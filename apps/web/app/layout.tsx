@@ -6,6 +6,12 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? process.env.BETTER_AUTH_URL ?? "http://localhost:3000"),
   title: "Село под съмнение",
   description: "Българска Werewolf/Mafia игра с тайни роли и authoritative game server.",
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    apple: "/favicon.svg",
+  },
   openGraph: {
     title: "Село под съмнение",
     description: "Българска Werewolf/Mafia игра с тайни роли и authoritative game server.",

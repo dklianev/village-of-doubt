@@ -13,6 +13,11 @@ export class PlayerPublicState extends Schema {
   @type("boolean") mayor = false;
   @type("boolean") hasVoted = false;
   @type("boolean") actedThisPhase = false;
+  /**
+   * Set only after death and only when revealRolesOnDeath is true.
+   * Empty string while the player is alive — never leaks live role data.
+   */
+  @type("string") revealedRole = "";
 }
 
 export class PublicEventState extends Schema {

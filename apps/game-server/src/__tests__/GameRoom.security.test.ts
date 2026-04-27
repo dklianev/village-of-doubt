@@ -52,6 +52,8 @@ describe("GameRoom security boundaries", () => {
     for (const player of state.players.values()) {
       expect("role" in player).toBe(false);
       expect(Object.prototype.hasOwnProperty.call(player, "role")).toBe(false);
+      // revealedRole must be an empty string for living players — never leak the secret role.
+      expect(player.revealedRole).toBe("");
     }
   });
 

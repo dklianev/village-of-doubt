@@ -15,6 +15,8 @@ caddy_config
 docs
 tmp
 output
+.playwright-mcp/
+playtest-*.png
 
 # Agent automation (Claude Code, Codex CLI, etc.) — kept local, never tracked.
 AGENTS.md

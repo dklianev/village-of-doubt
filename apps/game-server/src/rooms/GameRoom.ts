@@ -943,6 +943,12 @@ export class GameRoom extends Room<{ state: GameState }> {
     }
 
     const deaths = this.applyDeaths(resolution.deaths);
+    if (deaths.length === 0) {
+      const peaceMessage = this.state.phase === "first_night"
+        ? "Първата нощ премина мирно. Никой не пострада."
+        : "Нощта премина без жертви. Площадът се събужда невредим.";
+      this.addPublicEvent(peaceMessage);
+    }
     if (this.queueHunterRevenge(deaths)) {
       return;
     }
@@ -978,6 +984,16 @@ export class GameRoom extends Room<{ state: GameState }> {
     const [targetUserId, topVotes] = ranked[0] ?? [];
     const tied = ranked.filter(([, count]) => count === topVotes);
 
+    const totalVotes = ranked.reduce((sum, [, count]) => sum + count, 0);
+    this.persistGameEvent("vote_tally", {
+      visibility: "moderator",
+      payload: {
+        tally: ranked.map(([userId, count]) => ({ userId, count })),
+        totalVotes,
+        livingCount: [...this.privatePlayers.values()].filter((p) => p.alive).length,
+      },
+    });
+
     if (targetUserId && tied.length === 1) {
       const privatePlayer = this.privatePlayers.get(targetUserId);
       const publicPlayer = this.findPlayerByUserId(targetUserId);
@@ -1003,6 +1019,14 @@ export class GameRoom extends Room<{ state: GameState }> {
           return;
         }
       }
+    } else if (totalVotes === 0) {
+      this.addPublicEvent("Никой не гласува — площадът замълча.");
+    } else if (tied.length > 1) {
+      const tiedNames = tied
+        .map(([userId]) => this.findPlayerByUserId(userId)?.displayName)
+        .filter((name): name is string => Boolean(name))
+        .join(", ");
+      this.addPublicEvent(`Равенство в гласовете (${tiedNames}). Никой не е елиминиран.`);
     } else {
       this.addPublicEvent("Гласуването завърши без елиминация.");
     }
@@ -1032,6 +1056,9 @@ export class GameRoom extends Room<{ state: GameState }> {
       publicPlayer.alive = false;
       const wasMayor = publicPlayer.mayor;
       publicPlayer.mayor = false;
+      if (this.config.revealRolesOnDeath && privatePlayer.role) {
+        publicPlayer.revealedRole = privatePlayer.role;
+      }
       applied.push({
         userId: death.userId,
         causeBg: death.causeBg,

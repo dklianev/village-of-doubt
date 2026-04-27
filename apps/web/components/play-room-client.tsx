@@ -18,6 +18,7 @@ interface PublicPlayer {
   mayor: boolean;
   hasVoted: boolean;
   actedThisPhase: boolean;
+  revealedRole: string;
 }
 
 interface PublicEvent {
@@ -371,23 +372,25 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
             </div>
           </div>
 
-          <div className="action-bar">
-            <div className="action-bar-inner">
-              <button className="btn btn-secondary" type="button" onClick={sendReady} disabled={!room || phase !== "lobby"}>
-                {ownPlayer?.ready ? "Не съм готов" : "Готов"}
-              </button>
-              {ownPlayer?.host ? (
-                <button
-                  className="btn btn-primary"
-                  type="button"
-                  onClick={() => room?.send("startGame")}
-                  disabled={!room || phase !== "lobby" || !fullNarratorAccepted}
-                >
-                  Започни игра
+          {phase === "lobby" ? (
+            <div className="action-bar">
+              <div className="action-bar-inner">
+                <button className="btn btn-secondary" type="button" onClick={sendReady} disabled={!room}>
+                  {ownPlayer?.ready ? "Не съм готов" : "Готов"}
                 </button>
-              ) : null}
+                {ownPlayer?.host ? (
+                  <button
+                    className="btn btn-primary"
+                    type="button"
+                    onClick={() => room?.send("startGame")}
+                    disabled={!room || !fullNarratorAccepted}
+                  >
+                    Започни игра
+                  </button>
+                ) : null}
+              </div>
             </div>
-          </div>
+          ) : null}
 
           <LiveCuePanel
             cueMode={cueMode}
@@ -502,12 +505,18 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
                     <div>
                       <strong className="block leading-tight">{player.displayName}</strong>
                       <small className="font-bold uppercase tracking-[0.16em] text-[#842f2b]/80">
-                        {player.host ? "host" : player.narrator ? "разказвач" : player.ready ? "готов" : "чака"}
+                        {playerStatusBadge(player, phase)}
                       </small>
                     </div>
                   </div>
                   <span className="rounded-full bg-[#221611]/10 px-3 py-1 text-sm font-bold">
-                    {player.playing ? (player.alive ? "жив" : "елиминиран") : "извън играта"}
+                    {player.playing
+                      ? player.alive
+                        ? "жив"
+                        : player.revealedRole
+                          ? `† ${ROLE_DEFINITIONS[player.revealedRole as RoleCode]?.nameBg ?? "елиминиран"}`
+                          : "елиминиран"
+                      : "извън играта"}
                   </span>
                 </div>
                 <small className="mt-3 block text-[#4f3829]">
@@ -1239,6 +1248,52 @@ function roleSigil(role: RoleCode) {
   return sigils[role];
 }
 
+function playerStatusBadge(player: PublicPlayer, phase: string): string {
+  if (player.host) {
+    return "host";
+  }
+  if (player.narrator) {
+    return "разказвач";
+  }
+  if (phase === "lobby") {
+    return player.ready ? "готов" : "чака";
+  }
+  if (!player.playing) {
+    return "извън играта";
+  }
+  if (!player.alive) {
+    return "елиминиран";
+  }
+  if (phase === "voting") {
+    return player.hasVoted ? "гласувал" : "обмисля";
+  }
+  if (phase === "first_night" || phase === "night") {
+    return player.actedThisPhase ? "действал" : "буден";
+  }
+  if (phase === "day_discussion") {
+    return "говори";
+  }
+  if (phase === "day_announcement") {
+    return "слуша";
+  }
+  if (phase === "resolution") {
+    return "развръзка";
+  }
+  if (phase === "hunter_revenge") {
+    return "ловецът стреля";
+  }
+  if (phase === "mayor_successor") {
+    return "избор на кмет";
+  }
+  if (phase === "paused") {
+    return "пауза";
+  }
+  if (phase === "game_over") {
+    return "край";
+  }
+  return "играе";
+}
+
 function playerInitials(name: string) {
   return name
     .split(/\s+/)
@@ -1329,6 +1384,10 @@ function playerTokenClass(player: PublicPlayer) {
     .join(" ");
 }
 
+interface ColyseusGameStatePlayer extends Omit<PublicPlayer, "revealedRole"> {
+  revealedRole?: string;
+}
+
 interface ColyseusGameState {
   code: string;
   mode: string;
@@ -1345,7 +1404,7 @@ interface ColyseusGameState {
   phaseEndsAt: number;
   winnerTeam: string;
   winnerReasonBg: string;
-  players: { values(): IterableIterator<PublicPlayer> };
+  players: { values(): IterableIterator<ColyseusGameStatePlayer> };
   roleCounts: Iterable<PublicRoleCount>;
   publicEvents: Iterable<PublicEvent>;
   publicChat: Iterable<PublicChatMessage>;
@@ -1368,7 +1427,10 @@ function toSnapshot(state: ColyseusGameState): GameSnapshot {
     phaseEndsAt: state.phaseEndsAt,
     winnerTeam: state.winnerTeam,
     winnerReasonBg: state.winnerReasonBg,
-    players: Array.from(state.players.values()),
+    players: Array.from(state.players.values()).map((player) => ({
+      ...player,
+      revealedRole: player.revealedRole ?? "",
+    })),
     roleCounts: Array.from(state.roleCounts),
     publicEvents: Array.from(state.publicEvents),
     publicChat: Array.from(state.publicChat),
