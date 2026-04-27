@@ -113,14 +113,27 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
     let joinedRoom: Room | null = null;
     const client = createGameClient();
     setConnectionStatus("connecting");
-    const userId = window.localStorage.getItem("dev-user-id") ?? crypto.randomUUID();
-    window.localStorage.setItem("dev-user-id", userId);
+
+    // Dev fallback identity is only meaningful when the API allows dev auth.
+    // In production the /api/game-token route ignores these values and uses the
+    // Better Auth session, so we keep them out of localStorage entirely.
+    const isLocalHost =
+      typeof window !== "undefined" &&
+      (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+    const userId = isLocalHost
+      ? window.localStorage.getItem("dev-user-id") ?? crypto.randomUUID()
+      : crypto.randomUUID();
+    if (isLocalHost) {
+      window.localStorage.setItem("dev-user-id", userId);
+    }
     setCurrentUserId(userId);
 
-    const displayName =
-      window.localStorage.getItem("dev-display-name") ??
-      `Играч ${userId.slice(0, 4).toUpperCase()}`;
-    window.localStorage.setItem("dev-display-name", displayName);
+    const displayName = isLocalHost
+      ? window.localStorage.getItem("dev-display-name") ?? `Играч ${userId.slice(0, 4).toUpperCase()}`
+      : `Играч ${userId.slice(0, 4).toUpperCase()}`;
+    if (isLocalHost) {
+      window.localStorage.setItem("dev-display-name", displayName);
+    }
 
     fetch("/api/game-token", {
       method: "POST",
@@ -160,7 +173,7 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
         setConnectionStatus("connected");
 
         nextRoom.onStateChange((state) => {
-          startTransition(() => setSnapshot(toSnapshot(state)));
+          startTransition(() => setSnapshot(toSnapshot(state as unknown as ColyseusGameState)));
         });
 
         nextRoom.onMessage("private_role", (message: { role: RoleCode; roleNameBg: string }) => {
@@ -335,7 +348,7 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
             <div>
               <p className="phase-kicker">стая {code} · рунд {snapshot?.round ?? 0}</p>
               <h1 className="phase-title mt-5 font-black">{phaseBg(phase)}</h1>
-              <p className="phase-status mt-6">
+              <p className="phase-status mt-6" aria-live="polite" aria-atomic="true">
                 {status} {isPending ? " Обновяване..." : ""}
               </p>
               <div className="mt-6 flex flex-wrap gap-2">
@@ -555,8 +568,14 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
           ) : null}
 
           <div className="mt-8">
-            <h3 className="font-black">Събития</h3>
-            <div className="mt-3 grid gap-2 text-sm">
+            <h3 className="font-black" id="events-heading">Събития</h3>
+            <div
+              className="mt-3 grid gap-2 text-sm"
+              role="log"
+              aria-labelledby="events-heading"
+              aria-live="polite"
+              aria-relevant="additions"
+            >
               {(snapshot?.publicEvents ?? []).length === 0 ? (
                 <p className="event-line event-line-empty rounded-xl px-3 py-2">
                   Събитията ще се появят тук, когато ритуалът започне.
@@ -571,8 +590,14 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
           </div>
 
           <div className="mt-8">
-            <h3 className="font-black">Чат лог</h3>
-            <div className="mt-3 grid gap-2 text-sm">
+            <h3 className="font-black" id="chat-heading">Чат лог</h3>
+            <div
+              className="mt-3 grid gap-2 text-sm"
+              role="log"
+              aria-labelledby="chat-heading"
+              aria-live="polite"
+              aria-relevant="additions"
+            >
               {(snapshot?.publicChat ?? []).length === 0 ? (
                 <p className="chat-line rounded-xl px-3 py-2">Още няма публични реплики.</p>
               ) : null}
@@ -666,7 +691,12 @@ function ConnectionBanner({ status, message }: { status: ConnectionStatus; messa
   };
 
   return (
-    <div className={`connection-banner connection-${status} mb-6 p-4 text-[#fff6e5]`}>
+    <div
+      className={`connection-banner connection-${status} mb-6 p-4 text-[#fff6e5]`}
+      role={status === "error" ? "alert" : "status"}
+      aria-live={status === "error" ? "assertive" : "polite"}
+      aria-busy={status === "connecting" || status === "reconnecting"}
+    >
       <strong className="block">{title[status]}</strong>
       <span className="mt-1 block text-sm text-[#ead9ba]">{message}</span>
     </div>
@@ -1299,7 +1329,29 @@ function playerTokenClass(player: PublicPlayer) {
     .join(" ");
 }
 
-function toSnapshot(state: any): GameSnapshot {
+interface ColyseusGameState {
+  code: string;
+  mode: string;
+  playerCount: number;
+  narratorMode: string;
+  communicationMode: string;
+  tempoProfile: string;
+  dayDiscussionSeconds: number;
+  voteSeconds: number;
+  revealRolesOnDeath: boolean;
+  loversEnabled: boolean;
+  phase: string;
+  round: number;
+  phaseEndsAt: number;
+  winnerTeam: string;
+  winnerReasonBg: string;
+  players: { values(): IterableIterator<PublicPlayer> };
+  roleCounts: Iterable<PublicRoleCount>;
+  publicEvents: Iterable<PublicEvent>;
+  publicChat: Iterable<PublicChatMessage>;
+}
+
+function toSnapshot(state: ColyseusGameState): GameSnapshot {
   return {
     code: state.code,
     mode: state.mode,

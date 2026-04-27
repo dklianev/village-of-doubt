@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState, useTransition } from "react";
+import { FormEvent, useId, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 
@@ -14,6 +14,10 @@ export function AuthForm() {
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState("");
   const [isPending, startTransition] = useTransition();
+  const nameId = useId();
+  const emailId = useId();
+  const passwordId = useId();
+  const statusId = useId();
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -63,18 +67,57 @@ export function AuthForm() {
         </button>
       </div>
       {mode === "sign-up" ? (
-        <input className="input auth-input" value={name} onChange={(event) => setName(event.target.value)} placeholder="Име" />
+        <div className="grid gap-1">
+          <label htmlFor={nameId} className="text-xs font-bold uppercase tracking-[0.2em] text-[#842f2b]">
+            Име
+          </label>
+          <input
+            id={nameId}
+            className="input auth-input"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            placeholder="Име"
+            autoComplete="name"
+          />
+        </div>
       ) : null}
-      <input className="input auth-input" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Имейл" type="email" />
-      <input
-        className="input auth-input"
-        value={password}
-        onChange={(event) => setPassword(event.target.value)}
-        placeholder="Парола"
-        type="password"
-        minLength={8}
-      />
-      {status ? <p className="rounded-2xl bg-[#842f2b]/10 p-3 text-sm font-bold text-[#842f2b]">{status}</p> : null}
+      <div className="grid gap-1">
+        <label htmlFor={emailId} className="text-xs font-bold uppercase tracking-[0.2em] text-[#842f2b]">
+          Имейл
+        </label>
+        <input
+          id={emailId}
+          className="input auth-input"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          placeholder="example@domain.com"
+          type="email"
+          autoComplete={mode === "sign-in" ? "email" : "email"}
+          required
+        />
+      </div>
+      <div className="grid gap-1">
+        <label htmlFor={passwordId} className="text-xs font-bold uppercase tracking-[0.2em] text-[#842f2b]">
+          Парола
+        </label>
+        <input
+          id={passwordId}
+          className="input auth-input"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          placeholder="Поне 8 символа"
+          type="password"
+          minLength={8}
+          autoComplete={mode === "sign-in" ? "current-password" : "new-password"}
+          aria-describedby={status ? statusId : undefined}
+          required
+        />
+      </div>
+      {status ? (
+        <p id={statusId} role="alert" aria-live="assertive" className="rounded-2xl bg-[#842f2b]/10 p-3 text-sm font-bold text-[#842f2b]">
+          {status}
+        </p>
+      ) : null}
       <button className="btn btn-primary" type="submit" disabled={isPending}>
         {mode === "sign-in" ? "Влез" : "Създай профил"}
       </button>

@@ -13,3 +13,14 @@ caddy_config
 .tmp-design-*
 .claude
 docs
+tmp
+output
+
+# Agent automation (Claude Code, Codex CLI, etc.) — kept local, never tracked.
+AGENTS.md
+CLAUDE.md
+.mcp.json
+agents-shared/
+.githooks/
+scripts/agent-hooks/
+scripts/setup-githooks.mjs

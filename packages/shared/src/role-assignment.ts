@@ -20,7 +20,22 @@ export function expandRoleDistribution(distribution: RoleDistribution): RoleCode
   return roles;
 }
 
-export function shuffle<T>(items: T[], random: RandomSource = Math.random): T[] {
+/**
+ * Default crypto-grade source. On Node 19+/modern browsers `globalThis.crypto.getRandomValues`
+ * is available; we fall back to `Math.random` only when crypto is missing (e.g. older runtimes
+ * that load this module before the polyfill). Deterministic tests can still inject `() => 0.42`.
+ */
+export const defaultRandomSource: RandomSource = () => {
+  const cryptoSource = (globalThis as { crypto?: { getRandomValues?: (array: Uint32Array) => void } }).crypto;
+  if (cryptoSource?.getRandomValues) {
+    const buffer = new Uint32Array(1);
+    cryptoSource.getRandomValues(buffer);
+    return (buffer[0] ?? 0) / 0x1_00_00_00_00;
+  }
+  return Math.random();
+};
+
+export function shuffle<T>(items: T[], random: RandomSource = defaultRandomSource): T[] {
   const copy = [...items];
   for (let index = copy.length - 1; index > 0; index -= 1) {
     const swapIndex = Math.floor(random() * (index + 1));
@@ -38,7 +53,7 @@ export function shuffle<T>(items: T[], random: RandomSource = Math.random): T[] 
 export function assignRoles(
   playerIds: string[],
   distribution: RoleDistribution,
-  random: RandomSource = Math.random,
+  random: RandomSource = defaultRandomSource,
 ): AssignedRole[] {
   const roleCount = countRoles(distribution);
   if (roleCount !== playerIds.length) {

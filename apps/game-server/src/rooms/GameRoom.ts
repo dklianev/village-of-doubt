@@ -45,6 +45,9 @@ interface PrivatePlayerState {
 
 interface CreateOptions extends CreateRoomOptions {}
 
+const MAX_PUBLIC_EVENTS = 120;
+const MAX_PUBLIC_CHAT = 80;
+
 const PHASE_FLOW: Partial<Record<GamePhase, GamePhase>> = {
   role_reveal: "first_night",
   first_night: "day_announcement",
@@ -544,6 +547,9 @@ export class GameRoom extends Room<{ state: GameState }> {
     chat.message = message.slice(0, 500);
     chat.createdAt = Date.now();
     this.state.publicChat.push(chat);
+    while (this.state.publicChat.length > MAX_PUBLIC_CHAT) {
+      this.state.publicChat.shift();
+    }
     this.persistGameEvent("chat", {
       actorId: player.userId,
       visibility: "public",
@@ -1273,6 +1279,9 @@ export class GameRoom extends Room<{ state: GameState }> {
     event.messageBg = messageBg;
     event.createdAt = Date.now();
     this.state.publicEvents.push(event);
+    while (this.state.publicEvents.length > MAX_PUBLIC_EVENTS) {
+      this.state.publicEvents.shift();
+    }
   }
 
   private persistGameEvent(type: string, event: Omit<PersistEventInput, "round" | "phase" | "type"> = {}) {

@@ -3,14 +3,16 @@ WORKDIR /app
 RUN corepack enable
 
 FROM base AS deps
-COPY package.json pnpm-workspace.yaml turbo.json tsconfig.base.json ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json tsconfig.base.json ./
 COPY apps/game-server/package.json apps/game-server/package.json
 COPY packages/shared/package.json packages/shared/package.json
-RUN pnpm install --frozen-lockfile=false
+COPY packages/database/package.json packages/database/package.json
+RUN pnpm install --frozen-lockfile
 
 FROM deps AS builder
 COPY . .
 RUN pnpm --filter @werewolf/shared build
+RUN pnpm --filter @werewolf/database build
 RUN pnpm --filter @werewolf/game-server build
 
 FROM base AS runner
@@ -20,5 +22,7 @@ COPY --from=builder /app/apps/game-server/dist ./apps/game-server/dist
 COPY --from=builder /app/apps/game-server/package.json ./apps/game-server/package.json
 COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
 COPY --from=builder /app/packages/shared/package.json ./packages/shared/package.json
+COPY --from=builder /app/packages/database/dist ./packages/database/dist
+COPY --from=builder /app/packages/database/package.json ./packages/database/package.json
 EXPOSE 2567
 CMD ["node", "apps/game-server/dist/index.js"]

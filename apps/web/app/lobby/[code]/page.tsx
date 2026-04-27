@@ -34,16 +34,12 @@ export default async function LobbyCodePage({
         <div className="village-map-card mt-7" aria-hidden="true">
           <span>маршрут до площада</span>
         </div>
-        <div className="mt-8 grid gap-4 md:grid-cols-4">
-          {["Мила", "Ники", "Стефан", "Вики"].map((name, index) => (
-            <article key={name} className="paper-card seat-card rounded-3xl p-5">
-              <span className="seat-avatar" aria-hidden="true">{name[0]}</span>
-              <span className="text-xs font-black uppercase tracking-[0.25em] text-[#842f2b]">
-                {index === 0 ? "host" : "готов"}
-              </span>
-              <strong className="mt-3 block text-2xl">{name}</strong>
-            </article>
-          ))}
+        <div className="mt-8 rounded-3xl border border-[#f4e8d1]/15 bg-[#f4e8d1]/8 p-6 text-[#ead9ba]">
+          <p className="text-sm uppercase tracking-[0.25em] text-[#c18a38]">следваща стъпка</p>
+          <p className="mt-3 text-lg leading-7">
+            Сподели кода с групата и натисни „Влез в играта“. Списъкът на играчите се появява в реално време,
+            щом всички се присъединят към стаята.
+          </p>
         </div>
       </section>
     </main>

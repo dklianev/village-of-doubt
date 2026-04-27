@@ -1,0 +1,18 @@
+# Normalize line endings to LF in repo, native on checkout (works on Windows + macOS + Linux).
+* text=auto eol=lf
+
+# Binary files: never normalize.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.avif binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.tar binary
+
+# Lock files have one canonical format.
+pnpm-lock.yaml -text

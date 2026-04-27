@@ -81,7 +81,7 @@ function checkSecret(key) {
   if (value.length < 32) {
     errors.push(`${key} трябва да е поне 32 символа.`);
   }
-  if (/replace|change-me|placeholder/i.test(value)) {
+  if (/dev-only|replace|change-me|placeholder/i.test(value)) {
     errors.push(`${key} изглежда като placeholder.`);
   }
 }
