@@ -1,0 +1,850 @@
+{
+  "endpoint": "/v1/images/generations",
+  "job": 1,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\role-villager.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\role-villager-web.png"
+  ],
+  "prompt": "Use case: stylized-concept\nPrimary request: Vertical 2:3 role card illustration for a Bulgarian Werewolf social deduction web game. Central symbolic character: ordinary Bulgarian villager standing in a foggy village square at dawn, holding a lantern and folded bread cloth, humble but suspicious atmosphere, no weapons, safe empty space at the bottom for UI title overlay.\nStyle/medium: original Bulgarian folk-horror, Balkan village mystery, Thracian/Rhodope-inspired embroidery motifs, carved dark walnut details, beeswax candlelight, moonlit fog, old paper grain, premium board game art, cinematic hand-painted illustration\nComposition/framing: full-bleed vertical card, readable silhouette on mobile, restrained ornate frame elements\nColor palette: warm candle gold, soot black, bone parchment, muted red-black-white folk pattern accents\nConstraints: no readable text, no letters, no logos, no watermark, no official Werewolf or Mafia assets, no copied cards",
+  "quality": "high",
+  "size": "1024x1536"
+}
+{
+  "endpoint": "/v1/images/generations",
+  "job": 2,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\role-werewolf.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\role-werewolf-web.png"
+  ],
+  "prompt": "Use case: stylized-concept\nPrimary request: Vertical 2:3 role card illustration for a Bulgarian Werewolf social deduction web game. Central symbolic character: half-hidden wolf-human silhouette behind old wooden village gates, silver moon rim light, torn folk cloak, glowing eyes in the mist, powerful but not cartoonish, safe empty space at the bottom for UI title overlay.\nStyle/medium: original Bulgarian folk-horror, Balkan village mystery, Thracian/Rhodope-inspired embroidery motifs, carved dark walnut details, beeswax candlelight, moonlit fog, old paper grain, premium board game art, cinematic hand-painted illustration\nComposition/framing: full-bleed vertical card, readable silhouette on mobile, restrained ornate frame elements\nColor palette: cold moon blue, soot black, silver, deep wine red accents\nConstraints: no gore, no readable text, no letters, no logos, no watermark, no official Werewolf assets",
+  "quality": "high",
+  "size": "1024x1536"
+}
+{
+  "endpoint": "/v1/images/generations",
+  "job": 3,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\role-alpha-wolf.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\role-alpha-wolf-web.png"
+  ],
+  "prompt": "Use case: stylized-concept\nPrimary request: Vertical 2:3 role card illustration for a Bulgarian Werewolf social deduction web game. Central symbolic character: ancient alpha wolf leader on a hill above the village, black fur, red embroidery scraps tied like trophies, commanding presence, eclipsed moon behind, safe empty space at the bottom for UI title overlay.\nStyle/medium: original Bulgarian folk-horror, Balkan village mystery, Thracian/Rhodope-inspired embroidery motifs, carved dark walnut details, beeswax candlelight, moonlit fog, old paper grain, premium board game art, cinematic hand-painted illustration\nComposition/framing: full-bleed vertical card, heroic low angle, readable on mobile\nColor palette: eclipse black, silver moon, blood-red embroidery, ash gray\nConstraints: no gore, no readable text, no letters, no logos, no watermark, no official assets",
+  "quality": "high",
+  "size": "1024x1536"
+}
+{
+  "endpoint": "/v1/images/generations",
+  "job": 4,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\role-seer.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\role-seer-web.png"
+  ],
+  "prompt": "Use case: stylized-concept\nPrimary request: Vertical 2:3 role card illustration for a Bulgarian Werewolf social deduction web game. Central symbolic character: village clairvoyant beside a copper bowl of moonlit water, herbs, old icons, candle reflections showing a hidden wolf shadow, safe empty space at the bottom for UI title overlay.\nStyle/medium: original Bulgarian folk-horror, Balkan village mystery, Thracian/Rhodope-inspired embroidery motifs, carved dark walnut details, beeswax candlelight, moonlit fog, old paper grain, premium board game art, cinematic hand-painted illustration\nComposition/framing: intimate vertical card, face partly lit by bowl reflection, readable silhouette\nColor palette: copper, candle gold, deep blue, parchment, muted red accents\nConstraints: respectful mystical tone, no readable text, no letters, no logos, no watermark",
+  "quality": "high",
+  "size": "1024x1536"
+}
+{
+  "endpoint": "/v1/images/generations",
+  "job": 5,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\role-healer.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\role-healer-web.png"
+  ],
+  "prompt": "Use case: stylized-concept\nPrimary request: Vertical 2:3 role card illustration for a Bulgarian Werewolf social deduction web game. Central symbolic character: village healer with herbs, linen bandages, ceramic jars and warm golden light, protective hands over a sleeping patient, calm sacred mood, safe empty space at the bottom for UI title overlay.\nStyle/medium: original Bulgarian folk-horror, Balkan village mystery, Thracian/Rhodope-inspired embroidery motifs, carved dark walnut details, beeswax candlelight, moonlit fog, old paper grain, premium board game art, cinematic hand-painted illustration\nComposition/framing: warm vertical card, protective gesture centered, readable on mobile\nColor palette: warm green-gold, linen cream, walnut brown, soft red embroidery\nConstraints: no medical cross, no readable text, no letters, no logos, no watermark",
+  "quality": "high",
+  "size": "1024x1536"
+}
+{
+  "endpoint": "/v1/images/generations",
+  "job": 6,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\role-witch.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\role-witch-web.png"
+  ],
+  "prompt": "Use case: stylized-concept\nPrimary request: Vertical 2:3 role card illustration for a Bulgarian Werewolf social deduction web game. Central symbolic character: witch in an old mountain house, two potion bottles glowing different colors, dried herbs hanging from rafters, ambiguous ally-or-danger energy, safe empty space at the bottom for UI title overlay.\nStyle/medium: original Bulgarian folk-horror, Balkan village mystery, Thracian/Rhodope-inspired embroidery motifs, carved dark walnut details, beeswax candlelight, moonlit fog, old paper grain, premium board game art, cinematic hand-painted illustration\nComposition/framing: dramatic vertical card, two glowing bottles frame the subject, readable silhouette\nColor palette: emerald glow, amber candlelight, soot black, wine red\nConstraints: not cartoonish, no readable text, no letters, no logos, no watermark",
+  "quality": "high",
+  "size": "1024x1536"
+}
+{
+  "endpoint": "/v1/images/generations",
+  "job": 7,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\role-hunter.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\role-hunter-web.png"
+  ],
+  "prompt": "Use case: stylized-concept\nPrimary request: Vertical 2:3 role card illustration for a Bulgarian Werewolf social deduction web game. Central symbolic character: rugged village hunter in wool coat holding an old hunting rifle lowered safely, forest edge behind him, watchful revengeful expression, moonlit fog, safe empty space at the bottom for UI title overlay.\nStyle/medium: original Bulgarian folk-horror, Balkan village mystery, Thracian/Rhodope-inspired embroidery motifs, carved dark walnut details, beeswax candlelight, moonlit fog, old paper grain, premium board game art, cinematic hand-painted illustration\nComposition/framing: vertical card, grounded stance, rifle not aimed at viewer, readable silhouette\nColor palette: cold forest green, moon silver, walnut brown, muted red embroidery\nConstraints: no gore, no realistic violence, no readable text, no letters, no logos, no watermark",
+  "quality": "high",
+  "size": "1024x1536"
+}
+{
+  "endpoint": "/v1/images/generations",
+  "job": 8,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\role-cupid.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\role-cupid-web.png"
+  ],
+  "prompt": "Use case: stylized-concept\nPrimary request: Vertical 2:3 role card illustration for a Bulgarian Werewolf social deduction web game. Central symbolic character: eerie folk Cupid as a masked wedding spirit, red thread connecting two shadowy figures, ritual flowers, romantic but ominous, safe empty space at the bottom for UI title overlay.\nStyle/medium: original Bulgarian folk-horror, Balkan village mystery, Thracian/Rhodope-inspired embroidery motifs, carved dark walnut details, beeswax candlelight, moonlit fog, old paper grain, premium board game art, cinematic hand-painted illustration\nComposition/framing: vertical card, red thread is the visual focus, readable on mobile\nColor palette: wedding white, candle gold, deep crimson thread, soot shadows\nConstraints: not cute, no readable text, no letters, no logos, no watermark",
+  "quality": "high",
+  "size": "1024x1536"
+}
+{
+  "endpoint": "/v1/images/generations",
+  "job": 9,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\role-mayor.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\role-mayor-web.png"
+  ],
+  "prompt": "Use case: stylized-concept\nPrimary request: Vertical 2:3 role card illustration for a Bulgarian Werewolf social deduction web game. Central symbolic character: village mayor at an old wooden council table, heavy signet ring, election ribbons, two candles symbolizing double vote, civic authority with suspicion, safe empty space at the bottom for UI title overlay.\nStyle/medium: original Bulgarian folk-horror, Balkan village mystery, Thracian/Rhodope-inspired embroidery motifs, carved dark walnut details, beeswax candlelight, moonlit fog, old paper grain, premium board game art, cinematic hand-painted illustration\nComposition/framing: vertical card, table foreground, authoritative seated pose, readable silhouette\nColor palette: walnut brown, candle gold, parchment, dark burgundy\nConstraints: no readable text, no letters, no logos, no watermark",
+  "quality": "high",
+  "size": "1024x1536"
+}
+{
+  "endpoint": "/v1/images/generations",
+  "job": 10,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\role-priest.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\role-priest-web.png"
+  ],
+  "prompt": "Use case: stylized-concept\nPrimary request: Vertical 2:3 role card illustration for a Bulgarian Werewolf social deduction web game. Central symbolic character: Orthodox-inspired village priest blessing a villager with a small candle and embroidered cloth, golden protective aura, respectful and original, safe empty space at the bottom for UI title overlay.\nStyle/medium: original Bulgarian folk-horror, Balkan village mystery, Thracian/Rhodope-inspired embroidery motifs, carved dark walnut details, beeswax candlelight, moonlit fog, old paper grain, premium board game art, cinematic hand-painted illustration\nComposition/framing: vertical card, blessing gesture centered, soft sacred glow, readable silhouette\nColor palette: gold, dark walnut, ivory, muted red embroidery\nConstraints: no direct church logos, no readable text, no letters, no watermark",
+  "quality": "high",
+  "size": "1024x1536"
+}
+{
+  "endpoint": "/v1/images/generations",
+  "job": 11,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\role-vampire.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\role-vampire-web.png"
+  ],
+  "prompt": "Use case: stylized-concept\nPrimary request: Vertical 2:3 role card illustration for a Bulgarian Werewolf social deduction web game. Central symbolic character: aristocratic Balkan vampire in an abandoned Revival-era house, pale face half in shadow, red wine-like glow, bats only as subtle shapes, elegant menace, safe empty space at the bottom for UI title overlay.\nStyle/medium: original Bulgarian folk-horror, Balkan village mystery, Thracian/Rhodope-inspired embroidery motifs, carved dark walnut details, beeswax candlelight, moonlit fog, old paper grain, premium board game art, cinematic hand-painted illustration\nComposition/framing: vertical card, elegant figure framed by old window, readable silhouette\nColor palette: deep burgundy, bone white, moon blue, soot black\nConstraints: not gory, no blood splatter, no readable text, no letters, no logos, no watermark",
+  "quality": "high",
+  "size": "1024x1536"
+}
+{
+  "endpoint": "/v1/images/generations",
+  "job": 12,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\role-jester.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\role-jester-web.png"
+  ],
+  "prompt": "Use case: stylized-concept\nPrimary request: Vertical 2:3 role card illustration for a Bulgarian Werewolf social deduction web game. Central symbolic character: sinister village jester wearing patched folk costume and kukeri bells, smiling mask in one hand, chaotic candlelit tavern background, playful but unsettling, safe empty space at the bottom for UI title overlay.\nStyle/medium: original Bulgarian folk-horror, Balkan village mystery, Thracian/Rhodope-inspired embroidery motifs, carved dark walnut details, beeswax candlelight, moonlit fog, old paper grain, premium board game art, cinematic hand-painted illustration\nComposition/framing: vertical card, crooked theatrical pose, mask and bells readable on mobile\nColor palette: black, ivory, candle amber, sharp red folk accents\nConstraints: no clown clich\u00e9, no readable text, no letters, no logos, no watermark",
+  "quality": "high",
+  "size": "1024x1536"
+}
+{
+  "endpoint": "/v1/images/generations",
+  "job": 13,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\role-thief.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\role-thief-web.png"
+  ],
+  "prompt": "Use case: stylized-concept\nPrimary request: Vertical 2:3 role card illustration for a Bulgarian Werewolf social deduction web game. Central symbolic character: nimble thief in dark embroidered cloak reaching toward a glowing role card on a table, swapped shadow behind victim, clever and secretive, safe empty space at the bottom for UI title overlay.\nStyle/medium: original Bulgarian folk-horror, Balkan village mystery, Thracian/Rhodope-inspired embroidery motifs, carved dark walnut details, beeswax candlelight, moonlit fog, old paper grain, premium board game art, cinematic hand-painted illustration\nComposition/framing: vertical card, hand and glowing card in foreground, readable silhouette\nColor palette: shadow black, candle gold, red thread accents, old parchment\nConstraints: no readable text on cards, no letters, no logos, no watermark",
+  "quality": "high",
+  "size": "1024x1536"
+}
+{
+  "endpoint": "/v1/images/generations",
+  "job": 14,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\role-little-girl.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\role-little-girl-web.png"
+  ],
+  "prompt": "Use case: stylized-concept\nPrimary request: Vertical 2:3 role card illustration for a Bulgarian Werewolf social deduction web game. Central symbolic character: brave child peeking through a wooden door crack at night, moonlight on one eye, dangerous curiosity, protective fairytale tension, safe empty space at the bottom for UI title overlay.\nStyle/medium: original Bulgarian folk-horror, Balkan village mystery, Thracian/Rhodope-inspired embroidery motifs, carved dark walnut details, beeswax candlelight, moonlit fog, old paper grain, premium board game art, cinematic hand-painted illustration\nComposition/framing: vertical card, door crack creates dramatic light slice, readable on mobile\nColor palette: moon blue, warm interior amber, walnut brown, muted red detail\nConstraints: no gore, no exploitation, no readable text, no letters, no logos, no watermark",
+  "quality": "high",
+  "size": "1024x1536"
+}
+{
+  "endpoint": "/v1/images/generations",
+  "job": 15,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\role-peaceful-citizen.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\role-peaceful-citizen-web.png"
+  ],
+  "prompt": "Use case: stylized-concept\nPrimary request: Vertical 2:3 role card illustration for a Bulgarian Mafia social deduction web game. Central symbolic character: ordinary citizen in a rainy Bulgarian city street, holding an umbrella and folded newspaper, neon reflections, anxious noir atmosphere, safe empty space at the bottom for UI title overlay.\nStyle/medium: original Bulgarian urban mystery with folk-horror undertone, Sofia/old Balkan city mood, subtle embroidery motifs, wet asphalt, smoky lamplight, premium board game art, cinematic hand-painted illustration\nComposition/framing: full-bleed vertical card, readable silhouette on mobile\nColor palette: rain blue, amber streetlight, charcoal, muted red accent\nConstraints: no readable text on newspaper, no letters, no logos, no watermark, no copied Mafia assets",
+  "quality": "high",
+  "size": "1024x1536"
+}
+{
+  "endpoint": "/v1/images/generations",
+  "job": 16,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\role-mafioso.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\role-mafioso-web.png"
+  ],
+  "prompt": "Use case: stylized-concept\nPrimary request: Vertical 2:3 role card illustration for a Bulgarian Mafia social deduction web game. Central symbolic character: shadowy mafia member in dark suit with subtle Bulgarian folk lining, cigarette smoke, backroom table, hidden dagger silhouette, tense but elegant, safe empty space at the bottom for UI title overlay.\nStyle/medium: original Bulgarian urban mystery with folk-horror undertone, old tavern backroom, carved walnut, smoky lamplight, premium board game art, cinematic hand-painted illustration\nComposition/framing: vertical card, half-hidden face, readable silhouette on mobile\nColor palette: charcoal black, tobacco smoke gray, candle gold, burgundy accent\nConstraints: no gore, no glamorized modern gangster clich\u00e9, no readable text, no letters, no logos, no watermark",
+  "quality": "high",
+  "size": "1024x1536"
+}
+{
+  "endpoint": "/v1/images/generations",
+  "job": 17,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\role-don.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\role-don-web.png"
+  ],
+  "prompt": "Use case: stylized-concept\nPrimary request: Vertical 2:3 role card illustration for a Bulgarian Mafia social deduction web game. Central symbolic character: mafia boss seated at a carved wooden table, heavy ring, chess pieces, red wax seal, face partly hidden, elegant authority and danger, safe empty space at the bottom for UI title overlay.\nStyle/medium: original Bulgarian urban mystery with folk-horror undertone, carved walnut, smoky lamplight, premium board game art, cinematic hand-painted illustration\nComposition/framing: vertical card, seated authority pose, table foreground, readable on mobile\nColor palette: deep black, walnut brown, wax red, candle gold\nConstraints: no readable text, no letters, no logos, no watermark, no copied Mafia assets",
+  "quality": "high",
+  "size": "1024x1536"
+}
+{
+  "endpoint": "/v1/images/generations",
+  "job": 18,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\role-commissioner.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\role-commissioner-web.png"
+  ],
+  "prompt": "Use case: stylized-concept\nPrimary request: Vertical 2:3 role card illustration for a Bulgarian Mafia social deduction web game. Central symbolic character: detective commissioner in worn coat reviewing evidence under a desk lamp, city map, case files, one wolf-shaped clue hidden in shadow, safe empty space at the bottom for UI title overlay.\nStyle/medium: original Bulgarian urban mystery with folk-horror undertone, noir investigation desk, smoky lamplight, premium board game art, cinematic hand-painted illustration\nComposition/framing: vertical card, desk lamp creates strong focus, readable silhouette\nColor palette: amber desk light, navy shadows, parchment, muted red pin thread\nConstraints: no readable text on files or map, no letters, no logos, no watermark",
+  "quality": "high",
+  "size": "1024x1536"
+}
+{
+  "endpoint": "/v1/images/generations",
+  "job": 19,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\card-back-secret.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\card-back-secret-web.png"
+  ],
+  "prompt": "Use case: stylized-concept\nPrimary request: Vertical 2:3 ornate hidden role card back for a Bulgarian Werewolf/Mafia game, carved walnut frame, red-black-white embroidery border, central moon-and-eye sigil, premium board game card texture.\nStyle/medium: original Bulgarian folk-horror graphic card art, premium board game finish, subtle screenprint grain\nComposition/framing: perfect centered card back, symmetrical, mobile readable\nColor palette: walnut brown, soot black, moon gold, folk red and white accents\nConstraints: no readable text, no letters, no logos, no watermark",
+  "quality": "medium",
+  "size": "1024x1536"
+}
+{
+  "endpoint": "/v1/images/generations",
+  "job": 20,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\card-back-dark.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\card-back-dark-web.png"
+  ],
+  "prompt": "Use case: stylized-concept\nPrimary request: Vertical 2:3 dark secret faction card back for a Bulgarian Werewolf/Mafia game, black lacquer wood, silver moon scratch marks, subtle blood-red thread, restrained ornate border.\nStyle/medium: original Bulgarian folk-horror graphic card art, premium board game finish, subtle screenprint grain\nComposition/framing: perfect centered card back, symmetrical, mobile readable\nColor palette: black lacquer, silver, deep red, smoke gray\nConstraints: no readable text, no letters, no logos, no watermark",
+  "quality": "medium",
+  "size": "1024x1536"
+}
+{
+  "endpoint": "/v1/images/generations",
+  "job": 21,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\card-back-village.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\card-back-village-web.png"
+  ],
+  "prompt": "Use case: stylized-concept\nPrimary request: Vertical 2:3 village faction card back for a Bulgarian Werewolf/Mafia game, warm parchment and wheat motifs, protective candle sigil, embroidered border, premium board game card texture.\nStyle/medium: original Bulgarian folk-horror graphic card art, premium board game finish, subtle paper grain\nComposition/framing: perfect centered card back, symmetrical, mobile readable\nColor palette: parchment, wheat gold, walnut, folk red and white accents\nConstraints: no readable text, no letters, no logos, no watermark",
+  "quality": "medium",
+  "size": "1024x1536"
+}
+{
+  "endpoint": "/v1/images/generations",
+  "job": 22,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\bg-landing-hero.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\bg-landing-hero-web.png"
+  ],
+  "prompt": "Use case: stylized-concept\nPrimary request: 16:9 landing page hero background for a Bulgarian folk-horror Werewolf/Mafia web game, misty mountain village at blue hour, warm windows, huge moon, distant church bell tower silhouette, cinematic depth, no characters, generous negative space for UI overlay.\nStyle/medium: original Balkan village mystery, cinematic hand-painted environment, subtle screenprint grain, premium game landing art\nComposition/framing: wide landscape, deep atmospheric perspective, UI-safe center-right negative space\nColor palette: moon blue, fog gray, candle amber, soot black, muted red accents\nConstraints: no readable text, no letters, no logos, no watermark",
+  "quality": "medium",
+  "size": "1536x1024"
+}
+{
+  "endpoint": "/v1/images/generations",
+  "job": 23,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\bg-lobby-tavern.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\bg-lobby-tavern-web.png"
+  ],
+  "prompt": "Use case: stylized-concept\nPrimary request: 16:9 lobby background for a Bulgarian Werewolf/Mafia web game, old Bulgarian tavern interior, wooden table with candles, empty chairs, invitation cards, folk textiles, cozy but suspicious, no characters.\nStyle/medium: original Bulgarian folk-horror environment, cinematic hand-painted illustration, premium board game UI backdrop\nComposition/framing: wide tavern table foreground, UI-safe darker corners\nColor palette: warm walnut, candle gold, deep shadow, red-black-white textile accents\nConstraints: no readable text on cards, no letters, no logos, no watermark",
+  "quality": "medium",
+  "size": "1536x1024"
+}
+{
+  "endpoint": "/v1/images/generations",
+  "job": 24,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\bg-role-reveal.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\bg-role-reveal-web.png"
+  ],
+  "prompt": "Use case: stylized-concept\nPrimary request: 16:9 role reveal background for a Bulgarian Werewolf/Mafia web game, dark room with mirror, candles, hanging herbs, single glowing blank card on table, dramatic spotlight, no characters.\nStyle/medium: original Bulgarian folk-horror environment, cinematic hand-painted illustration, premium board game UI backdrop\nComposition/framing: wide scene, glowing card center-left, safe empty space for UI\nColor palette: amber candlelight, deep blue shadow, old paper, copper\nConstraints: card must be blank with no text, no letters, no logos, no watermark",
+  "quality": "medium",
+  "size": "1536x1024"
+}
+{
+  "endpoint": "/v1/images/generations",
+  "job": 25,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\bg-night-phase.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\bg-night-phase-web.png"
+  ],
+  "prompt": "Use case: stylized-concept\nPrimary request: 16:9 night phase background for a Bulgarian Werewolf/Mafia web game, sleeping village under full moon, fog between houses, wolf tracks in mud, cold blue palette, no visible characters.\nStyle/medium: original Balkan village mystery, cinematic hand-painted environment, premium game UI backdrop\nComposition/framing: wide landscape, moon high left, village low horizon, UI-safe sky area\nColor palette: cold moon blue, silver fog, soot black, muted red accent\nConstraints: no gore, no readable text, no letters, no logos, no watermark",
+  "quality": "medium",
+  "size": "1536x1024"
+}
+{
+  "endpoint": "/v1/images/generations",
+  "job": 26,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\bg-day-discussion.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\bg-day-discussion-web.png"
+  ],
+  "prompt": "Use case: stylized-concept\nPrimary request: 16:9 day discussion background for a Bulgarian Werewolf/Mafia web game, village square after sunrise, tense empty benches, old well in center, long shadows, warm dusty light, social suspicion atmosphere, no characters.\nStyle/medium: original Bulgarian village mystery, cinematic hand-painted environment, premium game UI backdrop\nComposition/framing: wide scene with central well, UI-safe sky and foreground edges\nColor palette: dusty gold, plaster white, walnut, muted folk red\nConstraints: no readable text, no letters, no logos, no watermark",
+  "quality": "medium",
+  "size": "1536x1024"
+}
+{
+  "endpoint": "/v1/images/generations",
+  "job": 27,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\bg-voting.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\bg-voting-web.png"
+  ],
+  "prompt": "Use case: stylized-concept\nPrimary request: 16:9 voting background for a Bulgarian Werewolf/Mafia web game, old council table with wax seals, black voting stones, candles almost burned down, dramatic overhead light, no characters.\nStyle/medium: original Bulgarian folk-horror table scene, cinematic hand-painted illustration, premium game UI backdrop\nComposition/framing: wide top-down/three-quarter table, strong central voting bowl, UI-safe edges\nColor palette: walnut brown, wax red, candle gold, charcoal black\nConstraints: no readable text, no letters, no logos, no watermark",
+  "quality": "medium",
+  "size": "1536x1024"
+}
+{
+  "endpoint": "/v1/images/generations",
+  "job": 28,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\bg-resolution.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\bg-resolution-web.png"
+  ],
+  "prompt": "Use case: stylized-concept\nPrimary request: 16:9 resolution background for a Bulgarian Werewolf/Mafia web game, dawn over graveyard and village road, candle smoke, one empty chair, solemn but not graphic, no characters.\nStyle/medium: original Bulgarian folk-horror environment, cinematic hand-painted illustration, premium game UI backdrop\nComposition/framing: wide solemn landscape, empty chair as focal point, UI-safe mist areas\nColor palette: pale dawn gold, fog gray, dark earth, muted red thread\nConstraints: no gore, no readable text, no letters, no logos, no watermark",
+  "quality": "medium",
+  "size": "1536x1024"
+}
+{
+  "endpoint": "/v1/images/generations",
+  "job": 29,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\bg-narrator-panel.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\bg-narrator-panel-web.png"
+  ],
+  "prompt": "Use case: stylized-concept\nPrimary request: 16:9 narrator panel background for a Bulgarian Werewolf/Mafia web game, theatrical ritual table with bell, hourglass, phase cards, candle, old notebook, top-down composition, no characters.\nStyle/medium: original Bulgarian folk-horror UI backdrop, cinematic hand-painted table scene, premium board game materials\nComposition/framing: wide top-down desk, objects arranged for UI panels, safe empty central parchment area\nColor palette: walnut brown, parchment, candle gold, wax red, soot black\nConstraints: no readable text in notebook or cards, no letters, no logos, no watermark",
+  "quality": "medium",
+  "size": "1536x1024"
+}
+{
+  "endpoint": "/v1/images/generations",
+  "job": 30,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\bg-history-archive.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\bg-history-archive-web.png"
+  ],
+  "prompt": "Use case: stylized-concept\nPrimary request: 16:9 history archive background for a Bulgarian Werewolf/Mafia web game, dusty municipal archive shelves, sealed game records, old photographs, candlelit evidence board, no characters.\nStyle/medium: original Bulgarian urban mystery archive, cinematic hand-painted environment, premium game UI backdrop\nComposition/framing: wide room, shelves recede into darkness, UI-safe central haze\nColor palette: sepia parchment, candle amber, charcoal, muted red wax\nConstraints: no readable text on records or photos, no letters, no logos, no watermark",
+  "quality": "medium",
+  "size": "1536x1024"
+}
+{
+  "background": "transparent",
+  "endpoint": "/v1/images/generations",
+  "job": 31,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\icon-phase-lobby.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\icon-phase-lobby-web.png"
+  ],
+  "prompt": "Use case: logo-brand\nPrimary request: Square 1:1 transparent UI icon for Lobby phase, carved wooden door with hanging lantern and invitation cord, Bulgarian folk-horror game icon, high contrast silhouette.\nStyle/medium: premium board game UI icon, hand-painted with clean edges, subtle folk embroidery accents\nComposition/framing: centered isolated icon, transparent background, readable at small size\nColor palette: walnut brown, candle gold, soot black, muted red accent\nConstraints: transparent background, no text, no letters, no logos, no watermark",
+  "quality": "medium",
+  "size": "1024x1024"
+}
+{
+  "background": "transparent",
+  "endpoint": "/v1/images/generations",
+  "job": 32,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\icon-phase-role-reveal.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\icon-phase-role-reveal-web.png"
+  ],
+  "prompt": "Use case: logo-brand\nPrimary request: Square 1:1 transparent UI icon for Role Reveal phase, glowing tarot-like blank card silhouette with moon eye sigil, Bulgarian folk-horror game icon, high contrast silhouette.\nStyle/medium: premium board game UI icon, hand-painted with clean edges, subtle folk embroidery accents\nComposition/framing: centered isolated icon, transparent background, readable at small size\nColor palette: moon gold, parchment, deep blue, red accent\nConstraints: card has no readable text, transparent background, no letters, no logos, no watermark",
+  "quality": "medium",
+  "size": "1024x1024"
+}
+{
+  "background": "transparent",
+  "endpoint": "/v1/images/generations",
+  "job": 33,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\icon-phase-night.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\icon-phase-night-web.png"
+  ],
+  "prompt": "Use case: logo-brand\nPrimary request: Square 1:1 transparent UI icon for Night phase, crescent moon behind wolf tracks, cold blue silver, Bulgarian folk-horror game icon, high contrast silhouette.\nStyle/medium: premium board game UI icon, hand-painted with clean edges, subtle folk embroidery accents\nComposition/framing: centered isolated icon, transparent background, readable at small size\nColor palette: silver, moon blue, soot black\nConstraints: transparent background, no text, no letters, no logos, no watermark",
+  "quality": "medium",
+  "size": "1024x1024"
+}
+{
+  "background": "transparent",
+  "endpoint": "/v1/images/generations",
+  "job": 34,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\icon-phase-day.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\icon-phase-day-web.png"
+  ],
+  "prompt": "Use case: logo-brand\nPrimary request: Square 1:1 transparent UI icon for Day Discussion phase, rising sun over village well, warm gold, Bulgarian folk-horror game icon, high contrast silhouette.\nStyle/medium: premium board game UI icon, hand-painted with clean edges, subtle folk embroidery accents\nComposition/framing: centered isolated icon, transparent background, readable at small size\nColor palette: sun gold, parchment, walnut, muted red\nConstraints: transparent background, no text, no letters, no logos, no watermark",
+  "quality": "medium",
+  "size": "1024x1024"
+}
+{
+  "background": "transparent",
+  "endpoint": "/v1/images/generations",
+  "job": 35,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\icon-phase-voting.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\icon-phase-voting-web.png"
+  ],
+  "prompt": "Use case: logo-brand\nPrimary request: Square 1:1 transparent UI icon for Voting phase, black voting stone dropping into wooden bowl, candlelight, Bulgarian folk-horror game icon, high contrast silhouette.\nStyle/medium: premium board game UI icon, hand-painted with clean edges, subtle folk embroidery accents\nComposition/framing: centered isolated icon, transparent background, readable at small size\nColor palette: charcoal black, candle gold, walnut brown, wax red\nConstraints: transparent background, no text, no letters, no logos, no watermark",
+  "quality": "medium",
+  "size": "1024x1024"
+}
+{
+  "background": "transparent",
+  "endpoint": "/v1/images/generations",
+  "job": 36,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\icon-phase-resolution.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\icon-phase-resolution-web.png"
+  ],
+  "prompt": "Use case: logo-brand\nPrimary request: Square 1:1 transparent UI icon for Resolution phase, cracked wax seal with smoke, solemn red-gold palette, Bulgarian folk-horror game icon, high contrast silhouette.\nStyle/medium: premium board game UI icon, hand-painted with clean edges, subtle folk embroidery accents\nComposition/framing: centered isolated icon, transparent background, readable at small size\nColor palette: wax red, candle gold, smoke gray, soot black\nConstraints: transparent background, no text, no letters, no logos, no watermark",
+  "quality": "medium",
+  "size": "1024x1024"
+}
+{
+  "background": "transparent",
+  "endpoint": "/v1/images/generations",
+  "job": 37,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\icon-phase-game-over.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\icon-phase-game-over-web.png"
+  ],
+  "prompt": "Use case: logo-brand\nPrimary request: Square 1:1 transparent UI icon for Game Over phase, extinguished candle with moonlit smoke forming a wolf and village silhouette, Bulgarian folk-horror game icon, high contrast silhouette.\nStyle/medium: premium board game UI icon, hand-painted with clean edges, subtle folk embroidery accents\nComposition/framing: centered isolated icon, transparent background, readable at small size\nColor palette: smoke gray, moon blue, candle gold, soot black\nConstraints: transparent background, no text, no letters, no logos, no watermark",
+  "quality": "medium",
+  "size": "1024x1024"
+}
+{
+  "background": "transparent",
+  "endpoint": "/v1/images/generations",
+  "job": 38,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\icon-ability-investigate.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\icon-ability-investigate-web.png"
+  ],
+  "prompt": "Use case: logo-brand\nPrimary request: Square 1:1 transparent UI icon for investigate ability, silver eye over a copper bowl of water, mystical but clean UI shape, Bulgarian folk-horror game icon.\nStyle/medium: premium board game UI icon, hand-painted with clean edges, subtle folk embroidery accents\nComposition/framing: centered isolated icon, transparent background, readable at small size\nColor palette: silver, copper, moon blue, candle gold\nConstraints: transparent background, no text, no letters, no logos, no watermark",
+  "quality": "medium",
+  "size": "1024x1024"
+}
+{
+  "background": "transparent",
+  "endpoint": "/v1/images/generations",
+  "job": 39,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\icon-ability-heal.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\icon-ability-heal-web.png"
+  ],
+  "prompt": "Use case: logo-brand\nPrimary request: Square 1:1 transparent UI icon for heal ability, herbs and linen bandage glowing warm green-gold, Bulgarian folk-horror game icon.\nStyle/medium: premium board game UI icon, hand-painted with clean edges, subtle folk embroidery accents\nComposition/framing: centered isolated icon, transparent background, readable at small size\nColor palette: warm green, linen cream, candle gold, walnut\nConstraints: no medical cross, transparent background, no text, no letters, no logos, no watermark",
+  "quality": "medium",
+  "size": "1024x1024"
+}
+{
+  "background": "transparent",
+  "endpoint": "/v1/images/generations",
+  "job": 40,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\icon-ability-kill.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\icon-ability-kill-web.png"
+  ],
+  "prompt": "Use case: logo-brand\nPrimary request: Square 1:1 transparent UI icon for kill ability, shadow claw mark across wax seal, dramatic but not bloody, Bulgarian folk-horror game icon.\nStyle/medium: premium board game UI icon, hand-painted with clean edges, subtle folk embroidery accents\nComposition/framing: centered isolated icon, transparent background, readable at small size\nColor palette: wax red, soot black, silver scratch, candle gold\nConstraints: no gore, transparent background, no text, no letters, no logos, no watermark",
+  "quality": "medium",
+  "size": "1024x1024"
+}
+{
+  "background": "transparent",
+  "endpoint": "/v1/images/generations",
+  "job": 41,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\icon-ability-bless.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\icon-ability-bless-web.png"
+  ],
+  "prompt": "Use case: logo-brand\nPrimary request: Square 1:1 transparent UI icon for blessing/protection ability, candle flame inside embroidered circle, sacred protective aura, Bulgarian folk-horror game icon.\nStyle/medium: premium board game UI icon, hand-painted with clean edges, subtle folk embroidery accents\nComposition/framing: centered isolated icon, transparent background, readable at small size\nColor palette: candle gold, ivory, red embroidery, walnut shadow\nConstraints: no church logo, transparent background, no text, no letters, no watermark",
+  "quality": "medium",
+  "size": "1024x1024"
+}
+{
+  "background": "transparent",
+  "endpoint": "/v1/images/generations",
+  "job": 42,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\icon-ability-steal.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\icon-ability-steal-web.png"
+  ],
+  "prompt": "Use case: logo-brand\nPrimary request: Square 1:1 transparent UI icon for steal role ability, hand swapping two glowing blank cards, sneaky motion, Bulgarian folk-horror game icon.\nStyle/medium: premium board game UI icon, hand-painted with clean edges, subtle folk embroidery accents\nComposition/framing: centered isolated icon, transparent background, readable at small size\nColor palette: shadow black, candle gold, parchment, muted red\nConstraints: cards have no readable text, transparent background, no letters, no logos, no watermark",
+  "quality": "medium",
+  "size": "1024x1024"
+}
+{
+  "background": "transparent",
+  "endpoint": "/v1/images/generations",
+  "job": 43,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\icon-ability-vampire.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\icon-ability-vampire-web.png"
+  ],
+  "prompt": "Use case: logo-brand\nPrimary request: Square 1:1 transparent UI icon for vampire bite ability, elegant red droplet and bat-wing shadow, not gory, Bulgarian folk-horror game icon.\nStyle/medium: premium board game UI icon, hand-painted with clean edges, subtle folk embroidery accents\nComposition/framing: centered isolated icon, transparent background, readable at small size\nColor palette: deep burgundy, black, moon silver, ivory\nConstraints: no gore, transparent background, no text, no letters, no logos, no watermark",
+  "quality": "medium",
+  "size": "1024x1024"
+}
+{
+  "background": "transparent",
+  "endpoint": "/v1/images/generations",
+  "job": 44,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\icon-ability-jester.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\icon-ability-jester-web.png"
+  ],
+  "prompt": "Use case: logo-brand\nPrimary request: Square 1:1 transparent UI icon for jester chaos ability, cracked smiling mask with kukeri bell, playful ominous, Bulgarian folk-horror game icon.\nStyle/medium: premium board game UI icon, hand-painted with clean edges, subtle folk embroidery accents\nComposition/framing: centered isolated icon, transparent background, readable at small size\nColor palette: ivory mask, black crack, candle gold, red accent\nConstraints: no clown clich\u00e9, transparent background, no text, no letters, no logos, no watermark",
+  "quality": "medium",
+  "size": "1024x1024"
+}
+{
+  "background": "transparent",
+  "endpoint": "/v1/images/generations",
+  "job": 45,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\icon-ability-hunter.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\icon-ability-hunter-web.png"
+  ],
+  "prompt": "Use case: logo-brand\nPrimary request: Square 1:1 transparent UI icon for hunter revenge ability, old rifle silhouette crossed with candle smoke, Bulgarian folk-horror game icon.\nStyle/medium: premium board game UI icon, hand-painted with clean edges, subtle folk embroidery accents\nComposition/framing: centered isolated icon, transparent background, readable at small size\nColor palette: walnut brown, moon silver, smoke gray, candle gold\nConstraints: no gore, no active shooting pose, transparent background, no text, no letters, no logos, no watermark",
+  "quality": "medium",
+  "size": "1024x1024"
+}
+{
+  "background": "transparent",
+  "endpoint": "/v1/images/generations",
+  "job": 46,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\icon-ability-lovers.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\icon-ability-lovers-web.png"
+  ],
+  "prompt": "Use case: logo-brand\nPrimary request: Square 1:1 transparent UI icon for lovers bond ability, red thread tying two small candle flames, romantic ominous, Bulgarian folk-horror game icon.\nStyle/medium: premium board game UI icon, hand-painted with clean edges, subtle folk embroidery accents\nComposition/framing: centered isolated icon, transparent background, readable at small size\nColor palette: deep red thread, candle gold, soot black, ivory\nConstraints: transparent background, no text, no letters, no logos, no watermark",
+  "quality": "medium",
+  "size": "1024x1024"
+}
+{
+  "endpoint": "/v1/images/generations",
+  "job": 47,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\texture-parchment.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\texture-parchment-web.png"
+  ],
+  "prompt": "Use case: stylized-concept\nPrimary request: Seamless square texture for web UI background: aged parchment with soot, faint Bulgarian embroidery fibers, subtle paper grain, low contrast, premium game interface material.\nStyle/medium: subtle procedural-looking hand-painted texture, tileable, restrained\nComposition/framing: seamless square texture, no focal object\nColor palette: parchment beige, soot gray, faint red-black fiber accents\nConstraints: no text, no letters, no symbols, no watermark, low contrast",
+  "quality": "medium",
+  "size": "1024x1024"
+}
+{
+  "endpoint": "/v1/images/generations",
+  "job": 48,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\texture-walnut.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\texture-walnut-web.png"
+  ],
+  "prompt": "Use case: stylized-concept\nPrimary request: Seamless square texture for web UI panels: dark carved walnut wood with faint red-black-white folk inlay, premium board game interface material, low contrast.\nStyle/medium: subtle procedural-looking hand-painted texture, tileable, restrained\nComposition/framing: seamless square texture, no focal object\nColor palette: dark walnut, charcoal, muted red, ivory inlay\nConstraints: no text, no letters, no logos, no watermark, low contrast",
+  "quality": "medium",
+  "size": "1024x1024"
+}
+{
+  "endpoint": "/v1/images/generations",
+  "job": 49,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\texture-fog.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\texture-fog-web.png"
+  ],
+  "prompt": "Use case: stylized-concept\nPrimary request: Seamless square texture for night UI overlay: moonlit fog over dark blue paper, subtle noise and smoky gradients, low contrast, premium game interface material.\nStyle/medium: subtle atmospheric texture, tileable, restrained\nComposition/framing: seamless square texture, no focal object\nColor palette: deep blue, silver fog, charcoal grain\nConstraints: no text, no letters, no symbols, no watermark, low contrast",
+  "quality": "medium",
+  "size": "1024x1024"
+}
+{
+  "endpoint": "/v1/images/generations",
+  "job": 50,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\texture-wax.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\texture-wax-web.png"
+  ],
+  "prompt": "Use case: stylized-concept\nPrimary request: Seamless square texture for web UI accents: red wax seal surface with tiny cracks and candle reflections, abstract material, low contrast, premium game interface material.\nStyle/medium: subtle material texture, tileable, restrained\nComposition/framing: seamless square texture, no focal object\nColor palette: deep wax red, candle amber, dark crimson\nConstraints: no text, no letters, no symbols, no watermark, low contrast",
+  "quality": "medium",
+  "size": "1024x1024"
+}
+{
+  "background": "transparent",
+  "endpoint": "/v1/images/generations",
+  "job": 51,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\logo-app-mark.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\logo-app-mark-web.png"
+  ],
+  "prompt": "Use case: logo-brand\nPrimary request: Square 1:1 app icon for an original Bulgarian Werewolf/Mafia web game, moon over village rooftops inside an embroidered eye sigil, premium board game identity, simple enough for favicon, transparent background.\nStyle/medium: vector-friendly hand-painted mark, Bulgarian folk-horror, red-black-white embroidery, moon-gold accent, clean silhouette\nComposition/framing: centered icon mark, readable at small size, transparent background\nColor palette: black, moon gold, ivory, deep red\nConstraints: no readable text, no letters, no official logos, no watermark",
+  "quality": "high",
+  "size": "1024x1024"
+}
+{
+  "background": "transparent",
+  "endpoint": "/v1/images/generations",
+  "job": 52,
+  "model": "gpt-image-2",
+  "n": 1,
+  "output_format": "png",
+  "outputs": [
+    "output\\imagegen\\generated\\logo-horizontal-mark.png"
+  ],
+  "outputs_downscaled": [
+    "output\\imagegen\\generated\\logo-horizontal-mark-web.png"
+  ],
+  "prompt": "Use case: logo-brand\nPrimary request: Wide horizontal logo mark without text for an original Bulgarian Werewolf/Mafia web game, wolf shadow and village candle merged into one folk embroidery sigil, elegant and high contrast, transparent background.\nStyle/medium: vector-friendly hand-painted mark, Bulgarian folk-horror, red-black-white embroidery, moon-gold accent, clean silhouette\nComposition/framing: wide centered mark with generous transparent padding, readable in header\nColor palette: black, moon gold, ivory, deep red\nConstraints: no readable text, no letters, no official logos, no watermark",
+  "quality": "high",
+  "size": "1536x1024"
+}

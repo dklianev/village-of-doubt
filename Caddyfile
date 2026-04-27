@@ -1,0 +1,9 @@
+{$PUBLIC_WEB_DOMAIN} {
+  encode gzip zstd
+  reverse_proxy web:3000
+}
+
+{$PUBLIC_WS_DOMAIN} {
+  encode gzip zstd
+  reverse_proxy game:2567
+}

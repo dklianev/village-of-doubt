@@ -1,0 +1,15 @@
+node_modules
+.turbo
+.next
+dist
+coverage
+.env
+.env.local
+.env.production
+*.tsbuildinfo
+postgres_data
+caddy_data
+caddy_config
+.tmp-design-*
+.claude
+docs

@@ -1,0 +1,27 @@
+{
+  "name": "bulgarian-werewolf-mafia",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.19.0",
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "test": "turbo test",
+    "typecheck": "turbo typecheck",
+    "smoke": "node scripts/smoke.mjs",
+    "playtest": "node scripts/playtest.mjs",
+    "optimize:assets": "node scripts/optimize-assets.mjs",
+    "regression": "node scripts/regression.mjs",
+    "verify": "pnpm optimize:assets && pnpm regression && pnpm typecheck && pnpm build && pnpm smoke && pnpm playtest && pnpm test",
+    "check:prod-env": "node scripts/check-production-env.mjs",
+    "db:generate": "pnpm --filter @werewolf/database db:generate",
+    "db:migrate": "pnpm --filter @werewolf/database db:migrate"
+  },
+  "devDependencies": {
+    "@types/node": "^24.9.1",
+    "tsx": "^4.20.6",
+    "turbo": "^2.9.6",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.2"
+  }
+}
