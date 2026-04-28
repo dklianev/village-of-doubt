@@ -102,6 +102,7 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
   const [chatMessage, setChatMessage] = useState("");
   const [privateChatMessage, setPrivateChatMessage] = useState("");
   const [privateChats, setPrivateChats] = useState<PrivateChatMessage[]>([]);
+  const [isBlessed, setIsBlessed] = useState(false);
   const [status, setStatus] = useState("Свързване...");
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("connecting");
   const [cueMode, setCueMode] = useState<CueMode>("silent");
@@ -192,10 +193,14 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
         });
 
         nextRoom.onMessage("private_blessing", () => {
+          setIsBlessed(true);
           setStatus("Свещеникът те благослови. Благословията ще спре първата нощна смърт срещу теб.");
         });
 
         nextRoom.onMessage("system", (message: { messageBg: string }) => {
+          if (message.messageBg.includes("Благословията те спаси")) {
+            setIsBlessed(false);
+          }
           setStatus(message.messageBg);
         });
 
@@ -263,6 +268,17 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
 
     setCueMode("visual");
   }, [createOptions?.tempoProfile]);
+
+  // When the phase changes, drop stale action-feedback strings so the previous
+  // "Нощното действие е изпратено" or boilerplate "Свързан" don't linger past
+  // the moment they are relevant. Players still get fresh status when they act.
+  useEffect(() => {
+    const nextPhase = snapshot?.phase;
+    if (!nextPhase) {
+      return;
+    }
+    setStatus((current) => (current === "" ? "" : ""));
+  }, [snapshot?.phase]);
 
   useEffect(() => {
     const nextPhase = snapshot?.phase;
@@ -338,6 +354,10 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
   const fullNarratorAccepted = snapshot?.narratorMode !== "full_human" || players.every((player) => player.acceptedFullNarrator);
   const privateChatChannel = getAvailablePrivateChatChannel(privateRole?.role, ownPlayer, phase, snapshot?.communicationMode);
   const liveMode = (snapshot?.tempoProfile ?? createOptions?.tempoProfile) === "live";
+  // Connection state already lives in the ConnectionBanner; the phase-status
+  // line is only useful for transient action feedback. Hide the boilerplate
+  // "Свързан" / "Свързване..." strings so the player doesn't see them linger.
+  const isStatusInformative = status.length > 0 && status !== "Свързан" && status !== "Свързване...";
 
   return (
     <main className={`shell game-shell phase-${phase}`} data-phase={phase}>
@@ -349,9 +369,12 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
             <div>
               <p className="phase-kicker">стая {code} · рунд {snapshot?.round ?? 0}</p>
               <h1 className="phase-title mt-5 font-black">{phaseBg(phase)}</h1>
-              <p className="phase-status mt-6" aria-live="polite" aria-atomic="true">
-                {status} {isPending ? " Обновяване..." : ""}
-              </p>
+              {isStatusInformative || isPending ? (
+                <p className="phase-status mt-6" aria-live="polite" aria-atomic="true">
+                  {isStatusInformative ? status : ""}
+                  {isPending ? " Обновяване..." : ""}
+                </p>
+              ) : null}
               <div className="mt-6 flex flex-wrap gap-2">
                 <span className="rounded-full border border-[#f4e8d1]/15 bg-[#f4e8d1]/10 px-3 py-2 text-sm font-bold text-[#ead9ba]">
                   {players.filter((player) => player.playing && player.alive).length} живи
@@ -436,6 +459,16 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
           ) : null}
 
           {privateLover ? <LoverCard lover={privateLover} /> : null}
+
+          {isBlessed ? (
+            <article className="paper-card mt-8 rounded-[2rem] border-2 border-[#c18a38]/45 p-5">
+              <p className="section-kicker text-[#842f2b]">тайна закрила</p>
+              <h2 className="mt-2 text-2xl font-black">Свещеникът те благослови</h2>
+              <p className="mt-2 text-sm text-[#4f3829]">
+                Благословията ще спре първото нощно убийство срещу теб. Ще изчезне щом те защити веднъж.
+              </p>
+            </article>
+          ) : null}
 
           <RoleCard role={privateRole} result={privateResult} players={players} />
 
@@ -556,18 +589,36 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
           </div>
 
           {phase === "day_discussion" && snapshot?.communicationMode === "built_in_chat" ? (
-            <form className="mt-8 grid gap-3" onSubmit={sendChat}>
-              <h3 className="font-black">Дневен чат</h3>
-              <input
-                className="input"
-                value={chatMessage}
-                onChange={(event) => setChatMessage(event.target.value)}
-                placeholder="Напиши обвинение, защита или блъф..."
-              />
-              <button className="btn btn-primary" type="submit">
-                Изпрати
-              </button>
-            </form>
+            ownPlayer?.playing && ownPlayer?.alive ? (
+              <form className="mt-8 grid gap-3" onSubmit={sendChat}>
+                <h3 className="font-black">Дневен чат</h3>
+                <div className="grid gap-1">
+                  <input
+                    className="input"
+                    value={chatMessage}
+                    onChange={(event) => setChatMessage(event.target.value.slice(0, 500))}
+                    placeholder="Напиши обвинение, защита или блъф..."
+                    maxLength={500}
+                    aria-describedby="chat-counter"
+                  />
+                  <span
+                    id="chat-counter"
+                    className={`text-right text-xs ${chatMessage.length >= 480 ? "text-[#c18a38]" : "text-[#ead9ba]/60"}`}
+                  >
+                    {chatMessage.length}/500
+                  </span>
+                </div>
+                <button className="btn btn-primary" type="submit" disabled={chatMessage.trim().length === 0}>
+                  Изпрати
+                </button>
+              </form>
+            ) : (
+              <div className="mt-8 rounded-2xl bg-[#221611]/15 p-4 text-sm font-bold text-[#842f2b]">
+                {ownPlayer?.playing
+                  ? "Елиминираните играчи могат да четат, но не и да пишат в дневния чат."
+                  : "Разказвачите и наблюдателите не пишат в дневния чат."}
+              </div>
+            )
           ) : null}
 
           {phase === "day_discussion" && snapshot?.communicationMode !== "built_in_chat" ? (

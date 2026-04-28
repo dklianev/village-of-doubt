@@ -72,6 +72,7 @@ export class GameRoom extends Room<{ state: GameState }> {
   private gameFinishedPersisted = false;
   private pausedSnapshot: { phase: GamePhase; remainingMs: number } | undefined;
   private pendingHunterRevengeUserId: string | undefined;
+  private pendingMayorSuccessor = false;
 
   onCreate(options: CreateOptions) {
     const mode = options.mode ?? "werewolves_classic";
@@ -339,6 +340,7 @@ export class GameRoom extends Room<{ state: GameState }> {
     });
 
     if (this.state.phase === "mayor_successor") {
+      this.pendingMayorSuccessor = false;
       this.transitionTo("resolution");
     }
   }
@@ -509,6 +511,8 @@ export class GameRoom extends Room<{ state: GameState }> {
 
     this.pendingHunterRevengeUserId = undefined;
     const deaths = this.applyDeaths([{ userId: targetUserId, causeBg: "Застрелян от Ловеца." }]);
+    // queueMayorSuccessor consults this.pendingMayorSuccessor too, so a mayor
+    // who died alongside a hunter still triggers a successor selection here.
     if (this.queueMayorSuccessor(deaths)) {
       return;
     }
@@ -827,6 +831,7 @@ export class GameRoom extends Room<{ state: GameState }> {
     }
 
     if (this.state.phase === "mayor_successor") {
+      this.pendingMayorSuccessor = false;
       this.transitionTo("resolution");
       return;
     }
@@ -1085,7 +1090,13 @@ export class GameRoom extends Room<{ state: GameState }> {
     return applied;
   }
 
-  private queueHunterRevenge(deaths: Array<{ userId: string; role?: RoleCode }>) {
+  private queueHunterRevenge(deaths: Array<{ userId: string; role?: RoleCode; wasMayor?: boolean }>) {
+    // If a mayor died in this resolution cycle, remember it so we still queue
+    // mayor_successor after hunter_revenge resolves.
+    if (this.config.mayorEnabled && deaths.some((death) => death.wasMayor)) {
+      this.pendingMayorSuccessor = true;
+    }
+
     const hunterDeath = deaths.find((death) => death.role === "hunter");
     if (!hunterDeath) {
       return false;
@@ -1097,11 +1108,18 @@ export class GameRoom extends Room<{ state: GameState }> {
   }
 
   private queueMayorSuccessor(deaths: Array<{ wasMayor?: boolean }>) {
-    if (!this.config.mayorEnabled || !deaths.some((death) => death.wasMayor)) {
+    if (!this.config.mayorEnabled) {
+      return false;
+    }
+    if (deaths.some((death) => death.wasMayor)) {
+      this.pendingMayorSuccessor = true;
+    }
+    if (!this.pendingMayorSuccessor) {
       return false;
     }
     const hasLivingPlayers = [...this.state.players.values()].some((player) => player.playing && player.alive);
     if (!hasLivingPlayers) {
+      this.pendingMayorSuccessor = false;
       return false;
     }
 
