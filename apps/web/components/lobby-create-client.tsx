@@ -227,7 +227,7 @@ export function LobbyCreateClient({ initialMode = "werewolves_classic" }: { init
           </div>
         ) : null}
 
-        <section className="mt-6 rounded-[2rem] border border-[#f4e8d1]/15 bg-[#f4e8d1]/8 p-5">
+        <section data-testid="manual-roles-panel" className="mt-6 rounded-[2rem] border border-[#f4e8d1]/15 bg-[#f4e8d1]/8 p-5">
           <label className="flex items-center justify-between gap-4">
             <span>
               <strong className="block text-lg">Ръчни роли</strong>

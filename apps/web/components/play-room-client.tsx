@@ -413,7 +413,7 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
           {phase === "lobby" ? (
             <div className="action-bar">
               <div className="action-bar-inner">
-                <button className="btn btn-secondary" type="button" onClick={sendReady} disabled={!room}>
+                <button data-testid="ready-toggle" className="btn btn-secondary" type="button" onClick={sendReady} disabled={!room}>
                   {ownPlayer?.ready ? "Не съм готов" : "Готов"}
                 </button>
                 {ownPlayer?.host ? (
