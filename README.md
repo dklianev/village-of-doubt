@@ -17,6 +17,14 @@ pnpm build
 pnpm dev
 ```
 
+За Codex Run Action използвай:
+
+```bash
+pnpm codex:run
+```
+
+Това стартира web на `http://localhost:3000` и Colyseus на `ws://localhost:2567` с local dev defaults за auth/game token-и.
+
 За локална база:
 
 ```bash

@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
+    "codex:run": "node scripts/codex-run.mjs",
     "test": "turbo test",
     "typecheck": "turbo typecheck",
     "frontend:e2e": "node scripts/frontend-e2e.mjs",

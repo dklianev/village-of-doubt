@@ -196,6 +196,8 @@ function checkScriptWiring() {
   const playtest = readText("scripts/playtest.mjs");
 
   assert(packageJson.scripts.regression === "node scripts/regression.mjs", "package.json must expose pnpm regression.");
+  assert(packageJson.scripts["codex:run"] === "node scripts/codex-run.mjs", "package.json must expose pnpm codex:run.");
+  assert(existsSync(path.join(root, "scripts/codex-run.mjs")), "Codex run action script must exist.");
   assert(packageJson.scripts["frontend:e2e"] === "node scripts/frontend-e2e.mjs", "package.json must expose pnpm frontend:e2e.");
   assert(packageJson.scripts.verify.includes("pnpm regression"), "pnpm verify must run regression checks.");
   assert(packageJson.scripts.verify.includes("pnpm frontend:e2e"), "pnpm verify must run frontend Playwright QA.");
