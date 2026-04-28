@@ -826,6 +826,9 @@ export class GameRoom extends Room<{ state: GameState }> {
 
     if (this.state.phase === "hunter_revenge") {
       this.pendingHunterRevengeUserId = undefined;
+      if (this.queueMayorSuccessor([])) {
+        return;
+      }
       this.transitionTo("resolution");
       return;
     }

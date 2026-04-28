@@ -358,6 +358,50 @@ describe("GameRoom gameplay regressions", () => {
 
     expect([...serverRoom.state.publicEvents.values()].some((event) => event.messageBg.includes("Шут"))).toBe(true);
   });
+
+  it("still asks for a Mayor successor when a Hunter Mayor revenge times out", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "MAYHUN",
+      mode: "werewolves_classic",
+      playerCount: 6,
+      tempoProfile: "manual",
+      roles: {
+        hunter: 1,
+        ordinary_villager: 4,
+        werewolf: 1,
+      },
+    });
+    const clients = await connectPlayers(colyseus, serverRoom, 6, "mayor-hunter");
+    const roleClients = await startGameAndCollectRoles(clients);
+    clients[0]?.client.send("narratorAdvance", {});
+    await serverRoom.waitForNextPatch();
+
+    const hunter = roleClients.find((item) => item.role === "hunter");
+    const werewolf = roleClients.find((item) => item.role === "werewolf");
+    expect(hunter).toBeTruthy();
+    expect(werewolf).toBeTruthy();
+
+    for (const player of serverRoom.state.players.values()) {
+      player.mayor = player.userId === hunter?.userId;
+    }
+
+    werewolf?.client.send("submitNightAction", {
+      action: { kind: "faction_kill", targetUserId: hunter?.userId },
+    });
+    clients[0]?.client.send("narratorAdvance", {});
+    await serverRoom.waitForNextPatch(20);
+    expect(serverRoom.state.phase).toBe("hunter_revenge");
+
+    clients[0]?.client.send("narratorAdvance", {});
+    await serverRoom.waitForNextPatch(20);
+    expect(serverRoom.state.phase).toBe("mayor_successor");
+
+    const successor = [...serverRoom.state.players.values()].find((player) => player.playing && player.alive);
+    expect(successor).toBeTruthy();
+    clients[0]?.client.send("setMayor", { targetUserId: successor?.userId });
+    await serverRoom.waitForNextPatch(20);
+    expect(serverRoom.state.phase).toBe("resolution");
+  });
 });
 
 async function connectPlayers(
