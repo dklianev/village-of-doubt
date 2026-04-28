@@ -1,4 +1,4 @@
-import type { RoleCode } from "./roles.js";
+import { getRoleNameBg, isRoleAvailableInFamily, type RoleCode } from "./roles.js";
 import type { GamePhase } from "./protocol.js";
 
 export type GameMode = "mafia_sport" | "mafia_free" | "werewolves_classic";
@@ -352,7 +352,7 @@ export function createGameConfigFromOptions(options: GameConfigOptions = {}): Ga
   const tempoProfile = options.tempoProfile ?? config.tempoProfile;
   const loversEnabled = options.loversEnabled ?? config.loversEnabled;
   const roles = options.roles
-    ? normalizeRoleDistribution(options.roles)
+    ? normalizeRoleDistributionForMode(mode, options.roles)
     : mode === "werewolves_classic"
       ? getWerewolvesMvpPreset(playerCount, loversEnabled)
       : config.roles;
@@ -379,6 +379,19 @@ export function normalizeRoleDistribution(distribution: RoleDistribution): RoleD
       normalized[role] = safeCount;
     }
   }
+  return normalized;
+}
+
+export function normalizeRoleDistributionForMode(mode: GameMode, distribution: RoleDistribution): RoleDistribution {
+  const normalized = normalizeRoleDistribution(distribution);
+  const family = getGameFamily(mode);
+  const invalidRoles = (Object.keys(normalized) as RoleCode[]).filter((role) => !isRoleAvailableInFamily(role, family));
+
+  if (invalidRoles.length > 0) {
+    const roleNames = invalidRoles.map((role) => getRoleNameBg(role)).join(", ");
+    throw new Error(`Тези роли не са налични за ${getGameModeNameBg(mode)}: ${roleNames}.`);
+  }
+
   return normalized;
 }
 

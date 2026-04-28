@@ -101,6 +101,7 @@ function checkRolesPageContracts() {
 
 function checkLobbyImageContracts() {
   const css = readText("apps/web/app/globals.css");
+  const lobbyInvitePage = readText("apps/web/app/lobby/[code]/page.tsx");
 
   assert(css.includes("--mode-preview-position"), "Lobby mode preview should use explicit sprite focal positions.");
   assert(css.includes("/ 200% auto no-repeat"), "Lobby mode preview sprite must preserve source aspect ratio.");
@@ -109,6 +110,10 @@ function checkLobbyImageContracts() {
   assert(css.includes(".achievement-preview-strip span"), "Lobby achievement preview strip is missing.");
   assert(css.includes("aspect-ratio: 1"), "Lobby badge tiles must stay square to avoid sprite distortion.");
   assert(css.includes("var(--empty-lobby) center / contain no-repeat"), "Lobby decorative empty-room art must preserve its full composition.");
+  assert(css.includes("--invite-art: var(--art-lobby)"), "Mafia invite card should swap away from the village map asset.");
+  assert(css.includes(".invite-scene-card"), "Invite card should use a mode-neutral class name.");
+  assert(css.includes("var(--invite-art) center / cover no-repeat"), "Invite card must use theme-aware invite art.");
+  assert(lobbyInvitePage.includes("досие към задната стая"), "Mafia invite page should use Mafia-specific scene copy.");
 }
 
 function checkPlayUiContracts() {
@@ -127,6 +132,9 @@ function checkPlayUiContracts() {
     "narratorExtendTimer",
     "getGameFamily(mode)",
     "phaseLabelBg(phase, familyOrMode)",
+    "phaseGuideBg(phase, mode)",
+    "MAFIA_PHASE_GUIDE_BG",
+    "Мафията, Донът и Комисарят.",
   ]) {
     assert(playClient.includes(contract), `Missing play UI contract: ${contract}`);
   }

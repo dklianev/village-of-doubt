@@ -47,6 +47,7 @@
   --empty-lobby: image-set(url("/game-art/empty-lobby.webp") type("image/webp"), url("/game-art/empty-lobby.png") type("image/png"));
   --empty-players: image-set(url("/game-art/empty-players.webp") type("image/webp"), url("/game-art/empty-players.png") type("image/png"));
   --village-map: image-set(url("/game-art/village-map.webp") type("image/webp"), url("/game-art/village-map.png") type("image/png"));
+  --invite-art: var(--village-map);
   --narrator-kit: image-set(url("/game-art/narrator-kit.webp") type("image/webp"), url("/game-art/narrator-kit.png") type("image/png"));
   --preset-cards-sheet: image-set(url("/game-art/preset-cards-sheet.webp") type("image/webp"), url("/game-art/preset-cards-sheet.png") type("image/png"));
   --achievement-badges-sheet: image-set(url("/game-art/achievement-badges-sheet.webp") type("image/webp"), url("/game-art/achievement-badges-sheet.png") type("image/png"));
@@ -98,6 +99,7 @@
   --faction-mafia: image-set(url("/game-art/mafia/faction-mafia.webp") type("image/webp"), url("/game-art/mafia/faction-mafia.png") type("image/png"));
   --empty-lobby: image-set(url("/game-art/mafia/empty-lobby.webp") type("image/webp"), url("/game-art/mafia/empty-lobby.png") type("image/png"));
   --empty-players: image-set(url("/game-art/mafia/empty-players.webp") type("image/webp"), url("/game-art/mafia/empty-players.png") type("image/png"));
+  --invite-art: var(--art-lobby);
   --role-art: image-set(url("/game-art/mafia/card-back-secret.webp") type("image/webp"), url("/game-art/mafia/card-back-secret.png") type("image/png"));
   --phase-art: var(--art-lobby);
   --phase-icon: image-set(url("/game-art/mafia/icon-phase-lobby.webp") type("image/webp"), url("/game-art/mafia/icon-phase-lobby.png") type("image/png"));
@@ -2010,7 +2012,7 @@ select {
   --badge-position: 100% 0%;
 }
 
-.village-map-card {
+.invite-scene-card {
   position: relative;
   min-height: 280px;
   overflow: hidden;
@@ -2018,11 +2020,11 @@ select {
   border-radius: 30px;
   background:
     linear-gradient(90deg, rgba(18, 10, 8, 0.86), rgba(18, 10, 8, 0.36) 46%, rgba(18, 10, 8, 0.82)),
-    var(--village-map) center / cover no-repeat;
+    var(--invite-art) center / cover no-repeat;
   box-shadow: 0 24px 74px rgba(0, 0, 0, 0.3), inset 0 1px rgba(255, 255, 255, 0.08);
 }
 
-.village-map-card::before {
+.invite-scene-card::before {
   position: absolute;
   inset: 14px;
   border: 1px solid rgba(209, 154, 66, 0.22);
@@ -2031,7 +2033,7 @@ select {
   pointer-events: none;
 }
 
-.village-map-card span {
+.invite-scene-card span {
   position: absolute;
   left: 22px;
   bottom: 20px;
@@ -2541,7 +2543,7 @@ select {
     justify-items: start;
   }
 
-  .village-map-card,
+  .invite-scene-card,
   .mode-preview-strip {
     min-height: 210px;
   }

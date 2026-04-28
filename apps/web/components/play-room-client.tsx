@@ -919,11 +919,7 @@ function PhaseGuide({
   privateRole: RoleCode | undefined;
   ownPlayer: PublicPlayer | undefined;
 }) {
-  const guide = PHASE_GUIDE_BG[phase] ?? {
-    title: phaseBg(phase, mode),
-    body: "Следвай указанията на екрана. Сървърът пази реда на фазите и валидира действията.",
-    wakes: "Няма специално събуждане в тази фаза.",
-  };
+  const guide = phaseGuideBg(phase, mode);
   const personalHint = privateRole ? roleWakeHint(privateRole, phase, ownPlayer) : "Ролята ти още не е разкрита на това устройство.";
 
   return (
@@ -1662,7 +1658,13 @@ const PHASE_RAIL = [
   },
 ];
 
-const PHASE_GUIDE_BG: Record<string, { title: string; body: string; wakes: string }> = {
+interface PhaseGuideCopy {
+  title: string;
+  body: string;
+  wakes: string;
+}
+
+const PHASE_GUIDE_BG: Partial<Record<GamePhase, PhaseGuideCopy>> = {
   lobby: {
     title: "Настройка на стаята",
     body: "Водещият избира режим, роли, таймери, комуникация и Разказвач. Всички трябва да са готови преди старт.",
@@ -1734,6 +1736,67 @@ const PHASE_GUIDE_BG: Record<string, { title: string; body: string; wakes: strin
     wakes: "Всички роли вече са приключили.",
   },
 };
+
+const MAFIA_PHASE_GUIDE_BG: Partial<Record<GamePhase, Partial<PhaseGuideCopy>>> = {
+  role_reveal: {
+    title: "Виж тайно досието си",
+    body: "Всеки играч получава само своята карта като лично събитие. Не показвай телефона си, ако играете на живо.",
+    wakes: "Всеки гледа само собствената си роля.",
+  },
+  first_night: {
+    body: "Първият договор подрежда началните действия преди редовните нощни решения.",
+    wakes: "Мафията, Донът и Комисарят според избраните роли.",
+  },
+  night: {
+    body: "Мафията избира жертва, Донът може да търси Комисаря, а Комисарят проверява подозрителен играч.",
+    wakes: "Мафията, Донът и Комисарят.",
+  },
+  day_announcement: {
+    body: "Системата обявява публичните резултати от нощта, без да разкрива скрита информация.",
+    wakes: "Градът се събужда.",
+  },
+  day_discussion: {
+    body: "Играчите защитават версии, притискат противоречия и събират подозрения. Таймерът е видимият ритъм; сървърът е източникът на истината.",
+    wakes: "Всички живи играчи говорят.",
+  },
+  nomination: {
+    title: "Обвинения",
+    body: "При спортна или ръчно водена Мафия тук се избират кандидати за гласуване.",
+    wakes: "Всички живи играчи участват.",
+  },
+  defense: {
+    title: "Последна защита",
+    body: "Номинираните получават време да защитят версията си преди присъдата.",
+    wakes: "Говорят номинираните.",
+  },
+  voting: {
+    body: "Всеки жив играч избира кого градът да елиминира. Сървърът валидира гласа и брои резултата.",
+    wakes: "Всички живи играчи гласуват.",
+  },
+  resolution: {
+    body: "Сървърът прилага присъдата, евентуално разкрива роля и проверява условията за победа.",
+    wakes: "Никой не действа, освен ако не се задейства специална роля.",
+  },
+};
+
+function phaseGuideBg(phase: GamePhase, mode: GameMode): PhaseGuideCopy {
+  const base = PHASE_GUIDE_BG[phase] ?? {
+    title: phaseLabelBg(phase, mode),
+    body: "Следвай указанията на екрана. Сървърът пази реда на фазите и валидира действията.",
+    wakes: "Няма специално събуждане в тази фаза.",
+  };
+
+  if (getGameFamily(mode) !== "mafia") {
+    return base;
+  }
+
+  const override = MAFIA_PHASE_GUIDE_BG[phase] ?? {};
+  return {
+    ...base,
+    title: override.title ?? phaseLabelBg(phase, mode),
+    ...override,
+  };
+}
 
 function roleWakeHint(role: RoleCode, phase: string, ownPlayer: PublicPlayer | undefined) {
   if (ownPlayer && ownPlayer.playing && !ownPlayer.alive) {

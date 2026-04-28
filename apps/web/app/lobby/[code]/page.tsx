@@ -14,9 +14,10 @@ export default async function LobbyCodePage({
   const query = roomOptionsToQuery(options);
   const mode = options.mode ?? "werewolves_classic";
   const family = getGameFamily(mode);
+  const inviteSceneLabel = family === "mafia" ? "досие към задната стая" : "маршрут до площада";
 
   return (
-    <main className="shell lobby-shell" data-theme={family}>
+    <main className="shell lobby-shell" data-theme={family} data-family={family}>
       <section className="card lobby-invite-card rounded-[2rem] p-7">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -35,8 +36,8 @@ export default async function LobbyCodePage({
             Влез в играта
           </Link>
         </div>
-        <div className="village-map-card mt-7" aria-hidden="true">
-          <span>маршрут до площада</span>
+        <div className="invite-scene-card mt-7" aria-hidden="true">
+          <span>{inviteSceneLabel}</span>
         </div>
         <div className="mt-8 rounded-3xl border border-[#f4e8d1]/15 bg-[#f4e8d1]/8 p-6 text-[#ead9ba]">
           <p className="text-sm uppercase tracking-[0.25em] text-[#c18a38]">следваща стъпка</p>

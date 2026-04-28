@@ -104,6 +104,30 @@ describe("role presets", () => {
     });
   });
 
+  it("rejects manual roles from the wrong game family", () => {
+    expect(() =>
+      createGameConfigFromOptions({
+        mode: "mafia_free",
+        playerCount: 4,
+        roles: {
+          civilian: 3,
+          werewolf: 1,
+        },
+      }),
+    ).toThrow("Тези роли не са налични за Свободна Мафия: Върколак.");
+
+    expect(() =>
+      createGameConfigFromOptions({
+        mode: "werewolves_classic",
+        playerCount: 6,
+        roles: {
+          ordinary_villager: 5,
+          don: 1,
+        },
+      }),
+    ).toThrow("Тези роли не са налични за Класически Върколаци: Дон.");
+  });
+
   it("separates mafia and werewolves families without duplicating role definitions", () => {
     expect(getGameFamily("werewolves_classic")).toBe("werewolves");
     expect(getGameFamily("mafia_sport")).toBe("mafia");

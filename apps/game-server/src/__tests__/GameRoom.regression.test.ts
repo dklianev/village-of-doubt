@@ -93,15 +93,15 @@ describe("GameRoom gameplay regressions", () => {
   it("lets Cupid link two lovers through private events only", async () => {
     const serverRoom = await colyseus.createRoom<GameRoom>("game", {
       code: "CUPID1",
-      mode: "mafia_free",
-      playerCount: 4,
+      mode: "werewolves_classic",
+      playerCount: 6,
       roles: {
         cupid: 1,
-        civilian: 2,
-        mafioso: 1,
+        ordinary_villager: 4,
+        werewolf: 1,
       },
     });
-    const clients = await connectPlayers(colyseus, serverRoom, 4, "cupid");
+    const clients = await connectPlayers(colyseus, serverRoom, 6, "cupid");
     const roleClients = await startGameAndCollectRoles(clients);
     clients[0]?.client.send("narratorAdvance", {});
     await serverRoom.waitForNextPatch();
@@ -128,15 +128,16 @@ describe("GameRoom gameplay regressions", () => {
   it("prevents Witch from reusing the same consumable", async () => {
     const serverRoom = await colyseus.createRoom<GameRoom>("game", {
       code: "WITCH1",
-      mode: "mafia_free",
-      playerCount: 4,
+      mode: "werewolves_classic",
+      playerCount: 6,
       roles: {
         witch: 1,
-        civilian: 2,
-        mafioso: 1,
+        seer: 1,
+        ordinary_villager: 3,
+        werewolf: 1,
       },
     });
-    const clients = await connectPlayers(colyseus, serverRoom, 4, "witch");
+    const clients = await connectPlayers(colyseus, serverRoom, 6, "witch");
     const roleClients = await startGameAndCollectRoles(clients);
     clients[0]?.client.send("narratorAdvance", {});
     await serverRoom.waitForNextPatch();
@@ -161,16 +162,16 @@ describe("GameRoom gameplay regressions", () => {
   it("lets the Priest give one persistent blessing that blocks a night death", async () => {
     const serverRoom = await colyseus.createRoom<GameRoom>("game", {
       code: "PRIEST",
-      mode: "mafia_free",
-      playerCount: 4,
+      mode: "werewolves_classic",
+      playerCount: 6,
       roles: {
         priest: 1,
-        ordinary_villager: 1,
+        ordinary_villager: 3,
         werewolf: 1,
         vampire: 1,
       },
     });
-    const clients = await connectPlayers(colyseus, serverRoom, 4, "priest");
+    const clients = await connectPlayers(colyseus, serverRoom, 6, "priest");
     const roleClients = await startGameAndCollectRoles(clients);
     clients[0]?.client.send("narratorAdvance", {});
     await serverRoom.waitForNextPatch();
@@ -206,16 +207,16 @@ describe("GameRoom gameplay regressions", () => {
   it("lets the Thief steal a role once and turns the target into an ordinary villager", async () => {
     const serverRoom = await colyseus.createRoom<GameRoom>("game", {
       code: "THIEF1",
-      mode: "mafia_free",
-      playerCount: 4,
+      mode: "werewolves_classic",
+      playerCount: 6,
       roles: {
         thief: 1,
         werewolf: 1,
-        ordinary_villager: 1,
+        ordinary_villager: 3,
         seer: 1,
       },
     });
-    const clients = await connectPlayers(colyseus, serverRoom, 4, "thief");
+    const clients = await connectPlayers(colyseus, serverRoom, 6, "thief");
     const roleClients = await startGameAndCollectRoles(clients);
     clients[0]?.client.send("narratorAdvance", {});
     await serverRoom.waitForNextPatch();
@@ -257,15 +258,15 @@ describe("GameRoom gameplay regressions", () => {
   it("lets the Healer protect themselves", async () => {
     const serverRoom = await colyseus.createRoom<GameRoom>("game", {
       code: "HEAL01",
-      mode: "mafia_free",
-      playerCount: 4,
+      mode: "werewolves_classic",
+      playerCount: 6,
       roles: {
         healer: 1,
-        ordinary_villager: 2,
+        ordinary_villager: 4,
         werewolf: 1,
       },
     });
-    const clients = await connectPlayers(colyseus, serverRoom, 4, "healer");
+    const clients = await connectPlayers(colyseus, serverRoom, 6, "healer");
     const roleClients = await startGameAndCollectRoles(clients);
     clients[0]?.client.send("narratorAdvance", {});
     await serverRoom.waitForNextPatch();
@@ -293,27 +294,27 @@ describe("GameRoom gameplay regressions", () => {
   it("enters hunter revenge when the Hunter dies at night", async () => {
     const serverRoom = await colyseus.createRoom<GameRoom>("game", {
       code: "HUNT01",
-      mode: "mafia_free",
-      playerCount: 4,
+      mode: "werewolves_classic",
+      playerCount: 6,
       roles: {
         hunter: 1,
-        civilian: 2,
-        mafioso: 1,
+        ordinary_villager: 4,
+        werewolf: 1,
       },
     });
-    const clients = await connectPlayers(colyseus, serverRoom, 4, "hunter");
+    const clients = await connectPlayers(colyseus, serverRoom, 6, "hunter");
     const roleClients = await startGameAndCollectRoles(clients);
     clients[0]?.client.send("narratorAdvance", {});
     await serverRoom.waitForNextPatch();
 
     const hunter = roleClients.find((item) => item.role === "hunter");
-    const mafioso = roleClients.find((item) => item.role === "mafioso");
-    const revengeTarget = roleClients.find((item) => item.role === "civilian");
+    const werewolf = roleClients.find((item) => item.role === "werewolf");
+    const revengeTarget = roleClients.find((item) => item.role === "ordinary_villager");
     expect(hunter).toBeTruthy();
-    expect(mafioso).toBeTruthy();
+    expect(werewolf).toBeTruthy();
     expect(revengeTarget).toBeTruthy();
 
-    mafioso?.client.send("submitNightAction", {
+    werewolf?.client.send("submitNightAction", {
       action: { kind: "faction_kill", targetUserId: hunter?.userId },
     });
     await serverRoom.waitForNextPatch(20);
@@ -328,15 +329,15 @@ describe("GameRoom gameplay regressions", () => {
   it("records a Jester personal win when the village votes them out", async () => {
     const serverRoom = await colyseus.createRoom<GameRoom>("game", {
       code: "JESTER",
-      mode: "mafia_free",
-      playerCount: 4,
+      mode: "werewolves_classic",
+      playerCount: 6,
       roles: {
         jester: 1,
-        ordinary_villager: 2,
+        ordinary_villager: 4,
         werewolf: 1,
       },
     });
-    const clients = await connectPlayers(colyseus, serverRoom, 4, "jester");
+    const clients = await connectPlayers(colyseus, serverRoom, 6, "jester");
     const roleClients = await startGameAndCollectRoles(clients);
     const jester = roleClients.find((item) => item.role === "jester");
     expect(jester).toBeTruthy();
@@ -357,6 +358,20 @@ describe("GameRoom gameplay regressions", () => {
     await serverRoom.waitForNextPatch(20);
 
     expect([...serverRoom.state.publicEvents.values()].some((event) => event.messageBg.includes("Шут"))).toBe(true);
+  });
+
+  it("rejects manual room configs with roles from another game family", async () => {
+    await expect(
+      colyseus.createRoom<GameRoom>("game", {
+        code: "WRONGF",
+        mode: "mafia_free",
+        playerCount: 4,
+        roles: {
+          civilian: 3,
+          werewolf: 1,
+        },
+      }),
+    ).rejects.toThrow("Тези роли не са налични за Свободна Мафия: Върколак.");
   });
 
   it("still asks for a Mayor successor when a Hunter Mayor revenge times out", async () => {
@@ -410,20 +425,21 @@ async function connectPlayers(
   count: number,
   prefix: string,
 ): Promise<JoinedClient[]> {
-  return Promise.all(
-    Array.from({ length: count }, async (_, index) => {
-      const userId = `${prefix}-${index + 1}`;
-      return {
+  const clients: JoinedClient[] = [];
+  for (let index = 0; index < count; index += 1) {
+    const userId = `${prefix}-${index + 1}`;
+    const displayName = `Играч ${index + 1}`;
+    clients.push({
+      userId,
+      displayName,
+      client: await colyseus.connectTo(room, {
+        code: room.state.code,
         userId,
-        displayName: `Играч ${index + 1}`,
-        client: await colyseus.connectTo(room, {
-          code: room.state.code,
-          userId,
-          displayName: `Играч ${index + 1}`,
-        }),
-      };
-    }),
-  );
+        displayName,
+      }),
+    });
+  }
+  return clients;
 }
 
 async function startGameAndCollectRoles(clients: JoinedClient[]): Promise<RoleClient[]> {
