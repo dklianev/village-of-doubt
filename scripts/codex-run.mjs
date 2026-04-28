@@ -6,6 +6,8 @@ const env = { ...process.env };
 const webPort = env.PORT ?? "3000";
 const gamePort = env.GAME_SERVER_PORT ?? "2567";
 const packageManager = packageManagerInvocation();
+let children = [];
+let shuttingDown = false;
 
 setDefault("GAME_SERVER_PORT", gamePort);
 setDefault("ALLOW_DEV_AUTH", "true");
@@ -16,43 +18,48 @@ setDefault("CORS_ORIGIN", `http://localhost:${webPort}`);
 setDefault("BETTER_AUTH_SECRET", "codex-local-better-auth-secret-00000000");
 setDefault("GAME_TOKEN_SECRET", "codex-local-game-token-secret-000000000");
 
-console.log("Codex run action: starting web + game-server with local defaults.");
-console.log(`Web:  http://localhost:${webPort}`);
-console.log(`Game: ws://localhost:${gamePort}`);
-console.log("Stop: Ctrl+C");
+main().catch((error) => {
+  console.error(error instanceof Error ? error.message : error);
+  process.exitCode = 1;
+});
 
-const existing = await detectExistingServices();
-if (existing.web && existing.game) {
-  console.log("Codex run action: web and game-server are already running.");
-  process.exit(0);
+async function main() {
+  console.log("Codex run action: starting web + game-server with local defaults.");
+  console.log(`Web:  http://localhost:${webPort}`);
+  console.log(`Game: ws://localhost:${gamePort}`);
+  console.log("Stop: Ctrl+C");
+
+  const existing = await detectExistingServices();
+  if (existing.web && existing.game) {
+    console.log("Codex run action: web and game-server are already running.");
+    return;
+  }
+
+  await assertPortAvailableOrHealthy("web", webPort, existing.web);
+  await assertPortAvailableOrHealthy("game-server", gamePort, existing.game);
+
+  children = [];
+  if (!existing.game) {
+    children.push(startProcess("game-server", ["--filter", "@werewolf/game-server", "dev"]));
+  } else {
+    console.log(`Codex run action: reusing existing game-server on port ${gamePort}.`);
+  }
+  if (!existing.web) {
+    children.push(startProcess("web", ["--filter", "@werewolf/web", "dev"]));
+  } else {
+    console.log(`Codex run action: reusing existing web server on port ${webPort}.`);
+  }
+
+  if (children.length === 0) {
+    return;
+  }
+
+  for (const signal of ["SIGINT", "SIGTERM"]) {
+    process.on(signal, async () => {
+      await shutdown(0);
+    });
+  }
 }
-
-await assertPortAvailableOrHealthy("web", webPort, existing.web);
-await assertPortAvailableOrHealthy("game-server", gamePort, existing.game);
-
-const children = [];
-if (!existing.game) {
-  children.push(startProcess("game-server", ["--filter", "@werewolf/game-server", "dev"]));
-} else {
-  console.log(`Codex run action: reusing existing game-server on port ${gamePort}.`);
-}
-if (!existing.web) {
-  children.push(startProcess("web", ["--filter", "@werewolf/web", "dev"]));
-} else {
-  console.log(`Codex run action: reusing existing web server on port ${webPort}.`);
-}
-
-if (children.length === 0) {
-  process.exit(0);
-}
-
-for (const signal of ["SIGINT", "SIGTERM"]) {
-  process.on(signal, async () => {
-    await shutdown(0);
-  });
-}
-
-let shuttingDown = false;
 
 function startProcess(label, args) {
   const child = spawn(packageManager.command, [...packageManager.args, ...args], {
@@ -85,7 +92,7 @@ async function shutdown(exitCode) {
   }
   shuttingDown = true;
   await Promise.all(children.map(stopChild));
-  process.exit(exitCode);
+  process.exitCode = exitCode;
 }
 
 function stopChild(child) {
@@ -135,8 +142,7 @@ async function assertPortAvailableOrHealthy(label, port, healthy) {
     console.error(
       `Codex run action: ${label} port ${port} is already in use, but its health endpoint did not respond.`,
     );
-    console.error("Stop the process using that port, or set PORT / GAME_SERVER_PORT to free ports and try again.");
-    process.exit(1);
+    throw new Error("Stop the process using that port, or set PORT / GAME_SERVER_PORT to free ports and try again.");
   }
 }
 
