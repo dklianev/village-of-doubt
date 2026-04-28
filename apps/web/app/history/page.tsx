@@ -1,4 +1,5 @@
 import { createDatabase, getGameTimeline, getRecentGameHistory } from "@werewolf/database";
+import { phaseLabelBg, type GameMode, type GamePhase } from "@werewolf/shared";
 
 export const dynamic = "force-dynamic";
 
@@ -24,11 +25,11 @@ export default async function HistoryPage() {
         ) : (
           <div className="mt-7 grid gap-4">
             {games.map((game) => (
-              <article key={game.id} className="history-game-card rounded-3xl p-5">
+              <article key={game.id} className="history-game-card rounded-3xl p-5" data-theme={modeFamily(game.mode)}>
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
                     <p className="text-sm font-black uppercase tracking-[0.25em] text-[#842f2b]">
-                      стая {game.code}
+                      стая {game.code} · {modeBg(game.mode)}
                     </p>
                     <h2 className="mt-2 text-2xl font-black">{winnerBg(game.winnerTeam)}</h2>
                   </div>
@@ -46,7 +47,7 @@ export default async function HistoryPage() {
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <strong>{eventTypeBg(event.type)}</strong>
                           <span className="rounded-full bg-white/45 px-3 py-1 text-xs font-bold">
-                            рунд {event.round} · {phaseBg(event.phase)} · {visibilityBg(event.visibility)}
+                            рунд {event.round} · {phaseBg(event.phase, game.mode)} · {visibilityBg(event.visibility)}
                           </span>
                         </div>
                         <p className="mt-2 text-sm text-[#4f3829]">{formatPayload(event.payload)}</p>
@@ -76,7 +77,7 @@ async function loadHistory() {
     const db = createDatabase(process.env.DATABASE_URL);
     const games = await getRecentGameHistory(db);
     const timelines = await Promise.all(games.map((game) => getGameTimeline(db, game.id, 6)));
-    return games.map((game, index) => ({ ...game, timeline: timelines[index] ?? [] }));
+    return games.map((game, index) => ({ ...game, mode: modeFromConfig(game.config), timeline: timelines[index] ?? [] }));
   } catch (error) {
     console.error("[history]", error);
     return [];
@@ -96,24 +97,52 @@ function winnerBg(winner: string | null) {
   return winner ? labels[winner] ?? winner : "Играта още няма победител";
 }
 
-function phaseBg(phase: string) {
-  const labels: Record<string, string> = {
-    lobby: "Лоби",
-    role_reveal: "Разкриване",
-    first_night: "Първа нощ",
-    night: "Нощ",
-    day_announcement: "Събуждане",
-    day_discussion: "Обсъждане",
-    nomination: "Номинации",
-    defense: "Защита",
-    voting: "Гласуване",
-    resolution: "Развръзка",
-    hunter_revenge: "Ловец",
-    mayor_successor: "Кмет",
-    game_over: "Край",
+function phaseBg(phase: string, mode: GameMode) {
+  return isKnownPhase(phase) ? phaseLabelBg(phase, mode) : phase;
+}
+
+function modeBg(mode: GameMode) {
+  const labels: Record<GameMode, string> = {
+    werewolves_classic: "Класически Върколаци",
+    mafia_sport: "Спортна Мафия",
+    mafia_free: "Свободна Мафия",
   };
 
-  return labels[phase] ?? phase;
+  return labels[mode];
+}
+
+function modeFamily(mode: GameMode) {
+  return mode === "werewolves_classic" ? "werewolves" : "mafia";
+}
+
+function modeFromConfig(config: unknown): GameMode {
+  if (config && typeof config === "object" && "mode" in config) {
+    const mode = (config as { mode?: unknown }).mode;
+    if (mode === "werewolves_classic" || mode === "mafia_sport" || mode === "mafia_free") {
+      return mode;
+    }
+  }
+
+  return "werewolves_classic";
+}
+
+function isKnownPhase(phase: string): phase is GamePhase {
+  return [
+    "lobby",
+    "role_reveal",
+    "first_night",
+    "night",
+    "day_announcement",
+    "day_discussion",
+    "nomination",
+    "defense",
+    "voting",
+    "resolution",
+    "hunter_revenge",
+    "mayor_successor",
+    "paused",
+    "game_over",
+  ].includes(phase);
 }
 
 function eventTypeBg(type: string) {

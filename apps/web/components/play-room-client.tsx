@@ -2,7 +2,20 @@
 
 import { FormEvent, useEffect, useRef, useState, useTransition } from "react";
 import type { Room } from "@colyseus/sdk";
-import { ROLE_DEFINITIONS, type ChatChannel, type CreateRoomOptions, type NightActionCommand, type RoleCode } from "@werewolf/shared";
+import {
+  GAME_MODE_DEFINITIONS,
+  ROLE_DEFINITIONS,
+  getGameFamily,
+  getGameModeNameBg,
+  phaseLabelBg,
+  type ChatChannel,
+  type CreateRoomOptions,
+  type GameFamily,
+  type GameMode,
+  type GamePhase,
+  type NightActionCommand,
+  type RoleCode,
+} from "@werewolf/shared";
 import { createGameClient, GAME_ROOM_NAME } from "@/lib/colyseus-client";
 
 interface PublicPlayer {
@@ -48,7 +61,7 @@ interface PublicRoleCount {
 
 interface GameSnapshot {
   code: string;
-  mode: string;
+  mode: GameMode;
   playerCount: number;
   narratorMode: string;
   communicationMode: string;
@@ -57,7 +70,7 @@ interface GameSnapshot {
   voteSeconds: number;
   revealRolesOnDeath: boolean;
   loversEnabled: boolean;
-  phase: string;
+  phase: GamePhase;
   round: number;
   phaseEndsAt: number;
   winnerTeam: string;
@@ -308,6 +321,8 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
   const players = snapshot?.players ?? [];
   const livingPlayers = players.filter((player) => player.playing && player.alive);
   const ownPlayer = players.find((player) => player.userId === currentUserId);
+  const mode = snapshot?.mode ?? createOptions?.mode ?? "werewolves_classic";
+  const family = getGameFamily(mode);
   const phase = snapshot?.phase ?? "lobby";
 
   function sendReady() {
@@ -360,7 +375,7 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
   const isStatusInformative = status.length > 0 && status !== "Свързан" && status !== "Свързване...";
 
   return (
-    <main className={`shell game-shell phase-${phase}`} data-phase={phase}>
+    <main className={`shell game-shell phase-${phase}`} data-phase={phase} data-theme={family} data-family={family}>
       <section className="grid gap-6 lg:grid-cols-[1fr_0.8fr]">
         <div className="card rounded-[2rem] p-5 md:p-7">
           <ConnectionBanner status={connectionStatus} message={status} />
@@ -368,7 +383,7 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
           <div className="phase-hero">
             <div>
               <p className="phase-kicker">стая {code} · рунд {snapshot?.round ?? 0}</p>
-              <h1 className="phase-title mt-5 font-black">{phaseBg(phase)}</h1>
+              <h1 className="phase-title mt-5 font-black">{phaseBg(phase, mode)}</h1>
               {isStatusInformative || isPending ? (
                 <p className="phase-status mt-6" aria-live="polite" aria-atomic="true">
                   {isStatusInformative ? status : ""}
@@ -380,7 +395,7 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
                   {players.filter((player) => player.playing && player.alive).length} живи
                 </span>
                 <span className="rounded-full border border-[#f4e8d1]/15 bg-[#f4e8d1]/10 px-3 py-2 text-sm font-bold text-[#ead9ba]">
-                  {modeBg(snapshot?.mode ?? "werewolves_classic")}
+                  {modeBg(mode)}
                 </span>
                 <span className="rounded-full border border-[#f4e8d1]/15 bg-[#f4e8d1]/10 px-3 py-2 text-sm font-bold text-[#ead9ba]">
                   {communicationBg(snapshot?.communicationMode ?? "built_in_chat")}
@@ -427,13 +442,14 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
 
           {snapshot ? <RulesSummary snapshot={snapshot} /> : null}
 
-          {snapshot ? <PhaseGuide phase={phase} privateRole={privateRole?.role} ownPlayer={ownPlayer} /> : null}
+          {snapshot ? <PhaseGuide phase={phase} mode={mode} privateRole={privateRole?.role} ownPlayer={ownPlayer} /> : null}
 
           {snapshot && (ownPlayer?.host || ownPlayer?.narrator) ? (
             <NarratorDesk
               room={room}
               snapshot={snapshot}
               phase={phase}
+              family={family}
               isHost={Boolean(ownPlayer?.host)}
               isNarrator={Boolean(ownPlayer?.narrator)}
               fullNarratorAccepted={fullNarratorAccepted}
@@ -638,7 +654,7 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
             >
               {(snapshot?.publicEvents ?? []).length === 0 ? (
                 <p className="event-line event-line-empty rounded-xl px-3 py-2">
-                  Събитията ще се появят тук, когато ритуалът започне.
+                  Събитията ще се появят тук, когато играта започне.
                 </p>
               ) : null}
               {(snapshot?.publicEvents ?? []).slice(-7).map((event) => (
@@ -817,13 +833,15 @@ function NarratorDesk({
   room,
   snapshot,
   phase,
+  family,
   isHost,
   isNarrator,
   fullNarratorAccepted,
 }: {
   room: Room | null;
   snapshot: GameSnapshot;
-  phase: string;
+  phase: GamePhase;
+  family: GameFamily;
   isHost: boolean;
   isNarrator: boolean;
   fullNarratorAccepted: boolean;
@@ -838,13 +856,13 @@ function NarratorDesk({
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="section-kicker">панел на Разказвача</p>
-          <h2 className="mt-2 text-3xl font-black">{isNarrator ? "Водиш ритуала" : "Host контрол"}</h2>
+          <h2 className="mt-2 text-3xl font-black">{isNarrator ? "Водиш играта" : "Контрол на водещия"}</h2>
           <p className="mt-3 max-w-2xl text-[#ead9ba]">
-            Управлявай темпото без скрити client-side решения. Всички действия се записват като narrator audit events.
+            Управлявай темпото без скрити клиентски решения. Всички действия се записват като събития за проверка на Разказвача.
           </p>
         </div>
         <div className="narrator-phase-seal">
-          <span>{phaseBg(phase)}</span>
+          <span>{phaseBg(phase, family)}</span>
           <Timer endsAt={snapshot.phaseEndsAt} />
         </div>
       </div>
@@ -892,15 +910,17 @@ function NarratorDesk({
 
 function PhaseGuide({
   phase,
+  mode,
   privateRole,
   ownPlayer,
 }: {
-  phase: string;
+  phase: GamePhase;
+  mode: GameMode;
   privateRole: RoleCode | undefined;
   ownPlayer: PublicPlayer | undefined;
 }) {
   const guide = PHASE_GUIDE_BG[phase] ?? {
-    title: phaseBg(phase),
+    title: phaseBg(phase, mode),
     body: "Следвай указанията на екрана. Сървърът пази реда на фазите и валидира действията.",
     wakes: "Няма специално събуждане в тази фаза.",
   };
@@ -931,7 +951,7 @@ function NarratorSnapshotPanel({ snapshot }: { snapshot: NarratorRoleSnapshot })
       <p className="text-sm uppercase tracking-[0.3em] text-[#842f2b]">само за Пълния Разказвач</p>
       <h2 className="mt-2 text-3xl font-black">Тайни роли</h2>
       <p className="mt-3 text-[#4f3829]">
-        Това табло се изпраща само като private event към избрания Пълен Разказвач.
+        Това табло се изпраща само като лично събитие към избрания Пълен Разказвач.
       </p>
       <div className="mt-5 grid gap-3 sm:grid-cols-2">
         {snapshot.roles.map((item) => (
@@ -1441,7 +1461,7 @@ interface ColyseusGameStatePlayer extends Omit<PublicPlayer, "revealedRole"> {
 
 interface ColyseusGameState {
   code: string;
-  mode: string;
+  mode: GameMode;
   playerCount: number;
   narratorMode: string;
   communicationMode: string;
@@ -1450,7 +1470,7 @@ interface ColyseusGameState {
   voteSeconds: number;
   revealRolesOnDeath: boolean;
   loversEnabled: boolean;
-  phase: string;
+  phase: GamePhase;
   round: number;
   phaseEndsAt: number;
   winnerTeam: string;
@@ -1612,9 +1632,9 @@ const ROLE_GUIDE_BG: Record<RoleCode, { summary: string; team: string; timing: s
     win: "Бъди изгонен през гласуване",
   },
   little_girl: {
-    summary: "Advanced роля за ръчно водени игри. Наднича, докато Върколаците са будни, но рискува да бъде разкрита.",
+    summary: "Разширена роля за ръчно водени игри. Наднича, докато Върколаците са будни, но рискува да бъде разкрита.",
     team: "Село",
-    timing: "Нощ, ръчно/advanced",
+    timing: "Нощ, ръчно/разширено",
     win: "Събирай информация без да бъдеш хваната",
   },
   thief: {
@@ -1645,12 +1665,12 @@ const PHASE_RAIL = [
 const PHASE_GUIDE_BG: Record<string, { title: string; body: string; wakes: string }> = {
   lobby: {
     title: "Настройка на стаята",
-    body: "Хостът избира режим, роли, таймери, комуникация и Разказвач. Всички трябва да са готови преди старт.",
+    body: "Водещият избира режим, роли, таймери, комуникация и Разказвач. Всички трябва да са готови преди старт.",
     wakes: "Никой още не се буди.",
   },
   role_reveal: {
     title: "Виж тайно ролята си",
-    body: "Всеки играч получава само своята карта като private event. Не показвай телефона си, ако играете на живо.",
+    body: "Всеки играч получава само своята карта като лично събитие. Не показвай телефона си, ако играете на живо.",
     wakes: "Всеки гледа само собствената си роля.",
   },
   first_night: {
@@ -1670,7 +1690,7 @@ const PHASE_GUIDE_BG: Record<string, { title: string; body: string; wakes: strin
   },
   day_discussion: {
     title: "Дневно обсъждане",
-    body: "Всички живи играчи спорят, блъфират и събират подозрения. Таймерът е само видимият ритъм; сървърът е source of truth.",
+    body: "Всички живи играчи спорят, блъфират и събират подозрения. Таймерът е само видимият ритъм; сървърът е източникът на истината.",
     wakes: "Всички живи играчи говорят.",
   },
   nomination: {
@@ -1805,35 +1825,35 @@ function formatPrivateResult(result: PrivateResult, players: PublicPlayer[]) {
   return `Получен е резултат за ${targetName}.`;
 }
 
-function phaseBg(phase: string) {
-  const labels: Record<string, string> = {
-    lobby: "Лоби",
-    role_reveal: "Разкриване на роля",
-    first_night: "Първа нощ",
-    night: "Нощ",
-    day_announcement: "Събуждане",
-    day_discussion: "Дневно обсъждане",
-    nomination: "Номинации",
-    defense: "Защита",
-    voting: "Гласуване",
-    resolution: "Развръзка",
-    hunter_revenge: "Отмъщение на Ловеца",
-    mayor_successor: "Наследник на Кмета",
-    paused: "Пауза",
-    game_over: "Край",
-  };
-
-  return labels[phase] ?? phase;
+function phaseBg(phase: string, familyOrMode: GameFamily | GameMode = "werewolves") {
+  return isKnownPhase(phase) ? phaseLabelBg(phase, familyOrMode) : phase;
 }
 
 function modeBg(mode: string) {
-  const labels: Record<string, string> = {
-    werewolves_classic: "Класически Върколаци",
-    mafia_sport: "Спортна Мафия",
-    mafia_free: "Свободна Мафия",
-  };
+  return isKnownMode(mode) ? getGameModeNameBg(mode) : mode;
+}
 
-  return labels[mode] ?? mode;
+function isKnownMode(mode: string): mode is GameMode {
+  return mode in GAME_MODE_DEFINITIONS;
+}
+
+function isKnownPhase(phase: string): phase is GamePhase {
+  return [
+    "lobby",
+    "role_reveal",
+    "first_night",
+    "night",
+    "day_announcement",
+    "day_discussion",
+    "nomination",
+    "defense",
+    "voting",
+    "resolution",
+    "hunter_revenge",
+    "mayor_successor",
+    "paused",
+    "game_over",
+  ].includes(phase);
 }
 
 function narratorBg(mode: string) {

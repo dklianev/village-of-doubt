@@ -66,6 +66,44 @@
   --connection-art: var(--screen-loading);
 }
 
+[data-theme="mafia"] {
+  --ink: #17120f;
+  --ink-soft: #211914;
+  --paper: #efe0bd;
+  --paper-deep: #c8a971;
+  --paper-muted: #9d8155;
+  --blood: #7b1f1b;
+  --blood-dark: #40100e;
+  --wolf: #142c2f;
+  --night: #080d0f;
+  --gold: #c89a55;
+  --ember: #e0aa63;
+  --fog: #e6d7b5;
+  --moss: #314b47;
+  --glass: rgba(10, 14, 14, 0.78);
+  --hairline: rgba(239, 224, 189, 0.2);
+  --shadow-gold: 0 0 42px rgba(200, 154, 85, 0.18);
+  --art-landing: image-set(url("/game-art/mafia/bg-landing-hero.webp") type("image/webp"), url("/game-art/mafia/bg-landing-hero.png") type("image/png"));
+  --art-lobby: image-set(url("/game-art/mafia/bg-lobby-tavern.webp") type("image/webp"), url("/game-art/mafia/bg-lobby-tavern.png") type("image/png"));
+  --art-reveal: image-set(url("/game-art/mafia/bg-role-reveal.webp") type("image/webp"), url("/game-art/mafia/bg-role-reveal.png") type("image/png"));
+  --art-night: image-set(url("/game-art/mafia/bg-night-phase.webp") type("image/webp"), url("/game-art/mafia/bg-night-phase.png") type("image/png"));
+  --art-day: image-set(url("/game-art/mafia/bg-day-discussion.webp") type("image/webp"), url("/game-art/mafia/bg-day-discussion.png") type("image/png"));
+  --art-vote: image-set(url("/game-art/mafia/bg-voting.webp") type("image/webp"), url("/game-art/mafia/bg-voting.png") type("image/png"));
+  --art-resolution: image-set(url("/game-art/mafia/bg-resolution.webp") type("image/webp"), url("/game-art/mafia/bg-resolution.png") type("image/png"));
+  --transition-night: var(--art-night);
+  --transition-day: var(--art-day);
+  --transition-vote: var(--art-vote);
+  --transition-resolution: var(--art-resolution);
+  --faction-village: image-set(url("/game-art/mafia/faction-village.webp") type("image/webp"), url("/game-art/mafia/faction-village.png") type("image/png"));
+  --faction-mafia: image-set(url("/game-art/mafia/faction-mafia.webp") type("image/webp"), url("/game-art/mafia/faction-mafia.png") type("image/png"));
+  --empty-lobby: image-set(url("/game-art/mafia/empty-lobby.webp") type("image/webp"), url("/game-art/mafia/empty-lobby.png") type("image/png"));
+  --empty-players: image-set(url("/game-art/mafia/empty-players.webp") type("image/webp"), url("/game-art/mafia/empty-players.png") type("image/png"));
+  --role-art: image-set(url("/game-art/mafia/card-back-secret.webp") type("image/webp"), url("/game-art/mafia/card-back-secret.png") type("image/png"));
+  --phase-art: var(--art-lobby);
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-lobby.webp") type("image/webp"), url("/game-art/mafia/icon-phase-lobby.png") type("image/png"));
+  --faction-art: var(--faction-mafia);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -730,6 +768,81 @@ select {
   max-width: 34rem;
 }
 
+.mode-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.mode-choice-card {
+  position: relative;
+  isolation: isolate;
+  min-height: 172px;
+  overflow: hidden;
+  border: 1px solid rgba(248, 236, 210, 0.18);
+  border-radius: 26px;
+  padding: 18px;
+  background:
+    linear-gradient(180deg, rgba(8, 10, 10, 0.16), rgba(8, 10, 10, 0.9) 78%),
+    var(--art-lobby) center / cover no-repeat;
+  box-shadow: 0 24px 68px rgba(0, 0, 0, 0.38), inset 0 1px rgba(255, 255, 255, 0.12);
+  transform: translateY(0);
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.mode-choice-card::before {
+  position: absolute;
+  inset: 12px;
+  z-index: -1;
+  border: 1px solid rgba(209, 154, 66, 0.24);
+  border-radius: 18px;
+  content: "";
+}
+
+.mode-choice-card:hover {
+  border-color: rgba(240, 180, 93, 0.5);
+  box-shadow: 0 30px 78px rgba(0, 0, 0, 0.48), var(--shadow-gold);
+  transform: translateY(-3px);
+}
+
+.mode-choice-card span,
+.mode-choice-card strong,
+.mode-choice-card p {
+  position: relative;
+  z-index: 1;
+}
+
+.mode-choice-card span {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 6px 9px;
+  background: rgba(8, 10, 10, 0.58);
+  color: var(--gold);
+  font-size: 0.62rem;
+  font-weight: 950;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.mode-choice-card strong {
+  display: block;
+  margin-top: 42px;
+  color: #fff6e5;
+  font-size: clamp(1.2rem, 2vw, 1.65rem);
+  line-height: 1;
+}
+
+.mode-choice-card p {
+  margin: 10px 0 0;
+  color: #ead9ba;
+  font-size: 0.84rem;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
 .tableau-card {
   position: relative;
   display: flex;
@@ -853,6 +966,24 @@ select {
     var(--art-reveal) center / cover no-repeat;
 }
 
+.family-section-heading {
+  border: 1px solid rgba(248, 236, 210, 0.14);
+  background:
+    linear-gradient(105deg, rgba(14, 8, 6, 0.92), rgba(14, 8, 6, 0.6)),
+    var(--art-lobby) center / cover no-repeat;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.24), inset 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.family-section-heading p:not(.section-kicker) {
+  color: #ead9ba;
+}
+
+[data-theme="mafia"] .family-section-heading {
+  background:
+    linear-gradient(105deg, rgba(4, 8, 8, 0.94), rgba(4, 8, 8, 0.58)),
+    var(--art-lobby) center / cover no-repeat;
+}
+
 .role-codex-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -882,6 +1013,20 @@ select {
   border-radius: 20px;
   content: "";
   pointer-events: none;
+}
+
+[data-theme="mafia"] .role-codex-card {
+  border-color: rgba(239, 224, 189, 0.16);
+  background:
+    linear-gradient(145deg, rgba(235, 220, 187, 0.94), rgba(181, 146, 91, 0.82)),
+    radial-gradient(circle at 15% 0%, rgba(123, 31, 27, 0.16), transparent 18rem),
+    var(--texture-paper) center / 520px 520px;
+}
+
+[data-theme="mafia"] .role-codex-art {
+  background:
+    radial-gradient(circle at 50% 18%, rgba(200, 154, 85, 0.22), transparent 42%),
+    linear-gradient(145deg, rgba(4, 8, 8, 0.98), rgba(23, 18, 15, 0.98));
 }
 
 .role-codex-art {
@@ -1246,6 +1391,37 @@ select {
   --phase-icon: image-set(url("/game-art/icon-phase-resolution.webp") type("image/webp"), url("/game-art/icon-phase-resolution.png") type("image/png"));
 }
 
+[data-theme="mafia"].game-shell {
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-lobby.webp") type("image/webp"), url("/game-art/mafia/icon-phase-lobby.png") type("image/png"));
+}
+
+[data-theme="mafia"].game-shell.phase-role_reveal {
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-role-reveal.webp") type("image/webp"), url("/game-art/mafia/icon-phase-role-reveal.png") type("image/png"));
+}
+
+[data-theme="mafia"].game-shell.phase-first_night,
+[data-theme="mafia"].game-shell.phase-night {
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-night.webp") type("image/webp"), url("/game-art/mafia/icon-phase-night.png") type("image/png"));
+}
+
+[data-theme="mafia"].game-shell.phase-day_announcement,
+[data-theme="mafia"].game-shell.phase-day_discussion,
+[data-theme="mafia"].game-shell.phase-nomination,
+[data-theme="mafia"].game-shell.phase-defense {
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-day.webp") type("image/webp"), url("/game-art/mafia/icon-phase-day.png") type("image/png"));
+}
+
+[data-theme="mafia"].game-shell.phase-voting {
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-voting.webp") type("image/webp"), url("/game-art/mafia/icon-phase-voting.png") type("image/png"));
+}
+
+[data-theme="mafia"].game-shell.phase-resolution,
+[data-theme="mafia"].game-shell.phase-hunter_revenge,
+[data-theme="mafia"].game-shell.phase-mayor_successor,
+[data-theme="mafia"].game-shell.phase-game_over {
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-resolution.webp") type("image/webp"), url("/game-art/mafia/icon-phase-resolution.png") type("image/png"));
+}
+
 .game-shell::before,
 .game-shell.phase-day_discussion::before,
 .game-shell.phase-day_announcement::before,
@@ -1372,6 +1548,37 @@ select {
 
 .phase-rail-icon.phase-resolution {
   --phase-icon: image-set(url("/game-art/icon-phase-resolution.webp") type("image/webp"), url("/game-art/icon-phase-resolution.png") type("image/png"));
+}
+
+[data-theme="mafia"] .phase-rail-icon.phase-lobby {
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-lobby.webp") type("image/webp"), url("/game-art/mafia/icon-phase-lobby.png") type("image/png"));
+}
+
+[data-theme="mafia"] .phase-rail-icon.phase-role_reveal {
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-role-reveal.webp") type("image/webp"), url("/game-art/mafia/icon-phase-role-reveal.png") type("image/png"));
+}
+
+[data-theme="mafia"] .phase-rail-icon.phase-night,
+[data-theme="mafia"] .phase-rail-icon.phase-first_night {
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-night.webp") type("image/webp"), url("/game-art/mafia/icon-phase-night.png") type("image/png"));
+}
+
+[data-theme="mafia"] .phase-rail-icon.phase-day_discussion,
+[data-theme="mafia"] .phase-rail-icon.phase-day_announcement,
+[data-theme="mafia"] .phase-rail-icon.phase-nomination,
+[data-theme="mafia"] .phase-rail-icon.phase-defense {
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-day.webp") type("image/webp"), url("/game-art/mafia/icon-phase-day.png") type("image/png"));
+}
+
+[data-theme="mafia"] .phase-rail-icon.phase-voting {
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-voting.webp") type("image/webp"), url("/game-art/mafia/icon-phase-voting.png") type("image/png"));
+}
+
+[data-theme="mafia"] .phase-rail-icon.phase-resolution,
+[data-theme="mafia"] .phase-rail-icon.phase-hunter_revenge,
+[data-theme="mafia"] .phase-rail-icon.phase-mayor_successor,
+[data-theme="mafia"] .phase-rail-icon.phase-game_over {
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-resolution.webp") type("image/webp"), url("/game-art/mafia/icon-phase-resolution.png") type("image/png"));
 }
 
 .phase-rail-label {
@@ -1646,6 +1853,26 @@ select {
 
 .role-don {
   --role-art: image-set(url("/game-art/role-don.webp") type("image/webp"), url("/game-art/role-don.png") type("image/png"));
+}
+
+[data-theme="mafia"] .role-civilian,
+.role-civilian[data-theme="mafia"] {
+  --role-art: image-set(url("/game-art/mafia/role-civilian.webp") type("image/webp"), url("/game-art/mafia/role-civilian.png") type("image/png"));
+}
+
+[data-theme="mafia"] .role-commissioner,
+.role-commissioner[data-theme="mafia"] {
+  --role-art: image-set(url("/game-art/mafia/role-commissioner.webp") type("image/webp"), url("/game-art/mafia/role-commissioner.png") type("image/png"));
+}
+
+[data-theme="mafia"] .role-mafioso,
+.role-mafioso[data-theme="mafia"] {
+  --role-art: image-set(url("/game-art/mafia/role-mafioso.webp") type("image/webp"), url("/game-art/mafia/role-mafioso.png") type("image/png"));
+}
+
+[data-theme="mafia"] .role-don,
+.role-don[data-theme="mafia"] {
+  --role-art: image-set(url("/game-art/mafia/role-don.webp") type("image/webp"), url("/game-art/mafia/role-don.png") type("image/png"));
 }
 
 .connection-banner {

@@ -35,7 +35,7 @@ if (failures > 0) {
 }
 
 function checkGameArtPairing() {
-  const files = readdirSync(gameArtDir);
+  const files = listFilesRecursive(gameArtDir);
   const pngs = files.filter((file) => file.endsWith(".png")).sort();
   const webps = new Set(files.filter((file) => file.endsWith(".webp")));
   assert(pngs.length >= 70, `Expected at least 70 PNG game-art files, got ${pngs.length}.`);
@@ -57,6 +57,11 @@ function checkGameArtPairing() {
     "player-avatar-sheet",
     "narrator-kit",
     "empty-history",
+    "mafia/bg-landing-hero",
+    "mafia/bg-lobby-tavern",
+    "mafia/role-mafioso",
+    "mafia/role-don",
+    "mafia/faction-mafia",
   ]) {
     assert(existsSync(path.join(gameArtDir, `${critical}.png`)), `Missing critical PNG asset ${critical}.png.`);
     assert(existsSync(path.join(gameArtDir, `${critical}.webp`)), `Missing critical WebP asset ${critical}.webp.`);
@@ -73,6 +78,8 @@ function checkCssImageSet() {
   assert(css.includes(".cue-panel"), "Missing live cue panel CSS.");
   assert(css.includes(".narrator-desk"), "Missing narrator desk CSS.");
   assert(css.includes("@keyframes cuePulse"), "Missing cue pulse animation.");
+  assert(css.includes('[data-theme="mafia"]'), "Missing Mafia theme selector.");
+  assert(css.includes('/game-art/mafia/bg-landing-hero.webp'), "Missing Mafia image-set CSS references.");
 }
 
 function checkRolesPageContracts() {
@@ -80,11 +87,14 @@ function checkRolesPageContracts() {
   const css = readText("apps/web/app/globals.css");
 
   assert(rolesPage.includes("ROLE_ART_SLUGS"), "Roles page must use explicit role art slugs.");
+  assert(rolesPage.includes("RoleFamilySection"), "Roles page must split roles by game family.");
+  assert(rolesPage.includes("getRolesForFamily"), "Roles page must filter roles by family.");
   assert(rolesPage.includes("<picture className=\"role-codex-art\""), "Roles page must render role art as real picture elements.");
   assert(rolesPage.includes("role-mayor mayor-codex-card"), "Mayor public title must render with role-mayor art.");
   assert(rolesPage.includes("PUBLIC_TITLES.mayor"), "Mayor copy should come from shared Bulgarian public title definitions.");
   assert(css.includes(".role-mayor"), "Missing mayor role-art CSS class.");
   assert(css.includes("/game-art/role-mayor.webp"), "Missing optimized mayor role art CSS reference.");
+  assert(css.includes("/game-art/mafia/role-mafioso.webp"), "Missing Mafia role-art CSS reference.");
   assert(css.includes(".role-codex-art img"), "Role codex cards must style real image elements.");
   assert(css.includes("object-fit: contain"), "Role codex images must preserve full generated art instead of aggressive cropping.");
 }
@@ -112,9 +122,11 @@ function checkPlayUiContracts() {
     "createOptions?.tempoProfile === \"live\"",
     "Игра на живо: звукът и вибрацията са изключени по подразбиране",
     "панел на Разказвача",
-    "Водиш ритуала",
-    "Host контрол",
+    "Водиш играта",
+    "Контрол на водещия",
     "narratorExtendTimer",
+    "getGameFamily(mode)",
+    "phaseLabelBg(phase, familyOrMode)",
   ]) {
     assert(playClient.includes(contract), `Missing play UI contract: ${contract}`);
   }
@@ -203,6 +215,19 @@ function runEnvChecker(env) {
 
 function sumBytes(files) {
   return files.reduce((total, file) => total + statSync(path.join(gameArtDir, file)).size, 0);
+}
+
+function listFilesRecursive(dir, prefix = "") {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const relative = path.join(prefix, entry.name);
+    const absolute = path.join(dir, entry.name);
+
+    if (entry.isDirectory()) {
+      return listFilesRecursive(absolute, relative);
+    }
+
+    return entry.isFile() ? [relative] : [];
+  });
 }
 
 function readText(relativePath) {

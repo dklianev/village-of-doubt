@@ -6,6 +6,10 @@ import {
   ROLE_DEFINITIONS,
   countRoles,
   createGameConfigFromOptions,
+  GAME_MODE_DEFINITIONS,
+  getGameFamily,
+  getGameModeNameBg,
+  getRolesForFamily,
   validateRoleDistribution,
   type CommunicationMode,
   type GameMode,
@@ -15,12 +19,6 @@ import {
   type TempoProfile,
 } from "@werewolf/shared";
 import { stringifyRolesParam } from "@/lib/room-options";
-
-const MODE_LABELS: Record<GameMode, string> = {
-  werewolves_classic: "Класически Върколаци",
-  mafia_sport: "Спортна Мафия",
-  mafia_free: "Свободна Мафия",
-};
 
 const COMMUNICATION_LABELS: Record<CommunicationMode, string> = {
   built_in_chat: "С вграден чат",
@@ -43,20 +41,21 @@ const TEMPO_LABELS: Record<TempoProfile, string> = {
   manual: "Ръчно водене",
 };
 
-export function LobbyCreateClient() {
+export function LobbyCreateClient({ initialMode = "werewolves_classic" }: { initialMode?: GameMode }) {
   const [code, setCode] = useState(createRoomCode);
-  const [mode, setMode] = useState<GameMode>("werewolves_classic");
-  const [playerCount, setPlayerCount] = useState(10);
+  const [mode, setMode] = useState<GameMode>(initialMode);
+  const [playerCount, setPlayerCount] = useState(defaultPlayerCount(initialMode));
   const [communicationMode, setCommunicationMode] = useState<CommunicationMode>("built_in_chat");
   const [narratorMode, setNarratorMode] = useState<NarratorMode>("automatic");
   const [tempoProfile, setTempoProfile] = useState<TempoProfile>("normal_online");
   const [loversEnabled, setLoversEnabled] = useState(false);
   const [manualRolesEnabled, setManualRolesEnabled] = useState(false);
   const [manualRoles, setManualRoles] = useState<RoleDistribution>(() =>
-    createGameConfigFromOptions({ mode: "werewolves_classic", playerCount: 10 }).roles,
+    createGameConfigFromOptions({ mode: initialMode, playerCount: defaultPlayerCount(initialMode) }).roles,
   );
 
   const boundedPlayerCount = clampPlayerCount(mode, playerCount);
+  const family = getGameFamily(mode);
   const presetConfig = createGameConfigFromOptions({
     mode,
     playerCount: boundedPlayerCount,
@@ -122,7 +121,7 @@ export function LobbyCreateClient() {
   }
 
   return (
-    <section className="grid gap-6 lg:grid-cols-[1fr_0.8fr]">
+    <section className="grid gap-6 lg:grid-cols-[1fr_0.8fr]" data-theme={family} data-family={family}>
       <div className="card rounded-[2rem] p-7">
         <p className="text-sm uppercase tracking-[0.3em] text-[#c18a38]">лоби</p>
         <h1 className="mt-3 text-5xl font-black">Създай частна стая</h1>
@@ -150,9 +149,9 @@ export function LobbyCreateClient() {
           <label className="grid gap-2">
             <span className="text-xs uppercase tracking-[0.25em] text-[#c18a38]">Режим</span>
             <select className="input" value={mode} onChange={(event) => changeMode(event.target.value as GameMode)}>
-              {Object.entries(MODE_LABELS).map(([value, label]) => (
+              {(Object.keys(GAME_MODE_DEFINITIONS) as GameMode[]).map((value) => (
                 <option key={value} value={value}>
-                  {label}
+                  {getGameModeNameBg(value)}
                 </option>
               ))}
             </select>
@@ -217,7 +216,7 @@ export function LobbyCreateClient() {
               onChange={(event) => setLoversEnabled(event.target.checked)}
             />
             <span>
-              Включи Купидон и Влюбени, когато preset-ът позволява. Добре е за по-големи групи.
+              Включи Купидон и Влюбени, когато готовото разпределение позволява. Добре е за по-големи групи.
             </span>
           </label>
         ) : null}
@@ -233,7 +232,7 @@ export function LobbyCreateClient() {
             <span>
               <strong className="block text-lg">Ръчни роли</strong>
               <span className="text-sm text-[#ead9ba]">
-                Използвай preset-а като старт, после настрой ролите за твоята група.
+                Използвай готовото разпределение като старт, после настрой ролите за твоята група.
               </span>
             </span>
             <input
@@ -245,7 +244,7 @@ export function LobbyCreateClient() {
 
           {manualRolesEnabled ? (
             <div className="mt-5 grid gap-3 md:grid-cols-2">
-              {rolesForMode(mode).map((role) => (
+              {getRolesForFamily(family).map((role) => (
                 <label key={role} className="grid gap-2 rounded-2xl bg-[#f4e8d1]/10 p-4">
                   <span className="text-sm font-bold">{ROLE_DEFINITIONS[role].nameBg}</span>
                   <div className="flex items-center gap-2">
@@ -289,15 +288,15 @@ export function LobbyCreateClient() {
       </div>
 
       <aside className="paper-card lobby-preset-card rounded-[2rem] p-7">
-        <p className="text-sm uppercase tracking-[0.3em] text-[#842f2b]">preset</p>
+        <p className="text-sm uppercase tracking-[0.3em] text-[#842f2b]">разпределение</p>
         <h2 className="mt-3 text-3xl font-black">
-          {config.playerCount} играчи · {MODE_LABELS[mode]}
+          {config.playerCount} играчи · {getGameModeNameBg(mode)}
         </h2>
         <p className="mt-2 font-bold text-[#842f2b]">
-          Роли: {roleTotal}/{config.playerCount} · {manualRolesEnabled ? "ръчна конфигурация" : "preset"}
+          Роли: {roleTotal}/{config.playerCount} · {manualRolesEnabled ? "ръчна конфигурация" : "готово разпределение"}
         </p>
         <div className={`mode-preview-strip mode-${mode}`} aria-hidden="true">
-          <span>{MODE_LABELS[mode]}</span>
+          <span>{getGameModeNameBg(mode)}</span>
         </div>
         <dl className="mt-6 grid gap-3">
           {Object.entries(config.roles).map(([role, count]) => (
@@ -405,25 +404,4 @@ function clampPlayerCount(mode: GameMode, value: number) {
   const range = playerRange(mode);
   const safeValue = Number.isFinite(value) ? value : defaultPlayerCount(mode);
   return Math.min(range.max, Math.max(range.min, Math.round(safeValue)));
-}
-
-function rolesForMode(mode: GameMode): RoleCode[] {
-  if (mode === "mafia_sport" || mode === "mafia_free") {
-    return ["civilian", "commissioner", "mafioso", "don"];
-  }
-
-  return [
-    "ordinary_villager",
-    "werewolf",
-    "seer",
-    "witch",
-    "healer",
-    "priest",
-    "hunter",
-    "cupid",
-    "vampire",
-    "jester",
-    "little_girl",
-    "thief",
-  ];
 }

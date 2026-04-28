@@ -22,8 +22,8 @@ export default function SignInPage() {
           <p className="section-kicker">клетвата на масата</p>
           <h2 className="mt-3 text-4xl font-black leading-tight">Всички виждат площада. Само ти виждаш картата си.</h2>
           <p className="mt-5 text-[#ead9ba]">
-            Auth-ът е входът към lobby, история и reconnect. Тайните роли пак не живеят в браузъра:
-            game server-ът изпраща само това, което ти се полага.
+            Входът е връзката към лоби, история и повторно свързване. Тайните роли пак не живеят в браузъра:
+            игровият сървър изпраща само това, което ти се полага.
           </p>
           <div className="auth-orbit" aria-hidden="true">
             <span className="role-art-tile role-priest">Свещеник</span>

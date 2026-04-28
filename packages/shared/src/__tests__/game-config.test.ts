@@ -5,8 +5,11 @@ import {
   createDefaultGameConfig,
   createGameConfigFromOptions,
   evaluateWinCondition,
+  getGameFamily,
+  getRolesForFamily,
   getMafiaSportPreset,
   getWerewolvesMvpPreset,
+  phaseLabelBg,
   ROLE_DEFINITIONS,
   validateRoleDistribution,
 } from "../index.js";
@@ -99,6 +102,24 @@ describe("role presets", () => {
       werewolf: 2,
       seer: 1,
     });
+  });
+
+  it("separates mafia and werewolves families without duplicating role definitions", () => {
+    expect(getGameFamily("werewolves_classic")).toBe("werewolves");
+    expect(getGameFamily("mafia_sport")).toBe("mafia");
+    expect(getGameFamily("mafia_free")).toBe("mafia");
+    expect(getRolesForFamily("mafia")).toEqual(["civilian", "commissioner", "mafioso", "don"]);
+    expect(getRolesForFamily("werewolves")).toContain("werewolf");
+    expect(getRolesForFamily("werewolves")).not.toContain("mafioso");
+    expect(ROLE_DEFINITIONS.werewolf.availableInFamilies).toEqual(["werewolves"]);
+    expect(ROLE_DEFINITIONS.mafioso.availableInFamilies).toEqual(["mafia"]);
+  });
+
+  it("uses mode-aware Bulgarian phase labels", () => {
+    expect(phaseLabelBg("night", "werewolves_classic")).toBe("Нощ");
+    expect(phaseLabelBg("night", "mafia_free")).toBe("Сделките започват");
+    expect(phaseLabelBg("day_discussion", "mafia_sport")).toBe("Речи на масата");
+    expect(phaseLabelBg("resolution", "mafia_free")).toBe("Присъда");
   });
 });
 

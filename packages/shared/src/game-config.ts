@@ -1,6 +1,8 @@
 import type { RoleCode } from "./roles.js";
+import type { GamePhase } from "./protocol.js";
 
 export type GameMode = "mafia_sport" | "mafia_free" | "werewolves_classic";
+export type GameFamily = "werewolves" | "mafia";
 export type RolePreset = "sport" | "free" | "classic_clean" | "mvp" | "manual";
 export type NarratorMode = "automatic" | "honest_human" | "full_human";
 export type CommunicationMode = "built_in_chat" | "no_chat" | "system_only" | "secret_channels";
@@ -51,6 +53,65 @@ export interface GameConfigOptions {
 }
 
 const DEFAULT_RULESET_VERSION = "bg-mvp-2026-04-24-roles-v2";
+
+export const GAME_MODE_DEFINITIONS: Record<
+  GameMode,
+  {
+    family: GameFamily;
+    nameBg: string;
+    shortBg: string;
+    recommendedPlayersBg: string;
+    themeKey: GameFamily;
+    phaseLabelsBg: Partial<Record<GamePhase, string>>;
+  }
+> = {
+  werewolves_classic: {
+    family: "werewolves",
+    nameBg: "Класически Върколаци",
+    shortBg: "Мистично село, тайни роли и нощни събуждания.",
+    recommendedPlayersBg: "6-30 играчи, най-добре 8-18.",
+    themeKey: "werewolves",
+    phaseLabelsBg: {},
+  },
+  mafia_sport: {
+    family: "mafia",
+    nameBg: "Спортна Мафия",
+    shortBg: "Строг 10-играчов формат с Комисар, Дон и точна реч.",
+    recommendedPlayersBg: "Точно 10 играчи.",
+    themeKey: "mafia",
+    phaseLabelsBg: {
+      first_night: "Първи договор",
+      night: "Нощни договорки",
+      day_announcement: "Градът се събужда",
+      day_discussion: "Речи на масата",
+      voting: "Обвинение",
+      resolution: "Присъда",
+    },
+  },
+  mafia_free: {
+    family: "mafia",
+    nameBg: "Свободна Мафия",
+    shortBg: "Градска мистерия с гъвкав брой играчи и класически роли.",
+    recommendedPlayersBg: "4-24 играчи.",
+    themeKey: "mafia",
+    phaseLabelsBg: {
+      first_night: "Първи договор",
+      night: "Сделките започват",
+      day_announcement: "Градът се събужда",
+      day_discussion: "Градът говори",
+      voting: "Обвинение",
+      resolution: "Присъда",
+    },
+  },
+};
+
+export function getGameFamily(mode: GameMode): GameFamily {
+  return GAME_MODE_DEFINITIONS[mode].family;
+}
+
+export function getGameModeNameBg(mode: GameMode): string {
+  return GAME_MODE_DEFINITIONS[mode].nameBg;
+}
 
 export const TEMPO_PRESETS: Record<TempoProfile, PhaseTimers> = {
   fast_online: {
@@ -177,14 +238,14 @@ export function getMafiaSportPreset(playerCount: number): RoleDistribution {
 export function getMafiaFreePreset(playerCount: number): RoleDistribution {
   const preset = MAFIA_FREE_PRESETS[playerCount];
   if (!preset) {
-    throw new Error("Свободната Мафия поддържа 4-24 играчи в MVP.");
+    throw new Error("Свободната Мафия поддържа 4-24 играчи в основния режим.");
   }
   return { ...preset };
 }
 
 export function getWerewolvesClassicPreset(playerCount: number): RoleDistribution {
   if (playerCount < 6 || playerCount > 30) {
-    throw new Error("Класическите Върколаци поддържат 6-30 играчи в MVP.");
+    throw new Error("Класическите Върколаци поддържат 6-30 играчи в основния режим.");
   }
 
   const werewolves =
@@ -203,7 +264,7 @@ export function getWerewolvesMvpPreset(playerCount: number, loversEnabled = fals
     return withOptionalCupid(fixed, loversEnabled, playerCount);
   }
 
-  throw new Error("MVP preset-ът за Върколаци поддържа 6-30 играчи.");
+  throw new Error("Основното разпределение за Върколаци поддържа 6-30 играчи.");
 }
 
 export function validateRoleDistribution(playerCount: number, distribution: RoleDistribution): string[] {
@@ -236,11 +297,11 @@ export function validateRoleDistribution(playerCount: number, distribution: Role
   }
 
   if ((distribution.little_girl ?? 0) > 0) {
-    warnings.push("Малко момиче е advanced роля и изисква дигитална адаптация.");
+    warnings.push("Малко момиче е разширена роля и изисква дигитална адаптация.");
   }
 
   if ((distribution.thief ?? 0) > 0 && playerCount < 13) {
-    warnings.push("Крадецът е advanced роля и е по-подходящ за 13+ играчи.");
+    warnings.push("Крадецът е разширена роля и е по-подходящ за 13+ играчи.");
   }
 
   if ((distribution.vampire ?? 0) > 0 && playerCount < 15) {

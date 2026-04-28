@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getMafiaSportPreset, getWerewolvesMvpPreset } from "@werewolf/shared";
+import { GAME_MODE_DEFINITIONS, getMafiaSportPreset, getWerewolvesMvpPreset, type GameMode } from "@werewolf/shared";
 
 const werewolfPreset = getWerewolvesMvpPreset(10);
 const mafiaPreset = getMafiaSportPreset(10);
@@ -15,7 +15,7 @@ export function LandingExperience() {
             Село под съмнение
           </h1>
           <p className="landing-hero-copy mt-6 max-w-xl text-lg leading-8 text-[#ead9ba]">
-            Българска Мафия и Върколаци с authoritative game server, тайни роли,
+            Българска Мафия и Върколаци с авторитетен игрови сървър, тайни роли,
             Разказвач и режими за Discord, онлайн или игра на живо.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
@@ -28,6 +28,21 @@ export function LandingExperience() {
             <Link href="/roles" className="btn btn-secondary">
               Виж ролите
             </Link>
+          </div>
+
+          <div className="mode-choice-grid mt-8">
+            <ModeChoiceCard
+              mode="werewolves_classic"
+              href="/lobby?mode=werewolves_classic"
+              title="Играй Върколаци"
+              line="Фолклорен хорър, Кмет, Ясновидка, Лечител и нощни събуждания."
+            />
+            <ModeChoiceCard
+              mode="mafia_sport"
+              href="/lobby?mode=mafia_sport"
+              title="Играй Мафия"
+              line="Криминален ноар, Комисар, Дон, Мафиоти и обвинения на масата."
+            />
           </div>
 
           <div className="landing-tableau" aria-hidden="true">
@@ -46,18 +61,18 @@ export function LandingExperience() {
         <section className="paper-card landing-rules-card rounded-[2rem] p-7">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="text-sm uppercase tracking-[0.3em] text-[#842f2b]">MVP правила</p>
+              <p className="text-sm uppercase tracking-[0.3em] text-[#842f2b]">основни правила</p>
               <h2 className="mt-3 text-4xl font-black">Готово за първата маса</h2>
             </div>
             <span className="rounded-full bg-[#842f2b] px-4 py-2 text-sm font-black text-white">
-              BG only
+              Само на български
             </span>
           </div>
 
           <div className="mt-8 grid gap-4 md:grid-cols-2">
             <RuleCard
               title="Върколаци"
-              subtitle="10 играчи default"
+              subtitle="10 играчи по подразбиране"
               items={[
                 `${werewolfPreset.werewolf ?? 0} Върколака`,
                 `${werewolfPreset.seer ?? 0} Ясновидка`,
@@ -97,5 +112,17 @@ function RuleCard({ title, subtitle, items }: { title: string; subtitle: string;
         ))}
       </ul>
     </article>
+  );
+}
+
+function ModeChoiceCard({ mode, href, title, line }: { mode: GameMode; href: string; title: string; line: string }) {
+  const definition = GAME_MODE_DEFINITIONS[mode];
+
+  return (
+    <Link href={href} className={`mode-choice-card mode-${mode}`} data-theme={definition.family}>
+      <span>{definition.nameBg}</span>
+      <strong>{title}</strong>
+      <p>{line}</p>
+    </Link>
   );
 }

@@ -7,11 +7,11 @@ import type {
   RoleDistribution,
   TempoProfile,
 } from "@werewolf/shared";
-import { ROLE_DEFINITIONS } from "@werewolf/shared";
+import { GAME_MODE_DEFINITIONS, ROLE_DEFINITIONS } from "@werewolf/shared";
 
 export type RoomSearchParams = Record<string, string | string[] | undefined>;
 
-const GAME_MODES: GameMode[] = ["mafia_sport", "mafia_free", "werewolves_classic"];
+const GAME_MODES = Object.keys(GAME_MODE_DEFINITIONS) as GameMode[];
 const COMMUNICATION_MODES: CommunicationMode[] = ["built_in_chat", "no_chat", "system_only", "secret_channels"];
 const NARRATOR_MODES: NarratorMode[] = ["automatic", "honest_human", "full_human"];
 const TEMPO_PROFILES: TempoProfile[] = ["fast_online", "normal_online", "live", "sport_mafia", "manual"];

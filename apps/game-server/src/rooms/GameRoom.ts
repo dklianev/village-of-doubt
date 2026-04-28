@@ -5,6 +5,7 @@ import {
   evaluateWinCondition,
   getRoleNameBg,
   getRoleTeam,
+  phaseLabelBg,
   type ClientCommand,
   type GameConfig,
   type GameMode,
@@ -871,7 +872,7 @@ export class GameRoom extends Room<{ state: GameState }> {
 
     const duration = this.getPhaseDurationMs(phase);
     this.state.phaseEndsAt = duration > 0 ? Date.now() + duration : 0;
-    this.addPublicEvent(`Фаза: ${phaseLabelBg(phase)}.`);
+    this.addPublicEvent(`Фаза: ${phaseLabelBg(phase, this.config.mode)}.`);
     this.persistGameEvent("phase_change", {
       payload: {
         phase,
@@ -904,7 +905,7 @@ export class GameRoom extends Room<{ state: GameState }> {
     this.pausedSnapshot = undefined;
     this.state.phase = snapshot.phase;
     this.state.phaseEndsAt = snapshot.remainingMs > 0 ? Date.now() + snapshot.remainingMs : 0;
-    this.addPublicEvent(`${player.displayName} продължи играта от фаза: ${phaseLabelBg(snapshot.phase)}.`);
+    this.addPublicEvent(`${player.displayName} продължи играта от фаза: ${phaseLabelBg(snapshot.phase, this.config.mode)}.`);
     this.persistGameEvent("phase_change", {
       payload: {
         phase: snapshot.phase,
@@ -1532,25 +1533,4 @@ function getGameTokenSecret() {
 
 function isProductionSecret(secret: string) {
   return secret.length >= 32 && !/dev-only|replace|change-me|placeholder/i.test(secret);
-}
-
-function phaseLabelBg(phase: GamePhase) {
-  const labels: Record<GamePhase, string> = {
-    lobby: "Лоби",
-    role_reveal: "Разкриване на роля",
-    first_night: "Първа нощ",
-    night: "Нощ",
-    day_announcement: "Събуждане",
-    day_discussion: "Дневно обсъждане",
-    nomination: "Номинации",
-    defense: "Защита",
-    voting: "Гласуване",
-    resolution: "Развръзка",
-    hunter_revenge: "Отмъщение на Ловеца",
-    mayor_successor: "Наследник на Кмета",
-    paused: "Пауза",
-    game_over: "Край",
-  };
-
-  return labels[phase];
 }

@@ -5,6 +5,7 @@ import type { Database } from "./client.js";
 export interface GameHistorySummary {
   id: string;
   code: string;
+  config: unknown;
   status: string;
   winnerTeam: string | null;
   startedAt: Date | null;
@@ -29,6 +30,7 @@ export async function getRecentGameHistory(db: Database, limit = 20): Promise<Ga
     .select({
       id: games.id,
       code: games.code,
+      config: games.config,
       status: games.status,
       winnerTeam: games.winnerTeam,
       startedAt: games.startedAt,

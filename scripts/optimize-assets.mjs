@@ -8,7 +8,7 @@ const quality = Number(process.env.WEBP_QUALITY ?? 82);
 
 async function main() {
   const sharp = await loadSharp();
-  const files = (await readdir(gameArtDir)).filter((file) => file.endsWith(".png")).sort();
+  const files = await listPngs(gameArtDir);
   let originalBytes = 0;
   let optimizedBytes = 0;
   let written = 0;
@@ -63,13 +63,33 @@ async function loadSharp() {
 }
 
 function maxWidthFor(file) {
-  if (file.startsWith("icon-") || file.includes("-sheet")) {
+  const basename = path.basename(file);
+
+  if (basename.startsWith("icon-") || basename.includes("-sheet")) {
     return 1024;
   }
-  if (file.startsWith("role-") || file.startsWith("faction-")) {
+  if (basename.startsWith("role-") || basename.startsWith("faction-")) {
     return 1200;
   }
   return 1600;
+}
+
+async function listPngs(dir, prefix = "") {
+  const entries = await readdir(dir, { withFileTypes: true });
+  const files = await Promise.all(
+    entries.map(async (entry) => {
+      const relative = path.join(prefix, entry.name);
+      const absolute = path.join(dir, entry.name);
+
+      if (entry.isDirectory()) {
+        return listPngs(absolute, relative);
+      }
+
+      return entry.isFile() && entry.name.endsWith(".png") ? [relative] : [];
+    }),
+  );
+
+  return files.flat().sort();
 }
 
 function formatBytes(bytes) {

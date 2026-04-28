@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getGameFamily, getGameModeNameBg } from "@werewolf/shared";
 import { parseRoomCreateOptions, roomOptionsToQuery, type RoomSearchParams } from "@/lib/room-options";
 
 export default async function LobbyCodePage({
@@ -9,14 +10,17 @@ export default async function LobbyCodePage({
   searchParams?: Promise<RoomSearchParams>;
 }) {
   const [{ code }, resolvedSearchParams] = await Promise.all([params, searchParams]);
-  const query = roomOptionsToQuery(parseRoomCreateOptions(resolvedSearchParams));
+  const options = parseRoomCreateOptions(resolvedSearchParams);
+  const query = roomOptionsToQuery(options);
+  const mode = options.mode ?? "werewolves_classic";
+  const family = getGameFamily(mode);
 
   return (
-    <main className="shell lobby-shell">
+    <main className="shell lobby-shell" data-theme={family}>
       <section className="card lobby-invite-card rounded-[2rem] p-7">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-sm uppercase tracking-[0.3em] text-[#c18a38]">частна стая</p>
+            <p className="text-sm uppercase tracking-[0.3em] text-[#c18a38]">частна стая · {getGameModeNameBg(mode)}</p>
             <h1 className="mt-3 text-5xl font-black">Покана за масата</h1>
             <p className="mt-4 max-w-2xl text-[#ead9ba]">
               Сподели кода с групата. Преди старт всички виждат настройките, но ролите остават
