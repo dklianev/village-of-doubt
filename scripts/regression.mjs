@@ -8,6 +8,7 @@ const gameArtDir = path.join(root, "apps/web/public/game-art");
 const checks = [
   ["game art WebP pairing", checkGameArtPairing],
   ["CSS image-set delivery", checkCssImageSet],
+  ["landing layout contracts", checkLandingLayoutContracts],
   ["roles page art contracts", checkRolesPageContracts],
   ["lobby image scaling contracts", checkLobbyImageContracts],
   ["play UI hardening contracts", checkPlayUiContracts],
@@ -80,6 +81,16 @@ function checkCssImageSet() {
   assert(css.includes("@keyframes cuePulse"), "Missing cue pulse animation.");
   assert(css.includes('[data-theme="mafia"]'), "Missing Mafia theme selector.");
   assert(css.includes('/game-art/mafia/bg-landing-hero.webp'), "Missing Mafia image-set CSS references.");
+}
+
+function checkLandingLayoutContracts() {
+  const css = readText("apps/web/app/globals.css");
+  const tableauBlock = css.match(/\.landing-tableau\s*\{[^}]+\}/)?.[0] ?? "";
+
+  assert(tableauBlock.includes("position: relative"), "Landing tableau must stay in normal flow below the mode picker.");
+  assert(!tableauBlock.includes("position: absolute"), "Landing tableau must not be absolute-positioned over the mode picker.");
+  assert(tableauBlock.includes("margin-top:"), "Landing tableau needs explicit spacing from the mode picker.");
+  assert(css.includes(".mode-choice-grid {\n  position: relative;\n  z-index: 2;"), "Mode picker must remain above decorative landing layers.");
 }
 
 function checkRolesPageContracts() {

@@ -755,14 +755,14 @@ select {
 }
 
 .landing-tableau {
-  position: absolute;
-  right: clamp(18px, 5vw, 54px);
-  bottom: clamp(18px, 4vw, 46px);
+  position: relative;
+  z-index: 1;
   display: grid;
-  grid-template-columns: repeat(3, minmax(78px, 116px));
+  width: min(100%, 560px);
+  margin-top: clamp(22px, 3vw, 34px);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: end;
   gap: clamp(8px, 1.4vw, 16px);
-  max-width: min(48%, 380px);
   pointer-events: none;
 }
 
@@ -771,6 +771,8 @@ select {
 }
 
 .mode-choice-grid {
+  position: relative;
+  z-index: 2;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
