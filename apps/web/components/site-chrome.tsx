@@ -5,10 +5,9 @@ import { usePathname } from "next/navigation";
 
 const NAV_ITEMS = [
   { href: "/", label: "Начало" },
-  { href: "/lobby", label: "Лоби" },
-  { href: "/roles", label: "Роли" },
+  { href: "/werewolf", label: "Върколак" },
+  { href: "/mafia", label: "Мафия" },
   { href: "/history", label: "История" },
-  { href: "/sign-in", label: "Вход" },
 ];
 
 export function SiteChrome() {
@@ -19,8 +18,8 @@ export function SiteChrome() {
       <Link className="site-brand" href="/" aria-label="Към началото">
         <span className="site-brand-mark" aria-hidden="true" />
         <span>
-          <strong>Село под съмнение</strong>
-          <small>Мафия · Върколаци · BG</small>
+          <strong>Върколак</strong>
+          <small>Върколак · Мафия</small>
         </span>
       </Link>
       <nav className="site-nav" aria-label="Основна навигация">

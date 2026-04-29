@@ -1,6 +1,6 @@
-# Село под съмнение
+# Върколак и Мафия
 
-Българска Werewolf/Mafia web игра с authoritative Colyseus game server, Next.js frontend, Better Auth, Drizzle и PostgreSQL.
+Българска web игра за Върколак и Мафия с authoritative Colyseus game server, Next.js frontend, Better Auth, Drizzle и PostgreSQL.
 
 ## Структура
 

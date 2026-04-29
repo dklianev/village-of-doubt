@@ -1,4 +1,5 @@
 export * from "./roles.js";
+export * from "./games/index.js";
 export * from "./game-config.js";
 export * from "./phase-vocabulary.js";
 export * from "./role-assignment.js";

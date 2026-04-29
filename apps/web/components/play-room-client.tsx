@@ -5,9 +5,11 @@ import type { Room } from "@colyseus/sdk";
 import {
   GAME_MODE_DEFINITIONS,
   ROLE_DEFINITIONS,
+  getRoleShortDescriptionBg,
   getGameFamily,
   getGameModeNameBg,
   phaseLabelBg,
+  teamLabelBg,
   type ChatChannel,
   type CreateRoomOptions,
   type GameFamily,
@@ -16,6 +18,13 @@ import {
   type NightActionCommand,
   type RoleCode,
 } from "@werewolf/shared";
+import {
+  ANONYMOUS_DISPLAY_NAME_KEY,
+  ANONYMOUS_USER_ID_KEY,
+  getOrCreateAnonymousUserId,
+  saveAnonymousIdentity,
+  validateDisplayNameBg,
+} from "@/lib/anonymous-player";
 import { createGameClient, GAME_ROOM_NAME } from "@/lib/colyseus-client";
 
 interface PublicPlayer {
@@ -118,10 +127,17 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
   const [isBlessed, setIsBlessed] = useState(false);
   const [status, setStatus] = useState("Свързване...");
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("connecting");
+  const [displayNameInput, setDisplayNameInput] = useState("");
+  const [identityVersion, setIdentityVersion] = useState(0);
+  const [identityError, setIdentityError] = useState("");
   const [cueMode, setCueMode] = useState<CueMode>("silent");
   const [phasePulse, setPhasePulse] = useState(0);
   const previousCuePhaseRef = useRef<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    setDisplayNameInput(window.localStorage.getItem(ANONYMOUS_DISPLAY_NAME_KEY) ?? window.localStorage.getItem("dev-display-name") ?? "");
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -129,26 +145,25 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
     const client = createGameClient();
     setConnectionStatus("connecting");
 
-    // Dev fallback identity is only meaningful when the API allows dev auth.
-    // In production the /api/game-token route ignores these values and uses the
-    // Better Auth session, so we keep them out of localStorage entirely.
-    const isLocalHost =
-      typeof window !== "undefined" &&
-      (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
-    const userId = isLocalHost
-      ? window.localStorage.getItem("dev-user-id") ?? crypto.randomUUID()
-      : crypto.randomUUID();
-    if (isLocalHost) {
-      window.localStorage.setItem("dev-user-id", userId);
+    const legacyDisplayName = window.localStorage.getItem("dev-display-name") ?? "";
+    const storedDisplayName = window.localStorage.getItem(ANONYMOUS_DISPLAY_NAME_KEY) ?? legacyDisplayName;
+    if (!storedDisplayName) {
+      setStatus("Въведи потребителско име, за да влезеш в стаята.");
+      setConnectionStatus("disconnected");
+      return;
     }
-    setCurrentUserId(userId);
 
-    const displayName = isLocalHost
-      ? window.localStorage.getItem("dev-display-name") ?? `Играч ${userId.slice(0, 4).toUpperCase()}`
-      : `Играч ${userId.slice(0, 4).toUpperCase()}`;
-    if (isLocalHost) {
-      window.localStorage.setItem("dev-display-name", displayName);
+    const legacyUserId = window.localStorage.getItem("dev-user-id") ?? "";
+    if (!window.localStorage.getItem(ANONYMOUS_DISPLAY_NAME_KEY) && legacyDisplayName) {
+      saveAnonymousIdentity(legacyDisplayName);
+      if (legacyUserId) {
+        window.localStorage.setItem(ANONYMOUS_USER_ID_KEY, legacyUserId);
+      }
     }
+
+    const userId = window.localStorage.getItem(ANONYMOUS_USER_ID_KEY) ?? getOrCreateAnonymousUserId();
+    setCurrentUserId(userId);
+    const displayName = storedDisplayName;
 
     fetch("/api/game-token", {
       method: "POST",
@@ -157,6 +172,8 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
       },
       body: JSON.stringify({
         code,
+        anonymousUserId: userId,
+        anonymousDisplayName: displayName,
         devUserId: userId,
         devDisplayName: displayName,
       }),
@@ -247,7 +264,7 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
       active = false;
       joinedRoom?.leave();
     };
-  }, [code, createOptions]);
+  }, [code, createOptions, identityVersion]);
 
   useEffect(() => {
     function handleOffline() {
@@ -373,6 +390,50 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
   // line is only useful for transient action feedback. Hide the boilerplate
   // "Свързан" / "Свързване..." strings so the player doesn't see them linger.
   const isStatusInformative = status.length > 0 && status !== "Свързан" && status !== "Свързване...";
+  const needsIdentity = !room && !snapshot && status.startsWith("Въведи потребителско име");
+
+  function submitDisplayName(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const error = validateDisplayNameBg(displayNameInput);
+    if (error) {
+      setIdentityError(error);
+      return;
+    }
+
+    saveAnonymousIdentity(displayNameInput);
+    setIdentityError("");
+    setIdentityVersion((version) => version + 1);
+  }
+
+  if (needsIdentity) {
+    return (
+      <main className="shell game-shell" data-theme={family} data-family={family}>
+        <section className="paper-card anonymous-entry-card rounded-[2rem] p-7">
+          <p className="section-kicker text-[#842f2b]">без регистрация</p>
+          <h1 className="mt-3 text-4xl font-black">Въведи потребителско име</h1>
+          <p className="mt-3 leading-7">
+            Нужно е само име за тази стая. То се пази локално и не създава акаунт.
+          </p>
+          <form className="mt-6 grid gap-4" onSubmit={submitDisplayName}>
+            <label className="grid gap-2">
+              <span className="text-xs font-black uppercase tracking-[0.25em] text-[#842f2b]">Потребителско име</span>
+              <input
+                className="input"
+                value={displayNameInput}
+                maxLength={24}
+                onChange={(event) => setDisplayNameInput(event.target.value)}
+                placeholder="Например: Мила"
+              />
+            </label>
+            {identityError ? <p className="rounded-2xl bg-[#842f2b]/10 p-4 font-bold text-[#842f2b]">{identityError}</p> : null}
+            <button className="btn btn-primary" type="submit">
+              Влез в стаята
+            </button>
+          </form>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className={`shell game-shell phase-${phase}`} data-phase={phase} data-theme={family} data-family={family}>
@@ -986,7 +1047,14 @@ function RoleCard({
     return null;
   }
 
-  const guide = ROLE_GUIDE_BG[role.role];
+  const definition = ROLE_DEFINITIONS[role.role];
+  const family = definition.availableInFamilies[0] ?? "werewolves";
+  const guide = ROLE_GUIDE_BG[role.role] ?? {
+    summary: getRoleShortDescriptionBg(role.role),
+    team: teamLabelBg(definition.team, family),
+    timing: definition.nightAction ? "Нощна фаза" : "Ден и гласуване",
+    win: "winConditionBg" in definition ? definition.winConditionBg : "Следвай целта на своя отбор",
+  };
 
   return (
     <article className={`role-card paper-card mt-8 rounded-[2rem] p-6 role-${role.role}`}>
@@ -999,20 +1067,14 @@ function RoleCard({
           {roleSigil(role.role)}
         </div>
       </div>
-      {guide ? (
-        <div className="mt-4 grid gap-3">
-          <p className="text-[#4f3829]">{guide.summary}</p>
-          <div className="grid gap-3 md:grid-cols-3">
-            <RoleFact label="Отбор" value={guide.team} />
-            <RoleFact label="Кога действа" value={guide.timing} />
-            <RoleFact label="Цел" value={guide.win} />
-          </div>
+      <div className="mt-4 grid gap-3">
+        <p className="text-[#4f3829]">{guide.summary}</p>
+        <div className="grid gap-3 md:grid-cols-3">
+          <RoleFact label="Отбор" value={guide.team} />
+          <RoleFact label="Кога действа" value={guide.timing} />
+          <RoleFact label="Цел" value={guide.win} />
         </div>
-      ) : (
-        <p className="mt-3 text-[#4f3829]">
-          Тази карта идва през private server event. Тя не съществува в публичния synchronized state.
-        </p>
-      )}
+      </div>
       <p className="mt-4 rounded-2xl bg-[#221611]/10 px-4 py-3 text-sm font-bold text-[#4f3829]">
         Сигурност: чуждите тайни роли не са в публичния state и не трябва да се виждат през DevTools/network.
       </p>
@@ -1121,10 +1183,7 @@ function NightActionPanel({
   setSecondTargetId: (value: string) => void;
   sendNightAction: (action: NightActionCommand) => void;
 }) {
-  const defaultTarget =
-    privateRole === "healer"
-      ? livingPlayers.find((player) => player.userId === currentUserId)?.userId
-      : livingPlayers.find((player) => player.userId !== currentUserId)?.userId;
+  const defaultTarget = livingPlayers.find((player) => player.userId !== currentUserId)?.userId;
   const targetId = selectedTargetId || defaultTarget || "";
   const secondId = secondTargetId || livingPlayers.find((player) => player.userId !== targetId)?.userId || "";
 
@@ -1171,14 +1230,19 @@ function NightActionPanel({
             Провери дали е от Мафията
           </button>
         ) : null}
+        {privateRole === "detective" ? (
+          <button className="btn btn-primary action-btn ability-investigate" type="button" onClick={() => targetId && sendNightAction({ kind: "check_alignment", targetUserId: targetId })}>
+            Разследвай целта
+          </button>
+        ) : null}
         {privateRole === "don" ? (
           <button className="btn btn-secondary action-btn ability-investigate" type="button" onClick={() => targetId && sendNightAction({ kind: "check_commissioner", targetUserId: targetId })}>
             Търси Комисаря
           </button>
         ) : null}
-        {privateRole === "seer" ? (
+        {privateRole === "seer" || privateRole === "oracle" ? (
           <button className="btn btn-primary action-btn ability-investigate" type="button" onClick={() => targetId && sendNightAction({ kind: "check_role", targetUserId: targetId })}>
-            Виж ролята
+            Провери заплахата
           </button>
         ) : null}
         {privateRole === "witch" ? (
@@ -1191,7 +1255,7 @@ function NightActionPanel({
             </button>
           </>
         ) : null}
-        {privateRole === "healer" ? (
+        {privateRole === "healer" || privateRole === "doctor" || privateRole === "bodyguard" ? (
           <button className="btn btn-primary action-btn ability-heal" type="button" onClick={() => targetId && sendNightAction({ kind: "healer_protect", targetUserId: targetId })}>
             Пази тази нощ
           </button>
@@ -1293,7 +1357,7 @@ function phaseSigil(phase: string) {
 }
 
 function roleSigil(role: RoleCode) {
-  const sigils: Record<RoleCode, string> = {
+  const sigils: Partial<Record<RoleCode, string>> = {
     civilian: "Г",
     commissioner: "К",
     mafioso: "М",
@@ -1312,7 +1376,7 @@ function roleSigil(role: RoleCode) {
     thief: "К",
   };
 
-  return sigils[role];
+  return sigils[role] ?? ROLE_DEFINITIONS[role].nameBg.slice(0, 1);
 }
 
 function playerStatusBadge(player: PublicPlayer, phase: string): string {
@@ -1510,7 +1574,7 @@ function isNightPhase(phase: string) {
 
 function canFactionKill(role: RoleCode) {
   const team = ROLE_DEFINITIONS[role].team;
-  return team === "mafia" || team === "werewolves" || team === "vampires";
+  return team === "mafia" || team === "werewolves" || team === "vampires" || role === "vigilante" || role === "maniac" || role === "vampire_hunter";
 }
 
 function getAvailablePrivateChatChannel(
@@ -1542,7 +1606,7 @@ function getAvailablePrivateChatChannel(
   return null;
 }
 
-const ROLE_GUIDE_BG: Record<RoleCode, { summary: string; team: string; timing: string; win: string }> = {
+const ROLE_GUIDE_BG: Partial<Record<RoleCode, { summary: string; team: string; timing: string; win: string }>> = {
   civilian: {
     summary: "Нямаш нощно действие. Силата ти е в дневното обсъждане, логиката и гласа.",
     team: "Мирни граждани",
@@ -1809,7 +1873,10 @@ function roleWakeHint(role: RoleCode, phase: string, ownPlayer: PublicPlayer | u
     return "Сега избираш двамата Влюбени.";
   }
   if (isNightPhase(phase)) {
-    if (canFactionKill(role) || ["commissioner", "don", "seer", "witch", "healer", "priest"].includes(role)) {
+    if (
+      canFactionKill(role) ||
+      ["commissioner", "detective", "don", "seer", "oracle", "witch", "healer", "doctor", "bodyguard", "priest"].includes(role)
+    ) {
       return "Тази фаза може да имаш активно нощно действие.";
     }
     return "В тази нощ нямаш задължително действие.";
@@ -1830,9 +1897,16 @@ function nightActionHelpBg(role: RoleCode) {
     werewolf: "Изберете жертва като фракция. Лечител, Вещица или благословия могат да спрат смъртта.",
     vampire: "Вампирите действат като отделна зла фракция и имат собствена жертва.",
     commissioner: "Проверката казва дали целта е от Мафията, не показва точната роля.",
+    detective: "Разследването дава личен резултат според настройките на Мафия.",
     seer: "Ясновидката вижда точната роля, но резултатът не е публичен.",
+    oracle: "Оракулът проверява дали целта е Върколак или Вампир.",
     witch: "Лечението и отровата са еднократни. Ако ги изразходваш, после вече не са налични.",
-    healer: "Лечителят може да пази себе си и може да пази един и същ играч в поредни нощи.",
+    healer: "Лечителят не може да пази себе си и не може да пази един и същ играч две нощи поред.",
+    doctor: "Докторът пази един играч от нощното убийство на Мафията.",
+    bodyguard: "Бодигардът пази цел с риск за себе си според настройките.",
+    vigilante: "Вигилантето може да атакува, но грешният избор помага на Мафията.",
+    maniac: "Маниакът играе сам и може да елиминира през нощта.",
+    vampire_hunter: "Убиецът на вампири може да ловува, но губи умението си при грешна жертва.",
     priest: "Благословията е еднократна като действие, но защитата остава до първото убийство срещу целта.",
     thief: "След кражбата ти ставаш новата роля, а целта става Обикновен селянин.",
     cupid: "Влюбените са тайно свързани. Смъртта на единия повлича другия.",
@@ -1861,9 +1935,16 @@ function nightInstructionBg(role: RoleCode) {
     werewolf: "Върколаците избират жертва",
     vampire: "Вампирите избират жертва",
     commissioner: "Комисарят проверява подозрителен играч",
+    detective: "Детективът разследва подозрителен играч",
     seer: "Ясновидката вижда тайна роля",
+    oracle: "Оракулът проверява заплахата",
     witch: "Вещицата решава дали да лекува или отрови",
     healer: "Лечителят пази един играч за тази нощ",
+    doctor: "Докторът пази един играч за тази нощ",
+    bodyguard: "Бодигардът охранява един играч",
+    vigilante: "Вигилантето избира цел",
+    maniac: "Маниакът избира жертва",
+    vampire_hunter: "Убиецът на вампири ловува",
     priest: "Свещеникът дава една трайна благословия",
     thief: "Крадецът краде карта веднъж през първата нощ",
     cupid: "Купидон избира двама Влюбени",

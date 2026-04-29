@@ -124,6 +124,15 @@ export class GameRoom extends Room<{ state: GameState }> {
       return;
     }
 
+    if (this.isDisplayNameTaken(auth.displayName, auth.userId)) {
+      client.send("safe_error", {
+        type: "safe_error",
+        messageBg: "Това име вече се използва в стаята.",
+      } satisfies ServerEvent);
+      client.leave();
+      return;
+    }
+
     if (this.state.locked) {
       client.send("safe_error", { type: "safe_error", messageBg: "Играта вече е заключена." } satisfies ServerEvent);
       client.leave();
@@ -256,6 +265,13 @@ export class GameRoom extends Room<{ state: GameState }> {
     player.ready = ready;
   }
 
+  private isDisplayNameTaken(displayName: string, userId: string) {
+    const normalized = displayName.trim().toLocaleLowerCase("bg-BG");
+    return [...this.state.players.values()].some(
+      (player) => player.userId !== userId && player.displayName.trim().toLocaleLowerCase("bg-BG") === normalized,
+    );
+  }
+
   private setNarrator(client: Client, targetUserId: string, narrator: boolean) {
     const actor = this.getPublicPlayer(client);
     if (!actor.host) {
@@ -375,6 +391,21 @@ export class GameRoom extends Room<{ state: GameState }> {
       communicationMode: this.config.communicationMode,
       tempoProfile: this.config.tempoProfile,
       loversEnabled: this.config.loversEnabled,
+      rolePreset: this.config.rolePreset,
+      revealRolesOnDeath: this.config.revealRolesOnDeath,
+      allowSkipVote: this.config.allowSkipVote,
+      majorityMode: this.config.majorityMode,
+      autoStart: this.config.autoStart,
+      beginnerMode: this.config.beginnerMode,
+      advancedMode: this.config.advancedMode,
+      werewolfVariant: this.config.werewolfVariant,
+      mayorMode: this.config.mayorMode,
+      promoRolesEnabled: this.config.promoRolesEnabled,
+      mafiaNightKill: this.config.mafiaNightKill,
+      doctorCanSelfProtect: this.config.doctorCanSelfProtect,
+      commissionerResultMode: this.config.commissionerResultMode,
+      maniacEnabled: this.config.maniacEnabled,
+      jesterEnabled: this.config.jesterEnabled,
       ...(this.config.rolePreset === "manual" ? { roles: this.config.roles } : {}),
     });
     this.syncPublicConfig();
@@ -640,6 +671,22 @@ export class GameRoom extends Room<{ state: GameState }> {
     }
     if (action.kind === "witch_poison" && privatePlayer.witchPoisonUsed) {
       throw new Error("Вещицата вече е използвала отровата си.");
+    }
+    if (action.kind === "healer_protect" && privatePlayer.role === "healer") {
+      if (action.targetUserId === publicPlayer.userId) {
+        throw new Error("Лечителят не може да лекува себе си по правилата на Върколак.");
+      }
+      if (
+        privatePlayer.lastNightAction?.kind === "healer_protect" &&
+        privatePlayer.lastNightAction.targetUserId === action.targetUserId
+      ) {
+        throw new Error("Лечителят не може да лекува същия играч две нощи поред.");
+      }
+    }
+    if (action.kind === "healer_protect" && privatePlayer.role === "doctor" && action.targetUserId === publicPlayer.userId) {
+      if (!this.config.doctorCanSelfProtect) {
+        throw new Error("Докторът не може да пази себе си при текущите настройки.");
+      }
     }
     if (action.kind === "witch_heal") {
       privatePlayer.witchHealUsed = true;
@@ -1193,10 +1240,17 @@ export class GameRoom extends Room<{ state: GameState }> {
         team === "werewolves" ||
         team === "vampires" ||
         privatePlayer.role === "seer" ||
+        privatePlayer.role === "oracle" ||
         privatePlayer.role === "commissioner" ||
         privatePlayer.role === "don" ||
         privatePlayer.role === "witch" ||
         privatePlayer.role === "healer" ||
+        privatePlayer.role === "doctor" ||
+        privatePlayer.role === "bodyguard" ||
+        privatePlayer.role === "detective" ||
+        privatePlayer.role === "vigilante" ||
+        privatePlayer.role === "maniac" ||
+        privatePlayer.role === "vampire_hunter" ||
         (privatePlayer.role === "priest" && !privatePlayer.priestBlessUsed) ||
         (privatePlayer.role === "thief" && this.state.phase === "first_night") ||
         (privatePlayer.role === "cupid" && this.state.phase === "first_night");
@@ -1497,13 +1551,19 @@ function ensureNightActionAllowed(role: RoleCode, action: NightActionCommand, ph
   const team = getRoleTeam(role);
   const allowed =
     action.kind === "skip" ||
-    (action.kind === "faction_kill" && (team === "mafia" || team === "werewolves" || team === "vampires")) ||
-    (action.kind === "check_alignment" && role === "commissioner") ||
-    (action.kind === "check_role" && role === "seer") ||
+    (action.kind === "faction_kill" &&
+      (team === "mafia" ||
+        team === "werewolves" ||
+        team === "vampires" ||
+        role === "vigilante" ||
+        role === "maniac" ||
+        role === "vampire_hunter")) ||
+    (action.kind === "check_alignment" && (role === "commissioner" || role === "detective")) ||
+    (action.kind === "check_role" && (role === "seer" || role === "oracle")) ||
     (action.kind === "check_commissioner" && role === "don") ||
     (action.kind === "witch_heal" && role === "witch") ||
     (action.kind === "witch_poison" && role === "witch") ||
-    (action.kind === "healer_protect" && role === "healer") ||
+    (action.kind === "healer_protect" && (role === "healer" || role === "doctor" || role === "bodyguard")) ||
     (action.kind === "priest_bless" && role === "priest") ||
     (action.kind === "thief_steal" && role === "thief" && phase === "first_night") ||
     (action.kind === "cupid_link" && role === "cupid" && phase === "first_night");

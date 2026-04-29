@@ -85,24 +85,28 @@ function checkCssImageSet() {
 
 function checkLandingLayoutContracts() {
   const css = readText("apps/web/app/globals.css");
-  const tableauBlock = css.match(/\.landing-tableau\s*\{[^}]+\}/)?.[0] ?? "";
+  const landingPage = readText("apps/web/components/landing-experience.tsx");
 
-  assert(tableauBlock.includes("position: relative"), "Landing tableau must stay in normal flow below the mode picker.");
-  assert(!tableauBlock.includes("position: absolute"), "Landing tableau must not be absolute-positioned over the mode picker.");
-  assert(tableauBlock.includes("margin-top:"), "Landing tableau needs explicit spacing from the mode picker.");
-  assert(css.includes(".mode-choice-grid {\n  position: relative;\n  z-index: 2;"), "Mode picker must remain above decorative landing layers.");
+  assert(landingPage.includes("game-choice-grid"), "Landing page must render the separated game picker.");
+  assert(landingPage.includes("href={`${game.href}/create`}"), "Landing page must link directly to each game's create flow.");
+  assert(landingPage.includes("href: \"/werewolf\""), "Landing page must define a Werewolf game entry.");
+  assert(landingPage.includes("href: \"/mafia\""), "Landing page must define a Mafia game entry.");
+  assert(!landingPage.includes("Село под съмнение"), "Landing page must not use the old Werewolf branding.");
+  assert(!landingPage.includes("Българска Мафия"), "Landing page must not use the old Mafia branding.");
+  assert(css.includes(".game-choice-grid"), "Game picker grid needs dedicated styling.");
+  assert(css.includes(".game-choice-card"), "Game picker cards need dedicated styling.");
 }
 
 function checkRolesPageContracts() {
-  const rolesPage = readText("apps/web/app/roles/page.tsx");
+  const rolesPage = readText("apps/web/components/games/game-roles-page.tsx");
+  const legacyRolesRoute = readText("apps/web/app/roles/page.tsx");
   const css = readText("apps/web/app/globals.css");
 
-  assert(rolesPage.includes("ROLE_ART_SLUGS"), "Roles page must use explicit role art slugs.");
-  assert(rolesPage.includes("RoleFamilySection"), "Roles page must split roles by game family.");
   assert(rolesPage.includes("getRolesForFamily"), "Roles page must filter roles by family.");
+  assert(rolesPage.includes("KNOWN_WEREWOLF_ROLE_ASSETS"), "Roles page must keep an explicit Werewolf asset allow-list.");
+  assert(rolesPage.includes("KNOWN_MAFIA_ROLE_ASSETS"), "Roles page must keep an explicit Mafia asset allow-list.");
   assert(rolesPage.includes("<picture className=\"role-codex-art\""), "Roles page must render role art as real picture elements.");
-  assert(rolesPage.includes("role-mayor mayor-codex-card"), "Mayor public title must render with role-mayor art.");
-  assert(rolesPage.includes("PUBLIC_TITLES.mayor"), "Mayor copy should come from shared Bulgarian public title definitions.");
+  assert(legacyRolesRoute.includes("redirect(\"/werewolf/roles\")"), "Legacy /roles route must not render mixed role data.");
   assert(css.includes(".role-mayor"), "Missing mayor role-art CSS class.");
   assert(css.includes("/game-art/role-mayor.webp"), "Missing optimized mayor role art CSS reference.");
   assert(css.includes("/game-art/mafia/role-mafioso.webp"), "Missing Mafia role-art CSS reference.");
@@ -131,6 +135,8 @@ function checkPlayUiContracts() {
   const playClient = readText("apps/web/components/play-room-client.tsx");
 
   for (const contract of [
+    "ANONYMOUS_DISPLAY_NAME_KEY",
+    "anonymousDisplayName",
     "CUE_MODE_STORAGE_KEY",
     "LiveCuePanel",
     "NarratorDesk",

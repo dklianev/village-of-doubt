@@ -1,151 +1,21 @@
 import type { GameFamily } from "./game-config.js";
+import { MAFIA_ROLE_DEFINITIONS } from "./games/mafia/roles.js";
+import { TEAM_CODES, type TeamCode } from "./games/shared/types.js";
+import { WEREWOLF_ROLE_DEFINITIONS } from "./games/werewolf/roles.js";
 
-export const TEAM_CODES = [
-  "village",
-  "werewolves",
-  "vampires",
-  "mafia",
-  "lovers",
-  "neutral",
-] as const;
-
-export type TeamCode = (typeof TEAM_CODES)[number];
+export { TEAM_CODES, type TeamCode } from "./games/shared/types.js";
 
 export const ROLE_DEFINITIONS = {
-  civilian: {
-    nameBg: "Мирен гражданин",
-    team: "village",
-    secret: true,
-    nightAction: false,
-    availableInFamilies: ["mafia"],
-  },
-  commissioner: {
-    nameBg: "Комисар",
-    team: "village",
-    secret: true,
-    nightAction: true,
-    availableInFamilies: ["mafia"],
-  },
-  mafioso: {
-    nameBg: "Мафиот",
-    team: "mafia",
-    secret: true,
-    nightAction: true,
-    availableInFamilies: ["mafia"],
-  },
-  don: {
-    nameBg: "Дон",
-    team: "mafia",
-    secret: true,
-    nightAction: true,
-    availableInFamilies: ["mafia"],
-  },
-  ordinary_villager: {
-    nameBg: "Обикновен селянин",
-    team: "village",
-    secret: true,
-    nightAction: false,
-    availableInFamilies: ["werewolves"],
-  },
-  werewolf: {
-    nameBg: "Върколак",
-    team: "werewolves",
-    secret: true,
-    nightAction: true,
-    availableInFamilies: ["werewolves"],
-  },
-  seer: {
-    nameBg: "Ясновидка",
-    team: "village",
-    secret: true,
-    nightAction: true,
-    availableInFamilies: ["werewolves"],
-  },
-  witch: {
-    nameBg: "Вещица",
-    team: "village",
-    secret: true,
-    nightAction: true,
-    availableInFamilies: ["werewolves"],
-  },
-  healer: {
-    nameBg: "Лечител",
-    team: "village",
-    secret: true,
-    nightAction: true,
-    availableInFamilies: ["werewolves"],
-  },
-  priest: {
-    nameBg: "Свещеник",
-    team: "village",
-    secret: true,
-    nightAction: true,
-    availableInFamilies: ["werewolves"],
-  },
-  hunter: {
-    nameBg: "Ловец",
-    team: "village",
-    secret: true,
-    nightAction: false,
-    availableInFamilies: ["werewolves"],
-  },
-  cupid: {
-    nameBg: "Купидон",
-    team: "village",
-    secret: true,
-    nightAction: true,
-    availableInFamilies: ["werewolves"],
-  },
-  vampire: {
-    nameBg: "Вампир",
-    team: "vampires",
-    secret: true,
-    nightAction: true,
-    advanced: true,
-    availableInFamilies: ["werewolves"],
-  },
-  jester: {
-    nameBg: "Шут",
-    team: "neutral",
-    secret: true,
-    nightAction: false,
-    advanced: true,
-    availableInFamilies: ["werewolves"],
-  },
-  little_girl: {
-    nameBg: "Малко момиче",
-    team: "village",
-    secret: true,
-    nightAction: false,
-    advanced: true,
-    availableInFamilies: ["werewolves"],
-  },
-  thief: {
-    nameBg: "Крадец",
-    team: "neutral",
-    secret: true,
-    nightAction: true,
-    advanced: true,
-    availableInFamilies: ["werewolves"],
-  },
-} as const satisfies Record<
-  string,
-  {
-    nameBg: string;
-    team: TeamCode;
-    secret: boolean;
-    nightAction: boolean;
-    advanced?: boolean;
-    availableInFamilies: readonly GameFamily[];
-  }
->;
+  ...WEREWOLF_ROLE_DEFINITIONS,
+  ...MAFIA_ROLE_DEFINITIONS,
+} as const;
 
 export type RoleCode = keyof typeof ROLE_DEFINITIONS;
 
 export const PUBLIC_TITLES = {
   mayor: {
     nameBg: "Кмет",
-    descriptionBg: "Публична титла. Гласът на Кмета се брои двойно.",
+    descriptionBg: "Публична титла. При равенство гласът на Кмета решава изхода.",
   },
 } as const;
 
@@ -162,6 +32,10 @@ export function getRoleNameBg(role: RoleCode): string {
   return ROLE_DEFINITIONS[role].nameBg;
 }
 
+export function getRoleShortDescriptionBg(role: RoleCode): string {
+  return ROLE_DEFINITIONS[role].shortDescriptionBg;
+}
+
 export function isRoleAvailableInFamily(role: RoleCode, family: GameFamily): boolean {
   const families: readonly GameFamily[] = ROLE_DEFINITIONS[role].availableInFamilies;
   return families.includes(family);
@@ -169,4 +43,29 @@ export function isRoleAvailableInFamily(role: RoleCode, family: GameFamily): boo
 
 export function getRolesForFamily(family: GameFamily): RoleCode[] {
   return (Object.keys(ROLE_DEFINITIONS) as RoleCode[]).filter((role) => isRoleAvailableInFamily(role, family));
+}
+
+export function getRoleAssetKey(role: RoleCode): string {
+  return ROLE_DEFINITIONS[role].assetKey;
+}
+
+export function teamLabelBg(team: TeamCode, family: GameFamily = "werewolves"): string {
+  if (family === "mafia" && team === "village") {
+    return "Град";
+  }
+
+  const labels: Record<TeamCode, string> = {
+    village: "Селяни",
+    werewolves: "Върколаци",
+    vampires: "Вампири",
+    mafia: "Мафия",
+    lovers: "Влюбени",
+    neutral: "Неутрален",
+  };
+
+  return labels[team];
+}
+
+export function assertKnownTeamCode(value: string): value is TeamCode {
+  return (TEAM_CODES as readonly string[]).includes(value);
 }

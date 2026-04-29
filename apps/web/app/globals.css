@@ -711,7 +711,9 @@ select {
 
 .landing-shell::before,
 .lobby-shell::before,
-.history-shell::before {
+.history-shell::before,
+.game-home-shell::before,
+.rules-shell::before {
   position: fixed;
   inset: 0;
   z-index: -1;
@@ -732,6 +734,11 @@ select {
 
 .history-shell {
   --page-art: var(--art-history);
+}
+
+.game-home-shell,
+.rules-shell {
+  --page-art: var(--art-landing);
 }
 
 .landing-hero-card {
@@ -770,7 +777,8 @@ select {
   max-width: 34rem;
 }
 
-.mode-choice-grid {
+.mode-choice-grid,
+.game-choice-grid {
   position: relative;
   z-index: 2;
   display: grid;
@@ -778,10 +786,11 @@ select {
   gap: 12px;
 }
 
-.mode-choice-card {
+.mode-choice-card,
+.game-choice-card {
   position: relative;
   isolation: isolate;
-  min-height: 172px;
+  min-height: 236px;
   overflow: hidden;
   border: 1px solid rgba(248, 236, 210, 0.18);
   border-radius: 26px;
@@ -797,7 +806,23 @@ select {
     transform 180ms ease;
 }
 
-.mode-choice-card::before {
+.game-choice-werewolf {
+  --choice-art: var(--art-lobby);
+}
+
+.game-choice-mafia {
+  --choice-art: image-set(url("/game-art/mafia/bg-lobby-tavern.webp") type("image/webp"), url("/game-art/mafia/bg-lobby-tavern.png") type("image/png"));
+}
+
+.mode-choice-card,
+.game-choice-card {
+  background:
+    linear-gradient(180deg, rgba(8, 10, 10, 0.1), rgba(8, 10, 10, 0.92) 76%),
+    var(--choice-art, var(--art-lobby)) center / cover no-repeat;
+}
+
+.mode-choice-card::before,
+.game-choice-card::before {
   position: absolute;
   inset: 12px;
   z-index: -1;
@@ -806,7 +831,8 @@ select {
   content: "";
 }
 
-.mode-choice-card:hover {
+.mode-choice-card:hover,
+.game-choice-card:hover {
   border-color: rgba(240, 180, 93, 0.5);
   box-shadow: 0 30px 78px rgba(0, 0, 0, 0.48), var(--shadow-gold);
   transform: translateY(-3px);
@@ -814,12 +840,17 @@ select {
 
 .mode-choice-card span,
 .mode-choice-card strong,
-.mode-choice-card p {
+.mode-choice-card p,
+.game-choice-card .section-kicker,
+.game-choice-card h2,
+.game-choice-card p,
+.game-choice-card a {
   position: relative;
   z-index: 1;
 }
 
-.mode-choice-card span {
+.mode-choice-card span,
+.game-choice-card .section-kicker {
   display: inline-flex;
   border-radius: 999px;
   padding: 6px 9px;
@@ -831,7 +862,8 @@ select {
   text-transform: uppercase;
 }
 
-.mode-choice-card strong {
+.mode-choice-card strong,
+.game-choice-card h2 {
   display: block;
   margin-top: 42px;
   color: #fff6e5;
@@ -839,12 +871,20 @@ select {
   line-height: 1;
 }
 
-.mode-choice-card p {
+.mode-choice-card p,
+.game-choice-card p {
   margin: 10px 0 0;
   color: #ead9ba;
   font-size: 0.84rem;
   font-weight: 800;
   line-height: 1.5;
+}
+
+.game-home-hero {
+  min-height: 470px;
+  background:
+    linear-gradient(90deg, rgba(18, 10, 8, 0.98) 0%, rgba(18, 10, 8, 0.82) 48%, rgba(18, 10, 8, 0.2) 100%),
+    var(--art-landing) center / cover no-repeat;
 }
 
 .tableau-card {
@@ -1105,6 +1145,19 @@ select {
   font-weight: 950;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.role-warning {
+  display: grid;
+  gap: 8px;
+  border: 1px solid rgba(132, 47, 43, 0.18);
+  border-radius: 18px;
+  padding: 12px;
+  background: rgba(132, 47, 43, 0.08);
+  color: var(--blood-dark);
+  font-size: 0.82rem;
+  font-weight: 900;
+  line-height: 1.45;
 }
 
 .mayor-codex-card {
@@ -2473,6 +2526,11 @@ select {
 
   .landing-hero-card {
     min-height: 460px;
+  }
+
+  .game-choice-grid,
+  .mode-choice-grid {
+    grid-template-columns: 1fr;
   }
 
   .landing-tableau {

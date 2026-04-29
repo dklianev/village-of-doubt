@@ -255,7 +255,7 @@ describe("GameRoom gameplay regressions", () => {
     await expect(oldWerewolfChat).rejects.toThrow("timed out");
   });
 
-  it("lets the Healer protect themselves", async () => {
+  it("rejects Healer self-protection by the published Werewolf rules", async () => {
     const serverRoom = await colyseus.createRoom<GameRoom>("game", {
       code: "HEAL01",
       mode: "werewolves_classic",
@@ -276,19 +276,29 @@ describe("GameRoom gameplay regressions", () => {
     expect(healer).toBeTruthy();
     expect(werewolf).toBeTruthy();
 
+    const error = healer?.client.waitForMessage("safe_error") as Promise<{ messageBg: string }>;
     healer?.client.send("submitNightAction", {
       action: { kind: "healer_protect", targetUserId: healer?.userId },
     });
+    await expect(error).resolves.toMatchObject({
+      messageBg: "Лечителят не може да лекува себе си по правилата на Върколак.",
+    });
+
+    const savedTarget = roleClients.find((item) => item.role === "ordinary_villager");
+    expect(savedTarget).toBeTruthy();
+    healer?.client.send("submitNightAction", {
+      action: { kind: "healer_protect", targetUserId: savedTarget?.userId },
+    });
     werewolf?.client.send("submitNightAction", {
-      action: { kind: "faction_kill", targetUserId: healer?.userId },
+      action: { kind: "faction_kill", targetUserId: savedTarget?.userId },
     });
     const ignoredAdvanceError = clients[0]?.client.waitForMessage("safe_error", 200).catch(() => undefined);
     clients[0]?.client.send("narratorAdvance", {});
     await ignoredAdvanceError;
     await serverRoom.waitForNextPatch(20);
 
-    const healerState = [...serverRoom.state.players.values()].find((player) => player.userId === healer?.userId);
-    expect(healerState?.alive).toBe(true);
+    const savedState = [...serverRoom.state.players.values()].find((player) => player.userId === savedTarget?.userId);
+    expect(savedState?.alive).toBe(true);
   });
 
   it("enters hunter revenge when the Hunter dies at night", async () => {
@@ -329,12 +339,12 @@ describe("GameRoom gameplay regressions", () => {
   it("records a Jester personal win when the village votes them out", async () => {
     const serverRoom = await colyseus.createRoom<GameRoom>("game", {
       code: "JESTER",
-      mode: "werewolves_classic",
+      mode: "mafia_free",
       playerCount: 6,
       roles: {
         jester: 1,
-        ordinary_villager: 4,
-        werewolf: 1,
+        civilian: 4,
+        mafioso: 1,
       },
     });
     const clients = await connectPlayers(colyseus, serverRoom, 6, "jester");
@@ -371,7 +381,7 @@ describe("GameRoom gameplay regressions", () => {
           werewolf: 1,
         },
       }),
-    ).rejects.toThrow("Тези роли не са налични за Свободна Мафия: Върколак.");
+    ).rejects.toThrow("Тези роли не са налични за Мафия: Върколак.");
   });
 
   it("still asks for a Mayor successor when a Hunter Mayor revenge times out", async () => {

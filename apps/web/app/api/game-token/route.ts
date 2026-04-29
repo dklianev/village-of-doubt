@@ -7,6 +7,8 @@ interface TokenRequestBody {
   code?: unknown;
   devUserId?: unknown;
   devDisplayName?: unknown;
+  anonymousUserId?: unknown;
+  anonymousDisplayName?: unknown;
 }
 
 export async function POST(request: Request) {
@@ -26,13 +28,17 @@ export async function POST(request: Request) {
     (process.env.ALLOW_DEV_AUTH !== "false" && process.env.NODE_ENV !== "production");
   const userId =
     session?.user?.id ??
+    (isValidAnonymousUserId(body.anonymousUserId) && isValidAnonymousName(body.anonymousDisplayName)
+      ? `anon:${body.anonymousUserId}`
+      : undefined) ??
     (allowDevAuth && typeof body.devUserId === "string" ? `dev:${body.devUserId}` : undefined);
   const displayName =
     session?.user?.name ??
+    (isValidAnonymousName(body.anonymousDisplayName) ? normalizeDisplayName(body.anonymousDisplayName) : undefined) ??
     (allowDevAuth && typeof body.devDisplayName === "string" ? body.devDisplayName : undefined);
 
   if (!userId || !displayName) {
-    return NextResponse.json({ error: "Нужен е вход, за да влезеш в игра." }, { status: 401 });
+    return NextResponse.json({ error: "Въведи потребителско име." }, { status: 401 });
   }
 
   const token = createGameToken({
@@ -49,6 +55,19 @@ export async function POST(request: Request) {
     roomCode,
     expiresInSeconds: 300,
   });
+}
+
+function normalizeDisplayName(value: unknown) {
+  return typeof value === "string" ? value.trim().replace(/\s+/g, " ") : "";
+}
+
+function isValidAnonymousName(value: unknown) {
+  const name = normalizeDisplayName(value);
+  return name.length >= 2 && name.length <= 24;
+}
+
+function isValidAnonymousUserId(value: unknown) {
+  return typeof value === "string" && /^[a-zA-Z0-9:_-]{8,80}$/.test(value);
 }
 
 function getGameTokenSecret() {

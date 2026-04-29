@@ -1,4 +1,16 @@
-import type { CommunicationMode, GameMode, NarratorMode, RoleDistribution, TempoProfile } from "./game-config.js";
+import type {
+  CommissionerResultMode,
+  CommunicationMode,
+  GameMode,
+  MajorityMode,
+  MayorMode,
+  NarratorMode,
+  RoleDistribution,
+  RolePreset,
+  RoomVisibility,
+  TempoProfile,
+  WerewolfVariant,
+} from "./game-config.js";
 import type { RoleCode } from "./roles.js";
 
 export type GamePhase =
@@ -20,11 +32,29 @@ export type GamePhase =
 export interface CreateRoomOptions {
   code?: string;
   mode?: GameMode;
+  roomName?: string;
   playerCount?: number;
+  maxPlayers?: number;
+  roomVisibility?: RoomVisibility;
+  rolePreset?: RolePreset;
   narratorMode?: NarratorMode;
   communicationMode?: CommunicationMode;
   tempoProfile?: TempoProfile;
   loversEnabled?: boolean;
+  revealRolesOnDeath?: boolean;
+  allowSkipVote?: boolean;
+  majorityMode?: MajorityMode;
+  autoStart?: boolean;
+  beginnerMode?: boolean;
+  advancedMode?: boolean;
+  werewolfVariant?: WerewolfVariant;
+  mayorMode?: MayorMode;
+  promoRolesEnabled?: boolean;
+  mafiaNightKill?: boolean;
+  doctorCanSelfProtect?: boolean;
+  commissionerResultMode?: CommissionerResultMode;
+  maniacEnabled?: boolean;
+  jesterEnabled?: boolean;
   roles?: RoleDistribution;
 }
 

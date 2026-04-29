@@ -57,7 +57,7 @@ async function main() {
   await runCheck("lobby mode filtering and manual roles", testLobbyModeFiltering);
   await runCheck("invite lobby family-specific copy and art shell", testInviteLobbyCopy);
   await runCheck("roles codex assets and responsiveness", testRolesCodex);
-  await runCheck("auth screen basics", testAuthScreen);
+  await runCheck("anonymous entry basics", testAnonymousEntry);
   await runCheck("history screen basics", testHistoryScreen);
   await runCheck("single-player live play screen", testSinglePlayScreen);
   await runCheck("six-client lobby starts a real game", testSixClientGameStart);
@@ -78,15 +78,15 @@ async function testLandingDesktop() {
   const { page, watcher, close } = await newPage("landing-desktop", viewports.desktop);
   try {
     await goto(page, "/", "landing desktop");
-    await expectText(page, "Село под съмнение");
-    await expectText(page, "Играй Върколаци");
-    await expectText(page, "Играй Мафия");
+    await expectText(page, "Върколак или Мафия");
+    await expectText(page, "фолклорен хорър");
+    await expectText(page, "градска мистерия");
     await assertNoHorizontalOverflow(page, "landing desktop");
-    await assertNoOverlap(page, ".mode-choice-grid", ".landing-tableau", "mode picker and tableau");
+    await assertNoOverlap(page, ".game-choice-werewolf", ".game-choice-mafia", "game picker cards");
     await assertCssBackgroundImagesLoaded(page, "landing desktop");
 
-    await page.getByRole("link", { name: /Играй Мафия/ }).click();
-    await page.waitForURL("**/lobby?mode=mafia_sport");
+    await page.locator(".game-choice-mafia").getByRole("link", { name: "Играй" }).click();
+    await page.waitForURL("**/mafia/create");
     await expectText(page, "Създай частна стая");
     await assertLocatorAttribute(page.locator("[data-family]").first(), "data-family", "mafia", "mafia lobby theme");
     watcher.assertClean();
@@ -99,11 +99,11 @@ async function testLandingMobile() {
   const { page, watcher, close } = await newPage("landing-mobile", viewports.mobile);
   try {
     await goto(page, "/", "landing mobile");
-    await expectText(page, "Село под съмнение");
-    await expectText(page, "Играй Върколаци");
-    await expectText(page, "Играй Мафия");
+    await expectText(page, "Върколак или Мафия");
+    await expectText(page, "фолклорен хорър");
+    await expectText(page, "градска мистерия");
     await assertNoHorizontalOverflow(page, "landing mobile");
-    await assertNoOverlap(page, ".mode-choice-grid", ".landing-tableau", "mobile mode picker and tableau");
+    await assertNoOverlap(page, ".game-choice-werewolf", ".game-choice-mafia", "mobile game picker cards");
     watcher.assertClean();
   } finally {
     await close();
@@ -113,17 +113,17 @@ async function testLandingMobile() {
 async function testLobbyModeFiltering() {
   const { page, watcher, close } = await newPage("lobby-filtering", viewports.desktop);
   try {
-    await goto(page, "/lobby?mode=werewolves_classic", "werewolves lobby");
+    await goto(page, "/werewolf/create", "werewolves lobby");
     await expectText(page, "Създай частна стая");
     await expectSelectValue(page.locator("label", { hasText: "Режим" }).locator("select"), "werewolves_classic");
     let manualRoles = page.getByTestId("manual-roles-panel");
     await manualRoles.locator('input[type="checkbox"]').check();
     await expectTextIn(manualRoles, "Върколак");
-    await expectTextIn(manualRoles, "Ясновидка");
+    await expectTextIn(manualRoles, "Гадателка");
     await expectNoTextIn(manualRoles, "Дон");
 
-    await goto(page, "/lobby?mode=mafia_sport", "mafia lobby");
-    await expectSelectValue(page.locator("label", { hasText: "Режим" }).locator("select"), "mafia_sport");
+    await goto(page, "/mafia/create", "mafia lobby");
+    await expectSelectValue(page.locator("label", { hasText: "Режим" }).locator("select"), "mafia_free");
     await expectInputValue(page.locator("label", { hasText: "Брой играчи" }).locator("input"), "10");
     manualRoles = page.getByTestId("manual-roles-panel");
     await manualRoles.locator('input[type="checkbox"]').check();
@@ -168,15 +168,24 @@ async function testInviteLobbyCopy() {
 async function testRolesCodex() {
   const { page, watcher, close } = await newPage("roles-codex", viewports.desktop);
   try {
-    await goto(page, "/roles", "roles codex");
-    await expectText(page, "Кой се буди през нощта?");
+    await goto(page, "/werewolf/roles", "werewolf roles codex");
+    await expectText(page, "Роли във Върколак");
     await expectText(page, "Кмет");
-    await expectText(page, "Дон");
     await expectText(page, "Вампир");
+    await expectNoText(page, "Кръстник");
     await scrollThroughPage(page);
     await assertHtmlImagesLoaded(page, "roles codex");
     await assertCssBackgroundImagesLoaded(page, "roles codex");
     await assertNoHorizontalOverflow(page, "roles codex desktop");
+
+    await goto(page, "/mafia/roles", "mafia roles codex");
+    await expectText(page, "Роли в Мафия");
+    await expectText(page, "Кръстник");
+    await expectText(page, "Доктор");
+    await expectNoTextIn(page.locator("main"), "Върколак");
+    await scrollThroughPage(page);
+    await assertHtmlImagesLoaded(page, "mafia roles codex");
+    await assertCssBackgroundImagesLoaded(page, "mafia roles codex");
 
     await page.setViewportSize(viewports.mobile);
     await page.reload({ waitUntil: "domcontentloaded" });
@@ -188,18 +197,17 @@ async function testRolesCodex() {
   }
 }
 
-async function testAuthScreen() {
-  const { page, watcher, close } = await newPage("auth-screen", viewports.desktop);
+async function testAnonymousEntry() {
+  const { page, watcher, close } = await newPage("anonymous-entry", viewports.desktop);
   try {
-    await goto(page, "/sign-in", "auth screen");
-    await expectText(page, "Вход");
-    await expectText(page, "Регистрация");
-    await page.getByRole("button", { name: "Регистрация" }).click();
-    await expectText(page, "Име");
-    await page.getByRole("textbox", { name: "Име", exact: true }).fill("Плейрайт Играч");
-    await page.getByRole("textbox", { name: "Имейл", exact: true }).fill("playwright@example.com");
-    await page.getByLabel("Парола", { exact: true }).fill("playwright-secret");
-    await assertNoHorizontalOverflow(page, "auth screen");
+    await goto(page, "/mafia/join/ABCD12", "anonymous join");
+    await expectText(page, "Влез с име");
+    await expectNoText(page, "Регистрация");
+    await page.getByRole("textbox", { name: "Потребителско име" }).fill("Плейрайт Играч");
+    await expectInputValue(page.getByRole("textbox", { name: "Код на стая" }), "ABCD12");
+    await page.getByRole("button", { name: "Влез в стая" }).click();
+    await page.waitForURL("**/play/ABCD12?**");
+    await assertNoHorizontalOverflow(page, "anonymous join");
     watcher.assertClean();
   } finally {
     await close();
@@ -257,6 +265,8 @@ async function testSixClientGameStart() {
       const context = await activeBrowser.newContext({ viewport: viewports.desktop });
       await context.addInitScript(
         ({ userId, displayName }) => {
+          window.localStorage.setItem("anonymous-player-id", userId);
+          window.localStorage.setItem("anonymous-display-name", displayName);
           window.localStorage.setItem("dev-user-id", userId);
           window.localStorage.setItem("dev-display-name", displayName);
         },
@@ -313,6 +323,8 @@ async function newPage(label, viewport, identity) {
   if (identity) {
     await context.addInitScript(
       ({ userId, displayName }) => {
+        window.localStorage.setItem("anonymous-player-id", userId);
+        window.localStorage.setItem("anonymous-display-name", displayName);
         window.localStorage.setItem("dev-user-id", userId);
         window.localStorage.setItem("dev-display-name", displayName);
       },

@@ -30,9 +30,10 @@ async function main() {
   });
 
   await waitForJson("http://127.0.0.1:3300/api/health", "web");
-  await waitForText("http://127.0.0.1:3300/", "Село под съмнение", "landing page");
+  await waitForText("http://127.0.0.1:3300/", "Върколак или Мафия", "landing page");
   await waitForStaticAsset("http://127.0.0.1:3300/", "landing static CSS");
-  await waitForText("http://127.0.0.1:3300/lobby", "Създай частна стая", "lobby page");
+  await waitForText("http://127.0.0.1:3300/werewolf/create", "Създай частна стая", "werewolf create page");
+  await waitForText("http://127.0.0.1:3300/mafia/create", "Създай частна стая", "mafia create page");
   await waitForText(
     "http://127.0.0.1:3300/play/SMOKE1?mode=werewolves_classic&players=6&communication=built_in_chat&narrator=automatic&tempo=fast_online",
     "Играчите на площада",
@@ -48,7 +49,8 @@ async function main() {
     "Лични сигнали за фазите",
     "live cue controls",
   );
-  await waitForText("http://127.0.0.1:3300/roles", "Кой се буди през нощта?", "roles page");
+  await waitForText("http://127.0.0.1:3300/werewolf/roles", "Роли във Върколак", "werewolf roles page");
+  await waitForText("http://127.0.0.1:3300/mafia/roles", "Роли в Мафия", "mafia roles page");
   await waitForText("http://127.0.0.1:3300/history", "Завършени игри", "history page");
   await waitForAsset("http://127.0.0.1:3300/game-art/og-preview.png", "OpenGraph game art");
   await waitForAsset("http://127.0.0.1:3300/game-art/og-preview.webp", "optimized OpenGraph game art");
@@ -150,8 +152,8 @@ async function waitForGameToken(url) {
     },
     body: JSON.stringify({
       code: "SMOKE1",
-      devUserId: "smoke-user",
-      devDisplayName: "Smoke User",
+      anonymousUserId: "00000000-0000-4000-8000-000000000001",
+      anonymousDisplayName: "Смоук Играч",
     }),
   });
   const body = await response.json().catch(() => ({}));

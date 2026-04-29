@@ -6,12 +6,16 @@ import {
   createGameConfigFromOptions,
   evaluateWinCondition,
   getGameFamily,
+  getRoleBalanceScore,
   getRolesForFamily,
   getMafiaSportPreset,
+  getWerewolfAdvancedPreset,
+  getWerewolfVampiresPreset,
   getWerewolvesMvpPreset,
   phaseLabelBg,
   ROLE_DEFINITIONS,
   validateRoleDistribution,
+  validateRoleDistributionForMode,
 } from "../index.js";
 
 describe("role presets", () => {
@@ -27,11 +31,11 @@ describe("role presets", () => {
     expect(countRoles(preset)).toBe(10);
   });
 
-  it("uses two werewolves for 8-11 players and three for 12-15", () => {
+  it("scales werewolves with the player count", () => {
     expect(getWerewolvesMvpPreset(8).werewolf).toBe(2);
-    expect(getWerewolvesMvpPreset(11).werewolf).toBe(2);
+    expect(getWerewolvesMvpPreset(11).werewolf).toBe(3);
     expect(getWerewolvesMvpPreset(12).werewolf).toBe(3);
-    expect(getWerewolvesMvpPreset(15).werewolf).toBe(3);
+    expect(getWerewolvesMvpPreset(16).werewolf).toBe(4);
   });
 
   it("keeps every 6-30 player werewolves preset exact", () => {
@@ -40,23 +44,24 @@ describe("role presets", () => {
     }
   });
 
-  it("adds advanced roles only when the table is large enough", () => {
+  it("keeps advanced werewolf roles in advanced presets", () => {
     expect(getWerewolvesMvpPreset(14).vampire).toBeUndefined();
-    expect(getWerewolvesMvpPreset(15).vampire).toBe(1);
-    expect(getWerewolvesMvpPreset(16).jester).toBe(1);
-    expect(getWerewolvesMvpPreset(12).priest).toBe(1);
-    expect(getWerewolvesMvpPreset(13).thief).toBe(1);
+    expect(getWerewolfAdvancedPreset(12).priest).toBe(1);
+    expect(getWerewolfAdvancedPreset(12).blacksmith).toBe(1);
+    expect(getWerewolfAdvancedPreset(12).vampire_hunter).toBe(1);
+    expect(getWerewolfVampiresPreset(14).werewolf).toBeGreaterThanOrEqual(3);
+    expect(getWerewolfVampiresPreset(14).vampire).toBeGreaterThanOrEqual(3);
     expect(getWerewolvesMvpPreset(10).healer).toBe(1);
     expect("guardian" in ROLE_DEFINITIONS).toBe(false);
   });
 
   it("adds Cupid only when lovers are enabled", () => {
-    const withoutLovers = getWerewolvesMvpPreset(14);
-    const withLovers = getWerewolvesMvpPreset(14, true);
+    const withoutLovers = getWerewolvesMvpPreset(10);
+    const withLovers = getWerewolvesMvpPreset(10, true);
 
     expect(withoutLovers.cupid).toBeUndefined();
     expect(withLovers.cupid).toBe(1);
-    expect(countRoles(withLovers)).toBe(14);
+    expect(countRoles(withLovers)).toBe(10);
     expect((withLovers.ordinary_villager ?? 0) + 1).toBe(withoutLovers.ordinary_villager);
   });
 
@@ -64,6 +69,29 @@ describe("role presets", () => {
     expect(validateRoleDistribution(8, { ordinary_villager: 4, werewolf: 2, seer: 1 })).toContain(
       "Броят роли (7) не съвпада с броя играчи (8).",
     );
+  });
+
+  it("validates PDF role dependencies and balance warnings for werewolf", () => {
+    expect(
+      validateRoleDistributionForMode("werewolves_classic", 8, {
+        ordinary_villager: 4,
+        werewolf: 2,
+        red_riding_hood: 1,
+        seer: 1,
+      }),
+    ).toContain("Червена шапчица може да се включи само ако Ловецът също е в играта.");
+
+    expect(
+      validateRoleDistributionForMode("werewolves_classic", 12, {
+        ordinary_villager: 6,
+        werewolf: 3,
+        seer: 1,
+        priest: 1,
+        hunter: 1,
+      }),
+    ).toContain("Свещеникът изисква Ковач.");
+
+    expect(getRoleBalanceScore({ werewolf: 3, ordinary_villager: 3, seer: 1, witch: 1, cupid: 1, hunter: 1, mayor: 1 })).toBe(0);
   });
 
   it("builds config from lobby options with matching timers and live mode", () => {
@@ -114,7 +142,7 @@ describe("role presets", () => {
           werewolf: 1,
         },
       }),
-    ).toThrow("Тези роли не са налични за Свободна Мафия: Върколак.");
+    ).toThrow("Тези роли не са налични за Мафия: Върколак.");
 
     expect(() =>
       createGameConfigFromOptions({
@@ -125,16 +153,19 @@ describe("role presets", () => {
           don: 1,
         },
       }),
-    ).toThrow("Тези роли не са налични за Класически Върколаци: Дон.");
+    ).toThrow("Тези роли не са налични за Върколак: Кръстник.");
   });
 
   it("separates mafia and werewolves families without duplicating role definitions", () => {
     expect(getGameFamily("werewolves_classic")).toBe("werewolves");
     expect(getGameFamily("mafia_sport")).toBe("mafia");
     expect(getGameFamily("mafia_free")).toBe("mafia");
-    expect(getRolesForFamily("mafia")).toEqual(["civilian", "commissioner", "mafioso", "don"]);
+    expect(getRolesForFamily("mafia")).toEqual(
+      expect.arrayContaining(["civilian", "commissioner", "doctor", "mafioso", "don", "jester"]),
+    );
     expect(getRolesForFamily("werewolves")).toContain("werewolf");
     expect(getRolesForFamily("werewolves")).not.toContain("mafioso");
+    expect(getRolesForFamily("werewolves")).toEqual(expect.arrayContaining(["oracle", "blacksmith", "stray_cat", "guard_dog"]));
     expect(ROLE_DEFINITIONS.werewolf.availableInFamilies).toEqual(["werewolves"]);
     expect(ROLE_DEFINITIONS.mafioso.availableInFamilies).toEqual(["mafia"]);
   });
