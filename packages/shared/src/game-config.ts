@@ -22,6 +22,7 @@ export type MajorityMode = "simple" | "absolute";
 export type WerewolfVariant = "werewolves_vs_village" | "vampires_vs_village" | "three_teams";
 export type MayorMode = "secret_role" | "public_vote";
 export type CommissionerResultMode = "team_only" | "exact_role";
+export type NarratorVoice = "classic" | "old_villager" | "inspector" | "witch";
 
 export type RoleDistribution = Partial<Record<RoleCode, number>>;
 
@@ -52,31 +53,24 @@ export interface GameConfig {
   timers: PhaseTimers;
   revealRolesOnDeath: boolean;
   tieBreaker: TieBreaker;
-  // TODO: not yet enforced by the game server; keep typed for future lobby rollout.
   allowSkipVote: boolean;
-  // TODO: not yet enforced by the game server; keep typed for future lobby rollout.
   majorityMode: MajorityMode;
-  // TODO: not yet enforced by the game server; keep typed for future lobby rollout.
   autoStart: boolean;
-  // TODO: not yet enforced by the game server; keep typed for future lobby rollout.
   beginnerMode: boolean;
-  // TODO: not yet enforced by the game server; keep typed for future lobby rollout.
   advancedMode: boolean;
   liveMode: boolean;
   firstNightKill: boolean;
   loversEnabled: boolean;
   werewolfVariant: WerewolfVariant;
   mayorMode: MayorMode;
+  // TODO: not yet enforced in runtime. Hidden from the main lobby until promo rule flow is wired.
   promoRolesEnabled: boolean;
-  // TODO: not yet enforced separately; Mafia faction kill is always active for playable mafia defaults.
   mafiaNightKill: boolean;
   doctorCanSelfProtect: boolean;
-  // TODO: exact-role Commissioner result is hidden until server messaging supports both modes.
   commissionerResultMode: CommissionerResultMode;
-  // TODO: hidden until Маниак runtime is implemented.
   maniacEnabled: boolean;
-  // TODO: hidden until Шут is promoted out of manual-only mode.
   jesterEnabled: boolean;
+  narratorVoice: NarratorVoice;
   rulesetVersion: string;
 }
 
@@ -107,6 +101,7 @@ export interface GameConfigOptions {
   commissionerResultMode?: CommissionerResultMode;
   maniacEnabled?: boolean;
   jesterEnabled?: boolean;
+  narratorVoice?: NarratorVoice;
 }
 
 export interface RoleValidationOptions {
@@ -178,6 +173,13 @@ export const ROLE_PRESET_LABELS_BG: Record<RolePreset, string> = {
   classic_clean: "Класическа чиста",
   mvp: "Готово разпределение",
   manual: "Персонализирана",
+};
+
+export const NARRATOR_VOICE_LABELS_BG: Record<NarratorVoice, string> = {
+  classic: "Класически Разказвач",
+  old_villager: "Старият селянин",
+  inspector: "Инспекторът",
+  witch: "Вещицата",
 };
 
 export function getGameFamily(mode: GameMode): GameFamily {
@@ -536,6 +538,7 @@ export function createDefaultGameConfig(mode: GameMode, playerCount: number): Ga
     commissionerResultMode: "team_only",
     maniacEnabled: false,
     jesterEnabled: false,
+    narratorVoice: "classic",
     rulesetVersion: DEFAULT_RULESET_VERSION,
   };
 }
@@ -552,7 +555,13 @@ export function createGameConfigFromOptions(options: GameConfigOptions = {}): Ga
     ? normalizeRoleDistributionForMode(mode, options.roles)
     : mode === "werewolves_classic"
       ? withOptionalCupid(getWerewolfPresetByRolePreset(playerCount, rolePreset), loversEnabled, playerCount)
-      : config.roles;
+      : mode === "mafia_free"
+        ? withOptionalMafiaVariants(config.roles, {
+            playerCount,
+            maniacEnabled: options.maniacEnabled ?? config.maniacEnabled,
+            jesterEnabled: options.jesterEnabled ?? config.jesterEnabled,
+          })
+        : config.roles;
 
   return {
     ...config,
@@ -582,6 +591,7 @@ export function createGameConfigFromOptions(options: GameConfigOptions = {}): Ga
     commissionerResultMode: options.commissionerResultMode ?? config.commissionerResultMode,
     maniacEnabled: options.maniacEnabled ?? config.maniacEnabled,
     jesterEnabled: options.jesterEnabled ?? config.jesterEnabled,
+    narratorVoice: options.narratorVoice ?? config.narratorVoice,
   };
 }
 
@@ -626,6 +636,33 @@ function withOptionalCupid(distribution: RoleDistribution, loversEnabled: boolea
   }
   preset.cupid = 1;
   return preset;
+}
+
+function withOptionalMafiaVariants(
+  distribution: RoleDistribution,
+  options: { playerCount: number; maniacEnabled: boolean; jesterEnabled: boolean },
+): RoleDistribution {
+  let preset = { ...distribution };
+  if (options.maniacEnabled && options.playerCount >= 10 && (preset.maniac ?? 0) === 0) {
+    preset = replaceOneCivilian(preset, "maniac");
+  }
+  if (options.jesterEnabled && options.playerCount >= 8 && (preset.jester ?? 0) === 0) {
+    preset = replaceOneCivilian(preset, "jester");
+  }
+  return normalizeRoleDistribution(preset);
+}
+
+function replaceOneCivilian(distribution: RoleDistribution, role: RoleCode): RoleDistribution {
+  const civilians = distribution.civilian ?? 0;
+  if (civilians <= 0) {
+    return distribution;
+  }
+
+  return {
+    ...distribution,
+    civilian: civilians - 1,
+    [role]: (distribution[role] ?? 0) + 1,
+  };
 }
 
 function roleValueBg(role: RoleCode): number {

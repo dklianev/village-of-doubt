@@ -5,6 +5,7 @@ import type {
   MajorityMode,
   MayorMode,
   NarratorMode,
+  NarratorVoice,
   RoleDistribution,
   RolePreset,
   RoomVisibility,
@@ -55,6 +56,8 @@ export interface CreateRoomOptions {
   commissionerResultMode?: CommissionerResultMode;
   maniacEnabled?: boolean;
   jesterEnabled?: boolean;
+  narratorVoice?: NarratorVoice;
+  spectator?: boolean;
   roles?: RoleDistribution;
 }
 
@@ -95,6 +98,9 @@ export type NightActionCommand =
   | { kind: "stray_cat_choose"; targetUserId: string }
   | { kind: "thief_steal"; targetUserId: string }
   | { kind: "cupid_link"; firstUserId: string; secondUserId: string }
+  | { kind: "roleblock"; targetUserId: string }
+  | { kind: "lawyer_cover"; targetUserId: string }
+  | { kind: "medium_contact"; targetUserId: string }
   | { kind: "skip" };
 
 export type ServerEvent =

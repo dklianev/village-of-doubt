@@ -100,6 +100,7 @@ function winnerBg(winner: string | null) {
     werewolves: "Върколаците печелят",
     vampires: "Вампирите печелят",
     mafia: "Мафията печели",
+    maniac: "Маниакът печели",
     lovers: "Влюбените печелят",
     draw: "Равенство",
   };

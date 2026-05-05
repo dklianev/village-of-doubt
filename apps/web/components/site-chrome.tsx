@@ -9,6 +9,9 @@ const NAV_ITEMS = [
   { href: "/mafia", label: "Мафия" },
   { href: "/tutorial", label: "Първа игра" },
   { href: "/history", label: "История" },
+  { href: "/achievements", label: "Постижения" },
+  { href: "/leaderboard", label: "Класация" },
+  { href: "/friends", label: "Приятели" },
 ];
 
 export function SiteChrome() {

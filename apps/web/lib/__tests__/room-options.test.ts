@@ -37,4 +37,35 @@ describe("room options query helpers", () => {
       "civilian:6,commissioner:1,mafioso:2,don:1",
     );
   });
+
+  it("serializes and parses wired lobby rule toggles", () => {
+    const query = roomOptionsToQuery({
+      mode: "mafia_free",
+      playerCount: 10,
+      allowSkipVote: true,
+      majorityMode: "absolute",
+      autoStart: true,
+      mafiaNightKill: false,
+      commissionerResultMode: "exact_role",
+      maniacEnabled: true,
+      jesterEnabled: true,
+      narratorVoice: "inspector",
+      spectator: true,
+    });
+    const params = Object.fromEntries(new URLSearchParams(query.slice(1)));
+
+    expect(parseRoomCreateOptions(params)).toMatchObject({
+      mode: "mafia_free",
+      playerCount: 10,
+      allowSkipVote: true,
+      majorityMode: "absolute",
+      autoStart: true,
+      mafiaNightKill: false,
+      commissionerResultMode: "exact_role",
+      maniacEnabled: true,
+      jesterEnabled: true,
+      narratorVoice: "inspector",
+      spectator: true,
+    });
+  });
 });

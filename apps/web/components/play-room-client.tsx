@@ -11,12 +11,14 @@ import {
   getGameModeNameBg,
   phaseLabelBg,
   teamLabelBg,
+  NARRATOR_VOICE_LABELS_BG,
   type ChatChannel,
   type CreateRoomOptions,
   type GameFamily,
   type GameMode,
   type GamePhase,
   type NightActionCommand,
+  type NarratorVoice,
   type RoleCode,
 } from "@werewolf/shared";
 import {
@@ -95,6 +97,9 @@ interface GameSnapshot {
   voteSeconds: number;
   revealRolesOnDeath: boolean;
   loversEnabled: boolean;
+  allowSkipVote: boolean;
+  majorityMode: string;
+  narratorVoice: NarratorVoice;
   phase: GamePhase;
   round: number;
   phaseEndsAt: number;
@@ -583,7 +588,7 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
 
   return (
     <main className={`shell game-shell phase-${phase}`} data-phase={phase} data-theme={family} data-family={family}>
-      <PhaseTransitionOverlay phase={phase} mode={mode} pulseKey={phasePulse} />
+      <PhaseTransitionOverlay phase={phase} mode={mode} narratorVoice={snapshot?.narratorVoice ?? "classic"} pulseKey={phasePulse} />
       <PreGameCountdown value={startCountdown} />
       {showShortcuts ? <ShortcutSheet onClose={() => setShowShortcuts(false)} /> : null}
       <section className="grid gap-6 lg:grid-cols-[1fr_0.8fr]">
@@ -704,6 +709,7 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
           {isNightPhase(phase) && privateRole ? (
             <NightActionPanel
               currentUserId={currentUserId}
+              players={players}
               livingPlayers={livingPlayers}
               phase={phase}
               privateRole={privateRole.role}
@@ -720,6 +726,7 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
               currentUserId={currentUserId}
               livingPlayers={livingPlayers}
               voteTally={snapshot?.voteTally ?? []}
+              allowSkipVote={Boolean(snapshot?.allowSkipVote)}
               sendVote={sendVote}
             />
           ) : null}
@@ -926,6 +933,8 @@ function RulesSummary({ snapshot }: { snapshot: GameSnapshot }) {
         <SummaryPill label="Комуникация" value={communicationBg(snapshot.communicationMode)} />
         <SummaryPill label="Темпо" value={tempoBg(snapshot.tempoProfile)} />
         <SummaryPill label="Ден/гласуване" value={`${snapshot.dayDiscussionSeconds}s / ${snapshot.voteSeconds}s`} />
+        <SummaryPill label="Глас" value={NARRATOR_VOICE_LABELS_BG[snapshot.narratorVoice]} />
+        <SummaryPill label="Гласуване" value={`${snapshot.allowSkipVote ? "може пропуск" : "без пропуск"} · ${majorityModeBg(snapshot.majorityMode)}`} />
       </div>
 
       <div className="mt-5 grid gap-3 md:grid-cols-2">
@@ -952,10 +961,12 @@ function RulesSummary({ snapshot }: { snapshot: GameSnapshot }) {
 function PhaseTransitionOverlay({
   phase,
   mode,
+  narratorVoice,
   pulseKey,
 }: {
   phase: GamePhase;
   mode: GameMode;
+  narratorVoice: NarratorVoice;
   pulseKey: number;
 }) {
   if (pulseKey === 0 || phase === "lobby") {
@@ -967,7 +978,7 @@ function PhaseTransitionOverlay({
       <div>
         <span>{phaseSigil(phase)}</span>
         <strong>{phaseBg(phase, mode)}</strong>
-        <small>{phaseNarratorLine(phase, mode)}</small>
+        <small>{phaseNarratorLine(phase, mode, narratorVoice)}</small>
       </div>
     </div>
   );
@@ -1471,6 +1482,7 @@ function PrivateChatPanel({
 
 function NightActionPanel({
   currentUserId,
+  players,
   livingPlayers,
   phase,
   privateRole,
@@ -1481,6 +1493,7 @@ function NightActionPanel({
   sendNightAction,
 }: {
   currentUserId: string;
+  players: PublicPlayer[];
   livingPlayers: PublicPlayer[];
   phase: string;
   privateRole: RoleCode;
@@ -1490,8 +1503,13 @@ function NightActionPanel({
   setSecondTargetId: (value: string) => void;
   sendNightAction: (action: NightActionCommand) => void;
 }) {
-  const defaultTarget = livingPlayers.find((player) => player.userId !== currentUserId)?.userId;
-  const targetId = selectedTargetId || defaultTarget || "";
+  const selectableTargets =
+    privateRole === "medium"
+      ? players.filter((player) => player.playing && !player.alive)
+      : livingPlayers;
+  const defaultTarget = selectableTargets.find((player) => player.userId !== currentUserId)?.userId;
+  const selectedTargetStillAvailable = selectableTargets.some((player) => player.userId === selectedTargetId);
+  const targetId = selectedTargetStillAvailable ? selectedTargetId : defaultTarget || "";
   const secondId = secondTargetId || livingPlayers.find((player) => player.userId !== targetId)?.userId || "";
 
   return (
@@ -1502,18 +1520,23 @@ function NightActionPanel({
       <p className="mt-2 text-sm font-bold text-[#c18a38]">
         Можеш да промениш избора си до края на таймера. Сървърът пази последното изпратено действие.
       </p>
+      {privateRole === "medium" && selectableTargets.length === 0 ? (
+        <p className="mt-3 rounded-2xl border border-[#c18a38]/35 bg-[#c18a38]/10 p-3 text-sm font-bold text-[#ead9ba]">
+          Медиумът няма елиминиран играч, с когото да се свърже тази нощ.
+        </p>
+      ) : null}
 
       <div className="mt-5 grid gap-3 sm:grid-cols-2">
         <select className="input" value={selectedTargetId} onChange={(event) => setSelectedTargetId(event.target.value)}>
           <option value="">Избери цел</option>
-          {livingPlayers.map((player) => (
+          {selectableTargets.map((player) => (
             <option key={player.userId} value={player.userId}>
               {player.displayName}
             </option>
           ))}
         </select>
 
-        {privateRole === "cupid" || privateRole === "blacksmith" ? (
+        {privateRole === "cupid" || privateRole === "lovers" || privateRole === "blacksmith" ? (
           <select className="input" value={secondTargetId} onChange={(event) => setSecondTargetId(event.target.value)}>
             <option value="">{privateRole === "blacksmith" ? "Кой получава меча" : "Втори влюбен"}</option>
             {livingPlayers.map((player) => (
@@ -1543,6 +1566,26 @@ function NightActionPanel({
         {privateRole === "detective" ? (
           <button className="btn btn-primary action-btn ability-investigate" type="button" onClick={() => targetId && sendNightAction({ kind: "check_alignment", targetUserId: targetId })}>
             Разследвай целта
+          </button>
+        ) : null}
+        {privateRole === "informant" ? (
+          <button className="btn btn-primary action-btn ability-investigate" type="button" onClick={() => targetId && sendNightAction({ kind: "check_role", targetUserId: targetId })}>
+            Отвори досие
+          </button>
+        ) : null}
+        {privateRole === "roleblocker" ? (
+          <button className="btn btn-primary action-btn ability-kill-alt" type="button" onClick={() => targetId && sendNightAction({ kind: "roleblock", targetUserId: targetId })}>
+            Блокирай действие
+          </button>
+        ) : null}
+        {privateRole === "lawyer" ? (
+          <button className="btn btn-secondary action-btn ability-bless" type="button" onClick={() => targetId && sendNightAction({ kind: "lawyer_cover", targetUserId: targetId })}>
+            Подготви алиби
+          </button>
+        ) : null}
+        {privateRole === "medium" ? (
+          <button className="btn btn-primary action-btn ability-investigate" type="button" disabled={!targetId} onClick={() => targetId && sendNightAction({ kind: "medium_contact", targetUserId: targetId })}>
+            Свържи се с елиминиран
           </button>
         ) : null}
         {privateRole === "don" ? (
@@ -1599,7 +1642,7 @@ function NightActionPanel({
             Открадни карта
           </button>
         ) : null}
-        {privateRole === "cupid" && phase === "first_night" ? (
+        {(privateRole === "cupid" || privateRole === "lovers") && phase === "first_night" ? (
           <button
             className="btn btn-primary action-btn ability-lovers"
             type="button"
@@ -1620,11 +1663,13 @@ function VotingPanel({
   currentUserId,
   livingPlayers,
   voteTally,
+  allowSkipVote,
   sendVote,
 }: {
   currentUserId: string;
   livingPlayers: PublicPlayer[];
   voteTally: VoteTallyItem[];
+  allowSkipVote: boolean;
   sendVote: (targetUserId: string) => void;
 }) {
   const maxVotes = Math.max(1, ...voteTally.map((item) => item.count));
@@ -1642,6 +1687,11 @@ function VotingPanel({
               {player.displayName}
             </button>
           ))}
+        {allowSkipVote ? (
+          <button className="btn btn-secondary" type="button" onClick={() => sendVote("skip")}>
+            Пропусни глас
+          </button>
+        ) : null}
       </div>
     </section>
   );
@@ -1715,8 +1765,14 @@ function phaseSigil(phase: string) {
   return sigils[phase] ?? "◇";
 }
 
-function phaseNarratorLine(phase: GamePhase, mode: GameMode) {
+function phaseNarratorLine(phase: GamePhase, mode: GameMode, narratorVoice: NarratorVoice = "classic") {
   const mafia = getGameFamily(mode) === "mafia";
+  if (narratorVoice !== "classic") {
+    const voiceLines = narratorVoiceLineBg(narratorVoice, mafia);
+    if (voiceLines[phase]) {
+      return voiceLines[phase];
+    }
+  }
   const lines: Partial<Record<GamePhase, string>> = mafia
     ? {
         role_reveal: "Досиетата се раздават. Градът още не знае кой държи ножа.",
@@ -1741,6 +1797,41 @@ function phaseNarratorLine(phase: GamePhase, mode: GameMode) {
       };
 
   return lines[phase] ?? "Разказвачът обръща следващата страница.";
+}
+
+function narratorVoiceLineBg(voice: NarratorVoice, mafia: boolean): Partial<Record<GamePhase, string>> {
+  if (voice === "old_villager") {
+    return {
+      first_night: "Слушай старите греди. Те винаги знаят кой не спи.",
+      night: "Никой не става по това време без причина.",
+      day_discussion: "Не бързайте с обвиненията. Лъжата обича шум.",
+      voting: "Сега ръката тежи повече от думите.",
+    };
+  }
+  if (voice === "inspector") {
+    return mafia
+      ? {
+          first_night: "Първият протокол започва без свидетели.",
+          night: "Всички алибита ще бъдат проверени сутринта.",
+          day_discussion: "Запишете фактите. После ще останат само версиите.",
+          voting: "Обвинението влиза в делото.",
+        }
+      : {
+          first_night: "Първата нощ се записва като особено рискова.",
+          night: "Движението в селото се наблюдава.",
+          day_discussion: "Съберете показанията преди присъдата.",
+          voting: "Решението трябва да издържи на съмнение.",
+        };
+  }
+  if (voice === "witch") {
+    return {
+      first_night: "Имената кипват като билки в черна вода.",
+      night: "Тъмното не крие всичко. Само това, което още не си готов да видиш.",
+      day_discussion: "Думите оставят следи по-силни от кръв.",
+      voting: "Изберете внимателно. Всяка присъда има вкус.",
+    };
+  }
+  return {};
 }
 
 function roleSigil(role: RoleCode) {
@@ -1917,6 +2008,9 @@ interface ColyseusGameState {
   voteSeconds: number;
   revealRolesOnDeath: boolean;
   loversEnabled: boolean;
+  allowSkipVote: boolean;
+  majorityMode: string;
+  narratorVoice: NarratorVoice;
   phase: GamePhase;
   round: number;
   phaseEndsAt: number;
@@ -1941,6 +2035,9 @@ function toSnapshot(state: ColyseusGameState): GameSnapshot {
     voteSeconds: state.voteSeconds,
     revealRolesOnDeath: state.revealRolesOnDeath,
     loversEnabled: state.loversEnabled,
+    allowSkipVote: state.allowSkipVote,
+    majorityMode: state.majorityMode,
+    narratorVoice: state.narratorVoice,
     phase: state.phase,
     round: state.round,
     phaseEndsAt: state.phaseEndsAt,
@@ -2278,6 +2375,10 @@ function roleWakeHint(role: RoleCode, phase: string, ownPlayer: PublicPlayer | u
         "blacksmith",
         "investigator",
         "stray_cat",
+        "informant",
+        "roleblocker",
+        "lawyer",
+        "medium",
       ].includes(role)
     ) {
       return "Тази фаза може да имаш активно нощно действие.";
@@ -2301,6 +2402,10 @@ function nightActionHelpBg(role: RoleCode) {
     vampire: "Вампирите действат като отделна зла фракция и имат собствена жертва.",
     commissioner: "Проверката казва дали целта е от Мафията, не показва точната роля.",
     detective: "Разследването дава личен резултат според настройките на Мафия.",
+    informant: "Доносникът вижда точна карта, освен ако някой не е прикрит.",
+    roleblocker: "Избраният играч няма да може да изпълни нощното си действие.",
+    lawyer: "Адвокатът прави целта да изглежда чиста пред разследващите.",
+    medium: "Медиумът може да пита вече елиминиран играч каква е била ролята му.",
     seer: "Ясновидката вижда точната роля, но резултатът не е публичен.",
     oracle: "Оракулът проверява дали целта е Върколак или Вампир.",
     witch: "Лечението и отровата са еднократни. Ако ги изразходваш, после вече не са налични.",
@@ -2343,6 +2448,10 @@ function nightInstructionBg(role: RoleCode) {
     vampire: "Вампирите избират жертва",
     commissioner: "Комисарят проверява подозрителен играч",
     detective: "Детективът разследва подозрителен играч",
+    informant: "Доносникът отваря чуждо досие",
+    roleblocker: "Блокиращият спира нощно действие",
+    lawyer: "Адвокатът подготвя алиби",
+    medium: "Медиумът говори с елиминиран играч",
     seer: "Ясновидката вижда тайна роля",
     oracle: "Оракулът проверява заплахата",
     witch: "Вещицата решава дали да лекува или отрови",
@@ -2448,12 +2557,22 @@ function tempoBg(mode: string) {
   return labels[mode] ?? mode;
 }
 
+function majorityModeBg(mode: string) {
+  const labels: Record<string, string> = {
+    simple: "обикновено мнозинство",
+    absolute: "абсолютно мнозинство",
+  };
+
+  return labels[mode] ?? mode;
+}
+
 function winnerBg(winner: string) {
   const labels: Record<string, string> = {
     village: "Селото печели",
     werewolves: "Върколаците печелят",
     vampires: "Вампирите печелят",
     mafia: "Мафията печели",
+    maniac: "Маниакът печели",
     lovers: "Влюбените печелят",
     draw: "Никой не печели",
   };

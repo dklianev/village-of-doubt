@@ -4,6 +4,7 @@ import {
   gameEvents,
   gamePlayers,
   games,
+  user,
   type Database,
 } from "@werewolf/database";
 import type { GameConfig, GamePhase, RoleCode, WinnerTeam } from "@werewolf/shared";
@@ -78,6 +79,8 @@ class DrizzleGamePersistence implements GamePersistence {
   constructor(private readonly db: Database) {}
 
   async ensureGame(input: PersistGameInput): Promise<string | undefined> {
+    await this.ensureUsers([{ userId: input.hostId, displayName: input.hostId }]);
+
     const [row] = await this.db
       .insert(games)
       .values({
@@ -118,6 +121,8 @@ class DrizzleGamePersistence implements GamePersistence {
       return;
     }
 
+    await this.ensureUsers(players);
+
     await this.db.insert(gamePlayers).values(
       players.map((player) => ({
         gameId,
@@ -132,6 +137,12 @@ class DrizzleGamePersistence implements GamePersistence {
   }
 
   async recordEvent(gameId: string, event: PersistEventInput): Promise<void> {
+    await this.ensureUsers(
+      [event.actorId ? { userId: event.actorId, displayName: event.actorId } : null, event.targetId ? { userId: event.targetId, displayName: event.targetId } : null].filter(
+        (item): item is { userId: string; displayName: string } => Boolean(item),
+      ),
+    );
+
     await this.db.insert(gameEvents).values({
       gameId,
       round: event.round,
@@ -155,4 +166,29 @@ class DrizzleGamePersistence implements GamePersistence {
       })
       .where(eq(games.id, gameId));
   }
+
+  private async ensureUsers(players: Array<{ userId: string; displayName: string }>): Promise<void> {
+    if (players.length === 0) {
+      return;
+    }
+
+    const uniquePlayers = [...new Map(players.map((player) => [player.userId, player])).values()];
+    await this.db
+      .insert(user)
+      .values(
+        uniquePlayers.map((player) => ({
+          id: player.userId,
+          name: player.displayName,
+          email: `${sanitizeUserId(player.userId)}@anonymous.local`,
+          emailVerified: false,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })),
+      )
+      .onConflictDoNothing();
+  }
+}
+
+function sanitizeUserId(userId: string) {
+  return userId.toLowerCase().replace(/[^a-z0-9_.-]/g, "_").slice(0, 64) || "anonymous";
 }

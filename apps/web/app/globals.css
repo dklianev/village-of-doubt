@@ -171,6 +171,15 @@ select {
   font: inherit;
 }
 
+input[type="checkbox"] {
+  inline-size: 32px;
+  block-size: 32px;
+  flex: 0 0 32px;
+  margin: 0;
+  accent-color: var(--gold);
+  cursor: pointer;
+}
+
 button,
 a,
 input,
@@ -3993,8 +4002,14 @@ select {
   }
 
   .replay-summary,
-  .replay-event {
+  .replay-event,
+  .friends-layout,
+  .leaderboard-row {
     grid-template-columns: 1fr;
+  }
+
+  .leaderboard-row {
+    justify-items: start;
   }
 
   .landing-tableau {
@@ -4080,6 +4095,191 @@ select {
       linear-gradient(180deg, transparent 0%, rgba(255, 247, 229, 0.12) 54%, rgba(255, 247, 229, 0.95) 100%),
       var(--role-art) center 18% / cover no-repeat;
   }
+}
+
+.utility-shell {
+  position: relative;
+}
+
+.utility-hero {
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, rgba(255, 246, 226, 0.96), rgba(205, 155, 81, 0.2)),
+    var(--texture-paper) center / 560px 560px;
+}
+
+.achievement-hero {
+  background:
+    linear-gradient(135deg, rgba(255, 246, 226, 0.92), rgba(132, 47, 43, 0.16)),
+    var(--texture-paper) center / 560px 560px;
+}
+
+.achievement-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+}
+
+.achievement-card {
+  border: 1px solid rgba(132, 47, 43, 0.18);
+  background: rgba(255, 250, 236, 0.78);
+}
+
+.achievement-card span {
+  display: inline-grid;
+  min-width: 56px;
+  min-height: 56px;
+  place-items: center;
+  border-radius: 999px;
+  background: #842f2b;
+  color: #fff6e5;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.achievement-card h2,
+.achievement-card strong {
+  display: block;
+  margin-top: 14px;
+  color: #221611;
+  font-size: 1.35rem;
+  font-weight: 950;
+}
+
+.achievement-card p {
+  margin-top: 8px;
+  color: #4f3829;
+  line-height: 1.65;
+}
+
+.leaderboard-list {
+  display: grid;
+  gap: 14px;
+}
+
+.leaderboard-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  border-radius: 24px;
+  border: 1px solid rgba(34, 22, 17, 0.1);
+  background: rgba(255, 250, 236, 0.72);
+  padding: 16px;
+}
+
+.leaderboard-rank {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+  border-radius: 18px;
+  background: #221611;
+  color: #fff6e5;
+  font-weight: 950;
+}
+
+.leaderboard-row h2 {
+  color: #221611;
+  font-size: 1.25rem;
+  font-weight: 950;
+}
+
+.leaderboard-row p {
+  margin-top: 4px;
+  color: #4f3829;
+}
+
+.leaderboard-row > strong {
+  color: #842f2b;
+  font-size: 1.55rem;
+}
+
+.utility-empty {
+  display: grid;
+  gap: 16px;
+  justify-items: start;
+  border-radius: 28px;
+  background: rgba(34, 22, 17, 0.08);
+  padding: 28px;
+}
+
+.utility-empty.compact {
+  min-height: 100%;
+}
+
+.utility-empty h2 {
+  color: #221611;
+  font-size: 1.75rem;
+  font-weight: 950;
+}
+
+.utility-empty p {
+  max-width: 60ch;
+  color: #4f3829;
+  line-height: 1.7;
+}
+
+.friends-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.75fr) 1fr;
+  gap: 22px;
+}
+
+.friend-form,
+.friend-list {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+}
+
+.friend-form h2 {
+  color: #221611;
+  font-size: 1.65rem;
+  font-weight: 950;
+}
+
+.friend-form label {
+  display: grid;
+  gap: 8px;
+}
+
+.friend-form label span {
+  color: #842f2b;
+  font-size: 0.78rem;
+  font-weight: 950;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.friend-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-radius: 24px;
+  border: 1px solid rgba(132, 47, 43, 0.16);
+  background: rgba(255, 250, 236, 0.74);
+  padding: 16px;
+}
+
+.friend-card strong {
+  color: #221611;
+  font-size: 1.1rem;
+}
+
+.friend-card p,
+.friend-message {
+  color: #4f3829;
+}
+
+.friend-card button {
+  min-height: 42px;
+  border-radius: 999px;
+  border: 1px solid rgba(132, 47, 43, 0.2);
+  padding: 0 16px;
+  color: #842f2b;
+  font-weight: 900;
 }
 
 @media (max-width: 1100px) {

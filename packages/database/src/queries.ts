@@ -1,5 +1,5 @@
 import { count, desc, eq, inArray } from "drizzle-orm";
-import { gameEvents, games } from "./schema.js";
+import { gameEvents, gamePlayers, games } from "./schema.js";
 import type { Database } from "./client.js";
 
 export interface GameHistorySummary {
@@ -23,6 +23,13 @@ export interface GameTimelineEvent {
   visibility: string;
   payload: unknown;
   createdAt: Date;
+}
+
+export interface LeaderboardEntryRow {
+  displayName: string;
+  role: string;
+  winnerTeam: string | null;
+  endedAt: Date | null;
 }
 
 export async function getRecentGameHistory(db: Database, limit = 20): Promise<GameHistorySummary[]> {
@@ -105,5 +112,20 @@ export async function getGameTimeline(db: Database, gameId: string, limit = 100)
     .from(gameEvents)
     .where(eq(gameEvents.gameId, gameId))
     .orderBy(desc(gameEvents.createdAt))
+    .limit(limit);
+}
+
+export async function getLeaderboardRows(db: Database, limit = 500): Promise<LeaderboardEntryRow[]> {
+  return db
+    .select({
+      displayName: gamePlayers.displayName,
+      role: gamePlayers.role,
+      winnerTeam: games.winnerTeam,
+      endedAt: games.endedAt,
+    })
+    .from(gamePlayers)
+    .innerJoin(games, eq(gamePlayers.gameId, games.id))
+    .where(eq(games.status, "ended"))
+    .orderBy(desc(games.endedAt))
     .limit(limit);
 }

@@ -10,6 +10,10 @@ const players: PrivatePlayerForNight[] = [
   { userId: "seer", role: "seer", alive: true },
   { userId: "witch", role: "witch", alive: true },
   { userId: "healer", role: "healer", alive: true },
+  { userId: "bodyguard", role: "bodyguard", alive: true },
+  { userId: "roleblocker", role: "roleblocker", alive: true },
+  { userId: "lawyer", role: "lawyer", alive: true },
+  { userId: "vigilante", role: "vigilante", alive: true },
   { userId: "priested", role: "ordinary_villager", alive: true, priestBlessed: true },
   { userId: "vampire", role: "vampire", alive: true },
   { userId: "jester", role: "jester", alive: true },
@@ -107,6 +111,49 @@ describe("resolveNight", () => {
     expect(result.checks).toEqual([
       expect.objectContaining({ actorUserId: "seer", targetUserId: "jester", role: "ordinary_villager" }),
     ]);
+  });
+
+  it("lets the roleblocker stop another night action", () => {
+    const result = resolveNight(players, [
+      action("roleblocker", { kind: "roleblock", targetUserId: "vigilante" }),
+      action("vigilante", { kind: "faction_kill", targetUserId: "mafioso" }),
+    ]);
+
+    expect(result.deaths).toEqual([]);
+    expect(result.privateMessages).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          targetUserId: "vigilante",
+          messageBg: "Блокиращият спря нощното ти действие.",
+        }),
+      ]),
+    );
+  });
+
+  it("lets the lawyer cover make an evil target look clean", () => {
+    const result = resolveNight(players, [
+      action("lawyer", { kind: "lawyer_cover", targetUserId: "mafioso" }),
+      action("commissioner", { kind: "check_alignment", targetUserId: "mafioso" }),
+      action("seer", { kind: "check_role", targetUserId: "mafioso" }),
+    ]);
+
+    expect(result.checks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ actorUserId: "commissioner", targetUserId: "mafioso", isEvil: false }),
+        expect.objectContaining({ actorUserId: "seer", targetUserId: "mafioso", role: "civilian" }),
+      ]),
+    );
+  });
+
+  it("makes the bodyguard absorb the death meant for the protected target", () => {
+    const result = resolveNight(players, [
+      action("bodyguard", { kind: "healer_protect", targetUserId: "commissioner" }),
+      action("mafioso", { kind: "faction_kill", targetUserId: "commissioner" }),
+      action("don", { kind: "faction_kill", targetUserId: "commissioner" }),
+    ]);
+
+    expect(result.deaths).toEqual([{ userId: "bodyguard", causeBg: "Загина, докато пазеше друг играч." }]);
+    expect(result.preventedDeaths).toEqual([{ userId: "commissioner", reasonBg: "Бодигардът пое нощната атака." }]);
   });
 });
 

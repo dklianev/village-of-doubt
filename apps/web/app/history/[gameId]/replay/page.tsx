@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createDatabase, getGameHistoryById, getGameTimeline } from "@werewolf/database";
-import { phaseLabelBg, type GameMode, type GamePhase } from "@werewolf/shared";
+import { deriveAchievementsFromEvents, phaseLabelBg, type GameMode, type GamePhase } from "@werewolf/shared";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +38,21 @@ export default async function ReplayPage({ params }: { params: Promise<{ gameId:
       </section>
 
       <section className="replay-timeline mt-6">
+        {replay.achievements.length > 0 ? (
+          <article className="paper-card achievement-unlocks rounded-[2rem] p-7">
+            <p className="section-kicker text-[#842f2b]">отключени моменти</p>
+            <h2 className="mt-2 text-3xl font-black">Постижения от тази игра</h2>
+            <div className="achievement-grid mt-5">
+              {replay.achievements.map((achievement) => (
+                <div key={achievement.id} className="achievement-card">
+                  <span>{achievement.iconBg}</span>
+                  <strong>{achievement.titleBg}</strong>
+                  <p>{achievement.descriptionBg}</p>
+                </div>
+              ))}
+            </div>
+          </article>
+        ) : null}
         {replay.timeline.map((event, index) => (
           <article key={event.id} className={`replay-event event-${event.type}`}>
             <span className="replay-index">{String(index + 1).padStart(2, "0")}</span>
@@ -80,7 +95,8 @@ async function loadReplay(gameId: string) {
       return null;
     }
     const timeline = await getGameTimeline(db, game.id, 300);
-    return { game, timeline: [...timeline].reverse() };
+    const orderedTimeline = [...timeline].reverse();
+    return { game, timeline: orderedTimeline, achievements: deriveAchievementsFromEvents(orderedTimeline) };
   } catch (error) {
     console.error("[replay]", error);
     return null;
@@ -102,6 +118,7 @@ function winnerBg(winner: string | null) {
     werewolves: "Върколаците печелят",
     vampires: "Вампирите печелят",
     mafia: "Мафията печели",
+    maniac: "Маниакът печели",
     lovers: "Влюбените печелят",
     draw: "Равенство",
   };

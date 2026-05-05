@@ -8,13 +8,17 @@ import {
   createGameConfigFromOptions,
   GAME_MODE_DEFINITIONS,
   ROLE_PRESET_LABELS_BG,
+  NARRATOR_VOICE_LABELS_BG,
   getGameFamily,
   getGameModeNameBg,
   getRoleBalanceScore,
   type CommunicationMode,
   type GameFamily,
   type GameMode,
+  type MajorityMode,
   type NarratorMode,
+  type NarratorVoice,
+  type CommissionerResultMode,
   type RoleDistribution,
   type RolePreset,
   type TempoProfile,
@@ -49,6 +53,16 @@ const TEMPO_LABELS: Record<TempoProfile, string> = {
   manual: "Ръчно водене",
 };
 
+const MAJORITY_LABELS: Record<MajorityMode, string> = {
+  simple: "Обикновено мнозинство",
+  absolute: "Абсолютно мнозинство",
+};
+
+const COMMISSIONER_RESULT_LABELS: Record<CommissionerResultMode, string> = {
+  team_only: "Само отбор",
+  exact_role: "Точна роля",
+};
+
 const MANUAL_PRESET_STORAGE_KEY = "werewolf-mafia-manual-role-preset-v1";
 
 export function LobbyCreateClient({
@@ -70,10 +84,18 @@ export function LobbyCreateClient({
   const [rolePreset, setRolePreset] = useState<RolePreset>(defaultRolePreset(initialMode));
   const [communicationMode, setCommunicationMode] = useState<CommunicationMode>("built_in_chat");
   const [narratorMode, setNarratorMode] = useState<NarratorMode>("automatic");
+  const [narratorVoice, setNarratorVoice] = useState<NarratorVoice>("classic");
   const [tempoProfile, setTempoProfile] = useState<TempoProfile>("normal_online");
   const [loversEnabled, setLoversEnabled] = useState(false);
   const [revealRolesOnDeath, setRevealRolesOnDeath] = useState(true);
+  const [allowSkipVote, setAllowSkipVote] = useState(true);
+  const [majorityMode, setMajorityMode] = useState<MajorityMode>("simple");
+  const [autoStart, setAutoStart] = useState(false);
+  const [mafiaNightKill, setMafiaNightKill] = useState(true);
   const [doctorCanSelfProtect, setDoctorCanSelfProtect] = useState(false);
+  const [commissionerResultMode, setCommissionerResultMode] = useState<CommissionerResultMode>("team_only");
+  const [maniacEnabled, setManiacEnabled] = useState(false);
+  const [jesterEnabled, setJesterEnabled] = useState(false);
   const [manualRolesEnabled, setManualRolesEnabled] = useState(false);
   const [manualRoles, setManualRoles] = useState<RoleDistribution>(() =>
     createGameConfigFromOptions({
@@ -93,10 +115,18 @@ export function LobbyCreateClient({
     rolePreset,
     communicationMode,
     narratorMode,
+    narratorVoice,
     tempoProfile,
     loversEnabled,
     revealRolesOnDeath,
+    allowSkipVote,
+    majorityMode,
+    autoStart,
+    mafiaNightKill,
     doctorCanSelfProtect,
+    commissionerResultMode,
+    maniacEnabled,
+    jesterEnabled,
   });
   const config = manualRolesEnabled
     ? createGameConfigFromOptions({
@@ -106,10 +136,18 @@ export function LobbyCreateClient({
         maxPlayers,
         communicationMode,
         narratorMode,
+        narratorVoice,
         tempoProfile,
         loversEnabled,
         revealRolesOnDeath,
+        allowSkipVote,
+        majorityMode,
+        autoStart,
+        mafiaNightKill,
         doctorCanSelfProtect,
+        commissionerResultMode,
+        maniacEnabled,
+        jesterEnabled,
         roles: manualRoles,
       })
     : presetConfig;
@@ -128,7 +166,15 @@ export function LobbyCreateClient({
     loversEnabled,
     rolePreset,
     revealRolesOnDeath,
+    allowSkipVote,
+    majorityMode,
+    autoStart,
+    mafiaNightKill,
     doctorCanSelfProtect,
+    commissionerResultMode,
+    maniacEnabled,
+    jesterEnabled,
+    narratorVoice,
     ...roleQueryOption,
   });
   const lobbyHref = buildRoomHref("/lobby", code, {
@@ -142,7 +188,15 @@ export function LobbyCreateClient({
     loversEnabled,
     rolePreset,
     revealRolesOnDeath,
+    allowSkipVote,
+    majorityMode,
+    autoStart,
+    mafiaNightKill,
     doctorCanSelfProtect,
+    commissionerResultMode,
+    maniacEnabled,
+    jesterEnabled,
+    narratorVoice,
     ...roleQueryOption,
   });
 
@@ -158,6 +212,8 @@ export function LobbyCreateClient({
     setRolePreset(defaultRolePreset(nextMode));
     setTempoProfile(nextMode === "mafia_sport" ? "sport_mafia" : "normal_online");
     setLoversEnabled(false);
+    setManiacEnabled(false);
+    setJesterEnabled(false);
     setManualRolesEnabled(false);
     setManualRoles(
       createGameConfigFromOptions({
@@ -352,6 +408,17 @@ export function LobbyCreateClient({
           </label>
 
           <label className="grid gap-2">
+            <span className="text-xs uppercase tracking-[0.25em] text-[#c18a38]">Глас на Разказвача</span>
+            <select className="input" value={narratorVoice} onChange={(event) => setNarratorVoice(event.target.value as NarratorVoice)}>
+              {Object.entries(NARRATOR_VOICE_LABELS_BG).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="grid gap-2">
             <span className="text-xs uppercase tracking-[0.25em] text-[#c18a38]">Темпо</span>
             <select className="input" value={tempoProfile} onChange={(event) => setTempoProfile(event.target.value as TempoProfile)}>
               {Object.entries(TEMPO_LABELS).map(([value, label]) => (
@@ -373,15 +440,47 @@ export function LobbyCreateClient({
         {family === "mafia" ? (
           <section className="mt-6 grid gap-3 rounded-2xl border border-[#f4e8d1]/15 bg-[#f4e8d1]/10 p-4">
             <h2 className="text-xl font-black">Настройки за Мафия</h2>
+            <Toggle checked={mafiaNightKill} onChange={setMafiaNightKill} label="Нощно убийство от Мафията." />
             <Toggle checked={doctorCanSelfProtect} onChange={setDoctorCanSelfProtect} label="Докторът може да пази себе си." />
+            <label className="grid gap-2">
+              <span className="text-xs uppercase tracking-[0.25em] text-[#c18a38]">Резултат от Комисаря</span>
+              <select
+                className="input"
+                value={commissionerResultMode}
+                onChange={(event) => setCommissionerResultMode(event.target.value as CommissionerResultMode)}
+              >
+                {Object.entries(COMMISSIONER_RESULT_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <Toggle checked={maniacEnabled} onChange={setManiacEnabled} label="Добави Маниак като трета страна, когато preset-ът го позволява." />
+            <Toggle checked={jesterEnabled} onChange={setJesterEnabled} label="Добави Шут с лична победа при дневно елиминиране." />
           </section>
         ) : null}
 
         <section className="mt-6 grid gap-3 rounded-2xl border border-[#f4e8d1]/15 bg-[#f4e8d1]/10 p-4">
           <h2 className="text-xl font-black">Правила и таймери</h2>
           <Toggle checked={revealRolesOnDeath} onChange={setRevealRolesOnDeath} label="Разкриване на ролята при смърт." />
+          <Toggle checked={allowSkipVote} onChange={setAllowSkipVote} label="Позволи пропускане на глас." />
+          <Toggle checked={autoStart} onChange={setAutoStart} label="Автоматичен старт, когато всички са готови." />
+          <label className="grid gap-2">
+            <span className="text-xs uppercase tracking-[0.25em] text-[#c18a38]">Изискване за гласуване</span>
+            <select className="input" value={majorityMode} onChange={(event) => setMajorityMode(event.target.value as MajorityMode)}>
+              {Object.entries(MAJORITY_LABELS).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+            <span className="text-sm font-bold text-[#ead9ba]">
+              Обикновено мнозинство за по-бърза игра или Абсолютно мнозинство за по-строга маса.
+            </span>
+          </label>
           <p className="text-sm font-bold text-[#ead9ba]">
-            Темпото управлява таймерите за ден, нощ и гласуване. Останалите разширени правила са скрити, докато бъдат напълно свързани със сървъра.
+            Темпото управлява таймерите за ден, нощ и гласуване. Видимите настройки тук са свързани със сървъра и се записват в поканата.
           </p>
         </section>
 
@@ -514,7 +613,15 @@ function buildRoomHref(
     loversEnabled: boolean;
     rolePreset: RolePreset;
     revealRolesOnDeath: boolean;
+    allowSkipVote: boolean;
+    majorityMode: MajorityMode;
+    autoStart: boolean;
+    mafiaNightKill: boolean;
     doctorCanSelfProtect: boolean;
+    commissionerResultMode: CommissionerResultMode;
+    maniacEnabled: boolean;
+    jesterEnabled: boolean;
+    narratorVoice: NarratorVoice;
     roles?: RoleDistribution;
   },
 ) {
@@ -528,7 +635,13 @@ function buildRoomHref(
     tempo: options.tempoProfile,
     preset: options.rolePreset,
     reveal: options.revealRolesOnDeath ? "1" : "0",
+    skip: options.allowSkipVote ? "1" : "0",
+    majority: options.majorityMode,
+    autoStart: options.autoStart ? "1" : "0",
+    mafiaKill: options.mafiaNightKill ? "1" : "0",
     doctorSelf: options.doctorCanSelfProtect ? "1" : "0",
+    commissionerResult: options.commissionerResultMode,
+    narratorVoice: options.narratorVoice,
   });
 
   if (options.loversEnabled) {
@@ -536,6 +649,12 @@ function buildRoomHref(
   }
   if (options.roles) {
     params.set("roles", stringifyRolesParam(options.roles));
+  }
+  if (options.maniacEnabled) {
+    params.set("maniac", "1");
+  }
+  if (options.jesterEnabled) {
+    params.set("jester", "1");
   }
 
   return `${base}/${cleanRoomCode(code)}?${params.toString()}`;

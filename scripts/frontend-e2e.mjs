@@ -60,6 +60,7 @@ async function main() {
   await runCheck("roles codex assets and responsiveness", testRolesCodex);
   await runCheck("anonymous entry basics", testAnonymousEntry);
   await runCheck("history screen basics", testHistoryScreen);
+  await runCheck("achievements, leaderboard and friends screens", testUtilityPages);
   await runCheck("single-player live play screen", testSinglePlayScreen);
   await runCheck("six-client lobby starts a real game", testSixClientGameStart);
 
@@ -147,6 +148,11 @@ async function testLobbyModeFiltering() {
     await manualRoles.locator('input[type="checkbox"]').check();
     await expectTextIn(manualRoles, "Кръстник");
     await expectTextIn(manualRoles, "Мафиот");
+    await expectText(page, "Нощно убийство от Мафията");
+    await expectText(page, "Абсолютно мнозинство");
+    await expectText(page, "Маниак");
+    await expectText(page, "Шут");
+    await expectText(page, "Глас на Разказвача");
     await expectNoTextIn(manualRoles, "Върколак");
     await assertNoHorizontalOverflow(page, "mafia lobby");
     watcher.assertClean();
@@ -165,8 +171,13 @@ async function testInviteLobbyCopy() {
     );
     await expectText(page, "Покана за масата");
     await expectText(page, "досие към задната стая");
+    await expectText(page, "Наблюдавай");
     await expectNoText(page, "маршрут до площада");
     await assertLocatorAttribute(page.locator("main").first(), "data-family", "mafia", "mafia invite theme");
+    const spectatorHref = await page.getByRole("link", { name: "Наблюдавай" }).getAttribute("href");
+    if (!spectatorHref?.includes("spectator=1")) {
+      throw new Error("Линкът за наблюдател не подава spectator=1.");
+    }
 
     await goto(
       page,
@@ -220,6 +231,7 @@ async function testAnonymousEntry() {
   try {
     await goto(page, "/mafia/join/ABCD12", "anonymous join");
     await expectText(page, "Влез с име");
+    await expectText(page, "Влез като наблюдател");
     await expectNoText(page, "Регистрация");
     await page.getByRole("textbox", { name: "Потребителско име" }).fill("Плейрайт Играч");
     await expectInputValue(page.getByRole("textbox", { name: "Код на стая" }), "ABCD12");
@@ -239,6 +251,30 @@ async function testHistoryScreen() {
     await expectText(page, "Завършени игри");
     await assertNoHorizontalOverflow(page, "history screen");
     await assertCssBackgroundImagesLoaded(page, "history screen");
+    watcher.assertClean();
+  } finally {
+    await close();
+  }
+}
+
+async function testUtilityPages() {
+  const { page, watcher, close } = await newPage("utility-pages", viewports.desktop);
+  try {
+    await goto(page, "/achievements", "achievements screen");
+    await expectText(page, "Малките легенди");
+    await expectText(page, "Първа кръв");
+    await assertCssBackgroundImagesLoaded(page, "achievements screen");
+
+    await goto(page, "/leaderboard", "leaderboard screen");
+    await expectText(page, "Кой оцелява най-често?");
+    await assertNoHorizontalOverflow(page, "leaderboard screen");
+
+    await goto(page, "/friends", "friends screen");
+    await expectText(page, "Покани групата без акаунти");
+    await page.getByRole("textbox", { name: "Име" }).fill("Мария");
+    await page.getByRole("button", { name: "Добави" }).click();
+    await expectText(page, "Приятелят е добавен локално.");
+    await assertNoHorizontalOverflow(page, "friends screen");
     watcher.assertClean();
   } finally {
     await close();
@@ -423,6 +459,8 @@ async function goto(page, path, label) {
   await page.goto(`${baseUrl}${path}`, { waitUntil: "domcontentloaded", timeout: 30_000 });
   await waitForSettled(page);
   await assertNoRuntimeErrorOverlay(page, label);
+  await assertInteractiveTouchTargets(page, label);
+  await assertNoInteractiveOverlap(page, label);
 }
 
 async function waitForSettled(page) {
@@ -562,6 +600,84 @@ async function assertNoOverlap(page, selectorA, selectorB, label) {
   }
   if (result.area > 1) {
     throw new Error(`${label} overlap detected (${result.area}px):\n${JSON.stringify(result, null, 2)}`);
+  }
+}
+
+async function assertInteractiveTouchTargets(page, label) {
+  const failures = await page.evaluate(() => {
+    const selector = 'button, a, input, select, textarea, summary, [role="button"]';
+    return Array.from(document.querySelectorAll(selector))
+      .filter((element) => {
+        const style = window.getComputedStyle(element);
+        const rect = element.getBoundingClientRect();
+        return style.visibility !== "hidden" && style.display !== "none" && rect.width > 0 && rect.height > 0;
+      })
+      .map((element) => {
+        const rect = element.getBoundingClientRect();
+        return {
+          tag: element.tagName.toLowerCase(),
+          text: (element.textContent ?? element.getAttribute("aria-label") ?? "").trim().replace(/\s+/g, " ").slice(0, 80),
+          width: Math.round(rect.width),
+          height: Math.round(rect.height),
+        };
+      })
+      .filter((item) => item.width < 28 || item.height < 28)
+      .slice(0, 12);
+  });
+
+  if (failures.length > 0) {
+    throw new Error(`${label} has cramped interactive targets:\n${JSON.stringify(failures, null, 2)}`);
+  }
+}
+
+async function assertNoInteractiveOverlap(page, label) {
+  const overlaps = await page.evaluate(() => {
+    const selector = 'button, a, input, select, textarea, summary, [role="button"]';
+    const elements = Array.from(document.querySelectorAll(selector)).filter((element) => {
+      const style = window.getComputedStyle(element);
+      const rect = element.getBoundingClientRect();
+      return style.visibility !== "hidden" && style.display !== "none" && rect.width > 0 && rect.height > 0;
+    });
+    const issues = [];
+
+    for (let leftIndex = 0; leftIndex < elements.length; leftIndex += 1) {
+      for (let rightIndex = leftIndex + 1; rightIndex < elements.length; rightIndex += 1) {
+        const left = elements[leftIndex];
+        const right = elements[rightIndex];
+        if (!left || !right || left.contains(right) || right.contains(left)) {
+          continue;
+        }
+        const leftRect = left.getBoundingClientRect();
+        const rightRect = right.getBoundingClientRect();
+        const width = Math.max(0, Math.min(leftRect.right, rightRect.right) - Math.max(leftRect.left, rightRect.left));
+        const height = Math.max(0, Math.min(leftRect.bottom, rightRect.bottom) - Math.max(leftRect.top, rightRect.top));
+        const area = width * height;
+        if (area > 16) {
+          issues.push({
+            area: Math.round(area),
+            first: describe(left, leftRect),
+            second: describe(right, rightRect),
+          });
+        }
+      }
+    }
+
+    return issues.slice(0, 8);
+
+    function describe(element, rect) {
+      return {
+        tag: element.tagName.toLowerCase(),
+        text: (element.textContent ?? element.getAttribute("aria-label") ?? "").trim().replace(/\s+/g, " ").slice(0, 64),
+        top: Math.round(rect.top),
+        left: Math.round(rect.left),
+        width: Math.round(rect.width),
+        height: Math.round(rect.height),
+      };
+    }
+  });
+
+  if (overlaps.length > 0) {
+    throw new Error(`${label} has overlapping interactive elements:\n${JSON.stringify(overlaps, null, 2)}`);
   }
 }
 

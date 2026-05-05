@@ -775,6 +775,181 @@ describe("GameRoom gameplay regressions", () => {
     expect(findPublicPlayer(serverRoom, mayor?.userId)?.alive).toBe(true);
     expect([...serverRoom.state.publicEvents.values()].some((event) => event.messageBg.includes("Кучето пазач"))).toBe(true);
   });
+
+  it("blocks a Mafia night action with the Blocker", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "MBLOCK",
+      mode: "mafia_free",
+      playerCount: 6,
+      tempoProfile: "manual",
+      roles: {
+        roleblocker: 1,
+        vigilante: 1,
+        commissioner: 1,
+        civilian: 2,
+        mafioso: 1,
+      },
+    });
+    const clients = await connectPlayers(colyseus, serverRoom, 6, "mafia-block");
+    const roleClients = await startGameAndCollectRoles(clients);
+    await advanceToFirstNight(clients[0]?.client, serverRoom);
+
+    const blocker = roleClients.find((item) => item.role === "roleblocker");
+    const vigilante = roleClients.find((item) => item.role === "vigilante");
+    const mafioso = roleClients.find((item) => item.role === "mafioso");
+    expect(blocker && vigilante && mafioso).toBeTruthy();
+
+    blocker?.client.send("submitNightAction", { action: { kind: "roleblock", targetUserId: vigilante?.userId } });
+    vigilante?.client.send("submitNightAction", { action: { kind: "faction_kill", targetUserId: mafioso?.userId } });
+    clients[0]?.client.send("narratorAdvance", {});
+    await serverRoom.waitForNextPatch(20);
+
+    expect(findPublicPlayer(serverRoom, mafioso?.userId)?.alive).toBe(true);
+  });
+
+  it("lets the Lawyer make a Mafia target look clean", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "LAWYER",
+      mode: "mafia_free",
+      playerCount: 4,
+      tempoProfile: "manual",
+      roles: {
+        lawyer: 1,
+        commissioner: 1,
+        civilian: 1,
+        mafioso: 1,
+      },
+    });
+    const clients = await connectPlayers(colyseus, serverRoom, 4, "lawyer");
+    const roleClients = await startGameAndCollectRoles(clients);
+    await advanceToFirstNight(clients[0]?.client, serverRoom);
+
+    const lawyer = roleClients.find((item) => item.role === "lawyer");
+    const commissioner = roleClients.find((item) => item.role === "commissioner");
+    const mafioso = roleClients.find((item) => item.role === "mafioso");
+    const result = commissioner?.client.waitForMessage("private_check_result") as Promise<{ isEvil: boolean; messageBg?: string }>;
+
+    lawyer?.client.send("submitNightAction", { action: { kind: "lawyer_cover", targetUserId: mafioso?.userId } });
+    await serverRoom.waitForNextPatch(20);
+    commissioner?.client.send("submitNightAction", { action: { kind: "check_alignment", targetUserId: mafioso?.userId } });
+    await serverRoom.waitForNextPatch(20);
+    clients[0]?.client.send("narratorAdvance", {});
+
+    await expect(result).resolves.toMatchObject({ isEvil: false });
+  });
+
+  it("makes the Bodyguard die instead of the protected Mafia target", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "BODYGD",
+      mode: "mafia_free",
+      playerCount: 4,
+      tempoProfile: "manual",
+      roles: {
+        bodyguard: 1,
+        civilian: 2,
+        mafioso: 1,
+      },
+    });
+    const clients = await connectPlayers(colyseus, serverRoom, 4, "bodyguard");
+    const roleClients = await startGameAndCollectRoles(clients);
+    await advanceToFirstNight(clients[0]?.client, serverRoom);
+
+    const bodyguard = roleClients.find((item) => item.role === "bodyguard");
+    const civilian = roleClients.find((item) => item.role === "civilian");
+    const mafioso = roleClients.find((item) => item.role === "mafioso");
+    bodyguard?.client.send("submitNightAction", { action: { kind: "healer_protect", targetUserId: civilian?.userId } });
+    mafioso?.client.send("submitNightAction", { action: { kind: "faction_kill", targetUserId: civilian?.userId } });
+    clients[0]?.client.send("narratorAdvance", {});
+    await serverRoom.waitForNextPatch(20);
+
+    expect(findPublicPlayer(serverRoom, civilian?.userId)?.alive).toBe(true);
+    expect(findPublicPlayer(serverRoom, bodyguard?.userId)?.alive).toBe(false);
+  });
+
+  it("uses Mafia Mayor as the tie-breaker vote", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "MMAYOR",
+      mode: "mafia_free",
+      playerCount: 4,
+      tempoProfile: "manual",
+      roles: {
+        mafia_mayor: 1,
+        commissioner: 1,
+        civilian: 1,
+        mafioso: 1,
+      },
+    });
+    const clients = await connectPlayers(colyseus, serverRoom, 4, "mafia-mayor");
+    const roleClients = await startGameAndCollectRoles(clients);
+    const mayor = roleClients.find((item) => item.role === "mafia_mayor");
+    const mafioso = roleClients.find((item) => item.role === "mafioso");
+    expect(findPublicPlayer(serverRoom, mayor?.userId)?.mayor).toBe(true);
+
+    await advanceToVoting(clients[0]?.client, serverRoom);
+    mayor?.client.send("submitVote", { targetUserId: mafioso?.userId });
+    mafioso?.client.send("submitVote", { targetUserId: mayor?.userId });
+    clients[0]?.client.send("narratorAdvance", {});
+    await serverRoom.waitForNextPatch(20);
+
+    expect(findPublicPlayer(serverRoom, mafioso?.userId)?.alive).toBe(false);
+  });
+
+  it("supports skip votes and absolute-majority no-elimination", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "SKIP01",
+      mode: "mafia_free",
+      playerCount: 4,
+      tempoProfile: "manual",
+      allowSkipVote: true,
+      majorityMode: "absolute",
+      roles: {
+        commissioner: 1,
+        civilian: 2,
+        mafioso: 1,
+      },
+    });
+    const clients = await connectPlayers(colyseus, serverRoom, 4, "skip-vote");
+    const roleClients = await startGameAndCollectRoles(clients);
+    const mafioso = roleClients.find((item) => item.role === "mafioso");
+    await advanceToVoting(clients[0]?.client, serverRoom);
+
+    roleClients[0]?.client.send("submitVote", { targetUserId: mafioso?.userId });
+    roleClients[1]?.client.send("submitVote", { targetUserId: "skip" });
+    clients[0]?.client.send("narratorAdvance", {});
+    await serverRoom.waitForNextPatch(20);
+
+    expect(findPublicPlayer(serverRoom, mafioso?.userId)?.alive).toBe(true);
+    expect([...serverRoom.state.publicEvents.values()].some((event) => event.messageBg.includes("абсолютно мнозинство"))).toBe(true);
+  });
+
+  it("allows spectators to join a locked room without receiving a private role", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "SPEC01",
+      mode: "mafia_free",
+      playerCount: 4,
+      tempoProfile: "manual",
+      roles: {
+        commissioner: 1,
+        civilian: 2,
+        mafioso: 1,
+      },
+    });
+    const clients = await connectPlayers(colyseus, serverRoom, 4, "spectator-game");
+    await startGameAndCollectRoles(clients);
+
+    const spectator = await colyseus.connectTo(serverRoom, {
+      code: serverRoom.state.code,
+      userId: "spectator-1",
+      displayName: "Наблюдател",
+      spectator: true,
+    });
+    const roleMessage = spectator.waitForMessage("private_role", 150) as Promise<unknown>;
+    const publicSpectator = findPublicPlayer(serverRoom, "spectator-1");
+
+    expect(publicSpectator?.playing).toBe(false);
+    expect(publicSpectator?.alive).toBe(false);
+    await expect(roleMessage).rejects.toThrow("timed out");
+  });
 });
 
 async function connectPlayers(

@@ -5,6 +5,7 @@ import type {
   MajorityMode,
   MayorMode,
   NarratorMode,
+  NarratorVoice,
   RoleCode,
   RoleDistribution,
   RolePreset,
@@ -27,6 +28,7 @@ const MAJORITY_MODES: MajorityMode[] = ["simple", "absolute"];
 const WEREWOLF_VARIANTS: WerewolfVariant[] = ["werewolves_vs_village", "vampires_vs_village", "three_teams"];
 const MAYOR_MODES: MayorMode[] = ["secret_role", "public_vote"];
 const COMMISSIONER_RESULT_MODES: CommissionerResultMode[] = ["team_only", "exact_role"];
+const NARRATOR_VOICES: NarratorVoice[] = ["classic", "old_villager", "inspector", "witch"];
 
 export function parseRoomCreateOptions(searchParams: RoomSearchParams = {}): CreateRoomOptions {
   const mode = first(searchParams.mode);
@@ -39,6 +41,7 @@ export function parseRoomCreateOptions(searchParams: RoomSearchParams = {}): Cre
   const variant = first(searchParams.variant);
   const mayorMode = first(searchParams.mayorMode);
   const commissionerResult = first(searchParams.commissionerResult);
+  const narratorVoice = first(searchParams.narratorVoice);
   const roomName = first(searchParams.roomName);
   const roles = parseRolesParam(first(searchParams.roles));
   const players = Number(first(searchParams.players));
@@ -71,6 +74,8 @@ export function parseRoomCreateOptions(searchParams: RoomSearchParams = {}): Cre
       : {}),
     ...(first(searchParams.maniac) === "1" ? { maniacEnabled: true } : {}),
     ...(first(searchParams.jester) === "1" ? { jesterEnabled: true } : {}),
+    ...(isOneOf(narratorVoice, NARRATOR_VOICES) ? { narratorVoice } : {}),
+    ...(first(searchParams.spectator) === "1" ? { spectator: true } : {}),
     ...(roles ? { roles } : {}),
   };
 }
@@ -149,6 +154,12 @@ export function roomOptionsToQuery(options: CreateRoomOptions) {
   }
   if (options.jesterEnabled) {
     params.set("jester", "1");
+  }
+  if (options.narratorVoice) {
+    params.set("narratorVoice", options.narratorVoice);
+  }
+  if (options.spectator) {
+    params.set("spectator", "1");
   }
   if (options.roles) {
     params.set("roles", stringifyRolesParam(options.roles));

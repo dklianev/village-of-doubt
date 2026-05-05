@@ -80,7 +80,7 @@ export const games = pgTable(
     rulesetVersion: text("ruleset_version").notNull(),
     status: text("status", { enum: ["lobby", "active", "ended"] }).notNull().default("lobby"),
     winnerTeam: text("winner_team", {
-      enum: ["village", "werewolves", "vampires", "mafia", "lovers", "draw"],
+      enum: ["village", "werewolves", "vampires", "mafia", "maniac", "lovers", "draw"],
     }),
     startedAt: timestamp("started_at"),
     endedAt: timestamp("ended_at"),

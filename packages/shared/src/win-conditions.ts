@@ -1,6 +1,6 @@
 import { getRoleTeam, type RoleCode } from "./roles.js";
 
-export type WinnerTeam = "village" | "werewolves" | "vampires" | "mafia" | "lovers" | "draw";
+export type WinnerTeam = "village" | "werewolves" | "vampires" | "mafia" | "maniac" | "lovers" | "draw";
 
 export interface WinPlayerState {
   playerId: string;
@@ -37,7 +37,17 @@ export function evaluateWinCondition(players: WinPlayerState[]): WinResult {
   const aliveVampires = alive.filter((player) => getRoleTeam(player.role) === "vampires").length;
   const aliveMafia = alive.filter((player) => getRoleTeam(player.role) === "mafia").length;
   const aliveVillage = alive.filter((player) => getRoleTeam(player.role) === "village").length;
+  const aliveManiacs = alive.filter((player) => player.role === "maniac").length;
   const aliveEvil = aliveWerewolves + aliveVampires + aliveMafia;
+  const totalAlive = alive.length;
+
+  if (aliveManiacs > 0 && aliveManiacs >= totalAlive - aliveManiacs) {
+    return { winner: "maniac", reasonBg: "Маниакът остана последната реална заплаха в града." };
+  }
+
+  if (aliveManiacs > 0 && aliveEvil === 0) {
+    return { winner: null, reasonBg: null };
+  }
 
   if (aliveEvil === 0) {
     if (aliveVillage > 0) {
@@ -45,8 +55,6 @@ export function evaluateWinCondition(players: WinPlayerState[]): WinResult {
     }
     return { winner: "draw", reasonBg: "Останаха само неутрални роли без отборна победа." };
   }
-
-  const totalAlive = alive.length;
 
   if (aliveVampires > 0 && aliveVampires >= totalAlive - aliveVampires) {
     return { winner: "vampires", reasonBg: "Вампирите достигнаха паритет с всички останали живи." };

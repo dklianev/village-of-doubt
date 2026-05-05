@@ -45,9 +45,14 @@ export default async function LobbyCodePage({
             <span>код</span>
             <strong>{code}</strong>
           </div>
-          <Link href={`/play/${code}${query}`} className="btn btn-primary">
-            Влез в играта
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link href={`/play/${code}${query}`} className="btn btn-primary">
+              Влез в играта
+            </Link>
+            <Link href={`/play/${code}${withSpectatorQuery(query)}`} className="btn btn-secondary">
+              Наблюдавай
+            </Link>
+          </div>
         </div>
         <div className="invite-scene-card mt-7" aria-hidden="true">
           <span>{inviteSceneLabel}</span>
@@ -62,4 +67,11 @@ export default async function LobbyCodePage({
       </section>
     </main>
   );
+}
+
+function withSpectatorQuery(query: string) {
+  const params = new URLSearchParams(query.startsWith("?") ? query.slice(1) : query);
+  params.set("spectator", "1");
+  const nextQuery = params.toString();
+  return nextQuery ? `?${nextQuery}` : "?spectator=1";
 }

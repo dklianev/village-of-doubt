@@ -27,6 +27,7 @@ export function AnonymousEntryClient({
   const router = useRouter();
   const [displayName, setDisplayName] = useState("");
   const [roomCode, setRoomCode] = useState(cleanRoomCode(initialCode));
+  const [spectator, setSpectator] = useState(false);
   const [error, setError] = useState("");
   const isMafia = family === "mafia";
   const gameRoot = isMafia ? "/mafia" : "/werewolf";
@@ -47,8 +48,11 @@ export function AnonymousEntryClient({
       narrator,
       tempo,
     });
+    if (spectator) {
+      params.set("spectator", "1");
+    }
     return `/play/${roomCode}?${params.toString()}`;
-  }, [communication, mode, narrator, playerCount, roomCode, tempo]);
+  }, [communication, mode, narrator, playerCount, roomCode, spectator, tempo]);
 
   function submit(action: "create" | "join") {
     const nameError = validateDisplayNameBg(displayName);
@@ -95,6 +99,10 @@ export function AnonymousEntryClient({
             onChange={(event) => setRoomCode(cleanRoomCode(event.target.value))}
             placeholder="ABC123"
           />
+        </label>
+        <label className="flex items-center gap-3 rounded-2xl bg-[#842f2b]/8 p-3 font-bold text-[#4f3829]">
+          <input type="checkbox" checked={spectator} onChange={(event) => setSpectator(event.target.checked)} />
+          <span>Влез като наблюдател, без да получаваш роля.</span>
         </label>
       </div>
 

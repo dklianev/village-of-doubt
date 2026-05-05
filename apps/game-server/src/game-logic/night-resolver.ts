@@ -42,16 +42,56 @@ export function resolveNight(
   const privateMessages: NightResolution["privateMessages"] = [];
   const factionKillVotes = new Map<TeamCode, Map<string, number>>();
   const healerProtectedTargets = new Set<string>();
+  const bodyguardProtectedTargets = new Map<string, string>();
   const witchHealedTargets = new Set<string>();
   const witchPoisonedTargets = new Set<string>();
+  const blockedActorIds = new Set<string>();
+  const lawyerCoveredTargets = new Set<string>();
+
+  for (const submission of actions) {
+    const actor = aliveById.get(submission.actorUserId);
+    if (actor?.role === "roleblocker" && submission.action.kind === "roleblock" && aliveById.has(submission.action.targetUserId)) {
+      blockedActorIds.add(submission.action.targetUserId);
+      privateMessages.push({
+        targetUserId: submission.action.targetUserId,
+        messageBg: "Блокиращият спря нощното ти действие.",
+      });
+      privateMessages.push({
+        targetUserId: submission.actorUserId,
+        messageBg: "Избраният играч беше блокиран за тази нощ.",
+      });
+    }
+  }
+
+  for (const submission of actions) {
+    const actor = aliveById.get(submission.actorUserId);
+    if (
+      actor?.role === "lawyer" &&
+      !blockedActorIds.has(submission.actorUserId) &&
+      submission.action.kind === "lawyer_cover" &&
+      aliveById.has(submission.action.targetUserId)
+    ) {
+      lawyerCoveredTargets.add(submission.action.targetUserId);
+      privateMessages.push({
+        targetUserId: submission.actorUserId,
+        messageBg: "Адвокатът подготви чисто алиби за избрания играч.",
+      });
+    }
+  }
 
   for (const submission of actions) {
     const actor = aliveById.get(submission.actorUserId);
     if (!actor) {
       continue;
     }
+    if (blockedActorIds.has(submission.actorUserId)) {
+      continue;
+    }
 
     const action = submission.action;
+    if (blockedActorIds.has(submission.actorUserId) && action.kind !== "roleblock" && action.kind !== "skip") {
+      continue;
+    }
 
     if (action.kind === "faction_kill" && aliveById.has(action.targetUserId)) {
       const team = getRoleTeam(actor.role);
@@ -82,10 +122,8 @@ export function resolveNight(
       checks.push({
         actorUserId: submission.actorUserId,
         targetUserId: action.targetUserId,
-        isEvil:
-          getRoleTeam(target.role) === "mafia" ||
-          getRoleTeam(target.role) === "werewolves" ||
-          getRoleTeam(target.role) === "vampires",
+        isEvil: lawyerCoveredTargets.has(action.targetUserId) ? false : isEvilTeam(getRoleTeam(target.role)),
+        ...(lawyerCoveredTargets.has(action.targetUserId) ? { messageBg: "Проверката изглежда чиста." } : {}),
       });
     }
 
@@ -97,7 +135,8 @@ export function resolveNight(
       checks.push({
         actorUserId: submission.actorUserId,
         targetUserId: action.targetUserId,
-        role: getRoleSeenBySeer(target.role),
+        role: lawyerCoveredTargets.has(action.targetUserId) ? "civilian" : getRoleSeenBySeer(target.role),
+        ...(lawyerCoveredTargets.has(action.targetUserId) ? { messageBg: "Досието е прикрито: целта изглежда като Гражданин." } : {}),
       });
     }
 
@@ -109,7 +148,8 @@ export function resolveNight(
       checks.push({
         actorUserId: submission.actorUserId,
         targetUserId: action.targetUserId,
-        isCommissioner: target.role === "commissioner",
+        isCommissioner: lawyerCoveredTargets.has(action.targetUserId) ? false : target.role === "commissioner",
+        ...(lawyerCoveredTargets.has(action.targetUserId) ? { messageBg: "Адвокатско алиби скри следата." } : {}),
       });
     }
 
@@ -127,7 +167,11 @@ export function resolveNight(
     }
 
     if (action.kind === "healer_protect" && aliveById.has(action.targetUserId)) {
-      healerProtectedTargets.add(action.targetUserId);
+      if (actor.role === "bodyguard") {
+        bodyguardProtectedTargets.set(action.targetUserId, submission.actorUserId);
+      } else {
+        healerProtectedTargets.add(action.targetUserId);
+      }
     }
 
     if (action.kind === "blacksmith_sword" && aliveById.has(action.receiverUserId) && aliveById.has(action.targetUserId)) {
@@ -218,6 +262,9 @@ export function resolveNight(
     preventDeath(delayedDeaths, targetUserId, "Лечителят спря вампирско ухапване.", preventedDeaths);
   }
 
+  applyBodyguardProtection(deaths, bodyguardProtectedTargets, "Бодигардът пое нощната атака.", preventedDeaths);
+  applyBodyguardProtection(delayedDeaths, bodyguardProtectedTargets, "Бодигардът пое вампирското ухапване.", preventedDeaths);
+
   const protectedByPriest: string[] = [];
   for (const player of aliveById.values()) {
     if (player.priestBlessed && deaths.has(player.userId)) {
@@ -271,6 +318,10 @@ function getRoleSeenBySeer(role: RoleCode): RoleCode {
   return role === "jester" ? "ordinary_villager" : role;
 }
 
+function isEvilTeam(team: TeamCode): boolean {
+  return team === "mafia" || team === "werewolves" || team === "vampires";
+}
+
 function isNightThreat(role: RoleCode): boolean {
   const team = getRoleTeam(role);
   return team === "werewolves" || team === "vampires";
@@ -301,6 +352,27 @@ function preventDeath(
   }
   deaths.delete(targetUserId);
   preventedDeaths.push({ userId: targetUserId, reasonBg });
+}
+
+function applyBodyguardProtection(
+  deaths: Map<string, { causeBg: string; sourceTeam?: TeamCode; sourceRole?: RoleCode }>,
+  protectedTargets: Map<string, string>,
+  reasonBg: string,
+  preventedDeaths: NightResolution["preventedDeaths"],
+) {
+  for (const [targetUserId, bodyguardUserId] of protectedTargets.entries()) {
+    if (!deaths.has(targetUserId) || targetUserId === bodyguardUserId) {
+      continue;
+    }
+    deaths.delete(targetUserId);
+    preventedDeaths.push({ userId: targetUserId, reasonBg });
+    if (!deaths.has(bodyguardUserId)) {
+      deaths.set(bodyguardUserId, {
+        causeBg: "Загина, докато пазеше друг играч.",
+        sourceRole: "bodyguard",
+      });
+    }
+  }
 }
 
 function protectSpecialFactionTargets(
