@@ -119,14 +119,27 @@ function checkBulgarianCopyContracts() {
   const uiFiles = [
     ...listFilesRecursive(path.join(root, "apps/web/app")).filter((file) => /\.(tsx|ts)$/.test(file)).map((file) => `apps/web/app/${file}`),
     ...listFilesRecursive(path.join(root, "apps/web/components")).filter((file) => /\.(tsx|ts)$/.test(file)).map((file) => `apps/web/components/${file}`),
+    "packages/shared/src/games/werewolf/roles.ts",
+    "packages/shared/src/games/werewolf/rules.ts",
+    "packages/shared/src/games/mafia/roles.ts",
+    "packages/shared/src/games/mafia/rules.ts",
   ];
 
   for (const file of uiFiles) {
     const text = readText(file);
-    for (const forbidden of ["Село под съмнение", "Българска Мафия", "Werewolf & Mafia", "Вот"]) {
+    for (const forbidden of ["Село под съмнение", "Българска Мафия", "Werewolf & Mafia", "Вот", "PDF", "pdf", "голямата кутия"]) {
       assert(!text.includes(forbidden), `${file} contains forbidden user-facing copy: ${forbidden}`);
     }
   }
+
+  assert(
+    existsSync(path.join(root, "docs/werewolf-rules-implementation-status.md")),
+    "Werewolf rules implementation status doc should use source-neutral naming.",
+  );
+  assert(
+    !existsSync(path.join(root, "docs/werewolf-pdf-implementation-status.md")),
+    "Old PDF-named Werewolf implementation doc should not remain.",
+  );
 }
 
 function checkLobbyImageContracts() {
@@ -148,6 +161,7 @@ function checkLobbyImageContracts() {
 
 function checkPlayUiContracts() {
   const playClient = readText("apps/web/components/play-room-client.tsx");
+  const css = readText("apps/web/app/globals.css");
 
   for (const contract of [
     "ANONYMOUS_DISPLAY_NAME_KEY",
@@ -177,6 +191,9 @@ function checkPlayUiContracts() {
     liveDefaultIndex >= 0 && cuePreferenceReadIndex >= 0 && liveDefaultIndex < cuePreferenceReadIndex,
     "Live rooms must force silent cues before reading saved cue preferences.",
   );
+  assert(css.includes("bottom: max(12px, env(safe-area-inset-bottom))"), "Mobile night action sheet must respect safe-area.");
+  assert(css.includes("max-height: calc(100dvh - 96px)"), "Mobile night action sheet must be height-constrained.");
+  assert(css.includes("overscroll-behavior: contain"), "Mobile night action sheet must contain scroll bounce.");
 }
 
 function checkProductionGuardContracts() {
@@ -184,6 +201,7 @@ function checkProductionGuardContracts() {
   const gameRoom = readText("apps/game-server/src/rooms/GameRoom.ts");
   const gameTokenRoute = readText("apps/web/app/api/game-token/route.ts");
   const proxy = readText("apps/web/proxy.ts");
+  const caddyfile = readText("Caddyfile");
 
   assert(gameConfig.includes("cors({ credentials: true, origin: getCorsOrigin() })"), "Game server CORS must be origin-restricted.");
   assert(gameConfig.includes("throw new Error(\"CORS_ORIGIN"), "Production CORS misconfiguration must fail fast.");
@@ -191,9 +209,14 @@ function checkProductionGuardContracts() {
   assert(gameRoom.includes("isProductionSecret"), "GameRoom missing production secret validation helper.");
   assert(gameTokenRoute.includes("process.env.NODE_ENV === \"production\""), "Web game-token route must enforce production token secrets.");
   assert(gameTokenRoute.includes("isProductionSecret"), "Web game-token route missing production secret validation helper.");
+  assert(proxy.includes("export function proxy"), "Next 16 rate limiter must use proxy.ts with export function proxy.");
   assert(proxy.includes("matcher: \"/api/game-token\""), "Game-token proxy must only match the token endpoint.");
+  assert(proxy.includes("process.env.NODE_ENV !== \"production\""), "Game-token proxy must stay production-only.");
   assert(proxy.includes("Retry-After"), "Game-token rate limit must return Retry-After.");
   assert(proxy.includes("Твърде много заявки"), "Game-token rate limit error must be Bulgarian.");
+  assert(caddyfile.includes("Strict-Transport-Security"), "Caddyfile must enable HSTS.");
+  assert(caddyfile.includes("X-Frame-Options \"DENY\""), "Caddyfile must block framing.");
+  assert(caddyfile.includes("Content-Security-Policy"), "Caddyfile must include a baseline CSP.");
 }
 
 function checkProductionEnvChecker() {

@@ -46,7 +46,7 @@ describe("role presets", () => {
     }
   });
 
-  it("keeps advanced werewolf presets playable until the PDF-only roles are wired", () => {
+  it("keeps advanced werewolf presets playable until manual-only roles are wired", () => {
     expect(getWerewolvesMvpPreset(14).vampire).toBeUndefined();
     expect(getWerewolfAdvancedPreset(12).oracle).toBe(1);
     expect(getWerewolfAdvancedPreset(12).priest).toBeUndefined();
@@ -92,7 +92,7 @@ describe("role presets", () => {
     );
   });
 
-  it("validates PDF role dependencies and balance warnings for werewolf", () => {
+  it("validates canonical role dependencies and balance warnings for werewolf", () => {
     expect(
       validateRoleDistributionForMode("werewolves_classic", 8, {
         ordinary_villager: 4,

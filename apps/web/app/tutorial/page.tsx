@@ -32,6 +32,33 @@ const STEPS = [
   },
 ] as const;
 
+const DEMO_PLAYERS = [
+  { name: "Анна", clue: "говори спокойно, но пази един играч" },
+  { name: "Борис", clue: "гласува рано и после сменя темата" },
+  { name: "Виктор", clue: "има проверка, но не я казва директно" },
+  { name: "Галя", clue: "слуша повече, отколкото говори" },
+  { name: "Деян", clue: "обвинява силно без нова причина" },
+] as const;
+
+const DEMO_ROUNDS = [
+  {
+    phase: "Роля",
+    text: "Всеки вижда само собствената си карта. Ако телефоните са близо един до друг, екранът стои ниско и без звук.",
+  },
+  {
+    phase: "Нощ",
+    text: "Активните роли действат по ред. Ако нямаш действие, просто изчакваш следващата фаза.",
+  },
+  {
+    phase: "Ден",
+    text: "Не търси перфектно доказателство. Търси противоречие, необичаен глас или прекалено удобна защита.",
+  },
+  {
+    phase: "Глас",
+    text: "Когато гласуваш, оставяш следа. След играта replay-ът показва кой кого е натискал и кога.",
+  },
+] as const;
+
 export default function TutorialPage() {
   return (
     <main className="shell tutorial-shell">
@@ -65,6 +92,33 @@ export default function TutorialPage() {
             <p>{step.text}</p>
           </article>
         ))}
+      </section>
+
+      <section className="tutorial-demo-table mt-8 rounded-[2rem] p-6" aria-label="Примерна маса">
+        <div>
+          <p className="section-kicker">примерна мини-маса</p>
+          <h2>Петима играчи, една подозрителна вечер</h2>
+          <p>
+            Това не е бот игра и не симулира тайна логика. Това е кратък сценарий, който показва как да мислиш по време
+            на първата истинска стая.
+          </p>
+        </div>
+        <div className="demo-player-grid">
+          {DEMO_PLAYERS.map((player) => (
+            <article key={player.name}>
+              <strong>{player.name}</strong>
+              <span>{player.clue}</span>
+            </article>
+          ))}
+        </div>
+        <ol className="demo-round-list">
+          {DEMO_ROUNDS.map((round) => (
+            <li key={round.phase}>
+              <strong>{round.phase}</strong>
+              <span>{round.text}</span>
+            </li>
+          ))}
+        </ol>
       </section>
 
       <section className="tutorial-table-mode mt-8 rounded-[2rem] p-6">

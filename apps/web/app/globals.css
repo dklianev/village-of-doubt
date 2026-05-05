@@ -3629,6 +3629,7 @@ select {
 
 .night-action-sheet {
   position: relative;
+  isolation: isolate;
 }
 
 .night-action-sheet::before {
@@ -3962,6 +3963,8 @@ select {
   .rules-phase-lab,
   .rules-table-grid,
   .tutorial-board,
+  .demo-player-grid,
+  .demo-round-list,
   .manual-role-grid,
   .manual-role-tile {
     grid-template-columns: 1fr;
@@ -3995,10 +3998,14 @@ select {
 
   .night-action-sheet {
     position: sticky;
-    bottom: 12px;
+    bottom: max(12px, env(safe-area-inset-bottom));
     z-index: 25;
+    max-height: calc(100dvh - 96px);
+    overflow-y: auto;
     border-radius: 2rem 2rem 1.4rem 1.4rem;
+    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
     box-shadow: 0 -18px 70px rgba(0, 0, 0, 0.42);
+    overscroll-behavior: contain;
   }
 
   .replay-summary,
@@ -4280,6 +4287,100 @@ select {
   padding: 0 16px;
   color: #842f2b;
   font-weight: 900;
+}
+
+.tutorial-demo-table {
+  display: grid;
+  gap: 22px;
+  border: 1px solid rgba(248, 236, 210, 0.16);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(209, 154, 66, 0.18), transparent 22rem),
+    linear-gradient(145deg, rgba(18, 10, 8, 0.82), rgba(8, 10, 10, 0.7)),
+    var(--texture-wood) center / 520px 520px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.32);
+}
+
+.tutorial-demo-table h2 {
+  margin-top: 8px;
+  color: #fff6e5;
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  font-weight: 950;
+  line-height: 0.98;
+}
+
+.tutorial-demo-table p {
+  max-width: 68ch;
+  margin-top: 12px;
+  color: #ead9ba;
+  font-weight: 850;
+  line-height: 1.65;
+}
+
+.demo-player-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.demo-player-grid article {
+  min-height: 132px;
+  border: 1px solid rgba(209, 154, 66, 0.22);
+  border-radius: 24px;
+  padding: 16px;
+  background:
+    linear-gradient(180deg, rgba(248, 236, 210, 0.1), rgba(248, 236, 210, 0.035)),
+    radial-gradient(circle at 50% 0%, rgba(158, 52, 45, 0.18), transparent 9rem);
+}
+
+.demo-player-grid strong,
+.demo-player-grid span,
+.demo-round-list strong,
+.demo-round-list span {
+  display: block;
+}
+
+.demo-player-grid strong {
+  color: #fff6e5;
+  font-size: 1.15rem;
+  font-weight: 950;
+}
+
+.demo-player-grid span {
+  margin-top: 10px;
+  color: #ead9ba;
+  font-size: 0.9rem;
+  font-weight: 850;
+  line-height: 1.45;
+}
+
+.demo-round-list {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.demo-round-list li {
+  border: 1px solid rgba(248, 236, 210, 0.13);
+  border-radius: 22px;
+  padding: 16px;
+  background: rgba(248, 236, 210, 0.08);
+}
+
+.demo-round-list strong {
+  color: var(--gold);
+  font-size: 0.78rem;
+  font-weight: 950;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.demo-round-list span {
+  margin-top: 9px;
+  color: #ead9ba;
+  font-weight: 850;
+  line-height: 1.5;
 }
 
 @media (max-width: 1100px) {
