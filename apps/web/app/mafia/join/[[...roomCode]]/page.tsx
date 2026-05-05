@@ -1,4 +1,10 @@
+import type { Metadata } from "next";
 import { AnonymousEntryClient } from "@/components/games/anonymous-entry-client";
+
+export const metadata: Metadata = {
+  title: "Влез в Мафия | Върколак и Мафия",
+  description: "Въведи име и код за частна Мафия стая без регистрация.",
+};
 
 export default async function MafiaJoinPage({ params }: { params: Promise<{ roomCode?: string[] }> }) {
   const { roomCode } = await params;

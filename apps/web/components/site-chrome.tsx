@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { href: "/", label: "Начало" },
   { href: "/werewolf", label: "Върколак" },
   { href: "/mafia", label: "Мафия" },
+  { href: "/tutorial", label: "Първа игра" },
   { href: "/history", label: "История" },
 ];
 

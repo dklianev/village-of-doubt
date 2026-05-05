@@ -43,6 +43,13 @@ export class RoleCountState extends Schema {
   @type("number") count = 0;
 }
 
+export class VoteTallyState extends Schema {
+  @type("string") targetUserId = "";
+  @type("string") targetName = "";
+  @type("number") count = 0;
+  @type("boolean") hasMayorVote = false;
+}
+
 export class GameState extends Schema {
   @type("string") code = "";
   @type("string") mode = "werewolves_classic";
@@ -63,6 +70,7 @@ export class GameState extends Schema {
   @type("string") winnerReasonBg = "";
   @type({ map: PlayerPublicState }) players = new MapSchema<PlayerPublicState>();
   @type([RoleCountState]) roleCounts = new ArraySchema<RoleCountState>();
+  @type([VoteTallyState]) voteTally = new ArraySchema<VoteTallyState>();
   @type([PublicEventState]) publicEvents = new ArraySchema<PublicEventState>();
   @type([ChatMessageState]) publicChat = new ArraySchema<ChatMessageState>();
 }

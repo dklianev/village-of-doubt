@@ -427,6 +427,354 @@ describe("GameRoom gameplay regressions", () => {
     await serverRoom.waitForNextPatch(20);
     expect(serverRoom.state.phase).toBe("resolution");
   });
+
+  it("marks the secret Mayor role and uses the double vote only as a tie-breaker", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "MAYVOT",
+      mode: "werewolves_classic",
+      playerCount: 6,
+      tempoProfile: "manual",
+      roles: {
+        mayor: 1,
+        ordinary_villager: 3,
+        seer: 1,
+        werewolf: 1,
+      },
+    });
+    const clients = await connectPlayers(colyseus, serverRoom, 6, "mayor-vote");
+    const roleClients = await startGameAndCollectRoles(clients);
+    const mayor = roleClients.find((item) => item.role === "mayor");
+    expect(mayor).toBeTruthy();
+
+    const mayorState = [...serverRoom.state.players.values()].find((player) => player.userId === mayor?.userId);
+    expect(mayorState?.mayor).toBe(true);
+
+    await advanceToVoting(clients[0]?.client, serverRoom);
+    const targets = roleClients.filter((item) => item.userId !== mayor?.userId);
+    const mayorTarget = targets[0];
+    const majorityTarget = targets[1];
+    const voters = targets.filter((item) => item.userId !== mayorTarget?.userId && item.userId !== majorityTarget?.userId);
+    expect(mayorTarget).toBeTruthy();
+    expect(majorityTarget).toBeTruthy();
+    expect(voters.length).toBeGreaterThanOrEqual(2);
+
+    mayor?.client.send("submitVote", { targetUserId: mayorTarget?.userId });
+    voters[0]?.client.send("submitVote", { targetUserId: majorityTarget?.userId });
+    voters[1]?.client.send("submitVote", { targetUserId: majorityTarget?.userId });
+    clients[0]?.client.send("narratorAdvance", {});
+    await serverRoom.waitForNextPatch(20);
+
+    const mayorTargetState = [...serverRoom.state.players.values()].find((player) => player.userId === mayorTarget?.userId);
+    const majorityTargetState = [...serverRoom.state.players.values()].find((player) => player.userId === majorityTarget?.userId);
+    expect(mayorTargetState?.alive).toBe(true);
+    expect(majorityTargetState?.alive).toBe(false);
+  });
+
+  it("lets the Mayor resolve a tied vote", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "MAYTIE",
+      mode: "werewolves_classic",
+      playerCount: 6,
+      tempoProfile: "manual",
+      roles: {
+        mayor: 1,
+        ordinary_villager: 3,
+        seer: 1,
+        werewolf: 1,
+      },
+    });
+    const clients = await connectPlayers(colyseus, serverRoom, 6, "mayor-tie");
+    const roleClients = await startGameAndCollectRoles(clients);
+    const mayor = roleClients.find((item) => item.role === "mayor");
+    const targets = roleClients.filter((item) => item.userId !== mayor?.userId);
+    expect(mayor).toBeTruthy();
+    expect(targets.length).toBeGreaterThanOrEqual(2);
+
+    await advanceToVoting(clients[0]?.client, serverRoom);
+    mayor?.client.send("submitVote", { targetUserId: targets[0]?.userId });
+    targets[1]?.client.send("submitVote", { targetUserId: targets[1]?.userId });
+    clients[0]?.client.send("narratorAdvance", {});
+    await serverRoom.waitForNextPatch(20);
+
+    const mayorTargetState = [...serverRoom.state.players.values()].find((player) => player.userId === targets[0]?.userId);
+    const otherTargetState = [...serverRoom.state.players.values()].find((player) => player.userId === targets[1]?.userId);
+    expect(mayorTargetState?.alive).toBe(false);
+    expect(otherTargetState?.alive).toBe(true);
+  });
+
+  it("keeps Червена шапчица and Готвач safe from faction attacks", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "REDCK1",
+      mode: "werewolves_classic",
+      playerCount: 6,
+      tempoProfile: "manual",
+      roles: {
+        red_riding_hood: 1,
+        cook: 1,
+        hunter: 1,
+        ordinary_villager: 1,
+        werewolf: 1,
+        vampire: 1,
+      },
+    });
+    const clients = await connectPlayers(colyseus, serverRoom, 6, "red-cook");
+    const roleClients = await startGameAndCollectRoles(clients);
+    await advanceToFirstNight(clients[0]?.client, serverRoom);
+
+    const red = roleClients.find((item) => item.role === "red_riding_hood");
+    const cook = roleClients.find((item) => item.role === "cook");
+    const werewolf = roleClients.find((item) => item.role === "werewolf");
+    const vampire = roleClients.find((item) => item.role === "vampire");
+    expect(red).toBeTruthy();
+    expect(cook).toBeTruthy();
+    expect(werewolf).toBeTruthy();
+    expect(vampire).toBeTruthy();
+
+    werewolf?.client.send("submitNightAction", {
+      action: { kind: "faction_kill", targetUserId: red?.userId },
+    });
+    await serverRoom.waitForNextPatch(20);
+    vampire?.client.send("submitNightAction", {
+      action: { kind: "faction_kill", targetUserId: cook?.userId },
+    });
+    await serverRoom.waitForNextPatch(20);
+    clients[0]?.client.send("narratorAdvance", {});
+    await serverRoom.waitForNextPatch(20);
+
+    expect(findPublicPlayer(serverRoom, red?.userId)?.alive).toBe(true);
+    expect(findPublicPlayer(serverRoom, cook?.userId)?.alive).toBe(true);
+    expect([...serverRoom.state.publicEvents.values()].some((event) => event.messageBg.includes("Червената шапчица"))).toBe(true);
+    expect([...serverRoom.state.publicEvents.values()].some((event) => event.messageBg.includes("Готвачът"))).toBe(true);
+  });
+
+  it("delays vampire bites until the end of the day", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "VAMPD1",
+      mode: "werewolves_classic",
+      playerCount: 6,
+      tempoProfile: "manual",
+      roles: {
+        ordinary_villager: 5,
+        vampire: 1,
+      },
+    });
+    const clients = await connectPlayers(colyseus, serverRoom, 6, "vampire-delay");
+    const roleClients = await startGameAndCollectRoles(clients);
+    await advanceToFirstNight(clients[0]?.client, serverRoom);
+
+    const vampire = roleClients.find((item) => item.role === "vampire");
+    const target = roleClients.find((item) => item.role === "ordinary_villager");
+    expect(vampire).toBeTruthy();
+    expect(target).toBeTruthy();
+
+    vampire?.client.send("submitNightAction", {
+      action: { kind: "faction_kill", targetUserId: target?.userId },
+    });
+    clients[0]?.client.send("narratorAdvance", {});
+    await serverRoom.waitForNextPatch(20);
+    expect(serverRoom.state.phase).toBe("day_announcement");
+    expect(findPublicPlayer(serverRoom, target?.userId)?.alive).toBe(true);
+
+    await advanceToPhase(clients[0]?.client, serverRoom, "resolution");
+    clients[0]?.client.send("narratorAdvance", {});
+    await serverRoom.waitForNextPatch(20);
+    expect(findPublicPlayer(serverRoom, target?.userId)?.alive).toBe(false);
+  });
+
+  it("resolves Blacksmith, Investigator, Stray Cat and Vampire Hunter advanced actions", async () => {
+    const blacksmithRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "BLACK1",
+      mode: "werewolves_classic",
+      playerCount: 6,
+      tempoProfile: "manual",
+      roles: {
+        blacksmith: 1,
+        ordinary_villager: 4,
+        werewolf: 1,
+      },
+    });
+    const blacksmithClients = await connectPlayers(colyseus, blacksmithRoom, 6, "blacksmith");
+    const blacksmithRoles = await startGameAndCollectRoles(blacksmithClients);
+    await advanceToFirstNight(blacksmithClients[0]?.client, blacksmithRoom);
+    const blacksmith = blacksmithRoles.find((item) => item.role === "blacksmith");
+    const receiver = blacksmithRoles.find((item) => item.role === "ordinary_villager");
+    const werewolf = blacksmithRoles.find((item) => item.role === "werewolf");
+    blacksmith?.client.send("submitNightAction", {
+      action: { kind: "blacksmith_sword", receiverUserId: receiver?.userId, targetUserId: werewolf?.userId },
+    });
+    blacksmithClients[0]?.client.send("narratorAdvance", {});
+    await blacksmithRoom.waitForNextPatch(20);
+    expect(findPublicPlayer(blacksmithRoom, werewolf?.userId)?.alive).toBe(false);
+
+    await colyseus.cleanup();
+    const investigatorRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "INVST1",
+      mode: "werewolves_classic",
+      playerCount: 6,
+      tempoProfile: "manual",
+      roles: {
+        investigator: 1,
+        ordinary_villager: 4,
+        werewolf: 1,
+      },
+    });
+    const investigatorClients = await connectPlayers(colyseus, investigatorRoom, 6, "investigator");
+    const investigatorRoles = await startGameAndCollectRoles(investigatorClients);
+    await advanceToFirstNight(investigatorClients[0]?.client, investigatorRoom);
+    const investigator = investigatorRoles.find((item) => item.role === "investigator");
+    const investigatedWerewolf = investigatorRoles.find((item) => item.role === "werewolf");
+    const checkMessage = investigator?.client.waitForMessage("private_check_result") as Promise<{ messageBg: string }>;
+    investigator?.client.send("submitNightAction", {
+      action: { kind: "investigator_check", targetUserId: investigatedWerewolf?.userId },
+    });
+    investigatorClients[0]?.client.send("narratorAdvance", {});
+    await expect(checkMessage).resolves.toMatchObject({
+      messageBg: expect.stringContaining("гореща"),
+    });
+
+    await colyseus.cleanup();
+    const catRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "CAT001",
+      mode: "werewolves_classic",
+      playerCount: 6,
+      tempoProfile: "manual",
+      roles: {
+        stray_cat: 1,
+        ordinary_villager: 4,
+        werewolf: 1,
+      },
+    });
+    const catClients = await connectPlayers(colyseus, catRoom, 6, "stray-cat");
+    const catRoles = await startGameAndCollectRoles(catClients);
+    await advanceToFirstNight(catClients[0]?.client, catRoom);
+    const cat = catRoles.find((item) => item.role === "stray_cat");
+    const catWerewolf = catRoles.find((item) => item.role === "werewolf");
+    cat?.client.send("submitNightAction", {
+      action: { kind: "stray_cat_choose", targetUserId: catWerewolf?.userId },
+    });
+    catClients[0]?.client.send("narratorAdvance", {});
+    await catRoom.waitForNextPatch(20);
+    expect(findPublicPlayer(catRoom, cat?.userId)?.alive).toBe(false);
+    expect(findPublicPlayer(catRoom, catWerewolf?.userId)?.alive).toBe(false);
+
+    await colyseus.cleanup();
+    const hunterRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "VHUNT1",
+      mode: "werewolves_classic",
+      playerCount: 6,
+      tempoProfile: "manual",
+      roles: {
+        vampire_hunter: 1,
+        ordinary_villager: 4,
+        werewolf: 1,
+      },
+    });
+    const hunterClients = await connectPlayers(colyseus, hunterRoom, 6, "vampire-hunter");
+    const hunterRoles = await startGameAndCollectRoles(hunterClients);
+    await advanceToFirstNight(hunterClients[0]?.client, hunterRoom);
+    const vampireHunter = hunterRoles.find((item) => item.role === "vampire_hunter");
+    const innocent = hunterRoles.find((item) => item.role === "ordinary_villager");
+    vampireHunter?.client.send("submitNightAction", {
+      action: { kind: "faction_kill", targetUserId: innocent?.userId },
+    });
+    hunterClients[0]?.client.send("narratorAdvance", {});
+    await hunterRoom.waitForNextPatch(20);
+    await advanceToPhase(hunterClients[0]?.client, hunterRoom, "night");
+    const disarmedError = vampireHunter?.client.waitForMessage("safe_error") as Promise<{ messageBg: string }>;
+    vampireHunter?.client.send("submitNightAction", {
+      action: { kind: "faction_kill", targetUserId: hunterRoles.find((item) => item.role === "werewolf")?.userId },
+    });
+    await expect(disarmedError).resolves.toMatchObject({
+      messageBg: "Убиецът на вампири изгуби умението си до края на играта.",
+    });
+  });
+
+  it("reports Insomniac neighbor activity without exposing roles", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "INSOM1",
+      mode: "werewolves_classic",
+      playerCount: 6,
+      tempoProfile: "manual",
+      roles: {
+        insomniac: 1,
+        investigator: 1,
+        blacksmith: 1,
+        priest: 1,
+        werewolf: 1,
+        vampire: 1,
+      },
+    });
+    const clients = await connectPlayers(colyseus, serverRoom, 6, "insomniac");
+    const roleClients = await startGameAndCollectRoles(clients);
+    await advanceToFirstNight(clients[0]?.client, serverRoom);
+
+    const insomniac = roleClients.find((item) => item.role === "insomniac");
+    expect(insomniac).toBeTruthy();
+    const livingOrder = roleClients;
+    const insomniacIndex = livingOrder.findIndex((item) => item.userId === insomniac?.userId);
+    const neighbor = livingOrder[(insomniacIndex + 1) % livingOrder.length];
+    const fallbackTarget = livingOrder.find((item) => item.userId !== neighbor?.userId && item.userId !== insomniac?.userId);
+    const result = insomniac?.client.waitForMessage("private_check_result") as Promise<{ messageBg: string; role?: RoleCode }>;
+    submitSimpleAdvancedAction(neighbor, fallbackTarget, livingOrder);
+    clients[0]?.client.send("narratorAdvance", {});
+    await expect(result).resolves.toMatchObject({
+      messageBg: expect.stringContaining("двамата съседни"),
+    });
+  });
+
+  it("reveals Drunk's real role on the second night", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "DRUNK1",
+      mode: "werewolves_classic",
+      playerCount: 6,
+      tempoProfile: "manual",
+      roles: {
+        drunk: 1,
+        ordinary_villager: 4,
+        werewolf: 1,
+      },
+    });
+    const clients = await connectPlayers(colyseus, serverRoom, 6, "drunk");
+    const roleClients = await startGameAndCollectRoles(clients);
+    const drunk = roleClients.find((item) => item.role === "drunk");
+    expect(drunk).toBeTruthy();
+
+    await advanceToFirstNight(clients[0]?.client, serverRoom);
+    clients[0]?.client.send("narratorAdvance", {});
+    await serverRoom.waitForNextPatch(20);
+    const roleUpdate = drunk?.client.waitForMessage("private_role") as Promise<{ role: RoleCode }>;
+    await advanceToPhase(clients[0]?.client, serverRoom, "night");
+    await expect(roleUpdate).resolves.toMatchObject({ role: "ordinary_villager" });
+  });
+
+  it("lets Guard Dog block a public Mayor elimination", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "GDOG01",
+      mode: "werewolves_classic",
+      playerCount: 6,
+      tempoProfile: "manual",
+      roles: {
+        mayor: 1,
+        guard_dog: 1,
+        ordinary_villager: 3,
+        werewolf: 1,
+      },
+    });
+    const clients = await connectPlayers(colyseus, serverRoom, 6, "guard-dog");
+    const roleClients = await startGameAndCollectRoles(clients);
+    const mayor = roleClients.find((item) => item.role === "mayor");
+    expect(mayor).toBeTruthy();
+    await advanceToVoting(clients[0]?.client, serverRoom);
+
+    for (const client of roleClients.filter((item) => item.userId !== mayor?.userId).slice(0, 3)) {
+      client.client.send("submitVote", { targetUserId: mayor?.userId });
+    }
+    clients[0]?.client.send("narratorAdvance", {});
+    await serverRoom.waitForNextPatch(20);
+
+    expect(findPublicPlayer(serverRoom, mayor?.userId)?.alive).toBe(true);
+    expect([...serverRoom.state.publicEvents.values()].some((event) => event.messageBg.includes("Кучето пазач"))).toBe(true);
+  });
 });
 
 async function connectPlayers(
@@ -463,4 +811,55 @@ async function startGameAndCollectRoles(clients: JoinedClient[]): Promise<RoleCl
 
 function waitForPrivateRole(client: ClientRoom<GameRoom, GameState>) {
   return client.waitForMessage("private_role") as Promise<{ role: RoleCode; roleNameBg: string }>;
+}
+
+async function advanceToVoting(client: ClientRoom<GameRoom, GameState> | undefined, room: GameRoom) {
+  while (room.state.phase !== "voting") {
+    client?.send("narratorAdvance", {});
+    await room.waitForNextPatch(20);
+  }
+}
+
+async function advanceToFirstNight(client: ClientRoom<GameRoom, GameState> | undefined, room: GameRoom) {
+  while (room.state.phase !== "first_night") {
+    client?.send("narratorAdvance", {});
+    await room.waitForNextPatch(20);
+  }
+}
+
+async function advanceToPhase(client: ClientRoom<GameRoom, GameState> | undefined, room: GameRoom, phase: string) {
+  while (room.state.phase !== phase) {
+    client?.send("narratorAdvance", {});
+    await room.waitForNextPatch(20);
+  }
+}
+
+function findPublicPlayer(room: GameRoom, userId: string | undefined) {
+  return [...room.state.players.values()].find((player) => player.userId === userId);
+}
+
+function submitSimpleAdvancedAction(
+  actor: RoleClient | undefined,
+  target: RoleClient | undefined,
+  allPlayers: RoleClient[],
+) {
+  if (!actor || !target) {
+    return;
+  }
+  if (actor.role === "investigator") {
+    actor.client.send("submitNightAction", { action: { kind: "investigator_check", targetUserId: target.userId } });
+    return;
+  }
+  if (actor.role === "blacksmith") {
+    const receiver = allPlayers.find((item) => item.userId !== actor.userId && item.userId !== target.userId);
+    actor.client.send("submitNightAction", {
+      action: { kind: "blacksmith_sword", receiverUserId: receiver?.userId, targetUserId: target.userId },
+    });
+    return;
+  }
+  if (actor.role === "priest") {
+    actor.client.send("submitNightAction", { action: { kind: "priest_bless", targetUserId: target.userId } });
+    return;
+  }
+  actor.client.send("submitNightAction", { action: { kind: "faction_kill", targetUserId: target.userId } });
 }

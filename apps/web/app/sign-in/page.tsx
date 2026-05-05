@@ -1,5 +1,11 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { AuthForm } from "@/components/auth-form";
+
+export const metadata: Metadata = {
+  title: "Вход | Върколак и Мафия",
+  description: "Вход за бъдеща история, статистики и публични стаи.",
+};
 
 export default function SignInPage() {
   return (

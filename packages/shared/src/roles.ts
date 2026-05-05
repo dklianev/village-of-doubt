@@ -1,6 +1,6 @@
 import type { GameFamily } from "./game-config.js";
 import { MAFIA_ROLE_DEFINITIONS } from "./games/mafia/roles.js";
-import { TEAM_CODES, type TeamCode } from "./games/shared/types.js";
+import { TEAM_CODES, type RoleDefinition, type TeamCode } from "./games/shared/types.js";
 import { WEREWOLF_ROLE_DEFINITIONS } from "./games/werewolf/roles.js";
 
 export { TEAM_CODES, type TeamCode } from "./games/shared/types.js";
@@ -41,8 +41,20 @@ export function isRoleAvailableInFamily(role: RoleCode, family: GameFamily): boo
   return families.includes(family);
 }
 
+export function getRoleRuntimeStatus(role: RoleCode): "playable" | "manual_only" | "disabled" {
+  return (ROLE_DEFINITIONS[role] as RoleDefinition).runtimeStatus ?? "playable";
+}
+
+export function isRolePlayable(role: RoleCode): boolean {
+  return getRoleRuntimeStatus(role) === "playable";
+}
+
 export function getRolesForFamily(family: GameFamily): RoleCode[] {
   return (Object.keys(ROLE_DEFINITIONS) as RoleCode[]).filter((role) => isRoleAvailableInFamily(role, family));
+}
+
+export function getPlayableRolesForFamily(family: GameFamily): RoleCode[] {
+  return getRolesForFamily(family).filter(isRolePlayable);
 }
 
 export function getRoleAssetKey(role: RoleCode): string {

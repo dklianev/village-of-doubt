@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
+import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
 import { SiteChrome } from "@/components/site-chrome";
 import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? process.env.BETTER_AUTH_URL ?? "http://localhost:3000"),
-  title: "Върколак",
+  title: "Върколак и Мафия",
   description: "Онлайн Върколак и Мафия с тайни роли, частни стаи и авторитетен игрови сървър.",
   icons: {
     icon: [
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
     apple: "/favicon.svg",
   },
   openGraph: {
-    title: "Върколак",
+    title: "Върколак и Мафия",
     description: "Онлайн Върколак и Мафия с тайни роли, частни стаи и авторитетен игрови сървър.",
     images: [{ url: "/game-art/og-preview.png", width: 1024, height: 1024, alt: "Върколак" }],
     locale: "bg_BG",
@@ -21,7 +22,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Върколак",
+    title: "Върколак и Мафия",
     description: "Онлайн Върколак и Мафия с тайни роли, частни стаи и авторитетен игрови сървър.",
     images: ["/game-art/og-preview.png"],
   },
@@ -33,6 +34,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body>
         <SiteChrome />
         {children}
+        <ServiceWorkerRegistration />
       </body>
     </html>
   );

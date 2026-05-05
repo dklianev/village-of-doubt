@@ -1,4 +1,10 @@
+import type { Metadata } from "next";
 import { AnonymousEntryClient } from "@/components/games/anonymous-entry-client";
+
+export const metadata: Metadata = {
+  title: "Влез във Върколак | Върколак и Мафия",
+  description: "Въведи име и код за частно село във Върколак без регистрация.",
+};
 
 export default async function WerewolfJoinPage({ params }: { params: Promise<{ roomCode?: string[] }> }) {
   const { roomCode } = await params;

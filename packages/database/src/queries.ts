@@ -57,6 +57,38 @@ export async function getRecentGameHistory(db: Database, limit = 20): Promise<Ga
   }));
 }
 
+export async function getGameHistoryById(db: Database, gameId: string): Promise<GameHistorySummary | null> {
+  const rows = await db
+    .select({
+      id: games.id,
+      code: games.code,
+      config: games.config,
+      status: games.status,
+      winnerTeam: games.winnerTeam,
+      startedAt: games.startedAt,
+      endedAt: games.endedAt,
+    })
+    .from(games)
+    .where(eq(games.id, gameId))
+    .limit(1);
+
+  const game = rows[0];
+  if (!game) {
+    return null;
+  }
+
+  const eventCounts = await db
+    .select({ value: count() })
+    .from(gameEvents)
+    .where(eq(gameEvents.gameId, game.id))
+    .limit(1);
+
+  return {
+    ...game,
+    eventCount: eventCounts[0]?.value ?? 0,
+  };
+}
+
 export async function getGameTimeline(db: Database, gameId: string, limit = 100): Promise<GameTimelineEvent[]> {
   return db
     .select({

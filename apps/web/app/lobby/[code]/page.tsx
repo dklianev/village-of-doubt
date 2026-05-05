@@ -1,6 +1,19 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { getGameFamily, getGameModeNameBg } from "@werewolf/shared";
 import { parseRoomCreateOptions, roomOptionsToQuery, type RoomSearchParams } from "@/lib/room-options";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ code: string }>;
+}): Promise<Metadata> {
+  const { code } = await params;
+  return {
+    title: `Лоби ${code} | Върколак и Мафия`,
+    description: "Покана за частна стая с отделни настройки за Върколак или Мафия.",
+  };
+}
 
 export default async function LobbyCodePage({
   params,

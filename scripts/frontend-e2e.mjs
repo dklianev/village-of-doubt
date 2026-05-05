@@ -54,6 +54,7 @@ async function main() {
 
   await runCheck("landing desktop layout and theme picker", testLandingDesktop);
   await runCheck("landing mobile layout", testLandingMobile);
+  await runCheck("tutorial and offline shell", testTutorialAndOfflineShell);
   await runCheck("lobby mode filtering and manual roles", testLobbyModeFiltering);
   await runCheck("invite lobby family-specific copy and art shell", testInviteLobbyCopy);
   await runCheck("roles codex assets and responsiveness", testRolesCodex);
@@ -110,6 +111,23 @@ async function testLandingMobile() {
   }
 }
 
+async function testTutorialAndOfflineShell() {
+  const { page, watcher, close } = await newPage("tutorial-offline", viewports.desktop);
+  try {
+    await goto(page, "/tutorial", "tutorial screen");
+    await expectText(page, "Научи масата преди първата нощ.");
+    await expectText(page, "Телефонът е карта, не микрофон.");
+    await assertNoHorizontalOverflow(page, "tutorial screen");
+
+    await goto(page, "/offline", "offline screen");
+    await expectText(page, "Играта чака интернет.");
+    await assertNoHorizontalOverflow(page, "offline screen");
+    watcher.assertClean();
+  } finally {
+    await close();
+  }
+}
+
 async function testLobbyModeFiltering() {
   const { page, watcher, close } = await newPage("lobby-filtering", viewports.desktop);
   try {
@@ -127,7 +145,7 @@ async function testLobbyModeFiltering() {
     await expectInputValue(page.locator("label", { hasText: "Брой играчи" }).locator("input"), "10");
     manualRoles = page.getByTestId("manual-roles-panel");
     await manualRoles.locator('input[type="checkbox"]').check();
-    await expectTextIn(manualRoles, "Дон");
+    await expectTextIn(manualRoles, "Кръстник");
     await expectTextIn(manualRoles, "Мафиот");
     await expectNoTextIn(manualRoles, "Върколак");
     await assertNoHorizontalOverflow(page, "mafia lobby");
@@ -413,11 +431,25 @@ async function waitForSettled(page) {
 }
 
 async function expectText(page, text) {
-  await page.getByText(text, { exact: false }).first().waitFor({ state: "visible", timeout: 10_000 });
+  await waitForVisibleText(page.getByText(text, { exact: false }), text);
 }
 
 async function expectTextIn(locator, text) {
-  await locator.getByText(text, { exact: false }).first().waitFor({ state: "visible", timeout: 10_000 });
+  await waitForVisibleText(locator.getByText(text, { exact: false }), text);
+}
+
+async function waitForVisibleText(locator, text) {
+  const deadline = Date.now() + 10_000;
+  while (Date.now() < deadline) {
+    const count = await locator.count();
+    for (let index = 0; index < count; index += 1) {
+      if (await locator.nth(index).isVisible().catch(() => false)) {
+        return;
+      }
+    }
+    await delay(100);
+  }
+  throw new Error(`Expected visible text not found: ${text}`);
 }
 
 async function expectNoText(page, text) {

@@ -11,22 +11,16 @@ import {
   getGameFamily,
   getGameModeNameBg,
   getRoleBalanceScore,
-  getRolesForFamily,
   type CommunicationMode,
-  type CommissionerResultMode,
   type GameFamily,
   type GameMode,
-  type MajorityMode,
-  type MayorMode,
   type NarratorMode,
-  type RoleCode,
   type RoleDistribution,
   type RolePreset,
-  type RoomVisibility,
   type TempoProfile,
-  type WerewolfVariant,
   validateRoleDistributionForMode,
 } from "@werewolf/shared";
+import { ManualRoleBuilder } from "@/components/manual-role-builder";
 import {
   ANONYMOUS_DISPLAY_NAME_KEY,
   saveAnonymousIdentity,
@@ -36,7 +30,7 @@ import { stringifyRolesParam } from "@/lib/room-options";
 
 const COMMUNICATION_LABELS: Record<CommunicationMode, string> = {
   built_in_chat: "С вграден чат",
-  no_chat: "Без чат (Discord/на живо)",
+  no_chat: "Без чат (външен разговор/на живо)",
   system_only: "Само системни съобщения",
   secret_channels: "Само тайни канали",
 };
@@ -55,6 +49,8 @@ const TEMPO_LABELS: Record<TempoProfile, string> = {
   manual: "Ръчно водене",
 };
 
+const MANUAL_PRESET_STORAGE_KEY = "werewolf-mafia-manual-role-preset-v1";
+
 export function LobbyCreateClient({
   initialMode = "werewolves_classic",
   family: lockedFamily,
@@ -65,31 +61,19 @@ export function LobbyCreateClient({
   const router = useRouter();
   const [displayName, setDisplayName] = useState("");
   const [formError, setFormError] = useState("");
+  const [manualPresetMessage, setManualPresetMessage] = useState("");
   const [code, setCode] = useState(createRoomCode);
   const [roomName, setRoomName] = useState(defaultRoomName(initialMode));
   const [mode, setMode] = useState<GameMode>(initialMode);
   const [playerCount, setPlayerCount] = useState(defaultPlayerCount(initialMode));
   const [maxPlayers, setMaxPlayers] = useState(defaultPlayerCount(initialMode));
-  const [roomVisibility, setRoomVisibility] = useState<RoomVisibility>("private");
   const [rolePreset, setRolePreset] = useState<RolePreset>(defaultRolePreset(initialMode));
   const [communicationMode, setCommunicationMode] = useState<CommunicationMode>("built_in_chat");
   const [narratorMode, setNarratorMode] = useState<NarratorMode>("automatic");
   const [tempoProfile, setTempoProfile] = useState<TempoProfile>("normal_online");
   const [loversEnabled, setLoversEnabled] = useState(false);
   const [revealRolesOnDeath, setRevealRolesOnDeath] = useState(true);
-  const [allowSkipVote, setAllowSkipVote] = useState(true);
-  const [majorityMode, setMajorityMode] = useState<MajorityMode>("simple");
-  const [autoStart, setAutoStart] = useState(false);
-  const [beginnerMode, setBeginnerMode] = useState(false);
-  const [advancedMode, setAdvancedMode] = useState(false);
-  const [werewolfVariant, setWerewolfVariant] = useState<WerewolfVariant>("werewolves_vs_village");
-  const [mayorMode, setMayorMode] = useState<MayorMode>("secret_role");
-  const [promoRolesEnabled, setPromoRolesEnabled] = useState(false);
-  const [mafiaNightKill, setMafiaNightKill] = useState(true);
   const [doctorCanSelfProtect, setDoctorCanSelfProtect] = useState(false);
-  const [commissionerResultMode, setCommissionerResultMode] = useState<CommissionerResultMode>("team_only");
-  const [maniacEnabled, setManiacEnabled] = useState(false);
-  const [jesterEnabled, setJesterEnabled] = useState(false);
   const [manualRolesEnabled, setManualRolesEnabled] = useState(false);
   const [manualRoles, setManualRoles] = useState<RoleDistribution>(() =>
     createGameConfigFromOptions({
@@ -106,26 +90,13 @@ export function LobbyCreateClient({
     roomName,
     playerCount: boundedPlayerCount,
     maxPlayers,
-    roomVisibility,
     rolePreset,
     communicationMode,
     narratorMode,
     tempoProfile,
     loversEnabled,
     revealRolesOnDeath,
-    allowSkipVote,
-    majorityMode,
-    autoStart,
-    beginnerMode,
-    advancedMode,
-    werewolfVariant,
-    mayorMode,
-    promoRolesEnabled,
-    mafiaNightKill,
     doctorCanSelfProtect,
-    commissionerResultMode,
-    maniacEnabled,
-    jesterEnabled,
   });
   const config = manualRolesEnabled
     ? createGameConfigFromOptions({
@@ -133,33 +104,16 @@ export function LobbyCreateClient({
         roomName,
         playerCount: boundedPlayerCount,
         maxPlayers,
-        roomVisibility,
         communicationMode,
         narratorMode,
         tempoProfile,
         loversEnabled,
         revealRolesOnDeath,
-        allowSkipVote,
-        majorityMode,
-        autoStart,
-        beginnerMode,
-        advancedMode,
-        werewolfVariant,
-        mayorMode,
-        promoRolesEnabled,
-        mafiaNightKill,
         doctorCanSelfProtect,
-        commissionerResultMode,
-        maniacEnabled,
-        jesterEnabled,
         roles: manualRoles,
       })
     : presetConfig;
-  const warnings = validateRoleDistributionForMode(mode, config.playerCount, config.roles, {
-    mayorMode,
-    werewolfVariant,
-    promoRolesEnabled,
-  });
+  const warnings = validateRoleDistributionForMode(mode, config.playerCount, config.roles);
   const roleTotal = countRoles(config.roles);
   const balanceScore = getRoleBalanceScore(config.roles);
   const roleQueryOption = manualRolesEnabled ? { roles: config.roles } : {};
@@ -168,26 +122,13 @@ export function LobbyCreateClient({
     roomName,
     playerCount: boundedPlayerCount,
     maxPlayers: Math.max(maxPlayers, boundedPlayerCount),
-    roomVisibility,
     communicationMode,
     narratorMode,
     tempoProfile,
     loversEnabled,
     rolePreset,
     revealRolesOnDeath,
-    allowSkipVote,
-    majorityMode,
-    autoStart,
-    beginnerMode,
-    advancedMode,
-    werewolfVariant,
-    mayorMode,
-    promoRolesEnabled,
-    mafiaNightKill,
     doctorCanSelfProtect,
-    commissionerResultMode,
-    maniacEnabled,
-    jesterEnabled,
     ...roleQueryOption,
   });
   const lobbyHref = buildRoomHref("/lobby", code, {
@@ -195,26 +136,13 @@ export function LobbyCreateClient({
     roomName,
     playerCount: boundedPlayerCount,
     maxPlayers: Math.max(maxPlayers, boundedPlayerCount),
-    roomVisibility,
     communicationMode,
     narratorMode,
     tempoProfile,
     loversEnabled,
     rolePreset,
     revealRolesOnDeath,
-    allowSkipVote,
-    majorityMode,
-    autoStart,
-    beginnerMode,
-    advancedMode,
-    werewolfVariant,
-    mayorMode,
-    promoRolesEnabled,
-    mafiaNightKill,
     doctorCanSelfProtect,
-    commissionerResultMode,
-    maniacEnabled,
-    jesterEnabled,
     ...roleQueryOption,
   });
 
@@ -253,11 +181,47 @@ export function LobbyCreateClient({
     }
   }
 
-  function updateManualRole(role: RoleCode, count: number) {
-    setManualRoles((current) => ({
-      ...current,
-      [role]: Math.max(0, Math.floor(Number.isFinite(count) ? count : 0)),
-    }));
+  function saveManualPreset() {
+    window.localStorage.setItem(
+      `${MANUAL_PRESET_STORAGE_KEY}:${family}`,
+      JSON.stringify({
+        mode,
+        playerCount: boundedPlayerCount,
+        roles: manualRoles,
+        savedAt: Date.now(),
+      }),
+    );
+    setManualPresetMessage("Шаблонът е запазен на това устройство.");
+  }
+
+  function loadManualPreset() {
+    const raw = window.localStorage.getItem(`${MANUAL_PRESET_STORAGE_KEY}:${family}`);
+    if (!raw) {
+      setManualPresetMessage("Няма запазен шаблон за тази игра.");
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(raw) as { mode?: GameMode; playerCount?: number; roles?: RoleDistribution };
+      const savedMode = isGameMode(parsed.mode) && getGameFamily(parsed.mode) === family ? parsed.mode : undefined;
+      if (savedMode) {
+        setMode(savedMode);
+      }
+      if (parsed.playerCount) {
+        setPlayerCount(parsed.playerCount);
+        setMaxPlayers(Math.max(parsed.playerCount, maxPlayers));
+      }
+      const normalized = createGameConfigFromOptions({
+        mode: savedMode ?? mode,
+        playerCount: parsed.playerCount ?? boundedPlayerCount,
+        roles: parsed.roles ?? {},
+      });
+      setManualRoles(normalized.roles);
+      setManualRolesEnabled(true);
+      setManualPresetMessage("Шаблонът е зареден.");
+    } catch {
+      setManualPresetMessage("Запазеният шаблон не може да бъде прочетен.");
+    }
   }
 
   function enterRoom(href: string) {
@@ -351,14 +315,6 @@ export function LobbyCreateClient({
           </label>
 
           <label className="grid gap-2">
-            <span className="text-xs uppercase tracking-[0.25em] text-[#c18a38]">Видимост</span>
-            <select className="input" value={roomVisibility} onChange={(event) => setRoomVisibility(event.target.value as RoomVisibility)}>
-              <option value="private">Частна стая</option>
-              <option value="public">Публична стая</option>
-            </select>
-          </label>
-
-          <label className="grid gap-2">
             <span className="text-xs uppercase tracking-[0.25em] text-[#c18a38]">Preset на ролите</span>
             <select className="input" value={manualRolesEnabled ? "manual" : rolePreset} onChange={(event) => changeRolePreset(event.target.value as RolePreset)}>
               {rolePresetsForMode(mode).map((preset) => (
@@ -410,61 +366,23 @@ export function LobbyCreateClient({
         {mode === "werewolves_classic" ? (
           <section className="mt-6 grid gap-3 rounded-2xl border border-[#f4e8d1]/15 bg-[#f4e8d1]/10 p-4">
             <h2 className="text-xl font-black">Настройки за Върколак</h2>
-            <label className="grid gap-2">
-              <span className="text-xs uppercase tracking-[0.25em] text-[#c18a38]">Вариант</span>
-              <select className="input" value={werewolfVariant} onChange={(event) => setWerewolfVariant(event.target.value as WerewolfVariant)}>
-                <option value="werewolves_vs_village">Върколаци срещу Селяни</option>
-                <option value="vampires_vs_village">Вампири срещу Селяни</option>
-                <option value="three_teams">Върколаци срещу Вампири срещу Селяни</option>
-              </select>
-            </label>
-            <label className="grid gap-2">
-              <span className="text-xs uppercase tracking-[0.25em] text-[#c18a38]">Кмет</span>
-              <select className="input" value={mayorMode} onChange={(event) => setMayorMode(event.target.value as MayorMode)}>
-                <option value="secret_role">Тайна роля</option>
-                <option value="public_vote">Публична карта чрез гласуване</option>
-              </select>
-            </label>
             <Toggle checked={loversEnabled} onChange={setLoversEnabled} label="Включи Купидон и Влюбени, когато разпределението го позволява." />
-            <Toggle checked={promoRolesEnabled} onChange={setPromoRolesEnabled} label="Позволи промо роли: Улична котка и Куче пазач." />
           </section>
         ) : null}
 
         {family === "mafia" ? (
           <section className="mt-6 grid gap-3 rounded-2xl border border-[#f4e8d1]/15 bg-[#f4e8d1]/10 p-4">
             <h2 className="text-xl font-black">Настройки за Мафия</h2>
-            <Toggle checked={mafiaNightKill} onChange={setMafiaNightKill} label="Мафията има нощно убийство." />
             <Toggle checked={doctorCanSelfProtect} onChange={setDoctorCanSelfProtect} label="Докторът може да пази себе си." />
-            <Toggle checked={maniacEnabled} onChange={setManiacEnabled} label="Разреши Маниак като трета страна." />
-            <Toggle checked={jesterEnabled} onChange={setJesterEnabled} label="Разреши Шут." />
-            <label className="grid gap-2">
-              <span className="text-xs uppercase tracking-[0.25em] text-[#c18a38]">Проверка на Комисаря</span>
-              <select
-                className="input"
-                value={commissionerResultMode}
-                onChange={(event) => setCommissionerResultMode(event.target.value as CommissionerResultMode)}
-              >
-                <option value="team_only">Само отбор</option>
-                <option value="exact_role">Точна роля</option>
-              </select>
-            </label>
           </section>
         ) : null}
 
         <section className="mt-6 grid gap-3 rounded-2xl border border-[#f4e8d1]/15 bg-[#f4e8d1]/10 p-4">
           <h2 className="text-xl font-black">Правила и таймери</h2>
           <Toggle checked={revealRolesOnDeath} onChange={setRevealRolesOnDeath} label="Разкриване на ролята при смърт." />
-          <Toggle checked={allowSkipVote} onChange={setAllowSkipVote} label="Разреши пропускане на гласуване." />
-          <Toggle checked={autoStart} onChange={setAutoStart} label="Автоматичен старт при достатъчно играчи." />
-          <Toggle checked={beginnerMode} onChange={setBeginnerMode} label="Режим за начинаещи с повече обяснения." />
-          <Toggle checked={advancedMode} onChange={setAdvancedMode} label="Разширен режим." />
-          <label className="grid gap-2">
-            <span className="text-xs uppercase tracking-[0.25em] text-[#c18a38]">Мнозинство</span>
-            <select className="input" value={majorityMode} onChange={(event) => setMajorityMode(event.target.value as MajorityMode)}>
-              <option value="simple">Обикновено мнозинство</option>
-              <option value="absolute">Абсолютно мнозинство</option>
-            </select>
-          </label>
+          <p className="text-sm font-bold text-[#ead9ba]">
+            Темпото управлява таймерите за ден, нощ и гласуване. Останалите разширени правила са скрити, докато бъдат напълно свързани със сървъра.
+          </p>
         </section>
 
         {narratorMode === "full_human" ? (
@@ -489,37 +407,16 @@ export function LobbyCreateClient({
           </label>
 
           {manualRolesEnabled ? (
-            <div className="mt-5 grid gap-3 md:grid-cols-2">
-              {getRolesForFamily(family).map((role) => (
-                <label key={role} className="grid gap-2 rounded-2xl bg-[#f4e8d1]/10 p-4">
-                  <span className="text-sm font-bold">{ROLE_DEFINITIONS[role].nameBg}</span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      className="btn btn-secondary min-h-0 px-3 py-2"
-                      type="button"
-                      onClick={() => updateManualRole(role, (manualRoles[role] ?? 0) - 1)}
-                    >
-                      -
-                    </button>
-                    <input
-                      className="input w-full text-center"
-                      type="number"
-                      min={0}
-                      max={47}
-                      value={manualRoles[role] ?? 0}
-                      onChange={(event) => updateManualRole(role, Number(event.target.value))}
-                    />
-                    <button
-                      className="btn btn-secondary min-h-0 px-3 py-2"
-                      type="button"
-                      onClick={() => updateManualRole(role, (manualRoles[role] ?? 0) + 1)}
-                    >
-                      +
-                    </button>
-                  </div>
-                </label>
-              ))}
-            </div>
+            <ManualRoleBuilder
+              family={family}
+              playerCount={boundedPlayerCount}
+              roles={manualRoles}
+              warnings={warnings}
+              onRolesChange={setManualRoles}
+              onSavePreset={saveManualPreset}
+              onLoadPreset={loadManualPreset}
+              presetMessage={manualPresetMessage}
+            />
           ) : null}
         </section>
 
@@ -611,26 +508,13 @@ function buildRoomHref(
     roomName: string;
     playerCount: number;
     maxPlayers: number;
-    roomVisibility: RoomVisibility;
     communicationMode: CommunicationMode;
     narratorMode: NarratorMode;
     tempoProfile: TempoProfile;
     loversEnabled: boolean;
     rolePreset: RolePreset;
     revealRolesOnDeath: boolean;
-    allowSkipVote: boolean;
-    majorityMode: MajorityMode;
-    autoStart: boolean;
-    beginnerMode: boolean;
-    advancedMode: boolean;
-    werewolfVariant: WerewolfVariant;
-    mayorMode: MayorMode;
-    promoRolesEnabled: boolean;
-    mafiaNightKill: boolean;
     doctorCanSelfProtect: boolean;
-    commissionerResultMode: CommissionerResultMode;
-    maniacEnabled: boolean;
-    jesterEnabled: boolean;
     roles?: RoleDistribution;
   },
 ) {
@@ -639,22 +523,12 @@ function buildRoomHref(
     roomName: options.roomName,
     players: String(options.playerCount),
     maxPlayers: String(options.maxPlayers),
-    visibility: options.roomVisibility,
     communication: options.communicationMode,
     narrator: options.narratorMode,
     tempo: options.tempoProfile,
     preset: options.rolePreset,
     reveal: options.revealRolesOnDeath ? "1" : "0",
-    skip: options.allowSkipVote ? "1" : "0",
-    majority: options.majorityMode,
-    variant: options.werewolfVariant,
-    mayorMode: options.mayorMode,
-    promo: options.promoRolesEnabled ? "1" : "0",
-    mafiaKill: options.mafiaNightKill ? "1" : "0",
     doctorSelf: options.doctorCanSelfProtect ? "1" : "0",
-    commissionerResult: options.commissionerResultMode,
-    maniac: options.maniacEnabled ? "1" : "0",
-    jester: options.jesterEnabled ? "1" : "0",
   });
 
   if (options.loversEnabled) {
@@ -692,6 +566,10 @@ function availableModes(family: GameFamily): GameMode[] {
   return (Object.keys(GAME_MODE_DEFINITIONS) as GameMode[]).filter((mode) => getGameFamily(mode) === family);
 }
 
+function isGameMode(value: unknown): value is GameMode {
+  return typeof value === "string" && value in GAME_MODE_DEFINITIONS;
+}
+
 function rolePresetsForMode(mode: GameMode): RolePreset[] {
   if (mode === "mafia_sport") {
     return ["sport", "manual"];
@@ -699,7 +577,7 @@ function rolePresetsForMode(mode: GameMode): RolePreset[] {
   if (mode === "mafia_free") {
     return ["free", "manual"];
   }
-  return ["beginner", "classic", "advanced", "wolves_vampires", "manual"];
+  return ["beginner", "classic", "advanced", "manual"];
 }
 
 function playerRange(mode: GameMode) {

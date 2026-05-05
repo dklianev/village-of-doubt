@@ -18,7 +18,14 @@ import {
   type ChatChannel,
 } from "@werewolf/shared";
 import { resolveNight, type SubmittedNightAction } from "../game-logic/night-resolver.js";
-import { ChatMessageState, GameState, PlayerPublicState, PublicEventState, RoleCountState } from "./schemas/GameState.js";
+import {
+  ChatMessageState,
+  GameState,
+  PlayerPublicState,
+  PublicEventState,
+  RoleCountState,
+  VoteTallyState,
+} from "./schemas/GameState.js";
 import { normalizeRoomCode, verifyGameToken } from "@werewolf/shared/server";
 import {
   createGamePersistence,
@@ -40,6 +47,10 @@ interface PrivatePlayerState {
   witchPoisonUsed?: boolean;
   priestBlessUsed?: boolean;
   priestBlessed?: boolean;
+  blacksmithUsed?: boolean;
+  investigatorUsed?: boolean;
+  vampireHunterDisarmed?: boolean;
+  drunkRealRole?: RoleCode;
   lastNightAction?: NightActionCommand;
   lastVoteTarget?: string;
 }
@@ -60,6 +71,17 @@ const PHASE_FLOW: Partial<Record<GamePhase, GamePhase>> = {
 };
 
 export class GameRoom extends Room<{ state: GameState }> {
+  private static liveRooms = new Set<GameRoom>();
+  private static lastWinner: { code: string; winnerTeam: string; winnerReasonBg: string; endedAt: string } | null = null;
+
+  static getRuntimeStats() {
+    return {
+      activeRooms: GameRoom.liveRooms.size,
+      connectedPlayers: [...GameRoom.liveRooms].reduce((sum, room) => sum + room.clients.length, 0),
+      lastWinner: GameRoom.lastWinner,
+    };
+  }
+
   maxClients = 47;
   private config!: GameConfig;
   private clientsByUserId = new Map<string, Client>();
@@ -74,8 +96,10 @@ export class GameRoom extends Room<{ state: GameState }> {
   private pausedSnapshot: { phase: GamePhase; remainingMs: number } | undefined;
   private pendingHunterRevengeUserId: string | undefined;
   private pendingMayorSuccessor = false;
+  private pendingVampireBites = new Map<string, { round: number; causeBg: string }>();
 
   onCreate(options: CreateOptions) {
+    GameRoom.liveRooms.add(this);
     const mode = options.mode ?? "werewolves_classic";
     const playerCount = options.playerCount ?? (mode === "mafia_sport" ? 10 : 8);
     this.config = createGameConfigFromOptions({ ...options, mode, playerCount });
@@ -210,6 +234,7 @@ export class GameRoom extends Room<{ state: GameState }> {
   }
 
   onDispose() {
+    GameRoom.liveRooms.delete(this);
     this.phaseTimer?.clear();
   }
 
@@ -233,6 +258,9 @@ export class GameRoom extends Room<{ state: GameState }> {
           break;
         case "sendChat":
           this.sendChat(client, command.channel, command.message);
+          break;
+        case "typing":
+          this.sendTyping(client, command.channel, command.active);
           break;
         case "setNarrator":
           this.setNarrator(client, command.targetUserId, command.narrator);
@@ -349,7 +377,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       player.mayor = false;
     }
     target.mayor = true;
-    this.addPublicEvent(`${target.displayName} е Кмет. Гласът му се брои двойно.`);
+    this.addPublicEvent(`${target.displayName} е Кмет. Гласът му решава при равенство.`);
     this.persistGameEvent("mayor_assigned", {
       actorId: actor.userId,
       targetId: target.userId,
@@ -414,11 +442,39 @@ export class GameRoom extends Room<{ state: GameState }> {
       this.config.roles,
     );
 
+    if (this.config.mayorMode !== "public_vote") {
+      for (const item of players) {
+        item.mayor = false;
+      }
+    }
+
     for (const assignment of assignments) {
       const privatePlayer = this.privatePlayers.get(assignment.playerId);
       if (privatePlayer) {
         privatePlayer.role = assignment.role;
         privatePlayer.alive = true;
+        privatePlayer.loverId = null;
+        privatePlayer.witchHealUsed = false;
+        privatePlayer.witchPoisonUsed = false;
+        privatePlayer.priestBlessUsed = false;
+        privatePlayer.priestBlessed = false;
+        privatePlayer.blacksmithUsed = false;
+        privatePlayer.investigatorUsed = false;
+        privatePlayer.vampireHunterDisarmed = false;
+        if (assignment.role === "drunk") {
+          privatePlayer.drunkRealRole = chooseDrunkRealRole(this.config.roles);
+        } else {
+          delete privatePlayer.drunkRealRole;
+        }
+        delete privatePlayer.lastNightAction;
+        delete privatePlayer.lastVoteTarget;
+      }
+      if (assignment.role === "mayor") {
+        const publicPlayer = players.find((item) => item.userId === assignment.playerId);
+        if (publicPlayer) {
+          publicPlayer.mayor = true;
+          this.addPublicEvent(`${publicPlayer.displayName} е Кмет по жребий.`);
+        }
       }
     }
 
@@ -517,6 +573,7 @@ export class GameRoom extends Room<{ state: GameState }> {
 
     privatePlayer.lastVoteTarget = targetUserId;
     publicPlayer.hasVoted = true;
+    this.syncVoteTally();
     this.persistGameEvent("vote_submitted", {
       actorId: publicPlayer.userId,
       targetId: targetUserId,
@@ -623,6 +680,41 @@ export class GameRoom extends Room<{ state: GameState }> {
     });
   }
 
+  private sendTyping(client: Client, channel: string, active: boolean) {
+    const player = this.getPublicPlayer(client);
+    const chatChannel = parseChatChannel(channel);
+    if (!chatChannel || this.config.communicationMode === "no_chat" || this.config.communicationMode === "system_only") {
+      return;
+    }
+
+    const payload = {
+      type: "typing",
+      channel: chatChannel,
+      senderUserId: player.userId,
+      senderName: player.displayName,
+      active: Boolean(active),
+      createdAt: Date.now(),
+    } satisfies ServerEvent;
+
+    if (chatChannel === "public") {
+      if (
+        this.config.communicationMode === "built_in_chat" &&
+        this.state.phase === "day_discussion" &&
+        player.playing &&
+        player.alive
+      ) {
+        this.broadcast("typing", payload);
+      }
+      return;
+    }
+
+    const privatePlayer = this.getPrivatePlayer(player.userId);
+    const recipients = this.getPrivateChatRecipients(player, privatePlayer, chatChannel);
+    for (const recipient of recipients) {
+      recipient.send("typing", payload);
+    }
+  }
+
   private getPrivateChatRecipients(player: PlayerPublicState, privatePlayer: PrivatePlayerState, channel: ChatChannel) {
     if (channel === "dead") {
       if (player.alive) {
@@ -687,6 +779,29 @@ export class GameRoom extends Room<{ state: GameState }> {
       if (!this.config.doctorCanSelfProtect) {
         throw new Error("Докторът не може да пази себе си при текущите настройки.");
       }
+    }
+    if (action.kind === "faction_kill" && privatePlayer.role === "vampire_hunter" && privatePlayer.vampireHunterDisarmed) {
+      throw new Error("Убиецът на вампири изгуби умението си до края на играта.");
+    }
+    if (action.kind === "investigator_check" && privatePlayer.investigatorUsed) {
+      throw new Error("Следователката вече използва своята проверка.");
+    }
+    if (action.kind === "blacksmith_sword") {
+      if (privatePlayer.blacksmithUsed) {
+        throw new Error("Ковачът вече изкова своя меч.");
+      }
+      if (action.receiverUserId === publicPlayer.userId) {
+        throw new Error("Ковачът трябва да даде меча на друг играч.");
+      }
+      if (action.receiverUserId === action.targetUserId) {
+        throw new Error("Получилият меч не може да го използва срещу себе си.");
+      }
+      if (!this.findPlayerByUserId(action.receiverUserId)?.alive || !this.findPlayerByUserId(action.targetUserId)?.alive) {
+        throw new Error("Ковашкият меч изисква двама живи играчи.");
+      }
+    }
+    if (action.kind === "stray_cat_choose" && action.targetUserId === publicPlayer.userId) {
+      throw new Error("Уличната котка трябва да избере друг играч.");
     }
     if (action.kind === "witch_heal") {
       privatePlayer.witchHealUsed = true;
@@ -888,6 +1003,16 @@ export class GameRoom extends Room<{ state: GameState }> {
     }
 
     if (this.state.phase === "resolution") {
+      const delayedDeaths = this.applyPendingVampireBites();
+      if (delayedDeaths.length > 0) {
+        if (this.queueHunterRevenge(delayedDeaths)) {
+          return;
+        }
+        if (this.queueMayorSuccessor(delayedDeaths)) {
+          return;
+        }
+      }
+
       const win = this.evaluateWin();
       if (win.winner) {
         this.state.winnerTeam = win.winner;
@@ -916,6 +1041,9 @@ export class GameRoom extends Room<{ state: GameState }> {
         }
       }
     }
+    if (phase !== "voting") {
+      this.state.voteTally.clear();
+    }
 
     const duration = this.getPhaseDurationMs(phase);
     this.state.phaseEndsAt = duration > 0 ? Date.now() + duration : 0;
@@ -927,8 +1055,18 @@ export class GameRoom extends Room<{ state: GameState }> {
       },
     });
 
+    if (phase === "night" && this.state.round === 2) {
+      this.revealDrunkRoles();
+    }
+
     if (phase === "game_over" && this.state.winnerTeam && !this.gameFinishedPersisted) {
       this.gameFinishedPersisted = true;
+      GameRoom.lastWinner = {
+        code: this.state.code,
+        winnerTeam: this.state.winnerTeam,
+        winnerReasonBg: this.state.winnerReasonBg,
+        endedAt: new Date().toISOString(),
+      };
       this.queuePersistence(async () => {
         const gameId = await this.ensurePersistedGame();
         if (gameId) {
@@ -980,8 +1118,13 @@ export class GameRoom extends Room<{ state: GameState }> {
         ...(player.priestBlessed ? { priestBlessed: true } : {}),
       }));
 
-    const resolution = resolveNight(players, [...this.pendingNightActions.values()]);
-    this.consumePriestBlessings(resolution.consumedPriestBlessings);
+    const submittedActions = [...this.pendingNightActions.values()];
+    const resolution = resolveNight(players, submittedActions);
+    this.reportPersistentPriestProtection(resolution.protectedByPriest);
+    this.reportPreventedDeaths(resolution.preventedDeaths);
+    this.rememberDelayedVampireBites(resolution.delayedDeaths);
+    this.sendPrivateNightMessages(resolution.privateMessages);
+    this.sendInsomniacResults(submittedActions);
     this.markNightActionConsumables();
     this.pendingNightActions.clear();
 
@@ -991,9 +1134,11 @@ export class GameRoom extends Room<{ state: GameState }> {
         targetClient.send("private_check_result", {
           type: "private_check_result",
           targetUserId: check.targetUserId,
+          ...(check.targetUserIds ? { targetUserIds: check.targetUserIds } : {}),
           ...(check.role ? { role: check.role } : {}),
           ...(typeof check.isEvil === "boolean" ? { isEvil: check.isEvil } : {}),
           ...(typeof check.isCommissioner === "boolean" ? { isCommissioner: check.isCommissioner } : {}),
+          ...(check.messageBg ? { messageBg: check.messageBg } : {}),
         } satisfies ServerEvent);
       }
     }
@@ -1023,22 +1168,145 @@ export class GameRoom extends Room<{ state: GameState }> {
     this.transitionTo("day_announcement");
   }
 
+  private rememberDelayedVampireBites(deaths: Array<{ userId: string; causeBg: string }>) {
+    for (const death of deaths) {
+      this.pendingVampireBites.set(death.userId, {
+        round: this.state.round,
+        causeBg: death.causeBg,
+      });
+      this.persistGameEvent("vampire_bite_delayed", {
+        targetId: death.userId,
+        visibility: "moderator",
+        payload: { resolvesAtRound: this.state.round },
+      });
+    }
+  }
+
+  private applyPendingVampireBites() {
+    const deaths: Array<{ userId: string; causeBg: string }> = [];
+    for (const [userId, bite] of [...this.pendingVampireBites.entries()]) {
+      if (bite.round > this.state.round) {
+        continue;
+      }
+      this.pendingVampireBites.delete(userId);
+      const privatePlayer = this.privatePlayers.get(userId);
+      const publicPlayer = this.findPlayerByUserId(userId);
+      if (!privatePlayer?.alive || !publicPlayer?.alive) {
+        continue;
+      }
+      deaths.push({ userId, causeBg: bite.causeBg });
+    }
+
+    if (deaths.length === 0) {
+      return [];
+    }
+
+    this.addPublicEvent("Вампирско ухапване застигна жертвата в края на деня.");
+    return this.applyDeaths(deaths);
+  }
+
+  private reportPreventedDeaths(events: Array<{ userId: string; reasonBg: string }>) {
+    const uniqueMessages = new Set<string>();
+    for (const event of events) {
+      uniqueMessages.add(event.reasonBg);
+      this.persistGameEvent("night_death_prevented", {
+        targetId: event.userId,
+        visibility: "moderator",
+        payload: { reasonBg: event.reasonBg },
+      });
+    }
+    for (const message of uniqueMessages) {
+      this.addPublicEvent(message);
+    }
+  }
+
+  private reportPersistentPriestProtection(userIds: string[]) {
+    for (const userId of userIds) {
+      const publicPlayer = this.findPlayerByUserId(userId);
+      this.addPublicEvent("Благословия спря нощна смърт.");
+      this.persistGameEvent("priest_blessing_protected", {
+        targetId: userId,
+        visibility: "public",
+      });
+      const client = this.clientsByUserId.get(userId);
+      if (client && publicPlayer) {
+        client.send("system", {
+          type: "system",
+          messageBg: `Благословията те спаси от нощна смърт, ${publicPlayer.displayName}, и остава върху теб.`,
+        } satisfies ServerEvent);
+      }
+    }
+  }
+
+  private sendPrivateNightMessages(messages: Array<{ targetUserId: string; messageBg: string }>) {
+    for (const message of messages) {
+      const client = this.clientsByUserId.get(message.targetUserId);
+      if (client) {
+        client.send("system", {
+          type: "system",
+          messageBg: message.messageBg,
+        } satisfies ServerEvent);
+      }
+    }
+  }
+
+  private sendInsomniacResults(actions: SubmittedNightAction[]) {
+    const activeNeighborIds = new Set(
+      actions
+        .filter((submission) => submission.action.kind !== "skip")
+        .map((submission) => submission.actorUserId),
+    );
+    const living = [...this.privatePlayers.values()]
+      .filter((player): player is PrivatePlayerState & { role: RoleCode } => Boolean(player.role && player.alive));
+
+    for (const player of living) {
+      if (player.role !== "insomniac") {
+        continue;
+      }
+      const neighbors = this.getAdjacentLivingPlayers(player.userId, living);
+      const someoneMoved = neighbors.some((neighbor) => activeNeighborIds.has(neighbor.userId));
+      const client = this.clientsByUserId.get(player.userId);
+      if (client) {
+        client.send("private_check_result", {
+          type: "private_check_result",
+          targetUserId: player.userId,
+          targetUserIds: neighbors.map((neighbor) => neighbor.userId),
+          messageBg: someoneMoved
+            ? "Неспящата усети движение до себе си: поне един от двамата съседни играчи действа тази нощ."
+            : "Неспящата не усети движение до себе си тази нощ.",
+        } satisfies ServerEvent);
+      }
+    }
+  }
+
   private resolveVoting() {
     const voteCounts = new Map<string, number>();
+    let mayorVoteTarget: string | undefined;
 
     for (const privatePlayer of this.privatePlayers.values()) {
       if (!privatePlayer.alive || !privatePlayer.lastVoteTarget) {
         continue;
       }
       const publicPlayer = this.findPlayerByUserId(privatePlayer.userId);
-      const weight = publicPlayer?.mayor ? 2 : 1;
-      voteCounts.set(privatePlayer.lastVoteTarget, (voteCounts.get(privatePlayer.lastVoteTarget) ?? 0) + weight);
+      voteCounts.set(privatePlayer.lastVoteTarget, (voteCounts.get(privatePlayer.lastVoteTarget) ?? 0) + 1);
+      if (publicPlayer?.mayor) {
+        mayorVoteTarget = privatePlayer.lastVoteTarget;
+      }
       delete privatePlayer.lastVoteTarget;
     }
 
-    const ranked = [...voteCounts.entries()].sort((a, b) => b[1] - a[1]);
-    const [targetUserId, topVotes] = ranked[0] ?? [];
-    const tied = ranked.filter(([, count]) => count === topVotes);
+    let ranked = [...voteCounts.entries()].sort((a, b) => b[1] - a[1]);
+    let [targetUserId, topVotes] = ranked[0] ?? [];
+    let tied = ranked.filter(([, count]) => count === topVotes);
+    let mayorTieBreakerApplied = false;
+
+    if (tied.length > 1 && mayorVoteTarget && tied.some(([userId]) => userId === mayorVoteTarget)) {
+      voteCounts.set(mayorVoteTarget, (voteCounts.get(mayorVoteTarget) ?? 0) + 1);
+      mayorTieBreakerApplied = true;
+      ranked = [...voteCounts.entries()].sort((a, b) => b[1] - a[1]);
+      [targetUserId, topVotes] = ranked[0] ?? [];
+      tied = ranked.filter(([, count]) => count === topVotes);
+    }
 
     const totalVotes = ranked.reduce((sum, [, count]) => sum + count, 0);
     this.persistGameEvent("vote_tally", {
@@ -1047,6 +1315,7 @@ export class GameRoom extends Room<{ state: GameState }> {
         tally: ranked.map(([userId, count]) => ({ userId, count })),
         totalVotes,
         livingCount: [...this.privatePlayers.values()].filter((p) => p.alive).length,
+        mayorTieBreakerApplied,
       },
     });
 
@@ -1054,6 +1323,15 @@ export class GameRoom extends Room<{ state: GameState }> {
       const privatePlayer = this.privatePlayers.get(targetUserId);
       const publicPlayer = this.findPlayerByUserId(targetUserId);
       if (privatePlayer && publicPlayer) {
+        if (this.guardDogBlocksMayorElimination(targetUserId)) {
+          this.addPublicEvent("Кучето пазач спря елиминирането на Кмета.");
+          this.persistGameEvent("guard_dog_protected_mayor", {
+            targetId: targetUserId,
+            visibility: "public",
+          });
+          this.transitionTo("resolution");
+          return;
+        }
         const role = privatePlayer.role ? ` (${getRoleNameBg(privatePlayer.role)})` : "";
         const deaths = this.applyDeaths([
           {
@@ -1190,6 +1468,25 @@ export class GameRoom extends Room<{ state: GameState }> {
       if (submission.action.kind === "witch_poison") {
         privatePlayer.witchPoisonUsed = true;
       }
+      if (submission.action.kind === "blacksmith_sword") {
+        privatePlayer.blacksmithUsed = true;
+      }
+      if (submission.action.kind === "investigator_check") {
+        privatePlayer.investigatorUsed = true;
+      }
+      if (submission.action.kind === "faction_kill" && privatePlayer.role === "vampire_hunter") {
+        const target = this.privatePlayers.get(submission.action.targetUserId);
+        if (target?.role && getRoleTeam(target.role) !== "werewolves" && getRoleTeam(target.role) !== "vampires") {
+          privatePlayer.vampireHunterDisarmed = true;
+          const client = this.clientsByUserId.get(submission.actorUserId);
+          if (client) {
+            client.send("system", {
+              type: "system",
+              messageBg: "Уби невинен. Умението на Убиеца на вампири е изгубено до края на играта.",
+            } satisfies ServerEvent);
+          }
+        }
+      }
     }
   }
 
@@ -1199,10 +1496,9 @@ export class GameRoom extends Room<{ state: GameState }> {
       if (!privatePlayer?.priestBlessed) {
         continue;
       }
-      privatePlayer.priestBlessed = false;
       const publicPlayer = this.findPlayerByUserId(userId);
       this.addPublicEvent("Благословия спря нощна смърт.");
-      this.persistGameEvent("priest_blessing_consumed", {
+      this.persistGameEvent("priest_blessing_protected", {
         targetId: userId,
         visibility: "public",
       });
@@ -1210,7 +1506,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       if (client && publicPlayer) {
         client.send("system", {
           type: "system",
-          messageBg: `Благословията те спаси от нощна смърт, ${publicPlayer.displayName}.`,
+          messageBg: `Благословията те спаси от нощна смърт, ${publicPlayer.displayName}, и остава върху теб.`,
         } satisfies ServerEvent);
       }
     }
@@ -1250,7 +1546,10 @@ export class GameRoom extends Room<{ state: GameState }> {
         privatePlayer.role === "detective" ||
         privatePlayer.role === "vigilante" ||
         privatePlayer.role === "maniac" ||
-        privatePlayer.role === "vampire_hunter" ||
+        (privatePlayer.role === "vampire_hunter" && !privatePlayer.vampireHunterDisarmed) ||
+        (privatePlayer.role === "blacksmith" && !privatePlayer.blacksmithUsed) ||
+        (privatePlayer.role === "investigator" && !privatePlayer.investigatorUsed) ||
+        privatePlayer.role === "stray_cat" ||
         (privatePlayer.role === "priest" && !privatePlayer.priestBlessUsed) ||
         (privatePlayer.role === "thief" && this.state.phase === "first_night") ||
         (privatePlayer.role === "cupid" && this.state.phase === "first_night");
@@ -1373,6 +1672,31 @@ export class GameRoom extends Room<{ state: GameState }> {
     }
   }
 
+  private revealDrunkRoles() {
+    for (const privatePlayer of this.privatePlayers.values()) {
+      if (!privatePlayer.alive || privatePlayer.role !== "drunk" || !privatePlayer.drunkRealRole) {
+        continue;
+      }
+      const newRole = privatePlayer.drunkRealRole;
+      privatePlayer.role = newRole;
+      delete privatePlayer.drunkRealRole;
+      const client = this.clientsByUserId.get(privatePlayer.userId);
+      if (client) {
+        this.sendPrivateRole(client, privatePlayer.userId);
+        client.send("system", {
+          type: "system",
+          messageBg: `Пияницата изтрезня. Истинската ти роля вече е ${getRoleNameBg(newRole)}.`,
+        } satisfies ServerEvent);
+      }
+      this.persistGameEvent("drunk_role_revealed", {
+        actorId: privatePlayer.userId,
+        visibility: "moderator",
+        payload: { role: newRole },
+      });
+    }
+    this.sendNarratorSnapshotsToNarrators();
+  }
+
   private addPublicEvent(messageBg: string) {
     const event = new PublicEventState();
     event.id = crypto.randomUUID();
@@ -1469,6 +1793,34 @@ export class GameRoom extends Room<{ state: GameState }> {
     }
   }
 
+  private syncVoteTally() {
+    this.state.voteTally.clear();
+    const counts = new Map<string, { count: number; hasMayorVote: boolean }>();
+
+    for (const privatePlayer of this.privatePlayers.values()) {
+      if (!privatePlayer.alive || !privatePlayer.lastVoteTarget) {
+        continue;
+      }
+
+      const publicPlayer = this.findPlayerByUserId(privatePlayer.userId);
+      const current = counts.get(privatePlayer.lastVoteTarget) ?? { count: 0, hasMayorVote: false };
+      current.count += 1;
+      current.hasMayorVote = current.hasMayorVote || Boolean(publicPlayer?.mayor);
+      counts.set(privatePlayer.lastVoteTarget, current);
+    }
+
+    const sorted = [...counts.entries()].sort((left, right) => right[1].count - left[1].count);
+    for (const [targetUserId, value] of sorted) {
+      const target = this.findPlayerByUserId(targetUserId);
+      const item = new VoteTallyState();
+      item.targetUserId = targetUserId;
+      item.targetName = target?.displayName ?? "неизвестен играч";
+      item.count = value.count;
+      item.hasMayorVote = value.hasMayorVote;
+      this.state.voteTally.push(item);
+    }
+  }
+
   private getPublicPlayer(client: Client) {
     const auth = getAuth(client);
     const player = auth ? this.findPlayerByUserId(auth.userId) : undefined;
@@ -1488,6 +1840,29 @@ export class GameRoom extends Room<{ state: GameState }> {
 
   private findPlayerByUserId(userId: string) {
     return [...this.state.players.values()].find((player) => player.userId === userId);
+  }
+
+  private getAdjacentLivingPlayers(userId: string, living: Array<PrivatePlayerState & { role: RoleCode }>) {
+    if (living.length <= 1) {
+      return [];
+    }
+    const index = living.findIndex((player) => player.userId === userId);
+    if (index === -1) {
+      return [];
+    }
+    const previous = living[(index - 1 + living.length) % living.length];
+    const next = living[(index + 1) % living.length];
+    return [previous, next].filter((player): player is PrivatePlayerState & { role: RoleCode } =>
+      Boolean(player && player.userId !== userId),
+    );
+  }
+
+  private guardDogBlocksMayorElimination(targetUserId: string) {
+    const target = this.findPlayerByUserId(targetUserId);
+    if (!target?.mayor) {
+      return false;
+    }
+    return [...this.privatePlayers.values()].some((player) => player.alive && player.role === "guard_dog");
   }
 
   private clientsFor(predicate: (player: PlayerPublicState) => boolean) {
@@ -1527,7 +1902,11 @@ function getActionTargetUserId(action: NightActionCommand): string | null {
     case "witch_poison":
     case "healer_protect":
     case "priest_bless":
+    case "investigator_check":
+    case "stray_cat_choose":
     case "thief_steal":
+      return action.targetUserId;
+    case "blacksmith_sword":
       return action.targetUserId;
     case "cupid_link":
       return action.firstUserId;
@@ -1561,10 +1940,13 @@ function ensureNightActionAllowed(role: RoleCode, action: NightActionCommand, ph
     (action.kind === "check_alignment" && (role === "commissioner" || role === "detective")) ||
     (action.kind === "check_role" && (role === "seer" || role === "oracle")) ||
     (action.kind === "check_commissioner" && role === "don") ||
+    (action.kind === "investigator_check" && role === "investigator") ||
     (action.kind === "witch_heal" && role === "witch") ||
     (action.kind === "witch_poison" && role === "witch") ||
     (action.kind === "healer_protect" && (role === "healer" || role === "doctor" || role === "bodyguard")) ||
     (action.kind === "priest_bless" && role === "priest") ||
+    (action.kind === "blacksmith_sword" && role === "blacksmith") ||
+    (action.kind === "stray_cat_choose" && role === "stray_cat") ||
     (action.kind === "thief_steal" && role === "thief" && phase === "first_night") ||
     (action.kind === "cupid_link" && role === "cupid" && phase === "first_night");
 
@@ -1578,6 +1960,21 @@ function generateRoomCode() {
   return Array.from({ length: 6 }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join("");
 }
 
+function chooseDrunkRealRole(roles: Partial<Record<RoleCode, number>>): RoleCode {
+  const preferred: RoleCode[] = [
+    "ordinary_villager",
+    "healer",
+    "hunter",
+    "seer",
+    "witch",
+    "oracle",
+    "priest",
+    "cook",
+    "red_riding_hood",
+  ];
+  return preferred.find((role) => (roles[role] ?? 0) > 0 && role !== "drunk") ?? "ordinary_villager";
+}
+
 function getGameTokenSecret() {
   const secret =
     process.env.GAME_TOKEN_SECRET ??
@@ -1589,6 +1986,10 @@ function getGameTokenSecret() {
   }
 
   return secret;
+}
+
+export function getGameRuntimeStats() {
+  return GameRoom.getRuntimeStats();
 }
 
 function isProductionSecret(secret: string) {

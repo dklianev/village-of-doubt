@@ -1,4 +1,4 @@
-# Mafia art pack
+# Арт пакет за Мафия
 
-Imagegen asset пакет за Mafia experience-а. Имената на файловете са стабилен asset contract:
+Imagegen пакет за Мафия преживяването. Имената на файловете са стабилен asset contract:
 по-късно могат да се преместят към R2/CDN без React промени.

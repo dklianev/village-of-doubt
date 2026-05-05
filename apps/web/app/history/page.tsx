@@ -1,7 +1,14 @@
+import type { Metadata } from "next";
+import Link from "next/link";
 import { createDatabase, getGameTimeline, getRecentGameHistory } from "@werewolf/database";
 import { phaseLabelBg, type GameMode, type GamePhase } from "@werewolf/shared";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "История | Върколак и Мафия",
+  description: "Завършени игри, победители, смърти, гласове и фазов timeline.",
+};
 
 export default async function HistoryPage() {
   const games = await loadHistory();
@@ -40,6 +47,9 @@ export default async function HistoryPage() {
                 <p className="mt-3 text-sm text-[#4f3829]">
                   Статус: {game.status} · Старт: {formatDate(game.startedAt)} · Край: {formatDate(game.endedAt)}
                 </p>
+                <Link className="btn btn-secondary mt-4 min-h-0 px-4 py-2" href={`/history/${game.id}/replay`}>
+                  Отвори replay
+                </Link>
                 {game.timeline.length > 0 ? (
                   <div className="mt-5 grid gap-3">
                     {[...game.timeline].reverse().map((event) => (
@@ -207,5 +217,5 @@ function payloadKeyBg(key: string) {
 }
 
 function formatDate(value: Date | null) {
-  return value ? new Intl.DateTimeFormat("bg-BG", { dateStyle: "medium", timeStyle: "short" }).format(value) : "n/a";
+  return value ? new Intl.DateTimeFormat("bg-BG", { dateStyle: "medium", timeStyle: "short" }).format(value) : "няма данни";
 }

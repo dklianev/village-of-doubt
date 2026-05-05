@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="bg">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Преглед на game art assets</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0b1114;
+        --paper: #f4e8d1;
+        --gold: #d19a42;
+        --blood: #9e342d;
+      }
+
+      body {
+        margin: 0;
+        background:
+          radial-gradient(circle at 20% 0%, rgba(209, 154, 66, 0.18), transparent 28rem),
+          linear-gradient(145deg, #140c0a, var(--bg));
+        color: var(--paper);
+        font-family: Georgia, "Times New Roman", serif;
+      }
+
+      main {
+        width: min(1280px, calc(100vw - 32px));
+        margin: 0 auto;
+        padding: 32px 0 64px;
+      }
+
+      h1 {
+        margin: 0;
+        color: #fff6e5;
+        font-size: clamp(2.4rem, 5vw, 5.4rem);
+        line-height: 0.9;
+      }
+
+      h2 {
+        margin: 40px 0 14px;
+        color: var(--gold);
+        font-size: 1rem;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 14px;
+      }
+
+      figure {
+        margin: 0;
+        overflow: hidden;
+        border: 1px solid rgba(244, 232, 209, 0.14);
+        border-radius: 22px;
+        background: rgba(244, 232, 209, 0.07);
+      }
+
+      img {
+        display: block;
+        width: 100%;
+        aspect-ratio: 5 / 7;
+        object-fit: cover;
+      }
+
+      .wide img {
+        aspect-ratio: 16 / 9;
+      }
+
+      figcaption {
+        padding: 10px;
+        color: #ead9ba;
+        font-size: 0.82rem;
+        font-weight: 700;
+        overflow-wrap: anywhere;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Преглед на визуалните assets</h1>
+      <p>Отвори този файл локално след `pnpm optimize:assets`, за да видиш дали карти, фонове и phase art изглеждат консистентно.</p>
+
+      <h2>Върколак роли</h2>
+      <section class="grid" id="werewolf-roles"></section>
+
+      <h2>Мафия роли</h2>
+      <section class="grid" id="mafia-roles"></section>
+
+      <h2>Фази и сцени</h2>
+      <section class="grid" id="scenes"></section>
+    </main>
+
+    <script>
+      const werewolfRoles = [
+        "ordinary-villager",
+        "werewolf",
+        "seer",
+        "witch",
+        "healer",
+        "priest",
+        "hunter",
+        "cupid",
+        "vampire",
+        "red-riding-hood",
+        "oracle",
+        "cook",
+        "blacksmith",
+        "insomniac",
+        "vampire-hunter",
+        "investigator",
+        "drunk",
+        "stray-cat",
+        "guard-dog",
+        "little-girl",
+        "thief",
+        "mayor",
+      ];
+      const mafiaRoles = [
+        "civilian",
+        "mafioso",
+        "don",
+        "commissioner",
+        "doctor",
+        "detective",
+        "bodyguard",
+        "vigilante",
+        "medium",
+        "roleblocker",
+        "lawyer",
+        "informant",
+        "maniac",
+        "jester",
+        "mayor",
+        "lovers",
+      ];
+      const scenes = [
+        "bg-landing-hero",
+        "bg-lobby-tavern",
+        "bg-role-reveal",
+        "bg-night-phase",
+        "bg-day-discussion",
+        "bg-voting",
+        "bg-resolution",
+        "transition-night-falls",
+        "transition-village-wakes",
+        "transition-voting-starts",
+        "transition-resolution",
+        "mafia/bg-landing-hero",
+        "mafia/bg-lobby-tavern",
+        "mafia/bg-role-reveal",
+        "mafia/bg-night-phase",
+        "mafia/bg-day-discussion",
+        "mafia/bg-voting",
+        "mafia/bg-resolution",
+      ];
+
+      render("werewolf-roles", werewolfRoles.map((name) => [`../apps/web/public/game-art/role-${name}.png`, name]));
+      render("mafia-roles", mafiaRoles.map((name) => [`../apps/web/public/game-art/mafia/role-${name}.png`, name]));
+      render("scenes", scenes.map((name) => [`../apps/web/public/game-art/${name}.png`, name]), true);
+
+      function render(id, items, wide = false) {
+        document.getElementById(id).innerHTML = items
+          .map(
+            ([src, label]) => `
+              <figure class="${wide ? "wide" : ""}">
+                <img src="${src}" alt="${label}" loading="lazy" />
+                <figcaption>${label}</figcaption>
+              </figure>
+            `,
+          )
+          .join("");
+      }
+    </script>
+  </body>
+</html>

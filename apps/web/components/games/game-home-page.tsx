@@ -1,10 +1,12 @@
 import Link from "next/link";
 import {
   GAME_MODE_DEFINITIONS,
-  getMafiaSportPreset,
+  getMafiaFreePreset,
+  getRoleNameBg,
   getWerewolvesClassicPreset,
   type GameFamily,
   type GameMode,
+  type RoleCode,
 } from "@werewolf/shared";
 
 export function GameHomePage({ family }: { family: GameFamily }) {
@@ -15,7 +17,7 @@ export function GameHomePage({ family }: { family: GameFamily }) {
   const subtitle = isMafia
     ? "Криминален ноар за град, който трябва да различи алиби от лъжа."
     : "Фолклорен хорър за село, което заспива заедно, но не всички се будят невинни.";
-  const preset = isMafia ? getMafiaSportPreset(10) : getWerewolvesClassicPreset(10);
+  const preset = isMafia ? getMafiaFreePreset(10) : getWerewolvesClassicPreset(10);
 
   return (
     <main className="shell game-home-shell" data-theme={family} data-family={family}>
@@ -52,7 +54,7 @@ export function GameHomePage({ family }: { family: GameFamily }) {
           <ul className="mt-4 grid gap-2 md:grid-cols-2">
             {Object.entries(preset).map(([role, count]) => (
               <li key={role} className={`role-count-chip role-${role}`}>
-                <span>{roleName(role)}</span>
+                <span>{getRoleNameBg(role as RoleCode)}</span>
                 <strong>{count}</strong>
               </li>
             ))}
@@ -70,21 +72,4 @@ function InfoCard({ title, body }: { title: string; body: string }) {
       <p className="mt-3 text-sm font-bold leading-6 text-[#4b3024]">{body}</p>
     </article>
   );
-}
-
-function roleName(role: string) {
-  const labels: Record<string, string> = {
-    ordinary_villager: "Селяни",
-    werewolf: "Върколаци",
-    seer: "Гадателка",
-    witch: "Вещица",
-    healer: "Лечител",
-    hunter: "Ловец",
-    civilian: "Граждани",
-    commissioner: "Комисар",
-    mafioso: "Мафиоти",
-    don: "Кръстник",
-  };
-
-  return labels[role] ?? role;
 }

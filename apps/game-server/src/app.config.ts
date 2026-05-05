@@ -1,7 +1,7 @@
 import { monitor } from "@colyseus/monitor";
 import defineConfig from "@colyseus/tools";
 import cors from "cors";
-import { GameRoom } from "./rooms/GameRoom.js";
+import { GameRoom, getGameRuntimeStats } from "./rooms/GameRoom.js";
 
 export default defineConfig({
   initializeGameServer(gameServer) {
@@ -16,6 +16,13 @@ export default defineConfig({
         ok: true,
         service: "werewolf-game-server",
         time: new Date().toISOString(),
+      });
+    });
+
+    app.get("/stats", (_req, res) => {
+      res.json({
+        ok: true,
+        ...getGameRuntimeStats(),
       });
     });
 

@@ -5,6 +5,7 @@ import type { Room } from "@colyseus/sdk";
 import {
   GAME_MODE_DEFINITIONS,
   ROLE_DEFINITIONS,
+  getRoleAssetKey,
   getRoleShortDescriptionBg,
   getGameFamily,
   getGameModeNameBg,
@@ -63,9 +64,24 @@ interface PrivateChatMessage {
   createdAt: number;
 }
 
+interface TypingNotice {
+  channel: ChatChannel;
+  senderUserId: string;
+  senderName: string;
+  active: boolean;
+  createdAt: number;
+}
+
 interface PublicRoleCount {
   role: RoleCode;
   count: number;
+}
+
+interface VoteTallyItem {
+  targetUserId: string;
+  targetName: string;
+  count: number;
+  hasMayorVote: boolean;
 }
 
 interface GameSnapshot {
@@ -86,15 +102,18 @@ interface GameSnapshot {
   winnerReasonBg: string;
   players: PublicPlayer[];
   roleCounts: PublicRoleCount[];
+  voteTally: VoteTallyItem[];
   publicEvents: PublicEvent[];
   publicChat: PublicChatMessage[];
 }
 
 interface PrivateResult {
   targetUserId: string;
+  targetUserIds?: string[];
   role?: RoleCode;
   isEvil?: boolean;
   isCommissioner?: boolean;
+  messageBg?: string;
 }
 
 interface PrivateLover {
@@ -124,6 +143,7 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
   const [chatMessage, setChatMessage] = useState("");
   const [privateChatMessage, setPrivateChatMessage] = useState("");
   const [privateChats, setPrivateChats] = useState<PrivateChatMessage[]>([]);
+  const [typingNotices, setTypingNotices] = useState<TypingNotice[]>([]);
   const [isBlessed, setIsBlessed] = useState(false);
   const [status, setStatus] = useState("Свързване...");
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("connecting");
@@ -132,7 +152,11 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
   const [identityError, setIdentityError] = useState("");
   const [cueMode, setCueMode] = useState<CueMode>("silent");
   const [phasePulse, setPhasePulse] = useState(0);
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const [startCountdown, setStartCountdown] = useState<number | null>(null);
   const previousCuePhaseRef = useRef<string | null>(null);
+  const typingTimeoutsRef = useRef<Map<string, number>>(new Map());
+  const lastTypingSentRef = useRef<Map<ChatChannel, number>>(new Map());
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -224,18 +248,38 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
 
         nextRoom.onMessage("private_blessing", () => {
           setIsBlessed(true);
-          setStatus("Свещеникът те благослови. Благословията ще спре първата нощна смърт срещу теб.");
+          setStatus("Свещеникът те благослови. Благословията остава върху теб до края на играта.");
         });
 
         nextRoom.onMessage("system", (message: { messageBg: string }) => {
-          if (message.messageBg.includes("Благословията те спаси")) {
-            setIsBlessed(false);
-          }
           setStatus(message.messageBg);
         });
 
         nextRoom.onMessage("private_chat", (message: PrivateChatMessage) => {
           setPrivateChats((current) => [...current.slice(-30), message]);
+        });
+
+        nextRoom.onMessage("typing", (message: TypingNotice) => {
+          const key = `${message.channel}:${message.senderUserId}`;
+          setTypingNotices((current) => {
+            const withoutCurrent = current.filter((item) => `${item.channel}:${item.senderUserId}` !== key);
+            if (!message.active) {
+              return withoutCurrent;
+            }
+            return [...withoutCurrent, message].slice(-12);
+          });
+
+          const existingTimeout = typingTimeoutsRef.current.get(key);
+          if (existingTimeout) {
+            window.clearTimeout(existingTimeout);
+          }
+          if (message.active) {
+            const timeout = window.setTimeout(() => {
+              setTypingNotices((current) => current.filter((item) => `${item.channel}:${item.senderUserId}` !== key));
+              typingTimeoutsRef.current.delete(key);
+            }, 2600);
+            typingTimeoutsRef.current.set(key, timeout);
+          }
         });
 
         nextRoom.onMessage("narrator_role_snapshot", (message: NarratorRoleSnapshot) => {
@@ -285,6 +329,15 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
   }, []);
 
   useEffect(() => {
+    return () => {
+      for (const timeout of typingTimeoutsRef.current.values()) {
+        window.clearTimeout(timeout);
+      }
+      typingTimeoutsRef.current.clear();
+    };
+  }, []);
+
+  useEffect(() => {
     if (createOptions?.tempoProfile === "live") {
       setCueMode("silent");
       return;
@@ -325,11 +378,11 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
     }
 
     previousCuePhaseRef.current = nextPhase;
+    setPhasePulse((current) => current + 1);
     if (cueMode === "silent") {
       return;
     }
 
-    setPhasePulse((current) => current + 1);
     if (cueMode === "audio_vibration") {
       triggerDeviceCue(nextPhase);
     }
@@ -349,11 +402,28 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
   function sendNightAction(action: NightActionCommand) {
     room?.send("submitNightAction", { action });
     setStatus("Нощното действие е изпратено.");
+    if ("vibrate" in navigator) {
+      navigator.vibrate([24]);
+    }
   }
 
   function sendVote(targetUserId: string) {
     room?.send("submitVote", { targetUserId });
     setStatus("Гласът е изпратен.");
+  }
+
+  function requestStartGame() {
+    if (!room || startCountdown !== null) {
+      return;
+    }
+
+    setStartCountdown(3);
+    window.setTimeout(() => setStartCountdown(2), 620);
+    window.setTimeout(() => setStartCountdown(1), 1240);
+    window.setTimeout(() => {
+      room.send("startGame");
+      setStartCountdown(null);
+    }, 1860);
   }
 
   function sendChat(event: FormEvent<HTMLFormElement>) {
@@ -363,6 +433,7 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
       return;
     }
     room?.send("sendChat", { channel: "public", message });
+    sendTypingSignal("public", false);
     setChatMessage("");
   }
 
@@ -372,7 +443,40 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
       return;
     }
     room?.send("sendChat", { channel, message });
+    sendTypingSignal(channel, false);
     setPrivateChatMessage("");
+  }
+
+  function updatePublicChatMessage(value: string) {
+    const nextValue = value.slice(0, 500);
+    setChatMessage(nextValue);
+    sendTypingSignal("public", nextValue.trim().length > 0);
+  }
+
+  function updatePrivateChatMessage(channel: ChatChannel | null, value: string) {
+    const nextValue = value.slice(0, 500);
+    setPrivateChatMessage(nextValue);
+    if (channel) {
+      sendTypingSignal(channel, nextValue.trim().length > 0);
+    }
+  }
+
+  function sendTypingSignal(channel: ChatChannel, active: boolean) {
+    if (!room) {
+      return;
+    }
+
+    if (active) {
+      const lastSentAt = lastTypingSentRef.current.get(channel) ?? 0;
+      if (Date.now() - lastSentAt < 1400) {
+        return;
+      }
+      lastTypingSentRef.current.set(channel, Date.now());
+    } else {
+      lastTypingSentRef.current.delete(channel);
+    }
+
+    room.send("typing", { channel, active });
   }
 
   function changeCueMode(mode: CueMode) {
@@ -385,12 +489,54 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
 
   const fullNarratorAccepted = snapshot?.narratorMode !== "full_human" || players.every((player) => player.acceptedFullNarrator);
   const privateChatChannel = getAvailablePrivateChatChannel(privateRole?.role, ownPlayer, phase, snapshot?.communicationMode);
+  const publicTypers = typingNotices.filter((notice) => notice.channel === "public" && notice.senderUserId !== currentUserId);
+  const privateTypers = typingNotices.filter(
+    (notice) => notice.channel === privateChatChannel && notice.senderUserId !== currentUserId,
+  );
   const liveMode = (snapshot?.tempoProfile ?? createOptions?.tempoProfile) === "live";
   // Connection state already lives in the ConnectionBanner; the phase-status
   // line is only useful for transient action feedback. Hide the boilerplate
   // "Свързан" / "Свързване..." strings so the player doesn't see them linger.
   const isStatusInformative = status.length > 0 && status !== "Свързан" && status !== "Свързване...";
   const needsIdentity = !room && !snapshot && status.startsWith("Въведи потребителско име");
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      const target = event.target as HTMLElement | null;
+      if (
+        target?.tagName === "INPUT" ||
+        target?.tagName === "TEXTAREA" ||
+        target?.tagName === "SELECT" ||
+        target?.isContentEditable
+      ) {
+        return;
+      }
+
+      if (event.key === "?") {
+        event.preventDefault();
+        setShowShortcuts((value) => !value);
+        return;
+      }
+
+      if (event.key === " " && (ownPlayer?.host || ownPlayer?.narrator)) {
+        event.preventDefault();
+        room?.send(phase === "paused" ? "narratorAdvance" : "narratorPause");
+        return;
+      }
+
+      if (phase === "voting" && /^[1-9]$/.test(event.key)) {
+        const index = Number(event.key) - 1;
+        const targetPlayer = livingPlayers.filter((player) => player.userId !== currentUserId)[index];
+        if (targetPlayer) {
+          event.preventDefault();
+          sendVote(targetPlayer.userId);
+        }
+      }
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [currentUserId, livingPlayers, ownPlayer?.host, ownPlayer?.narrator, phase, room]);
 
   function submitDisplayName(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -437,6 +583,9 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
 
   return (
     <main className={`shell game-shell phase-${phase}`} data-phase={phase} data-theme={family} data-family={family}>
+      <PhaseTransitionOverlay phase={phase} mode={mode} pulseKey={phasePulse} />
+      <PreGameCountdown value={startCountdown} />
+      {showShortcuts ? <ShortcutSheet onClose={() => setShowShortcuts(false)} /> : null}
       <section className="grid gap-6 lg:grid-cols-[1fr_0.8fr]">
         <div className="card rounded-[2rem] p-5 md:p-7">
           <ConnectionBanner status={connectionStatus} message={status} />
@@ -481,10 +630,10 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
                   <button
                     className="btn btn-primary"
                     type="button"
-                    onClick={() => room?.send("startGame")}
-                    disabled={!room || !fullNarratorAccepted}
+                    onClick={requestStartGame}
+                    disabled={!room || !fullNarratorAccepted || startCountdown !== null}
                   >
-                    Започни игра
+                    {startCountdown ? "Започваме..." : "Започни игра"}
                   </button>
                 ) : null}
               </div>
@@ -514,6 +663,8 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
               isHost={Boolean(ownPlayer?.host)}
               isNarrator={Boolean(ownPlayer?.narrator)}
               fullNarratorAccepted={fullNarratorAccepted}
+              onStartGame={requestStartGame}
+              startCountdownActive={startCountdown !== null}
             />
           ) : null}
 
@@ -542,12 +693,13 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
               <p className="section-kicker text-[#842f2b]">тайна закрила</p>
               <h2 className="mt-2 text-2xl font-black">Свещеникът те благослови</h2>
               <p className="mt-2 text-sm text-[#4f3829]">
-                Благословията ще спре първото нощно убийство срещу теб. Ще изчезне щом те защити веднъж.
+                Благословията остава върху теб до края на играта и спира нощни убийства срещу теб.
               </p>
             </article>
           ) : null}
 
           <RoleCard role={privateRole} result={privateResult} players={players} />
+          <DeathRevealCinematic players={players} />
 
           {isNightPhase(phase) && privateRole ? (
             <NightActionPanel
@@ -564,7 +716,12 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
           ) : null}
 
           {phase === "voting" ? (
-            <VotingPanel currentUserId={currentUserId} livingPlayers={livingPlayers} sendVote={sendVote} />
+            <VotingPanel
+              currentUserId={currentUserId}
+              livingPlayers={livingPlayers}
+              voteTally={snapshot?.voteTally ?? []}
+              sendVote={sendVote}
+            />
           ) : null}
 
           {phase === "hunter_revenge" && privateRole?.role === "hunter" ? (
@@ -580,8 +737,9 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
               channel={privateChatChannel}
               messages={privateChats.filter((message) => message.channel === privateChatChannel)}
               value={privateChatMessage}
-              setValue={setPrivateChatMessage}
+              setValue={(value) => updatePrivateChatMessage(privateChatChannel, value)}
               sendPrivateChat={sendPrivateChat}
+              typingNotices={privateTypers}
             />
           ) : null}
 
@@ -592,6 +750,7 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
               <p className="mt-3 text-[#4f3829]">{snapshot.winnerReasonBg}</p>
             </article>
           ) : null}
+          {snapshot?.winnerTeam ? <PostGameStory snapshot={snapshot} /> : null}
         </div>
 
         <aside className="paper-card rounded-[2rem] p-5 md:p-7 lg:sticky lg:top-6 lg:self-start">
@@ -673,7 +832,7 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
                   <input
                     className="input"
                     value={chatMessage}
-                    onChange={(event) => setChatMessage(event.target.value.slice(0, 500))}
+                    onChange={(event) => updatePublicChatMessage(event.target.value)}
                     placeholder="Напиши обвинение, защита или блъф..."
                     maxLength={500}
                     aria-describedby="chat-counter"
@@ -685,6 +844,7 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
                     {chatMessage.length}/500
                   </span>
                 </div>
+                <TypingIndicator notices={publicTypers} />
                 <button className="btn btn-primary" type="submit" disabled={chatMessage.trim().length === 0}>
                   Изпрати
                 </button>
@@ -700,7 +860,7 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
 
           {phase === "day_discussion" && snapshot?.communicationMode !== "built_in_chat" ? (
             <div className="mt-8 rounded-2xl bg-[#842f2b]/10 p-4 text-sm font-bold text-[#842f2b]">
-              В тази стая публичният чат е изключен. Използвайте Discord, разговор на живо или указанията на Разказвача.
+              В тази стая публичният чат е изключен. Използвайте външен разговор, игра на живо или указанията на Разказвача.
             </div>
           ) : null}
 
@@ -743,6 +903,7 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
                   <strong>{message.senderName}:</strong> {message.message}
                 </p>
               ))}
+              <TypingIndicator notices={publicTypers} compact />
             </div>
           </div>
         </aside>
@@ -784,6 +945,124 @@ function RulesSummary({ snapshot }: { snapshot: GameSnapshot }) {
           В тази стая Пълният Разказвач вижда всички роли и действия.
         </p>
       ) : null}
+    </section>
+  );
+}
+
+function PhaseTransitionOverlay({
+  phase,
+  mode,
+  pulseKey,
+}: {
+  phase: GamePhase;
+  mode: GameMode;
+  pulseKey: number;
+}) {
+  if (pulseKey === 0 || phase === "lobby") {
+    return null;
+  }
+
+  return (
+    <div key={`${phase}-${pulseKey}`} className={`phase-transition-overlay transition-${phase}`} aria-hidden="true">
+      <div>
+        <span>{phaseSigil(phase)}</span>
+        <strong>{phaseBg(phase, mode)}</strong>
+        <small>{phaseNarratorLine(phase, mode)}</small>
+      </div>
+    </div>
+  );
+}
+
+function PreGameCountdown({ value }: { value: number | null }) {
+  if (value === null) {
+    return null;
+  }
+
+  return (
+    <div className="pre-game-countdown" aria-live="assertive" aria-atomic="true">
+      <span>ролите се разбъркват</span>
+      <strong>{value}</strong>
+      <small>Не показвай екрана си на другите.</small>
+    </div>
+  );
+}
+
+function DeathRevealCinematic({ players }: { players: PublicPlayer[] }) {
+  const revealed = [...players].reverse().find((player) => player.playing && !player.alive && player.revealedRole);
+  if (!revealed?.revealedRole) {
+    return null;
+  }
+
+  const role = revealed.revealedRole as RoleCode;
+  const definition = ROLE_DEFINITIONS[role];
+  if (!definition) {
+    return null;
+  }
+
+  const family = definition.availableInFamilies[0] ?? "werewolves";
+  const prefix = family === "mafia" ? "/game-art/mafia" : "/game-art";
+  const slug = `role-${getRoleAssetKey(role)}`;
+
+  return (
+    <article className={`death-reveal-card mt-8 rounded-[2rem] p-5 role-${role}`}>
+      <picture aria-hidden="true">
+        <source srcSet={`${prefix}/${slug}.webp`} type="image/webp" />
+        <img src={`${prefix}/${slug}.png`} alt="" loading="lazy" width={280} height={392} />
+      </picture>
+      <div>
+        <p className="section-kicker">разкрита карта</p>
+        <h2>{revealed.displayName} беше {definition.nameBg}</h2>
+        <p>{definition.shortDescriptionBg}</p>
+      </div>
+    </article>
+  );
+}
+
+function ShortcutSheet({ onClose }: { onClose: () => void }) {
+  return (
+    <aside className="shortcut-sheet" role="dialog" aria-modal="false" aria-label="Клавишни команди">
+      <button type="button" onClick={onClose} aria-label="Затвори клавишните команди">
+        затвори
+      </button>
+      <p className="section-kicker">клавиши</p>
+      <h2>Бързи действия</h2>
+      <dl>
+        <div>
+          <dt>?</dt>
+          <dd>отваря и затваря този лист</dd>
+        </div>
+        <div>
+          <dt>1-9</dt>
+          <dd>гласува за съответния жив играч във фаза Гласуване</dd>
+        </div>
+        <div>
+          <dt>Space</dt>
+          <dd>пауза/продължи за host или Разказвач</dd>
+        </div>
+      </dl>
+    </aside>
+  );
+}
+
+function PostGameStory({ snapshot }: { snapshot: GameSnapshot }) {
+  const deaths = snapshot.players.filter((player) => player.playing && !player.alive).length;
+  const finalLiving = snapshot.players.filter((player) => player.playing && player.alive).length;
+  const lastEvents = snapshot.publicEvents.slice(-5);
+
+  return (
+    <section className="post-game-story mt-8 rounded-[2rem] p-6">
+      <p className="section-kicker">история на нощта</p>
+      <h2 className="mt-2 text-3xl font-black">Как ще я разказвате след играта</h2>
+      <div className="post-game-badges mt-5">
+        <span>оцеляха {finalLiving}</span>
+        <span>паднаха {deaths}</span>
+        <span>рундове {snapshot.round}</span>
+      </div>
+      <ol className="mt-5">
+        {lastEvents.map((event) => (
+          <li key={event.id}>{event.messageBg}</li>
+        ))}
+      </ol>
     </section>
   );
 }
@@ -898,6 +1177,8 @@ function NarratorDesk({
   isHost,
   isNarrator,
   fullNarratorAccepted,
+  onStartGame,
+  startCountdownActive,
 }: {
   room: Room | null;
   snapshot: GameSnapshot;
@@ -906,6 +1187,8 @@ function NarratorDesk({
   isHost: boolean;
   isNarrator: boolean;
   fullNarratorAccepted: boolean;
+  onStartGame: () => void;
+  startCountdownActive: boolean;
 }) {
   const pendingConsent = snapshot.players.filter((player) => !player.acceptedFullNarrator).length;
   const activePlayers = snapshot.players.filter((player) => player.playing);
@@ -937,8 +1220,8 @@ function NarratorDesk({
 
       <div className="mt-5 flex flex-wrap gap-3">
         {isHost && phase === "lobby" ? (
-          <button className="btn btn-primary" type="button" onClick={() => room?.send("startGame")} disabled={!room || !fullNarratorAccepted}>
-            Започни игра
+          <button className="btn btn-primary" type="button" onClick={onStartGame} disabled={!room || !fullNarratorAccepted || startCountdownActive}>
+            {startCountdownActive ? "Започваме..." : "Започни игра"}
           </button>
         ) : null}
         <button className="btn btn-secondary" type="button" onClick={() => room?.send("narratorPause")} disabled={!room || phase === "paused"}>
@@ -1123,18 +1406,41 @@ function HunterRevengePanel({
   );
 }
 
+function TypingIndicator({ notices, compact = false }: { notices: TypingNotice[]; compact?: boolean }) {
+  const names = [...new Set(notices.map((notice) => notice.senderName))].slice(0, 3);
+  if (names.length === 0) {
+    return null;
+  }
+
+  const label =
+    names.length === 1
+      ? `${names[0]} пише...`
+      : names.length === 2
+        ? `${names[0]} и ${names[1]} пишат...`
+        : `${names[0]}, ${names[1]} и още ${notices.length - 2} пишат...`;
+
+  return (
+    <p className={`typing-indicator ${compact ? "typing-indicator-compact" : ""}`} aria-live="polite">
+      <span aria-hidden="true" />
+      {label}
+    </p>
+  );
+}
+
 function PrivateChatPanel({
   channel,
   messages,
   value,
   setValue,
   sendPrivateChat,
+  typingNotices,
 }: {
   channel: ChatChannel;
   messages: PrivateChatMessage[];
   value: string;
   setValue: (value: string) => void;
   sendPrivateChat: (channel: ChatChannel) => void;
+  typingNotices: TypingNotice[];
 }) {
   return (
     <section className="ritual-panel mt-8 rounded-[2rem] p-6">
@@ -1146,6 +1452,7 @@ function PrivateChatPanel({
             <strong>{message.senderName}:</strong> {message.message}
           </p>
         ))}
+        <TypingIndicator notices={typingNotices} compact />
       </div>
       <div className="mt-4 flex gap-2">
         <input
@@ -1188,10 +1495,13 @@ function NightActionPanel({
   const secondId = secondTargetId || livingPlayers.find((player) => player.userId !== targetId)?.userId || "";
 
   return (
-    <section className="ritual-panel mt-8 rounded-[2rem] p-6">
+    <section className="night-action-sheet ritual-panel mt-8 rounded-[2rem] p-6">
       <p className="section-kicker">нощно действие</p>
       <h2 className="mt-2 text-3xl font-black">{nightInstructionBg(privateRole)}</h2>
       <p className="mt-3 text-[#ead9ba]">{nightActionHelpBg(privateRole)}</p>
+      <p className="mt-2 text-sm font-bold text-[#c18a38]">
+        Можеш да промениш избора си до края на таймера. Сървърът пази последното изпратено действие.
+      </p>
 
       <div className="mt-5 grid gap-3 sm:grid-cols-2">
         <select className="input" value={selectedTargetId} onChange={(event) => setSelectedTargetId(event.target.value)}>
@@ -1203,9 +1513,9 @@ function NightActionPanel({
           ))}
         </select>
 
-        {privateRole === "cupid" ? (
+        {privateRole === "cupid" || privateRole === "blacksmith" ? (
           <select className="input" value={secondTargetId} onChange={(event) => setSecondTargetId(event.target.value)}>
-            <option value="">Втори влюбен</option>
+            <option value="">{privateRole === "blacksmith" ? "Кой получава меча" : "Втори влюбен"}</option>
             {livingPlayers.map((player) => (
               <option key={player.userId} value={player.userId}>
                 {player.displayName}
@@ -1245,6 +1555,11 @@ function NightActionPanel({
             Провери заплахата
           </button>
         ) : null}
+        {privateRole === "investigator" ? (
+          <button className="btn btn-primary action-btn ability-investigate" type="button" onClick={() => targetId && sendNightAction({ kind: "investigator_check", targetUserId: targetId })}>
+            Провери тройка
+          </button>
+        ) : null}
         {privateRole === "witch" ? (
           <>
             <button className="btn btn-secondary action-btn ability-heal" type="button" onClick={() => targetId && sendNightAction({ kind: "witch_heal", targetUserId: targetId })}>
@@ -1263,6 +1578,20 @@ function NightActionPanel({
         {privateRole === "priest" ? (
           <button className="btn btn-primary action-btn ability-bless" type="button" onClick={() => targetId && sendNightAction({ kind: "priest_bless", targetUserId: targetId })}>
             Дай благословия
+          </button>
+        ) : null}
+        {privateRole === "blacksmith" ? (
+          <button
+            className="btn btn-primary action-btn ability-kill"
+            type="button"
+            onClick={() => targetId && secondId && sendNightAction({ kind: "blacksmith_sword", receiverUserId: secondId, targetUserId: targetId })}
+          >
+            Изкови меч
+          </button>
+        ) : null}
+        {privateRole === "stray_cat" ? (
+          <button className="btn btn-primary action-btn ability-investigate" type="button" onClick={() => targetId && sendNightAction({ kind: "stray_cat_choose", targetUserId: targetId })}>
+            Избери дом
           </button>
         ) : null}
         {privateRole === "thief" && phase === "first_night" ? (
@@ -1290,16 +1619,21 @@ function NightActionPanel({
 function VotingPanel({
   currentUserId,
   livingPlayers,
+  voteTally,
   sendVote,
 }: {
   currentUserId: string;
   livingPlayers: PublicPlayer[];
+  voteTally: VoteTallyItem[];
   sendVote: (targetUserId: string) => void;
 }) {
+  const maxVotes = Math.max(1, ...voteTally.map((item) => item.count));
+
   return (
     <section className="ritual-panel mt-8 rounded-[2rem] p-6">
       <p className="section-kicker">гласуване</p>
       <h2 className="mt-2 text-3xl font-black">Кого ще изгоните от площада?</h2>
+      <VoteTallyBar items={voteTally} maxVotes={maxVotes} />
       <div className="mt-5 flex flex-wrap gap-3">
         {livingPlayers
           .filter((player) => player.userId !== currentUserId)
@@ -1310,6 +1644,31 @@ function VotingPanel({
           ))}
       </div>
     </section>
+  );
+}
+
+function VoteTallyBar({ items, maxVotes }: { items: VoteTallyItem[]; maxVotes: number }) {
+  if (items.length === 0) {
+    return (
+      <div className="vote-tally-card mt-5">
+        <p>Още няма подадени гласове. Първият глас често задава посоката на целия ден.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="vote-tally-card mt-5" aria-label="Текущо броене на гласовете">
+      {items.map((item) => (
+        <div key={item.targetUserId} className="vote-tally-row">
+          <span>{item.targetName}</span>
+          <div>
+            <i style={{ width: `${Math.max(10, Math.round((item.count / maxVotes) * 100))}%` }} />
+          </div>
+          <strong>{item.count}</strong>
+          {item.hasMayorVote ? <small>кметски глас при равенство</small> : null}
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -1354,6 +1713,34 @@ function phaseSigil(phase: string) {
   };
 
   return sigils[phase] ?? "◇";
+}
+
+function phaseNarratorLine(phase: GamePhase, mode: GameMode) {
+  const mafia = getGameFamily(mode) === "mafia";
+  const lines: Partial<Record<GamePhase, string>> = mafia
+    ? {
+        role_reveal: "Досиетата се раздават. Градът още не знае кой държи ножа.",
+        first_night: "Първият договор се подписва без свидетели.",
+        night: "Неонът трепти, а алибитата чакат сутринта.",
+        day_announcement: "Градът се буди и брои липсващите.",
+        day_discussion: "Сега всяка дума тежи повече от факт.",
+        voting: "Обвинението вече има име.",
+        resolution: "Присъдата влиза в протокола.",
+        game_over: "Последната версия остана единствената.",
+      }
+    : {
+        role_reveal: "Картите се обръщат само пред очите на собственика си.",
+        first_night: "Мъглата пада ниско. Първите сенки се будят.",
+        night: "Селото спи, но гората не.",
+        day_announcement: "Утрото казва какво е оцеляло.",
+        day_discussion: "Площадът търси глас, който звучи като истина.",
+        voting: "Сега подозрението става решение.",
+        resolution: "Картата пада на масата.",
+        hunter_revenge: "Ловецът не си тръгва сам.",
+        game_over: "Последната песен е за победителите.",
+      };
+
+  return lines[phase] ?? "Разказвачът обръща следващата страница.";
 }
 
 function roleSigil(role: RoleCode) {
@@ -1537,6 +1924,7 @@ interface ColyseusGameState {
   winnerReasonBg: string;
   players: { values(): IterableIterator<ColyseusGameStatePlayer> };
   roleCounts: Iterable<PublicRoleCount>;
+  voteTally: Iterable<VoteTallyItem>;
   publicEvents: Iterable<PublicEvent>;
   publicChat: Iterable<PublicChatMessage>;
 }
@@ -1563,6 +1951,7 @@ function toSnapshot(state: ColyseusGameState): GameSnapshot {
       revealedRole: player.revealedRole ?? "",
     })),
     roleCounts: Array.from(state.roleCounts),
+    voteTally: Array.from(state.voteTally),
     publicEvents: Array.from(state.publicEvents),
     publicChat: Array.from(state.publicChat),
   };
@@ -1714,7 +2103,7 @@ const PHASE_RAIL = [
     iconPhase: "day_discussion",
     phases: ["day_announcement", "day_discussion", "nomination", "defense"],
   },
-  { label: "Вот", iconPhase: "voting", phases: ["voting"] },
+  { label: "Глас", iconPhase: "voting", phases: ["voting"] },
   {
     label: "Развръзка",
     iconPhase: "resolution",
@@ -1771,7 +2160,7 @@ const PHASE_GUIDE_BG: Partial<Record<GamePhase, PhaseGuideCopy>> = {
   },
   voting: {
     title: "Гласуване",
-    body: "Всеки жив играч избира кого да елиминира. Кметът има по-силен глас, ако е активен.",
+    body: "Всеки жив играч избира кого да елиминира. Кметът решава само ако водещите кандидати са с равен брой гласове.",
     wakes: "Всички живи играчи гласуват.",
   },
   resolution: {
@@ -1875,7 +2264,21 @@ function roleWakeHint(role: RoleCode, phase: string, ownPlayer: PublicPlayer | u
   if (isNightPhase(phase)) {
     if (
       canFactionKill(role) ||
-      ["commissioner", "detective", "don", "seer", "oracle", "witch", "healer", "doctor", "bodyguard", "priest"].includes(role)
+      [
+        "commissioner",
+        "detective",
+        "don",
+        "seer",
+        "oracle",
+        "witch",
+        "healer",
+        "doctor",
+        "bodyguard",
+        "priest",
+        "blacksmith",
+        "investigator",
+        "stray_cat",
+      ].includes(role)
     ) {
       return "Тази фаза може да имаш активно нощно действие.";
     }
@@ -1907,7 +2310,11 @@ function nightActionHelpBg(role: RoleCode) {
     vigilante: "Вигилантето може да атакува, но грешният избор помага на Мафията.",
     maniac: "Маниакът играе сам и може да елиминира през нощта.",
     vampire_hunter: "Убиецът на вампири може да ловува, но губи умението си при грешна жертва.",
-    priest: "Благословията е еднократна като действие, но защитата остава до първото убийство срещу целта.",
+    priest: "Благословията е еднократна като действие, но защитата остава до края на играта.",
+    blacksmith: "Ковачът избира кой получава меча и срещу кого се използва. Мечът е еднократен.",
+    investigator: "Следователката проверява избран играч и двамата му живи съседи като една тройка.",
+    insomniac: "Неспящата получава личен резултат в края на нощта, ако около нея е имало движение.",
+    stray_cat: "Уличната котка избира дом. Ако попадне при чудовище, и двамата излизат от играта.",
     thief: "След кражбата ти ставаш новата роля, а целта става Обикновен селянин.",
     cupid: "Влюбените са тайно свързани. Смъртта на единия повлича другия.",
   };
@@ -1946,6 +2353,10 @@ function nightInstructionBg(role: RoleCode) {
     maniac: "Маниакът избира жертва",
     vampire_hunter: "Убиецът на вампири ловува",
     priest: "Свещеникът дава една трайна благословия",
+    blacksmith: "Ковачът изковава един меч",
+    investigator: "Следователката проверява тройка",
+    insomniac: "Неспящата чака края на нощта",
+    stray_cat: "Уличната котка избира дом",
     thief: "Крадецът краде карта веднъж през първата нощ",
     cupid: "Купидон избира двама Влюбени",
   };
@@ -1954,6 +2365,10 @@ function nightInstructionBg(role: RoleCode) {
 }
 
 function formatPrivateResult(result: PrivateResult, players: PublicPlayer[]) {
+  if (result.messageBg) {
+    return result.messageBg;
+  }
+
   const targetName = players.find((player) => player.userId === result.targetUserId)?.displayName ?? "избрания играч";
 
   if (result.role) {

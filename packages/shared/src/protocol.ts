@@ -71,6 +71,7 @@ export type ClientCommand =
   | { type: "submitVote"; targetUserId: string }
   | { type: "submitHunterRevenge"; targetUserId: string }
   | { type: "sendChat"; channel: ChatChannel; message: string }
+  | { type: "typing"; channel: ChatChannel; active: boolean }
   | { type: "setNarrator"; targetUserId: string; narrator: boolean }
   | { type: "setMayor"; targetUserId: string }
   | { type: "acceptFullNarrator" }
@@ -85,10 +86,13 @@ export type NightActionCommand =
   | { kind: "check_alignment"; targetUserId: string }
   | { kind: "check_role"; targetUserId: string }
   | { kind: "check_commissioner"; targetUserId: string }
+  | { kind: "investigator_check"; targetUserId: string }
   | { kind: "witch_heal"; targetUserId: string }
   | { kind: "witch_poison"; targetUserId: string }
   | { kind: "healer_protect"; targetUserId: string }
   | { kind: "priest_bless"; targetUserId: string }
+  | { kind: "blacksmith_sword"; receiverUserId: string; targetUserId: string }
+  | { kind: "stray_cat_choose"; targetUserId: string }
   | { kind: "thief_steal"; targetUserId: string }
   | { kind: "cupid_link"; firstUserId: string; secondUserId: string }
   | { kind: "skip" };
@@ -104,9 +108,11 @@ export type ServerEvent =
   | {
       type: "private_check_result";
       targetUserId: string;
+      targetUserIds?: string[];
       role?: RoleCode;
       isEvil?: boolean;
       isCommissioner?: boolean;
+      messageBg?: string;
     }
   | {
       type: "private_chat";
@@ -114,6 +120,14 @@ export type ServerEvent =
       senderUserId: string;
       senderName: string;
       message: string;
+      createdAt: number;
+    }
+  | {
+      type: "typing";
+      channel: ChatChannel;
+      senderUserId: string;
+      senderName: string;
+      active: boolean;
       createdAt: number;
     }
   | { type: "safe_error"; messageBg: string }

@@ -52,10 +52,15 @@ export interface GameConfig {
   timers: PhaseTimers;
   revealRolesOnDeath: boolean;
   tieBreaker: TieBreaker;
+  // TODO: not yet enforced by the game server; keep typed for future lobby rollout.
   allowSkipVote: boolean;
+  // TODO: not yet enforced by the game server; keep typed for future lobby rollout.
   majorityMode: MajorityMode;
+  // TODO: not yet enforced by the game server; keep typed for future lobby rollout.
   autoStart: boolean;
+  // TODO: not yet enforced by the game server; keep typed for future lobby rollout.
   beginnerMode: boolean;
+  // TODO: not yet enforced by the game server; keep typed for future lobby rollout.
   advancedMode: boolean;
   liveMode: boolean;
   firstNightKill: boolean;
@@ -63,10 +68,14 @@ export interface GameConfig {
   werewolfVariant: WerewolfVariant;
   mayorMode: MayorMode;
   promoRolesEnabled: boolean;
+  // TODO: not yet enforced separately; Mafia faction kill is always active for playable mafia defaults.
   mafiaNightKill: boolean;
   doctorCanSelfProtect: boolean;
+  // TODO: exact-role Commissioner result is hidden until server messaging supports both modes.
   commissionerResultMode: CommissionerResultMode;
+  // TODO: hidden until Маниак runtime is implemented.
   maniacEnabled: boolean;
+  // TODO: hidden until Шут is promoted out of manual-only mode.
   jesterEnabled: boolean;
   rulesetVersion: string;
 }
@@ -247,18 +256,18 @@ const MAFIA_FREE_PRESETS: Record<number, RoleDistribution> = {
   10: { civilian: 5, commissioner: 1, doctor: 1, mafioso: 2, don: 1 },
   11: { civilian: 6, commissioner: 1, doctor: 1, mafioso: 2, don: 1 },
   12: { civilian: 7, commissioner: 1, doctor: 1, mafioso: 2, don: 1 },
-  13: { civilian: 7, commissioner: 1, doctor: 1, detective: 1, mafioso: 2, don: 1 },
-  14: { civilian: 8, commissioner: 1, doctor: 1, detective: 1, mafioso: 2, don: 1 },
-  15: { civilian: 8, commissioner: 1, doctor: 1, detective: 1, mafioso: 3, don: 1 },
-  16: { civilian: 9, commissioner: 1, doctor: 1, detective: 1, bodyguard: 1, mafioso: 2, don: 1 },
-  17: { civilian: 10, commissioner: 1, doctor: 1, detective: 1, bodyguard: 1, mafioso: 2, don: 1 },
-  18: { civilian: 10, commissioner: 1, doctor: 1, detective: 1, bodyguard: 1, mafioso: 3, don: 1 },
-  19: { civilian: 11, commissioner: 1, doctor: 1, detective: 1, bodyguard: 1, mafioso: 3, don: 1 },
-  20: { civilian: 12, commissioner: 1, doctor: 1, detective: 1, bodyguard: 1, mafioso: 3, don: 1 },
-  21: { civilian: 12, commissioner: 1, doctor: 1, detective: 1, bodyguard: 1, vigilante: 1, mafioso: 3, don: 1 },
-  22: { civilian: 13, commissioner: 1, doctor: 1, detective: 1, bodyguard: 1, vigilante: 1, mafioso: 3, don: 1 },
-  23: { civilian: 14, commissioner: 1, doctor: 1, detective: 1, bodyguard: 1, vigilante: 1, mafioso: 3, don: 1 },
-  24: { civilian: 14, commissioner: 1, doctor: 1, detective: 1, bodyguard: 1, vigilante: 1, mafioso: 4, don: 1 },
+  13: { civilian: 8, commissioner: 1, doctor: 1, mafioso: 2, don: 1 },
+  14: { civilian: 9, commissioner: 1, doctor: 1, mafioso: 2, don: 1 },
+  15: { civilian: 9, commissioner: 1, doctor: 1, mafioso: 3, don: 1 },
+  16: { civilian: 11, commissioner: 1, doctor: 1, mafioso: 2, don: 1 },
+  17: { civilian: 12, commissioner: 1, doctor: 1, mafioso: 2, don: 1 },
+  18: { civilian: 12, commissioner: 1, doctor: 1, mafioso: 3, don: 1 },
+  19: { civilian: 13, commissioner: 1, doctor: 1, mafioso: 3, don: 1 },
+  20: { civilian: 14, commissioner: 1, doctor: 1, mafioso: 3, don: 1 },
+  21: { civilian: 15, commissioner: 1, doctor: 1, mafioso: 3, don: 1 },
+  22: { civilian: 16, commissioner: 1, doctor: 1, mafioso: 3, don: 1 },
+  23: { civilian: 17, commissioner: 1, doctor: 1, mafioso: 3, don: 1 },
+  24: { civilian: 17, commissioner: 1, doctor: 1, mafioso: 4, don: 1 },
 };
 
 const WEREWOLF_CLASSIC_PRESETS: Record<number, RoleDistribution> = {
@@ -267,14 +276,14 @@ const WEREWOLF_CLASSIC_PRESETS: Record<number, RoleDistribution> = {
   8: { ordinary_villager: 3, werewolf: 2, seer: 1, healer: 1, hunter: 1 },
   9: { ordinary_villager: 4, werewolf: 2, seer: 1, witch: 1, hunter: 1 },
   10: { ordinary_villager: 4, werewolf: 2, seer: 1, witch: 1, healer: 1, hunter: 1 },
-  11: { ordinary_villager: 3, werewolf: 3, seer: 1, witch: 1, cupid: 1, hunter: 1, mayor: 1 },
-  12: { ordinary_villager: 4, werewolf: 3, seer: 1, witch: 1, healer: 1, hunter: 1, mayor: 1 },
-  13: { ordinary_villager: 5, werewolf: 3, seer: 1, witch: 1, healer: 1, hunter: 1, mayor: 1 },
-  14: { ordinary_villager: 5, werewolf: 3, seer: 1, witch: 1, healer: 1, hunter: 1, mayor: 1, cupid: 1 },
-  15: { ordinary_villager: 6, werewolf: 3, seer: 1, witch: 1, healer: 1, hunter: 1, mayor: 1, cupid: 1 },
-  16: { ordinary_villager: 6, werewolf: 4, seer: 1, witch: 1, healer: 1, hunter: 1, mayor: 1, cupid: 1 },
-  17: { ordinary_villager: 7, werewolf: 4, seer: 1, witch: 1, healer: 1, hunter: 1, mayor: 1, cupid: 1 },
-  18: { ordinary_villager: 8, werewolf: 4, seer: 1, witch: 1, healer: 1, hunter: 1, mayor: 1, cupid: 1 },
+  11: { ordinary_villager: 5, werewolf: 3, seer: 1, witch: 1, hunter: 1 },
+  12: { ordinary_villager: 5, werewolf: 3, seer: 1, witch: 1, healer: 1, hunter: 1 },
+  13: { ordinary_villager: 6, werewolf: 3, seer: 1, witch: 1, healer: 1, hunter: 1 },
+  14: { ordinary_villager: 7, werewolf: 3, seer: 1, witch: 1, healer: 1, hunter: 1 },
+  15: { ordinary_villager: 8, werewolf: 3, seer: 1, witch: 1, healer: 1, hunter: 1 },
+  16: { ordinary_villager: 8, werewolf: 4, seer: 1, witch: 1, healer: 1, hunter: 1 },
+  17: { ordinary_villager: 9, werewolf: 4, seer: 1, witch: 1, healer: 1, hunter: 1 },
+  18: { ordinary_villager: 10, werewolf: 4, seer: 1, witch: 1, healer: 1, hunter: 1 },
 };
 
 export function countRoles(distribution: RoleDistribution): number {
@@ -316,14 +325,12 @@ export function getWerewolvesClassicPreset(playerCount: number): RoleDistributio
 
   const werewolves = playerCount <= 22 ? 5 : 6;
   return {
-    ordinary_villager: playerCount - werewolves - 6,
+    ordinary_villager: playerCount - werewolves - 4,
     werewolf: werewolves,
     seer: 1,
     witch: 1,
     healer: 1,
     hunter: 1,
-    mayor: 1,
-    cupid: 1,
   };
 }
 
@@ -344,14 +351,11 @@ export function getWerewolfAdvancedPreset(playerCount: number): RoleDistribution
     return base;
   }
 
-  const villagers = Math.max(0, (base.ordinary_villager ?? 0) - 4);
+  const villagers = Math.max(0, (base.ordinary_villager ?? 0) - 1);
   return normalizeRoleDistribution({
     ...base,
     ordinary_villager: villagers,
     oracle: 1,
-    priest: 1,
-    blacksmith: 1,
-    vampire_hunter: 1,
   });
 }
 

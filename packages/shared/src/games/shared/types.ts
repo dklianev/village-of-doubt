@@ -50,6 +50,7 @@ export interface RoleDefinition {
   tags: readonly RoleTag[];
   secret: boolean;
   nightAction: boolean;
+  runtimeStatus?: "playable" | "manual_only" | "disabled";
   advanced?: boolean;
   availableInFamilies: readonly GameFamily[];
   winConditionBg?: string;

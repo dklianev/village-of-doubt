@@ -12,11 +12,12 @@ caddy_data
 caddy_config
 .tmp-design-*
 .claude
-docs
 tmp
 output
 .playwright-mcp/
 playtest-*.png
+audit-*.png
+review-*.png
 
 # Agent automation (Claude Code, Codex CLI, etc.) — kept local, never tracked.
 AGENTS.md

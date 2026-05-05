@@ -66,7 +66,7 @@ describe("resolveNight", () => {
     );
   });
 
-  it("resolves vampire and werewolf kills as separate factions", () => {
+  it("resolves werewolf kills immediately and vampire bites as delayed deaths", () => {
     const result = resolveNight(players, [
       action("werewolf", { kind: "faction_kill", targetUserId: "civilian" }),
       action("vampire", { kind: "faction_kill", targetUserId: "commissioner" }),
@@ -75,9 +75,9 @@ describe("resolveNight", () => {
     expect(result.deaths).toEqual(
       expect.arrayContaining([
         { userId: "civilian", causeBg: "Изяден от Върколаците." },
-        { userId: "commissioner", causeBg: "Изцеден от Вампирите." },
       ]),
     );
+    expect(result.delayedDeaths).toEqual([{ userId: "commissioner", causeBg: "Умря от вампирско ухапване." }]);
   });
 
   it("lets the healer protect against a night kill", () => {
@@ -89,13 +89,14 @@ describe("resolveNight", () => {
     expect(result.deaths).toEqual([]);
   });
 
-  it("consumes a priest blessing instead of killing the blessed player", () => {
+  it("keeps a priest blessing active after it protects the blessed player", () => {
     const result = resolveNight(players, [
       action("vampire", { kind: "faction_kill", targetUserId: "priested" }),
     ]);
 
     expect(result.deaths).toEqual([]);
-    expect(result.consumedPriestBlessings).toEqual(["priested"]);
+    expect(result.delayedDeaths).toEqual([]);
+    expect(result.protectedByPriest).toEqual(["priested"]);
   });
 
   it("shows the jester as an ordinary villager to the seer", () => {

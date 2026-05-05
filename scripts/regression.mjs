@@ -10,6 +10,7 @@ const checks = [
   ["CSS image-set delivery", checkCssImageSet],
   ["landing layout contracts", checkLandingLayoutContracts],
   ["roles page art contracts", checkRolesPageContracts],
+  ["Bulgarian copy contracts", checkBulgarianCopyContracts],
   ["lobby image scaling contracts", checkLobbyImageContracts],
   ["play UI hardening contracts", checkPlayUiContracts],
   ["production security guards", checkProductionGuardContracts],
@@ -111,7 +112,21 @@ function checkRolesPageContracts() {
   assert(css.includes("/game-art/role-mayor.webp"), "Missing optimized mayor role art CSS reference.");
   assert(css.includes("/game-art/mafia/role-mafioso.webp"), "Missing Mafia role-art CSS reference.");
   assert(css.includes(".role-codex-art img"), "Role codex cards must style real image elements.");
-  assert(css.includes("object-fit: contain"), "Role codex images must preserve full generated art instead of aggressive cropping.");
+  assert(css.includes("object-fit: cover"), "Role codex images must fill the card frame without stretching.");
+}
+
+function checkBulgarianCopyContracts() {
+  const uiFiles = [
+    ...listFilesRecursive(path.join(root, "apps/web/app")).filter((file) => /\.(tsx|ts)$/.test(file)).map((file) => `apps/web/app/${file}`),
+    ...listFilesRecursive(path.join(root, "apps/web/components")).filter((file) => /\.(tsx|ts)$/.test(file)).map((file) => `apps/web/components/${file}`),
+  ];
+
+  for (const file of uiFiles) {
+    const text = readText(file);
+    for (const forbidden of ["Село под съмнение", "Българска Мафия", "Werewolf & Mafia", "Вот"]) {
+      assert(!text.includes(forbidden), `${file} contains forbidden user-facing copy: ${forbidden}`);
+    }
+  }
 }
 
 function checkLobbyImageContracts() {
@@ -168,6 +183,7 @@ function checkProductionGuardContracts() {
   const gameConfig = readText("apps/game-server/src/app.config.ts");
   const gameRoom = readText("apps/game-server/src/rooms/GameRoom.ts");
   const gameTokenRoute = readText("apps/web/app/api/game-token/route.ts");
+  const proxy = readText("apps/web/proxy.ts");
 
   assert(gameConfig.includes("cors({ credentials: true, origin: getCorsOrigin() })"), "Game server CORS must be origin-restricted.");
   assert(gameConfig.includes("throw new Error(\"CORS_ORIGIN"), "Production CORS misconfiguration must fail fast.");
@@ -175,6 +191,9 @@ function checkProductionGuardContracts() {
   assert(gameRoom.includes("isProductionSecret"), "GameRoom missing production secret validation helper.");
   assert(gameTokenRoute.includes("process.env.NODE_ENV === \"production\""), "Web game-token route must enforce production token secrets.");
   assert(gameTokenRoute.includes("isProductionSecret"), "Web game-token route missing production secret validation helper.");
+  assert(proxy.includes("matcher: \"/api/game-token\""), "Game-token proxy must only match the token endpoint.");
+  assert(proxy.includes("Retry-After"), "Game-token rate limit must return Retry-After.");
+  assert(proxy.includes("Твърде много заявки"), "Game-token rate limit error must be Bulgarian.");
 }
 
 function checkProductionEnvChecker() {

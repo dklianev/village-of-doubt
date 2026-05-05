@@ -7,7 +7,9 @@ import {
   evaluateWinCondition,
   getGameFamily,
   getRoleBalanceScore,
+  getRoleRuntimeStatus,
   getRolesForFamily,
+  getMafiaFreePreset,
   getMafiaSportPreset,
   getWerewolfAdvancedPreset,
   getWerewolfVampiresPreset,
@@ -44,15 +46,34 @@ describe("role presets", () => {
     }
   });
 
-  it("keeps advanced werewolf roles in advanced presets", () => {
+  it("keeps advanced werewolf presets playable until the PDF-only roles are wired", () => {
     expect(getWerewolvesMvpPreset(14).vampire).toBeUndefined();
-    expect(getWerewolfAdvancedPreset(12).priest).toBe(1);
-    expect(getWerewolfAdvancedPreset(12).blacksmith).toBe(1);
-    expect(getWerewolfAdvancedPreset(12).vampire_hunter).toBe(1);
+    expect(getWerewolfAdvancedPreset(12).oracle).toBe(1);
+    expect(getWerewolfAdvancedPreset(12).priest).toBeUndefined();
+    expect(getWerewolfAdvancedPreset(12).blacksmith).toBeUndefined();
+    expect(getWerewolfAdvancedPreset(12).vampire_hunter).toBeUndefined();
     expect(getWerewolfVampiresPreset(14).werewolf).toBeGreaterThanOrEqual(3);
     expect(getWerewolfVampiresPreset(14).vampire).toBeGreaterThanOrEqual(3);
     expect(getWerewolvesMvpPreset(10).healer).toBe(1);
     expect("guardian" in ROLE_DEFINITIONS).toBe(false);
+  });
+
+  it("does not assign manual-only roles from default presets", () => {
+    for (let playerCount = 6; playerCount <= 30; playerCount += 1) {
+      for (const role of Object.keys(getWerewolvesMvpPreset(playerCount))) {
+        expect(getRoleRuntimeStatus(role as keyof typeof ROLE_DEFINITIONS)).toBe("playable");
+      }
+    }
+
+    for (let playerCount = 4; playerCount <= 24; playerCount += 1) {
+      for (const role of Object.keys(getMafiaFreePreset(playerCount))) {
+        expect(getRoleRuntimeStatus(role as keyof typeof ROLE_DEFINITIONS)).toBe("playable");
+      }
+    }
+
+    for (const role of Object.keys(getMafiaSportPreset(10))) {
+      expect(getRoleRuntimeStatus(role as keyof typeof ROLE_DEFINITIONS)).toBe("playable");
+    }
   });
 
   it("adds Cupid only when lovers are enabled", () => {

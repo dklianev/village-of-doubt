@@ -37,17 +37,6 @@ export function AuthForm() {
     startTransition(() => router.push("/lobby"));
   }
 
-  async function signInWithDiscord() {
-    setStatus("");
-    const result = await authClient.signIn.social({
-      provider: "discord",
-      callbackURL: "/lobby",
-    });
-    if (result.error) {
-      setStatus(result.error.message ?? "Discord входът не успя.");
-    }
-  }
-
   return (
     <form className="auth-form mt-7 grid gap-4" onSubmit={submit}>
       <div className="auth-mode-switch" aria-label="Избор между вход и регистрация">
@@ -120,9 +109,6 @@ export function AuthForm() {
       ) : null}
       <button className="btn btn-primary" type="submit" disabled={isPending}>
         {mode === "sign-in" ? "Влез" : "Създай профил"}
-      </button>
-      <button className="btn btn-secondary" type="button" onClick={signInWithDiscord}>
-        Влез с Discord
       </button>
       <button
         className="text-sm font-bold text-[#842f2b]"
