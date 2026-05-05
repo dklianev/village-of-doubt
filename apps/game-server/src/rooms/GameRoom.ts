@@ -139,12 +139,30 @@ export class GameRoom extends Room<{ state: GameState }> {
     this.clientsByUserId.set(auth.userId, client);
     client.userData = auth;
 
-    const existing = this.findPlayerByUserId(auth.userId);
+    const existingEntry = this.findPlayerEntryByUserId(auth.userId);
+    const existing = existingEntry?.[1];
     if (existing) {
+      if (existingEntry[0] !== client.sessionId) {
+        this.state.players.delete(existingEntry[0]);
+        this.state.players.set(client.sessionId, existing);
+      }
+      if (!options.spectator && !this.state.locked && this.state.phase === "lobby" && !existing.playing) {
+        existing.host = existing.host || !this.hasHostPlayer();
+        existing.narrator = existing.host && this.config.narratorMode !== "automatic";
+        existing.playing = !existing.narrator;
+        existing.alive = existing.playing;
+        existing.ready = false;
+        this.privatePlayers.set(auth.userId, { userId: auth.userId, alive: existing.playing });
+        if (existing.host) {
+          this.hostUserId = auth.userId;
+        }
+        this.addPublicEvent(`${auth.displayName} вече участва в стаята.`);
+      } else {
+        this.addPublicEvent(`${auth.displayName} се върна в стаята.`);
+      }
       existing.connected = true;
       this.sendPrivateRole(client, auth.userId);
       this.sendNarratorRoleSnapshot(client, auth.userId);
-      this.addPublicEvent(`${auth.displayName} се върна в стаята.`);
       return;
     }
 
@@ -166,7 +184,7 @@ export class GameRoom extends Room<{ state: GameState }> {
     const player = new PlayerPublicState();
     player.userId = auth.userId;
     player.displayName = auth.displayName;
-    player.host = this.state.players.size === 0 && !options.spectator;
+    player.host = !options.spectator && !this.hasHostPlayer();
     player.narrator = player.host && this.config.narratorMode !== "automatic";
     player.playing = !player.narrator && !options.spectator;
     player.alive = player.playing;
@@ -189,7 +207,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       return;
     }
 
-    const player = this.findPlayerByUserId(auth.userId);
+    const player = this.clientsByUserId.get(auth.userId) === client ? this.findPlayerByUserId(auth.userId) : undefined;
     if (player) {
       player.connected = false;
       this.addPublicEvent(`${player.displayName} загуби връзка.`);
@@ -220,8 +238,10 @@ export class GameRoom extends Room<{ state: GameState }> {
       return;
     }
 
-    this.clientsByUserId.delete(auth.userId);
-    const player = this.findPlayerByUserId(auth.userId);
+    if (this.clientsByUserId.get(auth.userId) === client) {
+      this.clientsByUserId.delete(auth.userId);
+    }
+    const player = this.state.players.get(client.sessionId);
     if (player && this.state.phase === "lobby") {
       this.state.players.delete(client.sessionId);
       this.privatePlayers.delete(auth.userId);
@@ -1950,6 +1970,19 @@ export class GameRoom extends Room<{ state: GameState }> {
 
   private findPlayerByUserId(userId: string) {
     return [...this.state.players.values()].find((player) => player.userId === userId);
+  }
+
+  private findPlayerEntryByUserId(userId: string): [string, PlayerPublicState] | undefined {
+    for (const entry of this.state.players.entries()) {
+      if (entry[1].userId === userId) {
+        return entry;
+      }
+    }
+    return undefined;
+  }
+
+  private hasHostPlayer() {
+    return [...this.state.players.values()].some((player) => player.host);
   }
 
   private getAdjacentLivingPlayers(userId: string, living: Array<PrivatePlayerState & { role: RoleCode }>) {

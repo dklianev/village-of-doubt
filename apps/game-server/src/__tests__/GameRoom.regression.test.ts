@@ -459,8 +459,11 @@ describe("GameRoom gameplay regressions", () => {
     expect(voters.length).toBeGreaterThanOrEqual(2);
 
     mayor?.client.send("submitVote", { targetUserId: mayorTarget?.userId });
+    await serverRoom.waitForNextPatch(20);
     voters[0]?.client.send("submitVote", { targetUserId: majorityTarget?.userId });
+    await serverRoom.waitForNextPatch(20);
     voters[1]?.client.send("submitVote", { targetUserId: majorityTarget?.userId });
+    await serverRoom.waitForNextPatch(20);
     clients[0]?.client.send("narratorAdvance", {});
     await serverRoom.waitForNextPatch(20);
 
@@ -492,7 +495,9 @@ describe("GameRoom gameplay regressions", () => {
 
     await advanceToVoting(clients[0]?.client, serverRoom);
     mayor?.client.send("submitVote", { targetUserId: targets[0]?.userId });
+    await serverRoom.waitForNextPatch(20);
     targets[1]?.client.send("submitVote", { targetUserId: targets[1]?.userId });
+    await serverRoom.waitForNextPatch(20);
     clients[0]?.client.send("narratorAdvance", {});
     await serverRoom.waitForNextPatch(20);
 
@@ -858,7 +863,9 @@ describe("GameRoom gameplay regressions", () => {
     const civilian = roleClients.find((item) => item.role === "civilian");
     const mafioso = roleClients.find((item) => item.role === "mafioso");
     bodyguard?.client.send("submitNightAction", { action: { kind: "healer_protect", targetUserId: civilian?.userId } });
+    await serverRoom.waitForNextPatch(20);
     mafioso?.client.send("submitNightAction", { action: { kind: "faction_kill", targetUserId: civilian?.userId } });
+    await serverRoom.waitForNextPatch(20);
     clients[0]?.client.send("narratorAdvance", {});
     await serverRoom.waitForNextPatch(20);
 
@@ -949,6 +956,83 @@ describe("GameRoom gameplay regressions", () => {
     expect(publicSpectator?.playing).toBe(false);
     expect(publicSpectator?.alive).toBe(false);
     await expect(roleMessage).rejects.toThrow("timed out");
+  });
+
+  it("keeps the room hostable when a spectator joins before players", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "SPECFI",
+      mode: "mafia_free",
+      playerCount: 4,
+      tempoProfile: "manual",
+      roles: {
+        commissioner: 1,
+        civilian: 2,
+        mafioso: 1,
+      },
+    });
+    const spectator = await colyseus.connectTo(serverRoom, {
+      code: serverRoom.state.code,
+      userId: "spectator-first",
+      displayName: "Първи наблюдател",
+      spectator: true,
+    });
+    const clients = await connectPlayers(colyseus, serverRoom, 4, "after-spectator");
+    const host = findPublicPlayer(serverRoom, clients[0]?.userId);
+
+    expect(findPublicPlayer(serverRoom, "spectator-first")?.host).toBe(false);
+    expect(host?.host).toBe(true);
+    expect(host?.playing).toBe(true);
+
+    const spectatorRole = spectator.waitForMessage("private_role", 150) as Promise<unknown>;
+    await startGameAndCollectRoles(clients);
+
+    expect(serverRoom.state.phase).not.toBe("lobby");
+    await expect(spectatorRole).rejects.toThrow("timed out");
+  });
+
+  it("promotes a lobby spectator to player without letting the old spectator session remove the slot", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "SPECPR",
+      mode: "mafia_free",
+      playerCount: 4,
+      tempoProfile: "manual",
+      roles: {
+        commissioner: 1,
+        civilian: 2,
+        mafioso: 1,
+      },
+    });
+    const spectator = await colyseus.connectTo(serverRoom, {
+      code: serverRoom.state.code,
+      userId: "spectator-promote",
+      displayName: "Наблюдател играч",
+      spectator: true,
+    });
+    const promotedClient = await colyseus.connectTo(serverRoom, {
+      code: serverRoom.state.code,
+      userId: "spectator-promote",
+      displayName: "Наблюдател играч",
+    });
+    const promoted = findPublicPlayer(serverRoom, "spectator-promote");
+
+    expect(promoted?.host).toBe(true);
+    expect(promoted?.playing).toBe(true);
+
+    spectator.leave();
+    await serverRoom.waitForNextPatch(20).catch(() => undefined);
+    expect(findPublicPlayer(serverRoom, "spectator-promote")?.playing).toBe(true);
+
+    const otherClients = await connectPlayers(colyseus, serverRoom, 3, "promoted-spectator");
+    await startGameAndCollectRoles([
+      {
+        client: promotedClient,
+        userId: "spectator-promote",
+        displayName: "Наблюдател играч",
+      },
+      ...otherClients,
+    ]);
+
+    expect(serverRoom.state.phase).not.toBe("lobby");
   });
 });
 
