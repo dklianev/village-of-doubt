@@ -3846,11 +3846,17 @@ select {
   font-weight: 900;
 }
 
-.shortcut-sheet {
+.shortcut-modal-backdrop {
   position: fixed;
-  right: 22px;
-  bottom: 22px;
   z-index: 80;
+  inset: 0;
+  display: grid;
+  place-items: end;
+  padding: 22px;
+  background: radial-gradient(circle at 80% 100%, rgba(209, 154, 66, 0.12), transparent 34rem);
+}
+
+.shortcut-modal {
   width: min(360px, calc(100vw - 32px));
   border: 1px solid rgba(248, 236, 210, 0.2);
   border-radius: 28px;
@@ -3859,9 +3865,10 @@ select {
     linear-gradient(145deg, rgba(18, 10, 8, 0.96), rgba(8, 10, 10, 0.92)),
     var(--texture-wood) center / 480px 480px;
   box-shadow: 0 28px 90px rgba(0, 0, 0, 0.42);
+  animation: toastSlideUp 220ms cubic-bezier(0.19, 1, 0.22, 1);
 }
 
-.shortcut-sheet > button {
+.shortcut-modal-close {
   float: right;
   border: 1px solid rgba(248, 236, 210, 0.12);
   border-radius: 999px;
@@ -3873,27 +3880,33 @@ select {
   font-weight: 950;
 }
 
-.shortcut-sheet h2 {
+.shortcut-modal h2 {
   margin-top: 8px;
   color: #fff6e5;
   font-size: 2rem;
   font-weight: 950;
 }
 
-.shortcut-sheet dl {
+.shortcut-modal p {
+  margin-top: 8px;
+  color: #ead9ba;
+  line-height: 1.55;
+}
+
+.shortcut-modal dl {
   display: grid;
   gap: 10px;
   margin: 16px 0 0;
 }
 
-.shortcut-sheet div {
+.shortcut-modal div {
   display: grid;
   grid-template-columns: 54px minmax(0, 1fr);
   gap: 12px;
   align-items: center;
 }
 
-.shortcut-sheet dt {
+.shortcut-modal dt {
   display: grid;
   place-items: center;
   min-height: 42px;
@@ -3903,7 +3916,7 @@ select {
   font-weight: 950;
 }
 
-.shortcut-sheet dd {
+.shortcut-modal dd {
   margin: 0;
   color: #ead9ba;
   font-size: 0.9rem;

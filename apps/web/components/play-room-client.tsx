@@ -31,6 +31,7 @@ import {
 import { createGameClient, GAME_ROOM_NAME } from "@/lib/colyseus-client";
 import { playCue, setSoundEnabled } from "@/lib/sound";
 import { useToast } from "@/lib/toast";
+import { KeyboardShortcutsModal } from "@/components/keyboard-shortcuts-modal";
 import { PlayerTokensSkeleton } from "@/components/skeleton";
 
 interface PublicPlayer {
@@ -449,6 +450,30 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
     playCue("vote", { forceSilent: liveMode });
   }
 
+  function submitCurrentShortcutAction() {
+    if (!room) {
+      return;
+    }
+
+    if (phase === "voting" && selectedTargetId) {
+      sendVote(selectedTargetId);
+      return;
+    }
+
+    if (phase === "hunter_revenge" && privateRole?.role === "hunter" && selectedTargetId) {
+      room.send("submitHunterRevenge", { targetUserId: selectedTargetId });
+      toast({ message: "Последният изстрел е изпратен.", kind: "success" });
+      return;
+    }
+
+    if (isNightPhase(phase) && privateRole) {
+      const action = buildPrimaryNightAction(privateRole.role, selectedTargetId, secondTargetId, phase);
+      if (action) {
+        sendNightAction(action);
+      }
+    }
+  }
+
   function requestStartGame() {
     if (!room || startCountdown !== null) {
       return;
@@ -559,25 +584,56 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
         return;
       }
 
-      if (event.key === " " && (ownPlayer?.host || ownPlayer?.narrator)) {
-        event.preventDefault();
-        room?.send(phase === "paused" ? "narratorAdvance" : "narratorPause");
+      if (event.key === "Escape") {
+        if (showShortcuts) {
+          setShowShortcuts(false);
+        } else {
+          setSelectedTargetId("");
+          setSecondTargetId("");
+        }
         return;
       }
 
-      if (phase === "voting" && /^[1-9]$/.test(event.key)) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        submitCurrentShortcutAction();
+        return;
+      }
+
+      if (event.key === " " && (ownPlayer?.host || ownPlayer?.narrator) && phase !== "paused" && phase !== "game_over") {
+        event.preventDefault();
+        room?.send("narratorPause");
+        return;
+      }
+
+      if ((phase === "voting" || phase === "hunter_revenge" || isNightPhase(phase)) && /^[1-9]$/.test(event.key)) {
         const index = Number(event.key) - 1;
-        const targetPlayer = livingPlayers.filter((player) => player.userId !== currentUserId)[index];
+        const targetPlayer = shortcutTargets(phase, privateRole?.role, players, livingPlayers, currentUserId)[index];
         if (targetPlayer) {
           event.preventDefault();
-          sendVote(targetPlayer.userId);
+          setSelectedTargetId(targetPlayer.userId);
+          if (phase === "voting") {
+            sendVote(targetPlayer.userId);
+          }
         }
       }
     }
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [currentUserId, livingPlayers, ownPlayer?.host, ownPlayer?.narrator, phase, room]);
+  }, [
+    currentUserId,
+    livingPlayers,
+    ownPlayer?.host,
+    ownPlayer?.narrator,
+    phase,
+    players,
+    privateRole,
+    room,
+    secondTargetId,
+    selectedTargetId,
+    showShortcuts,
+  ]);
 
   function submitDisplayName(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -626,7 +682,7 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
     <main className={`shell game-shell phase-${phase}`} data-phase={phase} data-theme={family} data-family={family}>
       <PhaseTransitionOverlay phase={phase} mode={mode} narratorVoice={snapshot?.narratorVoice ?? "classic"} pulseKey={phasePulse} />
       <PreGameCountdown value={startCountdown} />
-      {showShortcuts ? <ShortcutSheet onClose={() => setShowShortcuts(false)} /> : null}
+      {showShortcuts ? <KeyboardShortcutsModal onClose={() => setShowShortcuts(false)} /> : null}
       <section className="grid gap-6 lg:grid-cols-[1fr_0.8fr]">
         <div className="card rounded-[2rem] p-5 md:p-7">
           <ConnectionBanner status={connectionStatus} message={status} />
@@ -705,6 +761,7 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
               isNarrator={Boolean(ownPlayer?.narrator)}
               fullNarratorAccepted={fullNarratorAccepted}
               onStartGame={requestStartGame}
+              onOpenShortcuts={() => setShowShortcuts(true)}
               startCountdownActive={startCountdown !== null}
             />
           ) : null}
@@ -1066,32 +1123,6 @@ function DeathRevealCinematic({ players }: { players: PublicPlayer[] }) {
   );
 }
 
-function ShortcutSheet({ onClose }: { onClose: () => void }) {
-  return (
-    <aside className="shortcut-sheet" role="dialog" aria-modal="false" aria-label="Клавишни команди">
-      <button type="button" onClick={onClose} aria-label="Затвори клавишните команди">
-        затвори
-      </button>
-      <p className="section-kicker">клавиши</p>
-      <h2>Бързи действия</h2>
-      <dl>
-        <div>
-          <dt>?</dt>
-          <dd>отваря и затваря този лист</dd>
-        </div>
-        <div>
-          <dt>1-9</dt>
-          <dd>гласува за съответния жив играч във фаза Гласуване</dd>
-        </div>
-        <div>
-          <dt>Space</dt>
-          <dd>пауза/продължи за host или Разказвач</dd>
-        </div>
-      </dl>
-    </aside>
-  );
-}
-
 function PostGameStory({ snapshot }: { snapshot: GameSnapshot }) {
   const deaths = snapshot.players.filter((player) => player.playing && !player.alive).length;
   const finalLiving = snapshot.players.filter((player) => player.playing && player.alive).length;
@@ -1226,6 +1257,7 @@ function NarratorDesk({
   isNarrator,
   fullNarratorAccepted,
   onStartGame,
+  onOpenShortcuts,
   startCountdownActive,
 }: {
   room: Room | null;
@@ -1236,6 +1268,7 @@ function NarratorDesk({
   isNarrator: boolean;
   fullNarratorAccepted: boolean;
   onStartGame: () => void;
+  onOpenShortcuts: () => void;
   startCountdownActive: boolean;
 }) {
   const pendingConsent = snapshot.players.filter((player) => !player.acceptedFullNarrator).length;
@@ -1289,6 +1322,9 @@ function NarratorDesk({
             +{seconds} сек.
           </button>
         ))}
+        <button className="btn btn-secondary" type="button" onClick={onOpenShortcuts}>
+          Клавишни команди
+        </button>
       </div>
 
       {snapshot.narratorMode === "full_human" && pendingConsent > 0 ? (
@@ -1515,6 +1551,81 @@ function PrivateChatPanel({
       </div>
     </section>
   );
+}
+
+function shortcutTargets(
+  phase: GamePhase,
+  privateRole: RoleCode | undefined,
+  players: PublicPlayer[],
+  livingPlayers: PublicPlayer[],
+  currentUserId: string,
+) {
+  if (phase === "voting" || phase === "hunter_revenge") {
+    return livingPlayers.filter((player) => player.userId !== currentUserId);
+  }
+  if (privateRole === "medium") {
+    return players.filter((player) => player.playing && !player.alive);
+  }
+  return livingPlayers;
+}
+
+function buildPrimaryNightAction(
+  role: RoleCode,
+  targetUserId: string,
+  secondTargetUserId: string,
+  phase: GamePhase,
+): NightActionCommand | null {
+  if (!targetUserId) {
+    return null;
+  }
+
+  if (canFactionKill(role)) {
+    return { kind: "faction_kill", targetUserId };
+  }
+  if (role === "commissioner" || role === "detective") {
+    return { kind: "check_alignment", targetUserId };
+  }
+  if (role === "informant" || role === "seer" || role === "oracle") {
+    return { kind: "check_role", targetUserId };
+  }
+  if (role === "roleblocker") {
+    return { kind: "roleblock", targetUserId };
+  }
+  if (role === "lawyer") {
+    return { kind: "lawyer_cover", targetUserId };
+  }
+  if (role === "medium") {
+    return { kind: "medium_contact", targetUserId };
+  }
+  if (role === "don") {
+    return { kind: "check_commissioner", targetUserId };
+  }
+  if (role === "investigator") {
+    return { kind: "investigator_check", targetUserId };
+  }
+  if (role === "witch") {
+    return { kind: "witch_heal", targetUserId };
+  }
+  if (role === "healer" || role === "doctor" || role === "bodyguard") {
+    return { kind: "healer_protect", targetUserId };
+  }
+  if (role === "priest") {
+    return { kind: "priest_bless", targetUserId };
+  }
+  if (role === "blacksmith" && secondTargetUserId) {
+    return { kind: "blacksmith_sword", targetUserId, receiverUserId: secondTargetUserId };
+  }
+  if (role === "stray_cat") {
+    return { kind: "stray_cat_choose", targetUserId };
+  }
+  if (role === "thief" && phase === "first_night") {
+    return { kind: "thief_steal", targetUserId };
+  }
+  if ((role === "cupid" || role === "lovers") && phase === "first_night" && secondTargetUserId) {
+    return { kind: "cupid_link", firstUserId: targetUserId, secondUserId: secondTargetUserId };
+  }
+
+  return null;
 }
 
 function NightActionPanel({
