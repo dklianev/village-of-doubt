@@ -29,6 +29,8 @@ import {
   validateDisplayNameBg,
 } from "@/lib/anonymous-player";
 import { createGameClient, GAME_ROOM_NAME } from "@/lib/colyseus-client";
+import { useToast } from "@/lib/toast";
+import { PlayerTokensSkeleton } from "@/components/skeleton";
 
 interface PublicPlayer {
   userId: string;
@@ -163,6 +165,7 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
   const typingTimeoutsRef = useRef<Map<string, number>>(new Map());
   const lastTypingSentRef = useRef<Map<ChatChannel, number>>(new Map());
   const [isPending, startTransition] = useTransition();
+  const toast = useToast();
 
   useEffect(() => {
     setDisplayNameInput(window.localStorage.getItem(ANONYMOUS_DISPLAY_NAME_KEY) ?? window.localStorage.getItem("dev-display-name") ?? "");
@@ -243,21 +246,21 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
 
         nextRoom.onMessage("private_check_result", (message: PrivateResult) => {
           setPrivateResult(message);
-          setStatus("Получен е личен резултат от нощното действие.");
+          toast({ message: "Получен е личен резултат от нощното действие.", kind: "info" });
         });
 
         nextRoom.onMessage("private_lovers", (message: PrivateLover) => {
           setPrivateLover(message);
-          setStatus("Купидон те свърза с Влюбен.");
+          toast({ message: "Купидон те свърза с Влюбен.", kind: "success" });
         });
 
         nextRoom.onMessage("private_blessing", () => {
           setIsBlessed(true);
-          setStatus("Свещеникът те благослови. Благословията остава върху теб до края на играта.");
+          toast({ message: "Свещеникът те благослови. Благословията остава върху теб до края на играта.", kind: "success" });
         });
 
         nextRoom.onMessage("system", (message: { messageBg: string }) => {
-          setStatus(message.messageBg);
+          toast({ message: message.messageBg, kind: "info" });
         });
 
         nextRoom.onMessage("private_chat", (message: PrivateChatMessage) => {
@@ -289,11 +292,11 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
 
         nextRoom.onMessage("narrator_role_snapshot", (message: NarratorRoleSnapshot) => {
           setNarratorSnapshot(message);
-          setStatus("Получен е пълен snapshot за Разказвача.");
+          toast({ message: "Получен е пълен snapshot за Разказвача.", kind: "info" });
         });
 
         nextRoom.onMessage("safe_error", (message: { messageBg: string }) => {
-          setStatus(message.messageBg);
+          toast({ message: message.messageBg, kind: "error" });
         });
 
         nextRoom.onLeave((leaveCode) => {
@@ -313,7 +316,7 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
       active = false;
       joinedRoom?.leave();
     };
-  }, [code, createOptions, identityVersion]);
+  }, [code, createOptions, identityVersion, toast]);
 
   useEffect(() => {
     function handleOffline() {
@@ -365,7 +368,7 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
     if (!nextPhase) {
       return;
     }
-    setStatus((current) => (current === "" ? "" : ""));
+    setStatus("");
   }, [snapshot?.phase]);
 
   useEffect(() => {
@@ -406,7 +409,7 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
 
   function sendNightAction(action: NightActionCommand) {
     room?.send("submitNightAction", { action });
-    setStatus("Нощното действие е изпратено.");
+    toast({ message: "Нощното действие е изпратено.", kind: "success" });
     if ("vibrate" in navigator) {
       navigator.vibrate([24]);
     }
@@ -414,7 +417,7 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
 
   function sendVote(targetUserId: string) {
     room?.send("submitVote", { targetUserId });
-    setStatus("Гласът е изпратен.");
+    toast({ message: "Гласът е изпратен.", kind: "success" });
   }
 
   function requestStartGame() {
@@ -764,14 +767,15 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
           <p className="section-kicker text-[#842f2b]">площадът</p>
           <h2 className="mt-3 text-3xl font-black">Играчите на площада</h2>
           <div className="mt-6 grid gap-3">
-            {players.length === 0 ? (
+            {!snapshot ? <PlayerTokensSkeleton /> : null}
+            {snapshot && players.length === 0 ? (
               <div className="empty-state-card empty-players-card rounded-[2rem] p-5">
                 <span aria-hidden="true" />
                 <strong>Площадът още е празен</strong>
                 <p>Поканата чака първите телефони около масата.</p>
               </div>
             ) : null}
-            {players.map((player) => (
+            {snapshot ? players.map((player) => (
               <div key={player.userId} className={playerTokenClass(player)}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
@@ -828,7 +832,7 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
                   </button>
                 ) : null}
               </div>
-            ))}
+            )) : null}
           </div>
 
           {phase === "day_discussion" && snapshot?.communicationMode === "built_in_chat" ? (

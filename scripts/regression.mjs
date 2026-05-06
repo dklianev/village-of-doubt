@@ -79,7 +79,10 @@ function checkCssImageSet() {
   assert(directGameArtVariables.length === 0, `Found direct PNG CSS variables: ${directGameArtVariables.join(", ")}`);
   assert(css.includes(".cue-panel"), "Missing live cue panel CSS.");
   assert(css.includes(".narrator-desk"), "Missing narrator desk CSS.");
+  assert(css.includes(".toast-host"), "Missing toast host CSS.");
+  assert(css.includes(".skeleton"), "Missing loading skeleton CSS.");
   assert(css.includes("@keyframes cuePulse"), "Missing cue pulse animation.");
+  assert(css.includes("@keyframes skeletonShimmer"), "Missing skeleton shimmer animation.");
   assert(css.includes('[data-theme="mafia"]'), "Missing Mafia theme selector.");
   assert(css.includes('/game-art/mafia/bg-landing-hero.webp'), "Missing Mafia image-set CSS references.");
 }

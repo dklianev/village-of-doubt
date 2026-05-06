@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
 import { SiteChrome } from "@/components/site-chrome";
+import { ToastHost } from "@/components/toast-host";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -34,6 +35,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body>
         <SiteChrome />
         {children}
+        <ToastHost />
         <ServiceWorkerRegistration />
       </body>
     </html>

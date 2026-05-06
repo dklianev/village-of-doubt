@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { createDatabase, getLeaderboardRows } from "@werewolf/database";
 import { getRoleTeam, ROLE_DEFINITIONS, type RoleCode } from "@werewolf/shared";
+import { LeaderboardSkeleton } from "@/components/skeleton";
 
 export const dynamic = "force-dynamic";
 
@@ -17,9 +19,7 @@ interface LeaderboardEntry {
   lastPlayed: Date | null;
 }
 
-export default async function LeaderboardPage() {
-  const entries = await loadLeaderboard();
-
+export default function LeaderboardPage() {
   return (
     <main className="shell utility-shell">
       <section className="paper-card utility-hero rounded-[2rem] p-8">
@@ -32,34 +32,47 @@ export default async function LeaderboardPage() {
       </section>
 
       <section className="paper-card mt-6 rounded-[2rem] p-6">
-        {entries.length > 0 ? (
-          <div className="leaderboard-list">
-            {entries.map((entry, index) => (
-              <article key={entry.displayName} className="leaderboard-row">
-                <span className="leaderboard-rank">{index + 1}</span>
-                <div>
-                  <h2>{entry.displayName}</h2>
-                  <p>
-                    {entry.games} игри · {entry.wins} победи · последно: {formatDate(entry.lastPlayed)}
-                  </p>
-                </div>
-                <strong>{Math.round((entry.wins / Math.max(1, entry.games)) * 100)}%</strong>
-              </article>
-            ))}
-          </div>
-        ) : (
-          <div className="utility-empty">
-            <h2>Класацията още чака първата история</h2>
-            <p>
-              Когато има активна база данни и завършени игри, тук ще се появят участия, победи и процент на успех.
-            </p>
-            <Link className="btn btn-primary" href="/">
-              Започни игра
-            </Link>
-          </div>
-        )}
+        <Suspense fallback={<LeaderboardSkeleton />}>
+          <LeaderboardContent />
+        </Suspense>
       </section>
     </main>
+  );
+}
+
+async function LeaderboardContent() {
+  const entries = await loadLeaderboard();
+
+  if (entries.length === 0) {
+    return (
+      <div className="empty-state-card utility-empty">
+        <span aria-hidden="true" />
+        <h2>Първата победа още не е написана</h2>
+        <p>
+          Когато завърши игра, тук ще се появят участията, победите и процентът на успех за хората около масата.
+        </p>
+        <Link className="btn btn-primary" href="/">
+          Започни игра
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="leaderboard-list">
+      {entries.map((entry, index) => (
+        <article key={entry.displayName} className="leaderboard-row">
+          <span className="leaderboard-rank">{index + 1}</span>
+          <div>
+            <h2>{entry.displayName}</h2>
+            <p>
+              {entry.games} игри · {entry.wins} победи · последно: {formatDate(entry.lastPlayed)}
+            </p>
+          </div>
+          <strong>{Math.round((entry.wins / Math.max(1, entry.games)) * 100)}%</strong>
+        </article>
+      ))}
+    </div>
   );
 }
 

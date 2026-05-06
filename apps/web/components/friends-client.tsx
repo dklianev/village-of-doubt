@@ -100,7 +100,8 @@ export function FriendsClient() {
               </article>
             ))
           ) : (
-            <div className="utility-empty compact">
+            <div className="empty-state-card utility-empty compact">
+              <span aria-hidden="true" />
               <h2>Списъкът е празен</h2>
               <p>Добави хората, които най-често каниш. Данните стоят само в този браузър.</p>
             </div>
