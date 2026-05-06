@@ -10,18 +10,26 @@ const GAME_TOKEN_SECRET = "test-secret-that-is-long-enough";
 
 describe("GameRoom security boundaries", () => {
   let colyseus: ColyseusTestServer;
+  let previousAllowDevAuth: string | undefined;
+  let previousGameTokenSecret: string | undefined;
+  let previousNodeEnv: string | undefined;
 
   beforeEach(async () => {
+    previousAllowDevAuth = process.env.ALLOW_DEV_AUTH;
+    previousGameTokenSecret = process.env.GAME_TOKEN_SECRET;
+    previousNodeEnv = process.env.NODE_ENV;
     process.env.GAME_TOKEN_SECRET = GAME_TOKEN_SECRET;
     process.env.ALLOW_DEV_AUTH = "true";
+    process.env.NODE_ENV = "test";
     colyseus = await boot(appConfig, 2678);
   });
 
   afterEach(async () => {
     await colyseus?.cleanup();
     await colyseus?.shutdown();
-    delete process.env.ALLOW_DEV_AUTH;
-    delete process.env.GAME_TOKEN_SECRET;
+    restoreEnvValue("ALLOW_DEV_AUTH", previousAllowDevAuth);
+    restoreEnvValue("GAME_TOKEN_SECRET", previousGameTokenSecret);
+    restoreEnvValue("NODE_ENV", previousNodeEnv);
   });
 
   it("keeps role data out of the synchronized public state", async () => {
@@ -133,4 +141,13 @@ function waitForPrivateRole(client: ClientRoom<GameRoom, GameState>) {
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function restoreEnvValue(key: string, value: string | undefined) {
+  if (value === undefined) {
+    delete process.env[key];
+    return;
+  }
+
+  process.env[key] = value;
 }

@@ -18,9 +18,14 @@ interface RoleClient extends JoinedClient {
 
 describe("GameRoom gameplay regressions", () => {
   let colyseus: ColyseusTestServer;
+  let previousAllowDevAuth: string | undefined;
+  let previousNodeEnv: string | undefined;
 
   beforeAll(async () => {
+    previousAllowDevAuth = process.env.ALLOW_DEV_AUTH;
+    previousNodeEnv = process.env.NODE_ENV;
     process.env.ALLOW_DEV_AUTH = "true";
+    process.env.NODE_ENV = "test";
     colyseus = await boot(appConfig, 2679);
   });
 
@@ -30,7 +35,8 @@ describe("GameRoom gameplay regressions", () => {
 
   afterAll(async () => {
     await colyseus?.shutdown();
-    delete process.env.ALLOW_DEV_AUTH;
+    restoreEnvValue("ALLOW_DEV_AUTH", previousAllowDevAuth);
+    restoreEnvValue("NODE_ENV", previousNodeEnv);
   });
 
   it("rejects impossible manual role counts before any role is revealed", async () => {
@@ -1097,6 +1103,15 @@ async function advanceToPhase(client: ClientRoom<GameRoom, GameState> | undefine
 
 function findPublicPlayer(room: GameRoom, userId: string | undefined) {
   return [...room.state.players.values()].find((player) => player.userId === userId);
+}
+
+function restoreEnvValue(key: string, value: string | undefined) {
+  if (value === undefined) {
+    delete process.env[key];
+    return;
+  }
+
+  process.env[key] = value;
 }
 
 function submitSimpleAdvancedAction(
