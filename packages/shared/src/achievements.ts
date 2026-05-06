@@ -1,54 +1,135 @@
+import type { RoleCode } from "./roles.js";
+
+export interface AchievementEventLike {
+  round?: number;
+  phase: string;
+  type: string;
+  actorId?: string | null;
+  targetId?: string | null;
+  payload: unknown;
+}
+
+export interface AchievementPlayerLike {
+  userId: string;
+  role?: RoleCode | string;
+  alive?: boolean;
+}
+
+export interface AchievementGameContext {
+  events: AchievementEventLike[];
+  players: AchievementPlayerLike[];
+  winnerTeam?: string | null;
+}
+
 export interface AchievementDefinition {
   id: string;
   titleBg: string;
   descriptionBg: string;
   iconBg: string;
+  predicate: (context: AchievementGameContext) => string[];
 }
 
-export interface AchievementEventLike {
-  type: string;
-  phase: string;
-  payload: unknown;
-}
+const PROTECTIVE_ROLES = new Set(["healer", "doctor", "bodyguard", "priest", "witch"]);
+const CIVILIAN_ROLES = new Set(["civilian", "ordinary_villager"]);
 
 export const ACHIEVEMENTS: AchievementDefinition[] = [
   {
     id: "first_blood",
     titleBg: "Първа кръв",
-    descriptionBg: "В играта има елиминация през първата нощ.",
+    descriptionBg: "Играч преживява първата голяма сцена на елиминация в началото на играта.",
     iconBg: "кръв",
+    predicate: ({ events }) =>
+      uniqueUserIds(events.filter((event) => event.type === "death" && event.phase === "first_night").map((event) => event.targetId)),
   },
   {
     id: "jester_win",
-    titleBg: "Шут на вечерта",
-    descriptionBg: "Шутът постига лична победа чрез дневно елиминиране.",
+    titleBg: "Шут на годината",
+    descriptionBg: "Шутът успява да убеди масата да го елиминира и печели личната си игра.",
     iconBg: "маска",
+    predicate: ({ events }) =>
+      uniqueUserIds(
+        events
+          .filter((event) => event.type === "jester_personal_win" || event.type === "personal_win")
+          .map((event) => event.targetId ?? payloadStringValue(event.payload, "targetUserId")),
+      ),
   },
   {
     id: "guardian_save",
-    titleBg: "Пазител в тъмното",
-    descriptionBg: "Нощна смърт е спряна от защита, лечение или благословия.",
+    titleBg: "Спасител",
+    descriptionBg: "Защитна роля спира поне две смърти в една игра.",
     iconBg: "щит",
+    predicate: ({ events, players }) => {
+      const preventedDeaths = events.filter((event) =>
+        ["night_death_prevented", "priest_blessing_protected", "guard_dog_protected_mayor"].includes(event.type),
+      );
+      if (preventedDeaths.length < 2) {
+        return [];
+      }
+      return players
+        .filter((player) => player.role && PROTECTIVE_ROLES.has(player.role))
+        .map((player) => player.userId);
+    },
   },
   {
     id: "hunter_revenge",
-    titleBg: "Последен изстрел",
-    descriptionBg: "Ловецът взема някого със себе си след смъртта.",
+    titleBg: "Ловецът-вдовица",
+    descriptionBg: "Ловецът пада, но последният му изстрел променя финала.",
     iconBg: "куршум",
+    predicate: ({ events, players }) => {
+      const hasHunterShot = events.some((event) => event.type === "death" && payloadAsText(event.payload).includes("Ловеца"));
+      if (!hasHunterShot) {
+        return [];
+      }
+      return players.filter((player) => player.role === "hunter").map((player) => player.userId);
+    },
+  },
+  {
+    id: "silent_civilian",
+    titleBg: "Тих гражданин",
+    descriptionBg: "Обикновен играч оцелява до края, без да пропуска дневния си глас.",
+    iconBg: "свещ",
+    predicate: ({ events, players }) => {
+      const skipVoters = new Set(
+        events
+          .filter(
+            (event) =>
+              event.type === "vote_submitted" &&
+              (payloadStringValue(event.payload, "targetUserId") === "skip" || payloadBooleanValue(event.payload, "skipped")),
+          )
+          .map((event) => event.actorId)
+          .filter((userId): userId is string => Boolean(userId)),
+      );
+
+      return players
+        .filter((player) => player.alive && player.role && CIVILIAN_ROLES.has(player.role) && !skipVoters.has(player.userId))
+        .map((player) => player.userId);
+    },
   },
   {
     id: "perfect_record",
     titleBg: "Протокол без празнини",
     descriptionBg: "Replay-ът има поне 20 записани събития.",
     iconBg: "архив",
+    predicate: ({ events, players }) => (events.length >= 20 ? players.map((player) => player.userId) : []),
   },
   {
     id: "maniac_endgame",
     titleBg: "Сам срещу града",
     descriptionBg: "Маниакът печели като последна реална заплаха.",
     iconBg: "нож",
+    predicate: ({ winnerTeam, players }) =>
+      winnerTeam === "maniac" ? players.filter((player) => player.role === "maniac").map((player) => player.userId) : [],
   },
 ];
+
+export function evaluateAchievementUnlocks(context: AchievementGameContext) {
+  return ACHIEVEMENTS.flatMap((achievement) =>
+    achievement.predicate(context).map((userId) => ({
+      userId,
+      achievementId: achievement.id,
+    })),
+  );
+}
 
 export function deriveAchievementsFromEvents(events: AchievementEventLike[]) {
   const unlocked = new Set<string>();
@@ -60,24 +141,54 @@ export function deriveAchievementsFromEvents(events: AchievementEventLike[]) {
     unlocked.add("jester_win");
   }
   if (
-    events.some(
-      (event) =>
-        event.type === "night_death_prevented" ||
-        event.type === "priest_blessing_protected" ||
-        event.type === "guard_dog_protected_mayor",
+    events.some((event) =>
+      ["night_death_prevented", "priest_blessing_protected", "guard_dog_protected_mayor"].includes(event.type),
     )
   ) {
     unlocked.add("guardian_save");
   }
-  if (events.some((event) => event.type === "death" && JSON.stringify(event.payload).includes("Ловеца"))) {
+  if (events.some((event) => event.type === "death" && payloadAsText(event.payload).includes("Ловеца"))) {
     unlocked.add("hunter_revenge");
   }
   if (events.length >= 20) {
     unlocked.add("perfect_record");
   }
-  if (events.some((event) => JSON.stringify(event.payload).includes("maniac") || JSON.stringify(event.payload).includes("Маниак"))) {
+  if (events.some((event) => payloadAsText(event.payload).includes("maniac") || payloadAsText(event.payload).includes("Маниак"))) {
     unlocked.add("maniac_endgame");
   }
 
   return ACHIEVEMENTS.filter((achievement) => unlocked.has(achievement.id));
+}
+
+export function getAchievementById(id: string) {
+  return ACHIEVEMENTS.find((achievement) => achievement.id === id);
+}
+
+function uniqueUserIds(values: Array<string | null | undefined>) {
+  return [...new Set(values.filter((value): value is string => Boolean(value)))];
+}
+
+function payloadAsText(payload: unknown) {
+  try {
+    return JSON.stringify(payload);
+  } catch {
+    return "";
+  }
+}
+
+function payloadStringValue(payload: unknown, key: string) {
+  if (!payload || typeof payload !== "object" || !(key in payload)) {
+    return undefined;
+  }
+
+  const value = (payload as Record<string, unknown>)[key];
+  return typeof value === "string" ? value : undefined;
+}
+
+function payloadBooleanValue(payload: unknown, key: string) {
+  if (!payload || typeof payload !== "object" || !(key in payload)) {
+    return false;
+  }
+
+  return (payload as Record<string, unknown>)[key] === true;
 }

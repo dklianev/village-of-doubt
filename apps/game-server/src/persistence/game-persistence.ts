@@ -5,6 +5,7 @@ import {
   gamePlayers,
   games,
   user,
+  userAchievements,
   type Database,
 } from "@werewolf/database";
 import type { GameConfig, GamePhase, RoleCode, WinnerTeam } from "@werewolf/shared";
@@ -46,6 +47,7 @@ export interface GamePersistence {
   markGameActive(gameId: string, config: GameConfig): Promise<void>;
   upsertPlayers(gameId: string, players: PersistPlayerInput[]): Promise<void>;
   recordEvent(gameId: string, event: PersistEventInput): Promise<void>;
+  recordAchievement(userId: string, achievementId: string, gameId: string): Promise<void>;
   finishGame(gameId: string, input: FinishGameInput): Promise<void>;
 }
 
@@ -69,6 +71,8 @@ class NoopGamePersistence implements GamePersistence {
   async upsertPlayers(): Promise<void> {}
 
   async recordEvent(): Promise<void> {}
+
+  async recordAchievement(): Promise<void> {}
 
   async finishGame(): Promise<void> {}
 }
@@ -153,6 +157,19 @@ class DrizzleGamePersistence implements GamePersistence {
       visibility: event.visibility ?? "public",
       payload: event.payload ?? {},
     });
+  }
+
+  async recordAchievement(userId: string, achievementId: string, gameId: string): Promise<void> {
+    await this.ensureUsers([{ userId, displayName: userId }]);
+
+    await this.db
+      .insert(userAchievements)
+      .values({
+        userId,
+        achievementId,
+        gameId,
+      })
+      .onConflictDoNothing();
   }
 
   async finishGame(gameId: string, input: FinishGameInput): Promise<void> {

@@ -1,7 +1,9 @@
 import { Client, Room } from "colyseus";
 import {
   assignRoles,
+  ACHIEVEMENTS,
   createGameConfigFromOptions,
+  evaluateAchievementUnlocks,
   evaluateWinCondition,
   getRoleNameBg,
   getRoleTeam,
@@ -16,6 +18,7 @@ import {
   type ServerEvent,
   type CreateRoomOptions,
   type ChatChannel,
+  type AchievementEventLike,
 } from "@werewolf/shared";
 import { resolveNight, type SubmittedNightAction } from "../game-logic/night-resolver.js";
 import {
@@ -97,6 +100,8 @@ export class GameRoom extends Room<{ state: GameState }> {
   private pendingHunterRevengeUserId: string | undefined;
   private pendingMayorSuccessor = false;
   private pendingVampireBites = new Map<string, { round: number; causeBg: string }>();
+  private achievementEvents: AchievementEventLike[] = [];
+  private announcedAchievementUnlocks = new Set<string>();
 
   onCreate(options: CreateOptions) {
     GameRoom.liveRooms.add(this);
@@ -1160,12 +1165,17 @@ export class GameRoom extends Room<{ state: GameState }> {
         winnerReasonBg: this.state.winnerReasonBg,
         endedAt: new Date().toISOString(),
       };
+      const achievementUnlocks = this.evaluateAchievementUnlocks();
+      this.sendAchievementUnlocks(achievementUnlocks);
       this.queuePersistence(async () => {
         const gameId = await this.ensurePersistedGame();
         if (gameId) {
           await this.persistence.finishGame(gameId, {
             winnerTeam: this.state.winnerTeam as never,
           });
+          for (const unlock of achievementUnlocks) {
+            await this.persistence.recordAchievement(unlock.userId, unlock.achievementId, gameId);
+          }
         }
       });
     }
@@ -1468,6 +1478,7 @@ export class GameRoom extends Room<{ state: GameState }> {
             targetId: targetUserId,
             visibility: "public",
           });
+          this.sendAchievementUnlocks([{ userId: targetUserId, achievementId: "jester_win" }]);
         }
         if (this.queueHunterRevenge(deaths)) {
           return;
@@ -1839,6 +1850,15 @@ export class GameRoom extends Room<{ state: GameState }> {
   }
 
   private persistGameEvent(type: string, event: Omit<PersistEventInput, "round" | "phase" | "type"> = {}) {
+    this.achievementEvents.push({
+      round: this.state.round,
+      phase: this.currentPhase(),
+      type,
+      actorId: event.actorId ?? null,
+      targetId: event.targetId ?? null,
+      payload: event.payload ?? {},
+    });
+
     this.queuePersistence(async () => {
       const gameId = await this.ensurePersistedGame();
       if (!gameId) {
@@ -1852,6 +1872,56 @@ export class GameRoom extends Room<{ state: GameState }> {
         ...event,
       });
     });
+  }
+
+  private evaluateAchievementUnlocks() {
+    const rawUnlocks = evaluateAchievementUnlocks({
+      events: this.achievementEvents,
+      winnerTeam: this.state.winnerTeam,
+      players: [...this.privatePlayers.values()].map((player) => ({
+        userId: player.userId,
+        ...(player.role ? { role: player.role } : {}),
+        alive: player.alive,
+      })),
+    });
+
+    const seen = new Set<string>();
+    return rawUnlocks.filter((unlock) => {
+      const key = `${unlock.userId}:${unlock.achievementId}`;
+      if (seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
+      return true;
+    });
+  }
+
+  private sendAchievementUnlocks(unlocks: Array<{ userId: string; achievementId: string }>) {
+    if (unlocks.length === 0) {
+      return;
+    }
+
+    const knownAchievementIds = new Set(ACHIEVEMENTS.map((achievement) => achievement.id));
+    const byUserId = new Map<string, string[]>();
+    for (const unlock of unlocks) {
+      if (!knownAchievementIds.has(unlock.achievementId)) {
+        continue;
+      }
+      const key = `${unlock.userId}:${unlock.achievementId}`;
+      if (this.announcedAchievementUnlocks.has(key)) {
+        continue;
+      }
+      this.announcedAchievementUnlocks.add(key);
+      byUserId.set(unlock.userId, [...(byUserId.get(unlock.userId) ?? []), unlock.achievementId]);
+    }
+
+    for (const [userId, achievementIds] of byUserId) {
+      const client = this.clientsByUserId.get(userId);
+      client?.send("achievements_unlocked", {
+        type: "achievements_unlocked",
+        achievementIds,
+      } satisfies ServerEvent);
+    }
   }
 
   private auditNarratorAction(player: PlayerPublicState, type: string, payload: Record<string, unknown> = {}) {

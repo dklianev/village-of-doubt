@@ -351,6 +351,7 @@ describe("GameRoom gameplay regressions", () => {
     const roleClients = await startGameAndCollectRoles(clients);
     const jester = roleClients.find((item) => item.role === "jester");
     expect(jester).toBeTruthy();
+    const unlockMessage = jester?.client.waitForMessage("achievements_unlocked");
 
     clients[0]?.client.send("narratorAdvance", {});
     await serverRoom.waitForNextPatch();
@@ -368,6 +369,7 @@ describe("GameRoom gameplay regressions", () => {
     await serverRoom.waitForNextPatch(20);
 
     expect([...serverRoom.state.publicEvents.values()].some((event) => event.messageBg.includes("Шут"))).toBe(true);
+    await expect(unlockMessage).resolves.toMatchObject({ achievementIds: ["jester_win"] });
   });
 
   it("rejects manual room configs with roles from another game family", async () => {

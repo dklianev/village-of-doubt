@@ -1,5 +1,5 @@
 import { count, desc, eq, inArray } from "drizzle-orm";
-import { gameEvents, gamePlayers, games } from "./schema.js";
+import { gameEvents, gamePlayers, games, userAchievements } from "./schema.js";
 import type { Database } from "./client.js";
 
 export interface GameHistorySummary {
@@ -30,6 +30,12 @@ export interface LeaderboardEntryRow {
   role: string;
   winnerTeam: string | null;
   endedAt: Date | null;
+}
+
+export interface UserAchievementRow {
+  achievementId: string;
+  gameId: string | null;
+  unlockedAt: Date;
 }
 
 export async function getRecentGameHistory(db: Database, limit = 20): Promise<GameHistorySummary[]> {
@@ -128,4 +134,20 @@ export async function getLeaderboardRows(db: Database, limit = 500): Promise<Lea
     .where(eq(games.status, "ended"))
     .orderBy(desc(games.endedAt))
     .limit(limit);
+}
+
+export async function getAchievementsForUser(db: Database, userId: string): Promise<UserAchievementRow[]> {
+  if (!userId) {
+    return [];
+  }
+
+  return db
+    .select({
+      achievementId: userAchievements.achievementId,
+      gameId: userAchievements.gameId,
+      unlockedAt: userAchievements.unlockedAt,
+    })
+    .from(userAchievements)
+    .where(eq(userAchievements.userId, userId))
+    .orderBy(desc(userAchievements.unlockedAt));
 }

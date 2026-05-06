@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ACHIEVEMENTS } from "@werewolf/shared";
+import { AchievementsClient } from "@/components/achievements-client";
 
 export const metadata: Metadata = {
   title: "Постижения | Върколак и Мафия",
@@ -19,24 +19,7 @@ export default function AchievementsPage() {
         </p>
       </section>
 
-      <section className="empty-state-card utility-empty mt-6 rounded-[2rem] p-6">
-        <span aria-hidden="true" />
-        <h2>Първото постижение още чака своята сцена</h2>
-        <p>
-          След завършена игра тук ще различаваме отключените моменти от заключените легенди.
-          Засега каталогът по-долу показва какво може да се случи на масата.
-        </p>
-      </section>
-
-      <section className="achievement-grid mt-6">
-        {ACHIEVEMENTS.map((achievement) => (
-          <article key={achievement.id} className="paper-card achievement-card rounded-[2rem] p-6">
-            <span>{achievement.iconBg}</span>
-            <h2>{achievement.titleBg}</h2>
-            <p>{achievement.descriptionBg}</p>
-          </article>
-        ))}
-      </section>
+      <AchievementsClient />
 
       <Link className="btn btn-secondary mt-6" href="/history">
         Виж replay история

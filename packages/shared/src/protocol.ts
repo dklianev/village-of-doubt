@@ -136,5 +136,6 @@ export type ServerEvent =
       active: boolean;
       createdAt: number;
     }
+  | { type: "achievements_unlocked"; achievementIds: string[] }
   | { type: "safe_error"; messageBg: string }
   | { type: "system"; messageBg: string };

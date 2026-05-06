@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useRef, useState, useTransition } from "react";
 import type { Room } from "@colyseus/sdk";
 import {
+  ACHIEVEMENTS,
   GAME_MODE_DEFINITIONS,
   ROLE_DEFINITIONS,
   getRoleAssetKey,
@@ -163,6 +164,7 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
   const [phasePulse, setPhasePulse] = useState(0);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [startCountdown, setStartCountdown] = useState<number | null>(null);
+  const [unlockedAchievementIds, setUnlockedAchievementIds] = useState<string[]>([]);
   const previousCuePhaseRef = useRef<string | null>(null);
   const previousEventIdsRef = useRef<Set<string>>(new Set());
   const hasSeenEventsRef = useRef(false);
@@ -303,6 +305,12 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
 
         nextRoom.onMessage("safe_error", (message: { messageBg: string }) => {
           toast({ message: message.messageBg, kind: "error" });
+        });
+
+        nextRoom.onMessage("achievements_unlocked", (message: { achievementIds: string[] }) => {
+          setUnlockedAchievementIds(message.achievementIds);
+          toast({ message: "Отключи ново постижение.", kind: "success" });
+          window.setTimeout(() => setUnlockedAchievementIds([]), 7000);
         });
 
         nextRoom.onLeave((leaveCode) => {
@@ -683,6 +691,9 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
       <PhaseTransitionOverlay phase={phase} mode={mode} narratorVoice={snapshot?.narratorVoice ?? "classic"} pulseKey={phasePulse} />
       <PreGameCountdown value={startCountdown} />
       {showShortcuts ? <KeyboardShortcutsModal onClose={() => setShowShortcuts(false)} /> : null}
+      {unlockedAchievementIds.length > 0 ? (
+        <AchievementUnlockModal achievementIds={unlockedAchievementIds} onClose={() => setUnlockedAchievementIds([])} />
+      ) : null}
       <section className="grid gap-6 lg:grid-cols-[1fr_0.8fr]">
         <div className="card rounded-[2rem] p-5 md:p-7">
           <ConnectionBanner status={connectionStatus} message={status} />
@@ -1088,6 +1099,34 @@ function PreGameCountdown({ value }: { value: number | null }) {
       <span>ролите се разбъркват</span>
       <strong>{value}</strong>
       <small>Не показвай екрана си на другите.</small>
+    </div>
+  );
+}
+
+function AchievementUnlockModal({ achievementIds, onClose }: { achievementIds: string[]; onClose: () => void }) {
+  const achievements = ACHIEVEMENTS.filter((achievement) => achievementIds.includes(achievement.id));
+  if (achievements.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="achievement-unlock-backdrop" role="presentation" onClick={onClose}>
+      <aside className="achievement-unlock-modal" role="dialog" aria-label="Отключени постижения" onClick={(event) => event.stopPropagation()}>
+        <button type="button" onClick={onClose}>
+          затвори
+        </button>
+        <p className="section-kicker">нова легенда</p>
+        <h2>Отключи постижение</h2>
+        <div>
+          {achievements.map((achievement) => (
+            <article key={achievement.id}>
+              <span>{achievement.iconBg}</span>
+              <strong>{achievement.titleBg}</strong>
+              <p>{achievement.descriptionBg}</p>
+            </article>
+          ))}
+        </div>
+      </aside>
     </div>
   );
 }

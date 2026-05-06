@@ -7,6 +7,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -140,5 +141,22 @@ export const gameEvents = pgTable(
   (table) => [
     index("game_events_game_id_idx").on(table.gameId),
     index("game_events_created_at_idx").on(table.createdAt),
+  ],
+);
+
+export const userAchievements = pgTable(
+  "user_achievements",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    achievementId: text("achievement_id").notNull(),
+    gameId: uuid("game_id").references(() => games.id, { onDelete: "cascade" }),
+    unlockedAt: timestamp("unlocked_at").defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("user_achievements_user_achievement_idx").on(table.userId, table.achievementId),
+    index("user_achievements_user_id_idx").on(table.userId),
   ],
 );
