@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { getSoundEnabled, playCue, setSoundEnabled } from "@/lib/sound";
 
 const NAV_ITEMS = [
   { href: "/", label: "Начало" },
@@ -16,6 +18,20 @@ const NAV_ITEMS = [
 
 export function SiteChrome() {
   const pathname = usePathname();
+  const [soundEnabled, setSoundEnabledState] = useState(false);
+
+  useEffect(() => {
+    setSoundEnabledState(getSoundEnabled());
+  }, []);
+
+  function toggleSound() {
+    const nextEnabled = !soundEnabled;
+    setSoundEnabled(nextEnabled);
+    setSoundEnabledState(nextEnabled);
+    if (nextEnabled) {
+      playCue("phase-change");
+    }
+  }
 
   return (
     <header className={`site-chrome ${pathname.startsWith("/play") ? "is-game" : ""}`}>
@@ -35,6 +51,9 @@ export function SiteChrome() {
             </Link>
           );
         })}
+        <button className="site-sound-toggle" type="button" onClick={toggleSound}>
+          Звук: {soundEnabled ? "Вкл" : "Изкл"}
+        </button>
       </nav>
     </header>
   );

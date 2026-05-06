@@ -260,7 +260,8 @@ select {
   gap: 6px;
 }
 
-.site-nav a {
+.site-nav a,
+.site-sound-toggle {
   border: 1px solid transparent;
   border-radius: 999px;
   padding: 10px 14px;
@@ -269,6 +270,7 @@ select {
   font-weight: 950;
   letter-spacing: 0.1em;
   text-transform: uppercase;
+  cursor: pointer;
   transition:
     background 180ms ease,
     border-color 180ms ease,
@@ -276,14 +278,20 @@ select {
     transform 180ms ease;
 }
 
+.site-sound-toggle {
+  background: rgba(248, 236, 210, 0.055);
+}
+
 .site-nav a:hover,
-.site-nav a.is-active {
+.site-nav a.is-active,
+.site-sound-toggle:hover {
   border-color: rgba(209, 154, 66, 0.42);
   background: rgba(248, 236, 210, 0.1);
   color: #fff6e5;
 }
 
-.site-nav a:hover {
+.site-nav a:hover,
+.site-sound-toggle:hover {
   transform: translateY(-1px);
 }
 
@@ -4007,7 +4015,8 @@ select {
     justify-content: flex-start;
   }
 
-  .site-nav a {
+  .site-nav a,
+  .site-sound-toggle {
     padding: 9px 11px;
     font-size: 0.7rem;
   }

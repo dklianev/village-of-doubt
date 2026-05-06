@@ -29,6 +29,7 @@ import {
   validateDisplayNameBg,
 } from "@/lib/anonymous-player";
 import { createGameClient, GAME_ROOM_NAME } from "@/lib/colyseus-client";
+import { playCue, setSoundEnabled } from "@/lib/sound";
 import { useToast } from "@/lib/toast";
 import { PlayerTokensSkeleton } from "@/components/skeleton";
 
@@ -162,10 +163,14 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [startCountdown, setStartCountdown] = useState<number | null>(null);
   const previousCuePhaseRef = useRef<string | null>(null);
+  const previousEventIdsRef = useRef<Set<string>>(new Set());
+  const hasSeenEventsRef = useRef(false);
+  const previousWinnerTeamRef = useRef("");
   const typingTimeoutsRef = useRef<Map<string, number>>(new Map());
   const lastTypingSentRef = useRef<Map<ChatChannel, number>>(new Map());
   const [isPending, startTransition] = useTransition();
   const toast = useToast();
+  const liveMode = (snapshot?.tempoProfile ?? createOptions?.tempoProfile) === "live";
 
   useEffect(() => {
     setDisplayNameInput(window.localStorage.getItem(ANONYMOUS_DISPLAY_NAME_KEY) ?? window.localStorage.getItem("dev-display-name") ?? "");
@@ -387,14 +392,37 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
 
     previousCuePhaseRef.current = nextPhase;
     setPhasePulse((current) => current + 1);
-    if (cueMode === "silent") {
+    playCue("phase-change", { forceSilent: liveMode || cueMode === "silent" });
+    if (cueMode === "audio_vibration") {
+      triggerDeviceCue(nextPhase, liveMode);
+    }
+  }, [cueMode, liveMode, snapshot?.phase]);
+
+  useEffect(() => {
+    const events = snapshot?.publicEvents ?? [];
+    if (!hasSeenEventsRef.current) {
+      previousEventIdsRef.current = new Set(events.map((event) => event.id));
+      hasSeenEventsRef.current = true;
       return;
     }
 
-    if (cueMode === "audio_vibration") {
-      triggerDeviceCue(nextPhase);
+    const previousIds = previousEventIdsRef.current;
+    const newEvents = events.filter((event) => !previousIds.has(event.id));
+    previousEventIdsRef.current = new Set(events.map((event) => event.id));
+
+    if (newEvents.some((event) => eventLineClass(event.messageBg) === "event-death")) {
+      playCue("kill", { forceSilent: liveMode });
     }
-  }, [cueMode, snapshot?.phase]);
+  }, [liveMode, snapshot?.publicEvents]);
+
+  useEffect(() => {
+    const winnerTeam = snapshot?.winnerTeam ?? "";
+    if (!winnerTeam || previousWinnerTeamRef.current === winnerTeam) {
+      return;
+    }
+    previousWinnerTeamRef.current = winnerTeam;
+    playCue("win", { forceSilent: liveMode });
+  }, [liveMode, snapshot?.winnerTeam]);
 
   const players = snapshot?.players ?? [];
   const livingPlayers = players.filter((player) => player.playing && player.alive);
@@ -410,7 +438,7 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
   function sendNightAction(action: NightActionCommand) {
     room?.send("submitNightAction", { action });
     toast({ message: "Нощното действие е изпратено.", kind: "success" });
-    if ("vibrate" in navigator) {
+    if (!liveMode && "vibrate" in navigator) {
       navigator.vibrate([24]);
     }
   }
@@ -418,6 +446,7 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
   function sendVote(targetUserId: string) {
     room?.send("submitVote", { targetUserId });
     toast({ message: "Гласът е изпратен.", kind: "success" });
+    playCue("vote", { forceSilent: liveMode });
   }
 
   function requestStartGame() {
@@ -491,7 +520,12 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
     setCueMode(mode);
     window.localStorage.setItem(CUE_MODE_STORAGE_KEY, mode);
     if (mode === "audio_vibration") {
-      triggerDeviceCue(phase);
+      setSoundEnabled(true);
+      triggerDeviceCue(phase, liveMode);
+      playCue("phase-change", { forceSilent: liveMode });
+    }
+    if (mode === "silent") {
+      setSoundEnabled(false);
     }
   }
 
@@ -501,7 +535,6 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
   const privateTypers = typingNotices.filter(
     (notice) => notice.channel === privateChatChannel && notice.senderUserId !== currentUserId,
   );
-  const liveMode = (snapshot?.tempoProfile ?? createOptions?.tempoProfile) === "live";
   // Connection state already lives in the ConnectionBanner; the phase-status
   // line is only useful for transient action feedback. Hide the boilerplate
   // "Свързан" / "Свързване..." strings so the player doesn't see them linger.
@@ -1920,56 +1953,15 @@ function isCueMode(value: string | null): value is CueMode {
   return value === "silent" || value === "visual" || value === "audio_vibration";
 }
 
-function triggerDeviceCue(phase: string) {
+function triggerDeviceCue(phase: string, forceSilent = false) {
   if (typeof window === "undefined") {
     return;
   }
 
-  if ("vibrate" in navigator) {
+  if (!forceSilent && "vibrate" in navigator) {
     const pattern = phase === "voting" ? [90, 50, 90] : phase === "night" || phase === "first_night" ? [130] : [70];
     navigator.vibrate(pattern);
   }
-
-  playPhaseTone(phase);
-}
-
-function playPhaseTone(phase: string) {
-  try {
-    const AudioContextCtor =
-      window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-    if (!AudioContextCtor) {
-      return;
-    }
-
-    const context = new AudioContextCtor();
-    const oscillator = context.createOscillator();
-    const gain = context.createGain();
-    oscillator.type = "sine";
-    oscillator.frequency.value = phaseFrequency(phase);
-    gain.gain.setValueAtTime(0.0001, context.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.06, context.currentTime + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.22);
-    oscillator.connect(gain);
-    gain.connect(context.destination);
-    oscillator.start();
-    oscillator.stop(context.currentTime + 0.24);
-    window.setTimeout(() => void context.close(), 320);
-  } catch {
-    // Some mobile browsers block Web Audio until a gesture; the UI still keeps visual cues.
-  }
-}
-
-function phaseFrequency(phase: string) {
-  if (phase === "night" || phase === "first_night") {
-    return 196;
-  }
-  if (phase === "voting") {
-    return 392;
-  }
-  if (phase === "game_over") {
-    return 247;
-  }
-  return 523;
 }
 
 function eventLineClass(message: string) {
