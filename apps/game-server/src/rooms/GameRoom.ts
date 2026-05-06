@@ -1,4 +1,5 @@
 import { Client, Room } from "colyseus";
+import * as Sentry from "@sentry/node";
 import {
   assignRoles,
   ACHIEVEMENTS,
@@ -1961,6 +1962,9 @@ export class GameRoom extends Room<{ state: GameState }> {
     this.persistQueue = this.persistQueue
       .then(task)
       .catch((error) => {
+        if (process.env.SENTRY_DSN) {
+          Sentry.captureException(error);
+        }
         console.error("[game-persistence]", error);
       });
   }

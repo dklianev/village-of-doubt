@@ -11,8 +11,9 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@t3-oss/env-nextjs": "^0.13.11",
     "@colyseus/sdk": "^0.17.41",
+    "@sentry/nextjs": "^10.51.0",
+    "@t3-oss/env-nextjs": "^0.13.11",
     "@werewolf/database": "workspace:*",
     "@werewolf/shared": "workspace:*",
     "better-auth": "^1.6.8",

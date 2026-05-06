@@ -4388,6 +4388,23 @@ select {
   line-height: 1.5;
 }
 
+.global-error-screen {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(158, 52, 45, 0.25), transparent 32rem),
+    linear-gradient(135deg, #0b1114, #20130f);
+  color: var(--paper);
+}
+
+.global-error-card {
+  max-width: 34rem;
+  padding: clamp(1.5rem, 5vw, 3rem);
+  text-align: center;
+}
+
 .leaderboard-list {
   display: grid;
   gap: 14px;
