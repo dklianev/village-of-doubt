@@ -67,6 +67,45 @@
   --connection-art: var(--screen-loading);
 }
 
+[data-theme="dark"],
+[data-theme="werewolves"] {
+  --ink: #1b100c;
+  --ink-soft: #2a1a14;
+  --paper: #f8ecd2;
+  --paper-deep: #d6bc8b;
+  --paper-muted: #b99a68;
+  --blood: #9e342d;
+  --blood-dark: #5e1f1d;
+  --wolf: #182b31;
+  --night: #0b1114;
+  --gold: #d19a42;
+  --ember: #f0b45d;
+  --fog: #efe4ce;
+  --moss: #59633b;
+  --glass: rgba(35, 22, 16, 0.72);
+  --hairline: rgba(248, 236, 210, 0.18);
+}
+
+[data-theme="light"] {
+  --ink: #24160f;
+  --ink-soft: #4a3022;
+  --paper: #fff2d3;
+  --paper-deep: #d5b779;
+  --paper-muted: #85643b;
+  --blood: #8d2f29;
+  --blood-dark: #5e1f1d;
+  --wolf: #27474a;
+  --night: #f5e7cc;
+  --gold: #a96f22;
+  --ember: #c9822b;
+  --fog: #f8edda;
+  --moss: #6f7d4b;
+  --glass: rgba(255, 242, 211, 0.74);
+  --hairline: rgba(85, 54, 33, 0.16);
+  --shadow-deep: 0 30px 80px rgba(67, 39, 24, 0.16);
+  --shadow-gold: 0 0 42px rgba(169, 111, 34, 0.12);
+}
+
 [data-theme="mafia"] {
   --ink: #17120f;
   --ink-soft: #211914;
@@ -114,6 +153,15 @@ html {
   background: var(--night);
 }
 
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+  background: #f5e7cc;
+}
+
 body {
   min-height: 100vh;
   margin: 0;
@@ -129,6 +177,17 @@ body {
   color: var(--paper);
   font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
   overflow-x: hidden;
+}
+
+html[data-theme="light"] body {
+  background:
+    linear-gradient(rgba(255, 242, 211, 0.7), rgba(255, 242, 211, 0.84)),
+    var(--texture-paper),
+    radial-gradient(circle at 16% 4%, rgba(169, 111, 34, 0.2), transparent 19rem),
+    radial-gradient(circle at 80% 8%, rgba(141, 47, 41, 0.14), transparent 24rem),
+    radial-gradient(circle at 45% 110%, rgba(111, 125, 75, 0.16), transparent 34rem),
+    linear-gradient(145deg, #f7ead0 0%, #e7d0a4 48%, #c6d0b2 100%);
+  color: var(--ink);
 }
 
 body::before,
@@ -148,6 +207,15 @@ body::before {
     repeating-linear-gradient(90deg, rgba(248, 236, 210, 0.035) 0 1px, transparent 1px 18px),
     repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.08) 0 1px, transparent 1px 22px);
   mask-image: radial-gradient(circle at 50% 20%, black, transparent 78%);
+}
+
+html[data-theme="light"] body::before {
+  background:
+    linear-gradient(rgba(255, 242, 211, 0.74), rgba(255, 242, 211, 0.74)),
+    var(--texture-ornament) center / 860px 860px,
+    linear-gradient(115deg, transparent 0 42%, rgba(85, 54, 33, 0.075) 42% 43%, transparent 43%),
+    repeating-linear-gradient(90deg, rgba(85, 54, 33, 0.045) 0 1px, transparent 1px 18px),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.18) 0 1px, transparent 1px 22px);
 }
 
 body::after {
@@ -207,6 +275,14 @@ select {
   backdrop-filter: blur(18px);
 }
 
+html[data-theme="light"] .site-chrome {
+  border-color: rgba(85, 54, 33, 0.14);
+  background:
+    linear-gradient(135deg, rgba(255, 244, 220, 0.88), rgba(238, 216, 176, 0.78)),
+    var(--texture-paper) center / 520px 520px;
+  box-shadow: 0 18px 54px rgba(91, 59, 35, 0.16), inset 0 1px rgba(255, 255, 255, 0.65);
+}
+
 .site-chrome.is-game {
   position: relative;
   top: auto;
@@ -261,7 +337,8 @@ select {
 }
 
 .site-nav a,
-.site-sound-toggle {
+.site-sound-toggle,
+.site-theme-toggle {
   border: 1px solid transparent;
   border-radius: 999px;
   padding: 10px 14px;
@@ -278,20 +355,37 @@ select {
     transform 180ms ease;
 }
 
-.site-sound-toggle {
+.site-sound-toggle,
+.site-theme-toggle {
   background: rgba(248, 236, 210, 0.055);
+}
+
+html[data-theme="light"] .site-nav a,
+html[data-theme="light"] .site-sound-toggle,
+html[data-theme="light"] .site-theme-toggle {
+  color: rgba(36, 22, 15, 0.76);
 }
 
 .site-nav a:hover,
 .site-nav a.is-active,
-.site-sound-toggle:hover {
+.site-sound-toggle:hover,
+.site-theme-toggle:hover {
   border-color: rgba(209, 154, 66, 0.42);
   background: rgba(248, 236, 210, 0.1);
   color: #fff6e5;
 }
 
+html[data-theme="light"] .site-nav a:hover,
+html[data-theme="light"] .site-nav a.is-active,
+html[data-theme="light"] .site-sound-toggle:hover,
+html[data-theme="light"] .site-theme-toggle:hover {
+  background: rgba(255, 255, 255, 0.42);
+  color: var(--ink);
+}
+
 .site-nav a:hover,
-.site-sound-toggle:hover {
+.site-sound-toggle:hover,
+.site-theme-toggle:hover {
   transform: translateY(-1px);
 }
 
@@ -4029,7 +4123,8 @@ select {
   }
 
   .site-nav a,
-  .site-sound-toggle {
+  .site-sound-toggle,
+  .site-theme-toggle {
     padding: 9px 11px;
     font-size: 0.7rem;
   }

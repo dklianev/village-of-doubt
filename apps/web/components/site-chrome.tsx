@@ -5,6 +5,16 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { getSoundEnabled, playCue, setSoundEnabled } from "@/lib/sound";
 
+type ThemePreference = "system" | "dark" | "light";
+
+const THEME_STORAGE_KEY = "werewolf-theme";
+const THEME_OPTIONS: ThemePreference[] = ["system", "dark", "light"];
+const THEME_LABELS: Record<ThemePreference, string> = {
+  system: "Системна",
+  dark: "Тъмна",
+  light: "Светла",
+};
+
 const NAV_ITEMS = [
   { href: "/", label: "Начало" },
   { href: "/werewolf", label: "Върколак" },
@@ -19,9 +29,13 @@ const NAV_ITEMS = [
 export function SiteChrome() {
   const pathname = usePathname();
   const [soundEnabled, setSoundEnabledState] = useState(false);
+  const [themePreference, setThemePreference] = useState<ThemePreference>("system");
 
   useEffect(() => {
     setSoundEnabledState(getSoundEnabled());
+    const savedTheme = readThemePreference();
+    setThemePreference(savedTheme);
+    applyThemePreference(savedTheme);
   }, []);
 
   function toggleSound() {
@@ -31,6 +45,14 @@ export function SiteChrome() {
     if (nextEnabled) {
       playCue("phase-change");
     }
+  }
+
+  function cycleThemePreference() {
+    const currentIndex = THEME_OPTIONS.indexOf(themePreference);
+    const nextPreference = THEME_OPTIONS[(currentIndex + 1) % THEME_OPTIONS.length] ?? "system";
+    window.localStorage.setItem(THEME_STORAGE_KEY, nextPreference);
+    setThemePreference(nextPreference);
+    applyThemePreference(nextPreference);
   }
 
   return (
@@ -54,7 +76,33 @@ export function SiteChrome() {
         <button className="site-sound-toggle" type="button" onClick={toggleSound}>
           Звук: {soundEnabled ? "Вкл" : "Изкл"}
         </button>
+        <button className="site-theme-toggle" type="button" onClick={cycleThemePreference}>
+          Тема: {THEME_LABELS[themePreference]}
+        </button>
       </nav>
     </header>
   );
+}
+
+function readThemePreference(): ThemePreference {
+  if (typeof window === "undefined") {
+    return "system";
+  }
+
+  const saved = window.localStorage.getItem(THEME_STORAGE_KEY);
+  return saved === "dark" || saved === "light" || saved === "system" ? saved : "system";
+}
+
+function applyThemePreference(preference: ThemePreference) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const resolvedTheme =
+    preference === "system"
+      ? window.matchMedia("(prefers-color-scheme: light)").matches
+        ? "light"
+        : "dark"
+      : preference;
+  document.documentElement.dataset.theme = resolvedTheme;
 }

@@ -83,8 +83,19 @@ function checkCssImageSet() {
   assert(css.includes(".skeleton"), "Missing loading skeleton CSS.");
   assert(css.includes("@keyframes cuePulse"), "Missing cue pulse animation.");
   assert(css.includes("@keyframes skeletonShimmer"), "Missing skeleton shimmer animation.");
+  assertThemeVariableBlock(css, '[data-theme="dark"]');
+  assertThemeVariableBlock(css, '[data-theme="light"]');
   assert(css.includes('[data-theme="mafia"]'), "Missing Mafia theme selector.");
   assert(css.includes('/game-art/mafia/bg-landing-hero.webp'), "Missing Mafia image-set CSS references.");
+}
+
+function assertThemeVariableBlock(css, selector) {
+  const start = css.indexOf(selector);
+  assert(start >= 0, `Missing ${selector} theme selector.`);
+  const block = css.slice(start, css.indexOf("}", start));
+  for (const variable of ["--paper", "--ink", "--blood"]) {
+    assert(block.includes(variable), `${selector} must declare ${variable}.`);
+  }
 }
 
 function checkLandingLayoutContracts() {
