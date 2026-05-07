@@ -55,7 +55,7 @@ const WEREWOLF_PHASES: PhaseRule[] = [
     id: "vote",
     title: "Гласуване",
     short: "решение",
-    body: "Всеки жив играч гласува. Кметът не е постоянен двоен глас: той решава само при равенство по каноничната логика.",
+    body: "Всеки жив играч гласува. Кметът не е постоянен двоен глас: неговият избор натежава само при равенство.",
     timer: "30-90 секунди",
     wakes: "Всички живи гласуват.",
     example: "При равни гласове, ако Кметът е гласувал за един от вързаните кандидати, неговият избор решава.",
@@ -140,7 +140,7 @@ export function GameRulesPage({ family }: { family: GameFamily }) {
   return (
     <main className="shell rules-shell" data-theme={family} data-family={family}>
       <section className="card role-codex-hero rounded-[2rem] p-7">
-        <p className="section-kicker">{family === "mafia" ? "как се играе" : "канонични правила"}</p>
+        <p className="section-kicker">как се играе</p>
         <h1 className="mt-3 text-5xl font-black leading-none md:text-7xl">{rules.titleBg}</h1>
         <p className="mt-5 max-w-3xl text-lg leading-8 text-[#ead9ba]">{rules.introBg}</p>
       </section>

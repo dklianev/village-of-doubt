@@ -137,11 +137,24 @@ function checkBulgarianCopyContracts() {
     "packages/shared/src/games/werewolf/rules.ts",
     "packages/shared/src/games/mafia/roles.ts",
     "packages/shared/src/games/mafia/rules.ts",
+    "packages/shared/src/game-config.ts",
   ];
 
   for (const file of uiFiles) {
     const text = readText(file);
-    for (const forbidden of ["Село под съмнение", "Българска Мафия", "Werewolf & Mafia", "Вот", "PDF", "pdf", "голямата кутия"]) {
+    for (const forbidden of [
+      "Село под съмнение",
+      "Българска Мафия",
+      "Werewolf & Mafia",
+      "Вот",
+      "PDF",
+      "pdf",
+      "голямата кутия",
+      "Голяма кутия",
+      "канонич",
+      "правилник",
+      "правилниц",
+    ]) {
       assert(!text.includes(forbidden), `${file} contains forbidden user-facing copy: ${forbidden}`);
     }
   }

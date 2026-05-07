@@ -42,6 +42,7 @@ export function resolveNight(
   const privateMessages: NightResolution["privateMessages"] = [];
   const factionKillVotes = new Map<TeamCode, Map<string, number>>();
   const healerProtectedTargets = new Set<string>();
+  const doctorProtectedTargets = new Set<string>();
   const bodyguardProtectedTargets = new Map<string, string>();
   const witchHealedTargets = new Set<string>();
   const witchPoisonedTargets = new Set<string>();
@@ -94,8 +95,15 @@ export function resolveNight(
     }
 
     if (action.kind === "faction_kill" && aliveById.has(action.targetUserId)) {
+      const target = aliveById.get(action.targetUserId);
+      if (!target || target.userId === actor.userId) {
+        continue;
+      }
       const team = getRoleTeam(actor.role);
       if (actor.role === "vampire_hunter") {
+        if (target.role === "vampire_hunter") {
+          continue;
+        }
         deaths.set(action.targetUserId, {
           causeBg: "Повален от Убиеца на вампири.",
           sourceRole: actor.role,
@@ -107,6 +115,9 @@ export function resolveNight(
           causeBg: actor.role === "maniac" ? "Убит от Маниака." : "Убит от Вигиланте.",
           sourceRole: actor.role,
         });
+        continue;
+      }
+      if (isFactionTeam(team) && getRoleTeam(target.role) === team) {
         continue;
       }
       const votes = factionKillVotes.get(team) ?? new Map<string, number>();
@@ -132,11 +143,24 @@ export function resolveNight(
       if (!target) {
         continue;
       }
+      const covered = lawyerCoveredTargets.has(action.targetUserId);
+      if (actor.role === "seer" || actor.role === "oracle") {
+        const isThreat = covered ? false : isNightThreat(target.role);
+        checks.push({
+          actorUserId: submission.actorUserId,
+          targetUserId: action.targetUserId,
+          isEvil: isThreat,
+          messageBg: isThreat
+            ? "Видението потвърди нощна заплаха."
+            : "Видението не откри Върколак или Вампир.",
+        });
+        continue;
+      }
       checks.push({
         actorUserId: submission.actorUserId,
         targetUserId: action.targetUserId,
-        role: lawyerCoveredTargets.has(action.targetUserId) ? "civilian" : getRoleSeenBySeer(target.role),
-        ...(lawyerCoveredTargets.has(action.targetUserId) ? { messageBg: "Досието е прикрито: целта изглежда като Гражданин." } : {}),
+        role: covered ? "civilian" : getRoleSeenBySeer(target.role),
+        ...(covered ? { messageBg: "Досието е прикрито: целта изглежда като Гражданин." } : {}),
       });
     }
 
@@ -169,6 +193,8 @@ export function resolveNight(
     if (action.kind === "healer_protect" && aliveById.has(action.targetUserId)) {
       if (actor.role === "bodyguard") {
         bodyguardProtectedTargets.set(action.targetUserId, submission.actorUserId);
+      } else if (actor.role === "doctor") {
+        doctorProtectedTargets.add(action.targetUserId);
       } else {
         healerProtectedTargets.add(action.targetUserId);
       }
@@ -213,7 +239,8 @@ export function resolveNight(
   }
 
   for (const [team, votes] of factionKillVotes.entries()) {
-    const factionTarget = resolveMostVotedTarget(votes);
+    const livingFactionCount = livingPlayers.filter((player) => player.alive && getRoleTeam(player.role) === team).length;
+    const factionTarget = resolveConsensusTarget(votes, livingFactionCount);
     if (factionTarget) {
       if (team === "vampires") {
         delayedDeaths.set(factionTarget, {
@@ -253,13 +280,18 @@ export function resolveNight(
   }
 
   for (const targetUserId of witchHealedTargets) {
-    preventDeath(deaths, targetUserId, "Лечебната отвара спря нощна смърт.", preventedDeaths);
-    preventDeath(delayedDeaths, targetUserId, "Лечебната отвара спря вампирско ухапване.", preventedDeaths);
+    preventDeathFromFaction(deaths, targetUserId, "Лечебната отвара спря нощна атака.", preventedDeaths);
+    preventDeathFromFaction(delayedDeaths, targetUserId, "Лечебната отвара спря нощна атака.", preventedDeaths);
   }
 
   for (const targetUserId of healerProtectedTargets) {
-    preventDeath(deaths, targetUserId, "Лечителят спря нощна смърт.", preventedDeaths);
-    preventDeath(delayedDeaths, targetUserId, "Лечителят спря вампирско ухапване.", preventedDeaths);
+    preventDeathFromFaction(deaths, targetUserId, "Лечителят спря нощна атака.", preventedDeaths);
+    preventDeathFromFaction(delayedDeaths, targetUserId, "Лечителят спря нощна атака.", preventedDeaths);
+  }
+
+  for (const targetUserId of doctorProtectedTargets) {
+    preventDeath(deaths, targetUserId, "Докторът спря нощна смърт.", preventedDeaths);
+    preventDeath(delayedDeaths, targetUserId, "Докторът спря нощна смърт.", preventedDeaths);
   }
 
   applyBodyguardProtection(deaths, bodyguardProtectedTargets, "Бодигардът пое нощната атака.", preventedDeaths);
@@ -290,7 +322,7 @@ export function resolveNight(
   };
 }
 
-function resolveMostVotedTarget(votes: Map<string, number>): string | null {
+function resolveConsensusTarget(votes: Map<string, number>, livingFactionCount: number): string | null {
   const ranked = [...votes.entries()].sort((left, right) => right[1] - left[1]);
   const [targetUserId, topVotes] = ranked[0] ?? [];
   if (!targetUserId || !topVotes) {
@@ -298,7 +330,7 @@ function resolveMostVotedTarget(votes: Map<string, number>): string | null {
   }
 
   const tied = ranked.filter(([, count]) => count === topVotes);
-  return tied.length === 1 ? targetUserId : null;
+  return tied.length === 1 && topVotes === livingFactionCount ? targetUserId : null;
 }
 
 function factionKillCauseBg(team: TeamCode) {
@@ -319,6 +351,10 @@ function getRoleSeenBySeer(role: RoleCode): RoleCode {
 }
 
 function isEvilTeam(team: TeamCode): boolean {
+  return team === "mafia" || team === "werewolves" || team === "vampires";
+}
+
+function isFactionTeam(team: TeamCode): boolean {
   return team === "mafia" || team === "werewolves" || team === "vampires";
 }
 
@@ -348,6 +384,20 @@ function preventDeath(
   preventedDeaths: NightResolution["preventedDeaths"],
 ) {
   if (!deaths.has(targetUserId)) {
+    return;
+  }
+  deaths.delete(targetUserId);
+  preventedDeaths.push({ userId: targetUserId, reasonBg });
+}
+
+function preventDeathFromFaction(
+  deaths: Map<string, { causeBg: string; sourceTeam?: TeamCode; sourceRole?: RoleCode }>,
+  targetUserId: string,
+  reasonBg: string,
+  preventedDeaths: NightResolution["preventedDeaths"],
+) {
+  const death = deaths.get(targetUserId);
+  if (!death?.sourceTeam || !isFactionTeam(death.sourceTeam)) {
     return;
   }
   deaths.delete(targetUserId);

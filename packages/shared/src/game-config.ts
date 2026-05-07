@@ -126,7 +126,7 @@ export const GAME_MODE_DEFINITIONS: Record<
   werewolves_classic: {
     family: "werewolves",
     nameBg: "Върколак",
-    shortBg: "Класическа игра по правилата на „Върколаци — Голяма кутия“.",
+    shortBg: "Класическа игра с тайни роли, нощни заплахи и дневно гласуване.",
     recommendedPlayersBg: "6-30 играчи, най-добре 8-18.",
     themeKey: "werewolves",
     phaseLabelsBg: {},

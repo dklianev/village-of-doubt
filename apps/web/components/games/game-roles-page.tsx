@@ -63,7 +63,7 @@ export function GameRolesPage({ family }: { family: GameFamily }) {
   const title = isMafia ? "Роли в Мафия" : "Роли във Върколак";
   const intro = isMafia
     ? "Отделен справочник само за Мафия: градски роли, Мафия и неутрални варианти със собствен речник."
-    : "Справочник по ролите за Върколак, базиран на „Върколаци — Голяма кутия“, със стойности, зависимости и нощен ред.";
+    : "Справочник по ролите за Върколак със стойности, зависимости и нощен ред.";
   const roles = getRolesForFamily(family)
     .filter((role) => matchesRoleFilter(role, filter))
     .filter((role) => matchesRoleSearch(role, deferredQuery))

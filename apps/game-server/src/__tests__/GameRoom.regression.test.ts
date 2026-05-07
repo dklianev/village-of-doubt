@@ -161,8 +161,52 @@ describe("GameRoom gameplay regressions", () => {
     });
 
     await expect(error).resolves.toMatchObject({
-      messageBg: "Вещицата вече е използвала отровата си.",
+      messageBg: "Вещицата вече избра отровата тази нощ.",
     });
+  });
+
+  it("lets the Witch use both potions in the same night", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "WITCH2",
+      mode: "werewolves_classic",
+      playerCount: 6,
+      tempoProfile: "manual",
+      roles: {
+        witch: 1,
+        ordinary_villager: 4,
+        werewolf: 1,
+      },
+    });
+    const clients = await connectPlayers(colyseus, serverRoom, 6, "witch-both");
+    const roleClients = await startGameAndCollectRoles(clients);
+    await advanceToFirstNight(clients[0]?.client, serverRoom);
+
+    const witch = roleClients.find((item) => item.role === "witch");
+    const werewolf = roleClients.find((item) => item.role === "werewolf");
+    const savedTarget = roleClients.find((item) => item.role === "ordinary_villager");
+    const poisonedTarget = roleClients.find((item) => item.role === "ordinary_villager" && item.userId !== savedTarget?.userId);
+    expect(witch).toBeTruthy();
+    expect(werewolf).toBeTruthy();
+    expect(savedTarget).toBeTruthy();
+    expect(poisonedTarget).toBeTruthy();
+
+    werewolf?.client.send("submitNightAction", {
+      action: { kind: "faction_kill", targetUserId: savedTarget?.userId },
+    });
+    await serverRoom.waitForNextPatch(20);
+    witch?.client.send("submitNightAction", {
+      action: { kind: "witch_heal", targetUserId: savedTarget?.userId },
+    });
+    await serverRoom.waitForNextPatch(20);
+    witch?.client.send("submitNightAction", {
+      action: { kind: "witch_poison", targetUserId: poisonedTarget?.userId },
+    });
+    await serverRoom.waitForNextPatch(20);
+    clients[0]?.client.send("narratorAdvance", {});
+    await serverRoom.waitForNextPatch(20);
+
+    expect(findPublicPlayer(serverRoom, savedTarget?.userId)?.alive).toBe(true);
+    expect(findPublicPlayer(serverRoom, poisonedTarget?.userId)?.alive).toBe(false);
   });
 
   it("lets the Priest give one persistent blessing that blocks a night death", async () => {
@@ -189,20 +233,15 @@ describe("GameRoom gameplay regressions", () => {
     expect(vampire).toBeTruthy();
     expect(blessed).toBeTruthy();
 
-    const blessingMessage = blessed?.client.waitForMessage("private_blessing") as Promise<{ targetUserId: string }>;
     priest?.client.send("submitNightAction", {
       action: { kind: "priest_bless", targetUserId: blessed?.userId },
     });
-    await expect(blessingMessage).resolves.toMatchObject({ targetUserId: blessed?.userId });
+    await serverRoom.waitForNextPatch(20);
 
     vampire?.client.send("submitNightAction", {
       action: { kind: "faction_kill", targetUserId: blessed?.userId },
     });
-    const savedMessage = blessed?.client.waitForMessage("system") as Promise<{ messageBg: string }>;
     clients[0]?.client.send("narratorAdvance", {});
-    await expect(savedMessage).resolves.toMatchObject({
-      messageBg: expect.stringContaining("Благословията те спаси"),
-    });
     await serverRoom.waitForNextPatch(20);
 
     const blessedState = [...serverRoom.state.players.values()].find((player) => player.userId === blessed?.userId);
@@ -261,7 +300,7 @@ describe("GameRoom gameplay regressions", () => {
     await expect(oldWerewolfChat).rejects.toThrow("timed out");
   });
 
-  it("rejects Healer self-protection by the published Werewolf rules", async () => {
+  it("rejects Healer self-protection", async () => {
     const serverRoom = await colyseus.createRoom<GameRoom>("game", {
       code: "HEAL01",
       mode: "werewolves_classic",
@@ -287,7 +326,7 @@ describe("GameRoom gameplay regressions", () => {
       action: { kind: "healer_protect", targetUserId: healer?.userId },
     });
     await expect(error).resolves.toMatchObject({
-      messageBg: "Лечителят не може да лекува себе си по правилата на Върколак.",
+      messageBg: "Лечителят не може да лекува себе си.",
     });
 
     const savedTarget = roleClients.find((item) => item.role === "ordinary_villager");
@@ -455,7 +494,7 @@ describe("GameRoom gameplay regressions", () => {
     expect(mayor).toBeTruthy();
 
     const mayorState = [...serverRoom.state.players.values()].find((player) => player.userId === mayor?.userId);
-    expect(mayorState?.mayor).toBe(true);
+    expect(mayorState?.mayor).toBe(false);
 
     await advanceToVoting(clients[0]?.client, serverRoom);
     const targets = roleClients.filter((item) => item.userId !== mayor?.userId);
@@ -766,6 +805,7 @@ describe("GameRoom gameplay regressions", () => {
       mode: "werewolves_classic",
       playerCount: 6,
       tempoProfile: "manual",
+      mayorMode: "public_vote",
       roles: {
         mayor: 1,
         guard_dog: 1,

@@ -40,6 +40,7 @@ export function evaluateWinCondition(players: WinPlayerState[]): WinResult {
   const aliveManiacs = alive.filter((player) => player.role === "maniac").length;
   const aliveEvil = aliveWerewolves + aliveVampires + aliveMafia;
   const totalAlive = alive.length;
+  const aliveWerewolfOrVampire = aliveWerewolves + aliveVampires;
 
   if (aliveManiacs > 0 && aliveManiacs >= totalAlive - aliveManiacs) {
     return { winner: "maniac", reasonBg: "Маниакът остана последната реална заплаха в града." };
@@ -56,15 +57,21 @@ export function evaluateWinCondition(players: WinPlayerState[]): WinResult {
     return { winner: "draw", reasonBg: "Останаха само неутрални роли без отборна победа." };
   }
 
-  if (aliveVampires > 0 && aliveVampires >= totalAlive - aliveVampires) {
-    return { winner: "vampires", reasonBg: "Вампирите достигнаха паритет с всички останали живи." };
+  if (
+    aliveWerewolfOrVampire === 1 &&
+    aliveMafia === 0 &&
+    aliveVillage === 1 &&
+    alive.some((player) => player.alive && player.role === "cook")
+  ) {
+    return { winner: "draw", reasonBg: "Последната нощна заплаха не може да преодолее Готвача." };
   }
 
-  if (aliveWerewolves > 0) {
-    if (aliveWerewolves >= totalAlive - aliveWerewolves) {
-      return { winner: "werewolves", reasonBg: "Върколаците са равни или повече от всички останали живи." };
-    }
-    return { winner: null, reasonBg: null };
+  if (aliveWerewolves > 0 && aliveVampires === 0 && aliveMafia === 0 && aliveVillage === 0) {
+    return { winner: "werewolves", reasonBg: "Върколаците останаха единствената жива страна." };
+  }
+
+  if (aliveVampires > 0 && aliveWerewolves === 0 && aliveMafia === 0 && aliveVillage === 0) {
+    return { winner: "vampires", reasonBg: "Вампирите останаха единствената жива страна." };
   }
 
   if (aliveMafia > 0) {

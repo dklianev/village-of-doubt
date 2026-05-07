@@ -26,4 +26,28 @@ describe("evaluateWinCondition", () => {
       reasonBg: null,
     });
   });
+
+  it("does not let Werewolves win by parity alone", () => {
+    expect(
+      evaluateWinCondition([
+        { playerId: "wolf", role: "werewolf", alive: true },
+        { playerId: "villager", role: "ordinary_villager", alive: true },
+      ]),
+    ).toMatchObject({
+      winner: null,
+      reasonBg: null,
+    });
+  });
+
+  it("declares a stalemate when the last night threat cannot kill the Cook", () => {
+    expect(
+      evaluateWinCondition([
+        { playerId: "wolf", role: "werewolf", alive: true },
+        { playerId: "cook", role: "cook", alive: true },
+      ]),
+    ).toMatchObject({
+      winner: "draw",
+      reasonBg: "Последната нощна заплаха не може да преодолее Готвача.",
+    });
+  });
 });

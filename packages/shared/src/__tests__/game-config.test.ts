@@ -232,13 +232,13 @@ describe("assignment and win conditions", () => {
     expect(result.winner).toBe("lovers");
   });
 
-  it("declares vampire victory at parity with everyone else", () => {
+  it("does not let Vampires win by parity alone", () => {
     const result = evaluateWinCondition([
       { playerId: "a", role: "vampire", alive: true },
       { playerId: "b", role: "werewolf", alive: true },
     ]);
 
-    expect(result.winner).toBe("vampires");
+    expect(result.winner).toBeNull();
   });
 
   it("does not let a lone neutral jester count as village", () => {

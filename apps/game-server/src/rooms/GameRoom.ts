@@ -57,6 +57,7 @@ interface PrivatePlayerState {
   drunkRealRole?: RoleCode;
   lastNightAction?: NightActionCommand;
   lastVoteTarget?: string;
+  isMayor?: boolean;
 }
 
 interface CreateOptions extends CreateRoomOptions {}
@@ -90,7 +91,7 @@ export class GameRoom extends Room<{ state: GameState }> {
   private config!: GameConfig;
   private clientsByUserId = new Map<string, Client>();
   private privatePlayers = new Map<string, PrivatePlayerState>();
-  private pendingNightActions = new Map<string, SubmittedNightAction>();
+  private pendingNightActions = new Map<string, SubmittedNightAction[]>();
   private phaseTimer?: ReturnType<typeof this.clock.setTimeout>;
   private persistence: GamePersistence = createGamePersistence();
   private persistQueue: Promise<void> = Promise.resolve();
@@ -103,6 +104,7 @@ export class GameRoom extends Room<{ state: GameState }> {
   private pendingVampireBites = new Map<string, { round: number; causeBg: string }>();
   private achievementEvents: AchievementEventLike[] = [];
   private announcedAchievementUnlocks = new Set<string>();
+  private announcedWitchVictims = new Set<string>();
 
   onCreate(options: CreateOptions) {
     GameRoom.liveRooms.add(this);
@@ -422,7 +424,11 @@ export class GameRoom extends Room<{ state: GameState }> {
     for (const player of this.state.players.values()) {
       player.mayor = false;
     }
+    for (const privatePlayer of this.privatePlayers.values()) {
+      privatePlayer.isMayor = false;
+    }
     target.mayor = true;
+    this.getPrivatePlayer(target.userId).isMayor = true;
     this.addPublicEvent(`${target.displayName} е Кмет. Гласът му решава при равенство.`);
     this.persistGameEvent("mayor_assigned", {
       actorId: actor.userId,
@@ -508,6 +514,7 @@ export class GameRoom extends Room<{ state: GameState }> {
         privatePlayer.blacksmithUsed = false;
         privatePlayer.investigatorUsed = false;
         privatePlayer.vampireHunterDisarmed = false;
+        privatePlayer.isMayor = assignment.role === "mayor" || assignment.role === "mafia_mayor";
         if (assignment.role === "drunk") {
           privatePlayer.drunkRealRole = chooseDrunkRealRole(this.config.roles);
         } else {
@@ -516,11 +523,11 @@ export class GameRoom extends Room<{ state: GameState }> {
         delete privatePlayer.lastNightAction;
         delete privatePlayer.lastVoteTarget;
       }
-      if (assignment.role === "mayor" || assignment.role === "mafia_mayor") {
+      if (assignment.role === "mafia_mayor" || (assignment.role === "mayor" && this.config.mayorMode === "public_vote")) {
         const publicPlayer = players.find((item) => item.userId === assignment.playerId);
         if (publicPlayer) {
           publicPlayer.mayor = true;
-          this.addPublicEvent(`${publicPlayer.displayName} е Кмет по жребий.`);
+          this.addPublicEvent(`${publicPlayer.displayName} е Кмет.`);
         }
       }
     }
@@ -589,10 +596,10 @@ export class GameRoom extends Room<{ state: GameState }> {
 
     privatePlayer.lastNightAction = action;
     publicPlayer.actedThisPhase = true;
-    this.pendingNightActions.set(publicPlayer.userId, {
-      actorUserId: publicPlayer.userId,
-      action,
-    });
+    this.queueNightAction(publicPlayer.userId, privatePlayer.role, action);
+    if (action.kind === "faction_kill") {
+      this.notifyWitchesOfFactionVictim();
+    }
     this.persistGameEvent("night_action_submitted", {
       actorId: publicPlayer.userId,
       targetId: getActionTargetUserId(action),
@@ -602,6 +609,83 @@ export class GameRoom extends Room<{ state: GameState }> {
 
     if (this.config.timers.autoAdvanceWhenReady && this.allLivingNightActorsReady()) {
       this.advancePhase();
+    }
+  }
+
+  private queueNightAction(actorUserId: string, role: RoleCode, action: NightActionCommand) {
+    const submission = { actorUserId, action };
+    if (role === "witch" && (action.kind === "witch_heal" || action.kind === "witch_poison")) {
+      const existing = this.pendingNightActions.get(actorUserId) ?? [];
+      this.pendingNightActions.set(actorUserId, [
+        ...existing.filter((item) => item.action.kind !== action.kind),
+        submission,
+      ]);
+      return;
+    }
+
+    this.pendingNightActions.set(actorUserId, [submission]);
+  }
+
+  private getSubmittedNightActions() {
+    return [...this.pendingNightActions.values()].flat();
+  }
+
+  private hasPendingNightAction(actorUserId: string, kind?: NightActionCommand["kind"]) {
+    const submissions = this.pendingNightActions.get(actorUserId) ?? [];
+    if (!kind) {
+      return submissions.length > 0;
+    }
+    return submissions.some((submission) => submission.action.kind === kind);
+  }
+
+  private notifyWitchesOfFactionVictim() {
+    const actions = this.getSubmittedNightActions().filter((submission) => submission.action.kind === "faction_kill");
+    for (const team of ["werewolves", "vampires"] as const) {
+      const livingFaction = [...this.privatePlayers.values()].filter(
+        (player) => player.alive && player.role && getRoleTeam(player.role) === team,
+      );
+      if (livingFaction.length === 0) {
+        continue;
+      }
+
+      const votes = new Map<string, number>();
+      for (const submission of actions) {
+        const actor = this.privatePlayers.get(submission.actorUserId);
+        const targetUserId = submission.action.kind === "faction_kill" ? submission.action.targetUserId : "";
+        const target = this.privatePlayers.get(targetUserId);
+        if (!actor?.role || getRoleTeam(actor.role) !== team || !target?.role || getRoleTeam(target.role) === team) {
+          continue;
+        }
+        votes.set(targetUserId, (votes.get(targetUserId) ?? 0) + 1);
+      }
+
+      const [targetUserId, count] = [...votes.entries()].find(([, value]) => value === livingFaction.length) ?? [];
+      if (!targetUserId || count !== livingFaction.length) {
+        continue;
+      }
+
+      const key = `${this.state.round}:${this.state.phase}:${team}:${targetUserId}`;
+      if (this.announcedWitchVictims.has(key)) {
+        continue;
+      }
+      this.announcedWitchVictims.add(key);
+      const target = this.findPlayerByUserId(targetUserId);
+      if (!target) {
+        continue;
+      }
+
+      for (const witch of this.privatePlayers.values()) {
+        if (!witch.alive || witch.role !== "witch") {
+          continue;
+        }
+        const client = this.clientsByUserId.get(witch.userId);
+        if (client) {
+          client.send("system", {
+            type: "system",
+            messageBg: `${target.displayName} е нарочен за смърт тази нощ.`,
+          } satisfies ServerEvent);
+        }
+      }
     }
   }
 
@@ -825,12 +909,18 @@ export class GameRoom extends Room<{ state: GameState }> {
     if (action.kind === "witch_heal" && privatePlayer.witchHealUsed) {
       throw new Error("Вещицата вече е използвала лечението си.");
     }
+    if (action.kind === "witch_heal" && this.hasPendingNightAction(publicPlayer.userId, "witch_heal")) {
+      throw new Error("Вещицата вече избра лечебната отвара тази нощ.");
+    }
     if (action.kind === "witch_poison" && privatePlayer.witchPoisonUsed) {
       throw new Error("Вещицата вече е използвала отровата си.");
     }
+    if (action.kind === "witch_poison" && this.hasPendingNightAction(publicPlayer.userId, "witch_poison")) {
+      throw new Error("Вещицата вече избра отровата тази нощ.");
+    }
     if (action.kind === "healer_protect" && privatePlayer.role === "healer") {
       if (action.targetUserId === publicPlayer.userId) {
-        throw new Error("Лечителят не може да лекува себе си по правилата на Върколак.");
+        throw new Error("Лечителят не може да лекува себе си.");
       }
       if (
         privatePlayer.lastNightAction?.kind === "healer_protect" &&
@@ -875,12 +965,6 @@ export class GameRoom extends Room<{ state: GameState }> {
     }
     if (action.kind === "medium_contact") {
       this.applyMediumContact(publicPlayer, action.targetUserId);
-    }
-    if (action.kind === "witch_heal") {
-      privatePlayer.witchHealUsed = true;
-    }
-    if (action.kind === "witch_poison") {
-      privatePlayer.witchPoisonUsed = true;
     }
     if (action.kind === "priest_bless") {
       this.applyPriestBlessing(publicPlayer, privatePlayer, action.targetUserId);
@@ -989,7 +1073,6 @@ export class GameRoom extends Room<{ state: GameState }> {
 
     privatePlayer.priestBlessUsed = true;
     target.priestBlessed = true;
-    this.sendPrivateBlessing(targetUserId);
     this.persistGameEvent("priest_blessed", {
       actorId: actor.userId,
       targetId: targetUserId,
@@ -1143,6 +1226,9 @@ export class GameRoom extends Room<{ state: GameState }> {
     if (phase !== "voting") {
       this.state.voteTally.clear();
     }
+    if (isNightPhase(phase)) {
+      this.announcedWitchVictims.clear();
+    }
 
     const duration = this.getPhaseDurationMs(phase);
     this.state.phaseEndsAt = duration > 0 ? Date.now() + duration : 0;
@@ -1222,7 +1308,7 @@ export class GameRoom extends Room<{ state: GameState }> {
         ...(player.priestBlessed ? { priestBlessed: true } : {}),
       }));
 
-    const submittedActions = [...this.pendingNightActions.values()].filter((submission) => {
+    const submittedActions = this.getSubmittedNightActions().filter((submission) => {
       const privatePlayer = this.privatePlayers.get(submission.actorUserId);
       if (
         this.config.mafiaNightKill ||
@@ -1349,19 +1435,11 @@ export class GameRoom extends Room<{ state: GameState }> {
 
   private reportPersistentPriestProtection(userIds: string[]) {
     for (const userId of userIds) {
-      const publicPlayer = this.findPlayerByUserId(userId);
       this.addPublicEvent("Благословия спря нощна смърт.");
       this.persistGameEvent("priest_blessing_protected", {
         targetId: userId,
         visibility: "public",
       });
-      const client = this.clientsByUserId.get(userId);
-      if (client && publicPlayer) {
-        client.send("system", {
-          type: "system",
-          messageBg: `Благословията те спаси от нощна смърт, ${publicPlayer.displayName}, и остава върху теб.`,
-        } satisfies ServerEvent);
-      }
     }
   }
 
@@ -1416,7 +1494,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       }
       const publicPlayer = this.findPlayerByUserId(privatePlayer.userId);
       voteCounts.set(privatePlayer.lastVoteTarget, (voteCounts.get(privatePlayer.lastVoteTarget) ?? 0) + 1);
-      if (publicPlayer?.mayor) {
+      if (privatePlayer.isMayor || publicPlayer?.mayor) {
         mayorVoteTarget = privatePlayer.lastVoteTarget;
       }
       delete privatePlayer.lastVoteTarget;
@@ -1523,15 +1601,16 @@ export class GameRoom extends Room<{ state: GameState }> {
 
       privatePlayer.alive = false;
       publicPlayer.alive = false;
-      const wasMayor = publicPlayer.mayor;
+      const wasPublicMayor = publicPlayer.mayor;
       publicPlayer.mayor = false;
+      privatePlayer.isMayor = false;
       if (this.config.revealRolesOnDeath && privatePlayer.role) {
         publicPlayer.revealedRole = privatePlayer.role;
       }
       applied.push({
         userId: death.userId,
         causeBg: death.causeBg,
-        ...(wasMayor ? { wasMayor } : {}),
+        ...(wasPublicMayor ? { wasMayor: true } : {}),
         ...(privatePlayer.role ? { role: privatePlayer.role } : {}),
       });
       this.addPublicEvent(`${publicPlayer.displayName}: ${death.causeBg}`);
@@ -1592,7 +1671,7 @@ export class GameRoom extends Room<{ state: GameState }> {
   }
 
   private markNightActionConsumables() {
-    for (const submission of this.pendingNightActions.values()) {
+    for (const submission of this.getSubmittedNightActions()) {
       const privatePlayer = this.privatePlayers.get(submission.actorUserId);
       if (!privatePlayer) {
         continue;
@@ -1625,28 +1704,6 @@ export class GameRoom extends Room<{ state: GameState }> {
     }
   }
 
-  private consumePriestBlessings(userIds: string[]) {
-    for (const userId of userIds) {
-      const privatePlayer = this.privatePlayers.get(userId);
-      if (!privatePlayer?.priestBlessed) {
-        continue;
-      }
-      const publicPlayer = this.findPlayerByUserId(userId);
-      this.addPublicEvent("Благословия спря нощна смърт.");
-      this.persistGameEvent("priest_blessing_protected", {
-        targetId: userId,
-        visibility: "public",
-      });
-      const client = this.clientsByUserId.get(userId);
-      if (client && publicPlayer) {
-        client.send("system", {
-          type: "system",
-          messageBg: `Благословията те спаси от нощна смърт, ${publicPlayer.displayName}, и остава върху теб.`,
-        } satisfies ServerEvent);
-      }
-    }
-  }
-
   private evaluateWin() {
     return evaluateWinCondition(
       [...this.privatePlayers.values()]
@@ -1666,6 +1723,13 @@ export class GameRoom extends Room<{ state: GameState }> {
         return true;
       }
       const team = getRoleTeam(privatePlayer.role);
+      if (privatePlayer.role === "witch") {
+        return (
+          this.hasPendingNightAction(privatePlayer.userId, "skip") ||
+          ((privatePlayer.witchHealUsed || this.hasPendingNightAction(privatePlayer.userId, "witch_heal")) &&
+            (privatePlayer.witchPoisonUsed || this.hasPendingNightAction(privatePlayer.userId, "witch_poison")))
+        );
+      }
       const needsAction =
         team === "mafia" ||
         team === "werewolves" ||
@@ -1674,7 +1738,6 @@ export class GameRoom extends Room<{ state: GameState }> {
         privatePlayer.role === "oracle" ||
         privatePlayer.role === "commissioner" ||
         privatePlayer.role === "don" ||
-        privatePlayer.role === "witch" ||
         privatePlayer.role === "healer" ||
         privatePlayer.role === "doctor" ||
         privatePlayer.role === "bodyguard" ||
@@ -1693,7 +1756,7 @@ export class GameRoom extends Room<{ state: GameState }> {
         (privatePlayer.role === "thief" && this.state.phase === "first_night") ||
         ((privatePlayer.role === "cupid" || privatePlayer.role === "lovers") && this.state.phase === "first_night");
 
-      return !needsAction || this.pendingNightActions.has(privatePlayer.userId);
+      return !needsAction || this.hasPendingNightAction(privatePlayer.userId);
     });
   }
 
@@ -1737,9 +1800,6 @@ export class GameRoom extends Room<{ state: GameState }> {
     if (privatePlayer?.loverId) {
       this.sendPrivateLover(userId, privatePlayer.loverId);
     }
-    if (privatePlayer?.priestBlessed) {
-      this.sendPrivateBlessing(userId);
-    }
   }
 
   private sendPrivateLover(userId: string, loverUserId: string) {
@@ -1753,20 +1813,6 @@ export class GameRoom extends Room<{ state: GameState }> {
       type: "private_lovers",
       loverUserId,
       loverName: lover.displayName,
-    } satisfies ServerEvent);
-  }
-
-  private sendPrivateBlessing(userId: string) {
-    const client = this.clientsByUserId.get(userId);
-    const target = this.findPlayerByUserId(userId);
-    if (!client || !target) {
-      return;
-    }
-
-    client.send("private_blessing", {
-      type: "private_blessing",
-      targetUserId: userId,
-      targetName: target.displayName,
     } satisfies ServerEvent);
   }
 

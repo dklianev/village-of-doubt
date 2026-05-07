@@ -31,7 +31,7 @@ describe("resolveNight", () => {
       expect.arrayContaining([
         expect.objectContaining({ actorUserId: "commissioner", targetUserId: "mafioso", isEvil: true }),
         expect.objectContaining({ actorUserId: "don", targetUserId: "commissioner", isCommissioner: true }),
-        expect.objectContaining({ actorUserId: "seer", targetUserId: "don", role: "don" }),
+        expect.objectContaining({ actorUserId: "seer", targetUserId: "don", isEvil: false }),
       ]),
     );
     expect(result.deaths).toEqual([]);
@@ -41,6 +41,24 @@ describe("resolveNight", () => {
     const result = resolveNight(players, [
       action("witch", { kind: "witch_heal", targetUserId: "civilian" }),
       action("mafioso", { kind: "faction_kill", targetUserId: "civilian" }),
+      action("don", { kind: "faction_kill", targetUserId: "civilian" }),
+    ]);
+
+    expect(result.deaths).toEqual([]);
+  });
+
+  it("requires a clear faction consensus for a night kill", () => {
+    const result = resolveNight(players, [
+      action("mafioso", { kind: "faction_kill", targetUserId: "civilian" }),
+    ]);
+
+    expect(result.deaths).toEqual([]);
+  });
+
+  it("does not let a faction kill its own member", () => {
+    const result = resolveNight(players, [
+      action("don", { kind: "faction_kill", targetUserId: "mafioso" }),
+      action("mafioso", { kind: "faction_kill", targetUserId: "mafioso" }),
     ]);
 
     expect(result.deaths).toEqual([]);
@@ -59,6 +77,7 @@ describe("resolveNight", () => {
     const result = resolveNight(players, [
       action("don", { kind: "faction_kill", targetUserId: "civilian" }),
       action("mafioso", { kind: "faction_kill", targetUserId: "civilian" }),
+      action("lawyer", { kind: "faction_kill", targetUserId: "civilian" }),
       action("witch", { kind: "witch_poison", targetUserId: "don" }),
     ]);
 
@@ -103,13 +122,13 @@ describe("resolveNight", () => {
     expect(result.protectedByPriest).toEqual(["priested"]);
   });
 
-  it("shows the jester as an ordinary villager to the seer", () => {
+  it("lets the seer see only whether a target is a night threat", () => {
     const result = resolveNight(players, [
       action("seer", { kind: "check_role", targetUserId: "jester" }),
     ]);
 
     expect(result.checks).toEqual([
-      expect.objectContaining({ actorUserId: "seer", targetUserId: "jester", role: "ordinary_villager" }),
+      expect.objectContaining({ actorUserId: "seer", targetUserId: "jester", isEvil: false }),
     ]);
   });
 
@@ -140,9 +159,19 @@ describe("resolveNight", () => {
     expect(result.checks).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ actorUserId: "commissioner", targetUserId: "mafioso", isEvil: false }),
-        expect.objectContaining({ actorUserId: "seer", targetUserId: "mafioso", role: "civilian" }),
+        expect.objectContaining({ actorUserId: "seer", targetUserId: "mafioso", isEvil: false }),
       ]),
     );
+  });
+
+  it("does not let Healer protection stop poison", () => {
+    const result = resolveNight(players, [
+      action("healer", { kind: "healer_protect", targetUserId: "civilian" }),
+      action("witch", { kind: "witch_poison", targetUserId: "civilian" }),
+    ]);
+
+    expect(result.deaths).toEqual([{ userId: "civilian", causeBg: "Отровен от Вещицата." }]);
+    expect(result.preventedDeaths).toEqual([]);
   });
 
   it("makes the bodyguard absorb the death meant for the protected target", () => {
@@ -150,6 +179,7 @@ describe("resolveNight", () => {
       action("bodyguard", { kind: "healer_protect", targetUserId: "commissioner" }),
       action("mafioso", { kind: "faction_kill", targetUserId: "commissioner" }),
       action("don", { kind: "faction_kill", targetUserId: "commissioner" }),
+      action("lawyer", { kind: "faction_kill", targetUserId: "commissioner" }),
     ]);
 
     expect(result.deaths).toEqual([{ userId: "bodyguard", causeBg: "Загина, докато пазеше друг играч." }]);
