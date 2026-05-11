@@ -170,7 +170,7 @@ export function initialState({
   urlParams,
 }: {
   initialMode?: GameMode;
-  family?: GameFamily;
+  family?: GameFamily | undefined;
   urlParams?: RoomSearchParams | URLSearchParams;
 } = {}): LobbyFormState {
   const parsed = parseRoomCreateOptions(toRoomSearchParams(urlParams));

@@ -12,6 +12,7 @@ const checks = [
   ["roles page art contracts", checkRolesPageContracts],
   ["Bulgarian copy contracts", checkBulgarianCopyContracts],
   ["lobby image scaling contracts", checkLobbyImageContracts],
+  ["lobby wizard contracts", checkLobbyWizardContracts],
   ["play UI hardening contracts", checkPlayUiContracts],
   ["production security guards", checkProductionGuardContracts],
   ["production env checker behavior", checkProductionEnvChecker],
@@ -207,6 +208,30 @@ function checkLobbyImageContracts() {
   assert(css.includes(".invite-scene-card"), "Invite card should use a mode-neutral class name.");
   assert(css.includes("var(--invite-art) center / cover no-repeat"), "Invite card must use theme-aware invite art.");
   assert(lobbyInvitePage.includes("досие към задната стая"), "Mafia invite page should use Mafia-specific scene copy.");
+}
+
+function checkLobbyWizardContracts() {
+  const css = readText("apps/web/app/globals.css");
+  const wizard = readText("apps/web/components/lobby/LobbyWizard.tsx");
+  const reducer = readText("apps/web/lib/lobby-form.ts");
+
+  for (const selector of [
+    ".lobby-wizard",
+    ".mode-tile-card",
+    ".tempo-tile",
+    ".sticky-preview",
+    ".mobile-summary-chip",
+    ".role-tile-large",
+    ".role-carousel",
+    ".preset-chips",
+  ]) {
+    assert(css.includes(selector), `Missing lobby wizard CSS selector ${selector}.`);
+  }
+
+  assert(wizard.includes("useReducer(lobbyFormReducer"), "LobbyWizard must use the lobby form reducer.");
+  assert(wizard.includes("startViewTransition"), "LobbyWizard must use view transitions for step changes.");
+  assert(reducer.includes("export function lobbyFormReducer"), "lobby-form.ts must export lobbyFormReducer.");
+  assert(reducer.includes("export function estimatedDurationSeconds"), "lobby-form.ts must export estimatedDurationSeconds.");
 }
 
 function checkPlayUiContracts() {
