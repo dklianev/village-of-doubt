@@ -21,6 +21,7 @@ import {
 import { PresetChips } from "@/components/lobby/PresetChips";
 import { RoleCarousel } from "@/components/lobby/RoleCarousel";
 import { RoleDetailModal } from "@/components/lobby/RoleDetailModal";
+import { playCue } from "@/lib/sound";
 
 export function StepRoles({
   state,
@@ -43,6 +44,8 @@ export function StepRoles({
     const source = state.manualRolesEnabled ? state.manualRoles : config.roles;
     const next: RoleDistribution = { ...source, [role]: Math.max(0, (source[role] ?? 0) + delta) };
     dispatch({ type: "SET_MANUAL_ROLES", roles: next });
+    playCue("vote");
+    triggerHaptic(8);
   }
 
   return (
@@ -139,6 +142,13 @@ export function StepRoles({
       ) : null}
     </section>
   );
+}
+
+function triggerHaptic(pattern: number | number[]) {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || !("vibrate" in navigator)) {
+    return;
+  }
+  navigator.vibrate(pattern);
 }
 
 function saveManualPreset(state: LobbyFormState, dispatch: Dispatch<LobbyFormAction>) {

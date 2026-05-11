@@ -68,6 +68,7 @@ export type LobbyFormState = {
   roleDetail: RoleDetailState;
   mobileSummaryOpen: boolean;
   inviteSheetOpen: boolean;
+  confettiBurst: number;
 };
 
 export type LobbyTemplate = {
@@ -102,6 +103,7 @@ export type LobbyFormAction =
   | { type: "SET_ROLE_DETAIL"; roleDetail: RoleDetailState }
   | { type: "SET_MOBILE_SUMMARY_OPEN"; open: boolean }
   | { type: "SET_INVITE_SHEET_OPEN"; open: boolean }
+  | { type: "TRIGGER_CONFETTI" }
   | { type: "APPLY_TEMPLATE"; template: LobbyTemplate };
 
 export const MANUAL_PRESET_STORAGE_KEY = "werewolf-mafia-manual-role-preset-v1";
@@ -163,6 +165,8 @@ export function lobbyFormReducer(state: LobbyFormState, action: LobbyFormAction)
       return { ...state, mobileSummaryOpen: action.open };
     case "SET_INVITE_SHEET_OPEN":
       return { ...state, inviteSheetOpen: action.open };
+    case "TRIGGER_CONFETTI":
+      return { ...state, confettiBurst: state.confettiBurst + 1 };
     case "APPLY_TEMPLATE":
       return applyTemplate(state, action.template);
     default: {
@@ -228,6 +232,7 @@ export function initialState({
     roleDetail: null,
     mobileSummaryOpen: false,
     inviteSheetOpen: false,
+    confettiBurst: 0,
   };
 }
 

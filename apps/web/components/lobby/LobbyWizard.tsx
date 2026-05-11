@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useReducer } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef, type CSSProperties } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { countRoles } from "@werewolf/shared";
 import type { GameFamily, GameMode } from "@werewolf/shared";
 import { ANONYMOUS_DISPLAY_NAME_KEY, saveAnonymousIdentity, validateDisplayNameBg } from "@/lib/anonymous-player";
+import { playCue } from "@/lib/sound";
 import {
   MANUAL_PRESET_STORAGE_KEY,
   boundedPlayerCount,
@@ -37,6 +38,7 @@ export function LobbyWizard({
   const initial = useMemo(() => initialState({ initialMode, family, urlParams: searchParams }), [family, initialMode, searchParams]);
   const [state, dispatch] = useReducer(lobbyFormReducer, initial);
   const canAdvance = isStepValid(state, state.step);
+  const previousStep = useRef(state.step);
 
   const transition = useCallback((update: () => void) => {
     const startViewTransition = "startViewTransition" in document ? document.startViewTransition.bind(document) : undefined;
@@ -73,6 +75,15 @@ export function LobbyWizard({
     );
   }, [state.family, state.manualRoles, state.manualRolesEnabled, state.mode, state.playerCount]);
 
+  useEffect(() => {
+    if (previousStep.current === state.step) {
+      return;
+    }
+    previousStep.current = state.step;
+    playCue("phase-change");
+    triggerHaptic([12]);
+  }, [state.step]);
+
   function onAdvanceBlocked() {
     dispatch({ type: "SET_FORM_ERROR", formError: validationMessage(state, state.step) });
   }
@@ -87,7 +98,11 @@ export function LobbyWizard({
 
     saveAnonymousIdentity(state.displayName);
     dispatch({ type: "SET_FORM_ERROR", formError: "" });
-    router.push(href);
+    dispatch({ type: "TRIGGER_CONFETTI" });
+    playCue("win");
+    triggerHaptic([18, 24, 18]);
+    const delay = prefersReducedMotion() ? 0 : 220;
+    window.setTimeout(() => router.push(href), delay);
   }
 
   return (
@@ -104,6 +119,7 @@ export function LobbyWizard({
       </div>
       <StickyPreview state={state} />
       <MobileSummaryChip state={state} dispatch={dispatch} />
+      {state.confettiBurst > 0 ? <Confetti key={state.confettiBurst} /> : null}
     </main>
   );
 }
@@ -128,4 +144,34 @@ function validationMessage(state: LobbyFormState, step: LobbyStep) {
     return warning ?? "Броят роли трябва да съвпада с броя играчи.";
   }
   return "Провери настройките преди следващата стъпка.";
+}
+
+function Confetti() {
+  return (
+    <div className="lobby-confetti" aria-hidden="true">
+      {Array.from({ length: 30 }, (_, index) => (
+        <i
+          key={index}
+          style={
+            {
+              "--i": index,
+              "--x": `${(index * 37) % 100}%`,
+              "--dx": `${((index % 5) - 2) * 28}px`,
+            } as CSSProperties
+          }
+        />
+      ))}
+    </div>
+  );
+}
+
+function triggerHaptic(pattern: number | number[]) {
+  if (prefersReducedMotion() || !("vibrate" in navigator)) {
+    return;
+  }
+  navigator.vibrate(pattern);
+}
+
+function prefersReducedMotion() {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }

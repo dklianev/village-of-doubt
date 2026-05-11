@@ -4,6 +4,7 @@ import type { Dispatch } from "react";
 import { NARRATOR_VOICE_LABELS_BG, type CommunicationMode, type NarratorMode, type NarratorVoice } from "@werewolf/shared";
 import type { LobbyFormAction, LobbyFormState } from "@/lib/lobby-form";
 import { AdvancedDrawer } from "@/components/lobby/AdvancedDrawer";
+import { playCue } from "@/lib/sound";
 
 const NARRATOR_CARDS: { value: NarratorMode; label: string; detail: string }[] = [
   { value: "automatic", label: "Автоматичен", detail: "Сървърът води фазите и пази тайните роли." },
@@ -76,7 +77,10 @@ export function StepStyle({
                 type="button"
                 className="voice-tile"
                 data-active={state.advanced.narratorVoice === voice}
-                onClick={() => dispatch({ type: "SET_ADVANCED", key: "narratorVoice", value: voice })}
+                onClick={() => {
+                  dispatch({ type: "SET_ADVANCED", key: "narratorVoice", value: voice });
+                  playCue("vote");
+                }}
               >
                 <strong>{label}</strong>
                 <span>{VOICE_DETAILS[voice]}</span>

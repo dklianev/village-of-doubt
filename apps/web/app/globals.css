@@ -4179,6 +4179,34 @@ html[data-theme="light"] .site-theme-toggle:hover {
   display: none;
 }
 
+.lobby-confetti {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.lobby-confetti i {
+  position: absolute;
+  top: -20px;
+  left: var(--x);
+  width: 9px;
+  height: 14px;
+  border-radius: 3px;
+  background: hsl(calc(var(--i) * 37deg), 72%, 58%);
+  animation: lobbyConfettiFall 800ms cubic-bezier(0.18, 0.84, 0.32, 1) forwards;
+  animation-delay: calc((var(--i) % 8) * 18ms);
+  transform: rotate(calc(var(--i) * 11deg));
+}
+
+@keyframes lobbyConfettiFall {
+  to {
+    opacity: 0;
+    transform: translate3d(var(--dx), 110dvh, 0) rotate(calc(var(--i) * 47deg));
+  }
+}
+
 ::view-transition-old(lobby-step),
 ::view-transition-new(lobby-step) {
   animation-duration: 260ms;

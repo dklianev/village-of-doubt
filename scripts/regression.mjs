@@ -213,6 +213,7 @@ function checkLobbyImageContracts() {
 function checkLobbyWizardContracts() {
   const css = readText("apps/web/app/globals.css");
   const wizard = readText("apps/web/components/lobby/LobbyWizard.tsx");
+  const stepRoles = readText("apps/web/components/lobby/StepRoles.tsx");
   const reducer = readText("apps/web/lib/lobby-form.ts");
 
   for (const selector of [
@@ -224,12 +225,14 @@ function checkLobbyWizardContracts() {
     ".role-tile-large",
     ".role-carousel",
     ".preset-chips",
+    ".lobby-confetti",
   ]) {
     assert(css.includes(selector), `Missing lobby wizard CSS selector ${selector}.`);
   }
 
   assert(wizard.includes("useReducer(lobbyFormReducer"), "LobbyWizard must use the lobby form reducer.");
   assert(wizard.includes("startViewTransition"), "LobbyWizard must use view transitions for step changes.");
+  assert(stepRoles.includes("playCue"), "StepRoles must trigger role-selection sound cues.");
   assert(reducer.includes("export function lobbyFormReducer"), "lobby-form.ts must export lobbyFormReducer.");
   assert(reducer.includes("export function estimatedDurationSeconds"), "lobby-form.ts must export estimatedDurationSeconds.");
 }
