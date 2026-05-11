@@ -200,3 +200,15 @@ Updated screenshot:
 - `docs/frontend-audit/friends/friends_mobile.png`
 
 Result: resolved. The final re-audit caught `/friends` at 390px with the empty state stuck in a second grid column (`scrollWidth=533/clientWidth=390`). A local mobile override after the friends base styles now collapses `.friends-layout` to one 320px column and reports `scrollWidth=390/clientWidth=390` with no overflow offenders.
+
+## Phase 3 Final Re-audit
+
+Re-captured every public route at 390x844, 820x1180, 1440x900, and 1920x1080 after the fixes. The final raw metrics are stored in `docs/frontend-audit/reaudit-raw.json`.
+
+Result: clean. All 96 route/viewport captures completed successfully and reported `scrollWidth=clientWidth`; `failures` is empty in the raw report. The resolved issue set is:
+- `[overlap]` rules phase lab tablet overflow.
+- `[image-size] [text-overflow] [empty-state]` blank role codex cards and cramped tablet role cards.
+- `[mobile] [touch-target]` shared mobile chrome target sizing.
+- `[mobile] [overlap]` friends empty-state second-column overflow.
+
+Deferred: none from this audit pass. The fixed `.mobile-summary-chip` overlay remains expected bottom-sheet chrome and did not produce route-level overflow in the final sweep.
