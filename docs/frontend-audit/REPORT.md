@@ -182,3 +182,14 @@ Updated screenshots:
 - `docs/frontend-audit/roles/*`
 
 Result: resolved. At 390px and 820px, `.role-codex-grid` now computes to one column; at 1440px and 1920px it remains the intended two-column desktop grid. All three routes report `blankish=0` for role cards and `scrollWidth=clientWidth` across the four audit widths.
+
+### [mobile] [touch-target] Shared mobile chrome
+
+Updated screenshots:
+- `docs/frontend-audit/home/home_mobile.png`
+- `docs/frontend-audit/werewolf-create/werewolf-create_mobile.png`
+- `docs/frontend-audit/mafia-create/mafia-create_mobile.png`
+- `docs/frontend-audit/werewolf-join/werewolf-join_mobile.png`
+- `docs/frontend-audit/mafia-join/mafia-join_mobile.png`
+
+Result: resolved. At 390px, header links and chrome toggles now measure 44px minimum height on the affected routes, and all five routes report `scrollWidth=390/clientWidth=390`.

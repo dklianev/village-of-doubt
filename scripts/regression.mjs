@@ -14,6 +14,7 @@ const checks = [
   ["lobby image scaling contracts", checkLobbyImageContracts],
   ["lobby wizard contracts", checkLobbyWizardContracts],
   ["play UI hardening contracts", checkPlayUiContracts],
+  ["frontend hygiene contracts", checkFrontendHygieneContracts],
   ["production security guards", checkProductionGuardContracts],
   ["production env checker behavior", checkProductionEnvChecker],
   ["smoke/playtest/verify wiring", checkScriptWiring],
@@ -148,7 +149,7 @@ function checkRolesPageContracts() {
   assert(css.includes("/game-art/mafia/role-mafioso.webp"), "Missing Mafia role-art CSS reference.");
   assert(css.includes(".role-codex-art img"), "Role codex cards must style real image elements.");
   assert(css.includes("object-fit: cover"), "Role codex images must fill the card frame without stretching.");
-  assert(css.includes("content-visibility: auto"), "Long role lists should defer below-fold rendering work.");
+  assert(!/\.role-codex-card\s*{[^}]*content-visibility/s.test(css), "Role codex cards must render full content during visual audits.");
 }
 
 function checkBulgarianCopyContracts() {
@@ -274,6 +275,14 @@ function checkPlayUiContracts() {
   assert(css.includes("bottom: max(12px, env(safe-area-inset-bottom))"), "Mobile night action sheet must respect safe-area.");
   assert(css.includes("max-height: calc(100dvh - 96px)"), "Mobile night action sheet must be height-constrained.");
   assert(css.includes("overscroll-behavior: contain"), "Mobile night action sheet must contain scroll bounce.");
+}
+
+function checkFrontendHygieneContracts() {
+  const css = readText("apps/web/app/globals.css");
+
+  assert(!/calc\(100%\s*-\s*\d+px\)/.test(css), "globals.css must not contain calc(100% - Npx) width patterns.");
+  assert(css.includes("@media (max-width: 480px)"), "globals.css must include explicit max-width 480px mobile rules.");
+  assert(existsSync(path.join(root, "docs/frontend-audit/REPORT.md")), "Frontend visual audit report must exist.");
 }
 
 function checkProductionGuardContracts() {

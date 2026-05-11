@@ -5154,6 +5154,21 @@ html[data-theme="light"] .site-theme-toggle:hover {
   }
 }
 
+@media (max-width: 480px) {
+  .site-nav {
+    gap: 4px;
+  }
+
+  .site-nav a,
+  .site-sound-toggle,
+  .site-theme-toggle {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
 .utility-shell {
   position: relative;
 }
