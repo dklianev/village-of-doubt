@@ -9,7 +9,15 @@ import {
   type RoleDistribution,
 } from "@werewolf/shared";
 import type { Dispatch } from "react";
-import { currentConfig, roleBalance, roleWarnings, type LobbyFormAction, type LobbyFormState } from "@/lib/lobby-form";
+import {
+  MANUAL_PRESET_STORAGE_KEY,
+  boundedPlayerCount,
+  currentConfig,
+  roleBalance,
+  roleWarnings,
+  type LobbyFormAction,
+  type LobbyFormState,
+} from "@/lib/lobby-form";
 import { PresetChips } from "@/components/lobby/PresetChips";
 import { RoleCarousel } from "@/components/lobby/RoleCarousel";
 import { RoleDetailModal } from "@/components/lobby/RoleDetailModal";
@@ -85,11 +93,42 @@ export function StepRoles({
         onOpen={(role) => dispatch({ type: "SET_ROLE_DETAIL", roleDetail: { role, source: "tile" } })}
       />
 
-      {!state.manualRolesEnabled ? (
-        <button type="button" className="btn btn-secondary" onClick={() => dispatch({ type: "SET_MANUAL_ROLES_ENABLED", enabled: true })}>
-          Настрой ръчно
-        </button>
-      ) : null}
+      <div className="manual-builder-actions">
+        {!state.manualRolesEnabled ? (
+          <button type="button" className="btn btn-secondary" onClick={() => dispatch({ type: "SET_MANUAL_ROLES_ENABLED", enabled: true })}>
+            Настрой ръчно
+          </button>
+        ) : (
+          <>
+            <button type="button" className="btn btn-secondary min-h-0 px-4 py-2" onClick={() => saveManualPreset(state, dispatch)}>
+              Запази шаблон
+            </button>
+            <button type="button" className="btn btn-secondary min-h-0 px-4 py-2" onClick={() => loadManualPreset(state, dispatch)}>
+              Зареди шаблон
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary min-h-0 px-4 py-2"
+              disabled={state.manualRoleHistory.length === 0}
+              onClick={() => dispatch({ type: "UNDO_MANUAL_ROLES" })}
+            >
+              Назад
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary min-h-0 px-4 py-2"
+              disabled={state.manualRoleFuture.length === 0}
+              onClick={() => dispatch({ type: "REDO_MANUAL_ROLES" })}
+            >
+              Напред
+            </button>
+            <button type="button" className="btn btn-secondary min-h-0 px-4 py-2" onClick={() => dispatch({ type: "SET_ROLE_SEARCH", query: "" })}>
+              Добави роля
+            </button>
+          </>
+        )}
+        {state.manualPresetMessage ? <span className="manual-builder-message">{state.manualPresetMessage}</span> : null}
+      </div>
 
       {state.roleDetail ? (
         <RoleDetailModal
@@ -100,4 +139,33 @@ export function StepRoles({
       ) : null}
     </section>
   );
+}
+
+function saveManualPreset(state: LobbyFormState, dispatch: Dispatch<LobbyFormAction>) {
+  window.localStorage.setItem(
+    `${MANUAL_PRESET_STORAGE_KEY}:${state.family}`,
+    JSON.stringify({
+      mode: state.mode,
+      playerCount: boundedPlayerCount(state),
+      roles: state.manualRoles,
+      savedAt: Date.now(),
+    }),
+  );
+  dispatch({ type: "SET_MANUAL_PRESET_MESSAGE", message: "Шаблонът е запазен на това устройство." });
+}
+
+function loadManualPreset(state: LobbyFormState, dispatch: Dispatch<LobbyFormAction>) {
+  const raw = window.localStorage.getItem(`${MANUAL_PRESET_STORAGE_KEY}:${state.family}`);
+  if (!raw) {
+    dispatch({ type: "SET_MANUAL_PRESET_MESSAGE", message: "Няма запазен шаблон за тази игра." });
+    return;
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as { roles?: RoleDistribution };
+    dispatch({ type: "SET_MANUAL_ROLES", roles: parsed.roles ?? state.manualRoles });
+    dispatch({ type: "SET_MANUAL_PRESET_MESSAGE", message: "Шаблонът е зареден." });
+  } catch {
+    dispatch({ type: "SET_MANUAL_PRESET_MESSAGE", message: "Запазеният шаблон не може да бъде прочетен." });
+  }
 }

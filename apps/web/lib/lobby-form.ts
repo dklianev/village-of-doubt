@@ -57,6 +57,8 @@ export type LobbyFormState = {
   rolePreset: RolePreset;
   manualRolesEnabled: boolean;
   manualRoles: RoleDistribution;
+  manualRoleHistory: RoleDistribution[];
+  manualRoleFuture: RoleDistribution[];
   communicationMode: CommunicationMode;
   narratorMode: NarratorMode;
   tempoProfile: TempoProfile;
@@ -89,6 +91,8 @@ export type LobbyFormAction =
   | { type: "SET_ROLE_PRESET"; rolePreset: RolePreset }
   | { type: "SET_MANUAL_ROLES_ENABLED"; enabled: boolean }
   | { type: "SET_MANUAL_ROLES"; roles: RoleDistribution }
+  | { type: "UNDO_MANUAL_ROLES" }
+  | { type: "REDO_MANUAL_ROLES" }
   | { type: "SET_COMMUNICATION_MODE"; communicationMode: CommunicationMode }
   | { type: "SET_NARRATOR_MODE"; narratorMode: NarratorMode }
   | { type: "SET_TEMPO_PROFILE"; tempoProfile: TempoProfile }
@@ -136,7 +140,11 @@ export function lobbyFormReducer(state: LobbyFormState, action: LobbyFormAction)
         manualRoles: action.enabled ? currentConfig(state).roles : presetRoles(state.mode, state.playerCount, state.rolePreset, state.advanced),
       };
     case "SET_MANUAL_ROLES":
-      return { ...state, manualRoles: cleanRoles(action.roles), manualRolesEnabled: true, rolePreset: "manual" };
+      return commitManualRoles(state, action.roles);
+    case "UNDO_MANUAL_ROLES":
+      return undoManualRoles(state);
+    case "REDO_MANUAL_ROLES":
+      return redoManualRoles(state);
     case "SET_COMMUNICATION_MODE":
       return { ...state, communicationMode: action.communicationMode };
     case "SET_NARRATOR_MODE":
@@ -209,6 +217,8 @@ export function initialState({
     rolePreset: manualRolesEnabled ? "manual" : hydratedConfig.rolePreset,
     manualRolesEnabled,
     manualRoles: hydratedConfig.roles,
+    manualRoleHistory: [],
+    manualRoleFuture: [],
     communicationMode: hydratedConfig.communicationMode,
     narratorMode: hydratedConfig.narratorMode,
     tempoProfile: hydratedConfig.tempoProfile,
@@ -376,6 +386,8 @@ function applyMode(state: LobbyFormState, nextMode: GameMode): LobbyFormState {
     advanced,
     manualRolesEnabled: false,
     manualRoles: presetRoles(mode, playerCount, rolePreset, advanced),
+    manualRoleHistory: [],
+    manualRoleFuture: [],
     roleDetail: null,
   };
 }
@@ -401,6 +413,8 @@ function applyRolePreset(state: LobbyFormState, rolePreset: RolePreset): LobbyFo
     manualRoles: manualRolesEnabled
       ? currentConfig(state).roles
       : presetRoles(state.mode, boundedPlayerCount(state), nextPreset, state.advanced),
+    manualRoleHistory: [],
+    manualRoleFuture: [],
   };
 }
 
@@ -433,8 +447,47 @@ function applyTemplate(state: LobbyFormState, template: LobbyTemplate): LobbyFor
     advanced,
     manualRolesEnabled: rolePreset === "manual",
     manualRoles: presetRoles(mode, playerCount, rolePreset, advanced),
+    manualRoleHistory: [],
+    manualRoleFuture: [],
     step: template.step ?? state.step,
     visitedStep: template.step && template.step > state.visitedStep ? template.step : state.visitedStep,
+  };
+}
+
+function commitManualRoles(state: LobbyFormState, roles: RoleDistribution): LobbyFormState {
+  return {
+    ...state,
+    manualRoles: cleanRoles(roles),
+    manualRolesEnabled: true,
+    rolePreset: "manual",
+    manualRoleHistory: [...state.manualRoleHistory.slice(-11), state.manualRoles],
+    manualRoleFuture: [],
+  };
+}
+
+function undoManualRoles(state: LobbyFormState): LobbyFormState {
+  const previous = state.manualRoleHistory.at(-1);
+  if (!previous) {
+    return state;
+  }
+  return {
+    ...state,
+    manualRoles: previous,
+    manualRoleHistory: state.manualRoleHistory.slice(0, -1),
+    manualRoleFuture: [state.manualRoles, ...state.manualRoleFuture.slice(0, 11)],
+  };
+}
+
+function redoManualRoles(state: LobbyFormState): LobbyFormState {
+  const next = state.manualRoleFuture[0];
+  if (!next) {
+    return state;
+  }
+  return {
+    ...state,
+    manualRoles: next,
+    manualRoleHistory: [...state.manualRoleHistory.slice(-11), state.manualRoles],
+    manualRoleFuture: state.manualRoleFuture.slice(1),
   };
 }
 

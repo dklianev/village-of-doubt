@@ -42,6 +42,116 @@ export function ManualRoleBuilder({
   onLoadPreset,
   presetMessage,
 }: ManualRoleBuilderProps) {
+  const selection = useManualRoleSelection(roles, playerCount, family, onRolesChange);
+  const {
+    query,
+    setQuery,
+    runtimeFilter,
+    setRuntimeFilter,
+    total,
+    balance,
+    groups,
+    copyMessage,
+    setRoleCount,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    copyPreset,
+  } = selection;
+
+  return (
+    <section className="manual-role-builder mt-6 rounded-[2rem] p-5">
+      <div className="manual-builder-header">
+        <div>
+          <p className="section-kicker">ръчно разпределение</p>
+          <h2 className="mt-2 text-3xl font-black">Построй своята игра</h2>
+          <p className="mt-2 text-sm text-[#ead9ba]">
+            Добавяй роли като карти, гледай баланса в реално време и остави сървъра да валидира невъзможните комбинации.
+          </p>
+        </div>
+        <BalanceMeter family={family} balance={balance} total={total} playerCount={playerCount} />
+      </div>
+
+      <div className="manual-builder-toolbar mt-5">
+        <input
+          className="input"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Търси роля, отбор или таг..."
+          aria-label="Търси роля"
+        />
+        <div className="manual-filter-tabs" aria-label="Филтър на ролите">
+          <button
+            type="button"
+            className={runtimeFilter === "playable" ? "is-active" : ""}
+            onClick={() => setRuntimeFilter("playable")}
+          >
+            Работещи роли
+          </button>
+          <button
+            type="button"
+            className={runtimeFilter === "manual_only" ? "is-active" : ""}
+            onClick={() => setRuntimeFilter("manual_only")}
+          >
+            Разширени роли
+          </button>
+        </div>
+      </div>
+
+      <div className="manual-builder-actions mt-4">
+        <button type="button" className="btn btn-secondary min-h-0 px-4 py-2" onClick={onSavePreset}>
+          Запази шаблон
+        </button>
+        <button type="button" className="btn btn-secondary min-h-0 px-4 py-2" onClick={onLoadPreset}>
+          Зареди шаблон
+        </button>
+        <button type="button" className="btn btn-secondary min-h-0 px-4 py-2" onClick={copyPreset}>
+          Копирай шаблон
+        </button>
+        <button type="button" className="btn btn-secondary min-h-0 px-4 py-2" onClick={undo} disabled={!canUndo}>
+          Назад
+        </button>
+        <button type="button" className="btn btn-secondary min-h-0 px-4 py-2" onClick={redo} disabled={!canRedo}>
+          Напред
+        </button>
+        {presetMessage ? <span className="manual-builder-message">{presetMessage}</span> : null}
+        {copyMessage ? <span className="manual-builder-message">{copyMessage}</span> : null}
+      </div>
+
+      <WarningStrip warnings={warnings} family={family} balance={balance} total={total} playerCount={playerCount} />
+
+      <div className="manual-team-stack mt-5">
+        {groups.map((group) => (
+          <details key={group.team} className="manual-team-section" open>
+            <summary>
+              <span>{teamLabelBg(group.team, family)}</span>
+              <strong>{countTeamRoles(roles, group.team)} роли</strong>
+            </summary>
+            <div className="manual-role-grid">
+              {group.roles.map((role) => (
+                <RoleTile
+                  key={role}
+                  family={family}
+                  role={role}
+                  count={roles[role] ?? 0}
+                  onChange={(count) => setRoleCount(role, count)}
+                />
+              ))}
+            </div>
+          </details>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export function useManualRoleSelection(
+  roles: RoleDistribution,
+  playerCount: number,
+  family: GameFamily,
+  onRolesChange: (roles: RoleDistribution) => void = () => {},
+) {
   const [query, setQuery] = useState("");
   const [runtimeFilter, setRuntimeFilter] = useState<RuntimeFilter>("playable");
   const [history, setHistory] = useState<RoleDistribution[]>([]);
@@ -103,90 +213,23 @@ export function ManualRoleBuilder({
     roles: visibleRoles.filter((role) => ROLE_DEFINITIONS[role].team === team),
   })).filter((group) => group.roles.length > 0);
 
-  return (
-    <section className="manual-role-builder mt-6 rounded-[2rem] p-5">
-      <div className="manual-builder-header">
-        <div>
-          <p className="section-kicker">ръчно разпределение</p>
-          <h2 className="mt-2 text-3xl font-black">Построй своята игра</h2>
-          <p className="mt-2 text-sm text-[#ead9ba]">
-            Добавяй роли като карти, гледай баланса в реално време и остави сървъра да валидира невъзможните комбинации.
-          </p>
-        </div>
-        <BalanceMeter family={family} balance={balance} total={total} playerCount={playerCount} />
-      </div>
-
-      <div className="manual-builder-toolbar mt-5">
-        <input
-          className="input"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Търси роля, отбор или таг..."
-          aria-label="Търси роля"
-        />
-        <div className="manual-filter-tabs" aria-label="Филтър на ролите">
-          <button
-            type="button"
-            className={runtimeFilter === "playable" ? "is-active" : ""}
-            onClick={() => setRuntimeFilter("playable")}
-          >
-            Работещи роли
-          </button>
-          <button
-            type="button"
-            className={runtimeFilter === "manual_only" ? "is-active" : ""}
-            onClick={() => setRuntimeFilter("manual_only")}
-          >
-            Разширени роли
-          </button>
-        </div>
-      </div>
-
-      <div className="manual-builder-actions mt-4">
-        <button type="button" className="btn btn-secondary min-h-0 px-4 py-2" onClick={onSavePreset}>
-          Запази шаблон
-        </button>
-        <button type="button" className="btn btn-secondary min-h-0 px-4 py-2" onClick={onLoadPreset}>
-          Зареди шаблон
-        </button>
-        <button type="button" className="btn btn-secondary min-h-0 px-4 py-2" onClick={copyPreset}>
-          Копирай шаблон
-        </button>
-        <button type="button" className="btn btn-secondary min-h-0 px-4 py-2" onClick={undo} disabled={history.length === 0}>
-          Назад
-        </button>
-        <button type="button" className="btn btn-secondary min-h-0 px-4 py-2" onClick={redo} disabled={future.length === 0}>
-          Напред
-        </button>
-        {presetMessage ? <span className="manual-builder-message">{presetMessage}</span> : null}
-        {copyMessage ? <span className="manual-builder-message">{copyMessage}</span> : null}
-      </div>
-
-      <WarningStrip warnings={warnings} family={family} balance={balance} total={total} playerCount={playerCount} />
-
-      <div className="manual-team-stack mt-5">
-        {groups.map((group) => (
-          <details key={group.team} className="manual-team-section" open>
-            <summary>
-              <span>{teamLabelBg(group.team, family)}</span>
-              <strong>{countTeamRoles(roles, group.team)} роли</strong>
-            </summary>
-            <div className="manual-role-grid">
-              {group.roles.map((role) => (
-                <RoleTile
-                  key={role}
-                  family={family}
-                  role={role}
-                  count={roles[role] ?? 0}
-                  onChange={(count) => setRoleCount(role, count)}
-                />
-              ))}
-            </div>
-          </details>
-        ))}
-      </div>
-    </section>
-  );
+  return {
+    query,
+    setQuery,
+    runtimeFilter,
+    setRuntimeFilter,
+    total,
+    balance,
+    visibleRoles,
+    groups,
+    copyMessage,
+    setRoleCount,
+    undo,
+    redo,
+    canUndo: history.length > 0,
+    canRedo: future.length > 0,
+    copyPreset,
+  };
 }
 
 function RoleTile({
