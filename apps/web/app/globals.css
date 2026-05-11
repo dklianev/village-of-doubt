@@ -1523,8 +1523,6 @@ html[data-theme="light"] .site-theme-toggle:hover {
     var(--texture-paper) center / 520px 520px;
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.24), inset 0 1px rgba(255, 255, 255, 0.2);
   isolation: isolate;
-  content-visibility: auto;
-  contain-intrinsic-size: 410px;
 }
 
 .role-codex-card::before {
@@ -5558,6 +5556,10 @@ html[data-theme="light"] .site-theme-toggle:hover {
   }
 
   .rules-phase-lab {
+    grid-template-columns: 1fr;
+  }
+
+  .role-codex-grid {
     grid-template-columns: 1fr;
   }
 

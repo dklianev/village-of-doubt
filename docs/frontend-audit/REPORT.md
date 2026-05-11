@@ -173,3 +173,12 @@ Updated screenshots:
 - `docs/frontend-audit/mafia-rules/mafia-rules_tablet.png`
 
 Result: resolved. At 820px, `.rules-phase-lab` now computes to a single 738px column and both routes report `scrollWidth=820/clientWidth=820` with no horizontal overflow offenders.
+
+### [image-size] [text-overflow] [empty-state] Role codex cards
+
+Updated screenshots:
+- `docs/frontend-audit/werewolf-roles/*`
+- `docs/frontend-audit/mafia-roles/*`
+- `docs/frontend-audit/roles/*`
+
+Result: resolved. At 390px and 820px, `.role-codex-grid` now computes to one column; at 1440px and 1920px it remains the intended two-column desktop grid. All three routes report `blankish=0` for role cards and `scrollWidth=clientWidth` across the four audit widths.
