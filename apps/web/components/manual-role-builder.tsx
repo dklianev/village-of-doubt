@@ -4,7 +4,6 @@ import { useState } from "react";
 import {
   ROLE_DEFINITIONS,
   countRoles,
-  getRoleAssetKey,
   getRoleBalanceScore,
   getRoleNameBg,
   getRoleRuntimeStatus,
@@ -16,6 +15,7 @@ import {
   type TeamCode,
 } from "@werewolf/shared";
 import { stringifyRolesParam } from "@/lib/room-options";
+import { roleArtPath, roleThumbPath } from "@/lib/role-art";
 
 interface ManualRoleBuilderProps {
   family: GameFamily;
@@ -201,15 +201,13 @@ function RoleTile({
   onChange: (count: number) => void;
 }) {
   const definition = ROLE_DEFINITIONS[role];
-  const prefix = family === "mafia" ? "/game-art/mafia" : "/game-art";
-  const slug = `role-${getRoleAssetKey(role)}`;
   const runtimeStatus = getRoleRuntimeStatus(role);
 
   return (
     <article className={`manual-role-tile role-${role} ${count > 0 ? "is-selected" : ""}`}>
       <picture className="manual-role-art" aria-hidden="true">
-        <source srcSet={`${prefix}/${slug}.webp`} type="image/webp" />
-        <img src={`${prefix}/${slug}.png`} alt="" loading="lazy" width={320} height={448} />
+        <source srcSet={roleThumbPath(family, role)} type="image/webp" />
+        <img src={roleArtPath(family, role, "png")} alt="" loading="lazy" decoding="async" width={520} height={728} />
       </picture>
       <div className="manual-role-body">
         <div className="manual-role-title-row">

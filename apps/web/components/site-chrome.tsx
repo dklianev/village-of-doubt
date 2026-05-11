@@ -57,7 +57,7 @@ export function SiteChrome() {
 
   return (
     <header className={`site-chrome ${pathname.startsWith("/play") ? "is-game" : ""}`}>
-      <Link className="site-brand" href="/" aria-label="Към началото">
+      <Link className="site-brand" href="/" aria-label="Към началото" prefetch={false}>
         <span className="site-brand-mark" aria-hidden="true" />
         <span>
           <strong>Върколак</strong>
@@ -68,7 +68,7 @@ export function SiteChrome() {
         {NAV_ITEMS.map((item) => {
           const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
           return (
-            <Link key={item.href} className={active ? "is-active" : ""} href={item.href}>
+            <Link key={item.href} className={active ? "is-active" : ""} href={item.href} prefetch={false}>
               {item.label}
             </Link>
           );

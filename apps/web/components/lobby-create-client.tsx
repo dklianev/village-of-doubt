@@ -31,6 +31,7 @@ import {
   validateDisplayNameBg,
 } from "@/lib/anonymous-player";
 import { stringifyRolesParam } from "@/lib/room-options";
+import { roleThumbStyle } from "@/lib/role-art";
 
 const COMMUNICATION_LABELS: Record<CommunicationMode, string> = {
   built_in_chat: "С вграден чат",
@@ -554,7 +555,7 @@ export function LobbyCreateClient({
           {Object.entries(config.roles).map(([role, count]) => (
             <div key={role} className={`role-count-chip role-${role}`}>
               <dt>
-                <span className="role-count-art" aria-hidden="true" />
+                <span className="role-count-art" aria-hidden="true" style={roleThumbStyle(family, role as keyof typeof ROLE_DEFINITIONS)} />
                 <span className="font-bold">{ROLE_DEFINITIONS[role as keyof typeof ROLE_DEFINITIONS].nameBg}</span>
               </dt>
               <dd>{count}</dd>

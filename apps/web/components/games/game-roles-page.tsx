@@ -10,6 +10,8 @@ import {
   type GameFamily,
   type RoleCode,
 } from "@werewolf/shared";
+import { ResourceHints } from "@/components/resource-hints";
+import { roleArtPath, roleThumbPath } from "@/lib/role-art";
 
 const KNOWN_WEREWOLF_ROLE_ASSETS = new Set([
   "ordinary-villager",
@@ -71,6 +73,7 @@ export function GameRolesPage({ family }: { family: GameFamily }) {
 
   return (
     <main className="shell roles-shell" data-theme={family} data-family={family}>
+      <ResourceHints images={roles.slice(0, 2).map((role) => roleThumbPath(family, role))} />
       <section className="card role-codex-hero rounded-[2rem] p-7">
         <p className="section-kicker">{isMafia ? "досиета на града" : "книга на персонажите"}</p>
         <h1 className="mt-3 text-5xl font-black leading-none md:text-7xl">{title}</h1>
@@ -104,12 +107,12 @@ export function GameRolesPage({ family }: { family: GameFamily }) {
       </section>
 
       <div className="role-codex-grid mt-6">
-        {roles.map((role) => {
+        {roles.map((role, index) => {
           const definition = ROLE_DEFINITIONS[role];
           const runtimeStatus = getRoleRuntimeStatus(role);
           return (
             <article key={role} className={`role-codex-card role-${role}`}>
-              <RoleArt role={role} family={family} />
+              <RoleArt role={role} family={family} priority={index < 2} />
               <div className="role-codex-copy">
                 <p className="section-kicker text-[#842f2b]">{teamLabelBg(definition.team, family)}</p>
                 <h2>{definition.nameBg}</h2>
@@ -152,17 +155,25 @@ export function GameRolesPage({ family }: { family: GameFamily }) {
   );
 }
 
-function RoleArt({ role, family }: { role: RoleCode; family: GameFamily }) {
+function RoleArt({ role, family, priority }: { role: RoleCode; family: GameFamily; priority: boolean }) {
   const assetKey = getRoleAssetKey(role);
   const hasAsset =
     family === "mafia" ? KNOWN_MAFIA_ROLE_ASSETS.has(assetKey) : KNOWN_WEREWOLF_ROLE_ASSETS.has(assetKey);
-  const prefix = family === "mafia" ? "/game-art/mafia" : "/game-art";
-  const slug = hasAsset ? `role-${assetKey}` : "card-back-secret";
+  const src = hasAsset ? roleThumbPath(family, role) : "/game-art/thumbs/card-back-secret.webp";
+  const fallbackSrc = hasAsset ? roleArtPath(family, role, "png") : "/game-art/card-back-secret.png";
 
   return (
     <picture className="role-codex-art" aria-hidden="true">
-      <source srcSet={`${prefix}/${slug}.webp`} type="image/webp" />
-      <img src={`${prefix}/${slug}.png`} alt="" loading="lazy" width={640} height={896} />
+      <source srcSet={src} type="image/webp" />
+      <img
+        src={fallbackSrc}
+        alt=""
+        loading={priority ? "eager" : "lazy"}
+        fetchPriority={priority ? "high" : "auto"}
+        decoding="async"
+        width={520}
+        height={728}
+      />
     </picture>
   );
 }

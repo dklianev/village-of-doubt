@@ -8,6 +8,7 @@ import {
   type GameMode,
   type RoleCode,
 } from "@werewolf/shared";
+import { ResourceHints } from "@/components/resource-hints";
 
 export function GameHomePage({ family }: { family: GameFamily }) {
   const isMafia = family === "mafia";
@@ -21,6 +22,7 @@ export function GameHomePage({ family }: { family: GameFamily }) {
 
   return (
     <main className="shell game-home-shell" data-theme={family} data-family={family}>
+      <ResourceHints images={[isMafia ? "/game-art/mobile/mafia/bg-landing-hero.webp" : "/game-art/mobile/bg-landing-hero.webp"]} />
       <section className="card game-home-hero rounded-[2rem] p-7">
         <p className="section-kicker">{isMafia ? "град под напрежение" : "нощ над селото"}</p>
         <h1 className="mt-3 text-6xl font-black leading-none md:text-8xl">{title}</h1>
@@ -29,13 +31,13 @@ export function GameHomePage({ family }: { family: GameFamily }) {
           <Link href={`${root}/create`} className="btn btn-primary">
             Играй
           </Link>
-          <Link href={`${root}/roles`} className="btn btn-secondary">
+          <Link href={`${root}/roles`} className="btn btn-secondary" prefetch={false}>
             Роли
           </Link>
-          <Link href={`${root}/rules`} className="btn btn-secondary">
+          <Link href={`${root}/rules`} className="btn btn-secondary" prefetch={false}>
             Правила
           </Link>
-          <Link href={`${root}/join`} className="btn btn-secondary">
+          <Link href={`${root}/join`} className="btn btn-secondary" prefetch={false}>
             Влез с код
           </Link>
         </div>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ResourceHints } from "@/components/resource-hints";
 
 const GAMES = [
   {
@@ -26,6 +27,7 @@ const GAMES = [
 export function LandingExperience() {
   return (
     <main className="shell landing-shell">
+      <ResourceHints images={["/game-art/mobile/bg-landing-hero.webp", "/game-art/mobile/bg-lobby-tavern.webp"]} />
       <section className="card landing-hero-card rounded-[2rem] p-7">
         <div className="landing-logo-mark" aria-hidden="true" />
         <p className="section-kicker">избери игра</p>
@@ -48,10 +50,10 @@ export function LandingExperience() {
                 <Link href={`${game.href}/create`} className="btn btn-primary">
                   Играй
                 </Link>
-                <Link href={`${game.href}/roles`} className="btn btn-secondary">
+                <Link href={`${game.href}/roles`} className="btn btn-secondary" prefetch={false}>
                   Роли
                 </Link>
-                <Link href={`${game.href}/rules`} className="btn btn-secondary">
+                <Link href={`${game.href}/rules`} className="btn btn-secondary" prefetch={false}>
                   Правила
                 </Link>
               </div>
@@ -62,7 +64,7 @@ export function LandingExperience() {
         <section className="first-game-flow mt-8" aria-label="Първа игра за 30 секунди">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="section-kicker">първа игра за 30 секунди</p>
-            <Link href="/tutorial" className="btn btn-secondary min-h-0 px-4 py-2 text-sm">
+            <Link href="/tutorial" className="btn btn-secondary min-h-0 px-4 py-2 text-sm" prefetch={false}>
               Виж краткия наръчник
             </Link>
           </div>

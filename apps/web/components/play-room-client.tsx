@@ -34,6 +34,7 @@ import { playCue, setSoundEnabled } from "@/lib/sound";
 import { useToast } from "@/lib/toast";
 import { KeyboardShortcutsModal } from "@/components/keyboard-shortcuts-modal";
 import { PlayerTokensSkeleton } from "@/components/skeleton";
+import { roleThumbStyle } from "@/lib/role-art";
 
 interface PublicPlayer {
   userId: string;
@@ -1046,7 +1047,7 @@ function RulesSummary({ snapshot }: { snapshot: GameSnapshot }) {
         {snapshot.roleCounts.map((item) => (
           <div key={item.role} className={`role-count-chip role-${item.role} is-dark`}>
             <dt>
-              <span className="role-count-art" aria-hidden="true" />
+              <span className="role-count-art" aria-hidden="true" style={roleThumbStyle(getGameFamily(snapshot.mode), item.role)} />
               <span>{ROLE_DEFINITIONS[item.role]?.nameBg ?? item.role}</span>
             </dt>
             <dd>{item.count}</dd>

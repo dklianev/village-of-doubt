@@ -40,7 +40,11 @@ function checkGameArtPairing() {
   const files = listFilesRecursive(gameArtDir);
   const pngs = files.filter((file) => file.endsWith(".png")).sort();
   const webps = new Set(files.filter((file) => file.endsWith(".webp")));
+  const roleThumbs = files.filter((file) => /^thumbs[\\/](mafia[\\/])?role-[^\\/]+\.webp$/.test(file));
+  const mobileAssets = files.filter((file) => /^mobile[\\/].+\.webp$/.test(file));
   assert(pngs.length >= 70, `Expected at least 70 PNG game-art files, got ${pngs.length}.`);
+  assert(roleThumbs.length >= 38, `Expected at least 38 role thumbnail WebPs, got ${roleThumbs.length}.`);
+  assert(mobileAssets.length >= 40, `Expected at least 40 mobile WebP assets, got ${mobileAssets.length}.`);
 
   for (const png of pngs) {
     const webp = png.replace(/\.png$/, ".webp");
@@ -68,6 +72,18 @@ function checkGameArtPairing() {
     assert(existsSync(path.join(gameArtDir, `${critical}.png`)), `Missing critical PNG asset ${critical}.png.`);
     assert(existsSync(path.join(gameArtDir, `${critical}.webp`)), `Missing critical WebP asset ${critical}.webp.`);
   }
+
+  for (const critical of [
+    "thumbs/role-healer.webp",
+    "thumbs/role-seer.webp",
+    "thumbs/mafia/role-mafioso.webp",
+    "thumbs/mafia/role-don.webp",
+    "mobile/bg-landing-hero.webp",
+    "mobile/texture-parchment.webp",
+    "mobile/mafia/bg-landing-hero.webp",
+  ]) {
+    assert(existsSync(path.join(gameArtDir, critical)), `Missing critical lightweight asset ${critical}.`);
+  }
 }
 
 function checkCssImageSet() {
@@ -87,6 +103,7 @@ function checkCssImageSet() {
   assertThemeVariableBlock(css, '[data-theme="light"]');
   assert(css.includes('[data-theme="mafia"]'), "Missing Mafia theme selector.");
   assert(css.includes('/game-art/mafia/bg-landing-hero.webp'), "Missing Mafia image-set CSS references.");
+  assert(css.includes('/game-art/mobile/bg-landing-hero.webp'), "Missing mobile image-set CSS references.");
 }
 
 function assertThemeVariableBlock(css, selector) {
@@ -101,6 +118,7 @@ function assertThemeVariableBlock(css, selector) {
 function checkLandingLayoutContracts() {
   const css = readText("apps/web/app/globals.css");
   const landingPage = readText("apps/web/components/landing-experience.tsx");
+  const siteChrome = readText("apps/web/components/site-chrome.tsx");
 
   assert(landingPage.includes("game-choice-grid"), "Landing page must render the separated game picker.");
   assert(landingPage.includes("href={`${game.href}/create`}"), "Landing page must link directly to each game's create flow.");
@@ -110,6 +128,7 @@ function checkLandingLayoutContracts() {
   assert(!landingPage.includes("Българска Мафия"), "Landing page must not use the old Mafia branding.");
   assert(css.includes(".game-choice-grid"), "Game picker grid needs dedicated styling.");
   assert(css.includes(".game-choice-card"), "Game picker cards need dedicated styling.");
+  assert(siteChrome.includes("prefetch={false}"), "Site chrome navigation should not prefetch every secondary route on first load.");
 }
 
 function checkRolesPageContracts() {
@@ -121,12 +140,14 @@ function checkRolesPageContracts() {
   assert(rolesPage.includes("KNOWN_WEREWOLF_ROLE_ASSETS"), "Roles page must keep an explicit Werewolf asset allow-list.");
   assert(rolesPage.includes("KNOWN_MAFIA_ROLE_ASSETS"), "Roles page must keep an explicit Mafia asset allow-list.");
   assert(rolesPage.includes("<picture className=\"role-codex-art\""), "Roles page must render role art as real picture elements.");
+  assert(rolesPage.includes("roleThumbPath"), "Roles page must use lightweight role thumbnails for codex cards.");
   assert(legacyRolesRoute.includes("redirect(\"/werewolf/roles\")"), "Legacy /roles route must not render mixed role data.");
   assert(css.includes(".role-mayor"), "Missing mayor role-art CSS class.");
   assert(css.includes("/game-art/role-mayor.webp"), "Missing optimized mayor role art CSS reference.");
   assert(css.includes("/game-art/mafia/role-mafioso.webp"), "Missing Mafia role-art CSS reference.");
   assert(css.includes(".role-codex-art img"), "Role codex cards must style real image elements.");
   assert(css.includes("object-fit: cover"), "Role codex images must fill the card frame without stretching.");
+  assert(css.includes("content-visibility: auto"), "Long role lists should defer below-fold rendering work.");
 }
 
 function checkBulgarianCopyContracts() {
@@ -172,11 +193,13 @@ function checkBulgarianCopyContracts() {
 function checkLobbyImageContracts() {
   const css = readText("apps/web/app/globals.css");
   const lobbyInvitePage = readText("apps/web/app/lobby/[code]/page.tsx");
+  const lobbyCreateClient = readText("apps/web/components/lobby-create-client.tsx");
 
   assert(css.includes("--mode-preview-position"), "Lobby mode preview should use explicit sprite focal positions.");
   assert(css.includes("/ 200% auto no-repeat"), "Lobby mode preview sprite must preserve source aspect ratio.");
   assert(css.includes(".role-count-art"), "Lobby preset role chips must keep role artwork thumbnails.");
   assert(css.includes("var(--role-art) center / contain no-repeat"), "Lobby role thumbnails must not aggressively crop role art.");
+  assert(lobbyCreateClient.includes("roleThumbStyle"), "Lobby role chips must override role art with lightweight thumbnails.");
   assert(css.includes(".achievement-preview-strip span"), "Lobby achievement preview strip is missing.");
   assert(css.includes("aspect-ratio: 1"), "Lobby badge tiles must stay square to avoid sprite distortion.");
   assert(css.includes("var(--empty-lobby) center / contain no-repeat"), "Lobby decorative empty-room art must preserve its full composition.");

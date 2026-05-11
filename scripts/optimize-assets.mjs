@@ -1,6 +1,6 @@
 import { pathToFileURL } from "node:url";
 import { existsSync } from "node:fs";
-import { readdir, stat } from "node:fs/promises";
+import { mkdir, readdir, stat } from "node:fs/promises";
 import path from "node:path";
 
 const gameArtDir = path.resolve("apps/web/public/game-art");
@@ -12,6 +12,10 @@ async function main() {
   let originalBytes = 0;
   let optimizedBytes = 0;
   let written = 0;
+  let thumbnailBytes = 0;
+  let thumbnailsWritten = 0;
+  let mobileBytes = 0;
+  let mobileWritten = 0;
 
   for (const file of files) {
     const input = path.join(gameArtDir, file);
@@ -30,6 +34,31 @@ async function main() {
     originalBytes += before;
     optimizedBytes += after;
     written += 1;
+
+    if (shouldCreateRoleThumbnail(file)) {
+      const thumbOutput = path.join(gameArtDir, "thumbs", file.replace(/\.png$/, ".webp"));
+      await mkdir(path.dirname(thumbOutput), { recursive: true });
+      await sharp(input, { limitInputPixels: false })
+        .rotate()
+        .resize({ width: 520, withoutEnlargement: true })
+        .webp({ quality: 74, effort: 6, smartSubsample: true })
+        .toFile(thumbOutput);
+      thumbnailBytes += (await stat(thumbOutput)).size;
+      thumbnailsWritten += 1;
+    }
+
+    const mobileWidth = mobileWidthFor(file);
+    if (mobileWidth) {
+      const mobileOutput = path.join(gameArtDir, "mobile", file.replace(/\.png$/, ".webp"));
+      await mkdir(path.dirname(mobileOutput), { recursive: true });
+      await sharp(input, { limitInputPixels: false })
+        .rotate()
+        .resize({ width: mobileWidth, withoutEnlargement: true })
+        .webp({ quality: 70, effort: 6, smartSubsample: true })
+        .toFile(mobileOutput);
+      mobileBytes += (await stat(mobileOutput)).size;
+      mobileWritten += 1;
+    }
   }
 
   const saved = originalBytes - optimizedBytes;
@@ -37,6 +66,9 @@ async function main() {
     `Optimized ${written} assets to WebP. PNG: ${formatBytes(originalBytes)}, WebP: ${formatBytes(
       optimizedBytes,
     )}, saved: ${formatBytes(saved)}.`,
+  );
+  console.log(
+    `Generated ${thumbnailsWritten} role thumbnails (${formatBytes(thumbnailBytes)}) and ${mobileWritten} mobile assets (${formatBytes(mobileBytes)}).`,
   );
 }
 
@@ -72,6 +104,36 @@ function maxWidthFor(file) {
     return 1200;
   }
   return 1600;
+}
+
+function shouldCreateRoleThumbnail(file) {
+  const basename = path.basename(file);
+  return (basename.startsWith("role-") && !basename.includes("-sheet")) || basename === "card-back-secret.png";
+}
+
+function mobileWidthFor(file) {
+  const basename = path.basename(file);
+  if (
+    basename.startsWith("bg-") ||
+    basename.startsWith("transition-") ||
+    basename.startsWith("screen-") ||
+    basename.startsWith("empty-") ||
+    basename === "village-map.png"
+  ) {
+    return 960;
+  }
+  if (
+    basename.startsWith("texture-") ||
+    basename.includes("-sheet") ||
+    basename === "logo-app-mark.png" ||
+    basename === "narrator-kit.png"
+  ) {
+    return 640;
+  }
+  if (basename.startsWith("faction-") || basename.startsWith("event-")) {
+    return 720;
+  }
+  return 0;
 }
 
 async function listPngs(dir, prefix = "") {

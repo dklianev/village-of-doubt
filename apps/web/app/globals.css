@@ -145,6 +145,53 @@
   --faction-art: var(--faction-mafia);
 }
 
+@media (max-width: 720px) {
+  :root {
+    --art-landing: image-set(url("/game-art/mobile/bg-landing-hero.webp") type("image/webp"));
+    --art-lobby: image-set(url("/game-art/mobile/bg-lobby-tavern.webp") type("image/webp"));
+    --art-reveal: image-set(url("/game-art/mobile/bg-role-reveal.webp") type("image/webp"));
+    --art-night: image-set(url("/game-art/mobile/bg-night-phase.webp") type("image/webp"));
+    --art-day: image-set(url("/game-art/mobile/bg-day-discussion.webp") type("image/webp"));
+    --art-vote: image-set(url("/game-art/mobile/bg-voting.webp") type("image/webp"));
+    --art-resolution: image-set(url("/game-art/mobile/bg-resolution.webp") type("image/webp"));
+    --art-history: image-set(url("/game-art/mobile/bg-history-archive.webp") type("image/webp"));
+    --transition-night: image-set(url("/game-art/mobile/transition-night-falls.webp") type("image/webp"));
+    --transition-day: image-set(url("/game-art/mobile/transition-village-wakes.webp") type("image/webp"));
+    --transition-vote: image-set(url("/game-art/mobile/transition-voting-starts.webp") type("image/webp"));
+    --transition-resolution: image-set(url("/game-art/mobile/transition-resolution.webp") type("image/webp"));
+    --texture-ornament: image-set(url("/game-art/mobile/texture-ornament-sheet.webp") type("image/webp"));
+    --texture-paper: image-set(url("/game-art/mobile/texture-parchment.webp") type("image/webp"));
+    --texture-wood: image-set(url("/game-art/mobile/texture-walnut.webp") type("image/webp"));
+    --texture-fog: image-set(url("/game-art/mobile/texture-fog.webp") type("image/webp"));
+    --screen-loading: image-set(url("/game-art/mobile/screen-loading.webp") type("image/webp"));
+    --screen-reconnect: image-set(url("/game-art/mobile/screen-reconnect.webp") type("image/webp"));
+    --screen-error: image-set(url("/game-art/mobile/screen-error.webp") type("image/webp"));
+    --empty-history: image-set(url("/game-art/mobile/empty-history.webp") type("image/webp"));
+    --empty-lobby: image-set(url("/game-art/mobile/empty-lobby.webp") type("image/webp"));
+    --empty-players: image-set(url("/game-art/mobile/empty-players.webp") type("image/webp"));
+    --village-map: image-set(url("/game-art/mobile/village-map.webp") type("image/webp"));
+    --narrator-kit: image-set(url("/game-art/mobile/narrator-kit.webp") type("image/webp"));
+    --preset-cards-sheet: image-set(url("/game-art/mobile/preset-cards-sheet.webp") type("image/webp"));
+    --achievement-badges-sheet: image-set(url("/game-art/mobile/achievement-badges-sheet.webp") type("image/webp"));
+    --player-avatar-sheet: image-set(url("/game-art/mobile/player-avatar-sheet.webp") type("image/webp"));
+    --role-state-sheet: image-set(url("/game-art/mobile/role-state-sheet.webp") type("image/webp"));
+  }
+
+  [data-theme="mafia"] {
+    --art-landing: image-set(url("/game-art/mobile/mafia/bg-landing-hero.webp") type("image/webp"));
+    --art-lobby: image-set(url("/game-art/mobile/mafia/bg-lobby-tavern.webp") type("image/webp"));
+    --art-reveal: image-set(url("/game-art/mobile/mafia/bg-role-reveal.webp") type("image/webp"));
+    --art-night: image-set(url("/game-art/mobile/mafia/bg-night-phase.webp") type("image/webp"));
+    --art-day: image-set(url("/game-art/mobile/mafia/bg-day-discussion.webp") type("image/webp"));
+    --art-vote: image-set(url("/game-art/mobile/mafia/bg-voting.webp") type("image/webp"));
+    --art-resolution: image-set(url("/game-art/mobile/mafia/bg-resolution.webp") type("image/webp"));
+    --faction-village: image-set(url("/game-art/mobile/mafia/faction-village.webp") type("image/webp"));
+    --faction-mafia: image-set(url("/game-art/mobile/mafia/faction-mafia.webp") type("image/webp"));
+    --empty-lobby: image-set(url("/game-art/mobile/mafia/empty-lobby.webp") type("image/webp"));
+    --empty-players: image-set(url("/game-art/mobile/mafia/empty-players.webp") type("image/webp"));
+  }
+}
+
 * {
   box-sizing: border-box;
 }
@@ -1475,6 +1522,8 @@ html[data-theme="light"] .site-theme-toggle:hover {
     var(--texture-paper) center / 520px 520px;
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.24), inset 0 1px rgba(255, 255, 255, 0.2);
   isolation: isolate;
+  content-visibility: auto;
+  contain-intrinsic-size: 410px;
 }
 
 .role-codex-card::before {
@@ -3355,6 +3404,8 @@ html[data-theme="light"] .site-theme-toggle:hover {
   border-radius: 22px;
   padding: 12px;
   background: rgba(248, 236, 210, 0.08);
+  content-visibility: auto;
+  contain-intrinsic-size: 220px;
 }
 
 .manual-role-tile.is-selected {
