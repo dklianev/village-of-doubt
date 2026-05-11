@@ -905,6 +905,7 @@ html[data-theme="light"] .site-theme-toggle:hover {
 
 .lobby-shell {
   --page-art: var(--art-lobby);
+  width: min(1360px, calc(100vw - 32px));
 }
 
 .history-shell {
@@ -3529,7 +3530,7 @@ html[data-theme="light"] .site-theme-toggle:hover {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(320px, 0.42fr);
   gap: clamp(20px, 4vw, 44px);
-  width: min(1360px, calc(100vw - 32px));
+  width: 100%;
   margin: 0 auto;
   padding: clamp(20px, 4vw, 52px) 0 96px;
 }
@@ -3798,6 +3799,14 @@ html[data-theme="light"] .site-theme-toggle:hover {
 .player-count-control {
   grid-template-columns: 44px minmax(0, 1fr) 44px;
   align-items: center;
+}
+
+.player-count-control input[type="range"] {
+  inline-size: 100%;
+  min-block-size: 44px;
+  margin: 0;
+  accent-color: var(--gold);
+  cursor: pointer;
 }
 
 .player-count-control button,

@@ -134,26 +134,28 @@ async function testLobbyModeFiltering() {
   try {
     await goto(page, "/werewolf/create", "werewolves lobby");
     await expectText(page, "Създай частна стая");
-    await expectSelectValue(page.locator("label", { hasText: "Режим" }).locator("select"), "werewolves_classic");
-    let manualRoles = page.getByTestId("manual-roles-panel");
-    await manualRoles.locator('input[type="checkbox"]').check();
-    await expectTextIn(manualRoles, "Върколак");
-    await expectTextIn(manualRoles, "Гадателка");
-    await expectNoTextIn(manualRoles, "Дон");
+    await expectText(page, "Върколак");
+    await page.getByRole("button", { name: /Роли/ }).click();
+    await page.getByRole("button", { name: "Настрой ръчно" }).click();
+    await expectText(page, "Върколак");
+    await expectText(page, "Гадателка");
+    await expectNoTextIn(page.locator(".lobby-step-roles"), "Дон");
 
     await goto(page, "/mafia/create", "mafia lobby");
-    await expectSelectValue(page.locator("label", { hasText: "Режим" }).locator("select"), "mafia_free");
-    await expectInputValue(page.locator("label", { hasText: "Брой играчи" }).locator("input"), "10");
-    manualRoles = page.getByTestId("manual-roles-panel");
-    await manualRoles.locator('input[type="checkbox"]').check();
-    await expectTextIn(manualRoles, "Кръстник");
-    await expectTextIn(manualRoles, "Мафиот");
+    await expectText(page, "Мафия");
+    await expectText(page, "Брой играчи");
+    await page.getByRole("button", { name: /Роли/ }).click();
+    await page.getByRole("button", { name: "Настрой ръчно" }).click();
+    await expectText(page, "Кръстник");
+    await expectText(page, "Мафиот");
+    await page.getByRole("button", { name: /Стил/ }).click();
+    await page.getByText("Покажи още настройки").click();
     await expectText(page, "Нощно убийство от Мафията");
-    await expectText(page, "Абсолютно мнозинство");
+    await expectText(page, "Изискване за гласуване");
     await expectText(page, "Маниак");
     await expectText(page, "Шут");
-    await expectText(page, "Глас на Разказвача");
-    await expectNoTextIn(manualRoles, "Върколак");
+    await expectText(page, "Глас");
+    await expectNoTextIn(page.locator(".lobby-step-style"), "Върколак");
     await assertNoHorizontalOverflow(page, "mafia lobby");
     watcher.assertClean();
   } finally {
