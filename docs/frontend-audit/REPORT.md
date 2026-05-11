@@ -193,3 +193,10 @@ Updated screenshots:
 - `docs/frontend-audit/mafia-join/mafia-join_mobile.png`
 
 Result: resolved. At 390px, header links and chrome toggles now measure 44px minimum height on the affected routes, and all five routes report `scrollWidth=390/clientWidth=390`.
+
+### [mobile] [overlap] Friends empty state
+
+Updated screenshot:
+- `docs/frontend-audit/friends/friends_mobile.png`
+
+Result: resolved. The final re-audit caught `/friends` at 390px with the empty state stuck in a second grid column (`scrollWidth=533/clientWidth=390`). A local mobile override after the friends base styles now collapses `.friends-layout` to one 320px column and reports `scrollWidth=390/clientWidth=390` with no overflow offenders.

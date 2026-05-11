@@ -5471,6 +5471,12 @@ html[data-theme="light"] .site-theme-toggle:hover {
   font-weight: 900;
 }
 
+@media (max-width: 760px) {
+  .friends-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
 .tutorial-demo-table {
   display: grid;
   gap: 22px;
