@@ -21,6 +21,7 @@ import {
   type CommissionerResultMode,
 } from "@werewolf/shared";
 import { parseRoomCreateOptions, roomOptionsToQuery, type RoomSearchParams } from "@/lib/room-options";
+import { randomRoomName } from "@/lib/roomname-generator";
 
 export type LobbyStep = 1 | 2 | 3 | 4;
 
@@ -337,7 +338,7 @@ export function availableModes(family: GameFamily): GameMode[] {
 }
 
 export function defaultRoomName(mode: GameMode) {
-  return getGameFamily(mode) === "mafia" ? "Частна маса" : "Частно село";
+  return randomRoomName(getGameFamily(mode));
 }
 
 export function createRoomCode() {

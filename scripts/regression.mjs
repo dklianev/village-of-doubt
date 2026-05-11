@@ -215,6 +215,7 @@ function checkLobbyWizardContracts() {
   const wizard = readText("apps/web/components/lobby/LobbyWizard.tsx");
   const stepRoles = readText("apps/web/components/lobby/StepRoles.tsx");
   const reducer = readText("apps/web/lib/lobby-form.ts");
+  const roomNames = readText("apps/web/lib/roomname-generator.ts");
 
   for (const selector of [
     ".lobby-wizard",
@@ -235,6 +236,7 @@ function checkLobbyWizardContracts() {
   assert(stepRoles.includes("playCue"), "StepRoles must trigger role-selection sound cues.");
   assert(reducer.includes("export function lobbyFormReducer"), "lobby-form.ts must export lobbyFormReducer.");
   assert(reducer.includes("export function estimatedDurationSeconds"), "lobby-form.ts must export estimatedDurationSeconds.");
+  assert(roomNames.includes("export function randomRoomName"), "roomname-generator.ts must export randomRoomName.");
 }
 
 function checkPlayUiContracts() {

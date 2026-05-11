@@ -19,6 +19,7 @@ import {
 import { ModeTileCard } from "@/components/lobby/ModeTileCard";
 import { QuickStartRow } from "@/components/lobby/QuickStartRow";
 import type { Dispatch } from "react";
+import { randomRoomName } from "@/lib/roomname-generator";
 
 const TEMPO_CARDS: { value: TempoProfile; label: string; detail: string }[] = [
   { value: "fast_online", label: "Бърза", detail: "Къси фази за групи, които вече знаят правилата." },
@@ -62,12 +63,17 @@ export function StepRoom({
 
         <label className="lobby-field">
           <span>Име на стаята</span>
-          <input
-            className="input"
-            value={state.roomName}
-            maxLength={42}
-            onChange={(event) => dispatch({ type: "SET_ROOM_NAME", roomName: event.target.value })}
-          />
+          <div className="lobby-inline-control">
+            <input
+              className="input"
+              value={state.roomName}
+              maxLength={42}
+              onChange={(event) => dispatch({ type: "SET_ROOM_NAME", roomName: event.target.value })}
+            />
+            <button type="button" className="btn btn-secondary" onClick={() => dispatch({ type: "SET_ROOM_NAME", roomName: randomRoomName(state.family) })}>
+              Случайно
+            </button>
+          </div>
         </label>
 
         <label className="lobby-field">
