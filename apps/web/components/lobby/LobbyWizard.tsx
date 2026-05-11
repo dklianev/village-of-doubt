@@ -12,6 +12,7 @@ import {
   hrefForState,
   initialState,
   lobbyFormReducer,
+  criticalRoleWarnings,
   roleWarnings,
   type LobbyFormState,
   type LobbyStep,
@@ -113,7 +114,7 @@ function isStepValid(state: LobbyFormState, step: LobbyStep) {
   }
   if (step === 2) {
     const config = currentConfig(state);
-    return countRoles(config.roles) === config.playerCount && roleWarnings(state).length === 0;
+    return countRoles(config.roles) === config.playerCount && criticalRoleWarnings(state).length === 0;
   }
   return true;
 }
@@ -123,7 +124,7 @@ function validationMessage(state: LobbyFormState, step: LobbyStep) {
     return validateDisplayNameBg(state.displayName) ?? "Провери името преди следващата стъпка.";
   }
   if (step === 2) {
-    const warning = roleWarnings(state)[0];
+    const warning = criticalRoleWarnings(state)[0] ?? roleWarnings(state)[0];
     return warning ?? "Броят роли трябва да съвпада с броя играчи.";
   }
   return "Провери настройките преди следващата стъпка.";

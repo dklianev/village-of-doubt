@@ -268,6 +268,19 @@ export function roleWarnings(state: LobbyFormState) {
   return validateRoleDistributionForMode(state.mode, config.playerCount, config.roles);
 }
 
+export function criticalRoleWarnings(state: LobbyFormState) {
+  return roleWarnings(state).filter((warning) =>
+    [
+      "не съвпада",
+      "не принадлежи",
+      "Липсва",
+      "изисква",
+      "може да се включи само",
+      "трябва да има",
+    ].some((needle) => warning.includes(needle)),
+  );
+}
+
 export function roleTotal(state: LobbyFormState) {
   return countRoles(currentConfig(state).roles);
 }
