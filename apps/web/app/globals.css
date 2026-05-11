@@ -5557,6 +5557,10 @@ html[data-theme="light"] .site-theme-toggle:hover {
     max-width: 100%;
   }
 
+  .rules-phase-lab {
+    grid-template-columns: 1fr;
+  }
+
   .landing-tableau {
     position: relative;
     right: auto;

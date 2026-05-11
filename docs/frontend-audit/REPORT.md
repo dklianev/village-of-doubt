@@ -163,3 +163,13 @@ Screenshots:
 2. `[image-size] [text-overflow] [empty-state]` Remove `content-visibility` from role codex cards and collapse role codex to one column at tablet widths.
 3. `[mobile] [touch-target]` Add max-width 480px mobile chrome target sizing and add regression hygiene contracts.
 4. Re-screenshot affected routes and append re-audit notes after fixes.
+
+## Phase 2 Re-audit Notes
+
+### [overlap] Rules phase lab
+
+Updated screenshots:
+- `docs/frontend-audit/werewolf-rules/werewolf-rules_tablet.png`
+- `docs/frontend-audit/mafia-rules/mafia-rules_tablet.png`
+
+Result: resolved. At 820px, `.rules-phase-lab` now computes to a single 738px column and both routes report `scrollWidth=820/clientWidth=820` with no horizontal overflow offenders.
