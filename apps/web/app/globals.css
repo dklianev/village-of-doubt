@@ -1206,6 +1206,10 @@ html[data-theme="light"] .site-mobile-menu:hover {
   --page-art: var(--art-landing);
 }
 
+.game-home-shell > section + section {
+  margin-top: clamp(20px, 2.5vw, 32px);
+}
+
 .landing-hero-card {
   min-height: 520px;
   background:
@@ -3928,19 +3932,42 @@ html[data-theme="light"] .site-mobile-menu:hover {
   gap: 22px;
 }
 
+.lobby-step-room {
+  gap: clamp(20px, 2.4vw, 30px);
+}
+
 .lobby-step-heading h1 {
   margin-top: 6px;
   color: #fff6e5;
-  font-size: clamp(2.35rem, 6vw, 4.8rem);
-  line-height: 0.95;
+  font-size: clamp(2.3rem, 5vw, 4.25rem);
+  line-height: 0.98;
   font-weight: 950;
+  text-wrap: balance;
 }
 
 .lobby-step-heading p:not(.section-kicker) {
-  max-width: 760px;
+  max-width: 720px;
   margin-top: 12px;
   color: #ead9ba;
   font-weight: 750;
+  line-height: 1.55;
+}
+
+.step-eyebrow {
+  color: var(--gold);
+  font-size: 0.78rem;
+  font-weight: 950;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.step-lede {
+  max-width: 680px;
+  margin-top: 12px;
+  color: #ead9ba;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.55;
 }
 
 .lobby-field-grid,
@@ -3956,6 +3983,127 @@ html[data-theme="light"] .site-mobile-menu:hover {
   gap: 14px;
 }
 
+.lobby-step-room .lobby-field-grid {
+  align-items: start;
+  grid-template-columns: minmax(280px, 1fr) minmax(300px, 0.92fr);
+  gap: 24px;
+  max-width: 900px;
+}
+
+/* === step-room form === */
+.field {
+  display: grid;
+  grid-template-rows: auto 44px 18px;
+  align-self: start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.field-label {
+  color: var(--gold);
+  font-size: 0.69rem;
+  font-weight: 950;
+  letter-spacing: 0.18em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.field-input-wrap {
+  position: relative;
+  display: block;
+  height: 44px;
+  min-width: 0;
+}
+
+.field-input {
+  width: 100%;
+  height: 44px;
+  border: 1px solid rgba(248, 236, 210, 0.24);
+  border-radius: 14px;
+  padding: 0 14px;
+  background: rgba(255, 247, 229, 0.86);
+  color: #2b1712;
+  font-size: 0.94rem;
+  font-weight: 650;
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.56);
+}
+
+.field-input::placeholder {
+  color: rgba(43, 23, 18, 0.5);
+}
+
+.field-input-wrap[data-has-action="true"] .field-input {
+  padding-right: 46px;
+}
+
+.field-input:focus {
+  border-color: rgba(209, 154, 66, 0.95);
+  box-shadow: 0 0 0 2px var(--gold), inset 0 1px rgba(255, 255, 255, 0.56);
+  outline: 0;
+}
+
+.field-action {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(43, 23, 18, 0.12);
+  border-radius: 999px;
+  background: rgba(43, 23, 18, 0.08);
+  color: #4b3024;
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition: background 120ms ease, transform 120ms ease;
+}
+
+.field-action:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.field-action:active {
+  transform: translateY(-50%) scale(0.96);
+}
+
+.field-hint,
+.field-error {
+  min-height: 18px;
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
+.field-hint {
+  color: rgba(234, 217, 186, 0.55);
+  font-weight: 750;
+}
+
+.field-error {
+  color: var(--blood);
+  font-weight: 950;
+}
+
+.lobby-step-room .lobby-field-code {
+  grid-column: 1 / -1;
+  grid-template-columns: minmax(180px, 250px) 48px minmax(0, 1fr);
+  align-items: end;
+  column-gap: 10px;
+}
+
+.lobby-step-room .lobby-field-code > span {
+  grid-column: 1 / -1;
+}
+
+.lobby-step-room .lobby-field-code .lobby-inline-control {
+  display: contents;
+}
+
+.lobby-step-room .lobby-field-code small {
+  align-self: center;
+  color: rgba(234, 217, 186, 0.82);
+}
+
 .mode-tile-grid,
 .tempo-card-grid,
 .wizard-choice-grid,
@@ -3966,6 +4114,19 @@ html[data-theme="light"] .site-mobile-menu:hover {
 .lobby-field {
   display: grid;
   gap: 8px;
+}
+
+.lobby-field .input {
+  min-height: 48px;
+  border-color: rgba(248, 236, 210, 0.22);
+  border-radius: 13px;
+  background: rgba(255, 247, 229, 0.84);
+  color: #2b1712;
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.5);
+}
+
+.lobby-field .input::placeholder {
+  color: rgba(43, 23, 18, 0.5);
 }
 
 .lobby-field span,
@@ -3987,14 +4148,50 @@ html[data-theme="light"] .site-mobile-menu:hover {
 .player-count-control {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 8px;
+  gap: 10px;
+}
+
+.lobby-inline-control .btn {
+  min-height: 48px;
+  border-color: rgba(248, 236, 210, 0.34);
+  padding-inline: 16px;
+}
+
+.lobby-field-room-name .lobby-inline-control {
+  grid-template-columns: minmax(0, 1fr) 48px;
+}
+
+.lobby-field-room-name .btn,
+.lobby-field-code .btn {
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.lobby-icon-action {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  min-width: 48px;
+  padding-inline: 0;
+  font-size: 1.25rem;
+  line-height: 1;
 }
 
 .lobby-panel,
 .advanced-panel {
   border-radius: 24px;
-  padding: clamp(14px, 2vw, 20px);
-  background: rgba(248, 236, 210, 0.08);
+  padding: clamp(16px, 2vw, 22px);
+  background:
+    linear-gradient(180deg, rgba(255, 247, 229, 0.08), rgba(255, 247, 229, 0.03)),
+    rgba(8, 10, 10, 0.26);
+}
+
+.lobby-step-room .lobby-panel {
+  border: 1px solid rgba(248, 236, 210, 0.16);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 247, 229, 0.1), transparent 18rem),
+    linear-gradient(180deg, rgba(255, 247, 229, 0.08), rgba(255, 247, 229, 0.035)),
+    rgba(8, 10, 10, 0.3);
 }
 
 .lobby-panel-title {
@@ -4076,11 +4273,24 @@ html[data-theme="light"] .site-mobile-menu:hover {
 
 .locked-mode-card,
 .fixed-player-count {
+  display: grid;
+  gap: 8px;
   border: 1px dashed rgba(209, 154, 66, 0.48);
   border-radius: 20px;
   padding: 16px;
   color: #fff6e5;
   font-weight: 900;
+}
+
+.locked-mode-card strong {
+  font-size: 1.05rem;
+  line-height: 1.15;
+}
+
+.locked-mode-card span {
+  color: #ead9ba;
+  font-size: 0.95rem;
+  line-height: 1.45;
 }
 
 .player-count-control {
@@ -4137,6 +4347,38 @@ html[data-theme="light"] .site-mobile-menu:hover {
   flex: 0 0 min(260px, 82vw);
   min-height: 98px;
   scroll-snap-align: start;
+}
+
+.lobby-step-room .quick-start-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  overflow: visible;
+}
+
+.lobby-step-room .quick-start-row button {
+  min-width: 0;
+  min-height: 76px;
+  border-color: rgba(248, 236, 210, 0.18);
+  border-radius: 18px;
+  padding: 14px 16px;
+  background:
+    linear-gradient(135deg, rgba(255, 247, 229, 0.13), rgba(255, 247, 229, 0.035)),
+    rgba(8, 10, 10, 0.38);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.lobby-step-room .quick-start-row button:hover {
+  border-color: rgba(209, 154, 66, 0.45);
+}
+
+.lobby-step-room .quick-start-row strong {
+  font-size: clamp(0.95rem, 1.2vw, 1.08rem);
+  line-height: 1.15;
+}
+
+.lobby-step-room .quick-start-row span {
+  line-height: 1.35;
 }
 
 .advanced-drawer {
@@ -4367,19 +4609,20 @@ html[data-theme="light"] .site-mobile-menu:hover {
   top: 6rem;
   align-self: start;
   display: grid;
-  gap: 14px;
+  gap: 16px;
   border-radius: 30px;
-  padding: 22px;
+  padding: 24px;
   background:
-    radial-gradient(circle at 100% 0%, rgba(132, 47, 43, 0.18), transparent 18rem),
+    radial-gradient(circle at 100% 0%, rgba(132, 47, 43, 0.16), transparent 18rem),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.44), rgba(255, 247, 229, 0.1)),
     rgba(248, 236, 210, 0.9);
   color: #2b1712;
 }
 
 .sticky-preview h2 {
-  font-size: 2rem;
+  font-size: clamp(1.7rem, 2.1vw, 2.25rem);
   font-weight: 950;
-  line-height: 1;
+  line-height: 1.05;
 }
 
 .preview-balance {
@@ -4441,7 +4684,64 @@ html[data-theme="light"] .site-mobile-menu:hover {
 .preview-role-stack .role-count-chip,
 .preview-role-grid .role-count-chip {
   display: grid;
-  grid-template-columns: 36px minmax(0, 1fr) auto;
+  grid-template-columns: 58px minmax(0, 1fr) minmax(28px, auto);
+  min-height: 76px;
+  padding: 10px 14px 10px 10px;
+  column-gap: 12px;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.6), rgba(255, 247, 229, 0.32)),
+    rgba(255, 255, 255, 0.28);
+}
+
+.preview-role-stack .role-count-chip .role-count-art,
+.preview-role-grid .role-count-chip .role-count-art {
+  width: 56px;
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 48% 18%, rgba(255, 247, 229, 0.2), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(9, 6, 5, 0.18)),
+    var(--role-art) center / cover no-repeat,
+    #120b08;
+  box-shadow: 0 10px 22px rgba(34, 22, 17, 0.2), inset 0 1px rgba(255, 255, 255, 0.22);
+}
+
+.preview-role-stack .role-count-chip strong,
+.preview-role-grid .role-count-chip strong {
+  min-width: 0;
+  color: #2b1712;
+  font-size: 0.95rem;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.preview-role-stack .role-count-chip b,
+.preview-role-grid .role-count-chip b {
+  justify-self: end;
+  min-width: 28px;
+  border-radius: 999px;
+  padding: 4px 0;
+  background: rgba(43, 23, 18, 0.08);
+  color: #2b1712;
+  font-weight: 950;
+  text-align: center;
+}
+
+.sticky-preview .achievement-preview-strip {
+  gap: 12px;
+}
+
+.sticky-preview .achievement-preview-strip span {
+  min-height: 96px;
+  border-color: rgba(83, 52, 31, 0.16);
+  border-radius: 18px;
+  padding: 10px 6px;
+  background:
+    linear-gradient(180deg, rgba(9, 6, 5, 0.04) 0%, rgba(255, 247, 229, 0.18) 48%, rgba(255, 247, 229, 0.92) 100%),
+    var(--achievement-badges-sheet) var(--badge-position, 0% 0%) / 300% 300% no-repeat;
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.3);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-align: center;
 }
 
 .mobile-summary-chip {
@@ -4572,6 +4872,34 @@ html[data-theme="light"] .site-mobile-menu:hover {
 
   .lobby-step-nav button[data-status] strong {
     display: none;
+  }
+
+  .lobby-step-room .quick-start-row {
+    grid-template-columns: 1fr;
+    overflow: visible;
+  }
+
+  .lobby-inline-control {
+    grid-template-columns: 1fr;
+  }
+
+  .lobby-step-room .lobby-field-grid,
+  .lobby-step-room .lobby-field-code {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    max-width: none;
+  }
+
+  .lobby-step-room .lobby-field-code {
+    grid-column: auto;
+  }
+
+  .lobby-step-room .lobby-field-code .lobby-inline-control {
+    display: grid;
+  }
+
+  .lobby-step-room .lobby-field-code small {
+    align-self: auto;
   }
 
   .mobile-summary-chip {

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, type Dispatch, type ReactNode } from "react";
 import {
   GAME_MODE_DEFINITIONS,
   getGameModeNameBg,
@@ -18,8 +19,8 @@ import {
 } from "@/lib/lobby-form";
 import { ModeTileCard } from "@/components/lobby/ModeTileCard";
 import { QuickStartRow } from "@/components/lobby/QuickStartRow";
-import type { Dispatch } from "react";
 import { randomRoomName } from "@/lib/roomname-generator";
+import { validateDisplayNameBg } from "@/lib/anonymous-player";
 
 const TEMPO_CARDS: { value: TempoProfile; label: string; detail: string }[] = [
   { value: "fast_online", label: "Бърза", detail: "Къси фази за групи, които вече знаят правилата." },
@@ -37,59 +38,54 @@ export function StepRoom({
   const range = playerRange(state.mode);
   const players = boundedPlayerCount(state);
   const modes = availableModes(state.family);
+  const [displayNameBlurred, setDisplayNameBlurred] = useState(false);
+  const displayNameError =
+    displayNameBlurred && state.displayName.trim().length > 0 ? validateDisplayNameBg(state.displayName) : "";
 
   return (
     <section className="lobby-step lobby-step-room" aria-labelledby="step-room-title">
       <QuickStartRow dispatch={dispatch} />
       <div className="lobby-step-heading">
-        <p className="section-kicker">стъпка 1</p>
+        <p className="step-eyebrow">Стъпка 1 / 4 · Стая</p>
         <h1 id="step-room-title">Създай частна стая</h1>
-        <p>Избери име, код, игра и темпо. Настройките после се записват в поканата.</p>
+        <p className="step-lede">Избери име, код, игра и темпо.</p>
       </div>
 
       <div className="lobby-field-grid">
-        <label className="lobby-field">
-          <span>Потребителско име</span>
+        <Field label="Потребителско име" hint="Между 2 и 24 символа." error={displayNameError}>
           <input
-            className="input"
+            className="field-input"
             value={state.displayName}
             maxLength={24}
             autoFocus
             onChange={(event) => dispatch({ type: "SET_DISPLAY_NAME", displayName: event.target.value })}
+            onBlur={() => setDisplayNameBlurred(true)}
             placeholder="Например: Мила"
           />
-          <small>{state.displayName.trim().length < 2 ? "Нужно е име между 2 и 24 символа." : "Името е готово."}</small>
-        </label>
+        </Field>
 
-        <label className="lobby-field">
-          <span>Име на стаята</span>
-          <div className="lobby-inline-control">
-            <input
-              className="input"
-              value={state.roomName}
-              maxLength={42}
-              onChange={(event) => dispatch({ type: "SET_ROOM_NAME", roomName: event.target.value })}
-            />
-            <button type="button" className="btn btn-secondary" onClick={() => dispatch({ type: "SET_ROOM_NAME", roomName: randomRoomName(state.family) })}>
-              Случайно
-            </button>
-          </div>
-        </label>
+        <Field
+          label="Име на стаята"
+          hint="Може да го смениш преди поканата."
+          actionLabel="Ново име на стаята"
+          onAction={() => dispatch({ type: "SET_ROOM_NAME", roomName: randomRoomName(state.family) })}
+        >
+          <input
+            className="field-input"
+            value={state.roomName}
+            maxLength={42}
+            onChange={(event) => dispatch({ type: "SET_ROOM_NAME", roomName: event.target.value })}
+          />
+        </Field>
 
-        <label className="lobby-field">
-          <span>Код</span>
-          <div className="lobby-inline-control">
-            <input
-              className="input"
-              value={state.code}
-              maxLength={12}
-              onChange={(event) => dispatch({ type: "SET_CODE", code: cleanRoomCode(event.target.value) })}
-            />
-            <button type="button" className="btn btn-secondary" onClick={() => dispatch({ type: "SET_CODE", code: createRoomCode() })}>
-              Нов
-            </button>
-          </div>
-        </label>
+        <Field label="Код" hint="6 символа, споделим лесно." actionLabel="Нов код" onAction={() => dispatch({ type: "SET_CODE", code: createRoomCode() })}>
+          <input
+            className="field-input"
+            value={state.code}
+            maxLength={12}
+            onChange={(event) => dispatch({ type: "SET_CODE", code: cleanRoomCode(event.target.value) })}
+          />
+        </Field>
       </div>
 
       <section className="lobby-panel">
@@ -175,5 +171,53 @@ export function StepRoom({
         </div>
       </section>
     </section>
+  );
+}
+
+export function Field({
+  label,
+  hint,
+  error = "",
+  actionLabel,
+  onAction,
+  children,
+}: {
+  label: string;
+  hint: string;
+  error?: string;
+  actionLabel?: string;
+  onAction?: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <label className="field">
+      <span className="field-label">{label}</span>
+      <span className="field-input-wrap" data-has-action={Boolean(onAction)}>
+        {children}
+        {onAction ? (
+          <button type="button" className="field-action" aria-label={actionLabel} title={actionLabel} onClick={onAction}>
+            <RefreshIcon />
+          </button>
+        ) : null}
+      </span>
+      {error ? (
+        <span className="field-error" role="alert">
+          ⚠ {error}
+        </span>
+      ) : (
+        <span className="field-hint">{hint}</span>
+      )}
+    </label>
+  );
+}
+
+function RefreshIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none">
+      <path d="M3 12a9 9 0 0 1 15.1-6.6L21 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M21 3v5h-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M21 12a9 9 0 0 1-15.1 6.6L3 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M3 21v-5h5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }
