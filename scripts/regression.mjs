@@ -141,13 +141,18 @@ function checkRolesPageContracts() {
   assert(rolesPage.includes("getRolesForFamily"), "Roles page must filter roles by family.");
   assert(rolesPage.includes("KNOWN_WEREWOLF_ROLE_ASSETS"), "Roles page must keep an explicit Werewolf asset allow-list.");
   assert(rolesPage.includes("KNOWN_MAFIA_ROLE_ASSETS"), "Roles page must keep an explicit Mafia asset allow-list.");
-  assert(rolesPage.includes("<picture className=\"role-codex-art\""), "Roles page must render role art as real picture elements.");
+  assert(rolesPage.includes("<picture className=\"role-codex-art role-codex-frame\""), "Roles page must render role art as framed picture elements.");
+  assert(rolesPage.includes("role-codex-card-compact"), "Roles page must use compact codex cards instead of full-text rows.");
+  assert(rolesPage.includes("RoleCodexDetail"), "Roles page must keep full role copy in a cinematic detail sheet.");
   assert(rolesPage.includes("roleThumbPath"), "Roles page must use lightweight role thumbnails for codex cards.");
   assert(legacyRolesRoute.includes("redirect(\"/werewolf/roles\")"), "Legacy /roles route must not render mixed role data.");
   assert(css.includes(".role-mayor"), "Missing mayor role-art CSS class.");
   assert(css.includes("/game-art/role-mayor.webp"), "Missing optimized mayor role art CSS reference.");
   assert(css.includes("/game-art/mafia/role-mafioso.webp"), "Missing Mafia role-art CSS reference.");
-  assert(css.includes(".role-codex-art img"), "Role codex cards must style real image elements.");
+  assert(css.includes(".role-codex-frame"), "Role codex images need a stable art frame.");
+  assert(css.includes("aspect-ratio: 5 / 7"), "Role codex art frames must preserve a portrait card ratio.");
+  assert(css.includes(".role-codex-detail"), "Role codex detail sheet needs dedicated styling.");
+  assert(css.includes(".role-codex-frame img"), "Role codex cards must style real image elements.");
   assert(css.includes("object-fit: cover"), "Role codex images must fill the card frame without stretching.");
   assert(!/\.role-codex-card\s*{[^}]*content-visibility/s.test(css), "Role codex cards must render full content during visual audits.");
 }
