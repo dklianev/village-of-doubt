@@ -10,6 +10,7 @@ const checks = [
   ["CSS image-set delivery", checkCssImageSet],
   ["landing layout contracts", checkLandingLayoutContracts],
   ["roles page art contracts", checkRolesPageContracts],
+  ["rules playbook contracts", checkRulesPlaybookContracts],
   ["Bulgarian copy contracts", checkBulgarianCopyContracts],
   ["lobby image scaling contracts", checkLobbyImageContracts],
   ["lobby wizard contracts", checkLobbyWizardContracts],
@@ -155,6 +156,39 @@ function checkRolesPageContracts() {
   assert(css.includes(".role-codex-frame img"), "Role codex cards must style real image elements.");
   assert(css.includes("object-fit: cover"), "Role codex images must fill the card frame without stretching.");
   assert(!/\.role-codex-card\s*{[^}]*content-visibility/s.test(css), "Role codex cards must render full content during visual audits.");
+}
+
+function checkRulesPlaybookContracts() {
+  const rulesPage = readText("apps/web/components/games/game-rules-page.tsx");
+  const werewolfRulesRoute = readText("apps/web/app/werewolf/rules/page.tsx");
+  const mafiaRulesRoute = readText("apps/web/app/mafia/rules/page.tsx");
+  const css = readText("apps/web/app/globals.css");
+
+  assert(rulesPage.includes("getRulesForFamily"), "Rules page must keep shared rules data as its source.");
+  assert(rulesPage.includes("rules-playbook-hero"), "Rules page must render the premium playbook hero.");
+  assert(rulesPage.includes("rules-phase-timeline"), "Rules page must render the interactive phase timeline.");
+  assert(rulesPage.includes("rules-scenario-grid"), "Rules page must render family scenario cards.");
+  assert(rulesPage.includes("rules-chapter-grid"), "Rules sections must render as compact chapter cards.");
+  assert(rulesPage.includes("rules-table-protocol"), "Rules page must render the table protocol block.");
+  assert(rulesPage.includes("WEREWOLF_SCENARIOS"), "Werewolf rules must define family-specific scenarios.");
+  assert(rulesPage.includes("MAFIA_SCENARIOS"), "Mafia rules must define family-specific scenarios.");
+  assert(
+    werewolfRulesRoute.includes('<GameRulesPage family="werewolves" />'),
+    "/werewolf/rules must continue to render through GameRulesPage.",
+  );
+  assert(mafiaRulesRoute.includes('<GameRulesPage family="mafia" />'), "/mafia/rules must continue to render through GameRulesPage.");
+
+  for (const selector of [
+    ".rules-playbook-hero",
+    ".rules-phase-timeline",
+    ".rules-phase-detail",
+    ".rules-chapter-grid",
+    ".rules-chapter-card",
+    ".rules-scenario-grid",
+    ".rules-table-protocol",
+  ]) {
+    assert(css.includes(selector), `Missing rules playbook CSS selector ${selector}.`);
+  }
 }
 
 function checkBulgarianCopyContracts() {
