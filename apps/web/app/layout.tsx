@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
-import { SiteChrome } from "@/components/site-chrome";
+import SiteChrome from "@/components/site-chrome";
 import { ToastHost } from "@/components/toast-host";
 import "./globals.css";
 

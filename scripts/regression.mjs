@@ -279,10 +279,15 @@ function checkPlayUiContracts() {
 
 function checkFrontendHygieneContracts() {
   const css = readText("apps/web/app/globals.css");
+  const siteChrome = readText("apps/web/components/site-chrome.tsx");
 
   assert(!/calc\(100%\s*-\s*\d+px\)/.test(css), "globals.css must not contain calc(100% - Npx) width patterns.");
   assert(css.includes("@media (max-width: 480px)"), "globals.css must include explicit max-width 480px mobile rules.");
   assert(existsSync(path.join(root, "docs/frontend-audit/REPORT.md")), "Frontend visual audit report must exist.");
+  assert(css.includes("--chrome-bg"), "Navbar redesign must keep the --chrome-bg token.");
+  assert(siteChrome.includes("export default function SiteChrome"), "site-chrome.tsx must export one default component named SiteChrome.");
+  assert(!siteChrome.includes("ЗВУК: ВКЛ"), "Navbar sound control must be icon-only.");
+  assert(!siteChrome.includes("ТЕМА: СИСТЕМНА"), "Navbar theme control must be icon-only.");
 }
 
 function checkProductionGuardContracts() {

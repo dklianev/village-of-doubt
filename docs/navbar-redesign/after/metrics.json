@@ -1,0 +1,338 @@
+[
+  {
+    "viewport": "1440",
+    "route": "home",
+    "scrollWidth": 1440,
+    "clientWidth": 1440,
+    "chromeHeight": 64,
+    "visibleControls": [
+      "Върколак · Мафия",
+      "Играй",
+      "Върколак",
+      "Мафия",
+      "Още страници",
+      "Звук изключен",
+      "Системна тема"
+    ],
+    "brandText": "Върколак · Мафия",
+    "bgImage": "none",
+    "bgColor": "rgba(255, 247, 229, 0.86)",
+    "backdrop": "blur(14px) saturate(1.1)",
+    "zIndex": "40",
+    "activePills": 0,
+    "activeDot": false
+  },
+  {
+    "viewport": "1440",
+    "route": "werewolf",
+    "scrollWidth": 1440,
+    "clientWidth": 1440,
+    "chromeHeight": 64,
+    "visibleControls": [
+      "Върколак · Мафия",
+      "Играй",
+      "Върколак",
+      "Мафия",
+      "Още страници",
+      "Звук изключен",
+      "Системна тема"
+    ],
+    "brandText": "Върколак · Мафия",
+    "bgImage": "none",
+    "bgColor": "rgba(255, 247, 229, 0.86)",
+    "backdrop": "blur(14px) saturate(1.1)",
+    "zIndex": "40",
+    "activePills": 1,
+    "activeDot": true
+  },
+  {
+    "viewport": "1440",
+    "route": "mafia",
+    "scrollWidth": 1440,
+    "clientWidth": 1440,
+    "chromeHeight": 64,
+    "visibleControls": [
+      "Върколак · Мафия",
+      "Играй",
+      "Върколак",
+      "Мафия",
+      "Още страници",
+      "Звук изключен",
+      "Системна тема"
+    ],
+    "brandText": "Върколак · Мафия",
+    "bgImage": "none",
+    "bgColor": "rgba(255, 247, 229, 0.86)",
+    "backdrop": "blur(14px) saturate(1.1)",
+    "zIndex": "40",
+    "activePills": 1,
+    "activeDot": true
+  },
+  {
+    "viewport": "1440",
+    "route": "play",
+    "scrollWidth": 1440,
+    "clientWidth": 1440,
+    "chromeHeight": 64,
+    "visibleControls": [
+      "Върколак · Мафия",
+      "Играй",
+      "Върколак",
+      "Мафия",
+      "Още страници",
+      "Звук изключен",
+      "Системна тема"
+    ],
+    "brandText": "Върколак · Мафия",
+    "bgImage": "none",
+    "bgColor": "rgba(255, 247, 229, 0.86)",
+    "backdrop": "blur(14px) saturate(1.1)",
+    "zIndex": "40",
+    "activePills": 0,
+    "activeDot": false
+  },
+  {
+    "viewport": "1024",
+    "route": "home",
+    "scrollWidth": 1024,
+    "clientWidth": 1024,
+    "chromeHeight": 64,
+    "visibleControls": [
+      "Върколак · Мафия",
+      "Играй",
+      "Върколак",
+      "Мафия",
+      "Още страници",
+      "Звук изключен",
+      "Системна тема"
+    ],
+    "brandText": "Върколак · Мафия",
+    "bgImage": "none",
+    "bgColor": "rgba(255, 247, 229, 0.86)",
+    "backdrop": "blur(14px) saturate(1.1)",
+    "zIndex": "40",
+    "activePills": 0,
+    "activeDot": false
+  },
+  {
+    "viewport": "1024",
+    "route": "werewolf",
+    "scrollWidth": 1024,
+    "clientWidth": 1024,
+    "chromeHeight": 64,
+    "visibleControls": [
+      "Върколак · Мафия",
+      "Играй",
+      "Върколак",
+      "Мафия",
+      "Още страници",
+      "Звук изключен",
+      "Системна тема"
+    ],
+    "brandText": "Върколак · Мафия",
+    "bgImage": "none",
+    "bgColor": "rgba(255, 247, 229, 0.86)",
+    "backdrop": "blur(14px) saturate(1.1)",
+    "zIndex": "40",
+    "activePills": 1,
+    "activeDot": true
+  },
+  {
+    "viewport": "1024",
+    "route": "mafia",
+    "scrollWidth": 1024,
+    "clientWidth": 1024,
+    "chromeHeight": 64,
+    "visibleControls": [
+      "Върколак · Мафия",
+      "Играй",
+      "Върколак",
+      "Мафия",
+      "Още страници",
+      "Звук изключен",
+      "Системна тема"
+    ],
+    "brandText": "Върколак · Мафия",
+    "bgImage": "none",
+    "bgColor": "rgba(255, 247, 229, 0.86)",
+    "backdrop": "blur(14px) saturate(1.1)",
+    "zIndex": "40",
+    "activePills": 1,
+    "activeDot": true
+  },
+  {
+    "viewport": "1024",
+    "route": "play",
+    "scrollWidth": 1024,
+    "clientWidth": 1024,
+    "chromeHeight": 64,
+    "visibleControls": [
+      "Върколак · Мафия",
+      "Играй",
+      "Върколак",
+      "Мафия",
+      "Още страници",
+      "Звук изключен",
+      "Системна тема"
+    ],
+    "brandText": "Върколак · Мафия",
+    "bgImage": "none",
+    "bgColor": "rgba(255, 247, 229, 0.86)",
+    "backdrop": "blur(14px) saturate(1.1)",
+    "zIndex": "40",
+    "activePills": 0,
+    "activeDot": false
+  },
+  {
+    "viewport": "768",
+    "route": "home",
+    "scrollWidth": 768,
+    "clientWidth": 768,
+    "chromeHeight": 64,
+    "visibleControls": [
+      "Отвори менюто",
+      "Върколак · Мафия",
+      "Играй"
+    ],
+    "brandText": "Върколак · Мафия",
+    "bgImage": "none",
+    "bgColor": "rgba(255, 247, 229, 0.86)",
+    "backdrop": "blur(14px) saturate(1.1)",
+    "zIndex": "40",
+    "activePills": 0,
+    "activeDot": false
+  },
+  {
+    "viewport": "768",
+    "route": "werewolf",
+    "scrollWidth": 768,
+    "clientWidth": 768,
+    "chromeHeight": 64,
+    "visibleControls": [
+      "Отвори менюто",
+      "Върколак · Мафия",
+      "Играй"
+    ],
+    "brandText": "Върколак · Мафия",
+    "bgImage": "none",
+    "bgColor": "rgba(255, 247, 229, 0.86)",
+    "backdrop": "blur(14px) saturate(1.1)",
+    "zIndex": "40",
+    "activePills": 1,
+    "activeDot": true
+  },
+  {
+    "viewport": "768",
+    "route": "mafia",
+    "scrollWidth": 768,
+    "clientWidth": 768,
+    "chromeHeight": 64,
+    "visibleControls": [
+      "Отвори менюто",
+      "Върколак · Мафия",
+      "Играй"
+    ],
+    "brandText": "Върколак · Мафия",
+    "bgImage": "none",
+    "bgColor": "rgba(255, 247, 229, 0.86)",
+    "backdrop": "blur(14px) saturate(1.1)",
+    "zIndex": "40",
+    "activePills": 1,
+    "activeDot": true
+  },
+  {
+    "viewport": "768",
+    "route": "play",
+    "scrollWidth": 768,
+    "clientWidth": 768,
+    "chromeHeight": 64,
+    "visibleControls": [
+      "Отвори менюто",
+      "Върколак · Мафия",
+      "Играй"
+    ],
+    "brandText": "Върколак · Мафия",
+    "bgImage": "none",
+    "bgColor": "rgba(255, 247, 229, 0.86)",
+    "backdrop": "blur(14px) saturate(1.1)",
+    "zIndex": "40",
+    "activePills": 0,
+    "activeDot": false
+  },
+  {
+    "viewport": "390",
+    "route": "home",
+    "scrollWidth": 390,
+    "clientWidth": 390,
+    "chromeHeight": 64,
+    "visibleControls": [
+      "Отвори менюто",
+      "Върколак · Мафия",
+      "Играй"
+    ],
+    "brandText": "Върколак · Мафия",
+    "bgImage": "none",
+    "bgColor": "rgba(255, 247, 229, 0.86)",
+    "backdrop": "blur(14px) saturate(1.1)",
+    "zIndex": "40",
+    "activePills": 0,
+    "activeDot": false
+  },
+  {
+    "viewport": "390",
+    "route": "werewolf",
+    "scrollWidth": 390,
+    "clientWidth": 390,
+    "chromeHeight": 64,
+    "visibleControls": [
+      "Отвори менюто",
+      "Върколак · Мафия",
+      "Играй"
+    ],
+    "brandText": "Върколак · Мафия",
+    "bgImage": "none",
+    "bgColor": "rgba(255, 247, 229, 0.86)",
+    "backdrop": "blur(14px) saturate(1.1)",
+    "zIndex": "40",
+    "activePills": 1,
+    "activeDot": true
+  },
+  {
+    "viewport": "390",
+    "route": "mafia",
+    "scrollWidth": 390,
+    "clientWidth": 390,
+    "chromeHeight": 64,
+    "visibleControls": [
+      "Отвори менюто",
+      "Върколак · Мафия",
+      "Играй"
+    ],
+    "brandText": "Върколак · Мафия",
+    "bgImage": "none",
+    "bgColor": "rgba(255, 247, 229, 0.86)",
+    "backdrop": "blur(14px) saturate(1.1)",
+    "zIndex": "40",
+    "activePills": 1,
+    "activeDot": true
+  },
+  {
+    "viewport": "390",
+    "route": "play",
+    "scrollWidth": 390,
+    "clientWidth": 390,
+    "chromeHeight": 64,
+    "visibleControls": [
+      "Отвори менюто",
+      "Върколак · Мафия",
+      "Играй"
+    ],
+    "brandText": "Върколак · Мафия",
+    "bgImage": "none",
+    "bgColor": "rgba(255, 247, 229, 0.86)",
+    "backdrop": "blur(14px) saturate(1.1)",
+    "zIndex": "40",
+    "activePills": 0,
+    "activeDot": false
+  }
+]
