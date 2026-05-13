@@ -132,6 +132,10 @@ function checkLandingLayoutContracts() {
   assert(css.includes(".game-choice-grid"), "Game picker grid needs dedicated styling.");
   assert(css.includes(".game-choice-card"), "Game picker cards need dedicated styling.");
   assert(siteChrome.includes("prefetch={false}"), "Site chrome navigation should not prefetch every secondary route on first load.");
+  assert(css.includes("/game-art/logo-chrome-mark.webp"), "Navbar brand should use the chrome-optimized micro-sigil WebP.");
+  assert(existsSync(path.join(gameArtDir, "logo-chrome-mark.png")), "Missing chrome micro-sigil PNG asset.");
+  assert(existsSync(path.join(gameArtDir, "logo-chrome-mark.webp")), "Missing optimized chrome micro-sigil WebP asset.");
+  assert(siteChrome.includes("site-brand-dot"), "Navbar wordmark should keep the premium separator accent.");
 }
 
 function checkRolesPageContracts() {
