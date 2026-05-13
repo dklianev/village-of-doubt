@@ -380,6 +380,7 @@ function checkScriptWiring() {
   const smoke = readText("scripts/smoke.mjs");
   const playtest = readText("scripts/playtest.mjs");
   const codexEnvironment = readText(".codex/environments/environment.toml");
+  const ciWorkflow = readText(".github/workflows/ci.yml");
 
   assert(packageJson.scripts.regression === "node scripts/regression.mjs", "package.json must expose pnpm regression.");
   assert(packageJson.scripts["codex:run"] === "node scripts/codex-run.mjs", "package.json must expose pnpm codex:run.");
@@ -393,6 +394,10 @@ function checkScriptWiring() {
   assert(smoke.includes("live-safe play page"), "Smoke must check live-safe play page copy.");
   assert(smoke.includes("image-set"), "Smoke must check optimized CSS image-set references.");
   assert(playtest.includes("night-resolver.test.ts"), "Playtest must include night resolver regression tests.");
+  assert(ciWorkflow.includes("actions/checkout@v6"), "CI checkout action must use a Node 24-runtime release.");
+  assert(ciWorkflow.includes("pnpm/action-setup@v6"), "CI pnpm action must use a Node 24-runtime release.");
+  assert(ciWorkflow.includes("actions/setup-node@v6"), "CI setup-node action must use a Node 24-runtime release.");
+  assert(ciWorkflow.includes("node-version: 24"), "CI must verify against Node 24.");
 }
 
 function validProductionEnv() {

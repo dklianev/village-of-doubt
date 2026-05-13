@@ -39,15 +39,7 @@ describe("GameRoom security boundaries", () => {
       playerCount: 8,
     });
 
-    const clients = await Promise.all(
-      Array.from({ length: 8 }, (_, index) =>
-        colyseus.connectTo(serverRoom, {
-          code: "SEC001",
-          userId: `user-${index + 1}`,
-          displayName: `Играч ${index + 1}`,
-        }),
-      ),
-    );
+    const clients = await connectPlayers(colyseus, serverRoom, 8, "user");
 
     const privateRoleMessages = clients.map((client) => waitForPrivateRole(client));
     clients[0]?.send("startGame", {});
@@ -96,15 +88,7 @@ describe("GameRoom security boundaries", () => {
       narratorMode: "full_human",
     });
 
-    const clients = await Promise.all(
-      Array.from({ length: 5 }, (_, index) =>
-        colyseus.connectTo(serverRoom, {
-          code: "NARR01",
-          userId: `narr-user-${index + 1}`,
-          displayName: `Играч ${index + 1}`,
-        }),
-      ),
-    );
+    const clients = await connectPlayers(colyseus, serverRoom, 5, "narr-user");
 
     const blockedStart = clients[0]?.waitForMessage("safe_error") as Promise<{ messageBg: string }>;
     clients[0]?.send("startGame", {});
@@ -137,6 +121,46 @@ describe("GameRoom security boundaries", () => {
 
 function waitForPrivateRole(client: ClientRoom<GameRoom, GameState>) {
   return client.waitForMessage("private_role") as Promise<{ role: string; roleNameBg: string }>;
+}
+
+async function connectPlayers(
+  colyseus: ColyseusTestServer,
+  room: GameRoom,
+  count: number,
+  prefix: string,
+): Promise<Array<ClientRoom<GameRoom, GameState>>> {
+  const clients: Array<ClientRoom<GameRoom, GameState>> = [];
+  for (let index = 0; index < count; index += 1) {
+    clients.push(
+      await connectWithRetry(colyseus, room, {
+        code: room.state.code,
+        userId: `${prefix}-${index + 1}`,
+        displayName: `Играч ${index + 1}`,
+      }),
+    );
+  }
+  return clients;
+}
+
+async function connectWithRetry(
+  colyseus: ColyseusTestServer,
+  room: GameRoom,
+  options: { code: string; userId: string; displayName: string },
+): Promise<ClientRoom<GameRoom, GameState>> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      return await colyseus.connectTo(room, options);
+    } catch (error) {
+      lastError = error;
+      const message = error instanceof Error ? error.message : String(error);
+      if (!message.includes("fetch failed")) {
+        throw error;
+      }
+      await delay(25 * (attempt + 1));
+    }
+  }
+  throw lastError;
 }
 
 function delay(ms: number) {
