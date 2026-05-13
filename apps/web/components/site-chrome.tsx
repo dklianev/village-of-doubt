@@ -6,12 +6,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { getSoundEnabled, playCue, setSoundEnabled } from "@/lib/sound";
 
-type ThemePreference = "system" | "light" | "dark";
+type ThemePreference = "light" | "dark";
 type ChromeFamily = "werewolves" | "mafia";
 
 const THEME_STORAGE_KEY = "werewolf-theme";
 const LAST_FAMILY_STORAGE_KEY = "last-family";
-const THEME_OPTIONS: ThemePreference[] = ["system", "light", "dark"];
+const THEME_OPTIONS: ThemePreference[] = ["light", "dark"];
 
 const SECONDARY_LINKS = [
   { href: "/history", label: "История" },
@@ -32,7 +32,7 @@ const DRAWER_LINKS = [
 export default function SiteChrome() {
   const pathname = usePathname();
   const [soundEnabled, setSoundEnabledState] = useState(false);
-  const [themePreference, setThemePreference] = useState<ThemePreference>("system");
+  const [themePreference, setThemePreference] = useState<ThemePreference>("dark");
   const [family, setFamily] = useState<ChromeFamily>("werewolves");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -149,7 +149,7 @@ export default function SiteChrome() {
 
   function cycleThemePreference() {
     const currentIndex = THEME_OPTIONS.indexOf(themePreference);
-    const nextPreference = THEME_OPTIONS[(currentIndex + 1) % THEME_OPTIONS.length] ?? "system";
+    const nextPreference = THEME_OPTIONS[(currentIndex + 1) % THEME_OPTIONS.length] ?? "dark";
     window.localStorage.setItem(THEME_STORAGE_KEY, nextPreference);
     setThemePreference(nextPreference);
     applyThemePreference(nextPreference);
@@ -344,11 +344,17 @@ function MobileDrawer({
 
 function readThemePreference(): ThemePreference {
   if (typeof window === "undefined") {
-    return "system";
+    return "dark";
   }
 
   const saved = window.localStorage.getItem(THEME_STORAGE_KEY);
-  return saved === "dark" || saved === "light" || saved === "system" ? saved : "system";
+  if (saved === "dark" || saved === "light") {
+    return saved;
+  }
+
+  const resolvedTheme = document.documentElement.dataset.theme === "light" ? "light" : "dark";
+  window.localStorage.setItem(THEME_STORAGE_KEY, resolvedTheme);
+  return resolvedTheme;
 }
 
 function readFamilyPreference(): ChromeFamily {
@@ -375,23 +381,11 @@ function applyThemePreference(preference: ThemePreference) {
     return;
   }
 
-  const resolvedTheme =
-    preference === "system"
-      ? window.matchMedia("(prefers-color-scheme: light)").matches
-        ? "light"
-        : "dark"
-      : preference;
-  document.documentElement.dataset.theme = resolvedTheme;
+  document.documentElement.dataset.theme = preference;
 }
 
 function themeLabel(preference: ThemePreference) {
-  if (preference === "light") {
-    return "Светла тема";
-  }
-  if (preference === "dark") {
-    return "Тъмна тема";
-  }
-  return "Системна тема";
+  return preference === "dark" ? "Тъмна тема" : "Светла тема";
 }
 
 function Icon({ children }: { children: ReactNode }) {
@@ -455,25 +449,14 @@ function SpeakerXIcon() {
 }
 
 function ThemeIcon({ preference }: { preference: ThemePreference }) {
-  if (preference === "light") {
-    return (
-      <Icon>
-        <circle cx="12" cy="12" r="4" />
-        <path d="M12 2.8v2M12 19.2v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2.8 12h2M19.2 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4" />
-      </Icon>
-    );
-  }
-  if (preference === "dark") {
-    return (
-      <Icon>
-        <path d="M19.2 14.8A7.2 7.2 0 0 1 9.2 4.8 8 8 0 1 0 19.2 14.8z" />
-      </Icon>
-    );
-  }
-  return (
+  return preference === "dark" ? (
     <Icon>
-      <path d="M12 3a9 9 0 1 0 0 18V3z" />
-      <path d="M12 3a9 9 0 0 1 0 18" />
+      <path d="M19.2 14.8A7.2 7.2 0 0 1 9.2 4.8 8 8 0 1 0 19.2 14.8z" />
+    </Icon>
+  ) : (
+    <Icon>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2.8v2M12 19.2v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2.8 12h2M19.2 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4" />
     </Icon>
   );
 }

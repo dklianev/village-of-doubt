@@ -126,6 +126,9 @@ function checkLandingLayoutContracts() {
   const quickStart = readText("apps/web/components/landing/QuickStartSection.tsx");
   const quickStartIcons = readText("apps/web/components/landing/quickstart-icons.tsx");
   const siteChrome = readText("apps/web/components/site-chrome.tsx");
+  const chromeIconHoverStart = css.indexOf(".site-icon-button:hover");
+  const chromeIconHoverBlock =
+    chromeIconHoverStart >= 0 ? css.slice(chromeIconHoverStart, css.indexOf("}", chromeIconHoverStart)) : "";
 
   assert(landingPage.includes("<ModeChoiceCards"), "Landing page must render the separated game picker component.");
   assert(modeChoiceCards.includes("game-choice-grid"), "Landing mode choice component needs the game picker grid.");
@@ -138,9 +141,11 @@ function checkLandingLayoutContracts() {
   assert(!landingPage.includes("Българска Мафия"), "Landing page must not use the old Mafia branding.");
   assert(css.includes(".game-choice-grid"), "Game picker grid needs dedicated styling.");
   assert(css.includes(".game-choice-card"), "Game picker cards need dedicated styling.");
+  assert(css.includes(".game-choice-actions"), "Landing game choice actions must have a dedicated alignment hook.");
   assert(css.includes(".quickstart-surface"), "Landing quickstart needs the parchment surface selector.");
   assert(css.includes(".quickstart-medallion"), "Landing quickstart needs medallion styling.");
   assert(css.includes(".quickstart-connector"), "Landing quickstart needs connector styling.");
+  assert(css.includes("top: 46px;"), "Landing quickstart connector should align through medallion centers on desktop.");
   assert(css.includes(".mode-choice-continue-pill"), "Landing mode cards need the continue pill styling.");
   assert(existsSync(path.join(root, "apps/web/components/landing/QuickStartSection.tsx")), "Missing landing QuickStartSection component.");
   assert(existsSync(path.join(root, "apps/web/components/landing/quickstart-icons.tsx")), "Missing landing quickstart inline SVG icon set.");
@@ -153,6 +158,8 @@ function checkLandingLayoutContracts() {
   }
   assert(css.includes("--art-landing-dual"), "Landing page must expose the dual-world background art variable.");
   assert(css.includes("--art-landing-ambient"), "Landing page must expose the ambient outer background art variable.");
+  assert(css.includes('html[data-theme="light"] .landing-shell::before'), "Landing page must keep a light-theme outer background override.");
+  assert(css.includes("display: none;"), "Landing light theme should keep the ambient outer background disabled.");
   assert(css.includes("/game-art/bg-landing-ambient.webp"), "Landing page must reference the optimized ambient outer background.");
   assert(existsSync(path.join(gameArtDir, "bg-landing-ambient.png")), "Missing ambient landing background PNG.");
   assert(existsSync(path.join(gameArtDir, "bg-landing-ambient.webp")), "Missing optimized ambient landing background WebP.");
@@ -168,6 +175,9 @@ function checkLandingLayoutContracts() {
   assert(siteChrome.includes("site-brand-dot"), "Navbar wordmark should keep the premium separator accent.");
   assert(siteChrome.includes("Социална игра на сенки"), "Navbar subtitle should use the updated Bulgarian tagline.");
   assert(!siteChrome.includes("ВЪРКОЛАК · МАФИЯ"), "Navbar must not use the old uppercase subtitle.");
+  assert(!siteChrome.includes("Системна тема"), "Navbar theme toggle should only expose light and dark modes.");
+  assert(!siteChrome.includes("\"system\""), "Navbar theme cycle should not include the old system preference.");
+  assert(!chromeIconHoverBlock.includes("transform:"), "Navbar icon hover must not use transform lift.");
 }
 
 function checkFamilyQuickStartContracts() {

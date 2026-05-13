@@ -41,7 +41,7 @@ export function ModeChoiceCards({ games }: { games: readonly ModeChoiceGame[] })
             <h2>{game.title}</h2>
             <blockquote>{game.line}</blockquote>
             <p>{game.description}</p>
-            <div className="mt-6 flex flex-wrap gap-3">
+            <div className="game-choice-actions">
               <Link href={`${game.href}/create`} className="btn btn-primary">
                 Играй
               </Link>

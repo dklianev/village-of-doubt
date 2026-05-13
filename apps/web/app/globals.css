@@ -586,7 +586,7 @@ html[data-theme="light"] .site-family-link.is-active {
   background: rgba(248, 236, 210, 0.055);
   color: #ead9ba;
   cursor: pointer;
-  transition: background 140ms ease, border-color 140ms ease, color 140ms ease, transform 120ms ease;
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
 }
 
 html[data-theme="light"] .site-icon-button,
@@ -601,7 +601,6 @@ html[data-theme="light"] .site-mobile-menu {
   border-color: rgba(209, 154, 66, 0.36);
   background: rgba(248, 236, 210, 0.12);
   color: #fff6e5;
-  transform: translateY(-1px);
 }
 
 html[data-theme="light"] .site-icon-button:hover,
@@ -1277,6 +1276,7 @@ html[data-theme="light"] .landing-shell::before {
 }
 
 html[data-theme="light"] .landing-hero-card {
+  border-color: rgba(169, 111, 34, 0.58);
   background:
     radial-gradient(ellipse at 22% 34%, rgba(200, 154, 85, 0.2), transparent 24rem),
     radial-gradient(ellipse at 82% 38%, rgba(43, 93, 105, 0.14), transparent 28rem),
@@ -1284,6 +1284,21 @@ html[data-theme="light"] .landing-hero-card {
     linear-gradient(90deg, rgba(20, 12, 9, 0.48) 0%, rgba(12, 15, 15, 0.18) 48%, rgba(12, 14, 13, 0.42) 100%),
     linear-gradient(180deg, rgba(7, 9, 9, 0.16) 0%, rgba(7, 9, 9, 0.58) 100%),
     var(--art-landing-dual) center top / 100% auto no-repeat;
+  box-shadow: 0 34px 92px rgba(67, 39, 24, 0.24), 0 0 0 1px rgba(169, 111, 34, 0.18), inset 0 1px rgba(255, 247, 229, 0.18);
+}
+
+html[data-theme="light"] .landing-hero-card > .section-kicker {
+  display: inline-flex;
+  border: 1px solid rgba(240, 180, 93, 0.22);
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: rgba(8, 10, 10, 0.42);
+  color: #f0b45d;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.52);
+}
+
+html[data-theme="light"] .landing-hero-card::before {
+  border-color: rgba(209, 154, 66, 0.34);
 }
 
 .landing-hero-card::before {
@@ -1466,9 +1481,21 @@ html[data-theme="light"] .landing-hero-card {
 }
 
 .landing-split-grid .game-choice-card {
+  display: flex;
+  flex-direction: column;
   min-height: clamp(320px, 36vw, 520px);
   padding: clamp(20px, 3vw, 34px);
   transform-style: preserve-3d;
+}
+
+.game-choice-actions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 24px;
 }
 
 .landing-split-grid .game-choice-card::after {
@@ -2249,7 +2276,7 @@ html[data-theme="light"] .landing-hero-card {
 
 .quickstart-connector {
   position: absolute;
-  top: 28px;
+  top: 46px;
   right: calc(-50% + 36px);
   left: calc(50% + 36px);
   z-index: 1;
