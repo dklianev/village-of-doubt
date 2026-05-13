@@ -1308,11 +1308,7 @@ html[data-theme="light"] .site-mobile-menu:hover {
     linear-gradient(180deg, rgba(8, 10, 10, 0.16), rgba(8, 10, 10, 0.9) 78%),
     var(--art-lobby) center / cover no-repeat;
   box-shadow: 0 24px 68px rgba(0, 0, 0, 0.38), inset 0 1px rgba(255, 255, 255, 0.12);
-  transform: translateY(0);
-  transition:
-    border-color 180ms ease,
-    box-shadow 180ms ease,
-    transform 180ms ease;
+  transition: border-color 240ms ease, box-shadow 240ms ease;
 }
 
 .game-choice-werewolf {
@@ -1344,7 +1340,6 @@ html[data-theme="light"] .site-mobile-menu:hover {
 .game-choice-card:hover {
   border-color: rgba(240, 180, 93, 0.5);
   box-shadow: 0 30px 78px rgba(0, 0, 0, 0.48), var(--shadow-gold);
-  transform: translateY(-3px);
 }
 
 .game-choice-card.is-last-played {
@@ -1432,12 +1427,11 @@ html[data-theme="light"] .site-mobile-menu:hover {
   filter: blur(16px);
   opacity: 0.72;
   transform: translateY(10px);
-  transition: transform 260ms ease, opacity 260ms ease;
+  transition: opacity 260ms ease;
 }
 
 .landing-split-grid .game-choice-card:hover::after {
   opacity: 1;
-  transform: translateY(-3px);
 }
 
 .landing-split-grid .game-choice-card h2 {
