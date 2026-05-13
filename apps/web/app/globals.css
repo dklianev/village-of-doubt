@@ -1265,7 +1265,7 @@ html[data-theme="light"] .site-mobile-menu:hover {
   border-radius: 34px;
   background:
     radial-gradient(circle, rgba(248, 236, 210, 0.12), transparent 62%),
-    image-set(url("/game-art/logo-app-mark.webp") type("image/webp"), url("/game-art/logo-app-mark.png") type("image/png")) center / contain no-repeat;
+    image-set(url("/game-art/logo-landing-mark.webp") type("image/webp"), url("/game-art/logo-landing-mark.png") type("image/png")) center / contain no-repeat;
   box-shadow: 0 0 52px rgba(209, 154, 66, 0.24), inset 0 1px rgba(255, 255, 255, 0.08);
   transform: rotate(-3deg);
 }
@@ -2231,6 +2231,10 @@ html[data-theme="light"] .site-mobile-menu:hover {
 .quickstart-empty-live,
 .quickstart-winner-active {
   flex-wrap: wrap;
+}
+
+.quickstart-empty-live .quickstart-card-cta {
+  margin-top: 12px;
 }
 
 .quickstart-dice,

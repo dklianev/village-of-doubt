@@ -83,15 +83,13 @@ export function LastWinnerEmptyGlyph({ className }: IconProps) {
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <ellipse cx="32" cy="25.5" rx="18" ry="5.5" />
-      <circle cx="20" cy="13" r="4" />
-      <path d="M13.5 24c1.3-4.1 3.5-6.2 6.5-6.2s5.2 2.1 6.5 6.2" />
-      <circle cx="44" cy="13" r="4" />
-      <path d="M37.5 24c1.3-4.1 3.5-6.2 6.5-6.2s5.2 2.1 6.5 6.2" />
-      <circle cx="32" cy="9" r="4" opacity="0.52" />
-      <path d="M26 21.2c1.2-4.2 3.2-6.2 6-6.2 2.3 0 4.1 1.4 5.3 4.2" opacity="0.52" />
-      <path d="M35.5 8.2c0-2-1.3-3.1-3.2-3.1-1.4 0-2.5.7-3 1.8" opacity="0.72" />
-      <path d="M32 11.8v.2" opacity="0.72" />
+      <path d="M18.5 12.5c3.8-4 8.3-6 13.5-6s9.7 2 13.5 6" opacity="0.58" />
+      <path d="M21.5 29.5h21" />
+      <path d="M25 16.5h14l-1.7 13H26.7l-1.7-13Z" />
+      <path d="M25 16.5c-4.8.4-7.3 2-7.3 4.6 0 2.3 1.8 3.8 5.5 4.5M39 16.5c4.8.4 7.3 2 7.3 4.6 0 2.3-1.8 3.8-5.5 4.5" />
+      <path d="M28.4 11.2 32 7.6l3.6 3.6M32 7.6v16.8" />
+      <path d="M30 34.2h4" />
+      <path d="M12.5 14.2l1.7 1.7 1.7-1.7M48.1 14.2l1.7 1.7 1.7-1.7" opacity="0.62" />
     </svg>
   );
 }
