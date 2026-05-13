@@ -1227,6 +1227,8 @@ html[data-theme="light"] .site-mobile-menu:hover {
 
 .landing-shell {
   --page-art: var(--art-landing-dual);
+  z-index: 0;
+  isolation: isolate;
 }
 
 .landing-shell::before {
@@ -1271,12 +1273,7 @@ html[data-theme="light"] .site-mobile-menu:hover {
 }
 
 html[data-theme="light"] .landing-shell::before {
-  background:
-    radial-gradient(ellipse at 20% 34%, rgba(200, 154, 85, 0.18), transparent 34rem),
-    radial-gradient(ellipse at 82% 42%, rgba(43, 93, 105, 0.12), transparent 38rem),
-    linear-gradient(115deg, rgba(45, 26, 15, 0.52) 0%, rgba(30, 27, 21, 0.18) 45%, rgba(15, 21, 22, 0.56) 100%),
-    var(--art-landing-ambient) center / cover no-repeat;
-  filter: saturate(0.92) contrast(1.02) brightness(1.16);
+  display: none;
 }
 
 html[data-theme="light"] .landing-hero-card {
