@@ -38,7 +38,7 @@ export async function LandingExperience() {
 
   return (
     <main className="shell landing-shell">
-      <ResourceHints images={["/game-art/mobile/bg-landing-dual-world-v2.webp", "/game-art/mobile/bg-lobby-tavern.webp"]} />
+      <ResourceHints images={["/game-art/mobile/bg-landing-ambient.webp", "/game-art/mobile/bg-landing-dual-world-v2.webp", "/game-art/mobile/bg-lobby-tavern.webp"]} />
       <section className="card landing-hero-card rounded-[2rem] p-7">
         <div className="landing-logo-mark" aria-hidden="true" />
         <p className="section-kicker">избери игра</p>
