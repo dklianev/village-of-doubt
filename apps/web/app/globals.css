@@ -1239,15 +1239,6 @@ html[data-theme="light"] .site-mobile-menu:hover {
   filter: saturate(1.14) contrast(1.04);
 }
 
-html[data-theme="dark"] .game-home-shell::before {
-  background:
-    radial-gradient(ellipse at 4% 50%, rgba(200, 154, 85, 0.18), transparent 34rem),
-    radial-gradient(ellipse at 96% 48%, rgba(43, 93, 105, 0.18), transparent 38rem),
-    linear-gradient(115deg, rgba(5, 7, 8, 0.58) 0%, rgba(6, 8, 9, 0.34) 47%, rgba(5, 7, 8, 0.64) 100%),
-    var(--art-landing-ambient) center / cover no-repeat;
-  filter: saturate(1.14) contrast(1.04);
-}
-
 .lobby-shell {
   --page-art: var(--art-lobby);
   width: min(1360px, calc(100vw - 32px));
@@ -7357,6 +7348,27 @@ html[data-theme="dark"] .landing-quickstart .quickstart-dim-glyph {
 
 .utility-shell {
   position: relative;
+}
+
+html[data-theme="dark"] .landing-shell::before,
+html[data-theme="dark"] .game-home-shell::before,
+html[data-theme="dark"] .lobby-shell::before,
+html[data-theme="dark"] .history-shell::before,
+html[data-theme="dark"] .roles-shell::before,
+html[data-theme="dark"] .rules-shell::before,
+html[data-theme="dark"] .auth-shell::before,
+html[data-theme="dark"] .tutorial-shell::before,
+html[data-theme="dark"] .utility-shell::before {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse at 4% 50%, rgba(200, 154, 85, 0.18), transparent 34rem),
+    radial-gradient(ellipse at 96% 48%, rgba(43, 93, 105, 0.18), transparent 38rem),
+    linear-gradient(115deg, rgba(5, 7, 8, 0.58) 0%, rgba(6, 8, 9, 0.34) 47%, rgba(5, 7, 8, 0.64) 100%),
+    var(--art-landing-ambient) center / cover no-repeat;
+  content: "";
+  filter: saturate(1.14) contrast(1.04);
 }
 
 .utility-hero {

@@ -160,6 +160,19 @@ function checkLandingLayoutContracts() {
   }
   assert(css.includes("--art-landing-dual"), "Landing page must expose the dual-world background art variable.");
   assert(css.includes("--art-landing-ambient"), "Landing page must expose the ambient outer background art variable.");
+  for (const shellSelector of [
+    ".landing-shell::before",
+    ".game-home-shell::before",
+    ".lobby-shell::before",
+    ".history-shell::before",
+    ".roles-shell::before",
+    ".rules-shell::before",
+    ".auth-shell::before",
+    ".tutorial-shell::before",
+    ".utility-shell::before",
+  ]) {
+    assert(css.includes(`html[data-theme="dark"] ${shellSelector}`), `Dark theme must use the ambient landing background for ${shellSelector}.`);
+  }
   assert(css.includes('html[data-theme="light"] .landing-shell::before'), "Landing page must keep a light-theme outer background override.");
   assert(css.includes("display: none;"), "Landing light theme should keep the ambient outer background disabled.");
   assert(css.includes("/game-art/bg-landing-ambient.webp"), "Landing page must reference the optimized ambient outer background.");
