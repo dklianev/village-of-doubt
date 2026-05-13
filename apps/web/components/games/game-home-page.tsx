@@ -1,24 +1,16 @@
 import Link from "next/link";
-import {
-  GAME_MODE_DEFINITIONS,
-  getMafiaFreePreset,
-  getRoleNameBg,
-  getWerewolvesClassicPreset,
-  type GameFamily,
-  type GameMode,
-  type RoleCode,
-} from "@werewolf/shared";
+import { type GameFamily } from "@werewolf/shared";
 import { ResourceHints } from "@/components/resource-hints";
+import { QuickStartSection, type QuickStartLastWinner, type QuickStartLiveStats } from "@/components/games/QuickStartSection";
 
-export function GameHomePage({ family }: { family: GameFamily }) {
+export async function GameHomePage({ family }: { family: GameFamily }) {
   const isMafia = family === "mafia";
-  const mode: GameMode = isMafia ? "mafia_free" : "werewolves_classic";
   const root = isMafia ? "/mafia" : "/werewolf";
   const title = isMafia ? "Мафия" : "Върколак";
   const subtitle = isMafia
     ? "Криминален ноар за град, който трябва да различи алиби от лъжа."
     : "Фолклорен хорър за село, което заспива заедно, но не всички се будят невинни.";
-  const preset = isMafia ? getMafiaFreePreset(10) : getWerewolvesClassicPreset(10);
+  const stats = await loadGameStats();
 
   return (
     <main className="shell game-home-shell" data-theme={family} data-family={family}>
@@ -43,35 +35,35 @@ export function GameHomePage({ family }: { family: GameFamily }) {
         </div>
       </section>
 
-      <section className="paper-card rounded-[2rem] p-7">
-        <p className="section-kicker text-[#842f2b]">{GAME_MODE_DEFINITIONS[mode].recommendedPlayersBg}</p>
-        <h2 className="mt-3 text-4xl font-black">Как започва една добра игра</h2>
-        <div className="mt-6 grid gap-4 md:grid-cols-3">
-          <InfoCard title="1. Име" body="Всеки влиза само с потребителско име. Няма нужда от акаунт." />
-          <InfoCard title="2. Стая" body="Водещият създава код, настройва ролите и споделя поканата." />
-          <InfoCard title="3. Игра" body="Сървърът пази тайните роли и показва на всеки само позволеното." />
-        </div>
-        <div className="mt-6 rounded-3xl bg-white/30 p-5">
-          <h3 className="text-2xl font-black">Стартово разпределение</h3>
-          <ul className="mt-4 grid gap-2 md:grid-cols-2">
-            {Object.entries(preset).map(([role, count]) => (
-              <li key={role} className={`role-count-chip role-${role}`}>
-                <span>{getRoleNameBg(role as RoleCode)}</span>
-                <strong>{count}</strong>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
+      <QuickStartSection family={family} liveStats={stats?.liveStats ?? null} lastWinner={stats?.lastWinner ?? null} />
     </main>
   );
 }
 
-function InfoCard({ title, body }: { title: string; body: string }) {
-  return (
-    <article className="rounded-[1.5rem] border border-[#221611]/15 bg-white/35 p-5">
-      <h3 className="text-xl font-black">{title}</h3>
-      <p className="mt-3 text-sm font-bold leading-6 text-[#4b3024]">{body}</p>
-    </article>
-  );
+async function loadGameStats(): Promise<{ liveStats: QuickStartLiveStats; lastWinner: QuickStartLastWinner | null } | null> {
+  const gameServerUrl = process.env.NEXT_PUBLIC_GAME_SERVER_URL?.replace(/^ws/, "http") ?? "http://localhost:2567";
+  try {
+    const response = await fetch(`${gameServerUrl}/stats`, {
+      cache: "no-store",
+      next: { revalidate: 0 },
+    });
+    if (!response.ok) {
+      return null;
+    }
+    const stats = (await response.json()) as {
+      activeRooms?: number;
+      connectedPlayers?: number;
+      lastWinner?: QuickStartLastWinner | null;
+    };
+
+    return {
+      liveStats: {
+        activeRooms: stats.activeRooms ?? 0,
+        connectedPlayers: stats.connectedPlayers ?? 0,
+      },
+      lastWinner: stats.lastWinner ?? null,
+    };
+  } catch {
+    return null;
+  }
 }

@@ -9,6 +9,7 @@ const checks = [
   ["game art WebP pairing", checkGameArtPairing],
   ["CSS image-set delivery", checkCssImageSet],
   ["landing layout contracts", checkLandingLayoutContracts],
+  ["family quickstart contracts", checkFamilyQuickStartContracts],
   ["roles page art contracts", checkRolesPageContracts],
   ["rules playbook contracts", checkRulesPlaybookContracts],
   ["Bulgarian copy contracts", checkBulgarianCopyContracts],
@@ -142,6 +143,26 @@ function checkLandingLayoutContracts() {
   assert(existsSync(path.join(gameArtDir, "logo-chrome-mark.png")), "Missing chrome micro-sigil PNG asset.");
   assert(existsSync(path.join(gameArtDir, "logo-chrome-mark.webp")), "Missing optimized chrome micro-sigil WebP asset.");
   assert(siteChrome.includes("site-brand-dot"), "Navbar wordmark should keep the premium separator accent.");
+}
+
+function checkFamilyQuickStartContracts() {
+  const css = readText("apps/web/app/globals.css");
+  const gameHomePage = readText("apps/web/components/games/game-home-page.tsx");
+  const quickStart = readText("apps/web/components/games/QuickStartSection.tsx");
+  const icons = readText("apps/web/components/games/quickstart-icons.tsx");
+
+  assert(existsSync(path.join(root, "apps/web/components/games/QuickStartSection.tsx")), "Missing family home QuickStartSection component.");
+  assert(existsSync(path.join(root, "apps/web/components/games/quickstart-icons.tsx")), "Missing quickstart inline SVG icon set.");
+  assert(gameHomePage.includes("<QuickStartSection"), "GameHomePage must render the shared quickstart section.");
+  assert(quickStart.includes("IntersectionObserver"), "Quickstart connector reveal should use a browser IntersectionObserver.");
+  assert(quickStart.includes("Бъди първият на масата"), "Live ticker empty state must invite the first room, not show zero counts.");
+  assert(quickStart.includes("Първите герои ще се появят тук."), "Last winner empty state must use designed Bulgarian copy.");
+  for (const selector of [".quickstart-surface", ".quickstart-medallion", ".quickstart-connector", ".quickstart-row"]) {
+    assert(css.includes(selector), `Missing quickstart CSS selector ${selector}.`);
+  }
+  for (const exportName of ["PersonIcon", "DoorIcon", "MaskIcon", "MoonIcon", "BallotIcon"]) {
+    assert(icons.includes(`export function ${exportName}`), `quickstart-icons.tsx must export ${exportName}.`);
+  }
 }
 
 function checkRolesPageContracts() {
