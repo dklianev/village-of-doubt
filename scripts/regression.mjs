@@ -174,9 +174,9 @@ function checkLandingLayoutContracts() {
     ".tutorial-shell::before",
     ".utility-shell::before",
   ]) {
-    assert(css.includes(`html[data-theme="dark"] ${shellSelector}`), `Dark theme must use the dual-world landing background for ${shellSelector}.`);
+    assert(css.includes(`html[data-theme="dark"] ${shellSelector}`), `Dark theme must use the ambient landing background for ${shellSelector}.`);
   }
-  assert(darkBackdropBlock.includes("--art-landing-dual"), "Dark public page backdrop must use the dual-world homepage background, not the smoke plate.");
+  assert(darkBackdropBlock.includes("--art-landing-ambient"), "Dark public page backdrop must use the ambient smoky homepage background.");
   assert(css.includes('html[data-theme="light"] .landing-shell::before'), "Landing page must keep a light-theme outer background override.");
   assert(css.includes("display: none;"), "Landing light theme should keep the ambient outer background disabled.");
   assert(css.includes("/game-art/bg-landing-ambient.webp"), "Landing page must reference the optimized ambient outer background.");
@@ -211,7 +211,7 @@ function checkFamilyQuickStartContracts() {
   assert(existsSync(path.join(root, "apps/web/components/games/QuickStartSection.tsx")), "Missing family home QuickStartSection component.");
   assert(existsSync(path.join(root, "apps/web/components/games/quickstart-icons.tsx")), "Missing quickstart inline SVG icon set.");
   assert(gameHomePage.includes("<QuickStartSection"), "GameHomePage must render the shared quickstart section.");
-  assert(gameHomeAmbientBlock.includes("--art-landing-dual"), "Family home dark theme should use the dual-world homepage background.");
+  assert(gameHomeAmbientBlock.includes("--art-landing-ambient"), "Family home dark theme should use the ambient smoky homepage background.");
   assert(quickStart.includes("IntersectionObserver"), "Quickstart connector reveal should use a browser IntersectionObserver.");
   assert(quickStart.includes("Бъди първият на масата"), "Live ticker empty state must invite the first room, not show zero counts.");
   assert(quickStart.includes("Няма активни стаи в момента."), "Family live empty state must match the landing homepage copy.");
