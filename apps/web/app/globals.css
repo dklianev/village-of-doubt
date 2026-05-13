@@ -1246,15 +1246,44 @@ html[data-theme="light"] .site-mobile-menu:hover {
 }
 
 .landing-hero-card {
+  isolation: isolate;
   min-height: 520px;
+  border-color: rgba(200, 154, 85, 0.28);
   background:
-    radial-gradient(circle at 48% 28%, rgba(6, 9, 10, 0.34), rgba(6, 9, 10, 0.08) 42%, transparent 68%),
-    linear-gradient(90deg, rgba(13, 9, 8, 0.38) 0%, rgba(13, 12, 13, 0.46) 48%, rgba(13, 9, 8, 0.22) 100%),
-    var(--art-landing-dual) center 68% / cover no-repeat;
+    radial-gradient(ellipse at 22% 34%, rgba(200, 154, 85, 0.18), transparent 24rem),
+    radial-gradient(ellipse at 82% 38%, rgba(43, 93, 105, 0.2), transparent 28rem),
+    radial-gradient(circle at 50% 18%, rgba(255, 247, 229, 0.08), transparent 22rem),
+    linear-gradient(90deg, rgba(10, 10, 9, 0.5) 0%, rgba(10, 13, 13, 0.18) 48%, rgba(10, 10, 9, 0.42) 100%),
+    linear-gradient(180deg, rgba(4, 7, 8, 0.24) 0%, rgba(4, 7, 8, 0.68) 100%),
+    var(--art-landing-dual) center 58% / cover no-repeat;
+  box-shadow: 0 32px 92px rgba(0, 0, 0, 0.46), inset 0 1px rgba(255, 247, 229, 0.1);
+}
+
+.landing-hero-card::before {
+  position: absolute;
+  inset: 1px;
+  z-index: 0;
+  border: 1px solid rgba(200, 154, 85, 0.22);
+  border-radius: inherit;
+  background:
+    linear-gradient(115deg, transparent 0 38%, rgba(248, 236, 210, 0.04) 38% 39%, transparent 39%),
+    radial-gradient(ellipse at 21% 48%, rgba(209, 154, 66, 0.12), transparent 24rem),
+    radial-gradient(ellipse at 88% 44%, rgba(61, 103, 111, 0.16), transparent 25rem);
+  content: "";
+  pointer-events: none;
 }
 
 .landing-hero-card::after {
-  opacity: 0.34;
+  background:
+    radial-gradient(circle at 50% 22%, rgba(248, 236, 210, 0.07), transparent 22rem),
+    radial-gradient(circle at 12% 98%, rgba(200, 154, 85, 0.1), transparent 18rem),
+    radial-gradient(circle at 94% 96%, rgba(43, 93, 105, 0.12), transparent 20rem),
+    repeating-linear-gradient(135deg, rgba(248, 236, 210, 0.026) 0 1px, transparent 1px 18px);
+  opacity: 0.88;
+}
+
+.landing-hero-card:hover {
+  transform: none;
 }
 
 .landing-logo-mark {
@@ -1751,11 +1780,17 @@ html[data-theme="light"] .site-mobile-menu:hover {
 }
 
 .landing-hero-card {
+  isolation: isolate;
   min-height: 520px;
+  border-color: rgba(200, 154, 85, 0.28);
   background:
-    radial-gradient(circle at 48% 28%, rgba(6, 9, 10, 0.34), rgba(6, 9, 10, 0.08) 42%, transparent 68%),
-    linear-gradient(90deg, rgba(13, 9, 8, 0.38) 0%, rgba(13, 12, 13, 0.46) 48%, rgba(13, 9, 8, 0.22) 100%),
-    var(--art-landing-dual) center 68% / cover no-repeat;
+    radial-gradient(ellipse at 22% 34%, rgba(200, 154, 85, 0.18), transparent 24rem),
+    radial-gradient(ellipse at 82% 38%, rgba(43, 93, 105, 0.2), transparent 28rem),
+    radial-gradient(circle at 50% 18%, rgba(255, 247, 229, 0.08), transparent 22rem),
+    linear-gradient(90deg, rgba(10, 10, 9, 0.5) 0%, rgba(10, 13, 13, 0.18) 48%, rgba(10, 10, 9, 0.42) 100%),
+    linear-gradient(180deg, rgba(4, 7, 8, 0.24) 0%, rgba(4, 7, 8, 0.68) 100%),
+    var(--art-landing-dual) center 58% / cover no-repeat;
+  box-shadow: 0 32px 92px rgba(0, 0, 0, 0.46), inset 0 1px rgba(255, 247, 229, 0.1);
 }
 
 .lobby-shell .card {
