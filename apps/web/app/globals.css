@@ -25,6 +25,7 @@
   --chrome-pill-bg: rgba(248, 236, 210, 0.92);
   --chrome-z: 40;
   --art-landing: image-set(url("/game-art/bg-landing-hero.webp") type("image/webp"), url("/game-art/bg-landing-hero.png") type("image/png"));
+  --art-landing-dual: image-set(url("/game-art/bg-landing-dual-world.webp") type("image/webp"), url("/game-art/bg-landing-dual-world.png") type("image/png"));
   --art-lobby: image-set(url("/game-art/bg-lobby-tavern.webp") type("image/webp"), url("/game-art/bg-lobby-tavern.png") type("image/png"));
   --art-reveal: image-set(url("/game-art/bg-role-reveal.webp") type("image/webp"), url("/game-art/bg-role-reveal.png") type("image/png"));
   --art-night: image-set(url("/game-art/bg-night-phase.webp") type("image/webp"), url("/game-art/bg-night-phase.png") type("image/png"));
@@ -156,6 +157,7 @@
 @media (max-width: 720px) {
   :root {
     --art-landing: image-set(url("/game-art/mobile/bg-landing-hero.webp") type("image/webp"));
+    --art-landing-dual: image-set(url("/game-art/mobile/bg-landing-dual-world.webp") type("image/webp"));
     --art-lobby: image-set(url("/game-art/mobile/bg-lobby-tavern.webp") type("image/webp"));
     --art-reveal: image-set(url("/game-art/mobile/bg-role-reveal.webp") type("image/webp"));
     --art-night: image-set(url("/game-art/mobile/bg-night-phase.webp") type("image/webp"));
@@ -1202,7 +1204,7 @@ html[data-theme="light"] .site-mobile-menu:hover {
 }
 
 .landing-shell {
-  --page-art: var(--art-landing);
+  --page-art: var(--art-landing-dual);
 }
 
 .lobby-shell {
@@ -1226,8 +1228,13 @@ html[data-theme="light"] .site-mobile-menu:hover {
 .landing-hero-card {
   min-height: 520px;
   background:
-    linear-gradient(90deg, rgba(18, 10, 8, 0.96) 0%, rgba(18, 10, 8, 0.84) 42%, rgba(18, 10, 8, 0.22) 100%),
-    var(--art-landing) center / cover no-repeat;
+    radial-gradient(circle at 48% 28%, rgba(6, 9, 10, 0.34), rgba(6, 9, 10, 0.08) 42%, transparent 68%),
+    linear-gradient(90deg, rgba(13, 9, 8, 0.38) 0%, rgba(13, 12, 13, 0.46) 48%, rgba(13, 9, 8, 0.22) 100%),
+    var(--art-landing-dual) center 68% / cover no-repeat;
+}
+
+.landing-hero-card::after {
+  opacity: 0.34;
 }
 
 .landing-logo-mark {
@@ -1707,8 +1714,9 @@ html[data-theme="light"] .site-mobile-menu:hover {
 .landing-hero-card {
   min-height: 520px;
   background:
-    linear-gradient(90deg, rgba(18, 10, 8, 0.98) 0%, rgba(18, 10, 8, 0.86) 42%, rgba(18, 10, 8, 0.22) 100%),
-    var(--art-landing) center / cover no-repeat;
+    radial-gradient(circle at 48% 28%, rgba(6, 9, 10, 0.34), rgba(6, 9, 10, 0.08) 42%, transparent 68%),
+    linear-gradient(90deg, rgba(13, 9, 8, 0.38) 0%, rgba(13, 12, 13, 0.46) 48%, rgba(13, 9, 8, 0.22) 100%),
+    var(--art-landing-dual) center 68% / cover no-repeat;
 }
 
 .lobby-shell .card {
