@@ -1239,6 +1239,15 @@ html[data-theme="light"] .site-mobile-menu:hover {
   filter: saturate(1.14) contrast(1.04);
 }
 
+html[data-theme="dark"] .game-home-shell::before {
+  background:
+    radial-gradient(ellipse at 4% 50%, rgba(200, 154, 85, 0.18), transparent 34rem),
+    radial-gradient(ellipse at 96% 48%, rgba(43, 93, 105, 0.18), transparent 38rem),
+    linear-gradient(115deg, rgba(5, 7, 8, 0.58) 0%, rgba(6, 8, 9, 0.34) 47%, rgba(5, 7, 8, 0.64) 100%),
+    var(--art-landing-ambient) center / cover no-repeat;
+  filter: saturate(1.14) contrast(1.04);
+}
+
 .lobby-shell {
   --page-art: var(--art-lobby);
   width: min(1360px, calc(100vw - 32px));
@@ -1271,6 +1280,16 @@ html[data-theme="light"] .site-mobile-menu:hover {
   box-shadow: 0 32px 92px rgba(0, 0, 0, 0.46), inset 0 1px rgba(255, 247, 229, 0.1);
 }
 
+.landing-hero-card > .section-kicker {
+  display: inline-flex;
+  border: 1px solid rgba(240, 180, 93, 0.22);
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: rgba(8, 10, 10, 0.42);
+  color: #f0b45d;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.52);
+}
+
 html[data-theme="light"] .landing-shell::before {
   display: none;
 }
@@ -1285,16 +1304,6 @@ html[data-theme="light"] .landing-hero-card {
     linear-gradient(180deg, rgba(7, 9, 9, 0.16) 0%, rgba(7, 9, 9, 0.58) 100%),
     var(--art-landing-dual) center top / 100% auto no-repeat;
   box-shadow: 0 34px 92px rgba(67, 39, 24, 0.24), 0 0 0 1px rgba(169, 111, 34, 0.18), inset 0 1px rgba(255, 247, 229, 0.18);
-}
-
-html[data-theme="light"] .landing-hero-card > .section-kicker {
-  display: inline-flex;
-  border: 1px solid rgba(240, 180, 93, 0.22);
-  border-radius: 999px;
-  padding: 6px 10px;
-  background: rgba(8, 10, 10, 0.42);
-  color: #f0b45d;
-  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.52);
 }
 
 html[data-theme="light"] .landing-hero-card::before {

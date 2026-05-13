@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, type ComponentType, type CSSProperties } from "react";
 import type { GameFamily } from "@werewolf/shared";
-import { BallotIcon, DoorIcon, MaskIcon, MoonIcon, PersonIcon } from "./quickstart-icons";
+import { BallotIcon, DoorIcon, LastWinnerEmptyGlyph, MaskIcon, MoonIcon, PersonIcon } from "./quickstart-icons";
 
 export type QuickStartLiveStats = {
   activeRooms: number;
@@ -146,15 +146,15 @@ function LiveTickerCard({ family, liveStats }: { family: GameFamily; liveStats: 
       {isEmpty ? (
         <div className="quickstart-empty-live">
           <span className="quickstart-dice" aria-hidden="true">
-            ◆
+            ⚂
           </span>
           <div>
             <h3>Бъди първият на масата</h3>
-            <p>Стаята чака своя първи код.</p>
+            <p>Няма активни стаи в момента.</p>
+            <Link href={`${root}/create`} className="quickstart-card-cta" prefetch={false}>
+              Създай стая <span aria-hidden="true">→</span>
+            </Link>
           </div>
-          <Link href={`${root}/create`} className="quickstart-card-cta">
-            Създай стая <span aria-hidden="true">→</span>
-          </Link>
         </div>
       ) : (
         <div className="quickstart-live-active">
@@ -192,7 +192,7 @@ function LastWinnerCard({ lastWinner }: { lastWinner: QuickStartLastWinner | nul
         </div>
       ) : (
         <div className="quickstart-winner-empty">
-          <TableMysteryIcon />
+          <LastWinnerEmptyGlyph className="quickstart-dim-glyph" />
           <div>
             <h3>Първите герои ще се появят тук.</h3>
             <p>След първата завършена игра.</p>
@@ -200,19 +200,6 @@ function LastWinnerCard({ lastWinner }: { lastWinner: QuickStartLastWinner | nul
         </div>
       )}
     </article>
-  );
-}
-
-function TableMysteryIcon() {
-  return (
-    <svg className="quickstart-dim-glyph" viewBox="0 0 92 56" fill="none" aria-hidden="true">
-      <ellipse cx="46" cy="35" rx="28" ry="11" stroke="currentColor" strokeWidth="3" />
-      <circle cx="26" cy="18" r="7" stroke="currentColor" strokeWidth="3" />
-      <circle cx="46" cy="13" r="7" stroke="currentColor" strokeWidth="3" />
-      <circle cx="66" cy="18" r="7" stroke="currentColor" strokeWidth="3" />
-      <path d="M16 38c3-8 9-12 18-12M38 29c4-7 12-7 16 0M58 26c9 0 15 4 18 12" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-      <path d="M45 40h2v2h-2zM43 30c.4-3 2.2-4.2 4.1-5.2 2.1-1.2 3-2.3 2.4-4.1-.5-1.7-2.4-2.7-4.6-2.1-1.5.4-2.6 1.3-3.4 2.8" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-    </svg>
   );
 }
 

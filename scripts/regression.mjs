@@ -129,6 +129,7 @@ function checkLandingLayoutContracts() {
   const chromeIconHoverStart = css.indexOf(".site-icon-button:hover");
   const chromeIconHoverBlock =
     chromeIconHoverStart >= 0 ? css.slice(chromeIconHoverStart, css.indexOf("}", chromeIconHoverStart)) : "";
+  const heroKickerPattern = /(^|\n)\.landing-hero-card > \.section-kicker\s*{/;
 
   assert(landingPage.includes("<ModeChoiceCards"), "Landing page must render the separated game picker component.");
   assert(modeChoiceCards.includes("game-choice-grid"), "Landing mode choice component needs the game picker grid.");
@@ -142,6 +143,7 @@ function checkLandingLayoutContracts() {
   assert(css.includes(".game-choice-grid"), "Game picker grid needs dedicated styling.");
   assert(css.includes(".game-choice-card"), "Game picker cards need dedicated styling.");
   assert(css.includes(".game-choice-actions"), "Landing game choice actions must have a dedicated alignment hook.");
+  assert(heroKickerPattern.test(css), "Landing hero kicker chip must be a base dark-and-light style, not light-only.");
   assert(css.includes(".quickstart-surface"), "Landing quickstart needs the parchment surface selector.");
   assert(css.includes(".quickstart-medallion"), "Landing quickstart needs medallion styling.");
   assert(css.includes(".quickstart-connector"), "Landing quickstart needs connector styling.");
@@ -185,17 +187,23 @@ function checkFamilyQuickStartContracts() {
   const gameHomePage = readText("apps/web/components/games/game-home-page.tsx");
   const quickStart = readText("apps/web/components/games/QuickStartSection.tsx");
   const icons = readText("apps/web/components/games/quickstart-icons.tsx");
+  const gameHomeAmbientStart = css.indexOf('html[data-theme="dark"] .game-home-shell::before');
+  const gameHomeAmbientBlock =
+    gameHomeAmbientStart >= 0 ? css.slice(gameHomeAmbientStart, css.indexOf("}", gameHomeAmbientStart)) : "";
 
   assert(existsSync(path.join(root, "apps/web/components/games/QuickStartSection.tsx")), "Missing family home QuickStartSection component.");
   assert(existsSync(path.join(root, "apps/web/components/games/quickstart-icons.tsx")), "Missing quickstart inline SVG icon set.");
   assert(gameHomePage.includes("<QuickStartSection"), "GameHomePage must render the shared quickstart section.");
+  assert(gameHomeAmbientBlock.includes("--art-landing-ambient"), "Family home dark theme should use the ambient landing background.");
   assert(quickStart.includes("IntersectionObserver"), "Quickstart connector reveal should use a browser IntersectionObserver.");
   assert(quickStart.includes("Бъди първият на масата"), "Live ticker empty state must invite the first room, not show zero counts.");
+  assert(quickStart.includes("Няма активни стаи в момента."), "Family live empty state must match the landing homepage copy.");
   assert(quickStart.includes("Първите герои ще се появят тук."), "Last winner empty state must use designed Bulgarian copy.");
+  assert(quickStart.includes("LastWinnerEmptyGlyph"), "Family winner empty state must use the shared designed glyph.");
   for (const selector of [".quickstart-surface", ".quickstart-medallion", ".quickstart-connector", ".quickstart-row"]) {
     assert(css.includes(selector), `Missing quickstart CSS selector ${selector}.`);
   }
-  for (const exportName of ["PersonIcon", "DoorIcon", "MaskIcon", "MoonIcon", "BallotIcon"]) {
+  for (const exportName of ["PersonIcon", "DoorIcon", "MaskIcon", "MoonIcon", "BallotIcon", "LastWinnerEmptyGlyph"]) {
     assert(icons.includes(`export function ${exportName}`), `quickstart-icons.tsx must export ${exportName}.`);
   }
 }
