@@ -25,7 +25,7 @@
   --chrome-pill-bg: rgba(248, 236, 210, 0.92);
   --chrome-z: 40;
   --art-landing: image-set(url("/game-art/bg-landing-hero.webp") type("image/webp"), url("/game-art/bg-landing-hero.png") type("image/png"));
-  --art-landing-dual: image-set(url("/game-art/bg-landing-dual-world.webp") type("image/webp"), url("/game-art/bg-landing-dual-world.png") type("image/png"));
+  --art-landing-dual: image-set(url("/game-art/bg-landing-dual-world-v2.webp") type("image/webp"), url("/game-art/bg-landing-dual-world-v2.png") type("image/png"));
   --art-lobby: image-set(url("/game-art/bg-lobby-tavern.webp") type("image/webp"), url("/game-art/bg-lobby-tavern.png") type("image/png"));
   --art-reveal: image-set(url("/game-art/bg-role-reveal.webp") type("image/webp"), url("/game-art/bg-role-reveal.png") type("image/png"));
   --art-night: image-set(url("/game-art/bg-night-phase.webp") type("image/webp"), url("/game-art/bg-night-phase.png") type("image/png"));
@@ -157,7 +157,7 @@
 @media (max-width: 720px) {
   :root {
     --art-landing: image-set(url("/game-art/mobile/bg-landing-hero.webp") type("image/webp"));
-    --art-landing-dual: image-set(url("/game-art/mobile/bg-landing-dual-world.webp") type("image/webp"));
+    --art-landing-dual: image-set(url("/game-art/mobile/bg-landing-dual-world-v2.webp") type("image/webp"));
     --art-lobby: image-set(url("/game-art/mobile/bg-lobby-tavern.webp") type("image/webp"));
     --art-reveal: image-set(url("/game-art/mobile/bg-role-reveal.webp") type("image/webp"));
     --art-night: image-set(url("/game-art/mobile/bg-night-phase.webp") type("image/webp"));
@@ -1227,6 +1227,15 @@ html[data-theme="light"] .site-mobile-menu:hover {
   --page-art: var(--art-landing-dual);
 }
 
+.landing-shell::before {
+  background:
+    radial-gradient(ellipse at 21% 34%, rgba(200, 154, 85, 0.16), transparent 30rem),
+    radial-gradient(ellipse at 82% 42%, rgba(43, 93, 105, 0.16), transparent 34rem),
+    linear-gradient(115deg, rgba(5, 7, 8, 0.84) 0%, rgba(10, 12, 12, 0.52) 45%, rgba(5, 7, 8, 0.88) 100%),
+    var(--page-art, var(--art-landing)) center 52% / cover no-repeat;
+  filter: saturate(1.03) contrast(1.06);
+}
+
 .lobby-shell {
   --page-art: var(--art-lobby);
   width: min(1360px, calc(100vw - 32px));
@@ -1250,13 +1259,32 @@ html[data-theme="light"] .site-mobile-menu:hover {
   min-height: 520px;
   border-color: rgba(200, 154, 85, 0.28);
   background:
-    radial-gradient(ellipse at 22% 34%, rgba(200, 154, 85, 0.18), transparent 24rem),
-    radial-gradient(ellipse at 82% 38%, rgba(43, 93, 105, 0.2), transparent 28rem),
+    radial-gradient(ellipse at 22% 34%, rgba(200, 154, 85, 0.15), transparent 24rem),
+    radial-gradient(ellipse at 82% 38%, rgba(43, 93, 105, 0.16), transparent 28rem),
     radial-gradient(circle at 50% 18%, rgba(255, 247, 229, 0.08), transparent 22rem),
-    linear-gradient(90deg, rgba(10, 10, 9, 0.5) 0%, rgba(10, 13, 13, 0.18) 48%, rgba(10, 10, 9, 0.42) 100%),
-    linear-gradient(180deg, rgba(4, 7, 8, 0.24) 0%, rgba(4, 7, 8, 0.68) 100%),
-    var(--art-landing-dual) center 58% / cover no-repeat;
+    linear-gradient(90deg, rgba(10, 10, 9, 0.42) 0%, rgba(10, 13, 13, 0.16) 48%, rgba(10, 10, 9, 0.38) 100%),
+    linear-gradient(180deg, rgba(4, 7, 8, 0.18) 0%, rgba(4, 7, 8, 0.62) 100%),
+    var(--art-landing-dual) center top / 100% auto no-repeat;
   box-shadow: 0 32px 92px rgba(0, 0, 0, 0.46), inset 0 1px rgba(255, 247, 229, 0.1);
+}
+
+html[data-theme="light"] .landing-shell::before {
+  background:
+    radial-gradient(ellipse at 19% 32%, rgba(200, 154, 85, 0.18), transparent 28rem),
+    radial-gradient(ellipse at 83% 42%, rgba(43, 93, 105, 0.12), transparent 34rem),
+    linear-gradient(115deg, rgba(22, 13, 9, 0.68) 0%, rgba(25, 23, 18, 0.3) 44%, rgba(13, 18, 18, 0.72) 100%),
+    var(--page-art, var(--art-landing)) center 52% / cover no-repeat;
+  filter: saturate(0.92) contrast(1.03) brightness(1.06);
+}
+
+html[data-theme="light"] .landing-hero-card {
+  background:
+    radial-gradient(ellipse at 22% 34%, rgba(200, 154, 85, 0.2), transparent 24rem),
+    radial-gradient(ellipse at 82% 38%, rgba(43, 93, 105, 0.14), transparent 28rem),
+    radial-gradient(circle at 50% 18%, rgba(255, 247, 229, 0.1), transparent 22rem),
+    linear-gradient(90deg, rgba(20, 12, 9, 0.48) 0%, rgba(12, 15, 15, 0.18) 48%, rgba(12, 14, 13, 0.42) 100%),
+    linear-gradient(180deg, rgba(7, 9, 9, 0.16) 0%, rgba(7, 9, 9, 0.58) 100%),
+    var(--art-landing-dual) center top / 100% auto no-repeat;
 }
 
 .landing-hero-card::before {
@@ -1784,12 +1812,12 @@ html[data-theme="light"] .site-mobile-menu:hover {
   min-height: 520px;
   border-color: rgba(200, 154, 85, 0.28);
   background:
-    radial-gradient(ellipse at 22% 34%, rgba(200, 154, 85, 0.18), transparent 24rem),
-    radial-gradient(ellipse at 82% 38%, rgba(43, 93, 105, 0.2), transparent 28rem),
+    radial-gradient(ellipse at 22% 34%, rgba(200, 154, 85, 0.15), transparent 24rem),
+    radial-gradient(ellipse at 82% 38%, rgba(43, 93, 105, 0.16), transparent 28rem),
     radial-gradient(circle at 50% 18%, rgba(255, 247, 229, 0.08), transparent 22rem),
-    linear-gradient(90deg, rgba(10, 10, 9, 0.5) 0%, rgba(10, 13, 13, 0.18) 48%, rgba(10, 10, 9, 0.42) 100%),
-    linear-gradient(180deg, rgba(4, 7, 8, 0.24) 0%, rgba(4, 7, 8, 0.68) 100%),
-    var(--art-landing-dual) center 58% / cover no-repeat;
+    linear-gradient(90deg, rgba(10, 10, 9, 0.42) 0%, rgba(10, 13, 13, 0.16) 48%, rgba(10, 10, 9, 0.38) 100%),
+    linear-gradient(180deg, rgba(4, 7, 8, 0.18) 0%, rgba(4, 7, 8, 0.62) 100%),
+    var(--art-landing-dual) center top / 100% auto no-repeat;
   box-shadow: 0 32px 92px rgba(0, 0, 0, 0.46), inset 0 1px rgba(255, 247, 229, 0.1);
 }
 

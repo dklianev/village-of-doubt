@@ -132,7 +132,7 @@ function checkLandingLayoutContracts() {
   assert(modeChoiceCards.includes("href={`${game.href}/create`}"), "Landing page must link directly to each game's create flow.");
   assert(landingPage.includes("href: \"/werewolf\""), "Landing page must define a Werewolf game entry.");
   assert(landingPage.includes("href: \"/mafia\""), "Landing page must define a Mafia game entry.");
-  assert(landingPage.includes("/game-art/mobile/bg-landing-dual-world.webp"), "Landing page should preload the dual-world background plate.");
+  assert(landingPage.includes("/game-art/mobile/bg-landing-dual-world-v2.webp"), "Landing page should preload the current dual-world background plate.");
   assert(!landingPage.includes("Село под съмнение"), "Landing page must not use the old Werewolf branding.");
   assert(!landingPage.includes("Българска Мафия"), "Landing page must not use the old Mafia branding.");
   assert(css.includes(".game-choice-grid"), "Game picker grid needs dedicated styling.");
@@ -151,10 +151,10 @@ function checkLandingLayoutContracts() {
     assert(quickStartIcons.includes(`export function ${exportName}`), `landing quickstart-icons.tsx must export ${exportName}.`);
   }
   assert(css.includes("--art-landing-dual"), "Landing page must expose the dual-world background art variable.");
-  assert(css.includes("/game-art/bg-landing-dual-world.webp"), "Landing page must reference the optimized dual-world background.");
-  assert(existsSync(path.join(gameArtDir, "bg-landing-dual-world.png")), "Missing dual-world landing background PNG.");
-  assert(existsSync(path.join(gameArtDir, "bg-landing-dual-world.webp")), "Missing optimized dual-world landing background WebP.");
-  assert(existsSync(path.join(gameArtDir, "mobile/bg-landing-dual-world.webp")), "Missing mobile dual-world landing background WebP.");
+  assert(css.includes("/game-art/bg-landing-dual-world-v2.webp"), "Landing page must reference the optimized current dual-world background.");
+  assert(existsSync(path.join(gameArtDir, "bg-landing-dual-world-v2.png")), "Missing current dual-world landing background PNG.");
+  assert(existsSync(path.join(gameArtDir, "bg-landing-dual-world-v2.webp")), "Missing optimized current dual-world landing background WebP.");
+  assert(existsSync(path.join(gameArtDir, "mobile/bg-landing-dual-world-v2.webp")), "Missing mobile current dual-world landing background WebP.");
   assert(siteChrome.includes("prefetch={false}"), "Site chrome navigation should not prefetch every secondary route on first load.");
   assert(css.includes("/game-art/logo-chrome-mark.webp"), "Navbar brand should use the chrome-optimized micro-sigil WebP.");
   assert(existsSync(path.join(gameArtDir, "logo-chrome-mark.png")), "Missing chrome micro-sigil PNG asset.");
