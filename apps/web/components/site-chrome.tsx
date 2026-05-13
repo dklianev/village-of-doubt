@@ -206,12 +206,15 @@ function BrandMark({ compact }: { compact: boolean }) {
   return (
     <Link className="site-brand" href="/" aria-label="Към началото" prefetch={false}>
       <span className="site-brand-mark" aria-hidden="true" />
-      <span className={compact ? "site-brand-wordmark is-compact" : "site-brand-wordmark"}>
-        <span>Върколак</span>
-        <span className="site-brand-dot" aria-hidden="true">
-          ·
+      <span className="site-brand-text">
+        <span className={compact ? "site-brand-wordmark is-compact" : "site-brand-wordmark"}>
+          <span>Върколак</span>
+          <span className="site-brand-dot" aria-hidden="true">
+            ·
+          </span>
+          <span>Мафия</span>
         </span>
-        <span>Мафия</span>
+        <span className="site-brand-subtitle">Социална игра на сенки</span>
       </span>
     </Link>
   );

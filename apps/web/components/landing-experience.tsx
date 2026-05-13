@@ -1,5 +1,7 @@
-import Link from "next/link";
+import type { GameFamily } from "@werewolf/shared";
 import { ResourceHints } from "@/components/resource-hints";
+import { ModeChoiceCards, type ModeChoiceGame } from "@/components/landing/ModeChoiceCards";
+import { QuickStartSection, type LandingQuickStartLastWinner } from "@/components/landing/QuickStartSection";
 
 const GAMES = [
   {
@@ -22,9 +24,18 @@ const GAMES = [
     line: "Дъждът измива улицата, но не и алибитата.",
     href: "/mafia",
   },
-] as const;
+] as const satisfies readonly ModeChoiceGame[];
 
-export function LandingExperience() {
+export async function LandingExperience() {
+  const stats = await loadGameStats();
+  const liveStats = stats
+    ? {
+        activeRooms: stats.activeRooms ?? 0,
+        connectedPlayers: stats.connectedPlayers ?? 0,
+        ...(stats.byFamily ? { byFamily: stats.byFamily } : {}),
+      }
+    : null;
+
   return (
     <main className="shell landing-shell">
       <ResourceHints images={["/game-art/mobile/bg-landing-dual-world.webp", "/game-art/mobile/bg-lobby-tavern.webp"]} />
@@ -39,66 +50,9 @@ export function LandingExperience() {
           или въвеждаш код и започваш без регистрация.
         </p>
 
-        <div className="game-choice-grid landing-split-grid mt-8">
-          {GAMES.map((game) => (
-            <article key={game.id} className={`game-choice-card game-choice-${game.id}`} data-theme={game.family}>
-              <span className="section-kicker">{game.eyebrow}</span>
-              <h2>{game.title}</h2>
-              <blockquote>{game.line}</blockquote>
-              <p>{game.description}</p>
-              <div className="mt-6 flex flex-wrap gap-3">
-                <Link href={`${game.href}/create`} className="btn btn-primary">
-                  Играй
-                </Link>
-                <Link href={`${game.href}/roles`} className="btn btn-secondary" prefetch={false}>
-                  Роли
-                </Link>
-                <Link href={`${game.href}/rules`} className="btn btn-secondary" prefetch={false}>
-                  Правила
-                </Link>
-              </div>
-            </article>
-          ))}
-        </div>
+        <ModeChoiceCards games={GAMES} />
 
-        <section className="first-game-flow mt-8" aria-label="Първа игра за 30 секунди">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="section-kicker">първа игра за 30 секунди</p>
-            <Link href="/tutorial" className="btn btn-secondary min-h-0 px-4 py-2 text-sm" prefetch={false}>
-              Виж краткия наръчник
-            </Link>
-          </div>
-          <ol>
-            <li>
-              <strong>1. Име</strong>
-              <span>Влизаш без акаунт, само с име за масата.</span>
-            </li>
-            <li>
-              <strong>2. Стая</strong>
-              <span>Създаваш код или се присъединяваш към приятел.</span>
-            </li>
-            <li>
-              <strong>3. Роля</strong>
-              <span>Сървърът ти показва само твоята карта.</span>
-            </li>
-            <li>
-              <strong>4. Нощ</strong>
-              <span>Действаш тихо, ако ролята ти го позволява.</span>
-            </li>
-            <li>
-              <strong>5. Глас</strong>
-              <span>Денят решава кой ще напусне играта.</span>
-            </li>
-          </ol>
-        </section>
-
-        <section className="landing-live-strip mt-8" aria-label="Жив пулс на играта">
-          <LiveTicker />
-          <div className="winner-banner">
-            <span>последна история</span>
-            <strong>Когато първата игра приключи, тук ще се появи победителят.</strong>
-          </div>
-        </section>
+        <QuickStartSection liveStats={liveStats} lastWinner={stats?.lastWinner ?? null} />
       </section>
     </main>
   );
@@ -117,50 +71,10 @@ async function loadGameStats() {
     return (await response.json()) as {
       activeRooms?: number;
       connectedPlayers?: number;
-      lastWinner?: { code: string; winnerTeam: string; winnerReasonBg: string } | null;
+      byFamily?: Partial<Record<GameFamily, number>>;
+      lastWinner?: LandingQuickStartLastWinner | null;
     };
   } catch {
     return null;
   }
-}
-
-async function LiveTicker() {
-  const stats = await loadGameStats();
-  const activeRooms = stats?.activeRooms ?? 0;
-  const connectedPlayers = stats?.connectedPlayers ?? 0;
-  const lastWinner = stats?.lastWinner;
-
-  return (
-    <div className="live-ticker">
-      <span aria-hidden="true" />
-      <div>
-        <strong>В момента играят</strong>
-        <p>
-          {activeRooms} {activeRooms === 1 ? "стая" : "стаи"} · {connectedPlayers}{" "}
-          {connectedPlayers === 1 ? "човек" : "души"}
-        </p>
-      </div>
-      {lastWinner ? (
-        <div>
-          <strong>Последна победа</strong>
-          <p>
-            Стая {lastWinner.code} · {winnerTeamBg(lastWinner.winnerTeam)}
-          </p>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function winnerTeamBg(team: string) {
-  const labels: Record<string, string> = {
-    village: "Селото",
-    werewolves: "Върколаците",
-    vampires: "Вампирите",
-    mafia: "Мафията",
-    lovers: "Влюбените",
-    draw: "Равенство",
-  };
-
-  return labels[team] ?? "неизвестен победител";
 }

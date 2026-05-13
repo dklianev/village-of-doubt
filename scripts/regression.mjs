@@ -122,10 +122,14 @@ function assertThemeVariableBlock(css, selector) {
 function checkLandingLayoutContracts() {
   const css = readText("apps/web/app/globals.css");
   const landingPage = readText("apps/web/components/landing-experience.tsx");
+  const modeChoiceCards = readText("apps/web/components/landing/ModeChoiceCards.tsx");
+  const quickStart = readText("apps/web/components/landing/QuickStartSection.tsx");
+  const quickStartIcons = readText("apps/web/components/landing/quickstart-icons.tsx");
   const siteChrome = readText("apps/web/components/site-chrome.tsx");
 
-  assert(landingPage.includes("game-choice-grid"), "Landing page must render the separated game picker.");
-  assert(landingPage.includes("href={`${game.href}/create`}"), "Landing page must link directly to each game's create flow.");
+  assert(landingPage.includes("<ModeChoiceCards"), "Landing page must render the separated game picker component.");
+  assert(modeChoiceCards.includes("game-choice-grid"), "Landing mode choice component needs the game picker grid.");
+  assert(modeChoiceCards.includes("href={`${game.href}/create`}"), "Landing page must link directly to each game's create flow.");
   assert(landingPage.includes("href: \"/werewolf\""), "Landing page must define a Werewolf game entry.");
   assert(landingPage.includes("href: \"/mafia\""), "Landing page must define a Mafia game entry.");
   assert(landingPage.includes("/game-art/mobile/bg-landing-dual-world.webp"), "Landing page should preload the dual-world background plate.");
@@ -133,6 +137,19 @@ function checkLandingLayoutContracts() {
   assert(!landingPage.includes("Българска Мафия"), "Landing page must not use the old Mafia branding.");
   assert(css.includes(".game-choice-grid"), "Game picker grid needs dedicated styling.");
   assert(css.includes(".game-choice-card"), "Game picker cards need dedicated styling.");
+  assert(css.includes(".quickstart-surface"), "Landing quickstart needs the parchment surface selector.");
+  assert(css.includes(".quickstart-medallion"), "Landing quickstart needs medallion styling.");
+  assert(css.includes(".quickstart-connector"), "Landing quickstart needs connector styling.");
+  assert(css.includes(".mode-choice-continue-pill"), "Landing mode cards need the continue pill styling.");
+  assert(existsSync(path.join(root, "apps/web/components/landing/QuickStartSection.tsx")), "Missing landing QuickStartSection component.");
+  assert(existsSync(path.join(root, "apps/web/components/landing/quickstart-icons.tsx")), "Missing landing quickstart inline SVG icon set.");
+  assert(landingPage.includes("QuickStartSection"), "Landing page must import and render QuickStartSection.");
+  assert(quickStart.includes("IntersectionObserver"), "Landing quickstart connector reveal should use IntersectionObserver.");
+  assert(quickStart.includes("Бъди първият на масата"), "Landing live empty state must invite the first room.");
+  assert(quickStart.includes("Първите герои ще се появят тук."), "Landing winner empty state must use designed Bulgarian copy.");
+  for (const exportName of ["PersonIcon", "HouseIcon", "MaskIcon", "MoonIcon", "BallotIcon", "LastWinnerEmptyGlyph"]) {
+    assert(quickStartIcons.includes(`export function ${exportName}`), `landing quickstart-icons.tsx must export ${exportName}.`);
+  }
   assert(css.includes("--art-landing-dual"), "Landing page must expose the dual-world background art variable.");
   assert(css.includes("/game-art/bg-landing-dual-world.webp"), "Landing page must reference the optimized dual-world background.");
   assert(existsSync(path.join(gameArtDir, "bg-landing-dual-world.png")), "Missing dual-world landing background PNG.");
@@ -143,6 +160,8 @@ function checkLandingLayoutContracts() {
   assert(existsSync(path.join(gameArtDir, "logo-chrome-mark.png")), "Missing chrome micro-sigil PNG asset.");
   assert(existsSync(path.join(gameArtDir, "logo-chrome-mark.webp")), "Missing optimized chrome micro-sigil WebP asset.");
   assert(siteChrome.includes("site-brand-dot"), "Navbar wordmark should keep the premium separator accent.");
+  assert(siteChrome.includes("Социална игра на сенки"), "Navbar subtitle should use the updated Bulgarian tagline.");
+  assert(!siteChrome.includes("ВЪРКОЛАК · МАФИЯ"), "Navbar must not use the old uppercase subtitle.");
 }
 
 function checkFamilyQuickStartContracts() {
