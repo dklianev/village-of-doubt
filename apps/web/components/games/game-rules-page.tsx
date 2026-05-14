@@ -376,9 +376,13 @@ function PhaseNode({
 function PhaseLoopArrow() {
   return (
     <div className="phase-loop-arrow" aria-hidden="true">
-      <svg viewBox="0 0 620 88" focusable="false">
-        <path className="phase-loop-arrow__path" d="M570 12 C522 78 330 82 242 18" />
-        <path className="phase-loop-arrow__head" d="M244 18 L270 17 L254 38" />
+      <svg className="phase-loop-arrow__svg phase-loop-arrow__svg--desktop" viewBox="0 0 600 96" preserveAspectRatio="none" focusable="false">
+        <path className="phase-loop-arrow__path" d="M600 10 C570 82 42 82 0 10" />
+        <path className="phase-loop-arrow__head" d="M0 10 L-14 32 M0 10 L14 32" />
+      </svg>
+      <svg className="phase-loop-arrow__svg phase-loop-arrow__svg--mobile" viewBox="0 0 80 360" preserveAspectRatio="none" focusable="false">
+        <path className="phase-loop-arrow__path" d="M54 348 C8 286 8 74 54 12" />
+        <path className="phase-loop-arrow__head" d="M54 12 L38 38 M54 12 L70 38" />
       </svg>
       <span>повтаря се</span>
     </div>
