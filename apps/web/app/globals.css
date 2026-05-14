@@ -7035,13 +7035,16 @@ html[data-theme="dark"] .landing-quickstart .quickstart-dim-glyph {
 }
 
 .phase-loop-arrow__path {
-  stroke-width: 2.6;
+  stroke-width: 2.35;
   vector-effect: non-scaling-stroke;
 }
 
-.phase-loop-arrow__head {
-  fill: currentColor;
-  stroke: none;
+.phase-loop-arrow__marker {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.9;
 }
 
 .phase-loop-arrow span {

@@ -377,12 +377,20 @@ function PhaseLoopArrow() {
   return (
     <div className="phase-loop-arrow" aria-hidden="true">
       <svg className="phase-loop-arrow__svg phase-loop-arrow__svg--desktop" viewBox="0 0 600 96" preserveAspectRatio="none" focusable="false">
-        <path className="phase-loop-arrow__path" d="M600 10 C570 82 72 82 24 24" />
-        <path className="phase-loop-arrow__head" d="M24 14 L12 38 L24 32 L36 38 Z" />
+        <defs>
+          <marker id="phase-loop-arrowhead-desktop" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4.5" markerHeight="4.5" orient="auto">
+            <path className="phase-loop-arrow__marker" d="M2 1.5 L8 5 L2 8.5" />
+          </marker>
+        </defs>
+        <path className="phase-loop-arrow__path" d="M588 14 C560 82 92 82 32 34 C26 28 24 22 24 14" markerEnd="url(#phase-loop-arrowhead-desktop)" />
       </svg>
       <svg className="phase-loop-arrow__svg phase-loop-arrow__svg--mobile" viewBox="0 0 80 360" preserveAspectRatio="none" focusable="false">
-        <path className="phase-loop-arrow__path" d="M54 348 C8 286 8 74 54 24" />
-        <path className="phase-loop-arrow__head" d="M54 14 L42 40 L54 34 L66 40 Z" />
+        <defs>
+          <marker id="phase-loop-arrowhead-mobile" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4.5" markerHeight="4.5" orient="auto">
+            <path className="phase-loop-arrow__marker" d="M2 1.5 L8 5 L2 8.5" />
+          </marker>
+        </defs>
+        <path className="phase-loop-arrow__path" d="M54 348 C12 286 12 82 54 34 C58 28 58 20 58 12" markerEnd="url(#phase-loop-arrowhead-mobile)" />
       </svg>
       <span>повтаря се</span>
     </div>
