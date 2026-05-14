@@ -6796,6 +6796,504 @@ html[data-theme="dark"] .landing-quickstart .quickstart-dim-glyph {
   font-weight: 900;
 }
 
+/* === phase timeline === */
+.phase-timeline-section.rules-phase-timeline {
+  display: block;
+  margin-top: 22px;
+  border: 1px solid rgba(248, 236, 210, 0.16);
+  border-radius: 34px;
+  padding: clamp(20px, 3vw, 34px);
+  background:
+    radial-gradient(circle at 14% 0%, rgba(209, 154, 66, 0.18), transparent 26rem),
+    radial-gradient(circle at 92% 16%, rgba(43, 93, 105, 0.14), transparent 30rem),
+    linear-gradient(145deg, rgba(18, 10, 8, 0.97), rgba(8, 10, 10, 0.94));
+  box-shadow: 0 32px 96px rgba(0, 0, 0, 0.38), inset 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.phase-timeline-header {
+  max-width: 860px;
+}
+
+.phase-timeline {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0;
+  margin-top: clamp(22px, 3vw, 34px);
+  border: 1px solid rgba(248, 236, 210, 0.12);
+  border-radius: 28px;
+  padding: 24px 14px 104px;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(248, 236, 210, 0.08), rgba(248, 236, 210, 0.03)),
+    rgba(8, 10, 10, 0.46);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.phase-timeline__line {
+  position: absolute;
+  top: 68px;
+  right: 8.333%;
+  left: 8.333%;
+  z-index: 0;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(248, 236, 210, 0.26), rgba(248, 236, 210, 0.14));
+}
+
+.phase-timeline__line.is-loop {
+  right: 8.333%;
+  left: 41.667%;
+  background: linear-gradient(90deg, rgba(209, 154, 66, 0.22), rgba(209, 154, 66, 0.84));
+  box-shadow: 0 0 24px rgba(209, 154, 66, 0.24);
+}
+
+[data-theme="mafia"] .phase-timeline__line.is-loop {
+  background: linear-gradient(90deg, rgba(200, 111, 62, 0.22), rgba(200, 154, 85, 0.88));
+  box-shadow: 0 0 24px rgba(200, 111, 62, 0.26);
+}
+
+.phase-node {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  min-width: 0;
+  border: 0;
+  padding: 0 8px;
+  background: transparent;
+  color: #ead9ba;
+  cursor: pointer;
+  font: inherit;
+  opacity: 0.76;
+  text-align: center;
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease,
+    color 180ms ease;
+}
+
+.phase-node:hover,
+.phase-node:focus-visible {
+  color: #fff6e5;
+  opacity: 1;
+}
+
+.phase-node.is-selected {
+  color: #fff6e5;
+  opacity: 1;
+  transform: translateY(-4px);
+}
+
+.phase-node-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  min-height: 20px;
+  border: 1px solid rgba(209, 154, 66, 0.3);
+  border-radius: 999px;
+  margin-bottom: 6px;
+  background: rgba(8, 10, 10, 0.62);
+  color: var(--gold);
+  font-size: 0.66rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+}
+
+.phase-node-medallion {
+  display: block;
+  width: 58px;
+  aspect-ratio: 1;
+  border: 1px solid rgba(248, 236, 210, 0.22);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(248, 236, 210, 0.18), transparent 50%),
+    rgba(8, 10, 10, 0.72);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.26), inset 0 1px rgba(255, 255, 255, 0.12);
+  filter: saturate(0.78) brightness(0.88);
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    filter 180ms ease,
+    transform 180ms ease;
+}
+
+.phase-node:hover .phase-node-medallion,
+.phase-node:focus-visible .phase-node-medallion {
+  border-color: rgba(209, 154, 66, 0.58);
+  filter: saturate(1) brightness(1);
+}
+
+.phase-node.is-selected .phase-node-medallion {
+  border-color: rgba(209, 154, 66, 0.95);
+  box-shadow: 0 0 0 4px rgba(209, 154, 66, 0.16), 0 20px 42px rgba(0, 0, 0, 0.36), inset 0 1px rgba(255, 255, 255, 0.18);
+  filter: saturate(1.08) brightness(1.08);
+  transform: scale(1.05);
+}
+
+.phase-node-icon {
+  background:
+    linear-gradient(180deg, rgba(8, 10, 10, 0.18), rgba(8, 10, 10, 0.5)),
+    var(--phase-node-icon) center / cover no-repeat;
+}
+
+.phase-node-icon.phase-lobby {
+  --phase-node-icon: image-set(url("/game-art/icon-phase-lobby.webp") type("image/webp"), url("/game-art/icon-phase-lobby.png") type("image/png"));
+}
+
+.phase-node-icon.phase-role_reveal {
+  --phase-node-icon: image-set(url("/game-art/icon-phase-role-reveal.webp") type("image/webp"), url("/game-art/icon-phase-role-reveal.png") type("image/png"));
+}
+
+.phase-node-icon.phase-night {
+  --phase-node-icon: image-set(url("/game-art/icon-phase-night.webp") type("image/webp"), url("/game-art/icon-phase-night.png") type("image/png"));
+}
+
+.phase-node-icon.phase-day_discussion {
+  --phase-node-icon: image-set(url("/game-art/icon-phase-day.webp") type("image/webp"), url("/game-art/icon-phase-day.png") type("image/png"));
+}
+
+.phase-node-icon.phase-voting {
+  --phase-node-icon: image-set(url("/game-art/icon-phase-voting.webp") type("image/webp"), url("/game-art/icon-phase-voting.png") type("image/png"));
+}
+
+.phase-node-icon.phase-resolution {
+  --phase-node-icon: image-set(url("/game-art/icon-phase-resolution.webp") type("image/webp"), url("/game-art/icon-phase-resolution.png") type("image/png"));
+}
+
+[data-theme="mafia"] .phase-node-icon.phase-lobby {
+  --phase-node-icon: image-set(url("/game-art/mafia/icon-phase-lobby.webp") type("image/webp"), url("/game-art/mafia/icon-phase-lobby.png") type("image/png"));
+}
+
+[data-theme="mafia"] .phase-node-icon.phase-role_reveal {
+  --phase-node-icon: image-set(url("/game-art/mafia/icon-phase-role-reveal.webp") type("image/webp"), url("/game-art/mafia/icon-phase-role-reveal.png") type("image/png"));
+}
+
+[data-theme="mafia"] .phase-node-icon.phase-night {
+  --phase-node-icon: image-set(url("/game-art/mafia/icon-phase-night.webp") type("image/webp"), url("/game-art/mafia/icon-phase-night.png") type("image/png"));
+}
+
+[data-theme="mafia"] .phase-node-icon.phase-day_discussion {
+  --phase-node-icon: image-set(url("/game-art/mafia/icon-phase-day.webp") type("image/webp"), url("/game-art/mafia/icon-phase-day.png") type("image/png"));
+}
+
+[data-theme="mafia"] .phase-node-icon.phase-voting {
+  --phase-node-icon: image-set(url("/game-art/mafia/icon-phase-voting.webp") type("image/webp"), url("/game-art/mafia/icon-phase-voting.png") type("image/png"));
+}
+
+[data-theme="mafia"] .phase-node-icon.phase-resolution {
+  --phase-node-icon: image-set(url("/game-art/mafia/icon-phase-resolution.webp") type("image/webp"), url("/game-art/mafia/icon-phase-resolution.png") type("image/png"));
+}
+
+.phase-node-label,
+.phase-node-short {
+  display: block;
+  max-width: 12rem;
+}
+
+.phase-node-label {
+  margin-top: 14px;
+  font-size: clamp(0.86rem, 1.2vw, 1.06rem);
+  font-weight: 950;
+  line-height: 1.08;
+}
+
+.phase-node-short {
+  margin-top: 7px;
+  color: var(--gold);
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.phase-loop-arrow {
+  position: absolute;
+  right: 8.333%;
+  bottom: 18px;
+  left: 41.667%;
+  z-index: 1;
+  height: 76px;
+  color: rgba(209, 154, 66, 0.9);
+  pointer-events: none;
+}
+
+.phase-loop-arrow svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.phase-loop-arrow__path {
+  stroke-width: 2.4;
+  stroke-dasharray: 4 7;
+}
+
+.phase-loop-arrow__head {
+  stroke-width: 2.4;
+}
+
+.phase-loop-arrow span {
+  position: absolute;
+  right: 38%;
+  bottom: 8px;
+  border: 1px solid rgba(209, 154, 66, 0.34);
+  border-radius: 999px;
+  padding: 5px 10px;
+  background: rgba(8, 10, 10, 0.72);
+  color: #fff6e5;
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.phase-detail-panel {
+  margin-top: 18px;
+  border: 1px solid rgba(83, 52, 31, 0.18);
+  border-radius: 28px;
+  padding: clamp(20px, 2.6vw, 30px);
+  background:
+    radial-gradient(circle at 88% 0%, rgba(209, 154, 66, 0.18), transparent 18rem),
+    linear-gradient(145deg, rgba(255, 247, 229, 0.98), rgba(211, 180, 125, 0.9)),
+    var(--texture-paper) center / 540px 540px;
+  color: var(--ink);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.24), inset 0 1px rgba(255, 255, 255, 0.34);
+}
+
+.phase-detail-panel__lead {
+  max-width: 54rem;
+}
+
+.phase-detail-panel__lead h3 {
+  margin-top: 8px;
+  color: var(--ink);
+  font-size: clamp(2.2rem, 3.8vw, 4rem);
+  font-weight: 950;
+  line-height: 0.92;
+}
+
+.phase-detail-panel__lead p:not(.section-kicker) {
+  margin-top: 16px;
+  color: #4f3829;
+  font-size: 1rem;
+  font-weight: 760;
+  line-height: 1.64;
+}
+
+.phase-info-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: clamp(18px, 2vw, 24px) 0 0;
+}
+
+.phase-info-chip {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-height: 152px;
+  border: 1px solid rgba(83, 52, 31, 0.14);
+  border-radius: 22px;
+  padding: 15px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.44), rgba(255, 255, 255, 0.16)),
+    rgba(34, 22, 17, 0.05);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.34);
+}
+
+.phase-info-chip dt {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  color: var(--blood-dark);
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.phase-info-chip__icon {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  aspect-ratio: 1;
+  border: 1px solid rgba(132, 47, 43, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.34);
+  color: var(--blood-dark);
+}
+
+.phase-info-chip svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+
+.phase-info-chip dd {
+  margin: 12px 0 0;
+  color: #4f3829;
+  font-size: 0.94rem;
+  font-weight: 860;
+  line-height: 1.45;
+}
+
+@media (max-width: 1023px) {
+  .phase-timeline {
+    padding-inline: 8px;
+  }
+
+  .phase-node {
+    padding-inline: 4px;
+  }
+
+  .phase-node-medallion {
+    width: 52px;
+  }
+
+  .phase-node-label {
+    font-size: 0.82rem;
+  }
+
+  .phase-detail-panel {
+    display: block;
+  }
+
+  .phase-info-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .phase-timeline-section.rules-phase-timeline {
+    border-radius: 26px;
+    padding: 18px;
+  }
+
+  .phase-timeline {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 18px 14px 18px 16px;
+  }
+
+  .phase-timeline__line {
+    top: 46px;
+    bottom: 84px;
+    left: 44px;
+    width: 3px;
+    height: auto;
+    background: linear-gradient(180deg, rgba(248, 236, 210, 0.26), rgba(248, 236, 210, 0.14));
+  }
+
+  .phase-timeline__line.is-loop {
+    display: none;
+  }
+
+  .phase-node {
+    display: grid;
+    grid-template-columns: 58px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    column-gap: 14px;
+    align-items: center;
+    justify-items: start;
+    min-height: 86px;
+    border: 1px solid rgba(248, 236, 210, 0.11);
+    border-radius: 22px;
+    padding: 10px 12px;
+    background: rgba(8, 10, 10, 0.42);
+    text-align: left;
+  }
+
+  .phase-node.is-selected {
+    transform: none;
+    border-color: rgba(209, 154, 66, 0.42);
+    background:
+      radial-gradient(circle at 0% 0%, rgba(209, 154, 66, 0.18), transparent 12rem),
+      rgba(248, 236, 210, 0.08);
+  }
+
+  .phase-node-number {
+    position: absolute;
+    top: 5px;
+    left: 33px;
+    z-index: 2;
+    min-width: 24px;
+    min-height: 18px;
+    margin: 0;
+    font-size: 0.58rem;
+  }
+
+  .phase-node-medallion {
+    grid-row: 1 / span 2;
+    width: 56px;
+  }
+
+  .phase-node-label,
+  .phase-node-short {
+    max-width: none;
+    margin-top: 0;
+  }
+
+  .phase-loop-arrow {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: auto;
+    border: 1px dashed rgba(209, 154, 66, 0.34);
+    border-radius: 18px;
+    padding: 10px 12px;
+    background: rgba(8, 10, 10, 0.36);
+  }
+
+  .phase-loop-arrow svg {
+    display: none;
+  }
+
+  .phase-loop-arrow span {
+    position: static;
+    border: 0;
+    padding: 0;
+    background: transparent;
+  }
+
+  .phase-loop-arrow span::before {
+    content: "↻ ";
+  }
+
+  .phase-loop-arrow span::after {
+    content: " · 06 към 03";
+  }
+
+  .phase-info-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .phase-timeline-section.rules-phase-timeline {
+    padding: 14px;
+  }
+
+  .phase-detail-panel {
+    border-radius: 24px;
+    padding: 18px;
+  }
+
+}
+
 .rules-table-mode,
 .rules-table-protocol {
   margin-top: 22px;

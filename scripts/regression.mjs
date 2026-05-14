@@ -298,6 +298,9 @@ function checkRulesPlaybookContracts() {
   assert(rulesPage.includes("getRulesForFamily"), "Rules page must keep shared rules data as its source.");
   assert(rulesPage.includes("rules-playbook-hero"), "Rules page must render the premium playbook hero.");
   assert(rulesPage.includes("rules-phase-timeline"), "Rules page must render the interactive phase timeline.");
+  assert(rulesPage.includes("function PhaseTimeline"), "Rules page must render the phase map through PhaseTimeline.");
+  assert(rulesPage.includes("function PhaseDetailPanel"), "Rules page must render phase details through PhaseDetailPanel.");
+  assert(rulesPage.includes("phaseLabelBg"), "Rules phase timeline must use family-aware phase labels.");
   assert(rulesPage.includes("rules-scenario-grid"), "Rules page must render family scenario cards.");
   assert(rulesPage.includes("rules-chapter-grid"), "Rules sections must render as compact chapter cards.");
   assert(rulesPage.includes("rules-table-protocol"), "Rules page must render the table protocol block.");
@@ -312,6 +315,12 @@ function checkRulesPlaybookContracts() {
   for (const selector of [
     ".rules-playbook-hero",
     ".rules-phase-timeline",
+    ".phase-timeline",
+    ".phase-node",
+    ".phase-detail-panel",
+    ".phase-info-chip",
+    ".phase-loop-arrow",
+    ".phase-timeline__line.is-loop",
     ".rules-phase-detail",
     ".rules-chapter-grid",
     ".rules-chapter-card",
