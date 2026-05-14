@@ -1309,7 +1309,15 @@ html[data-theme="light"] .site-mobile-menu:hover {
   text-shadow: 0 2px 16px rgba(0, 0, 0, 0.52);
 }
 
-html[data-theme="light"] .landing-shell::before {
+html[data-theme="light"] .landing-shell::before,
+html[data-theme="light"] .game-home-shell::before,
+html[data-theme="light"] .lobby-shell::before,
+html[data-theme="light"] .history-shell::before,
+html[data-theme="light"] .roles-shell::before,
+html[data-theme="light"] .rules-shell::before,
+html[data-theme="light"] .auth-shell::before,
+html[data-theme="light"] .tutorial-shell::before,
+html[data-theme="light"] .utility-shell::before {
   display: none;
 }
 

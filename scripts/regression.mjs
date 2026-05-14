@@ -136,6 +136,9 @@ function checkLandingLayoutContracts() {
   const darkBodyStart = css.indexOf('html[data-theme="dark"] body');
   const darkBodyBlock =
     darkBodyStart >= 0 ? css.slice(darkBodyStart, css.indexOf("}", darkBodyStart)) : "";
+  const lightBackdropStart = css.indexOf('html[data-theme="light"] .landing-shell::before');
+  const lightBackdropBlock =
+    lightBackdropStart >= 0 ? css.slice(lightBackdropStart, css.indexOf("}", lightBackdropStart)) : "";
   const publicShellStackPattern =
     /\.landing-shell,\s*\.game-home-shell,\s*\.lobby-shell,\s*\.history-shell,\s*\.roles-shell,\s*\.rules-shell,\s*\.auth-shell,\s*\.tutorial-shell,\s*\.utility-shell\s*{[\s\S]*?z-index:\s*0;[\s\S]*?isolation:\s*isolate;/;
 
@@ -184,8 +187,20 @@ function checkLandingLayoutContracts() {
     assert(css.includes(`html[data-theme="dark"] ${shellSelector}`), `Dark theme must use the ambient landing background for ${shellSelector}.`);
   }
   assert(darkBackdropBlock.includes("--art-landing-ambient"), "Dark public page backdrop must use the ambient smoky homepage background.");
-  assert(css.includes('html[data-theme="light"] .landing-shell::before'), "Landing page must keep a light-theme outer background override.");
-  assert(css.includes("display: none;"), "Landing light theme should keep the ambient outer background disabled.");
+  for (const shellSelector of [
+    ".landing-shell::before",
+    ".game-home-shell::before",
+    ".lobby-shell::before",
+    ".history-shell::before",
+    ".roles-shell::before",
+    ".rules-shell::before",
+    ".auth-shell::before",
+    ".tutorial-shell::before",
+    ".utility-shell::before",
+  ]) {
+    assert(lightBackdropBlock.includes(shellSelector), `Light theme must disable page-art backdrop for ${shellSelector}.`);
+  }
+  assert(lightBackdropBlock.includes("display: none;"), "Light theme should use the shared homepage body background instead of page-art backdrops.");
   assert(css.includes("/game-art/bg-landing-ambient.webp"), "Landing page must reference the optimized ambient outer background.");
   assert(existsSync(path.join(gameArtDir, "bg-landing-ambient.png")), "Missing ambient landing background PNG.");
   assert(existsSync(path.join(gameArtDir, "bg-landing-ambient.webp")), "Missing optimized ambient landing background WebP.");
