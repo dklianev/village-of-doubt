@@ -92,6 +92,7 @@
   --moss: #59633b;
   --glass: rgba(35, 22, 16, 0.72);
   --hairline: rgba(248, 236, 210, 0.18);
+  --family-hero: image-set(url("/game-art/werewolf/bg-hero-v2.webp") type("image/webp"), url("/game-art/werewolf/bg-hero-v2.png") type("image/png"));
 }
 
 [data-theme="light"] {
@@ -144,6 +145,7 @@
   --transition-day: var(--art-day);
   --transition-vote: var(--art-vote);
   --transition-resolution: var(--art-resolution);
+  --family-hero: image-set(url("/game-art/mafia/bg-hero-v2.webp") type("image/webp"), url("/game-art/mafia/bg-hero-v2.png") type("image/png"));
   --faction-village: image-set(url("/game-art/mafia/faction-village.webp") type("image/webp"), url("/game-art/mafia/faction-village.png") type("image/png"));
   --faction-mafia: image-set(url("/game-art/mafia/faction-mafia.webp") type("image/webp"), url("/game-art/mafia/faction-mafia.png") type("image/png"));
   --empty-lobby: image-set(url("/game-art/mafia/empty-lobby.webp") type("image/webp"), url("/game-art/mafia/empty-lobby.png") type("image/png"));
@@ -201,6 +203,11 @@
     --faction-mafia: image-set(url("/game-art/mobile/mafia/faction-mafia.webp") type("image/webp"));
     --empty-lobby: image-set(url("/game-art/mobile/mafia/empty-lobby.webp") type("image/webp"));
     --empty-players: image-set(url("/game-art/mobile/mafia/empty-players.webp") type("image/webp"));
+    --family-hero: image-set(url("/game-art/mobile/mafia/bg-hero-v2.webp") type("image/webp"));
+  }
+
+  [data-theme="werewolves"] {
+    --family-hero: image-set(url("/game-art/mobile/werewolf/bg-hero-v2.webp") type("image/webp"));
   }
 }
 
@@ -1775,11 +1782,360 @@ html[data-theme="light"] .landing-hero-card::before {
     rgba(8, 10, 10, 0.38);
 }
 
+/* === game home cinematic hero === */
 .game-home-hero {
-  min-height: 470px;
+  position: relative;
+  min-height: clamp(500px, 43vw, 620px);
+  border-color: rgba(248, 236, 210, 0.18);
+  border-radius: 32px;
+  padding: clamp(28px, 5vw, 58px);
+  background: rgba(8, 10, 10, 0.78);
+  box-shadow: 0 34px 110px rgba(0, 0, 0, 0.48), inset 0 1px rgba(255, 255, 255, 0.12);
+  transform: none;
+}
+
+.game-home-hero:hover {
+  transform: none;
+}
+
+.game-home-hero::before {
+  position: absolute;
+  inset: 1px;
+  z-index: 4;
+  border: 1px solid rgba(209, 154, 66, 0.22);
+  border-radius: inherit;
   background:
-    linear-gradient(90deg, rgba(18, 10, 8, 0.98) 0%, rgba(18, 10, 8, 0.82) 48%, rgba(18, 10, 8, 0.2) 100%),
-    var(--art-landing) center / cover no-repeat;
+    radial-gradient(circle at 8% 0%, rgba(248, 236, 210, 0.12), transparent 16rem),
+    radial-gradient(circle at 100% 0%, rgba(209, 154, 66, 0.14), transparent 20rem);
+  content: "";
+  pointer-events: none;
+}
+
+.game-home-hero::after {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  background:
+    linear-gradient(135deg, rgba(248, 236, 210, 0.06) 0 1px, transparent 1px 18px),
+    repeating-linear-gradient(90deg, rgba(255, 247, 229, 0.028) 0 1px, transparent 1px 4px);
+  content: "";
+  opacity: 0.46;
+  mix-blend-mode: soft-light;
+  pointer-events: none;
+}
+
+.game-home-hero > * {
+  position: relative;
+  z-index: 5;
+}
+
+.game-home-hero__art,
+.game-home-hero__scrim,
+.game-home-hero__vignette,
+.game-home-hero__grain,
+.game-home-hero__fog,
+.game-home-hero__rain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.game-home-hero__art {
+  z-index: 0;
+  background: var(--family-hero) center right / cover no-repeat;
+  transform: scale(1.01);
+}
+
+.game-home-hero__scrim {
+  z-index: 1;
+  background: linear-gradient(90deg, rgba(13, 9, 8, 0.96) 0%, rgba(13, 9, 8, 0.84) 38%, rgba(13, 9, 8, 0.3) 70%, transparent 100%);
+}
+
+.game-home-hero.is-werewolf .game-home-hero__scrim {
+  background: linear-gradient(90deg, rgba(9, 12, 13, 0.97) 0%, rgba(12, 15, 15, 0.86) 38%, rgba(9, 18, 20, 0.34) 70%, transparent 100%);
+}
+
+.game-home-hero.is-mafia .game-home-hero__scrim {
+  background: linear-gradient(90deg, rgba(15, 8, 6, 0.97) 0%, rgba(20, 11, 8, 0.86) 38%, rgba(47, 22, 12, 0.33) 70%, transparent 100%);
+}
+
+.game-home-hero__vignette {
+  z-index: 2;
+  background:
+    radial-gradient(circle at 92% 12%, rgba(255, 247, 229, 0.09), transparent 20rem),
+    radial-gradient(circle at 50% 110%, rgba(0, 0, 0, 0.62), transparent 34rem),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.36), transparent 30%, rgba(0, 0, 0, 0.46));
+}
+
+.game-home-hero__grain {
+  z-index: 3;
+  background-image:
+    radial-gradient(circle at 18% 22%, rgba(255, 255, 255, 0.1) 0 1px, transparent 1px),
+    radial-gradient(circle at 78% 36%, rgba(255, 255, 255, 0.08) 0 1px, transparent 1px),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 3px);
+  background-size: 96px 96px, 142px 142px, auto;
+  opacity: 0.36;
+  mix-blend-mode: overlay;
+}
+
+.game-home-hero__fog {
+  z-index: 2;
+  background:
+    radial-gradient(ellipse at 72% 58%, rgba(226, 239, 246, 0.14), transparent 18rem),
+    radial-gradient(ellipse at 36% 70%, rgba(226, 239, 246, 0.1), transparent 24rem),
+    linear-gradient(95deg, transparent 0%, rgba(230, 239, 246, 0.1) 42%, transparent 74%);
+  opacity: 0.42;
+  animation: fog-drift 34s ease-in-out infinite alternate;
+}
+
+.game-home-hero__rain {
+  z-index: 2;
+  background:
+    repeating-linear-gradient(112deg, rgba(255, 247, 229, 0.11) 0 1px, transparent 1px 15px),
+    linear-gradient(90deg, transparent, rgba(209, 154, 66, 0.09), transparent);
+  background-size: 220px 220px, auto;
+  opacity: 0.16;
+  animation: rain-veil 8s linear infinite;
+}
+
+.game-home-hero__content {
+  display: flex;
+  z-index: 5;
+  max-width: min(58%, 720px);
+  min-height: calc(clamp(500px, 43vw, 620px) - clamp(56px, 10vw, 116px));
+  flex-direction: column;
+  justify-content: center;
+}
+
+.game-home-hero .section-kicker {
+  color: var(--gold);
+  letter-spacing: 0.3em;
+}
+
+.game-home-hero h1 {
+  margin: 14px 0 0;
+  color: #fff6e5;
+  font-size: clamp(3rem, 7vw, 6rem);
+  font-weight: 950;
+  line-height: 0.92;
+  text-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+}
+
+.game-home-title-accent {
+  display: block;
+  width: min(124px, 36vw);
+  height: 3px;
+  margin-top: 22px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--gold), rgba(209, 154, 66, 0.18));
+  box-shadow: 0 0 22px rgba(209, 154, 66, 0.32);
+}
+
+.game-home-hero__lede {
+  max-width: 680px;
+  margin: 22px 0 0;
+  color: rgba(255, 247, 229, 0.88);
+  font-size: clamp(1rem, 1.45vw, 1.22rem);
+  font-weight: 760;
+  line-height: 1.65;
+  text-shadow: 0 8px 26px rgba(0, 0, 0, 0.48);
+}
+
+.game-home-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 22px;
+  align-items: center;
+  margin-top: 34px;
+}
+
+.game-home-hero__primary,
+.game-home-hero__secondary-links a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.game-home-hero__primary {
+  min-height: 52px;
+  border: 1px solid rgba(255, 247, 229, 0.18);
+  padding: 0 28px;
+  background:
+    linear-gradient(135deg, #c8483c, var(--blood-dark)),
+    var(--blood);
+  color: #fff6e5;
+  box-shadow: 0 0 30px rgba(158, 52, 45, 0.34), 0 18px 42px rgba(0, 0, 0, 0.3), inset 0 1px rgba(255, 255, 255, 0.2);
+  font-size: 0.92rem;
+  letter-spacing: 0.06em;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    border-color 160ms ease;
+}
+
+.game-home-hero.is-mafia .game-home-hero__primary {
+  background:
+    linear-gradient(135deg, #b94d35, #6f2118),
+    var(--blood);
+  box-shadow: 0 0 30px rgba(200, 111, 62, 0.34), 0 18px 42px rgba(0, 0, 0, 0.3), inset 0 1px rgba(255, 255, 255, 0.2);
+}
+
+.game-home-hero__primary:hover {
+  transform: translateY(-1px) scale(1.015);
+  border-color: rgba(255, 247, 229, 0.32);
+  box-shadow: 0 0 38px rgba(158, 52, 45, 0.44), 0 22px 54px rgba(0, 0, 0, 0.36), inset 0 1px rgba(255, 255, 255, 0.22);
+}
+
+.game-home-hero.is-mafia .game-home-hero__primary:hover {
+  box-shadow: 0 0 38px rgba(200, 111, 62, 0.44), 0 22px 54px rgba(0, 0, 0, 0.36), inset 0 1px rgba(255, 255, 255, 0.22);
+}
+
+.game-home-hero__secondary-links {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0;
+  align-items: center;
+}
+
+.game-home-hero__secondary-links a {
+  position: relative;
+  min-height: 44px;
+  padding: 0 14px;
+  color: rgba(255, 247, 229, 0.78);
+  font-size: 0.86rem;
+  letter-spacing: 0.06em;
+  text-shadow: 0 8px 24px rgba(0, 0, 0, 0.48);
+  transition:
+    color 160ms ease,
+    text-shadow 160ms ease;
+}
+
+.game-home-hero__secondary-links a + a::before {
+  position: absolute;
+  left: 0;
+  color: rgba(209, 154, 66, 0.56);
+  content: "·";
+  transform: translateX(-2px);
+}
+
+.game-home-hero__secondary-links a::after {
+  position: absolute;
+  right: 14px;
+  bottom: 8px;
+  left: 14px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  content: "";
+  opacity: 0;
+  transform: scaleX(0.5);
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+.game-home-hero__secondary-links a:hover {
+  color: #fff6e5;
+  text-shadow: 0 0 18px rgba(209, 154, 66, 0.32);
+}
+
+.game-home-hero__secondary-links a:hover::after {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+@media (max-width: 1023px) {
+  .game-home-hero {
+    min-height: 540px;
+  }
+
+  .game-home-hero__scrim,
+  .game-home-hero.is-werewolf .game-home-hero__scrim,
+  .game-home-hero.is-mafia .game-home-hero__scrim {
+    background: linear-gradient(90deg, rgba(13, 9, 8, 0.98) 0%, rgba(13, 9, 8, 0.9) 48%, rgba(13, 9, 8, 0.54) 82%, rgba(13, 9, 8, 0.12) 100%);
+  }
+
+  .game-home-hero__content {
+    max-width: min(74%, 680px);
+  }
+}
+
+@media (max-width: 768px) {
+  .game-home-hero {
+    min-height: 560px;
+    border-radius: 28px;
+    padding: 28px 22px;
+  }
+
+  .game-home-hero__art {
+    background-position: 64% center;
+  }
+
+  .game-home-hero__scrim,
+  .game-home-hero.is-werewolf .game-home-hero__scrim,
+  .game-home-hero.is-mafia .game-home-hero__scrim {
+    background: linear-gradient(180deg, rgba(13, 9, 8, 0.55) 0%, rgba(13, 9, 8, 0.86) 44%, rgba(13, 9, 8, 0.96) 100%);
+  }
+
+  .game-home-hero__content {
+    max-width: 100%;
+    min-height: 504px;
+    justify-content: flex-end;
+  }
+
+  .game-home-hero h1 {
+    max-width: 100%;
+    font-size: clamp(3.1rem, 17vw, 4.8rem);
+  }
+
+  .game-home-hero__lede {
+    max-width: 100%;
+    font-size: 1rem;
+    line-height: 1.55;
+  }
+
+  .game-home-hero__actions {
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .game-home-hero__primary {
+    min-height: 50px;
+    padding-inline: 26px;
+  }
+
+  .game-home-hero__secondary-links {
+    width: 100%;
+  }
+
+  .game-home-hero__secondary-links a {
+    min-height: 38px;
+    padding-inline: 10px;
+    font-size: 0.78rem;
+  }
+
+  .game-home-hero__secondary-links a + a::before {
+    transform: translateX(-1px);
+  }
+}
+
+@media (max-width: 420px) {
+  .game-home-hero {
+    min-height: 584px;
+    padding-inline: 18px;
+  }
+
+  .game-home-hero h1 {
+    font-size: clamp(2.9rem, 16vw, 4.1rem);
+  }
+
+  .game-home-hero__secondary-links {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, auto));
+    justify-content: start;
+  }
 }
 
 .tableau-card {
@@ -7834,6 +8190,24 @@ html[data-theme="dark"] .utility-shell::before {
   }
   to {
     transform: translate3d(-98px, 42px, 0);
+  }
+}
+
+@keyframes fog-drift {
+  from {
+    transform: translate3d(-3%, 0, 0) scale(1.02);
+  }
+  to {
+    transform: translate3d(4%, -2%, 0) scale(1.05);
+  }
+}
+
+@keyframes rain-veil {
+  from {
+    background-position: 0 0, 50% 50%;
+  }
+  to {
+    background-position: -220px 420px, 50% 50%;
   }
 }
 

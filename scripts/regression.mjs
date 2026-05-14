@@ -218,6 +218,24 @@ function checkFamilyQuickStartContracts() {
   assert(existsSync(path.join(root, "apps/web/components/games/QuickStartSection.tsx")), "Missing family home QuickStartSection component.");
   assert(existsSync(path.join(root, "apps/web/components/games/quickstart-icons.tsx")), "Missing quickstart inline SVG icon set.");
   assert(gameHomePage.includes("<QuickStartSection"), "GameHomePage must render the shared quickstart section.");
+  assert(gameHomePage.includes("function GameHero"), "GameHomePage must extract the cinematic hero into a GameHero subcomponent.");
+  for (const selector of [".game-home-hero__art", ".game-home-hero__scrim", ".game-home-hero__content", ".game-home-hero__fog", ".game-home-hero__rain"]) {
+    assert(css.includes(selector), `Missing cinematic game hero selector ${selector}.`);
+  }
+  assert(css.includes('[data-theme="werewolves"]') && css.includes("--family-hero"), "Werewolf theme must expose --family-hero.");
+  assert(css.includes('[data-theme="mafia"]') && css.includes("--family-hero"), "Mafia theme must expose --family-hero.");
+  assert(css.includes("@keyframes fog-drift"), "Werewolf hero needs fog-drift keyframes.");
+  assert(css.includes("@keyframes rain-veil"), "Mafia hero needs rain-veil keyframes.");
+  for (const asset of [
+    "werewolf/bg-hero-v2.png",
+    "werewolf/bg-hero-v2.webp",
+    "mafia/bg-hero-v2.png",
+    "mafia/bg-hero-v2.webp",
+    "mobile/werewolf/bg-hero-v2.webp",
+    "mobile/mafia/bg-hero-v2.webp",
+  ]) {
+    assert(existsSync(path.join(gameArtDir, asset)), `Missing cinematic hero asset ${asset}.`);
+  }
   assert(gameHomeAmbientBlock.includes("--art-landing-ambient"), "Family home dark theme should use the ambient smoky homepage background.");
   assert(quickStart.includes("IntersectionObserver"), "Quickstart connector reveal should use a browser IntersectionObserver.");
   assert(quickStart.includes("Бъди първият на масата"), "Live ticker empty state must invite the first room, not show zero counts.");
