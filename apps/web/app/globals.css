@@ -7040,8 +7040,8 @@ html[data-theme="dark"] .landing-quickstart .quickstart-dim-glyph {
 }
 
 .phase-loop-arrow__head {
-  stroke-width: 2.6;
-  vector-effect: non-scaling-stroke;
+  fill: currentColor;
+  stroke: none;
 }
 
 .phase-loop-arrow span {

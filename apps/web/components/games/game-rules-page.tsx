@@ -377,12 +377,12 @@ function PhaseLoopArrow() {
   return (
     <div className="phase-loop-arrow" aria-hidden="true">
       <svg className="phase-loop-arrow__svg phase-loop-arrow__svg--desktop" viewBox="0 0 600 96" preserveAspectRatio="none" focusable="false">
-        <path className="phase-loop-arrow__path" d="M600 10 C570 82 42 82 0 10" />
-        <path className="phase-loop-arrow__head" d="M0 10 L-14 32 M0 10 L14 32" />
+        <path className="phase-loop-arrow__path" d="M600 10 C570 82 72 82 24 24" />
+        <path className="phase-loop-arrow__head" d="M24 14 L12 38 L24 32 L36 38 Z" />
       </svg>
       <svg className="phase-loop-arrow__svg phase-loop-arrow__svg--mobile" viewBox="0 0 80 360" preserveAspectRatio="none" focusable="false">
-        <path className="phase-loop-arrow__path" d="M54 348 C8 286 8 74 54 12" />
-        <path className="phase-loop-arrow__head" d="M54 12 L38 38 M54 12 L70 38" />
+        <path className="phase-loop-arrow__path" d="M54 348 C8 286 8 74 54 24" />
+        <path className="phase-loop-arrow__head" d="M54 14 L42 40 L54 34 L66 40 Z" />
       </svg>
       <span>повтаря се</span>
     </div>
