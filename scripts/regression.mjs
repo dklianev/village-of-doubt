@@ -133,6 +133,11 @@ function checkLandingLayoutContracts() {
   const darkBackdropStart = css.indexOf('html[data-theme="dark"] .landing-shell::before');
   const darkBackdropBlock =
     darkBackdropStart >= 0 ? css.slice(darkBackdropStart, css.indexOf("}", darkBackdropStart)) : "";
+  const darkBodyStart = css.indexOf('html[data-theme="dark"] body');
+  const darkBodyBlock =
+    darkBodyStart >= 0 ? css.slice(darkBodyStart, css.indexOf("}", darkBodyStart)) : "";
+  const publicShellStackPattern =
+    /\.landing-shell,\s*\.game-home-shell,\s*\.lobby-shell,\s*\.history-shell,\s*\.roles-shell,\s*\.rules-shell,\s*\.auth-shell,\s*\.tutorial-shell,\s*\.utility-shell\s*{[\s\S]*?z-index:\s*0;[\s\S]*?isolation:\s*isolate;/;
 
   assert(landingPage.includes("<ModeChoiceCards"), "Landing page must render the separated game picker component.");
   assert(modeChoiceCards.includes("game-choice-grid"), "Landing mode choice component needs the game picker grid.");
@@ -163,6 +168,8 @@ function checkLandingLayoutContracts() {
   }
   assert(css.includes("--art-landing-dual"), "Landing page must expose the dual-world background art variable.");
   assert(css.includes("--art-landing-ambient"), "Landing page must expose the ambient outer background art variable.");
+  assert(darkBodyBlock.includes("--art-landing-ambient"), "Dark body backdrop must use the ambient homepage background so old smoke cannot show through.");
+  assert(publicShellStackPattern.test(css), "Public page shells must isolate their fixed backdrop layer above the body background.");
   for (const shellSelector of [
     ".landing-shell::before",
     ".game-home-shell::before",
