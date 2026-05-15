@@ -1273,9 +1273,21 @@ html[data-theme="light"] .site-mobile-menu:hover {
 }
 
 .join-shell {
+  --join-page-accent: rgba(200, 154, 85, 0.16);
+  --join-page-danger: rgba(132, 47, 43, 0.16);
   z-index: 0;
   isolation: isolate;
   width: min(1240px, calc(100vw - 32px));
+}
+
+.join-shell[data-theme="mafia"] {
+  --join-page-accent: rgba(200, 111, 62, 0.18);
+  --join-page-danger: rgba(132, 47, 43, 0.2);
+}
+
+.join-shell[data-theme="werewolves"] {
+  --join-page-accent: rgba(169, 111, 34, 0.18);
+  --join-page-danger: rgba(43, 93, 105, 0.16);
 }
 
 .join-shell::before {
@@ -1283,12 +1295,21 @@ html[data-theme="light"] .site-mobile-menu:hover {
   inset: 0;
   z-index: -1;
   background:
-    radial-gradient(ellipse at 18% 20%, rgba(200, 154, 85, 0.16), transparent 28rem),
-    radial-gradient(ellipse at 84% 18%, rgba(132, 47, 43, 0.16), transparent 26rem),
+    radial-gradient(ellipse at 18% 20%, var(--join-page-accent), transparent 28rem),
+    radial-gradient(ellipse at 84% 18%, var(--join-page-danger), transparent 26rem),
     linear-gradient(115deg, rgba(7, 8, 8, 0.96) 0%, rgba(21, 12, 9, 0.84) 48%, rgba(6, 7, 8, 0.97) 100%),
     var(--art-landing-ambient) center / cover no-repeat;
   content: "";
   filter: saturate(1.04) contrast(1.08);
+}
+
+html[data-theme="light"] .join-shell::before {
+  background:
+    radial-gradient(ellipse at 18% 20%, color-mix(in srgb, var(--join-page-accent) 86%, transparent), transparent 28rem),
+    radial-gradient(ellipse at 84% 18%, color-mix(in srgb, var(--join-page-danger) 72%, transparent), transparent 26rem),
+    linear-gradient(115deg, rgba(255, 242, 211, 0.86) 0%, rgba(247, 228, 188, 0.72) 48%, rgba(238, 216, 174, 0.86) 100%),
+    var(--texture-paper) center / 620px 620px;
+  filter: none;
 }
 
 .history-shell {
