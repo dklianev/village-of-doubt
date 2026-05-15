@@ -4,7 +4,7 @@ import { TutorialFlipbook } from "@/components/tutorial/TutorialFlipbook";
 
 export const metadata: Metadata = {
   title: "Първа игра | Върколак и Мафия",
-  description: "Кинематографичен наръчник за първа игра без регистрация - една вечер в шест сцени.",
+  description: "Кинематографичен наръчник за първа игра след вход — една вечер в шест сцени.",
 };
 
 export default function TutorialPage() {

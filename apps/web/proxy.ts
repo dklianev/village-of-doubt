@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-const ANONYMOUS_LIMIT = 10;
+const UNAUTHENTICATED_LIMIT = 10;
 const AUTHENTICATED_LIMIT = 60;
 const WINDOW_MS = 60_000;
 
@@ -14,8 +14,8 @@ export function proxy(request: NextRequest) {
   const now = Date.now();
   const identity = requestIdentity(request);
   const authenticated = hasAuthCookie(request);
-  const limit = authenticated ? AUTHENTICATED_LIMIT : ANONYMOUS_LIMIT;
-  const key = `${authenticated ? "auth" : "anon"}:${identity}`;
+  const limit = authenticated ? AUTHENTICATED_LIMIT : UNAUTHENTICATED_LIMIT;
+  const key = `${authenticated ? "auth" : "guest"}:${identity}`;
   const current = buckets.get(key);
   const bucket = current && current.resetAt > now ? current : { count: 0, resetAt: now + WINDOW_MS };
   bucket.count += 1;

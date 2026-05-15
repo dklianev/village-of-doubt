@@ -19,13 +19,30 @@ export const auth = betterAuth({
     minPasswordLength: 8,
     autoSignIn: true,
   },
-  socialProviders:
-    process.env.DISCORD_CLIENT_ID && process.env.DISCORD_CLIENT_SECRET
-      ? {
-          discord: {
-            clientId: process.env.DISCORD_CLIENT_ID,
-            clientSecret: process.env.DISCORD_CLIENT_SECRET,
-          },
-        }
-      : undefined,
+  user: {
+    deleteUser: {
+      enabled: true,
+    },
+  },
+  socialProviders: buildSocialProviders(),
 });
+
+function buildSocialProviders() {
+  const providers: Record<string, { clientId: string; clientSecret: string }> = {};
+
+  if (process.env.DISCORD_CLIENT_ID && process.env.DISCORD_CLIENT_SECRET) {
+    providers.discord = {
+      clientId: process.env.DISCORD_CLIENT_ID,
+      clientSecret: process.env.DISCORD_CLIENT_SECRET,
+    };
+  }
+
+  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+    providers.google = {
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    };
+  }
+
+  return Object.keys(providers).length > 0 ? providers : undefined;
+}

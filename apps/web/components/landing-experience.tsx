@@ -47,7 +47,7 @@ export async function LandingExperience() {
         </h1>
         <p className="landing-hero-copy mt-6 max-w-3xl text-lg leading-8 text-[#ead9ba]">
           Две отделни игри, два отделни речника и два отделни набора роли. Влизаш с име, създаваш стая
-          или въвеждаш код и започваш без регистрация.
+          или въвеждаш код и започваш веднага.
         </p>
 
         <ModeChoiceCards games={GAMES} />

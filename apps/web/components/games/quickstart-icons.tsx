@@ -11,6 +11,28 @@ export function PersonIcon(props: IconProps) {
   );
 }
 
+export function KeyIcon(props: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="22"
+      height="22"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      {...props}
+    >
+      <circle cx="8" cy="12" r="3.5" />
+      <path d="M11.5 12H21" />
+      <path d="M18 12v4" />
+      <path d="M21 12v3" />
+    </svg>
+  );
+}
+
 export function DoorIcon(props: IconProps) {
   return (
     <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" {...props}>

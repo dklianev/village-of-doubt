@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type Dispatch, type ReactNode } from "react";
+import type { Dispatch, ReactNode } from "react";
 import {
   GAME_MODE_DEFINITIONS,
   getGameModeNameBg,
@@ -20,7 +20,6 @@ import {
 import { ModeTileCard } from "@/components/lobby/ModeTileCard";
 import { QuickStartRow } from "@/components/lobby/QuickStartRow";
 import { randomRoomName } from "@/lib/roomname-generator";
-import { validateDisplayNameBg } from "@/lib/anonymous-player";
 
 const TEMPO_CARDS: { value: TempoProfile; label: string; detail: string }[] = [
   { value: "fast_online", label: "Бърза", detail: "Къси фази за групи, които вече знаят правилата." },
@@ -38,9 +37,6 @@ export function StepRoom({
   const range = playerRange(state.mode);
   const players = boundedPlayerCount(state);
   const modes = availableModes(state.family);
-  const [displayNameBlurred, setDisplayNameBlurred] = useState(false);
-  const displayNameError =
-    displayNameBlurred && state.displayName.trim().length > 0 ? validateDisplayNameBg(state.displayName) : "";
 
   return (
     <section className="lobby-step lobby-step-room" aria-labelledby="step-room-title">
@@ -48,22 +44,10 @@ export function StepRoom({
       <div className="lobby-step-heading">
         <p className="step-eyebrow">Стъпка 1 / 4 · Стая</p>
         <h1 id="step-room-title">Създай частна стая</h1>
-        <p className="step-lede">Избери име, код, игра и темпо.</p>
+        <p className="step-lede">Избери име на стаята, код, игра и темпо.</p>
       </div>
 
       <div className="lobby-field-grid">
-        <Field label="Потребителско име" hint="Между 2 и 24 символа." error={displayNameError}>
-          <input
-            className="field-input"
-            value={state.displayName}
-            maxLength={24}
-            autoFocus
-            onChange={(event) => dispatch({ type: "SET_DISPLAY_NAME", displayName: event.target.value })}
-            onBlur={() => setDisplayNameBlurred(true)}
-            placeholder="Например: Мила"
-          />
-        </Field>
-
         <Field
           label="Име на стаята"
           hint="Може да го смениш преди поканата."
@@ -74,6 +58,7 @@ export function StepRoom({
             className="field-input"
             value={state.roomName}
             maxLength={42}
+            autoFocus
             onChange={(event) => dispatch({ type: "SET_ROOM_NAME", roomName: event.target.value })}
           />
         </Field>

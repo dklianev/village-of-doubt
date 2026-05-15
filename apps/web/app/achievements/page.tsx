@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AchievementsClient } from "@/components/achievements-client";
+import { requireSession } from "@/lib/require-session";
 
 export const metadata: Metadata = {
   title: "Постижения | Върколак и Мафия",
   description: "Колекция от моменти, отключени от записите: първа кръв, спасени нощи, лични победи и финални обрати.",
 };
 
-export default function AchievementsPage() {
+export default async function AchievementsPage() {
+  await requireSession("/achievements");
+
   return (
     <main className="shell utility-shell achievement-shell">
       <section className="paper-card utility-hero achievement-hero rounded-[2rem] p-8">

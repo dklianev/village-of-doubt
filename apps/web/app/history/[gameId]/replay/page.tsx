@@ -7,8 +7,8 @@ import { deriveAchievementsFromEvents, phaseLabelBg, type GameMode, type GamePha
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Replay | Върколак и Мафия",
-  description: "Timeline преглед на завършена игра: фази, гласове, смърти и победител.",
+  title: "Запис | Върколак и Мафия",
+  description: "Преглед на завършена игра: фази, гласове, смърти и победител.",
 };
 
 export default async function ReplayPage({ params }: { params: Promise<{ gameId: string }> }) {
@@ -24,10 +24,10 @@ export default async function ReplayPage({ params }: { params: Promise<{ gameId:
     <main className="shell history-shell replay-shell" data-theme={mode === "werewolves_classic" ? "werewolves" : "mafia"}>
       <section className="paper-card replay-hero rounded-[2rem] p-8">
         <p className="section-kicker text-[#842f2b]">преглед след игра</p>
-        <h1 className="mt-3 text-5xl font-black">Replay на стая {replay.game.code}</h1>
+        <h1 className="mt-3 text-5xl font-black">Запис на стая {replay.game.code}</h1>
         <p className="mt-4 max-w-3xl text-[#4f3829]">
-          Timeline от записаните събития. Тук няма live spectator state и няма чужди тайни роли извън това,
-          което играта е записала като публично или модераторско събитие.
+          Хронология от записаните събития. Тук няма състояние на наблюдател на живо и няма чужди тайни роли
+          извън това, което играта е записала като публично или модераторско събитие.
         </p>
         <div className="replay-summary mt-6">
           <Summary label="Режим" value={modeBg(mode)} />
@@ -71,7 +71,7 @@ export default async function ReplayPage({ params }: { params: Promise<{ gameId:
         {replay.timeline.length === 0 ? (
           <article className="paper-card rounded-[2rem] p-7">
             <h2 className="text-3xl font-black">Няма записани събития</h2>
-            <p className="mt-3 text-[#4f3829]">Играта съществува, но replay timeline-ът е празен.</p>
+            <p className="mt-3 text-[#4f3829]">Играта съществува, но записът е празен.</p>
           </article>
         ) : null}
       </section>

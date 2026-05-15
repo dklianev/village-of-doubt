@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition, type FormEvent } from "react";
 import type { Room } from "@colyseus/sdk";
 import {
   ACHIEVEMENTS,
@@ -22,13 +22,7 @@ import {
   type NarratorVoice,
   type RoleCode,
 } from "@werewolf/shared";
-import {
-  ANONYMOUS_DISPLAY_NAME_KEY,
-  ANONYMOUS_USER_ID_KEY,
-  getOrCreateAnonymousUserId,
-  saveAnonymousIdentity,
-  validateDisplayNameBg,
-} from "@/lib/anonymous-player";
+import { authClient } from "@/lib/auth-client";
 import { createGameClient, GAME_ROOM_NAME } from "@/lib/colyseus-client";
 import { playCue, setSoundEnabled } from "@/lib/sound";
 import { useToast } from "@/lib/toast";
@@ -142,6 +136,7 @@ type CueMode = "silent" | "visual" | "audio_vibration";
 const CUE_MODE_STORAGE_KEY = "werewolf-cue-mode";
 
 export function PlayRoomClient({ code, createOptions }: { code: string; createOptions?: CreateRoomOptions }) {
+  const { data: session, isPending: sessionPending } = authClient.useSession();
   const [room, setRoom] = useState<Room | null>(null);
   const [snapshot, setSnapshot] = useState<GameSnapshot | null>(null);
   const [currentUserId, setCurrentUserId] = useState("");
@@ -158,9 +153,6 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
   const [isBlessed, setIsBlessed] = useState(false);
   const [status, setStatus] = useState("Свързване...");
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("connecting");
-  const [displayNameInput, setDisplayNameInput] = useState("");
-  const [identityVersion, setIdentityVersion] = useState(0);
-  const [identityError, setIdentityError] = useState("");
   const [cueMode, setCueMode] = useState<CueMode>("silent");
   const [phasePulse, setPhasePulse] = useState(0);
   const [showShortcuts, setShowShortcuts] = useState(false);
@@ -177,34 +169,27 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
   const liveMode = (snapshot?.tempoProfile ?? createOptions?.tempoProfile) === "live";
 
   useEffect(() => {
-    setDisplayNameInput(window.localStorage.getItem(ANONYMOUS_DISPLAY_NAME_KEY) ?? window.localStorage.getItem("dev-display-name") ?? "");
-  }, []);
-
-  useEffect(() => {
     let active = true;
     let joinedRoom: Room | null = null;
+
+    if (sessionPending) {
+      return () => {
+        active = false;
+      };
+    }
+
+    if (!session?.user?.id) {
+      setStatus("Трябва да влезеш, за да се присъединиш към стаята.");
+      setConnectionStatus("disconnected");
+      return () => {
+        active = false;
+      };
+    }
+
     const client = createGameClient();
     setConnectionStatus("connecting");
 
-    const legacyDisplayName = window.localStorage.getItem("dev-display-name") ?? "";
-    const storedDisplayName = window.localStorage.getItem(ANONYMOUS_DISPLAY_NAME_KEY) ?? legacyDisplayName;
-    if (!storedDisplayName) {
-      setStatus("Въведи потребителско име, за да влезеш в стаята.");
-      setConnectionStatus("disconnected");
-      return;
-    }
-
-    const legacyUserId = window.localStorage.getItem("dev-user-id") ?? "";
-    if (!window.localStorage.getItem(ANONYMOUS_DISPLAY_NAME_KEY) && legacyDisplayName) {
-      saveAnonymousIdentity(legacyDisplayName);
-      if (legacyUserId) {
-        window.localStorage.setItem(ANONYMOUS_USER_ID_KEY, legacyUserId);
-      }
-    }
-
-    const userId = window.localStorage.getItem(ANONYMOUS_USER_ID_KEY) ?? getOrCreateAnonymousUserId();
-    setCurrentUserId(userId);
-    const displayName = storedDisplayName;
+    setCurrentUserId(session.user.id);
 
     fetch("/api/game-token", {
       method: "POST",
@@ -213,16 +198,12 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
       },
       body: JSON.stringify({
         code,
-        anonymousUserId: userId,
-        anonymousDisplayName: displayName,
-        devUserId: userId,
-        devDisplayName: displayName,
       }),
     })
       .then(async (response) => {
         if (!response.ok) {
           const body = (await response.json().catch(() => ({}))) as { error?: string };
-          throw new Error(body.error ?? "Неуспешно издаване на game token.");
+          throw new Error(body.error ?? "Неуспешно издаване на игрови ключ.");
         }
         return response.json() as Promise<{ token: string; userId: string; displayName: string; roomCode: string }>;
       })
@@ -301,7 +282,7 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
 
         nextRoom.onMessage("narrator_role_snapshot", (message: NarratorRoleSnapshot) => {
           setNarratorSnapshot(message);
-          toast({ message: "Получен е пълен snapshot за Разказвача.", kind: "info" });
+          toast({ message: "Получен е пълен преглед за Разказвача.", kind: "info" });
         });
 
         nextRoom.onMessage("safe_error", (message: { messageBg: string }) => {
@@ -331,7 +312,7 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
       active = false;
       joinedRoom?.leave();
     };
-  }, [code, createOptions, identityVersion, toast]);
+  }, [code, createOptions, session?.user?.id, sessionPending, toast]);
 
   useEffect(() => {
     function handleOffline() {
@@ -573,8 +554,6 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
   // line is only useful for transient action feedback. Hide the boilerplate
   // "Свързан" / "Свързване..." strings so the player doesn't see them linger.
   const isStatusInformative = status.length > 0 && status !== "Свързан" && status !== "Свързване...";
-  const needsIdentity = !room && !snapshot && status.startsWith("Въведи потребителско име");
-
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       const target = event.target as HTMLElement | null;
@@ -643,49 +622,6 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
     selectedTargetId,
     showShortcuts,
   ]);
-
-  function submitDisplayName(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const error = validateDisplayNameBg(displayNameInput);
-    if (error) {
-      setIdentityError(error);
-      return;
-    }
-
-    saveAnonymousIdentity(displayNameInput);
-    setIdentityError("");
-    setIdentityVersion((version) => version + 1);
-  }
-
-  if (needsIdentity) {
-    return (
-      <main className="shell game-shell" data-theme={family} data-family={family}>
-        <section className="paper-card anonymous-entry-card rounded-[2rem] p-7">
-          <p className="section-kicker text-[#842f2b]">без регистрация</p>
-          <h1 className="mt-3 text-4xl font-black">Въведи потребителско име</h1>
-          <p className="mt-3 leading-7">
-            Нужно е само име за тази стая. То се пази локално и не създава акаунт.
-          </p>
-          <form className="mt-6 grid gap-4" onSubmit={submitDisplayName}>
-            <label className="grid gap-2">
-              <span className="text-xs font-black uppercase tracking-[0.25em] text-[#842f2b]">Потребителско име</span>
-              <input
-                className="input"
-                value={displayNameInput}
-                maxLength={24}
-                onChange={(event) => setDisplayNameInput(event.target.value)}
-                placeholder="Например: Мила"
-              />
-            </label>
-            {identityError ? <p className="rounded-2xl bg-[#842f2b]/10 p-4 font-bold text-[#842f2b]">{identityError}</p> : null}
-            <button className="btn btn-primary" type="submit">
-              Влез в стаята
-            </button>
-          </form>
-        </section>
-      </main>
-    );
-  }
 
   return (
     <main className={`shell game-shell phase-${phase}`} data-phase={phase} data-theme={family} data-family={family}>
@@ -903,7 +839,7 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
                 </div>
                 <small className="mt-3 block text-[#4f3829]">
                   {player.connected ? "онлайн" : "прекъсната връзка"}
-                  {player.host ? " · host" : ""}
+                  {player.host ? " · водещ" : ""}
                   {player.narrator ? " · Разказвач" : ""}
                   {player.mayor ? " · Кмет" : ""}
                   {player.ready ? " · готов" : ""}
@@ -2047,7 +1983,7 @@ function roleSigil(role: RoleCode) {
 
 function playerStatusBadge(player: PublicPlayer, phase: string): string {
   if (player.host) {
-    return "host";
+    return "водещ";
   }
   if (player.narrator) {
     return "разказвач";

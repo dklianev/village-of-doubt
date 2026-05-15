@@ -7,8 +7,6 @@ interface TokenRequestBody {
   code?: unknown;
   devUserId?: unknown;
   devDisplayName?: unknown;
-  anonymousUserId?: unknown;
-  anonymousDisplayName?: unknown;
 }
 
 export async function POST(request: Request) {
@@ -26,19 +24,15 @@ export async function POST(request: Request) {
   const allowDevAuth =
     (process.env.ALLOW_DEV_AUTH === "true" && isLocalAuthUrl(process.env.BETTER_AUTH_URL)) ||
     (process.env.ALLOW_DEV_AUTH !== "false" && process.env.NODE_ENV !== "production");
+  const sessionDisplayName = normalizeDisplayName(session?.user?.name);
+  const sessionEmailName = normalizeDisplayName(session?.user?.email?.split("@")[0]);
   const userId =
-    session?.user?.id ??
-    (isValidAnonymousUserId(body.anonymousUserId) && isValidAnonymousName(body.anonymousDisplayName)
-      ? `anon:${body.anonymousUserId}`
-      : undefined) ??
-    (allowDevAuth && typeof body.devUserId === "string" ? `dev:${body.devUserId}` : undefined);
+    session?.user?.id ?? (allowDevAuth && typeof body.devUserId === "string" ? `dev:${body.devUserId}` : undefined);
   const displayName =
-    session?.user?.name ??
-    (isValidAnonymousName(body.anonymousDisplayName) ? normalizeDisplayName(body.anonymousDisplayName) : undefined) ??
-    (allowDevAuth && typeof body.devDisplayName === "string" ? body.devDisplayName : undefined);
+    sessionDisplayName || sessionEmailName || (allowDevAuth && typeof body.devDisplayName === "string" ? normalizeDisplayName(body.devDisplayName) : undefined);
 
   if (!userId || !displayName) {
-    return NextResponse.json({ error: "Въведи потребителско име." }, { status: 401 });
+    return NextResponse.json({ error: "Трябва да си влязъл, за да получиш игрови ключ." }, { status: 401 });
   }
 
   const token = createGameToken({
@@ -59,15 +53,6 @@ export async function POST(request: Request) {
 
 function normalizeDisplayName(value: unknown) {
   return typeof value === "string" ? value.trim().replace(/\s+/g, " ") : "";
-}
-
-function isValidAnonymousName(value: unknown) {
-  const name = normalizeDisplayName(value);
-  return name.length >= 2 && name.length <= 24;
-}
-
-function isValidAnonymousUserId(value: unknown) {
-  return typeof value === "string" && /^[a-zA-Z0-9:_-]{8,80}$/.test(value);
 }
 
 function getGameTokenSecret() {

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { ACHIEVEMENTS } from "@werewolf/shared";
 import { AchievementPlaque } from "@/components/achievements/AchievementPlaque";
 import { AchievementProgressWreath } from "@/components/achievements/AchievementProgressWreath";
-import { ANONYMOUS_USER_ID_KEY } from "@/lib/anonymous-player";
+import { authClient } from "@/lib/auth-client";
 
 interface OwnedAchievement {
   achievementId: string;
@@ -13,11 +13,16 @@ interface OwnedAchievement {
 }
 
 export function AchievementsClient() {
+  const { data: session, isPending } = authClient.useSession();
   const [owned, setOwned] = useState<OwnedAchievement[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    const userId = window.localStorage.getItem(ANONYMOUS_USER_ID_KEY) ?? "";
+    if (isPending) {
+      return;
+    }
+
+    const userId = session?.user?.id ?? "";
     if (!userId) {
       setLoaded(true);
       return;
@@ -28,7 +33,7 @@ export function AchievementsClient() {
       .then((body: { achievements?: OwnedAchievement[] }) => setOwned(body.achievements ?? []))
       .catch(() => setOwned([]))
       .finally(() => setLoaded(true));
-  }, []);
+  }, [isPending, session?.user?.id]);
 
   const ownedById = new Map(owned.map((achievement) => [achievement.achievementId, achievement]));
   const unlockedCount = ownedById.size;

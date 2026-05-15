@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   type CommunicationMode,
@@ -9,13 +10,9 @@ import {
   type NarratorMode,
   type TempoProfile,
 } from "@werewolf/shared";
-import {
-  ANONYMOUS_DISPLAY_NAME_KEY,
-  saveAnonymousIdentity,
-  validateDisplayNameBg,
-} from "@/lib/anonymous-player";
+import { authClient } from "@/lib/auth-client";
 
-export function AnonymousEntryClient({
+export function AuthGatedEntry({
   family,
   mode,
   initialCode = "",
@@ -25,7 +22,7 @@ export function AnonymousEntryClient({
   initialCode?: string;
 }) {
   const router = useRouter();
-  const [displayName, setDisplayName] = useState("");
+  const { data: session, isPending } = authClient.useSession();
   const [roomCode, setRoomCode] = useState(cleanRoomCode(initialCode));
   const [spectator, setSpectator] = useState(false);
   const [error, setError] = useState("");
@@ -35,10 +32,6 @@ export function AnonymousEntryClient({
   const tempo: TempoProfile = mode === "mafia_sport" ? "sport_mafia" : "normal_online";
   const communication: CommunicationMode = "built_in_chat";
   const narrator: NarratorMode = "automatic";
-
-  useEffect(() => {
-    setDisplayName(window.localStorage.getItem(ANONYMOUS_DISPLAY_NAME_KEY) ?? "");
-  }, []);
 
   const playPath = useMemo(() => {
     const params = new URLSearchParams({
@@ -55,41 +48,32 @@ export function AnonymousEntryClient({
   }, [communication, mode, narrator, playerCount, roomCode, spectator, tempo]);
 
   function submit(action: "create" | "join") {
-    const nameError = validateDisplayNameBg(displayName);
-    if (nameError) {
-      setError(nameError);
-      return;
-    }
     if (action === "join" && !isValidRoomCode(roomCode)) {
       setError("Невалиден код на стая.");
       return;
     }
 
-    saveAnonymousIdentity(displayName);
     setError("");
     router.push(action === "create" ? `${gameRoot}/create` : playPath);
   }
 
+  if (isPending || !session) {
+    return (
+      <section className="paper-card anonymous-entry-card rounded-[2rem] p-7" data-theme={family} data-family={family}>
+        <p className="section-kicker text-[#842f2b]">влез в стаята</p>
+        <h2 className="mt-3 text-4xl font-black">Проверяваме профила</h2>
+        <p className="mt-3 leading-7">След вход ще те върнем към поканата за тази стая.</p>
+      </section>
+    );
+  }
+
   return (
     <section className="paper-card anonymous-entry-card rounded-[2rem] p-7" data-theme={family} data-family={family}>
-      <p className="section-kicker text-[#842f2b]">без регистрация</p>
-      <h2 className="mt-3 text-4xl font-black">Влез с име</h2>
-      <p className="mt-3 leading-7">
-        Името важи само за тази машина и се пази локално. Ако в стаята вече има играч със същото име,
-        сървърът ще поиска друго.
-      </p>
+      <p className="section-kicker text-[#842f2b]">влез в стаята</p>
+      <h2 className="mt-3 text-4xl font-black">Добре дошъл, {session.user.name ?? "играч"}.</h2>
+      <p className="mt-3 leading-7">Въведи кода на стаята, за да се присъединиш към играта с твоя профил.</p>
 
       <div className="mt-6 grid gap-4">
-        <label className="grid gap-2">
-          <span className="text-xs font-black uppercase tracking-[0.25em] text-[#842f2b]">Потребителско име</span>
-          <input
-            className="input"
-            value={displayName}
-            maxLength={24}
-            onChange={(event) => setDisplayName(event.target.value)}
-            placeholder="Например: Мила"
-          />
-        </label>
         <label className="grid gap-2">
           <span className="text-xs font-black uppercase tracking-[0.25em] text-[#842f2b]">Код на стая</span>
           <input
@@ -100,25 +84,33 @@ export function AnonymousEntryClient({
             placeholder="ABC123"
           />
         </label>
-        <label className="flex items-center gap-3 rounded-2xl bg-[#842f2b]/8 p-3 font-bold text-[#4f3829]">
-          <input type="checkbox" checked={spectator} onChange={(event) => setSpectator(event.target.checked)} />
-          <span>Влез като наблюдател, без да получаваш роля.</span>
-        </label>
+        <button
+          type="button"
+          className="join-spectator-toggle"
+          data-active={spectator}
+          aria-pressed={spectator}
+          onClick={() => setSpectator((value) => !value)}
+        >
+          <span className="join-spectator-dot" aria-hidden />
+          {spectator ? "Сядам встрани, без роля" : "Влизам да играя"}
+        </button>
       </div>
 
       {error ? <p className="mt-4 rounded-2xl bg-[#842f2b]/10 p-4 font-bold text-[#842f2b]">{error}</p> : null}
 
       <div className="mt-6 flex flex-wrap gap-3">
-        <button className="btn btn-primary" type="button" onClick={() => submit("join")}>
+        <button className="btn btn-primary" type="button" onClick={() => submit("join")} disabled={roomCode.length < 4}>
           Влез в стая
         </button>
-        <button className="btn btn-secondary" type="button" onClick={() => submit("create")}>
+        <Link className="btn btn-secondary" href={`${gameRoot}/create`}>
           Създай стая
-        </button>
+        </Link>
       </div>
     </section>
   );
 }
+
+export const AnonymousEntryClient = AuthGatedEntry;
 
 function cleanRoomCode(code: string) {
   return code.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12);

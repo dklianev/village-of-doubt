@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { AuthChip } from "@/components/site-chrome/AuthChip";
 import { getSoundEnabled, playCue, setSoundEnabled } from "@/lib/sound";
 
 type ThemePreference = "light" | "dark";
@@ -19,7 +20,6 @@ const SECONDARY_LINKS = [
   { href: "/leaderboard", label: "Класация" },
   { href: "/friends", label: "Приятели" },
   { href: "/tutorial", label: "Първа игра" },
-  { href: "/sign-in", label: "Вход" },
 ];
 
 const DRAWER_LINKS = [
@@ -275,11 +275,13 @@ function UtilityCluster({
   themePreference,
   onToggleSound,
   onCycleTheme,
+  showAuth = true,
 }: {
   soundEnabled: boolean;
   themePreference: ThemePreference;
   onToggleSound: () => void;
   onCycleTheme: () => void;
+  showAuth?: boolean;
 }) {
   return (
     <div className="site-utility-cluster" aria-label="Настройки">
@@ -289,6 +291,12 @@ function UtilityCluster({
       <button className="site-icon-button" type="button" aria-label={themeLabel(themePreference)} onClick={onCycleTheme}>
         <ThemeIcon preference={themePreference} />
       </button>
+      {showAuth ? (
+        <>
+          <span className="site-utility-separator" aria-hidden />
+          <AuthChip />
+        </>
+      ) : null}
     </div>
   );
 }
@@ -335,7 +343,16 @@ function MobileDrawer({
           })}
         </nav>
         <div className="site-drawer-footer">
-          <UtilityCluster soundEnabled={soundEnabled} themePreference={themePreference} onToggleSound={onToggleSound} onCycleTheme={onCycleTheme} />
+          <UtilityCluster
+            soundEnabled={soundEnabled}
+            themePreference={themePreference}
+            onToggleSound={onToggleSound}
+            onCycleTheme={onCycleTheme}
+            showAuth={false}
+          />
+          <div className="site-drawer-auth">
+            <AuthChip />
+          </div>
         </div>
       </aside>
     </div>
