@@ -3881,6 +3881,10 @@ html[data-theme="dark"] .landing-quickstart .quickstart-dim-glyph {
   line-height: 0.98;
 }
 
+.role-codex-card.role-investigator .role-codex-copy h2 {
+  font-size: clamp(1.62rem, 2.12vw, 2.08rem);
+}
+
 .role-codex-copy p:not(.section-kicker) {
   color: #4f3829;
   font-size: 0.92rem;
@@ -9201,7 +9205,7 @@ html[data-theme="dark"] .utility-shell::before {
   }
 
   .role-codex-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr));
   }
 
   .landing-tableau {
