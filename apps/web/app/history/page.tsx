@@ -1,96 +1,38 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Suspense } from "react";
 import { createDatabase, getGameTimeline, getRecentGameHistory } from "@werewolf/database";
-import { phaseLabelBg, type GameMode, type GamePhase } from "@werewolf/shared";
-import { HistoryListSkeleton } from "@/components/skeleton";
+import type { GameMode } from "@werewolf/shared";
+import { EvidenceWall } from "@/components/history/EvidenceWall";
+import { EvidenceWallSkeleton } from "@/components/skeleton";
+import type { HistoryGameView, HistoryTimelineEventView } from "@/lib/history-highlights";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "История | Върколак и Мафия",
-  description: "Завършени игри, победители, смърти, гласове и фазов timeline.",
+  description: "Завършени игри, победители, смърти, гласове и развръзки от масата.",
 };
 
 export default function HistoryPage() {
   return (
-    <main className="shell history-shell">
-      <section className="paper-card history-ledger rounded-[2rem] p-8">
-        <p className="text-sm uppercase tracking-[0.3em] text-[#842f2b]">история</p>
-        <h1 className="mt-3 text-4xl font-black">Завършени игри</h1>
-        <Suspense fallback={<HistoryListSkeleton />}>
-          <HistoryContent />
-        </Suspense>
-      </section>
+    <main className="shell history-shell evidence-shell">
+      <Suspense fallback={<EvidenceWallSkeleton />}>
+        <HistoryContent />
+      </Suspense>
     </main>
   );
 }
 
 async function HistoryContent() {
   const games = await loadHistory();
-
-  return (
-    <>
-      {games.length === 0 ? (
-        <div className="empty-state-card history-empty mt-7 rounded-[2rem] p-6">
-          <span className="history-empty-mark" aria-hidden="true" />
-          <div>
-            <h2 className="text-3xl font-black">Архивът още е запечатан</h2>
-            <p className="mt-3 max-w-2xl text-[#4f3829]">
-              Първата победа още не е написана. Когато завърши игра, тук ще видиш победител,
-              смърти, гласове и фазов timeline.
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className="mt-7 grid gap-4">
-          {games.map((game) => (
-            <article key={game.id} className="history-game-card rounded-3xl p-5" data-theme={modeFamily(game.mode)}>
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm font-black uppercase tracking-[0.25em] text-[#842f2b]">
-                    стая {game.code} · {modeBg(game.mode)}
-                  </p>
-                  <h2 className="mt-2 text-2xl font-black">{winnerBg(game.winnerTeam)}</h2>
-                </div>
-                <span className="rounded-full bg-[#221611]/10 px-4 py-2 text-sm font-bold">
-                  {game.eventCount} събития
-                </span>
-              </div>
-              <p className="mt-3 text-sm text-[#4f3829]">
-                Статус: {game.status} · Старт: {formatDate(game.startedAt)} · Край: {formatDate(game.endedAt)}
-              </p>
-              <Link className="btn btn-secondary mt-4 min-h-0 px-4 py-2" href={`/history/${game.id}/replay`}>
-                Отвори replay
-              </Link>
-              {game.timeline.length > 0 ? (
-                <div className="mt-5 grid gap-3">
-                  {[...game.timeline].reverse().map((event) => (
-                    <div key={event.id} className="timeline-event rounded-2xl px-4 py-3">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <strong>{eventTypeBg(event.type)}</strong>
-                        <span className="rounded-full bg-white/45 px-3 py-1 text-xs font-bold">
-                          рунд {event.round} · {phaseBg(event.phase, game.mode)} · {visibilityBg(event.visibility)}
-                        </span>
-                      </div>
-                      <p className="mt-2 text-sm text-[#4f3829]">{formatPayload(event.payload)}</p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="mt-4 rounded-2xl bg-[#221611]/8 px-4 py-3 text-sm text-[#4f3829]">
-                  Все още няма записан timeline за тази игра.
-                </p>
-              )}
-            </article>
-          ))}
-        </div>
-      )}
-    </>
-  );
+  return <EvidenceWall games={games} />;
 }
 
-async function loadHistory() {
+async function loadHistory(): Promise<HistoryGameView[]> {
+  if (process.env.NODE_ENV !== "production" && process.env.HISTORY_EVIDENCE_FIXTURE === "1") {
+    return fixtureHistory();
+  }
+
   if (!process.env.DATABASE_URL) {
     return [];
   }
@@ -99,43 +41,47 @@ async function loadHistory() {
     const db = createDatabase(process.env.DATABASE_URL);
     const games = await getRecentGameHistory(db);
     const timelines = await Promise.all(games.map((game) => getGameTimeline(db, game.id, 6)));
-    return games.map((game, index) => ({ ...game, mode: modeFromConfig(game.config), timeline: timelines[index] ?? [] }));
+
+    return games.map((game, index) => ({
+      id: game.id,
+      code: game.code,
+      config: game.config,
+      status: game.status,
+      winnerTeam: game.winnerTeam,
+      startedAt: game.startedAt?.toISOString() ?? null,
+      endedAt: game.endedAt?.toISOString() ?? null,
+      eventCount: game.eventCount,
+      mode: modeFromConfig(game.config),
+      timeline: (timelines[index] ?? []).map(serializeTimelineEvent),
+    }));
   } catch (error) {
     console.error("[history]", error);
     return [];
   }
 }
 
-function winnerBg(winner: string | null) {
-  const labels: Record<string, string> = {
-    village: "Селото печели",
-    werewolves: "Върколаците печелят",
-    vampires: "Вампирите печелят",
-    mafia: "Мафията печели",
-    maniac: "Маниакът печели",
-    lovers: "Влюбените печелят",
-    draw: "Равенство",
+function serializeTimelineEvent(event: {
+  id: string;
+  round: number;
+  phase: string;
+  type: string;
+  actorId: string | null;
+  targetId: string | null;
+  visibility: string;
+  payload: unknown;
+  createdAt: Date;
+}): HistoryTimelineEventView {
+  return {
+    id: event.id,
+    round: event.round,
+    phase: event.phase,
+    type: event.type,
+    actorId: event.actorId,
+    targetId: event.targetId,
+    visibility: event.visibility,
+    payload: event.payload,
+    createdAt: event.createdAt.toISOString(),
   };
-
-  return winner ? labels[winner] ?? winner : "Играта още няма победител";
-}
-
-function phaseBg(phase: string, mode: GameMode) {
-  return isKnownPhase(phase) ? phaseLabelBg(phase, mode) : phase;
-}
-
-function modeBg(mode: GameMode) {
-  const labels: Record<GameMode, string> = {
-    werewolves_classic: "Класически Върколаци",
-    mafia_sport: "Спортна Мафия",
-    mafia_free: "Свободна Мафия",
-  };
-
-  return labels[mode];
-}
-
-function modeFamily(mode: GameMode) {
-  return mode === "werewolves_classic" ? "werewolves" : "mafia";
 }
 
 function modeFromConfig(config: unknown): GameMode {
@@ -149,86 +95,54 @@ function modeFromConfig(config: unknown): GameMode {
   return "werewolves_classic";
 }
 
-function isKnownPhase(phase: string): phase is GamePhase {
-  return [
-    "lobby",
-    "role_reveal",
-    "first_night",
-    "night",
-    "day_announcement",
-    "day_discussion",
-    "nomination",
-    "defense",
-    "voting",
-    "resolution",
-    "hunter_revenge",
-    "mayor_successor",
-    "paused",
-    "game_over",
-  ].includes(phase);
+function fixtureHistory(): HistoryGameView[] {
+  const now = new Date("2026-05-15T20:30:00.000Z");
+  const winners = ["village", "mafia", "werewolves", "lovers", "vampires", "draw", "maniac", "village"];
+  const modes: GameMode[] = [
+    "werewolves_classic",
+    "mafia_sport",
+    "werewolves_classic",
+    "mafia_free",
+    "werewolves_classic",
+    "mafia_sport",
+    "mafia_free",
+    "werewolves_classic",
+  ];
+
+  return modes.map((mode, index) => {
+    const endedAt = new Date(now.getTime() - index * 1000 * 60 * 60 * 18);
+    const startedAt = new Date(endedAt.getTime() - 1000 * 60 * (42 + index * 3));
+    const round = 3 + (index % 4);
+
+    return {
+      id: `fixture-${index + 1}`,
+      code: String(42 - index).padStart(3, "0"),
+      config: { mode, playerCount: mode === "mafia_sport" ? 10 : 12 + (index % 5) },
+      status: "ended",
+      winnerTeam: winners[index] ?? "village",
+      startedAt: startedAt.toISOString(),
+      endedAt: endedAt.toISOString(),
+      eventCount: 18 + index * 5,
+      mode,
+      timeline: [
+        fixtureEvent(index, 0, round, "game_over", endedAt),
+        fixtureEvent(index, 1, round, index % 2 === 0 ? "death" : "vote_tally", new Date(endedAt.getTime() - 1000 * 60 * 7)),
+        fixtureEvent(index, 2, Math.max(1, round - 1), "reveal", new Date(endedAt.getTime() - 1000 * 60 * 18)),
+      ],
+    };
+  });
 }
 
-function eventTypeBg(type: string) {
-  const labels: Record<string, string> = {
-    room_created: "Създадена стая",
-    player_joined: "Играч влезе",
-    player_left: "Играч излезе",
-    reconnect: "Възстановена връзка",
-    ready: "Готовност",
-    phase_change: "Смяна на фаза",
-    role_assignment: "Раздадени роли",
-    night_action: "Нощно действие",
-    vote: "Глас",
-    death: "Смърт",
-    reveal: "Разкриване",
-    chat: "Чат",
-    narrator_action: "Разказвач",
-    game_over: "Край на играта",
-    personal_win: "Лична победа",
+function fixtureEvent(index: number, offset: number, round: number, type: string, createdAt: Date): HistoryTimelineEventView {
+  return {
+    id: `fixture-${index + 1}-${offset}`,
+    round,
+    phase: type === "game_over" ? "game_over" : "resolution",
+    type,
+    actorId: null,
+    targetId: null,
+    visibility: "public",
+    payload: {},
+    createdAt: createdAt.toISOString(),
   };
-
-  return labels[type] ?? type;
-}
-
-function visibilityBg(visibility: string) {
-  const labels: Record<string, string> = {
-    public: "публично",
-    private: "лично",
-    faction: "фракция",
-    moderator: "модератор",
-  };
-
-  return labels[visibility] ?? visibility;
-}
-
-function formatPayload(payload: unknown) {
-  if (!payload || typeof payload !== "object") {
-    return "Събитието няма допълнителни данни.";
-  }
-
-  const entries = Object.entries(payload)
-    .filter(([, value]) => value !== undefined && value !== null && value !== "")
-    .slice(0, 4)
-    .map(([key, value]) => `${payloadKeyBg(key)}: ${String(value)}`);
-
-  return entries.length > 0 ? entries.join(" · ") : "Събитието е записано без публични детайли.";
-}
-
-function payloadKeyBg(key: string) {
-  const labels: Record<string, string> = {
-    messageBg: "съобщение",
-    winnerTeam: "победител",
-    reasonBg: "причина",
-    role: "роля",
-    phase: "фаза",
-    targetUserId: "цел",
-    actorUserId: "действащ",
-    action: "действие",
-  };
-
-  return labels[key] ?? key;
-}
-
-function formatDate(value: Date | null) {
-  return value ? new Intl.DateTimeFormat("bg-BG", { dateStyle: "medium", timeStyle: "short" }).format(value) : "няма данни";
 }
