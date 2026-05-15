@@ -10,7 +10,7 @@ export default async function WerewolfJoinPage({ params }: { params: Promise<{ r
   const { roomCode } = await params;
 
   return (
-    <main className="shell lobby-shell" data-theme="werewolves" data-family="werewolves">
+    <main className="shell join-shell" data-theme="werewolves" data-family="werewolves">
       <AnonymousEntryClient family="werewolves" mode="werewolves_classic" initialCode={roomCode?.[0] ?? ""} />
     </main>
   );

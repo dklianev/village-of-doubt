@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { type ClipboardEvent, type FormEvent, type KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   type CommunicationMode,
@@ -29,12 +29,19 @@ export function AnonymousEntryClient({
   const [roomCode, setRoomCode] = useState(cleanRoomCode(initialCode));
   const [spectator, setSpectator] = useState(false);
   const [error, setError] = useState("");
+  const [codeShaking, setCodeShaking] = useState(false);
+  const [joining, setJoining] = useState(false);
+  const slotRefs = useRef<Array<HTMLInputElement | null>>([]);
   const isMafia = family === "mafia";
+  const copy = isMafia ? JOIN_COPY.mafia : JOIN_COPY.werewolves;
   const gameRoot = isMafia ? "/mafia" : "/werewolf";
   const playerCount = mode === "mafia_sport" ? 10 : isMafia ? 10 : 8;
   const tempo: TempoProfile = mode === "mafia_sport" ? "sport_mafia" : "normal_online";
   const communication: CommunicationMode = "built_in_chat";
   const narrator: NarratorMode = "automatic";
+  const slotCount = Math.max(6, Math.min(12, roomCode.length));
+  const canJoin = roomCode.length >= 6 && !joining;
+  const codeHint = `${roomCode || "ABC123"} • ${Math.max(6, roomCode.length)} знака • A-Z 0-9`;
 
   useEffect(() => {
     setDisplayName(window.localStorage.getItem(ANONYMOUS_DISPLAY_NAME_KEY) ?? "");
@@ -54,76 +61,219 @@ export function AnonymousEntryClient({
     return `/play/${roomCode}?${params.toString()}`;
   }, [communication, mode, narrator, playerCount, roomCode, spectator, tempo]);
 
-  function submit(action: "create" | "join") {
+  function focusSlot(index: number) {
+    window.requestAnimationFrame(() => slotRefs.current[index]?.focus());
+  }
+
+  function triggerCodeShake() {
+    setCodeShaking(false);
+    window.requestAnimationFrame(() => setCodeShaking(true));
+  }
+
+  function handleSlotChange(index: number, value: string) {
+    const nextValue = cleanRoomCode(value);
+    if (nextValue.length > 1) {
+      setRoomCode(nextValue);
+      focusSlot(Math.min(nextValue.length, 12) - 1);
+      setError("");
+      return;
+    }
+
+    setRoomCode((current) => {
+      const chars = current.split("");
+      if (nextValue) {
+        chars[index] = nextValue;
+      } else {
+        chars.splice(index, 1);
+      }
+      return cleanRoomCode(chars.join(""));
+    });
+
+    if (nextValue && index < 11) {
+      focusSlot(index + 1);
+    }
+    setError("");
+  }
+
+  function handleSlotKeyDown(index: number, event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Backspace" && !roomCode[index] && index > 0) {
+      event.preventDefault();
+      focusSlot(index - 1);
+    }
+    if (event.key === "ArrowLeft" && index > 0) {
+      event.preventDefault();
+      focusSlot(index - 1);
+    }
+    if (event.key === "ArrowRight" && index < slotCount - 1) {
+      event.preventDefault();
+      focusSlot(index + 1);
+    }
+  }
+
+  function handlePaste(event: ClipboardEvent<HTMLInputElement>) {
+    const pastedCode = cleanRoomCode(event.clipboardData.getData("text"));
+    if (!pastedCode) {
+      return;
+    }
+    event.preventDefault();
+    setRoomCode(pastedCode);
+    setError("");
+    focusSlot(Math.min(pastedCode.length, 12) - 1);
+  }
+
+  function createRoom() {
+    router.push(`${gameRoot}/create`);
+  }
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     const nameError = validateDisplayNameBg(displayName);
     if (nameError) {
       setError(nameError);
       return;
     }
-    if (action === "join" && !isValidRoomCode(roomCode)) {
+    if (!isValidRoomCode(roomCode)) {
       setError("Невалиден код на стая.");
+      triggerCodeShake();
       return;
     }
 
     saveAnonymousIdentity(displayName);
     setError("");
-    router.push(action === "create" ? `${gameRoot}/create` : playPath);
+    setJoining(true);
+    router.push(playPath);
   }
 
   return (
-    <section className="paper-card anonymous-entry-card rounded-[2rem] p-7" data-theme={family} data-family={family}>
-      <p className="section-kicker text-[#842f2b]">без регистрация</p>
-      <h2 className="mt-3 text-4xl font-black">Влез с име</h2>
-      <p className="mt-3 leading-7">
-        Името важи само за тази машина и се пази локално. Ако в стаята вече има играч със същото име,
-        сървърът ще поиска друго.
-      </p>
+    <section className="join-stage" data-theme={family} data-family={family}>
+      <aside className="join-side-art" aria-label={copy.artLabel}>
+        <div className="join-side-art__caption">
+          <p className="join-side-art__kicker">{copy.artKicker}</p>
+          <p>{copy.caption}</p>
+        </div>
+      </aside>
 
-      <div className="mt-6 grid gap-4">
-        <label className="grid gap-2">
-          <span className="text-xs font-black uppercase tracking-[0.25em] text-[#842f2b]">Потребителско име</span>
-          <input
-            className="input"
-            value={displayName}
-            maxLength={24}
-            onChange={(event) => setDisplayName(event.target.value)}
-            placeholder="Например: Мила"
-          />
-        </label>
-        <label className="grid gap-2">
-          <span className="text-xs font-black uppercase tracking-[0.25em] text-[#842f2b]">Код на стая</span>
-          <input
-            className="input"
-            value={roomCode}
-            maxLength={12}
-            onChange={(event) => setRoomCode(cleanRoomCode(event.target.value))}
-            placeholder="ABC123"
-          />
-        </label>
-        <label className="flex items-center gap-3 rounded-2xl bg-[#842f2b]/8 p-3 font-bold text-[#4f3829]">
-          <input type="checkbox" checked={spectator} onChange={(event) => setSpectator(event.target.checked)} />
-          <span>Влез като наблюдател, без да получаваш роля.</span>
-        </label>
-      </div>
+      <form className="join-form-card" onSubmit={submit}>
+        <header className="join-header">
+          <p className="join-kicker">{copy.kicker}</p>
+          <h1 className="join-title">{copy.title}</h1>
+          <p className="join-subtitle">{copy.subtitle}</p>
+        </header>
 
-      {error ? <p className="mt-4 rounded-2xl bg-[#842f2b]/10 p-4 font-bold text-[#842f2b]">{error}</p> : null}
+        <div className="join-code-panel">
+          {error ? (
+            <div className="join-error" role="alert">
+              <span aria-hidden="true">!</span> {error}
+            </div>
+          ) : null}
+          <p className="join-code-label">Код на стаята</p>
+          <div
+            className={codeShaking ? "join-codeslots is-shaking" : "join-codeslots"}
+            role="group"
+            aria-label="Код на стаята"
+            onAnimationEnd={() => setCodeShaking(false)}
+          >
+            {Array.from({ length: slotCount }).map((_, index) => (
+              <input
+                key={index}
+                ref={(element) => {
+                  slotRefs.current[index] = element;
+                }}
+                className="join-codeslot"
+                maxLength={1}
+                inputMode="text"
+                autoCapitalize="characters"
+                autoComplete="off"
+                value={roomCode[index] ?? ""}
+                onChange={(event) => handleSlotChange(index, event.target.value)}
+                onKeyDown={(event) => handleSlotKeyDown(index, event)}
+                onPaste={handlePaste}
+                aria-label={`Символ ${index + 1}`}
+                data-filled={Boolean(roomCode[index])}
+              />
+            ))}
+          </div>
+          <p className="join-code-hint">{codeHint}</p>
+        </div>
 
-      <div className="mt-6 flex flex-wrap gap-3">
-        <button className="btn btn-primary" type="button" onClick={() => submit("join")}>
-          Влез в стая
-        </button>
-        <button className="btn btn-secondary" type="button" onClick={() => submit("create")}>
-          Създай стая
-        </button>
-      </div>
+        <div className="join-fields">
+          <label className="join-field">
+            <span>{copy.nameLabel}</span>
+            <input
+              className="join-name-input"
+              value={displayName}
+              maxLength={24}
+              onChange={(event) => {
+                setDisplayName(event.target.value);
+                setError("");
+              }}
+              placeholder="Например: Мила"
+            />
+          </label>
+
+          <button
+            type="button"
+            className="join-spectator-toggle"
+            data-active={spectator}
+            onClick={() => setSpectator((value) => !value)}
+            aria-pressed={spectator}
+          >
+            <span className="join-spectator-track" aria-hidden="true">
+              <span className="join-spectator-dot" />
+            </span>
+            <span>{spectator ? "Сядам встрани, без роля" : "Влизам да играя"}</span>
+          </button>
+        </div>
+
+        <div className="join-actions">
+          <button className="join-primary" type="submit" disabled={!canJoin}>
+            {joining ? "Хлопаме..." : "Хлопам на вратата"}
+          </button>
+          <button className="join-secondary" type="button" onClick={createRoom}>
+            Създай нова стая
+          </button>
+        </div>
+      </form>
     </section>
   );
 }
+
+const JOIN_COPY = {
+  mafia: {
+    artLabel: "Вход към частен бар",
+    artKicker: "частен бар",
+    caption: "Името на вратата. Кодът на бара. Останалото — между нас.",
+    kicker: "частен бар",
+    title: "Покажи кода",
+    subtitle: "Името стои на масата. Кодът отваря вратата. Останалото — между нас.",
+    nameLabel: "На кое име на масата?",
+  },
+  werewolves: {
+    artLabel: "Вход към тихо село",
+    artKicker: "тихо село",
+    caption: "Селото е тихо. Покажи знакът си, преди да отвори вратата.",
+    kicker: "тихо село",
+    title: "Покажи знакът",
+    subtitle: "Името върви по селските пътеки. Кодът пуска отвъд оградата.",
+    nameLabel: "С кое име в селото?",
+  },
+} satisfies Record<
+  GameFamily,
+  {
+    artLabel: string;
+    artKicker: string;
+    caption: string;
+    kicker: string;
+    title: string;
+    subtitle: string;
+    nameLabel: string;
+  }
+>;
 
 function cleanRoomCode(code: string) {
   return code.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12);
 }
 
 function isValidRoomCode(code: string) {
-  return /^[A-Z0-9]{4,12}$/.test(code);
+  return /^[A-Z0-9]{6,12}$/.test(code);
 }
