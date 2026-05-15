@@ -375,28 +375,11 @@ function PhaseNode({
 function PhaseLoopArrow() {
   return (
     <div className="phase-loop-arrow" aria-hidden="true">
-      <svg className="phase-loop-arrow__svg phase-loop-arrow__svg--desktop" viewBox="0 0 600 112" preserveAspectRatio="none" focusable="false">
-        <defs>
-          <marker id="phase-loop-arrowhead-desktop" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="8" markerHeight="8" orient="auto">
-            <path className="phase-loop-arrow__marker" d="M0 0 L8 4 L0 8 Z" />
-          </marker>
-        </defs>
-        <path className="phase-loop-arrow__path" d="M550 96 Q400 8 250 96" markerEnd="url(#phase-loop-arrowhead-desktop)" />
-        <rect className="phase-loop-arrow__label-bg" x="342" y="16" width="116" height="24" rx="12" />
-        <text className="phase-loop-label" x="400" y="32" textAnchor="middle">ПОВТАРЯ СЕ</text>
-      </svg>
-      <svg className="phase-loop-arrow__svg phase-loop-arrow__svg--mobile" viewBox="0 0 80 360" preserveAspectRatio="none" focusable="false">
-        <defs>
-          <marker id="phase-loop-arrowhead-mobile" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="8" markerHeight="8" orient="auto">
-            <path className="phase-loop-arrow__marker" d="M0 0 L8 4 L0 8 Z" />
-          </marker>
-        </defs>
-        <path className="phase-loop-arrow__path" d="M54 348 C12 286 12 82 54 34 C58 28 58 20 58 12" markerEnd="url(#phase-loop-arrowhead-mobile)" />
-        <g transform="translate(18 184) rotate(-90)">
-          <rect className="phase-loop-arrow__label-bg" x="-58" y="-12" width="116" height="24" rx="12" />
-          <text className="phase-loop-label" x="0" y="4" textAnchor="middle">ПОВТАРЯ СЕ</text>
-        </g>
-      </svg>
+      <div className="phase-loop-bracket">
+        <span className="phase-loop-bracket__top" />
+        <span className="phase-loop-label">↻ ПОВТАРЯ СЕ</span>
+      </div>
+      <span className="phase-loop-mobile-marker">↻ ПОВТАРЯ СЕ</span>
     </div>
   );
 }

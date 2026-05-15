@@ -7057,53 +7057,71 @@ html[data-theme="dark"] .landing-quickstart .quickstart-dim-glyph {
 
 .phase-loop-arrow {
   position: absolute;
-  top: 58px;
+  top: 48px;
   right: 0;
   left: 0;
   z-index: 1;
-  height: 112px;
-  color: rgba(209, 154, 66, 0.9);
+  height: 58px;
+  color: rgba(248, 236, 210, 0.5);
   pointer-events: none;
 }
 
-.phase-loop-arrow__svg {
+.phase-loop-bracket {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  top: 0;
+  right: 8.333%;
+  left: 41.667%;
+  height: 54px;
 }
 
-.phase-loop-arrow__svg--mobile {
-  display: none;
+.phase-loop-bracket::before,
+.phase-loop-bracket::after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: currentColor;
+  content: "";
 }
 
-.phase-loop-arrow__path {
-  stroke-width: 2.35;
-  stroke-dasharray: 6 4;
-  vector-effect: non-scaling-stroke;
+.phase-loop-bracket::before {
+  left: 0;
 }
 
-.phase-loop-arrow__marker {
-  fill: currentColor;
-  stroke: none;
+.phase-loop-bracket::after {
+  right: 0;
 }
 
-.phase-loop-arrow__label-bg {
-  fill: rgba(8, 10, 10, 0.82);
-  stroke: rgba(209, 154, 66, 0.38);
-  stroke-width: 1;
+.phase-loop-bracket__top {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    currentColor 0 calc(50% - 5.9rem),
+    transparent calc(50% - 5.9rem) calc(50% + 5.9rem),
+    currentColor calc(50% + 5.9rem) 100%
+  );
 }
 
 .phase-loop-label {
-  fill: #fff6e5;
+  position: absolute;
+  top: -0.55rem;
+  left: 50%;
+  color: rgba(248, 236, 210, 0.84);
   font-size: 0.64rem;
   font-weight: 950;
   letter-spacing: 0.16em;
+  line-height: 1;
+  text-transform: uppercase;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.phase-loop-mobile-marker {
+  display: none;
 }
 
 .phase-detail-panel {
@@ -7293,23 +7311,30 @@ html[data-theme="dark"] .landing-quickstart .quickstart-dim-glyph {
   }
 
   .phase-loop-arrow {
-    position: absolute;
-    top: 258px;
-    bottom: 60px;
-    left: 0;
-    right: auto;
+    position: static;
     z-index: 2;
-    width: 94px;
+    display: flex;
+    width: auto;
     height: auto;
-    color: rgba(209, 154, 66, 0.86);
+    margin: -2px 0 0 72px;
+    color: rgba(248, 236, 210, 0.72);
   }
 
-  .phase-loop-arrow__svg--desktop {
+  .phase-loop-bracket {
     display: none;
   }
 
-  .phase-loop-arrow__svg--mobile {
-    display: block;
+  .phase-loop-mobile-marker {
+    display: inline-flex;
+    align-items: center;
+    border-left: 1px solid currentColor;
+    padding-left: 10px;
+    color: rgba(248, 236, 210, 0.78);
+    font-size: 0.64rem;
+    font-weight: 950;
+    letter-spacing: 0.16em;
+    line-height: 1;
+    text-transform: uppercase;
   }
 
   .phase-info-grid {
