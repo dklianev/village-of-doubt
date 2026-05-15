@@ -8340,6 +8340,334 @@ html[data-theme="dark"] .utility-shell::before {
   font-weight: 950;
 }
 
+.achievement-shell {
+  width: min(1240px, calc(100vw - 32px));
+}
+
+.achievement-shell::before {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse at 18% 18%, rgba(132, 47, 43, 0.22), transparent 34rem),
+    radial-gradient(ellipse at 88% 28%, rgba(200, 154, 85, 0.16), transparent 38rem),
+    linear-gradient(115deg, rgba(8, 8, 8, 0.94), rgba(26, 16, 12, 0.82) 44%, rgba(8, 9, 9, 0.96)),
+    var(--art-history) center / cover no-repeat;
+  content: "";
+  filter: saturate(0.78) contrast(1.08);
+}
+
+.achievement-shell .achievement-hero {
+  border-color: rgba(200, 154, 85, 0.34);
+  background:
+    radial-gradient(ellipse at 82% 12%, rgba(200, 154, 85, 0.24), transparent 24rem),
+    linear-gradient(135deg, rgba(255, 246, 226, 0.96), rgba(215, 174, 105, 0.22)),
+    var(--texture-paper) center / 560px 560px;
+  box-shadow: 0 24px 74px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.achievement-hero-lede {
+  color: #4f3829;
+  line-height: 1.65;
+}
+
+.achievement-wreath {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 28px;
+  color: #d19a42;
+}
+
+.achievement-wreath-branch {
+  width: 64px;
+  height: 80px;
+  filter: drop-shadow(0 1px 0 rgba(255, 238, 196, 0.2));
+}
+
+.achievement-wreath-branch-right {
+  transform: scaleX(-1);
+}
+
+.achievement-wreath-count {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  min-width: 116px;
+  text-align: center;
+}
+
+.achievement-wreath-count strong {
+  color: #f1d18a;
+  font-family: "Noto Serif", serif;
+  font-size: 2.75rem;
+  font-weight: 950;
+  line-height: 1;
+  text-shadow: 0 1px 0 rgba(72, 42, 12, 0.8), 0 0 18px rgba(209, 154, 66, 0.24);
+}
+
+.achievement-wreath-count span {
+  color: rgba(242, 216, 168, 0.9);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.plaque-wall {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  padding: 24px 0 32px;
+}
+
+.achievement-plaque {
+  --plaque-bg-color: #c8a366;
+  --plaque-fg-color: #2a1b10;
+  --plaque-muted-color: rgba(42, 27, 16, 0.8);
+  --plaque-meta-color: rgba(42, 27, 16, 0.9);
+  --plaque-edge-light: rgba(255, 240, 200, 0.58);
+  --plaque-edge-dark: rgba(50, 30, 10, 0.62);
+  --plaque-filter: saturate(1.05) contrast(1.02);
+  --plaque-overlay: linear-gradient(155deg, rgba(255, 242, 198, 0.34), rgba(85, 50, 16, 0.22));
+  position: relative;
+  overflow: hidden;
+  min-height: 246px;
+  padding: 30px 24px 28px;
+  border-radius: 12px;
+  background-color: var(--plaque-bg-color);
+  box-shadow:
+    inset 0 0 0 1px var(--plaque-edge-light),
+    inset 0 0 0 5px var(--plaque-edge-dark),
+    inset 0 0 0 7px var(--plaque-edge-light),
+    0 10px 28px rgba(0, 0, 0, 0.56),
+    0 2px 4px rgba(0, 0, 0, 0.42);
+  color: var(--plaque-fg-color);
+  isolation: isolate;
+  text-align: center;
+  transition: transform 220ms ease, box-shadow 220ms ease;
+}
+
+.achievement-plaque::before {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background-image:
+    var(--plaque-overlay),
+    image-set(
+      url("/game-art/textures/brass-plate.webp") type("image/webp"),
+      url("/game-art/textures/brass-plate.png") type("image/png")
+    );
+  background-position: center;
+  background-size: cover;
+  content: "";
+  filter: var(--plaque-filter);
+}
+
+.achievement-plaque::after {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(115deg, rgba(255, 255, 255, 0.18), transparent 26%, rgba(45, 24, 8, 0.18) 72%, transparent),
+    radial-gradient(ellipse at 50% 0%, rgba(255, 246, 206, 0.22), transparent 58%);
+  content: "";
+  opacity: 0.82;
+  pointer-events: none;
+}
+
+.achievement-plaque:hover {
+  transform: perspective(800px) rotateX(2deg) translateY(-3px);
+  box-shadow:
+    inset 0 0 0 1px var(--plaque-edge-light),
+    inset 0 0 0 5px var(--plaque-edge-dark),
+    inset 0 0 0 7px var(--plaque-edge-light),
+    0 16px 40px rgba(0, 0, 0, 0.66),
+    0 4px 6px rgba(0, 0, 0, 0.5);
+}
+
+.achievement-plaque-inner {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+}
+
+.achievement-icon {
+  width: 58px;
+  height: 58px;
+  color: var(--plaque-fg-color);
+  filter: drop-shadow(0 1px 0 rgba(255, 240, 200, 0.54)) drop-shadow(0 -1px 0 rgba(44, 24, 8, 0.38));
+}
+
+.achievement-plaque-title {
+  max-width: 18ch;
+  color: var(--plaque-fg-color);
+  font-family: "Noto Serif", serif;
+  font-size: clamp(1.14rem, 2vw, 1.34rem);
+  font-weight: 950;
+  letter-spacing: 0.04em;
+  line-height: 1.18;
+  text-shadow: 0 1px 0 rgba(255, 240, 200, 0.42), 0 -1px 0 rgba(50, 30, 10, 0.52);
+  text-transform: uppercase;
+}
+
+.achievement-plaque-desc {
+  max-width: 28ch;
+  color: var(--plaque-muted-color);
+  font-size: 0.9rem;
+  font-weight: 650;
+  line-height: 1.55;
+  text-shadow: 0 1px 0 rgba(255, 240, 200, 0.28);
+}
+
+.achievement-plaque-meta {
+  margin-top: 4px;
+  color: var(--plaque-meta-color);
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.achievement-plaque[data-tier="silver"] {
+  --plaque-bg-color: #b6b1a6;
+  --plaque-fg-color: #1e2526;
+  --plaque-muted-color: rgba(30, 37, 38, 0.82);
+  --plaque-meta-color: rgba(30, 37, 38, 0.9);
+  --plaque-edge-light: rgba(255, 255, 246, 0.58);
+  --plaque-edge-dark: rgba(38, 42, 42, 0.58);
+  --plaque-filter: grayscale(0.78) saturate(0.48) brightness(1.08) contrast(1.04);
+  --plaque-overlay: linear-gradient(155deg, rgba(255, 255, 246, 0.3), rgba(42, 48, 48, 0.2));
+}
+
+.achievement-plaque[data-tier="gold"] {
+  --plaque-bg-color: #e6c25e;
+  --plaque-fg-color: #2d1a07;
+  --plaque-muted-color: rgba(45, 26, 7, 0.82);
+  --plaque-meta-color: rgba(45, 26, 7, 0.9);
+  --plaque-edge-light: rgba(255, 247, 202, 0.68);
+  --plaque-edge-dark: rgba(80, 44, 10, 0.64);
+  --plaque-filter: saturate(1.38) brightness(1.08) contrast(1.05);
+  --plaque-overlay: linear-gradient(155deg, rgba(255, 248, 190, 0.38), rgba(114, 67, 11, 0.18));
+}
+
+.achievement-plaque[data-family="werewolves"] {
+  padding-top: 42px;
+  border-radius: 0;
+  clip-path: polygon(0% 14%, 50% 0%, 100% 14%, 100% 100%, 0% 100%);
+}
+
+.achievement-plaque[data-family="mafia"] {
+  border-radius: 36px 36px 24px 24px / 48px 48px 24px 24px;
+}
+
+.achievement-plaque[data-locked="true"] {
+  --plaque-fg-color: #e0dec0;
+  --plaque-muted-color: rgba(226, 222, 190, 0.78);
+  --plaque-meta-color: rgba(216, 184, 136, 0.84);
+  --plaque-edge-light: rgba(178, 215, 172, 0.18);
+  --plaque-edge-dark: rgba(14, 32, 21, 0.68);
+  --plaque-filter: grayscale(0.5) sepia(0.44) hue-rotate(50deg) brightness(0.7) contrast(0.96);
+  --plaque-overlay: linear-gradient(155deg, rgba(120, 155, 110, 0.18), rgba(8, 22, 14, 0.36));
+}
+
+.achievement-plaque[data-locked="true"]::after {
+  opacity: 0.54;
+}
+
+.achievement-plaque[data-locked="true"] .achievement-plaque-title,
+.achievement-plaque[data-locked="true"] .achievement-plaque-desc,
+.achievement-plaque[data-locked="true"] .achievement-plaque-meta {
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.62), 0 -1px 0 rgba(115, 150, 112, 0.2);
+}
+
+.achievement-plaque[data-locked="true"]:hover {
+  --plaque-filter: grayscale(0.42) sepia(0.34) hue-rotate(40deg) brightness(0.78) contrast(0.98);
+}
+
+.plaque-loading {
+  margin-top: 10px;
+  color: #ead8b8;
+  font-weight: 800;
+  text-align: center;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+}
+
+html[data-theme="light"] .achievement-shell::before {
+  display: block;
+  background:
+    radial-gradient(ellipse at 18% 18%, rgba(169, 111, 34, 0.12), transparent 34rem),
+    linear-gradient(180deg, rgba(255, 247, 229, 0.86), rgba(247, 231, 200, 0.94)),
+    var(--art-history) center / cover no-repeat;
+  filter: saturate(0.66) contrast(0.94);
+  opacity: 0.72;
+}
+
+html[data-theme="light"] .achievement-wreath {
+  color: #842f2b;
+}
+
+html[data-theme="light"] .achievement-wreath-count strong {
+  color: #842f2b;
+  text-shadow: 0 1px 0 rgba(255, 240, 200, 0.45);
+}
+
+html[data-theme="light"] .achievement-wreath-count span,
+html[data-theme="light"] .plaque-loading {
+  color: #5a3c2a;
+  text-shadow: none;
+}
+
+@media (min-width: 640px) {
+  .plaque-wall {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .plaque-wall {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 32px;
+  }
+}
+
+@media (max-width: 640px) {
+  .achievement-shell {
+    width: min(calc(100vw - 20px), 1240px);
+  }
+
+  .achievement-shell .achievement-hero {
+    padding: 24px !important;
+  }
+
+  .achievement-shell .achievement-hero h1 {
+    font-size: clamp(2.4rem, 15vw, 3.35rem);
+    line-height: 0.98;
+  }
+
+  .achievement-wreath {
+    gap: 10px;
+  }
+
+  .achievement-wreath-branch {
+    width: 46px;
+    height: 66px;
+  }
+
+  .achievement-wreath-count {
+    min-width: 94px;
+  }
+
+  .achievement-wreath-count strong {
+    font-size: 2.25rem;
+  }
+
+  .plaque-wall {
+    gap: 22px;
+  }
+}
+
 .achievement-unlock-backdrop {
   position: fixed;
   z-index: 85;
