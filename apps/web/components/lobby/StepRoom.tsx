@@ -14,6 +14,7 @@ import {
   cleanRoomCode,
   createRoomCode,
   playerRange,
+  roomCodeValidationMessage,
   type LobbyFormAction,
   type LobbyFormState,
 } from "@/lib/lobby-form";
@@ -39,8 +40,10 @@ export function StepRoom({
   const players = boundedPlayerCount(state);
   const modes = availableModes(state.family);
   const [displayNameBlurred, setDisplayNameBlurred] = useState(false);
+  const [codeBlurred, setCodeBlurred] = useState(false);
   const displayNameError =
     displayNameBlurred && state.displayName.trim().length > 0 ? validateDisplayNameBg(state.displayName) : "";
+  const codeError = codeBlurred ? roomCodeValidationMessage(state.code) : "";
 
   return (
     <section className="lobby-step lobby-step-room" aria-labelledby="step-room-title">
@@ -78,12 +81,19 @@ export function StepRoom({
           />
         </Field>
 
-        <Field label="Код" hint="6 символа, споделим лесно." actionLabel="Нов код" onAction={() => dispatch({ type: "SET_CODE", code: createRoomCode() })}>
+        <Field
+          label="Код"
+          hint="6-12 символа, споделим лесно."
+          error={codeError}
+          actionLabel="Нов код"
+          onAction={() => dispatch({ type: "SET_CODE", code: createRoomCode() })}
+        >
           <input
             className="field-input"
             value={state.code}
             maxLength={12}
             onChange={(event) => dispatch({ type: "SET_CODE", code: cleanRoomCode(event.target.value) })}
+            onBlur={() => setCodeBlurred(true)}
           />
         </Field>
       </div>

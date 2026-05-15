@@ -12,8 +12,10 @@ import {
   currentConfig,
   hrefForState,
   initialState,
+  isValidRoomCode,
   lobbyFormReducer,
   criticalRoleWarnings,
+  roomCodeValidationMessage,
   roleWarnings,
   type LobbyFormState,
   type LobbyStep,
@@ -126,7 +128,7 @@ export function LobbyWizard({
 
 function isStepValid(state: LobbyFormState, step: LobbyStep) {
   if (step === 1) {
-    return !validateDisplayNameBg(state.displayName);
+    return !validateDisplayNameBg(state.displayName) && isValidRoomCode(state.code);
   }
   if (step === 2) {
     const config = currentConfig(state);
@@ -137,7 +139,7 @@ function isStepValid(state: LobbyFormState, step: LobbyStep) {
 
 function validationMessage(state: LobbyFormState, step: LobbyStep) {
   if (step === 1) {
-    return validateDisplayNameBg(state.displayName) ?? "Провери името преди следващата стъпка.";
+    return validateDisplayNameBg(state.displayName) || roomCodeValidationMessage(state.code) || "Провери името преди следващата стъпка.";
   }
   if (step === 2) {
     const warning = criticalRoleWarnings(state)[0] ?? roleWarnings(state)[0];

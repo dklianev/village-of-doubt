@@ -108,6 +108,8 @@ export type LobbyFormAction =
   | { type: "APPLY_TEMPLATE"; template: LobbyTemplate };
 
 export const MANUAL_PRESET_STORAGE_KEY = "werewolf-mafia-manual-role-preset-v1";
+export const ROOM_CODE_MIN_LENGTH = 6;
+export const ROOM_CODE_MAX_LENGTH = 12;
 
 const DEFAULT_STEP: LobbyStep = 1;
 
@@ -343,11 +345,19 @@ export function defaultRoomName(mode: GameMode) {
 
 export function createRoomCode() {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  return Array.from({ length: 6 }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join("");
+  return Array.from({ length: ROOM_CODE_MIN_LENGTH }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join("");
 }
 
 export function cleanRoomCode(code: string) {
-  return code.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12);
+  return code.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, ROOM_CODE_MAX_LENGTH);
+}
+
+export function isValidRoomCode(code: string) {
+  return new RegExp(`^[A-Z0-9]{${ROOM_CODE_MIN_LENGTH},${ROOM_CODE_MAX_LENGTH}}$`).test(cleanRoomCode(code));
+}
+
+export function roomCodeValidationMessage(code: string) {
+  return isValidRoomCode(code) ? "" : `Кодът трябва да е между ${ROOM_CODE_MIN_LENGTH} и ${ROOM_CODE_MAX_LENGTH} символа.`;
 }
 
 export function estimatedDurationSeconds(state: LobbyFormState) {

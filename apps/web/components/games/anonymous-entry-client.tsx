@@ -1,6 +1,6 @@
 "use client";
 
-import { type ClipboardEvent, type FormEvent, type KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, type ClipboardEvent, type FormEvent, type KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   type CommunicationMode,
@@ -14,6 +14,9 @@ import {
   saveAnonymousIdentity,
   validateDisplayNameBg,
 } from "@/lib/anonymous-player";
+
+const MIN_ROOM_CODE_LENGTH = 6;
+const MAX_ROOM_CODE_LENGTH = 12;
 
 export function AnonymousEntryClient({
   family,
@@ -39,9 +42,12 @@ export function AnonymousEntryClient({
   const tempo: TempoProfile = mode === "mafia_sport" ? "sport_mafia" : "normal_online";
   const communication: CommunicationMode = "built_in_chat";
   const narrator: NarratorMode = "automatic";
-  const slotCount = Math.max(6, Math.min(12, roomCode.length));
-  const canJoin = roomCode.length >= 6 && !joining;
-  const codeHint = `${roomCode || "ABC123"} • ${Math.max(6, roomCode.length)} знака • A-Z 0-9`;
+  const slotCount = Math.min(
+    MAX_ROOM_CODE_LENGTH,
+    Math.max(MIN_ROOM_CODE_LENGTH, roomCode.length + (roomCode.length < MAX_ROOM_CODE_LENGTH ? 1 : 0)),
+  );
+  const canJoin = isValidRoomCode(roomCode) && !joining;
+  const codeHint = `${roomCode || "ABC123"} • ${MIN_ROOM_CODE_LENGTH}-${MAX_ROOM_CODE_LENGTH} знака • A-Z 0-9`;
 
   useEffect(() => {
     setDisplayName(window.localStorage.getItem(ANONYMOUS_DISPLAY_NAME_KEY) ?? "");
@@ -74,7 +80,7 @@ export function AnonymousEntryClient({
     const nextValue = cleanRoomCode(value);
     if (nextValue.length > 1) {
       setRoomCode(nextValue);
-      focusSlot(Math.min(nextValue.length, 12) - 1);
+      focusSlot(Math.min(nextValue.length, MAX_ROOM_CODE_LENGTH) - 1);
       setError("");
       return;
     }
@@ -89,7 +95,7 @@ export function AnonymousEntryClient({
       return cleanRoomCode(chars.join(""));
     });
 
-    if (nextValue && index < 11) {
+    if (nextValue && index < MAX_ROOM_CODE_LENGTH - 1) {
       focusSlot(index + 1);
     }
     setError("");
@@ -118,10 +124,18 @@ export function AnonymousEntryClient({
     event.preventDefault();
     setRoomCode(pastedCode);
     setError("");
-    focusSlot(Math.min(pastedCode.length, 12) - 1);
+    focusSlot(Math.min(pastedCode.length, MAX_ROOM_CODE_LENGTH) - 1);
   }
 
   function createRoom() {
+    if (displayName.trim()) {
+      const nameError = validateDisplayNameBg(displayName);
+      if (nameError) {
+        setError(nameError);
+        return;
+      }
+      saveAnonymousIdentity(displayName);
+    }
     router.push(`${gameRoot}/create`);
   }
 
@@ -171,6 +185,7 @@ export function AnonymousEntryClient({
             className={codeShaking ? "join-codeslots is-shaking" : "join-codeslots"}
             role="group"
             aria-label="Код на стаята"
+            style={{ "--join-slot-count": slotCount } as CSSProperties}
             onAnimationEnd={() => setCodeShaking(false)}
           >
             {Array.from({ length: slotCount }).map((_, index) => (
@@ -251,9 +266,9 @@ const JOIN_COPY = {
   werewolves: {
     artLabel: "Вход към тихо село",
     artKicker: "тихо село",
-    caption: "Селото е тихо. Покажи знакът си, преди да отвори вратата.",
+    caption: "Селото е тихо. Покажи знака си, преди да отвори вратата.",
     kicker: "тихо село",
-    title: "Покажи знакът",
+    title: "Покажи знака",
     subtitle: "Името върви по селските пътеки. Кодът пуска отвъд оградата.",
     nameLabel: "С кое име в селото?",
   },
@@ -271,9 +286,9 @@ const JOIN_COPY = {
 >;
 
 function cleanRoomCode(code: string) {
-  return code.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12);
+  return code.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, MAX_ROOM_CODE_LENGTH);
 }
 
 function isValidRoomCode(code: string) {
-  return /^[A-Z0-9]{6,12}$/.test(code);
+  return new RegExp(`^[A-Z0-9]{${MIN_ROOM_CODE_LENGTH},${MAX_ROOM_CODE_LENGTH}}$`).test(code);
 }

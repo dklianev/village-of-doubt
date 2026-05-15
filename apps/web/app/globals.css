@@ -2485,7 +2485,8 @@ html[data-theme="light"] .landing-hero-card::before {
 }
 
 .join-codeslot {
-  width: clamp(40px, 10.5vw, 52px);
+  width: min(52px, calc((100% - (var(--join-slot-count, 6) - 1) * 8px) / var(--join-slot-count, 6)));
+  min-width: 40px;
   height: clamp(54px, 13vw, 64px);
   border: 2px solid color-mix(in srgb, var(--accent-strong) 40%, transparent);
   border-radius: 8px;
