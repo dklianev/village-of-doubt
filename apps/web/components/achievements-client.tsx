@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { ACHIEVEMENTS } from "@werewolf/shared";
+import { AchievementPlaque } from "@/components/achievements/AchievementPlaque";
+import { AchievementProgressWreath } from "@/components/achievements/AchievementProgressWreath";
 import { ANONYMOUS_USER_ID_KEY } from "@/lib/anonymous-player";
 
 interface OwnedAchievement {
@@ -33,42 +35,16 @@ export function AchievementsClient() {
 
   return (
     <>
-      <section className="empty-state-card utility-empty mt-6 rounded-[2rem] p-6">
-        <span aria-hidden="true" />
-        <h2>{unlockedCount > 0 ? "Легендите вече имат следи" : "Първото постижение още чака своята сцена"}</h2>
-        <p>
-          {unlockedCount > 0
-            ? `Отключени са ${unlockedCount} от ${ACHIEVEMENTS.length} постижения за този anonymous играч.`
-            : "След завършена игра тук ще различаваме отключените моменти от заключените легенди."}
-        </p>
-      </section>
+      <AchievementProgressWreath unlocked={unlockedCount} total={ACHIEVEMENTS.length} />
 
-      <section className="achievement-grid mt-6">
+      <section className="plaque-wall mt-8">
         {ACHIEVEMENTS.map((achievement) => {
           const unlocked = ownedById.get(achievement.id);
-          return (
-            <article
-              key={achievement.id}
-              className={`paper-card achievement-card rounded-[2rem] p-6 ${unlocked ? "is-unlocked" : "is-locked"}`}
-            >
-              <span>{achievement.iconBg}</span>
-              <h2>{achievement.titleBg}</h2>
-              <p>{achievement.descriptionBg}</p>
-              <small className="achievement-meta">
-                {unlocked ? `Отключено: ${formatDate(unlocked.unlockedAt)}` : loaded ? "Заключено" : "Зареждане..."}
-              </small>
-            </article>
-          );
+          return <AchievementPlaque key={achievement.id} achievement={achievement} unlockedAt={unlocked?.unlockedAt ?? null} />;
         })}
       </section>
+
+      {!loaded ? <p className="plaque-loading">Зареждам легенди...</p> : null}
     </>
   );
-}
-
-function formatDate(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "няма дата";
-  }
-  return new Intl.DateTimeFormat("bg-BG", { dateStyle: "medium" }).format(date);
 }

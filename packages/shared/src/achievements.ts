@@ -21,11 +21,16 @@ export interface AchievementGameContext {
   winnerTeam?: string | null;
 }
 
+export type AchievementTier = "bronze" | "silver" | "gold";
+export type AchievementFamily = "werewolves" | "mafia" | "universal";
+
 export interface AchievementDefinition {
   id: string;
   titleBg: string;
   descriptionBg: string;
   iconBg: string;
+  tier?: AchievementTier;
+  family?: AchievementFamily;
   predicate: (context: AchievementGameContext) => string[];
 }
 
@@ -38,6 +43,8 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
     titleBg: "Първа кръв",
     descriptionBg: "Играч преживява първата голяма сцена на елиминация в началото на играта.",
     iconBg: "кръв",
+    tier: "bronze",
+    family: "universal",
     predicate: ({ events }) =>
       uniqueUserIds(events.filter((event) => event.type === "death" && event.phase === "first_night").map((event) => event.targetId)),
   },
@@ -46,6 +53,8 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
     titleBg: "Шут на годината",
     descriptionBg: "Шутът успява да убеди масата да го елиминира и печели личната си игра.",
     iconBg: "маска",
+    tier: "silver",
+    family: "universal",
     predicate: ({ events }) =>
       uniqueUserIds(
         events
@@ -58,6 +67,8 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
     titleBg: "Спасител",
     descriptionBg: "Защитна роля спира поне две смърти в една игра.",
     iconBg: "щит",
+    tier: "silver",
+    family: "universal",
     predicate: ({ events, players }) => {
       const preventedDeaths = events.filter((event) =>
         ["night_death_prevented", "priest_blessing_protected", "guard_dog_protected_mayor"].includes(event.type),
@@ -75,6 +86,8 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
     titleBg: "Ловецът-вдовица",
     descriptionBg: "Ловецът пада, но последният му изстрел променя финала.",
     iconBg: "куршум",
+    tier: "gold",
+    family: "werewolves",
     predicate: ({ events, players }) => {
       const hasHunterShot = events.some((event) => event.type === "death" && payloadAsText(event.payload).includes("Ловеца"));
       if (!hasHunterShot) {
@@ -88,6 +101,8 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
     titleBg: "Тих гражданин",
     descriptionBg: "Обикновен играч оцелява до края, без да пропуска дневния си глас.",
     iconBg: "свещ",
+    tier: "bronze",
+    family: "universal",
     predicate: ({ events, players }) => {
       const skipVoters = new Set(
         events
@@ -108,8 +123,10 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
   {
     id: "perfect_record",
     titleBg: "Протокол без празнини",
-    descriptionBg: "Replay-ът има поне 20 записани събития.",
+    descriptionBg: "Записът има поне 20 запазени събития.",
     iconBg: "архив",
+    tier: "bronze",
+    family: "universal",
     predicate: ({ events, players }) => (events.length >= 20 ? players.map((player) => player.userId) : []),
   },
   {
@@ -117,6 +134,8 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
     titleBg: "Сам срещу града",
     descriptionBg: "Маниакът печели като последна реална заплаха.",
     iconBg: "нож",
+    tier: "gold",
+    family: "mafia",
     predicate: ({ winnerTeam, players }) =>
       winnerTeam === "maniac" ? players.filter((player) => player.role === "maniac").map((player) => player.userId) : [],
   },
