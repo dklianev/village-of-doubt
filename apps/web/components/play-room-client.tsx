@@ -695,8 +695,8 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
       {unlockedAchievementIds.length > 0 ? (
         <AchievementUnlockModal achievementIds={unlockedAchievementIds} onClose={() => setUnlockedAchievementIds([])} />
       ) : null}
-      <section className="grid gap-6 lg:grid-cols-[1fr_0.8fr]">
-        <div className="card rounded-[2rem] p-5 md:p-7">
+      <section className="play-room-layout">
+        <div className="card play-room-lobby-card rounded-[2rem] p-5 md:p-7">
           <ConnectionBanner status={connectionStatus} message={status} />
 
           <div className="phase-hero">
@@ -748,7 +748,9 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
               </div>
             </div>
           ) : null}
+        </div>
 
+        <div className="card play-room-content-card rounded-[2rem] p-5 md:p-7">
           <LiveCuePanel
             cueMode={cueMode}
             liveMode={liveMode}
@@ -769,12 +771,8 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
               snapshot={snapshot}
               phase={phase}
               family={family}
-              isHost={Boolean(ownPlayer?.host)}
               isNarrator={Boolean(ownPlayer?.narrator)}
-              fullNarratorAccepted={fullNarratorAccepted}
-              onStartGame={requestStartGame}
               onOpenShortcuts={() => setShowShortcuts(true)}
-              startCountdownActive={startCountdown !== null}
             />
           ) : null}
 
@@ -863,9 +861,31 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
             </article>
           ) : null}
           {snapshot?.winnerTeam ? <PostGameStory snapshot={snapshot} /> : null}
+
+          <div className="mt-8">
+            <h3 className="font-black" id="events-heading">Събития</h3>
+            <div
+              className="mt-3 grid gap-2 text-sm"
+              role="log"
+              aria-labelledby="events-heading"
+              aria-live="polite"
+              aria-relevant="additions"
+            >
+              {(snapshot?.publicEvents ?? []).length === 0 ? (
+                <p className="event-line event-line-empty rounded-xl px-3 py-2">
+                  Събитията ще се появят тук, когато играта започне.
+                </p>
+              ) : null}
+              {(snapshot?.publicEvents ?? []).slice(-7).map((event) => (
+                <p key={event.id} className={`event-line ${eventLineClass(event.messageBg)} rounded-xl px-3 py-2`}>
+                  {event.messageBg}
+                </p>
+              ))}
+            </div>
+          </div>
         </div>
 
-        <aside className="paper-card rounded-[2rem] p-5 md:p-7 lg:sticky lg:top-6 lg:self-start">
+        <aside className="paper-card play-room-players-panel rounded-[2rem] p-5 md:p-7">
           <p className="section-kicker text-[#842f2b]">площадът</p>
           <h2 className="mt-3 text-3xl font-black">Играчите на площада</h2>
           <div className="mt-6 grid gap-3">
@@ -976,28 +996,6 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
               В тази стая публичният чат е изключен. Използвайте външен разговор, игра на живо или указанията на Разказвача.
             </div>
           ) : null}
-
-          <div className="mt-8">
-            <h3 className="font-black" id="events-heading">Събития</h3>
-            <div
-              className="mt-3 grid gap-2 text-sm"
-              role="log"
-              aria-labelledby="events-heading"
-              aria-live="polite"
-              aria-relevant="additions"
-            >
-              {(snapshot?.publicEvents ?? []).length === 0 ? (
-                <p className="event-line event-line-empty rounded-xl px-3 py-2">
-                  Събитията ще се появят тук, когато играта започне.
-                </p>
-              ) : null}
-              {(snapshot?.publicEvents ?? []).slice(-7).map((event) => (
-                <p key={event.id} className={`event-line ${eventLineClass(event.messageBg)} rounded-xl px-3 py-2`}>
-                  {event.messageBg}
-                </p>
-              ))}
-            </div>
-          </div>
 
           <div className="mt-8">
             <h3 className="font-black" id="chat-heading">Чат лог</h3>
@@ -1293,23 +1291,15 @@ function NarratorDesk({
   snapshot,
   phase,
   family,
-  isHost,
   isNarrator,
-  fullNarratorAccepted,
-  onStartGame,
   onOpenShortcuts,
-  startCountdownActive,
 }: {
   room: Room | null;
   snapshot: GameSnapshot;
   phase: GamePhase;
   family: GameFamily;
-  isHost: boolean;
   isNarrator: boolean;
-  fullNarratorAccepted: boolean;
-  onStartGame: () => void;
   onOpenShortcuts: () => void;
-  startCountdownActive: boolean;
 }) {
   const pendingConsent = snapshot.players.filter((player) => !player.acceptedFullNarrator).length;
   const activePlayers = snapshot.players.filter((player) => player.playing);
@@ -1340,11 +1330,6 @@ function NarratorDesk({
       </div>
 
       <div className="mt-5 flex flex-wrap gap-3">
-        {isHost && phase === "lobby" ? (
-          <button className="btn btn-primary" type="button" onClick={onStartGame} disabled={!room || !fullNarratorAccepted || startCountdownActive}>
-            {startCountdownActive ? "Започваме..." : "Започни игра"}
-          </button>
-        ) : null}
         <button className="btn btn-secondary" type="button" onClick={() => room?.send("narratorPause")} disabled={!room || phase === "paused"}>
           Пауза
         </button>
