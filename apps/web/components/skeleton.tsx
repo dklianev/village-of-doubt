@@ -28,18 +28,21 @@ export function HistoryListSkeleton() {
 
 export function LeaderboardSkeleton() {
   return (
-    <div className="leaderboard-list">
-      {[0, 1, 2, 3, 4].map((item) => (
-        <article key={item} className="leaderboard-row skeleton-card">
-          <Skeleton className="h-[54px] w-[54px] rounded-2xl" />
-          <div className="grid gap-3">
-            <Skeleton className="h-6 w-44 rounded-full" />
-            <Skeleton className="h-4 w-72 max-w-full rounded-full" />
-          </div>
-          <Skeleton className="h-9 w-16 rounded-full" />
-        </article>
-      ))}
-    </div>
+    <article className="newspaper-page newspaper-skeleton">
+      <div className="masthead">
+        <Skeleton className="h-12 w-full max-w-lg rounded-full" />
+        <Skeleton className="h-4 w-80 max-w-full rounded-full" />
+      </div>
+      <Skeleton className="h-14 w-full max-w-3xl rounded-full" />
+      <div className="headline-main-grid mt-6">
+        <Skeleton className="h-[360px] w-full rounded-sm" />
+        <div className="grid content-start gap-4">
+          <Skeleton className="h-7 w-full rounded-full" />
+          <Skeleton className="h-7 w-5/6 rounded-full" />
+          <Skeleton className="h-24 w-full rounded-sm" />
+        </div>
+      </div>
+    </article>
   );
 }
 
