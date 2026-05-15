@@ -829,6 +829,7 @@ html[data-theme="light"] .site-mobile-menu:hover {
   .play-room-players-panel {
     position: sticky;
     top: 96px;
+    min-height: calc(100vh - 120px);
     max-height: calc(100vh - 120px);
     overflow-y: auto;
     overscroll-behavior: contain;
