@@ -1898,6 +1898,8 @@ html[data-theme="light"] .landing-hero-card::before {
 .game-home-hero__art {
   z-index: 0;
   background: var(--family-hero) center right / cover no-repeat;
+  -webkit-mask-image: linear-gradient(to left, black 60%, transparent 100%);
+  mask-image: linear-gradient(to left, black 60%, transparent 100%);
   transform: scale(1.01);
 }
 
@@ -2126,6 +2128,8 @@ html[data-theme="light"] .landing-hero-card::before {
 
   .game-home-hero__art {
     background-position: 64% center;
+    -webkit-mask-image: linear-gradient(to top, black 58%, transparent 100%);
+    mask-image: linear-gradient(to top, black 58%, transparent 100%);
   }
 
   .game-home-hero__scrim,
@@ -6877,7 +6881,7 @@ html[data-theme="dark"] .landing-quickstart .quickstart-dim-glyph {
   margin-top: clamp(22px, 3vw, 34px);
   border: 1px solid rgba(248, 236, 210, 0.12);
   border-radius: 28px;
-  padding: 24px 14px 104px;
+  padding: 112px 14px 28px;
   overflow: hidden;
   background:
     linear-gradient(180deg, rgba(248, 236, 210, 0.08), rgba(248, 236, 210, 0.03)),
@@ -6887,7 +6891,7 @@ html[data-theme="dark"] .landing-quickstart .quickstart-dim-glyph {
 
 .phase-timeline__line {
   position: absolute;
-  top: 68px;
+  top: 156px;
   right: calc(8.333% + 11.667px);
   left: calc(8.333% + 11.667px);
   z-index: 0;
@@ -6897,6 +6901,7 @@ html[data-theme="dark"] .landing-quickstart .quickstart-dim-glyph {
 }
 
 .phase-timeline__line.is-loop {
+  display: none;
   right: calc(8.333% + 11.667px);
   left: calc(41.667% + 2.333px);
   background: linear-gradient(90deg, rgba(209, 154, 66, 0.22), rgba(209, 154, 66, 0.84));
@@ -7064,11 +7069,11 @@ html[data-theme="dark"] .landing-quickstart .quickstart-dim-glyph {
 
 .phase-loop-arrow {
   position: absolute;
-  right: calc(8.333% + 11.667px);
-  bottom: 16px;
-  left: calc(41.667% + 2.333px);
+  top: 58px;
+  right: 0;
+  left: 0;
   z-index: 1;
-  height: 92px;
+  height: 112px;
   color: rgba(209, 154, 66, 0.9);
   pointer-events: none;
 }
@@ -7091,31 +7096,26 @@ html[data-theme="dark"] .landing-quickstart .quickstart-dim-glyph {
 
 .phase-loop-arrow__path {
   stroke-width: 2.35;
+  stroke-dasharray: 6 4;
   vector-effect: non-scaling-stroke;
 }
 
 .phase-loop-arrow__marker {
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 1.9;
+  fill: currentColor;
+  stroke: none;
 }
 
-.phase-loop-arrow span {
-  position: absolute;
-  top: 66%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  border: 1px solid rgba(209, 154, 66, 0.34);
-  border-radius: 999px;
-  padding: 5px 10px;
-  background: rgba(8, 10, 10, 0.72);
-  color: #fff6e5;
-  font-size: 0.68rem;
+.phase-loop-arrow__label-bg {
+  fill: rgba(8, 10, 10, 0.82);
+  stroke: rgba(209, 154, 66, 0.38);
+  stroke-width: 1;
+}
+
+.phase-loop-label {
+  fill: #fff6e5;
+  font-size: 0.64rem;
   font-weight: 950;
   letter-spacing: 0.16em;
-  text-transform: uppercase;
 }
 
 .phase-detail-panel {
@@ -7326,25 +7326,6 @@ html[data-theme="dark"] .landing-quickstart .quickstart-dim-glyph {
 
   .phase-loop-arrow__svg--mobile {
     display: block;
-  }
-
-  .phase-loop-arrow span {
-    top: 50%;
-    left: 18px;
-    z-index: 1;
-    padding: 4px 8px;
-    transform: translate(-50%, -50%) rotate(-90deg);
-    transform-origin: center;
-    background: rgba(8, 10, 10, 0.78);
-    white-space: nowrap;
-  }
-
-  .phase-loop-arrow span::before {
-    content: "";
-  }
-
-  .phase-loop-arrow span::after {
-    content: "";
   }
 
   .phase-info-grid {
