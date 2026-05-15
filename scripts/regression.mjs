@@ -13,6 +13,7 @@ const checks = [
   ["roles page art contracts", checkRolesPageContracts],
   ["rules playbook contracts", checkRulesPlaybookContracts],
   ["Bulgarian copy contracts", checkBulgarianCopyContracts],
+  ["Latin copy leak contracts", assertNoLatinCopyLeak],
   ["lobby image scaling contracts", checkLobbyImageContracts],
   ["lobby wizard contracts", checkLobbyWizardContracts],
   ["play UI hardening contracts", checkPlayUiContracts],
@@ -371,6 +372,97 @@ function checkBulgarianCopyContracts() {
   );
 }
 
+function assertNoLatinCopyLeak() {
+  const roots = ["apps/web/app", "apps/web/components"];
+  const forbiddenWords = ["replay", "grind", "host", "chat", "live", "loading", "continue", "cancel", "save", "delete"];
+  const forbiddenPattern = new RegExp(`\\b(?:${forbiddenWords.map(escapeRegExp).join("|")})\\b`, "i");
+  const forbiddenKeyPattern = new RegExp(`\\b(?:${forbiddenWords.map(escapeRegExp).join("|")})\\b\\s*:`, "gi");
+  const leaks = [];
+
+  const files = roots.flatMap((scanRoot) =>
+    listFilesRecursive(path.join(root, scanRoot))
+      .filter((file) => /\.(?:tsx?|jsx?)$/.test(file))
+      .filter((file) => !/\.(?:test|spec)\.(?:tsx?|jsx?)$/.test(file))
+      .map((file) => path.join(scanRoot, file)),
+  );
+
+  for (const file of files) {
+    const lines = readText(file).split(/\r?\n/);
+    lines.forEach((line, index) => {
+      if (shouldSkipLatinCopyLine(line, forbiddenPattern)) {
+        return;
+      }
+
+      const segments = potentialCopySegments(line, forbiddenKeyPattern);
+      for (const segment of segments) {
+        const match = segment.match(forbiddenPattern);
+        if (match) {
+          leaks.push(`${file}:${index + 1}: ${match[0]} -> ${line.trim()}`);
+          break;
+        }
+      }
+    });
+  }
+
+  assert(
+    leaks.length === 0,
+    `Found forbidden Latin user-facing copy:\n${leaks.slice(0, 80).join("\n")}${leaks.length > 80 ? `\n...and ${leaks.length - 80} more` : ""}`,
+  );
+}
+
+function shouldSkipLatinCopyLine(line, forbiddenPattern) {
+  const trimmed = line.trim();
+  if (!trimmed) {
+    return true;
+  }
+
+  if (
+    /^import\b/.test(trimmed) ||
+    /\bfrom\s+["']/.test(line) ||
+    /console\./.test(line) ||
+    /\bclassName\s*=/.test(line) ||
+    /\baria-[\w-]+\s*=/.test(line) ||
+    /\bhref\s*=/.test(line) ||
+    /\bsrc\s*=/.test(line)
+  ) {
+    return true;
+  }
+
+  return new RegExp(`^\\s*(?:export\\s+)?const\\s+(?:${forbiddenPattern.source})\\b\\s*=`).test(line);
+}
+
+function potentialCopySegments(line, forbiddenKeyPattern) {
+  const segments = [];
+  const withoutStrings = line.replace(/(["'`])((?:\\.|(?!\1).)*)\1/g, (literal, quote, body, offset) => {
+    if (!isTechnicalStringContext(line.slice(0, offset))) {
+      segments.push(body);
+    }
+    return " ";
+  });
+  const jsxText = withoutStrings
+    .replace(/\{[^{}]*\}/g, " ")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\/\/.*$/, " ")
+    .replace(forbiddenKeyPattern, ":")
+    .trim();
+
+  if (/[А-Яа-я]/.test(jsxText)) {
+    segments.push(jsxText);
+  }
+
+  return segments;
+}
+
+function isTechnicalStringContext(beforeString) {
+  if (/[=!]==?\s*$/.test(beforeString)) {
+    return true;
+  }
+
+  return /(?:^|[,{([])\s*(?:as|channel|decoding|event|family|fetchPriority|height|id|key|kind|method|mode|name|rel|role|status|target|type|value|variant|width)\s*[:=]\s*$/.test(
+    beforeString,
+  );
+}
+
 function checkLobbyImageContracts() {
   const css = readText("apps/web/app/globals.css");
   const lobbyInvitePage = readText("apps/web/app/lobby/[code]/page.tsx");
@@ -591,6 +683,10 @@ function readText(relativePath) {
 
 function count(haystack, needle) {
   return haystack.split(needle).length - 1;
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function assert(condition, message) {

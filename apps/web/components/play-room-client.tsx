@@ -903,7 +903,7 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
                 </div>
                 <small className="mt-3 block text-[#4f3829]">
                   {player.connected ? "онлайн" : "прекъсната връзка"}
-                  {player.host ? " · host" : ""}
+                  {player.host ? " · водещ" : ""}
                   {player.narrator ? " · Разказвач" : ""}
                   {player.mayor ? " · Кмет" : ""}
                   {player.ready ? " · готов" : ""}
@@ -2047,7 +2047,7 @@ function roleSigil(role: RoleCode) {
 
 function playerStatusBadge(player: PublicPlayer, phase: string): string {
   if (player.host) {
-    return "host";
+    return "водещ";
   }
   if (player.narrator) {
     return "разказвач";

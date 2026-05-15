@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "История | Върколак и Мафия",
-  description: "Завършени игри, победители, смърти, гласове и фазов timeline.",
+  description: "Завършени игри, победители, смърти, гласове и фазова линия.",
 };
 
 export default function HistoryPage() {
@@ -38,7 +38,7 @@ async function HistoryContent() {
             <h2 className="text-3xl font-black">Архивът още е запечатан</h2>
             <p className="mt-3 max-w-2xl text-[#4f3829]">
               Първата победа още не е написана. Когато завърши игра, тук ще видиш победител,
-              смърти, гласове и фазов timeline.
+              смърти, гласове и фазова линия.
             </p>
           </div>
         </div>
@@ -61,7 +61,7 @@ async function HistoryContent() {
                 Статус: {game.status} · Старт: {formatDate(game.startedAt)} · Край: {formatDate(game.endedAt)}
               </p>
               <Link className="btn btn-secondary mt-4 min-h-0 px-4 py-2" href={`/history/${game.id}/replay`}>
-                Отвори replay
+                Отвори записа
               </Link>
               {game.timeline.length > 0 ? (
                 <div className="mt-5 grid gap-3">
@@ -79,7 +79,7 @@ async function HistoryContent() {
                 </div>
               ) : (
                 <p className="mt-4 rounded-2xl bg-[#221611]/8 px-4 py-3 text-sm text-[#4f3829]">
-                  Все още няма записан timeline за тази игра.
+                  Все още няма записана линия със събития за тази игра.
                 </p>
               )}
             </article>

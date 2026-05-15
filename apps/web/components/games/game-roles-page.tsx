@@ -174,7 +174,7 @@ export function GameRolesPage({ family }: { family: GameFamily }) {
                     <span>{teamLabelBg(definition.team, family)}</span>
                     <span>{definition.nightAction ? "Нощна" : "Дневна"}</span>
                   </div>
-                  <h2>{definition.nameBg}</h2>
+                  <h2 className="role-card-title">{definition.nameBg}</h2>
                   <p>{definition.shortDescriptionBg}</p>
                   <div className="role-codex-tags" aria-label="Данни за ролята">
                     <span>{runtimeStatus === "playable" ? "Автоматична" : "Ръчно водене"}</span>

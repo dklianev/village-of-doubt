@@ -3334,6 +3334,7 @@ html[data-theme="dark"] .landing-quickstart .quickstart-dim-glyph {
   z-index: 3;
   display: grid;
   gap: 10px;
+  min-width: 0;
   padding: 16px 4px 4px;
   color: var(--ink);
 }
@@ -3355,6 +3356,13 @@ html[data-theme="dark"] .landing-quickstart .quickstart-dim-glyph {
   font-size: clamp(1.7rem, 2.4vw, 2.35rem);
   font-weight: 950;
   line-height: 0.98;
+}
+
+.role-card-title {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .role-codex-copy p:not(.section-kicker) {
@@ -8691,6 +8699,16 @@ html[data-theme="dark"] .utility-shell::before {
 
   .tableau-card {
     min-height: clamp(140px, 23vw, 210px);
+  }
+}
+
+@media (max-width: 480px) {
+  .role-codex-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .role-codex-card-button {
+    grid-template-columns: minmax(92px, 0.32fr) minmax(0, 1fr);
   }
 }
 
