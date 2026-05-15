@@ -2280,8 +2280,8 @@ html[data-theme="light"] .landing-hero-card::before {
   --accent-strong: #6b3f10;
   --accent-soft: rgba(107, 63, 16, 0.18);
   --family-tagline: "Тиха гора, тихи стъпки. Шепни кода.";
-  --join-art: image-set(url("/game-art/werewolf/bg-hero-v2.webp") type("image/webp"), url("/game-art/werewolf/bg-hero-v2.png") type("image/png"));
-  --join-art-position: center top;
+  --join-art: image-set(url("/game-art/bg-night-phase.webp") type("image/webp"), url("/game-art/bg-night-phase.png") type("image/png"));
+  --join-art-position: left center;
 }
 
 .join-side-art {
@@ -2306,6 +2306,16 @@ html[data-theme="light"] .landing-hero-card::before {
   filter: saturate(1.04) contrast(1.02);
   -webkit-mask-image: linear-gradient(to bottom, black 62%, transparent 100%);
   mask-image: linear-gradient(to bottom, black 62%, transparent 100%);
+}
+
+.join-stage[data-theme="werewolves"] .join-side-art::before {
+  filter: saturate(1.18) contrast(1.08) brightness(1.18);
+}
+
+.join-stage[data-theme="werewolves"] .join-side-art::after {
+  background:
+    radial-gradient(ellipse at 22% 12%, rgba(248, 236, 210, 0.18), transparent 18rem),
+    linear-gradient(90deg, rgba(8, 10, 10, 0.02), rgba(8, 10, 10, 0.36));
 }
 
 .join-side-art::after {
