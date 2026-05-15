@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, type CSSProperties
 import { useRouter, useSearchParams } from "next/navigation";
 import { countRoles } from "@werewolf/shared";
 import type { GameFamily, GameMode } from "@werewolf/shared";
-import { ANONYMOUS_DISPLAY_NAME_KEY, saveAnonymousIdentity, validateDisplayNameBg } from "@/lib/anonymous-player";
 import { playCue } from "@/lib/sound";
 import {
   MANUAL_PRESET_STORAGE_KEY,
@@ -50,17 +49,6 @@ export function LobbyWizard({
   }, []);
 
   useEffect(() => {
-    dispatch({ type: "SET_DISPLAY_NAME", displayName: window.localStorage.getItem(ANONYMOUS_DISPLAY_NAME_KEY) ?? "" });
-  }, []);
-
-  useEffect(() => {
-    if (!state.displayName.trim()) {
-      return;
-    }
-    window.localStorage.setItem(ANONYMOUS_DISPLAY_NAME_KEY, state.displayName);
-  }, [state.displayName]);
-
-  useEffect(() => {
     if (!state.manualRolesEnabled) {
       return;
     }
@@ -89,14 +77,6 @@ export function LobbyWizard({
   }
 
   function onSubmit(href = hrefForState("/play", state)) {
-    const error = validateDisplayNameBg(state.displayName);
-    if (error) {
-      dispatch({ type: "SET_FORM_ERROR", formError: error });
-      transition(() => dispatch({ type: "SET_STEP", step: 1 }));
-      return;
-    }
-
-    saveAnonymousIdentity(state.displayName);
     dispatch({ type: "SET_FORM_ERROR", formError: "" });
     dispatch({ type: "TRIGGER_CONFETTI" });
     playCue("win");
@@ -126,7 +106,7 @@ export function LobbyWizard({
 
 function isStepValid(state: LobbyFormState, step: LobbyStep) {
   if (step === 1) {
-    return !validateDisplayNameBg(state.displayName);
+    return cleanRoomStepValid(state);
   }
   if (step === 2) {
     const config = currentConfig(state);
@@ -137,13 +117,17 @@ function isStepValid(state: LobbyFormState, step: LobbyStep) {
 
 function validationMessage(state: LobbyFormState, step: LobbyStep) {
   if (step === 1) {
-    return validateDisplayNameBg(state.displayName) ?? "Провери името преди следващата стъпка.";
+    return cleanRoomStepValid(state) ? "" : "Провери името на стаята и кода.";
   }
   if (step === 2) {
     const warning = criticalRoleWarnings(state)[0] ?? roleWarnings(state)[0];
     return warning ?? "Броят роли трябва да съвпада с броя играчи.";
   }
   return "Провери настройките преди следващата стъпка.";
+}
+
+function cleanRoomStepValid(state: LobbyFormState) {
+  return state.roomName.trim().length > 0 && state.code.trim().length >= 4;
 }
 
 function Confetti() {

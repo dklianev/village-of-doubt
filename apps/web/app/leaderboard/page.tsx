@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Suspense } from "react";
 import { createDatabase, getLeaderboardRows } from "@werewolf/database";
 import { getRoleTeam, ROLE_DEFINITIONS, type RoleCode } from "@werewolf/shared";
+import { NewspaperEmpty } from "@/components/leaderboard/NewspaperEmpty";
+import { NewspaperPage } from "@/components/leaderboard/NewspaperPage";
 import { LeaderboardSkeleton } from "@/components/skeleton";
+import type { LeaderboardEntry } from "@/lib/leaderboard-headlines";
 
 export const dynamic = "force-dynamic";
 
@@ -12,78 +14,49 @@ export const metadata: Metadata = {
   description: "Анонимна класация от завършени игри: участия, победи и последна активност.",
 };
 
-interface LeaderboardEntry {
-  displayName: string;
-  games: number;
-  wins: number;
-  lastPlayed: Date | null;
-}
-
 export default function LeaderboardPage() {
   return (
-    <main className="shell utility-shell">
-      <section className="paper-card utility-hero rounded-[2rem] p-8">
-        <p className="section-kicker text-[#842f2b]">класация</p>
-        <h1 className="mt-3 text-5xl font-black">Кой оцелява най-често?</h1>
-        <p className="mt-4 max-w-3xl text-[#4f3829]">
-          Класацията работи с anonymous имената от завършени игри. Няма акаунти, няма профили за следене — само
-          вечерната статистика, която групата може да гледа след игра.
-        </p>
-      </section>
-
-      <section className="paper-card mt-6 rounded-[2rem] p-6">
-        <Suspense fallback={<LeaderboardSkeleton />}>
-          <LeaderboardContent />
-        </Suspense>
-      </section>
+    <main className="shell newspaper-shell">
+      <Suspense fallback={<LeaderboardSkeleton />}>
+        <LeaderboardContent />
+      </Suspense>
     </main>
   );
 }
 
 async function LeaderboardContent() {
-  const entries = await loadLeaderboard();
+  const { entries, issueCount } = await loadLeaderboard();
 
   if (entries.length === 0) {
-    return (
-      <div className="empty-state-card utility-empty">
-        <span aria-hidden="true" />
-        <h2>Първата победа още не е написана</h2>
-        <p>
-          Когато завърши игра, тук ще се появят участията, победите и процентът на успех за хората около масата.
-        </p>
-        <Link className="btn btn-primary" href="/">
-          Започни игра
-        </Link>
-      </div>
-    );
+    return <NewspaperEmpty />;
   }
 
-  return (
-    <div className="leaderboard-list">
-      {entries.map((entry, index) => (
-        <article key={entry.displayName} className="leaderboard-row">
-          <span className="leaderboard-rank">{index + 1}</span>
-          <div>
-            <h2>{entry.displayName}</h2>
-            <p>
-              {entry.games} игри · {entry.wins} победи · последно: {formatDate(entry.lastPlayed)}
-            </p>
-          </div>
-          <strong>{Math.round((entry.wins / Math.max(1, entry.games)) * 100)}%</strong>
-        </article>
-      ))}
-    </div>
-  );
+  return <NewspaperPage entries={entries} issueCount={issueCount} />;
 }
 
-async function loadLeaderboard(): Promise<LeaderboardEntry[]> {
+interface LeaderboardData {
+  entries: LeaderboardEntry[];
+  issueCount: number;
+}
+
+async function loadLeaderboard(): Promise<LeaderboardData> {
+  if (process.env.NODE_ENV !== "production") {
+    if (process.env.LEADERBOARD_NEWSPAPER_FIXTURE === "empty") {
+      return { entries: [], issueCount: 1 };
+    }
+    if (process.env.LEADERBOARD_NEWSPAPER_FIXTURE === "filled") {
+      return { entries: fixtureLeaderboard(), issueCount: 18 };
+    }
+  }
+
   if (!process.env.DATABASE_URL) {
-    return [];
+    return { entries: [], issueCount: 1 };
   }
 
   try {
     const db = createDatabase(process.env.DATABASE_URL);
     const rows = await getLeaderboardRows(db);
+    const issueCount = new Set(rows.map((row) => row.gameId)).size;
     const byName = new Map<string, LeaderboardEntry>();
     for (const row of rows) {
       const current = byName.get(row.displayName) ?? {
@@ -98,10 +71,11 @@ async function loadLeaderboard(): Promise<LeaderboardEntry[]> {
       byName.set(row.displayName, current);
     }
 
-    return [...byName.values()].sort((left, right) => right.wins - left.wins || right.games - left.games).slice(0, 30);
+    const entries = [...byName.values()].sort((left, right) => right.wins - left.wins || right.games - left.games).slice(0, 30);
+    return { entries, issueCount: Math.max(1, issueCount) };
   } catch (error) {
     console.error("[leaderboard]", error);
-    return [];
+    return { entries: [], issueCount: 1 };
   }
 }
 
@@ -132,6 +106,57 @@ function latestDate(left: Date | null, right: Date | null) {
   return left > right ? left : right;
 }
 
-function formatDate(value: Date | null) {
-  return value ? new Intl.DateTimeFormat("bg-BG", { dateStyle: "medium" }).format(value) : "няма данни";
+function fixtureLeaderboard(): LeaderboardEntry[] {
+  const day = 24 * 60 * 60 * 1000;
+  const today = new Date("2026-05-15T19:00:00.000Z");
+  const names = [
+    "Мила",
+    "Калоян",
+    "Ива",
+    "Борис",
+    "Сияна",
+    "Радо",
+    "Неда",
+    "Тео",
+    "Лора",
+    "Виктор",
+    "Елица",
+    "Петър",
+    "Дара",
+    "Никола",
+    "Яна",
+    "Сава",
+    "Рая",
+    "Крис",
+  ];
+  const scores: Array<[number, number]> = [
+    [9, 8],
+    [11, 7],
+    [8, 5],
+    [10, 5],
+    [7, 4],
+    [9, 4],
+    [6, 3],
+    [8, 3],
+    [6, 2],
+    [5, 2],
+    [7, 2],
+    [4, 1],
+    [5, 1],
+    [3, 1],
+    [6, 1],
+    [2, 1],
+    [4, 0],
+    [3, 0],
+  ];
+
+  return names.map((displayName, index) => {
+    const [games, wins] = scores[index] ?? [1, 0];
+    return {
+      displayName,
+      games,
+      wins,
+      lastPlayed: new Date(today.getTime() - index * day),
+    };
+  });
 }

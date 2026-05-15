@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { ACHIEVEMENTS } from "@werewolf/shared";
-import { ANONYMOUS_USER_ID_KEY } from "@/lib/anonymous-player";
+import { AchievementPlaque } from "@/components/achievements/AchievementPlaque";
+import { AchievementProgressWreath } from "@/components/achievements/AchievementProgressWreath";
+import { authClient } from "@/lib/auth-client";
 
 interface OwnedAchievement {
   achievementId: string;
@@ -11,11 +13,16 @@ interface OwnedAchievement {
 }
 
 export function AchievementsClient() {
+  const { data: session, isPending } = authClient.useSession();
   const [owned, setOwned] = useState<OwnedAchievement[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    const userId = window.localStorage.getItem(ANONYMOUS_USER_ID_KEY) ?? "";
+    if (isPending) {
+      return;
+    }
+
+    const userId = session?.user?.id ?? "";
     if (!userId) {
       setLoaded(true);
       return;
@@ -26,49 +33,23 @@ export function AchievementsClient() {
       .then((body: { achievements?: OwnedAchievement[] }) => setOwned(body.achievements ?? []))
       .catch(() => setOwned([]))
       .finally(() => setLoaded(true));
-  }, []);
+  }, [isPending, session?.user?.id]);
 
   const ownedById = new Map(owned.map((achievement) => [achievement.achievementId, achievement]));
   const unlockedCount = ownedById.size;
 
   return (
     <>
-      <section className="empty-state-card utility-empty mt-6 rounded-[2rem] p-6">
-        <span aria-hidden="true" />
-        <h2>{unlockedCount > 0 ? "Легендите вече имат следи" : "Първото постижение още чака своята сцена"}</h2>
-        <p>
-          {unlockedCount > 0
-            ? `Отключени са ${unlockedCount} от ${ACHIEVEMENTS.length} постижения за този anonymous играч.`
-            : "След завършена игра тук ще различаваме отключените моменти от заключените легенди."}
-        </p>
-      </section>
+      <AchievementProgressWreath unlocked={unlockedCount} total={ACHIEVEMENTS.length} />
 
-      <section className="achievement-grid mt-6">
+      <section className="plaque-wall mt-8">
         {ACHIEVEMENTS.map((achievement) => {
           const unlocked = ownedById.get(achievement.id);
-          return (
-            <article
-              key={achievement.id}
-              className={`paper-card achievement-card rounded-[2rem] p-6 ${unlocked ? "is-unlocked" : "is-locked"}`}
-            >
-              <span>{achievement.iconBg}</span>
-              <h2>{achievement.titleBg}</h2>
-              <p>{achievement.descriptionBg}</p>
-              <small className="achievement-meta">
-                {unlocked ? `Отключено: ${formatDate(unlocked.unlockedAt)}` : loaded ? "Заключено" : "Зареждане..."}
-              </small>
-            </article>
-          );
+          return <AchievementPlaque key={achievement.id} achievement={achievement} unlockedAt={unlocked?.unlockedAt ?? null} />;
         })}
       </section>
+
+      {!loaded ? <p className="plaque-loading">Зареждам легенди...</p> : null}
     </>
   );
-}
-
-function formatDate(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "няма дата";
-  }
-  return new Intl.DateTimeFormat("bg-BG", { dateStyle: "medium" }).format(date);
 }

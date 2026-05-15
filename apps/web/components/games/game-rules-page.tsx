@@ -62,7 +62,7 @@ const WEREWOLF_PHASES: PhaseRule[] = [
     phase: "day_discussion",
     title: "Ден",
     short: "спор",
-    body: "Всички живи играчи обсъждат кой лъже. В no-chat или live режим приложението става табло с фаза и таймер.",
+    body: "Всички живи играчи обсъждат кой лъже. В режим без чат или на живо приложението става табло с фаза и таймер.",
     timer: "90-300 секунди",
     wakes: "Всички живи говорят.",
     example: "Разказвачът може да удължи времето, ако масата е в ключов спор.",
@@ -101,7 +101,7 @@ const MAFIA_PHASES: PhaseRule[] = [
     body: "Стаята избира свободна или спортна Мафия, брой играчи, таймери, чат и дали Докторът може да пази себе си.",
     timer: "без таймер",
     wakes: "Никой още не действа.",
-    example: "Поканата е досие: кодът влиза директно в стаята без регистрация.",
+    example: "Поканата е досие: кодът влиза директно в стаята след вход.",
     watch: "Уточни дали играете спортно или свободно, защото темпото променя разговорите.",
   },
   {
@@ -376,23 +376,11 @@ function PhaseNode({
 function PhaseLoopArrow() {
   return (
     <div className="phase-loop-arrow" aria-hidden="true">
-      <svg className="phase-loop-arrow__svg phase-loop-arrow__svg--desktop" viewBox="0 0 600 96" preserveAspectRatio="none" focusable="false">
-        <defs>
-          <marker id="phase-loop-arrowhead-desktop" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4.5" markerHeight="4.5" orient="auto">
-            <path className="phase-loop-arrow__marker" d="M2 1.5 L8 5 L2 8.5" />
-          </marker>
-        </defs>
-        <path className="phase-loop-arrow__path" d="M588 14 C560 82 92 82 32 34 C26 28 24 22 24 14" markerEnd="url(#phase-loop-arrowhead-desktop)" />
-      </svg>
-      <svg className="phase-loop-arrow__svg phase-loop-arrow__svg--mobile" viewBox="0 0 80 360" preserveAspectRatio="none" focusable="false">
-        <defs>
-          <marker id="phase-loop-arrowhead-mobile" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4.5" markerHeight="4.5" orient="auto">
-            <path className="phase-loop-arrow__marker" d="M2 1.5 L8 5 L2 8.5" />
-          </marker>
-        </defs>
-        <path className="phase-loop-arrow__path" d="M54 348 C12 286 12 82 54 34 C58 28 58 20 58 12" markerEnd="url(#phase-loop-arrowhead-mobile)" />
-      </svg>
-      <span>повтаря се</span>
+      <div className="phase-loop-bracket">
+        <span className="phase-loop-bracket__top" />
+        <span className="phase-loop-label">↻ ПОВТАРЯ СЕ</span>
+      </div>
+      <span className="phase-loop-mobile-marker">↻ ПОВТАРЯ СЕ</span>
     </div>
   );
 }

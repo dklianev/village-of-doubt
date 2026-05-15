@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, type ComponentType, type CSSProperties } from "react";
 import type { GameFamily } from "@werewolf/shared";
-import { BallotIcon, DoorIcon, LastWinnerEmptyGlyph, MaskIcon, MoonIcon, PersonIcon } from "./quickstart-icons";
+import { BallotIcon, DoorIcon, KeyIcon, LastWinnerEmptyGlyph, MaskIcon, MoonIcon } from "./quickstart-icons";
 
 export type QuickStartLiveStats = {
   activeRooms: number;
@@ -29,9 +29,9 @@ const STEPS: Array<{
   Icon: ComponentType;
 }> = [
   {
-    label: "Име",
-    body: "Влизаш без акаунт, само с име за масата.",
-    Icon: PersonIcon,
+    label: "Вход",
+    body: "Влизаш с Google, Discord или имейл.",
+    Icon: KeyIcon,
   },
   {
     label: "Стая",
@@ -87,7 +87,7 @@ export function QuickStartSection({ family, liveStats, lastWinner }: QuickStartS
           <div>
             <p className="section-kicker">първа игра за 30 секунди</p>
             <h2>Как започва добра игра</h2>
-            <p>Влез без акаунт, избери стая, играй.</p>
+            <p>Влез, избери стая, играй.</p>
           </div>
           <Link href={`${root}/rules`} className="quickstart-rules-cta" prefetch={false}>
             Виж пълните правила <span aria-hidden="true">→</span>

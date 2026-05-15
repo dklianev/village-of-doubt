@@ -1,3 +1,6 @@
+// DEPRECATED: anonymous flow беше премахнат за публичното пускане.
+// Файлът остава за back-compat на legacy tests. Не го импортирай в нов код.
+
 export const ANONYMOUS_USER_ID_KEY = "anonymous-player-id";
 export const ANONYMOUS_DISPLAY_NAME_KEY = "anonymous-display-name";
 
@@ -19,28 +22,14 @@ export function validateDisplayNameBg(value: string) {
   return "";
 }
 
-export function getOrCreateAnonymousUserId() {
-  const existing = window.localStorage.getItem(ANONYMOUS_USER_ID_KEY);
-  if (existing) {
-    return existing;
-  }
-
-  const id = crypto.randomUUID();
-  window.localStorage.setItem(ANONYMOUS_USER_ID_KEY, id);
-  return id;
+export function getOrCreateAnonymousUserId(): string {
+  throw new Error("Anonymous flow е премахнат — използвай Better Auth session.");
 }
 
-export function saveAnonymousIdentity(displayName: string) {
-  const normalized = normalizeDisplayName(displayName);
-  const userId = getOrCreateAnonymousUserId();
-  window.localStorage.setItem(ANONYMOUS_DISPLAY_NAME_KEY, normalized);
-  window.localStorage.setItem("dev-user-id", userId);
-  window.localStorage.setItem("dev-display-name", normalized);
-  return { userId, displayName: normalized };
+export function saveAnonymousIdentity(_displayName: string): { userId: string; displayName: string } {
+  throw new Error("Anonymous flow е премахнат — използвай Better Auth session.");
 }
 
 export function getAnonymousIdentity() {
-  const userId = window.localStorage.getItem(ANONYMOUS_USER_ID_KEY) ?? "";
-  const displayName = window.localStorage.getItem(ANONYMOUS_DISPLAY_NAME_KEY) ?? "";
-  return { userId, displayName };
+  return { userId: "", displayName: "" };
 }

@@ -32,26 +32,22 @@ async function main() {
   await waitForJson("http://127.0.0.1:3300/api/health", "web");
   await waitForText("http://127.0.0.1:3300/", "Върколак или Мафия", "landing page");
   await waitForStaticAsset("http://127.0.0.1:3300/", "landing static CSS");
-  await waitForText("http://127.0.0.1:3300/werewolf/create", "Създай частна стая", "werewolf create page");
-  await waitForText("http://127.0.0.1:3300/mafia/create", "Създай частна стая", "mafia create page");
+  await waitForText("http://127.0.0.1:3300/sign-in", "Покажи се на масата", "sign-in page");
+  await waitForText("http://127.0.0.1:3300/werewolf/create", "Покажи се на масата", "werewolf create auth gate");
+  await waitForText("http://127.0.0.1:3300/mafia/create", "Покажи се на масата", "mafia create auth gate");
   await waitForText(
     "http://127.0.0.1:3300/play/SMOKE1?mode=werewolves_classic&players=6&communication=built_in_chat&narrator=automatic&tempo=fast_online",
-    "Играчите на площада",
-    "play page",
+    "Покажи се на масата",
+    "play auth gate",
   );
   await waitForText(
     "http://127.0.0.1:3300/play/SMOKEL?mode=werewolves_classic&players=6&communication=no_chat&narrator=honest_human&tempo=live",
-    "Игра на живо: звукът и вибрацията са изключени по подразбиране",
+    "Покажи се на масата",
     "live-safe play page",
-  );
-  await waitForText(
-    "http://127.0.0.1:3300/play/SMOKEL?mode=werewolves_classic&players=6&communication=no_chat&narrator=honest_human&tempo=live",
-    "Лични сигнали за фазите",
-    "live cue controls",
   );
   await waitForText("http://127.0.0.1:3300/werewolf/roles", "Роли във Върколак", "werewolf roles page");
   await waitForText("http://127.0.0.1:3300/mafia/roles", "Роли в Мафия", "mafia roles page");
-  await waitForText("http://127.0.0.1:3300/history", "Завършени игри", "history page");
+  await waitForText("http://127.0.0.1:3300/history", "Архив на масата", "history page");
   await waitForAsset("http://127.0.0.1:3300/game-art/og-preview.png", "OpenGraph game art");
   await waitForAsset("http://127.0.0.1:3300/game-art/og-preview.webp", "optimized OpenGraph game art");
   await waitForAsset("http://127.0.0.1:3300/game-art/transition-night-falls.png", "phase transition game art");
@@ -152,8 +148,8 @@ async function waitForGameToken(url) {
     },
     body: JSON.stringify({
       code: "SMOKE1",
-      anonymousUserId: "00000000-0000-4000-8000-000000000001",
-      anonymousDisplayName: "Смоук Играч",
+      devUserId: "smoke-user-0001",
+      devDisplayName: "Смоук Играч",
     }),
   });
   const body = await response.json().catch(() => ({}));

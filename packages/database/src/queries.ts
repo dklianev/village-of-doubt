@@ -26,6 +26,7 @@ export interface GameTimelineEvent {
 }
 
 export interface LeaderboardEntryRow {
+  gameId: string;
   displayName: string;
   role: string;
   winnerTeam: string | null;
@@ -124,6 +125,7 @@ export async function getGameTimeline(db: Database, gameId: string, limit = 100)
 export async function getLeaderboardRows(db: Database, limit = 500): Promise<LeaderboardEntryRow[]> {
   return db
     .select({
+      gameId: gamePlayers.gameId,
       displayName: gamePlayers.displayName,
       role: gamePlayers.role,
       winnerTeam: games.winnerTeam,

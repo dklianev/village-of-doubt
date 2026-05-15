@@ -31,6 +31,17 @@ export function PersonIcon({ className }: IconProps) {
   );
 }
 
+export function KeyIcon({ className }: IconProps) {
+  return (
+    <IconShell className={className}>
+      <circle cx="7.8" cy="11" r="3.4" />
+      <path d="M11.2 11h8.6" />
+      <path d="M16.5 11v3.5" />
+      <path d="M19.8 11v2.6" />
+    </IconShell>
+  );
+}
+
 export function HouseIcon({ className }: IconProps) {
   return (
     <IconShell className={className}>

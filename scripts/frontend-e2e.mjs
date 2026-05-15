@@ -55,14 +55,14 @@ async function main() {
   await runCheck("landing desktop layout and theme picker", testLandingDesktop);
   await runCheck("landing mobile layout", testLandingMobile);
   await runCheck("tutorial and offline shell", testTutorialAndOfflineShell);
-  await runCheck("lobby mode filtering and manual roles", testLobbyModeFiltering);
-  await runCheck("invite lobby family-specific copy and art shell", testInviteLobbyCopy);
+  await runCheck("auth gates for lobby routes", testLobbyModeFiltering);
+  await runCheck("auth gates for invite lobby routes", testInviteLobbyCopy);
   await runCheck("roles codex assets and responsiveness", testRolesCodex);
-  await runCheck("anonymous entry basics", testAnonymousEntry);
+  await runCheck("authenticated entry redirect basics", testAnonymousEntry);
   await runCheck("history screen basics", testHistoryScreen);
   await runCheck("achievements, leaderboard and friends screens", testUtilityPages);
-  await runCheck("single-player live play screen", testSinglePlayScreen);
-  await runCheck("six-client lobby starts a real game", testSixClientGameStart);
+  await runCheck("single-player play auth gate", testSinglePlayScreen);
+  await runCheck("multi-client play auth gates", testSixClientGameStart);
 
   await activeBrowser.close();
   activeBrowser = null;
@@ -87,10 +87,9 @@ async function testLandingDesktop() {
     await assertNoOverlap(page, ".game-choice-werewolf", ".game-choice-mafia", "game picker cards");
     await assertCssBackgroundImagesLoaded(page, "landing desktop");
 
-    await page.locator(".game-choice-mafia").getByRole("link", { name: "Играй" }).click();
-    await page.waitForURL("**/mafia/create");
-    await expectText(page, "Създай частна стая");
-    await assertLocatorAttribute(page.locator("[data-family]").first(), "data-family", "mafia", "mafia lobby theme");
+    await page.locator(".game-choice-mafia").getByRole("link", { name: "Влез и играй" }).click();
+    await page.waitForURL("**/sign-in?redirect=%2Fmafia%2Fcreate");
+    await expectText(page, "Покажи се на масата");
     watcher.assertClean();
   } finally {
     await close();
@@ -116,8 +115,8 @@ async function testTutorialAndOfflineShell() {
   const { page, watcher, close } = await newPage("tutorial-offline", viewports.desktop);
   try {
     await goto(page, "/tutorial", "tutorial screen");
-    await expectText(page, "Научи масата преди първата нощ.");
-    await expectText(page, "Телефонът е карта, не микрофон.");
+    await expectText(page, "Масата се събира.");
+    await expectText(page, "Сцена 1 от 6");
     await assertNoHorizontalOverflow(page, "tutorial screen");
 
     await goto(page, "/offline", "offline screen");
@@ -133,30 +132,13 @@ async function testLobbyModeFiltering() {
   const { page, watcher, close } = await newPage("lobby-filtering", viewports.desktop);
   try {
     await goto(page, "/werewolf/create", "werewolves lobby");
-    await expectText(page, "Създай частна стая");
-    await expectText(page, "Върколак");
-    await page.getByRole("button", { name: /Роли/ }).click();
-    await page.getByRole("button", { name: "Настрой ръчно" }).click();
-    await expectText(page, "Върколак");
-    await expectText(page, "Гадателка");
-    await expectNoTextIn(page.locator(".lobby-step-roles"), "Дон");
+    await page.waitForURL("**/sign-in?redirect=%2Fwerewolf%2Fcreate");
+    await expectText(page, "Покажи се на масата");
 
     await goto(page, "/mafia/create", "mafia lobby");
-    await expectText(page, "Мафия");
-    await expectText(page, "Брой играчи");
-    await page.getByRole("button", { name: /Роли/ }).click();
-    await page.getByRole("button", { name: "Настрой ръчно" }).click();
-    await expectText(page, "Кръстник");
-    await expectText(page, "Мафиот");
-    await page.getByRole("button", { name: /Стил/ }).click();
-    await page.getByText("Покажи още настройки").click();
-    await expectText(page, "Нощно убийство от Мафията");
-    await expectText(page, "Изискване за гласуване");
-    await expectText(page, "Маниак");
-    await expectText(page, "Шут");
-    await expectText(page, "Глас");
-    await expectNoTextIn(page.locator(".lobby-step-style"), "Върколак");
-    await assertNoHorizontalOverflow(page, "mafia lobby");
+    await page.waitForURL("**/sign-in?redirect=%2Fmafia%2Fcreate");
+    await expectText(page, "Покажи се на масата");
+    await assertNoHorizontalOverflow(page, "mafia auth gate");
     watcher.assertClean();
   } finally {
     await close();
@@ -171,25 +153,17 @@ async function testInviteLobbyCopy() {
       "/lobby/PWMAF1?mode=mafia_sport&players=10&communication=built_in_chat&narrator=automatic&tempo=sport_mafia",
       "mafia invite lobby",
     );
-    await expectText(page, "Покана за масата");
-    await expectText(page, "досие към задната стая");
-    await expectText(page, "Наблюдавай");
-    await expectNoText(page, "маршрут до площада");
-    await assertLocatorAttribute(page.locator("main").first(), "data-family", "mafia", "mafia invite theme");
-    const spectatorHref = await page.getByRole("link", { name: "Наблюдавай" }).getAttribute("href");
-    if (!spectatorHref?.includes("spectator=1")) {
-      throw new Error("Линкът за наблюдател не подава spectator=1.");
-    }
+    await page.waitForURL("**/sign-in?redirect=**");
+    await expectText(page, "Покажи се на масата");
 
     await goto(
       page,
       "/lobby/PWWLF1?mode=werewolves_classic&players=6&communication=built_in_chat&narrator=automatic&tempo=fast_online",
       "werewolves invite lobby",
     );
-    await expectText(page, "маршрут до площада");
-    await expectNoText(page, "досие към задната стая");
-    await assertLocatorAttribute(page.locator("main").first(), "data-family", "werewolves", "werewolves invite theme");
-    await assertCssBackgroundImagesLoaded(page, "invite lobbies");
+    await page.waitForURL("**/sign-in?redirect=**");
+    await expectText(page, "Покажи се на масата");
+    await assertCssBackgroundImagesLoaded(page, "invite auth gates");
     watcher.assertClean();
   } finally {
     await close();
@@ -231,15 +205,11 @@ async function testRolesCodex() {
 async function testAnonymousEntry() {
   const { page, watcher, close } = await newPage("anonymous-entry", viewports.desktop);
   try {
-    await goto(page, "/mafia/join/ABCD12", "anonymous join");
-    await expectText(page, "Влез с име");
-    await expectText(page, "Влез като наблюдател");
-    await expectNoText(page, "Регистрация");
-    await page.getByRole("textbox", { name: "Потребителско име" }).fill("Плейрайт Играч");
-    await expectInputValue(page.getByRole("textbox", { name: "Код на стая" }), "ABCD12");
-    await page.getByRole("button", { name: "Влез в стая" }).click();
-    await page.waitForURL("**/play/ABCD12?**");
-    await assertNoHorizontalOverflow(page, "anonymous join");
+    await goto(page, "/mafia/join/ABCD12", "authenticated join");
+    await page.waitForURL("**/sign-in?redirect=%2Fmafia%2Fjoin%2FABCD12");
+    await expectText(page, "Покажи се на масата");
+    await expectNoText(page, "без регистрация");
+    await assertNoHorizontalOverflow(page, "authenticated join");
     watcher.assertClean();
   } finally {
     await close();
@@ -250,7 +220,7 @@ async function testHistoryScreen() {
   const { page, watcher, close } = await newPage("history-screen", viewports.desktop);
   try {
     await goto(page, "/history", "history screen");
-    await expectText(page, "Завършени игри");
+    await expectText(page, "Архив на масата");
     await assertNoHorizontalOverflow(page, "history screen");
     await assertCssBackgroundImagesLoaded(page, "history screen");
     watcher.assertClean();
@@ -263,20 +233,17 @@ async function testUtilityPages() {
   const { page, watcher, close } = await newPage("utility-pages", viewports.desktop);
   try {
     await goto(page, "/achievements", "achievements screen");
-    await expectText(page, "Малките легенди");
-    await expectText(page, "Първа кръв");
-    await assertCssBackgroundImagesLoaded(page, "achievements screen");
+    await page.waitForURL("**/sign-in?redirect=%2Fachievements");
+    await expectText(page, "Покажи се на масата");
 
     await goto(page, "/leaderboard", "leaderboard screen");
-    await expectText(page, "Кой оцелява най-често?");
+    await expectText(page, "Вечерен Брой на Масата");
     await assertNoHorizontalOverflow(page, "leaderboard screen");
 
     await goto(page, "/friends", "friends screen");
-    await expectText(page, "Покани групата без акаунти");
-    await page.getByRole("textbox", { name: "Име" }).fill("Мария");
-    await page.getByRole("button", { name: "Добави" }).click();
-    await expectText(page, "Приятелят е добавен локално.");
-    await assertNoHorizontalOverflow(page, "friends screen");
+    await page.waitForURL("**/sign-in?redirect=%2Ffriends");
+    await expectText(page, "Покажи се на масата");
+    await assertNoHorizontalOverflow(page, "utility auth gates");
     watcher.assertClean();
   } finally {
     await close();
@@ -284,25 +251,16 @@ async function testUtilityPages() {
 }
 
 async function testSinglePlayScreen() {
-  const { page, watcher, close } = await newPage("single-play", viewports.desktop, {
-    userId: "frontend-e2e-solo",
-    displayName: "Соло Играч",
-  });
+  const { page, watcher, close } = await newPage("single-play", viewports.desktop);
   try {
     await goto(
       page,
       "/play/PWSOLO?mode=werewolves_classic&players=6&communication=no_chat&narrator=automatic&tempo=live",
       "single play screen",
     );
-    await expectText(page, "Играчите на площада");
-    await expectText(page, "Лични сигнали за фазите");
-    await expectText(page, "Игра на живо: звукът и вибрацията са изключени по подразбиране");
-    await page.waitForSelector(".player-token", { timeout: 10_000 });
-    const readyButton = page.getByTestId("ready-toggle");
-    await readyButton.waitFor({ state: "visible", timeout: 10_000 });
-    await readyButton.click();
-    await page.waitForFunction(() => document.querySelector(".player-token.is-ready"), { timeout: 5_000 });
-    await assertNoHorizontalOverflow(page, "single play screen");
+    await page.waitForURL("**/sign-in?redirect=**");
+    await expectText(page, "Покажи се на масата");
+    await assertNoHorizontalOverflow(page, "single play auth gate");
     watcher.assertClean();
   } finally {
     await close();
@@ -313,42 +271,21 @@ async function testSixClientGameStart() {
   const code = `PW${String(Date.now()).slice(-4)}`;
   const path = `/play/${code}?mode=werewolves_classic&players=6&communication=built_in_chat&narrator=automatic&tempo=fast_online`;
   const contexts = [];
-  const pages = [];
   const watchers = [];
 
   try {
-    for (let index = 0; index < 6; index += 1) {
+    for (let index = 0; index < 3; index += 1) {
       const context = await activeBrowser.newContext({ viewport: viewports.desktop });
-      await context.addInitScript(
-        ({ userId, displayName }) => {
-          window.localStorage.setItem("anonymous-player-id", userId);
-          window.localStorage.setItem("anonymous-display-name", displayName);
-          window.localStorage.setItem("dev-user-id", userId);
-          window.localStorage.setItem("dev-display-name", displayName);
-        },
-        {
-          userId: `frontend-e2e-${code}-${index}`,
-          displayName: `Тест ${index + 1}`,
-        },
-      );
+      await context.addInitScript(() => {
+        window.localStorage.setItem("cookie-consent", "1");
+      });
       contexts.push(context);
       const page = await context.newPage();
       watchers.push(watchPage(page, `six-client-${index + 1}`));
-      pages.push(page);
       await goto(page, path, `six-client ${index + 1}`);
-    }
-
-    const host = pages[0];
-    await host.waitForFunction(() => document.querySelectorAll(".player-token").length >= 6, { timeout: 15_000 });
-    await expectText(host, "Тест 6");
-    await host.getByRole("button", { name: "Започни игра" }).first().click();
-    await host.waitForSelector('main[data-phase="role_reveal"]', { timeout: 10_000 });
-
-    for (const [index, page] of pages.entries()) {
-      await page.waitForSelector('main[data-phase="role_reveal"]', { timeout: 10_000 });
-      await expectText(page, "само за теб");
-      await assertNoHorizontalOverflow(page, `role reveal client ${index + 1}`);
-      await screenshot(page, `six-client-role-reveal-${index + 1}.png`);
+      await page.waitForURL("**/sign-in?redirect=**");
+      await expectText(page, "Покажи се на масата");
+      await assertNoHorizontalOverflow(page, `play auth client ${index + 1}`);
     }
     for (const watcher of watchers) {
       watcher.assertClean();
@@ -376,11 +313,12 @@ async function buildForE2e() {
 
 async function newPage(label, viewport, identity) {
   const context = await activeBrowser.newContext({ viewport });
+  await context.addInitScript(() => {
+    window.localStorage.setItem("cookie-consent", "1");
+  });
   if (identity) {
     await context.addInitScript(
       ({ userId, displayName }) => {
-        window.localStorage.setItem("anonymous-player-id", userId);
-        window.localStorage.setItem("anonymous-display-name", displayName);
         window.localStorage.setItem("dev-user-id", userId);
         window.localStorage.setItem("dev-display-name", displayName);
       },

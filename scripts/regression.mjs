@@ -140,11 +140,13 @@ function checkLandingLayoutContracts() {
   const lightBackdropBlock =
     lightBackdropStart >= 0 ? css.slice(lightBackdropStart, css.indexOf("}", lightBackdropStart)) : "";
   const publicShellStackPattern =
-    /\.landing-shell,\s*\.game-home-shell,\s*\.lobby-shell,\s*\.history-shell,\s*\.roles-shell,\s*\.rules-shell,\s*\.auth-shell,\s*\.tutorial-shell,\s*\.utility-shell\s*{[\s\S]*?z-index:\s*0;[\s\S]*?isolation:\s*isolate;/;
+    /\.landing-shell,\s*\.game-home-shell,\s*\.lobby-shell,\s*\.history-shell,\s*\.roles-shell,\s*\.rules-shell,\s*\.auth-shell,\s*\.sign-in-shell,\s*\.tutorial-shell,\s*\.utility-shell\s*{[\s\S]*?z-index:\s*0;[\s\S]*?isolation:\s*isolate;/;
 
   assert(landingPage.includes("<ModeChoiceCards"), "Landing page must render the separated game picker component.");
   assert(modeChoiceCards.includes("game-choice-grid"), "Landing mode choice component needs the game picker grid.");
-  assert(modeChoiceCards.includes("href={`${game.href}/create`}"), "Landing page must link directly to each game's create flow.");
+  assert(modeChoiceCards.includes("authClient.useSession"), "Landing page CTA must react to the auth session.");
+  assert(modeChoiceCards.includes("Влез и играй"), "Signed-out landing CTA must point users to sign-in.");
+  assert(modeChoiceCards.includes("Избери игра"), "Signed-in landing CTA must send users to game selection.");
   assert(landingPage.includes("href: \"/werewolf\""), "Landing page must define a Werewolf game entry.");
   assert(landingPage.includes("href: \"/mafia\""), "Landing page must define a Mafia game entry.");
   assert(landingPage.includes("/game-art/mobile/bg-landing-ambient.webp"), "Landing page should preload the ambient outer background plate.");
@@ -260,7 +262,7 @@ function checkFamilyQuickStartContracts() {
   for (const selector of [".quickstart-surface", ".quickstart-medallion", ".quickstart-connector", ".quickstart-row"]) {
     assert(css.includes(selector), `Missing quickstart CSS selector ${selector}.`);
   }
-  for (const exportName of ["PersonIcon", "DoorIcon", "MaskIcon", "MoonIcon", "BallotIcon", "LastWinnerEmptyGlyph"]) {
+  for (const exportName of ["PersonIcon", "KeyIcon", "DoorIcon", "MaskIcon", "MoonIcon", "BallotIcon", "LastWinnerEmptyGlyph"]) {
     assert(icons.includes(`export function ${exportName}`), `quickstart-icons.tsx must export ${exportName}.`);
   }
 }
@@ -424,8 +426,8 @@ function checkPlayUiContracts() {
   const css = readText("apps/web/app/globals.css");
 
   for (const contract of [
-    "ANONYMOUS_DISPLAY_NAME_KEY",
-    "anonymousDisplayName",
+    "authClient.useSession",
+    "/api/game-token",
     "CUE_MODE_STORAGE_KEY",
     "LiveCuePanel",
     "NarratorDesk",

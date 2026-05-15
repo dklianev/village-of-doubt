@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { CookieBanner } from "@/components/CookieBanner";
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
 import SiteChrome from "@/components/site-chrome";
 import { ToastHost } from "@/components/toast-host";
@@ -50,6 +51,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body>
         <SiteChrome />
         {children}
+        <CookieBanner />
         <ToastHost />
         <ServiceWorkerRegistration />
       </body>

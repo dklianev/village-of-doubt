@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getGameFamily, getGameModeNameBg } from "@werewolf/shared";
+import { requireSession } from "@/lib/require-session";
 import { parseRoomCreateOptions, roomOptionsToQuery, type RoomSearchParams } from "@/lib/room-options";
 
 export async function generateMetadata({
@@ -23,6 +24,8 @@ export default async function LobbyCodePage({
   searchParams?: Promise<RoomSearchParams>;
 }) {
   const [{ code }, resolvedSearchParams] = await Promise.all([params, searchParams]);
+  const rawQuery = stringifySearchParams(resolvedSearchParams);
+  await requireSession(`/lobby/${code}${rawQuery ? `?${rawQuery}` : ""}`);
   const options = parseRoomCreateOptions(resolvedSearchParams);
   const query = roomOptionsToQuery(options);
   const mode = options.mode ?? "werewolves_classic";
@@ -67,6 +70,18 @@ export default async function LobbyCodePage({
       </section>
     </main>
   );
+}
+
+function stringifySearchParams(searchParams: RoomSearchParams | undefined) {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(searchParams ?? {})) {
+    if (Array.isArray(value)) {
+      value.forEach((item) => params.append(key, item));
+    } else if (typeof value === "string") {
+      params.set(key, value);
+    }
+  }
+  return params.toString();
 }
 
 function withSpectatorQuery(query: string) {
