@@ -6901,19 +6901,6 @@ html[data-theme="dark"] .landing-quickstart .quickstart-dim-glyph {
   background: linear-gradient(90deg, rgba(248, 236, 210, 0.26), rgba(248, 236, 210, 0.14));
 }
 
-.phase-timeline__line.is-loop {
-  display: none;
-  right: calc(8.333% + 11.667px);
-  left: calc(41.667% + 2.333px);
-  background: linear-gradient(90deg, rgba(209, 154, 66, 0.22), rgba(209, 154, 66, 0.84));
-  box-shadow: 0 0 24px rgba(209, 154, 66, 0.24);
-}
-
-[data-theme="mafia"] .phase-timeline__line.is-loop {
-  background: linear-gradient(90deg, rgba(200, 111, 62, 0.22), rgba(200, 154, 85, 0.88));
-  box-shadow: 0 0 24px rgba(200, 111, 62, 0.26);
-}
-
 .phase-node {
   position: relative;
   z-index: 1;
@@ -7258,10 +7245,6 @@ html[data-theme="dark"] .landing-quickstart .quickstart-dim-glyph {
     width: 3px;
     height: auto;
     background: linear-gradient(180deg, rgba(248, 236, 210, 0.26), rgba(248, 236, 210, 0.14));
-  }
-
-  .phase-timeline__line.is-loop {
-    display: none;
   }
 
   .phase-node {

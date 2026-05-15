@@ -321,7 +321,6 @@ function checkRulesPlaybookContracts() {
     ".phase-detail-panel",
     ".phase-info-chip",
     ".phase-loop-arrow",
-    ".phase-timeline__line.is-loop",
     ".rules-phase-detail",
     ".rules-chapter-grid",
     ".rules-chapter-card",
@@ -373,7 +372,7 @@ function checkBulgarianCopyContracts() {
 }
 
 function assertNoLatinCopyLeak() {
-  const roots = ["apps/web/app", "apps/web/components"];
+  const roots = ["apps/web/app", "apps/web/components", "apps/web/lib"];
   const forbiddenWords = ["replay", "grind", "host", "chat", "live", "loading", "continue", "cancel", "save", "delete"];
   const forbiddenPattern = new RegExp(`\\b(?:${forbiddenWords.map(escapeRegExp).join("|")})\\b`, "i");
   const forbiddenKeyPattern = new RegExp(`\\b(?:${forbiddenWords.map(escapeRegExp).join("|")})\\b\\s*:`, "gi");
@@ -388,7 +387,9 @@ function assertNoLatinCopyLeak() {
 
   for (const file of files) {
     const lines = readText(file).split(/\r?\n/);
-    lines.forEach((line, index) => {
+    const blockCommentState = { active: false };
+    lines.forEach((rawLine, index) => {
+      const line = stripBlockCommentFragments(rawLine, blockCommentState);
       if (shouldSkipLatinCopyLine(line, forbiddenPattern)) {
         return;
       }
@@ -428,7 +429,7 @@ function shouldSkipLatinCopyLine(line, forbiddenPattern) {
     return true;
   }
 
-  return new RegExp(`^\\s*(?:export\\s+)?const\\s+(?:${forbiddenPattern.source})\\b\\s*=`).test(line);
+  return new RegExp(`^\\s*(?:export\\s+)?const\\s+(?:${forbiddenPattern.source})\\b\\s*=`, "i").test(line);
 }
 
 function potentialCopySegments(line, forbiddenKeyPattern) {
@@ -453,14 +454,84 @@ function potentialCopySegments(line, forbiddenKeyPattern) {
   return segments;
 }
 
+function stripBlockCommentFragments(line, state) {
+  let output = "";
+  let quote = "";
+  let escaped = false;
+
+  for (let index = 0; index < line.length; index += 1) {
+    const char = line[index];
+    const next = line[index + 1];
+
+    if (state.active) {
+      if (char === "*" && next === "/") {
+        state.active = false;
+        index += 1;
+      }
+      continue;
+    }
+
+    if (quote) {
+      output += char;
+      if (escaped) {
+        escaped = false;
+      } else if (char === "\\") {
+        escaped = true;
+      } else if (char === quote) {
+        quote = "";
+      }
+      continue;
+    }
+
+    if (char === "/" && next === "*") {
+      state.active = true;
+      index += 1;
+      continue;
+    }
+
+    if (char === "\"" || char === "'" || char === "`") {
+      quote = char;
+    }
+
+    output += char;
+  }
+
+  return output;
+}
+
 function isTechnicalStringContext(beforeString) {
   if (/[=!]==?\s*$/.test(beforeString)) {
+    return true;
+  }
+
+  if (isCallArgumentStringContext(beforeString) || isTypedTokenArrayStringContext(beforeString)) {
     return true;
   }
 
   return /(?:^|[,{([])\s*(?:as|channel|decoding|event|family|fetchPriority|height|id|key|kind|method|mode|name|rel|role|status|target|type|value|variant|width)\s*[:=]\s*$/.test(
     beforeString,
   );
+}
+
+function isCallArgumentStringContext(beforeString) {
+  const openIndex = beforeString.lastIndexOf("(");
+  if (openIndex < 0 || beforeString.lastIndexOf(")") > openIndex) {
+    return false;
+  }
+
+  const callee = beforeString.slice(0, openIndex).trimEnd();
+  const argsPrefix = beforeString.slice(openIndex + 1);
+  return /(?:[\w$)\]]|\.)$/.test(callee) && !/[<>{}]/.test(argsPrefix);
+}
+
+function isTypedTokenArrayStringContext(beforeString) {
+  const openIndex = beforeString.lastIndexOf("[");
+  if (openIndex < 0 || beforeString.lastIndexOf("]") > openIndex) {
+    return false;
+  }
+
+  const arrayPrefix = beforeString.slice(0, openIndex).trimEnd();
+  return /\bconst\s+[A-Z0-9_]+\b[^=\n]*=\s*$/.test(arrayPrefix);
 }
 
 function checkLobbyImageContracts() {

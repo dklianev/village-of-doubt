@@ -323,7 +323,6 @@ function PhaseTimeline({ phases, mode }: { phases: PhaseRule[]; mode: GameMode }
 
       <div className="phase-timeline" role="tablist" aria-label="Фази">
         <span className="phase-timeline__line" aria-hidden="true" />
-        <span className="phase-timeline__line is-loop" aria-hidden="true" />
         {phases.map((phase, index) => (
           <PhaseNode
             key={phase.id}
