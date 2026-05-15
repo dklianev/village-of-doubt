@@ -40,9 +40,10 @@ async function loadHistory(): Promise<HistoryGameView[]> {
   try {
     const db = createDatabase(process.env.DATABASE_URL);
     const games = await getRecentGameHistory(db);
-    const timelines = await Promise.all(games.map((game) => getGameTimeline(db, game.id, 6)));
+    const endedGames = games.filter((game) => game.status === "ended");
+    const timelines = await Promise.all(endedGames.map((game) => getGameTimeline(db, game.id, 6)));
 
-    return games.map((game, index) => ({
+    return endedGames.map((game, index) => ({
       id: game.id,
       code: game.code,
       config: game.config,

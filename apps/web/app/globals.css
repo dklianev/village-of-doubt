@@ -4322,7 +4322,7 @@ html[data-theme="light"] .evidence-empty .btn-secondary {
 
 @media (max-width: 640px) {
   .evidence-shell {
-    width: min(100vw - 20px, 1360px);
+    width: min(calc(100vw - 20px), 1360px);
   }
 
   .evidence-wall-header {
@@ -8505,7 +8505,7 @@ html[data-theme="light"] .evidence-empty .btn-secondary {
 
 @media (max-width: 760px) {
   .shell {
-    width: min(100vw - 20px, 1180px);
+    width: min(calc(100vw - 20px), 1180px);
     padding-top: 10px;
   }
 
