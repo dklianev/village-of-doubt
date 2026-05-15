@@ -4002,8 +4002,8 @@ html[data-theme="dark"] .landing-quickstart .quickstart-dim-glyph {
   background-image:
     linear-gradient(155deg, rgba(255, 250, 238, 0.55), rgba(238, 222, 196, 0.35)),
     image-set(
-      url("/game-art/textures/case-file-paper.webp") type("image/webp"),
-      url("/game-art/textures/case-file-paper.png") type("image/png")
+      url("/game-art/textures/case-file-paper-v2.webp") type("image/webp"),
+      url("/game-art/textures/case-file-paper-v2.png") type("image/png")
     );
   background-position: center, center;
   background-size: cover, cover;

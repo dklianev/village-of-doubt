@@ -7,7 +7,7 @@ export function EvidenceWallEmpty() {
     <section className="evidence-empty">
       <figure className="evidence-empty-figure">
         <Image
-          src="/game-art/history-empty-hero.webp"
+          src="/game-art/history-empty-hero-v2.webp"
           alt=""
           width={768}
           height={512}
