@@ -5,8 +5,7 @@ import { RanksColumn } from "./RanksColumn";
 import { SecondaryStories } from "./SecondaryStories";
 import type { LeaderboardEntry } from "@/lib/leaderboard-headlines";
 
-export function NewspaperPage({ entries }: { entries: LeaderboardEntry[] }) {
-  const totalGames = entries.reduce((sum, entry) => sum + entry.games, 0);
+export function NewspaperPage({ entries, issueCount }: { entries: LeaderboardEntry[]; issueCount: number }) {
   const top1 = entries[0];
   const top2 = entries[1];
   const top3 = entries[2];
@@ -19,7 +18,7 @@ export function NewspaperPage({ entries }: { entries: LeaderboardEntry[] }) {
 
   return (
     <article className="newspaper-page" aria-label="Вечерен брой на класацията">
-      <Masthead totalGames={totalGames} />
+      <Masthead issueCount={issueCount} />
       <MainHeadline entry={top1} />
       <SecondaryStories second={top2} third={top3} />
       {ranksColumn.length > 0 ? <RanksColumn entries={ranksColumn} startRank={4} /> : null}

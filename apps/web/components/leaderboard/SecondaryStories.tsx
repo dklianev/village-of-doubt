@@ -4,9 +4,10 @@ export function SecondaryStories({ second, third }: { second: LeaderboardEntry |
   if (!second && !third) {
     return null;
   }
+  const splitLayout = Boolean(second && third);
 
   return (
-    <section className="secondary-stories" aria-label="Вторични новини">
+    <section className="secondary-stories" data-split={splitLayout} aria-label="Вторични новини">
       {second ? (
         <article className="secondary-story">
           <p className="secondary-rank">№ 2</p>

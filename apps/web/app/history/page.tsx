@@ -8,6 +8,9 @@ import type { HistoryGameView, HistoryTimelineEventView } from "@/lib/history-hi
 
 export const dynamic = "force-dynamic";
 
+const HISTORY_CASE_LIMIT = 20;
+const HISTORY_SCAN_LIMIT = 100;
+
 export const metadata: Metadata = {
   title: "История | Върколак и Мафия",
   description: "Завършени игри, победители, смърти, гласове и развръзки от масата.",
@@ -39,8 +42,8 @@ async function loadHistory(): Promise<HistoryGameView[]> {
 
   try {
     const db = createDatabase(process.env.DATABASE_URL);
-    const games = await getRecentGameHistory(db);
-    const endedGames = games.filter((game) => game.status === "ended");
+    const games = await getRecentGameHistory(db, HISTORY_SCAN_LIMIT);
+    const endedGames = games.filter((game) => game.status === "ended").slice(0, HISTORY_CASE_LIMIT);
     const timelines = await Promise.all(endedGames.map((game) => getGameTimeline(db, game.id, 6)));
 
     return endedGames.map((game, index) => ({

@@ -25,32 +25,38 @@ export default function LeaderboardPage() {
 }
 
 async function LeaderboardContent() {
-  const entries = await loadLeaderboard();
+  const { entries, issueCount } = await loadLeaderboard();
 
   if (entries.length === 0) {
     return <NewspaperEmpty />;
   }
 
-  return <NewspaperPage entries={entries} />;
+  return <NewspaperPage entries={entries} issueCount={issueCount} />;
 }
 
-async function loadLeaderboard(): Promise<LeaderboardEntry[]> {
+interface LeaderboardData {
+  entries: LeaderboardEntry[];
+  issueCount: number;
+}
+
+async function loadLeaderboard(): Promise<LeaderboardData> {
   if (process.env.NODE_ENV !== "production") {
     if (process.env.LEADERBOARD_NEWSPAPER_FIXTURE === "empty") {
-      return [];
+      return { entries: [], issueCount: 1 };
     }
     if (process.env.LEADERBOARD_NEWSPAPER_FIXTURE === "filled") {
-      return fixtureLeaderboard();
+      return { entries: fixtureLeaderboard(), issueCount: 18 };
     }
   }
 
   if (!process.env.DATABASE_URL) {
-    return [];
+    return { entries: [], issueCount: 1 };
   }
 
   try {
     const db = createDatabase(process.env.DATABASE_URL);
     const rows = await getLeaderboardRows(db);
+    const issueCount = new Set(rows.map((row) => row.gameId)).size;
     const byName = new Map<string, LeaderboardEntry>();
     for (const row of rows) {
       const current = byName.get(row.displayName) ?? {
@@ -65,10 +71,11 @@ async function loadLeaderboard(): Promise<LeaderboardEntry[]> {
       byName.set(row.displayName, current);
     }
 
-    return [...byName.values()].sort((left, right) => right.wins - left.wins || right.games - left.games).slice(0, 30);
+    const entries = [...byName.values()].sort((left, right) => right.wins - left.wins || right.games - left.games).slice(0, 30);
+    return { entries, issueCount: Math.max(1, issueCount) };
   } catch (error) {
     console.error("[leaderboard]", error);
-    return [];
+    return { entries: [], issueCount: 1 };
   }
 }
 

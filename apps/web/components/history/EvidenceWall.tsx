@@ -30,7 +30,13 @@ export function EvidenceWall({ games }: { games: HistoryGameView[] }) {
       {games.length > 0 ? (
         <div className="evidence-filters" role="group" aria-label="Филтри по дело">
           {FILTERS.map((item) => (
-            <button key={item.value} type="button" data-active={filter === item.value} onClick={() => setFilter(item.value)}>
+            <button
+              key={item.value}
+              type="button"
+              aria-pressed={filter === item.value}
+              data-active={filter === item.value}
+              onClick={() => setFilter(item.value)}
+            >
               {item.label}
             </button>
           ))}

@@ -1,6 +1,6 @@
 import { formatNewspaperDate, issueNumber } from "@/lib/leaderboard-headlines";
 
-export function Masthead({ totalGames }: { totalGames: number }) {
+export function Masthead({ issueCount }: { issueCount: number }) {
   const today = new Date();
 
   return (
@@ -13,7 +13,7 @@ export function Masthead({ totalGames }: { totalGames: number }) {
       </div>
       <h1 className="masthead-title">Вечерен Брой на Масата</h1>
       <p className="masthead-meta">
-        Брой № {issueNumber(totalGames)} · {formatNewspaperDate(today)} · Издание след игра
+        Брой № {issueNumber(issueCount)} · {formatNewspaperDate(today)} · Издание след игра
       </p>
       <div className="masthead-ornament" aria-hidden="true">
         <svg viewBox="0 0 60 14" width="60" height="14">
