@@ -84,6 +84,14 @@ export function FaqClient({ items }: { items: readonly FaqItem[] }) {
     });
   }, []);
 
+  const expandAll = useCallback(() => {
+    setOpenSlugs(new Set(filtered.map((item) => item.slug)));
+  }, [filtered]);
+
+  const collapseAll = useCallback(() => {
+    setOpenSlugs(new Set());
+  }, []);
+
   return (
     <section className="faq-stage">
       <figure className="faq-hero-art" aria-hidden />
@@ -111,11 +119,19 @@ export function FaqClient({ items }: { items: readonly FaqItem[] }) {
             </span>
           </div>
 
-          {search ? (
-            <p className="faq-result-count">
-              {filtered.length} {filtered.length === 1 ? "резултат" : "резултата"}
-            </p>
-          ) : null}
+          <div className="faq-toolbar">
+            <button type="button" className="faq-tool-btn" onClick={expandAll} aria-label="Отвори всички чекмеджета">
+              Разтвори всичко
+            </button>
+            <button type="button" className="faq-tool-btn" onClick={collapseAll} aria-label="Затвори всички чекмеджета">
+              Затвори всичко
+            </button>
+            {search ? (
+              <span className="faq-result-count">
+                {filtered.length} {filtered.length === 1 ? "резултат" : "резултата"}
+              </span>
+            ) : null}
+          </div>
         </header>
 
         {grouped.length === 0 ? (
