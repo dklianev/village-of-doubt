@@ -1,6 +1,6 @@
 import { defineConfig } from "playwright/test";
 
-const port = Number(process.env.VISUAL_WEB_PORT ?? 3000);
+const port = Number(process.env.VISUAL_WEB_PORT ?? 3420);
 
 export default defineConfig({
   testDir: "./apps/web/__visual__",
