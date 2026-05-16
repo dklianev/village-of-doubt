@@ -22,8 +22,7 @@ export function expandRoleDistribution(distribution: RoleDistribution): RoleCode
 
 /**
  * Default crypto-grade source. On Node 19+/modern browsers `globalThis.crypto.getRandomValues`
- * is available; we fall back to `Math.random` only when crypto is missing (e.g. older runtimes
- * that load this module before the polyfill). Deterministic tests can still inject `() => 0.42`.
+ * is available. Deterministic tests can still inject `() => 0.42`.
  */
 export const defaultRandomSource: RandomSource = () => {
   const cryptoSource = (globalThis as { crypto?: { getRandomValues?: (array: Uint32Array) => void } }).crypto;
@@ -32,7 +31,7 @@ export const defaultRandomSource: RandomSource = () => {
     cryptoSource.getRandomValues(buffer);
     return (buffer[0] ?? 0) / 0x1_00_00_00_00;
   }
-  return Math.random();
+  throw new Error("Не е намерен криптографски източник на случайност. Раздаването на роли е спряно.");
 };
 
 export function shuffle<T>(items: T[], random: RandomSource = defaultRandomSource): T[] {

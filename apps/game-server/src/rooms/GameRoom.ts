@@ -347,7 +347,7 @@ export class GameRoom extends Room<{ state: GameState }> {
   private setNarrator(client: Client, targetUserId: string, narrator: boolean) {
     const actor = this.getPublicPlayer(client);
     if (!actor.host) {
-      throw new Error("Само host-ът може да избере Разказвач.");
+      throw new Error("Само домакинът може да избере Разказвач.");
     }
     if (this.state.phase !== "lobby") {
       throw new Error("Разказвачът се избира само преди старт.");
@@ -403,7 +403,7 @@ export class GameRoom extends Room<{ state: GameState }> {
   private setMayor(client: Client, targetUserId: string) {
     const actor = this.getPublicPlayer(client);
     if (!actor.host && !actor.narrator) {
-      throw new Error("Само host-ът или Разказвачът може да избере Кмет.");
+      throw new Error("Само домакинът или Разказвачът може да избере Кмет.");
     }
     if (!this.config.mayorEnabled) {
       throw new Error("Кметът не е активен за този режим.");
@@ -441,7 +441,7 @@ export class GameRoom extends Room<{ state: GameState }> {
   private startGame(client: Client) {
     const player = this.getPublicPlayer(client);
     if (!player.host) {
-      throw new Error("Само host-ът може да започне играта.");
+      throw new Error("Само домакинът може да започне играта.");
     }
     if (this.state.phase !== "lobby") {
       throw new Error("Играта вече е започнала.");
@@ -602,6 +602,11 @@ export class GameRoom extends Room<{ state: GameState }> {
       visibility: "moderator",
       payload: { action },
     });
+    client.send("night_action_ack", {
+      type: "night_action_ack",
+      phase: this.state.phase,
+      round: this.state.round,
+    } satisfies ServerEvent);
 
     if (this.config.timers.autoAdvanceWhenReady && this.allLivingNightActorsReady()) {
       this.advancePhase();
@@ -1106,7 +1111,7 @@ export class GameRoom extends Room<{ state: GameState }> {
   private pauseByNarrator(client: Client) {
     const player = this.getPublicPlayer(client);
     if (!player.host && !player.narrator) {
-      throw new Error("Само Разказвачът или host-ът може да паузира.");
+      throw new Error("Само Разказвачът или домакинът може да паузира.");
     }
     if (this.state.phase === "paused" || this.state.phase === "game_over") {
       throw new Error("Тази фаза не може да бъде паузирана.");
@@ -1123,7 +1128,7 @@ export class GameRoom extends Room<{ state: GameState }> {
   private advanceByNarrator(client: Client) {
     const player = this.getPublicPlayer(client);
     if (!player.host && !player.narrator) {
-      throw new Error("Само Разказвачът или host-ът може да смени фазата.");
+      throw new Error("Само Разказвачът или домакинът може да смени фазата.");
     }
     if (this.state.phase === "paused" && this.pausedSnapshot) {
       this.resumePausedPhase(player);
@@ -1137,7 +1142,7 @@ export class GameRoom extends Room<{ state: GameState }> {
   private extendTimerByNarrator(client: Client, seconds: number) {
     const player = this.getPublicPlayer(client);
     if (!player.host && !player.narrator) {
-      throw new Error("Само Разказвачът или host-ът може да удължи таймера.");
+      throw new Error("Само Разказвачът или домакинът може да удължи таймера.");
     }
     if (!this.state.phaseEndsAt || this.state.phase === "paused" || this.state.phase === "game_over") {
       throw new Error("В тази фаза няма активен таймер.");

@@ -2,21 +2,37 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { createDatabase, getLeaderboardRows } from "@werewolf/database";
 import { getRoleTeam, ROLE_DEFINITIONS, type RoleCode } from "@werewolf/shared";
+import { JsonLd } from "@/components/JsonLd";
 import { NewspaperEmpty } from "@/components/leaderboard/NewspaperEmpty";
 import { NewspaperPage } from "@/components/leaderboard/NewspaperPage";
 import { LeaderboardSkeleton } from "@/components/skeleton";
 import type { LeaderboardEntry } from "@/lib/leaderboard-headlines";
+import { absoluteUrl, routeMetadata } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Класация | Върколак и Мафия",
-  description: "Анонимна класация от завършени игри: участия, победи и последна активност.",
+export const metadata: Metadata = routeMetadata({
+  title: "Класация — седмичният брой на масата",
+  description: "Анонимна класация от завършени игри: участия, победи и последна активност, подредени като стар градски вестник.",
+  path: "/leaderboard",
+  image: "/game-art/og/og-leaderboard.png",
+  imageAlt: "Празен стар вестник, пишеща машина и кафе",
+  ogDescription: "Участия, победи и последна активност от завършените игри.",
+});
+
+const leaderboardJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  name: "Класация",
+  description: "Анонимна класация от завършени игри с участия, победи и последна активност.",
+  url: absoluteUrl("/leaderboard"),
+  inLanguage: "bg-BG",
 };
 
 export default function LeaderboardPage() {
   return (
     <main className="shell newspaper-shell">
+      <JsonLd data={leaderboardJsonLd} />
       <Suspense fallback={<LeaderboardSkeleton />}>
         <LeaderboardContent />
       </Suspense>

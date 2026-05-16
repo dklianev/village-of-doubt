@@ -1,6 +1,7 @@
 "use client";
 
 import { type FormEvent, useId, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 
@@ -110,6 +111,12 @@ export function EmailPasswordForm({ redirectTo }: { redirectTo: string }) {
           required
         />
       </label>
+
+      {mode === "sign-in" ? (
+        <Link href="/forgot-password" className="email-form-help">
+          Забравена парола?
+        </Link>
+      ) : null}
 
       {status ? (
         <p id={statusId} role="alert" className="email-form-status">

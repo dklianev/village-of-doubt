@@ -1,6 +1,6 @@
 import { defineConfig } from "playwright/test";
 
-const port = Number(process.env.VISUAL_WEB_PORT ?? 3000);
+const port = Number(process.env.VISUAL_WEB_PORT ?? 3420);
 
 export default defineConfig({
   testDir: "./apps/web/__visual__",
@@ -19,7 +19,7 @@ export default defineConfig({
     env: {
       BETTER_AUTH_URL: `http://127.0.0.1:${port}`,
       NEXT_PUBLIC_APP_URL: `http://127.0.0.1:${port}`,
-      NEXT_PUBLIC_GAME_SERVER_URL: "ws://127.0.0.1:2567",
+      NEXT_PUBLIC_GAME_SERVER_URL: "ws://127.0.0.1:9",
       BETTER_AUTH_SECRET: "visual-secret-that-is-long-enough-32-chars",
       GAME_TOKEN_SECRET: "visual-token-secret-that-is-long-enough",
     },

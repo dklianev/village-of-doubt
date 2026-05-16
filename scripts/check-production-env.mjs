@@ -48,8 +48,20 @@ if (corsOrigins.some((origin) => origin === "*" || !origin.startsWith("https://"
   errors.push("CORS_ORIGIN трябва да съдържа само конкретни HTTPS origins, не wildcard.");
 }
 
-if (!process.env.DISCORD_CLIENT_ID || !process.env.DISCORD_CLIENT_SECRET) {
-  warnings.push("Discord OAuth не е настроен. Email/password може да работи, но Discord входът няма.");
+const hasDiscord = Boolean(process.env.DISCORD_CLIENT_ID && process.env.DISCORD_CLIENT_SECRET);
+const hasGoogle = Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
+if (!hasDiscord && !hasGoogle) {
+  errors.push("Производственото пускане очаква поне един OAuth провайдер (Discord или Google).");
+}
+if (!hasGoogle) {
+  warnings.push("Google OAuth не е конфигуриран; интерфейсът ще покаже само Discord и имейл.");
+}
+if (!hasDiscord) {
+  warnings.push("Discord OAuth не е конфигуриран; интерфейсът ще покаже само Google и имейл.");
+}
+
+if (!process.env.RESEND_API_KEY) {
+  warnings.push("RESEND_API_KEY липсва. Потвържденията по имейл и новите пароли ще отказват в production.");
 }
 
 if (!process.env.RCLONE_REMOTE) {

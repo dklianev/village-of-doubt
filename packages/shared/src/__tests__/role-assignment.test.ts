@@ -1,8 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { assignRoles } from "../role-assignment.js";
 import { countRoles, getWerewolvesClassicPreset, type RoleDistribution } from "../game-config.js";
 
 describe("assignRoles", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("is deterministic with the same random source", () => {
     const preset = getWerewolvesClassicPreset(8);
     const users = usersFor(8);
@@ -47,6 +51,14 @@ describe("assignRoles", () => {
     const preset = getWerewolvesClassicPreset(8);
 
     expect(() => assignRoles(["u1", "u2"], preset, seededRandom("too-few"))).toThrow("не съвпада");
+  });
+
+  it("refuses to assign roles when no crypto source is available", () => {
+    vi.stubGlobal("crypto", undefined);
+
+    expect(() => assignRoles(usersFor(8), getWerewolvesClassicPreset(8))).toThrow(
+      "Не е намерен криптографски източник на случайност.",
+    );
   });
 });
 

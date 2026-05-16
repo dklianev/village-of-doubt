@@ -137,5 +137,6 @@ export type ServerEvent =
       createdAt: number;
     }
   | { type: "achievements_unlocked"; achievementIds: string[] }
+  | { type: "night_action_ack"; phase: GamePhase; round: number }
   | { type: "safe_error"; messageBg: string }
   | { type: "system"; messageBg: string };

@@ -63,7 +63,7 @@ export interface GameConfig {
   loversEnabled: boolean;
   werewolfVariant: WerewolfVariant;
   mayorMode: MayorMode;
-  // TODO: not yet enforced in runtime. Hidden from the main lobby until promo rule flow is wired.
+  // Promo rule runtime enforcement is tracked in docs/post-launch-todo.md.
   promoRolesEnabled: boolean;
   mafiaNightKill: boolean;
   doctorCanSelfProtect: boolean;
@@ -277,12 +277,12 @@ const WEREWOLF_CLASSIC_PRESETS: Record<number, RoleDistribution> = {
   7: { ordinary_villager: 3, werewolf: 2, seer: 1, healer: 1 },
   8: { ordinary_villager: 3, werewolf: 2, seer: 1, healer: 1, hunter: 1 },
   9: { ordinary_villager: 4, werewolf: 2, seer: 1, witch: 1, hunter: 1 },
-  10: { ordinary_villager: 4, werewolf: 2, seer: 1, witch: 1, healer: 1, hunter: 1 },
+  10: { ordinary_villager: 5, werewolf: 2, seer: 1, witch: 1, hunter: 1 },
   11: { ordinary_villager: 5, werewolf: 3, seer: 1, witch: 1, hunter: 1 },
-  12: { ordinary_villager: 5, werewolf: 3, seer: 1, witch: 1, healer: 1, hunter: 1 },
+  12: { ordinary_villager: 6, werewolf: 3, seer: 1, witch: 1, hunter: 1 },
   13: { ordinary_villager: 6, werewolf: 3, seer: 1, witch: 1, healer: 1, hunter: 1 },
-  14: { ordinary_villager: 7, werewolf: 3, seer: 1, witch: 1, healer: 1, hunter: 1 },
-  15: { ordinary_villager: 8, werewolf: 3, seer: 1, witch: 1, healer: 1, hunter: 1 },
+  14: { ordinary_villager: 6, werewolf: 4, seer: 1, witch: 1, healer: 1, hunter: 1 },
+  15: { ordinary_villager: 7, werewolf: 4, seer: 1, witch: 1, healer: 1, hunter: 1 },
   16: { ordinary_villager: 8, werewolf: 4, seer: 1, witch: 1, healer: 1, hunter: 1 },
   17: { ordinary_villager: 9, werewolf: 4, seer: 1, witch: 1, healer: 1, hunter: 1 },
   18: { ordinary_villager: 10, werewolf: 4, seer: 1, witch: 1, healer: 1, hunter: 1 },
@@ -325,7 +325,7 @@ export function getWerewolvesClassicPreset(playerCount: number): RoleDistributio
     return { ...fixed };
   }
 
-  const werewolves = playerCount <= 22 ? 5 : 6;
+  const werewolves = playerCount <= 22 ? 5 : playerCount <= 28 ? 6 : 7;
   return {
     ordinary_villager: playerCount - werewolves - 4,
     werewolf: werewolves,

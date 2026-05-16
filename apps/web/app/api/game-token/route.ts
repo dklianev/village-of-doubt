@@ -9,13 +9,16 @@ interface TokenRequestBody {
   devDisplayName?: unknown;
 }
 
+const ROOM_CODE_PATTERN = /^[A-Z0-9]{4,12}$/;
+
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as TokenRequestBody;
-  const roomCode = typeof body.code === "string" ? normalizeRoomCode(body.code) : "";
+  const submittedCode = typeof body.code === "string" ? body.code.trim().toUpperCase() : "";
 
-  if (!roomCode) {
-    return NextResponse.json({ error: "Липсва код на стая." }, { status: 400 });
+  if (!ROOM_CODE_PATTERN.test(submittedCode)) {
+    return NextResponse.json({ error: "Невалиден код на стая." }, { status: 400 });
   }
+  const roomCode = normalizeRoomCode(submittedCode);
 
   const session = await auth.api.getSession({
     headers: await headers(),

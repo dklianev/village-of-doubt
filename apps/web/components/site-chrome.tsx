@@ -21,6 +21,8 @@ const SECONDARY_LINKS = [
   { href: "/leaderboard", label: "Класация" },
   { href: "/friends", label: "Приятели" },
   { href: "/tutorial", label: "Първа игра" },
+  { href: "/faq", label: "Въпроси" },
+  { href: "/status", label: "Състояние" },
 ];
 
 const DRAWER_LINKS = [
@@ -217,6 +219,11 @@ function BrandMark({ compact }: { compact: boolean }) {
           </span>
           <span>Мафия</span>
         </span>
+        {process.env.NEXT_PUBLIC_SHOW_BETA_BADGE !== "false" ? (
+          <span className="site-beta-badge" aria-label="Бета версия">
+            БЕТА
+          </span>
+        ) : null}
         <span className="site-brand-subtitle">Социална игра на сенки</span>
       </span>
     </Link>

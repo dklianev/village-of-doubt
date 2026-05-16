@@ -28,7 +28,7 @@ export function AchievementsClient() {
       return;
     }
 
-    fetch(`/api/achievements?userId=${encodeURIComponent(userId)}`)
+    fetch("/api/achievements")
       .then((response) => (response.ok ? response.json() : { achievements: [] }))
       .then((body: { achievements?: OwnedAchievement[] }) => setOwned(body.achievements ?? []))
       .catch(() => setOwned([]))

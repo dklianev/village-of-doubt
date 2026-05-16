@@ -404,6 +404,22 @@ html[data-theme="light"] .site-chrome[data-version="v2"] .site-brand {
   text-shadow: 0 1px 12px rgba(255, 246, 229, 0.08);
 }
 
+.site-beta-badge {
+  display: inline-block;
+  width: fit-content;
+  padding: 2px 8px;
+  margin-left: 6px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #d94a3d, #842f2b);
+  color: #fff5e0;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  line-height: 1.25;
+  vertical-align: middle;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
+}
+
 .site-brand-text {
   display: grid;
   gap: 3px;
@@ -10596,7 +10612,7 @@ html[data-theme="light"] .sign-in-table {
     0 2px 5px rgba(0, 0, 0, 0.22);
 }
 
-.oauth-button-logo svg {
+.oauth-button-logo img {
   display: block;
 }
 
@@ -10695,6 +10711,21 @@ html[data-theme="light"] .sign-in-table {
   margin-top: 8px;
 }
 
+.email-form-help {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 32px;
+  color: #842f2b;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.email-form-help:hover {
+  text-decoration: underline;
+}
+
 .sign-in-foot {
   display: flex;
   justify-content: center;
@@ -10714,6 +10745,1845 @@ html[data-theme="light"] .sign-in-table {
   color: rgba(26, 20, 16, 0.72);
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+
+/* ============================== */
+/* Locksmith (forgot password)    */
+/* ============================== */
+
+.locksmith-shell {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 24px 16px;
+}
+
+.locksmith-stage {
+  display: grid;
+  grid-template-columns: 1fr;
+  width: 100%;
+  max-width: 1100px;
+  min-height: 600px;
+  align-items: stretch;
+  gap: 24px;
+}
+
+@media (min-width: 960px) {
+  .locksmith-stage {
+    grid-template-columns: 1.1fr 1fr;
+  }
+}
+
+.locksmith-art {
+  position: relative;
+  min-height: 280px;
+  border-radius: 24px;
+  background-image:
+    radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, 0.6) 100%),
+    image-set(
+      url("/game-art/auth/forgot-password-locksmith.webp") type("image/webp"),
+      url("/game-art/auth/forgot-password-locksmith.png") type("image/png")
+    );
+  background-position: center;
+  background-size: cover;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
+}
+
+@media (max-width: 640px) {
+  .locksmith-art {
+    background-image:
+      radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, 0.6) 100%),
+      image-set(
+        url("/game-art/mobile/auth/forgot-password-locksmith.webp") type("image/webp"),
+        url("/game-art/auth/forgot-password-locksmith.png") type("image/png")
+      );
+  }
+}
+
+.locksmith-card {
+  display: grid;
+  align-content: start;
+  gap: 20px;
+  padding: 36px 32px;
+  color: #1a1410;
+  border-radius: 14px;
+  background-color: #f0e0c4;
+  background-image:
+    linear-gradient(155deg, rgba(255, 250, 238, 0.55), rgba(238, 222, 196, 0.35)),
+    image-set(
+      url("/game-art/textures/brass-plate.webp") type("image/webp"),
+      url("/game-art/textures/brass-plate.png") type("image/png")
+    );
+  background-size: cover;
+  background-blend-mode: multiply;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 240, 200, 0.55),
+    inset 0 0 0 4px rgba(50, 30, 10, 0.5),
+    inset 0 0 0 6px rgba(255, 240, 200, 0.55),
+    0 20px 50px rgba(0, 0, 0, 0.45);
+}
+
+.locksmith-kicker {
+  color: #842f2b;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+}
+
+.locksmith-card h1 {
+  margin: 8px 0 0;
+  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-size: clamp(1.875rem, 4vw, 2.5rem);
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.locksmith-subtitle {
+  color: rgba(26, 20, 16, 0.85);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.locksmith-form {
+  display: grid;
+  gap: 14px;
+}
+
+.locksmith-form label {
+  display: grid;
+  gap: 4px;
+}
+
+.locksmith-form label > span {
+  color: #842f2b;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.locksmith-form input {
+  padding: 10px 14px;
+  color: #1a1410;
+  border: 1px solid rgba(50, 30, 10, 0.35);
+  border-radius: 8px;
+  background: rgba(255, 250, 238, 0.8);
+  font-size: 1rem;
+}
+
+.locksmith-error {
+  padding: 10px 14px;
+  color: #842f2b;
+  border-radius: 8px;
+  background: rgba(132, 47, 43, 0.12);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.locksmith-success {
+  display: grid;
+  gap: 6px;
+  padding: 18px;
+  color: #1a1410;
+  border-left: 3px solid #2e6b2e;
+  border-radius: 0 12px 12px 0;
+  background: rgba(46, 107, 46, 0.14);
+}
+
+.locksmith-success p {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.locksmith-success-hint {
+  color: rgba(26, 20, 16, 0.7);
+  font-size: 0.85rem !important;
+}
+
+.locksmith-foot {
+  margin-top: 8px;
+}
+
+.locksmith-foot-link {
+  color: #842f2b;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.locksmith-foot-link:hover {
+  text-decoration: underline;
+}
+
+/* ============================== */
+/* Forge (reset password)         */
+/* ============================== */
+
+.forge-shell {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 24px 16px;
+}
+
+.forge-loading {
+  color: #f5e8c8;
+  font-weight: 800;
+}
+
+.forge-stage {
+  display: grid;
+  grid-template-columns: 1fr;
+  width: 100%;
+  max-width: 1100px;
+  min-height: 600px;
+  gap: 24px;
+}
+
+@media (min-width: 960px) {
+  .forge-stage {
+    grid-template-columns: 1fr 1.1fr;
+  }
+}
+
+.forge-art {
+  min-height: 280px;
+  border-radius: 24px;
+  background-image:
+    radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 30%, rgba(20, 5, 0, 0.7) 100%),
+    image-set(
+      url("/game-art/auth/reset-password-forge.webp") type("image/webp"),
+      url("/game-art/auth/reset-password-forge.png") type("image/png")
+    );
+  background-position: center;
+  background-size: cover;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.55);
+}
+
+@media (max-width: 640px) {
+  .forge-art {
+    background-image:
+      radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 30%, rgba(20, 5, 0, 0.7) 100%),
+      image-set(
+        url("/game-art/mobile/auth/reset-password-forge.webp") type("image/webp"),
+        url("/game-art/auth/reset-password-forge.png") type("image/png")
+      );
+  }
+}
+
+.forge-card {
+  display: grid;
+  align-content: start;
+  gap: 20px;
+  padding: 36px 32px;
+  color: #f5e8c8;
+  border: 1px solid rgba(217, 154, 66, 0.18);
+  border-radius: 14px;
+  background-color: #1a1410;
+  background-image:
+    radial-gradient(ellipse 60% 50% at 30% 20%, rgba(217, 74, 61, 0.12), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 70% 80%, rgba(217, 154, 66, 0.08), transparent 70%);
+}
+
+.forge-kicker {
+  color: #d19a42;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+}
+
+.forge-card h1 {
+  margin: 8px 0 0;
+  color: #f5e8c8;
+  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-size: clamp(1.875rem, 4vw, 2.5rem);
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.forge-card p {
+  color: rgba(245, 232, 200, 0.82);
+  line-height: 1.6;
+}
+
+.forge-subtitle {
+  color: rgba(245, 232, 200, 0.78);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.forge-form {
+  display: grid;
+  gap: 14px;
+}
+
+.forge-form label {
+  display: grid;
+  gap: 4px;
+}
+
+.forge-form label > span {
+  color: #d19a42;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.forge-form input {
+  padding: 10px 14px;
+  color: #f5e8c8;
+  border: 1px solid rgba(217, 154, 66, 0.35);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.35);
+  font-size: 1rem;
+}
+
+.forge-error {
+  padding: 10px 14px;
+  color: #f5e8c8;
+  border-left: 3px solid #d94a3d;
+  border-radius: 0 8px 8px 0;
+  background: rgba(217, 74, 61, 0.18);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.forge-success {
+  padding: 14px 18px;
+  color: #f5e8c8 !important;
+  border-left: 3px solid #5cb85c;
+  border-radius: 0 8px 8px 0;
+  background: rgba(46, 107, 46, 0.22);
+  font-size: 1rem;
+}
+
+/* ============================== */
+/* Wax seal (verify email)        */
+/* ============================== */
+
+.seal-shell {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 24px 16px;
+}
+
+.seal-loading {
+  color: #f5e8c8;
+  font-weight: 800;
+}
+
+.seal-stage {
+  display: grid;
+  grid-template-columns: 1fr;
+  width: 100%;
+  max-width: 760px;
+  align-items: center;
+  gap: 32px;
+}
+
+@media (min-width: 720px) {
+  .seal-stage {
+    grid-template-columns: 320px 1fr;
+  }
+}
+
+.seal-art {
+  aspect-ratio: 1 / 1;
+  margin: 0;
+  border-radius: 24px;
+  background-image:
+    radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 40%, rgba(40, 10, 10, 0.55) 100%),
+    image-set(
+      url("/game-art/auth/verify-email-seal.webp") type("image/webp"),
+      url("/game-art/auth/verify-email-seal.png") type("image/png")
+    );
+  background-position: center;
+  background-size: cover;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
+}
+
+@media (max-width: 640px) {
+  .seal-art {
+    background-image:
+      radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 40%, rgba(40, 10, 10, 0.55) 100%),
+      image-set(
+        url("/game-art/mobile/auth/verify-email-seal.webp") type("image/webp"),
+        url("/game-art/auth/verify-email-seal.png") type("image/png")
+      );
+  }
+}
+
+.seal-card {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+}
+
+.seal-kicker {
+  color: #d94a3d;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+}
+
+.seal-card h1 {
+  margin: 4px 0 0;
+  color: #f5e8c8;
+  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-size: clamp(1.875rem, 4vw, 2.75rem);
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.seal-body {
+  color: rgba(245, 232, 200, 0.85);
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+.seal-hint {
+  color: rgba(245, 232, 200, 0.6);
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+.seal-error {
+  padding: 12px 16px;
+  color: #f5e8c8;
+  border-left: 3px solid #d94a3d;
+  border-radius: 0 8px 8px 0;
+  background: rgba(217, 74, 61, 0.18);
+  font-weight: 700;
+}
+
+.seal-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+/* ============================== */
+/* Dossier (account settings)     */
+/* ============================== */
+
+.dossier-shell {
+  display: grid;
+  min-height: 100vh;
+  place-items: start center;
+  padding: 32px 16px 64px;
+}
+
+.dossier-stage {
+  display: grid;
+  grid-template-columns: 1fr;
+  width: 100%;
+  max-width: 980px;
+  gap: 32px;
+}
+
+@media (min-width: 900px) {
+  .dossier-stage {
+    grid-template-columns: 320px 1fr;
+    align-items: start;
+  }
+}
+
+.dossier-art {
+  position: sticky;
+  top: 96px;
+  aspect-ratio: 3 / 4;
+  margin: 0;
+  border-radius: 18px;
+  background-image:
+    radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 50%, rgba(20, 10, 5, 0.5) 100%),
+    image-set(
+      url("/game-art/auth/account-dossier.webp") type("image/webp"),
+      url("/game-art/auth/account-dossier.png") type("image/png")
+    );
+  background-position: center;
+  background-size: cover;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
+}
+
+@media (max-width: 899px) {
+  .dossier-art {
+    position: relative;
+    top: 0;
+    aspect-ratio: 16 / 9;
+  }
+}
+
+@media (max-width: 640px) {
+  .dossier-art {
+    background-image:
+      radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 50%, rgba(20, 10, 5, 0.5) 100%),
+      image-set(
+        url("/game-art/mobile/auth/account-dossier.webp") type("image/webp"),
+        url("/game-art/auth/account-dossier.png") type("image/png")
+      );
+  }
+}
+
+.dossier-card {
+  display: grid;
+  gap: 28px;
+  padding: 32px;
+  color: #1a1410;
+  border-radius: 14px;
+  background-color: #f0e0c4;
+  background-image:
+    linear-gradient(155deg, rgba(255, 250, 238, 0.55), rgba(238, 222, 196, 0.35)),
+    image-set(
+      url("/game-art/textures/brass-plate.webp") type("image/webp"),
+      url("/game-art/textures/brass-plate.png") type("image/png")
+    );
+  background-size: cover;
+  background-blend-mode: multiply;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 240, 200, 0.55),
+    inset 0 0 0 4px rgba(50, 30, 10, 0.5),
+    inset 0 0 0 6px rgba(255, 240, 200, 0.55),
+    0 20px 50px rgba(0, 0, 0, 0.45);
+}
+
+.dossier-kicker {
+  color: #842f2b;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+}
+
+.dossier-head h1 {
+  margin: 4px 0 8px;
+  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-size: clamp(1.875rem, 4vw, 2.5rem);
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.dossier-subtitle {
+  color: rgba(26, 20, 16, 0.78);
+  font-size: 0.95rem;
+}
+
+.dossier-section {
+  display: grid;
+  gap: 12px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(50, 30, 10, 0.25);
+}
+
+.dossier-section h2 {
+  color: #842f2b;
+  font-family: "Noto Serif Display", serif;
+  font-size: 1.125rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.dossier-row {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  align-items: start;
+  gap: 16px;
+}
+
+.dossier-avatar {
+  display: grid;
+  width: 80px;
+  height: 80px;
+  place-items: center;
+  overflow: hidden;
+  color: #fff5e0;
+  border: 2px solid rgba(255, 240, 200, 0.55);
+  border-radius: 50%;
+  background: rgba(50, 30, 10, 0.6);
+  font-family: "Noto Serif Display", serif;
+  font-size: 2rem;
+  font-weight: 900;
+}
+
+.dossier-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.dossier-meta {
+  display: grid;
+  gap: 6px;
+}
+
+.dossier-meta label {
+  display: grid;
+  gap: 4px;
+}
+
+.dossier-meta label > span {
+  color: #842f2b;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.dossier-meta input {
+  padding: 8px 12px;
+  color: #1a1410;
+  border: 1px solid rgba(50, 30, 10, 0.35);
+  border-radius: 8px;
+  background: rgba(255, 250, 238, 0.8);
+  font-size: 1rem;
+}
+
+.dossier-save-btn {
+  width: fit-content;
+}
+
+.dossier-status {
+  color: #2e6b2e;
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+.dossier-email {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.95rem;
+}
+
+.dossier-badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.dossier-badge-ok {
+  color: #1d4f1d;
+  background: rgba(46, 107, 46, 0.22);
+}
+
+.dossier-badge-warn {
+  color: #5a3c10;
+  background: rgba(217, 154, 66, 0.28);
+}
+
+.dossier-provider-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.dossier-provider-list li {
+  padding: 6px 10px;
+  border: 1px solid rgba(50, 30, 10, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 250, 238, 0.5);
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.dossier-danger {
+  border-color: rgba(132, 47, 43, 0.3);
+}
+
+.dossier-danger h2 {
+  color: #842f2b;
+}
+
+.dossier-confirm {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid rgba(132, 47, 43, 0.25);
+  border-radius: 12px;
+  background: rgba(132, 47, 43, 0.1);
+}
+
+.dossier-confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.dossier-error {
+  padding: 8px 12px;
+  color: #842f2b;
+  border-radius: 8px;
+  background: rgba(132, 47, 43, 0.2);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.btn-danger {
+  color: #fff5e0;
+  border: 1px solid #4a1a18;
+  background: #842f2b;
+  font-weight: 700;
+}
+
+.btn-danger:hover {
+  background: #6d2421;
+}
+
+.dossier-foot {
+  margin-top: 8px;
+}
+
+.dossier-foot-link {
+  color: #842f2b;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.dossier-foot-link:hover {
+  text-decoration: underline;
+}
+
+/* ============================== */
+/* Lighthouse (reports)           */
+/* ============================== */
+
+.lighthouse-shell {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 24px 16px;
+}
+
+.lighthouse-stage {
+  display: grid;
+  grid-template-columns: 1fr;
+  width: 100%;
+  max-width: 1100px;
+  min-height: 600px;
+  gap: 24px;
+}
+
+@media (min-width: 960px) {
+  .lighthouse-stage {
+    grid-template-columns: 1.1fr 1fr;
+  }
+}
+
+.lighthouse-art {
+  min-height: 280px;
+  border-radius: 24px;
+  background-image:
+    radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 30%, rgba(10, 20, 30, 0.55) 100%),
+    image-set(
+      url("/game-art/auth/report-lighthouse.webp") type("image/webp"),
+      url("/game-art/auth/report-lighthouse.png") type("image/png")
+    );
+  background-position: center;
+  background-size: cover;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.55);
+}
+
+@media (max-width: 640px) {
+  .lighthouse-art {
+    background-image:
+      radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 30%, rgba(10, 20, 30, 0.55) 100%),
+      image-set(
+        url("/game-art/mobile/auth/report-lighthouse.webp") type("image/webp"),
+        url("/game-art/auth/report-lighthouse.png") type("image/png")
+      );
+  }
+}
+
+.lighthouse-card {
+  display: grid;
+  gap: 20px;
+  padding: 36px 32px;
+  color: #1a1410;
+  border-radius: 14px;
+  background-color: #f0e0c4;
+  background-image:
+    linear-gradient(155deg, rgba(255, 250, 238, 0.55), rgba(238, 222, 196, 0.35)),
+    image-set(
+      url("/game-art/textures/brass-plate.webp") type("image/webp"),
+      url("/game-art/textures/brass-plate.png") type("image/png")
+    );
+  background-size: cover;
+  background-blend-mode: multiply;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 240, 200, 0.55),
+    inset 0 0 0 4px rgba(50, 30, 10, 0.5),
+    inset 0 0 0 6px rgba(255, 240, 200, 0.55),
+    0 20px 50px rgba(0, 0, 0, 0.45);
+}
+
+.lighthouse-kicker {
+  color: #d19a42;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+}
+
+.lighthouse-card h1 {
+  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-size: clamp(1.875rem, 4vw, 2.5rem);
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.lighthouse-subtitle {
+  color: rgba(26, 20, 16, 0.82);
+  line-height: 1.6;
+}
+
+.lighthouse-form {
+  display: grid;
+  gap: 14px;
+}
+
+.lighthouse-form label {
+  display: grid;
+  gap: 4px;
+}
+
+.lighthouse-form label > span {
+  color: #842f2b;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.lighthouse-form input,
+.lighthouse-form select,
+.lighthouse-form textarea {
+  padding: 10px 14px;
+  color: #1a1410;
+  border: 1px solid rgba(50, 30, 10, 0.35);
+  border-radius: 8px;
+  background: rgba(255, 250, 238, 0.8);
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+.lighthouse-form textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.lighthouse-error {
+  padding: 10px 14px;
+  color: #842f2b;
+  border-radius: 8px;
+  background: rgba(132, 47, 43, 0.12);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.lighthouse-success {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  border-left: 3px solid #2e6b2e;
+  border-radius: 0 12px 12px 0;
+  background: rgba(46, 107, 46, 0.14);
+}
+
+.lighthouse-success-hint {
+  color: rgba(26, 20, 16, 0.7);
+  font-size: 0.85rem;
+}
+
+/* ============================== */
+/* Vault (privacy)                */
+/* ============================== */
+
+.vault-shell {
+  padding: 32px 16px 72px;
+}
+
+.vault-stage {
+  display: grid;
+  grid-template-columns: 1fr;
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  gap: 32px;
+}
+
+@media (min-width: 980px) {
+  .vault-stage {
+    grid-template-columns: 360px 1fr;
+    align-items: start;
+  }
+}
+
+.vault-art {
+  position: sticky;
+  top: 96px;
+  aspect-ratio: 1 / 1;
+  margin: 0;
+  border-radius: 24px;
+  background-image:
+    radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 45%, rgba(20, 6, 4, 0.62) 100%),
+    image-set(
+      url("/game-art/auth/privacy-vault.webp") type("image/webp"),
+      url("/game-art/auth/privacy-vault.png") type("image/png")
+    );
+  background-position: center;
+  background-size: cover;
+  box-shadow: 0 28px 60px rgba(0, 0, 0, 0.55);
+}
+
+@media (max-width: 979px) {
+  .vault-art {
+    position: relative;
+    top: 0;
+    aspect-ratio: 16 / 9;
+  }
+}
+
+@media (max-width: 640px) {
+  .vault-art {
+    background-image:
+      radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 45%, rgba(20, 6, 4, 0.62) 100%),
+      image-set(
+        url("/game-art/mobile/auth/privacy-vault.webp") type("image/webp"),
+        url("/game-art/auth/privacy-vault.png") type("image/png")
+      );
+  }
+}
+
+.vault-card {
+  display: grid;
+  gap: 28px;
+  padding: clamp(24px, 4vw, 44px);
+  color: #1a1410;
+  border-radius: 14px;
+  background-color: #f0e0c4;
+  background-image:
+    linear-gradient(155deg, rgba(255, 250, 238, 0.58), rgba(238, 222, 196, 0.38)),
+    image-set(
+      url("/game-art/textures/brass-plate.webp") type("image/webp"),
+      url("/game-art/textures/brass-plate.png") type("image/png")
+    );
+  background-size: cover;
+  background-blend-mode: multiply;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 240, 200, 0.55),
+    inset 0 0 0 4px rgba(50, 30, 10, 0.42),
+    inset 0 0 0 6px rgba(255, 240, 200, 0.45),
+    0 22px 54px rgba(0, 0, 0, 0.45);
+}
+
+.vault-kicker {
+  color: #842f2b;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+}
+
+.vault-head h1 {
+  margin: 6px 0 8px;
+  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-size: clamp(2rem, 5vw, 3.75rem);
+  font-weight: 900;
+  line-height: 1;
+}
+
+.vault-meta {
+  color: rgba(26, 20, 16, 0.66);
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.vault-section {
+  display: grid;
+  gap: 12px;
+  max-width: 78ch;
+  padding-top: 22px;
+  border-top: 1px solid rgba(50, 30, 10, 0.25);
+}
+
+.vault-section h2 {
+  color: #842f2b;
+  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-size: 1.25rem;
+  font-weight: 900;
+}
+
+.vault-section p,
+.vault-section li {
+  color: #4f3829;
+  font-size: 1rem;
+  line-height: 1.75;
+}
+
+.vault-section ul {
+  display: grid;
+  gap: 8px;
+  padding-left: 1.2rem;
+}
+
+.vault-section a {
+  color: #842f2b;
+  font-weight: 900;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.vault-foot {
+  padding-top: 20px;
+  border-top: 1px solid rgba(50, 30, 10, 0.25);
+}
+
+.vault-foot-link {
+  color: #842f2b;
+  font-size: 0.9rem;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.vault-foot-link:hover {
+  text-decoration: underline;
+}
+
+/* ============================== */
+/* Handshake (terms)              */
+/* ============================== */
+
+.handshake-shell {
+  padding: 32px 16px 72px;
+}
+
+.handshake-stage {
+  display: grid;
+  grid-template-columns: 1fr;
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  gap: 32px;
+}
+
+@media (min-width: 980px) {
+  .handshake-stage {
+    grid-template-columns: 1fr 380px;
+    align-items: start;
+  }
+
+  .handshake-art {
+    order: 2;
+  }
+}
+
+.handshake-art {
+  position: sticky;
+  top: 96px;
+  aspect-ratio: 3 / 2;
+  margin: 0;
+  border-radius: 24px;
+  background-image:
+    radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 38%, rgba(30, 14, 6, 0.62) 100%),
+    image-set(
+      url("/game-art/auth/terms-handshake.webp") type("image/webp"),
+      url("/game-art/auth/terms-handshake.png") type("image/png")
+    );
+  background-position: center;
+  background-size: cover;
+  box-shadow: 0 28px 60px rgba(0, 0, 0, 0.55);
+}
+
+@media (max-width: 979px) {
+  .handshake-art {
+    position: relative;
+    top: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .handshake-art {
+    background-image:
+      radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 38%, rgba(30, 14, 6, 0.62) 100%),
+      image-set(
+        url("/game-art/mobile/auth/terms-handshake.webp") type("image/webp"),
+        url("/game-art/auth/terms-handshake.png") type("image/png")
+      );
+  }
+}
+
+.handshake-card {
+  display: grid;
+  gap: 28px;
+  padding: clamp(24px, 4vw, 44px);
+  color: #1a1410;
+  border-radius: 14px;
+  background:
+    linear-gradient(160deg, rgba(255, 241, 207, 0.92), rgba(204, 146, 78, 0.22)),
+    linear-gradient(90deg, rgba(65, 34, 12, 0.06), rgba(255, 255, 255, 0.18));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 240, 200, 0.5),
+    inset 0 0 0 4px rgba(87, 45, 18, 0.36),
+    0 22px 54px rgba(0, 0, 0, 0.45);
+}
+
+.handshake-kicker {
+  color: #7a2d1f;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+}
+
+.handshake-head h1 {
+  margin: 6px 0 8px;
+  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-size: clamp(2rem, 5vw, 3.75rem);
+  font-weight: 900;
+  line-height: 1;
+}
+
+.handshake-meta {
+  color: rgba(26, 20, 16, 0.66);
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.handshake-section {
+  display: grid;
+  gap: 12px;
+  max-width: 78ch;
+  padding-top: 22px;
+  border-top: 1px solid rgba(88, 48, 18, 0.26);
+}
+
+.handshake-section h2 {
+  color: #7a2d1f;
+  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-size: 1.25rem;
+  font-weight: 900;
+}
+
+.handshake-section p,
+.handshake-section li {
+  color: #4f3829;
+  font-size: 1rem;
+  line-height: 1.75;
+}
+
+.handshake-section ul {
+  display: grid;
+  gap: 8px;
+  padding-left: 1.2rem;
+}
+
+.handshake-section a {
+  color: #842f2b;
+  font-weight: 900;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.handshake-foot {
+  padding-top: 20px;
+  border-top: 1px solid rgba(88, 48, 18, 0.26);
+}
+
+.handshake-foot-link {
+  color: #842f2b;
+  font-size: 0.9rem;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.handshake-foot-link:hover {
+  text-decoration: underline;
+}
+
+/* ============================== */
+/* Welcome onboarding modal       */
+/* ============================== */
+
+.welcome-modal-backdrop {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(6px);
+}
+
+.welcome-modal {
+  display: grid;
+  width: 100%;
+  max-width: 480px;
+  gap: 14px;
+  padding: 32px;
+  color: #1a1410;
+  border-radius: 14px;
+  background-color: #f0e0c4;
+  background-image:
+    linear-gradient(155deg, rgba(255, 250, 238, 0.55), rgba(238, 222, 196, 0.35)),
+    image-set(
+      url("/game-art/textures/brass-plate.webp") type("image/webp"),
+      url("/game-art/textures/brass-plate.png") type("image/png")
+    );
+  background-size: cover;
+  background-blend-mode: multiply;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 240, 200, 0.55),
+    inset 0 0 0 4px rgba(50, 30, 10, 0.5),
+    inset 0 0 0 6px rgba(255, 240, 200, 0.55),
+    0 30px 80px rgba(0, 0, 0, 0.6);
+}
+
+.welcome-kicker {
+  color: #842f2b;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+}
+
+.welcome-modal h2 {
+  margin: 4px 0;
+  font-family: "Noto Serif Display", serif;
+  font-size: 1.875rem;
+  font-weight: 900;
+}
+
+.welcome-body {
+  color: rgba(26, 20, 16, 0.85);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.welcome-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.feedback-fab {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 60;
+  display: grid;
+  width: 52px;
+  height: 52px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background-color: #c8a366;
+  background-image:
+    linear-gradient(155deg, rgba(255, 250, 238, 0.45), rgba(238, 222, 196, 0.25)),
+    image-set(url("/game-art/textures/brass-plate.webp") type("image/webp"), url("/game-art/textures/brass-plate.png") type("image/png"));
+  background-size: cover;
+  background-blend-mode: multiply;
+  color: #1a1410;
+  cursor: pointer;
+  font-size: 1.5rem;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 240, 200, 0.55),
+    inset 0 -1px 0 rgba(50, 30, 10, 0.4),
+    0 8px 20px rgba(0, 0, 0, 0.5);
+  transition: transform 160ms ease;
+}
+
+.feedback-fab:hover {
+  transform: translateY(-2px);
+}
+
+.feedback-panel {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 70;
+  display: grid;
+  width: 360px;
+  max-width: calc(100vw - 32px);
+  gap: 10px;
+  padding: 20px;
+  border-radius: 14px;
+  background-color: #f0e0c4;
+  background-image:
+    linear-gradient(155deg, rgba(255, 250, 238, 0.55), rgba(238, 222, 196, 0.35)),
+    image-set(url("/game-art/textures/brass-plate.webp") type("image/webp"), url("/game-art/textures/brass-plate.png") type("image/png"));
+  background-size: cover;
+  background-blend-mode: multiply;
+  color: #1a1410;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 240, 200, 0.55),
+    inset 0 0 0 4px rgba(50, 30, 10, 0.5),
+    inset 0 0 0 6px rgba(255, 240, 200, 0.55),
+    0 30px 60px rgba(0, 0, 0, 0.55);
+}
+
+.feedback-close {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  border: 0;
+  background: transparent;
+  color: #842f2b;
+  cursor: pointer;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.feedback-kicker {
+  color: #842f2b;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+}
+
+.feedback-panel h3 {
+  margin: 0 0 8px;
+  font-family: "Noto Serif Display", serif;
+  font-size: 1.25rem;
+  font-weight: 900;
+}
+
+.feedback-panel textarea,
+.feedback-panel input {
+  width: 100%;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  border: 1px solid rgba(50, 30, 10, 0.35);
+  border-radius: 8px;
+  background: rgba(255, 250, 238, 0.85);
+  color: #1a1410;
+  font-family: inherit;
+  font-size: 0.95rem;
+  resize: vertical;
+}
+
+.feedback-error {
+  color: #842f2b;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.feedback-sent {
+  padding: 12px;
+  border-radius: 8px;
+  background: rgba(46, 107, 46, 0.18);
+  color: #1a1410;
+  font-weight: 700;
+}
+
+.harbor-shell {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 24px 16px;
+}
+
+.harbor-stage {
+  display: grid;
+  grid-template-columns: 1fr;
+  width: 100%;
+  max-width: 1120px;
+  gap: 24px;
+}
+
+@media (min-width: 980px) {
+  .harbor-stage {
+    grid-template-columns: 1.15fr 0.95fr;
+    align-items: stretch;
+  }
+}
+
+.harbor-art {
+  min-height: 300px;
+  border-radius: 24px;
+  background-image:
+    radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 35%, rgba(5, 14, 18, 0.62) 100%),
+    image-set(url("/game-art/auth/status-harbor.webp") type("image/webp"), url("/game-art/auth/status-harbor.png") type("image/png"));
+  background-position: center;
+  background-size: cover;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.55);
+}
+
+@media (min-width: 980px) {
+  .harbor-art {
+    min-height: 640px;
+  }
+}
+
+.harbor-card {
+  display: grid;
+  align-content: start;
+  gap: 22px;
+  padding: 34px 28px;
+  border: 1px solid rgba(132, 180, 180, 0.18);
+  border-radius: 16px;
+  background:
+    radial-gradient(ellipse 80% 50% at 30% 0%, rgba(209, 154, 66, 0.12), transparent 70%),
+    linear-gradient(155deg, rgba(20, 35, 42, 0.96), rgba(9, 15, 18, 0.98));
+  color: #f3ead5;
+  box-shadow: 0 22px 54px rgba(0, 0, 0, 0.48);
+}
+
+.harbor-kicker {
+  color: #d19a42;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+}
+
+.harbor-card h1 {
+  margin: 8px 0 0;
+  color: #f5e8c8;
+  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-size: clamp(1.875rem, 4vw, 2.6rem);
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1.1;
+}
+
+.harbor-subtitle {
+  margin-top: 12px;
+  color: rgba(245, 232, 200, 0.78);
+  font-size: 0.98rem;
+  line-height: 1.6;
+}
+
+.harbor-overall {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  margin-top: 18px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  font-weight: 800;
+}
+
+.harbor-list {
+  display: grid;
+  gap: 12px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.harbor-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(245, 232, 200, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.harbor-item-body {
+  display: grid;
+  gap: 4px;
+}
+
+.harbor-item h2 {
+  color: #f5e8c8;
+  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.harbor-item-desc,
+.harbor-item-status {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.harbor-item-desc {
+  color: rgba(245, 232, 200, 0.7);
+}
+
+.harbor-dot,
+.harbor-item-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: #888;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.harbor-item-dot {
+  margin-top: 5px;
+}
+
+.harbor-overall-ok,
+.harbor-item-ok {
+  color: #77c277;
+}
+
+.harbor-overall-ok .harbor-dot,
+.harbor-item-ok .harbor-item-dot {
+  background: #77c277;
+}
+
+.harbor-overall-degraded,
+.harbor-item-degraded,
+.harbor-item-unknown {
+  color: #d19a42;
+}
+
+.harbor-overall-degraded .harbor-dot,
+.harbor-item-degraded .harbor-item-dot,
+.harbor-item-unknown .harbor-item-dot {
+  background: #d19a42;
+}
+
+.harbor-overall-down,
+.harbor-item-down {
+  color: #d94a3d;
+}
+
+.harbor-overall-down .harbor-dot,
+.harbor-item-down .harbor-item-dot {
+  background: #d94a3d;
+}
+
+.harbor-foot {
+  display: grid;
+  gap: 6px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(245, 232, 200, 0.12);
+  color: rgba(245, 232, 200, 0.72);
+  font-size: 0.9rem;
+}
+
+.harbor-foot a {
+  color: #f0b45d;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.harbor-foot a:hover {
+  text-decoration: underline;
+}
+
+.harbor-foot-time {
+  color: rgba(245, 232, 200, 0.52);
+  font-size: 0.8rem;
+}
+
+.site-footer {
+  padding: 24px 16px;
+  margin-top: 48px;
+  border-top: 1px solid rgba(255, 240, 200, 0.08);
+  color: rgba(232, 217, 187, 0.55);
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.site-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.site-footer-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 4px;
+  color: rgba(232, 217, 187, 0.75);
+  text-decoration: none;
+}
+
+.site-footer-links a:hover {
+  color: #d19a42;
+  text-decoration: underline;
+}
+
+.site-footer-credit {
+  margin-top: 8px;
+}
+
+/* ============================== */
+/* FAQ — library catalog          */
+/* ============================== */
+
+.faq-shell {
+  display: grid;
+  place-items: start center;
+  min-height: 100vh;
+  padding: 32px 16px 64px;
+  background:
+    linear-gradient(180deg, rgba(8, 22, 24, 0.28), rgba(20, 12, 8, 0.48)),
+    var(--background);
+}
+
+.faq-stage {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px;
+  width: 100%;
+  max-width: 1100px;
+}
+
+@media (min-width: 980px) {
+  .faq-stage {
+    grid-template-columns: 360px 1fr;
+    align-items: start;
+  }
+}
+
+.faq-hero-art {
+  position: sticky;
+  top: 96px;
+  min-height: 360px;
+  margin: 0;
+  aspect-ratio: 3 / 4;
+  background-image:
+    linear-gradient(180deg, rgba(15, 24, 24, 0.05), rgba(20, 10, 5, 0.45)),
+    image-set(
+      url("/game-art/faq/library-catalog-hero.webp") type("image/webp"),
+      url("/game-art/faq/library-catalog-hero.png") type("image/png")
+    );
+  background-position: center;
+  background-size: cover;
+  border: 1px solid rgba(217, 154, 66, 0.18);
+  border-radius: 18px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
+}
+
+.faq-cabinet {
+  display: grid;
+  gap: 28px;
+  padding: 32px;
+  color: #f5e8c8;
+  background-color: #4a3422;
+  background-image:
+    linear-gradient(180deg, rgba(74, 52, 34, 0.38), rgba(18, 33, 34, 0.28) 50%, rgba(28, 18, 10, 0.65)),
+    repeating-linear-gradient(180deg, rgba(60, 40, 20, 0.18) 0 2px, transparent 2px 8px);
+  border: 1px solid rgba(217, 154, 66, 0.22);
+  border-radius: 18px;
+  box-shadow:
+    inset 0 0 0 1px rgba(217, 154, 66, 0.15),
+    0 20px 50px rgba(0, 0, 0, 0.55);
+}
+
+.faq-head {
+  display: grid;
+  gap: 8px;
+}
+
+.faq-kicker {
+  color: #d19a42;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.faq-head h1 {
+  margin: 0;
+  color: #fff1cf;
+  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  font-weight: 900;
+  line-height: 1.05;
+}
+
+.faq-subtitle {
+  max-width: 60ch;
+  color: rgba(245, 232, 200, 0.78);
+  font-size: 0.98rem;
+  line-height: 1.6;
+}
+
+.faq-drawer-row {
+  display: grid;
+  gap: 12px;
+}
+
+.faq-drawer-label {
+  margin: 0;
+  padding-bottom: 8px;
+  color: #d19a42;
+  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-size: 1.05rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  border-bottom: 1px solid rgba(217, 154, 66, 0.3);
+}
+
+.faq-drawer-stack {
+  display: grid;
+  gap: 8px;
+}
+
+.faq-drawer {
+  overflow: hidden;
+  color: #1a1410;
+  background-color: #c8a366;
+  background-image:
+    linear-gradient(180deg, rgba(255, 240, 200, 0.18), transparent 30%, rgba(18, 33, 34, 0.14) 100%),
+    image-set(
+      url("/game-art/textures/brass-plate.webp") type("image/webp"),
+      url("/game-art/textures/brass-plate.png") type("image/png")
+    );
+  background-blend-mode: multiply;
+  background-size: cover;
+  border: 1px solid rgba(50, 30, 10, 0.45);
+  border-radius: 4px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 240, 200, 0.45),
+    inset 0 -1px 0 rgba(50, 30, 10, 0.4),
+    0 2px 4px rgba(0, 0, 0, 0.35);
+  transition: box-shadow 200ms ease, transform 200ms ease;
+}
+
+.faq-drawer[data-open="true"] {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 240, 200, 0.55),
+    inset 0 -1px 0 rgba(50, 30, 10, 0.5),
+    0 8px 20px rgba(0, 0, 0, 0.45);
+}
+
+.faq-drawer-handle {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) 28px;
+  gap: 16px;
+  align-items: center;
+  width: 100%;
+  min-height: 58px;
+  padding: 14px 18px;
+  color: #1a1410;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.faq-drawer-pull {
+  width: 36px;
+  height: 12px;
+  background:
+    linear-gradient(180deg, rgba(255, 240, 200, 0.35), transparent 50%),
+    radial-gradient(ellipse at center, rgba(50, 30, 10, 0.65), rgba(50, 30, 10, 0.2));
+  border: 1px solid rgba(50, 30, 10, 0.5);
+  border-radius: 4px;
+  box-shadow: inset 0 1px 0 rgba(255, 240, 200, 0.3);
+}
+
+.faq-drawer-title {
+  min-width: 0;
+  font-family: "Noto Serif", serif;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.3;
+  text-shadow: 0 1px 0 rgba(255, 240, 200, 0.4);
+}
+
+.faq-drawer-chevron {
+  color: #842f2b;
+  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-size: 1.5rem;
+  font-weight: 900;
+  text-align: center;
+}
+
+.faq-drawer-card {
+  padding: 0 18px 18px 70px;
+  background: linear-gradient(180deg, rgba(255, 250, 235, 0.94), rgba(245, 235, 215, 0.88));
+  border-top: 1px dashed rgba(50, 30, 10, 0.35);
+}
+
+.faq-drawer-card-inner {
+  padding-top: 14px;
+  color: #2a1b10;
+  font-size: 0.95rem;
+  line-height: 1.65;
+}
+
+.faq-drawer-card-inner a {
+  color: #842f2b;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.faq-foot {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 20px;
+  text-align: center;
+  border-top: 1px solid rgba(217, 154, 66, 0.22);
+}
+
+.faq-foot p {
+  color: rgba(245, 232, 200, 0.78);
+  font-size: 0.95rem;
+}
+
+.faq-foot-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+@media (max-width: 979px) {
+  .faq-hero-art {
+    position: relative;
+    top: 0;
+    min-height: 260px;
+    aspect-ratio: 16 / 9;
+  }
+}
+
+@media (max-width: 640px) {
+  .faq-shell {
+    padding-inline: 12px;
+  }
+
+  .faq-cabinet {
+    padding: 22px 16px;
+    border-radius: 14px;
+  }
+
+  .faq-drawer-handle {
+    grid-template-columns: 28px minmax(0, 1fr) 24px;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .faq-drawer-pull {
+    width: 28px;
+  }
+
+  .faq-drawer-card {
+    padding: 0 12px 14px 50px;
+  }
 }
 
 .site-utility-separator {
@@ -11158,6 +13028,18 @@ html[data-theme="dark"] .cookie-banner {
 .account-status {
   color: #842f2b;
   font-weight: 800;
+}
+
+.not-found-shell {
+  display: grid;
+  place-items: center;
+  min-height: calc(100vh - 80px);
+  padding: 64px 16px;
+}
+
+.not-found-card {
+  max-width: 720px;
+  text-align: left;
 }
 
 @media (max-width: 768px) {

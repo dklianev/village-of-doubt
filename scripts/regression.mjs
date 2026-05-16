@@ -590,6 +590,8 @@ function validProductionEnv() {
     PUBLIC_WS_DOMAIN: "ws.werewolf.example.com",
     CORS_ORIGIN: "https://werewolf.example.com",
     ALLOW_DEV_AUTH: "false",
+    GOOGLE_CLIENT_ID: "prod-google-client-id",
+    GOOGLE_CLIENT_SECRET: "prod-google-client-secret",
   };
 }
 

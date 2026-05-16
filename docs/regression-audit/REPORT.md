@@ -337,3 +337,26 @@ Verified:
 - No accessibility audit was performed; this was explicitly out of scope.
 - Dependency advisories were not exploit-tested; this report treats `pnpm audit` as source evidence and recommends upgrades.
 - The untracked `audit-v3/desktop`, `audit-v3/mobile`, and `docs/frontend-audit-v3` folders were read only lightly for overlap context and were not modified by this audit.
+
+## Fix verification (2026-05-16)
+
+All 16 findings from the 2026-05-16 audit have been addressed in branch `fix/regression-audit-followup`.
+
+| ID | Status | Commit |
+|---|---|---|
+| SEC-001 | ✅ Fixed | 5aa4528 |
+| AUTH-001 | ✅ Fixed | 269337e |
+| DB-001 | ✅ Fixed | f4c88dd |
+| TEST-001 | ✅ Fixed | e735283 |
+| TEST-003 | ✅ Fixed | 41398c5 |
+| DEPLOY-001 | ✅ Fixed | ba8fb35 |
+| GAME-001 | ✅ Fixed | 66771c9 |
+| BG-001 | ✅ Fixed | b7f7e44 |
+| BG-002 | ✅ Fixed | e8c0147 |
+| API-001 | ✅ Fixed | 1b3710f |
+| ENV-001 | ✅ Fixed | 8a0f016 |
+| TEST-002 | ✅ Fixed | 50006a6 |
+| DEPLOY-002 | ✅ Fixed | 6e37b19 |
+| DEAD-001 | ✅ Fixed | b01206f |
+| TODO-001 | ✅ Fixed | 22c84a9 |
+| DOC-001 | ✅ Fixed | d0c3536 |

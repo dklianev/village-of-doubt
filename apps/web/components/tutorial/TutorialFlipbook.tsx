@@ -14,15 +14,24 @@ const TOTAL_SLIDES = 6;
 const STORAGE_KEY_COMPLETED = "tutorial-completed";
 const STORAGE_KEY_LAST_SLIDE = "tutorial-last-slide";
 
+function readInitialSlide(searchParams: Pick<URLSearchParams, "get">): number {
+  const fromUrl = Number(searchParams.get("step"));
+  if (Number.isFinite(fromUrl) && fromUrl >= 1 && fromUrl <= TOTAL_SLIDES) {
+    return fromUrl;
+  }
+
+  return 1;
+}
+
 export function TutorialFlipbook() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [current, setCurrent] = useState(1);
+  const [current, setCurrent] = useState(() => readInitialSlide(searchParams));
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    const fromUrl = Number(searchParams.get("step"));
-    if (Number.isFinite(fromUrl) && fromUrl >= 1 && fromUrl <= TOTAL_SLIDES) {
-      setCurrent(fromUrl);
+    if (searchParams.get("step")) {
+      setHydrated(true);
       return;
     }
 
@@ -30,11 +39,16 @@ export function TutorialFlipbook() {
     if (Number.isFinite(stored) && stored >= 1 && stored <= TOTAL_SLIDES) {
       setCurrent(stored);
     }
+    setHydrated(true);
     // We only restore once on mount; later changes are driven by local state.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
+    if (!hydrated) {
+      return;
+    }
+
     const params = new URLSearchParams(searchParams.toString());
     params.set("step", String(current));
     router.replace(`/tutorial?${params.toString()}`, { scroll: false });
@@ -44,7 +58,7 @@ export function TutorialFlipbook() {
     }
     // Avoid reacting to searchParams changes caused by this same replace call.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current, router]);
+  }, [current, hydrated, router]);
 
   const goTo = useCallback((slide: number) => {
     if (slide < 1 || slide > TOTAL_SLIDES) {

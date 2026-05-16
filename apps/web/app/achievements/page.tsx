@@ -1,11 +1,26 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AchievementsClient } from "@/components/achievements-client";
+import { JsonLd } from "@/components/JsonLd";
 import { requireSession } from "@/lib/require-session";
+import { absoluteUrl, routeMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Постижения | Върколак и Мафия",
+export const metadata: Metadata = routeMetadata({
+  title: "Постижения — малките легенди",
   description: "Колекция от моменти, отключени от записите: първа кръв, спасени нощи, лични победи и финални обрати.",
+  path: "/achievements",
+  image: "/game-art/og/og-achievements.png",
+  imageAlt: "Стена с празни месингови плочи за постижения",
+  ogDescription: "Плочи за спасения, предателства, точни изстрели и лични победи.",
+});
+
+const achievementsJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  name: "Постижения",
+  description: "Колекция от игрови постижения, отключени от записите и победите.",
+  url: absoluteUrl("/achievements"),
+  inLanguage: "bg-BG",
 };
 
 export default async function AchievementsPage() {
@@ -13,6 +28,7 @@ export default async function AchievementsPage() {
 
   return (
     <main className="shell utility-shell achievement-shell">
+      <JsonLd data={achievementsJsonLd} />
       <section className="paper-card utility-hero achievement-hero rounded-[2rem] p-8">
         <p className="section-kicker text-[#842f2b]">постижения</p>
         <h1 className="mt-3 text-5xl font-black">Малките легенди след всяка игра</h1>
