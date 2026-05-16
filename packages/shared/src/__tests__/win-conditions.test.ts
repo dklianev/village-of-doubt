@@ -27,15 +27,77 @@ describe("evaluateWinCondition", () => {
     });
   });
 
-  it("does not let Werewolves win by parity alone", () => {
+  it("lets Werewolves win at parity (1 wolf vs 1 villager)", () => {
     expect(
       evaluateWinCondition([
         { playerId: "wolf", role: "werewolf", alive: true },
         { playerId: "villager", role: "ordinary_villager", alive: true },
       ]),
     ).toMatchObject({
+      winner: "werewolves",
+      reasonBg: "Върколаците са равни или повече от живите селяни.",
+    });
+  });
+
+  it("lets Werewolves win at parity (2 wolves vs 2 villagers)", () => {
+    expect(
+      evaluateWinCondition([
+        { playerId: "w1", role: "werewolf", alive: true },
+        { playerId: "w2", role: "werewolf", alive: true },
+        { playerId: "v1", role: "ordinary_villager", alive: true },
+        { playerId: "v2", role: "ordinary_villager", alive: true },
+      ]),
+    ).toMatchObject({
+      winner: "werewolves",
+    });
+  });
+
+  it("keeps the game alive when villagers still outnumber werewolves", () => {
+    expect(
+      evaluateWinCondition([
+        { playerId: "w1", role: "werewolf", alive: true },
+        { playerId: "v1", role: "ordinary_villager", alive: true },
+        { playerId: "v2", role: "ordinary_villager", alive: true },
+      ]),
+    ).toMatchObject({
       winner: null,
       reasonBg: null,
+    });
+  });
+
+  it("lets Vampires win at parity", () => {
+    expect(
+      evaluateWinCondition([
+        { playerId: "vamp", role: "vampire", alive: true },
+        { playerId: "villager", role: "ordinary_villager", alive: true },
+      ]),
+    ).toMatchObject({
+      winner: "vampires",
+      reasonBg: "Вампирите са равни или повече от живите селяни.",
+    });
+  });
+
+  it("resolves mixed WW+Vampires by faction headcount tie-break", () => {
+    expect(
+      evaluateWinCondition([
+        { playerId: "w1", role: "werewolf", alive: true },
+        { playerId: "w2", role: "werewolf", alive: true },
+        { playerId: "v1", role: "vampire", alive: true },
+        { playerId: "village", role: "ordinary_villager", alive: true },
+      ]),
+    ).toMatchObject({
+      winner: "werewolves",
+      reasonBg: "Върколаците надделяха в смесената нощ.",
+    });
+
+    expect(
+      evaluateWinCondition([
+        { playerId: "w1", role: "werewolf", alive: true },
+        { playerId: "v1", role: "vampire", alive: true },
+      ]),
+    ).toMatchObject({
+      winner: "draw",
+      reasonBg: "Върколаци и вампири се изравниха над селото.",
     });
   });
 

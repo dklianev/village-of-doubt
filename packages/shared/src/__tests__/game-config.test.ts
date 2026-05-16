@@ -233,13 +233,14 @@ describe("assignment and win conditions", () => {
     expect(result.winner).toBe("lovers");
   });
 
-  it("does not let Vampires win by parity alone", () => {
+  it("declares draw when Werewolves and Vampires tie without village opposition", () => {
     const result = evaluateWinCondition([
       { playerId: "a", role: "vampire", alive: true },
       { playerId: "b", role: "werewolf", alive: true },
     ]);
 
-    expect(result.winner).toBeNull();
+    expect(result.winner).toBe("draw");
+    expect(result.reasonBg).toBe("Върколаци и вампири се изравниха над селото.");
   });
 
   it("does not let a lone neutral jester count as village", () => {

@@ -2,7 +2,7 @@
   "auditDate": "2026-05-16",
   "totals": {
     "p0": 0,
-    "p1": 9,
+    "p1": 10,
     "p2": 4,
     "p3": 3
   },
@@ -83,6 +83,17 @@
       "repro": "Inspect `defaultRandomSource`; when `globalThis.crypto.getRandomValues` is unavailable, it returns `Math.random()`.",
       "impact": "Violates the project invariant that role assignment must be crypto-based. In a crypto-less runtime/polyfill failure, roles become predictable.",
       "suggestedFix": "Use Node crypto as a server fallback or throw a Bulgarian-safe configuration/runtime error instead of falling back to `Math.random`."
+    },
+    {
+      "id": "GAME-002",
+      "severity": "P1",
+      "category": "game-server",
+      "title": "Werewolves and Vampires win conditions used wipe-out instead of documented parity rule",
+      "file": "packages/shared/src/win-conditions.ts",
+      "line": 69,
+      "repro": "Run 2 werewolves vs 2 villagers through `evaluateWinCondition`; pre-fix it returned `{ winner: null }`, while `docs/rules-bg.md:667` documents parity wins. UI role-card copy in `apps/web/components/play-room-client.tsx:2213` already promised \"Върколаците да достигнат паритет със селото\".",
+      "impact": "Games continued 2+ phases past the documented endgame, frustrating play and contradicting UI promises.",
+      "suggestedFix": "Fixed in branch `fix/win-condition-parity` (commit `cd020a1`). Werewolves and vampires now win at parity; mixed WW+Vampires scenario resolves via faction headcount tie-break."
     },
     {
       "id": "AUTH-001",

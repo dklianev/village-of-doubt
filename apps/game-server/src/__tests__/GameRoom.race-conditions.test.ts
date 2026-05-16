@@ -5,6 +5,7 @@ import type { GameRoom } from "../rooms/GameRoom.js";
 import {
   advanceToFirstNight,
   connectPlayers,
+  delay,
   findPublicPlayer,
   restoreEnvValue,
   startGameAndCollectRoles,
@@ -55,6 +56,7 @@ describe("GameRoom race-condition contracts", () => {
     wolves[0]?.client.send("submitNightAction", { action: { kind: "faction_kill", targetUserId: target?.userId } });
     wolves[1]?.client.send("submitNightAction", { action: { kind: "faction_kill", targetUserId: target?.userId } });
     await Promise.all([firstAck, secondAck]);
+    await waitForPendingNightActions(serverRoom, wolves.length);
     clients[0]?.client.send("narratorAdvance", {});
     await serverRoom.waitForNextPatch(25).catch(() => undefined);
 
@@ -63,3 +65,13 @@ describe("GameRoom race-condition contracts", () => {
     expect(findPublicPlayer(serverRoom, target?.userId)?.alive).toBe(false);
   });
 });
+
+async function waitForPendingNightActions(room: GameRoom, expectedCount: number) {
+  for (let index = 0; index < 20; index += 1) {
+    const pendingActions = (room as unknown as { pendingNightActions?: Map<string, unknown> }).pendingNightActions;
+    if ((pendingActions?.size ?? 0) >= expectedCount) {
+      return;
+    }
+    await delay(10);
+  }
+}
