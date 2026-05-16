@@ -10712,7 +10712,10 @@ html[data-theme="light"] .sign-in-table {
 }
 
 .email-form-help {
+  display: inline-flex;
+  align-items: center;
   width: fit-content;
+  min-height: 32px;
   color: #842f2b;
   font-size: 0.82rem;
   font-weight: 800;
@@ -12305,6 +12308,10 @@ html[data-theme="light"] .sign-in-table {
 }
 
 .site-footer-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 4px;
   color: rgba(232, 217, 187, 0.75);
   text-decoration: none;
 }
