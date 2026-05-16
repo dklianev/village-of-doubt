@@ -132,11 +132,7 @@ export class GameRoom extends Room<{ state: GameState }> {
     }
 
     if (options.token) {
-      const payload = verifyGameToken(options.token, getGameTokenSecret());
-      if (payload.roomCode !== this.state.code) {
-        throw new Error("Game token-ът е за друга стая.");
-      }
-
+      const payload = verifyGameToken(options.token, getGameTokenSecret(), { roomCode: this.state.code });
       return { userId: payload.userId, displayName: payload.displayName };
     }
 

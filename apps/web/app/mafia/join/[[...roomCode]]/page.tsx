@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { AnonymousEntryClient } from "@/components/games/anonymous-entry-client";
+import { AuthGatedEntryClient } from "@/components/games/auth-gated-entry-client";
 import { requireSession } from "@/lib/require-session";
 
 export const metadata: Metadata = {
@@ -14,7 +14,7 @@ export default async function MafiaJoinPage({ params }: { params: Promise<{ room
 
   return (
     <main className="shell lobby-shell" data-theme="mafia" data-family="mafia">
-      <AnonymousEntryClient family="mafia" mode="mafia_free" initialCode={initialCode} />
+      <AuthGatedEntryClient family="mafia" mode="mafia_free" initialCode={initialCode} />
     </main>
   );
 }

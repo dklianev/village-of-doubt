@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { AnonymousEntryClient } from "@/components/games/anonymous-entry-client";
+import { AuthGatedEntryClient } from "@/components/games/auth-gated-entry-client";
 import { requireSession } from "@/lib/require-session";
 
 export const metadata: Metadata = {
@@ -14,7 +14,7 @@ export default async function WerewolfJoinPage({ params }: { params: Promise<{ r
 
   return (
     <main className="shell lobby-shell" data-theme="werewolves" data-family="werewolves">
-      <AnonymousEntryClient family="werewolves" mode="werewolves_classic" initialCode={initialCode} />
+      <AuthGatedEntryClient family="werewolves" mode="werewolves_classic" initialCode={initialCode} />
     </main>
   );
 }

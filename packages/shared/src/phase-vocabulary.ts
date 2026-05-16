@@ -33,7 +33,7 @@ const FAMILY_PHASE_LABELS_BG: Record<GameFamily, Partial<Record<GamePhase, strin
 export function phaseLabelBg(phase: GamePhase, familyOrMode: GameFamily | GameMode = "werewolves"): string {
   const family = isGameMode(familyOrMode) ? getGameFamily(familyOrMode) : familyOrMode;
   const modeOverride = isGameMode(familyOrMode) ? GAME_MODE_DEFINITIONS[familyOrMode].phaseLabelsBg[phase] : undefined;
-  return modeOverride ?? FAMILY_PHASE_LABELS_BG[family][phase] ?? DEFAULT_PHASE_LABELS_BG[phase];
+  return modeOverride ?? FAMILY_PHASE_LABELS_BG[family][phase] ?? DEFAULT_PHASE_LABELS_BG[phase] ?? String(phase);
 }
 
 function isGameMode(value: GameFamily | GameMode): value is GameMode {

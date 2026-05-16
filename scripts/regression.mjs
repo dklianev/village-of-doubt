@@ -18,6 +18,7 @@ const checks = [
   ["play UI hardening contracts", checkPlayUiContracts],
   ["frontend hygiene contracts", checkFrontendHygieneContracts],
   ["production security guards", checkProductionGuardContracts],
+  ["launch testing contracts", checkLaunchTestingContracts],
   ["production env checker behavior", checkProductionEnvChecker],
   ["smoke/playtest/verify wiring", checkScriptWiring],
 ];
@@ -496,6 +497,41 @@ function checkProductionGuardContracts() {
   assert(caddyfile.includes("Strict-Transport-Security"), "Caddyfile must enable HSTS.");
   assert(caddyfile.includes("X-Frame-Options \"DENY\""), "Caddyfile must block framing.");
   assert(caddyfile.includes("Content-Security-Policy"), "Caddyfile must include a baseline CSP.");
+}
+
+function checkLaunchTestingContracts() {
+  const packageJson = JSON.parse(readText("package.json"));
+  const authRoute = readText("apps/web/app/api/auth/[...all]/route.ts");
+  const authConfig = readText("apps/web/lib/auth.ts");
+  const bannedCopyPattern = /без акаунт|без регистрация|временна идентичност|играй без|влизаш без|без профил|anonymous/i;
+  const uiFiles = [
+    ...listFilesRecursive(path.join(root, "apps/web/app"))
+      .filter((file) => /\.(tsx|ts)$/.test(file))
+      .map((file) => `apps/web/app/${file}`),
+    ...listFilesRecursive(path.join(root, "apps/web/components"))
+      .filter((file) => /\.(tsx|ts)$/.test(file))
+      .map((file) => `apps/web/components/${file}`),
+  ];
+  const visualBaselineDir = path.join(root, "apps/web/__visual__/__baseline__");
+  const baselinePngs = existsSync(visualBaselineDir)
+    ? listFilesRecursive(visualBaselineDir).filter((file) => file.endsWith(".png"))
+    : [];
+
+  assert(packageJson.scripts["perf:budget"] === "node scripts/bundle-budget.mjs", "package.json must expose pnpm perf:budget.");
+  assert(packageJson.scripts.visual?.includes("playwright.config.ts"), "package.json must expose pnpm visual with the Playwright config.");
+  assert(packageJson.scripts["e2e:auth"] === "node scripts/e2e-auth.mjs", "package.json must expose pnpm e2e:auth.");
+  assert(packageJson.scripts.verify.includes("pnpm visual"), "pnpm verify must run visual regression.");
+  assert(packageJson.scripts.verify.includes("pnpm perf:budget"), "pnpm verify must run bundle budgets.");
+  assert(packageJson.scripts.verify.includes("pnpm e2e:auth"), "pnpm verify must run auth E2E checks.");
+  assert(packageJson.scripts["verify:heavy"]?.includes("pnpm test:migrations"), "pnpm verify:heavy must include migration tests.");
+  assert(packageJson.scripts["verify:heavy"]?.includes("pnpm loadtest"), "pnpm verify:heavy must include load tests.");
+  assert(!authRoute.includes("OAUTH_MOCK") && !authConfig.includes("OAUTH_MOCK"), "OAuth mock code must not ship in auth production routes.");
+  assert(baselinePngs.length >= 30, `Expected at least 30 visual baseline PNGs, got ${baselinePngs.length}. Run pnpm visual:update.`);
+
+  for (const file of uiFiles) {
+    const text = readText(file);
+    assert(!bannedCopyPattern.test(text), `${file} still contains removed anonymous/auth-bypass wording.`);
+  }
 }
 
 function checkProductionEnvChecker() {

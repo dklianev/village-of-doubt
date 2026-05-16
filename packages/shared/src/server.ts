@@ -17,6 +17,11 @@ export interface CreateGameTokenInput {
   ttlSeconds?: number;
 }
 
+export interface VerifyGameTokenOptions {
+  roomCode?: string;
+  nowSeconds?: number;
+}
+
 const DEFAULT_TTL_SECONDS = 5 * 60;
 
 export function createGameToken(input: CreateGameTokenInput): string {
@@ -37,8 +42,15 @@ export function createGameToken(input: CreateGameTokenInput): string {
   return `${encodedPayload}.${signature}`;
 }
 
-export function verifyGameToken(token: string, secret: string, nowSeconds = Math.floor(Date.now() / 1000)): GameTokenPayload {
+export function verifyGameToken(
+  token: string,
+  secret: string,
+  optionsOrNowSeconds: VerifyGameTokenOptions | number = {},
+): GameTokenPayload {
   assertUsableSecret(secret);
+  const nowSeconds =
+    typeof optionsOrNowSeconds === "number" ? optionsOrNowSeconds : (optionsOrNowSeconds.nowSeconds ?? Math.floor(Date.now() / 1000));
+  const expectedRoomCode = typeof optionsOrNowSeconds === "number" ? undefined : optionsOrNowSeconds.roomCode;
 
   const [encodedPayload, signature] = token.split(".");
   if (!encodedPayload || !signature) {
@@ -64,6 +76,10 @@ export function verifyGameToken(token: string, secret: string, nowSeconds = Math
 
   if (parsed.expiresAt < nowSeconds) {
     throw new Error("Game token-ът е изтекъл.");
+  }
+
+  if (expectedRoomCode && normalizeRoomCode(parsed.roomCode) !== normalizeRoomCode(expectedRoomCode)) {
+    throw new Error("Game token-ът е за друга стая.");
   }
 
   return {

@@ -409,7 +409,7 @@ async function waitForSettled(page) {
 }
 
 async function expectText(page, text) {
-  await waitForVisibleText(page.getByText(text, { exact: false }), text);
+  await waitForVisibleText(page.getByText(text, { exact: false }).or(page.locator(`[aria-label="${cssString(text)}"]`)), text);
 }
 
 async function expectTextIn(locator, text) {
@@ -824,6 +824,10 @@ async function stop(child) {
 
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function cssString(value) {
+  return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 }
 
 process.on("exit", () => {
