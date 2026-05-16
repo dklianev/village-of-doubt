@@ -6,6 +6,7 @@ import {
   advanceToFirstNight,
   advanceToPhase,
   connectPlayers,
+  delay,
   findPublicPlayer,
   restoreEnvValue,
   startGameAndCollectRoles,
@@ -100,6 +101,7 @@ describe("GameRoom full-night launch smoke", () => {
         action: { kind: "faction_kill", targetUserId: hunter?.userId },
       });
     }
+    await waitForPendingNightActions(serverRoom, wolves.length);
     clients[0]?.client.send("narratorAdvance", {});
     await serverRoom.waitForNextPatch(25).catch(() => undefined);
 
@@ -119,3 +121,13 @@ describe("GameRoom full-night launch smoke", () => {
     expect(serverRoom.state.winnerReasonBg).toBe("Върколаците са равни или повече от живите селяни.");
   });
 });
+
+async function waitForPendingNightActions(room: GameRoom, expectedCount: number) {
+  for (let index = 0; index < 20; index += 1) {
+    const pendingActions = (room as unknown as { pendingNightActions?: Map<string, unknown> }).pendingNightActions;
+    if ((pendingActions?.size ?? 0) >= expectedCount) {
+      return;
+    }
+    await delay(10);
+  }
+}
