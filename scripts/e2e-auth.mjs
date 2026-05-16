@@ -79,8 +79,8 @@ async function emailRegistration(page) {
   await page.goto(`${baseUrl}/sign-in`, { waitUntil: "domcontentloaded" });
   await page.getByRole("tab", { name: "Нов профил" }).click();
   await page.getByLabel("Име на масата").fill("Тест Играч");
-  await page.getByLabel("Имейл").fill(email);
-  await page.getByLabel("Парола").fill("Test1234!");
+  await page.getByRole("textbox", { name: "Имейл" }).fill(email);
+  await page.getByLabel("Парола", { exact: true }).fill("Test1234!");
   await page.getByRole("button", { name: "Създай профил" }).click();
   await page.waitForURL(`${baseUrl}/`, { timeout: 10_000 });
   await page.locator(".auth-chip-avatar").waitFor({ timeout: 10_000 });
@@ -92,8 +92,8 @@ async function authenticatedCreateReturn(page) {
   await page.waitForURL(/\/sign-in\?redirect=/);
   await page.getByRole("tab", { name: "Нов профил" }).click();
   await page.getByLabel("Име на масата").fill("Връщане");
-  await page.getByLabel("Имейл").fill(email);
-  await page.getByLabel("Парола").fill("Test1234!");
+  await page.getByRole("textbox", { name: "Имейл" }).fill(email);
+  await page.getByLabel("Парола", { exact: true }).fill("Test1234!");
   await page.getByRole("button", { name: "Създай профил" }).click();
   await page.waitForURL(`${baseUrl}/werewolf/create`, { timeout: 10_000 });
   await page.getByText("Създай частна стая").waitFor();
@@ -104,13 +104,13 @@ async function accountDeletion(page) {
   await page.goto(`${baseUrl}/sign-in`, { waitUntil: "domcontentloaded" });
   await page.getByRole("tab", { name: "Нов профил" }).click();
   await page.getByLabel("Име на масата").fill("За Изтриване");
-  await page.getByLabel("Имейл").fill(email);
-  await page.getByLabel("Парола").fill("Test1234!");
+  await page.getByRole("textbox", { name: "Имейл" }).fill(email);
+  await page.getByLabel("Парола", { exact: true }).fill("Test1234!");
   await page.getByRole("button", { name: "Създай профил" }).click();
   await page.waitForURL(`${baseUrl}/`, { timeout: 10_000 });
   await page.goto(`${baseUrl}/account`, { waitUntil: "domcontentloaded" });
-  page.once("dialog", (dialog) => dialog.accept());
   await page.getByRole("button", { name: /Изтрий профила/ }).click();
+  await page.getByRole("button", { name: "Потвърди изтриването" }).click();
   await page.waitForURL(`${baseUrl}/`, { timeout: 10_000 });
 }
 
