@@ -36,6 +36,15 @@ describe("POST /api/game-token", () => {
     expect(response.status).toBe(400);
   });
 
+  it("rejects malformed room codes", async () => {
+    const { auth } = await import("@/lib/auth");
+    vi.mocked(auth.api.getSession).mockResolvedValue({ user: { id: "user-1", name: "Анна" } } as never);
+
+    await expectStatus({ code: "ABC" }, 400);
+    await expectStatus({ code: "ABCDEF1234567" }, 400);
+    await expectStatus({ code: "abc-123" }, 400);
+  });
+
   it("issues a token for a valid session and room code", async () => {
     vi.stubEnv("GAME_TOKEN_SECRET", "test-secret-that-is-long-enough-32-chars");
     vi.stubEnv("NODE_ENV", "test");
@@ -52,6 +61,11 @@ describe("POST /api/game-token", () => {
     expect(body.roomCode).toBe("ABC123");
   });
 });
+
+async function expectStatus(body: unknown, status: number) {
+  const response = await POST(jsonRequest(body));
+  expect(response.status).toBe(status);
+}
 
 function jsonRequest(body: unknown) {
   return new Request("http://localhost/api/game-token", {
