@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { createDatabase, getLeaderboardRows } from "@werewolf/database";
 import { getRoleTeam, ROLE_DEFINITIONS, type RoleCode } from "@werewolf/shared";
+import { JsonLd } from "@/components/JsonLd";
 import { NewspaperEmpty } from "@/components/leaderboard/NewspaperEmpty";
 import { NewspaperPage } from "@/components/leaderboard/NewspaperPage";
 import { LeaderboardSkeleton } from "@/components/skeleton";
 import type { LeaderboardEntry } from "@/lib/leaderboard-headlines";
-import { routeMetadata } from "@/lib/seo";
+import { absoluteUrl, routeMetadata } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -19,9 +20,19 @@ export const metadata: Metadata = routeMetadata({
   ogDescription: "Участия, победи и последна активност от завършените игри.",
 });
 
+const leaderboardJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  name: "Класация",
+  description: "Анонимна класация от завършени игри с участия, победи и последна активност.",
+  url: absoluteUrl("/leaderboard"),
+  inLanguage: "bg-BG",
+};
+
 export default function LeaderboardPage() {
   return (
     <main className="shell newspaper-shell">
+      <JsonLd data={leaderboardJsonLd} />
       <Suspense fallback={<LeaderboardSkeleton />}>
         <LeaderboardContent />
       </Suspense>

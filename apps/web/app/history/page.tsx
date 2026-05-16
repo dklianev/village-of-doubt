@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { createDatabase, getGameTimeline, getRecentGameHistory } from "@werewolf/database";
 import type { GameMode } from "@werewolf/shared";
+import { JsonLd } from "@/components/JsonLd";
 import { EvidenceWall } from "@/components/history/EvidenceWall";
 import { EvidenceWallSkeleton } from "@/components/skeleton";
 import type { HistoryGameView, HistoryTimelineEventView } from "@/lib/history-highlights";
-import { routeMetadata } from "@/lib/seo";
+import { absoluteUrl, routeMetadata } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -21,9 +22,19 @@ export const metadata: Metadata = routeMetadata({
   ogDescription: "Победи, смърти, гласове и развръзки от старите стаи.",
 });
 
+const historyJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  name: "История на игрите",
+  description: "Архив от завършени игри, победители, гласове и развръзки.",
+  url: absoluteUrl("/history"),
+  inLanguage: "bg-BG",
+};
+
 export default function HistoryPage() {
   return (
     <main className="shell history-shell evidence-shell">
+      <JsonLd data={historyJsonLd} />
       <Suspense fallback={<EvidenceWallSkeleton />}>
         <HistoryContent />
       </Suspense>
