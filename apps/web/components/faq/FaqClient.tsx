@@ -92,6 +92,15 @@ export function FaqClient({ items }: { items: readonly FaqItem[] }) {
     setOpenSlugs(new Set());
   }, []);
 
+  const copyLink = useCallback(async (slug: string) => {
+    const url = `${window.location.origin}/faq?q=${encodeURIComponent(slug)}`;
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      // Clipboard access can be blocked in non-secure preview contexts.
+    }
+  }, []);
+
   return (
     <section className="faq-stage">
       <figure className="faq-hero-art" aria-hidden />
@@ -164,6 +173,16 @@ export function FaqClient({ items }: { items: readonly FaqItem[] }) {
                       {isOpen ? (
                         <div className="faq-drawer-card">
                           <FaqAnswerRenderer blocks={item.answer} />
+                          <footer className="faq-drawer-footer">
+                            <button
+                              type="button"
+                              className="faq-copy-link"
+                              onClick={() => copyLink(item.slug)}
+                              aria-label={`Копирай линк към „${item.question}“`}
+                            >
+                              🔗 Копирай линк
+                            </button>
+                          </footer>
                         </div>
                       ) : null}
                     </article>
