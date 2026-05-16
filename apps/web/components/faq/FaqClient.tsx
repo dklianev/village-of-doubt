@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import type { FaqCategory, FaqItem } from "@/lib/faq-data";
 import { FaqAnswerRenderer } from "./FaqAnswerRenderer";
+import { CategoryIcon } from "./FaqCategoryIcon";
 
 const CATEGORY_LABELS: Record<FaqCategory, string> = {
   "pre-game": "Преди първа игра",
@@ -177,7 +178,10 @@ export function FaqClient({ items }: { items: readonly FaqItem[] }) {
         ) : (
           grouped.map(({ category, entries }) => (
             <section key={category} className="faq-drawer-row" data-category={category}>
-              <h2 className="faq-drawer-label">{CATEGORY_LABELS[category]}</h2>
+              <h2 className="faq-drawer-label">
+                <CategoryIcon category={category} className="faq-category-icon" />
+                {CATEGORY_LABELS[category]}
+              </h2>
 
               <div className="faq-drawer-stack">
                 {entries.map((item) => {

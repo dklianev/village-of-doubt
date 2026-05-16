@@ -12423,6 +12423,9 @@ html[data-theme="light"] .sign-in-table {
 }
 
 .faq-drawer-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin: 0;
   padding-bottom: 8px;
   color: #d19a42;
@@ -12431,6 +12434,37 @@ html[data-theme="light"] .sign-in-table {
   font-weight: 900;
   text-transform: uppercase;
   border-bottom: 1px solid rgba(217, 154, 66, 0.3);
+}
+
+.faq-category-icon {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+}
+
+.faq-drawer-row[data-category="pre-game"] .faq-drawer-label,
+.faq-drawer-row[data-category="pre-game"] .faq-category-icon {
+  color: #d19a42;
+}
+
+.faq-drawer-row[data-category="gameplay"] .faq-drawer-label,
+.faq-drawer-row[data-category="gameplay"] .faq-category-icon {
+  color: #d94a3d;
+}
+
+.faq-drawer-row[data-category="account"] .faq-drawer-label,
+.faq-drawer-row[data-category="account"] .faq-category-icon {
+  color: #6a8caf;
+}
+
+.faq-drawer-row[data-category="tech"] .faq-drawer-label,
+.faq-drawer-row[data-category="tech"] .faq-category-icon {
+  color: #a8a39b;
+}
+
+.faq-drawer-row[data-category="privacy"] .faq-drawer-label,
+.faq-drawer-row[data-category="privacy"] .faq-category-icon {
+  color: #4a6b8a;
 }
 
 .faq-drawer-stack {
