@@ -11160,6 +11160,18 @@ html[data-theme="dark"] .cookie-banner {
   font-weight: 800;
 }
 
+.not-found-shell {
+  display: grid;
+  place-items: center;
+  min-height: calc(100vh - 80px);
+  padding: 64px 16px;
+}
+
+.not-found-card {
+  max-width: 720px;
+  text-align: left;
+}
+
 @media (max-width: 768px) {
   .auth-chip-name {
     display: none;
