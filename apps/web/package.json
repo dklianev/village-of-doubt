@@ -16,10 +16,10 @@
     "@t3-oss/env-nextjs": "^0.13.11",
     "@werewolf/database": "workspace:*",
     "@werewolf/shared": "workspace:*",
-    "better-auth": "^1.6.8",
-    "next": "^16.2.4",
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5",
+    "better-auth": "^1.6.11",
+    "next": "^16.2.6",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
     "zod": "^4.1.12"
   },
   "devDependencies": {
