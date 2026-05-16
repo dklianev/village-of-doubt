@@ -23,6 +23,7 @@ async function main() {
   const web = start("web", process.execPath, [webStandaloneServer], {
     PORT: "3300",
     BETTER_AUTH_URL: "http://127.0.0.1:3300",
+    NEXT_PUBLIC_APP_URL: "http://127.0.0.1:3300",
     NEXT_PUBLIC_GAME_SERVER_URL: "ws://127.0.0.1:3567",
     BETTER_AUTH_SECRET: "smoke-test-secret-that-is-long-enough",
     GAME_TOKEN_SECRET: "smoke-test-secret-that-is-long-enough",

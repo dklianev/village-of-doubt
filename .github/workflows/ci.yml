@@ -55,6 +55,8 @@ jobs:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/werewolf_test
           BETTER_AUTH_SECRET: ci-only-secret-that-is-long-enough-32-chars-min
           GAME_TOKEN_SECRET: ci-only-secret-that-is-long-enough-32-chars-min
+          BETTER_AUTH_URL: https://werewolf.example.com
+          NEXT_PUBLIC_APP_URL: https://werewolf.example.com
           OAUTH_MOCK: "true"
 
       - name: Upload visual diffs

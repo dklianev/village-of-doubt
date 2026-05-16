@@ -4,7 +4,7 @@ import { cpSync, existsSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 
 const webPort = process.env.E2E_AUTH_WEB_PORT ?? "3412";
-let baseUrl = process.env.E2E_AUTH_BASE_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? `http://127.0.0.1:${webPort}`;
+let baseUrl = process.env.E2E_AUTH_BASE_URL ?? localAppUrl(process.env.NEXT_PUBLIC_APP_URL) ?? `http://127.0.0.1:${webPort}`;
 const hasDatabase = Boolean(process.env.DATABASE_URL);
 const isLocalOnly = process.env.E2E_LOCAL_ONLY === "true";
 const testSecret = "auth-e2e-secret-that-is-long-enough";
@@ -199,3 +199,18 @@ process.on("exit", () => {
     }
   }
 });
+
+function localAppUrl(value) {
+  if (!value) {
+    return undefined;
+  }
+  try {
+    const url = new URL(value);
+    if (url.hostname === "127.0.0.1" || url.hostname === "localhost" || url.hostname === "::1") {
+      return value;
+    }
+  } catch {
+    return undefined;
+  }
+  return undefined;
+}
