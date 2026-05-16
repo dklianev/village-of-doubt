@@ -12293,7 +12293,7 @@ html[data-theme="light"] .sign-in-table {
 
 .site-footer {
   padding: 24px 16px;
-  margin-top: 48px;
+  margin-top: 24px;
   border-top: 1px solid rgba(255, 240, 200, 0.08);
   color: rgba(232, 217, 187, 0.55);
   font-size: 0.8rem;
@@ -12319,10 +12319,6 @@ html[data-theme="light"] .sign-in-table {
 .site-footer-links a:hover {
   color: #d19a42;
   text-decoration: underline;
-}
-
-.site-footer-credit {
-  margin-top: 8px;
 }
 
 /* ============================== */
