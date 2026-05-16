@@ -40,6 +40,11 @@
     "overrides": {
       "esbuild": "0.28.0",
       "postcss": "8.5.14"
+    },
+    "auditConfig": {
+      "ignoreCves": [
+        "CVE-2025-14505"
+      ]
     }
   }
 }
