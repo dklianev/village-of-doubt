@@ -6,9 +6,17 @@ import { dirname } from "node:path";
 const webPort = process.env.E2E_AUTH_WEB_PORT ?? "3412";
 let baseUrl = process.env.E2E_AUTH_BASE_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? `http://127.0.0.1:${webPort}`;
 const hasDatabase = Boolean(process.env.DATABASE_URL);
+const isLocalOnly = process.env.E2E_LOCAL_ONLY === "true";
 const testSecret = "auth-e2e-secret-that-is-long-enough";
 const processes = [];
 const standaloneServer = "apps/web/.next/standalone/apps/web/server.js";
+
+if (!hasDatabase && !isLocalOnly) {
+  console.error(
+    "✗ e2e:auth изисква DATABASE_URL извън локален режим. Стартирай с E2E_LOCAL_ONLY=true за skip или подай DATABASE_URL.",
+  );
+  process.exit(1);
+}
 
 if (!process.env.E2E_AUTH_BASE_URL && !(await isHealthy(`${baseUrl}/api/health`))) {
   ensureStandaloneAssets();
@@ -31,9 +39,9 @@ let failures = 0;
 const scenarios = [
   ["auth gate redirect", authGateRedirect],
   ["sign-in surface", signInSurface],
-  ["email registration", hasDatabase ? emailRegistration : skipped("DATABASE_URL липсва")],
-  ["authenticated create redirect return", hasDatabase ? authenticatedCreateReturn : skipped("DATABASE_URL липсва")],
-  ["account deletion", hasDatabase ? accountDeletion : skipped("DATABASE_URL липсва")],
+  ["email registration", hasDatabase ? emailRegistration : skipped("локален режим: DATABASE_URL липсва")],
+  ["authenticated create redirect return", hasDatabase ? authenticatedCreateReturn : skipped("локален режим: DATABASE_URL липсва")],
+  ["account deletion", hasDatabase ? accountDeletion : skipped("локален режим: DATABASE_URL липсва")],
 ];
 
 for (const [name, run] of scenarios) {
