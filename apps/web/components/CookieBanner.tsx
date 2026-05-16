@@ -6,20 +6,18 @@ import Link from "next/link";
 const STORAGE_KEY = "cookie-consent";
 
 export function CookieBanner() {
-  const [visible, setVisible] = useState(false);
+  const [state, setState] = useState<"unknown" | "visible" | "hidden">("unknown");
 
   useEffect(() => {
-    if (!window.localStorage.getItem(STORAGE_KEY)) {
-      setVisible(true);
-    }
+    setState(window.localStorage.getItem(STORAGE_KEY) ? "hidden" : "visible");
   }, []);
 
   function accept() {
     window.localStorage.setItem(STORAGE_KEY, "1");
-    setVisible(false);
+    setState("hidden");
   }
 
-  if (!visible) {
+  if (state !== "visible") {
     return null;
   }
 
