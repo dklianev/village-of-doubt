@@ -23,8 +23,20 @@ const themeInitScript = `(() => {
   }
 })();`;
 
+function resolveMetadataBase(): URL {
+  const candidate = process.env.NEXT_PUBLIC_APP_URL ?? process.env.BETTER_AUTH_URL;
+
+  if (process.env.NODE_ENV === "production" && !candidate) {
+    throw new Error(
+      "NEXT_PUBLIC_APP_URL или BETTER_AUTH_URL трябва да са зададени в production среда. Иначе social media preview-та и абсолютните URLs ще сочат към localhost.",
+    );
+  }
+
+  return new URL(candidate ?? "http://localhost:3000");
+}
+
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? process.env.BETTER_AUTH_URL ?? "http://localhost:3000"),
+  metadataBase: resolveMetadataBase(),
   title: "Върколак и Мафия",
   description: "Онлайн Върколак и Мафия с тайни роли, частни стаи и авторитетен игрови сървър.",
   icons: {
