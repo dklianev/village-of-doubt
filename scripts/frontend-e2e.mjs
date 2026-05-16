@@ -751,7 +751,7 @@ function runCommand(name, command, args, env) {
         ...process.env,
         ...env,
       },
-      shell: isWindows && command.endsWith(".cmd"),
+      shell: shouldRunThroughShell(command),
       stdio: ["ignore", "pipe", "pipe"],
     });
 
@@ -770,9 +770,21 @@ function runCommand(name, command, args, env) {
 
 function packageManagerInvocation() {
   if (process.env.npm_execpath) {
-    return { command: process.execPath, args: [process.env.npm_execpath] };
+    const npmExecPath = process.env.npm_execpath;
+    if (isNodeScript(npmExecPath)) {
+      return { command: process.execPath, args: [npmExecPath] };
+    }
+    return { command: npmExecPath, args: [] };
   }
   return { command: isWindows ? "pnpm.cmd" : "pnpm", args: [] };
+}
+
+function isNodeScript(filePath) {
+  return /\.(?:c|m)?js$/i.test(filePath);
+}
+
+function shouldRunThroughShell(command) {
+  return isWindows && /\.(?:cmd|bat|ps1)$/i.test(command);
 }
 
 async function waitForJson(url, label) {
