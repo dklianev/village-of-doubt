@@ -10,11 +10,8 @@ export function SiteFooter() {
         <span aria-hidden>·</span>
         <Link href="/report">Сигнал</Link>
         <span aria-hidden>·</span>
-        <Link href="/faq">Въпроси</Link>
-        <span aria-hidden>·</span>
         <Link href="/status">Състояние</Link>
       </div>
-      <p className="site-footer-credit">Върколак и Мафия · социална игра на сенки</p>
     </footer>
   );
 }
