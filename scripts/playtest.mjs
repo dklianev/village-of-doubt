@@ -4,17 +4,16 @@ const isWindows = process.platform === "win32";
 const pnpm = isWindows ? "pnpm.cmd" : "pnpm";
 
 const suites = [
-  "apps/game-server/src/game-logic/__tests__/night-resolver.test.ts",
-  "apps/game-server/src/__tests__/GameRoom.security.test.ts",
-  "apps/game-server/src/__tests__/GameRoom.regression.test.ts",
+  "src/game-logic/__tests__/night-resolver.test.ts",
+  "src/__tests__/GameRoom.security.test.ts",
+  "src/__tests__/GameRoom.regression.test.ts",
 ];
 
+const args = ["--filter", "@werewolf/game-server", "exec", "vitest", "run", ...suites];
 const command = isWindows ? (process.env.ComSpec ?? "cmd.exe") : pnpm;
-const args = isWindows
-  ? ["/d", "/s", "/c", [pnpm, "--filter", "@werewolf/game-server", "test", "--", ...suites].join(" ")]
-  : ["--filter", "@werewolf/game-server", "test", "--", ...suites];
+const commandArgs = isWindows ? ["/d", "/s", "/c", [pnpm, ...args].join(" ")] : args;
 
-const child = spawn(command, args, {
+const child = spawn(command, commandArgs, {
   cwd: process.cwd(),
   env: {
     ...process.env,
@@ -22,6 +21,7 @@ const child = spawn(command, args, {
     GAME_TOKEN_SECRET: "playtest-secret-that-is-long-enough",
   },
   stdio: "inherit",
+  shell: false,
 });
 
 child.on("exit", (code) => {
