@@ -1,26 +1,38 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { AccountClient } from "@/components/account/AccountClient";
-import { requireSession } from "@/lib/require-session";
+import { auth } from "@/lib/auth";
 
 export const metadata: Metadata = {
-  title: "Моят профил | Върколак и Мафия",
-  description: "Преглед на профила и управление на изтриването.",
+  title: "Твоето досие | Върколак и Мафия",
+  description: "Профил, име, парола и контрол на твоите данни.",
 };
 
 export default async function AccountPage() {
-  const session = await requireSession("/account");
+  const requestHeaders = await headers();
+  const session = await auth.api.getSession({ headers: requestHeaders });
+
+  if (!session) {
+    redirect("/sign-in?redirect=/account");
+  }
+
+  const accounts = await auth.api.listUserAccounts({ headers: requestHeaders }).catch(() => []);
+  const providerIds = new Set(accounts.map((account) => account.providerId));
+  if (session.user.email) {
+    providerIds.add("credential");
+  }
 
   return (
-    <main className="shell utility-shell account-shell">
-      <section className="paper-card account-card rounded-[2rem] p-8">
-        <p className="section-kicker text-[#842f2b]">профил</p>
-        <h1 className="mt-3 text-5xl font-black">Моят профил</h1>
-        <AccountClient
-          name={session.user.name ?? "Играч"}
-          email={session.user.email ?? ""}
-          image={session.user.image ?? ""}
-        />
-      </section>
+    <main className="shell dossier-shell">
+      <AccountClient
+        userId={session.user.id}
+        email={session.user.email}
+        name={session.user.name ?? ""}
+        image={session.user.image ?? null}
+        emailVerified={session.user.emailVerified ?? false}
+        providers={[...providerIds]}
+      />
     </main>
   );
 }

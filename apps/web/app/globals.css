@@ -11148,6 +11148,294 @@ html[data-theme="light"] .sign-in-table {
   margin-top: 16px;
 }
 
+/* ============================== */
+/* Dossier (account settings)     */
+/* ============================== */
+
+.dossier-shell {
+  display: grid;
+  min-height: 100vh;
+  place-items: start center;
+  padding: 32px 16px 64px;
+}
+
+.dossier-stage {
+  display: grid;
+  grid-template-columns: 1fr;
+  width: 100%;
+  max-width: 980px;
+  gap: 32px;
+}
+
+@media (min-width: 900px) {
+  .dossier-stage {
+    grid-template-columns: 320px 1fr;
+    align-items: start;
+  }
+}
+
+.dossier-art {
+  position: sticky;
+  top: 96px;
+  aspect-ratio: 3 / 4;
+  margin: 0;
+  border-radius: 18px;
+  background-image:
+    radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 50%, rgba(20, 10, 5, 0.5) 100%),
+    image-set(
+      url("/game-art/auth/account-dossier.webp") type("image/webp"),
+      url("/game-art/auth/account-dossier.png") type("image/png")
+    );
+  background-position: center;
+  background-size: cover;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
+}
+
+@media (max-width: 899px) {
+  .dossier-art {
+    position: relative;
+    top: 0;
+    aspect-ratio: 16 / 9;
+  }
+}
+
+@media (max-width: 640px) {
+  .dossier-art {
+    background-image:
+      radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 50%, rgba(20, 10, 5, 0.5) 100%),
+      image-set(
+        url("/game-art/mobile/auth/account-dossier.webp") type("image/webp"),
+        url("/game-art/auth/account-dossier.png") type("image/png")
+      );
+  }
+}
+
+.dossier-card {
+  display: grid;
+  gap: 28px;
+  padding: 32px;
+  color: #1a1410;
+  border-radius: 14px;
+  background-color: #f0e0c4;
+  background-image:
+    linear-gradient(155deg, rgba(255, 250, 238, 0.55), rgba(238, 222, 196, 0.35)),
+    image-set(
+      url("/game-art/textures/brass-plate.webp") type("image/webp"),
+      url("/game-art/textures/brass-plate.png") type("image/png")
+    );
+  background-size: cover;
+  background-blend-mode: multiply;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 240, 200, 0.55),
+    inset 0 0 0 4px rgba(50, 30, 10, 0.5),
+    inset 0 0 0 6px rgba(255, 240, 200, 0.55),
+    0 20px 50px rgba(0, 0, 0, 0.45);
+}
+
+.dossier-kicker {
+  color: #842f2b;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+}
+
+.dossier-head h1 {
+  margin: 4px 0 8px;
+  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-size: clamp(1.875rem, 4vw, 2.5rem);
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.dossier-subtitle {
+  color: rgba(26, 20, 16, 0.78);
+  font-size: 0.95rem;
+}
+
+.dossier-section {
+  display: grid;
+  gap: 12px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(50, 30, 10, 0.25);
+}
+
+.dossier-section h2 {
+  color: #842f2b;
+  font-family: "Noto Serif Display", serif;
+  font-size: 1.125rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.dossier-row {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  align-items: start;
+  gap: 16px;
+}
+
+.dossier-avatar {
+  display: grid;
+  width: 80px;
+  height: 80px;
+  place-items: center;
+  overflow: hidden;
+  color: #fff5e0;
+  border: 2px solid rgba(255, 240, 200, 0.55);
+  border-radius: 50%;
+  background: rgba(50, 30, 10, 0.6);
+  font-family: "Noto Serif Display", serif;
+  font-size: 2rem;
+  font-weight: 900;
+}
+
+.dossier-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.dossier-meta {
+  display: grid;
+  gap: 6px;
+}
+
+.dossier-meta label {
+  display: grid;
+  gap: 4px;
+}
+
+.dossier-meta label > span {
+  color: #842f2b;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.dossier-meta input {
+  padding: 8px 12px;
+  color: #1a1410;
+  border: 1px solid rgba(50, 30, 10, 0.35);
+  border-radius: 8px;
+  background: rgba(255, 250, 238, 0.8);
+  font-size: 1rem;
+}
+
+.dossier-save-btn {
+  width: fit-content;
+}
+
+.dossier-status {
+  color: #2e6b2e;
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+.dossier-email {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.95rem;
+}
+
+.dossier-badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.dossier-badge-ok {
+  color: #1d4f1d;
+  background: rgba(46, 107, 46, 0.22);
+}
+
+.dossier-badge-warn {
+  color: #5a3c10;
+  background: rgba(217, 154, 66, 0.28);
+}
+
+.dossier-provider-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.dossier-provider-list li {
+  padding: 6px 10px;
+  border: 1px solid rgba(50, 30, 10, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 250, 238, 0.5);
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.dossier-danger {
+  border-color: rgba(132, 47, 43, 0.3);
+}
+
+.dossier-danger h2 {
+  color: #842f2b;
+}
+
+.dossier-confirm {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid rgba(132, 47, 43, 0.25);
+  border-radius: 12px;
+  background: rgba(132, 47, 43, 0.1);
+}
+
+.dossier-confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.dossier-error {
+  padding: 8px 12px;
+  color: #842f2b;
+  border-radius: 8px;
+  background: rgba(132, 47, 43, 0.2);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.btn-danger {
+  color: #fff5e0;
+  border: 1px solid #4a1a18;
+  background: #842f2b;
+  font-weight: 700;
+}
+
+.btn-danger:hover {
+  background: #6d2421;
+}
+
+.dossier-foot {
+  margin-top: 8px;
+}
+
+.dossier-foot-link {
+  color: #842f2b;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.dossier-foot-link:hover {
+  text-decoration: underline;
+}
+
 .site-utility-separator {
   display: inline-block;
   width: 1px;
