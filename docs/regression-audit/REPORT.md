@@ -3,7 +3,7 @@
 ## Executive summary
 
 - 🔴 P0 (blocker): 0 findings
-- 🟠 P1 (high): 9 findings
+- 🟠 P1 (high): 10 findings
 - 🟡 P2 (medium): 4 findings
 - 🟢 P3 (low): 3 findings
 
@@ -23,9 +23,9 @@ Commands/evidence captured in `docs/regression-audit/logs/`:
 5. [TEST-003](#2-test-failures--flakiness): auth E2E exits green while skipping database-backed auth flows.
 6. [DEPLOY-001](#10-production-env--deployment-guards): Docker production environment omits Google OAuth and `NEXT_PUBLIC_APP_URL`.
 7. [GAME-001](#6-game-server-colyseus-correctness): role assignment can fall back to `Math.random`.
-8. [BG-001](#3-bg-only-invariant-violations-user-facing-copy): default 404 page leaks English UI text.
-9. [BG-002](#3-bg-only-invariant-violations-user-facing-copy): game-server safe errors use Latin `host`.
-10. [API-001](#8-api-route-hygiene-nextjs-routes): game-token route signs malformed room codes.
+8. [GAME-002](#6-game-server-colyseus-correctness): werewolves and vampires use wipe-out instead of documented parity.
+9. [BG-001](#3-bg-only-invariant-violations-user-facing-copy): default 404 page leaks English UI text.
+10. [BG-002](#3-bg-only-invariant-violations-user-facing-copy): game-server safe errors use Latin `host`.
 
 ## Findings by category
 
@@ -117,6 +117,12 @@ File: `packages/shared/src/role-assignment.ts:35`
 Repro: Inspect `defaultRandomSource`; when `globalThis.crypto.getRandomValues` is unavailable, it returns `Math.random()`.  
 Impact: Violates the project invariant that role assignment must be crypto-based. In a crypto-less runtime/polyfill failure, roles become predictable.  
 Suggested fix: Use Node crypto as a server fallback or throw a Bulgarian-safe configuration/runtime error instead of falling back to `Math.random`.
+
+**[GAME-002] [P1] [game-server] Werewolves and Vampires win conditions used wipe-out instead of documented parity rule**  
+File: `packages/shared/src/win-conditions.ts:69`  
+Repro: Run 2 werewolves vs 2 villagers through `evaluateWinCondition`; pre-fix it returned `{ winner: null }`, while `docs/rules-bg.md:667` documents parity wins. UI role-card copy in `apps/web/components/play-room-client.tsx:2213` already promised "Върколаците да достигнат паритет със селото".  
+Impact: Games continued 2+ phases past the documented endgame, frustrating play and contradicting UI promises.  
+Suggested fix: Fixed in branch `fix/win-condition-parity` (commit `cd020a1`). Werewolves and vampires now win at parity; mixed WW+Vampires scenario resolves via faction headcount tie-break.
 
 Verified:
 
@@ -308,6 +314,10 @@ Verified:
 
 - [GAME-001] (P1): role assignment can fall back to `Math.random`.
 
+`packages/shared/src/win-conditions.ts`
+
+- [GAME-002] (P1): werewolves and vampires used wipe-out instead of documented parity.
+
 `packages/shared/src/server.ts`
 
 - [ENV-001] (P2): runtime secret validation is weaker than documented invariant.
@@ -327,8 +337,9 @@ Verified:
 3. Stabilize verification: race-condition test, playtest filtering, and auth E2E database coverage in CI.
 4. Fix public-launch deployment env: Google OAuth variables, `NEXT_PUBLIC_APP_URL`, and production env checker coverage.
 5. Fix BG-only violations: custom 404 and `host-ът` safe errors.
-6. Tighten security posture: crypto-only role assignment, secret minimum consistency, CSP.
-7. Clean low-risk drift: dead `AuthForm`, TODOs, and `AGENTS.md`.
+6. Fix gameplay correctness drift: werewolves/vampires parity resolution and hunter-revenge ordering coverage.
+7. Tighten security posture: crypto-only role assignment, secret minimum consistency, CSP.
+8. Clean low-risk drift: dead `AuthForm`, TODOs, and `AGENTS.md`.
 
 ## What was NOT audited
 
