@@ -9,6 +9,7 @@ import { ServiceWorkerRegistration } from "@/components/service-worker-registrat
 import { SiteFooter } from "@/components/SiteFooter";
 import SiteChrome from "@/components/site-chrome";
 import { ToastHost } from "@/components/toast-host";
+import { absoluteUrl, SITE_NAME, SITE_URL } from "@/lib/seo";
 import "./globals.css";
 
 const themeInitScript = `(() => {
@@ -23,22 +24,14 @@ const themeInitScript = `(() => {
   }
 })();`;
 
-function resolveMetadataBase(): URL {
-  const candidate = process.env.NEXT_PUBLIC_APP_URL ?? process.env.BETTER_AUTH_URL;
-
-  if (process.env.NODE_ENV === "production" && !candidate) {
-    throw new Error(
-      "NEXT_PUBLIC_APP_URL или BETTER_AUTH_URL трябва да са зададени в production среда. Иначе social media preview-та и абсолютните URLs ще сочат към localhost.",
-    );
-  }
-
-  return new URL(candidate ?? "http://localhost:3000");
-}
-
 export const metadata: Metadata = {
-  metadataBase: resolveMetadataBase(),
-  title: "Върколак и Мафия",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: SITE_NAME,
+    template: `%s | ${SITE_NAME}`,
+  },
   description: "Онлайн Върколак и Мафия с тайни роли, частни стаи и авторитетен игрови сървър.",
+  alternates: { canonical: SITE_URL },
   icons: {
     icon: [
       { url: "/favicon.svg", type: "image/svg+xml" },
@@ -46,17 +39,19 @@ export const metadata: Metadata = {
     apple: "/favicon.svg",
   },
   openGraph: {
-    title: "Върколак и Мафия",
+    title: SITE_NAME,
     description: "Онлайн Върколак и Мафия с тайни роли, частни стаи и авторитетен игрови сървър.",
-    images: [{ url: "/game-art/og-preview.png", width: 1024, height: 1024, alt: "Върколак" }],
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    images: [{ url: absoluteUrl("/game-art/og/og-home.png"), width: 1200, height: 630, alt: "Върколак и Мафия" }],
     locale: "bg_BG",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Върколак и Мафия",
+    title: SITE_NAME,
     description: "Онлайн Върколак и Мафия с тайни роли, частни стаи и авторитетен игрови сървър.",
-    images: ["/game-art/og-preview.png"],
+    images: [absoluteUrl("/game-art/og/og-home.png")],
   },
 };
 

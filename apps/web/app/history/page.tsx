@@ -5,16 +5,21 @@ import type { GameMode } from "@werewolf/shared";
 import { EvidenceWall } from "@/components/history/EvidenceWall";
 import { EvidenceWallSkeleton } from "@/components/skeleton";
 import type { HistoryGameView, HistoryTimelineEventView } from "@/lib/history-highlights";
+import { routeMetadata } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
 const HISTORY_CASE_LIMIT = 20;
 const HISTORY_SCAN_LIMIT = 100;
 
-export const metadata: Metadata = {
-  title: "История | Върколак и Мафия",
-  description: "Завършени игри, победители, смърти, гласове и развръзки от масата.",
-};
+export const metadata: Metadata = routeMetadata({
+  title: "История — архивът на масата",
+  description: "Завършени игри, победители, смърти, гласове и развръзки от масата. Прегледай как са се развили старите стаи.",
+  path: "/history",
+  image: "/game-art/og/og-history.png",
+  imageAlt: "Детективско табло с празни карти и червена нишка",
+  ogDescription: "Победи, смърти, гласове и развръзки от старите стаи.",
+});
 
 export default function HistoryPage() {
   return (

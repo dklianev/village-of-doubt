@@ -6,13 +6,18 @@ import { NewspaperEmpty } from "@/components/leaderboard/NewspaperEmpty";
 import { NewspaperPage } from "@/components/leaderboard/NewspaperPage";
 import { LeaderboardSkeleton } from "@/components/skeleton";
 import type { LeaderboardEntry } from "@/lib/leaderboard-headlines";
+import { routeMetadata } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Класация | Върколак и Мафия",
-  description: "Анонимна класация от завършени игри: участия, победи и последна активност.",
-};
+export const metadata: Metadata = routeMetadata({
+  title: "Класация — седмичният брой на масата",
+  description: "Анонимна класация от завършени игри: участия, победи и последна активност, подредени като стар градски вестник.",
+  path: "/leaderboard",
+  image: "/game-art/og/og-leaderboard.png",
+  imageAlt: "Празен стар вестник, пишеща машина и кафе",
+  ogDescription: "Участия, победи и последна активност от завършените игри.",
+});
 
 export default function LeaderboardPage() {
   return (
