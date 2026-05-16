@@ -23,6 +23,7 @@ const ROUTES = [
   { name: "privacy", path: "/privacy" },
   { name: "terms", path: "/terms" },
   { name: "status", path: "/status" },
+  { name: "faq", path: "/faq" },
 ];
 
 const VIEWPORTS = [
