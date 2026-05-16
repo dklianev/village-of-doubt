@@ -204,50 +204,48 @@ export function FaqClient({ items }: { items: readonly FaqItem[] }) {
                         </span>
                       </button>
 
-                      {isOpen ? (
-                        <div className="faq-drawer-card">
-                          <FaqAnswerRenderer blocks={item.answer} />
-                          {item.tutorialStep ? (
-                            <p className="faq-tutorial-hint">
-                              <Link href={`/tutorial?step=${item.tutorialStep}`}>
-                                Виж в Tutorial → сцена {item.tutorialStep}
-                              </Link>
-                            </p>
-                          ) : null}
-                          <footer className="faq-drawer-footer">
+                      <div className="faq-drawer-card" aria-hidden={!isOpen}>
+                        <FaqAnswerRenderer blocks={item.answer} />
+                        {item.tutorialStep ? (
+                          <p className="faq-tutorial-hint">
+                            <Link href={`/tutorial?step=${item.tutorialStep}`}>
+                              Виж в Tutorial → сцена {item.tutorialStep}
+                            </Link>
+                          </p>
+                        ) : null}
+                        <footer className="faq-drawer-footer">
+                          <button
+                            type="button"
+                            className="faq-copy-link"
+                            onClick={() => copyLink(item.slug)}
+                            aria-label={`Копирай линк към „${item.question}“`}
+                          >
+                            🔗 Копирай линк
+                          </button>
+
+                          <div className="faq-helpful" role="group" aria-label="Помогна ли отговорът?">
+                            <span className="faq-helpful-label">Помогна ли?</span>
                             <button
                               type="button"
-                              className="faq-copy-link"
-                              onClick={() => copyLink(item.slug)}
-                              aria-label={`Копирай линк към „${item.question}“`}
+                              className="faq-helpful-btn"
+                              data-active={feedbackValue === "up"}
+                              onClick={() => setFeedbackFor(item.slug, "up")}
+                              aria-label="Да, помогна"
                             >
-                              🔗 Копирай линк
+                              👍
                             </button>
-
-                            <div className="faq-helpful" role="group" aria-label="Помогна ли отговорът?">
-                              <span className="faq-helpful-label">Помогна ли?</span>
-                              <button
-                                type="button"
-                                className="faq-helpful-btn"
-                                data-active={feedbackValue === "up"}
-                                onClick={() => setFeedbackFor(item.slug, "up")}
-                                aria-label="Да, помогна"
-                              >
-                                👍
-                              </button>
-                              <button
-                                type="button"
-                                className="faq-helpful-btn"
-                                data-active={feedbackValue === "down"}
-                                onClick={() => setFeedbackFor(item.slug, "down")}
-                                aria-label="Не, не помогна"
-                              >
-                                👎
-                              </button>
-                            </div>
-                          </footer>
-                        </div>
-                      ) : null}
+                            <button
+                              type="button"
+                              className="faq-helpful-btn"
+                              data-active={feedbackValue === "down"}
+                              onClick={() => setFeedbackFor(item.slug, "down")}
+                              aria-label="Не, не помогна"
+                            >
+                              👎
+                            </button>
+                          </div>
+                        </footer>
+                      </div>
                     </article>
                   );
                 })}
