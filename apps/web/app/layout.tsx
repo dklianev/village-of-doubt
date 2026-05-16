@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import type { AuthSessionView } from "@/lib/use-auth-session";
 import { CookieBanner } from "@/components/CookieBanner";
+import { FeedbackWidget } from "@/components/feedback/FeedbackWidget";
 import { WelcomeModal } from "@/components/onboarding/WelcomeModal";
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
 import SiteChrome from "@/components/site-chrome";
@@ -70,6 +71,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <CookieBanner />
         <ToastHost />
         <WelcomeModal />
+        <FeedbackWidget />
         <ServiceWorkerRegistration />
       </body>
     </html>

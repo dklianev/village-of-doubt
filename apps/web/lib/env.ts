@@ -17,6 +17,7 @@ export const env = createEnv({
   client: {
     NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),
     NEXT_PUBLIC_GAME_SERVER_URL: z.string().url().default("ws://localhost:2567"),
+    NEXT_PUBLIC_SHOW_BETA_BADGE: z.string().optional(),
   },
   runtimeEnv: {
     DATABASE_URL: process.env.DATABASE_URL,
@@ -31,5 +32,6 @@ export const env = createEnv({
     REPORTS_NOTIFY_EMAIL: process.env.REPORTS_NOTIFY_EMAIL,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_GAME_SERVER_URL: process.env.NEXT_PUBLIC_GAME_SERVER_URL,
+    NEXT_PUBLIC_SHOW_BETA_BADGE: process.env.NEXT_PUBLIC_SHOW_BETA_BADGE,
   },
 });
