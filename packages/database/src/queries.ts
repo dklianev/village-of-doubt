@@ -1,4 +1,4 @@
-import { count, desc, eq, inArray, or } from "drizzle-orm";
+import { count, desc, eq, inArray, or, sql } from "drizzle-orm";
 import { gameEvents, gamePlayers, games, userAchievements } from "./schema.js";
 import type { Database } from "./client.js";
 
@@ -186,6 +186,73 @@ export async function getGameTimeline(db: Database, gameId: string, limit = 100)
     .where(eq(gameEvents.gameId, gameId))
     .orderBy(desc(gameEvents.createdAt))
     .limit(limit);
+}
+
+type GameTimelineEventBatchRow = Record<string, unknown> & {
+  id: string;
+  game_id: string;
+  round: number;
+  phase: string;
+  type: string;
+  actor_id: string | null;
+  target_id: string | null;
+  visibility: string;
+  payload: unknown;
+  created_at: Date;
+};
+
+export async function getGameTimelinesBatch(
+  db: Database,
+  gameIds: string[],
+  perGameLimit = 6,
+): Promise<Map<string, GameTimelineEvent[]>> {
+  if (gameIds.length === 0) {
+    return new Map();
+  }
+
+  const rows = await db.execute<GameTimelineEventBatchRow>(sql`
+    SELECT id, game_id, round, phase, type, actor_id, target_id, visibility, payload, created_at
+    FROM (
+      SELECT
+        id,
+        game_id,
+        round,
+        phase,
+        type,
+        actor_id,
+        target_id,
+        visibility,
+        payload,
+        created_at,
+        ROW_NUMBER() OVER (PARTITION BY game_id ORDER BY created_at DESC) AS rn
+      FROM game_events
+      WHERE game_id IN (${sql.join(
+        gameIds.map((id) => sql`${id}`),
+        sql`, `,
+      )})
+    ) ranked
+    WHERE rn <= ${perGameLimit}
+    ORDER BY game_id, created_at DESC
+  `);
+
+  const grouped = new Map<string, GameTimelineEvent[]>();
+  for (const row of rows) {
+    const timeline = grouped.get(row.game_id) ?? [];
+    timeline.push({
+      id: row.id,
+      round: row.round,
+      phase: row.phase,
+      type: row.type,
+      actorId: row.actor_id,
+      targetId: row.target_id,
+      visibility: row.visibility,
+      payload: row.payload,
+      createdAt: row.created_at,
+    });
+    grouped.set(row.game_id, timeline);
+  }
+
+  return grouped;
 }
 
 export async function getLeaderboardRows(db: Database, limit = 500): Promise<LeaderboardEntryRow[]> {

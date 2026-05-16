@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { createDatabase, getGameTimeline, getRecentGameHistory } from "@werewolf/database";
+import { createDatabase, getGameTimelinesBatch, getRecentGameHistory } from "@werewolf/database";
 import type { GameMode } from "@werewolf/shared";
 import { JsonLd } from "@/components/JsonLd";
 import { EvidenceWall } from "@/components/history/EvidenceWall";
@@ -60,9 +60,13 @@ async function loadHistory(): Promise<HistoryGameView[]> {
     const db = createDatabase(process.env.DATABASE_URL);
     const games = await getRecentGameHistory(db, HISTORY_SCAN_LIMIT);
     const endedGames = games.filter((game) => game.status === "ended").slice(0, HISTORY_CASE_LIMIT);
-    const timelines = await Promise.all(endedGames.map((game) => getGameTimeline(db, game.id, 6)));
+    const timelinesMap = await getGameTimelinesBatch(
+      db,
+      endedGames.map((game) => game.id),
+      6,
+    );
 
-    return endedGames.map((game, index) => ({
+    return endedGames.map((game) => ({
       id: game.id,
       code: game.code,
       config: game.config,
@@ -72,7 +76,7 @@ async function loadHistory(): Promise<HistoryGameView[]> {
       endedAt: game.endedAt?.toISOString() ?? null,
       eventCount: game.eventCount,
       mode: modeFromConfig(game.config),
-      timeline: (timelines[index] ?? []).map(serializeTimelineEvent),
+      timeline: (timelinesMap.get(game.id) ?? []).map(serializeTimelineEvent),
     }));
   } catch (error) {
     console.error("[history]", error);
