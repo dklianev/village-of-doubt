@@ -1,0 +1,18 @@
+
+> bulgarian-werewolf-mafia@0.1.0 playtest E:\werewolf_mafia
+> node scripts/playtest.mjs
+
+
+> @werewolf/game-server@0.1.0 test E:\werewolf_mafia\apps\game-server
+> vitest run --passWithNoTests "--" "apps/game-server/src/game-logic/__tests__/night-resolver.test.ts" "apps/game-server/src/__tests__/GameRoom.security.test.ts" "apps/game-server/src/__tests__/GameRoom.regression.test.ts"
+
+
+ RUN  v4.1.5 E:/werewolf_mafia/apps/game-server
+
+
+ Test Files  7 passed (7)
+      Tests  49 passed (49)
+   Start at  11:02:08
+   Duration  10.45s (transform 930ms, setup 0ms, import 22.53s, tests 8.75s, environment 1ms)
+
+Multi-client playtest suite passed.

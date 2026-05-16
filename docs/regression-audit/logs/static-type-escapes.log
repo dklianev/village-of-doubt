@@ -1,0 +1,7 @@
+apps\web\lib\sound.ts:54:      window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+apps\web\components\account\AccountClient.tsx:32:            // eslint-disable-next-line @next/next/no-img-element
+apps\web\components\tutorial\TutorialFlipbook.tsx:34:    // eslint-disable-next-line react-hooks/exhaustive-deps
+apps\web\components\tutorial\TutorialFlipbook.tsx:46:    // eslint-disable-next-line react-hooks/exhaustive-deps
+apps\web\components\site-chrome\AuthChip.tsx:74:            // eslint-disable-next-line @next/next/no-img-element
+apps\web\components\leaderboard\__tests__\MainHeadline.test.tsx:8:    // eslint-disable-next-line @next/next/no-img-element
+apps\web\components\play-room-client.tsx:230:          startTransition(() => setSnapshot(toSnapshot(state as unknown as ColyseusGameState)));

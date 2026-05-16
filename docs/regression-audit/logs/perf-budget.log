@@ -1,0 +1,9 @@
+
+> bulgarian-werewolf-mafia@0.1.0 perf:budget E:\werewolf_mafia
+> node scripts/bundle-budget.mjs
+
+Total JS gzip: 494.5 KB (budget: 550 KB)
+Largest JS gzip: 125.3 KB (04qeu2zwf-bso.js)
+Largest optimized art: village-map.webp (564.5 KB)
+
+✓ All budgets within thresholds

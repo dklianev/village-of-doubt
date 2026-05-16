@@ -1,0 +1,5 @@
+packages\shared\src\game-config.ts:66:  // TODO: not yet enforced in runtime. Hidden from the main lobby until promo rule flow is wired.
+apps\web\public\sw.js:9:      .then(() => self.skipWaiting()),
+apps\web\lib\room-options.ts:62:    ...(first(searchParams.skip) ? { allowSkipVote: first(searchParams.skip) !== "0" } : {}),
+apps\web\components\landing\QuickStartSection.tsx:182:          {/* TODO: family from server when the stats endpoint starts returning it consistently. */}
+apps\web\components\landing\QuickStartSection.tsx:214:  // TODO: byFamily breakdown when the stats endpoint exposes per-family room counts.

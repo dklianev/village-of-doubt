@@ -1,0 +1,16 @@
+
+> @werewolf/database@0.1.0 db:generate E:\werewolf_mafia\packages\database
+> drizzle-kit generate --config drizzle.config.ts
+
+Reading config file 'E:\werewolf_mafia\packages\database\drizzle.config.ts'
+8 tables
+account 13 columns 1 indexes 1 fks
+game_events 10 columns 2 indexes 3 fks
+game_players 11 columns 2 indexes 2 fks
+games 11 columns 3 indexes 1 fks
+session 8 columns 1 indexes 1 fks
+user 7 columns 0 indexes 0 fks
+user_achievements 5 columns 2 indexes 2 fks
+verification 6 columns 0 indexes 0 fks
+
+No schema changes, nothing to migrate 😴

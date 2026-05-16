@@ -1,0 +1,95 @@
+
+> bulgarian-werewolf-mafia@0.1.0 build E:\werewolf_mafia
+> turbo build
+
+• turbo 2.9.6
+
+   • Packages in scope: @werewolf/database, @werewolf/game-server, @werewolf/shared, @werewolf/web
+   • Running build in 4 packages
+   • Remote caching disabled
+
+@werewolf/database:build: cache hit, replaying logs d022fe488a81423b
+@werewolf/database:build: 
+@werewolf/database:build: > @werewolf/database@0.1.0 build E:\werewolf_mafia\packages\database
+@werewolf/database:build: > tsc -p tsconfig.json
+@werewolf/database:build: 
+@werewolf/shared:build: cache hit, replaying logs 6ab449f859b6d7c3
+@werewolf/shared:build: 
+@werewolf/shared:build: > @werewolf/shared@0.1.0 build E:\werewolf_mafia\packages\shared
+@werewolf/shared:build: > tsc -p tsconfig.json
+@werewolf/shared:build: 
+@werewolf/web:build: cache miss, executing ccbbe85fb2ce14fd
+@werewolf/game-server:build: cache hit, replaying logs 2e0474ec9bf34369
+@werewolf/game-server:build: 
+@werewolf/game-server:build: > @werewolf/game-server@0.1.0 build E:\werewolf_mafia\apps\game-server
+@werewolf/game-server:build: > tsc -p tsconfig.json
+@werewolf/game-server:build: 
+@werewolf/web:build: 
+@werewolf/web:build: > @werewolf/web@0.1.0 build E:\werewolf_mafia\apps\web
+@werewolf/web:build: > next build
+@werewolf/web:build: 
+@werewolf/web:build: ▲ Next.js 16.2.4 (Turbopack)
+@werewolf/web:build: - Experiments (use with caution):
+@werewolf/web:build:   ✓ viewTransition
+@werewolf/web:build: 
+@werewolf/web:build:   Creating an optimized production build ...
+@werewolf/web:build: (node:7296) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+@werewolf/web:build: (Use `node --trace-deprecation ...` to show where the warning was created)
+@werewolf/web:build: ✓ Compiled successfully in 7.0s
+@werewolf/web:build:   Running TypeScript ...
+@werewolf/web:build:   Finished TypeScript in 9.8s ...
+@werewolf/web:build:   Collecting page data using 11 workers ...
+@werewolf/web:build:   Generating static pages using 11 workers (0/26) ...
+@werewolf/web:build:   Generating static pages using 11 workers (6/26) 
+@werewolf/web:build:   Generating static pages using 11 workers (12/26) 
+@werewolf/web:build:   Generating static pages using 11 workers (19/26) 
+@werewolf/web:build: ✓ Generating static pages using 11 workers (26/26) in 619ms
+@werewolf/web:build:   Finalizing page optimization ...
+@werewolf/web:build: 
+@werewolf/web:build: Route (app)
+@werewolf/web:build: ┌ ƒ /
+@werewolf/web:build: ├ ƒ /_not-found
+@werewolf/web:build: ├ ƒ /account
+@werewolf/web:build: ├ ƒ /achievements
+@werewolf/web:build: ├ ƒ /api/account/delete
+@werewolf/web:build: ├ ƒ /api/achievements
+@werewolf/web:build: ├ ƒ /api/auth/[...all]
+@werewolf/web:build: ├ ƒ /api/game-token
+@werewolf/web:build: ├ ƒ /api/health
+@werewolf/web:build: ├ ƒ /friends
+@werewolf/web:build: ├ ƒ /history
+@werewolf/web:build: ├ ƒ /history/[gameId]/replay
+@werewolf/web:build: ├ ƒ /leaderboard
+@werewolf/web:build: ├ ƒ /lobby
+@werewolf/web:build: ├ ƒ /lobby/[code]
+@werewolf/web:build: ├ ƒ /mafia
+@werewolf/web:build: ├ ƒ /mafia/create
+@werewolf/web:build: ├ ƒ /mafia/join/[[...roomCode]]
+@werewolf/web:build: ├ ƒ /mafia/roles
+@werewolf/web:build: ├ ƒ /mafia/rules
+@werewolf/web:build: ├ ○ /manifest.webmanifest
+@werewolf/web:build: ├ ƒ /offline
+@werewolf/web:build: ├ ƒ /play/[code]
+@werewolf/web:build: ├ ƒ /privacy
+@werewolf/web:build: ├ ƒ /roles
+@werewolf/web:build: ├ ƒ /sign-in
+@werewolf/web:build: ├ ƒ /terms
+@werewolf/web:build: ├ ƒ /tutorial
+@werewolf/web:build: ├ ƒ /werewolf
+@werewolf/web:build: ├ ƒ /werewolf/create
+@werewolf/web:build: ├ ƒ /werewolf/join/[[...roomCode]]
+@werewolf/web:build: ├ ƒ /werewolf/roles
+@werewolf/web:build: └ ƒ /werewolf/rules
+@werewolf/web:build: 
+@werewolf/web:build: 
+@werewolf/web:build: ƒ Proxy (Middleware)
+@werewolf/web:build: 
+@werewolf/web:build: ○  (Static)   prerendered as static content
+@werewolf/web:build: ƒ  (Dynamic)  server-rendered on demand
+@werewolf/web:build: 
+
+ Tasks:    4 successful, 4 total
+Cached:    3 cached, 4 total
+  Time:    23.131s 
+
+ WARNING  IO error: provided value is too long when setting link name for apps/web/.next/dev/node_modules/require-in-the-middle-a99415fa67232f7f

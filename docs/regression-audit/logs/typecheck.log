@@ -1,0 +1,45 @@
+
+> bulgarian-werewolf-mafia@0.1.0 typecheck E:\werewolf_mafia
+> turbo typecheck
+
+• turbo 2.9.6
+
+   • Packages in scope: @werewolf/database, @werewolf/game-server, @werewolf/shared, @werewolf/web
+   • Running typecheck in 4 packages
+   • Remote caching disabled
+
+@werewolf/shared:typecheck: cache hit, replaying logs fcc330d23659f373
+@werewolf/shared:typecheck: 
+@werewolf/shared:typecheck: > @werewolf/shared@0.1.0 typecheck E:\werewolf_mafia\packages\shared
+@werewolf/shared:typecheck: > tsc -p tsconfig.json --noEmit
+@werewolf/shared:typecheck: 
+@werewolf/database:build: cache hit, replaying logs d022fe488a81423b
+@werewolf/database:typecheck: cache hit, replaying logs 8c7414339a8dec31
+@werewolf/database:build: 
+@werewolf/database:build: > @werewolf/database@0.1.0 build E:\werewolf_mafia\packages\database
+@werewolf/database:build: > tsc -p tsconfig.json
+@werewolf/database:build: 
+@werewolf/database:typecheck: 
+@werewolf/database:typecheck: > @werewolf/database@0.1.0 typecheck E:\werewolf_mafia\packages\database
+@werewolf/database:typecheck: > tsc -p tsconfig.json --noEmit
+@werewolf/database:typecheck: 
+@werewolf/shared:build: cache hit, replaying logs 6ab449f859b6d7c3
+@werewolf/shared:build: 
+@werewolf/shared:build: > @werewolf/shared@0.1.0 build E:\werewolf_mafia\packages\shared
+@werewolf/shared:build: > tsc -p tsconfig.json
+@werewolf/shared:build: 
+@werewolf/web:typecheck: cache hit, replaying logs 43635892df6b5ded
+@werewolf/game-server:typecheck: cache hit, replaying logs fa10685a567cc0a6
+@werewolf/web:typecheck: 
+@werewolf/web:typecheck: > @werewolf/web@0.1.0 typecheck E:\werewolf_mafia\apps\web
+@werewolf/game-server:typecheck: 
+@werewolf/web:typecheck: > tsc -p tsconfig.json --noEmit
+@werewolf/game-server:typecheck: > @werewolf/game-server@0.1.0 typecheck E:\werewolf_mafia\apps\game-server
+@werewolf/game-server:typecheck: > tsc -p tsconfig.json --noEmit
+@werewolf/web:typecheck: 
+@werewolf/game-server:typecheck: 
+
+ Tasks:    6 successful, 6 total
+Cached:    6 cached, 6 total
+  Time:    75ms >>> FULL TURBO
+

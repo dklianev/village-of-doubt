@@ -1,0 +1,412 @@
+[
+  {
+    "route": "/",
+    "finalUrl": "http://127.0.0.1:3000/",
+    "consoleMessages": [],
+    "pageErrors": [],
+    "failedResponses": [],
+    "requestFailures": [],
+    "horizontalOverflow": false,
+    "layout": {
+      "path": "/",
+      "title": "Върколак и Мафия",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyText": "Върколак\n·\nМафия\nСОЦИАЛНА ИГРА НА СЕНКИ\nИГРАЙ\nВЪРКОЛАК\nМАФИЯ\nВлез\n→\n\nИЗБЕРИ ИГРА\n\nВърколак или Мафия\n\nДве отделни игри, два отделни речника и два отделни набора роли. Влизаш с име, създаваш стая или въвеждаш код и започваш веднага.\n\nФОЛКЛОРЕН ХОРЪР\nВърколак\nПърво пада мъглата. После някой лъже прекалено спокойно.\n\nКласическо село с тайни роли, нощни събуждания, Върколаци, Вампири и Разказвач.\n\nВЛЕЗ И ИГРАЙ\nРОЛИ\nПРАВИЛА\nГРАДСКА МИСТЕРИЯ\nМафия\nДъждът измива улицата, но не и алибитата.\n\nКриминална "
+    }
+  },
+  {
+    "route": "/werewolf",
+    "finalUrl": "http://127.0.0.1:3000/werewolf",
+    "consoleMessages": [],
+    "pageErrors": [],
+    "failedResponses": [],
+    "requestFailures": [],
+    "horizontalOverflow": false,
+    "layout": {
+      "path": "/werewolf",
+      "title": "Върколак | Върколак и Мафия",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyText": "Върколак\n·\nМафия\nСОЦИАЛНА ИГРА НА СЕНКИ\nИГРАЙ\nВЪРКОЛАК\nМАФИЯ\nВлез\n→\n\nНОЩ НАД СЕЛОТО\n\nВърколак\n\nФолклорен хорър за село, което заспива заедно, но не всички се будят невинни.\n\nИГРАЙ\nРОЛИ\nПРАВИЛА\nВЛЕЗ С КОД\n\nПЪРВА ИГРА ЗА 30 СЕКУНДИ\n\nКак започва добра игра\n\nВлез, избери стая, играй.\n\nВИЖ ПЪЛНИТЕ ПРАВИЛА\n→\n1\nВХОД\n\nВлизаш с Google, Discord или имейл.\n\n2\nСТАЯ\n\nСъздаваш код или се присъединяваш към приятел.\n\n3\nРОЛЯ\n\nСървърът ти показва само твоята карта.\n\n4\nНОЩ\n\nДействаш тихо, ако ролята ти го позволяв"
+    }
+  },
+  {
+    "route": "/mafia",
+    "finalUrl": "http://127.0.0.1:3000/mafia",
+    "consoleMessages": [],
+    "pageErrors": [],
+    "failedResponses": [],
+    "requestFailures": [],
+    "horizontalOverflow": false,
+    "layout": {
+      "path": "/mafia",
+      "title": "Мафия | Върколак и Мафия",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyText": "Върколак\n·\nМафия\nСОЦИАЛНА ИГРА НА СЕНКИ\nИГРАЙ\nВЪРКОЛАК\nМАФИЯ\nВлез\n→\n\nГРАД ПОД НАПРЕЖЕНИЕ\n\nМафия\n\nКриминален ноар за град, който трябва да различи алиби от лъжа.\n\nИГРАЙ\nРОЛИ\nПРАВИЛА\nВЛЕЗ С КОД\n\nПЪРВА ИГРА ЗА 30 СЕКУНДИ\n\nКак започва добра игра\n\nВлез, избери стая, играй.\n\nВИЖ ПЪЛНИТЕ ПРАВИЛА\n→\n1\nВХОД\n\nВлизаш с Google, Discord или имейл.\n\n2\nСТАЯ\n\nСъздаваш код или се присъединяваш към приятел.\n\n3\nРОЛЯ\n\nСървърът ти показва само твоята карта.\n\n4\nНОЩ\n\nДействаш тихо, ако ролята ти го позволява.\n\n5\nГЛАС\n\n"
+    }
+  },
+  {
+    "route": "/werewolf/create",
+    "finalUrl": "http://127.0.0.1:3000/sign-in?redirect=%2Fwerewolf%2Fcreate",
+    "consoleMessages": [],
+    "pageErrors": [],
+    "failedResponses": [],
+    "requestFailures": [],
+    "horizontalOverflow": false,
+    "layout": {
+      "path": "/sign-in?redirect=%2Fwerewolf%2Fcreate",
+      "title": "Влез в стаята | Върколак и Мафия",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyText": "Върколак\n·\nМафия\nСОЦИАЛНА ИГРА НА СЕНКИ\nИГРАЙ\nВЪРКОЛАК\nМАФИЯ\nВлез\n→\n\nВХОД НА МАСАТА\n\nПокажи се\nна масата\n\nЕдин профил пази историята, статистиките и поканите. Тайните роли остават на сървъра.\n\nПродължи с Google\nПродължи с Discord\nИЛИ С ИМЕЙЛ\nИмам профил\nНов профил\nИМЕЙЛ\nПАРОЛА\nВЛЕЗ\nПОВЕРИТЕЛНОСТ\n·\nУСЛОВИЯ\n\nИзползваме само необходими бисквитки за вход и сесия. Прочети политиката за поверителност.\n\nРАЗБРАХ"
+    }
+  },
+  {
+    "route": "/mafia/create",
+    "finalUrl": "http://127.0.0.1:3000/sign-in?redirect=%2Fmafia%2Fcreate",
+    "consoleMessages": [],
+    "pageErrors": [],
+    "failedResponses": [],
+    "requestFailures": [],
+    "horizontalOverflow": false,
+    "layout": {
+      "path": "/sign-in?redirect=%2Fmafia%2Fcreate",
+      "title": "Влез в стаята | Върколак и Мафия",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyText": "Върколак\n·\nМафия\nСОЦИАЛНА ИГРА НА СЕНКИ\nИГРАЙ\nВЪРКОЛАК\nМАФИЯ\nВлез\n→\n\nВХОД НА МАСАТА\n\nПокажи се\nна масата\n\nЕдин профил пази историята, статистиките и поканите. Тайните роли остават на сървъра.\n\nПродължи с Google\nПродължи с Discord\nИЛИ С ИМЕЙЛ\nИмам профил\nНов профил\nИМЕЙЛ\nПАРОЛА\nВЛЕЗ\nПОВЕРИТЕЛНОСТ\n·\nУСЛОВИЯ\n\nИзползваме само необходими бисквитки за вход и сесия. Прочети политиката за поверителност.\n\nРАЗБРАХ"
+    }
+  },
+  {
+    "route": "/werewolf/join",
+    "finalUrl": "http://127.0.0.1:3000/sign-in?redirect=%2Fwerewolf%2Fjoin",
+    "consoleMessages": [],
+    "pageErrors": [],
+    "failedResponses": [],
+    "requestFailures": [],
+    "horizontalOverflow": false,
+    "layout": {
+      "path": "/sign-in?redirect=%2Fwerewolf%2Fjoin",
+      "title": "Влез в стаята | Върколак и Мафия",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyText": "Върколак\n·\nМафия\nСОЦИАЛНА ИГРА НА СЕНКИ\nИГРАЙ\nВЪРКОЛАК\nМАФИЯ\nВлез\n→\n\nВХОД НА МАСАТА\n\nПокажи се\nна масата\n\nЕдин профил пази историята, статистиките и поканите. Тайните роли остават на сървъра.\n\nПродължи с Google\nПродължи с Discord\nИЛИ С ИМЕЙЛ\nИмам профил\nНов профил\nИМЕЙЛ\nПАРОЛА\nВЛЕЗ\nПОВЕРИТЕЛНОСТ\n·\nУСЛОВИЯ"
+    }
+  },
+  {
+    "route": "/mafia/join",
+    "finalUrl": "http://127.0.0.1:3000/sign-in?redirect=%2Fmafia%2Fjoin",
+    "consoleMessages": [],
+    "pageErrors": [],
+    "failedResponses": [],
+    "requestFailures": [],
+    "horizontalOverflow": false,
+    "layout": {
+      "path": "/sign-in?redirect=%2Fmafia%2Fjoin",
+      "title": "Влез в стаята | Върколак и Мафия",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyText": "Върколак\n·\nМафия\nСОЦИАЛНА ИГРА НА СЕНКИ\nИГРАЙ\nВЪРКОЛАК\nМАФИЯ\nВлез\n→\n\nВХОД НА МАСАТА\n\nПокажи се\nна масата\n\nЕдин профил пази историята, статистиките и поканите. Тайните роли остават на сървъра.\n\nПродължи с Google\nПродължи с Discord\nИЛИ С ИМЕЙЛ\nИмам профил\nНов профил\nИМЕЙЛ\nПАРОЛА\nВЛЕЗ\nПОВЕРИТЕЛНОСТ\n·\nУСЛОВИЯ\n\nИзползваме само необходими бисквитки за вход и сесия. Прочети политиката за поверителност.\n\nРАЗБРАХ"
+    }
+  },
+  {
+    "route": "/werewolf/join/TEST01",
+    "finalUrl": "http://127.0.0.1:3000/sign-in?redirect=%2Fwerewolf%2Fjoin%2FTEST01",
+    "consoleMessages": [],
+    "pageErrors": [],
+    "failedResponses": [],
+    "requestFailures": [],
+    "horizontalOverflow": false,
+    "layout": {
+      "path": "/sign-in?redirect=%2Fwerewolf%2Fjoin%2FTEST01",
+      "title": "Влез в стаята | Върколак и Мафия",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyText": "Върколак\n·\nМафия\nСОЦИАЛНА ИГРА НА СЕНКИ\nИГРАЙ\nВЪРКОЛАК\nМАФИЯ\nВлез\n→\n\nВХОД НА МАСАТА\n\nПокажи се\nна масата\n\nЕдин профил пази историята, статистиките и поканите. Тайните роли остават на сървъра.\n\nПродължи с Google\nПродължи с Discord\nИЛИ С ИМЕЙЛ\nИмам профил\nНов профил\nИМЕЙЛ\nПАРОЛА\nВЛЕЗ\nПОВЕРИТЕЛНОСТ\n·\nУСЛОВИЯ\n\nИзползваме само необходими бисквитки за вход и сесия. Прочети политиката за поверителност.\n\nРАЗБРАХ"
+    }
+  },
+  {
+    "route": "/mafia/join/TEST01",
+    "finalUrl": "http://127.0.0.1:3000/sign-in?redirect=%2Fmafia%2Fjoin%2FTEST01",
+    "consoleMessages": [],
+    "pageErrors": [],
+    "failedResponses": [],
+    "requestFailures": [],
+    "horizontalOverflow": false,
+    "layout": {
+      "path": "/sign-in?redirect=%2Fmafia%2Fjoin%2FTEST01",
+      "title": "Влез в стаята | Върколак и Мафия",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyText": "Върколак\n·\nМафия\nСОЦИАЛНА ИГРА НА СЕНКИ\nИГРАЙ\nВЪРКОЛАК\nМАФИЯ\nВлез\n→\n\nВХОД НА МАСАТА\n\nПокажи се\nна масата\n\nЕдин профил пази историята, статистиките и поканите. Тайните роли остават на сървъра.\n\nПродължи с Google\nПродължи с Discord\nИЛИ С ИМЕЙЛ\nИмам профил\nНов профил\nИМЕЙЛ\nПАРОЛА\nВЛЕЗ\nПОВЕРИТЕЛНОСТ\n·\nУСЛОВИЯ\n\nИзползваме само необходими бисквитки за вход и сесия. Прочети политиката за поверителност.\n\nРАЗБРАХ"
+    }
+  },
+  {
+    "route": "/werewolf/roles",
+    "finalUrl": "http://127.0.0.1:3000/werewolf/roles",
+    "consoleMessages": [],
+    "pageErrors": [],
+    "failedResponses": [],
+    "requestFailures": [],
+    "horizontalOverflow": false,
+    "layout": {
+      "path": "/werewolf/roles",
+      "title": "Роли във Върколак | Върколак и Мафия",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyText": "Върколак\n·\nМафия\nСОЦИАЛНА ИГРА НА СЕНКИ\nИГРАЙ\nВЪРКОЛАК\nМАФИЯ\nВлез\n→\n\nКНИГА НА ПЕРСОНАЖИТЕ\n\nРоли във Върколак\n\nБърз справочник за селото: кой вижда, кой лъже и кои роли обръщат нощта.\n\nСЪЗДАЙ ИГРА\nВиж ролите в Мафия\n22\nСЕЛСКИ РОЛИ\n⌕\nВсички\nСтартови\nРазширени\nНощни\n12+ играчи\nВсички отбори\nСело\nВърколаци\nВампири\nВлюбени\nНеутрални\nПоказани 22 от 22 роли\nСЕЛЯНИ\nНОЩНА\nУлична котка\n\nПромо роля, която всяка нощ сменя условния си собственик.\n\nАВТОМАТИЧНА\nСТОЙНОСТ +6\nРЕД -1\nОТВОРИ ДОСИЕТО\nСЕЛЯНИ\nНОЩНА\nКу"
+    }
+  },
+  {
+    "route": "/mafia/roles",
+    "finalUrl": "http://127.0.0.1:3000/mafia/roles",
+    "consoleMessages": [],
+    "pageErrors": [],
+    "failedResponses": [],
+    "requestFailures": [],
+    "horizontalOverflow": false,
+    "layout": {
+      "path": "/mafia/roles",
+      "title": "Роли в Мафия | Върколак и Мафия",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyText": "Върколак\n·\nМафия\nСОЦИАЛНА ИГРА НА СЕНКИ\nИГРАЙ\nВЪРКОЛАК\nМАФИЯ\nВлез\n→\n\nДОСИЕТА НА ГРАДА\n\nРоли в Мафия\n\nБърз справочник за града: кой разследва, кой пази и кой дърпа конците след полунощ.\n\nСЪЗДАЙ ИГРА\nВиж ролите във Върколак\n16\nГРАДСКИ ДОСИЕТА\n⌕\nВсички\nСтартови\nРазширени\nНощни\n12+ играчи\nВсички отбори\nГрад\nМафия\nНеутрални\nВлюбени\nПоказани 16 от 16 роли\nГРАД\nНОЩНА\nКомисар\n\nПроверява играч през нощта и търси Мафията.\n\nАВТОМАТИЧНА\nСТАРТОВА\nСТОЙНОСТ +6\nРЕД 5\nОТВОРИ ДОСИЕТО\nГРАД\nНОЩНА\nБодигард\n\nПази игр"
+    }
+  },
+  {
+    "route": "/roles",
+    "finalUrl": "http://127.0.0.1:3000/werewolf/roles",
+    "consoleMessages": [],
+    "pageErrors": [],
+    "failedResponses": [],
+    "requestFailures": [],
+    "horizontalOverflow": false,
+    "layout": {
+      "path": "/werewolf/roles",
+      "title": "Роли във Върколак | Върколак и Мафия",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyText": "Върколак\n·\nМафия\nСОЦИАЛНА ИГРА НА СЕНКИ\nИГРАЙ\nВЪРКОЛАК\nМАФИЯ\nВлез\n→\n\nКНИГА НА ПЕРСОНАЖИТЕ\n\nРоли във Върколак\n\nБърз справочник за селото: кой вижда, кой лъже и кои роли обръщат нощта.\n\nСЪЗДАЙ ИГРА\nВиж ролите в Мафия\n22\nСЕЛСКИ РОЛИ\n⌕\nВсички\nСтартови\nРазширени\nНощни\n12+ играчи\nВсички отбори\nСело\nВърколаци\nВампири\nВлюбени\nНеутрални\nПоказани 22 от 22 роли\nСЕЛЯНИ\nНОЩНА\nУлична котка\n\nПромо роля, която всяка нощ сменя условния си собственик.\n\nАВТОМАТИЧНА\nСТОЙНОСТ +6\nРЕД -1\nОТВОРИ ДОСИЕТО\nСЕЛЯНИ\nНОЩНА\nКу"
+    }
+  },
+  {
+    "route": "/werewolf/rules",
+    "finalUrl": "http://127.0.0.1:3000/werewolf/rules",
+    "consoleMessages": [],
+    "pageErrors": [],
+    "failedResponses": [],
+    "requestFailures": [],
+    "horizontalOverflow": false,
+    "layout": {
+      "path": "/werewolf/rules",
+      "title": "Правила за Върколак | Върколак и Мафия",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyText": "Върколак\n·\nМафия\nСОЦИАЛНА ИГРА НА СЕНКИ\nИГРАЙ\nВЪРКОЛАК\nМАФИЯ\nВлез\n→\n\nКАК СЕ ИГРАЕ\n\nПравила за Върколак\n\nИграта се води от Разказвач или от автоматичния сървър. Играчите получават тайни роли, но обсъждането и гласуването решават кой ще оцелее.\n\nСЪЗДАЙ ИГРА\nПравила за Мафия\nВиж ролите\n6\nФАЗИ В ИГРАТА\n\nХОД НА ИГРАТА\n\nФазова карта\n\nНатисни фаза, за да видиш кой действа, какъв таймер е подходящ и какво да следиш.\n\n01\nЛоби\nСЪБИРАНЕ\n02\nРазкриване на роля\nТАЙНА КАРТА\n03\nНощ\nСЪБУЖДАНИЯ\n04\nДневно обсъждан"
+    }
+  },
+  {
+    "route": "/mafia/rules",
+    "finalUrl": "http://127.0.0.1:3000/mafia/rules",
+    "consoleMessages": [],
+    "pageErrors": [],
+    "failedResponses": [],
+    "requestFailures": [],
+    "horizontalOverflow": false,
+    "layout": {
+      "path": "/mafia/rules",
+      "title": "Правила за Мафия | Върколак и Мафия",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyText": "Върколак\n·\nМафия\nСОЦИАЛНА ИГРА НА СЕНКИ\nИГРАЙ\nВЪРКОЛАК\nМАФИЯ\nВлез\n→\n\nКАК СЕ ИГРАЕ\n\nПравила за Мафия\n\nМафия е игра на обвинения, алибита и нощни решения. Градът търси Мафията, а Мафията се опитва да контролира разговора.\n\nСЪЗДАЙ ИГРА\nПравила за Върколак\nВиж ролите\n6\nФАЗИ В ИГРАТА\n\nХОД НА ИГРАТА\n\nФазова карта\n\nНатисни фаза, за да видиш кой действа, какъв таймер е подходящ и какво да следиш.\n\n01\nЛоби\nАЛИБИТА\n02\nРазкриване на роля\nТАЙНА КАРТА\n03\nСделките започват\nСДЕЛКА\n04\nГрадът говори\nРАЗПИТ\n05\nОб"
+    }
+  },
+  {
+    "route": "/tutorial",
+    "finalUrl": "http://127.0.0.1:3000/tutorial?step=1",
+    "consoleMessages": [],
+    "pageErrors": [],
+    "failedResponses": [],
+    "requestFailures": [],
+    "horizontalOverflow": false,
+    "layout": {
+      "path": "/tutorial?step=1",
+      "title": "Първа игра | Върколак и Мафия",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyText": "Върколак\n·\nМафия\nСОЦИАЛНА ИГРА НА СЕНКИ\nИГРАЙ\nВЪРКОЛАК\nМАФИЯ\nВлез\n→\nПРЕСКОЧИ\n\nСЦЕНА 1 - ПРЕДИ НОЩТА\n\nМасата се събира.\n\nСедем-осем приятели сядат на маса. Никой не се регистрира. Всеки въвежда име, споделяте код и влизате в стая. Сървърът ще раздаде картите след минута.\n\nТова е единственият момент, в който всички виждат всички. После всеки знае само своята роля.\n\nПРЕДИ ДА ЗАПОЧНЕТЕ\nДръжте телефоните близо до тялото. Тук имената стават алибита.\nНАЗАД\nСЦЕНА 1 ОТ 6\nНАПРЕД\n\nСъвет: стрелките наляво и"
+    }
+  },
+  {
+    "route": "/sign-in",
+    "finalUrl": "http://127.0.0.1:3000/sign-in",
+    "consoleMessages": [],
+    "pageErrors": [],
+    "failedResponses": [],
+    "requestFailures": [],
+    "horizontalOverflow": false,
+    "layout": {
+      "path": "/sign-in",
+      "title": "Влез в стаята | Върколак и Мафия",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyText": "Върколак\n·\nМафия\nСОЦИАЛНА ИГРА НА СЕНКИ\nИГРАЙ\nВЪРКОЛАК\nМАФИЯ\nВлез\n→\n\nВХОД НА МАСАТА\n\nПокажи се\nна масата\n\nЕдин профил пази историята, статистиките и поканите. Тайните роли остават на сървъра.\n\nПродължи с Google\nПродължи с Discord\nИЛИ С ИМЕЙЛ\nИмам профил\nНов профил\nИМЕЙЛ\nПАРОЛА\nВЛЕЗ\nПОВЕРИТЕЛНОСТ\n·\nУСЛОВИЯ"
+    }
+  },
+  {
+    "route": "/lobby",
+    "finalUrl": "http://127.0.0.1:3000/lobby",
+    "consoleMessages": [],
+    "pageErrors": [],
+    "failedResponses": [],
+    "requestFailures": [],
+    "horizontalOverflow": false,
+    "layout": {
+      "path": "/lobby",
+      "title": "Лоби | Върколак и Мафия",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyText": "Върколак\n·\nМафия\nСОЦИАЛНА ИГРА НА СЕНКИ\nИГРАЙ\nВЪРКОЛАК\nМАФИЯ\nВлез\n→\n1\nСтая\n2\nРоли\n3\nСтил\n4\nПреглед\nНАЗАД\nНАПРЕД\nБърза игра 6 души\nНачинаещи · директен преглед\nКласика 10 души\nНай-познатата маса\nГоляма маса 16+\nРазширен състав\n\nСТЪПКА 1 / 4 · СТАЯ\n\nСъздай частна стая\n\nИзбери име на стаята, код, игра и темпо.\n\nИМЕ НА СТАЯТА\nМоже да го смениш преди поканата.\nКОД\n6 символа, споделим лесно.\nРЕЖИМ\nВЪРКОЛАК\nВърколак\nКласическа игра с тайни роли, нощни заплахи и дневно гласуване.\nБРОЙ ИГРАЧИ\n8 играчи\n-\n"
+    }
+  },
+  {
+    "route": "/lobby/TEST01",
+    "finalUrl": "http://127.0.0.1:3000/sign-in?redirect=%2Flobby%2FTEST01",
+    "consoleMessages": [],
+    "pageErrors": [],
+    "failedResponses": [],
+    "requestFailures": [],
+    "horizontalOverflow": false,
+    "layout": {
+      "path": "/sign-in?redirect=%2Flobby%2FTEST01",
+      "title": "Влез в стаята | Върколак и Мафия",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyText": "Върколак\n·\nМафия\nСОЦИАЛНА ИГРА НА СЕНКИ\nИГРАЙ\nВЪРКОЛАК\nМАФИЯ\nВлез\n→\n\nВХОД НА МАСАТА\n\nПокажи се\nна масата\n\nЕдин профил пази историята, статистиките и поканите. Тайните роли остават на сървъра.\n\nПродължи с Google\nПродължи с Discord\nИЛИ С ИМЕЙЛ\nИмам профил\nНов профил\nИМЕЙЛ\nПАРОЛА\nВЛЕЗ\nПОВЕРИТЕЛНОСТ\n·\nУСЛОВИЯ"
+    }
+  },
+  {
+    "route": "/play/TEST01",
+    "finalUrl": "http://127.0.0.1:3000/sign-in?redirect=%2Fplay%2FTEST01",
+    "consoleMessages": [],
+    "pageErrors": [],
+    "failedResponses": [],
+    "requestFailures": [],
+    "horizontalOverflow": false,
+    "layout": {
+      "path": "/sign-in?redirect=%2Fplay%2FTEST01",
+      "title": "Влез в стаята | Върколак и Мафия",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyText": "Върколак\n·\nМафия\nСОЦИАЛНА ИГРА НА СЕНКИ\nИГРАЙ\nВЪРКОЛАК\nМАФИЯ\nВлез\n→\n\nВХОД НА МАСАТА\n\nПокажи се\nна масата\n\nЕдин профил пази историята, статистиките и поканите. Тайните роли остават на сървъра.\n\nПродължи с Google\nПродължи с Discord\nИЛИ С ИМЕЙЛ\nИмам профил\nНов профил\nИМЕЙЛ\nПАРОЛА\nВЛЕЗ\nПОВЕРИТЕЛНОСТ\n·\nУСЛОВИЯ"
+    }
+  },
+  {
+    "route": "/history",
+    "finalUrl": "http://127.0.0.1:3000/history",
+    "consoleMessages": [],
+    "pageErrors": [],
+    "failedResponses": [],
+    "requestFailures": [],
+    "horizontalOverflow": false,
+    "layout": {
+      "path": "/history",
+      "title": "История | Върколак и Мафия",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyText": "Върколак\n·\nМафия\nСОЦИАЛНА ИГРА НА СЕНКИ\nИГРАЙ\nВЪРКОЛАК\nМАФИЯ\nВлез\n→\n\nАРХИВ\n\nАрхив на масата\n\nВсяко дело носи дата, играчите, ролите и развръзката.\n\nПървата нощ ще остави следа тук.\nЗАПОЧНИ ПЪРВОТО ДЕЛО\nВИЖ КАК ИЗГЛЕЖДА ДЕЛО\n\nИзползваме само необходими бисквитки за вход и сесия. Прочети политиката за поверителност.\n\nРАЗБРАХ"
+    }
+  },
+  {
+    "route": "/leaderboard",
+    "finalUrl": "http://127.0.0.1:3000/leaderboard",
+    "consoleMessages": [],
+    "pageErrors": [],
+    "failedResponses": [],
+    "requestFailures": [],
+    "horizontalOverflow": false,
+    "layout": {
+      "path": "/leaderboard",
+      "title": "Класация | Върколак и Мафия",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyText": "Върколак\n·\nМафия\nСОЦИАЛНА ИГРА НА СЕНКИ\nИГРАЙ\nВЪРКОЛАК\nМАФИЯ\nВлез\n→\nВЕЧЕРЕН БРОЙ НА МАСАТА\n\nБРОЙ № 001 · ОЧАКВА ИМЕТО СИ\n\nГЛАВНА НОВИНА\n\nИЗДАНИЕТО ОЩЕ НЕ Е ТИРАЖИРАНО\n\nУтрешният брой ще носи първото име. Завърши една игра и редакцията се събужда.\n\nЗАПОЧНИ ПЪРВОТО ИЗДАНИЕ\nВИЖ КАК ИЗГЛЕЖДА ВЕЧЕР\n\nИзползваме само необходими бисквитки за вход и сесия. Прочети политиката за поверителност.\n\nРАЗБРАХ"
+    }
+  },
+  {
+    "route": "/achievements",
+    "finalUrl": "http://127.0.0.1:3000/sign-in?redirect=%2Fachievements",
+    "consoleMessages": [],
+    "pageErrors": [],
+    "failedResponses": [],
+    "requestFailures": [],
+    "horizontalOverflow": false,
+    "layout": {
+      "path": "/sign-in?redirect=%2Fachievements",
+      "title": "Влез в стаята | Върколак и Мафия",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyText": "Върколак\n·\nМафия\nСОЦИАЛНА ИГРА НА СЕНКИ\nИГРАЙ\nВЪРКОЛАК\nМАФИЯ\nВлез\n→\n\nВХОД НА МАСАТА\n\nПокажи се\nна масата\n\nЕдин профил пази историята, статистиките и поканите. Тайните роли остават на сървъра.\n\nПродължи с Google\nПродължи с Discord\nИЛИ С ИМЕЙЛ\nИмам профил\nНов профил\nИМЕЙЛ\nПАРОЛА\nВЛЕЗ\nПОВЕРИТЕЛНОСТ\n·\nУСЛОВИЯ\n\nИзползваме само необходими бисквитки за вход и сесия. Прочети политиката за поверителност.\n\nРАЗБРАХ"
+    }
+  },
+  {
+    "route": "/friends",
+    "finalUrl": "http://127.0.0.1:3000/sign-in?redirect=%2Ffriends",
+    "consoleMessages": [],
+    "pageErrors": [],
+    "failedResponses": [],
+    "requestFailures": [],
+    "horizontalOverflow": false,
+    "layout": {
+      "path": "/sign-in?redirect=%2Ffriends",
+      "title": "Влез в стаята | Върколак и Мафия",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyText": "Върколак\n·\nМафия\nСОЦИАЛНА ИГРА НА СЕНКИ\nИГРАЙ\nВЪРКОЛАК\nМАФИЯ\nВлез\n→\n\nВХОД НА МАСАТА\n\nПокажи се\nна масата\n\nЕдин профил пази историята, статистиките и поканите. Тайните роли остават на сървъра.\n\nПродължи с Google\nПродължи с Discord\nИЛИ С ИМЕЙЛ\nИмам профил\nНов профил\nИМЕЙЛ\nПАРОЛА\nВЛЕЗ\nПОВЕРИТЕЛНОСТ\n·\nУСЛОВИЯ\n\nИзползваме само необходими бисквитки за вход и сесия. Прочети политиката за поверителност.\n\nРАЗБРАХ"
+    }
+  },
+  {
+    "route": "/offline",
+    "finalUrl": "http://127.0.0.1:3000/offline",
+    "consoleMessages": [],
+    "pageErrors": [],
+    "failedResponses": [],
+    "requestFailures": [],
+    "horizontalOverflow": false,
+    "layout": {
+      "path": "/offline",
+      "title": "Няма връзка | Върколак и Мафия",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyText": "Върколак\n·\nМафия\nСОЦИАЛНА ИГРА НА СЕНКИ\nИГРАЙ\nВЪРКОЛАК\nМАФИЯ\nВлез\n→\n\nВРЪЗКАТА ПРЕКЪСНА\n\nИграта чака интернет.\n\nАко си бил в активна стая, не затваряй страницата. Когато връзката се върне, приложението ще опита да те върне към същото място.\n\nКЪМ НАЧАЛОТО\nПРОЧЕТИ ПРАВИЛАТА\n\nИзползваме само необходими бисквитки за вход и сесия. Прочети политиката за поверителност.\n\nРАЗБРАХ"
+    }
+  },
+  {
+    "route": "/this-does-not-exist",
+    "finalUrl": "http://127.0.0.1:3000/this-does-not-exist",
+    "consoleMessages": [
+      {
+        "type": "error",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      }
+    ],
+    "pageErrors": [],
+    "failedResponses": [
+      {
+        "status": 404,
+        "url": "http://127.0.0.1:3000/this-does-not-exist"
+      }
+    ],
+    "requestFailures": [],
+    "horizontalOverflow": false,
+    "layout": {
+      "path": "/this-does-not-exist",
+      "title": "Върколак и Мафия",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyText": "Върколак\n·\nМафия\nСОЦИАЛНА ИГРА НА СЕНКИ\nИГРАЙ\nВЪРКОЛАК\nМАФИЯ\nВлез\n→\n404\nThis page could not be found.\n\nИзползваме само необходими бисквитки за вход и сесия. Прочети политиката за поверителност.\n\nРАЗБРАХ"
+    }
+  }
+]

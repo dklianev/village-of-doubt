@@ -1,0 +1,187 @@
+{
+  "auditDate": "2026-05-16",
+  "totals": {
+    "p0": 0,
+    "p1": 9,
+    "p2": 4,
+    "p3": 3
+  },
+  "findings": [
+    {
+      "id": "SEC-001",
+      "severity": "P1",
+      "category": "dependency-security",
+      "title": "pnpm audit reports high severity advisories in Next.js and Kysely",
+      "file": "apps/web/package.json",
+      "line": 20,
+      "repro": "Run `pnpm audit --json`; see `docs/regression-audit/logs/audit.json`. It exits non-zero with 8 high, 6 moderate and 3 low advisories, including Next.js <16.2.6 and Kysely <0.28.17.",
+      "impact": "Public launch would ship known high severity framework advisories, including App Router middleware/proxy bypass, SSRF/DoS classes, and Kysely JSON-path injection risk through drizzle-orm.",
+      "suggestedFix": "Upgrade Next.js to a patched version satisfying the audit advisories, and update drizzle-orm/Kysely once compatible patched versions are available; rerun `pnpm audit` and the full verify chain."
+    },
+    {
+      "id": "TEST-001",
+      "severity": "P1",
+      "category": "tests",
+      "title": "GameRoom race-condition test is flaky under playtest",
+      "file": "apps/game-server/src/__tests__/GameRoom.race-conditions.test.ts",
+      "line": 52,
+      "repro": "`pnpm playtest` failed once with expected deadPlayers `[race-3]` but received `[]`; immediate rerun passed. Logs: `docs/regression-audit/logs/playtest.log` and `docs/regression-audit/logs/playtest-rerun.log`.",
+      "impact": "CI/release verification can fail nondeterministically, and the test may be advancing the narrator before the concurrent night submissions are fully processed.",
+      "suggestedFix": "Make the test wait for both server-side submissions to be accepted before `narratorAdvance`, or add an explicit deterministic helper/ack path for the race-condition contract."
+    },
+    {
+      "id": "TEST-002",
+      "severity": "P2",
+      "category": "tests",
+      "title": "playtest suite filter does not narrow Vitest to the intended three suites",
+      "file": "scripts/playtest.mjs",
+      "line": 15,
+      "repro": "`pnpm playtest` output ran all 7 GameRoom tests, including `GameRoom.race-conditions.test.ts`, although `scripts/playtest.mjs` lists only three suites. The spawned command includes a literal `--` after the package script.",
+      "impact": "`pnpm playtest` no longer means the documented multi-client regression subset and can inherit unrelated launch-coverage flakiness.",
+      "suggestedFix": "Adjust pnpm/Vitest argument forwarding so the selected suite paths are passed as Vitest filters without the extra literal separator."
+    },
+    {
+      "id": "TEST-003",
+      "severity": "P1",
+      "category": "tests",
+      "title": "Auth E2E reports success while skipping database-backed flows",
+      "file": "scripts/e2e-auth.mjs",
+      "line": 34,
+      "repro": "Run `pnpm e2e:auth` without `DATABASE_URL`. It logs `пропуснато: DATABASE_URL липсва` for email registration, authenticated redirect return, and account deletion, then exits 0. CI (`.github/workflows/ci.yml`) does not provide a Postgres service.",
+      "impact": "The standard `pnpm verify` gate can pass without exercising the highest-risk public-launch auth flows.",
+      "suggestedFix": "Provide a CI Postgres service and seedable test database for `e2e:auth`, or make skipped critical auth flows fail outside an explicitly marked local-only mode."
+    },
+    {
+      "id": "BG-001",
+      "severity": "P1",
+      "category": "bg-copy",
+      "title": "Default 404 page leaks English UI text",
+      "file": "apps/web/app/not-found.tsx",
+      "line": 1,
+      "repro": "Open `/this-does-not-exist` or inspect `docs/regression-audit/runtime-probe-results.json`; body text includes `This page could not be found.`",
+      "impact": "Violates the Bulgarian-only UI invariant on a public route.",
+      "suggestedFix": "Add a custom `apps/web/app/not-found.tsx` with Bulgarian copy and links back to the main game surfaces."
+    },
+    {
+      "id": "BG-002",
+      "severity": "P1",
+      "category": "bg-copy",
+      "title": "Game-server safe errors use Latin `host` in user-facing messages",
+      "file": "apps/game-server/src/rooms/GameRoom.ts",
+      "line": 350,
+      "repro": "Send privileged commands as a non-host client; safe errors include `Само host-ът...` at lines 350, 406, and 444.",
+      "impact": "These safe errors are sent to clients and can appear in the UI, violating the Bulgarian-only copy invariant.",
+      "suggestedFix": "Replace `host-ът` with Bulgarian wording such as `домакинът` in all user-facing error strings."
+    },
+    {
+      "id": "GAME-001",
+      "severity": "P1",
+      "category": "game-server",
+      "title": "Role assignment can fall back to Math.random",
+      "file": "packages/shared/src/role-assignment.ts",
+      "line": 35,
+      "repro": "Inspect `defaultRandomSource`; when `globalThis.crypto.getRandomValues` is unavailable, it returns `Math.random()`.",
+      "impact": "Violates the project invariant that role assignment must be crypto-based. In a crypto-less runtime/polyfill failure, roles become predictable.",
+      "suggestedFix": "Use Node crypto as a server fallback or throw a Bulgarian-safe configuration/runtime error instead of falling back to `Math.random`."
+    },
+    {
+      "id": "AUTH-001",
+      "severity": "P1",
+      "category": "authorization",
+      "title": "Achievements API exposes arbitrary user achievements by query parameter",
+      "file": "apps/web/app/api/achievements/route.ts",
+      "line": 5,
+      "repro": "Call `GET /api/achievements?userId=<any-user-id>`; the route reads the user id from the URL and does not call `auth.api.getSession`. The route test at `apps/web/app/api/achievements/__tests__/route.test.ts:48` codifies this behavior.",
+      "impact": "Personal achievements can be enumerated for any known user id despite `/achievements` being auth-gated.",
+      "suggestedFix": "Require a Better Auth session in the route and use `session.user.id`; reject mismatched `userId` parameters or remove the parameter entirely."
+    },
+    {
+      "id": "API-001",
+      "severity": "P2",
+      "category": "api",
+      "title": "Game-token route signs normalized codes without enforcing room-code length",
+      "file": "apps/web/app/api/game-token/route.ts",
+      "line": 14,
+      "repro": "POST `{ \"code\": \"ABC\" }` to `/api/game-token` with a valid session; line 14 normalizes and line 16 only rejects empty strings.",
+      "impact": "The API can mint tokens for impossible or malformed room codes, pushing validation failure later to the game-server connect path.",
+      "suggestedFix": "Validate `roomCode` with the same 4-12 uppercase alphanumeric rule used by the join UI before signing."
+    },
+    {
+      "id": "DB-001",
+      "severity": "P1",
+      "category": "database",
+      "title": "Account deletion conflicts with game-history foreign keys",
+      "file": "packages/database/src/schema.ts",
+      "line": 77,
+      "repro": "`/api/account/delete` calls Better Auth `deleteUser` at `apps/web/app/api/account/delete/route.ts:23`, but `games.hostId`, `game_players.userId`, and `game_events.actorId/targetId` reference `user.id` without cascade or set-null behavior.",
+      "impact": "Users with persisted games may receive `Не успяхме да изтрием профила.` and remain undeleted, undermining the GDPR deletion flow.",
+      "suggestedFix": "Define an account deletion policy: anonymize game-history user references before deletion, or change selected FKs to `onDelete: set null`/cascade where legally and product-wise correct."
+    },
+    {
+      "id": "ENV-001",
+      "severity": "P2",
+      "category": "authorization",
+      "title": "Runtime secret validation is weaker than the documented 32-character invariant",
+      "file": "packages/shared/src/server.ts",
+      "line": 117,
+      "repro": "`assertUsableSecret` rejects only secrets shorter than 16 characters, while `AGENTS.md` and `scripts/check-production-env.mjs` require 32+ characters. `apps/web/lib/env.ts:7` also validates `BETTER_AUTH_SECRET` with min 16.",
+      "impact": "Local/test runtimes can accidentally exercise weaker-than-production secrets, and the invariant is enforced inconsistently across layers.",
+      "suggestedFix": "Align runtime validation and env schema with the 32-character minimum, while keeping explicit test fixtures long enough."
+    },
+    {
+      "id": "DEPLOY-001",
+      "severity": "P1",
+      "category": "deployment",
+      "title": "Docker production environment omits Google OAuth and NEXT_PUBLIC_APP_URL",
+      "file": "docker-compose.yml",
+      "line": 29,
+      "repro": "Inspect the `web.environment` block: it passes Discord OAuth and `NEXT_PUBLIC_GAME_SERVER_URL`, but not `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, or `NEXT_PUBLIC_APP_URL`. `scripts/check-production-env.mjs:51` warns only about Discord OAuth.",
+      "impact": "A Docker deployment can silently ship without Google sign-in despite the public-launch UI presenting Google as a primary auth path; URL-dependent metadata/client config can also fall back unexpectedly.",
+      "suggestedFix": "Pass Google OAuth variables and `NEXT_PUBLIC_APP_URL` into the web service, and extend production env checks to require or explicitly warn on Google OAuth."
+    },
+    {
+      "id": "DEPLOY-002",
+      "severity": "P2",
+      "category": "deployment",
+      "title": "Production CSP still allows unsafe inline/eval scripts and non-TLS connect targets",
+      "file": "Caddyfile",
+      "line": 9,
+      "repro": "Inspect the `Content-Security-Policy` header: `script-src` includes `'unsafe-inline' 'unsafe-eval'`, and `connect-src` includes `http:` and `ws:`.",
+      "impact": "The reverse proxy has useful baseline headers, but CSP is permissive enough to weaken XSS and mixed-content defense for a public launch.",
+      "suggestedFix": "Tighten CSP after confirming Next/Sentry requirements: remove `unsafe-eval` in production, move toward nonce/hash-based scripts, and restrict `connect-src` to HTTPS/WSS origins."
+    },
+    {
+      "id": "DEAD-001",
+      "severity": "P3",
+      "category": "dead-code",
+      "title": "Legacy AuthForm component remains unused after sign-in redesign",
+      "file": "apps/web/components/auth-form.tsx",
+      "line": 9,
+      "repro": "Run `rg -n 'AuthForm|auth-form' apps/web`; the only hits are the component definition and its own CSS class.",
+      "impact": "Dead auth UI code can confuse future changes and still contains pre-redesign behavior/copy surface.",
+      "suggestedFix": "Delete `auth-form.tsx` and any orphaned `.auth-form` CSS after confirming no tests or docs depend on it."
+    },
+    {
+      "id": "TODO-001",
+      "severity": "P3",
+      "category": "todo-debt",
+      "title": "Launch-visible stats TODOs remain in landing quickstart",
+      "file": "apps/web/components/landing/QuickStartSection.tsx",
+      "line": 182,
+      "repro": "Run `rg -n 'TODO|FIXME|HACK|XXX|@deprecated' apps packages scripts docs`; TODOs remain at lines 182 and 214 for family/byFamily stats, plus `packages/shared/src/game-config.ts:66` for promo rules.",
+      "impact": "Not a blocker, but the home quickstart data story still has known incomplete stats wiring.",
+      "suggestedFix": "Either wire the missing stats fields or move the TODOs to a tracked issue and simplify the code comments."
+    },
+    {
+      "id": "DOC-001",
+      "severity": "P3",
+      "category": "documentation",
+      "title": "AGENTS.md command and stack notes drift from current scripts",
+      "file": "AGENTS.md",
+      "line": 18,
+      "repro": "Inspect `AGENTS.md`: auth stack mentions Discord but not Google; `pnpm test` still says 39 tests; `pnpm verify` omits `frontend:e2e`, `e2e:auth`, `visual`, and `perf:budget`; hook docs reference `.husky` while the repo uses `.githooks/pre-commit`.",
+      "impact": "New agents and contributors can rely on stale launch instructions and miss the real verification chain.",
+      "suggestedFix": "Update AGENTS.md to match current auth providers, test counts, verify chain, and hook location."
+    }
+  ]
+}

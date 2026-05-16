@@ -1,0 +1,232 @@
+
+> bulgarian-werewolf-mafia@0.1.0 test E:\werewolf_mafia
+> turbo test
+
+• turbo 2.9.6
+
+   • Packages in scope: @werewolf/database, @werewolf/game-server, @werewolf/shared, @werewolf/web
+   • Running test in 4 packages
+   • Remote caching disabled
+
+@werewolf/database:test: cache hit, replaying logs bf1ac5b950c7c387
+@werewolf/database:test: 
+@werewolf/database:test: > @werewolf/database@0.1.0 test E:\werewolf_mafia\packages\database
+@werewolf/database:test: > vitest run --passWithNoTests
+@werewolf/database:test: 
+@werewolf/database:test: 
+@werewolf/database:test: [1m[30m[46m RUN [49m[39m[22m [36mv4.1.5 [39m[90mE:/werewolf_mafia/packages/database[39m
+@werewolf/database:test: 
+@werewolf/database:test: No test files found, exiting with code 0
+@werewolf/database:test: 
+@werewolf/database:test: [2minclude: [22m[33m**/*.{test,spec}.?(c|m)[jt]s?(x)[39m
+@werewolf/database:test: [2mexclude:  [22m[33m**/node_modules/**[2m, [22m**/.git/**[39m
+@werewolf/database:test: 
+@werewolf/shared:test: cache hit, replaying logs f38ac2a9c50ced2b
+@werewolf/database:build: cache hit, replaying logs d022fe488a81423b
+@werewolf/database:build: 
+@werewolf/database:build: > @werewolf/database@0.1.0 build E:\werewolf_mafia\packages\database
+@werewolf/database:build: > tsc -p tsconfig.json
+@werewolf/database:build: 
+@werewolf/shared:build: cache hit, replaying logs 6ab449f859b6d7c3
+@werewolf/shared:build: 
+@werewolf/shared:build: > @werewolf/shared@0.1.0 build E:\werewolf_mafia\packages\shared
+@werewolf/shared:build: > tsc -p tsconfig.json
+@werewolf/shared:build: 
+@werewolf/web:test: cache hit, replaying logs 328304b34c3d41b8
+@werewolf/game-server:test: cache hit, replaying logs 0d33ae138ea70214
+@werewolf/web:test: 
+@werewolf/web:test: > @werewolf/web@0.1.0 test E:\werewolf_mafia\apps\web
+@werewolf/web:test: > vitest run --passWithNoTests
+@werewolf/web:test: 
+@werewolf/web:test: 
+@werewolf/web:test: [1m[30m[46m RUN [49m[39m[22m [36mv4.1.5 [39m[90mE:/werewolf_mafia/apps/web[39m
+@werewolf/web:test: 
+@werewolf/web:test: (node:3288) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+@werewolf/web:test: (Use `node --trace-deprecation ...` to show where the warning was created)
+@werewolf/web:test:  [32m✓[39m lib/__tests__/leaderboard-headlines.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+@werewolf/web:test:  [32m✓[39m lib/__tests__/sound.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+@werewolf/web:test:  [32m✓[39m lib/__tests__/history-highlights.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+@werewolf/game-server:test: 
+@werewolf/game-server:test: > @werewolf/game-server@0.1.0 test E:\werewolf_mafia\apps\game-server
+@werewolf/web:test:  [32m✓[39m components/leaderboard/__tests__/MainHeadline.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 126[2mms[22m[39m
+@werewolf/web:test:  [32m✓[39m lib/__tests__/room-options.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+@werewolf/game-server:test: > vitest run --passWithNoTests
+@werewolf/game-server:test: 
+@werewolf/web:test:  [32m✓[39m components/sign-in/__tests__/OAuthButton.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 149[2mms[22m[39m
+@werewolf/web:test:  [32m✓[39m components/tutorial/__tests__/DayClueChips.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 199[2mms[22m[39m
+@werewolf/game-server:test: 
+@werewolf/game-server:test: [1m[30m[46m RUN [49m[39m[22m [36mv4.1.5 [39m[90mE:/werewolf_mafia/apps/game-server[39m
+@werewolf/web:test:  [32m✓[39m components/site-chrome/__tests__/AuthChip.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 133[2mms[22m[39m
+@werewolf/game-server:test: 
+@werewolf/web:test:  [32m✓[39m components/lobby/__tests__/LobbyWizard.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 305[2mms[22m[39m
+@werewolf/web:test: 
+@werewolf/game-server:test:  [32m✓[39m src/game-logic/__tests__/night-resolver.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+@werewolf/game-server:test: [90mstdout[2m | src/__tests__/GameRoom.reconnect.test.ts
+@werewolf/web:test: [2m Test Files [22m [1m[32m9 passed[39m[22m[90m (9)[39m
+@werewolf/web:test: [2m      Tests [22m [1m[32m27 passed[39m[22m[90m (27)[39m
+@werewolf/web:test: [2m   Start at [22m 04:12:59
+@werewolf/web:test: [2m   Duration [22m 3.17s[2m (transform 806ms, setup 5.72s, import 1.66s, tests 938ms, environment 11.89s)[22m
+@werewolf/game-server:test: [22m[39mℹ️  optional .env file not found: .env.test, .env
+@werewolf/game-server:test: 
+@werewolf/web:test: 
+@werewolf/game-server:test: [90mstdout[2m | src/__tests__/GameRoom.mayor-succession.test.ts
+@werewolf/game-server:test: [22m[39mℹ️  optional .env file not found: .env.test, .env
+@werewolf/game-server:test: 
+@werewolf/game-server:test: [90mstdout[2m | src/__tests__/GameRoom.security.test.ts
+@werewolf/game-server:test: [22m[39mℹ️  optional .env file not found: .env.test, .env
+@werewolf/game-server:test: 
+@werewolf/game-server:test: [90mstdout[2m | src/__tests__/GameRoom.full-night.test.ts
+@werewolf/game-server:test: [22m[39mℹ️  optional .env file not found: .env.test, .env
+@werewolf/game-server:test: 
+@werewolf/game-server:test: [90mstdout[2m | src/__tests__/GameRoom.race-conditions.test.ts
+@werewolf/game-server:test: [22m[39mℹ️  optional .env file not found: .env.test, .env
+@werewolf/game-server:test: 
+@werewolf/game-server:test: [90mstdout[2m | src/__tests__/GameRoom.regression.test.ts
+@werewolf/game-server:test: [22m[39mℹ️  optional .env file not found: .env.test, .env
+@werewolf/game-server:test: 
+@werewolf/game-server:test:  [32m✓[39m src/__tests__/GameRoom.reconnect.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 439[2mms[22m[39m
+@werewolf/game-server:test:      [33m[2m✓[22m[39m restores a disconnected player's private role without leaking it publicly [33m 437[2mms[22m[39m
+@werewolf/game-server:test:  [32m✓[39m src/__tests__/GameRoom.mayor-succession.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 488[2mms[22m[39m
+@werewolf/game-server:test:      [33m[2m✓[22m[39m asks for a successor when the current Mayor dies [33m 486[2mms[22m[39m
+@werewolf/game-server:test:  [32m✓[39m src/__tests__/GameRoom.race-conditions.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 347[2mms[22m[39m
+@werewolf/game-server:test:      [33m[2m✓[22m[39m resolves concurrent faction submissions deterministically to one death [33m 346[2mms[22m[39m
+@werewolf/game-server:test:  [32m✓[39m src/__tests__/GameRoom.security.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 424[2mms[22m[39m
+@werewolf/game-server:test:      [33m[2m✓[22m[39m keeps role data out of the synchronized public state [33m 324[2mms[22m[39m
+@werewolf/game-server:test: [90mstderr[2m | src/__tests__/GameRoom.full-night.test.ts[2m > [22m[2mGameRoom full-night launch smoke[2m > [22m[2mruns from lobby through night result, vote and game over
+@werewolf/game-server:test: [22m[39m@colyseus/sdk: onMessage() not registered for type 'achievements_unlocked'.
+@werewolf/game-server:test: 
+@werewolf/game-server:test: [90mstderr[2m | src/__tests__/GameRoom.full-night.test.ts[2m > [22m[2mGameRoom full-night launch smoke[2m > [22m[2mruns from lobby through night result, vote and game over
+@werewolf/game-server:test: [22m[39m@colyseus/sdk: onMessage() not registered for type 'achievements_unlocked'.
+@werewolf/game-server:test: 
+@werewolf/game-server:test: [90mstderr[2m | src/__tests__/GameRoom.full-night.test.ts[2m > [22m[2mGameRoom full-night launch smoke[2m > [22m[2mruns from lobby through night result, vote and game over
+@werewolf/game-server:test: [22m[39m@colyseus/sdk: onMessage() not registered for type 'achievements_unlocked'.
+@werewolf/game-server:test: 
+@werewolf/game-server:test: [90mstderr[2m | src/__tests__/GameRoom.full-night.test.ts[2m > [22m[2mGameRoom full-night launch smoke[2m > [22m[2mruns from lobby through night result, vote and game over
+@werewolf/game-server:test: [22m[39m@colyseus/sdk: onMessage() not registered for type 'achievements_unlocked'.
+@werewolf/game-server:test: 
+@werewolf/game-server:test: [90mstderr[2m | src/__tests__/GameRoom.full-night.test.ts[2m > [22m[2mGameRoom full-night launch smoke[2m > [22m[2mruns from lobby through night result, vote and game over
+@werewolf/game-server:test: [22m[39m@colyseus/sdk: onMessage() not registered for type 'achievements_unlocked'.
+@werewolf/game-server:test: 
+@werewolf/game-server:test: [90mstderr[2m | src/__tests__/GameRoom.full-night.test.ts[2m > [22m[2mGameRoom full-night launch smoke[2m > [22m[2mruns from lobby through night result, vote and game over
+@werewolf/game-server:test: [22m[39m@colyseus/sdk: onMessage() not registered for type 'achievements_unlocked'.
+@werewolf/game-server:test: 
+@werewolf/game-server:test:  [32m✓[39m src/__tests__/GameRoom.full-night.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 563[2mms[22m[39m
+@werewolf/game-server:test:      [33m[2m✓[22m[39m runs from lobby through night result, vote and game over [33m 561[2mms[22m[39m
+@werewolf/game-server:test: [90mstderr[2m | src/__tests__/GameRoom.regression.test.ts[2m > [22m[2mGameRoom gameplay regressions[2m > [22m[2mlets the Witch use both potions in the same night
+@werewolf/game-server:test: [22m[39m@colyseus/sdk: onMessage() not registered for type 'system'.
+@werewolf/game-server:test: 
+@werewolf/game-server:test: [90mstderr[2m | src/__tests__/GameRoom.regression.test.ts[2m > [22m[2mGameRoom gameplay regressions[2m > [22m[2mrejects Healer self-protection
+@werewolf/game-server:test: [22m[39m@colyseus/sdk: onMessage() not registered for type 'safe_error'.
+@werewolf/game-server:test: 
+@werewolf/game-server:test: [90mstderr[2m | src/__tests__/GameRoom.regression.test.ts[2m > [22m[2mGameRoom gameplay regressions[2m > [22m[2mrejects manual room configs with roles from another game family
+@werewolf/game-server:test: [22m[39mError: Тези роли не са налични за Мафия: Върколак.
+@werewolf/game-server:test:     at normalizeRoleDistributionForMode (E:/werewolf_mafia/packages/shared/dist/game-config.js:448:15)
+@werewolf/game-server:test:     at createGameConfigFromOptions (E:/werewolf_mafia/packages/shared/dist/game-config.js:391:11)
+@werewolf/game-server:test:     at GameRoom.onCreate (E:/werewolf_mafia/apps/game-server/src/rooms/GameRoom.ts:113:19)
+@werewolf/game-server:test:     at handleCreateRoom (file:///E:/werewolf_mafia/node_modules/.pnpm/@colyseus+core@0.17.42_@col_9977e644a928bfe28e0789aa0c37529e/node_modules/@colyseus/core/build/MatchMaker.mjs:289:18)
+@werewolf/game-server:test:     at Module.createRoom (file:///E:/werewolf_mafia/node_modules/.pnpm/@colyseus+core@0.17.42_@col_9977e644a928bfe28e0789aa0c37529e/node_modules/@colyseus/core/build/MatchMaker.mjs:237:18)
+@werewolf/game-server:test:     at ColyseusTestServer.createRoom (file:///E:/werewolf_mafia/node_modules/.pnpm/@colyseus+testing@0.17.11_@_bf8ab606fd012245473842e152884af0/node_modules/@colyseus/testing/build/TestServer.mjs:22:18)
+@werewolf/game-server:test:     at E:/werewolf_mafia/apps/game-server/src/__tests__/GameRoom.regression.test.ts:421:5
+@werewolf/game-server:test:     at file:///E:/werewolf_mafia/node_modules/.pnpm/@vitest+runner@4.1.5/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+@werewolf/game-server:test: 
+@werewolf/game-server:test: [90mstderr[2m | src/__tests__/GameRoom.regression.test.ts[2m > [22m[2mGameRoom gameplay regressions[2m > [22m[2mresolves Blacksmith, Investigator, Stray Cat and Vampire Hunter advanced actions
+@werewolf/game-server:test: [22m[39m@colyseus/sdk: onMessage() not registered for type 'system'.
+@werewolf/game-server:test: @colyseus/sdk: onMessage() not registered for type 'achievements_unlocked'.
+@werewolf/game-server:test: 
+@werewolf/game-server:test: [90mstderr[2m | src/__tests__/GameRoom.regression.test.ts[2m > [22m[2mGameRoom gameplay regressions[2m > [22m[2mresolves Blacksmith, Investigator, Stray Cat and Vampire Hunter advanced actions
+@werewolf/game-server:test: [22m[39m@colyseus/sdk: onMessage() not registered for type 'achievements_unlocked'.
+@werewolf/game-server:test: 
+@werewolf/game-server:test: [90mstderr[2m | src/__tests__/GameRoom.regression.test.ts[2m > [22m[2mGameRoom gameplay regressions[2m > [22m[2mresolves Blacksmith, Investigator, Stray Cat and Vampire Hunter advanced actions
+@werewolf/game-server:test: [22m[39m@colyseus/sdk: onMessage() not registered for type 'achievements_unlocked'.
+@werewolf/game-server:test: 
+@werewolf/game-server:test: [90mstderr[2m | src/__tests__/GameRoom.regression.test.ts[2m > [22m[2mGameRoom gameplay regressions[2m > [22m[2mresolves Blacksmith, Investigator, Stray Cat and Vampire Hunter advanced actions
+@werewolf/game-server:test: [22m[39m@colyseus/sdk: onMessage() not registered for type 'achievements_unlocked'.
+@werewolf/game-server:test: 
+@werewolf/game-server:test: [90mstderr[2m | src/__tests__/GameRoom.regression.test.ts[2m > [22m[2mGameRoom gameplay regressions[2m > [22m[2mresolves Blacksmith, Investigator, Stray Cat and Vampire Hunter advanced actions
+@werewolf/game-server:test: [22m[39m@colyseus/sdk: onMessage() not registered for type 'achievements_unlocked'.
+@werewolf/game-server:test: 
+@werewolf/game-server:test: [90mstderr[2m | src/__tests__/GameRoom.regression.test.ts[2m > [22m[2mGameRoom gameplay regressions[2m > [22m[2mresolves Blacksmith, Investigator, Stray Cat and Vampire Hunter advanced actions
+@werewolf/game-server:test: [22m[39m@colyseus/sdk: onMessage() not registered for type 'system'.
+@werewolf/game-server:test: @colyseus/sdk: onMessage() not registered for type 'achievements_unlocked'.
+@werewolf/game-server:test: 
+@werewolf/game-server:test: [90mstderr[2m | src/__tests__/GameRoom.regression.test.ts[2m > [22m[2mGameRoom gameplay regressions[2m > [22m[2mresolves Blacksmith, Investigator, Stray Cat and Vampire Hunter advanced actions
+@werewolf/game-server:test: [22m[39m@colyseus/sdk: onMessage() not registered for type 'achievements_unlocked'.
+@werewolf/game-server:test: 
+@werewolf/game-server:test: [90mstderr[2m | src/__tests__/GameRoom.regression.test.ts[2m > [22m[2mGameRoom gameplay regressions[2m > [22m[2mresolves Blacksmith, Investigator, Stray Cat and Vampire Hunter advanced actions
+@werewolf/game-server:test: [22m[39m@colyseus/sdk: onMessage() not registered for type 'achievements_unlocked'.
+@werewolf/game-server:test: 
+@werewolf/game-server:test: [90mstderr[2m | src/__tests__/GameRoom.regression.test.ts[2m > [22m[2mGameRoom gameplay regressions[2m > [22m[2mresolves Blacksmith, Investigator, Stray Cat and Vampire Hunter advanced actions
+@werewolf/game-server:test: [22m[39m@colyseus/sdk: onMessage() not registered for type 'achievements_unlocked'.
+@werewolf/game-server:test: 
+@werewolf/game-server:test: [90mstderr[2m | src/__tests__/GameRoom.regression.test.ts[2m > [22m[2mGameRoom gameplay regressions[2m > [22m[2mresolves Blacksmith, Investigator, Stray Cat and Vampire Hunter advanced actions
+@werewolf/game-server:test: [22m[39m@colyseus/sdk: onMessage() not registered for type 'achievements_unlocked'.
+@werewolf/game-server:test: 
+@werewolf/game-server:test: [90mstderr[2m | src/__tests__/GameRoom.regression.test.ts[2m > [22m[2mGameRoom gameplay regressions[2m > [22m[2mresolves Blacksmith, Investigator, Stray Cat and Vampire Hunter advanced actions
+@werewolf/game-server:test: [22m[39m@colyseus/sdk: onMessage() not registered for type 'achievements_unlocked'.
+@werewolf/game-server:test: 
+@werewolf/game-server:test: [90mstderr[2m | src/__tests__/GameRoom.regression.test.ts[2m > [22m[2mGameRoom gameplay regressions[2m > [22m[2mresolves Blacksmith, Investigator, Stray Cat and Vampire Hunter advanced actions
+@werewolf/game-server:test: [22m[39m@colyseus/sdk: onMessage() not registered for type 'system'.
+@werewolf/game-server:test: 
+@werewolf/game-server:test: [90mstderr[2m | src/__tests__/GameRoom.regression.test.ts[2m > [22m[2mGameRoom gameplay regressions[2m > [22m[2mreports Insomniac neighbor activity without exposing roles
+@werewolf/game-server:test: [22m[39m@colyseus/sdk: onMessage() not registered for type 'system'.
+@werewolf/game-server:test: 
+@werewolf/game-server:test: [90mstderr[2m | src/__tests__/GameRoom.regression.test.ts[2m > [22m[2mGameRoom gameplay regressions[2m > [22m[2mreveals Drunk's real role on the second night
+@werewolf/game-server:test: [22m[39m@colyseus/sdk: onMessage() not registered for type 'system'.
+@werewolf/game-server:test: 
+@werewolf/game-server:test: [90mstderr[2m | src/__tests__/GameRoom.regression.test.ts[2m > [22m[2mGameRoom gameplay regressions[2m > [22m[2mlets Guard Dog block a public Mayor elimination
+@werewolf/game-server:test: [22m[39m@colyseus/sdk: onMessage() not registered for type 'safe_error'.
+@werewolf/game-server:test: 
+@werewolf/game-server:test: [90mstderr[2m | src/__tests__/GameRoom.regression.test.ts[2m > [22m[2mGameRoom gameplay regressions[2m > [22m[2mlets Guard Dog block a public Mayor elimination
+@werewolf/game-server:test: [22m[39m@colyseus/sdk: onMessage() not registered for type 'safe_error'.
+@werewolf/game-server:test: 
+@werewolf/game-server:test: [90mstderr[2m | src/__tests__/GameRoom.regression.test.ts[2m > [22m[2mGameRoom gameplay regressions[2m > [22m[2mblocks a Mafia night action with the Blocker
+@werewolf/game-server:test: [22m[39m@colyseus/sdk: onMessage() not registered for type 'system'.
+@werewolf/game-server:test: 
+@werewolf/game-server:test: [90mstderr[2m | src/__tests__/GameRoom.regression.test.ts[2m > [22m[2mGameRoom gameplay regressions[2m > [22m[2mblocks a Mafia night action with the Blocker
+@werewolf/game-server:test: [22m[39m@colyseus/sdk: onMessage() not registered for type 'system'.
+@werewolf/game-server:test: 
+@werewolf/game-server:test: [90mstderr[2m | src/__tests__/GameRoom.regression.test.ts[2m > [22m[2mGameRoom gameplay regressions[2m > [22m[2mlets the Lawyer make a Mafia target look clean
+@werewolf/game-server:test: [22m[39m@colyseus/sdk: onMessage() not registered for type 'system'.
+@werewolf/game-server:test: 
+@werewolf/game-server:test: [90mstderr[2m | src/__tests__/GameRoom.regression.test.ts[2m > [22m[2mGameRoom gameplay regressions[2m > [22m[2mmakes the Bodyguard die instead of the protected Mafia target
+@werewolf/game-server:test: [22m[39m@colyseus/sdk: onMessage() not registered for type 'achievements_unlocked'.
+@werewolf/game-server:test: 
+@werewolf/game-server:test: [90mstderr[2m | src/__tests__/GameRoom.regression.test.ts[2m > [22m[2mGameRoom gameplay regressions[2m > [22m[2msupports skip votes and absolute-majority no-elimination
+@werewolf/game-server:test: [22m[39m@colyseus/sdk: onMessage() not registered for type 'safe_error'.
+@werewolf/game-server:test: 
+@werewolf/game-server:test:  [32m✓[39m src/__tests__/GameRoom.regression.test.ts [2m([22m[2m28 tests[22m[2m)[22m[33m 6243[2mms[22m[39m
+@werewolf/game-server:test:      [33m[2m✓[22m[39m marks the secret Mayor role and uses the double vote only as a tie-breaker [33m 423[2mms[22m[39m
+@werewolf/game-server:test:      [33m[2m✓[22m[39m lets the Mayor resolve a tied vote [33m 371[2mms[22m[39m
+@werewolf/game-server:test:      [33m[2m✓[22m[39m delays vampire bites until the end of the day [33m 322[2mms[22m[39m
+@werewolf/game-server:test:      [33m[2m✓[22m[39m resolves Blacksmith, Investigator, Stray Cat and Vampire Hunter advanced actions [33m 638[2mms[22m[39m
+@werewolf/game-server:test:      [33m[2m✓[22m[39m reveals Drunk's real role on the second night [33m 322[2mms[22m[39m
+@werewolf/game-server:test: 
+@werewolf/game-server:test: [2m Test Files [22m [1m[32m7 passed[39m[22m[90m (7)[39m
+@werewolf/game-server:test: [2m      Tests [22m [1m[32m49 passed[39m[22m[90m (49)[39m
+@werewolf/game-server:test: [2m   Start at [22m 04:00:27
+@werewolf/game-server:test: [2m   Duration [22m 12.73s[2m (transform 1.36s, setup 0ms, import 32.32s, tests 8.52s, environment 1ms)[22m
+@werewolf/game-server:test: 
+@werewolf/shared:test: 
+@werewolf/shared:test: > @werewolf/shared@0.1.0 test E:\werewolf_mafia\packages\shared
+@werewolf/shared:test: > vitest run src
+@werewolf/shared:test: 
+@werewolf/shared:test: 
+@werewolf/shared:test: [1m[30m[46m RUN [49m[39m[22m [36mv4.1.5 [39m[90mE:/werewolf_mafia/packages/shared[39m
+@werewolf/shared:test: 
+@werewolf/shared:test:  [32m✓[39m src/__tests__/game-token.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+@werewolf/shared:test:  [32m✓[39m src/__tests__/achievements.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+@werewolf/shared:test:  [32m✓[39m src/__tests__/role-assignment.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+@werewolf/shared:test:  [32m✓[39m src/__tests__/phase-vocabulary.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+@werewolf/shared:test:  [32m✓[39m src/__tests__/game-config.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 25[2mms[22m[39m
+@werewolf/shared:test:  [32m✓[39m src/__tests__/win-conditions.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+@werewolf/shared:test: 
+@werewolf/shared:test: [2m Test Files [22m [1m[32m6 passed[39m[22m[90m (6)[39m
+@werewolf/shared:test: [2m      Tests [22m [1m[32m41 passed[39m[22m[90m (41)[39m
+@werewolf/shared:test: [2m   Start at [22m 04:00:27
+@werewolf/shared:test: [2m   Duration [22m 1.28s[2m (transform 527ms, setup 0ms, import 806ms, tests 66ms, environment 1ms)[22m
+@werewolf/shared:test: 
+
+ Tasks:    6 successful, 6 total
+Cached:    6 cached, 6 total
+  Time:    81ms >>> FULL TURBO
+

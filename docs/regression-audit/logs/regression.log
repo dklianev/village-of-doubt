@@ -1,0 +1,20 @@
+
+> bulgarian-werewolf-mafia@0.1.0 regression E:\werewolf_mafia
+> node scripts/regression.mjs
+
+ok: game art WebP pairing
+ok: CSS image-set delivery
+ok: landing layout contracts
+ok: family quickstart contracts
+ok: roles page art contracts
+ok: rules playbook contracts
+ok: Bulgarian copy contracts
+ok: lobby image scaling contracts
+ok: lobby wizard contracts
+ok: play UI hardening contracts
+ok: frontend hygiene contracts
+ok: production security guards
+ok: launch testing contracts
+ok: production env checker behavior
+ok: smoke/playtest/verify wiring
+Regression contract checks passed.

@@ -1,0 +1,131 @@
+
+> bulgarian-werewolf-mafia@0.1.0 frontend:e2e E:\werewolf_mafia
+> node scripts/frontend-e2e.mjs
+
+[production build for frontend e2e] 
+> bulgarian-werewolf-mafia@0.1.0 build E:\werewolf_mafia
+> turbo build
+
+[production build for frontend e2e] • turbo 2.9.6
+[production build for frontend e2e] 
+   • Packages in scope: @werewolf/database, @werewolf/game-server, @werewolf/shared, @werewolf/web
+[production build for frontend e2e]    • Running build in 4 packages
+   • Remote caching disabled
+
+[production build for frontend e2e] @werewolf/database:build: cache hit, replaying logs d022fe488a81423b
+[production build for frontend e2e] @werewolf/database:build: 
+@werewolf/database:build: > @werewolf/database@0.1.0 build E:\werewolf_mafia\packages\database
+@werewolf/database:build: > tsc -p tsconfig.json
+@werewolf/database:build: 
+[production build for frontend e2e] @werewolf/shared:build: cache hit, replaying logs 6ab449f859b6d7c3
+[production build for frontend e2e] @werewolf/shared:build: 
+@werewolf/shared:build: > @werewolf/shared@0.1.0 build E:\werewolf_mafia\packages\shared
+@werewolf/shared:build: > tsc -p tsconfig.json
+@werewolf/shared:build: 
+[production build for frontend e2e] @werewolf/web:build: cache miss, executing 7daf302246b5d005
+[production build for frontend e2e] @werewolf/game-server:build: cache hit, replaying logs 2e0474ec9bf34369
+[production build for frontend e2e] @werewolf/game-server:build: 
+@werewolf/game-server:build: > @werewolf/game-server@0.1.0 build E:\werewolf_mafia\apps\game-server
+@werewolf/game-server:build: > tsc -p tsconfig.json
+@werewolf/game-server:build: 
+[production build for frontend e2e] @werewolf/web:build: 
+@werewolf/web:build: > @werewolf/web@0.1.0 build E:\werewolf_mafia\apps\web
+@werewolf/web:build: > next build
+@werewolf/web:build: 
+[production build for frontend e2e] @werewolf/web:build: ▲ Next.js 16.2.4 (Turbopack)
+[production build for frontend e2e] @werewolf/web:build: - Experiments (use with caution):
+[production build for frontend e2e] @werewolf/web:build:   ✓ viewTransition
+[production build for frontend e2e] @werewolf/web:build: 
+[production build for frontend e2e] @werewolf/web:build:   Creating an optimized production build ...
+[production build for frontend e2e] @werewolf/web:build: (node:23708) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+@werewolf/web:build: (Use `node --trace-deprecation ...` to show where the warning was created)
+[production build for frontend e2e] @werewolf/web:build: ✓ Compiled successfully in 7.1s
+[production build for frontend e2e] @werewolf/web:build:   Running TypeScript ...
+[production build for frontend e2e] @werewolf/web:build:   Finished TypeScript in 9.9s ...
+[production build for frontend e2e] @werewolf/web:build:   Collecting page data using 11 workers ...
+[production build for frontend e2e] @werewolf/web:build:   Generating static pages using 11 workers (0/26) ...
+[production build for frontend e2e] @werewolf/web:build:   Generating static pages using 11 workers (6/26) 
+[production build for frontend e2e] @werewolf/web:build:   Generating static pages using 11 workers (12/26) 
+[production build for frontend e2e] @werewolf/web:build:   Generating static pages using 11 workers (19/26) 
+[production build for frontend e2e] @werewolf/web:build: ✓ Generating static pages using 11 workers (26/26) in 448ms
+[production build for frontend e2e] @werewolf/web:build:   Finalizing page optimization ...
+[production build for frontend e2e] @werewolf/web:build: 
+[production build for frontend e2e] @werewolf/web:build: Route (app)
+@werewolf/web:build: ┌ ƒ /
+@werewolf/web:build: ├ ƒ /_not-found
+@werewolf/web:build: ├ ƒ /account
+@werewolf/web:build: ├ ƒ /achievements
+[production build for frontend e2e] @werewolf/web:build: ├ ƒ /api/account/delete
+@werewolf/web:build: ├ ƒ /api/achievements
+@werewolf/web:build: ├ ƒ /api/auth/[...all]
+@werewolf/web:build: ├ ƒ /api/game-token
+@werewolf/web:build: ├ ƒ /api/health
+@werewolf/web:build: ├ ƒ /friends
+@werewolf/web:build: ├ ƒ /history
+@werewolf/web:build: ├ ƒ /history/[gameId]/replay
+@werewolf/web:build: ├ ƒ /leaderboard
+@werewolf/web:build: ├ ƒ /lobby
+@werewolf/web:build: ├ ƒ /lobby/[code]
+@werewolf/web:build: ├ ƒ /mafia
+@werewolf/web:build: ├ ƒ /mafia/create
+@werewolf/web:build: ├ ƒ /mafia/join/[[...roomCode]]
+@werewolf/web:build: ├ ƒ /mafia/roles
+@werewolf/web:build: ├ ƒ /mafia/rules
+@werewolf/web:build: ├ ○ /manifest.webmanifest
+@werewolf/web:build: ├ ƒ /offline
+@werewolf/web:build: ├ ƒ /play/[code]
+@werewolf/web:build: ├ ƒ /privacy
+@werewolf/web:build: ├ ƒ /roles
+@werewolf/web:build: ├ ƒ /sign-in
+@werewolf/web:build: ├ ƒ /terms
+@werewolf/web:build: ├ ƒ /tutorial
+@werewolf/web:build: ├ ƒ /werewolf
+@werewolf/web:build: ├ ƒ /werewolf/create
+@werewolf/web:build: ├ ƒ /werewolf/join/[[...roomCode]]
+@werewolf/web:build: ├ ƒ /werewolf/roles
+@werewolf/web:build: └ ƒ /werewolf/rules
+[production build for frontend e2e] @werewolf/web:build: 
+@werewolf/web:build: 
+@werewolf/web:build: ƒ Proxy (Middleware)
+@werewolf/web:build: 
+[production build for frontend e2e] @werewolf/web:build: ○  (Static)   prerendered as static content
+@werewolf/web:build: ƒ  (Dynamic)  server-rendered on demand
+@werewolf/web:build: 
+[production build for frontend e2e] 
+ Tasks:    4 successful, 4 total
+Cached:    3 cached, 4 total
+  Time:    22.905s 
+
+[production build for frontend e2e]  WARNING  IO error: provided value is too long when setting link name for apps/web/.next/dev/node_modules/require-in-the-middle-a99415fa67232f7f
+[game-server] ℹ️  optional .env file not found: .env.production, .env
+[game-server] 
+   ___      _                                    ___   _ _____
+  / __\___ | |_   _ ___  ___ _   _ ___   __   __/ _ \ / |___  |
+ / /  / _ \| | | | / __|/ _ \ | | / __|  \ \ / / | | || |  / /
+/ /__| (_) | | |_| \__ \  __/ |_| \__ \   \ V /| |_| || | / /
+\____/\___/|_|\__, |___/\___|\__,_|___/    \_/  \___(_)_|/_/
+              |___/
+
+             · Multiplayer Framework for Node.js ·
+
+💖 Consider becoming a Sponsor on GitHub → https://github.com/sponsors/endel
+🌟 Give us a star on GitHub → https://github.com/colyseus/colyseus
+☁️  Deploy and scale your project on Colyseus Cloud → https://cloud.colyseus.io
+
+[game-server] ⚔️  Listening on http://localhost:3568
+[web] ▲ Next.js 16.2.4
+[web] - Local:         http://localhost:3401
+[web] - Network:       http://0.0.0.0:3401
+[web] ✓ Ready in 0ms
+ok: landing desktop layout and theme picker
+ok: landing mobile layout
+ok: tutorial and offline shell
+ok: auth gates for lobby routes
+ok: auth gates for invite lobby routes
+ok: roles codex assets and responsiveness
+ok: authenticated entry redirect basics
+ok: history screen basics
+ok: achievements, leaderboard and friends screens
+ok: single-player play auth gate
+ok: multi-client play auth gates
+Frontend Playwright QA passed.

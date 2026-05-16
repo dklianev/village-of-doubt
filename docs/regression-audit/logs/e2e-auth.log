@@ -1,0 +1,21 @@
+
+> bulgarian-werewolf-mafia@0.1.0 e2e:auth E:\werewolf_mafia
+> node scripts/e2e-auth.mjs
+
+[auth-web] ▲ Next.js 16.2.4
+[auth-web] - Local:         http://localhost:3412
+- Network:       http://0.0.0.0:3412
+✓ Ready in 0ms
+▶ auth gate redirect
+✓ auth gate redirect
+▶ sign-in surface
+✓ sign-in surface
+▶ email registration
+  пропуснато: DATABASE_URL липсва
+✓ email registration
+▶ authenticated create redirect return
+  пропуснато: DATABASE_URL липсва
+✓ authenticated create redirect return
+▶ account deletion
+  пропуснато: DATABASE_URL липсва
+✓ account deletion

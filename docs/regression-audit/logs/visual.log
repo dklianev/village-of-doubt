@@ -1,0 +1,43 @@
+
+> bulgarian-werewolf-mafia@0.1.0 visual E:\werewolf_mafia
+> playwright test --config=playwright.config.ts
+
+(node:11076) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+Running 30 tests using 1 worker
+
+(node:17932) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+  ok  1 apps\web\__visual__\visual-regression.spec.ts:28:5 › desktop home (3.3s)
+  ok  2 apps\web\__visual__\visual-regression.spec.ts:28:5 › desktop werewolf-home (3.0s)
+  ok  3 apps\web\__visual__\visual-regression.spec.ts:28:5 › desktop mafia-home (3.0s)
+  ok  4 apps\web\__visual__\visual-regression.spec.ts:28:5 › desktop werewolf-roles (11.3s)
+  ok  5 apps\web\__visual__\visual-regression.spec.ts:28:5 › desktop werewolf-rules (3.8s)
+  ok  6 apps\web\__visual__\visual-regression.spec.ts:28:5 › desktop tutorial-1 (2.1s)
+  ok  7 apps\web\__visual__\visual-regression.spec.ts:28:5 › desktop tutorial-2 (2.3s)
+  ok  8 apps\web\__visual__\visual-regression.spec.ts:28:5 › desktop tutorial-3 (2.3s)
+  ok  9 apps\web\__visual__\visual-regression.spec.ts:28:5 › desktop tutorial-4 (2.1s)
+  ok 10 apps\web\__visual__\visual-regression.spec.ts:28:5 › desktop tutorial-5 (2.1s)
+  ok 11 apps\web\__visual__\visual-regression.spec.ts:28:5 › desktop tutorial-6 (2.2s)
+  ok 12 apps\web\__visual__\visual-regression.spec.ts:28:5 › desktop sign-in (2.6s)
+  ok 13 apps\web\__visual__\visual-regression.spec.ts:28:5 › desktop history-empty (2.4s)
+  ok 14 apps\web\__visual__\visual-regression.spec.ts:28:5 › desktop leaderboard-empty (2.2s)
+  ok 15 apps\web\__visual__\visual-regression.spec.ts:28:5 › desktop achievements-gate (2.5s)
+  ok 16 apps\web\__visual__\visual-regression.spec.ts:28:5 › mobile home (2.4s)
+  ok 17 apps\web\__visual__\visual-regression.spec.ts:28:5 › mobile werewolf-home (2.0s)
+  ok 18 apps\web\__visual__\visual-regression.spec.ts:28:5 › mobile mafia-home (2.1s)
+  ok 19 apps\web\__visual__\visual-regression.spec.ts:28:5 › mobile werewolf-roles (5.1s)
+  ok 20 apps\web\__visual__\visual-regression.spec.ts:28:5 › mobile werewolf-rules (2.6s)
+  ok 21 apps\web\__visual__\visual-regression.spec.ts:28:5 › mobile tutorial-1 (1.7s)
+  ok 22 apps\web\__visual__\visual-regression.spec.ts:28:5 › mobile tutorial-2 (2.0s)
+  ok 23 apps\web\__visual__\visual-regression.spec.ts:28:5 › mobile tutorial-3 (2.2s)
+  ok 24 apps\web\__visual__\visual-regression.spec.ts:28:5 › mobile tutorial-4 (1.9s)
+  ok 25 apps\web\__visual__\visual-regression.spec.ts:28:5 › mobile tutorial-5 (1.8s)
+  ok 26 apps\web\__visual__\visual-regression.spec.ts:28:5 › mobile tutorial-6 (1.9s)
+  ok 27 apps\web\__visual__\visual-regression.spec.ts:28:5 › mobile sign-in (1.8s)
+  ok 28 apps\web\__visual__\visual-regression.spec.ts:28:5 › mobile history-empty (1.8s)
+  ok 29 apps\web\__visual__\visual-regression.spec.ts:28:5 › mobile leaderboard-empty (2.0s)
+  ok 30 apps\web\__visual__\visual-regression.spec.ts:28:5 › mobile achievements-gate (1.9s)
+
+  30 passed (1.4m)

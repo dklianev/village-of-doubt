@@ -1,0 +1,252 @@
+[
+  {
+    "route": "/",
+    "finalUrl": "http://127.0.0.1:3000/",
+    "console": 0,
+    "pageErrors": 0,
+    "failedResponses": 0,
+    "requestFailures": 0,
+    "horizontalOverflow": false,
+    "navigationError": ""
+  },
+  {
+    "route": "/werewolf",
+    "finalUrl": "http://127.0.0.1:3000/werewolf",
+    "console": 0,
+    "pageErrors": 0,
+    "failedResponses": 0,
+    "requestFailures": 0,
+    "horizontalOverflow": false,
+    "navigationError": ""
+  },
+  {
+    "route": "/mafia",
+    "finalUrl": "http://127.0.0.1:3000/mafia",
+    "console": 0,
+    "pageErrors": 0,
+    "failedResponses": 0,
+    "requestFailures": 0,
+    "horizontalOverflow": false,
+    "navigationError": ""
+  },
+  {
+    "route": "/werewolf/create",
+    "finalUrl": "http://127.0.0.1:3000/sign-in?redirect=%2Fwerewolf%2Fcreate",
+    "console": 0,
+    "pageErrors": 0,
+    "failedResponses": 0,
+    "requestFailures": 0,
+    "horizontalOverflow": false,
+    "navigationError": ""
+  },
+  {
+    "route": "/mafia/create",
+    "finalUrl": "http://127.0.0.1:3000/sign-in?redirect=%2Fmafia%2Fcreate",
+    "console": 0,
+    "pageErrors": 0,
+    "failedResponses": 0,
+    "requestFailures": 0,
+    "horizontalOverflow": false,
+    "navigationError": ""
+  },
+  {
+    "route": "/werewolf/join",
+    "finalUrl": "http://127.0.0.1:3000/sign-in?redirect=%2Fwerewolf%2Fjoin",
+    "console": 0,
+    "pageErrors": 0,
+    "failedResponses": 0,
+    "requestFailures": 0,
+    "horizontalOverflow": false,
+    "navigationError": ""
+  },
+  {
+    "route": "/mafia/join",
+    "finalUrl": "http://127.0.0.1:3000/sign-in?redirect=%2Fmafia%2Fjoin",
+    "console": 0,
+    "pageErrors": 0,
+    "failedResponses": 0,
+    "requestFailures": 0,
+    "horizontalOverflow": false,
+    "navigationError": ""
+  },
+  {
+    "route": "/werewolf/join/TEST01",
+    "finalUrl": "http://127.0.0.1:3000/sign-in?redirect=%2Fwerewolf%2Fjoin%2FTEST01",
+    "console": 0,
+    "pageErrors": 0,
+    "failedResponses": 0,
+    "requestFailures": 0,
+    "horizontalOverflow": false,
+    "navigationError": ""
+  },
+  {
+    "route": "/mafia/join/TEST01",
+    "finalUrl": "http://127.0.0.1:3000/sign-in?redirect=%2Fmafia%2Fjoin%2FTEST01",
+    "console": 0,
+    "pageErrors": 0,
+    "failedResponses": 0,
+    "requestFailures": 0,
+    "horizontalOverflow": false,
+    "navigationError": ""
+  },
+  {
+    "route": "/werewolf/roles",
+    "finalUrl": "http://127.0.0.1:3000/werewolf/roles",
+    "console": 0,
+    "pageErrors": 0,
+    "failedResponses": 0,
+    "requestFailures": 0,
+    "horizontalOverflow": false,
+    "navigationError": ""
+  },
+  {
+    "route": "/mafia/roles",
+    "finalUrl": "http://127.0.0.1:3000/mafia/roles",
+    "console": 0,
+    "pageErrors": 0,
+    "failedResponses": 0,
+    "requestFailures": 0,
+    "horizontalOverflow": false,
+    "navigationError": ""
+  },
+  {
+    "route": "/roles",
+    "finalUrl": "http://127.0.0.1:3000/werewolf/roles",
+    "console": 0,
+    "pageErrors": 0,
+    "failedResponses": 0,
+    "requestFailures": 0,
+    "horizontalOverflow": false,
+    "navigationError": ""
+  },
+  {
+    "route": "/werewolf/rules",
+    "finalUrl": "http://127.0.0.1:3000/werewolf/rules",
+    "console": 0,
+    "pageErrors": 0,
+    "failedResponses": 0,
+    "requestFailures": 0,
+    "horizontalOverflow": false,
+    "navigationError": ""
+  },
+  {
+    "route": "/mafia/rules",
+    "finalUrl": "http://127.0.0.1:3000/mafia/rules",
+    "console": 0,
+    "pageErrors": 0,
+    "failedResponses": 0,
+    "requestFailures": 0,
+    "horizontalOverflow": false,
+    "navigationError": ""
+  },
+  {
+    "route": "/tutorial",
+    "finalUrl": "http://127.0.0.1:3000/tutorial?step=1",
+    "console": 0,
+    "pageErrors": 0,
+    "failedResponses": 0,
+    "requestFailures": 0,
+    "horizontalOverflow": false,
+    "navigationError": ""
+  },
+  {
+    "route": "/sign-in",
+    "finalUrl": "http://127.0.0.1:3000/sign-in",
+    "console": 0,
+    "pageErrors": 0,
+    "failedResponses": 0,
+    "requestFailures": 0,
+    "horizontalOverflow": false,
+    "navigationError": ""
+  },
+  {
+    "route": "/lobby",
+    "finalUrl": "http://127.0.0.1:3000/lobby",
+    "console": 0,
+    "pageErrors": 0,
+    "failedResponses": 0,
+    "requestFailures": 0,
+    "horizontalOverflow": false,
+    "navigationError": ""
+  },
+  {
+    "route": "/lobby/TEST01",
+    "finalUrl": "http://127.0.0.1:3000/sign-in?redirect=%2Flobby%2FTEST01",
+    "console": 0,
+    "pageErrors": 0,
+    "failedResponses": 0,
+    "requestFailures": 0,
+    "horizontalOverflow": false,
+    "navigationError": ""
+  },
+  {
+    "route": "/play/TEST01",
+    "finalUrl": "http://127.0.0.1:3000/sign-in?redirect=%2Fplay%2FTEST01",
+    "console": 0,
+    "pageErrors": 0,
+    "failedResponses": 0,
+    "requestFailures": 0,
+    "horizontalOverflow": false,
+    "navigationError": ""
+  },
+  {
+    "route": "/history",
+    "finalUrl": "http://127.0.0.1:3000/history",
+    "console": 0,
+    "pageErrors": 0,
+    "failedResponses": 0,
+    "requestFailures": 0,
+    "horizontalOverflow": false,
+    "navigationError": ""
+  },
+  {
+    "route": "/leaderboard",
+    "finalUrl": "http://127.0.0.1:3000/leaderboard",
+    "console": 0,
+    "pageErrors": 0,
+    "failedResponses": 0,
+    "requestFailures": 0,
+    "horizontalOverflow": false,
+    "navigationError": ""
+  },
+  {
+    "route": "/achievements",
+    "finalUrl": "http://127.0.0.1:3000/sign-in?redirect=%2Fachievements",
+    "console": 0,
+    "pageErrors": 0,
+    "failedResponses": 0,
+    "requestFailures": 0,
+    "horizontalOverflow": false,
+    "navigationError": ""
+  },
+  {
+    "route": "/friends",
+    "finalUrl": "http://127.0.0.1:3000/sign-in?redirect=%2Ffriends",
+    "console": 0,
+    "pageErrors": 0,
+    "failedResponses": 0,
+    "requestFailures": 0,
+    "horizontalOverflow": false,
+    "navigationError": ""
+  },
+  {
+    "route": "/offline",
+    "finalUrl": "http://127.0.0.1:3000/offline",
+    "console": 0,
+    "pageErrors": 0,
+    "failedResponses": 0,
+    "requestFailures": 0,
+    "horizontalOverflow": false,
+    "navigationError": ""
+  },
+  {
+    "route": "/this-does-not-exist",
+    "finalUrl": "http://127.0.0.1:3000/this-does-not-exist",
+    "console": 1,
+    "pageErrors": 0,
+    "failedResponses": 1,
+    "requestFailures": 0,
+    "horizontalOverflow": false,
+    "navigationError": ""
+  }
+]

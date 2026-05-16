@@ -1,0 +1,205 @@
+apps/web/components\account\AccountClient.tsx:7:export function AccountClient({ name, email, image }: { name: string; email: string; image: string }) {
+apps/web/components\account\AccountClient.tsx:11:  const initial = name.charAt(0).toUpperCase();
+apps/web/components\account\AccountClient.tsx:15:    const response = await fetch("/api/account/delete", { method: "POST" });
+apps/web/components\account\AccountClient.tsx:39:          <h2>{name}</h2>
+apps/web/components\auth-form.tsx:7:type AuthMode = "sign-in" | "sign-up";
+apps/web/components\auth-form.tsx:11:  const [mode, setMode] = useState<AuthMode>("sign-in");
+apps/web/components\auth-form.tsx:12:  const [name, setName] = useState("");
+apps/web/components\auth-form.tsx:27:      mode === "sign-in"
+apps/web/components\auth-form.tsx:29:        : authClient.signUp.email({ name: name || email, email, password });
+apps/web/components\auth-form.tsx:46:          onClick={() => setMode("sign-in")}
+apps/web/components\auth-form.tsx:53:          onClick={() => setMode("sign-up")}
+apps/web/components\auth-form.tsx:58:      {mode === "sign-up" ? (
+apps/web/components\auth-form.tsx:66:            value={name}
+apps/web/components\auth-form.tsx:69:            autoComplete="name"
+apps/web/components\auth-form.tsx:84:          autoComplete={mode === "sign-in" ? "email" : "email"}
+apps/web/components\auth-form.tsx:100:          autoComplete={mode === "sign-in" ? "current-password" : "new-password"}
+apps/web/components\auth-form.tsx:111:        {mode === "sign-in" ? "Влез" : "Създай профил"}
+apps/web/components\auth-form.tsx:116:        onClick={() => setMode(mode === "sign-in" ? "sign-up" : "sign-in")}
+apps/web/components\auth-form.tsx:118:        {mode === "sign-in" ? "Нямаш профил? Регистрирай се" : "Имаш профил? Влез"}
+apps/web/components\friends-client.tsx:7:  name: string;
+apps/web/components\friends-client.tsx:15:  const [name, setName] = useState("");
+apps/web/components\friends-client.tsx:38:    const cleanName = name.trim();
+apps/web/components\friends-client.tsx:43:    if (friends.some((friend) => friend.name.toLocaleLowerCase("bg-BG") === cleanName.toLocaleLowerCase("bg-BG"))) {
+apps/web/components\friends-client.tsx:48:    persist([{ id: crypto.randomUUID(), name: cleanName, note: note.trim() }, ...friends]);
+apps/web/components\friends-client.tsx:94:                  <strong>{friend.name}</strong>
+apps/web/app\account\page.tsx:11:  const session = await requireSession("/account");
+apps/web/app\account\page.tsx:19:          name={session.user.name ?? "Играч"}
+apps/web/components\landing\ModeChoiceCards.tsx:34:        const primaryHref = session ? `${game.href}/create` : `/sign-in?redirect=${encodeURIComponent(`${game.href}/create`)}`;
+apps/web/components\games\game-roles-page.tsx:215:        loading={priority ? "eager" : "lazy"}
+apps/web/app\api\achievements\__tests__\route.test.ts:15:      delete process.env.DATABASE_URL;
+apps/web/app\api\achievements\__tests__\route.test.ts:29:    delete process.env.DATABASE_URL;
+apps/web/components\play-room-client.tsx:40:  host: boolean;
+apps/web/components\play-room-client.tsx:169:  const liveMode = (snapshot?.tempoProfile ?? createOptions?.tempoProfile) === "live";
+apps/web/components\play-room-client.tsx:277:              typingTimeoutsRef.current.delete(key);
+apps/web/components\play-room-client.tsx:345:    if (createOptions?.tempoProfile === "live") {
+apps/web/components\play-room-client.tsx:528:      lastTypingSentRef.current.delete(channel);
+apps/web/components\play-room-client.tsx:591:      if (event.key === " " && (ownPlayer?.host || ownPlayer?.narrator) && phase !== "paused" && phase !== "game_over") {
+apps/web/components\play-room-client.tsx:615:    ownPlayer?.host,
+apps/web/components\play-room-client.tsx:674:                {ownPlayer?.host ? (
+apps/web/components\play-room-client.tsx:702:          {snapshot && (ownPlayer?.host || ownPlayer?.narrator) ? (
+apps/web/components\play-room-client.tsx:708:              isHost={Boolean(ownPlayer?.host)}
+apps/web/components\play-room-client.tsx:842:                  {player.host ? " · водещ" : ""}
+apps/web/components\play-room-client.tsx:850:                {ownPlayer?.host && snapshot?.narratorMode !== "automatic" && phase === "lobby" ? (
+apps/web/components\play-room-client.tsx:859:                {(ownPlayer?.host || ownPlayer?.narrator) &&
+apps/web/components\play-room-client.tsx:890:                    id="chat-counter"
+apps/web/components\play-room-client.tsx:1985:  if (player.host) {
+apps/web/components\play-room-client.tsx:2030:function playerInitials(name: string) {
+apps/web/components\play-room-client.tsx:2031:  return name
+apps/web/components\play-room-client.tsx:2635:    live: "На живо",
+apps/web/components\tutorial\__tests__\DayClueChips.test.tsx:17:    await user.click(screen.getByLabelText("Разкрий Анна"));
+apps/web/components\tutorial\__tests__\DayClueChips.test.tsx:27:    await user.click(screen.getByLabelText("Разкрий Анна"));
+apps/web/app\api\account\delete\__tests__\route.test.ts:19:describe("POST /api/account/delete", () => {
+apps/web/app\api\account\delete\__tests__\route.test.ts:29:  it("deletes the authenticated account through Better Auth", async () => {
+apps/web/app\api\account\delete\route.ts:25:    console.error("[account-delete]", error);
+apps/web/components\tutorial\DayClueChips.tsx:6:  { name: "Анна", clue: "Говори спокойно, но винаги защитава един и същ играч." },
+apps/web/components\tutorial\DayClueChips.tsx:7:  { name: "Борис", clue: "Гласува рано, после сменя темата." },
+apps/web/components\tutorial\DayClueChips.tsx:8:  { name: "Виктор", clue: "Има проверка, но я разкрива косвено." },
+apps/web/components\tutorial\DayClueChips.tsx:9:  { name: "Галя", clue: "Слуша повече, отколкото говори. Запомня всичко." },
+apps/web/components\tutorial\DayClueChips.tsx:10:  { name: "Деян", clue: "Обвинява силно без нова причина - често е жертва на блъф." },
+apps/web/components\tutorial\DayClueChips.tsx:16:  const flip = (name: string) => {
+apps/web/components\tutorial\DayClueChips.tsx:17:    setRevealed((prev) => ({ ...prev, [name]: !prev[name] }));
+apps/web/components\tutorial\DayClueChips.tsx:29:          const isRevealed = Boolean(revealed[player.name]);
+apps/web/components\tutorial\DayClueChips.tsx:36:              onClick={() => flip(player.name)}
+apps/web/components\tutorial\DayClueChips.tsx:46:                  <strong>{player.name}</strong>
+apps/web/app\api\game-token\route.ts:27:  const sessionDisplayName = normalizeDisplayName(session?.user?.name);
+apps/web/components\service-worker-registration.tsx:18:      void navigator.serviceWorker.register("/sw.js").catch(() => {
+apps/web/components\site-chrome\AuthChip.tsx:59:  const displayName = session.user.name ?? "Играч";
+apps/web/components\lobby\StepRoom.tsx:27:  { value: "live", label: "На живо", detail: "По-дълги фази и тих режим за маса в стая." },
+apps/web/components\lobby\__tests__\LobbyWizard.test.tsx:30:    await user.click(screen.getByRole("button", { name: /Напред/ }));
+apps/web/components\lobby\__tests__\LobbyWizard.test.tsx:31:    expect(screen.getByRole("button", { name: /Назад/ })).toBeEnabled();
+apps/web/components\lobby\__tests__\LobbyWizard.test.tsx:32:    await user.click(screen.getByRole("button", { name: /Назад/ }));
+apps/web/components\lobby\__tests__\LobbyWizard.test.tsx:33:    expect(screen.getByRole("button", { name: /Назад/ })).toBeDisabled();
+apps/web/components\lobby\__tests__\LobbyWizard.test.tsx:36:  it("validates the room name before advancing", async () => {
+apps/web/components\lobby\__tests__\LobbyWizard.test.tsx:45:    await user.click(screen.getByRole("button", { name: /Напред/ }));
+apps/web/components\sign-in\EmailPasswordForm.tsx:7:type Mode = "sign-in" | "sign-up";
+apps/web/components\sign-in\EmailPasswordForm.tsx:11:  const [mode, setMode] = useState<Mode>("sign-in");
+apps/web/components\sign-in\EmailPasswordForm.tsx:12:  const [name, setName] = useState("");
+apps/web/components\sign-in\EmailPasswordForm.tsx:27:    const nextName = name.trim();
+apps/web/components\sign-in\EmailPasswordForm.tsx:41:    const result = await (mode === "sign-in"
+apps/web/components\sign-in\EmailPasswordForm.tsx:43:      : authClient.signUp.email({ name: nextName || nextEmail, email: nextEmail, password })).catch(() => {
+apps/web/components\sign-in\EmailPasswordForm.tsx:64:          onClick={() => setMode("sign-in")}
+apps/web/components\sign-in\EmailPasswordForm.tsx:73:          onClick={() => setMode("sign-up")}
+apps/web/components\sign-in\EmailPasswordForm.tsx:79:      {mode === "sign-up" ? (
+apps/web/components\sign-in\EmailPasswordForm.tsx:82:          <input id={nameId} value={name} onChange={(event) => setName(event.target.value)} placeholder="Например: Мила" autoComplete="name" />
+apps/web/components\sign-in\EmailPasswordForm.tsx:108:          autoComplete={mode === "sign-in" ? "current-password" : "new-password"}
+apps/web/components\sign-in\EmailPasswordForm.tsx:121:        {mode === "sign-in" ? "Влез" : "Създай профил"}
+apps/web/components\sign-in\__tests__\OAuthButton.test.tsx:27:  it("starts the social sign-in flow on click", async () => {
+apps/web/components\sign-in\__tests__\OAuthButton.test.tsx:32:    await user.click(screen.getByRole("button", { name: "Продължи с Google" }));
+apps/web/components\site-chrome\__tests__\AuthChip.test.tsx:24:  it("shows a sign-in link for guests", async () => {
+apps/web/components\site-chrome\__tests__\AuthChip.test.tsx:30:    expect(screen.getByRole("link", { name: /Влез/ })).toHaveAttribute("href", "/sign-in");
+apps/web/components\site-chrome\__tests__\AuthChip.test.tsx:36:      data: { user: { id: "user-1", name: "Анна", image: "" } },
+apps/web/components\site-chrome\__tests__\AuthChip.test.tsx:43:    await user.click(screen.getByRole("button", { name: "Меню на Анна" }));
+apps/web/components\site-chrome\__tests__\AuthChip.test.tsx:45:    expect(screen.getByRole("menuitem", { name: "Моят профил" })).toBeInTheDocument();
+apps/web/components\site-chrome\__tests__\AuthChip.test.tsx:46:    expect(screen.getByRole("menuitem", { name: "История" })).toBeInTheDocument();
+apps/web/components\site-chrome\__tests__\AuthChip.test.tsx:47:    expect(screen.getByRole("menuitem", { name: "Постижения" })).toBeInTheDocument();
+apps/web/components\site-chrome\__tests__\AuthChip.test.tsx:48:    expect(screen.getByRole("menuitem", { name: "Изход" })).toBeInTheDocument();
+apps/web/app\layout.tsx:54:          name: session.user.name,
+apps/web/app\globals.css:51:  --screen-loading: image-set(url("/game-art/screen-loading.webp") type("image/webp"), url("/game-art/screen-loading.png") type("image/png"));
+apps/web/app\globals.css:75:  --connection-art: var(--screen-loading);
+apps/web/app\globals.css:180:    --screen-loading: image-set(url("/game-art/mobile/screen-loading.webp") type("image/webp"));
+apps/web/app\globals.css:331:  -webkit-tap-highlight-color: transparent;
+apps/web/app\globals.css:1224:.chat-line {
+apps/web/app\globals.css:1251:.sign-in-shell,
+apps/web/app\globals.css:1458:.mode-choice-continue-pill {
+apps/web/app\globals.css:1624:.landing-live-strip {
+apps/web/app\globals.css:1966:.clue-chip-name {
+apps/web/app\globals.css:2147:.live-ticker,
+apps/web/app\globals.css:2160:.live-ticker {
+apps/web/app\globals.css:2167:.live-ticker > span {
+apps/web/app\globals.css:2176:.live-ticker strong,
+apps/web/app\globals.css:2186:.live-ticker p,
+apps/web/app\globals.css:3102:.quickstart-empty-live,
+apps/web/app\globals.css:3103:.quickstart-live-active,
+apps/web/app\globals.css:3112:.quickstart-empty-live,
+apps/web/app\globals.css:3117:.quickstart-empty-live .quickstart-card-cta {
+apps/web/app\globals.css:3137:.quickstart-live h3,
+apps/web/app\globals.css:3145:.quickstart-live p,
+apps/web/app\globals.css:3166:.quickstart-live-count {
+apps/web/app\globals.css:3399:  .quickstart-empty-live,
+apps/web/app\globals.css:3400:  .quickstart-live-active,
+apps/web/app\globals.css:3451:.landing-quickstart .quickstart-live h3,
+apps/web/app\globals.css:3461:.landing-quickstart .quickstart-live p,
+apps/web/app\globals.css:3504:.landing-quickstart .quickstart-live-count,
+apps/web/app\globals.css:5401:  --connection-art: var(--screen-loading);
+apps/web/app\globals.css:5624:.toast-host {
+apps/web/app\globals.css:5936:.cue-panel.is-live {
+apps/web/app\globals.css:6689:.lobby-field-room-name .lobby-inline-control {
+apps/web/app\globals.css:6693:.lobby-field-room-name .btn,
+apps/web/app\globals.css:7342:  animation-name: lobbyStepOut;
+apps/web/app\globals.css:7346:  animation-name: lobbyStepIn;
+apps/web/app\globals.css:8668:.replay-hero {
+apps/web/app\globals.css:8674:.replay-summary {
+apps/web/app\globals.css:8680:.replay-summary div {
+apps/web/app\globals.css:8687:.replay-summary span,
+apps/web/app\globals.css:8688:.replay-summary strong {
+apps/web/app\globals.css:8692:.replay-summary span {
+apps/web/app\globals.css:8700:.replay-summary strong {
+apps/web/app\globals.css:8706:.replay-timeline {
+apps/web/app\globals.css:8711:.replay-event {
+apps/web/app\globals.css:8724:.replay-index {
+apps/web/app\globals.css:8735:.replay-event h2 {
+apps/web/app\globals.css:8741:.replay-event p {
+apps/web/app\globals.css:8748:.replay-event small,
+apps/web/app\globals.css:8749:.replay-phase {
+apps/web/app\globals.css:8975:  .landing-live-strip,
+apps/web/app\globals.css:8976:  .live-ticker,
+apps/web/app\globals.css:9022:  .replay-summary,
+apps/web/app\globals.css:9023:  .replay-event,
+apps/web/app\globals.css:9466:.plaque-loading {
+apps/web/app\globals.css:9959:.ranks-column-name {
+apps/web/app\globals.css:10370:.sign-in-shell {
+apps/web/app\globals.css:10378:.sign-in-stage {
+apps/web/app\globals.css:10388:.sign-in-stage::before {
+apps/web/app\globals.css:10401:.sign-in-table {
+apps/web/app\globals.css:10411:      url("/game-art/sign-in-table.webp") type("image/webp"),
+apps/web/app\globals.css:10412:      url("/game-art/sign-in-table.png") type("image/png")
+apps/web/app\globals.css:10448:.sign-in-plaque {
+apps/web/app\globals.css:10473:.sign-in-plaque-head h1 {
+apps/web/app\globals.css:10488:.sign-in-plaque-head h1 span {
+apps/web/app\globals.css:10492:.sign-in-kicker {
+apps/web/app\globals.css:10500:.sign-in-subtitle {
+apps/web/app\globals.css:10507:.sign-in-oauth {
+apps/web/app\globals.css:10617:.sign-in-divider {
+apps/web/app\globals.css:10630:.sign-in-divider::before,
+apps/web/app\globals.css:10631:.sign-in-divider::after {
+apps/web/app\globals.css:10698:.sign-in-foot {
+apps/web/app\globals.css:10710:.sign-in-foot-link {
+apps/web/app\globals.css:10824:.auth-chip-loading {
+apps/web/app\globals.css:10913:.auth-chip-name {
+apps/web/app\globals.css:11078:.account-card {
+apps/web/app\globals.css:11097:.account-panel {
+apps/web/app\globals.css:11102:.account-profile-row {
+apps/web/app\globals.css:11108:.account-avatar {
+apps/web/app\globals.css:11123:.account-avatar img {
+apps/web/app\globals.css:11129:.account-profile-row h2,
+apps/web/app\globals.css:11130:.account-danger h2 {
+apps/web/app\globals.css:11137:.account-profile-row p,
+apps/web/app\globals.css:11138:.account-danger p {
+apps/web/app\globals.css:11143:.account-danger {
+apps/web/app\globals.css:11152:.account-danger-actions {
+apps/web/app\globals.css:11158:.account-status {
+apps/web/app\globals.css:11164:  .auth-chip-name {
+apps/web/app\globals.css:11174:  .sign-in-stage {
+apps/web/app\globals.css:11180:  .sign-in-table {
+apps/web/app\globals.css:11184:  .sign-in-plaque {
+apps/web/app\globals.css:11188:  .sign-in-plaque-head h1 {
+apps/web/app\manifest.ts:5:    name: "Върколак и Мафия",
+apps/web/app\manifest.ts:25:        name: "Върколак",
+apps/web/app\manifest.ts:31:        name: "Мафия",
+apps/web/app\history\[gameId]\replay\page.tsx:16:  const replay = await loadReplay(gameId);
+apps/web/app\history\[gameId]\replay\page.tsx:17:  if (!replay) {
+apps/web/app\history\[gameId]\replay\page.tsx:21:  const mode = modeFromConfig(replay.game.config);
+apps/web/app\history\[gameId]\replay\page.tsx:34:          <Summary label="Победител" value={winnerBg(replay.game.winnerTeam)} />
+apps/web/app\history\[gameId]\replay\page.tsx:35:          <Summary label="Събития" value={String(replay.game.eventCount)} />
+apps/web/app\history\[gameId]\replay\page.tsx:36:          <Summary label="Край" value={formatDate(replay.game.endedAt)} />
+apps/web/app\history\[gameId]\replay\page.tsx:41:        {replay.achievements.length > 0 ? (
+apps/web/app\history\[gameId]\replay\page.tsx:46:              {replay.achievements.map((achievement) => (
+apps/web/app\history\[gameId]\replay\page.tsx:56:        {replay.timeline.map((event, index) => (
+apps/web/app\history\[gameId]\replay\page.tsx:71:        {replay.timeline.length === 0 ? (
+apps/web/app\history\[gameId]\replay\page.tsx:101:    console.error("[replay]", error);
+apps/web/app\api\game-token\__tests__\route.test.ts:32:    vi.mocked(auth.api.getSession).mockResolvedValue({ user: { id: "user-1", name: "Анна" } } as never);
+apps/web/app\api\game-token\__tests__\route.test.ts:43:    vi.mocked(auth.api.getSession).mockResolvedValue({ user: { id: "user-1", name: "Анна" } } as never);
+apps/web/components\leaderboard\__tests__\MainHeadline.test.tsx:17:    expect(screen.getByRole("heading", { name: "Мила още не познава поражение" })).toBeInTheDocument();
+apps/web/components\leaderboard\__tests__\MainHeadline.test.tsx:24:    expect(screen.getByRole("heading", { name: "Първа победа: Анна взе вечерта" })).toBeInTheDocument();
+apps/web/components\leaderboard\__tests__\MainHeadline.test.tsx:30:    expect(screen.getByRole("heading", { name: "Борис оцелява най-често" })).toBeInTheDocument();
