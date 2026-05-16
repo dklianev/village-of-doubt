@@ -4,7 +4,7 @@ import { z } from "zod";
 export const env = createEnv({
   server: {
     DATABASE_URL: z.string().url().optional(),
-    BETTER_AUTH_SECRET: z.string().min(16).optional(),
+    BETTER_AUTH_SECRET: z.string().min(32).optional(),
     BETTER_AUTH_URL: z.string().url().optional(),
     DISCORD_CLIENT_ID: z.string().optional(),
     DISCORD_CLIENT_SECRET: z.string().optional(),

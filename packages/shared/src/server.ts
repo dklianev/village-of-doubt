@@ -23,6 +23,7 @@ export interface VerifyGameTokenOptions {
 }
 
 const DEFAULT_TTL_SECONDS = 5 * 60;
+const MIN_SECRET_LENGTH = 32;
 
 export function createGameToken(input: CreateGameTokenInput): string {
   assertUsableSecret(input.secret);
@@ -115,7 +116,7 @@ function safeEqual(left: string, right: string): boolean {
 }
 
 function assertUsableSecret(secret: string): void {
-  if (secret.length < 16) {
-    throw new Error("GAME_TOKEN_SECRET трябва да бъде поне 16 символа.");
+  if (secret.length < MIN_SECRET_LENGTH) {
+    throw new Error(`GAME_TOKEN_SECRET трябва да бъде поне ${MIN_SECRET_LENGTH} символа.`);
   }
 }

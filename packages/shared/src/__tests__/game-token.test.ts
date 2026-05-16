@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createGameToken, normalizeRoomCode, verifyGameToken } from "../server.js";
 
-const secret = "test-secret-with-enough-length";
+const secret = "test-secret-with-enough-length-32";
 
 describe("game tokens", () => {
   it("signs and verifies a short-lived game token", () => {

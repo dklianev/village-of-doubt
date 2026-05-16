@@ -6,7 +6,7 @@ import appConfig from "../app.config.js";
 import type { GameRoom } from "../rooms/GameRoom.js";
 import type { GameState } from "../rooms/schemas/GameState.js";
 
-const GAME_TOKEN_SECRET = "test-secret-that-is-long-enough";
+const GAME_TOKEN_SECRET = "test-secret-that-is-long-enough-32-chars";
 
 describe("GameRoom security boundaries", () => {
   let colyseus: ColyseusTestServer;
