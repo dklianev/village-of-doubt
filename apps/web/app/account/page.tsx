@@ -7,6 +7,7 @@ import { auth } from "@/lib/auth";
 export const metadata: Metadata = {
   title: "Твоето досие | Върколак и Мафия",
   description: "Профил, име, парола и контрол на твоите данни.",
+  robots: { index: false, follow: false },
 };
 
 export default async function AccountPage() {

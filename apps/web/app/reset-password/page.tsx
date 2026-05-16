@@ -5,6 +5,7 @@ import { ResetPasswordClient } from "@/components/auth/ResetPasswordClient";
 export const metadata: Metadata = {
   title: "Нов ключ | Върколак и Мафия",
   description: "Създай нова парола за твоя профил.",
+  robots: { index: false, follow: false },
 };
 
 export default function ResetPasswordPage() {

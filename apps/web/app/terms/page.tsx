@@ -1,10 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { routeMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = routeMetadata({
   title: "Условия | Върколак и Мафия",
   description: "Условия за профили, стаи, поведение и ползване на играта.",
-};
+  path: "/terms",
+  image: "/game-art/og/og-home.png",
+  imageAlt: "Нощно село и нощен град",
+  robots: { index: false, follow: true },
+  absoluteTitle: true,
+});
 
 const LAST_UPDATED = "16 май 2026";
 
