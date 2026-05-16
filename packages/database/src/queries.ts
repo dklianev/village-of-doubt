@@ -1,10 +1,11 @@
-import { count, desc, eq, inArray } from "drizzle-orm";
+import { count, desc, eq, inArray, or } from "drizzle-orm";
 import { gameEvents, gamePlayers, games, userAchievements } from "./schema.js";
 import type { Database } from "./client.js";
 
 export interface GameHistorySummary {
   id: string;
   code: string;
+  hostId: string | null;
   config: unknown;
   status: string;
   winnerTeam: string | null;
@@ -64,6 +65,7 @@ export async function getRecentGameHistory(db: Database, limit = 20): Promise<Ga
     .select({
       id: games.id,
       code: games.code,
+      hostId: games.hostId,
       config: games.config,
       status: games.status,
       winnerTeam: games.winnerTeam,
@@ -96,6 +98,7 @@ export async function getGameHistoryById(db: Database, gameId: string): Promise<
     .select({
       id: games.id,
       code: games.code,
+      hostId: games.hostId,
       config: games.config,
       status: games.status,
       winnerTeam: games.winnerTeam,
@@ -121,6 +124,49 @@ export async function getGameHistoryById(db: Database, gameId: string): Promise<
     ...game,
     eventCount: eventCounts[0]?.value ?? 0,
   };
+}
+
+export async function getGameHistoryForUser(db: Database, userId: string, limit = 500): Promise<GameHistorySummary[]> {
+  const playerGames = await db
+    .select({ gameId: gamePlayers.gameId })
+    .from(gamePlayers)
+    .where(eq(gamePlayers.userId, userId))
+    .limit(limit);
+  const playerGameIds = [...new Set(playerGames.map((game) => game.gameId))];
+  const whereClause =
+    playerGameIds.length > 0 ? or(eq(games.hostId, userId), inArray(games.id, playerGameIds)) : eq(games.hostId, userId);
+
+  const rows = await db
+    .select({
+      id: games.id,
+      code: games.code,
+      hostId: games.hostId,
+      config: games.config,
+      status: games.status,
+      winnerTeam: games.winnerTeam,
+      startedAt: games.startedAt,
+      endedAt: games.endedAt,
+    })
+    .from(games)
+    .where(whereClause)
+    .orderBy(desc(games.createdAt))
+    .limit(limit);
+
+  if (rows.length === 0) {
+    return [];
+  }
+
+  const eventCounts = await db
+    .select({ gameId: gameEvents.gameId, value: count() })
+    .from(gameEvents)
+    .where(inArray(gameEvents.gameId, rows.map((game) => game.id)))
+    .groupBy(gameEvents.gameId);
+  const countsByGameId = new Map(eventCounts.map((item) => [item.gameId, item.value]));
+
+  return rows.map((game) => ({
+    ...game,
+    eventCount: countsByGameId.get(game.id) ?? 0,
+  }));
 }
 
 export async function getGameTimeline(db: Database, gameId: string, limit = 100): Promise<GameTimelineEvent[]> {
