@@ -54,7 +54,8 @@ describe("role presets", () => {
     expect(getWerewolfAdvancedPreset(12).vampire_hunter).toBeUndefined();
     expect(getWerewolfVampiresPreset(14).werewolf).toBeGreaterThanOrEqual(3);
     expect(getWerewolfVampiresPreset(14).vampire).toBeGreaterThanOrEqual(3);
-    expect(getWerewolvesMvpPreset(10).healer).toBe(1);
+    expect(getWerewolvesMvpPreset(10).healer).toBeUndefined();
+    expect(getWerewolvesMvpPreset(10).witch).toBe(1);
     expect("guardian" in ROLE_DEFINITIONS).toBe(false);
   });
 
