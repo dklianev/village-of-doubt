@@ -60,6 +60,10 @@ if (!hasDiscord) {
   warnings.push("Discord OAuth не е конфигуриран; интерфейсът ще покаже само Google и имейл.");
 }
 
+if (!process.env.RESEND_API_KEY) {
+  warnings.push("RESEND_API_KEY липсва. Потвържденията по имейл и новите пароли ще отказват в production.");
+}
+
 if (!process.env.RCLONE_REMOTE) {
   warnings.push("RCLONE_REMOTE не е настроен. Backup-ите ще останат само локално на Droplet-а.");
 }
