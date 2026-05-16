@@ -21,6 +21,30 @@ export function FaqClient({ items }: { items: readonly FaqItem[] }) {
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    const initialSlug = new URLSearchParams(window.location.search).get("q");
+    if (!initialSlug || !items.some((item) => item.slug === initialSlug)) {
+      return;
+    }
+
+    setOpenSlugs(new Set([initialSlug]));
+    window.setTimeout(() => {
+      document.querySelector(`[data-slug="${initialSlug}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 50);
+  }, [items]);
+
+  useEffect(() => {
+    const firstOpen = [...openSlugs][0];
+    const url = new URL(window.location.href);
+    if (firstOpen) {
+      url.searchParams.set("q", firstOpen);
+    } else {
+      url.searchParams.delete("q");
+    }
+
+    window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+  }, [openSlugs]);
+
+  useEffect(() => {
     function onKey(event: KeyboardEvent) {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
