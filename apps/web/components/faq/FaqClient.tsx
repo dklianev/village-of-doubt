@@ -207,6 +207,13 @@ export function FaqClient({ items }: { items: readonly FaqItem[] }) {
                       {isOpen ? (
                         <div className="faq-drawer-card">
                           <FaqAnswerRenderer blocks={item.answer} />
+                          {item.tutorialStep ? (
+                            <p className="faq-tutorial-hint">
+                              <Link href={`/tutorial?step=${item.tutorialStep}`}>
+                                Виж в Tutorial → сцена {item.tutorialStep}
+                              </Link>
+                            </p>
+                          ) : null}
                           <footer className="faq-drawer-footer">
                             <button
                               type="button"
