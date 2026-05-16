@@ -112,7 +112,11 @@ function shouldCreateRoleThumbnail(file) {
 }
 
 function mobileWidthFor(file) {
+  const normalized = file.split(path.sep).join("/");
   const basename = path.basename(file);
+  if (normalized.startsWith("auth/")) {
+    return 960;
+  }
   if (
     basename.startsWith("bg-") ||
     basename.startsWith("transition-") ||
