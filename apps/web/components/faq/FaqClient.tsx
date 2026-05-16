@@ -2,16 +2,17 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import type { FaqCategory, FaqItem } from "@/lib/faq-data";
+import type { AnswerBlock, FaqCategory, FaqItem } from "@/lib/faq-data";
 
 const CATEGORY_LABELS: Record<FaqCategory, string> = {
+  "pre-game": "Преди първа игра",
   gameplay: "Геймплей",
   account: "Профил и достъп",
   tech: "Технически",
   privacy: "Поверителност и контакт",
 };
 
-const CATEGORY_ORDER: FaqCategory[] = ["gameplay", "account", "tech", "privacy"];
+const CATEGORY_ORDER: FaqCategory[] = ["pre-game", "gameplay", "account", "tech", "privacy"];
 
 export function FaqClient({ items }: { items: readonly FaqItem[] }) {
   const [openIds, setOpenIds] = useState<Set<number>>(new Set());
@@ -73,15 +74,9 @@ export function FaqClient({ items }: { items: readonly FaqItem[] }) {
                     {isOpen ? (
                       <div className="faq-drawer-card">
                         <div className="faq-drawer-card-inner">
-                          {item.answer.map((part, partIndex) =>
-                            part.href ? (
-                              <Link key={`${item.question}-${partIndex}`} href={part.href}>
-                                {part.text}
-                              </Link>
-                            ) : (
-                              <span key={`${item.question}-${partIndex}`}>{part.text}</span>
-                            ),
-                          )}
+                          {item.answer.map((block, partIndex) => (
+                            <PlainAnswerBlock key={`${item.question}-${partIndex}`} block={block} />
+                          ))}
                         </div>
                       </div>
                     ) : null}
@@ -106,4 +101,39 @@ export function FaqClient({ items }: { items: readonly FaqItem[] }) {
       </article>
     </section>
   );
+}
+
+function PlainAnswerBlock({ block }: { block: AnswerBlock }) {
+  switch (block.type) {
+    case "tldr":
+    case "callout":
+      return <p>{block.text}</p>;
+    case "paragraph":
+      return (
+        <p>
+          {block.text}
+          {block.links?.map((link) => (
+            <Link key={link.href} href={link.href}>
+              {link.text}
+            </Link>
+          ))}
+        </p>
+      );
+    case "steps":
+    case "bullets":
+      return <p>{block.items.join(" ")}</p>;
+    case "link-list":
+      return (
+        <p>
+          {block.title}
+          {block.links.map((link) => (
+            <Link key={link.href} href={link.href}>
+              {link.text}
+            </Link>
+          ))}
+        </p>
+      );
+    case "image":
+      return <p>{block.caption ?? block.alt}</p>;
+  }
 }

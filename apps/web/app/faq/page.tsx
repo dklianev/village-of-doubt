@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { FaqClient } from "@/components/faq/FaqClient";
 import { JsonLd } from "@/components/JsonLd";
 import { ResourceHints } from "@/components/resource-hints";
-import { FAQ_DATA } from "@/lib/faq-data";
+import { FAQ_DATA, flattenAnswerForSchema } from "@/lib/faq-data";
 import { absoluteUrl, routeMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = routeMetadata({
@@ -24,7 +24,7 @@ const faqJsonLd = {
     name: item.question,
     acceptedAnswer: {
       "@type": "Answer",
-      text: item.answerText,
+      text: flattenAnswerForSchema(item.answer),
     },
   })),
 };
