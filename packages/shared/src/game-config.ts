@@ -63,7 +63,7 @@ export interface GameConfig {
   loversEnabled: boolean;
   werewolfVariant: WerewolfVariant;
   mayorMode: MayorMode;
-  // TODO: not yet enforced in runtime. Hidden from the main lobby until promo rule flow is wired.
+  // Promo rule runtime enforcement is tracked in docs/post-launch-todo.md.
   promoRolesEnabled: boolean;
   mafiaNightKill: boolean;
   doctorCanSelfProtect: boolean;

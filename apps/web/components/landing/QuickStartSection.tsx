@@ -179,7 +179,7 @@ function LastWinnerCard({ lastWinner }: { lastWinner: LandingQuickStartLastWinne
       {lastWinner ? (
         <div className="quickstart-winner-active">
           {lastWinner.family ? <span className="quickstart-winner-mark">{familyBadgeBg(lastWinner.family)}</span> : null}
-          {/* TODO: family from server when the stats endpoint starts returning it consistently. */}
+          {/* Family badge polish is tracked in docs/post-launch-todo.md. */}
           <div>
             <h3>
               Стая {lastWinner.code} — {winnerTeamBg(lastWinner.winnerTeam)}
@@ -211,7 +211,7 @@ function formatLiveStats(liveStats: LandingQuickStartLiveStats | null) {
     return `${werewolfRooms} ${roomWordBg(werewolfRooms)} Върколак · ${mafiaRooms} ${roomWordBg(mafiaRooms)} Мафия · ${connectedPlayers} ${playerWordBg(connectedPlayers)} общо`;
   }
 
-  // TODO: byFamily breakdown when the stats endpoint exposes per-family room counts.
+  // Per-family live stats polish is tracked in docs/post-launch-todo.md.
   return `${activeRooms} ${roomWordBg(activeRooms)} · ${connectedPlayers} ${playerWordBg(connectedPlayers)}`;
 }
 
