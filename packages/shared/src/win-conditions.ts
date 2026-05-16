@@ -57,6 +57,9 @@ export function evaluateWinCondition(players: WinPlayerState[]): WinResult {
     return { winner: "draw", reasonBg: "Останаха само неутрални роли без отборна победа." };
   }
 
+  // Cook stalemate clause — preserved as-is.
+  // When exactly one nightly threat (WW or Vampire) faces exactly one villager,
+  // and that villager is the Cook, the night threat cannot kill them.
   if (
     aliveWerewolfOrVampire === 1 &&
     aliveMafia === 0 &&
@@ -66,14 +69,38 @@ export function evaluateWinCondition(players: WinPlayerState[]): WinResult {
     return { winner: "draw", reasonBg: "Последната нощна заплаха не може да преодолее Готвача." };
   }
 
-  if (aliveWerewolves > 0 && aliveVampires === 0 && aliveMafia === 0 && aliveVillage === 0) {
-    return { winner: "werewolves", reasonBg: "Върколаците останаха единствената жива страна." };
+  // Mixed nightly threats (Werewolves + Vampires together against village).
+  // Rare scenario; resolve at parity with tie-break by faction headcount.
+  if (aliveWerewolves > 0 && aliveVampires > 0 && aliveMafia === 0) {
+    if (aliveWerewolfOrVampire >= totalAlive - aliveWerewolfOrVampire) {
+      if (aliveWerewolves > aliveVampires) {
+        return { winner: "werewolves", reasonBg: "Върколаците надделяха в смесената нощ." };
+      }
+      if (aliveVampires > aliveWerewolves) {
+        return { winner: "vampires", reasonBg: "Вампирите надделяха в смесената нощ." };
+      }
+      return { winner: "draw", reasonBg: "Върколаци и вампири се изравниха над селото." };
+    }
+    return { winner: null, reasonBg: null };
   }
 
-  if (aliveVampires > 0 && aliveWerewolves === 0 && aliveMafia === 0 && aliveVillage === 0) {
-    return { winner: "vampires", reasonBg: "Вампирите останаха единствената жива страна." };
+  // Werewolves alone — parity rule per docs/rules-bg.md:667.
+  if (aliveWerewolves > 0 && aliveVampires === 0 && aliveMafia === 0) {
+    if (aliveWerewolves >= totalAlive - aliveWerewolves) {
+      return { winner: "werewolves", reasonBg: "Върколаците са равни или повече от живите селяни." };
+    }
+    return { winner: null, reasonBg: null };
   }
 
+  // Vampires alone — same parity rule as werewolves.
+  if (aliveVampires > 0 && aliveWerewolves === 0 && aliveMafia === 0) {
+    if (aliveVampires >= totalAlive - aliveVampires) {
+      return { winner: "vampires", reasonBg: "Вампирите са равни или повече от живите селяни." };
+    }
+    return { winner: null, reasonBg: null };
+  }
+
+  // Mafia clause — unchanged (already parity-based).
   if (aliveMafia > 0) {
     if (aliveMafia >= totalAlive - aliveMafia) {
       return { winner: "mafia", reasonBg: "Мафията е равна или повече от всички останали живи." };
