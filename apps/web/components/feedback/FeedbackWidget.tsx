@@ -3,6 +3,31 @@
 import { type FormEvent, useState } from "react";
 import { usePathname } from "next/navigation";
 
+// Marketing, info, and auth-flow routes do not need product-context feedback.
+// Keep matching exact so /werewolf/create and /werewolf/join/CODE still show it.
+const HIDDEN_ROUTES = [
+  "/",
+  "/werewolf",
+  "/mafia",
+  "/werewolf/rules",
+  "/mafia/rules",
+  "/werewolf/roles",
+  "/mafia/roles",
+  "/roles",
+  "/sign-in",
+  "/forgot-password",
+  "/reset-password",
+  "/verify-email",
+  "/privacy",
+  "/terms",
+  "/faq",
+  "/status",
+] as const;
+
+function shouldHideFeedback(pathname: string): boolean {
+  return HIDDEN_ROUTES.some((route) => route === pathname);
+}
+
 export function FeedbackWidget() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -10,6 +35,10 @@ export function FeedbackWidget() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "submitting" | "sent" | "error">("idle");
   const [error, setError] = useState("");
+
+  if (shouldHideFeedback(pathname)) {
+    return null;
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
