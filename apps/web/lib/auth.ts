@@ -9,6 +9,7 @@ export const auth = betterAuth({
   // Docker/production must provide real values; these fallbacks keep local builds deterministic.
   secret: process.env.BETTER_AUTH_SECRET ?? "dev-only-secret-replace-before-production-32-chars",
   baseURL: process.env.BETTER_AUTH_URL ?? "http://localhost:3000",
+  trustedOrigins: buildTrustedOrigins(),
   database: db
     ? drizzleAdapter(db, {
         provider: "pg",
@@ -45,4 +46,13 @@ function buildSocialProviders() {
   }
 
   return Object.keys(providers).length > 0 ? providers : undefined;
+}
+
+function buildTrustedOrigins() {
+  return [
+    process.env.BETTER_AUTH_URL,
+    process.env.NEXT_PUBLIC_APP_URL,
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+  ].filter((origin): origin is string => Boolean(origin));
 }

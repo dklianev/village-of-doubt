@@ -49,6 +49,7 @@ export function EmailPasswordForm({ redirectTo }: { redirectTo: string }) {
       return;
     }
 
+    window.dispatchEvent(new Event("auth-session-change"));
     startTransition(() => router.push(redirectTo));
   }
 

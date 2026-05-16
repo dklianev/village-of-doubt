@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
+import { auth } from "@/lib/auth";
+import type { AuthSessionView } from "@/lib/use-auth-session";
 import { CookieBanner } from "@/components/CookieBanner";
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
 import SiteChrome from "@/components/site-chrome";
@@ -42,14 +45,26 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  const chromeSession: AuthSessionView | null = session?.user?.id
+    ? {
+        user: {
+          id: session.user.id,
+          name: session.user.name,
+          email: session.user.email,
+          image: session.user.image ?? null,
+        },
+      }
+    : null;
+
   return (
     <html lang="bg" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body>
-        <SiteChrome />
+        <SiteChrome initialSession={chromeSession} />
         {children}
         <CookieBanner />
         <ToastHost />

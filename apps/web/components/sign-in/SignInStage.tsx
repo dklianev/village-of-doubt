@@ -11,7 +11,10 @@ export function SignInStage({ redirectTo }: { redirectTo: string }) {
       <article className="sign-in-plaque">
         <header className="sign-in-plaque-head">
           <p className="sign-in-kicker">вход на масата</p>
-          <h1>Покажи се на масата</h1>
+          <h1 aria-label="Покажи се на масата">
+            <span>Покажи се</span>
+            <span>на масата</span>
+          </h1>
           <p className="sign-in-subtitle">
             Един профил пази историята, статистиките и поканите. Тайните роли остават на сървъра.
           </p>

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AuthChip } from "@/components/site-chrome/AuthChip";
 import { getSoundEnabled, playCue, setSoundEnabled } from "@/lib/sound";
+import type { AuthSessionView } from "@/lib/use-auth-session";
 
 type ThemePreference = "light" | "dark";
 type ChromeFamily = "werewolves" | "mafia";
@@ -29,7 +30,7 @@ const DRAWER_LINKS = [
   ...SECONDARY_LINKS,
 ];
 
-export default function SiteChrome() {
+export default function SiteChrome({ initialSession }: { initialSession: AuthSessionView | null }) {
   const pathname = usePathname();
   const [soundEnabled, setSoundEnabledState] = useState(false);
   const [themePreference, setThemePreference] = useState<ThemePreference>("dark");
@@ -174,6 +175,7 @@ export default function SiteChrome() {
       <UtilityCluster
         soundEnabled={soundEnabled}
         themePreference={themePreference}
+        initialSession={initialSession}
         onToggleSound={toggleSound}
         onCycleTheme={cycleThemePreference}
       />
@@ -189,6 +191,7 @@ export default function SiteChrome() {
               pathname={pathname}
               soundEnabled={soundEnabled}
               themePreference={themePreference}
+              initialSession={initialSession}
               playHref={playHref}
               closing={drawerClosing}
               onClose={closeDrawer}
@@ -273,12 +276,14 @@ function FamilyLink({ href, label, active, family }: { href: string; label: stri
 function UtilityCluster({
   soundEnabled,
   themePreference,
+  initialSession,
   onToggleSound,
   onCycleTheme,
   showAuth = true,
 }: {
   soundEnabled: boolean;
   themePreference: ThemePreference;
+  initialSession: AuthSessionView | null;
   onToggleSound: () => void;
   onCycleTheme: () => void;
   showAuth?: boolean;
@@ -294,7 +299,7 @@ function UtilityCluster({
       {showAuth ? (
         <>
           <span className="site-utility-separator" aria-hidden />
-          <AuthChip />
+          <AuthChip initialSession={initialSession} />
         </>
       ) : null}
     </div>
@@ -307,6 +312,7 @@ function MobileDrawer({
   themePreference,
   playHref,
   closing,
+  initialSession,
   onClose,
   onToggleSound,
   onCycleTheme,
@@ -316,6 +322,7 @@ function MobileDrawer({
   themePreference: ThemePreference;
   playHref: string;
   closing: boolean;
+  initialSession: AuthSessionView | null;
   onClose: () => void;
   onToggleSound: () => void;
   onCycleTheme: () => void;
@@ -346,12 +353,13 @@ function MobileDrawer({
           <UtilityCluster
             soundEnabled={soundEnabled}
             themePreference={themePreference}
+            initialSession={initialSession}
             onToggleSound={onToggleSound}
             onCycleTheme={onCycleTheme}
             showAuth={false}
           />
           <div className="site-drawer-auth">
-            <AuthChip />
+            <AuthChip initialSession={initialSession} />
           </div>
         </div>
       </aside>

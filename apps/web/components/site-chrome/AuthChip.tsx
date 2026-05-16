@@ -4,10 +4,11 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import { type AuthSessionView, useAuthSession } from "@/lib/use-auth-session";
 
-export function AuthChip() {
+export function AuthChip({ initialSession }: { initialSession: AuthSessionView | null }) {
   const router = useRouter();
-  const { data: session, isPending } = authClient.useSession();
+  const { data: session, isPending, refresh } = useAuthSession(initialSession);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -44,6 +45,9 @@ export function AuthChip() {
   if (!session) {
     return (
       <Link href="/sign-in" className="auth-chip auth-chip-signin" prefetch={false}>
+        <span className="auth-chip-mark" aria-hidden>
+          <KeyholeIcon />
+        </span>
         <span className="auth-chip-text">Влез</span>
         <span className="auth-chip-arrow" aria-hidden>
           →
@@ -98,6 +102,8 @@ export function AuthChip() {
             onClick={async () => {
               setOpen(false);
               await authClient.signOut();
+              window.dispatchEvent(new Event("auth-session-change"));
+              await refresh();
               router.push("/");
               router.refresh();
             }}
@@ -107,5 +113,14 @@ export function AuthChip() {
         </div>
       ) : null}
     </div>
+  );
+}
+
+function KeyholeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden>
+      <path d="M12 3.75a5.25 5.25 0 0 0-2.2 10.02l-1.05 5.48h6.5l-1.05-5.48A5.25 5.25 0 0 0 12 3.75Z" />
+      <path d="M9.8 14.05h4.4" />
+    </svg>
   );
 }
