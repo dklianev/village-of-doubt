@@ -325,7 +325,7 @@ export function getWerewolvesClassicPreset(playerCount: number): RoleDistributio
     return { ...fixed };
   }
 
-  const werewolves = playerCount <= 22 ? 5 : 6;
+  const werewolves = playerCount <= 22 ? 5 : playerCount <= 28 ? 6 : 7;
   return {
     ordinary_villager: playerCount - werewolves - 4,
     werewolf: werewolves,
