@@ -11587,6 +11587,161 @@ html[data-theme="light"] .sign-in-table {
   font-size: 0.85rem;
 }
 
+/* ============================== */
+/* Vault (privacy)                */
+/* ============================== */
+
+.vault-shell {
+  padding: 32px 16px 72px;
+}
+
+.vault-stage {
+  display: grid;
+  grid-template-columns: 1fr;
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  gap: 32px;
+}
+
+@media (min-width: 980px) {
+  .vault-stage {
+    grid-template-columns: 360px 1fr;
+    align-items: start;
+  }
+}
+
+.vault-art {
+  position: sticky;
+  top: 96px;
+  aspect-ratio: 1 / 1;
+  margin: 0;
+  border-radius: 24px;
+  background-image:
+    radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 45%, rgba(20, 6, 4, 0.62) 100%),
+    image-set(
+      url("/game-art/auth/privacy-vault.webp") type("image/webp"),
+      url("/game-art/auth/privacy-vault.png") type("image/png")
+    );
+  background-position: center;
+  background-size: cover;
+  box-shadow: 0 28px 60px rgba(0, 0, 0, 0.55);
+}
+
+@media (max-width: 979px) {
+  .vault-art {
+    position: relative;
+    top: 0;
+    aspect-ratio: 16 / 9;
+  }
+}
+
+@media (max-width: 640px) {
+  .vault-art {
+    background-image:
+      radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 45%, rgba(20, 6, 4, 0.62) 100%),
+      image-set(
+        url("/game-art/mobile/auth/privacy-vault.webp") type("image/webp"),
+        url("/game-art/auth/privacy-vault.png") type("image/png")
+      );
+  }
+}
+
+.vault-card {
+  display: grid;
+  gap: 28px;
+  padding: clamp(24px, 4vw, 44px);
+  color: #1a1410;
+  border-radius: 14px;
+  background-color: #f0e0c4;
+  background-image:
+    linear-gradient(155deg, rgba(255, 250, 238, 0.58), rgba(238, 222, 196, 0.38)),
+    image-set(
+      url("/game-art/textures/brass-plate.webp") type("image/webp"),
+      url("/game-art/textures/brass-plate.png") type("image/png")
+    );
+  background-size: cover;
+  background-blend-mode: multiply;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 240, 200, 0.55),
+    inset 0 0 0 4px rgba(50, 30, 10, 0.42),
+    inset 0 0 0 6px rgba(255, 240, 200, 0.45),
+    0 22px 54px rgba(0, 0, 0, 0.45);
+}
+
+.vault-kicker {
+  color: #842f2b;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+}
+
+.vault-head h1 {
+  margin: 6px 0 8px;
+  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-size: clamp(2rem, 5vw, 3.75rem);
+  font-weight: 900;
+  line-height: 1;
+}
+
+.vault-meta {
+  color: rgba(26, 20, 16, 0.66);
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.vault-section {
+  display: grid;
+  gap: 12px;
+  max-width: 78ch;
+  padding-top: 22px;
+  border-top: 1px solid rgba(50, 30, 10, 0.25);
+}
+
+.vault-section h2 {
+  color: #842f2b;
+  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-size: 1.25rem;
+  font-weight: 900;
+}
+
+.vault-section p,
+.vault-section li {
+  color: #4f3829;
+  font-size: 1rem;
+  line-height: 1.75;
+}
+
+.vault-section ul {
+  display: grid;
+  gap: 8px;
+  padding-left: 1.2rem;
+}
+
+.vault-section a {
+  color: #842f2b;
+  font-weight: 900;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.vault-foot {
+  padding-top: 20px;
+  border-top: 1px solid rgba(50, 30, 10, 0.25);
+}
+
+.vault-foot-link {
+  color: #842f2b;
+  font-size: 0.9rem;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.vault-foot-link:hover {
+  text-decoration: underline;
+}
+
 .site-utility-separator {
   display: inline-block;
   width: 1px;
