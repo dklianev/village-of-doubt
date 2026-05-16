@@ -14,11 +14,28 @@ const CATEGORY_LABELS: Record<FaqCategory, string> = {
 };
 
 const CATEGORY_ORDER: FaqCategory[] = ["pre-game", "gameplay", "account", "tech", "privacy"];
+const STORAGE_FEEDBACK_KEY = "faq-feedback";
+
+interface FeedbackState {
+  [slug: string]: "up" | "down" | undefined;
+}
 
 export function FaqClient({ items }: { items: readonly FaqItem[] }) {
   const [search, setSearch] = useState("");
   const [openSlugs, setOpenSlugs] = useState<Set<string>>(new Set());
+  const [feedback, setFeedback] = useState<FeedbackState>({});
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(STORAGE_FEEDBACK_KEY);
+      if (raw) {
+        setFeedback(JSON.parse(raw) as FeedbackState);
+      }
+    } catch {
+      // Ignore corrupt local storage.
+    }
+  }, []);
 
   useEffect(() => {
     const initialSlug = new URLSearchParams(window.location.search).get("q");
@@ -101,6 +118,18 @@ export function FaqClient({ items }: { items: readonly FaqItem[] }) {
     }
   }, []);
 
+  const setFeedbackFor = useCallback((slug: string, value: "up" | "down") => {
+    setFeedback((current) => {
+      const next = current[slug] === value ? { ...current, [slug]: undefined } : { ...current, [slug]: value };
+      try {
+        window.localStorage.setItem(STORAGE_FEEDBACK_KEY, JSON.stringify(next));
+      } catch {
+        // Local storage can be blocked in private browsing contexts.
+      }
+      return next;
+    });
+  }, []);
+
   return (
     <section className="faq-stage">
       <figure className="faq-hero-art" aria-hidden />
@@ -153,6 +182,7 @@ export function FaqClient({ items }: { items: readonly FaqItem[] }) {
               <div className="faq-drawer-stack">
                 {entries.map((item) => {
                   const isOpen = openSlugs.has(item.slug);
+                  const feedbackValue = feedback[item.slug];
                   return (
                     <article key={item.slug} className="faq-drawer" data-open={isOpen} data-slug={item.slug}>
                       <button
@@ -182,6 +212,28 @@ export function FaqClient({ items }: { items: readonly FaqItem[] }) {
                             >
                               🔗 Копирай линк
                             </button>
+
+                            <div className="faq-helpful" role="group" aria-label="Помогна ли отговорът?">
+                              <span className="faq-helpful-label">Помогна ли?</span>
+                              <button
+                                type="button"
+                                className="faq-helpful-btn"
+                                data-active={feedbackValue === "up"}
+                                onClick={() => setFeedbackFor(item.slug, "up")}
+                                aria-label="Да, помогна"
+                              >
+                                👍
+                              </button>
+                              <button
+                                type="button"
+                                className="faq-helpful-btn"
+                                data-active={feedbackValue === "down"}
+                                onClick={() => setFeedbackFor(item.slug, "down")}
+                                aria-label="Не, не помогна"
+                              >
+                                👎
+                              </button>
+                            </div>
                           </footer>
                         </div>
                       ) : null}
