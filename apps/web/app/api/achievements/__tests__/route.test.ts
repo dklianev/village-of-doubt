@@ -1,6 +1,17 @@
-import { NextRequest } from "next/server";
-import { describe, expect, it, vi, afterEach } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { GET } from "../route";
+
+vi.mock("next/headers", () => ({
+  headers: vi.fn(async () => new Headers()),
+}));
+
+vi.mock("@/lib/auth", () => ({
+  auth: {
+    api: {
+      getSession: vi.fn(),
+    },
+  },
+}));
 
 vi.mock("@werewolf/database", () => ({
   createDatabase: vi.fn(() => ({ mocked: true })),
@@ -11,6 +22,7 @@ describe("GET /api/achievements", () => {
   const previousDatabaseUrl = process.env.DATABASE_URL;
 
   afterEach(() => {
+    vi.clearAllMocks();
     if (previousDatabaseUrl === undefined) {
       delete process.env.DATABASE_URL;
     } else {
@@ -18,25 +30,36 @@ describe("GET /api/achievements", () => {
     }
   });
 
-  it("returns an empty list when userId is missing", async () => {
-    const response = await GET(new NextRequest("http://localhost/api/achievements"));
+  it("отказва без сесия", async () => {
+    const { auth } = await import("@/lib/auth");
+    vi.mocked(auth.api.getSession).mockResolvedValue(null);
 
-    expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({ achievements: [] });
+    const response = await GET();
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toEqual({ error: "Не си влязъл." });
   });
 
-  it("returns an empty list when DATABASE_URL is missing", async () => {
+  it("връща празен списък при липсваща база, но само със сесия", async () => {
     delete process.env.DATABASE_URL;
+    const { auth } = await import("@/lib/auth");
+    vi.mocked(auth.api.getSession).mockResolvedValue({
+      user: { id: "user-1" },
+    } as Awaited<ReturnType<typeof auth.api.getSession>>);
 
-    const response = await GET(new NextRequest("http://localhost/api/achievements?userId=user-1"));
+    const response = await GET();
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ achievements: [] });
   });
 
-  it("serializes achievements for a known user", async () => {
+  it("зарежда постижения за потребителя от сесията", async () => {
     process.env.DATABASE_URL = "postgres://postgres:postgres@localhost:5432/werewolf";
+    const { auth } = await import("@/lib/auth");
     const { getAchievementsForUser } = await import("@werewolf/database");
+    vi.mocked(auth.api.getSession).mockResolvedValue({
+      user: { id: "user-1" },
+    } as Awaited<ReturnType<typeof auth.api.getSession>>);
     vi.mocked(getAchievementsForUser).mockResolvedValue([
       {
         achievementId: "first_blood",
@@ -45,9 +68,10 @@ describe("GET /api/achievements", () => {
       },
     ]);
 
-    const response = await GET(new NextRequest("http://localhost/api/achievements?userId=user-1"));
+    const response = await GET();
 
     expect(response.status).toBe(200);
+    expect(getAchievementsForUser).toHaveBeenCalledWith({ mocked: true }, "user-1");
     await expect(response.json()).resolves.toEqual({
       achievements: [
         {
@@ -57,5 +81,20 @@ describe("GET /api/achievements", () => {
         },
       ],
     });
+  });
+
+  it("игнорира userId в URL и използва само сесията", async () => {
+    process.env.DATABASE_URL = "postgres://postgres:postgres@localhost:5432/werewolf";
+    const { auth } = await import("@/lib/auth");
+    const { getAchievementsForUser } = await import("@werewolf/database");
+    vi.mocked(auth.api.getSession).mockResolvedValue({
+      user: { id: "owner-user" },
+    } as Awaited<ReturnType<typeof auth.api.getSession>>);
+    vi.mocked(getAchievementsForUser).mockResolvedValue([]);
+
+    const response = await GET();
+
+    expect(response.status).toBe(200);
+    expect(getAchievementsForUser).toHaveBeenCalledWith({ mocked: true }, "owner-user");
   });
 });
