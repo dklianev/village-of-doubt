@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ResourceHints } from "@/components/resource-hints";
 
 export const metadata: Metadata = {
   title: "Състояние | Върколак и Мафия",
@@ -130,6 +131,7 @@ export default async function StatusPage() {
 
   return (
     <main className="shell harbor-shell">
+      <ResourceHints images={["/game-art/auth/status-harbor.webp"]} />
       <section className="harbor-stage">
         <div className="harbor-art" aria-hidden />
 

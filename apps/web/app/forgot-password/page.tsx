@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ForgotPasswordClient } from "@/components/auth/ForgotPasswordClient";
+import { ResourceHints } from "@/components/resource-hints";
 
 export const metadata: Metadata = {
   title: "Загубен ключ | Върколак и Мафия",
@@ -10,6 +11,7 @@ export const metadata: Metadata = {
 export default function ForgotPasswordPage() {
   return (
     <main className="shell locksmith-shell">
+      <ResourceHints images={["/game-art/auth/forgot-password-locksmith.webp"]} />
       <ForgotPasswordClient />
     </main>
   );

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ResourceHints } from "@/components/resource-hints";
 import { routeMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = routeMetadata({
@@ -17,6 +18,7 @@ const LAST_UPDATED = "16 май 2026";
 export default function TermsPage() {
   return (
     <main className="shell handshake-shell">
+      <ResourceHints images={["/game-art/auth/terms-handshake.webp"]} />
       <section className="handshake-stage">
         <figure className="handshake-art" aria-hidden />
 

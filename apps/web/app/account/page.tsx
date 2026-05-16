@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { AccountClient } from "@/components/account/AccountClient";
+import { ResourceHints } from "@/components/resource-hints";
 import { auth } from "@/lib/auth";
 
 export const metadata: Metadata = {
@@ -26,6 +27,7 @@ export default async function AccountPage() {
 
   return (
     <main className="shell dossier-shell">
+      <ResourceHints images={["/game-art/auth/account-dossier.webp"]} />
       <AccountClient
         userId={session.user.id}
         email={session.user.email}

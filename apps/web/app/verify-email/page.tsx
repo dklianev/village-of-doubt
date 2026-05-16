@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { VerifyEmailClient } from "@/components/auth/VerifyEmailClient";
+import { ResourceHints } from "@/components/resource-hints";
 
 export const metadata: Metadata = {
   title: "Потвърждение | Върколак и Мафия",
@@ -11,6 +12,7 @@ export const metadata: Metadata = {
 export default function VerifyEmailPage() {
   return (
     <main className="shell seal-shell">
+      <ResourceHints images={["/game-art/auth/verify-email-seal.webp"]} />
       <Suspense fallback={<p className="seal-loading">Восъкът се топи...</p>}>
         <VerifyEmailClient />
       </Suspense>

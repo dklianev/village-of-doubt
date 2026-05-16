@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { FaqClient } from "@/components/faq/FaqClient";
 import { JsonLd } from "@/components/JsonLd";
+import { ResourceHints } from "@/components/resource-hints";
 import { FAQ_DATA } from "@/lib/faq-data";
 import { absoluteUrl, routeMetadata } from "@/lib/seo";
 
@@ -31,6 +32,7 @@ const faqJsonLd = {
 export default function FaqPage() {
   return (
     <main className="shell faq-shell">
+      <ResourceHints images={["/game-art/faq/library-catalog-hero.webp"]} />
       <JsonLd data={faqJsonLd} />
       <FaqClient items={FAQ_DATA} />
     </main>

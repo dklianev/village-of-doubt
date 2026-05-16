@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ResourceHints } from "@/components/resource-hints";
 import { ReportClient } from "@/components/report/ReportClient";
 
 export const metadata: Metadata = {
@@ -9,6 +10,7 @@ export const metadata: Metadata = {
 export default function ReportPage() {
   return (
     <main className="shell lighthouse-shell">
+      <ResourceHints images={["/game-art/auth/report-lighthouse.webp"]} />
       <ReportClient />
     </main>
   );

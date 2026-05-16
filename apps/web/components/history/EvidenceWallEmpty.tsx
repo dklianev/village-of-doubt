@@ -11,6 +11,7 @@ export function EvidenceWallEmpty() {
           alt=""
           width={768}
           height={512}
+          sizes="(max-width: 768px) 100vw, 768px"
           priority
           className="evidence-empty-art"
         />

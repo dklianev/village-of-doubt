@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { ResourceHints } from "@/components/resource-hints";
 import { SignInStage } from "@/components/sign-in/SignInStage";
 import { routeMetadata } from "@/lib/seo";
 
@@ -22,6 +23,7 @@ export default async function SignInPage({
 
   return (
     <main className="shell sign-in-shell">
+      <ResourceHints images={["/game-art/sign-in-table.webp"]} />
       <Suspense fallback={<div className="sign-in-loading">Подреждаме масата...</div>}>
         <SignInStage redirectTo={safeRedirect(redirect)} />
       </Suspense>
