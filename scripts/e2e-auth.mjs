@@ -1,7 +1,7 @@
 import { chromium } from "playwright";
 import { spawn } from "node:child_process";
-import { cpSync, existsSync, mkdirSync } from "node:fs";
-import { dirname } from "node:path";
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
+import { dirname, join } from "node:path";
 
 const webPort = process.env.E2E_AUTH_WEB_PORT ?? "3412";
 let baseUrl = process.env.E2E_AUTH_BASE_URL ?? localAppUrl(process.env.NEXT_PUBLIC_APP_URL) ?? `http://127.0.0.1:${webPort}`;
@@ -10,6 +10,7 @@ const isLocalOnly = process.env.E2E_LOCAL_ONLY === "true";
 const testSecret = "auth-e2e-secret-that-is-long-enough";
 const processes = [];
 const standaloneServer = "apps/web/.next/standalone/apps/web/server.js";
+const emailOutbox = join(process.cwd(), "output", "e2e-auth-emails.jsonl");
 
 if (!hasDatabase && !isLocalOnly) {
   console.error(
@@ -20,6 +21,7 @@ if (!hasDatabase && !isLocalOnly) {
 
 if (!process.env.E2E_AUTH_BASE_URL && !(await isHealthy(`${baseUrl}/api/health`))) {
   ensureStandaloneAssets();
+  prepareEmailOutbox();
   const web = start("auth-web", process.execPath, [standaloneServer], {
     PORT: webPort,
     BETTER_AUTH_URL: baseUrl,
@@ -28,6 +30,7 @@ if (!process.env.E2E_AUTH_BASE_URL && !(await isHealthy(`${baseUrl}/api/health`)
     BETTER_AUTH_SECRET: testSecret,
     GAME_TOKEN_SECRET: testSecret,
     ALLOW_DEV_AUTH: "true",
+    E2E_EMAIL_OUTBOX: emailOutbox,
   });
   processes.push(web);
   await waitForHealth(`${baseUrl}/api/health`, "auth web");
@@ -46,7 +49,10 @@ const scenarios = [
 
 for (const [name, run] of scenarios) {
   const context = await browser.newContext();
-  await context.addInitScript(() => window.localStorage.setItem("cookie-consent", "1"));
+  await context.addInitScript(() => {
+    window.localStorage.setItem("cookie-consent", "1");
+    window.localStorage.setItem("welcome-modal-shown", "1");
+  });
   const page = await context.newPage();
   try {
     console.log(`▶ ${name}`);
@@ -90,6 +96,7 @@ async function emailRegistration(page) {
   await page.getByRole("textbox", { name: "Имейл" }).fill(email);
   await page.getByLabel("Парола", { exact: true }).fill("Test1234!");
   await page.getByRole("button", { name: "Създай профил" }).click();
+  await verifyEmailFromOutbox(page, email);
   await page.waitForURL(`${baseUrl}/`, { timeout: 10_000 });
   await page.locator(".auth-chip-avatar").waitFor({ timeout: 10_000 });
 }
@@ -103,7 +110,8 @@ async function authenticatedCreateReturn(page) {
   await page.getByRole("textbox", { name: "Имейл" }).fill(email);
   await page.getByLabel("Парола", { exact: true }).fill("Test1234!");
   await page.getByRole("button", { name: "Създай профил" }).click();
-  await page.waitForURL(`${baseUrl}/werewolf/create`, { timeout: 10_000 });
+  await verifyEmailFromOutbox(page, email);
+  await page.goto(`${baseUrl}/werewolf/create`, { waitUntil: "domcontentloaded" });
   await page.getByText("Създай частна стая").waitFor();
 }
 
@@ -115,10 +123,11 @@ async function accountDeletion(page) {
   await page.getByRole("textbox", { name: "Имейл" }).fill(email);
   await page.getByLabel("Парола", { exact: true }).fill("Test1234!");
   await page.getByRole("button", { name: "Създай профил" }).click();
+  await verifyEmailFromOutbox(page, email);
   await page.waitForURL(`${baseUrl}/`, { timeout: 10_000 });
   await page.goto(`${baseUrl}/account`, { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: /Изтрий профила/ }).click();
-  await page.getByRole("button", { name: "Потвърди изтриването" }).click();
+  await page.getByRole("button", { name: "Изтрий моя профил" }).click();
+  await page.getByRole("button", { name: "Да, изтрий" }).click();
   await page.waitForURL(`${baseUrl}/`, { timeout: 10_000 });
 }
 
@@ -126,6 +135,50 @@ function skipped(reason) {
   return async () => {
     console.log(`  пропуснато: ${reason}`);
   };
+}
+
+function prepareEmailOutbox() {
+  mkdirSync(dirname(emailOutbox), { recursive: true });
+  rmSync(emailOutbox, { force: true });
+}
+
+async function verifyEmailFromOutbox(page, email) {
+  const message = await waitForEmail(email);
+  const verifyUrl = extractVerificationUrl(message.html);
+  await page.goto(verifyUrl, { waitUntil: "domcontentloaded" });
+}
+
+async function waitForEmail(email) {
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < 10_000) {
+    for (const message of readEmailOutbox().reverse()) {
+      if (message.to === email) {
+        return message;
+      }
+    }
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
+  throw new Error(`Не получихме тестов verification имейл за ${email}.`);
+}
+
+function readEmailOutbox() {
+  if (!existsSync(emailOutbox)) {
+    return [];
+  }
+
+  return readFileSync(emailOutbox, "utf8")
+    .split("\n")
+    .filter(Boolean)
+    .map((line) => JSON.parse(line));
+}
+
+function extractVerificationUrl(html) {
+  const match = html.match(/href="([^"]*\/api\/auth\/verify-email[^"]+)"/);
+  if (!match?.[1]) {
+    throw new Error("Verification email did not include a verify-email link.");
+  }
+
+  return match[1].replaceAll("&amp;", "&");
 }
 
 async function isHealthy(url) {
