@@ -35,5 +35,11 @@
     "turbo": "^2.9.6",
     "typescript": "^5.9.3",
     "vitest": "^4.0.2"
+  },
+  "pnpm": {
+    "overrides": {
+      "esbuild": "0.28.0",
+      "postcss": "8.5.14"
+    }
   }
 }
