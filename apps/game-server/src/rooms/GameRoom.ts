@@ -602,6 +602,11 @@ export class GameRoom extends Room<{ state: GameState }> {
       visibility: "moderator",
       payload: { action },
     });
+    client.send("night_action_ack", {
+      type: "night_action_ack",
+      phase: this.state.phase,
+      round: this.state.round,
+    } satisfies ServerEvent);
 
     if (this.config.timers.autoAdvanceWhenReady && this.allLivingNightActorsReady()) {
       this.advancePhase();

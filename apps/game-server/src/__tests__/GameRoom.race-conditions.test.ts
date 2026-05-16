@@ -50,8 +50,11 @@ describe("GameRoom race-condition contracts", () => {
     expect(target).toBeTruthy();
 
     await advanceToFirstNight(clients[0]?.client, serverRoom);
+    const firstAck = wolves[0]?.client.waitForMessage("night_action_ack") as Promise<{ phase: string; round: number }>;
+    const secondAck = wolves[1]?.client.waitForMessage("night_action_ack") as Promise<{ phase: string; round: number }>;
     wolves[0]?.client.send("submitNightAction", { action: { kind: "faction_kill", targetUserId: target?.userId } });
     wolves[1]?.client.send("submitNightAction", { action: { kind: "faction_kill", targetUserId: target?.userId } });
+    await Promise.all([firstAck, secondAck]);
     clients[0]?.client.send("narratorAdvance", {});
     await serverRoom.waitForNextPatch(25).catch(() => undefined);
 
