@@ -16,6 +16,13 @@ const ROUTES = [
   { name: "history-empty", path: "/history" },
   { name: "leaderboard-empty", path: "/leaderboard" },
   { name: "achievements-gate", path: "/achievements" },
+  { name: "forgot-password", path: "/forgot-password" },
+  { name: "reset-password-invalid", path: "/reset-password" },
+  { name: "verify-email-invalid", path: "/verify-email?token=fake" },
+  { name: "report", path: "/report" },
+  { name: "privacy", path: "/privacy" },
+  { name: "terms", path: "/terms" },
+  { name: "status", path: "/status" },
 ];
 
 const VIEWPORTS = [
@@ -34,6 +41,7 @@ for (const viewport of VIEWPORTS) {
       await expect(page).toHaveScreenshot(`${viewport.name}-${route.name}.png`, {
         fullPage: true,
         maxDiffPixelRatio: 0.002,
+        mask: [page.locator(".harbor-foot-time")],
         timeout: 15_000,
       });
     });

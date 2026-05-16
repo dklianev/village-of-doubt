@@ -6,6 +6,7 @@ import { CookieBanner } from "@/components/CookieBanner";
 import { FeedbackWidget } from "@/components/feedback/FeedbackWidget";
 import { WelcomeModal } from "@/components/onboarding/WelcomeModal";
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
+import { SiteFooter } from "@/components/SiteFooter";
 import SiteChrome from "@/components/site-chrome";
 import { ToastHost } from "@/components/toast-host";
 import "./globals.css";
@@ -68,6 +69,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       <body>
         <SiteChrome initialSession={chromeSession} />
         {children}
+        <SiteFooter />
         <CookieBanner />
         <ToastHost />
         <WelcomeModal />

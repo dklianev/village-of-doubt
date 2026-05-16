@@ -21,6 +21,7 @@ const SECONDARY_LINKS = [
   { href: "/leaderboard", label: "Класация" },
   { href: "/friends", label: "Приятели" },
   { href: "/tutorial", label: "Първа игра" },
+  { href: "/status", label: "Състояние" },
 ];
 
 const DRAWER_LINKS = [
