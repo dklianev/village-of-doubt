@@ -15,6 +15,13 @@
       "when": 1778052486781,
       "tag": "0001_tough_havok",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778920440027,
+      "tag": "0002_deleted_user_sentinel",
+      "breakpoints": true
     }
   ]
 }

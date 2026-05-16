@@ -39,6 +39,26 @@ export interface UserAchievementRow {
   unlockedAt: Date;
 }
 
+export const DELETED_USER_ID = "00000000-0000-0000-0000-000000000000";
+export const DELETED_DISPLAY_NAME = "Изтрит играч";
+
+export async function anonymizeUserGameHistory(db: Database, userId: string): Promise<void> {
+  if (!userId || userId === DELETED_USER_ID) {
+    return;
+  }
+
+  await db.transaction(async (tx) => {
+    await tx
+      .update(gamePlayers)
+      .set({ userId: DELETED_USER_ID, displayName: DELETED_DISPLAY_NAME })
+      .where(eq(gamePlayers.userId, userId));
+    await tx.update(gameEvents).set({ actorId: DELETED_USER_ID }).where(eq(gameEvents.actorId, userId));
+    await tx.update(gameEvents).set({ targetId: DELETED_USER_ID }).where(eq(gameEvents.targetId, userId));
+    await tx.update(games).set({ hostId: DELETED_USER_ID }).where(eq(games.hostId, userId));
+    await tx.delete(userAchievements).where(eq(userAchievements.userId, userId));
+  });
+}
+
 export async function getRecentGameHistory(db: Database, limit = 20): Promise<GameHistorySummary[]> {
   const rows = await db
     .select({
