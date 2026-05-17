@@ -1,4 +1,4 @@
-import { expect, test } from "playwright/test";
+import { expect, type Page, test } from "playwright/test";
 
 const ROUTES = [
   { name: "home", path: "/" },
@@ -47,4 +47,52 @@ for (const viewport of VIEWPORTS) {
       });
     });
   }
+
+  test(`${viewport.name} tutorial feedback open`, async ({ page }) => {
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await page.addInitScript(() => {
+      window.localStorage.setItem("cookie-consent", "1");
+      window.localStorage.setItem("welcome-modal-shown", "1");
+    });
+    await mockFeedbackSession(page);
+    await page.goto("/tutorial", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle").catch(() => {});
+    await page.getByRole("button", { name: "Дай ни бележка" }).click();
+    await expect(page.getByRole("dialog", { name: "Дай ни бележка." })).toBeVisible();
+    await page.waitForTimeout(600);
+    await expect(page).toHaveScreenshot(`${viewport.name}-tutorial-feedback-open.png`, {
+      fullPage: true,
+      maxDiffPixelRatio: 0.01,
+      mask: [page.locator(".harbor-foot-time")],
+      timeout: 15_000,
+    });
+  });
+}
+
+async function mockFeedbackSession(page: Page) {
+  await page.route(/\/api\/auth\/(?:get-session|session)(?:\?.*)?$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        session: {
+          id: "visual-session",
+          token: "visual-session-token",
+          userId: "visual-user",
+          expiresAt: "2099-01-01T00:00:00.000Z",
+          createdAt: "2026-05-17T00:00:00.000Z",
+          updatedAt: "2026-05-17T00:00:00.000Z",
+        },
+        user: {
+          id: "visual-user",
+          email: "visual@example.com",
+          name: "Визуален играч",
+          image: null,
+          emailVerified: true,
+          createdAt: "2026-05-17T00:00:00.000Z",
+          updatedAt: "2026-05-17T00:00:00.000Z",
+        },
+      }),
+    });
+  });
 }
