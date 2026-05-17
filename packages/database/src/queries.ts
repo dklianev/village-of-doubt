@@ -198,8 +198,21 @@ type GameTimelineEventBatchRow = Record<string, unknown> & {
   target_id: string | null;
   visibility: string;
   payload: unknown;
-  created_at: Date;
+  created_at: Date | string;
 };
+
+function normalizeDatabaseDate(value: Date | string): Date {
+  if (value instanceof Date) {
+    return value;
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    throw new Error(`Invalid database timestamp: ${value}`);
+  }
+
+  return date;
+}
 
 export async function getGameTimelinesBatch(
   db: Database,
@@ -247,7 +260,7 @@ export async function getGameTimelinesBatch(
       targetId: row.target_id,
       visibility: row.visibility,
       payload: row.payload,
-      createdAt: row.created_at,
+      createdAt: normalizeDatabaseDate(row.created_at),
     });
     grouped.set(row.game_id, timeline);
   }
