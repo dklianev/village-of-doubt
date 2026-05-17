@@ -75,7 +75,9 @@ describe("GameRoom reconnect resilience", () => {
     reconnected.send("submitNightAction", {
       action: { kind: "faction_kill", targetUserId: target?.userId },
     });
-    await serverRoom.waitForNextPatch(25).catch(() => undefined);
+    for (let attempt = 0; attempt < 20 && !findPublicPlayer(serverRoom, werewolf?.userId)?.actedThisPhase; attempt += 1) {
+      await serverRoom.waitForNextPatch(25).catch(() => delay(25));
+    }
     expect(findPublicPlayer(serverRoom, werewolf?.userId)?.actedThisPhase).toBe(true);
   });
 });
