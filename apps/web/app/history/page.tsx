@@ -48,8 +48,13 @@ async function HistoryContent() {
 }
 
 async function loadHistory(): Promise<HistoryGameView[]> {
-  if (process.env.NODE_ENV !== "production" && process.env.HISTORY_EVIDENCE_FIXTURE === "1") {
-    return fixtureHistory();
+  if (process.env.NODE_ENV !== "production") {
+    if (process.env.HISTORY_EVIDENCE_FIXTURE === "empty") {
+      return [];
+    }
+    if (process.env.HISTORY_EVIDENCE_FIXTURE === "1") {
+      return fixtureHistory();
+    }
   }
 
   if (!process.env.DATABASE_URL) {

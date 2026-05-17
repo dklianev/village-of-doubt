@@ -22,6 +22,9 @@ export default defineConfig({
       NEXT_PUBLIC_GAME_SERVER_URL: "ws://127.0.0.1:9",
       BETTER_AUTH_SECRET: "visual-secret-that-is-long-enough-32-chars",
       GAME_TOKEN_SECRET: "visual-token-secret-that-is-long-enough",
+      DATABASE_URL: undefined,
+      HISTORY_EVIDENCE_FIXTURE: "empty",
+      LEADERBOARD_NEWSPAPER_FIXTURE: "empty",
     },
   },
   expect: {
