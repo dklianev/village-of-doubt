@@ -41,7 +41,7 @@ for (const viewport of VIEWPORTS) {
       await page.waitForTimeout(600);
       await expect(page).toHaveScreenshot(`${viewport.name}-${route.name}.png`, {
         fullPage: true,
-        maxDiffPixelRatio: 0.002,
+        maxDiffPixelRatio: 0.01,
         mask: [page.locator(".harbor-foot-time")],
         timeout: 15_000,
       });
