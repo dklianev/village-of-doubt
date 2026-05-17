@@ -119,7 +119,11 @@ ${params.verifyUrl}
 }
 
 export function renderFeedbackEmail(params: FeedbackParams) {
-  const page = escapeHtml(params.page);
+  const [pagePathRaw, pageCategoryRaw] = params.page.includes(" · ")
+    ? params.page.split(" · ", 2)
+    : [params.page, null];
+  const pagePath = escapeHtml(pagePathRaw);
+  const pageCategory = pageCategoryRaw ? escapeHtml(pageCategoryRaw) : null;
   const reporterEmail = params.reporterEmail ? escapeHtml(params.reporterEmail) : null;
   const body = escapeHtml(params.body);
 
@@ -134,7 +138,10 @@ ${params.body}`;
   const html = `${STYLE_INTRO}
     <h1 style="color: #842f2b; font-size: 22px; margin: 0 0 16px;">Нова бележка от играч</h1>
     <p style="color: #4f3829; font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; margin: 0 0 4px;">страница</p>
-    <p style="color: #2a1b10; font-size: 15px; margin: 0 0 16px;">${page}</p>
+    <p style="color: #2a1b10; font-size: 15px; margin: 0 0 16px;">
+      <code style="background: rgba(50, 30, 10, 0.08); border-radius: 4px; padding: 2px 6px;">${pagePath}</code>
+      ${pageCategory ? `<span style="display: inline-block; margin-left: 8px; padding: 2px 8px; background: #842f2b; color: #fff5e0; border-radius: 4px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;">${pageCategory}</span>` : ""}
+    </p>
     <p style="color: #4f3829; font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; margin: 0 0 4px;">от</p>
     <p style="color: #2a1b10; font-size: 15px; margin: 0 0 16px;">${reporterEmail ?? "(анонимен)"}</p>
     <p style="color: #4f3829; font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; margin: 0 0 4px;">бележка</p>

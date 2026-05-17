@@ -4,11 +4,23 @@ import { renderFeedbackEmail } from "@/lib/email-templates";
 import { sendEmail } from "@/lib/email";
 import { auth } from "@/lib/auth";
 
+const VALID_CATEGORIES = new Set(["bug", "idea", "praise", "other"]);
+
+const CATEGORY_LABEL_BG: Record<string, string> = {
+  bug: "Бъг",
+  idea: "Идея",
+  praise: "Похвала",
+  other: "Друго",
+};
+
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
   const text = typeof body.body === "string" ? body.body.trim() : "";
   const email = typeof body.email === "string" && body.email.trim() ? body.email.trim() : null;
   const page = typeof body.page === "string" ? body.page : "?";
+  const rawCategory = typeof body.category === "string" ? body.category : "other";
+  const category = VALID_CATEGORIES.has(rawCategory) ? rawCategory : "other";
+  const categoryLabel = CATEGORY_LABEL_BG[category];
 
   if (text.length < 10) {
     return NextResponse.json({ error: "Кажи поне 10 символа." }, { status: 400 });
@@ -24,16 +36,16 @@ export async function POST(request: Request) {
 
   const operatorEmail = process.env.REPORTS_NOTIFY_EMAIL;
   if (!operatorEmail) {
-    console.log("[feedback]", { text, email, page, actor });
+    console.log("[feedback]", { category, text, email, page, actor });
     return NextResponse.json({ ok: true });
   }
 
   try {
     const template = renderFeedbackEmail({
       brandUrl: process.env.BETTER_AUTH_URL ?? "",
-      body: `${actor}\n\n${text}`,
+      body: `[${categoryLabel}]\n${actor}\n\n${text}`,
       reporterEmail: email,
-      page,
+      page: `${page} · ${categoryLabel}`,
     });
     await sendEmail({ to: operatorEmail, ...template });
   } catch (error) {
