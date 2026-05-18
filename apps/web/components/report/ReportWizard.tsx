@@ -77,8 +77,8 @@ export function ReportWizard({ userEmail, userName }: ReportWizardProps) {
   const [type, setType] = useState<ReportType>("abuse");
   const [body, setBody] = useState("");
   const [evidence, setEvidence] = useState("");
-  const [identity, setIdentity] = useState<"anonymous" | "identified">(
-    userEmail ? "identified" : "anonymous",
+  const [identity, setIdentity] = useState<"private" | "identified">(
+    userEmail ? "identified" : "private",
   );
   const [email, setEmail] = useState(userEmail ?? "");
   const [status, setStatus] = useState<"idle" | "submitting" | "error">("idle");
@@ -283,13 +283,13 @@ export function ReportWizard({ userEmail, userName }: ReportWizardProps) {
                 </span>
               </label>
 
-              <label className="report-identity-card" data-active={identity === "anonymous"}>
+              <label className="report-identity-card" data-active={identity === "private"}>
                 <input
                   type="radio"
                   name="report-identity"
-                  value="anonymous"
-                  checked={identity === "anonymous"}
-                  onChange={() => setIdentity("anonymous")}
+                  value="private"
+                  checked={identity === "private"}
+                  onChange={() => setIdentity("private")}
                 />
                 <span className="report-identity-title">Анонимно</span>
                 <span className="report-identity-hint">
@@ -405,7 +405,7 @@ function ReportSuccessState({
   type,
 }: {
   referenceId: string | null;
-  identity: "anonymous" | "identified";
+  identity: "private" | "identified";
   type: ReportType;
 }) {
   const meta = TYPE_META[type];
