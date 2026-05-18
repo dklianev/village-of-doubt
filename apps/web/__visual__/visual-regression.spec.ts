@@ -34,6 +34,15 @@ const VIEWPORTS = [
   { name: "mobile", width: 390, height: 844 },
 ];
 
+const LIGHT_UTILITY_ROUTES = [
+  { name: "account-dashboard", path: "/account" },
+  { name: "privacy", path: "/privacy" },
+  { name: "terms", path: "/terms" },
+  { name: "report", path: "/report" },
+  { name: "status", path: "/status" },
+  { name: "faq", path: "/faq" },
+];
+
 for (const viewport of VIEWPORTS) {
   for (const route of ROUTES) {
     test(`${viewport.name} ${route.name}`, async ({ page }) => {
@@ -45,7 +54,26 @@ for (const viewport of VIEWPORTS) {
       await expect(page).toHaveScreenshot(`${viewport.name}-${route.name}.png`, {
         fullPage: true,
         maxDiffPixelRatio: 0.01,
-        mask: [page.locator(".harbor-foot-time")],
+        mask: visualMasks(page),
+        timeout: 15_000,
+      });
+    });
+  }
+
+  for (const route of LIGHT_UTILITY_ROUTES) {
+    test(`${viewport.name} ${route.name} light`, async ({ page }) => {
+      await page.setViewportSize({ width: viewport.width, height: viewport.height });
+      await page.addInitScript(() => {
+        window.localStorage.setItem("cookie-consent", "1");
+        window.localStorage.setItem("werewolf-theme", "light");
+      });
+      await page.goto(route.path, { waitUntil: "domcontentloaded" });
+      await page.waitForLoadState("networkidle").catch(() => {});
+      await page.waitForTimeout(600);
+      await expect(page).toHaveScreenshot(`${viewport.name}-${route.name}-light.png`, {
+        fullPage: true,
+        maxDiffPixelRatio: 0.01,
+        mask: visualMasks(page),
         timeout: 15_000,
       });
     });
@@ -66,7 +94,7 @@ for (const viewport of VIEWPORTS) {
     await expect(page).toHaveScreenshot(`${viewport.name}-tutorial-feedback-open.png`, {
       fullPage: true,
       maxDiffPixelRatio: 0.01,
-      mask: [page.locator(".harbor-foot-time")],
+      mask: visualMasks(page),
       timeout: 15_000,
     });
   });
@@ -82,7 +110,7 @@ for (const viewport of VIEWPORTS) {
     await expect(page).toHaveScreenshot(`${viewport.name}-report-details-abuse.png`, {
       fullPage: true,
       maxDiffPixelRatio: 0.01,
-      mask: [page.locator(".harbor-foot-time")],
+      mask: visualMasks(page),
       timeout: 15_000,
     });
   });
@@ -99,7 +127,7 @@ for (const viewport of VIEWPORTS) {
     await expect(page).toHaveScreenshot(`${viewport.name}-report-details-copyright.png`, {
       fullPage: true,
       maxDiffPixelRatio: 0.01,
-      mask: [page.locator(".harbor-foot-time")],
+      mask: visualMasks(page),
       timeout: 15_000,
     });
   });
@@ -114,7 +142,7 @@ for (const viewport of VIEWPORTS) {
     await expect(page).toHaveScreenshot(`${viewport.name}-report-review.png`, {
       fullPage: true,
       maxDiffPixelRatio: 0.01,
-      mask: [page.locator(".harbor-foot-time")],
+      mask: visualMasks(page),
       timeout: 15_000,
     });
   });
@@ -129,10 +157,14 @@ for (const viewport of VIEWPORTS) {
     await expect(page).toHaveScreenshot(`${viewport.name}-report-success.png`, {
       fullPage: true,
       maxDiffPixelRatio: 0.01,
-      mask: [page.locator(".harbor-foot-time")],
+      mask: visualMasks(page),
       timeout: 15_000,
     });
   });
+}
+
+function visualMasks(page: Page) {
+  return [page.locator(".harbor-foot-time"), page.locator(".status-hero-time")];
 }
 
 async function mockFeedbackSession(page: Page) {
