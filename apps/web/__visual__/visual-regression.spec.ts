@@ -13,6 +13,7 @@ const ROUTES = [
   { name: "tutorial-5", path: "/tutorial?step=5" },
   { name: "tutorial-6", path: "/tutorial?step=6" },
   { name: "sign-in", path: "/sign-in" },
+  { name: "account-dashboard", path: "/account" },
   { name: "history-empty", path: "/history" },
   { name: "leaderboard-empty", path: "/leaderboard" },
   { name: "achievements-gate", path: "/achievements" },

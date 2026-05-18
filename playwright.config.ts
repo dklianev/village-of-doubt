@@ -23,6 +23,7 @@ export default defineConfig({
       BETTER_AUTH_SECRET: "visual-secret-that-is-long-enough-32-chars",
       GAME_TOKEN_SECRET: "visual-token-secret-that-is-long-enough",
       DATABASE_URL: undefined,
+      ACCOUNT_DASHBOARD_FIXTURE: "1",
       HISTORY_EVIDENCE_FIXTURE: "empty",
       LEADERBOARD_NEWSPAPER_FIXTURE: "empty",
     },

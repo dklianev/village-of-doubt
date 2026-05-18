@@ -1,4 +1,4 @@
-import { count, desc, eq, inArray, or, sql } from "drizzle-orm";
+import { and, count, desc, eq, inArray, or, sql } from "drizzle-orm";
 import { gameEvents, gamePlayers, games, userAchievements } from "./schema.js";
 import type { Database } from "./client.js";
 
@@ -38,6 +38,11 @@ export interface UserAchievementRow {
   achievementId: string;
   gameId: string | null;
   unlockedAt: Date;
+}
+
+export interface PlayerRoleInGameRow {
+  gameId: string;
+  role: string;
 }
 
 export const DELETED_USER_ID = "00000000-0000-0000-0000-000000000000";
@@ -167,6 +172,26 @@ export async function getGameHistoryForUser(db: Database, userId: string, limit 
     ...game,
     eventCount: countsByGameId.get(game.id) ?? 0,
   }));
+}
+
+export async function getPlayerRolesInGames(
+  db: Database,
+  userId: string,
+  gameIds: string[],
+): Promise<Map<string, string>> {
+  if (!userId || gameIds.length === 0) {
+    return new Map();
+  }
+
+  const rows: PlayerRoleInGameRow[] = await db
+    .select({
+      gameId: gamePlayers.gameId,
+      role: gamePlayers.role,
+    })
+    .from(gamePlayers)
+    .where(and(eq(gamePlayers.userId, userId), inArray(gamePlayers.gameId, gameIds)));
+
+  return new Map(rows.map((row) => [row.gameId, row.role]));
 }
 
 export async function getGameTimeline(db: Database, gameId: string, limit = 100): Promise<GameTimelineEvent[]> {

@@ -11168,291 +11168,701 @@ html[data-theme="light"] .sign-in-table {
 }
 
 /* ============================== */
-/* Dossier (account settings)     */
+/* Account dashboard              */
 /* ============================== */
 
-.dossier-shell {
-  display: grid;
+.account-shell {
+  --account-bg: #0d0a08;
+  --account-surface: rgba(26, 20, 16, 0.7);
+  --account-surface-strong: rgba(36, 28, 22, 0.88);
+  --account-text: #f5e8c8;
+  --account-text-muted: rgba(245, 232, 200, 0.74);
+  --account-text-soft: rgba(245, 232, 200, 0.5);
+  --account-border: rgba(245, 232, 200, 0.12);
+  --account-border-strong: rgba(245, 232, 200, 0.22);
+  --account-accent: #d19a42;
+  --account-accent-soft: rgba(209, 154, 66, 0.18);
+  --account-danger: #d94a3d;
+  --account-danger-soft: rgba(217, 74, 61, 0.16);
+
   min-height: 100vh;
-  place-items: start center;
-  padding: 32px 16px 64px;
+  padding: 0 0 64px;
+  color: var(--account-text);
+  background: var(--account-bg);
+  font-family: "Noto Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
-.dossier-stage {
+.account-page {
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.account-content {
   display: grid;
-  grid-template-columns: 1fr;
-  width: 100%;
-  max-width: 980px;
+  max-width: 960px;
   gap: 32px;
+  margin: 0 auto;
+  padding: 32px 24px 0;
 }
 
-@media (min-width: 900px) {
-  .dossier-stage {
-    grid-template-columns: 320px 1fr;
-    align-items: start;
-  }
+.account-hero {
+  position: relative;
+  width: 100%;
+  min-height: clamp(280px, 38vw, 460px);
+  border-bottom: 1px solid var(--account-border);
 }
 
-.dossier-art {
-  position: sticky;
-  top: 96px;
-  aspect-ratio: 3 / 4;
-  margin: 0;
-  border-radius: 18px;
-  background-image:
-    radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 50%, rgba(20, 10, 5, 0.5) 100%),
-    image-set(
-      url("/game-art/auth/account-dossier.webp") type("image/webp"),
-      url("/game-art/auth/account-dossier.png") type("image/png")
-    );
-  background-position: center;
-  background-size: cover;
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
+.account-hero-banner {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
 }
 
-@media (max-width: 899px) {
-  .dossier-art {
-    position: relative;
-    top: 0;
-    aspect-ratio: 16 / 9;
-  }
+.account-hero-img {
+  object-fit: cover;
+  object-position: center 38%;
 }
 
-@media (max-width: 640px) {
-  .dossier-art {
-    background-image:
-      radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 50%, rgba(20, 10, 5, 0.5) 100%),
-      image-set(
-        url("/game-art/mobile/auth/account-dossier.webp") type("image/webp"),
-        url("/game-art/auth/account-dossier.png") type("image/png")
-      );
-  }
+.account-hero-scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(13, 10, 8, 0.18) 0%, rgba(13, 10, 8, 0.55) 55%, rgba(13, 10, 8, 0.96) 100%),
+    linear-gradient(90deg, rgba(13, 10, 8, 0.34) 0%, transparent 38%, transparent 62%, rgba(13, 10, 8, 0.42) 100%);
 }
 
-.dossier-card {
+.account-hero-inner {
+  position: relative;
+  z-index: 1;
   display: grid;
-  gap: 28px;
-  padding: 32px;
-  color: #1a1410;
-  border-radius: 14px;
-  background-color: #f0e0c4;
-  background-image:
-    linear-gradient(155deg, rgba(255, 250, 238, 0.55), rgba(238, 222, 196, 0.35)),
-    image-set(
-      url("/game-art/textures/brass-plate.webp") type("image/webp"),
-      url("/game-art/textures/brass-plate.png") type("image/png")
-    );
-  background-size: cover;
-  background-blend-mode: multiply;
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 240, 200, 0.55),
-    inset 0 0 0 4px rgba(50, 30, 10, 0.5),
-    inset 0 0 0 6px rgba(255, 240, 200, 0.55),
-    0 20px 50px rgba(0, 0, 0, 0.45);
+  grid-template-columns: auto 1fr;
+  grid-template-rows: 1fr auto;
+  align-items: end;
+  max-width: 960px;
+  min-height: clamp(280px, 38vw, 460px);
+  gap: 16px 24px;
+  margin: 0 auto;
+  padding: 32px 24px;
 }
 
-.dossier-kicker {
-  color: #842f2b;
+@media (min-width: 768px) {
+  .account-hero-inner {
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: 1fr;
+    padding-bottom: 40px;
+  }
+}
+
+.account-hero-avatar {
+  grid-row: 1;
+  display: grid;
+  width: 96px;
+  height: 96px;
+  place-items: center;
+  overflow: hidden;
+  border: 3px solid var(--account-accent);
+  border-radius: 50%;
+  background: var(--account-surface-strong);
+  box-shadow:
+    0 12px 28px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(245, 232, 200, 0.12);
+}
+
+.account-hero-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.account-hero-initial {
+  color: var(--account-accent);
+  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-size: 2.4rem;
+  font-weight: 900;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+.account-hero-identity {
+  grid-row: 1;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.account-hero-kicker {
+  margin: 0;
+  color: var(--account-accent);
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.32em;
   text-transform: uppercase;
 }
 
-.dossier-head h1 {
-  margin: 4px 0 8px;
+.account-hero-name {
+  max-width: 100%;
+  margin: 0;
+  overflow: hidden;
+  color: var(--account-text);
   font-family: "Noto Serif Display", "Noto Serif", serif;
-  font-size: clamp(1.875rem, 4vw, 2.5rem);
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
   font-weight: 900;
-  line-height: 1.1;
+  letter-spacing: 0;
+  line-height: 1.05;
+  text-overflow: ellipsis;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.55);
+  white-space: nowrap;
 }
 
-.dossier-subtitle {
-  color: rgba(26, 20, 16, 0.78);
-  font-size: 0.95rem;
+.account-hero-meta {
+  margin: 4px 0 0;
+  color: var(--account-text-muted);
+  font-size: 0.88rem;
 }
 
-.dossier-section {
+.account-hero-quickstats {
   display: grid;
-  gap: 12px;
-  padding-top: 20px;
-  border-top: 1px solid rgba(50, 30, 10, 0.25);
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin: 0;
+  padding: 0;
 }
 
-.dossier-section h2 {
-  color: #842f2b;
-  font-family: "Noto Serif Display", serif;
-  font-size: 1.125rem;
+@media (min-width: 768px) {
+  .account-hero-quickstats {
+    grid-column: auto;
+    grid-row: 1;
+    grid-template-columns: repeat(3, auto);
+    gap: 22px;
+  }
+}
+
+.account-hero-quickstats div {
+  text-align: center;
+}
+
+.account-hero-quickstats dt {
+  margin: 0 0 2px;
+  color: var(--account-text-soft);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.account-hero-quickstats dd {
+  margin: 0;
+  color: var(--account-text);
+  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-variant-numeric: tabular-nums;
   font-weight: 900;
+  line-height: 1;
+}
+
+.account-hero-empty {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--account-text-muted);
+  font-size: 0.95rem;
+  font-style: italic;
+}
+
+.account-section {
+  display: grid;
+  gap: 20px;
+  padding: 24px;
+  border: 1px solid var(--account-border);
+  border-radius: 16px;
+  background: var(--account-surface);
+}
+
+.account-section-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.account-section-head h2 {
+  margin: 0;
+  color: var(--account-text);
+  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.account-section-head p {
+  margin: 0;
+  color: var(--account-text-soft);
+  font-size: 0.88rem;
+}
+
+.account-section-link {
+  display: inline-flex;
+  align-self: start;
+  align-items: center;
+  gap: 4px;
+  color: var(--account-accent);
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.account-section-link:hover {
+  text-decoration-thickness: 2px;
+}
+
+.account-empty-note {
+  margin: 0;
+  padding: 16px 18px;
+  color: var(--account-text-muted);
+  border: 1px dashed var(--account-border);
+  border-radius: 10px;
+  background: rgba(245, 232, 200, 0.04);
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+.account-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (min-width: 768px) {
+  .account-stats-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.account-stat-card {
+  display: grid;
+  gap: 4px;
+  padding: 16px;
+  border: 1px solid var(--account-border);
+  border-radius: 12px;
+  background: var(--account-surface-strong);
+}
+
+.account-stat-label {
+  margin: 0;
+  color: var(--account-accent);
+  font-size: 0.72rem;
+  font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
 }
 
-.dossier-row {
-  display: grid;
-  grid-template-columns: 80px 1fr;
-  align-items: start;
-  gap: 16px;
-}
-
-.dossier-avatar {
-  display: grid;
-  width: 80px;
-  height: 80px;
-  place-items: center;
-  overflow: hidden;
-  color: #fff5e0;
-  border: 2px solid rgba(255, 240, 200, 0.55);
-  border-radius: 50%;
-  background: rgba(50, 30, 10, 0.6);
-  font-family: "Noto Serif Display", serif;
+.account-stat-value {
+  margin: 0;
+  color: var(--account-text);
+  font-family: "Noto Serif Display", "Noto Serif", serif;
   font-size: 2rem;
+  font-variant-numeric: tabular-nums;
   font-weight: 900;
+  line-height: 1;
 }
 
-.dossier-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.dossier-meta {
-  display: grid;
-  gap: 6px;
-}
-
-.dossier-meta label {
-  display: grid;
-  gap: 4px;
-}
-
-.dossier-meta label > span {
-  color: #842f2b;
-  font-size: 0.7rem;
+.account-stat-suffix {
+  margin-left: 2px;
+  color: var(--account-text-muted);
+  font-size: 1.1rem;
   font-weight: 700;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
 }
 
-.dossier-meta input {
-  padding: 8px 12px;
-  color: #1a1410;
-  border: 1px solid rgba(50, 30, 10, 0.35);
-  border-radius: 8px;
-  background: rgba(255, 250, 238, 0.8);
-  font-size: 1rem;
+.account-stat-hint {
+  margin: 0;
+  color: var(--account-text-soft);
+  font-size: 0.76rem;
+  line-height: 1.4;
 }
 
-.dossier-save-btn {
-  width: fit-content;
-}
-
-.dossier-status {
-  color: #2e6b2e;
-  font-size: 0.85rem;
-  font-style: italic;
-}
-
-.dossier-email {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-  font-size: 0.95rem;
-}
-
-.dossier-badge {
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.dossier-badge-ok {
-  color: #1d4f1d;
-  background: rgba(46, 107, 46, 0.22);
-}
-
-.dossier-badge-warn {
-  color: #5a3c10;
-  background: rgba(217, 154, 66, 0.28);
-}
-
-.dossier-provider-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+.account-achievement-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.dossier-provider-list li {
-  padding: 6px 10px;
-  border: 1px solid rgba(50, 30, 10, 0.22);
-  border-radius: 999px;
-  background: rgba(255, 250, 238, 0.5);
-  font-size: 0.85rem;
-  font-weight: 800;
+@media (max-width: 640px) {
+  .account-achievement-row {
+    grid-template-columns: 1fr;
+  }
 }
 
-.dossier-danger {
-  border-color: rgba(132, 47, 43, 0.3);
-}
-
-.dossier-danger h2 {
-  color: #842f2b;
-}
-
-.dossier-confirm {
-  display: grid;
+.account-achievement-mini {
+  display: flex;
+  align-items: center;
+  min-height: 64px;
   gap: 12px;
-  padding: 16px;
-  border: 1px solid rgba(132, 47, 43, 0.25);
-  border-radius: 12px;
-  background: rgba(132, 47, 43, 0.1);
+  padding: 12px 14px;
+  color: #1a1410;
+  border-radius: 10px;
+  background: linear-gradient(155deg, rgba(200, 163, 102, 0.92), rgba(168, 132, 75, 0.85));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 240, 200, 0.45),
+    0 4px 12px rgba(0, 0, 0, 0.35);
 }
 
-.dossier-confirm-actions {
+.account-achievement-mini[data-tier="silver"] {
+  background: linear-gradient(155deg, rgba(180, 180, 180, 0.92), rgba(140, 140, 140, 0.85));
+}
+
+.account-achievement-mini[data-tier="gold"] {
+  background: linear-gradient(155deg, rgba(230, 194, 94, 0.95), rgba(196, 158, 70, 0.88));
+}
+
+.account-achievement-icon {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  color: #1a1410;
+}
+
+.account-achievement-title {
+  margin: 0;
+  color: #1a1410;
+  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-size: 0.88rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  text-shadow: 0 1px 0 rgba(255, 240, 200, 0.4);
+}
+
+.account-game-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.account-game-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto auto;
+  gap: 6px 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--account-border);
+  border-radius: 12px;
+  background: var(--account-surface-strong);
+  transition: border-color 160ms ease;
+}
+
+.account-game-card:hover {
+  border-color: var(--account-accent);
+}
+
+.account-game-head {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.account-game-code {
+  color: var(--account-accent);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.account-game-date {
+  color: var(--account-text-soft);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.account-game-verdict {
+  margin: 0;
+  color: var(--account-text);
+  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.account-game-mode {
+  margin: 0;
+  color: var(--account-text-muted);
+  font-size: 0.82rem;
+}
+
+.account-game-link {
+  grid-column: 2;
+  grid-row: 2 / 4;
+  align-self: end;
+  color: var(--account-accent);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  .account-game-card {
+    grid-template-columns: 1fr;
+  }
+
+  .account-game-link {
+    grid-column: 1;
+    grid-row: auto;
+    align-self: start;
+  }
+}
+
+.account-profile-form {
+  display: grid;
+  gap: 20px;
+}
+
+.account-field {
+  display: grid;
+  gap: 8px;
+}
+
+.account-field label,
+.account-field-label {
+  margin: 0;
+  color: var(--account-text);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.account-field-inline {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
 }
 
-.dossier-error {
-  padding: 8px 12px;
-  color: #842f2b;
-  border-radius: 8px;
-  background: rgba(132, 47, 43, 0.2);
-  font-size: 0.85rem;
+.account-field input[type="text"] {
+  min-width: 200px;
+  flex: 1;
+  padding: 10px 14px;
+  color: var(--account-text);
+  border: 1px solid var(--account-border-strong);
+  border-radius: 10px;
+  background: rgba(13, 10, 8, 0.5);
+  font-family: inherit;
+  font-size: 1rem;
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.account-field input[type="text"]:focus {
+  outline: none;
+  border-color: var(--account-accent);
+  box-shadow: 0 0 0 3px var(--account-accent-soft);
+}
+
+.account-save-btn {
+  min-height: 44px;
+  padding: 10px 18px;
+  color: #1a1410;
+  border: 1px solid var(--account-accent);
+  border-radius: 10px;
+  background: var(--account-accent);
+  cursor: pointer;
+  font-family: inherit;
   font-weight: 700;
+  transition:
+    filter 160ms ease,
+    transform 160ms ease;
 }
 
-.btn-danger {
-  color: #fff5e0;
-  border: 1px solid #4a1a18;
-  background: #842f2b;
+.account-save-btn:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.account-save-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.account-status {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.account-status-ok {
+  color: #6fbf6f;
+}
+
+.account-status-error {
+  color: #e57373;
+}
+
+.account-field-static {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--account-border);
+  border-radius: 10px;
+  background: rgba(13, 10, 8, 0.4);
+  font-size: 0.95rem;
+}
+
+.account-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.74rem;
   font-weight: 700;
-}
-
-.btn-danger:hover {
-  background: #6d2421;
-}
-
-.dossier-foot {
-  margin-top: 8px;
-}
-
-.dossier-foot-link {
-  color: #842f2b;
-  font-size: 0.85rem;
-  font-weight: 700;
+  letter-spacing: 0.08em;
   text-decoration: none;
+  text-transform: uppercase;
 }
 
-.dossier-foot-link:hover {
-  text-decoration: underline;
+.account-badge-ok {
+  color: #6fbf6f;
+  border: 1px solid rgba(111, 191, 111, 0.45);
+  background: rgba(111, 191, 111, 0.18);
+}
+
+.account-badge-warn {
+  color: var(--account-danger);
+  border: 1px solid var(--account-danger);
+  background: var(--account-danger-soft);
+}
+
+.account-provider-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.account-provider-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  color: var(--account-text);
+  border: 1px solid var(--account-border);
+  border-radius: 10px;
+  background: rgba(13, 10, 8, 0.4);
+  font-size: 0.92rem;
+}
+
+.account-provider-icon {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  color: var(--account-accent);
+  border-radius: 50%;
+  background: var(--account-accent-soft);
+  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-weight: 700;
+}
+
+.account-export-btn {
+  align-self: start;
+  min-height: 44px;
+  padding: 12px 18px;
+  color: var(--account-text);
+  border: 1px solid var(--account-border-strong);
+  border-radius: 10px;
+  background: var(--account-surface-strong);
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 600;
+  transition: border-color 160ms ease;
+}
+
+.account-export-btn:hover {
+  border-color: var(--account-accent);
+}
+
+.account-danger {
+  border-color: rgba(217, 74, 61, 0.36);
+  background: linear-gradient(155deg, var(--account-danger-soft), rgba(13, 10, 8, 0.7));
+}
+
+.account-danger .account-section-head h2 {
+  color: var(--account-danger);
+}
+
+.account-danger-body {
+  display: grid;
+  gap: 14px;
+}
+
+.account-danger-body p {
+  margin: 0;
+  color: var(--account-text-muted);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.account-danger-btn {
+  align-self: start;
+  min-height: 44px;
+  padding: 10px 18px;
+  color: #fff5e0;
+  border: 1px solid var(--account-danger);
+  border-radius: 10px;
+  background: var(--account-danger);
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 700;
+  transition:
+    filter 160ms ease,
+    transform 160ms ease;
+}
+
+.account-danger-btn:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.account-danger-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.account-cancel-btn {
+  min-height: 44px;
+  padding: 10px 18px;
+  color: var(--account-text-muted);
+  border: 1px solid var(--account-border-strong);
+  border-radius: 10px;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 600;
+}
+
+.account-danger-confirm {
+  display: grid;
+  gap: 12px;
+  padding: 16px 18px;
+  border: 1px solid var(--account-danger);
+  border-radius: 10px;
+  background: rgba(217, 74, 61, 0.1);
+}
+
+.account-danger-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 /* ============================== */
@@ -13802,8 +14212,7 @@ html[data-theme="dark"] .cookie-banner {
     inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 
-.legal-card,
-.account-card {
+.legal-card {
   color: #2a1b10;
 }
 
@@ -13820,72 +14229,6 @@ html[data-theme="dark"] .cookie-banner {
   color: #842f2b;
   font-weight: 800;
   text-decoration: underline;
-}
-
-.account-panel {
-  display: grid;
-  gap: 28px;
-}
-
-.account-profile-row {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.account-avatar {
-  display: grid;
-  width: 72px;
-  height: 72px;
-  place-items: center;
-  overflow: hidden;
-  color: #fff5e0;
-  font-family: "Noto Serif Display", "Noto Serif", serif;
-  font-size: 2rem;
-  font-weight: 900;
-  background: #842f2b;
-  border-radius: 50%;
-  box-shadow: inset 0 0 0 3px rgba(255, 240, 200, 0.45);
-}
-
-.account-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.account-profile-row h2,
-.account-danger h2 {
-  color: #2a1b10;
-  font-family: "Noto Serif", serif;
-  font-size: 1.5rem;
-  font-weight: 900;
-}
-
-.account-profile-row p,
-.account-danger p {
-  color: #4f3829;
-  line-height: 1.6;
-}
-
-.account-danger {
-  display: grid;
-  gap: 12px;
-  padding: 18px;
-  border: 1px solid rgba(132, 47, 43, 0.22);
-  border-radius: 16px;
-  background: rgba(132, 47, 43, 0.08);
-}
-
-.account-danger-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.account-status {
-  color: #842f2b;
-  font-weight: 800;
 }
 
 .not-found-shell {
