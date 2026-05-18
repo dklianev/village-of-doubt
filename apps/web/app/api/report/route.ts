@@ -11,7 +11,15 @@ interface ReportBody {
   evidence?: unknown;
 }
 
-const VALID_TYPES = new Set(["abuse", "copyright", "bug", "other"]);
+const VALID_TYPES = new Set(["abuse", "copyright", "bug", "gdpr", "other"]);
+
+const TYPE_LABEL_BG: Record<string, string> = {
+  abuse: "Тормоз",
+  copyright: "Авторски права",
+  bug: "Бъг",
+  gdpr: "GDPR",
+  other: "Друго",
+};
 
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as ReportBody;
@@ -42,14 +50,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true });
   }
 
-  const summary = `[${type}] ${actorContext} | Доказателство: ${evidence ?? "няма"}\n\n${reportBody}`;
+  const typeLabel = TYPE_LABEL_BG[type] ?? TYPE_LABEL_BG.other;
+  const summary = `[${typeLabel}] ${actorContext} | Доказателство: ${evidence ?? "няма"}\n\n${reportBody}`;
 
   try {
     const template = renderFeedbackEmail({
       brandUrl: process.env.BETTER_AUTH_URL ?? "",
       body: summary,
       reporterEmail,
-      page: `/report (${type})`,
+      page: `/report · ${typeLabel}`,
     });
     await sendEmail({ to: operatorEmail, ...template });
   } catch (error) {
