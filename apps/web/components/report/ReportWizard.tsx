@@ -9,6 +9,7 @@ type Step = "type" | "details" | "identity" | "review" | "success";
 interface ReportWizardProps {
   userEmail: string | null;
   userName: string | null;
+  visualStep: "review" | "success" | null;
 }
 
 interface TypeMeta {
@@ -72,18 +73,23 @@ const TYPE_META: Record<ReportType, TypeMeta> = {
 
 const STEPS: Step[] = ["type", "details", "identity", "review"];
 
-export function ReportWizard({ userEmail, userName }: ReportWizardProps) {
-  const [step, setStep] = useState<Step>("type");
+export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardProps) {
+  const isVisualReview = visualStep === "review" || visualStep === "success";
+  const [step, setStep] = useState<Step>(visualStep ?? "type");
   const [type, setType] = useState<ReportType>("abuse");
-  const [body, setBody] = useState("");
-  const [evidence, setEvidence] = useState("");
+  const [body, setBody] = useState(
+    isVisualReview ? "Играч използва обиди в стаята и продължи след предупреждение." : "",
+  );
+  const [evidence, setEvidence] = useState(isVisualReview ? "ABC123 · вчера около 21:30" : "");
   const [identity, setIdentity] = useState<"private" | "identified">(
     userEmail ? "identified" : "private",
   );
   const [email, setEmail] = useState(userEmail ?? "");
   const [status, setStatus] = useState<"idle" | "submitting" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
-  const [referenceId, setReferenceId] = useState<string | null>(null);
+  const [referenceId, setReferenceId] = useState<string | null>(
+    visualStep === "success" ? "СИГ-DDDD" : null,
+  );
 
   const bodyId = useId();
   const evidenceId = useId();

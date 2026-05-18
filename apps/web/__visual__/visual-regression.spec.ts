@@ -24,6 +24,7 @@ const ROUTES = [
   { name: "privacy", path: "/privacy" },
   { name: "privacy-auth", path: "/privacy?visualAuth=1" },
   { name: "terms", path: "/terms" },
+  { name: "terms-auth", path: "/terms?visualAuth=1" },
   { name: "status", path: "/status" },
   { name: "faq", path: "/faq" },
 ];
@@ -63,6 +64,69 @@ for (const viewport of VIEWPORTS) {
     await expect(page.getByRole("dialog", { name: "Дай ни бележка." })).toBeVisible();
     await page.waitForTimeout(600);
     await expect(page).toHaveScreenshot(`${viewport.name}-tutorial-feedback-open.png`, {
+      fullPage: true,
+      maxDiffPixelRatio: 0.01,
+      mask: [page.locator(".harbor-foot-time")],
+      timeout: 15_000,
+    });
+  });
+
+  test(`${viewport.name} report details abuse`, async ({ page }) => {
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await page.addInitScript(() => window.localStorage.setItem("cookie-consent", "1"));
+    await page.goto("/report", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle").catch(() => {});
+    await page.getByRole("button", { name: "Напред →" }).click();
+    await expect(page.getByText("Код на стая и приблизителен час")).toBeVisible();
+    await page.waitForTimeout(600);
+    await expect(page).toHaveScreenshot(`${viewport.name}-report-details-abuse.png`, {
+      fullPage: true,
+      maxDiffPixelRatio: 0.01,
+      mask: [page.locator(".harbor-foot-time")],
+      timeout: 15_000,
+    });
+  });
+
+  test(`${viewport.name} report details copyright`, async ({ page }) => {
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await page.addInitScript(() => window.localStorage.setItem("cookie-consent", "1"));
+    await page.goto("/report", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle").catch(() => {});
+    await page.locator(".report-type-card").filter({ hasText: "Авторски права" }).click();
+    await page.getByRole("button", { name: "Напред →" }).click();
+    await expect(page.getByText("Линк към материала и кой е автор")).toBeVisible();
+    await page.waitForTimeout(600);
+    await expect(page).toHaveScreenshot(`${viewport.name}-report-details-copyright.png`, {
+      fullPage: true,
+      maxDiffPixelRatio: 0.01,
+      mask: [page.locator(".harbor-foot-time")],
+      timeout: 15_000,
+    });
+  });
+
+  test(`${viewport.name} report review`, async ({ page }) => {
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await page.addInitScript(() => window.localStorage.setItem("cookie-consent", "1"));
+    await page.goto("/report?visualAuth=1&visualStep=review", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle").catch(() => {});
+    await expect(page.getByText("Преглед преди изпращане.")).toBeVisible();
+    await page.waitForTimeout(600);
+    await expect(page).toHaveScreenshot(`${viewport.name}-report-review.png`, {
+      fullPage: true,
+      maxDiffPixelRatio: 0.01,
+      mask: [page.locator(".harbor-foot-time")],
+      timeout: 15_000,
+    });
+  });
+
+  test(`${viewport.name} report success`, async ({ page }) => {
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await page.addInitScript(() => window.localStorage.setItem("cookie-consent", "1"));
+    await page.goto("/report?visualAuth=1&visualStep=success", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle").catch(() => {});
+    await expect(page.getByText("Светилникът свети.")).toBeVisible();
+    await page.waitForTimeout(600);
+    await expect(page).toHaveScreenshot(`${viewport.name}-report-success.png`, {
       fullPage: true,
       maxDiffPixelRatio: 0.01,
       mask: [page.locator(".harbor-foot-time")],

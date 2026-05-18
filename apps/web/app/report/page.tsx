@@ -17,12 +17,13 @@ export const metadata: Metadata = routeMetadata({
 });
 
 interface ReportPageProps {
-  searchParams?: Promise<{ visualAuth?: string | string[] }>;
+  searchParams?: Promise<{ visualAuth?: string | string[]; visualStep?: string | string[] }>;
 }
 
 export default async function ReportPage({ searchParams }: ReportPageProps) {
   const params = await searchParams;
   const visualAuth = process.env.NODE_ENV !== "production" && firstSearchValue(params?.visualAuth) === "1";
+  const visualStep = process.env.NODE_ENV !== "production" ? firstSearchValue(params?.visualStep) : undefined;
   const requestHeaders = await headers();
   const session = visualAuth
     ? { user: { email: "visual@example.com", name: "Визуален играч" } }
@@ -43,6 +44,7 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
       <ReportLighthouse
         userEmail={session?.user?.email ?? null}
         userName={session?.user?.name ?? null}
+        visualStep={visualStep === "review" || visualStep === "success" ? visualStep : null}
       />
     </main>
   );
