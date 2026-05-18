@@ -43,11 +43,26 @@ const LIGHT_UTILITY_ROUTES = [
   { name: "faq", path: "/faq" },
 ];
 
+const DARK_UTILITY_ROUTE_NAMES = new Set([
+  "account-dashboard",
+  "privacy",
+  "privacy-auth",
+  "terms",
+  "terms-auth",
+  "report",
+  "status",
+  "faq",
+]);
+
 for (const viewport of VIEWPORTS) {
   for (const route of ROUTES) {
     test(`${viewport.name} ${route.name}`, async ({ page }) => {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
-      await setVisualTheme(page, "dark");
+      if (DARK_UTILITY_ROUTE_NAMES.has(route.name)) {
+        await setVisualTheme(page, "dark");
+      } else {
+        await acceptCookies(page);
+      }
       await page.goto(route.path, { waitUntil: "domcontentloaded" });
       await page.waitForLoadState("networkidle").catch(() => {});
       await page.waitForTimeout(600);
@@ -78,7 +93,7 @@ for (const viewport of VIEWPORTS) {
 
   test(`${viewport.name} tutorial feedback open`, async ({ page }) => {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
-    await setVisualTheme(page, "dark");
+    await acceptCookies(page);
     await page.addInitScript(() => {
       window.localStorage.setItem("welcome-modal-shown", "1");
     });
@@ -162,6 +177,12 @@ for (const viewport of VIEWPORTS) {
 
 function visualMasks(page: Page) {
   return [page.locator(".harbor-foot-time"), page.locator(".status-hero-time")];
+}
+
+async function acceptCookies(page: Page) {
+  await page.addInitScript(() => {
+    window.localStorage.setItem("cookie-consent", "1");
+  });
 }
 
 async function setVisualTheme(page: Page, theme: "dark" | "light") {
