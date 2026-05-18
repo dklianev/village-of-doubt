@@ -47,7 +47,7 @@ for (const viewport of VIEWPORTS) {
   for (const route of ROUTES) {
     test(`${viewport.name} ${route.name}`, async ({ page }) => {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
-      await page.addInitScript(() => window.localStorage.setItem("cookie-consent", "1"));
+      await setVisualTheme(page, "dark");
       await page.goto(route.path, { waitUntil: "domcontentloaded" });
       await page.waitForLoadState("networkidle").catch(() => {});
       await page.waitForTimeout(600);
@@ -63,10 +63,7 @@ for (const viewport of VIEWPORTS) {
   for (const route of LIGHT_UTILITY_ROUTES) {
     test(`${viewport.name} ${route.name} light`, async ({ page }) => {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
-      await page.addInitScript(() => {
-        window.localStorage.setItem("cookie-consent", "1");
-        window.localStorage.setItem("werewolf-theme", "light");
-      });
+      await setVisualTheme(page, "light");
       await page.goto(route.path, { waitUntil: "domcontentloaded" });
       await page.waitForLoadState("networkidle").catch(() => {});
       await page.waitForTimeout(600);
@@ -81,8 +78,8 @@ for (const viewport of VIEWPORTS) {
 
   test(`${viewport.name} tutorial feedback open`, async ({ page }) => {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await setVisualTheme(page, "dark");
     await page.addInitScript(() => {
-      window.localStorage.setItem("cookie-consent", "1");
       window.localStorage.setItem("welcome-modal-shown", "1");
     });
     await mockFeedbackSession(page);
@@ -101,7 +98,7 @@ for (const viewport of VIEWPORTS) {
 
   test(`${viewport.name} report details abuse`, async ({ page }) => {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
-    await page.addInitScript(() => window.localStorage.setItem("cookie-consent", "1"));
+    await setVisualTheme(page, "dark");
     await page.goto("/report", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle").catch(() => {});
     await page.getByRole("button", { name: "Напред →" }).click();
@@ -117,7 +114,7 @@ for (const viewport of VIEWPORTS) {
 
   test(`${viewport.name} report details copyright`, async ({ page }) => {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
-    await page.addInitScript(() => window.localStorage.setItem("cookie-consent", "1"));
+    await setVisualTheme(page, "dark");
     await page.goto("/report", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle").catch(() => {});
     await page.locator(".report-type-card").filter({ hasText: "Авторски права" }).click();
@@ -134,7 +131,7 @@ for (const viewport of VIEWPORTS) {
 
   test(`${viewport.name} report review`, async ({ page }) => {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
-    await page.addInitScript(() => window.localStorage.setItem("cookie-consent", "1"));
+    await setVisualTheme(page, "dark");
     await page.goto("/report?visualAuth=1&visualStep=review", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle").catch(() => {});
     await expect(page.getByText("Преглед преди изпращане.")).toBeVisible();
@@ -149,7 +146,7 @@ for (const viewport of VIEWPORTS) {
 
   test(`${viewport.name} report success`, async ({ page }) => {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
-    await page.addInitScript(() => window.localStorage.setItem("cookie-consent", "1"));
+    await setVisualTheme(page, "dark");
     await page.goto("/report?visualAuth=1&visualStep=success", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle").catch(() => {});
     await expect(page.getByText("Светилникът свети.")).toBeVisible();
@@ -165,6 +162,13 @@ for (const viewport of VIEWPORTS) {
 
 function visualMasks(page: Page) {
   return [page.locator(".harbor-foot-time"), page.locator(".status-hero-time")];
+}
+
+async function setVisualTheme(page: Page, theme: "dark" | "light") {
+  await page.addInitScript((selectedTheme) => {
+    window.localStorage.setItem("cookie-consent", "1");
+    window.localStorage.setItem("werewolf-theme", selectedTheme);
+  }, theme);
 }
 
 async function mockFeedbackSession(page: Page) {
