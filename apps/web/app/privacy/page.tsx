@@ -1,140 +1,121 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { headers } from "next/headers";
+import { createDatabase, getAchievementsForUser, getGameHistoryForUser } from "@werewolf/database";
+import { ACHIEVEMENTS } from "@werewolf/shared";
+import { JsonLd } from "@/components/JsonLd";
+import { PrivacyDashboard, type PrivacyUserSnapshot } from "@/components/privacy/PrivacyDashboard";
 import { ResourceHints } from "@/components/resource-hints";
-import { routeMetadata } from "@/lib/seo";
+import { auth } from "@/lib/auth";
+import { absoluteUrl, routeMetadata } from "@/lib/seo";
+
+const LAST_UPDATED = "17 май 2026";
 
 export const metadata: Metadata = routeMetadata({
   title: "Поверителност | Върколак и Мафия",
-  description: "Какви данни събираме, защо ги пазим и какво можеш да направиш с тях.",
+  description: "Какви данни събираме, защо ги пазим и как можеш да упражниш правата си.",
   path: "/privacy",
-  image: "/game-art/og/og-home.png",
-  imageAlt: "Нощно село и нощен град",
-  robots: { index: false, follow: true },
+  image: "/game-art/legal/privacy-banner.png",
+  imageAlt: "Месингов сандък в светлина на свещ",
+  robots: { index: true, follow: true },
   absoluteTitle: true,
 });
 
-const LAST_UPDATED = "16 май 2026";
+interface PrivacyPageProps {
+  searchParams?: Promise<{ visualAuth?: string | string[] }>;
+}
 
-export default function PrivacyPage() {
+export default async function PrivacyPage({ searchParams }: PrivacyPageProps) {
+  const params = await searchParams;
+  const useVisualAuthFixture =
+    process.env.NODE_ENV !== "production" && firstSearchValue(params?.visualAuth) === "1";
+
+  let snapshot: PrivacyUserSnapshot | null = useVisualAuthFixture ? fixtureSnapshot() : null;
+
+  if (!useVisualAuthFixture) {
+    const requestHeaders = await headers();
+    const session = await auth.api.getSession({ headers: requestHeaders }).catch(() => null);
+
+    if (session?.user?.id) {
+      let totalGames = 0;
+      let totalAchievements = 0;
+
+      if (process.env.DATABASE_URL) {
+        try {
+          const db = createDatabase(process.env.DATABASE_URL);
+          const [games, achievements] = await Promise.all([
+            getGameHistoryForUser(db, session.user.id, 200),
+            getAchievementsForUser(db, session.user.id),
+          ]);
+          totalGames = games.length;
+          totalAchievements = achievements.length;
+        } catch (error) {
+          console.error("[privacy-snapshot]", error);
+        }
+      }
+
+      const accounts = await auth.api.listUserAccounts({ headers: requestHeaders }).catch(() => []);
+      const providers = new Set(accounts.map((account) => account.providerId));
+      if (session.user.email) {
+        providers.add("credential");
+      }
+
+      snapshot = {
+        userId: session.user.id,
+        name: session.user.name ?? "",
+        email: session.user.email ?? "",
+        emailVerified: session.user.emailVerified ?? false,
+        memberSince: parseDate(session.user.createdAt),
+        totalGames,
+        totalAchievements,
+        achievementTotal: ACHIEVEMENTS.length,
+        providersUsed: providers.size,
+      };
+    }
+  }
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name: "Поверителност",
+    inLanguage: "bg-BG",
+    dateModified: "2026-05-17",
+    url: absoluteUrl("/privacy"),
+  };
+
   return (
-    <main className="shell vault-shell">
-      <ResourceHints images={["/game-art/auth/privacy-vault.webp"]} />
-      <section className="vault-stage">
-        <figure className="vault-art" aria-hidden />
-
-        <article className="vault-card">
-          <header className="vault-head">
-            <p className="vault-kicker">политика за поверителност</p>
-            <h1>Твоите тайни остават при теб.</h1>
-            <p className="vault-meta">Последна актуализация: {LAST_UPDATED}</p>
-          </header>
-
-          <section className="vault-section">
-            <h2>1. Кои сме ние</h2>
-            <p>
-              "Върколак и Мафия" е онлайн социална игра за стаи с приятели. Тази политика обяснява
-              какви лични данни обработваме, защо са нужни и как можеш да упражниш правата си.
-            </p>
-            <p>
-              За въпроси относно поверителност можеш да използваш <Link href="/report">страницата за сигнал</Link>.
-              Преди публичното пускане ще бъде добавен и постоянен адрес за кореспонденция.
-            </p>
-          </section>
-
-          <section className="vault-section">
-            <h2>2. Какви данни събираме</h2>
-            <p>Когато създаваш профил и играеш, обработваме:</p>
-            <ul>
-              <li><strong>Имейл адрес</strong> - за вход, потвърждение и нова парола.</li>
-              <li><strong>Име на масата</strong> - видимо за другите играчи в стаите.</li>
-              <li><strong>Данни от Google или Discord</strong> - само ако избереш вход през тях: публичен идентификатор, име и снимка.</li>
-              <li><strong>Игрова история</strong> - стаи, роли, резултат, ходове и край на играта.</li>
-              <li><strong>Постижения</strong> - кои са отключени и кога.</li>
-              <li><strong>Сесийни данни</strong> - технически записи за вход, защита и злоупотреби.</li>
-            </ul>
-            <p>Не събираме телефон, адрес, платежни данни или чувствителни категории лични данни.</p>
-          </section>
-
-          <section className="vault-section">
-            <h2>3. Защо ги пазим</h2>
-            <ul>
-              <li><strong>За да работи играта</strong> - профилът те разпознава между стаи и устройства.</li>
-              <li><strong>За история и постижения</strong> - класацията и архивът изискват завършени игри.</li>
-              <li><strong>За сигурност</strong> - сесиите и техническите записи помагат срещу измами и автоматизирано натоварване.</li>
-              <li><strong>За служебни писма</strong> - потвърждение на имейл, нова парола и важни промени.</li>
-            </ul>
-          </section>
-
-          <section className="vault-section">
-            <h2>4. С кого споделяме</h2>
-            <p>Не продаваме данни и не показваме реклами. Технически партньори могат да обработват ограничени данни:</p>
-            <ul>
-              <li><strong>ДиджиталОушън</strong> - хостинг на сървърите и базата данни в европейска среда.</li>
-              <li><strong>Рисенд</strong> - системни имейли за потвърждение и нова парола.</li>
-              <li><strong>Google и Discord</strong> - само ако използваш техния вход.</li>
-              <li><strong>ОупънЕйАй</strong> - използван само за статични изображения преди старта, без лични данни на играчи.</li>
-            </ul>
-            <p>Не използваме рекламни броячи, проследяващи профили или продажба на аудитории.</p>
-          </section>
-
-          <section className="vault-section">
-            <h2>5. Колко дълго ги пазим</h2>
-            <ul>
-              <li><strong>Профил</strong> - докато го поддържаш или докато не поискаш изтриване.</li>
-              <li><strong>Сесии</strong> - до 30 дни от последна активност.</li>
-              <li><strong>Игрова история</strong> - до 24 месеца, след което може да бъде анонимизирана.</li>
-              <li><strong>Служебни писма</strong> - доставчикът пази технически записи за доставка за ограничен срок.</li>
-            </ul>
-          </section>
-
-          <section className="vault-section">
-            <h2>6. Твоите права</h2>
-            <p>Имаш право да:</p>
-            <ul>
-              <li>изтеглиш копие на данните си от <Link href="/account">твоето досие</Link>;</li>
-              <li>изтриеш профила си от същата страница;</li>
-              <li>поправиш името си на масата;</li>
-              <li>поискаш ограничаване или възражение срещу обработка;</li>
-              <li>подадеш жалба до Комисията за защита на личните данни.</li>
-            </ul>
-            <p>
-              При изтриване игрите остават в архива, за да не се чупи историята на другите играчи, но името ти
-              се заменя с "Изтрит играч", а постиженията се премахват.
-            </p>
-          </section>
-
-          <section className="vault-section">
-            <h2>7. Бисквитки и памет на браузъра</h2>
-            <p>Използваме само технически необходими бисквитки и локални настройки:</p>
-            <ul>
-              <li>сесийна бисквитка за вход;</li>
-              <li>настройки за звук, тема и последно избрано семейство игри;</li>
-              <li>маркер, че си видял въвеждащото съобщение.</li>
-            </ul>
-            <p>Не използваме рекламни или маркетингови бисквитки.</p>
-          </section>
-
-          <section className="vault-section">
-            <h2>8. Деца под 13 години</h2>
-            <p>
-              Платформата не е предназначена за деца под 13 години. Ако родител или настойник установи, че дете
-              е създало профил, може да поиска изтриване чрез страницата за сигнал.
-            </p>
-          </section>
-
-          <section className="vault-section">
-            <h2>9. Промени в политиката</h2>
-            <p>
-              Ако променим тази политика, ще публикуваме нова дата на актуализация и при съществени промени ще
-              уведомим потребителите през платформата или по имейл.
-            </p>
-          </section>
-
-          <footer className="vault-foot">
-            <Link href="/" className="vault-foot-link">Към началото</Link>
-          </footer>
-        </article>
-      </section>
+    <main className="shell privacy-shell">
+      <ResourceHints
+        images={["/game-art/legal/privacy-banner.webp", "/game-art/legal/trust-flow-diagram.webp"]}
+      />
+      <JsonLd data={jsonLd} />
+      <PrivacyDashboard lastUpdated={LAST_UPDATED} userSnapshot={snapshot} />
     </main>
   );
+}
+
+function fixtureSnapshot(): PrivacyUserSnapshot {
+  return {
+    userId: "privacy-visual-user",
+    name: "Визуален играч",
+    email: "visual@example.com",
+    emailVerified: true,
+    memberSince: new Date("2026-03-10T10:00:00.000Z"),
+    totalGames: 8,
+    totalAchievements: 3,
+    achievementTotal: ACHIEVEMENTS.length,
+    providersUsed: 2,
+  };
+}
+
+function firstSearchValue(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function parseDate(value: Date | string | null | undefined): Date | null {
+  if (!value) {
+    return null;
+  }
+
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
 }

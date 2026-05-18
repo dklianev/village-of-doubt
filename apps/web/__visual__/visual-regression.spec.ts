@@ -22,6 +22,7 @@ const ROUTES = [
   { name: "verify-email-invalid", path: "/verify-email?token=fake" },
   { name: "report", path: "/report" },
   { name: "privacy", path: "/privacy" },
+  { name: "privacy-auth", path: "/privacy?visualAuth=1" },
   { name: "terms", path: "/terms" },
   { name: "status", path: "/status" },
   { name: "faq", path: "/faq" },
