@@ -11959,7 +11959,6 @@ html[data-theme="light"] .faq-shell::before {
   position: relative;
   width: 100%;
   min-height: clamp(280px, 38vw, 460px);
-  border-bottom: 1px solid var(--privacy-border);
 }
 
 .privacy-hero-banner {
@@ -12616,7 +12615,6 @@ html[data-theme="light"] .faq-shell::before {
   width: 100%;
   min-height: clamp(280px, 38vw, 460px);
   overflow: hidden;
-  border-bottom: 1px solid var(--legal-border);
 }
 
 .terms-hero-banner,
@@ -14349,7 +14347,6 @@ html[data-theme="light"] .faq-shell::before {
   overflow: hidden;
   width: 100%;
   min-height: clamp(260px, 32vw, 400px);
-  border-bottom: 1px solid var(--status-border);
 }
 
 .status-hero-banner {
