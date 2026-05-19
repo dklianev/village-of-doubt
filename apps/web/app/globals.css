@@ -15625,7 +15625,7 @@ html[data-theme="light"] .site-footer-links a {
   overflow: hidden;
   isolation: isolate;
   margin: 24px auto 96px;
-  padding: 0;
+  padding: 0 0 56px;
   border: 1px solid rgba(245, 232, 200, 0.14);
   border-radius: 28px;
   background: rgba(17, 12, 10, 0.92);
@@ -15653,6 +15653,7 @@ html[data-theme="light"] .faq-shell {
   .status-shell,
   .faq-shell {
     margin: 16px auto 64px;
+    padding: 0 0 40px;
     border-radius: 20px;
   }
 }
