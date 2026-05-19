@@ -15618,6 +15618,52 @@ html[data-theme="light"] .site-footer-links a {
 }
 
 /* ============================== */
+/* Utility shells — rounded frame */
+/* ============================== */
+
+.privacy-shell,
+.terms-shell,
+.report-shell,
+.status-shell,
+.faq-shell {
+  position: relative;
+  z-index: 0;
+  overflow: hidden;
+  isolation: isolate;
+  margin: 24px auto 96px;
+  padding: 0;
+  border: 1px solid rgba(245, 232, 200, 0.14);
+  border-radius: 28px;
+  background: rgba(17, 12, 10, 0.92);
+  box-shadow:
+    0 32px 60px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(245, 232, 200, 0.06);
+}
+
+html[data-theme="light"] .privacy-shell,
+html[data-theme="light"] .terms-shell,
+html[data-theme="light"] .report-shell,
+html[data-theme="light"] .status-shell,
+html[data-theme="light"] .faq-shell {
+  border-color: rgba(83, 52, 31, 0.18);
+  background: rgba(252, 246, 236, 0.94);
+  box-shadow:
+    0 32px 60px rgba(40, 26, 16, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+@media (max-width: 640px) {
+  .privacy-shell,
+  .terms-shell,
+  .report-shell,
+  .status-shell,
+  .faq-shell {
+    margin: 16px auto 64px;
+    border-radius: 20px;
+  }
+}
+
+/* ============================== */
 /* Utility pages — light theme    */
 /* ============================== */
 
