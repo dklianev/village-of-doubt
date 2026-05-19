@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useState } from "react";
 
 interface PrivacyPromise {
@@ -78,16 +77,6 @@ export function PrivacyPromiseWall() {
           Шест обещания, които стоят зад всичко в детайлите по-долу.
         </p>
       </header>
-
-      <figure className="privacy-trust-visual" aria-hidden>
-        <Image
-          src="/game-art/legal/trust-flow-diagram.webp"
-          alt=""
-          width={1500}
-          height={500}
-          sizes="(max-width: 980px) calc(100vw - 48px), 932px"
-        />
-      </figure>
 
       <ul className="privacy-promise-grid">
         {PROMISES.map((promise) => {

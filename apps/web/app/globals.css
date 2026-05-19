@@ -12220,20 +12220,6 @@ html[data-theme="light"] .faq-shell::before {
   line-height: 1.6;
 }
 
-.privacy-trust-visual {
-  margin: 0 0 20px;
-  overflow: hidden;
-  border: 1px solid var(--privacy-border);
-  border-radius: 14px;
-  background: rgba(13, 10, 8, 0.4);
-}
-
-.privacy-trust-visual img {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-
 .privacy-promise-grid {
   display: grid;
   grid-template-columns: 1fr;
