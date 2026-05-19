@@ -29,6 +29,12 @@ interface SecondaryLink {
   group: SecondaryLinkGroup;
 }
 
+interface DrawerLink {
+  href: string;
+  label: string;
+  icon?: LucideIcon;
+}
+
 const THEME_STORAGE_KEY = "werewolf-theme";
 const LAST_FAMILY_STORAGE_KEY = "last-family";
 const THEME_OPTIONS: ThemePreference[] = ["light", "dark"];
@@ -51,7 +57,7 @@ const GROUP_LABELS: Record<SecondaryLinkGroup, string> = {
 
 const GROUP_ORDER: ReadonlyArray<SecondaryLinkGroup> = ["game", "social", "help"];
 
-const DRAWER_LINKS = [
+const DRAWER_LINKS: ReadonlyArray<DrawerLink> = [
   { href: "/", label: "Начало" },
   { href: "/werewolf", label: "Върколак" },
   { href: "/mafia", label: "Мафия" },
@@ -383,7 +389,7 @@ function MobileDrawer({
   onToggleSound: () => void;
   onCycleTheme: () => void;
 }) {
-  const drawerLinks = useMemo(() => [{ href: playHref, label: "Играй" }, ...DRAWER_LINKS], [playHref]);
+  const drawerLinks = useMemo<ReadonlyArray<DrawerLink>>(() => [{ href: playHref, label: "Играй" }, ...DRAWER_LINKS], [playHref]);
 
   return (
     <div className={closing ? "site-drawer-layer is-closing" : "site-drawer-layer"}>
@@ -397,10 +403,12 @@ function MobileDrawer({
         </div>
         <nav className="site-drawer-nav" aria-label="Мобилна навигация">
           {drawerLinks.map((item) => {
+            const Icon = item.icon;
             const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
             return (
               <Link key={`${item.href}:${item.label}`} className={active ? "is-active" : ""} href={item.href} prefetch={false} onClick={onClose}>
-                {item.label}
+                {Icon ? <Icon aria-hidden strokeWidth={1.8} className="site-drawer-icon" /> : null}
+                <span>{item.label}</span>
               </Link>
             );
           })}

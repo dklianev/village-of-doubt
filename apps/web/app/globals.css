@@ -855,8 +855,22 @@ html[data-theme="light"] .site-mobile-menu:hover {
 }
 
 .site-drawer-nav a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   padding: 13px 14px;
   font-size: 0.95rem;
+}
+
+.site-drawer-icon {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  color: rgba(232, 217, 187, 0.7);
+}
+
+.site-drawer-nav a.is-active .site-drawer-icon {
+  color: #d19a42;
 }
 
 .site-drawer-footer .site-utility-cluster {
