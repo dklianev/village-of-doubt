@@ -15665,9 +15665,9 @@ html[data-theme="light"] .faq-shell {
 /* ============================== */
 
 html[data-theme="light"] .privacy-shell {
-  --privacy-bg: #f4ece0;
-  --privacy-surface: rgba(255, 250, 238, 0.85);
-  --privacy-surface-strong: rgba(255, 250, 238, 0.98);
+  --privacy-bg: transparent;
+  --privacy-surface: rgba(255, 250, 238, 0.55);
+  --privacy-surface-strong: rgba(255, 250, 238, 0.85);
   --privacy-text: #2a1b10;
   --privacy-text-muted: rgba(42, 27, 16, 0.74);
   --privacy-text-soft: rgba(42, 27, 16, 0.5);
@@ -15675,15 +15675,15 @@ html[data-theme="light"] .privacy-shell {
   --privacy-border-strong: rgba(83, 52, 31, 0.32);
   --privacy-accent: #2d3f66;
   --privacy-accent-warm: #842f2b;
-  --privacy-accent-soft: rgba(45, 63, 102, 0.18);
+  --privacy-accent-soft: rgba(45, 63, 102, 0.16);
   --privacy-accent-warm-soft: rgba(132, 47, 43, 0.12);
 }
 
 html[data-theme="light"] .terms-shell,
 html[data-theme="light"] .report-shell {
-  --legal-bg: #f4ece0;
-  --legal-surface: rgba(255, 250, 238, 0.85);
-  --legal-surface-strong: rgba(255, 250, 238, 0.98);
+  --legal-bg: transparent;
+  --legal-surface: rgba(255, 250, 238, 0.55);
+  --legal-surface-strong: rgba(255, 250, 238, 0.85);
   --legal-text: #2a1b10;
   --legal-text-muted: rgba(42, 27, 16, 0.74);
   --legal-text-soft: rgba(42, 27, 16, 0.5);
@@ -15706,9 +15706,9 @@ html[data-theme="light"] .report-shell {
 }
 
 html[data-theme="light"] .account-shell {
-  --account-bg: #f4ece0;
-  --account-surface: rgba(255, 250, 238, 0.85);
-  --account-surface-strong: rgba(255, 250, 238, 0.98);
+  --account-bg: transparent;
+  --account-surface: rgba(255, 250, 238, 0.55);
+  --account-surface-strong: rgba(255, 250, 238, 0.85);
   --account-text: #2a1b10;
   --account-text-muted: rgba(42, 27, 16, 0.74);
   --account-text-soft: rgba(42, 27, 16, 0.5);
@@ -15721,9 +15721,9 @@ html[data-theme="light"] .account-shell {
 }
 
 html[data-theme="light"] .status-shell {
-  --status-bg: #f4ece0;
-  --status-surface: rgba(255, 250, 238, 0.85);
-  --status-surface-strong: rgba(255, 250, 238, 0.98);
+  --status-bg: transparent;
+  --status-surface: rgba(255, 250, 238, 0.55);
+  --status-surface-strong: rgba(255, 250, 238, 0.85);
   --status-text: #2a1b10;
   --status-text-muted: rgba(42, 27, 16, 0.74);
   --status-text-soft: rgba(42, 27, 16, 0.5);
@@ -15738,9 +15738,9 @@ html[data-theme="light"] .status-shell {
 }
 
 html[data-theme="light"] .faq-shell {
-  --doc-bg: #f4ece0;
-  --doc-surface: rgba(255, 250, 238, 0.85);
-  --doc-surface-strong: rgba(255, 250, 238, 0.98);
+  --doc-bg: transparent;
+  --doc-surface: rgba(255, 250, 238, 0.55);
+  --doc-surface-strong: rgba(255, 250, 238, 0.85);
   --doc-text: #2a1b10;
   --doc-text-muted: rgba(42, 27, 16, 0.74);
   --doc-text-soft: rgba(42, 27, 16, 0.5);
