@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
-import { FaqClient } from "@/components/faq/FaqClient";
+import { FaqHearth } from "@/components/faq/FaqHearth";
 import { JsonLd } from "@/components/JsonLd";
 import { ResourceHints } from "@/components/resource-hints";
 import { FAQ_DATA, flattenAnswerForSchema } from "@/lib/faq-data";
 import { absoluteUrl, routeMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = routeMetadata({
-  title: "Често задавани въпроси",
-  description: "Отговори за геймплея, профила, техническите детайли и поверителността на Върколак и Мафия.",
+  title: "Седни до огъня | Върколак и Мафия",
+  description: "Отговори за геймплея, профила, техническите детайли и поверителността — споделени до огъня.",
   path: "/faq",
-  image: "/game-art/og/og-faq.png",
-  imageAlt: "Стар библиотечен каталог",
-  ogDescription: "Геймплей, профил, техника, поверителност — отговорите на масата.",
+  image: "/game-art/legal/faq-hearth-banner.png",
+  imageAlt: "Каменно огнище с книги и свещ",
+  absoluteTitle: true,
 });
 
 const faqJsonLd = {
@@ -32,9 +32,9 @@ const faqJsonLd = {
 export default function FaqPage() {
   return (
     <main className="shell faq-shell">
-      <ResourceHints images={["/game-art/faq/library-catalog-hero.webp"]} />
+      <ResourceHints images={["/game-art/legal/faq-hearth-banner.webp"]} />
       <JsonLd data={faqJsonLd} />
-      <FaqClient items={FAQ_DATA} />
+      <FaqHearth items={FAQ_DATA} />
     </main>
   );
 }
