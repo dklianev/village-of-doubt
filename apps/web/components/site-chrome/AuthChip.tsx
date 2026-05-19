@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { History, LogOut, Trophy, User } from "lucide-react";
+import { ArrowRight, ChevronDown, History, LogOut, Trophy, User } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
@@ -50,9 +50,7 @@ export function AuthChip({ initialSession }: { initialSession: AuthSessionView |
           <KeyholeIcon />
         </span>
         <span className="auth-chip-text">Влез</span>
-        <span className="auth-chip-arrow" aria-hidden>
-          →
-        </span>
+        <ArrowRight className="auth-chip-arrow" aria-hidden strokeWidth={2.2} />
       </Link>
     );
   }
@@ -79,9 +77,7 @@ export function AuthChip({ initialSession }: { initialSession: AuthSessionView |
           )}
         </span>
         <span className="auth-chip-name">{displayName}</span>
-        <span className="auth-chip-chevron" aria-hidden>
-          ▾
-        </span>
+        <ChevronDown className="auth-chip-chevron" aria-hidden strokeWidth={2.2} />
       </button>
 
       {open ? (

@@ -16036,81 +16036,88 @@ html[data-theme="light"] .faq-head {
   background: linear-gradient(180deg, transparent, rgba(255, 240, 200, 0.35), transparent);
 }
 
+/* ============================== */
+/* Auth chip — modern brass-locket */
+/* ============================== */
+
 .auth-chip {
   display: inline-flex;
   align-items: center;
-  height: 40px;
-  gap: 8px;
-  padding: 0 14px;
-  color: #1a1410;
-  font-family: "Noto Serif", serif;
-  font-size: 0.875rem;
-  font-weight: 800;
+  gap: 10px;
+  height: 38px;
+  padding: 0 14px 0 4px;
+  color: #f5e8c8;
+  font-family: "Noto Serif", system-ui, serif;
+  font-size: 0.92rem;
+  font-weight: 600;
   letter-spacing: 0.02em;
   text-decoration: none;
-  text-shadow: 0 1px 0 rgba(255, 240, 200, 0.45);
-  border: 1px solid rgba(50, 30, 10, 0.5);
-  border-radius: 999px;
   cursor: pointer;
-  background-color: #c8a366;
-  background-image:
-    linear-gradient(155deg, rgba(255, 250, 238, 0.45), rgba(238, 222, 196, 0.25)),
-    image-set(
-      url("/game-art/textures/brass-plate.webp") type("image/webp"),
-      url("/game-art/textures/brass-plate.png") type("image/png")
-    );
-  background-size: cover;
-  background-position: center;
-  background-blend-mode: multiply;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 240, 200, 0.55),
-    inset 0 -1px 0 rgba(50, 30, 10, 0.4),
-    0 4px 10px rgba(0, 0, 0, 0.35);
-  transition: transform 160ms ease, box-shadow 160ms ease, filter 160ms ease;
+  background: rgba(17, 12, 10, 0.58);
+  border: 1px solid rgba(245, 232, 200, 0.16);
+  border-radius: 999px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition:
+    border-color 200ms ease,
+    background 200ms ease,
+    transform 200ms ease;
 }
 
 .auth-chip:hover {
+  background: rgba(17, 12, 10, 0.78);
+  border-color: rgba(217, 154, 66, 0.45);
   transform: translateY(-1px);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 240, 200, 0.6),
-    inset 0 -1px 0 rgba(50, 30, 10, 0.5),
-    0 6px 14px rgba(0, 0, 0, 0.45);
 }
 
+.auth-chip:focus-visible {
+  outline: none;
+  border-color: rgba(217, 154, 66, 0.7);
+  box-shadow: 0 0 0 3px rgba(217, 154, 66, 0.22);
+}
+
+/* Loading skeleton */
+
+.auth-chip-loading {
+  width: 96px;
+  height: 38px;
+  padding: 0;
+  background: rgba(17, 12, 10, 0.42);
+  border: 1px solid rgba(245, 232, 200, 0.08);
+  border-radius: 999px;
+  animation: auth-chip-skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes auth-chip-skeleton-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+/* Signed-out variant */
+
 .auth-chip-signin {
-  min-width: 112px;
-  justify-content: center;
-  gap: 9px;
-  padding: 0 13px 0 9px;
-  background-image:
-    linear-gradient(135deg, rgba(255, 250, 238, 0.28), rgba(209, 154, 66, 0.18) 42%, rgba(91, 41, 15, 0.22)),
-    image-set(
-      url("/game-art/textures/brass-plate.webp") type("image/webp"),
-      url("/game-art/textures/brass-plate.png") type("image/png")
-    );
-  box-shadow:
-    inset 0 1px 0 rgba(255, 240, 200, 0.72),
-    inset 0 -1px 0 rgba(50, 30, 10, 0.5),
-    0 0 0 1px rgba(209, 154, 66, 0.12),
-    0 8px 18px rgba(0, 0, 0, 0.34);
+  padding: 0 16px;
 }
 
 .auth-chip-mark {
-  display: grid;
+  display: inline-grid;
   width: 26px;
   height: 26px;
   place-items: center;
-  border-radius: 999px;
-  background: rgba(26, 20, 16, 0.68);
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 240, 200, 0.34),
-    0 1px 2px rgba(0, 0, 0, 0.28);
+  color: #d19a42;
+  background: rgba(217, 154, 66, 0.18);
+  border: 1px solid rgba(217, 154, 66, 0.45);
+  border-radius: 50%;
 }
 
 .auth-chip-mark svg {
-  width: 15px;
-  height: 15px;
-  color: #fff2d3;
+  width: 14px;
+  height: 14px;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.7;
@@ -16119,93 +16126,115 @@ html[data-theme="light"] .faq-head {
 }
 
 .auth-chip-text {
+  font-weight: 700;
   line-height: 1;
+  letter-spacing: 0.04em;
 }
 
 .auth-chip-arrow {
-  color: #842f2b;
-  font-size: 0.9rem;
-  font-weight: 900;
-  transition: transform 160ms ease;
+  width: 16px;
+  height: 16px;
+  color: #d19a42;
+  transition: transform 200ms ease;
 }
 
 .auth-chip-signin:hover .auth-chip-arrow {
-  transform: translateX(2px);
+  transform: translateX(3px);
 }
 
-.auth-chip-loading {
-  position: relative;
-  width: 104px;
-  overflow: hidden;
-  opacity: 0.72;
-  pointer-events: none;
-  background-image:
-    linear-gradient(90deg, transparent, rgba(255, 240, 200, 0.32), transparent),
-    linear-gradient(135deg, rgba(255, 250, 238, 0.14), rgba(209, 154, 66, 0.24));
-  background-size: 200% 100%, 100% 100%;
-  background-position: -120% 0, center;
-  border-color: rgba(209, 154, 66, 0.28);
-  animation: authChipShimmer 1.2s ease-in-out infinite;
-}
+/* Signed-in variant — avatar + name + chevron */
 
 .auth-chip-avatar {
   position: relative;
   padding: 0;
-  background: none;
+  cursor: default;
+  background: transparent;
   border: 0;
   box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .auth-chip-avatar:hover {
+  background: transparent;
+  border-color: transparent;
   transform: none;
-  box-shadow: none;
 }
 
 .auth-chip-trigger {
   display: inline-flex;
   align-items: center;
-  height: 40px;
-  gap: 8px;
-  padding: 0 12px 0 4px;
-  color: #1a1410;
-  font-family: "Noto Serif", serif;
-  font-size: 0.875rem;
-  font-weight: 800;
+  gap: 10px;
+  height: 38px;
+  padding: 0 14px 0 4px;
+  color: #f5e8c8;
+  font-family: "Noto Serif", system-ui, serif;
+  font-size: 0.92rem;
+  font-weight: 600;
   letter-spacing: 0.02em;
-  text-shadow: 0 1px 0 rgba(255, 240, 200, 0.45);
-  border: 1px solid rgba(50, 30, 10, 0.5);
-  border-radius: 999px;
   cursor: pointer;
-  background-color: #c8a366;
-  background-image:
-    linear-gradient(155deg, rgba(255, 250, 238, 0.45), rgba(238, 222, 196, 0.25)),
-    image-set(
-      url("/game-art/textures/brass-plate.webp") type("image/webp"),
-      url("/game-art/textures/brass-plate.png") type("image/png")
-    );
-  background-size: cover;
-  background-blend-mode: multiply;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 240, 200, 0.55),
-    inset 0 -1px 0 rgba(50, 30, 10, 0.4),
-    0 4px 10px rgba(0, 0, 0, 0.35);
-  transition: transform 160ms ease;
+  background: rgba(17, 12, 10, 0.58);
+  border: 1px solid rgba(245, 232, 200, 0.16);
+  border-radius: 999px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition:
+    border-color 200ms ease,
+    background 200ms ease,
+    transform 200ms ease;
 }
 
 .auth-chip-trigger:hover {
+  background: rgba(17, 12, 10, 0.78);
+  border-color: rgba(217, 154, 66, 0.45);
   transform: translateY(-1px);
 }
 
+.auth-chip-trigger:focus-visible {
+  outline: none;
+  border-color: rgba(217, 154, 66, 0.7);
+  box-shadow: 0 0 0 3px rgba(217, 154, 66, 0.22);
+}
+
+/* Avatar circle with amber glow halo */
+
 .auth-chip-photo {
+  position: relative;
   display: grid;
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   place-items: center;
   flex-shrink: 0;
   overflow: hidden;
-  background: rgba(50, 30, 10, 0.6);
-  border: 1px solid rgba(255, 240, 200, 0.5);
+  background: rgba(13, 10, 8, 0.85);
+  border: 2px solid rgba(217, 154, 66, 0.7);
   border-radius: 50%;
+  box-shadow:
+    0 0 0 1px rgba(13, 10, 8, 0.6),
+    0 0 14px rgba(217, 154, 66, 0.34);
+  animation: auth-chip-halo-pulse 3.4s ease-in-out infinite;
+  transition: box-shadow 280ms ease, border-color 200ms ease;
+}
+
+@keyframes auth-chip-halo-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px rgba(13, 10, 8, 0.6),
+      0 0 14px rgba(217, 154, 66, 0.28);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(13, 10, 8, 0.6),
+      0 0 18px rgba(217, 154, 66, 0.45);
+  }
+}
+
+.auth-chip-trigger:hover .auth-chip-photo {
+  border-color: rgba(217, 154, 66, 0.95);
+  box-shadow:
+    0 0 0 1px rgba(13, 10, 8, 0.6),
+    0 0 22px rgba(217, 154, 66, 0.58);
 }
 
 .auth-chip-photo img {
@@ -16215,77 +16244,122 @@ html[data-theme="light"] .faq-head {
 }
 
 .auth-chip-initial {
-  color: #fff5e0;
+  color: #d19a42;
   font-family: "Noto Serif Display", "Noto Serif", serif;
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 900;
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+  line-height: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 .auth-chip-name {
-  max-width: 96px;
+  max-width: 120px;
   overflow: hidden;
+  color: #f5e8c8;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .auth-chip-chevron {
-  color: rgba(26, 20, 16, 0.7);
-  font-size: 0.7rem;
-  transition: transform 160ms ease;
-}
-
-html[data-theme="dark"] .auth-chip-signin,
-html[data-theme="dark"] .auth-chip-trigger {
-  color: #fff2d3;
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.55);
-  border-color: rgba(209, 154, 66, 0.42);
-  background-color: #21150d;
-  background-image:
-    linear-gradient(135deg, rgba(255, 240, 200, 0.18), rgba(209, 154, 66, 0.28) 48%, rgba(35, 15, 8, 0.82)),
-    image-set(
-      url("/game-art/textures/brass-plate.webp") type("image/webp"),
-      url("/game-art/textures/brass-plate.png") type("image/png")
-    );
-  box-shadow:
-    inset 0 1px 0 rgba(255, 240, 200, 0.38),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.5),
-    0 0 0 1px rgba(209, 154, 66, 0.12),
-    0 8px 18px rgba(0, 0, 0, 0.4);
-}
-
-html[data-theme="dark"] .auth-chip-arrow,
-html[data-theme="dark"] .auth-chip-chevron {
-  color: #f0b45d;
-}
-
-html[data-theme="dark"] .auth-chip-mark {
-  background: rgba(5, 7, 8, 0.76);
-}
-
-html[data-theme="light"] .auth-chip-signin,
-html[data-theme="light"] .auth-chip-trigger {
-  color: #24160f;
-  border-color: rgba(100, 62, 28, 0.28);
-  background-color: #f3d39a;
-  background-image:
-    linear-gradient(135deg, rgba(255, 250, 238, 0.66), rgba(209, 154, 66, 0.22) 52%, rgba(132, 47, 43, 0.12)),
-    image-set(
-      url("/game-art/textures/brass-plate.webp") type("image/webp"),
-      url("/game-art/textures/brass-plate.png") type("image/png")
-    );
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.62),
-    inset 0 -1px 0 rgba(100, 62, 28, 0.22),
-    0 6px 14px rgba(98, 61, 31, 0.18);
-}
-
-html[data-theme="light"] .site-utility-separator {
-  background: linear-gradient(180deg, transparent, rgba(80, 50, 24, 0.26), transparent);
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  color: rgba(217, 154, 66, 0.85);
+  transition: transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .auth-chip-trigger[aria-expanded="true"] .auth-chip-chevron {
   transform: rotate(180deg);
+}
+
+/* Light theme — cream surface, darker amber ring */
+
+[data-theme="light"] .auth-chip,
+[data-theme="light"] .auth-chip-trigger {
+  color: #2a1b10;
+  text-shadow: none;
+  background: rgba(252, 246, 236, 0.78);
+  border-color: rgba(132, 47, 43, 0.22);
+}
+
+[data-theme="light"] .auth-chip:hover,
+[data-theme="light"] .auth-chip-trigger:hover {
+  background: rgba(252, 246, 236, 0.92);
+  border-color: rgba(132, 47, 43, 0.42);
+}
+
+[data-theme="light"] .auth-chip:focus-visible,
+[data-theme="light"] .auth-chip-trigger:focus-visible {
+  border-color: rgba(132, 47, 43, 0.65);
+  box-shadow: 0 0 0 3px rgba(132, 47, 43, 0.18);
+}
+
+[data-theme="light"] .auth-chip-loading {
+  background: rgba(252, 246, 236, 0.5);
+  border-color: rgba(83, 52, 31, 0.14);
+}
+
+[data-theme="light"] .auth-chip-mark {
+  color: #842f2b;
+  background: rgba(132, 47, 43, 0.14);
+  border-color: rgba(132, 47, 43, 0.45);
+}
+
+[data-theme="light"] .auth-chip-arrow {
+  color: #842f2b;
+}
+
+[data-theme="light"] .auth-chip-avatar,
+[data-theme="light"] .auth-chip-avatar:hover {
+  background: transparent;
+  border-color: transparent;
+}
+
+[data-theme="light"] .auth-chip-photo {
+  background: rgba(252, 246, 236, 0.95);
+  border-color: rgba(132, 47, 43, 0.62);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.6),
+    0 0 10px rgba(132, 47, 43, 0.22);
+  animation: auth-chip-halo-pulse-light 3.4s ease-in-out infinite;
+}
+
+@keyframes auth-chip-halo-pulse-light {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.6),
+      0 0 10px rgba(132, 47, 43, 0.2);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.6),
+      0 0 14px rgba(132, 47, 43, 0.34);
+  }
+}
+
+[data-theme="light"] .auth-chip-trigger:hover .auth-chip-photo {
+  border-color: rgba(132, 47, 43, 0.85);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.6),
+    0 0 18px rgba(132, 47, 43, 0.4);
+}
+
+[data-theme="light"] .auth-chip-initial {
+  color: #842f2b;
+  text-shadow: none;
+}
+
+[data-theme="light"] .auth-chip-name {
+  color: #2a1b10;
+}
+
+[data-theme="light"] .auth-chip-chevron {
+  color: rgba(132, 47, 43, 0.78);
+}
+
+html[data-theme="light"] .site-utility-separator {
+  background: linear-gradient(180deg, transparent, rgba(80, 50, 24, 0.26), transparent);
 }
 
 .site-drawer-auth {
@@ -16386,7 +16460,8 @@ html[data-theme="dark"] .cookie-banner {
   }
 
   .auth-chip-trigger {
-    padding: 0 8px 0 4px;
+    gap: 6px;
+    padding: 0 10px 0 4px;
   }
 }
 
@@ -16437,14 +16512,5 @@ html[data-theme="dark"] .cookie-banner {
 @keyframes oauth-spin {
   to {
     transform: rotate(360deg);
-  }
-}
-
-@keyframes authChipShimmer {
-  0% {
-    background-position: -120% 0, center;
-  }
-  100% {
-    background-position: 120% 0, center;
   }
 }
