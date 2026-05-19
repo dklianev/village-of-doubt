@@ -604,6 +604,20 @@ html[data-theme="light"] .site-family-link.is-active {
   -webkit-backdrop-filter: blur(12px);
 }
 
+[data-theme="light"] .nav-dropdown {
+  --dropdown-bg: rgba(252, 246, 236, 0.96);
+  --dropdown-surface-hover: rgba(132, 47, 43, 0.08);
+  --dropdown-border: rgba(83, 52, 31, 0.16);
+  --dropdown-border-strong: rgba(83, 52, 31, 0.28);
+  --dropdown-text: #2a1b10;
+  --dropdown-text-muted: rgba(42, 27, 16, 0.74);
+  --dropdown-text-soft: rgba(42, 27, 16, 0.5);
+  --dropdown-accent: #842f2b;
+  --dropdown-accent-soft: rgba(132, 47, 43, 0.12);
+  --dropdown-danger: #a02a22;
+  --dropdown-danger-soft: rgba(160, 42, 34, 0.12);
+}
+
 @keyframes nav-dropdown-in {
   from {
     opacity: 0;
@@ -871,6 +885,14 @@ html[data-theme="light"] .site-mobile-menu:hover {
 
 .site-drawer-nav a.is-active .site-drawer-icon {
   color: #d19a42;
+}
+
+html[data-theme="light"] .site-drawer-icon {
+  color: rgba(42, 27, 16, 0.56);
+}
+
+html[data-theme="light"] .site-drawer-nav a.is-active .site-drawer-icon {
+  color: #842f2b;
 }
 
 .site-drawer-footer .site-utility-cluster {
