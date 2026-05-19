@@ -373,7 +373,7 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
             </button>
           ) : (
             <Link href="/" className="report-wizard-back">
-              ← Към началото
+              Затвори
             </Link>
           )}
 
