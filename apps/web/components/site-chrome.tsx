@@ -4,26 +4,52 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import {
+  Activity,
+  Clock,
+  HelpCircle,
+  ListOrdered,
+  Sparkles,
+  Trophy,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 import { AuthChip } from "@/components/site-chrome/AuthChip";
 import { getSoundEnabled, playCue, setSoundEnabled } from "@/lib/sound";
 import type { AuthSessionView } from "@/lib/use-auth-session";
 
 type ThemePreference = "light" | "dark";
 type ChromeFamily = "werewolves" | "mafia";
+type SecondaryLinkGroup = "game" | "social" | "help";
+
+interface SecondaryLink {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  group: SecondaryLinkGroup;
+}
 
 const THEME_STORAGE_KEY = "werewolf-theme";
 const LAST_FAMILY_STORAGE_KEY = "last-family";
 const THEME_OPTIONS: ThemePreference[] = ["light", "dark"];
 
-const SECONDARY_LINKS = [
-  { href: "/history", label: "История" },
-  { href: "/achievements", label: "Постижения" },
-  { href: "/leaderboard", label: "Класация" },
-  { href: "/friends", label: "Приятели" },
-  { href: "/tutorial", label: "Първа игра" },
-  { href: "/faq", label: "Въпроси" },
-  { href: "/status", label: "Състояние" },
+const SECONDARY_LINKS: ReadonlyArray<SecondaryLink> = [
+  { href: "/history", label: "История", icon: Clock, group: "game" },
+  { href: "/achievements", label: "Постижения", icon: Trophy, group: "game" },
+  { href: "/leaderboard", label: "Класация", icon: ListOrdered, group: "game" },
+  { href: "/friends", label: "Приятели", icon: Users, group: "social" },
+  { href: "/tutorial", label: "Първа игра", icon: Sparkles, group: "help" },
+  { href: "/faq", label: "Въпроси", icon: HelpCircle, group: "help" },
+  { href: "/status", label: "Състояние", icon: Activity, group: "help" },
 ];
+
+const GROUP_LABELS: Record<SecondaryLinkGroup, string> = {
+  game: "Игра",
+  social: "Социал",
+  help: "Помощ",
+};
+
+const GROUP_ORDER: ReadonlyArray<SecondaryLinkGroup> = ["game", "social", "help"];
 
 const DRAWER_LINKS = [
   { href: "/", label: "Начало" },
@@ -259,12 +285,35 @@ function PrimaryBand({
           <DotsIcon />
         </button>
         {dropdownOpen ? (
-          <div className="site-dropdown paper-card" role="menu">
-            {SECONDARY_LINKS.map((item) => (
-              <Link key={item.href} href={item.href} role="menuitem" prefetch={false}>
-                {item.label}
-              </Link>
-            ))}
+          <div className="nav-dropdown nav-dropdown-overflow" role="menu">
+            {GROUP_ORDER.map((groupKey) => {
+              const groupLinks = SECONDARY_LINKS.filter((item) => item.group === groupKey);
+              if (groupLinks.length === 0) {
+                return null;
+              }
+
+              return (
+                <div key={groupKey} className="nav-dropdown-group">
+                  <p className="nav-dropdown-group-label">{GROUP_LABELS[groupKey]}</p>
+                  {groupLinks.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        role="menuitem"
+                        prefetch={false}
+                        onClick={onToggleDropdown}
+                        className="nav-dropdown-item"
+                      >
+                        <Icon className="nav-dropdown-item-icon" aria-hidden strokeWidth={1.8} />
+                        <span>{item.label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              );
+            })}
           </div>
         ) : null}
       </div>
