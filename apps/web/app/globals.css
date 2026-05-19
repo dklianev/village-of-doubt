@@ -15763,7 +15763,11 @@ html[data-theme="light"] .terms-hero-subtitle,
 html[data-theme="light"] .terms-hero-meta,
 html[data-theme="light"] .report-hero-title,
 html[data-theme="light"] .report-hero-subtitle,
-html[data-theme="light"] .report-hero-stat {
+html[data-theme="light"] .report-hero-stat,
+html[data-theme="light"] .status-hero-title,
+html[data-theme="light"] .status-hero-subtitle,
+html[data-theme="light"] .status-hero-meta-label,
+html[data-theme="light"] .status-hero-refresh {
   color: #f5e8c8 !important;
   text-shadow: 0 2px 14px rgba(0, 0, 0, 0.6);
 }
@@ -15771,7 +15775,8 @@ html[data-theme="light"] .report-hero-stat {
 html[data-theme="light"] .account-hero-kicker,
 html[data-theme="light"] .privacy-hero-kicker,
 html[data-theme="light"] .terms-hero-kicker,
-html[data-theme="light"] .report-hero-kicker {
+html[data-theme="light"] .report-hero-kicker,
+html[data-theme="light"] .status-hero-kicker {
   color: #d19a42 !important;
 }
 
