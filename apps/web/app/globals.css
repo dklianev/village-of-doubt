@@ -11881,15 +11881,11 @@ html[data-theme="light"] .sign-in-table {
   background: transparent;
 }
 
-.privacy-shell::before,
-.terms-shell::before,
-.report-shell::before,
-.status-shell::before,
-.faq-shell::before {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  content: "";
+body:has(.privacy-shell),
+body:has(.terms-shell),
+body:has(.report-shell),
+body:has(.status-shell),
+body:has(.faq-shell) {
   background:
     radial-gradient(ellipse at 4% 50%, rgba(200, 154, 85, 0.18), transparent 34rem),
     radial-gradient(ellipse at 96% 48%, rgba(43, 93, 105, 0.18), transparent 38rem),
@@ -11898,15 +11894,16 @@ html[data-theme="light"] .sign-in-table {
       rgba(6, 8, 9, 0.34) 47%,
       rgba(5, 7, 8, 0.64) 100%),
     var(--art-landing-ambient) center / cover no-repeat;
+  background-attachment: scroll;
+  background-size: auto, auto, auto, cover;
   filter: saturate(1.14) contrast(1.04);
-  pointer-events: none;
 }
 
-html[data-theme="light"] .privacy-shell::before,
-html[data-theme="light"] .terms-shell::before,
-html[data-theme="light"] .report-shell::before,
-html[data-theme="light"] .status-shell::before,
-html[data-theme="light"] .faq-shell::before {
+html[data-theme="light"] body:has(.privacy-shell),
+html[data-theme="light"] body:has(.terms-shell),
+html[data-theme="light"] body:has(.report-shell),
+html[data-theme="light"] body:has(.status-shell),
+html[data-theme="light"] body:has(.faq-shell) {
   background:
     radial-gradient(ellipse at 4% 50%, rgba(255, 230, 180, 0.32), transparent 34rem),
     radial-gradient(ellipse at 96% 48%, rgba(180, 200, 220, 0.28), transparent 38rem),
@@ -11915,7 +11912,22 @@ html[data-theme="light"] .faq-shell::before {
       rgba(252, 244, 230, 0.34) 47%,
       rgba(252, 244, 230, 0.64) 100%),
     var(--art-landing-ambient) center / cover no-repeat;
+  background-attachment: scroll;
+  background-size: auto, auto, auto, cover;
   filter: saturate(0.95) contrast(1.06);
+}
+
+body:has(.privacy-shell)::before,
+body:has(.privacy-shell)::after,
+body:has(.terms-shell)::before,
+body:has(.terms-shell)::after,
+body:has(.report-shell)::before,
+body:has(.report-shell)::after,
+body:has(.status-shell)::before,
+body:has(.status-shell)::after,
+body:has(.faq-shell)::before,
+body:has(.faq-shell)::after {
+  display: none;
 }
 
 /* ============================== */
