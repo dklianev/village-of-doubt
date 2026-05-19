@@ -11867,6 +11867,7 @@ html[data-theme="light"] .sign-in-table {
 
 /* ============================== */
 /* Utility pages — atmospheric bg */
+/* Matches homepage .landing-shell  */
 /* ============================== */
 
 .privacy-shell,
@@ -11886,14 +11887,19 @@ html[data-theme="light"] .sign-in-table {
 .status-shell::before,
 .faq-shell::before {
   position: fixed;
-  z-index: -1;
   inset: 0;
+  z-index: -1;
   content: "";
-  pointer-events: none;
   background:
-    linear-gradient(115deg, rgba(13, 10, 8, 0.94) 0%, rgba(21, 12, 9, 0.88) 44%, rgba(13, 10, 8, 0.96) 100%),
+    radial-gradient(ellipse at 4% 50%, rgba(200, 154, 85, 0.18), transparent 34rem),
+    radial-gradient(ellipse at 96% 48%, rgba(43, 93, 105, 0.18), transparent 38rem),
+    linear-gradient(115deg,
+      rgba(5, 7, 8, 0.58) 0%,
+      rgba(6, 8, 9, 0.34) 47%,
+      rgba(5, 7, 8, 0.64) 100%),
     var(--art-landing-ambient) center / cover no-repeat;
-  filter: saturate(0.55) contrast(1.02) blur(3px);
+  filter: saturate(1.14) contrast(1.04);
+  pointer-events: none;
 }
 
 html[data-theme="light"] .privacy-shell::before,
@@ -11902,9 +11908,14 @@ html[data-theme="light"] .report-shell::before,
 html[data-theme="light"] .status-shell::before,
 html[data-theme="light"] .faq-shell::before {
   background:
-    linear-gradient(115deg, rgba(244, 236, 224, 0.96) 0%, rgba(240, 228, 208, 0.92) 44%, rgba(244, 236, 224, 0.97) 100%),
+    radial-gradient(ellipse at 4% 50%, rgba(255, 230, 180, 0.32), transparent 34rem),
+    radial-gradient(ellipse at 96% 48%, rgba(180, 200, 220, 0.28), transparent 38rem),
+    linear-gradient(115deg,
+      rgba(252, 244, 230, 0.58) 0%,
+      rgba(252, 244, 230, 0.34) 47%,
+      rgba(252, 244, 230, 0.64) 100%),
     var(--art-landing-ambient) center / cover no-repeat;
-  filter: saturate(0.4) contrast(1.05) blur(3px);
+  filter: saturate(0.95) contrast(1.06);
 }
 
 /* ============================== */
