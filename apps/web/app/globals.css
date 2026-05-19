@@ -729,31 +729,12 @@ html[data-theme="light"] .site-family-link.is-active {
   background: var(--dropdown-border);
 }
 
-.site-dropdown {
-  position: absolute;
-  top: calc(100% + 12px);
-  right: 0;
-  z-index: 55;
-  display: grid;
-  width: 220px;
-  gap: 4px;
-  border-radius: 22px;
-  padding: 10px;
-  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.34);
-}
-
-.site-dropdown a,
 .site-drawer-nav a {
   border-radius: 14px;
   color: var(--ink);
   font-weight: 900;
 }
 
-.site-dropdown a {
-  padding: 11px 12px;
-}
-
-.site-dropdown a:hover,
 .site-drawer-nav a:hover,
 .site-drawer-nav a.is-active {
   background: rgba(132, 47, 43, 0.12);
@@ -16305,49 +16286,6 @@ html[data-theme="light"] .site-utility-separator {
 
 .auth-chip-trigger[aria-expanded="true"] .auth-chip-chevron {
   transform: rotate(180deg);
-}
-
-.auth-chip-dropdown {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  z-index: 50;
-  display: grid;
-  min-width: 200px;
-  gap: 2px;
-  padding: 10px;
-}
-
-.auth-chip-dropdown a,
-.auth-chip-dropdown button {
-  display: block;
-  width: 100%;
-  padding: 10px 12px;
-  color: #1a1410;
-  font-size: 0.9rem;
-  font-weight: 800;
-  text-align: left;
-  text-decoration: none;
-  background: transparent;
-  border: 0;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.auth-chip-dropdown a:hover,
-.auth-chip-dropdown button:hover {
-  color: #842f2b;
-  background: rgba(132, 47, 43, 0.12);
-}
-
-.auth-chip-divider {
-  height: 1px;
-  margin: 4px 6px;
-  background: rgba(50, 30, 10, 0.18);
-}
-
-.auth-chip-signout {
-  color: #842f2b !important;
 }
 
 .site-drawer-auth {
