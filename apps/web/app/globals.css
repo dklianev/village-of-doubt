@@ -15771,6 +15771,11 @@ html[data-theme="light"] .account-field-static,
 html[data-theme="light"] .account-provider-list li,
 html[data-theme="light"] .privacy-data-row,
 html[data-theme="light"] .privacy-data-row code,
+html[data-theme="light"] .privacy-data-disclaimer,
+html[data-theme="light"] .privacy-promise-detail,
+html[data-theme="light"] .privacy-right-card,
+html[data-theme="light"] .privacy-history-toggle,
+html[data-theme="light"] .privacy-history-list li article,
 html[data-theme="light"] .terms-acceptance-state,
 html[data-theme="light"] .terms-conflict-steps li,
 html[data-theme="light"] .report-field input,
@@ -15778,7 +15783,8 @@ html[data-theme="light"] .report-field textarea,
 html[data-theme="light"] .report-review,
 html[data-theme="light"] .report-review-body,
 html[data-theme="light"] .report-success-reference,
-html[data-theme="light"] .status-legend-grid > div {
+html[data-theme="light"] .status-legend-grid > div,
+html[data-theme="light"] .status-incident-empty {
   background: rgba(255, 250, 238, 0.72);
 }
 
