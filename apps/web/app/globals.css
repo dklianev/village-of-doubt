@@ -12644,10 +12644,10 @@ body:has(.faq-shell)::after {
   position: relative;
   z-index: 1;
   display: flex;
+  min-height: clamp(280px, 38vw, 460px);
   flex-direction: column;
   justify-content: flex-end;
   max-width: 980px;
-  height: 100%;
   margin: 0 auto;
   padding: 32px 24px 40px;
 }
@@ -14367,12 +14367,12 @@ body:has(.faq-shell)::after {
   position: relative;
   z-index: 1;
   display: flex;
+  min-height: clamp(280px, 38vw, 460px);
   flex-direction: column;
   justify-content: flex-end;
   max-width: 980px;
-  height: 100%;
   margin: 0 auto;
-  padding: 32px 24px 36px;
+  padding: 32px 24px 40px;
 }
 
 .status-hero-kicker {
