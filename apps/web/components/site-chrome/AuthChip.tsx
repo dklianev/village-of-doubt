@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { History, LogOut, Trophy, User } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
@@ -84,21 +85,24 @@ export function AuthChip({ initialSession }: { initialSession: AuthSessionView |
       </button>
 
       {open ? (
-        <div className="auth-chip-dropdown paper-card" role="menu">
-          <Link href="/account" role="menuitem" prefetch={false} onClick={() => setOpen(false)}>
-            Моят профил
+        <div className="nav-dropdown nav-dropdown-user" role="menu">
+          <Link href="/account" role="menuitem" prefetch={false} onClick={() => setOpen(false)} className="nav-dropdown-item">
+            <User className="nav-dropdown-item-icon" aria-hidden strokeWidth={1.8} />
+            <span>Моят профил</span>
           </Link>
-          <Link href="/history" role="menuitem" prefetch={false} onClick={() => setOpen(false)}>
-            История
+          <Link href="/history" role="menuitem" prefetch={false} onClick={() => setOpen(false)} className="nav-dropdown-item">
+            <History className="nav-dropdown-item-icon" aria-hidden strokeWidth={1.8} />
+            <span>История</span>
           </Link>
-          <Link href="/achievements" role="menuitem" prefetch={false} onClick={() => setOpen(false)}>
-            Постижения
+          <Link href="/achievements" role="menuitem" prefetch={false} onClick={() => setOpen(false)} className="nav-dropdown-item">
+            <Trophy className="nav-dropdown-item-icon" aria-hidden strokeWidth={1.8} />
+            <span>Постижения</span>
           </Link>
-          <div className="auth-chip-divider" role="separator" />
+          <div className="nav-dropdown-divider" role="separator" />
           <button
             type="button"
             role="menuitem"
-            className="auth-chip-signout"
+            className="nav-dropdown-item nav-dropdown-item-danger"
             onClick={async () => {
               setOpen(false);
               await authClient.signOut();
@@ -108,7 +112,8 @@ export function AuthChip({ initialSession }: { initialSession: AuthSessionView |
               router.refresh();
             }}
           >
-            Изход
+            <LogOut className="nav-dropdown-item-icon" aria-hidden strokeWidth={1.8} />
+            <span>Изход</span>
           </button>
         </div>
       ) : null}
