@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BookOpen, ScrollText, Users } from "lucide-react";
 import { TutorialSlide } from "./TutorialSlide";
 
 export function SlideFinal() {
@@ -22,17 +23,21 @@ export function SlideFinal() {
         </Link>
       </div>
 
-      <div className="tutorial-final-secondary">
-        <Link href="/werewolf/rules" className="tutorial-final-secondary-link">
-          Правила за Върколак
+      <div className="tutorial-final-secondary-grid">
+        <Link href="/werewolf/rules" className="tutorial-final-secondary-card">
+          <BookOpen className="tutorial-final-secondary-icon" aria-hidden strokeWidth={1.8} />
+          <span className="tutorial-final-secondary-label">Правила за Върколак</span>
+          <span className="tutorial-final-secondary-hint">Как се събужда селото</span>
         </Link>
-        <span aria-hidden="true">·</span>
-        <Link href="/mafia/rules" className="tutorial-final-secondary-link">
-          Правила за Мафия
+        <Link href="/mafia/rules" className="tutorial-final-secondary-card">
+          <ScrollText className="tutorial-final-secondary-icon" aria-hidden strokeWidth={1.8} />
+          <span className="tutorial-final-secondary-label">Правила за Мафия</span>
+          <span className="tutorial-final-secondary-hint">Алибита и подозрения</span>
         </Link>
-        <span aria-hidden="true">·</span>
-        <Link href="/roles" className="tutorial-final-secondary-link">
-          Всички роли
+        <Link href="/roles" className="tutorial-final-secondary-card">
+          <Users className="tutorial-final-secondary-icon" aria-hidden strokeWidth={1.8} />
+          <span className="tutorial-final-secondary-label">Всички роли</span>
+          <span className="tutorial-final-secondary-hint">Разгледай героите</span>
         </Link>
       </div>
     </TutorialSlide>

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 
 interface TutorialProgressProps {
   current: number;
@@ -36,7 +37,8 @@ export function TutorialProgress({ current, total, onJump }: TutorialProgressPro
       </div>
 
       <Link href="/" className="tutorial-skip-link">
-        Прескочи
+        <span>Прескочи</span>
+        <ChevronRight className="tutorial-skip-icon" aria-hidden strokeWidth={2} />
       </Link>
     </header>
   );

@@ -37,16 +37,17 @@ export function DayClueChips() {
               aria-pressed={isRevealed}
               aria-label={isRevealed ? `Скрий ${player.name}` : `Разкрий ${player.name}`}
             >
-              <span className="clue-chip-inner">
-                <span className="clue-chip-front">
+              {isRevealed ? (
+                <span className="clue-chip-content clue-chip-back-content">
+                  <strong className="clue-chip-back-name">{player.name}</strong>
+                  <span className="clue-chip-back-text">{player.clue}</span>
+                </span>
+              ) : (
+                <span className="clue-chip-content clue-chip-front-content">
                   <span className="clue-chip-initial">{player.name[0]}</span>
                   <span className="clue-chip-name">{player.name}</span>
                 </span>
-                <span className="clue-chip-back">
-                  <strong>{player.name}</strong>
-                  <span>{player.clue}</span>
-                </span>
-              </span>
+              )}
             </button>
           );
         })}
