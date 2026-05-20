@@ -10737,6 +10737,357 @@ html[data-theme="light"] .newspaper-shell::before {
   }
 }
 
+/* ============================== */
+/* Friends — companions at table  */
+/* ============================== */
+
+.friends-shell {
+  --friends-text: #f5e8c8;
+  --friends-text-muted: rgba(245, 232, 200, 0.74);
+  --friends-text-soft: rgba(245, 232, 200, 0.54);
+  --friends-surface: rgba(13, 10, 8, 0.54);
+  --friends-surface-strong: rgba(13, 10, 8, 0.74);
+  --friends-border: rgba(245, 232, 200, 0.14);
+  --friends-border-strong: rgba(209, 154, 66, 0.42);
+  --friends-accent: #d19a42;
+}
+
+.friends-hero {
+  position: relative;
+  min-height: clamp(300px, 36vw, 460px);
+  overflow: hidden;
+}
+
+.friends-hero-img {
+  object-fit: cover;
+  object-position: center 44%;
+}
+
+.friends-hero-scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(13, 10, 8, 0.12) 0%, rgba(13, 10, 8, 0.5) 55%, rgba(13, 10, 8, 0.95) 100%),
+    radial-gradient(ellipse at 52% 44%, rgba(209, 154, 66, 0.16), transparent 34rem);
+}
+
+.friends-hero-copy {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  min-height: clamp(300px, 36vw, 460px);
+  flex-direction: column;
+  justify-content: flex-end;
+  max-width: 780px;
+  padding: clamp(26px, 5vw, 52px);
+}
+
+.friends-kicker {
+  margin: 0;
+  color: var(--friends-accent);
+  font-size: 0.74rem;
+  font-weight: 850;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+}
+
+.friends-hero-copy h1 {
+  max-width: 14ch;
+  margin: 12px 0 14px;
+  color: #f5e8c8;
+  font-family: "Noto Serif Display", serif;
+  font-size: clamp(2.6rem, 6vw, 5rem);
+  font-weight: 900;
+  line-height: 0.98;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.68);
+  text-wrap: balance;
+}
+
+.friends-hero-copy p:not(.friends-kicker) {
+  max-width: 58ch;
+  margin: 0;
+  color: var(--friends-text-muted);
+  font-size: 1.02rem;
+  line-height: 1.68;
+}
+
+.friends-board {
+  width: min(980px, 92%);
+  margin: 0 auto;
+  padding: 0 0 34px;
+}
+
+.friends-board .friends-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.82fr) 1.18fr;
+  gap: 18px;
+}
+
+.friends-board .friend-form,
+.friends-board .friend-list,
+.friends-empty {
+  border: 1px solid var(--friends-border);
+  border-radius: 18px;
+  background: var(--friends-surface);
+  box-shadow: inset 0 1px 0 rgba(245, 232, 200, 0.06);
+  backdrop-filter: blur(14px);
+}
+
+.friends-board .friend-form {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  padding: 20px;
+}
+
+.friends-board .friend-list {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding: 18px;
+}
+
+.friends-board .friend-form h2,
+.friend-list-head h2,
+.friends-empty h2 {
+  margin: 0;
+  color: var(--friends-text);
+  font-family: "Noto Serif Display", serif;
+  font-size: 1.45rem;
+  font-weight: 850;
+}
+
+.friends-board .friend-form label {
+  display: grid;
+  gap: 8px;
+}
+
+.friends-board .friend-form label span {
+  color: var(--friends-accent);
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.friends-board .input {
+  border-color: rgba(245, 232, 200, 0.16);
+  background: rgba(13, 10, 8, 0.42);
+  color: var(--friends-text);
+}
+
+.friends-board .input::placeholder {
+  color: var(--friends-text-soft);
+}
+
+.friends-board .input:focus {
+  border-color: var(--friends-border-strong);
+  box-shadow: 0 0 0 4px rgba(209, 154, 66, 0.16);
+}
+
+.friend-actions,
+.friend-list-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.friend-actions .btn,
+.friend-list-head .btn {
+  gap: 8px;
+}
+
+.friend-actions .btn svg,
+.friend-list-head .btn svg {
+  width: 17px;
+  height: 17px;
+}
+
+.friend-list-head {
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 6px;
+}
+
+.friends-board .friend-card {
+  display: grid;
+  grid-template-columns: 28px 42px minmax(0, 1fr) 38px;
+  gap: 12px;
+  align-items: center;
+  border: 1px solid var(--friends-border);
+  border-radius: 16px;
+  background: rgba(13, 10, 8, 0.46);
+  padding: 12px;
+  transition:
+    border-color 180ms ease,
+    background 180ms ease,
+    transform 180ms ease;
+}
+
+.friends-board .friend-card:hover,
+.friends-board .friend-card[data-selected="true"] {
+  border-color: var(--friends-border-strong);
+  background: var(--friends-surface-strong);
+}
+
+.friends-board .friend-card:hover {
+  transform: translateY(-1px);
+}
+
+.friends-board .friend-card .friend-select,
+.friends-board .friend-card .friend-remove {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  min-height: 0;
+  border: 1px solid var(--friends-border);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--friends-text-soft);
+  cursor: pointer;
+  padding: 0;
+}
+
+.friends-board .friend-card .friend-select svg,
+.friends-board .friend-card .friend-remove svg {
+  width: 14px;
+  height: 14px;
+}
+
+.friends-board .friend-card .friend-select:hover,
+.friends-board .friend-card .friend-remove:hover {
+  border-color: var(--friends-border-strong);
+  color: var(--friends-accent);
+}
+
+.friends-board .friend-card[data-selected="true"] .friend-select {
+  border-color: var(--friends-border-strong);
+  background: rgba(209, 154, 66, 0.2);
+  color: var(--friends-accent);
+}
+
+.friend-avatar {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 22%, rgba(255, 255, 255, 0.34), transparent 42%),
+    rgba(209, 154, 66, 0.18);
+  color: var(--friends-accent);
+  font-family: "Noto Serif Display", serif;
+  font-size: 1.08rem;
+  font-weight: 900;
+}
+
+.friend-card-copy {
+  min-width: 0;
+}
+
+.friends-board .friend-card strong {
+  display: block;
+  overflow: hidden;
+  color: var(--friends-text);
+  font-size: 1.02rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.friends-board .friend-card p,
+.friends-board .friend-message,
+.friends-empty p {
+  margin: 0;
+  color: var(--friends-text-muted);
+  line-height: 1.5;
+}
+
+.friends-empty {
+  display: grid;
+  gap: 12px;
+  padding: 22px;
+}
+
+.friends-empty-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.friends-empty-preview span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border: 1px dashed var(--friends-border-strong);
+  border-radius: 999px;
+  color: var(--friends-text-soft);
+  opacity: 0.78;
+}
+
+.friends-empty-preview strong {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(209, 154, 66, 0.16);
+  color: var(--friends-accent);
+}
+
+.friends-empty-preview em {
+  font-style: normal;
+  font-weight: 750;
+}
+
+html[data-theme="light"] .friends-shell {
+  --friends-text: #2a1b10;
+  --friends-text-muted: rgba(42, 27, 16, 0.74);
+  --friends-text-soft: rgba(42, 27, 16, 0.52);
+  --friends-surface: rgba(252, 246, 236, 0.64);
+  --friends-surface-strong: rgba(252, 246, 236, 0.9);
+  --friends-border: rgba(83, 52, 31, 0.16);
+  --friends-border-strong: rgba(132, 47, 43, 0.34);
+  --friends-accent: #842f2b;
+}
+
+html[data-theme="light"] .friends-hero-scrim {
+  background:
+    linear-gradient(180deg, rgba(13, 10, 8, 0.08) 0%, rgba(13, 10, 8, 0.28) 55%, rgba(252, 246, 236, 0.96) 100%),
+    radial-gradient(ellipse at 52% 44%, rgba(132, 47, 43, 0.14), transparent 34rem);
+}
+
+html[data-theme="light"] .friends-board .input {
+  border-color: rgba(83, 52, 31, 0.16);
+  background: rgba(255, 250, 238, 0.78);
+}
+
+html[data-theme="light"] .friends-board .input:focus {
+  box-shadow: 0 0 0 4px rgba(132, 47, 43, 0.14);
+}
+
+@media (max-width: 800px) {
+  .friends-board .friends-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 540px) {
+  .friends-board .friend-card {
+    grid-template-columns: 28px 38px minmax(0, 1fr);
+  }
+
+  .friends-board .friend-card .friend-remove {
+    grid-column: 2 / -1;
+    justify-self: start;
+    width: auto;
+    padding: 0 12px;
+    border-radius: 999px;
+  }
+}
+
 @media (max-width: 1100px) {
   .landing-hero-copy {
     max-width: 100%;
