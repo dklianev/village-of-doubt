@@ -120,7 +120,7 @@ async function testTutorialAndOfflineShell() {
     await assertNoHorizontalOverflow(page, "tutorial screen");
 
     await goto(page, "/offline", "offline screen");
-    await expectText(page, "Играта чака интернет.");
+    await expectText(page, "Лампата свети, чакаме теб.");
     await assertNoHorizontalOverflow(page, "offline screen");
     watcher.assertClean();
   } finally {
