@@ -375,13 +375,27 @@ function PhaseNode({
 
 function PhaseLoopArrow() {
   return (
-    <div className="phase-loop-arrow" aria-hidden="true">
-      <div className="phase-loop-bracket">
-        <span className="phase-loop-bracket__top" />
-        <span className="phase-loop-label">↻ ПОВТАРЯ СЕ</span>
-      </div>
-      <span className="phase-loop-mobile-marker">↻ ПОВТАРЯ СЕ</span>
-    </div>
+    <svg className="phase-loop-arrow" viewBox="0 0 600 86" aria-hidden="true" preserveAspectRatio="none">
+      <defs>
+        <marker id="phase-loop-arrowhead" markerWidth="10" markerHeight="10" refX="7" refY="5" orient="auto">
+          <path d="M0 0 L10 5 L0 10 Z" fill="currentColor" />
+        </marker>
+      </defs>
+      <path
+        className="phase-loop-path"
+        d="M 520 55 Q 300 -34 80 55"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeDasharray="7 6"
+        strokeLinecap="round"
+        markerEnd="url(#phase-loop-arrowhead)"
+      />
+      <rect className="phase-loop-badge" x="232" y="2" width="136" height="24" rx="12" />
+      <text className="phase-loop-text" x="300" y="18" textAnchor="middle">
+        ПОВТАРЯ СЕ
+      </text>
+    </svg>
   );
 }
 
