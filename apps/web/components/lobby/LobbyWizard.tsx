@@ -81,8 +81,7 @@ export function LobbyWizard({
     dispatch({ type: "TRIGGER_CONFETTI" });
     playCue("win");
     triggerHaptic([18, 24, 18]);
-    const delay = prefersReducedMotion() ? 0 : 220;
-    window.setTimeout(() => router.push(href), delay);
+    window.setTimeout(() => router.push(href), 220);
   }
 
   return (
@@ -150,12 +149,8 @@ function Confetti() {
 }
 
 function triggerHaptic(pattern: number | number[]) {
-  if (prefersReducedMotion() || !("vibrate" in navigator)) {
+  if (!("vibrate" in navigator)) {
     return;
   }
   navigator.vibrate(pattern);
-}
-
-function prefersReducedMotion() {
-  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }

@@ -145,7 +145,7 @@ export function StepRoles({
 }
 
 function triggerHaptic(pattern: number | number[]) {
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || !("vibrate" in navigator)) {
+  if (!("vibrate" in navigator)) {
     return;
   }
   navigator.vibrate(pattern);

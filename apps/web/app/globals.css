@@ -12476,17 +12476,6 @@ html[data-theme="light"] .offline-status-retry {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.001ms !important;
-    animation-iteration-count: 1 !important;
-    scroll-behavior: auto !important;
-    transition-duration: 0.001ms !important;
-  }
-}
-
 @keyframes driftFog {
   from {
     transform: translate3d(0, 0, 0);
@@ -16082,15 +16071,6 @@ body:has(.faq-shell)::after {
   color: var(--legal-text);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .report-hero-beam,
-  .report-success-beam,
-  .report-success-icon,
-  .report-wizard-step {
-    animation: none;
-  }
-}
-
 @media (max-width: 640px) {
   .terms-section,
   .report-section,
@@ -17194,12 +17174,6 @@ body:has(.faq-shell)::after {
 .status-subscribe-hint {
   color: var(--status-text-soft);
   font-size: 0.82rem;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .status-hero-meta[data-overall="down"] .status-hero-dot {
-    animation: none;
-  }
 }
 
 @media (max-width: 640px) {
