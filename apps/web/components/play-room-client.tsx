@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition, type FormEvent } from "react";
 import type { Room } from "@colyseus/sdk";
 import {
   EyeOff,
@@ -427,9 +427,11 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
     playCue("win", { forceSilent: liveMode });
   }, [liveMode, snapshot?.winnerTeam]);
 
-  const players = snapshot?.players ?? [];
-  const livingPlayers = players.filter((player) => player.playing && player.alive);
-  const ownPlayer = players.find((player) => player.userId === currentUserId);
+  const players = useMemo(() => snapshot?.players ?? [], [snapshot?.players]);
+  const livingPlayers = useMemo(() => players.filter((player) => player.playing && player.alive), [players]);
+  const ownPlayer = useMemo(() => players.find((player) => player.userId === currentUserId), [currentUserId, players]);
+  const recentPublicEvents = useMemo(() => snapshot?.publicEvents.slice(-7) ?? [], [snapshot?.publicEvents]);
+  const recentPublicChat = useMemo(() => snapshot?.publicChat.slice(-5) ?? [], [snapshot?.publicChat]);
   const mode = snapshot?.mode ?? createOptions?.mode ?? "werewolves_classic";
   const family = getGameFamily(mode);
   const phase = snapshot?.phase ?? "lobby";
@@ -558,9 +560,17 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
 
   const fullNarratorAccepted = snapshot?.narratorMode !== "full_human" || players.every((player) => player.acceptedFullNarrator);
   const privateChatChannel = getAvailablePrivateChatChannel(privateRole?.role, ownPlayer, phase, snapshot?.communicationMode);
-  const publicTypers = typingNotices.filter((notice) => notice.channel === "public" && notice.senderUserId !== currentUserId);
-  const privateTypers = typingNotices.filter(
-    (notice) => notice.channel === privateChatChannel && notice.senderUserId !== currentUserId,
+  const publicTypers = useMemo(
+    () => typingNotices.filter((notice) => notice.channel === "public" && notice.senderUserId !== currentUserId),
+    [currentUserId, typingNotices],
+  );
+  const privateTypers = useMemo(
+    () => typingNotices.filter((notice) => notice.channel === privateChatChannel && notice.senderUserId !== currentUserId),
+    [currentUserId, privateChatChannel, typingNotices],
+  );
+  const privateChannelMessages = useMemo(
+    () => privateChats.filter((message) => message.channel === privateChatChannel),
+    [privateChatChannel, privateChats],
   );
   // Connection state already lives in the ConnectionBanner; the phase-status
   // line is only useful for transient action feedback. Hide the boilerplate
@@ -780,7 +790,7 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
                 Събитията ще се появят тук, когато играта започне.
               </p>
             ) : null}
-            {(snapshot?.publicEvents ?? []).slice(-7).map((event) => (
+            {recentPublicEvents.map((event) => (
               <p key={event.id} className={`event-line ${eventLineClass(event.messageBg)} rounded-xl px-3 py-2`}>
                 {event.messageBg}
               </p>
@@ -803,7 +813,7 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
             {(snapshot?.publicChat ?? []).length === 0 ? (
               <p className="chat-line rounded-xl px-3 py-2">Още няма публични реплики.</p>
             ) : null}
-            {(snapshot?.publicChat ?? []).slice(-5).map((message) => (
+            {recentPublicChat.map((message) => (
               <p key={message.id} className="chat-line rounded-xl px-3 py-2">
                 <strong>{message.senderName}:</strong> {message.message}
               </p>
@@ -980,7 +990,7 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
           {privateChatChannel ? (
             <PrivateChatPanel
               channel={privateChatChannel}
-              messages={privateChats.filter((message) => message.channel === privateChatChannel)}
+              messages={privateChannelMessages}
               value={privateChatMessage}
               setValue={(value) => updatePrivateChatMessage(privateChatChannel, value)}
               sendPrivateChat={sendPrivateChat}
@@ -1878,7 +1888,7 @@ function VoteTallyBar({ items, maxVotes }: { items: VoteTallyItem[]; maxVotes: n
         <div key={item.targetUserId} className="vote-tally-row">
           <span>{item.targetName}</span>
           <div>
-            <i style={{ width: `${Math.max(10, Math.round((item.count / maxVotes) * 100))}%` }} />
+            <i style={{ transform: `scaleX(${Math.max(0.1, Math.min(1, item.count / maxVotes))})` }} />
           </div>
           <strong>{item.count}</strong>
           {item.hasMayorVote ? <small>кметски глас при равенство</small> : null}
@@ -1892,9 +1902,21 @@ function Timer({ endsAt }: { endsAt: number }) {
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    setNow(Date.now());
+
+    if (!endsAt) {
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      const next = Date.now();
+      setNow(next);
+      if (next >= endsAt) {
+        window.clearInterval(timer);
+      }
+    }, 1000);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [endsAt]);
 
   const remaining = Math.max(0, Math.ceil((endsAt - now) / 1000));
   const minutes = Math.floor(remaining / 60)
