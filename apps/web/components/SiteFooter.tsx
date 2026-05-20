@@ -12,6 +12,7 @@ export function SiteFooter() {
         <span aria-hidden>·</span>
         <Link href="/status">Състояние</Link>
       </div>
+      <p className="site-footer-tagline">© {new Date().getFullYear()} Върколак и Мафия · Бета</p>
     </footer>
   );
 }
