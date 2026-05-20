@@ -3,6 +3,18 @@
 import { useEffect, useRef, useState, useTransition, type FormEvent } from "react";
 import type { Room } from "@colyseus/sdk";
 import {
+  EyeOff,
+  Keyboard,
+  MessageSquare,
+  Pause,
+  Play,
+  Plus,
+  Settings,
+  SkipForward,
+  Users,
+  Volume2,
+} from "lucide-react";
+import {
   ACHIEVEMENTS,
   GAME_MODE_DEFINITIONS,
   ROLE_DEFINITIONS,
@@ -623,21 +635,206 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
     showShortcuts,
   ]);
 
+  const renderPlayersPanel = (variant: "desktop" | "mobile") => {
+    const eventsHeadingId = `events-heading-${variant}`;
+    const chatHeadingId = `chat-heading-${variant}`;
+
+    return (
+      <aside className={`play-section play-players-panel play-players-panel-${variant}`}>
+        <p className="section-kicker play-section-kicker">
+          <Users className="play-section-icon" aria-hidden strokeWidth={1.8} />
+          <span>площадът</span>
+        </p>
+        <h2 className="mt-3 text-3xl font-black">Играчите на площада</h2>
+        <div className="mt-6 grid gap-3">
+          {!snapshot ? <PlayerTokensSkeleton /> : null}
+          {snapshot && players.length === 0 ? (
+            <div className="empty-state-card empty-players-card rounded-[2rem] p-5">
+              <span aria-hidden="true" />
+              <strong>Площадът още е празен</strong>
+              <p>Поканата чака първите телефони около масата.</p>
+            </div>
+          ) : null}
+          {snapshot ? players.map((player) => (
+            <div key={player.userId} className={playerTokenClass(player)}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <span className="player-avatar" aria-hidden="true">
+                    {playerInitials(player.displayName)}
+                  </span>
+                  <div>
+                    <strong className="block leading-tight">{player.displayName}</strong>
+                    <small className="font-bold uppercase tracking-[0.16em] text-[#842f2b]/80">
+                      {playerStatusBadge(player, phase)}
+                    </small>
+                  </div>
+                </div>
+                <span className="rounded-full bg-[#221611]/10 px-3 py-1 text-sm font-bold">
+                  {player.playing
+                    ? player.alive
+                      ? "жив"
+                      : player.revealedRole
+                        ? `† ${ROLE_DEFINITIONS[player.revealedRole as RoleCode]?.nameBg ?? "елиминиран"}`
+                        : "елиминиран"
+                    : "извън играта"}
+                </span>
+              </div>
+              <small className="mt-3 block text-[#4f3829]">
+                {player.connected ? "онлайн" : "прекъсната връзка"}
+                {player.host ? " · водещ" : ""}
+                {player.narrator ? " · Разказвач" : ""}
+                {player.mayor ? " · Кмет" : ""}
+                {player.ready ? " · готов" : ""}
+                {snapshot?.narratorMode === "full_human" ? ` · ${player.acceptedFullNarrator ? "приел" : "чака приемане"}` : ""}
+                {player.actedThisPhase ? " · действал" : ""}
+                {player.hasVoted ? " · гласувал" : ""}
+              </small>
+              {ownPlayer?.host && snapshot?.narratorMode !== "automatic" && phase === "lobby" ? (
+                <button
+                  className="btn btn-secondary mt-3 min-h-0 px-3 py-2 text-sm"
+                  type="button"
+                  onClick={() => room?.send("setNarrator", { targetUserId: player.userId, narrator: true })}
+                >
+                  Направи Разказвач
+                </button>
+              ) : null}
+              {(ownPlayer?.host || ownPlayer?.narrator) &&
+              snapshot?.mode === "werewolves_classic" &&
+              (phase === "lobby" || phase === "mayor_successor") &&
+              player.playing &&
+              player.alive ? (
+                <button
+                  className="btn btn-secondary mt-3 min-h-0 px-3 py-2 text-sm"
+                  type="button"
+                  onClick={() => room?.send("setMayor", { targetUserId: player.userId })}
+                >
+                  Направи Кмет
+                </button>
+              ) : null}
+            </div>
+          )) : null}
+        </div>
+
+        {phase === "day_discussion" && snapshot?.communicationMode === "built_in_chat" ? (
+          ownPlayer?.playing && ownPlayer?.alive ? (
+            <form className="mt-8 grid gap-3" onSubmit={sendChat}>
+              <h3 className="play-panel-subhead">
+                <MessageSquare className="play-section-icon" aria-hidden strokeWidth={1.8} />
+                <span>Дневен чат</span>
+              </h3>
+              <div className="grid gap-1">
+                <input
+                  className="input"
+                  value={chatMessage}
+                  onChange={(event) => updatePublicChatMessage(event.target.value)}
+                  placeholder="Напиши обвинение, защита или блъф..."
+                  maxLength={500}
+                  aria-describedby={`chat-counter-${variant}`}
+                />
+                <span
+                  id={`chat-counter-${variant}`}
+                  className={`text-right text-xs ${chatMessage.length >= 480 ? "text-[#c18a38]" : "text-[#ead9ba]/60"}`}
+                >
+                  {chatMessage.length}/500
+                </span>
+              </div>
+              <TypingIndicator notices={publicTypers} />
+              <button className="btn btn-primary" type="submit" disabled={chatMessage.trim().length === 0}>
+                <MessageSquare className="play-button-icon" aria-hidden strokeWidth={1.8} />
+                <span>Изпрати</span>
+              </button>
+            </form>
+          ) : (
+            <div className="play-muted-note mt-8">
+              <EyeOff className="play-section-icon" aria-hidden strokeWidth={1.8} />
+              <span>
+                {ownPlayer?.playing
+                  ? "Елиминираните играчи могат да четат, но не и да пишат в дневния чат."
+                  : "Разказвачите и наблюдателите не пишат в дневния чат."}
+              </span>
+            </div>
+          )
+        ) : null}
+
+        {phase === "day_discussion" && snapshot?.communicationMode !== "built_in_chat" ? (
+          <div className="play-muted-note mt-8">
+            <EyeOff className="play-section-icon" aria-hidden strokeWidth={1.8} />
+            <span>В тази стая публичният чат е изключен. Използвайте външен разговор, игра на живо или указанията на Разказвача.</span>
+          </div>
+        ) : null}
+
+        <div className="mt-8">
+          <h3 className="play-panel-subhead" id={eventsHeadingId}>
+            <Settings className="play-section-icon" aria-hidden strokeWidth={1.8} />
+            <span>Събития</span>
+          </h3>
+          <div
+            className="mt-3 grid gap-2 text-sm"
+            role="log"
+            aria-labelledby={eventsHeadingId}
+            aria-live="polite"
+            aria-relevant="additions"
+          >
+            {(snapshot?.publicEvents ?? []).length === 0 ? (
+              <p className="event-line event-line-empty rounded-xl px-3 py-2">
+                Събитията ще се появят тук, когато играта започне.
+              </p>
+            ) : null}
+            {(snapshot?.publicEvents ?? []).slice(-7).map((event) => (
+              <p key={event.id} className={`event-line ${eventLineClass(event.messageBg)} rounded-xl px-3 py-2`}>
+                {event.messageBg}
+              </p>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-8">
+          <h3 className="play-panel-subhead" id={chatHeadingId}>
+            <MessageSquare className="play-section-icon" aria-hidden strokeWidth={1.8} />
+            <span>Чат лог</span>
+          </h3>
+          <div
+            className="mt-3 grid gap-2 text-sm"
+            role="log"
+            aria-labelledby={chatHeadingId}
+            aria-live="polite"
+            aria-relevant="additions"
+          >
+            {(snapshot?.publicChat ?? []).length === 0 ? (
+              <p className="chat-line rounded-xl px-3 py-2">Още няма публични реплики.</p>
+            ) : null}
+            {(snapshot?.publicChat ?? []).slice(-5).map((message) => (
+              <p key={message.id} className="chat-line rounded-xl px-3 py-2">
+                <strong>{message.senderName}:</strong> {message.message}
+              </p>
+            ))}
+            <TypingIndicator notices={publicTypers} compact />
+          </div>
+        </div>
+      </aside>
+    );
+  };
+
   return (
-    <main className={`shell game-shell phase-${phase}`} data-phase={phase} data-theme={family} data-family={family}>
+    <main className={`shell game-shell play-shell framed-shell phase-${phase}`} data-phase={phase} data-theme={family} data-family={family}>
       <PhaseTransitionOverlay phase={phase} mode={mode} narratorVoice={snapshot?.narratorVoice ?? "classic"} pulseKey={phasePulse} />
       <PreGameCountdown value={startCountdown} />
       {showShortcuts ? <KeyboardShortcutsModal onClose={() => setShowShortcuts(false)} /> : null}
       {unlockedAchievementIds.length > 0 ? (
         <AchievementUnlockModal achievementIds={unlockedAchievementIds} onClose={() => setUnlockedAchievementIds([])} />
       ) : null}
-      <section className="grid gap-6 lg:grid-cols-[1fr_0.8fr]">
-        <div className="card rounded-[2rem] p-5 md:p-7">
+      <div className="framed-shell-inner play-shell-inner">
+      <section className="play-layout">
+        <div className="card play-main-stack play-section rounded-[2rem] p-5 md:p-7">
           <ConnectionBanner status={connectionStatus} message={status} />
 
           <div className="phase-hero">
             <div>
               <p className="phase-kicker">стая {code} · рунд {snapshot?.round ?? 0}</p>
+              <div className="play-phase-pill" aria-label={`Фаза: ${phaseBg(phase, mode)}`}>
+                <span className="play-phase-dot" aria-hidden />
+                <span>Фаза: {phaseBg(phase, mode)}</span>
+              </div>
               <h1 className="phase-title mt-5 font-black">{phaseBg(phase, mode)}</h1>
               {isStatusInformative || isPending ? (
                 <p className="phase-status mt-6" aria-live="polite" aria-atomic="true">
@@ -669,6 +866,7 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
             <div className="action-bar">
               <div className="action-bar-inner">
                 <button data-testid="ready-toggle" className="btn btn-secondary" type="button" onClick={sendReady} disabled={!room}>
+                  <Users className="play-button-icon" aria-hidden strokeWidth={1.8} />
                   {ownPlayer?.ready ? "Не съм готов" : "Готов"}
                 </button>
                 {ownPlayer?.host ? (
@@ -678,12 +876,15 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
                     onClick={requestStartGame}
                     disabled={!room || !fullNarratorAccepted || startCountdown !== null}
                   >
+                    <Play className="play-button-icon" aria-hidden strokeWidth={1.8} />
                     {startCountdown ? "Започваме..." : "Започни игра"}
                   </button>
                 ) : null}
               </div>
             </div>
           ) : null}
+
+          {renderPlayersPanel("mobile")}
 
           <LiveCuePanel
             cueMode={cueMode}
@@ -705,12 +906,8 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
               snapshot={snapshot}
               phase={phase}
               family={family}
-              isHost={Boolean(ownPlayer?.host)}
               isNarrator={Boolean(ownPlayer?.narrator)}
-              fullNarratorAccepted={fullNarratorAccepted}
-              onStartGame={requestStartGame}
               onOpenShortcuts={() => setShowShortcuts(true)}
-              startCountdownActive={startCountdown !== null}
             />
           ) : null}
 
@@ -801,162 +998,9 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
           {snapshot?.winnerTeam ? <PostGameStory snapshot={snapshot} /> : null}
         </div>
 
-        <aside className="paper-card rounded-[2rem] p-5 md:p-7 lg:sticky lg:top-6 lg:self-start">
-          <p className="section-kicker text-[#842f2b]">площадът</p>
-          <h2 className="mt-3 text-3xl font-black">Играчите на площада</h2>
-          <div className="mt-6 grid gap-3">
-            {!snapshot ? <PlayerTokensSkeleton /> : null}
-            {snapshot && players.length === 0 ? (
-              <div className="empty-state-card empty-players-card rounded-[2rem] p-5">
-                <span aria-hidden="true" />
-                <strong>Площадът още е празен</strong>
-                <p>Поканата чака първите телефони около масата.</p>
-              </div>
-            ) : null}
-            {snapshot ? players.map((player) => (
-              <div key={player.userId} className={playerTokenClass(player)}>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <span className="player-avatar" aria-hidden="true">
-                      {playerInitials(player.displayName)}
-                    </span>
-                    <div>
-                      <strong className="block leading-tight">{player.displayName}</strong>
-                      <small className="font-bold uppercase tracking-[0.16em] text-[#842f2b]/80">
-                        {playerStatusBadge(player, phase)}
-                      </small>
-                    </div>
-                  </div>
-                  <span className="rounded-full bg-[#221611]/10 px-3 py-1 text-sm font-bold">
-                    {player.playing
-                      ? player.alive
-                        ? "жив"
-                        : player.revealedRole
-                          ? `† ${ROLE_DEFINITIONS[player.revealedRole as RoleCode]?.nameBg ?? "елиминиран"}`
-                          : "елиминиран"
-                      : "извън играта"}
-                  </span>
-                </div>
-                <small className="mt-3 block text-[#4f3829]">
-                  {player.connected ? "онлайн" : "прекъсната връзка"}
-                  {player.host ? " · водещ" : ""}
-                  {player.narrator ? " · Разказвач" : ""}
-                  {player.mayor ? " · Кмет" : ""}
-                  {player.ready ? " · готов" : ""}
-                  {snapshot?.narratorMode === "full_human" ? ` · ${player.acceptedFullNarrator ? "приел" : "чака приемане"}` : ""}
-                  {player.actedThisPhase ? " · действал" : ""}
-                  {player.hasVoted ? " · гласувал" : ""}
-                </small>
-                {ownPlayer?.host && snapshot?.narratorMode !== "automatic" && phase === "lobby" ? (
-                  <button
-                    className="btn btn-secondary mt-3 min-h-0 px-3 py-2 text-sm"
-                    type="button"
-                    onClick={() => room?.send("setNarrator", { targetUserId: player.userId, narrator: true })}
-                  >
-                    Направи Разказвач
-                  </button>
-                ) : null}
-                {(ownPlayer?.host || ownPlayer?.narrator) &&
-                snapshot?.mode === "werewolves_classic" &&
-                (phase === "lobby" || phase === "mayor_successor") &&
-                player.playing &&
-                player.alive ? (
-                  <button
-                    className="btn btn-secondary mt-3 min-h-0 px-3 py-2 text-sm"
-                    type="button"
-                    onClick={() => room?.send("setMayor", { targetUserId: player.userId })}
-                  >
-                    Направи Кмет
-                  </button>
-                ) : null}
-              </div>
-            )) : null}
-          </div>
-
-          {phase === "day_discussion" && snapshot?.communicationMode === "built_in_chat" ? (
-            ownPlayer?.playing && ownPlayer?.alive ? (
-              <form className="mt-8 grid gap-3" onSubmit={sendChat}>
-                <h3 className="font-black">Дневен чат</h3>
-                <div className="grid gap-1">
-                  <input
-                    className="input"
-                    value={chatMessage}
-                    onChange={(event) => updatePublicChatMessage(event.target.value)}
-                    placeholder="Напиши обвинение, защита или блъф..."
-                    maxLength={500}
-                    aria-describedby="chat-counter"
-                  />
-                  <span
-                    id="chat-counter"
-                    className={`text-right text-xs ${chatMessage.length >= 480 ? "text-[#c18a38]" : "text-[#ead9ba]/60"}`}
-                  >
-                    {chatMessage.length}/500
-                  </span>
-                </div>
-                <TypingIndicator notices={publicTypers} />
-                <button className="btn btn-primary" type="submit" disabled={chatMessage.trim().length === 0}>
-                  Изпрати
-                </button>
-              </form>
-            ) : (
-              <div className="mt-8 rounded-2xl bg-[#221611]/15 p-4 text-sm font-bold text-[#842f2b]">
-                {ownPlayer?.playing
-                  ? "Елиминираните играчи могат да четат, но не и да пишат в дневния чат."
-                  : "Разказвачите и наблюдателите не пишат в дневния чат."}
-              </div>
-            )
-          ) : null}
-
-          {phase === "day_discussion" && snapshot?.communicationMode !== "built_in_chat" ? (
-            <div className="mt-8 rounded-2xl bg-[#842f2b]/10 p-4 text-sm font-bold text-[#842f2b]">
-              В тази стая публичният чат е изключен. Използвайте външен разговор, игра на живо или указанията на Разказвача.
-            </div>
-          ) : null}
-
-          <div className="mt-8">
-            <h3 className="font-black" id="events-heading">Събития</h3>
-            <div
-              className="mt-3 grid gap-2 text-sm"
-              role="log"
-              aria-labelledby="events-heading"
-              aria-live="polite"
-              aria-relevant="additions"
-            >
-              {(snapshot?.publicEvents ?? []).length === 0 ? (
-                <p className="event-line event-line-empty rounded-xl px-3 py-2">
-                  Събитията ще се появят тук, когато играта започне.
-                </p>
-              ) : null}
-              {(snapshot?.publicEvents ?? []).slice(-7).map((event) => (
-                <p key={event.id} className={`event-line ${eventLineClass(event.messageBg)} rounded-xl px-3 py-2`}>
-                  {event.messageBg}
-                </p>
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-8">
-            <h3 className="font-black" id="chat-heading">Чат лог</h3>
-            <div
-              className="mt-3 grid gap-2 text-sm"
-              role="log"
-              aria-labelledby="chat-heading"
-              aria-live="polite"
-              aria-relevant="additions"
-            >
-              {(snapshot?.publicChat ?? []).length === 0 ? (
-                <p className="chat-line rounded-xl px-3 py-2">Още няма публични реплики.</p>
-              ) : null}
-              {(snapshot?.publicChat ?? []).slice(-5).map((message) => (
-                <p key={message.id} className="chat-line rounded-xl px-3 py-2">
-                  <strong>{message.senderName}:</strong> {message.message}
-                </p>
-              ))}
-              <TypingIndicator notices={publicTypers} compact />
-            </div>
-          </div>
-        </aside>
+        {renderPlayersPanel("desktop")}
       </section>
+      </div>
     </main>
   );
 }
@@ -1193,7 +1237,10 @@ function LiveCuePanel({
         <span key={pulseKey} />
       </div>
       <div>
-        <p className="section-kicker">събуждане</p>
+        <p className="section-kicker play-section-kicker">
+          <Volume2 className="play-section-icon" aria-hidden strokeWidth={1.8} />
+          <span>събуждане</span>
+        </p>
         <h2 className="mt-1 text-2xl font-black">Лични сигнали за фазите</h2>
         <p className="mt-2 text-sm text-[#ead9ba]">
           {liveMode
@@ -1203,9 +1250,11 @@ function LiveCuePanel({
       </div>
       <div className="cue-actions">
         <button className="btn btn-secondary" type="button" aria-pressed={cueMode === "silent"} onClick={() => onChange("silent")}>
+          <EyeOff className="play-button-icon" aria-hidden strokeWidth={1.8} />
           Тихо
         </button>
         <button className="btn btn-secondary" type="button" aria-pressed={cueMode === "visual"} onClick={() => onChange("visual")}>
+          <Settings className="play-button-icon" aria-hidden strokeWidth={1.8} />
           Визуално
         </button>
         <button
@@ -1214,9 +1263,11 @@ function LiveCuePanel({
           aria-pressed={cueMode === "audio_vibration"}
           onClick={() => onChange("audio_vibration")}
         >
+          <Volume2 className="play-button-icon" aria-hidden strokeWidth={1.8} />
           Звук + вибрация
         </button>
         <button className="btn btn-secondary" type="button" onClick={() => triggerDeviceCue(phase)} disabled={cueMode === "silent"}>
+          <Play className="play-button-icon" aria-hidden strokeWidth={1.8} />
           Тест
         </button>
       </div>
@@ -1229,23 +1280,15 @@ function NarratorDesk({
   snapshot,
   phase,
   family,
-  isHost,
   isNarrator,
-  fullNarratorAccepted,
-  onStartGame,
   onOpenShortcuts,
-  startCountdownActive,
 }: {
   room: Room | null;
   snapshot: GameSnapshot;
   phase: GamePhase;
   family: GameFamily;
-  isHost: boolean;
   isNarrator: boolean;
-  fullNarratorAccepted: boolean;
-  onStartGame: () => void;
   onOpenShortcuts: () => void;
-  startCountdownActive: boolean;
 }) {
   const pendingConsent = snapshot.players.filter((player) => !player.acceptedFullNarrator).length;
   const activePlayers = snapshot.players.filter((player) => player.playing);
@@ -1276,15 +1319,12 @@ function NarratorDesk({
       </div>
 
       <div className="mt-5 flex flex-wrap gap-3">
-        {isHost && phase === "lobby" ? (
-          <button className="btn btn-primary" type="button" onClick={onStartGame} disabled={!room || !fullNarratorAccepted || startCountdownActive}>
-            {startCountdownActive ? "Започваме..." : "Започни игра"}
-          </button>
-        ) : null}
         <button className="btn btn-secondary" type="button" onClick={() => room?.send("narratorPause")} disabled={!room || phase === "paused"}>
+          <Pause className="play-button-icon" aria-hidden strokeWidth={1.8} />
           Пауза
         </button>
         <button className="btn btn-primary" type="button" onClick={() => room?.send("narratorAdvance")} disabled={!room}>
+          <SkipForward className="play-button-icon" aria-hidden strokeWidth={1.8} />
           Следваща фаза
         </button>
         {[30, 60, 180].map((seconds) => (
@@ -1295,10 +1335,12 @@ function NarratorDesk({
             onClick={() => room?.send("narratorExtendTimer", { seconds })}
             disabled={!room || phase === "paused" || phase === "game_over"}
           >
+            <Plus className="play-button-icon" aria-hidden strokeWidth={1.8} />
             +{seconds} сек.
           </button>
         ))}
         <button className="btn btn-secondary" type="button" onClick={onOpenShortcuts}>
+          <Keyboard className="play-button-icon" aria-hidden strokeWidth={1.8} />
           Клавишни команди
         </button>
       </div>
