@@ -265,7 +265,8 @@ function checkFamilyQuickStartContracts() {
     assert(existsSync(path.join(gameArtDir, asset)), `Missing cinematic hero asset ${asset}.`);
   }
   assert(gameHomeAmbientBlock.includes("--art-landing-ambient"), "Family home dark theme should use the ambient smoky homepage background.");
-  assert(quickStart.includes("IntersectionObserver"), "Quickstart connector reveal should use a browser IntersectionObserver.");
+  assert(!quickStart.includes("IntersectionObserver"), "Family quickstart should not ship IntersectionObserver for connector reveal.");
+  assert(css.includes("content-visibility: auto"), "Family quickstart should use CSS paint containment instead of JS viewport observers.");
   assert(quickStart.includes("Бъди първият на масата"), "Live ticker empty state must invite the first room, not show zero counts.");
   assert(quickStart.includes("Няма активни стаи в момента."), "Family live empty state must match the landing homepage copy.");
   assert(quickStart.includes("Първите герои ще се появят тук."), "Last winner empty state must use designed Bulgarian copy.");

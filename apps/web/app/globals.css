@@ -3246,6 +3246,8 @@ html[data-theme="dark"] .tutorial-nav .btn-secondary:disabled {
 .quickstart-block {
   display: grid;
   gap: 20px;
+  content-visibility: auto;
+  contain-intrinsic-size: 860px 760px;
 }
 
 .quickstart-surface,

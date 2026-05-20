@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, type ComponentType, type CSSProperties } from "react";
+import { type ComponentType, type CSSProperties } from "react";
 import type { GameFamily } from "@werewolf/shared";
 import { BallotIcon, DoorIcon, KeyIcon, LastWinnerEmptyGlyph, MaskIcon, MoonIcon } from "./quickstart-icons";
 
@@ -57,28 +57,6 @@ const STEPS: Array<{
 
 export function QuickStartSection({ family, liveStats, lastWinner }: QuickStartSectionProps) {
   const root = family === "mafia" ? "/mafia" : "/werewolf";
-  const stepsRef = useRef<HTMLOListElement>(null);
-  const [revealed, setRevealed] = useState(false);
-
-  useEffect(() => {
-    const node = stepsRef.current;
-    if (!node) {
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) {
-          setRevealed(true);
-          observer.disconnect();
-        }
-      },
-      { rootMargin: "0px 0px 260px 0px", threshold: 0.05 },
-    );
-
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
 
   return (
     <section className="quickstart-block" aria-label="Първа игра за 30 секунди">
@@ -89,12 +67,12 @@ export function QuickStartSection({ family, liveStats, lastWinner }: QuickStartS
             <h2>Как започва добра игра</h2>
             <p>Влез, избери стая, играй.</p>
           </div>
-          <Link href={`${root}/rules`} className="quickstart-rules-cta" prefetch={false}>
+          <Link href={`${root}/rules`} className="quickstart-rules-cta">
             Виж пълните правила <span aria-hidden="true">→</span>
           </Link>
         </div>
 
-        <ol ref={stepsRef} className="quickstart-steps" data-revealed={revealed ? "true" : "false"}>
+        <ol className="quickstart-steps" data-revealed="true">
           {STEPS.map((step, index) => (
             <li key={step.label} className="quickstart-step-slot">
               <StepMedallion number={index + 1} label={step.label} body={step.body} Icon={step.Icon} />
@@ -151,7 +129,7 @@ function LiveTickerCard({ family, liveStats }: { family: GameFamily; liveStats: 
           <div>
             <h3>Бъди първият на масата</h3>
             <p>Няма активни стаи в момента.</p>
-            <Link href={`${root}/create`} className="quickstart-card-cta" prefetch={false}>
+            <Link href={`${root}/create`} className="quickstart-card-cta">
               Създай стая <span aria-hidden="true">→</span>
             </Link>
           </div>
