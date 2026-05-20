@@ -1,9 +1,10 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { type GameFamily } from "@werewolf/shared";
 import { ResourceHints } from "@/components/resource-hints";
 import { QuickStartSection, type QuickStartLastWinner, type QuickStartLiveStats } from "@/components/games/QuickStartSection";
 
-export async function GameHomePage({ family }: { family: GameFamily }) {
+export function GameHomePage({ family }: { family: GameFamily }) {
   const isMafia = family === "mafia";
   const root = isMafia ? "/mafia" : "/werewolf";
   const title = isMafia ? "Мафия" : "Върколак";
@@ -11,7 +12,6 @@ export async function GameHomePage({ family }: { family: GameFamily }) {
   const subtitle = isMafia
     ? "Криминален ноар за град, който трябва да различи алиби от лъжа."
     : "Фолклорен хорър за село, което заспива заедно, но не всички се будят невинни.";
-  const stats = await loadGameStats();
   const heroImages = isMafia
     ? ["/game-art/mafia/bg-hero-v2.webp", "/game-art/mobile/mafia/bg-hero-v2.webp"]
     : ["/game-art/werewolf/bg-hero-v2.webp", "/game-art/mobile/werewolf/bg-hero-v2.webp"];
@@ -21,8 +21,24 @@ export async function GameHomePage({ family }: { family: GameFamily }) {
       <ResourceHints images={heroImages} />
       <GameHero family={family} root={root} eyebrow={eyebrow} title={title} subtitle={subtitle} />
 
-      <QuickStartSection family={family} liveStats={stats?.liveStats ?? null} lastWinner={stats?.lastWinner ?? null} />
+      <Suspense fallback={<QuickStartFallback />}>
+        <QuickStartWithStats family={family} />
+      </Suspense>
     </main>
+  );
+}
+
+async function QuickStartWithStats({ family }: { family: GameFamily }) {
+  const stats = await loadGameStats();
+
+  return <QuickStartSection family={family} liveStats={stats?.liveStats ?? null} lastWinner={stats?.lastWinner ?? null} />;
+}
+
+function QuickStartFallback() {
+  return (
+    <section className="quickstart-block" aria-hidden="true">
+      <div className="quickstart-surface quickstart-skeleton" />
+    </section>
   );
 }
 
@@ -78,8 +94,8 @@ async function loadGameStats(): Promise<{ liveStats: QuickStartLiveStats; lastWi
   const gameServerUrl = process.env.NEXT_PUBLIC_GAME_SERVER_URL?.replace(/^ws/, "http") ?? "http://localhost:2567";
   try {
     const response = await fetch(`${gameServerUrl}/stats`, {
-      cache: "no-store",
-      next: { revalidate: 0 },
+      next: { revalidate: 5 },
+      signal: AbortSignal.timeout(800),
     });
     if (!response.ok) {
       return null;

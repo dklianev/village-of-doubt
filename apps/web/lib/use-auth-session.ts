@@ -35,15 +35,18 @@ export function useAuthSession(initialSession: AuthSessionView | null = null) {
   }, []);
 
   useEffect(() => {
-    void refresh();
-
     window.addEventListener("focus", refresh);
     window.addEventListener("auth-session-change", refresh);
+
+    if (!initialSession?.user?.id) {
+      void refresh();
+    }
+
     return () => {
       window.removeEventListener("focus", refresh);
       window.removeEventListener("auth-session-change", refresh);
     };
-  }, [refresh]);
+  }, [initialSession?.user?.id, refresh]);
 
   return { data, isPending, refresh };
 }
