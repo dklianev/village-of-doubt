@@ -6188,6 +6188,20 @@ html[data-theme="light"] .lobby-code-display {
   padding-block: 32px 64px;
 }
 
+body:has(.join-shell) {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+}
+
+body:has(.join-shell) .join-shell {
+  flex: 1 0 auto;
+}
+
+body:has(.join-shell) .site-footer {
+  margin-top: auto;
+}
+
 .join-shell-inner {
   display: grid;
   gap: 24px;
