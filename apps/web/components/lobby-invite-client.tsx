@@ -13,6 +13,7 @@ interface LobbyInviteClientProps {
   playHref: string;
   spectatorHref: string;
   hostName: string;
+  routeLabel: string;
 }
 
 export function LobbyInviteClient({
@@ -22,6 +23,7 @@ export function LobbyInviteClient({
   playHref,
   spectatorHref,
   hostName,
+  routeLabel,
 }: LobbyInviteClientProps) {
   const toast = useToast();
 
@@ -119,7 +121,7 @@ export function LobbyInviteClient({
       </nav>
 
       <section className="lobby-route-card">
-        <p className="lobby-route-kicker">Маршрут до площада</p>
+        <p className="lobby-route-kicker">{routeLabel}</p>
         <p>
           {family === "werewolves"
             ? "Стаята е подготвена за нощни роли, дневно обсъждане и финален вот на селото."

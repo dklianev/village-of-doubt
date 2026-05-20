@@ -5905,7 +5905,7 @@ html[data-theme="light"] .evidence-empty .btn-secondary {
 .lobby-code-panel,
 .lobby-route-card,
 .lobby-player-preview {
-  width: min(920px, calc(100% - 40px));
+  width: min(920px, 92%);
   margin: 0 auto;
   border: 1px solid var(--invite-border);
   border-radius: 18px;
@@ -5965,7 +5965,7 @@ html[data-theme="light"] .evidence-empty .btn-secondary {
 }
 
 .lobby-invite-cta {
-  width: min(920px, calc(100% - 40px));
+  width: min(920px, 92%);
   margin: 0 auto;
 }
 

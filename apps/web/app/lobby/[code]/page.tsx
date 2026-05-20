@@ -32,6 +32,7 @@ export default async function LobbyCodePage({
   const family = getGameFamily(mode);
   const playHref = `/play/${code}${query}`;
   const spectatorHref = `/play/${code}${withSpectatorQuery(query)}`;
+  const routeLabel = family === "mafia" ? "досие към задната стая" : "маршрут до площада";
 
   return (
     <main className="shell lobby-shell framed-shell" data-theme={family} data-family={family}>
@@ -43,6 +44,7 @@ export default async function LobbyCodePage({
           playHref={playHref}
           spectatorHref={spectatorHref}
           hostName={session.user.name ?? "Домакин"}
+          routeLabel={routeLabel}
         />
       </div>
     </main>
