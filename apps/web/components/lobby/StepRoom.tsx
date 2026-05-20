@@ -3,6 +3,7 @@
 import type { Dispatch, ReactNode } from "react";
 import {
   GAME_MODE_DEFINITIONS,
+  ROOM_CODE_LENGTH,
   getGameModeNameBg,
   TEMPO_PRESETS,
   type GameMode,
@@ -67,7 +68,7 @@ export function StepRoom({
           <input
             className="field-input"
             value={state.code}
-            maxLength={12}
+            maxLength={ROOM_CODE_LENGTH}
             onChange={(event) => dispatch({ type: "SET_CODE", code: cleanRoomCode(event.target.value) })}
           />
         </Field>

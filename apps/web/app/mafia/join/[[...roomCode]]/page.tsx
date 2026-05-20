@@ -3,8 +3,8 @@ import { AuthGatedEntryClient } from "@/components/games/auth-gated-entry-client
 import { requireSession } from "@/lib/require-session";
 
 export const metadata: Metadata = {
-  title: "Влез в Мафия | Върколак и Мафия",
-  description: "Влез с твоя профил и кода за частна Мафия стая.",
+  title: "Седни на масата | Върколак и Мафия",
+  description: "Покажи кода на бара и седни на масата с приятели в Мафия.",
 };
 
 export default async function MafiaJoinPage({ params }: { params: Promise<{ roomCode?: string[] }> }) {

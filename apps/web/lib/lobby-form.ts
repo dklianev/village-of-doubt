@@ -19,6 +19,9 @@ import {
   type RolePreset,
   type TempoProfile,
   type CommissionerResultMode,
+  ROOM_CODE_ALPHABET,
+  ROOM_CODE_LENGTH,
+  normalizeRoomCodeInput,
 } from "@werewolf/shared";
 import { parseRoomCreateOptions, roomOptionsToQuery, type RoomSearchParams } from "@/lib/room-options";
 import { randomRoomName } from "@/lib/roomname-generator";
@@ -342,12 +345,14 @@ export function defaultRoomName(mode: GameMode) {
 }
 
 export function createRoomCode() {
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  return Array.from({ length: 6 }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join("");
+  return Array.from(
+    { length: ROOM_CODE_LENGTH },
+    () => ROOM_CODE_ALPHABET[Math.floor(Math.random() * ROOM_CODE_ALPHABET.length)],
+  ).join("");
 }
 
 export function cleanRoomCode(code: string) {
-  return code.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12);
+  return normalizeRoomCodeInput(code);
 }
 
 export function estimatedDurationSeconds(state: LobbyFormState) {

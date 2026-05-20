@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, type CSSProperties } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { countRoles } from "@werewolf/shared";
+import { ROOM_CODE_REGEX, countRoles } from "@werewolf/shared";
 import type { GameFamily, GameMode } from "@werewolf/shared";
 import { playCue } from "@/lib/sound";
 import {
@@ -126,7 +126,7 @@ function validationMessage(state: LobbyFormState, step: LobbyStep) {
 }
 
 function cleanRoomStepValid(state: LobbyFormState) {
-  return state.roomName.trim().length > 0 && state.code.trim().length >= 4;
+  return state.roomName.trim().length > 0 && ROOM_CODE_REGEX.test(state.code.trim());
 }
 
 function Confetti() {

@@ -6,11 +6,16 @@ import {
   createGameConfigFromOptions,
   evaluateAchievementUnlocks,
   evaluateWinCondition,
+  getGameFamily,
   getRoleNameBg,
   getRoleTeam,
   phaseLabelBg,
+  ROOM_CODE_ALPHABET,
+  ROOM_CODE_LENGTH,
+  ROOM_CODE_REGEX,
   type ClientCommand,
   type GameConfig,
+  type GameFamily,
   type GameMode,
   type GamePhase,
   type JoinRoomOptions,
@@ -62,6 +67,14 @@ interface PrivatePlayerState {
 
 interface CreateOptions extends CreateRoomOptions {}
 
+export interface GameRoomPreview {
+  code: string;
+  status: "lobby" | "in_game" | "finished";
+  playerCount: number;
+  capacity: number;
+  family: GameFamily;
+}
+
 const MAX_PUBLIC_EVENTS = 120;
 const MAX_PUBLIC_CHAT = 80;
 
@@ -84,6 +97,29 @@ export class GameRoom extends Room<{ state: GameState }> {
       activeRooms: GameRoom.liveRooms.size,
       connectedPlayers: [...GameRoom.liveRooms].reduce((sum, room) => sum + room.clients.length, 0),
       lastWinner: GameRoom.lastWinner,
+    };
+  }
+
+  static getRoomPreview(code: string): GameRoomPreview | null {
+    const normalizedCode = code.toUpperCase();
+    if (!ROOM_CODE_REGEX.test(normalizedCode)) {
+      return null;
+    }
+
+    const room = [...GameRoom.liveRooms].find((candidate) => candidate.state.code === normalizedCode);
+    if (!room) {
+      return null;
+    }
+
+    const players = [...room.state.players.values()].filter((player) => player.playing);
+    const status = room.state.phase === "lobby" ? "lobby" : room.state.phase === "game_over" ? "finished" : "in_game";
+
+    return {
+      code: room.state.code,
+      status,
+      playerCount: players.length,
+      capacity: room.config.playerCount,
+      family: getGameFamily(room.config.mode),
     };
   }
 
@@ -2231,8 +2267,10 @@ function ensureNightActionAllowed(role: RoleCode, action: NightActionCommand, ph
 }
 
 function generateRoomCode() {
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  return Array.from({ length: 6 }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join("");
+  return Array.from(
+    { length: ROOM_CODE_LENGTH },
+    () => ROOM_CODE_ALPHABET[Math.floor(Math.random() * ROOM_CODE_ALPHABET.length)],
+  ).join("");
 }
 
 function chooseDrunkRealRole(roles: Partial<Record<RoleCode, number>>): RoleCode {
