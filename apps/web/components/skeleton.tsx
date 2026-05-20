@@ -1,9 +1,54 @@
+import type { CSSProperties } from "react";
+
 interface SkeletonProps {
   className?: string;
+  style?: CSSProperties;
 }
 
-export function Skeleton({ className = "" }: SkeletonProps) {
-  return <span className={`skeleton ${className}`} aria-hidden="true" />;
+export function Skeleton({ className = "", style }: SkeletonProps) {
+  return <span className={`skeleton ${className}`} style={style} aria-hidden="true" />;
+}
+
+export function SkeletonText({
+  width = "100%",
+  size = "default",
+}: {
+  width?: string;
+  size?: "sm" | "default" | "lg" | "xl";
+}) {
+  const sizeClass = {
+    sm: "skeleton-text-sm",
+    default: "skeleton-text",
+    lg: "skeleton-text-lg",
+    xl: "skeleton-text-xl",
+  }[size];
+
+  return <Skeleton className={sizeClass} style={{ width }} />;
+}
+
+export function SkeletonAvatar({ className = "" }: SkeletonProps) {
+  return <Skeleton className={`skeleton-avatar ${className}`} />;
+}
+
+export function SkeletonCard({ className = "" }: SkeletonProps) {
+  return <div className={`skeleton skeleton-card-shell ${className}`} aria-hidden="true" />;
+}
+
+export function SkeletonHero({ className = "" }: SkeletonProps) {
+  return <div className={`skeleton skeleton-hero ${className}`} aria-hidden="true" />;
+}
+
+export function PageSkeleton() {
+  return (
+    <section className="page-skeleton" aria-label="Зареждане">
+      <SkeletonHero />
+      <div className="page-skeleton-grid">
+        <SkeletonCard />
+        <SkeletonCard />
+        <SkeletonCard />
+      </div>
+    </section>
+  );
 }
 
 export function HistoryListSkeleton() {
@@ -13,13 +58,13 @@ export function HistoryListSkeleton() {
         <article key={item} className="history-game-card skeleton-card rounded-3xl p-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="grid flex-1 gap-3">
-              <Skeleton className="h-4 w-48 rounded-full" />
-              <Skeleton className="h-8 w-64 rounded-full" />
+              <SkeletonText width="12rem" size="sm" />
+              <SkeletonText width="16rem" size="xl" />
             </div>
-            <Skeleton className="h-10 w-28 rounded-full" />
+            <SkeletonText width="7rem" size="lg" />
           </div>
           <Skeleton className="mt-5 h-4 w-full max-w-xl rounded-full" />
-          <Skeleton className="mt-5 h-24 w-full rounded-[1.35rem]" />
+          <SkeletonCard className="mt-5 h-24 w-full rounded-[1.35rem]" />
         </article>
       ))}
     </div>

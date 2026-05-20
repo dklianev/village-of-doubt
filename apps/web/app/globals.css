@@ -6110,26 +6110,109 @@ html[data-theme="light"] .lobby-code-display {
   position: relative;
   display: block;
   overflow: hidden;
-  background: linear-gradient(90deg, rgba(244, 232, 209, 0.14), rgba(255, 247, 229, 0.34), rgba(244, 232, 209, 0.14));
-  background-size: 240% 100%;
+  border-radius: 8px;
+  background-color: rgba(245, 232, 200, 0.08);
+  background-image: linear-gradient(90deg, transparent 0, rgba(245, 232, 200, 0.16) 50%, transparent 100%);
+  background-repeat: no-repeat;
+  background-size: 200px 100%;
+  background-position: -200px 0;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
-  animation: skeletonShimmer 1.18s ease-in-out infinite;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
 }
 
 .skeleton-card {
   border: 1px solid rgba(132, 47, 43, 0.12);
-  background:
-    linear-gradient(135deg, rgba(255, 247, 229, 0.58), rgba(211, 180, 125, 0.4)),
-    var(--texture-paper) center / 520px 520px;
+  background-color: rgba(245, 232, 200, 0.08);
+  background-image:
+    linear-gradient(90deg, transparent 0, rgba(245, 232, 200, 0.12) 50%, transparent 100%),
+    linear-gradient(135deg, rgba(255, 247, 229, 0.1), rgba(211, 180, 125, 0.08));
+  background-repeat: no-repeat;
+  background-size:
+    200px 100%,
+    100% 100%;
+  background-position:
+    -200px 0,
+    0 0;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+.skeleton-text-sm {
+  height: 12px;
+}
+
+.skeleton-text,
+.skeleton-text-lg {
+  height: 16px;
+}
+
+.skeleton-text-xl {
+  height: 24px;
+}
+
+.skeleton-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.skeleton-card-shell {
+  min-height: 120px;
+}
+
+.skeleton-hero {
+  min-height: 360px;
+}
+
+.page-skeleton {
+  display: grid;
+  gap: 16px;
+}
+
+.page-skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+html[data-theme="light"] .skeleton {
+  background-color: rgba(132, 47, 43, 0.08);
+  background-image: linear-gradient(90deg, transparent 0, rgba(132, 47, 43, 0.15) 50%, transparent 100%);
+  box-shadow: inset 0 0 0 1px rgba(83, 52, 31, 0.08);
+}
+
+html[data-theme="light"] .skeleton-card {
+  border-color: rgba(83, 52, 31, 0.12);
+  background-color: rgba(132, 47, 43, 0.08);
+  background-image:
+    linear-gradient(90deg, transparent 0, rgba(132, 47, 43, 0.12) 50%, transparent 100%),
+    linear-gradient(135deg, rgba(255, 250, 238, 0.62), rgba(132, 47, 43, 0.08));
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position:
+      -200px 0,
+      0 0;
+  }
+
+  100% {
+    background-position:
+      calc(200px + 100%) 0,
+      0 0;
+  }
 }
 
 @keyframes skeletonShimmer {
   0% {
-    background-position: 140% 0;
+    background-position:
+      -200px 0,
+      0 0;
   }
 
   100% {
-    background-position: -140% 0;
+    background-position:
+      calc(200px + 100%) 0,
+      0 0;
   }
 }
 
