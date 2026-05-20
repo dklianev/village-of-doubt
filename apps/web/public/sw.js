@@ -1,4 +1,4 @@
-const CACHE_NAME = "werewolf-mafia-shell-v1";
+const CACHE_NAME = "werewolf-mafia-shell-v2";
 const SHELL_URLS = ["/", "/offline", "/werewolf", "/mafia", "/werewolf/rules", "/mafia/rules", "/favicon.svg"];
 
 self.addEventListener("install", (event) => {
@@ -38,14 +38,16 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       caches.open(CACHE_NAME).then(async (cache) => {
         const cached = await cache.match(event.request);
-        if (cached) {
-          return cached;
-        }
-        const response = await fetch(event.request);
-        if (response.ok) {
-          await cache.put(event.request, response.clone());
-        }
-        return response;
+        const network = fetch(event.request)
+          .then(async (response) => {
+            if (response.ok) {
+              await cache.put(event.request, response.clone());
+            }
+            return response;
+          })
+          .catch(() => cached);
+
+        return cached ?? network;
       }),
     );
   }
