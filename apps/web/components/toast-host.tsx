@@ -1,12 +1,14 @@
 "use client";
 
-import { useToastItems } from "@/lib/toast";
+import { AlertCircle, CheckCircle2, Info, X } from "lucide-react";
+import { useToastItems, type ToastKind } from "@/lib/toast";
 
-const TOAST_KIND_BG = {
+const TOAST_KIND_BG: Record<ToastKind, string> = {
   info: "съобщение",
   error: "грешка",
   success: "готово",
-} as const;
+  warning: "внимание",
+};
 
 export function ToastHost() {
   const { items, dismiss } = useToastItems();
@@ -16,18 +18,37 @@ export function ToastHost() {
   }
 
   return (
-    <div className="toast-host" aria-live="polite" aria-atomic="false">
+    <aside className="toast-host" aria-live="polite" aria-atomic="false">
       {items.map((item) => (
-        <button
-          key={item.id}
-          className={`toast-card toast-${item.kind}`}
-          type="button"
-          onClick={() => dismiss(item.id)}
-        >
-          <span>{TOAST_KIND_BG[item.kind]}</span>
-          <strong>{item.message}</strong>
-        </button>
+        <article key={item.id} className="toast-card" data-kind={item.kind}>
+          <span className="toast-icon" aria-hidden>
+            <ToastIcon kind={item.kind} />
+          </span>
+          <div className="toast-copy">
+            <span>{TOAST_KIND_BG[item.kind]}</span>
+            <strong>{item.message}</strong>
+          </div>
+          <button
+            type="button"
+            className="toast-close"
+            onClick={() => dismiss(item.id)}
+            aria-label="Затвори"
+          >
+            <X aria-hidden strokeWidth={2} />
+          </button>
+          <span className="toast-progress" style={{ animationDuration: `${item.duration}ms` }} aria-hidden />
+        </article>
       ))}
-    </div>
+    </aside>
   );
+}
+
+function ToastIcon({ kind }: { kind: ToastKind }) {
+  if (kind === "success") {
+    return <CheckCircle2 strokeWidth={2} />;
+  }
+  if (kind === "info") {
+    return <Info strokeWidth={2} />;
+  }
+  return <AlertCircle strokeWidth={2} />;
 }

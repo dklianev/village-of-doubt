@@ -2,17 +2,19 @@
 
 import { useEffect, useSyncExternalStore } from "react";
 
-export type ToastKind = "info" | "error" | "success";
+export type ToastKind = "info" | "error" | "success" | "warning";
 
 export interface ToastItem {
   id: string;
   message: string;
   kind: ToastKind;
+  duration: number;
 }
 
 type ToastInput = {
   message: string;
   kind?: ToastKind;
+  duration?: number;
 };
 
 const MAX_VISIBLE_TOASTS = 3;
@@ -49,17 +51,17 @@ function removeToast(id: string) {
   emit();
 }
 
-export function pushToast({ message, kind = "info" }: ToastInput) {
+export function pushToast({ message, kind = "info", duration = TOAST_TTL_MS }: ToastInput) {
   if (typeof window === "undefined" || !message.trim()) {
     return;
   }
 
   const id = crypto.randomUUID();
-  const item: ToastItem = { id, message: message.trim(), kind };
+  const item: ToastItem = { id, message: message.trim(), kind, duration };
   toasts = [item, ...toasts].slice(0, MAX_VISIBLE_TOASTS);
   emit();
 
-  const timer = window.setTimeout(() => removeToast(id), TOAST_TTL_MS);
+  const timer = window.setTimeout(() => removeToast(id), duration);
   timers.set(id, timer);
 }
 
