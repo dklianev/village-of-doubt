@@ -6182,8 +6182,9 @@ html[data-theme="light"] .lobby-code-display {
 /* Join gate — room code entry     */
 /* ============================== */
 
-.join-shell.framed-shell {
+.join-shell {
   width: min(1120px, 94vw);
+  margin: 24px auto 96px;
   padding-block: 32px 64px;
 }
 
@@ -6736,7 +6737,7 @@ html[data-theme="light"] .join-entry-trust a {
 }
 
 @media (max-width: 760px) {
-  .join-shell.framed-shell {
+  .join-shell {
     width: min(100%, 100vw);
     padding-top: 12px;
   }
