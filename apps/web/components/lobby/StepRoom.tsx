@@ -1,6 +1,6 @@
 "use client";
 
-import type { Dispatch, ReactNode } from "react";
+import { useEffect, useRef, type Dispatch, type ReactNode } from "react";
 import {
   GAME_MODE_DEFINITIONS,
   ROOM_CODE_LENGTH,
@@ -38,6 +38,20 @@ export function StepRoom({
   const range = playerRange(state.mode);
   const players = boundedPlayerCount(state);
   const modes = availableModes(state.family);
+  const roomNameRef = useRef<HTMLInputElement | null>(null);
+  const didAutoFocus = useRef(false);
+
+  useEffect(() => {
+    if (didAutoFocus.current) {
+      return;
+    }
+    if (state.roomName) {
+      didAutoFocus.current = true;
+      return;
+    }
+    roomNameRef.current?.focus({ preventScroll: true });
+    didAutoFocus.current = true;
+  }, [state.roomName]);
 
   return (
     <section className="lobby-step lobby-step-room" aria-labelledby="step-room-title">
@@ -57,9 +71,9 @@ export function StepRoom({
         >
           <input
             className="field-input"
+            ref={roomNameRef}
             value={state.roomName}
             maxLength={42}
-            autoFocus
             onChange={(event) => dispatch({ type: "SET_ROOM_NAME", roomName: event.target.value })}
           />
         </Field>

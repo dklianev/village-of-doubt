@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, type Dispatch } from "react";
+import { memo, useEffect, type Dispatch } from "react";
 import { roleWarnings, type LobbyFormAction, type LobbyFormState } from "@/lib/lobby-form";
 import { StickyPreview } from "@/components/lobby/StickyPreview";
 
-export function MobileSummaryChip({
+function MobileSummaryChipImpl({
   state,
   dispatch,
 }: {
@@ -46,3 +46,30 @@ export function MobileSummaryChip({
     </>
   );
 }
+
+export const MobileSummaryChip = memo(MobileSummaryChipImpl, (prev, next) => {
+  const p = prev.state;
+  const n = next.state;
+  if (prev.dispatch !== next.dispatch || p.mobileSummaryOpen !== n.mobileSummaryOpen) {
+    return false;
+  }
+
+  const summaryStable =
+    p.playerCount === n.playerCount &&
+    p.family === n.family &&
+    p.mode === n.mode &&
+    p.manualRoles === n.manualRoles &&
+    p.manualRolesEnabled === n.manualRolesEnabled &&
+    p.rolePreset === n.rolePreset &&
+    p.advanced === n.advanced;
+
+  if (!summaryStable) {
+    return false;
+  }
+
+  if (!p.mobileSummaryOpen) {
+    return true;
+  }
+
+  return p.roomName === n.roomName && p.tempoProfile === n.tempoProfile;
+});

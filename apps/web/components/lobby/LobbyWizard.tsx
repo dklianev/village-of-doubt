@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useReducer, useRef, type CSSProperties } from "react";
+import { useCallback, useEffect, useReducer, useRef, type CSSProperties } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ROOM_CODE_REGEX, countRoles } from "@werewolf/shared";
 import type { GameFamily, GameMode } from "@werewolf/shared";
@@ -34,8 +34,11 @@ export function LobbyWizard({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initial = useMemo(() => initialState({ initialMode, family, urlParams: searchParams }), [family, initialMode, searchParams]);
-  const [state, dispatch] = useReducer(lobbyFormReducer, initial);
+  const initialRef = useRef<LobbyFormState | null>(null);
+  if (initialRef.current === null) {
+    initialRef.current = initialState({ initialMode, family, urlParams: searchParams });
+  }
+  const [state, dispatch] = useReducer(lobbyFormReducer, initialRef.current);
   const canAdvance = isStepValid(state, state.step);
   const previousStep = useRef(state.step);
 
@@ -68,8 +71,11 @@ export function LobbyWizard({
       return;
     }
     previousStep.current = state.step;
-    playCue("phase-change");
-    triggerHaptic([12]);
+    const frameId = window.requestAnimationFrame(() => {
+      playCue("phase-change");
+      triggerHaptic([12]);
+    });
+    return () => window.cancelAnimationFrame(frameId);
   }, [state.step]);
 
   function onAdvanceBlocked() {
@@ -89,10 +95,18 @@ export function LobbyWizard({
       <div className="lobby-wizard-main">
         <StepNav state={state} dispatch={dispatch} canAdvance={canAdvance} onAdvanceBlocked={onAdvanceBlocked} transition={transition} />
         <div className="lobby-step-pane" style={{ viewTransitionName: "lobby-step" }}>
-          {state.step === 1 ? <StepRoom state={state} dispatch={dispatch} /> : null}
-          {state.step === 2 ? <StepRoles state={state} dispatch={dispatch} /> : null}
-          {state.step === 3 ? <StepStyle state={state} dispatch={dispatch} /> : null}
-          {state.step === 4 ? <StepPreview state={state} dispatch={dispatch} onSubmit={onSubmit} /> : null}
+          <div className="lobby-step-slot" data-active={state.step === 1} aria-hidden={state.step !== 1} inert={state.step !== 1}>
+            <StepRoom state={state} dispatch={dispatch} />
+          </div>
+          <div className="lobby-step-slot" data-active={state.step === 2} aria-hidden={state.step !== 2} inert={state.step !== 2}>
+            <StepRoles state={state} dispatch={dispatch} />
+          </div>
+          <div className="lobby-step-slot" data-active={state.step === 3} aria-hidden={state.step !== 3} inert={state.step !== 3}>
+            <StepStyle state={state} dispatch={dispatch} />
+          </div>
+          <div className="lobby-step-slot" data-active={state.step === 4} aria-hidden={state.step !== 4} inert={state.step !== 4}>
+            <StepPreview state={state} dispatch={dispatch} onSubmit={onSubmit} />
+          </div>
         </div>
         {state.formError ? <p className="lobby-form-error">{state.formError}</p> : null}
       </div>

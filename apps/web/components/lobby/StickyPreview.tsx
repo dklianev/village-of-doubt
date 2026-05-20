@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import {
   ROLE_DEFINITIONS,
   countRoles,
@@ -19,7 +20,7 @@ import {
 } from "@/lib/lobby-form";
 import { roleThumbStyle } from "@/lib/role-art";
 
-export function StickyPreview({
+function StickyPreviewImpl({
   state,
   dispatch,
   compact = false,
@@ -44,7 +45,11 @@ export function StickyPreview({
       <div className="preview-balance">
         <span>{state.family === "werewolves" ? "Баланс" : "Роли"}</span>
         <strong>{state.family === "werewolves" ? (balance > 0 ? `+${balance}` : balance) : `${total}/${boundedPlayerCount(state)}`}</strong>
-        <i style={{ width: `${Math.max(10, Math.min(100, state.family === "werewolves" ? 100 - Math.abs(balance) * 12 : (total / boundedPlayerCount(state)) * 100))}%` }} />
+        <i
+          style={{
+            transform: `scaleX(${Math.max(0.1, Math.min(1, state.family === "werewolves" ? (100 - Math.abs(balance) * 12) / 100 : total / boundedPlayerCount(state)))})`,
+          }}
+        />
       </div>
       <div className={`preview-warning ${warnings.length > 0 ? "has-warnings" : "is-clean"}`}>
         {warnings.length > 0 ? warnings.slice(0, 2).join(" ") : "Тази комбинация от роли е валидна."}
@@ -83,6 +88,24 @@ export function StickyPreview({
     </aside>
   );
 }
+
+export const StickyPreview = memo(StickyPreviewImpl, (prev, next) => {
+  const p = prev.state;
+  const n = next.state;
+  return (
+    prev.compact === next.compact &&
+    prev.dispatch === next.dispatch &&
+    p.roomName === n.roomName &&
+    p.mode === n.mode &&
+    p.playerCount === n.playerCount &&
+    p.family === n.family &&
+    p.manualRoles === n.manualRoles &&
+    p.manualRolesEnabled === n.manualRolesEnabled &&
+    p.rolePreset === n.rolePreset &&
+    p.tempoProfile === n.tempoProfile &&
+    p.advanced === n.advanced
+  );
+});
 
 function summarizeTeams(state: LobbyFormState) {
   const roles = currentConfig(state).roles;

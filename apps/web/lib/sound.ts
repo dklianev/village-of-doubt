@@ -50,13 +50,15 @@ export function playCue(name: CueName, options: PlayCueOptions = {}) {
   }
 
   try {
-    const AudioContextCtor =
-      window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-    if (!AudioContextCtor) {
+    const context = getSharedAudioContext();
+    if (!context) {
       return false;
     }
 
-    const context = new AudioContextCtor();
+    if (context.state === "suspended") {
+      void context.resume();
+    }
+
     const master = context.createGain();
     master.gain.setValueAtTime(0.9, context.currentTime);
     master.connect(context.destination);
@@ -79,12 +81,30 @@ export function playCue(name: CueName, options: PlayCueOptions = {}) {
     }
 
     const longestCueMs = Math.max(...CUE_PATTERNS[name].map((voice) => (voice.at + voice.length) * 1000));
-    window.setTimeout(() => void context.close(), longestCueMs + 120);
+    window.setTimeout(() => master.disconnect(), longestCueMs + 120);
     return true;
   } catch {
     // Mobile browsers often block Web Audio until a gesture. Visual feedback still works.
     return false;
   }
+}
+
+let sharedAudioContext: AudioContext | null = null;
+
+function getSharedAudioContext() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  if (sharedAudioContext) {
+    return sharedAudioContext;
+  }
+  const AudioContextCtor =
+    window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!AudioContextCtor) {
+    return null;
+  }
+  sharedAudioContext = new AudioContextCtor();
+  return sharedAudioContext;
 }
 
 function getBrowserStorage() {
