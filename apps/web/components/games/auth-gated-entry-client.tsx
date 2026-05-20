@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { DoorOpen, Eye, Gamepad2, KeyRound, LoaderCircle, Plus, Users } from "lucide-react";
 import {
   type CommunicationMode,
   type GameFamily,
@@ -59,29 +60,43 @@ export function AuthGatedEntryClient({
 
   if (isPending || !session) {
     return (
-      <section className="paper-card auth-entry-card rounded-[2rem] p-7" data-theme={family} data-family={family}>
-        <p className="section-kicker text-[#842f2b]">влез в стаята</p>
-        <h2 className="mt-3 text-4xl font-black">Проверяваме профила</h2>
-        <p className="mt-3 leading-7">След вход ще те върнем към поканата за тази стая.</p>
+      <section className="auth-entry-card join-entry-card" data-theme={family} data-family={family}>
+        <span className="join-entry-mark" aria-hidden>
+          <LoaderCircle strokeWidth={1.8} />
+        </span>
+        <p className="section-kicker join-entry-kicker">влез в стаята</p>
+        <h2>Проверяваме профила</h2>
+        <p>След вход ще те върнем към поканата за тази стая.</p>
       </section>
     );
   }
 
   return (
-    <section className="paper-card auth-entry-card rounded-[2rem] p-7" data-theme={family} data-family={family}>
-      <p className="section-kicker text-[#842f2b]">влез в стаята</p>
-      <h2 className="mt-3 text-4xl font-black">Добре дошъл, {session.user.name ?? "играч"}.</h2>
-      <p className="mt-3 leading-7">Въведи кода на стаята, за да се присъединиш към играта с твоя профил.</p>
+    <section className="auth-entry-card join-entry-card" data-theme={family} data-family={family}>
+      <header className="join-entry-hero">
+        <span className="join-entry-mark" aria-hidden>
+          <DoorOpen strokeWidth={1.8} />
+        </span>
+        <div>
+          <p className="section-kicker join-entry-kicker">влез в стаята</p>
+          <h2>Добре дошъл, {session.user.name ?? "играч"}.</h2>
+          <p>Въведи кода на стаята, за да се присъединиш към играта с твоя профил.</p>
+        </div>
+      </header>
 
-      <div className="mt-6 grid gap-4">
-        <label className="grid gap-2">
-          <span className="text-xs font-black uppercase tracking-[0.25em] text-[#842f2b]">Код на стая</span>
+      <div className="join-entry-code-panel">
+        <label className="join-entry-code-field">
+          <span>
+            <KeyRound aria-hidden strokeWidth={1.8} />
+            Код на стая
+          </span>
           <input
             className="input"
             value={roomCode}
             maxLength={12}
             onChange={(event) => setRoomCode(cleanRoomCode(event.target.value))}
             placeholder="ABC123"
+            aria-label="Код на стая"
           />
         </label>
         <button
@@ -92,17 +107,20 @@ export function AuthGatedEntryClient({
           onClick={() => setSpectator((value) => !value)}
         >
           <span className="join-spectator-dot" aria-hidden />
+          {spectator ? <Eye aria-hidden strokeWidth={1.8} /> : <Gamepad2 aria-hidden strokeWidth={1.8} />}
           {spectator ? "Сядам встрани, без роля" : "Влизам да играя"}
         </button>
       </div>
 
-      {error ? <p className="mt-4 rounded-2xl bg-[#842f2b]/10 p-4 font-bold text-[#842f2b]">{error}</p> : null}
+      {error ? <p className="join-entry-error">{error}</p> : null}
 
-      <div className="mt-6 flex flex-wrap gap-3">
+      <div className="join-entry-actions">
         <button className="btn btn-primary" type="button" onClick={() => submit("join")} disabled={roomCode.length < 4}>
+          <Users aria-hidden strokeWidth={1.8} />
           Влез в стая
         </button>
         <Link className="btn btn-secondary" href={`${gameRoot}/create`}>
+          <Plus aria-hidden strokeWidth={1.8} />
           Създай стая
         </Link>
       </div>
