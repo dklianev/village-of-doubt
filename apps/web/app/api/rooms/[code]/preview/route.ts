@@ -9,7 +9,7 @@ type RoomPreview = {
   family: GameFamily | null;
 };
 
-export const dynamic = "force-dynamic";
+export const revalidate = 5;
 
 export async function GET(_request: Request, { params }: { params: Promise<{ code: string }> }) {
   const { code: rawCode } = await params;
@@ -21,7 +21,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ cod
 
   try {
     const response = await fetch(`${gameServerHttpUrl()}/rooms/${code}/preview`, {
-      cache: "no-store",
+      next: { revalidate: 5 },
       signal: AbortSignal.timeout(2000),
     });
 
@@ -36,7 +36,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ cod
 
     return NextResponse.json(data, {
       status: 200,
-      headers: { "Cache-Control": "private, max-age=5" },
+      headers: { "Cache-Control": "private, max-age=5, stale-while-revalidate=10" },
     });
   } catch {
     return NextResponse.json({ status: "missing" } satisfies Partial<RoomPreview>, { status: 404 });

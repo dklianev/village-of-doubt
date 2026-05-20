@@ -119,7 +119,7 @@ export function AuthGatedEntryClient({
 
     let cancelled = false;
     setPreviewLoading(true);
-    fetch(`/api/rooms/${roomCode}/preview`, { cache: "no-store" })
+    fetch(`/api/rooms/${roomCode}/preview`)
       .then((response) => (response.ok ? (response.json() as Promise<RoomPreview>) : Promise.reject()))
       .then((data) => {
         if (!cancelled) {

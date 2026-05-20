@@ -135,7 +135,9 @@ export async function getGameHistoryForUser(db: Database, userId: string, limit 
   const playerGames = await db
     .select({ gameId: gamePlayers.gameId })
     .from(gamePlayers)
+    .innerJoin(games, eq(gamePlayers.gameId, games.id))
     .where(eq(gamePlayers.userId, userId))
+    .orderBy(desc(games.createdAt))
     .limit(limit);
   const playerGameIds = [...new Set(playerGames.map((game) => game.gameId))];
   const whereClause =

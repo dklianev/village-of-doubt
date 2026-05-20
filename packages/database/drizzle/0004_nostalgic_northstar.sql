@@ -1,0 +1,2 @@
+CREATE INDEX "game_events_game_id_created_at_idx" ON "game_events" USING btree ("game_id","created_at" DESC NULLS LAST);--> statement-breakpoint
+CREATE INDEX "user_achievements_user_id_unlocked_at_idx" ON "user_achievements" USING btree ("user_id","unlocked_at" DESC NULLS LAST);

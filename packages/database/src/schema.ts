@@ -149,6 +149,7 @@ export const gameEvents = pgTable(
   (table) => [
     index("game_events_game_id_idx").on(table.gameId),
     index("game_events_created_at_idx").on(table.createdAt),
+    index("game_events_game_id_created_at_idx").on(table.gameId, table.createdAt.desc()),
   ],
 );
 
@@ -166,5 +167,6 @@ export const userAchievements = pgTable(
   (table) => [
     uniqueIndex("user_achievements_user_achievement_idx").on(table.userId, table.achievementId),
     index("user_achievements_user_id_idx").on(table.userId),
+    index("user_achievements_user_id_unlocked_at_idx").on(table.userId, table.unlockedAt.desc()),
   ],
 );
