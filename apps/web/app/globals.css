@@ -11716,9 +11716,16 @@ html[data-theme="light"] .plaque-loading {
 .newspaper-shell {
   display: grid;
   place-items: start center;
-  width: min(1160px, calc(100vw - 32px));
-  min-height: 100vh;
-  padding: 32px 0 64px;
+  width: min(1180px, 94vw);
+  min-height: auto;
+  margin: 24px auto 96px;
+  border: 1px solid rgba(245, 232, 200, 0.14);
+  border-radius: 28px;
+  padding: clamp(16px, 2.4vw, 32px);
+  background: rgba(17, 12, 10, 0.9);
+  box-shadow:
+    0 32px 60px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(245, 232, 200, 0.08);
   z-index: 0;
   isolation: isolate;
 }
@@ -11733,7 +11740,6 @@ html[data-theme="light"] .plaque-loading {
     linear-gradient(115deg, rgba(8, 8, 8, 0.94), rgba(26, 16, 12, 0.82) 44%, rgba(8, 9, 9, 0.96)),
     var(--art-history) center / cover no-repeat;
   content: "";
-  filter: saturate(0.72) contrast(1.08);
 }
 
 .newspaper-page {
@@ -11741,7 +11747,7 @@ html[data-theme="light"] .plaque-loading {
   width: 100%;
   max-width: 1100px;
   padding: 48px 56px 56px;
-  border-radius: 4px;
+  border-radius: 18px;
   background-color: #f6e6c4;
   background-image:
     radial-gradient(ellipse 80% 60% at 30% 20%, rgba(255, 250, 230, 0.55), transparent 70%),
@@ -12080,8 +12086,15 @@ html[data-theme="light"] .newspaper-shell::before {
     radial-gradient(ellipse at 18% 16%, rgba(169, 111, 34, 0.12), transparent 34rem),
     linear-gradient(180deg, rgba(255, 247, 229, 0.82), rgba(247, 231, 200, 0.94)),
     var(--art-history) center / cover no-repeat;
-  filter: saturate(0.66) contrast(0.94);
   opacity: 0.72;
+}
+
+html[data-theme="light"] .newspaper-shell {
+  border-color: rgba(83, 52, 31, 0.16);
+  background: rgba(252, 246, 236, 0.9);
+  box-shadow:
+    0 32px 60px rgba(67, 39, 24, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.58);
 }
 
 @media (max-width: 1023px) {
@@ -12128,8 +12141,10 @@ html[data-theme="light"] .newspaper-shell::before {
 
 @media (max-width: 639px) {
   .newspaper-shell {
-    width: min(calc(100vw - 20px), 1160px);
-    padding-top: 18px;
+    width: min(calc(100vw - 16px), 1160px);
+    margin-top: 12px;
+    padding: 8px;
+    border-radius: 22px;
   }
 
   .newspaper-page {
