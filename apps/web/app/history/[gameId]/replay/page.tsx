@@ -1,8 +1,16 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createDatabase, getGameHistoryById, getGameTimeline } from "@werewolf/database";
-import { deriveAchievementsFromEvents, phaseLabelBg, type GameMode, type GamePhase } from "@werewolf/shared";
+import {
+  deriveAchievementsFromEvents,
+  getRoleNameBg,
+  phaseLabelBg,
+  type GameMode,
+  type GamePhase,
+  type RoleCode,
+} from "@werewolf/shared";
 
 export const dynamic = "force-dynamic";
 
@@ -19,30 +27,77 @@ export default async function ReplayPage({ params }: { params: Promise<{ gameId:
   }
 
   const mode = modeFromConfig(replay.game.config);
+  const groupedTimeline = groupTimeline(replay.timeline, mode);
+  const participants = collectReplayParticipants(replay.timeline);
+  const duration = formatDuration(replay.game.startedAt, replay.game.endedAt);
 
   return (
-    <main className="shell history-shell replay-shell" data-theme={mode === "werewolves_classic" ? "werewolves" : "mafia"}>
-      <section className="paper-card replay-hero rounded-[2rem] p-8">
-        <p className="section-kicker text-[#842f2b]">преглед след игра</p>
-        <h1 className="mt-3 text-5xl font-black">Запис на стая {replay.game.code}</h1>
-        <p className="mt-4 max-w-3xl text-[#4f3829]">
-          Хронология от записаните събития. Тук няма състояние на наблюдател на живо и няма чужди тайни роли
-          извън това, което играта е записала като публично или модераторско събитие.
-        </p>
-        <div className="replay-summary mt-6">
-          <Summary label="Режим" value={modeBg(mode)} />
-          <Summary label="Победител" value={winnerBg(replay.game.winnerTeam)} />
-          <Summary label="Събития" value={String(replay.game.eventCount)} />
-          <Summary label="Край" value={formatDate(replay.game.endedAt)} />
-        </div>
-      </section>
+    <main
+      className="shell history-shell replay-shell framed-shell"
+      data-theme={mode === "werewolves_classic" ? "werewolves" : "mafia"}
+    >
+      <div className="framed-shell-inner">
+        <header className="replay-hero-v2">
+          <Image
+            src="/game-art/legal/replay-banner.webp"
+            alt=""
+            fill
+            priority
+            sizes="(max-width: 1180px) 100vw, 1180px"
+            className="replay-hero-img"
+          />
+          <div className="replay-hero-scrim" aria-hidden />
+          <div className="replay-hero-copy">
+            <p className="replay-kicker">преглед след игра</p>
+            <h1>Запис на стая {replay.game.code}.</h1>
+            <p>
+              Хронология от записаните събития. Тайните роли се показват само ако вече са част от
+              записа.
+            </p>
+            <div className="replay-summary">
+              <Summary label="Режим" value={modeBg(mode)} />
+              <Summary label="Победител" value={winnerBg(replay.game.winnerTeam)} />
+              <Summary label="Времетраене" value={duration} />
+              <Summary label="Събития" value={String(replay.game.eventCount)} />
+            </div>
+          </div>
+        </header>
 
-      <section className="replay-timeline mt-6">
+        <section className="replay-verdict-card">
+          <p className="replay-kicker">победата</p>
+          <h2>{winnerBg(replay.game.winnerTeam)}</h2>
+          <p>
+            Финалът е записан на {formatDate(replay.game.endedAt)}. В хронологията има{" "}
+            {replay.timeline.length} събития, групирани по фаза за по-лесен преглед.
+          </p>
+        </section>
+
+        <section className="replay-participants" aria-label="Играчите в записа">
+          <div className="replay-section-head">
+            <p className="replay-kicker">играчи</p>
+            <h2>Участници от записа</h2>
+          </div>
+          <div className="replay-player-grid">
+            {participants.length > 0 ? (
+              participants.map((participant) => (
+                <span key={participant.id} className="replay-player-chip">
+                  <strong>{participant.initial}</strong>
+                  <span>{participant.label}</span>
+                  <em>{participant.role ?? "роля в записа"}</em>
+                </span>
+              ))
+            ) : (
+              <p className="replay-empty-note">В събитията няма отделно записани имена на играчи.</p>
+            )}
+          </div>
+        </section>
+
+        <section className="replay-timeline-v2" aria-label="Хронология на играта">
         {replay.achievements.length > 0 ? (
-          <article className="paper-card achievement-unlocks rounded-[2rem] p-7">
-            <p className="section-kicker text-[#842f2b]">отключени моменти</p>
-            <h2 className="mt-2 text-3xl font-black">Постижения от тази игра</h2>
-            <div className="achievement-grid mt-5">
+          <article className="replay-achievements">
+            <p className="replay-kicker">отключени моменти</p>
+            <h2>Постижения от тази игра</h2>
+            <div className="achievement-grid">
               {replay.achievements.map((achievement) => (
                 <div key={achievement.id} className="achievement-card">
                   <span>{achievement.iconBg}</span>
@@ -53,32 +108,45 @@ export default async function ReplayPage({ params }: { params: Promise<{ gameId:
             </div>
           </article>
         ) : null}
-        {replay.timeline.map((event, index) => (
-          <article key={event.id} className={`replay-event event-${event.type}`}>
-            <span className="replay-index">{String(index + 1).padStart(2, "0")}</span>
-            <div>
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <h2>{eventTypeBg(event.type)}</h2>
-                <span className="replay-phase">
-                  рунд {event.round} · {phaseBg(event.phase, mode)} · {visibilityBg(event.visibility)}
-                </span>
-              </div>
-              <p>{formatPayload(event.payload)}</p>
-              <small>{formatDate(event.createdAt)}</small>
-            </div>
-          </article>
-        ))}
-        {replay.timeline.length === 0 ? (
-          <article className="paper-card rounded-[2rem] p-7">
-            <h2 className="text-3xl font-black">Няма записани събития</h2>
-            <p className="mt-3 text-[#4f3829]">Играта съществува, но записът е празен.</p>
-          </article>
-        ) : null}
-      </section>
+          {groupedTimeline.map((group) => (
+            <article key={group.key} className="replay-phase-group">
+              <header>
+                <span>{group.events.length}</span>
+                <div>
+                  <p className="replay-kicker">рунд {group.round}</p>
+                  <h2>{group.phaseLabel}</h2>
+                </div>
+              </header>
+              <ol>
+                {group.events.map((event, index) => (
+                  <li key={event.id} className="replay-event-v2" data-tone={eventTone(event.type)}>
+                    <span className="replay-index">{String(index + 1).padStart(2, "0")}</span>
+                    <div>
+                      <h3>{eventTypeBg(event.type)}</h3>
+                      <p>{formatPayload(event.payload)}</p>
+                      <small>
+                        {visibilityBg(event.visibility)} · {formatDate(event.createdAt)}
+                      </small>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </article>
+          ))}
+          {replay.timeline.length === 0 ? (
+            <article className="replay-empty-card">
+              <h2>Няма записани събития</h2>
+              <p>Играта съществува, но записът е празен.</p>
+            </article>
+          ) : null}
+        </section>
 
-      <Link className="btn btn-secondary mt-6" href="/history">
-        Назад към историята
-      </Link>
+        <nav className="replay-actions" aria-label="Действия със записа">
+          <Link className="btn btn-secondary" href="/history">
+            Назад към историята
+          </Link>
+        </nav>
+      </div>
     </main>
   );
 }
@@ -110,6 +178,129 @@ function Summary({ label, value }: { label: string; value: string }) {
       <strong>{value}</strong>
     </div>
   );
+}
+
+type ReplayData = NonNullable<Awaited<ReturnType<typeof loadReplay>>>;
+type TimelineEvent = ReplayData["timeline"][number];
+type ReplayParticipant = { id: string; label: string; role: string | undefined; initial: string };
+
+function groupTimeline(events: TimelineEvent[], mode: GameMode) {
+  const groups = new Map<
+    string,
+    {
+      key: string;
+      round: number;
+      phaseLabel: string;
+      events: TimelineEvent[];
+    }
+  >();
+
+  for (const event of events) {
+    const key = `${event.round}:${event.phase}`;
+    const existing = groups.get(key);
+    if (existing) {
+      existing.events.push(event);
+    } else {
+      groups.set(key, {
+        key,
+        round: event.round,
+        phaseLabel: phaseBg(event.phase, mode),
+        events: [event],
+      });
+    }
+  }
+
+  return [...groups.values()];
+}
+
+function collectReplayParticipants(events: TimelineEvent[]) {
+  const participants = new Map<string, ReplayParticipant>();
+
+  for (const event of events) {
+    const payload = payloadRecord(event.payload);
+    const actorName = stringValue(payload.actorNameBg) ?? stringValue(payload.actorName) ?? stringValue(payload.displayName);
+    const targetName = stringValue(payload.targetNameBg) ?? stringValue(payload.targetName);
+    const role = stringValue(payload.roleNameBg) ?? roleNameFromCode(stringValue(payload.role));
+
+    if (event.actorId) {
+      upsertParticipant(participants, event.actorId, actorName, role);
+    }
+    if (event.targetId) {
+      upsertParticipant(participants, event.targetId, targetName, role);
+    }
+    if (!event.actorId && actorName) {
+      upsertParticipant(participants, actorName, actorName, role);
+    }
+    if (!event.targetId && targetName) {
+      upsertParticipant(participants, targetName, targetName, role);
+    }
+  }
+
+  return [...participants.values()].slice(0, 12);
+}
+
+function upsertParticipant(
+  participants: Map<string, ReplayParticipant>,
+  id: string,
+  label: string | undefined,
+  role: string | undefined,
+) {
+  const nextLabel = label ?? shortId(id);
+  const existing = participants.get(id);
+  participants.set(id, {
+    id,
+    label: existing?.label && existing.label !== shortId(id) ? existing.label : nextLabel,
+    role: existing?.role ?? role,
+    initial: initialFor(nextLabel),
+  });
+}
+
+function payloadRecord(payload: unknown): Record<string, unknown> {
+  return payload && typeof payload === "object" && !Array.isArray(payload) ? (payload as Record<string, unknown>) : {};
+}
+
+function stringValue(value: unknown) {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+function roleNameFromCode(role: string | undefined) {
+  if (!role) {
+    return undefined;
+  }
+  try {
+    return getRoleNameBg(role as RoleCode);
+  } catch {
+    return role;
+  }
+}
+
+function shortId(id: string) {
+  return id.length > 8 ? `играч ${id.slice(0, 4)}` : id;
+}
+
+function initialFor(label: string) {
+  return label.trim().charAt(0).toLocaleUpperCase("bg-BG") || "И";
+}
+
+function eventTone(type: string) {
+  if (type.includes("death") || type.includes("kill")) return "danger";
+  if (type.includes("vote")) return "vote";
+  if (type.includes("reveal") || type.includes("role")) return "reveal";
+  if (type.includes("game_over") || type.includes("win")) return "victory";
+  return "neutral";
+}
+
+function formatDuration(startedAt: Date | null, endedAt: Date | null) {
+  if (!startedAt || !endedAt) {
+    return "няма данни";
+  }
+  const minutes = Math.max(1, Math.round((endedAt.getTime() - startedAt.getTime()) / 60000));
+  if (minutes < 60) {
+    return `${minutes} мин.`;
+  }
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return rest > 0 ? `${hours} ч. ${rest} мин.` : `${hours} ч.`;
 }
 
 function winnerBg(winner: string | null) {
