@@ -17855,26 +17855,27 @@ html[data-theme="light"] .site-footer-tagline {
 }
 
 .faq-hearth-item-answer-shell {
-  display: grid;
-  grid-template-rows: 0fr;
+  max-height: 0;
   overflow: hidden;
   visibility: hidden;
   opacity: 0;
+  pointer-events: none;
   transform: translateY(-6px);
   transition:
-    grid-template-rows 380ms cubic-bezier(0.22, 0.78, 0.22, 1),
+    max-height 360ms cubic-bezier(0.22, 0.78, 0.22, 1),
     opacity 240ms ease,
     transform 300ms cubic-bezier(0.22, 0.78, 0.22, 1),
     visibility 0s linear 380ms;
 }
 
 .faq-hearth-item[data-open="true"] .faq-hearth-item-answer-shell {
-  grid-template-rows: 1fr;
+  max-height: 1600px;
   visibility: visible;
   opacity: 1;
+  pointer-events: auto;
   transform: translateY(0);
   transition:
-    grid-template-rows 420ms cubic-bezier(0.22, 0.78, 0.22, 1),
+    max-height 420ms cubic-bezier(0.22, 0.78, 0.22, 1),
     opacity 260ms ease 80ms,
     transform 320ms cubic-bezier(0.22, 0.78, 0.22, 1) 40ms,
     visibility 0s linear 0s;
