@@ -78,7 +78,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         {children}
         <SiteFooter />
         <ToastHost />
-        <NonCriticalWidgets />
+        <NonCriticalWidgets initialSession={chromeSession} />
         <ServiceWorkerRegistration />
       </body>
     </html>
