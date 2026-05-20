@@ -13,8 +13,8 @@ export default async function WerewolfJoinPage({ params }: { params: Promise<{ r
   await requireSession(`/werewolf/join${initialCode ? `/${initialCode}` : ""}`);
 
   return (
-    <main className="shell lobby-shell join-shell framed-shell" data-theme="werewolves" data-family="werewolves">
-      <div className="framed-shell-inner join-shell-inner">
+    <main className="shell lobby-shell join-shell" data-theme="werewolves" data-family="werewolves">
+      <div className="join-shell-inner">
         <AuthGatedEntryClient family="werewolves" mode="werewolves_classic" initialCode={initialCode} />
       </div>
     </main>
