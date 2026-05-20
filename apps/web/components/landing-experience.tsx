@@ -35,9 +35,9 @@ export function LandingExperience({ initialSession }: { initialSession: LandingS
     <main className="shell landing-shell">
       <ResourceHints
         images={[
-          { href: "/game-art/bg-landing-hero-composited.webp", media: "(min-width: 721px)" },
+          { href: "/game-art/bg-landing-hero-composited.webp?v=2", media: "(min-width: 721px)" },
           { href: "/game-art/bg-landing-ambient-composited.webp", media: "(min-width: 721px)" },
-          { href: "/game-art/mobile/bg-landing-hero-composited.webp", media: "(max-width: 720px)" },
+          { href: "/game-art/mobile/bg-landing-hero-composited.webp?v=2", media: "(max-width: 720px)" },
           { href: "/game-art/mobile/bg-landing-ambient-composited.webp", media: "(max-width: 720px)" },
           { href: "/game-art/logo-landing-mark.webp" },
         ]}

@@ -27,7 +27,7 @@
   --art-landing: image-set(url("/game-art/bg-landing-hero.webp") type("image/webp"), url("/game-art/bg-landing-hero.png") type("image/png"));
   --art-landing-ambient: image-set(url("/game-art/bg-landing-ambient.webp") type("image/webp"), url("/game-art/bg-landing-ambient.png") type("image/png"));
   --art-landing-dual: image-set(url("/game-art/bg-landing-dual-world-v2.webp") type("image/webp"), url("/game-art/bg-landing-dual-world-v2.png") type("image/png"));
-  --art-landing-hero-composited: image-set(url("/game-art/bg-landing-hero-composited.webp") type("image/webp"), url("/game-art/bg-landing-hero-composited.png") type("image/png"));
+  --art-landing-hero-composited: image-set(url("/game-art/bg-landing-hero-composited.webp?v=2") type("image/webp"), url("/game-art/bg-landing-hero-composited.png?v=2") type("image/png"));
   --art-landing-ambient-composited: image-set(url("/game-art/bg-landing-ambient-composited.webp") type("image/webp"), url("/game-art/bg-landing-ambient-composited.png") type("image/png"));
   --hero-card-border: rgba(200, 154, 85, 0.28);
   --hero-card-scrim: linear-gradient(180deg, rgba(4, 7, 8, 0) 0%, rgba(4, 7, 8, 0.16) 100%);
@@ -170,7 +170,7 @@
     --art-landing: image-set(url("/game-art/mobile/bg-landing-hero.webp") type("image/webp"));
     --art-landing-ambient: image-set(url("/game-art/mobile/bg-landing-ambient.webp") type("image/webp"));
     --art-landing-dual: image-set(url("/game-art/mobile/bg-landing-dual-world-v2.webp") type("image/webp"));
-    --art-landing-hero-composited: image-set(url("/game-art/mobile/bg-landing-hero-composited.webp") type("image/webp"));
+    --art-landing-hero-composited: image-set(url("/game-art/mobile/bg-landing-hero-composited.webp?v=2") type("image/webp"));
     --art-landing-ambient-composited: image-set(url("/game-art/mobile/bg-landing-ambient-composited.webp") type("image/webp"));
     --art-lobby: image-set(url("/game-art/mobile/bg-lobby-tavern.webp") type("image/webp"));
     --art-reveal: image-set(url("/game-art/mobile/bg-role-reveal.webp") type("image/webp"));
@@ -1487,7 +1487,8 @@ html[data-theme="light"] .site-drawer-nav a.is-active .site-drawer-icon {
   border-color: var(--hero-card-border);
   background:
     var(--hero-card-scrim),
-    var(--art-landing-hero-composited) center top / cover no-repeat;
+    var(--art-landing-hero-composited) center top / 100% auto no-repeat,
+    linear-gradient(145deg, rgba(8, 11, 12, 0.96), rgba(17, 12, 10, 0.92));
   box-shadow: var(--hero-card-shadow);
 }
 
@@ -2995,7 +2996,8 @@ html[data-theme="dark"] .tutorial-nav .btn-secondary:disabled {
   border-color: var(--hero-card-border);
   background:
     var(--hero-card-scrim),
-    var(--art-landing-hero-composited) center top / cover no-repeat;
+    var(--art-landing-hero-composited) center top / 100% auto no-repeat,
+    linear-gradient(145deg, rgba(8, 11, 12, 0.96), rgba(17, 12, 10, 0.92));
   box-shadow: var(--hero-card-shadow);
 }
 
