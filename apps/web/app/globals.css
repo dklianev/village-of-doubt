@@ -17827,6 +17827,176 @@ html[data-theme="light"] .status-section-legend {
   color: rgba(132, 47, 43, 0.78);
 }
 
+/* Sign-out confirmation */
+
+.signout-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(5, 4, 3, 0.58);
+  backdrop-filter: blur(10px);
+}
+
+.signout-modal {
+  position: relative;
+  width: min(420px, 100%);
+  border: 1px solid rgba(245, 232, 200, 0.16);
+  border-radius: 18px;
+  padding: 24px;
+  background: rgba(17, 12, 10, 0.94);
+  color: #f5e8c8;
+  box-shadow:
+    0 34px 80px rgba(0, 0, 0, 0.52),
+    inset 0 1px 0 rgba(245, 232, 200, 0.06);
+  animation: signout-modal-in 200ms cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+@keyframes signout-modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.signout-modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(245, 232, 200, 0.14);
+  border-radius: 50%;
+  background: transparent;
+  color: rgba(245, 232, 200, 0.68);
+  cursor: pointer;
+}
+
+.signout-modal-close:hover {
+  border-color: rgba(217, 154, 66, 0.55);
+  color: #d19a42;
+}
+
+.signout-modal-close svg {
+  width: 16px;
+  height: 16px;
+}
+
+.signout-modal-head {
+  display: grid;
+  gap: 10px;
+  padding-right: 28px;
+}
+
+.signout-modal-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(217, 74, 61, 0.42);
+  border-radius: 50%;
+  background: rgba(217, 74, 61, 0.14);
+  color: #d94a3d;
+}
+
+.signout-modal-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.signout-modal h2 {
+  margin: 0;
+  color: #f5e8c8;
+  font-family: "Noto Serif Display", serif;
+  font-size: 1.5rem;
+  font-weight: 850;
+}
+
+.signout-modal p {
+  margin: 0;
+  color: rgba(245, 232, 200, 0.76);
+  line-height: 1.58;
+}
+
+.signout-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.signout-modal-cancel,
+.signout-modal-confirm {
+  min-height: 42px;
+  border-radius: 999px;
+  padding: 0 16px;
+  cursor: pointer;
+  font-weight: 850;
+}
+
+.signout-modal-cancel {
+  border: 1px solid rgba(245, 232, 200, 0.2);
+  background: transparent;
+  color: rgba(245, 232, 200, 0.82);
+}
+
+.signout-modal-confirm {
+  border: 1px solid rgba(217, 74, 61, 0.42);
+  background: rgba(217, 74, 61, 0.18);
+  color: #ffcbc5;
+}
+
+.signout-modal-cancel:hover {
+  border-color: rgba(217, 154, 66, 0.55);
+  color: #d19a42;
+}
+
+.signout-modal-confirm:hover {
+  border-color: rgba(217, 74, 61, 0.72);
+  background: rgba(217, 74, 61, 0.24);
+}
+
+[data-theme="light"] .signout-modal-backdrop {
+  background: rgba(42, 27, 16, 0.34);
+}
+
+[data-theme="light"] .signout-modal {
+  border-color: rgba(83, 52, 31, 0.18);
+  background: rgba(252, 246, 236, 0.96);
+  color: #2a1b10;
+  box-shadow:
+    0 34px 80px rgba(40, 26, 16, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+[data-theme="light"] .signout-modal h2 {
+  color: #2a1b10;
+}
+
+[data-theme="light"] .signout-modal p {
+  color: rgba(42, 27, 16, 0.74);
+}
+
+[data-theme="light"] .signout-modal-close,
+[data-theme="light"] .signout-modal-cancel {
+  border-color: rgba(83, 52, 31, 0.16);
+  color: rgba(42, 27, 16, 0.68);
+}
+
+[data-theme="light"] .signout-modal-confirm {
+  border-color: rgba(160, 42, 34, 0.36);
+  background: rgba(160, 42, 34, 0.12);
+  color: #842f2b;
+}
+
 html[data-theme="light"] .site-utility-separator {
   background: linear-gradient(180deg, transparent, rgba(80, 50, 24, 0.26), transparent);
 }

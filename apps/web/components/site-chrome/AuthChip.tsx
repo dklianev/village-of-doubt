@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, ChevronDown, History, LogOut, Trophy, User } from "lucide-react";
+import { ArrowRight, ChevronDown, History, LogOut, Trophy, User, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
@@ -11,6 +11,8 @@ export function AuthChip({ initialSession }: { initialSession: AuthSessionView |
   const router = useRouter();
   const { data: session, isPending, refresh } = useAuthSession(initialSession);
   const [open, setOpen] = useState(false);
+  const [confirmSignOut, setConfirmSignOut] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -59,6 +61,17 @@ export function AuthChip({ initialSession }: { initialSession: AuthSessionView |
   const avatarUrl = session.user.image ?? "";
   const initial = displayName.charAt(0).toUpperCase();
 
+  async function confirmLogout() {
+    setSigningOut(true);
+    await authClient.signOut();
+    window.dispatchEvent(new Event("auth-session-change"));
+    await refresh();
+    setConfirmSignOut(false);
+    setSigningOut(false);
+    router.push("/");
+    router.refresh();
+  }
+
   return (
     <div className="auth-chip auth-chip-avatar" ref={ref}>
       <button
@@ -99,13 +112,9 @@ export function AuthChip({ initialSession }: { initialSession: AuthSessionView |
             type="button"
             role="menuitem"
             className="nav-dropdown-item nav-dropdown-item-danger"
-            onClick={async () => {
+            onClick={() => {
               setOpen(false);
-              await authClient.signOut();
-              window.dispatchEvent(new Event("auth-session-change"));
-              await refresh();
-              router.push("/");
-              router.refresh();
+              setConfirmSignOut(true);
             }}
           >
             <LogOut className="nav-dropdown-item-icon" aria-hidden strokeWidth={1.8} />
@@ -113,6 +122,63 @@ export function AuthChip({ initialSession }: { initialSession: AuthSessionView |
           </button>
         </div>
       ) : null}
+
+      {confirmSignOut ? (
+        <SignOutConfirmDialog
+          userName={displayName}
+          pending={signingOut}
+          onCancel={() => setConfirmSignOut(false)}
+          onConfirm={confirmLogout}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function SignOutConfirmDialog({
+  userName,
+  pending,
+  onCancel,
+  onConfirm,
+}: {
+  userName: string;
+  pending: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        onCancel();
+      }
+    }
+
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onCancel]);
+
+  return (
+    <div className="signout-modal-backdrop" role="presentation" onClick={onCancel}>
+      <dialog className="signout-modal" open aria-labelledby="signout-title" onClick={(event) => event.stopPropagation()}>
+        <button type="button" className="signout-modal-close" onClick={onCancel} aria-label="Затвори" disabled={pending}>
+          <X aria-hidden strokeWidth={2} />
+        </button>
+        <header className="signout-modal-head">
+          <span className="signout-modal-icon" aria-hidden>
+            <LogOut strokeWidth={1.8} />
+          </span>
+          <h2 id="signout-title">Излизаш ли от масата?</h2>
+          <p>Здрасти, {userName}. Сесията ще се затвори и ще се върнеш на началната страница.</p>
+        </header>
+        <div className="signout-modal-actions">
+          <button type="button" className="signout-modal-cancel" onClick={onCancel} disabled={pending}>
+            Отказ
+          </button>
+          <button type="button" className="signout-modal-confirm" onClick={onConfirm} disabled={pending}>
+            {pending ? "Излизане..." : "Излизам"}
+          </button>
+        </div>
+      </dialog>
     </div>
   );
 }
