@@ -494,6 +494,10 @@ html[data-theme="light"] .site-chrome[data-version="v2"] .site-brand {
   stroke-linejoin: round;
 }
 
+.site-icon {
+  flex-shrink: 0;
+}
+
 .site-play-cta svg {
   width: 17px;
   height: 17px;

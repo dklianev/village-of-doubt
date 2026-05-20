@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -9,9 +9,17 @@ import {
   Clock,
   HelpCircle,
   ListOrdered,
+  Menu,
+  Moon,
+  MoreHorizontal,
+  Play,
   Sparkles,
+  Sun,
   Trophy,
   Users,
+  Volume2,
+  VolumeX,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import { AuthChip } from "@/components/site-chrome/AuthChip";
@@ -193,7 +201,7 @@ export default function SiteChrome({ initialSession }: { initialSession: AuthSes
   return (
     <header className="site-chrome" data-version="v2" data-family={activeFamily}>
       <button className="site-mobile-menu" type="button" aria-label="Отвори менюто" onClick={openDrawer}>
-        <MenuIcon />
+        <Menu className="site-icon" aria-hidden strokeWidth={1.9} />
       </button>
 
       <BrandMark compact={false} />
@@ -215,7 +223,7 @@ export default function SiteChrome({ initialSession }: { initialSession: AuthSes
       />
 
       <Link className="site-play-cta site-play-cta-mobile" href={playHref} prefetch={false}>
-        <PlayIcon />
+        <Play className="site-icon" aria-hidden strokeWidth={1.9} />
         <span>Играй</span>
       </Link>
 
@@ -278,7 +286,7 @@ function PrimaryBand({
   return (
     <nav className="site-primary-band" aria-label="Основна навигация">
       <Link className="site-play-cta" href={playHref} prefetch={false}>
-        <PlayIcon />
+        <Play className="site-icon" aria-hidden strokeWidth={1.9} />
         <span>Играй</span>
       </Link>
       <div className="site-family-switcher" aria-label="Семейство игри">
@@ -288,7 +296,7 @@ function PrimaryBand({
       </div>
       <div className="site-more-menu" ref={dropdownRef}>
         <button className="site-icon-button" type="button" aria-label="Още страници" aria-expanded={dropdownOpen} onClick={onToggleDropdown}>
-          <DotsIcon />
+          <MoreHorizontal className="site-icon" aria-hidden strokeWidth={1.9} />
         </button>
         {dropdownOpen ? (
           <div className="nav-dropdown nav-dropdown-overflow" role="menu">
@@ -353,10 +361,18 @@ function UtilityCluster({
   return (
     <div className="site-utility-cluster" aria-label="Настройки">
       <button className="site-icon-button" type="button" aria-label={soundEnabled ? "Звук включен" : "Звук изключен"} onClick={onToggleSound}>
-        {soundEnabled ? <SpeakerWaveIcon /> : <SpeakerXIcon />}
+        {soundEnabled ? (
+          <Volume2 className="site-icon" aria-hidden strokeWidth={1.9} />
+        ) : (
+          <VolumeX className="site-icon" aria-hidden strokeWidth={1.9} />
+        )}
       </button>
       <button className="site-icon-button" type="button" aria-label={themeLabel(themePreference)} onClick={onCycleTheme}>
-        <ThemeIcon preference={themePreference} />
+        {themePreference === "dark" ? (
+          <Moon className="site-icon" aria-hidden strokeWidth={1.9} />
+        ) : (
+          <Sun className="site-icon" aria-hidden strokeWidth={1.9} />
+        )}
       </button>
       {showAuth ? (
         <>
@@ -398,7 +414,7 @@ function MobileDrawer({
         <div className="site-drawer-header">
           <BrandMark compact />
           <button className="site-icon-button" type="button" aria-label="Затвори менюто" onClick={onClose}>
-            <CloseIcon />
+            <X className="site-icon" aria-hidden strokeWidth={1.9} />
           </button>
         </div>
         <nav className="site-drawer-nav" aria-label="Мобилна навигация">
@@ -475,77 +491,4 @@ function applyThemePreference(preference: ThemePreference) {
 
 function themeLabel(preference: ThemePreference) {
   return preference === "dark" ? "Тъмна тема" : "Светла тема";
-}
-
-function Icon({ children }: { children: ReactNode }) {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      {children}
-    </svg>
-  );
-}
-
-function MenuIcon() {
-  return (
-    <Icon>
-      <path d="M4 7h16M4 12h16M4 17h16" />
-    </Icon>
-  );
-}
-
-function CloseIcon() {
-  return (
-    <Icon>
-      <path d="M6 6l12 12M18 6L6 18" />
-    </Icon>
-  );
-}
-
-function DotsIcon() {
-  return (
-    <Icon>
-      <circle cx="6" cy="12" r="1.7" />
-      <circle cx="12" cy="12" r="1.7" />
-      <circle cx="18" cy="12" r="1.7" />
-    </Icon>
-  );
-}
-
-function PlayIcon() {
-  return (
-    <Icon>
-      <path d="M9 6.8v10.4L17.2 12 9 6.8z" fill="currentColor" stroke="none" />
-    </Icon>
-  );
-}
-
-function SpeakerWaveIcon() {
-  return (
-    <Icon>
-      <path d="M4 14.5h3.3L12 18V6L7.3 9.5H4v5z" />
-      <path d="M15 9.2a4 4 0 0 1 0 5.6M17.8 6.7a8 8 0 0 1 0 10.6" />
-    </Icon>
-  );
-}
-
-function SpeakerXIcon() {
-  return (
-    <Icon>
-      <path d="M4 14.5h3.3L12 18V6L7.3 9.5H4v5z" />
-      <path d="M16 9l5 5M21 9l-5 5" />
-    </Icon>
-  );
-}
-
-function ThemeIcon({ preference }: { preference: ThemePreference }) {
-  return preference === "dark" ? (
-    <Icon>
-      <path d="M19.2 14.8A7.2 7.2 0 0 1 9.2 4.8 8 8 0 1 0 19.2 14.8z" />
-    </Icon>
-  ) : (
-    <Icon>
-      <circle cx="12" cy="12" r="4" />
-      <path d="M12 2.8v2M12 19.2v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2.8 12h2M19.2 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4" />
-    </Icon>
-  );
 }
