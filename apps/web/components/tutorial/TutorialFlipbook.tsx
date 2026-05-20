@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { X } from "lucide-react";
 import { SlideDay } from "./SlideDay";
 import { SlideFinal } from "./SlideFinal";
 import { SlideNight } from "./SlideNight";
@@ -28,6 +29,7 @@ export function TutorialFlipbook() {
   const searchParams = useSearchParams();
   const [current, setCurrent] = useState(() => readInitialSlide(searchParams));
   const [hydrated, setHydrated] = useState(false);
+  const [welcomeVisible, setWelcomeVisible] = useState(() => searchParams.get("welcome") === "1");
 
   useEffect(() => {
     if (searchParams.get("step")) {
@@ -88,6 +90,15 @@ export function TutorialFlipbook() {
     return () => window.removeEventListener("keydown", onKey);
   }, [next, prev]);
 
+  useEffect(() => {
+    if (!welcomeVisible) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => setWelcomeVisible(false), 6000);
+    return () => window.clearTimeout(timer);
+  }, [welcomeVisible]);
+
   const slide = useMemo(() => {
     switch (current) {
       case 1:
@@ -109,6 +120,18 @@ export function TutorialFlipbook() {
 
   return (
     <section className="tutorial-flipbook" aria-label="Наръчник за първа игра">
+      {welcomeVisible ? (
+        <aside className="tutorial-welcome-banner" role="status">
+          <p>
+            <span>добре дошъл</span>
+            <strong>Играч,</strong> ето кратък пробег през първата игра.
+          </p>
+          <button type="button" onClick={() => setWelcomeVisible(false)} aria-label="Затвори">
+            <X aria-hidden strokeWidth={2} />
+          </button>
+        </aside>
+      ) : null}
+
       <TutorialProgress current={current} total={TOTAL_SLIDES} onJump={goTo} />
 
       <div className="tutorial-slide-stage" role="region">

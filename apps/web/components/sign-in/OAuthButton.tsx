@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
+import { resolveWelcomeRedirect } from "./welcome-redirect";
 
 interface Props {
   provider: "google" | "discord";
@@ -28,7 +29,7 @@ export function OAuthButton({ provider, redirectTo }: Props) {
     try {
       await authClient.signIn.social({
         provider,
-        callbackURL: redirectTo,
+        callbackURL: resolveWelcomeRedirect(redirectTo),
       });
     } catch (error) {
       console.error(`[oauth:${provider}]`, error);

@@ -4,6 +4,7 @@ import { type FormEvent, useId, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import { resolveWelcomeRedirect } from "./welcome-redirect";
 
 type Mode = "sign-in" | "sign-up";
 
@@ -51,7 +52,7 @@ export function EmailPasswordForm({ redirectTo }: { redirectTo: string }) {
     }
 
     window.dispatchEvent(new Event("auth-session-change"));
-    startTransition(() => router.push(redirectTo));
+    startTransition(() => router.push(resolveWelcomeRedirect(redirectTo)));
   }
 
   return (
