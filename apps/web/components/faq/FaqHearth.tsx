@@ -232,7 +232,7 @@ export function FaqHearth({ items }: { items: readonly FaqItem[] }) {
                           <ChevronDown className="faq-hearth-item-chevron" aria-hidden strokeWidth={2.2} />
                         </button>
 
-                        {isOpen ? (
+                        <div className="faq-hearth-item-answer-shell" aria-hidden={!isOpen}>
                           <div className="faq-hearth-item-answer">
                             <FaqAnswerRenderer blocks={item.answer} />
 
@@ -278,7 +278,7 @@ export function FaqHearth({ items }: { items: readonly FaqItem[] }) {
                               </div>
                             </footer>
                           </div>
-                        ) : null}
+                        </div>
                       </article>
                     </li>
                   );
