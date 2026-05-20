@@ -12795,6 +12795,187 @@ html[data-theme="light"] .sign-in-table {
   margin-top: 16px;
 }
 
+/* Auth recovery — framed shell polish */
+
+.auth-recovery-shell.framed-shell {
+  width: min(1100px, 92vw);
+  min-height: auto;
+  place-items: stretch;
+}
+
+.auth-recovery-shell .framed-shell-inner {
+  padding: clamp(16px, 3vw, 28px);
+}
+
+.auth-recovery-shell .locksmith-stage,
+.auth-recovery-shell .forge-stage,
+.auth-recovery-shell .seal-stage {
+  max-width: none;
+  min-height: 560px;
+}
+
+.auth-recovery-shell .locksmith-art,
+.auth-recovery-shell .forge-art,
+.auth-recovery-shell .seal-art {
+  overflow: hidden;
+  border: 1px solid rgba(245, 232, 200, 0.14);
+  box-shadow:
+    0 24px 54px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 rgba(245, 232, 200, 0.08);
+}
+
+.auth-recovery-shell .locksmith-card,
+.auth-recovery-shell .forge-card,
+.auth-recovery-shell .seal-card {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+  border: 1px solid rgba(245, 232, 200, 0.14);
+  border-radius: 18px;
+  padding: clamp(24px, 4vw, 38px);
+  background: rgba(13, 10, 8, 0.68);
+  color: #f5e8c8;
+  box-shadow:
+    0 24px 54px rgba(0, 0, 0, 0.36),
+    inset 0 1px 0 rgba(245, 232, 200, 0.06);
+  backdrop-filter: blur(14px);
+}
+
+.auth-recovery-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(209, 154, 66, 0.42);
+  border-radius: 50%;
+  background: rgba(209, 154, 66, 0.16);
+  color: #d19a42;
+}
+
+.auth-recovery-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.auth-recovery-shell .locksmith-kicker,
+.auth-recovery-shell .forge-kicker,
+.auth-recovery-shell .seal-kicker {
+  color: #d19a42;
+}
+
+.auth-recovery-shell .locksmith-card h1,
+.auth-recovery-shell .forge-card h1,
+.auth-recovery-shell .seal-card h1 {
+  color: #f5e8c8;
+}
+
+.auth-recovery-shell .locksmith-subtitle,
+.auth-recovery-shell .forge-subtitle,
+.auth-recovery-shell .seal-body,
+.auth-recovery-shell .forge-card p {
+  color: rgba(245, 232, 200, 0.78);
+}
+
+.auth-recovery-shell .locksmith-form input,
+.auth-recovery-shell .forge-form input {
+  min-height: 48px;
+  border: 1px solid rgba(245, 232, 200, 0.16);
+  border-radius: 12px;
+  background: rgba(13, 10, 8, 0.48);
+  color: #f5e8c8;
+}
+
+.auth-recovery-shell .locksmith-form input:focus,
+.auth-recovery-shell .forge-form input:focus {
+  outline: none;
+  border-color: rgba(209, 154, 66, 0.62);
+  box-shadow: 0 0 0 4px rgba(209, 154, 66, 0.16);
+}
+
+.auth-recovery-shell .locksmith-form input::placeholder,
+.auth-recovery-shell .forge-form input::placeholder {
+  color: rgba(245, 232, 200, 0.42);
+}
+
+.auth-recovery-shell .locksmith-form label > span,
+.auth-recovery-shell .forge-form label > span {
+  color: #d19a42;
+}
+
+.auth-recovery-shell .locksmith-success,
+.auth-recovery-shell .forge-success {
+  border-left-color: #75b36a;
+  background: rgba(117, 179, 106, 0.14);
+  color: #f5e8c8;
+}
+
+.auth-recovery-shell .locksmith-success-hint,
+.auth-recovery-shell .seal-hint {
+  color: rgba(245, 232, 200, 0.62);
+}
+
+.auth-recovery-shell .locksmith-foot-link {
+  color: #d19a42;
+}
+
+html[data-theme="light"] .auth-recovery-shell .locksmith-card,
+html[data-theme="light"] .auth-recovery-shell .forge-card,
+html[data-theme="light"] .auth-recovery-shell .seal-card {
+  border-color: rgba(83, 52, 31, 0.18);
+  background: rgba(252, 246, 236, 0.88);
+  color: #2a1b10;
+  box-shadow:
+    0 24px 54px rgba(40, 26, 16, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+html[data-theme="light"] .auth-recovery-shell .locksmith-card h1,
+html[data-theme="light"] .auth-recovery-shell .forge-card h1,
+html[data-theme="light"] .auth-recovery-shell .seal-card h1 {
+  color: #2a1b10;
+}
+
+html[data-theme="light"] .auth-recovery-shell .locksmith-subtitle,
+html[data-theme="light"] .auth-recovery-shell .forge-subtitle,
+html[data-theme="light"] .auth-recovery-shell .seal-body,
+html[data-theme="light"] .auth-recovery-shell .forge-card p {
+  color: rgba(42, 27, 16, 0.74);
+}
+
+html[data-theme="light"] .auth-recovery-shell .locksmith-form input,
+html[data-theme="light"] .auth-recovery-shell .forge-form input {
+  border-color: rgba(83, 52, 31, 0.18);
+  background: rgba(255, 250, 238, 0.8);
+  color: #2a1b10;
+}
+
+html[data-theme="light"] .auth-recovery-shell .locksmith-form input:focus,
+html[data-theme="light"] .auth-recovery-shell .forge-form input:focus {
+  border-color: rgba(132, 47, 43, 0.5);
+  box-shadow: 0 0 0 4px rgba(132, 47, 43, 0.14);
+}
+
+html[data-theme="light"] .auth-recovery-icon {
+  border-color: rgba(132, 47, 43, 0.38);
+  background: rgba(132, 47, 43, 0.12);
+  color: #842f2b;
+}
+
+html[data-theme="light"] .auth-recovery-shell .locksmith-kicker,
+html[data-theme="light"] .auth-recovery-shell .forge-kicker,
+html[data-theme="light"] .auth-recovery-shell .seal-kicker,
+html[data-theme="light"] .auth-recovery-shell .locksmith-foot-link {
+  color: #842f2b;
+}
+
+@media (max-width: 720px) {
+  .auth-recovery-shell .locksmith-stage,
+  .auth-recovery-shell .forge-stage,
+  .auth-recovery-shell .seal-stage {
+    min-height: auto;
+  }
+}
+
 /* ============================== */
 /* Account dashboard              */
 /* ============================== */

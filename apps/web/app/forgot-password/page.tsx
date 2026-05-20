@@ -10,9 +10,11 @@ export const metadata: Metadata = {
 
 export default function ForgotPasswordPage() {
   return (
-    <main className="shell locksmith-shell">
+    <main className="shell locksmith-shell auth-recovery-shell framed-shell">
       <ResourceHints images={["/game-art/auth/forgot-password-locksmith.webp"]} />
-      <ForgotPasswordClient />
+      <div className="framed-shell-inner">
+        <ForgotPasswordClient />
+      </div>
     </main>
   );
 }

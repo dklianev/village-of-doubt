@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { MailCheck } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 
 type VerifyState = "idle" | "verifying" | "success" | "error";
@@ -47,6 +48,9 @@ export function VerifyEmailClient() {
       <figure className="seal-art" aria-hidden />
 
       <article className="seal-card">
+        <span className="auth-recovery-icon" aria-hidden>
+          <MailCheck strokeWidth={1.8} />
+        </span>
         <p className="seal-kicker">потвърждение</p>
         <h1>{state === "success" ? "Печатът е поставен." : "Притискаме печата..."}</h1>
 

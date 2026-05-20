@@ -3,6 +3,7 @@
 import { type FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { KeySquare } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 
 export function ResetPasswordClient() {
@@ -64,6 +65,9 @@ export function ResetPasswordClient() {
 
       <article className="forge-card">
         <header>
+          <span className="auth-recovery-icon" aria-hidden>
+            <KeySquare strokeWidth={1.8} />
+          </span>
           <p className="forge-kicker">нов ключ</p>
           <h1>Затвори нов ключ зад себе си.</h1>
           <p className="forge-subtitle">

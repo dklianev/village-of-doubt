@@ -2,6 +2,7 @@
 
 import { type FormEvent, useState } from "react";
 import Link from "next/link";
+import { KeyRound } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 
 export function ForgotPasswordClient() {
@@ -34,6 +35,9 @@ export function ForgotPasswordClient() {
 
       <article className="locksmith-card">
         <header>
+          <span className="auth-recovery-icon" aria-hidden>
+            <KeyRound strokeWidth={1.8} />
+          </span>
           <p className="locksmith-kicker">загубен ключ</p>
           <h1>Майсторим нов ключ.</h1>
           <p className="locksmith-subtitle">

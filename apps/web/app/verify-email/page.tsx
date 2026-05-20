@@ -11,11 +11,13 @@ export const metadata: Metadata = {
 
 export default function VerifyEmailPage() {
   return (
-    <main className="shell seal-shell">
+    <main className="shell seal-shell auth-recovery-shell framed-shell">
       <ResourceHints images={["/game-art/auth/verify-email-seal.webp"]} />
-      <Suspense fallback={<p className="seal-loading">Восъкът се топи...</p>}>
-        <VerifyEmailClient />
-      </Suspense>
+      <div className="framed-shell-inner">
+        <Suspense fallback={<p className="seal-loading">Восъкът се топи...</p>}>
+          <VerifyEmailClient />
+        </Suspense>
+      </div>
     </main>
   );
 }

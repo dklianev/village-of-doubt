@@ -11,11 +11,13 @@ export const metadata: Metadata = {
 
 export default function ResetPasswordPage() {
   return (
-    <main className="shell forge-shell">
+    <main className="shell forge-shell auth-recovery-shell framed-shell">
       <ResourceHints images={["/game-art/auth/reset-password-forge.webp"]} />
-      <Suspense fallback={<p className="forge-loading">Подготвяме ковачницата...</p>}>
-        <ResetPasswordClient />
-      </Suspense>
+      <div className="framed-shell-inner">
+        <Suspense fallback={<p className="forge-loading">Подготвяме ковачницата...</p>}>
+          <ResetPasswordClient />
+        </Suspense>
+      </div>
     </main>
   );
 }
