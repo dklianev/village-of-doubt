@@ -11088,6 +11088,194 @@ html[data-theme="light"] .friends-board .input:focus {
   }
 }
 
+/* ============================== */
+/* Offline — lantern recovery      */
+/* ============================== */
+
+.offline-shell {
+  --offline-text: #f5e8c8;
+  --offline-text-muted: rgba(245, 232, 200, 0.76);
+  --offline-surface: rgba(13, 10, 8, 0.56);
+  --offline-border: rgba(245, 232, 200, 0.14);
+  --offline-border-strong: rgba(209, 154, 66, 0.42);
+  --offline-accent: #d19a42;
+  --offline-ok: #75b36a;
+}
+
+.offline-page {
+  display: grid;
+  gap: 24px;
+  padding-bottom: 34px;
+  color: var(--offline-text);
+}
+
+.offline-hero {
+  position: relative;
+  min-height: clamp(340px, 42vw, 540px);
+  overflow: hidden;
+}
+
+.offline-hero-img {
+  object-fit: cover;
+  object-position: center 44%;
+}
+
+.offline-hero-scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(7, 10, 12, 0.16) 0%, rgba(7, 10, 12, 0.54) 55%, rgba(7, 10, 12, 0.96) 100%),
+    radial-gradient(ellipse at 24% 46%, rgba(209, 154, 66, 0.16), transparent 28rem);
+}
+
+.offline-hero-copy {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  min-height: clamp(340px, 42vw, 540px);
+  flex-direction: column;
+  justify-content: flex-end;
+  max-width: 760px;
+  padding: clamp(26px, 5vw, 52px);
+}
+
+.offline-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+  color: var(--offline-accent);
+  font-size: 0.74rem;
+  font-weight: 850;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+}
+
+.offline-kicker svg {
+  width: 17px;
+  height: 17px;
+}
+
+.offline-hero-copy h1 {
+  max-width: 13ch;
+  margin: 12px 0 14px;
+  color: #f5e8c8;
+  font-family: "Noto Serif Display", serif;
+  font-size: clamp(2.7rem, 6.5vw, 5.4rem);
+  font-weight: 900;
+  line-height: 0.98;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.68);
+  text-wrap: balance;
+}
+
+.offline-hero-copy p:not(.offline-kicker) {
+  max-width: 58ch;
+  margin: 0;
+  color: var(--offline-text-muted);
+  font-size: 1.02rem;
+  line-height: 1.68;
+}
+
+.offline-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 22px;
+  padding: 10px 12px 10px 14px;
+  border: 1px solid var(--offline-border-strong);
+  border-radius: 999px;
+  background: var(--offline-surface);
+  color: var(--offline-text);
+  font-size: 0.9rem;
+  font-weight: 800;
+  backdrop-filter: blur(14px);
+}
+
+.offline-status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--offline-accent);
+  box-shadow: 0 0 16px rgba(209, 154, 66, 0.65);
+  animation: offline-status-pulse 1.7s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.offline-status[data-state="online"] .offline-status-dot {
+  background: var(--offline-ok);
+  box-shadow: 0 0 16px rgba(117, 179, 106, 0.65);
+}
+
+@keyframes offline-status-pulse {
+  0%,
+  100% {
+    opacity: 0.54;
+    transform: scale(0.92);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.offline-status-retry {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--offline-border);
+  border-radius: 50%;
+  background: rgba(245, 232, 200, 0.08);
+  color: var(--offline-accent);
+  cursor: pointer;
+}
+
+.offline-status-retry:hover {
+  border-color: var(--offline-border-strong);
+}
+
+.offline-status-retry svg {
+  width: 15px;
+  height: 15px;
+}
+
+.offline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  width: min(920px, 92%);
+  margin: 0 auto;
+}
+
+html[data-theme="light"] .offline-shell {
+  --offline-text: #2a1b10;
+  --offline-text-muted: rgba(42, 27, 16, 0.74);
+  --offline-surface: rgba(252, 246, 236, 0.72);
+  --offline-border: rgba(83, 52, 31, 0.16);
+  --offline-border-strong: rgba(132, 47, 43, 0.34);
+  --offline-accent: #842f2b;
+  --offline-ok: #3a7a3a;
+}
+
+html[data-theme="light"] .offline-hero-scrim {
+  background:
+    linear-gradient(180deg, rgba(7, 10, 12, 0.08) 0%, rgba(7, 10, 12, 0.28) 55%, rgba(252, 246, 236, 0.96) 100%),
+    radial-gradient(ellipse at 24% 46%, rgba(132, 47, 43, 0.14), transparent 28rem);
+}
+
+html[data-theme="light"] .offline-status-retry {
+  background: rgba(132, 47, 43, 0.08);
+}
+
+@media (max-width: 560px) {
+  .offline-status {
+    align-items: flex-start;
+    border-radius: 18px;
+  }
+}
+
 @media (max-width: 1100px) {
   .landing-hero-copy {
     max-width: 100%;
