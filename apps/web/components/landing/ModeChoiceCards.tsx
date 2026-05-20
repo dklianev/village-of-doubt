@@ -5,6 +5,7 @@ import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
 
 type LastFamily = "werewolves" | "mafia";
+type LandingSession = { user: { id: string; name?: string | null } } | null;
 
 export type ModeChoiceGame = {
   id: "werewolf" | "mafia";
@@ -16,8 +17,9 @@ export type ModeChoiceGame = {
   href: string;
 };
 
-export function ModeChoiceCards({ games }: { games: readonly ModeChoiceGame[] }) {
-  const { data: session } = authClient.useSession();
+export function ModeChoiceCards({ games, initialSession }: { games: readonly ModeChoiceGame[]; initialSession: LandingSession }) {
+  const sessionQuery = authClient.useSession();
+  const session = sessionQuery.data ?? initialSession;
   const [lastFamily, setLastFamily] = useState<LastFamily | null>(null);
 
   useEffect(() => {
@@ -48,10 +50,10 @@ export function ModeChoiceCards({ games }: { games: readonly ModeChoiceGame[] })
               <Link href={primaryHref} className="btn btn-primary">
                 {session ? "Избери игра" : "Влез и играй"}
               </Link>
-              <Link href={`${game.href}/roles`} className="btn btn-secondary" prefetch={false}>
+              <Link href={`${game.href}/roles`} className="btn btn-secondary">
                 Роли
               </Link>
-              <Link href={`${game.href}/rules`} className="btn btn-secondary" prefetch={false}>
+              <Link href={`${game.href}/rules`} className="btn btn-secondary">
                 Правила
               </Link>
             </div>

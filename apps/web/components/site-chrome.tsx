@@ -1,26 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Activity,
-  Clock,
-  HelpCircle,
-  ListOrdered,
   Menu,
   Moon,
   MoreHorizontal,
   Play,
-  Sparkles,
   Sun,
-  Trophy,
-  Users,
   Volume2,
   VolumeX,
-  X,
-  type LucideIcon,
 } from "lucide-react";
 import { AuthChip } from "@/components/site-chrome/AuthChip";
 import { getSoundEnabled, playCue, setSoundEnabled } from "@/lib/sound";
@@ -28,49 +20,20 @@ import type { AuthSessionView } from "@/lib/use-auth-session";
 
 type ThemePreference = "light" | "dark";
 type ChromeFamily = "werewolves" | "mafia";
-type SecondaryLinkGroup = "game" | "social" | "help";
-
-interface SecondaryLink {
-  href: string;
-  label: string;
-  icon: LucideIcon;
-  group: SecondaryLinkGroup;
-}
-
-interface DrawerLink {
-  href: string;
-  label: string;
-  icon?: LucideIcon;
-}
 
 const THEME_STORAGE_KEY = "werewolf-theme";
 const LAST_FAMILY_STORAGE_KEY = "last-family";
 const THEME_OPTIONS: ThemePreference[] = ["light", "dark"];
 
-const SECONDARY_LINKS: ReadonlyArray<SecondaryLink> = [
-  { href: "/history", label: "История", icon: Clock, group: "game" },
-  { href: "/achievements", label: "Постижения", icon: Trophy, group: "game" },
-  { href: "/leaderboard", label: "Класация", icon: ListOrdered, group: "game" },
-  { href: "/friends", label: "Приятели", icon: Users, group: "social" },
-  { href: "/tutorial", label: "Първа игра", icon: Sparkles, group: "help" },
-  { href: "/faq", label: "Въпроси", icon: HelpCircle, group: "help" },
-  { href: "/status", label: "Състояние", icon: Activity, group: "help" },
-];
+const MobileDrawer = dynamic(() => import("@/components/site-chrome/MobileDrawer").then((mod) => mod.MobileDrawer), {
+  loading: () => null,
+  ssr: false,
+});
 
-const GROUP_LABELS: Record<SecondaryLinkGroup, string> = {
-  game: "Игра",
-  social: "Социал",
-  help: "Помощ",
-};
-
-const GROUP_ORDER: ReadonlyArray<SecondaryLinkGroup> = ["game", "social", "help"];
-
-const DRAWER_LINKS: ReadonlyArray<DrawerLink> = [
-  { href: "/", label: "Начало" },
-  { href: "/werewolf", label: "Върколак" },
-  { href: "/mafia", label: "Мафия" },
-  ...SECONDARY_LINKS,
-];
+const NavDropdown = dynamic(() => import("@/components/site-chrome/NavDropdown").then((mod) => mod.NavDropdown), {
+  loading: () => null,
+  ssr: false,
+});
 
 export default function SiteChrome({ initialSession }: { initialSession: AuthSessionView | null }) {
   const pathname = usePathname();
@@ -195,6 +158,10 @@ export default function SiteChrome({ initialSession }: { initialSession: AuthSes
     const nextPreference = THEME_OPTIONS[(currentIndex + 1) % THEME_OPTIONS.length] ?? "dark";
     window.localStorage.setItem(THEME_STORAGE_KEY, nextPreference);
     setThemePreference(nextPreference);
+    if ("startViewTransition" in document) {
+      document.startViewTransition(() => applyThemePreference(nextPreference));
+      return;
+    }
     applyThemePreference(nextPreference);
   }
 
@@ -298,38 +265,7 @@ function PrimaryBand({
         <button className="site-icon-button" type="button" aria-label="Още страници" aria-expanded={dropdownOpen} onClick={onToggleDropdown}>
           <MoreHorizontal className="site-icon" aria-hidden strokeWidth={1.9} />
         </button>
-        {dropdownOpen ? (
-          <div className="nav-dropdown nav-dropdown-overflow" role="menu">
-            {GROUP_ORDER.map((groupKey) => {
-              const groupLinks = SECONDARY_LINKS.filter((item) => item.group === groupKey);
-              if (groupLinks.length === 0) {
-                return null;
-              }
-
-              return (
-                <div key={groupKey} className="nav-dropdown-group">
-                  <p className="nav-dropdown-group-label">{GROUP_LABELS[groupKey]}</p>
-                  {groupLinks.map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        role="menuitem"
-                        prefetch={false}
-                        onClick={onToggleDropdown}
-                        className="nav-dropdown-item"
-                      >
-                        <Icon className="nav-dropdown-item-icon" aria-hidden strokeWidth={1.8} />
-                        <span>{item.label}</span>
-                      </Link>
-                    );
-                  })}
-                </div>
-              );
-            })}
-          </div>
-        ) : null}
+        {dropdownOpen ? <NavDropdown onNavigate={onToggleDropdown} /> : null}
       </div>
     </nav>
   );
@@ -384,69 +320,6 @@ function UtilityCluster({
   );
 }
 
-function MobileDrawer({
-  pathname,
-  soundEnabled,
-  themePreference,
-  playHref,
-  closing,
-  initialSession,
-  onClose,
-  onToggleSound,
-  onCycleTheme,
-}: {
-  pathname: string;
-  soundEnabled: boolean;
-  themePreference: ThemePreference;
-  playHref: string;
-  closing: boolean;
-  initialSession: AuthSessionView | null;
-  onClose: () => void;
-  onToggleSound: () => void;
-  onCycleTheme: () => void;
-}) {
-  const drawerLinks = useMemo<ReadonlyArray<DrawerLink>>(() => [{ href: playHref, label: "Играй" }, ...DRAWER_LINKS], [playHref]);
-
-  return (
-    <div className={closing ? "site-drawer-layer is-closing" : "site-drawer-layer"}>
-      <button className="site-drawer-backdrop" type="button" aria-label="Затвори менюто" onClick={onClose} />
-      <aside className="site-drawer" aria-label="Навигация">
-        <div className="site-drawer-header">
-          <BrandMark compact />
-          <button className="site-icon-button" type="button" aria-label="Затвори менюто" onClick={onClose}>
-            <X className="site-icon" aria-hidden strokeWidth={1.9} />
-          </button>
-        </div>
-        <nav className="site-drawer-nav" aria-label="Мобилна навигация">
-          {drawerLinks.map((item) => {
-            const Icon = item.icon;
-            const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
-            return (
-              <Link key={`${item.href}:${item.label}`} className={active ? "is-active" : ""} href={item.href} prefetch={false} onClick={onClose}>
-                {Icon ? <Icon aria-hidden strokeWidth={1.8} className="site-drawer-icon" /> : null}
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
-        <div className="site-drawer-footer">
-          <UtilityCluster
-            soundEnabled={soundEnabled}
-            themePreference={themePreference}
-            initialSession={initialSession}
-            onToggleSound={onToggleSound}
-            onCycleTheme={onCycleTheme}
-            showAuth={false}
-          />
-          <div className="site-drawer-auth">
-            <AuthChip initialSession={initialSession} />
-          </div>
-        </div>
-      </aside>
-    </div>
-  );
-}
-
 function readThemePreference(): ThemePreference {
   if (typeof window === "undefined") {
     return "dark";
@@ -486,7 +359,11 @@ function applyThemePreference(preference: ThemePreference) {
     return;
   }
 
+  document.documentElement.dataset.vt = "theme";
   document.documentElement.dataset.theme = preference;
+  window.setTimeout(() => {
+    delete document.documentElement.dataset.vt;
+  }, 320);
 }
 
 function themeLabel(preference: ThemePreference) {

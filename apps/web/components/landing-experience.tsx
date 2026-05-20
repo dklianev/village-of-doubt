@@ -1,7 +1,11 @@
+import { Suspense } from "react";
+import Image from "next/image";
 import type { GameFamily } from "@werewolf/shared";
 import { ResourceHints } from "@/components/resource-hints";
 import { ModeChoiceCards, type ModeChoiceGame } from "@/components/landing/ModeChoiceCards";
 import { QuickStartSection, type LandingQuickStartLastWinner } from "@/components/landing/QuickStartSection";
+
+export type LandingSession = { user: { id: string; name?: string | null } } | null;
 
 const GAMES = [
   {
@@ -26,21 +30,20 @@ const GAMES = [
   },
 ] as const satisfies readonly ModeChoiceGame[];
 
-export async function LandingExperience() {
-  const stats = await loadGameStats();
-  const liveStats = stats
-    ? {
-        activeRooms: stats.activeRooms ?? 0,
-        connectedPlayers: stats.connectedPlayers ?? 0,
-        ...(stats.byFamily ? { byFamily: stats.byFamily } : {}),
-      }
-    : null;
-
+export function LandingExperience({ initialSession }: { initialSession: LandingSession }) {
   return (
     <main className="shell landing-shell">
-      <ResourceHints images={["/game-art/mobile/bg-landing-ambient.webp", "/game-art/mobile/bg-landing-dual-world-v2.webp", "/game-art/mobile/bg-lobby-tavern.webp"]} />
+      <ResourceHints
+        images={[
+          { href: "/game-art/bg-landing-hero-composited.webp", media: "(min-width: 721px)" },
+          { href: "/game-art/bg-landing-ambient-composited.webp", media: "(min-width: 721px)" },
+          { href: "/game-art/mobile/bg-landing-hero-composited.webp", media: "(max-width: 720px)" },
+          { href: "/game-art/mobile/bg-landing-ambient-composited.webp", media: "(max-width: 720px)" },
+          { href: "/game-art/logo-landing-mark.webp" },
+        ]}
+      />
       <section className="card landing-hero-card rounded-[2rem] p-7">
-        <div className="landing-logo-mark" aria-hidden="true" />
+        <LandingLogoMark />
         <p className="section-kicker">избери игра</p>
         <h1 className="mt-5 text-5xl font-black leading-none text-[#f4e8d1] md:text-7xl">
           Върколак или Мафия
@@ -50,11 +53,42 @@ export async function LandingExperience() {
           или въвеждаш код и започваш веднага.
         </p>
 
-        <ModeChoiceCards games={GAMES} />
+        <ModeChoiceCards games={GAMES} initialSession={initialSession} />
 
-        <QuickStartSection liveStats={liveStats} lastWinner={stats?.lastWinner ?? null} />
+        <Suspense fallback={<QuickStartSkeleton />}>
+          <QuickStartWithStats />
+        </Suspense>
       </section>
     </main>
+  );
+}
+
+async function QuickStartWithStats() {
+  const stats = await loadGameStats();
+  const liveStats = stats
+    ? {
+        activeRooms: stats.activeRooms ?? 0,
+        connectedPlayers: stats.connectedPlayers ?? 0,
+        ...(stats.byFamily ? { byFamily: stats.byFamily } : {}),
+      }
+    : null;
+
+  return <QuickStartSection liveStats={liveStats} lastWinner={stats?.lastWinner ?? null} />;
+}
+
+function QuickStartSkeleton() {
+  return (
+    <section className="landing-quickstart" aria-hidden="true">
+      <div className="quickstart-surface quickstart-skeleton" />
+    </section>
+  );
+}
+
+function LandingLogoMark() {
+  return (
+    <span className="landing-logo-mark" aria-hidden="true">
+      <Image src="/game-art/logo-landing-mark.webp" alt="" width={118} height={118} priority fetchPriority="high" sizes="118px" />
+    </span>
   );
 }
 
@@ -62,8 +96,8 @@ async function loadGameStats() {
   const gameServerUrl = process.env.NEXT_PUBLIC_GAME_SERVER_URL?.replace(/^ws/, "http") ?? "http://localhost:2567";
   try {
     const response = await fetch(`${gameServerUrl}/stats`, {
-      cache: "no-store",
-      next: { revalidate: 0 },
+      next: { revalidate: 5 },
+      signal: AbortSignal.timeout(800),
     });
     if (!response.ok) {
       return null;

@@ -150,8 +150,10 @@ function checkLandingLayoutContracts() {
   assert(modeChoiceCards.includes("Избери игра"), "Signed-in landing CTA must send users to game selection.");
   assert(landingPage.includes("href: \"/werewolf\""), "Landing page must define a Werewolf game entry.");
   assert(landingPage.includes("href: \"/mafia\""), "Landing page must define a Mafia game entry.");
-  assert(landingPage.includes("/game-art/mobile/bg-landing-ambient.webp"), "Landing page should preload the ambient outer background plate.");
-  assert(landingPage.includes("/game-art/mobile/bg-landing-dual-world-v2.webp"), "Landing page should preload the current dual-world background plate.");
+  assert(landingPage.includes("/game-art/mobile/bg-landing-ambient-composited.webp"), "Landing page should preload the mobile composited ambient background.");
+  assert(landingPage.includes("/game-art/mobile/bg-landing-hero-composited.webp"), "Landing page should preload the mobile composited hero background.");
+  assert(landingPage.includes("/game-art/bg-landing-ambient-composited.webp"), "Landing page should preload the desktop composited ambient background.");
+  assert(landingPage.includes("/game-art/bg-landing-hero-composited.webp"), "Landing page should preload the desktop composited hero background.");
   assert(!landingPage.includes("Село под съмнение"), "Landing page must not use the old Werewolf branding.");
   assert(!landingPage.includes("Българска Мафия"), "Landing page must not use the old Mafia branding.");
   assert(css.includes(".game-choice-grid"), "Game picker grid needs dedicated styling.");
@@ -166,7 +168,8 @@ function checkLandingLayoutContracts() {
   assert(existsSync(path.join(root, "apps/web/components/landing/QuickStartSection.tsx")), "Missing landing QuickStartSection component.");
   assert(existsSync(path.join(root, "apps/web/components/landing/quickstart-icons.tsx")), "Missing landing quickstart inline SVG icon set.");
   assert(landingPage.includes("QuickStartSection"), "Landing page must import and render QuickStartSection.");
-  assert(quickStart.includes("IntersectionObserver"), "Landing quickstart connector reveal should use IntersectionObserver.");
+  assert(!quickStart.includes("IntersectionObserver"), "Landing quickstart should not ship IntersectionObserver for below-fold connector reveal.");
+  assert(css.includes("content-visibility: auto;"), "Landing quickstart should use content-visibility to defer below-fold paint.");
   assert(quickStart.includes("Бъди първият на масата"), "Landing live empty state must invite the first room.");
   assert(quickStart.includes("Първите герои ще се появят тук."), "Landing winner empty state must use designed Bulgarian copy.");
   for (const exportName of ["PersonIcon", "HouseIcon", "MaskIcon", "MoonIcon", "BallotIcon", "LastWinnerEmptyGlyph"]) {
@@ -174,7 +177,7 @@ function checkLandingLayoutContracts() {
   }
   assert(css.includes("--art-landing-dual"), "Landing page must expose the dual-world background art variable.");
   assert(css.includes("--art-landing-ambient"), "Landing page must expose the ambient outer background art variable.");
-  assert(darkBodyBlock.includes("--art-landing-ambient"), "Dark body backdrop must use the ambient homepage background so old smoke cannot show through.");
+  assert(darkBodyBlock.includes("--art-landing-ambient-composited"), "Dark body backdrop must use the composited ambient homepage background so old smoke cannot show through.");
   assert(publicShellStackPattern.test(css), "Public page shells must isolate their fixed backdrop layer above the body background.");
   for (const shellSelector of [
     ".landing-shell::before",
@@ -189,7 +192,7 @@ function checkLandingLayoutContracts() {
   ]) {
     assert(css.includes(`html[data-theme="dark"] ${shellSelector}`), `Dark theme must use the ambient landing background for ${shellSelector}.`);
   }
-  assert(darkBackdropBlock.includes("--art-landing-ambient"), "Dark public page backdrop must use the ambient smoky homepage background.");
+  assert(darkBackdropBlock.includes("--art-landing-ambient-composited"), "Dark public page backdrop must use the composited ambient homepage background.");
   for (const shellSelector of [
     ".landing-shell::before",
     ".game-home-shell::before",
@@ -204,11 +207,18 @@ function checkLandingLayoutContracts() {
     assert(lightBackdropBlock.includes(shellSelector), `Light theme must disable page-art backdrop for ${shellSelector}.`);
   }
   assert(lightBackdropBlock.includes("display: none;"), "Light theme should use the shared homepage body background instead of page-art backdrops.");
-  assert(css.includes("/game-art/bg-landing-ambient.webp"), "Landing page must reference the optimized ambient outer background.");
+  assert(css.includes("/game-art/bg-landing-ambient-composited.webp"), "Landing page must reference the optimized composited ambient outer background.");
+  assert(existsSync(path.join(gameArtDir, "bg-landing-ambient-composited.png")), "Missing composited ambient landing background PNG.");
+  assert(existsSync(path.join(gameArtDir, "bg-landing-ambient-composited.webp")), "Missing optimized composited ambient landing background WebP.");
+  assert(existsSync(path.join(gameArtDir, "mobile/bg-landing-ambient-composited.webp")), "Missing mobile composited ambient landing background WebP.");
   assert(existsSync(path.join(gameArtDir, "bg-landing-ambient.png")), "Missing ambient landing background PNG.");
   assert(existsSync(path.join(gameArtDir, "bg-landing-ambient.webp")), "Missing optimized ambient landing background WebP.");
   assert(existsSync(path.join(gameArtDir, "mobile/bg-landing-ambient.webp")), "Missing mobile ambient landing background WebP.");
-  assert(css.includes("/game-art/bg-landing-dual-world-v2.webp"), "Landing page must reference the optimized current dual-world background.");
+  assert(css.includes("/game-art/bg-landing-hero-composited.webp"), "Landing page must reference the optimized composited hero background.");
+  assert(existsSync(path.join(gameArtDir, "bg-landing-hero-composited.png")), "Missing composited hero landing background PNG.");
+  assert(existsSync(path.join(gameArtDir, "bg-landing-hero-composited.webp")), "Missing optimized composited hero landing background WebP.");
+  assert(existsSync(path.join(gameArtDir, "mobile/bg-landing-hero-composited.webp")), "Missing mobile composited hero landing background WebP.");
+  assert(css.includes("/game-art/bg-landing-dual-world-v2.webp"), "Landing page must keep the optimized current dual-world background variable for other routes.");
   assert(existsSync(path.join(gameArtDir, "bg-landing-dual-world-v2.png")), "Missing current dual-world landing background PNG.");
   assert(existsSync(path.join(gameArtDir, "bg-landing-dual-world-v2.webp")), "Missing optimized current dual-world landing background WebP.");
   assert(existsSync(path.join(gameArtDir, "mobile/bg-landing-dual-world-v2.webp")), "Missing mobile current dual-world landing background WebP.");

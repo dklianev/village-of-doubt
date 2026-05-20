@@ -2,9 +2,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import type { AuthSessionView } from "@/lib/use-auth-session";
-import { CookieBanner } from "@/components/CookieBanner";
-import { FeedbackWidget } from "@/components/feedback/FeedbackWidget";
-import { WelcomeModal } from "@/components/onboarding/WelcomeModal";
+import { NonCriticalWidgets } from "@/components/non-critical-widgets";
 import { ResourceHints } from "@/components/resource-hints";
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -79,10 +77,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <SiteChrome initialSession={chromeSession} />
         {children}
         <SiteFooter />
-        <CookieBanner />
         <ToastHost />
-        <WelcomeModal />
-        <FeedbackWidget />
+        <NonCriticalWidgets />
         <ServiceWorkerRegistration />
       </body>
     </html>

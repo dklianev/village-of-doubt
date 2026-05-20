@@ -1,21 +1,23 @@
-"use client";
-
-import ReactDOM from "react-dom";
+type PreloadImage = string | { href: string; media?: string; type?: string };
 
 export function ResourceHints({
   images = [],
   preconnect = [],
 }: {
-  images?: readonly string[];
+  images?: readonly PreloadImage[];
   preconnect?: readonly string[];
 }) {
-  for (const origin of preconnect) {
-    ReactDOM.preconnect(origin);
-  }
-
-  for (const image of images) {
-    ReactDOM.preload(image, { as: "image" });
-  }
-
-  return null;
+  return (
+    <>
+      {preconnect.map((href) => (
+        <link key={href} rel="preconnect" href={href} />
+      ))}
+      {images.map((image) => {
+        const href = typeof image === "string" ? image : image.href;
+        const media = typeof image === "string" ? undefined : image.media;
+        const type = typeof image === "string" ? "image/webp" : (image.type ?? "image/webp");
+        return <link key={`${href}:${media ?? ""}`} rel="preload" as="image" href={href} type={type} {...(media ? { media } : {})} />;
+      })}
+    </>
+  );
 }

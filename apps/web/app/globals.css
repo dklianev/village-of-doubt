@@ -27,6 +27,11 @@
   --art-landing: image-set(url("/game-art/bg-landing-hero.webp") type("image/webp"), url("/game-art/bg-landing-hero.png") type("image/png"));
   --art-landing-ambient: image-set(url("/game-art/bg-landing-ambient.webp") type("image/webp"), url("/game-art/bg-landing-ambient.png") type("image/png"));
   --art-landing-dual: image-set(url("/game-art/bg-landing-dual-world-v2.webp") type("image/webp"), url("/game-art/bg-landing-dual-world-v2.png") type("image/png"));
+  --art-landing-hero-composited: image-set(url("/game-art/bg-landing-hero-composited.webp") type("image/webp"), url("/game-art/bg-landing-hero-composited.png") type("image/png"));
+  --art-landing-ambient-composited: image-set(url("/game-art/bg-landing-ambient-composited.webp") type("image/webp"), url("/game-art/bg-landing-ambient-composited.png") type("image/png"));
+  --hero-card-border: rgba(200, 154, 85, 0.28);
+  --hero-card-scrim: linear-gradient(180deg, rgba(4, 7, 8, 0) 0%, rgba(4, 7, 8, 0.16) 100%);
+  --hero-card-shadow: 0 32px 92px rgba(0, 0, 0, 0.46), inset 0 1px rgba(255, 247, 229, 0.1);
   --art-lobby: image-set(url("/game-art/bg-lobby-tavern.webp") type("image/webp"), url("/game-art/bg-lobby-tavern.png") type("image/png"));
   --art-reveal: image-set(url("/game-art/bg-role-reveal.webp") type("image/webp"), url("/game-art/bg-role-reveal.png") type("image/png"));
   --art-night: image-set(url("/game-art/bg-night-phase.webp") type("image/webp"), url("/game-art/bg-night-phase.png") type("image/png"));
@@ -115,6 +120,9 @@
   --shadow-gold: 0 0 42px rgba(169, 111, 34, 0.12);
   --chrome-bg: rgba(255, 247, 229, 0.86);
   --chrome-pill-bg: rgba(34, 22, 17, 0.92);
+  --hero-card-border: rgba(169, 111, 34, 0.58);
+  --hero-card-scrim: linear-gradient(180deg, rgba(252, 246, 236, 0.18) 0%, rgba(252, 246, 236, 0.32) 100%);
+  --hero-card-shadow: 0 34px 92px rgba(67, 39, 24, 0.24), 0 0 0 1px rgba(169, 111, 34, 0.18), inset 0 1px rgba(255, 247, 229, 0.18);
 }
 
 [data-theme="mafia"] {
@@ -162,6 +170,8 @@
     --art-landing: image-set(url("/game-art/mobile/bg-landing-hero.webp") type("image/webp"));
     --art-landing-ambient: image-set(url("/game-art/mobile/bg-landing-ambient.webp") type("image/webp"));
     --art-landing-dual: image-set(url("/game-art/mobile/bg-landing-dual-world-v2.webp") type("image/webp"));
+    --art-landing-hero-composited: image-set(url("/game-art/mobile/bg-landing-hero-composited.webp") type("image/webp"));
+    --art-landing-ambient-composited: image-set(url("/game-art/mobile/bg-landing-ambient-composited.webp") type("image/webp"));
     --art-lobby: image-set(url("/game-art/mobile/bg-lobby-tavern.webp") type("image/webp"));
     --art-reveal: image-set(url("/game-art/mobile/bg-role-reveal.webp") type("image/webp"));
     --art-night: image-set(url("/game-art/mobile/bg-night-phase.webp") type("image/webp"));
@@ -246,13 +256,9 @@ body {
 }
 
 html[data-theme="dark"] body {
-  background:
-    radial-gradient(ellipse at 4% 50%, rgba(200, 154, 85, 0.18), transparent 34rem),
-    radial-gradient(ellipse at 96% 48%, rgba(43, 93, 105, 0.18), transparent 38rem),
-    linear-gradient(115deg, rgba(5, 7, 8, 0.58) 0%, rgba(6, 8, 9, 0.34) 47%, rgba(5, 7, 8, 0.64) 100%),
-    var(--art-landing-ambient) center / cover no-repeat;
+  background: var(--art-landing-ambient-composited) center / cover no-repeat;
   background-attachment: fixed;
-  background-size: auto, auto, auto, cover;
+  background-size: cover;
 }
 
 html[data-theme="light"] body {
@@ -1453,12 +1459,8 @@ html[data-theme="light"] .site-drawer-nav a.is-active .site-drawer-icon {
 }
 
 .landing-shell::before {
-  background:
-    radial-gradient(ellipse at 4% 50%, rgba(200, 154, 85, 0.18), transparent 34rem),
-    radial-gradient(ellipse at 96% 48%, rgba(43, 93, 105, 0.18), transparent 38rem),
-    linear-gradient(115deg, rgba(5, 7, 8, 0.58) 0%, rgba(6, 8, 9, 0.34) 47%, rgba(5, 7, 8, 0.64) 100%),
-    var(--art-landing-ambient) center / cover no-repeat;
-  filter: saturate(1.14) contrast(1.04);
+  background: var(--art-landing-ambient-composited) center / cover no-repeat;
+  filter: none;
 }
 
 .lobby-shell {
@@ -1482,15 +1484,11 @@ html[data-theme="light"] .site-drawer-nav a.is-active .site-drawer-icon {
 .landing-hero-card {
   isolation: isolate;
   min-height: 520px;
-  border-color: rgba(200, 154, 85, 0.28);
+  border-color: var(--hero-card-border);
   background:
-    radial-gradient(ellipse at 22% 34%, rgba(200, 154, 85, 0.15), transparent 24rem),
-    radial-gradient(ellipse at 82% 38%, rgba(43, 93, 105, 0.16), transparent 28rem),
-    radial-gradient(circle at 50% 18%, rgba(255, 247, 229, 0.08), transparent 22rem),
-    linear-gradient(90deg, rgba(10, 10, 9, 0.42) 0%, rgba(10, 13, 13, 0.16) 48%, rgba(10, 10, 9, 0.38) 100%),
-    linear-gradient(180deg, rgba(4, 7, 8, 0.18) 0%, rgba(4, 7, 8, 0.62) 100%),
-    var(--art-landing-dual) center top / 100% auto no-repeat;
-  box-shadow: 0 32px 92px rgba(0, 0, 0, 0.46), inset 0 1px rgba(255, 247, 229, 0.1);
+    var(--hero-card-scrim),
+    var(--art-landing-hero-composited) center top / cover no-repeat;
+  box-shadow: var(--hero-card-shadow);
 }
 
 .landing-hero-card > .section-kicker {
@@ -1516,15 +1514,8 @@ html[data-theme="light"] .utility-shell::before {
 }
 
 html[data-theme="light"] .landing-hero-card {
-  border-color: rgba(169, 111, 34, 0.58);
-  background:
-    radial-gradient(ellipse at 22% 34%, rgba(200, 154, 85, 0.2), transparent 24rem),
-    radial-gradient(ellipse at 82% 38%, rgba(43, 93, 105, 0.14), transparent 28rem),
-    radial-gradient(circle at 50% 18%, rgba(255, 247, 229, 0.1), transparent 22rem),
-    linear-gradient(90deg, rgba(20, 12, 9, 0.48) 0%, rgba(12, 15, 15, 0.18) 48%, rgba(12, 14, 13, 0.42) 100%),
-    linear-gradient(180deg, rgba(7, 9, 9, 0.16) 0%, rgba(7, 9, 9, 0.58) 100%),
-    var(--art-landing-dual) center top / 100% auto no-repeat;
-  box-shadow: 0 34px 92px rgba(67, 39, 24, 0.24), 0 0 0 1px rgba(169, 111, 34, 0.18), inset 0 1px rgba(255, 247, 229, 0.18);
+  border-color: var(--hero-card-border);
+  box-shadow: var(--hero-card-shadow);
 }
 
 html[data-theme="light"] .landing-hero-card::before {
@@ -1537,20 +1528,13 @@ html[data-theme="light"] .landing-hero-card::before {
   z-index: 0;
   border: 1px solid rgba(200, 154, 85, 0.22);
   border-radius: inherit;
-  background:
-    linear-gradient(115deg, transparent 0 38%, rgba(248, 236, 210, 0.04) 38% 39%, transparent 39%),
-    radial-gradient(ellipse at 21% 48%, rgba(209, 154, 66, 0.12), transparent 24rem),
-    radial-gradient(ellipse at 88% 44%, rgba(61, 103, 111, 0.16), transparent 25rem);
+  background: linear-gradient(115deg, transparent 0 38%, rgba(248, 236, 210, 0.04) 38% 39%, transparent 39%);
   content: "";
   pointer-events: none;
 }
 
 .landing-hero-card::after {
-  background:
-    radial-gradient(circle at 50% 22%, rgba(248, 236, 210, 0.07), transparent 22rem),
-    radial-gradient(circle at 12% 98%, rgba(200, 154, 85, 0.1), transparent 18rem),
-    radial-gradient(circle at 94% 96%, rgba(43, 93, 105, 0.12), transparent 20rem),
-    repeating-linear-gradient(135deg, rgba(248, 236, 210, 0.026) 0 1px, transparent 1px 18px);
+  background: repeating-linear-gradient(135deg, rgba(248, 236, 210, 0.026) 0 1px, transparent 1px 18px);
   opacity: 0.88;
 }
 
@@ -1559,16 +1543,23 @@ html[data-theme="light"] .landing-hero-card::before {
 }
 
 .landing-logo-mark {
+  display: inline-grid;
+  place-items: center;
   width: 118px;
   aspect-ratio: 1;
   margin-bottom: 28px;
   border: 1px solid rgba(209, 154, 66, 0.38);
   border-radius: 34px;
-  background:
-    radial-gradient(circle, rgba(248, 236, 210, 0.12), transparent 62%),
-    image-set(url("/game-art/logo-landing-mark.webp") type("image/webp"), url("/game-art/logo-landing-mark.png") type("image/png")) center / contain no-repeat;
+  background: radial-gradient(circle, rgba(248, 236, 210, 0.12), transparent 62%);
   box-shadow: 0 0 52px rgba(209, 154, 66, 0.24), inset 0 1px rgba(255, 255, 255, 0.08);
+  overflow: hidden;
   transform: rotate(-3deg);
+}
+
+.landing-logo-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .landing-tableau {
@@ -1726,6 +1717,11 @@ html[data-theme="light"] .landing-hero-card::before {
   gap: 12px;
   margin-top: auto;
   padding-top: 24px;
+  --primary-cta-min-width: 11ch;
+}
+
+.game-choice-actions .btn-primary {
+  min-width: var(--primary-cta-min-width);
 }
 
 .landing-split-grid .game-choice-card::after {
@@ -1737,14 +1733,21 @@ html[data-theme="light"] .landing-hero-card::before {
     radial-gradient(ellipse at 50% 100%, rgba(209, 154, 66, 0.28), transparent 58%),
     linear-gradient(90deg, transparent, rgba(248, 236, 210, 0.14), transparent);
   content: "";
-  filter: blur(16px);
-  opacity: 0.72;
+  filter: none;
+  opacity: 0.52;
   transform: translateY(10px);
-  transition: opacity 260ms ease;
+  transition: opacity 260ms ease, filter 260ms ease;
 }
 
 .landing-split-grid .game-choice-card:hover::after {
   opacity: 1;
+  filter: blur(16px);
+}
+
+@media (hover: none) {
+  .landing-split-grid .game-choice-card::after {
+    opacity: 0.6;
+  }
 }
 
 .landing-split-grid .game-choice-card h2 {
@@ -2989,15 +2992,11 @@ html[data-theme="dark"] .tutorial-nav .btn-secondary:disabled {
 .landing-hero-card {
   isolation: isolate;
   min-height: 520px;
-  border-color: rgba(200, 154, 85, 0.28);
+  border-color: var(--hero-card-border);
   background:
-    radial-gradient(ellipse at 22% 34%, rgba(200, 154, 85, 0.15), transparent 24rem),
-    radial-gradient(ellipse at 82% 38%, rgba(43, 93, 105, 0.16), transparent 28rem),
-    radial-gradient(circle at 50% 18%, rgba(255, 247, 229, 0.08), transparent 22rem),
-    linear-gradient(90deg, rgba(10, 10, 9, 0.42) 0%, rgba(10, 13, 13, 0.16) 48%, rgba(10, 10, 9, 0.38) 100%),
-    linear-gradient(180deg, rgba(4, 7, 8, 0.18) 0%, rgba(4, 7, 8, 0.62) 100%),
-    var(--art-landing-dual) center top / 100% auto no-repeat;
-  box-shadow: 0 32px 92px rgba(0, 0, 0, 0.46), inset 0 1px rgba(255, 247, 229, 0.1);
+    var(--hero-card-scrim),
+    var(--art-landing-hero-composited) center top / cover no-repeat;
+  box-shadow: var(--hero-card-shadow);
 }
 
 .lobby-shell .card {
@@ -3437,15 +3436,12 @@ html[data-theme="dark"] .tutorial-nav .btn-secondary:disabled {
   opacity: 0;
   transform: scaleX(0.2);
   transform-origin: left center;
+  animation: quickstartConnectorIn 520ms ease forwards;
+  animation-delay: calc(var(--connector-index) * 120ms);
 }
 
 .quickstart-connector i {
   display: none;
-}
-
-.quickstart-steps[data-revealed="true"] .quickstart-connector {
-  animation: quickstartConnectorIn 520ms ease forwards;
-  animation-delay: calc(var(--connector-index) * 120ms);
 }
 
 .quickstart-row {
@@ -3526,14 +3522,10 @@ html[data-theme="dark"] .tutorial-nav .btn-secondary:disabled {
 
 .quickstart-live-count {
   display: inline-block;
-  color: transparent;
-  background: linear-gradient(100deg, var(--ink) 0%, var(--ink) 35%, #a65c30 48%, var(--ink) 62%, var(--ink) 100%);
-  background-size: 240% 100%;
-  background-clip: text;
-  -webkit-background-clip: text;
+  color: var(--ink);
   font-size: 1.3rem;
   font-weight: 950;
-  animation: quickstartDigits 3.8s ease-in-out infinite;
+  animation: quickstartLiveCountPulse 2.4s ease-in-out infinite;
 }
 
 .quickstart-dim-glyph {
@@ -3603,11 +3595,7 @@ html[data-theme="dark"] .quickstart-winner-mark {
 }
 
 html[data-theme="dark"] .quickstart-live-count {
-  color: transparent;
-  background: linear-gradient(100deg, #fff7e5 0%, #fff7e5 35%, #e7ad5b 48%, #fff7e5 62%, #fff7e5 100%);
-  background-size: 240% 100%;
-  background-clip: text;
-  -webkit-background-clip: text;
+  color: #fff7e5;
 }
 
 html[data-theme="dark"] .quickstart-dim-glyph {
@@ -3633,13 +3621,13 @@ html[data-theme="dark"] .quickstart-dim-glyph {
   }
 }
 
-@keyframes quickstartDigits {
+@keyframes quickstartLiveCountPulse {
   0%,
-  68% {
-    background-position: 0% 50%;
-  }
   100% {
-    background-position: 180% 50%;
+    opacity: 0.92;
+  }
+  50% {
+    opacity: 1;
   }
 }
 
@@ -3669,7 +3657,7 @@ html[data-theme="dark"] .quickstart-dim-glyph {
     background: rgba(34, 22, 17, 0.34);
   }
 
-  .quickstart-steps[data-revealed="true"] .quickstart-connector {
+  .quickstart-connector {
     animation: quickstartConnectorDots 440ms ease forwards;
     animation-delay: calc(var(--connector-index) * 90ms);
   }
@@ -3779,6 +3767,13 @@ html[data-theme="dark"] .quickstart-dim-glyph {
   display: grid;
   gap: 20px;
   margin-top: 32px;
+  content-visibility: auto;
+  contain-intrinsic-size: 880px 980px;
+}
+
+.quickstart-skeleton {
+  min-height: 560px;
+  opacity: 0.45;
 }
 
 .landing-quickstart .quickstart-surface,
@@ -3864,11 +3859,8 @@ html[data-theme="dark"] .landing-quickstart .quickstart-winner-mark {
 
 .landing-quickstart .quickstart-live-count,
 html[data-theme="dark"] .landing-quickstart .quickstart-live-count {
-  color: transparent;
-  background: linear-gradient(100deg, var(--ink) 0%, var(--ink) 35%, #a65c30 48%, var(--ink) 62%, var(--ink) 100%);
-  background-size: 240% 100%;
-  background-clip: text;
-  -webkit-background-clip: text;
+  color: var(--ink);
+  background: none;
 }
 
 .landing-quickstart .quickstart-dim-glyph,
@@ -3935,11 +3927,7 @@ html[data-theme="dark"] .landing-quickstart .quickstart-winner-mark {
 }
 
 html[data-theme="dark"] .landing-quickstart .quickstart-live-count {
-  color: transparent;
-  background: linear-gradient(100deg, #fff7e5 0%, #fff7e5 35%, #e7ad5b 48%, #fff7e5 62%, #fff7e5 100%);
-  background-size: 240% 100%;
-  background-clip: text;
-  -webkit-background-clip: text;
+  color: #fff7e5;
 }
 
 html[data-theme="dark"] .landing-quickstart .quickstart-dim-glyph {
@@ -9059,6 +9047,12 @@ html[data-theme="light"] .play-players-panel .chat-line {
   animation-duration: 0s;
 }
 
+html[data-vt="theme"]::view-transition-old(root),
+html[data-vt="theme"]::view-transition-new(root) {
+  animation-duration: 280ms;
+  animation-timing-function: ease;
+}
+
 ::view-transition-old(lobby-step) {
   animation-name: lobbyStepOut;
 }
@@ -11168,13 +11162,9 @@ html[data-theme="dark"] .utility-shell::before {
   position: fixed;
   inset: 0;
   z-index: -1;
-  background:
-    radial-gradient(ellipse at 4% 50%, rgba(200, 154, 85, 0.18), transparent 34rem),
-    radial-gradient(ellipse at 96% 48%, rgba(43, 93, 105, 0.18), transparent 38rem),
-    linear-gradient(115deg, rgba(5, 7, 8, 0.58) 0%, rgba(6, 8, 9, 0.34) 47%, rgba(5, 7, 8, 0.64) 100%),
-    var(--art-landing-ambient) center / cover no-repeat;
+  background: var(--art-landing-ambient-composited) center / cover no-repeat;
   content: "";
-  filter: saturate(1.14) contrast(1.04);
+  filter: none;
 }
 
 .utility-hero {

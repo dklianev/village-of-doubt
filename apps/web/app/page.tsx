@@ -1,5 +1,7 @@
+import { headers } from "next/headers";
 import { JsonLd } from "@/components/JsonLd";
 import { LandingExperience } from "@/components/landing-experience";
+import { auth } from "@/lib/auth";
 import { routeMetadata, SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/seo";
 
 export const metadata = routeMetadata({
@@ -37,11 +39,21 @@ const homeJsonLd = {
   },
 };
 
-export default function HomePage() {
+export default async function HomePage() {
+  const session = await auth.api.getSession({ headers: await headers() });
+  const initialSession = session?.user?.id
+    ? {
+        user: {
+          id: session.user.id,
+          name: session.user.name ?? null,
+        },
+      }
+    : null;
+
   return (
     <>
       <JsonLd data={homeJsonLd} />
-      <LandingExperience />
+      <LandingExperience initialSession={initialSession} />
     </>
   );
 }
