@@ -3278,12 +3278,17 @@ html[data-theme="dark"] .tutorial-nav .btn-secondary:disabled {
     radial-gradient(circle at 16% 0%, rgba(255, 255, 255, 0.52), transparent 18rem),
     linear-gradient(145deg, rgba(255, 247, 229, 0.94), rgba(223, 193, 137, 0.9)),
     var(--texture-paper) center / 540px 540px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45), inset 1px 1px rgba(255, 255, 255, 0.32);
+  box-shadow:
+    0 18px 44px rgba(80, 50, 24, 0.14),
+    inset 1px 1px rgba(255, 255, 255, 0.32);
 }
 
 .quickstart-surface {
-  border-radius: 2rem;
-  padding: 30px;
+  overflow: visible;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .quickstart-surface::before,
@@ -3307,6 +3312,11 @@ html[data-theme="dark"] .tutorial-nav .btn-secondary:disabled {
 .quickstart-surface::after,
 .quickstart-mini-card::after {
   bottom: 0;
+}
+
+.quickstart-surface::before,
+.quickstart-surface::after {
+  display: none;
 }
 
 .quickstart-header {
@@ -3563,7 +3573,14 @@ html[data-theme="dark"] .quickstart-mini-card {
     radial-gradient(circle at 18% 0%, rgba(248, 236, 210, 0.14), transparent 18rem),
     linear-gradient(145deg, rgba(34, 22, 17, 0.94), rgba(13, 9, 8, 0.9)),
     var(--texture-paper) center / 540px 540px;
-  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.58), inset 1px 1px rgba(248, 236, 210, 0.1);
+  box-shadow:
+    0 18px 48px rgba(0, 0, 0, 0.34),
+    inset 1px 1px rgba(248, 236, 210, 0.1);
+}
+
+html[data-theme="dark"] .quickstart-surface {
+  background: transparent;
+  box-shadow: none;
 }
 
 html[data-theme="dark"] .quickstart-surface::before,
@@ -3686,8 +3703,7 @@ html[data-theme="dark"] .quickstart-dim-glyph {
 
 @media (max-width: 767px) {
   .quickstart-surface {
-    border-radius: 1.55rem;
-    padding: 20px;
+    padding: 0;
   }
 
   .quickstart-header {
@@ -3806,11 +3822,16 @@ html[data-theme="dark"] .landing-quickstart .quickstart-mini-card {
     radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.48), transparent 20rem),
     linear-gradient(145deg, rgba(255, 247, 229, 0.88), rgba(225, 194, 138, 0.88)),
     var(--texture-paper) center / 540px 540px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45), inset 1px 1px rgba(255, 255, 255, 0.35);
+  box-shadow:
+    0 18px 44px rgba(80, 50, 24, 0.14),
+    inset 1px 1px rgba(255, 255, 255, 0.35);
 }
 
 .landing-quickstart .quickstart-surface {
-  padding: clamp(20px, 3vw, 32px);
+  overflow: visible;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .landing-quickstart .quickstart-mini-card {
@@ -3896,7 +3917,14 @@ html[data-theme="dark"] .landing-quickstart .quickstart-mini-card {
     radial-gradient(circle at 18% 0%, rgba(248, 236, 210, 0.12), transparent 20rem),
     linear-gradient(145deg, rgba(34, 22, 17, 0.94), rgba(13, 9, 8, 0.92)),
     var(--texture-paper) center / 540px 540px;
-  box-shadow: 0 26px 72px rgba(0, 0, 0, 0.6), inset 1px 1px rgba(248, 236, 210, 0.1);
+  box-shadow:
+    0 18px 48px rgba(0, 0, 0, 0.34),
+    inset 1px 1px rgba(248, 236, 210, 0.1);
+}
+
+html[data-theme="dark"] .landing-quickstart .quickstart-surface {
+  background: transparent;
+  box-shadow: none;
 }
 
 html[data-theme="dark"] .landing-quickstart .quickstart-surface::before,

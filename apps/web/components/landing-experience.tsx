@@ -54,11 +54,10 @@ export function LandingExperience({ initialSession }: { initialSession: LandingS
         </p>
 
         <ModeChoiceCards games={GAMES} initialSession={initialSession} />
-
-        <Suspense fallback={<QuickStartSkeleton />}>
-          <QuickStartWithStats />
-        </Suspense>
       </section>
+      <Suspense fallback={<QuickStartSkeleton />}>
+        <QuickStartWithStats />
+      </Suspense>
     </main>
   );
 }
