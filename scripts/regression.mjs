@@ -133,15 +133,18 @@ function checkLandingLayoutContracts() {
   const chromeIconHoverBlock =
     chromeIconHoverStart >= 0 ? css.slice(chromeIconHoverStart, css.indexOf("}", chromeIconHoverStart)) : "";
   const heroKickerPattern = /(^|\n)\.landing-hero-card > \.section-kicker\s*{/;
-  const darkBackdropStart = css.indexOf('html[data-theme="dark"] .landing-shell::before');
-  const darkBackdropBlock =
-    darkBackdropStart >= 0 ? css.slice(darkBackdropStart, css.indexOf("}", darkBackdropStart)) : "";
-  const darkBodyStart = css.indexOf('html[data-theme="dark"] body');
-  const darkBodyBlock =
-    darkBodyStart >= 0 ? css.slice(darkBodyStart, css.indexOf("}", darkBodyStart)) : "";
+  const theatreBackdropStart = css.indexOf("body:has(.landing-shell)::before");
+  const theatreBackdropBlock =
+    theatreBackdropStart >= 0 ? css.slice(theatreBackdropStart, css.indexOf("}", theatreBackdropStart)) : "";
+  const theatreBodyStart = css.indexOf('html[data-theme="dark"] body:has(.landing-shell)');
+  const theatreBodyBlock =
+    theatreBodyStart >= 0 ? css.slice(theatreBodyStart, css.indexOf("}", theatreBodyStart)) : "";
   const lightBackdropStart = css.indexOf('html[data-theme="light"] .landing-shell::before');
   const lightBackdropBlock =
     lightBackdropStart >= 0 ? css.slice(lightBackdropStart, css.indexOf("}", lightBackdropStart)) : "";
+  const lightTheatreBackdropStart = css.indexOf('html[data-theme="light"] body:has(.landing-shell)::before');
+  const lightTheatreBackdropBlock =
+    lightTheatreBackdropStart >= 0 ? css.slice(lightTheatreBackdropStart, css.indexOf("}", lightTheatreBackdropStart)) : "";
   const publicShellStackPattern =
     /\.landing-shell,\s*\.game-home-shell,\s*\.lobby-shell,\s*\.history-shell,\s*\.roles-shell,\s*\.rules-shell,\s*\.auth-shell,\s*\.sign-in-shell,\s*\.tutorial-shell,\s*\.utility-shell\s*{[\s\S]*?z-index:\s*0;[\s\S]*?isolation:\s*isolate;/;
 
@@ -183,22 +186,14 @@ function checkLandingLayoutContracts() {
   }
   assert(css.includes("--art-landing-dual"), "Landing page must expose the dual-world background art variable.");
   assert(css.includes("--art-landing-ambient"), "Landing page must expose the ambient outer background art variable.");
-  assert(darkBodyBlock.includes("--art-landing-ambient-composited"), "Dark body backdrop must use the composited ambient homepage background so old smoke cannot show through.");
+  assert(theatreBodyBlock.includes("rgba(8, 9, 9, 0.95)"), "Dark theatre pages should use a solid body color behind the fixed backdrop.");
   assert(publicShellStackPattern.test(css), "Public page shells must isolate their fixed backdrop layer above the body background.");
-  for (const shellSelector of [
-    ".landing-shell::before",
-    ".game-home-shell::before",
-    ".lobby-shell::before",
-    ".history-shell::before",
-    ".roles-shell::before",
-    ".rules-shell::before",
-    ".auth-shell::before",
-    ".tutorial-shell::before",
-    ".utility-shell::before",
-  ]) {
-    assert(css.includes(`html[data-theme="dark"] ${shellSelector}`), `Dark theme must use the ambient landing background for ${shellSelector}.`);
-  }
-  assert(darkBackdropBlock.includes("--art-landing-ambient-composited"), "Dark public page backdrop must use the composited ambient homepage background.");
+  assert(theatreBackdropBlock.includes("--art-landing-ambient-composited"), "Landing theatre backdrop must use the composited ambient homepage background.");
+  assert(theatreBackdropBlock.includes("animation: ambient-drift 48s"), "Landing theatre backdrop must drift subtly in dark theme.");
+  assert(css.includes(".landing-shell::before,\n.game-home-shell::before"), "Landing and family shells should disable their old absolute pseudo backdrop.");
+  assert(css.includes('html[data-theme="dark"] .lobby-shell::before'), "Lobby dark backdrop should keep the original absolute pseudo system.");
+  assert(!css.includes('html[data-theme="dark"] .landing-shell::before'), "Landing dark theme must not use the old zoom-prone shell pseudo.");
+  assert(!css.includes('html[data-theme="dark"] .game-home-shell::before'), "Family home dark theme must not use the old zoom-prone shell pseudo.");
   for (const shellSelector of [
     ".landing-shell::before",
     ".game-home-shell::before",
@@ -213,6 +208,7 @@ function checkLandingLayoutContracts() {
     assert(lightBackdropBlock.includes(shellSelector), `Light theme must disable page-art backdrop for ${shellSelector}.`);
   }
   assert(lightBackdropBlock.includes("display: none;"), "Light theme should use the shared homepage body background instead of page-art backdrops.");
+  assert(lightTheatreBackdropBlock.includes("#f7ead0") && lightTheatreBackdropBlock.includes("animation: none;"), "Light theatre backdrop should use a static cream gradient.");
   assert(css.includes("/game-art/bg-landing-ambient-composited.webp"), "Landing page must reference the optimized composited ambient outer background.");
   assert(existsSync(path.join(gameArtDir, "bg-landing-ambient-composited.png")), "Missing composited ambient landing background PNG.");
   assert(existsSync(path.join(gameArtDir, "bg-landing-ambient-composited.webp")), "Missing optimized composited ambient landing background WebP.");
@@ -253,9 +249,12 @@ function checkFamilyQuickStartContracts() {
   const sportMafia = readText("apps/web/components/games/SportMafiaCallout.tsx");
   const gameRoom = readText("apps/game-server/src/rooms/GameRoom.ts");
   const icons = readText("apps/web/components/games/quickstart-icons.tsx");
-  const gameHomeAmbientStart = css.indexOf('html[data-theme="dark"] .game-home-shell::before');
-  const gameHomeAmbientBlock =
-    gameHomeAmbientStart >= 0 ? css.slice(gameHomeAmbientStart, css.indexOf("}", gameHomeAmbientStart)) : "";
+  const werewolfTheatreStart = css.indexOf('body:has(.game-home-shell[data-family="werewolves"])::before');
+  const werewolfTheatreBlock =
+    werewolfTheatreStart >= 0 ? css.slice(werewolfTheatreStart, css.indexOf("}", werewolfTheatreStart)) : "";
+  const mafiaTheatreStart = css.indexOf('body:has(.game-home-shell[data-family="mafia"])::before');
+  const mafiaTheatreBlock =
+    mafiaTheatreStart >= 0 ? css.slice(mafiaTheatreStart, css.indexOf("}", mafiaTheatreStart)) : "";
 
   assert(existsSync(path.join(root, "apps/web/components/games/WerewolfNightTimeline.tsx")), "Missing WerewolfNightTimeline component.");
   assert(existsSync(path.join(root, "apps/web/components/games/MafiaNightTimeline.tsx")), "Missing MafiaNightTimeline component.");
@@ -284,7 +283,8 @@ function checkFamilyQuickStartContracts() {
   ]) {
     assert(existsSync(path.join(gameArtDir, asset)), `Missing cinematic hero asset ${asset}.`);
   }
-  assert(gameHomeAmbientBlock.includes("--art-landing-ambient"), "Family home dark theme should use the ambient smoky homepage background.");
+  assert(werewolfTheatreBlock.includes("/game-art/werewolf/bg-hero-v2.webp"), "Werewolf home theatre backdrop should use the family forest hero art.");
+  assert(mafiaTheatreBlock.includes("/game-art/mafia/bg-hero-v2.webp"), "Mafia home theatre backdrop should use the family noir city hero art.");
   assert(!gameHomePage.includes("QuickStartSection"), "GameHomePage must not render deprecated QuickStartSection.");
   assert(!werewolfTimeline.includes("IntersectionObserver") && !mafiaTimeline.includes("IntersectionObserver"), "Family timelines should not ship IntersectionObserver for reveal.");
   assert(css.includes("content-visibility: auto"), "Family quickstart should use CSS paint containment instead of JS viewport observers.");
