@@ -124,7 +124,9 @@ function checkLandingLayoutContracts() {
   const css = readText("apps/web/app/globals.css");
   const landingPage = readText("apps/web/components/landing-experience.tsx");
   const modeChoiceCards = readText("apps/web/components/landing/ModeChoiceCards.tsx");
-  const quickStart = readText("apps/web/components/landing/QuickStartSection.tsx");
+  const universalHowToPlay = readText("apps/web/components/landing/UniversalHowToPlay.tsx");
+  const liveTickerCard = readText("apps/web/components/landing/LiveTickerCard.tsx");
+  const recentEndingsCard = readText("apps/web/components/landing/RecentEndingsCard.tsx");
   const quickStartIcons = readText("apps/web/components/landing/quickstart-icons.tsx");
   const siteChrome = readText("apps/web/components/site-chrome.tsx");
   const chromeIconHoverStart = css.indexOf(".site-icon-button:hover");
@@ -165,13 +167,17 @@ function checkLandingLayoutContracts() {
   assert(css.includes(".quickstart-connector"), "Landing quickstart needs connector styling.");
   assert(css.includes("top: 46px;"), "Landing quickstart connector should align through medallion centers on desktop.");
   assert(css.includes(".mode-choice-continue-pill"), "Landing mode cards need the continue pill styling.");
-  assert(existsSync(path.join(root, "apps/web/components/landing/QuickStartSection.tsx")), "Missing landing QuickStartSection component.");
+  assert(existsSync(path.join(root, "apps/web/components/landing/UniversalHowToPlay.tsx")), "Missing landing UniversalHowToPlay component.");
+  assert(existsSync(path.join(root, "apps/web/components/landing/LiveTickerCard.tsx")), "Missing landing LiveTickerCard component.");
+  assert(existsSync(path.join(root, "apps/web/components/landing/RecentEndingsCard.tsx")), "Missing landing RecentEndingsCard component.");
   assert(existsSync(path.join(root, "apps/web/components/landing/quickstart-icons.tsx")), "Missing landing quickstart inline SVG icon set.");
-  assert(landingPage.includes("QuickStartSection"), "Landing page must import and render QuickStartSection.");
-  assert(!quickStart.includes("IntersectionObserver"), "Landing quickstart should not ship IntersectionObserver for below-fold connector reveal.");
+  assert(landingPage.includes("UniversalHowToPlay"), "Landing page must import and render UniversalHowToPlay.");
+  assert(landingPage.includes("LiveTickerCard") && landingPage.includes("RecentEndingsCard"), "Landing page must render shared stats cards.");
+  assert(!landingPage.includes("QuickStartSection"), "Landing page must not render deprecated QuickStartSection.");
+  assert(!universalHowToPlay.includes("IntersectionObserver"), "Landing how-to-play should not ship IntersectionObserver for below-fold connector reveal.");
   assert(css.includes("content-visibility: auto;"), "Landing quickstart should use content-visibility to defer below-fold paint.");
-  assert(quickStart.includes("Бъди първият на масата"), "Landing live empty state must invite the first room.");
-  assert(quickStart.includes("Първите герои ще се появят тук."), "Landing winner empty state must use designed Bulgarian copy.");
+  assert(liveTickerCard.includes("Бъди първият на масата"), "Landing live empty state must invite the first room.");
+  assert(recentEndingsCard.includes("Първите герои ще се появят тук."), "Landing winner empty state must use designed Bulgarian copy.");
   for (const exportName of ["PersonIcon", "HouseIcon", "MaskIcon", "MoonIcon", "BallotIcon", "LastWinnerEmptyGlyph"]) {
     assert(quickStartIcons.includes(`export function ${exportName}`), `landing quickstart-icons.tsx must export ${exportName}.`);
   }
@@ -237,15 +243,29 @@ function checkLandingLayoutContracts() {
 function checkFamilyQuickStartContracts() {
   const css = readText("apps/web/app/globals.css");
   const gameHomePage = readText("apps/web/components/games/game-home-page.tsx");
-  const quickStart = readText("apps/web/components/games/QuickStartSection.tsx");
+  const liveTickerCard = readText("apps/web/components/landing/LiveTickerCard.tsx");
+  const recentEndingsCard = readText("apps/web/components/landing/RecentEndingsCard.tsx");
+  const werewolfTimeline = readText("apps/web/components/games/WerewolfNightTimeline.tsx");
+  const mafiaTimeline = readText("apps/web/components/games/MafiaNightTimeline.tsx");
+  const roleSpotlight = readText("apps/web/components/games/RoleSpotlight.tsx");
+  const variantsChips = readText("apps/web/components/games/VariantsChips.tsx");
+  const mafiaMechanics = readText("apps/web/components/games/MafiaMechanicsCallouts.tsx");
+  const sportMafia = readText("apps/web/components/games/SportMafiaCallout.tsx");
+  const gameRoom = readText("apps/game-server/src/rooms/GameRoom.ts");
   const icons = readText("apps/web/components/games/quickstart-icons.tsx");
   const gameHomeAmbientStart = css.indexOf('html[data-theme="dark"] .game-home-shell::before');
   const gameHomeAmbientBlock =
     gameHomeAmbientStart >= 0 ? css.slice(gameHomeAmbientStart, css.indexOf("}", gameHomeAmbientStart)) : "";
 
-  assert(existsSync(path.join(root, "apps/web/components/games/QuickStartSection.tsx")), "Missing family home QuickStartSection component.");
+  assert(existsSync(path.join(root, "apps/web/components/games/WerewolfNightTimeline.tsx")), "Missing WerewolfNightTimeline component.");
+  assert(existsSync(path.join(root, "apps/web/components/games/MafiaNightTimeline.tsx")), "Missing MafiaNightTimeline component.");
+  assert(existsSync(path.join(root, "apps/web/components/games/RoleSpotlight.tsx")), "Missing RoleSpotlight component.");
+  assert(existsSync(path.join(root, "apps/web/components/games/VariantsChips.tsx")), "Missing VariantsChips component.");
   assert(existsSync(path.join(root, "apps/web/components/games/quickstart-icons.tsx")), "Missing quickstart inline SVG icon set.");
-  assert(gameHomePage.includes("<QuickStartSection"), "GameHomePage must render the shared quickstart section.");
+  assert(!existsSync(path.join(root, "apps/web/components/games/QuickStartSection.tsx")), "Family home QuickStartSection should be deprecated after identity split.");
+  assert(gameHomePage.includes("<WerewolfNightTimeline") && gameHomePage.includes("<MafiaNightTimeline"), "GameHomePage must render family-specific timelines.");
+  assert(gameHomePage.includes("<RoleSpotlight"), "GameHomePage must render family role spotlight.");
+  assert(gameHomePage.includes("<LiveTickerCard") && gameHomePage.includes("<RecentEndingsCard"), "GameHomePage must render shared stats cards.");
   assert(gameHomePage.includes("function GameHero"), "GameHomePage must extract the cinematic hero into a GameHero subcomponent.");
   for (const selector of [".game-home-hero__art", ".game-home-hero__scrim", ".game-home-hero__content", ".game-home-hero__fog", ".game-home-hero__rain"]) {
     assert(css.includes(selector), `Missing cinematic game hero selector ${selector}.`);
@@ -265,14 +285,35 @@ function checkFamilyQuickStartContracts() {
     assert(existsSync(path.join(gameArtDir, asset)), `Missing cinematic hero asset ${asset}.`);
   }
   assert(gameHomeAmbientBlock.includes("--art-landing-ambient"), "Family home dark theme should use the ambient smoky homepage background.");
-  assert(!quickStart.includes("IntersectionObserver"), "Family quickstart should not ship IntersectionObserver for connector reveal.");
+  assert(!gameHomePage.includes("QuickStartSection"), "GameHomePage must not render deprecated QuickStartSection.");
+  assert(!werewolfTimeline.includes("IntersectionObserver") && !mafiaTimeline.includes("IntersectionObserver"), "Family timelines should not ship IntersectionObserver for reveal.");
   assert(css.includes("content-visibility: auto"), "Family quickstart should use CSS paint containment instead of JS viewport observers.");
-  assert(quickStart.includes("Бъди първият на масата"), "Live ticker empty state must invite the first room, not show zero counts.");
-  assert(quickStart.includes("Няма активни стаи в момента."), "Family live empty state must match the landing homepage copy.");
-  assert(quickStart.includes("Първите герои ще се появят тук."), "Last winner empty state must use designed Bulgarian copy.");
-  assert(quickStart.includes("LastWinnerEmptyGlyph"), "Family winner empty state must use the shared designed glyph.");
-  for (const selector of [".quickstart-surface", ".quickstart-medallion", ".quickstart-connector", ".quickstart-row"]) {
+  assert(liveTickerCard.includes("Бъди първият на масата") && liveTickerCard.includes("Запали първия огън"), "Live ticker empty states must be family-aware.");
+  assert(recentEndingsCard.includes("Първите легенди ще се появят тук.") && recentEndingsCard.includes("Първите досиета ще се появят тук."), "Recent endings empty states must be family-aware.");
+  assert(recentEndingsCard.includes("LastWinnerEmptyGlyph"), "Family winner empty state must use the shared designed glyph.");
+  assert(roleSpotlight.includes("ordinary_villager") && roleSpotlight.includes("commissioner"), "RoleSpotlight must use real family role identifiers.");
+  assert(variantsChips.includes("С Маниак") && variantsChips.includes("Комисар и Доктор"), "Variant chips must use project role terminology.");
+  assert(mafiaMechanics.includes("Дневникът на Комисаря"), "Mafia mechanics must use current role terminology.");
+  assert(sportMafia.includes("Създай маса"), "Sport Mafia CTA must use idiomatic Bulgarian copy.");
+  assert(gameRoom.includes("recentEndings") && gameRoom.includes("byFamily"), "Game server stats must expose family counts and recent endings.");
+  for (const selector of [".quickstart-surface", ".quickstart-medallion", ".quickstart-connector", ".quickstart-row", ".night-timeline", ".role-spotlight", ".variants-chips"]) {
     assert(css.includes(selector), `Missing quickstart CSS selector ${selector}.`);
+  }
+  for (const asset of [
+    "werewolf/night-1-fog.png",
+    "werewolf/night-1-fog.webp",
+    "werewolf/night-2-seer.webp",
+    "werewolf/night-3-wolves.webp",
+    "werewolf/night-4-healer.webp",
+    "werewolf/night-5-dawn.webp",
+    "mafia/night-1-rain.png",
+    "mafia/night-1-rain.webp",
+    "mafia/night-2-don.webp",
+    "mafia/night-3-sheriff.webp",
+    "mafia/night-4-doctor.webp",
+    "mafia/night-5-morning.webp",
+  ]) {
+    assert(existsSync(path.join(gameArtDir, asset)), `Missing night timeline art asset ${asset}.`);
   }
   for (const exportName of ["PersonIcon", "KeyIcon", "DoorIcon", "MaskIcon", "MoonIcon", "BallotIcon", "LastWinnerEmptyGlyph"]) {
     assert(icons.includes(`export function ${exportName}`), `quickstart-icons.tsx must export ${exportName}.`);
