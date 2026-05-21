@@ -308,6 +308,85 @@ body::after {
   background-size: 98px 98px, 143px 143px;
 }
 
+/* ============================== */
+/* Cinematic theatre backdrop      */
+/* Layer 1 - fixed ambient drift   */
+/* ============================== */
+
+body:has(.landing-shell),
+body:has(.game-home-shell) {
+  position: relative;
+  z-index: 0;
+}
+
+html[data-theme="dark"] body:has(.landing-shell),
+html[data-theme="dark"] body:has(.game-home-shell) {
+  background: rgba(8, 9, 9, 0.95);
+}
+
+html[data-theme="light"] body:has(.landing-shell),
+html[data-theme="light"] body:has(.game-home-shell) {
+  background: rgba(252, 244, 230, 0.96);
+}
+
+body:has(.landing-shell)::before,
+body:has(.game-home-shell)::before {
+  display: block;
+  z-index: -2;
+  background: var(--art-landing-ambient-composited) center / cover no-repeat;
+  animation: ambient-drift 48s ease-in-out infinite alternate;
+  mask-image: none;
+}
+
+body:has(.game-home-shell[data-family="werewolves"])::before {
+  background-image: image-set(
+    url("/game-art/werewolf/bg-hero-v2.webp") type("image/webp"),
+    url("/game-art/werewolf/bg-hero-v2.png") type("image/png")
+  );
+}
+
+body:has(.game-home-shell[data-family="mafia"])::before {
+  background-image: image-set(
+    url("/game-art/mafia/bg-hero-v2.webp") type("image/webp"),
+    url("/game-art/mafia/bg-hero-v2.png") type("image/png")
+  );
+}
+
+html[data-theme="light"] body:has(.landing-shell)::before,
+html[data-theme="light"] body:has(.game-home-shell)::before {
+  background:
+    radial-gradient(ellipse at 4% 50%, rgba(255, 230, 180, 0.42), transparent 38rem),
+    radial-gradient(ellipse at 96% 48%, rgba(180, 200, 220, 0.38), transparent 42rem),
+    linear-gradient(135deg, #f7ead0 0%, #e7d0a4 48%, #c6d0b2 100%);
+  animation: none;
+}
+
+@keyframes ambient-drift {
+  0% {
+    background-position: 48% 50%;
+  }
+  50% {
+    background-position: 52% 48%;
+  }
+  100% {
+    background-position: 48% 52%;
+  }
+}
+
+@media (max-width: 760px) {
+  body:has(.game-home-shell[data-family="werewolves"])::before {
+    background-image: image-set(
+      url("/game-art/mobile/werewolf/bg-hero-v2.webp") type("image/webp")
+    );
+  }
+
+  body:has(.game-home-shell[data-family="mafia"])::before {
+    background-image: image-set(
+      url("/game-art/mobile/mafia/bg-hero-v2.webp") type("image/webp")
+    );
+  }
+}
+
 a {
   color: inherit;
   text-decoration: none;
@@ -1471,9 +1550,9 @@ html[data-theme="light"] .site-drawer-nav a.is-active .site-drawer-icon {
   --page-art: var(--art-landing-dual);
 }
 
-.landing-shell::before {
-  background: var(--art-landing-ambient-composited) center / cover no-repeat;
-  filter: none;
+.landing-shell::before,
+.game-home-shell::before {
+  display: none;
 }
 
 .lobby-shell {
@@ -11691,8 +11770,6 @@ html[data-theme="light"] .replay-hero-scrim {
   position: relative;
 }
 
-html[data-theme="dark"] .landing-shell::before,
-html[data-theme="dark"] .game-home-shell::before,
 html[data-theme="dark"] .lobby-shell::before,
 html[data-theme="dark"] .history-shell::before,
 html[data-theme="dark"] .roles-shell::before,
