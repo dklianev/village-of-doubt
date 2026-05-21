@@ -12,12 +12,18 @@ const PLAYERS = [
 
 export function DayClueChips() {
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
+  const [activeName, setActiveName] = useState<string | null>(null);
 
   const flip = (name: string) => {
-    setRevealed((prev) => ({ ...prev, [name]: !prev[name] }));
+    const willReveal = !revealed[name];
+    const next = { ...revealed, [name]: willReveal };
+
+    setRevealed(next);
+    setActiveName(willReveal ? name : (PLAYERS.find((player) => player.name !== name && next[player.name])?.name ?? null));
   };
 
   const visited = Object.values(revealed).filter(Boolean).length;
+  const activePlayer = activeName ? PLAYERS.find((player) => player.name === activeName) : null;
 
   return (
     <div className="clue-chips" role="group" aria-label="Примерни играчи">
@@ -37,21 +43,29 @@ export function DayClueChips() {
               aria-pressed={isRevealed}
               aria-label={isRevealed ? `Скрий ${player.name}` : `Разкрий ${player.name}`}
             >
-              {isRevealed ? (
-                <span className="clue-chip-content clue-chip-back-content">
-                  <strong className="clue-chip-back-name">{player.name}</strong>
-                  <span className="clue-chip-back-text">{player.clue}</span>
-                </span>
-              ) : (
-                <span className="clue-chip-content clue-chip-front-content">
-                  <span className="clue-chip-initial">{player.name[0]}</span>
-                  <span className="clue-chip-name">{player.name}</span>
-                </span>
-              )}
+              <span className="clue-chip-content clue-chip-front-content">
+                <span className="clue-chip-initial">{player.name[0]}</span>
+                <span className="clue-chip-name">{player.name}</span>
+                <span className="clue-chip-status">{isRevealed ? "следа" : "скрита"}</span>
+              </span>
             </button>
           );
         })}
       </div>
+
+      <aside className="clue-chip-detail" aria-live="polite">
+        {activePlayer ? (
+          <>
+            <strong>{activePlayer.name}</strong>
+            <span>{activePlayer.clue}</span>
+          </>
+        ) : (
+          <>
+            <strong>Избери играч</strong>
+            <span>Виж как една дребна реплика може да промени подозрението.</span>
+          </>
+        )}
+      </aside>
     </div>
   );
 }
