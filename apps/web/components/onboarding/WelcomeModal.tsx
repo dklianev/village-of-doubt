@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
+import styles from "./WelcomeModal.module.css";
 
 const STORAGE_KEY = "welcome-modal-shown";
 
@@ -30,17 +31,17 @@ export function WelcomeModal() {
   const displayName = session?.user?.name ?? "приятел";
 
   return (
-    <div className="welcome-modal-backdrop" role="presentation" onClick={dismiss}>
-      <aside className="welcome-modal" role="dialog" aria-label="Добре дошъл" onClick={(event) => event.stopPropagation()}>
-        <p className="welcome-kicker">добре дошъл</p>
+    <div className={styles.backdrop} role="presentation" onClick={dismiss}>
+      <aside className={styles.modal} role="dialog" aria-label="Добре дошъл" onClick={(event) => event.stopPropagation()}>
+        <p className={styles.kicker}>добре дошъл</p>
         <h2>Здравей, {displayName}.</h2>
-        <p className="welcome-body">
+        <p className={styles.body}>
           Първа игра за теб? Имаме шест сцени, които те водят през една вечер на масата - нощ, ден и подозрение.
         </p>
-        <p className="welcome-body">
+        <p className={styles.body}>
           Иначе избери семейство игри и създай първа стая. Приятели се канят с код.
         </p>
-        <div className="welcome-actions">
+        <div className={styles.actions}>
           <Link href="/tutorial?welcome=1" className="btn btn-primary" onClick={dismiss}>
             Виж шестте сцени
           </Link>

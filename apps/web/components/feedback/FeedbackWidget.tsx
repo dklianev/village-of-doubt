@@ -3,6 +3,7 @@
 import { type FormEvent, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import styles from "./FeedbackWidget.module.css";
 
 type FeedbackCategory = "bug" | "idea" | "praise" | "other";
 type Status = "idle" | "submitting" | "sent" | "error";
@@ -54,7 +55,7 @@ function shouldHideFeedback(pathname: string): boolean {
   return HIDDEN_ROUTES.some((route) => route === pathname);
 }
 
-function FeedbackIcon({ className }: { className?: string }) {
+function FeedbackIcon({ className }: { className?: string | undefined }) {
   return (
     <svg
       className={className}
@@ -193,47 +194,47 @@ export function FeedbackWidget() {
 
   if (!open) {
     return (
-      <button type="button" className="feedback-fab" onClick={() => setOpen(true)} aria-label="Дай ни бележка">
-        <FeedbackIcon className="feedback-fab-icon" />
+      <button type="button" className={styles.fab} onClick={() => setOpen(true)} aria-label="Дай ни бележка">
+        <FeedbackIcon className={styles.fabIcon} />
       </button>
     );
   }
 
   return (
     <>
-      <div className="feedback-overlay" aria-hidden onClick={close} />
-      <aside className="feedback-panel" role="dialog" aria-modal="true" aria-labelledby={panelTitleId}>
-        <header className="feedback-panel-head">
-          <FeedbackIcon className="feedback-panel-icon" />
+      <div className={styles.overlay} aria-hidden onClick={close} />
+      <aside className={styles.panel} role="dialog" aria-modal="true" aria-labelledby={panelTitleId}>
+        <header className={styles.panelHead}>
+          <FeedbackIcon className={styles.panelIcon} />
           <div>
-            <p className="feedback-kicker">бележка от масата</p>
+            <p className={styles.kicker}>бележка от масата</p>
             <h2 id={panelTitleId}>Дай ни бележка.</h2>
           </div>
-          <button type="button" className="feedback-close" onClick={close} aria-label="Затвори">
+          <button type="button" className={styles.close} onClick={close} aria-label="Затвори">
             ×
           </button>
         </header>
 
         {status === "sent" ? (
-          <div className="feedback-sent" role="status">
-            <div className="feedback-sent-mark" aria-hidden>
+          <div className={styles.sent} role="status">
+            <div className={styles.sentMark} aria-hidden>
               ✓
             </div>
-            <p className="feedback-sent-title">Получено. Благодарим.</p>
-            <p className="feedback-sent-detail">
+            <p className={styles.sentTitle}>Получено. Благодарим.</p>
+            <p className={styles.sentDetail}>
               {submittedEmail
                 ? `Ще ти отговорим на ${submittedEmail}, ако се наложи.`
                 : "Ще я прегледаме без да те търсим обратно."}
             </p>
-            <p className="feedback-sent-hint">Затваря автоматично...</p>
+            <p className={styles.sentHint}>Затваря автоматично...</p>
           </div>
         ) : (
-          <form onSubmit={submit} className="feedback-form">
-            <fieldset className="feedback-category">
+          <form onSubmit={submit} className={styles.form}>
+            <fieldset className={styles.category}>
               <legend>За какво е бележката?</legend>
-              <div className="feedback-category-grid">
+              <div className={styles.categoryGrid}>
                 {(Object.keys(CATEGORY_LABELS) as FeedbackCategory[]).map((key) => (
-                  <label key={key} className="feedback-category-option" data-active={category === key}>
+                  <label key={key} className={styles.categoryOption} data-active={category === key}>
                     <input
                       type="radio"
                       name="feedback-category"
@@ -241,14 +242,14 @@ export function FeedbackWidget() {
                       checked={category === key}
                       onChange={() => setCategory(key)}
                     />
-                    <span className="feedback-category-label">{CATEGORY_LABELS[key]}</span>
-                    <span className="feedback-category-hint">{CATEGORY_HINTS[key]}</span>
+                    <span className={styles.categoryLabel}>{CATEGORY_LABELS[key]}</span>
+                    <span className={styles.categoryHint}>{CATEGORY_HINTS[key]}</span>
                   </label>
                 ))}
               </div>
             </fieldset>
 
-            <div className="feedback-field">
+            <div className={styles.field}>
               <label htmlFor={bodyId}>Описание</label>
               <textarea
                 ref={firstFieldRef}
@@ -263,40 +264,40 @@ export function FeedbackWidget() {
                 aria-invalid={Boolean(error)}
                 aria-describedby={error ? errorBodyId : undefined}
               />
-              <div className="feedback-field-foot">
-                <span className="feedback-field-count">{body.length} / 2000</span>
+              <div className={styles.fieldFoot}>
+                <span className={styles.fieldCount}>{body.length} / 2000</span>
                 {error ? (
-                  <span id={errorBodyId} className="feedback-field-error" role="alert">
+                  <span id={errorBodyId} className={styles.fieldError} role="alert">
                     {error}
                   </span>
                 ) : null}
               </div>
             </div>
 
-            <div className="feedback-field">
+            <div className={styles.field}>
               <label htmlFor={emailId}>
-                Имейл за връзка <span className="feedback-field-optional">(по избор)</span>
+                Имейл за връзка <span className={styles.fieldOptional}>(по избор)</span>
               </label>
               <input
                 id={emailId}
                 type="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
-                placeholder="example@domain.com"
+                placeholder="ime@primer.bg"
                 autoComplete="email"
               />
             </div>
 
-            <p className="feedback-context">
-              <span className="feedback-context-label">Изпращаш от</span>
+            <p className={styles.context}>
+              <span className={styles.contextLabel}>Изпращаш от</span>
               <code>{pathname}</code>
             </p>
 
-            <div className="feedback-actions">
-              <button type="submit" className="feedback-submit" disabled={status === "submitting"}>
+            <div className={styles.actions}>
+              <button type="submit" className={styles.submit} disabled={status === "submitting"}>
                 {status === "submitting" ? "Изпращаме..." : "Изпрати"}
               </button>
-              <button type="button" className="feedback-cancel" onClick={close}>
+              <button type="button" className={styles.cancel} onClick={close}>
                 Отказ
               </button>
             </div>

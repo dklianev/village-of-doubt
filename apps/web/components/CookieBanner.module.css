@@ -1,0 +1,65 @@
+.banner {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 100;
+  display: flex;
+  max-width: 500px;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  color: #1a1410;
+  background: rgba(246, 230, 196, 0.95);
+  border: 1px solid rgba(80, 50, 24, 0.28);
+  border-radius: 14px;
+  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.35);
+}
+
+.banner:hover {
+  box-shadow:
+    0 24px 48px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(245, 232, 200, 0.08);
+}
+
+.banner p {
+  margin: 0;
+  color: #2a1b10;
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.banner a {
+  color: #842f2b;
+  font-weight: 800;
+  text-decoration: underline;
+}
+
+.banner :global(.btn) {
+  min-height: 36px;
+  flex: 0 0 auto;
+  padding: 0 16px;
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  border-radius: 999px;
+  box-shadow: 0 8px 18px rgba(132, 47, 43, 0.18);
+}
+
+:global(html[data-theme="dark"]) .banner {
+  background: rgba(246, 230, 196, 0.96);
+  box-shadow:
+    0 18px 44px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+@media (max-width: 640px) {
+  .banner {
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    align-items: center;
+  }
+
+  .banner :global(.btn) {
+    min-width: 96px;
+  }
+}

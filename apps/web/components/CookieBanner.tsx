@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import styles from "./CookieBanner.module.css";
 
 const STORAGE_KEY = "cookie-consent";
 
@@ -22,7 +23,7 @@ export function CookieBanner() {
   }
 
   return (
-    <aside className="cookie-banner" role="dialog" aria-label="Бисквитки">
+    <aside className={styles.banner} role="dialog" aria-label="Бисквитки">
       <p>
         Използваме само необходими бисквитки за вход и сесия. Прочети{" "}
         <Link href="/privacy">политиката за поверителност</Link>.
