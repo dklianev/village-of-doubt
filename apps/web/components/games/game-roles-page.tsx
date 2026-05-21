@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useDeferredValue, useEffect, useState } from "react";
+import { memo, useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
 import {
   ROLE_DEFINITIONS,
   getRoleAssetKey,
@@ -72,12 +72,19 @@ export function GameRolesPage({ family }: { family: GameFamily }) {
   const intro = isMafia
     ? "Бърз справочник за града: кой разследва, кой пази и кой дърпа конците след полунощ."
     : "Бърз справочник за селото: кой вижда, кой лъже и кои роли обръщат нощта.";
-  const allRoles = getRolesForFamily(family).sort(compareRoles);
-  const roles = allRoles
-    .filter((role) => matchesRoleFilter(role, filter))
-    .filter((role) => matchesTeamFilter(role, teamFilter))
-    .filter((role) => matchesRoleSearch(role, deferredQuery))
-    .sort(compareRoles);
+  const allRoles = useMemo(() => [...getRolesForFamily(family)].sort(compareRoles), [family]);
+  const normalizedQuery = useMemo(() => normalizeSearch(deferredQuery), [deferredQuery]);
+  const roles = useMemo(
+    () =>
+      allRoles
+        .filter((role) => matchesRoleFilter(role, filter))
+        .filter((role) => matchesTeamFilter(role, teamFilter))
+        .filter((role) => matchesRoleSearch(role, normalizedQuery)),
+    [allRoles, filter, normalizedQuery, teamFilter],
+  );
+  const selectRole = useCallback((role: RoleCode) => {
+    setSelectedRole(role);
+  }, []);
 
   useEffect(() => {
     if (!selectedRole) {
@@ -163,29 +170,8 @@ export function GameRolesPage({ family }: { family: GameFamily }) {
 
       <div className="role-codex-grid">
         {roles.map((role, index) => {
-          const definition = ROLE_DEFINITIONS[role];
-          const runtimeStatus = getRoleRuntimeStatus(role);
           return (
-            <article key={role} className={`role-codex-card role-codex-card-compact role-${role}`}>
-              <button type="button" className="role-codex-card-button" onClick={() => setSelectedRole(role)}>
-                <RoleArt role={role} family={family} priority={index < 4} />
-                <div className="role-codex-copy">
-                  <div className="role-codex-card-topline">
-                    <span>{teamLabelBg(definition.team, family)}</span>
-                    <span>{definition.nightAction ? "Нощна" : "Дневна"}</span>
-                  </div>
-                  <h2 className="role-card-title">{definition.nameBg}</h2>
-                  <p>{definition.shortDescriptionBg}</p>
-                  <div className="role-codex-tags" aria-label="Данни за ролята">
-                    <span>{runtimeStatus === "playable" ? "Автоматична" : "Ръчно водене"}</span>
-                    {definition.isDefaultEnabled ? <span>Стартова</span> : null}
-                    <span>Стойност {formatValue(definition.value)}</span>
-                    <span>{definition.nightOrder === null ? "Без нощен ред" : `Ред ${definition.nightOrder}`}</span>
-                  </div>
-                  <span className="role-codex-open">Отвори досието</span>
-                </div>
-              </button>
-            </article>
+            <RoleCodexCard key={role} family={family} role={role} priority={index < 4} onSelect={selectRole} />
           );
         })}
       </div>
@@ -199,6 +185,44 @@ export function GameRolesPage({ family }: { family: GameFamily }) {
     </main>
   );
 }
+
+const RoleCodexCard = memo(function RoleCodexCard({
+  family,
+  role,
+  priority,
+  onSelect,
+}: {
+  family: GameFamily;
+  role: RoleCode;
+  priority: boolean;
+  onSelect: (role: RoleCode) => void;
+}) {
+  const definition = ROLE_DEFINITIONS[role];
+  const runtimeStatus = getRoleRuntimeStatus(role);
+
+  return (
+    <article className={`role-codex-card role-codex-card-compact role-${role}`}>
+      <button type="button" className="role-codex-card-button" onClick={() => onSelect(role)}>
+        <RoleArt role={role} family={family} priority={priority} />
+        <div className="role-codex-copy">
+          <div className="role-codex-card-topline">
+            <span>{teamLabelBg(definition.team, family)}</span>
+            <span>{definition.nightAction ? "Нощна" : "Дневна"}</span>
+          </div>
+          <h2 className="role-card-title">{definition.nameBg}</h2>
+          <p>{definition.shortDescriptionBg}</p>
+          <div className="role-codex-tags" aria-label="Данни за ролята">
+            <span>{runtimeStatus === "playable" ? "Автоматична" : "Ръчно водене"}</span>
+            {definition.isDefaultEnabled ? <span>Стартова</span> : null}
+            <span>Стойност {formatValue(definition.value)}</span>
+            <span>{definition.nightOrder === null ? "Без нощен ред" : `Ред ${definition.nightOrder}`}</span>
+          </div>
+          <span className="role-codex-open">Отвори досието</span>
+        </div>
+      </button>
+    </article>
+  );
+});
 
 function RoleArt({ role, family, priority }: { role: RoleCode; family: GameFamily; priority: boolean }) {
   const assetKey = getRoleAssetKey(role);
@@ -372,8 +396,7 @@ function matchesTeamFilter(role: RoleCode, filter: TeamFilter) {
   return true;
 }
 
-function matchesRoleSearch(role: RoleCode, query: string) {
-  const normalizedQuery = normalizeSearch(query);
+function matchesRoleSearch(role: RoleCode, normalizedQuery: string) {
   if (!normalizedQuery) {
     return true;
   }
