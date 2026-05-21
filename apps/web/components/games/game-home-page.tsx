@@ -2,7 +2,14 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { type GameFamily } from "@werewolf/shared";
 import { ResourceHints } from "@/components/resource-hints";
-import { QuickStartSection, type QuickStartLastWinner, type QuickStartLiveStats } from "@/components/games/QuickStartSection";
+import { MafiaMechanicsCallouts } from "@/components/games/MafiaMechanicsCallouts";
+import { MafiaNightTimeline } from "@/components/games/MafiaNightTimeline";
+import { RoleSpotlight } from "@/components/games/RoleSpotlight";
+import { SportMafiaCallout } from "@/components/games/SportMafiaCallout";
+import { VariantsChips } from "@/components/games/VariantsChips";
+import { WerewolfNightTimeline } from "@/components/games/WerewolfNightTimeline";
+import { LiveTickerCard, type LiveStats } from "@/components/landing/LiveTickerCard";
+import { RecentEndingsCard, type Ending } from "@/components/landing/RecentEndingsCard";
 
 export function GameHomePage({ family }: { family: GameFamily }) {
   const isMafia = family === "mafia";
@@ -21,24 +28,41 @@ export function GameHomePage({ family }: { family: GameFamily }) {
       <ResourceHints images={heroImages} />
       <GameHero family={family} root={root} eyebrow={eyebrow} title={title} subtitle={subtitle} />
 
-      <Suspense fallback={<QuickStartFallback />}>
-        <QuickStartWithStats family={family} />
+      {family === "werewolves" ? <WerewolfNightTimeline /> : <MafiaNightTimeline />}
+      <RoleSpotlight family={family} />
+      {family === "werewolves" ? (
+        <VariantsChips family="werewolves" />
+      ) : (
+        <>
+          <MafiaMechanicsCallouts />
+          <SportMafiaCallout />
+        </>
+      )}
+
+      <Suspense fallback={<GameStatsFallback />}>
+        <GameStatsRow family={family} />
       </Suspense>
     </main>
   );
 }
 
-async function QuickStartWithStats({ family }: { family: GameFamily }) {
+async function GameStatsRow({ family }: { family: GameFamily }) {
   const stats = await loadGameStats();
 
-  return <QuickStartSection family={family} liveStats={stats?.liveStats ?? null} lastWinner={stats?.lastWinner ?? null} />;
+  return (
+    <div className="landing-stats-row quickstart-row">
+      <LiveTickerCard family={family} liveStats={stats?.liveStats ?? null} />
+      <RecentEndingsCard family={family} endings={stats?.recentEndings ?? []} />
+    </div>
+  );
 }
 
-function QuickStartFallback() {
+function GameStatsFallback() {
   return (
-    <section className="quickstart-block" aria-hidden="true">
-      <div className="quickstart-surface quickstart-skeleton" />
-    </section>
+    <div className="landing-stats-row quickstart-row" aria-hidden="true">
+      <div className="quickstart-mini-card quickstart-skeleton" />
+      <div className="quickstart-mini-card quickstart-skeleton" />
+    </div>
   );
 }
 
@@ -90,7 +114,7 @@ function GameHero({
   );
 }
 
-async function loadGameStats(): Promise<{ liveStats: QuickStartLiveStats; lastWinner: QuickStartLastWinner | null } | null> {
+async function loadGameStats(): Promise<{ liveStats: LiveStats; recentEndings: Ending[] } | null> {
   const gameServerUrl = process.env.NEXT_PUBLIC_GAME_SERVER_URL?.replace(/^ws/, "http") ?? "http://localhost:2567";
   try {
     const response = await fetch(`${gameServerUrl}/stats`, {
@@ -103,15 +127,18 @@ async function loadGameStats(): Promise<{ liveStats: QuickStartLiveStats; lastWi
     const stats = (await response.json()) as {
       activeRooms?: number;
       connectedPlayers?: number;
-      lastWinner?: QuickStartLastWinner | null;
+      byFamily?: Partial<Record<GameFamily, number>>;
+      recentEndings?: Ending[];
+      lastWinner?: Ending | null;
     };
 
     return {
       liveStats: {
         activeRooms: stats.activeRooms ?? 0,
         connectedPlayers: stats.connectedPlayers ?? 0,
+        ...(stats.byFamily ? { byFamily: stats.byFamily } : {}),
       },
-      lastWinner: stats.lastWinner ?? null,
+      recentEndings: stats.recentEndings ?? (stats.lastWinner ? [stats.lastWinner] : []),
     };
   } catch {
     return null;
