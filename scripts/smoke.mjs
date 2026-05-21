@@ -34,16 +34,16 @@ async function main() {
   await waitForText("http://127.0.0.1:3300/", "Върколак или Мафия", "landing page");
   await waitForStaticAsset("http://127.0.0.1:3300/", "landing static CSS");
   await waitForText("http://127.0.0.1:3300/sign-in", "Покажи се на масата", "sign-in page");
-  await waitForText("http://127.0.0.1:3300/werewolf/create", "Покажи се на масата", "werewolf create auth gate");
-  await waitForText("http://127.0.0.1:3300/mafia/create", "Покажи се на масата", "mafia create auth gate");
+  await waitForText("http://127.0.0.1:3300/werewolf/create", "Стани", "werewolf create auth gate");
+  await waitForText("http://127.0.0.1:3300/mafia/create", "Стани", "mafia create auth gate");
   await waitForText(
     "http://127.0.0.1:3300/play/SMOKE1?mode=werewolves_classic&players=6&communication=built_in_chat&narrator=automatic&tempo=fast_online",
-    "Покажи се на масата",
+    "Върни се в играта",
     "play auth gate",
   );
   await waitForText(
     "http://127.0.0.1:3300/play/SMOKEL?mode=werewolves_classic&players=6&communication=no_chat&narrator=honest_human&tempo=live",
-    "Покажи се на масата",
+    "Върни се в играта",
     "live-safe play page",
   );
   await waitForText("http://127.0.0.1:3300/werewolf/roles", "Роли във Върколак", "werewolf roles page");
