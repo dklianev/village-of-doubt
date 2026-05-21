@@ -331,11 +331,14 @@ html[data-theme="light"] body:has(.game-home-shell) {
 
 body:has(.landing-shell)::before,
 body:has(.game-home-shell)::before {
+  inset: -4vh -4vw;
   display: block;
   z-index: -2;
   background: var(--art-landing-ambient-composited) center / cover no-repeat;
   animation: ambient-drift 48s ease-in-out infinite alternate;
   mask-image: none;
+  transform: translate3d(-1%, 0, 0) scale(1.035);
+  will-change: transform;
 }
 
 body:has(.game-home-shell[data-family="werewolves"])::before {
@@ -391,13 +394,13 @@ html[data-theme="light"] body:has(.game-home-shell)::after {
 
 @keyframes ambient-drift {
   0% {
-    background-position: 48% 50%;
+    transform: translate3d(-1.2%, 0, 0) scale(1.035);
   }
   50% {
-    background-position: 52% 48%;
+    transform: translate3d(1.2%, -0.8%, 0) scale(1.04);
   }
   100% {
-    background-position: 48% 52%;
+    transform: translate3d(-0.8%, 0.9%, 0) scale(1.035);
   }
 }
 
@@ -1785,7 +1788,8 @@ html[data-theme="light"] .landing-hero-card::before {
   box-shadow: 0 30px 78px rgba(0, 0, 0, 0.48), var(--shadow-gold);
 }
 
-.game-choice-card.is-last-played {
+.game-choice-card.is-last-played,
+.game-choice-card:has(.mode-choice-continue-pill) {
   border-color: rgba(209, 154, 66, 0.72);
   box-shadow: 0 28px 74px rgba(0, 0, 0, 0.48), 0 0 0 1px rgba(209, 154, 66, 0.18), var(--shadow-gold);
 }
@@ -3646,7 +3650,6 @@ html[data-theme="light"] .game-home-hero {
   outline: 1px solid rgba(209, 154, 66, 0.16);
   outline-offset: -5px;
   padding: 22px;
-  animation: candleBreath 6.4s ease-in-out infinite;
   transition: transform 380ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
@@ -3656,7 +3659,6 @@ html[data-theme="light"] .game-home-hero {
 
 .quickstart-row .quickstart-mini-card:nth-child(2) {
   transform: rotate(0.8deg) translateY(6px);
-  animation-delay: 1.6s;
 }
 
 .quickstart-row .quickstart-mini-card:hover,
@@ -3758,7 +3760,6 @@ html[data-theme="dark"] .quickstart-mini-card {
 
 html[data-theme="dark"] .quickstart-mini-card {
   outline-color: rgba(209, 154, 66, 0.22);
-  animation-name: candleBreathDark;
 }
 
 html[data-theme="dark"] .quickstart-surface {
@@ -3977,52 +3978,6 @@ html[data-theme="dark"] .quickstart-dim-glyph {
   to {
     opacity: 1;
     transform: translateX(-50%);
-  }
-}
-
-@keyframes candleBreath {
-  0%,
-  100% {
-    box-shadow:
-      0 2px 4px rgba(70, 38, 18, 0.18),
-      0 12px 32px rgba(70, 38, 18, 0.22),
-      0 28px 64px rgba(70, 38, 18, 0.16),
-      0 0 0 rgba(209, 154, 66, 0),
-      inset 0 1px 0 rgba(255, 255, 255, 0.6),
-      inset 1px 1px rgba(255, 255, 255, 0.32);
-  }
-
-  50% {
-    box-shadow:
-      0 2px 4px rgba(70, 38, 18, 0.18),
-      0 14px 36px rgba(70, 38, 18, 0.26),
-      0 32px 72px rgba(70, 38, 18, 0.2),
-      0 0 36px rgba(209, 154, 66, 0.1),
-      inset 0 1px 0 rgba(255, 255, 255, 0.6),
-      inset 1px 1px rgba(255, 255, 255, 0.32);
-  }
-}
-
-@keyframes candleBreathDark {
-  0%,
-  100% {
-    box-shadow:
-      0 2px 4px rgba(0, 0, 0, 0.42),
-      0 12px 32px rgba(0, 0, 0, 0.48),
-      0 28px 64px rgba(0, 0, 0, 0.36),
-      0 0 0 rgba(209, 154, 66, 0),
-      inset 0 1px 0 rgba(248, 236, 210, 0.14),
-      inset 1px 1px rgba(248, 236, 210, 0.1);
-  }
-
-  50% {
-    box-shadow:
-      0 2px 4px rgba(0, 0, 0, 0.42),
-      0 14px 36px rgba(0, 0, 0, 0.54),
-      0 32px 72px rgba(0, 0, 0, 0.42),
-      0 0 42px rgba(209, 154, 66, 0.16),
-      inset 0 1px 0 rgba(248, 236, 210, 0.14),
-      inset 1px 1px rgba(248, 236, 210, 0.1);
   }
 }
 
