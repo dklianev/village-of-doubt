@@ -1,5 +1,3 @@
-"use client";
-
 import type { GameFamily } from "@werewolf/shared";
 import { LastWinnerEmptyGlyph } from "@/components/landing/quickstart-icons";
 

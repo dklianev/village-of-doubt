@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import type { GameFamily } from "@werewolf/shared";
 

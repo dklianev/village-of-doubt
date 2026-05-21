@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
+import { LastFamilyPill } from "@/components/landing/LastFamilyPill";
 
 type LastFamily = "werewolves" | "mafia";
 type LandingSession = { user: { id: string; name?: string | null } } | null;
@@ -20,28 +20,19 @@ export type ModeChoiceGame = {
 export function ModeChoiceCards({ games, initialSession }: { games: readonly ModeChoiceGame[]; initialSession: LandingSession }) {
   const sessionQuery = authClient.useSession();
   const session = sessionQuery.data ?? initialSession;
-  const [lastFamily, setLastFamily] = useState<LastFamily | null>(null);
-
-  useEffect(() => {
-    const saved = window.localStorage.getItem("last-family");
-    if (saved === "werewolves" || saved === "mafia") {
-      setLastFamily(saved);
-    }
-  }, []);
 
   return (
     <div className="game-choice-grid landing-split-grid mt-8">
       {games.map((game) => {
-        const isLastPlayed = lastFamily === game.family;
         const primaryHref = session ? `${game.href}/create` : `/sign-in?redirect=${encodeURIComponent(`${game.href}/create`)}`;
 
         return (
           <article
             key={game.id}
-            className={`game-choice-card game-choice-${game.id}${isLastPlayed ? " is-last-played" : ""}`}
+            className={`game-choice-card game-choice-${game.id}`}
             data-theme={game.family}
           >
-            {isLastPlayed ? <span className="mode-choice-continue-pill">Продължи</span> : null}
+            <LastFamilyPill family={game.family} />
             <span className="section-kicker">{game.eyebrow}</span>
             <h2>{game.title}</h2>
             <blockquote>{game.line}</blockquote>
