@@ -4735,6 +4735,7 @@ html[data-theme="light"] .sport-mafia-callout {
   z-index: 3;
   display: grid;
   gap: 10px;
+  min-width: 0;
   padding: 16px 4px 4px;
   color: var(--ink);
 }
@@ -4760,9 +4761,15 @@ html[data-theme="light"] .sport-mafia-callout {
 
 .role-card-title {
   max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+  text-wrap: balance;
+  white-space: normal;
+}
+
+.role-codex-copy .role-card-title {
+  font-size: clamp(1.45rem, 2vw, 2.05rem);
+  line-height: 1.05;
 }
 
 .role-codex-copy p:not(.section-kicker) {
