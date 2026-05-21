@@ -28,6 +28,7 @@ export function SignInStage({ redirectTo }: { redirectTo: string }) {
           <p className="sign-in-kicker">{copy.kicker}</p>
           <h1 aria-label={title}>
             <span>{copy.title[0]}</span>
+            {" "}
             <span>{copy.title[1]}</span>
           </h1>
           <p className="sign-in-subtitle">{copy.subtitle}</p>
