@@ -90,13 +90,29 @@ const PHASE_FLOW: Partial<Record<GamePhase, GamePhase>> = {
 
 export class GameRoom extends Room<{ state: GameState }> {
   private static liveRooms = new Set<GameRoom>();
-  private static lastWinner: { code: string; winnerTeam: string; winnerReasonBg: string; endedAt: string } | null = null;
+  private static recentEndings: Array<{
+    code: string;
+    winnerTeam: string;
+    winnerReasonBg: string;
+    endedAt: string;
+    family: GameFamily;
+  }> = [];
+  private static readonly MAX_RECENT_ENDINGS = 12;
 
   static getRuntimeStats() {
+    const byFamily: Partial<Record<GameFamily, number>> = {};
+
+    for (const room of GameRoom.liveRooms) {
+      const family = getGameFamily(room.config.mode);
+      byFamily[family] = (byFamily[family] ?? 0) + 1;
+    }
+
     return {
       activeRooms: GameRoom.liveRooms.size,
       connectedPlayers: [...GameRoom.liveRooms].reduce((sum, room) => sum + room.clients.length, 0),
-      lastWinner: GameRoom.lastWinner,
+      byFamily,
+      recentEndings: GameRoom.recentEndings.slice(),
+      lastWinner: GameRoom.recentEndings[0] ?? null,
     };
   }
 
@@ -1283,12 +1299,16 @@ export class GameRoom extends Room<{ state: GameState }> {
 
     if (phase === "game_over" && this.state.winnerTeam && !this.gameFinishedPersisted) {
       this.gameFinishedPersisted = true;
-      GameRoom.lastWinner = {
+      GameRoom.recentEndings.unshift({
         code: this.state.code,
         winnerTeam: this.state.winnerTeam,
         winnerReasonBg: this.state.winnerReasonBg,
         endedAt: new Date().toISOString(),
-      };
+        family: getGameFamily(this.config.mode),
+      });
+      if (GameRoom.recentEndings.length > GameRoom.MAX_RECENT_ENDINGS) {
+        GameRoom.recentEndings.length = GameRoom.MAX_RECENT_ENDINGS;
+      }
       const achievementUnlocks = this.evaluateAchievementUnlocks();
       this.sendAchievementUnlocks(achievementUnlocks);
       this.queuePersistence(async () => {
