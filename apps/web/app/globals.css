@@ -361,6 +361,34 @@ html[data-theme="light"] body:has(.game-home-shell)::before {
   animation: none;
 }
 
+/* Layer 2 - radial spotlight vignette */
+
+body:has(.landing-shell)::after,
+body:has(.game-home-shell)::after {
+  display: block;
+  z-index: -1;
+  opacity: 1;
+  background:
+    radial-gradient(
+      ellipse 65vw 55vh at 50% 36%,
+      transparent 0%,
+      rgba(8, 9, 12, 0.18) 55%,
+      rgba(8, 9, 12, 0.58) 100%
+    );
+  background-size: auto;
+}
+
+html[data-theme="light"] body:has(.landing-shell)::after,
+html[data-theme="light"] body:has(.game-home-shell)::after {
+  background:
+    radial-gradient(
+      ellipse 65vw 55vh at 50% 36%,
+      transparent 0%,
+      rgba(252, 244, 230, 0.22) 55%,
+      rgba(252, 244, 230, 0.62) 100%
+    );
+}
+
 @keyframes ambient-drift {
   0% {
     background-position: 48% 50%;
@@ -384,6 +412,28 @@ html[data-theme="light"] body:has(.game-home-shell)::before {
     background-image: image-set(
       url("/game-art/mobile/mafia/bg-hero-v2.webp") type("image/webp")
     );
+  }
+
+  body:has(.landing-shell)::after,
+  body:has(.game-home-shell)::after {
+    background:
+      radial-gradient(
+        ellipse 110vw 70vh at 50% 32%,
+        transparent 0%,
+        rgba(8, 9, 12, 0.12) 60%,
+        rgba(8, 9, 12, 0.42) 100%
+      );
+  }
+
+  html[data-theme="light"] body:has(.landing-shell)::after,
+  html[data-theme="light"] body:has(.game-home-shell)::after {
+    background:
+      radial-gradient(
+        ellipse 110vw 70vh at 50% 32%,
+        transparent 0%,
+        rgba(252, 244, 230, 0.18) 60%,
+        rgba(252, 244, 230, 0.46) 100%
+      );
   }
 }
 
