@@ -89,7 +89,7 @@ async function testLandingDesktop() {
 
     await page.locator(".game-choice-mafia").getByRole("link", { name: "Влез и играй" }).click();
     await page.waitForURL("**/sign-in?redirect=%2Fmafia%2Fcreate");
-    await expectText(page, "Покажи се на масата");
+    await expectText(page, "Стани");
     watcher.assertClean();
   } finally {
     await close();
@@ -133,11 +133,11 @@ async function testLobbyModeFiltering() {
   try {
     await goto(page, "/werewolf/create", "werewolves lobby");
     await page.waitForURL("**/sign-in?redirect=%2Fwerewolf%2Fcreate");
-    await expectText(page, "Покажи се на масата");
+    await expectText(page, "Стани");
 
     await goto(page, "/mafia/create", "mafia lobby");
     await page.waitForURL("**/sign-in?redirect=%2Fmafia%2Fcreate");
-    await expectText(page, "Покажи се на масата");
+    await expectText(page, "Стани");
     await assertNoHorizontalOverflow(page, "mafia auth gate");
     watcher.assertClean();
   } finally {
@@ -207,7 +207,7 @@ async function testAnonymousEntry() {
   try {
     await goto(page, "/mafia/join/ABCD12", "authenticated join");
     await page.waitForURL("**/sign-in?redirect=%2Fmafia%2Fjoin%2FABCD12");
-    await expectText(page, "Покажи се на масата");
+    await expectText(page, "Влез с кода");
     await expectNoText(page, "без регистрация");
     await assertNoHorizontalOverflow(page, "authenticated join");
     watcher.assertClean();
@@ -234,7 +234,7 @@ async function testUtilityPages() {
   try {
     await goto(page, "/achievements", "achievements screen");
     await page.waitForURL("**/sign-in?redirect=%2Fachievements");
-    await expectText(page, "Покажи се на масата");
+    await expectText(page, "Запази");
 
     await goto(page, "/leaderboard", "leaderboard screen");
     await expectText(page, "Вечерен Брой на Масата");
@@ -242,7 +242,7 @@ async function testUtilityPages() {
 
     await goto(page, "/friends", "friends screen");
     await page.waitForURL("**/sign-in?redirect=%2Ffriends");
-    await expectText(page, "Покажи се на масата");
+    await expectText(page, "Събери");
     await assertNoHorizontalOverflow(page, "utility auth gates");
     watcher.assertClean();
   } finally {
@@ -259,7 +259,7 @@ async function testSinglePlayScreen() {
       "single play screen",
     );
     await page.waitForURL("**/sign-in?redirect=**");
-    await expectText(page, "Покажи се на масата");
+    await expectText(page, "Върни се");
     await assertNoHorizontalOverflow(page, "single play auth gate");
     watcher.assertClean();
   } finally {
@@ -284,7 +284,7 @@ async function testSixClientGameStart() {
       watchers.push(watchPage(page, `six-client-${index + 1}`));
       await goto(page, path, `six-client ${index + 1}`);
       await page.waitForURL("**/sign-in?redirect=**");
-      await expectText(page, "Покажи се на масата");
+      await expectText(page, "Върни се");
       await assertNoHorizontalOverflow(page, `play auth client ${index + 1}`);
     }
     for (const watcher of watchers) {
