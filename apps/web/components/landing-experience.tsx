@@ -3,7 +3,9 @@ import Image from "next/image";
 import type { GameFamily } from "@werewolf/shared";
 import { ResourceHints } from "@/components/resource-hints";
 import { ModeChoiceCards, type ModeChoiceGame } from "@/components/landing/ModeChoiceCards";
-import { QuickStartSection, type LandingQuickStartLastWinner } from "@/components/landing/QuickStartSection";
+import { UniversalHowToPlay } from "@/components/landing/UniversalHowToPlay";
+import { LiveTickerCard, type LiveStats } from "@/components/landing/LiveTickerCard";
+import { RecentEndingsCard, type Ending } from "@/components/landing/RecentEndingsCard";
 
 export type LandingSession = { user: { id: string; name?: string | null } } | null;
 
@@ -55,31 +57,31 @@ export function LandingExperience({ initialSession }: { initialSession: LandingS
 
         <ModeChoiceCards games={GAMES} initialSession={initialSession} />
       </section>
-      <Suspense fallback={<QuickStartSkeleton />}>
-        <QuickStartWithStats />
+      <UniversalHowToPlay />
+      <Suspense fallback={<LandingStatsSkeleton />}>
+        <LandingStatsRow />
       </Suspense>
     </main>
   );
 }
 
-async function QuickStartWithStats() {
+async function LandingStatsRow() {
   const stats = await loadGameStats();
-  const liveStats = stats
-    ? {
-        activeRooms: stats.activeRooms ?? 0,
-        connectedPlayers: stats.connectedPlayers ?? 0,
-        ...(stats.byFamily ? { byFamily: stats.byFamily } : {}),
-      }
-    : null;
 
-  return <QuickStartSection liveStats={liveStats} lastWinner={stats?.lastWinner ?? null} />;
+  return (
+    <div className="landing-stats-row quickstart-row">
+      <LiveTickerCard family={null} liveStats={stats?.liveStats ?? null} />
+      <RecentEndingsCard family={null} endings={stats?.recentEndings ?? []} />
+    </div>
+  );
 }
 
-function QuickStartSkeleton() {
+function LandingStatsSkeleton() {
   return (
-    <section className="landing-quickstart" aria-hidden="true">
-      <div className="quickstart-surface quickstart-skeleton" />
-    </section>
+    <div className="landing-stats-row quickstart-row" aria-hidden="true">
+      <div className="quickstart-mini-card quickstart-skeleton" />
+      <div className="quickstart-mini-card quickstart-skeleton" />
+    </div>
   );
 }
 
@@ -91,7 +93,7 @@ function LandingLogoMark() {
   );
 }
 
-async function loadGameStats() {
+async function loadGameStats(): Promise<{ liveStats: LiveStats; recentEndings: Ending[] } | null> {
   const gameServerUrl = process.env.NEXT_PUBLIC_GAME_SERVER_URL?.replace(/^ws/, "http") ?? "http://localhost:2567";
   try {
     const response = await fetch(`${gameServerUrl}/stats`, {
@@ -101,11 +103,21 @@ async function loadGameStats() {
     if (!response.ok) {
       return null;
     }
-    return (await response.json()) as {
+    const stats = (await response.json()) as {
       activeRooms?: number;
       connectedPlayers?: number;
       byFamily?: Partial<Record<GameFamily, number>>;
-      lastWinner?: LandingQuickStartLastWinner | null;
+      recentEndings?: Ending[];
+      lastWinner?: Ending | null;
+    };
+
+    return {
+      liveStats: {
+        activeRooms: stats.activeRooms ?? 0,
+        connectedPlayers: stats.connectedPlayers ?? 0,
+        ...(stats.byFamily ? { byFamily: stats.byFamily } : {}),
+      },
+      recentEndings: stats.recentEndings ?? (stats.lastWinner ? [stats.lastWinner] : []),
     };
   } catch {
     return null;
