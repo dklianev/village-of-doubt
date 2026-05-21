@@ -882,11 +882,11 @@ html[data-theme="light"] .site-mobile-menu:hover {
   flex-shrink: 0;
   width: 18px;
   height: 18px;
-  color: rgba(232, 217, 187, 0.7);
+  color: rgba(42, 27, 16, 0.58);
 }
 
 .site-drawer-nav a.is-active .site-drawer-icon {
-  color: #d19a42;
+  color: #842f2b;
 }
 
 html[data-theme="light"] .site-drawer-icon {
@@ -900,6 +900,18 @@ html[data-theme="light"] .site-drawer-nav a.is-active .site-drawer-icon {
 .site-drawer-footer .site-utility-cluster {
   width: 100%;
   justify-content: flex-start;
+}
+
+.site-drawer .site-icon-button {
+  border-color: rgba(42, 27, 16, 0.16);
+  background: rgba(42, 27, 16, 0.06);
+  color: rgba(42, 27, 16, 0.72);
+}
+
+.site-drawer .site-icon-button:hover {
+  border-color: rgba(132, 47, 43, 0.32);
+  background: rgba(132, 47, 43, 0.1);
+  color: #842f2b;
 }
 
 @media (max-width: 768px) {
