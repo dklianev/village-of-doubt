@@ -16,6 +16,7 @@
     "@t3-oss/env-nextjs": "^0.13.11",
     "@werewolf/database": "workspace:*",
     "@werewolf/shared": "workspace:*",
+    "@werewolf/ui": "workspace:*",
     "better-auth": "^1.6.11",
     "lucide-react": "^1.16.0",
     "next": "^16.2.6",
