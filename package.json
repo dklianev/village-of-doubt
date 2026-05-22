@@ -13,6 +13,11 @@
     "e2e:auth": "node scripts/e2e-auth.mjs",
     "visual": "playwright test --config=playwright.config.ts",
     "visual:update": "playwright test --config=playwright.config.ts --update-snapshots",
+    "ui:dev": "pnpm --filter @werewolf/ui storybook",
+    "ui:build": "pnpm --filter @werewolf/ui build",
+    "ui:storybook:build": "pnpm --filter @werewolf/ui build-storybook",
+    "check:dict": "tsx scripts/check-dictionary.mjs",
+    "visual:ui": "playwright test --config=playwright.config.ts --grep '@ui'",
     "perf:budget": "node scripts/bundle-budget.mjs",
     "loadtest": "node scripts/loadtest.mjs",
     "loadtest:heavy": "LOAD_CLIENTS=500 node scripts/loadtest.mjs",
@@ -28,10 +33,11 @@
     "db:migrate": "pnpm --filter @werewolf/database db:migrate"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.11.3",
     "@colyseus/loadtest": "^0.16.2",
     "@types/node": "^24.9.1",
     "playwright": "^1.59.1",
-    "tsx": "^4.20.6",
+    "tsx": "4.22.3",
     "turbo": "^2.9.6",
     "typescript": "^5.9.3",
     "vitest": "^4.0.2"
