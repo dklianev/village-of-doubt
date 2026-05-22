@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { memo, useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useDeferredValue, useMemo, useState } from "react";
 import {
   ROLE_DEFINITIONS,
   getRoleAssetKey,
@@ -13,6 +13,7 @@ import {
 } from "@werewolf/shared";
 import { ResourceHints } from "@/components/resource-hints";
 import { roleArtPath, roleThumbPath } from "@/lib/role-art";
+import { useModal } from "@/lib/use-modal";
 
 type RoleFilter = "all" | "starter" | "advanced" | "night" | "large";
 type TeamFilter = "all" | "town" | "evil" | "vampires" | "lovers" | "neutral";
@@ -61,6 +62,42 @@ const KNOWN_MAFIA_ROLE_ASSETS = new Set([
   "lovers",
 ]);
 
+const ROLE_HAYSTACK_CACHE = new Map<RoleCode, string>();
+const CYRILLIC_SEARCH_MAP: Record<string, string> = {
+  а: "a",
+  б: "b",
+  в: "v",
+  г: "g",
+  д: "d",
+  е: "e",
+  ж: "zh",
+  з: "z",
+  и: "i",
+  ѝ: "i",
+  й: "y",
+  к: "k",
+  л: "l",
+  м: "m",
+  н: "n",
+  о: "o",
+  п: "p",
+  р: "r",
+  с: "s",
+  т: "t",
+  у: "u",
+  ф: "f",
+  х: "h",
+  ц: "ts",
+  ч: "ch",
+  ш: "sh",
+  щ: "sht",
+  ъ: "a",
+  ь: "y",
+  ю: "yu",
+  я: "ya",
+};
+const CYRILLIC_SEARCH_PATTERN = /[а-яѝ]/g;
+
 export function GameRolesPage({ family }: { family: GameFamily }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<RoleFilter>("all");
@@ -85,19 +122,11 @@ export function GameRolesPage({ family }: { family: GameFamily }) {
   const selectRole = useCallback((role: RoleCode) => {
     setSelectedRole(role);
   }, []);
-
-  useEffect(() => {
-    if (!selectedRole) {
-      return;
-    }
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setSelectedRole(null);
-      }
-    }
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedRole]);
+  const resetFilters = useCallback(() => {
+    setQuery("");
+    setFilter("all");
+    setTeamFilter("all");
+  }, []);
 
   return (
     <main className="shell roles-shell" data-theme={family} data-family={family}>
@@ -177,8 +206,13 @@ export function GameRolesPage({ family }: { family: GameFamily }) {
       </div>
       {roles.length === 0 ? (
         <section className="role-codex-empty">
-          <h2 className="text-3xl font-black">Няма роля по този филтър</h2>
-          <p className="mt-3 text-[#4f3829]">Пробвай с друго име или върни филтъра на “Всички”.</p>
+          <div>
+            <h2>Няма роля по този филтър</h2>
+            <p>Пробвай с друго име или върни филтъра на “Всички”.</p>
+          </div>
+          <button type="button" className="role-codex-empty-action" onClick={resetFilters}>
+            Покажи всички роли
+          </button>
         </section>
       ) : null}
       {selectedRole ? <RoleCodexDetail family={family} role={selectedRole} onClose={() => setSelectedRole(null)} /> : null}
@@ -255,9 +289,10 @@ function RoleArt({ role, family, priority }: { role: RoleCode; family: GameFamil
 function RoleCodexDetail({ family, role, onClose }: { family: GameFamily; role: RoleCode; onClose: () => void }) {
   const definition = ROLE_DEFINITIONS[role];
   const runtimeStatus = getRoleRuntimeStatus(role);
+  const { ref } = useModal({ open: true, onClose });
 
   return (
-    <div className="role-codex-detail" role="dialog" aria-modal="true" aria-labelledby="role-codex-detail-title">
+    <div ref={ref} className="role-codex-detail" role="dialog" aria-modal="true" aria-labelledby="role-codex-detail-title">
       <button type="button" className="role-codex-detail-backdrop" aria-label="Затвори досието" onClick={onClose} />
       <article className="role-codex-detail-panel">
         <button type="button" className="role-codex-detail-close" aria-label="Затвори досието" onClick={onClose}>
@@ -401,46 +436,26 @@ function matchesRoleSearch(role: RoleCode, normalizedQuery: string) {
     return true;
   }
 
+  return getRoleHaystack(role).includes(normalizedQuery);
+}
+
+function getRoleHaystack(role: RoleCode) {
+  const cached = ROLE_HAYSTACK_CACHE.get(role);
+  if (cached) {
+    return cached;
+  }
   const definition = ROLE_DEFINITIONS[role];
   const haystack = normalizeSearch(
     `${role} ${definition.nameBg} ${definition.shortDescriptionBg} ${definition.fullDescriptionBg} ${definition.tags.join(" ")}`,
   );
-  return haystack.includes(normalizedQuery);
+  ROLE_HAYSTACK_CACHE.set(role, haystack);
+  return haystack;
 }
 
 function normalizeSearch(value: string) {
   return value
     .toLowerCase()
-    .replaceAll("а", "a")
-    .replaceAll("б", "b")
-    .replaceAll("в", "v")
-    .replaceAll("г", "g")
-    .replaceAll("д", "d")
-    .replaceAll("е", "e")
-    .replaceAll("ж", "zh")
-    .replaceAll("з", "z")
-    .replaceAll("и", "i")
-    .replaceAll("й", "y")
-    .replaceAll("к", "k")
-    .replaceAll("л", "l")
-    .replaceAll("м", "m")
-    .replaceAll("н", "n")
-    .replaceAll("о", "o")
-    .replaceAll("п", "p")
-    .replaceAll("р", "r")
-    .replaceAll("с", "s")
-    .replaceAll("т", "t")
-    .replaceAll("у", "u")
-    .replaceAll("ф", "f")
-    .replaceAll("х", "h")
-    .replaceAll("ц", "ts")
-    .replaceAll("ч", "ch")
-    .replaceAll("ш", "sh")
-    .replaceAll("щ", "sht")
-    .replaceAll("ъ", "a")
-    .replaceAll("ь", "y")
-    .replaceAll("ю", "yu")
-    .replaceAll("я", "ya")
+    .replace(CYRILLIC_SEARCH_PATTERN, (letter) => CYRILLIC_SEARCH_MAP[letter] ?? letter)
     .replace(/[^a-z0-9а-я]+/gi, " ")
     .trim();
 }

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { boot, type ColyseusTestServer } from "@colyseus/testing";
 import type { Room as ClientRoom } from "@colyseus/sdk";
 import { createGameToken } from "@werewolf/shared/server";
@@ -78,6 +78,71 @@ describe("GameRoom security boundaries", () => {
         token: wrongRoomToken,
       }),
     ).rejects.toThrow();
+  });
+
+  it("rejects replayed signed game tokens", async () => {
+    process.env.ALLOW_DEV_AUTH = "false";
+
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "TOK001",
+      mode: "werewolves_classic",
+      playerCount: 8,
+    });
+    const token = createGameToken({
+      userId: "token-user-1",
+      displayName: "Играч с токен",
+      roomCode: "TOK001",
+      secret: GAME_TOKEN_SECRET,
+    });
+
+    await colyseus.connectTo(serverRoom, { code: "TOK001", token });
+    await expect(colyseus.connectTo(serverRoom, { code: "TOK001", token })).rejects.toThrow();
+  });
+
+  it("rate-limits rapid join attempts from the same user", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "RATE01",
+      mode: "werewolves_classic",
+      playerCount: 8,
+    });
+    const auth = { userId: "rate-user-1", displayName: "Митко" };
+    const options = { code: "RATE01" };
+
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      serverRoom.onJoin(fakeClient(`rate-session-${attempt}`), options, auth);
+    }
+
+    const blockedClient = fakeClient("rate-session-blocked");
+    serverRoom.onJoin(blockedClient, options, auth);
+
+    expect(blockedClient.send).toHaveBeenCalledWith(
+      "safe_error",
+      expect.objectContaining({
+        messageBg: "Твърде много опити за вход. Изчакай малко.",
+      }),
+    );
+    expect(blockedClient.leave).toHaveBeenCalledWith(4029);
+  });
+
+  it("replaces manual-only roles unless the room uses full human narrator", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "MAN001",
+      mode: "werewolves_classic",
+      playerCount: 8,
+      narratorMode: "automatic",
+      rolePreset: "manual",
+      roles: {
+        ordinary_villager: 4,
+        werewolf: 2,
+        stray_cat: 1,
+        guard_dog: 1,
+      },
+    });
+
+    const roleCounts = new Map([...serverRoom.state.roleCounts.values()].map((role) => [role.role, role.count]));
+    expect(roleCounts.get("stray_cat")).toBeUndefined();
+    expect(roleCounts.get("guard_dog")).toBeUndefined();
+    expect(roleCounts.get("ordinary_villager")).toBe(6);
   });
 
   it("requires full narrator consent and sends all roles only to the full narrator", async () => {
@@ -165,6 +230,15 @@ async function connectWithRetry(
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function fakeClient(sessionId: string) {
+  return {
+    sessionId,
+    send: vi.fn(),
+    leave: vi.fn(),
+    userData: undefined,
+  } as unknown as Parameters<GameRoom["onJoin"]>[0];
 }
 
 function restoreEnvValue(key: string, value: string | undefined) {

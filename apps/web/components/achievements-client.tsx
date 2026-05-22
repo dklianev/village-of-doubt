@@ -38,6 +38,28 @@ export function AchievementsClient() {
   const ownedById = new Map(owned.map((achievement) => [achievement.achievementId, achievement]));
   const unlockedCount = ownedById.size;
 
+  if (!loaded) {
+    return (
+      <>
+        <AchievementProgressWreath unlocked={0} total={ACHIEVEMENTS.length} />
+        <section className="plaque-wall achievements-skeleton mt-8" aria-hidden="true">
+          {Array.from({ length: Math.min(12, ACHIEVEMENTS.length) }).map((_, index) => (
+            <article key={index} className="achievement-plaque achievement-plaque-skeleton">
+              <div className="achievement-plaque-inner">
+                <span className="achievement-skeleton-line achievement-skeleton-line-title" />
+                <span className="achievement-skeleton-line" />
+                <span className="achievement-skeleton-line achievement-skeleton-line-short" />
+              </div>
+            </article>
+          ))}
+        </section>
+        <p className="plaque-loading" role="status">
+          Зареждам легенди...
+        </p>
+      </>
+    );
+  }
+
   return (
     <>
       <AchievementProgressWreath unlocked={unlockedCount} total={ACHIEVEMENTS.length} />
@@ -48,8 +70,6 @@ export function AchievementsClient() {
           return <AchievementPlaque key={achievement.id} achievement={achievement} unlockedAt={unlocked?.unlockedAt ?? null} />;
         })}
       </section>
-
-      {!loaded ? <p className="plaque-loading">Зареждам легенди...</p> : null}
     </>
   );
 }

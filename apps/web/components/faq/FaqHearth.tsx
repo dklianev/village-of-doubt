@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ChevronDown, Copy, Flame, Search, ThumbsDown, ThumbsUp } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FaqCategory, FaqItem } from "@/lib/faq-data";
+import { copyTextToClipboard } from "@/lib/clipboard";
 import { CategoryIcon } from "./FaqCategoryIcon";
 import { FaqAnswerRenderer } from "./FaqAnswerRenderer";
 
@@ -115,7 +116,7 @@ export function FaqHearth({ items }: { items: readonly FaqItem[] }) {
   const copyLink = useCallback(async (slug: string) => {
     const url = `${window.location.origin}/faq?q=${encodeURIComponent(slug)}`;
     try {
-      await navigator.clipboard.writeText(url);
+      await copyTextToClipboard(url);
     } catch {
       // Clipboard access can be blocked in non-secure preview contexts.
     }

@@ -3,6 +3,7 @@
 import { type FormEvent, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import { useModal } from "@/lib/use-modal";
 import styles from "./FeedbackWidget.module.css";
 
 type FeedbackCategory = "bug" | "idea" | "praise" | "other";
@@ -104,6 +105,7 @@ export function FeedbackWidget() {
       setError("");
     }
   }, [status]);
+  const { ref: panelRef } = useModal<HTMLElement>({ open, onClose: close });
 
   useEffect(() => {
     if (hidden && open) {
@@ -123,19 +125,6 @@ export function FeedbackWidget() {
     const timer = window.setTimeout(() => firstFieldRef.current?.focus(), 80);
     return () => window.clearTimeout(timer);
   }, [hidden, open]);
-
-  useEffect(() => {
-    if (!open) return;
-
-    function onKey(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        close();
-      }
-    }
-
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [close, open]);
 
   useEffect(() => {
     if (status !== "sent") return;
@@ -203,7 +192,7 @@ export function FeedbackWidget() {
   return (
     <>
       <div className={styles.overlay} aria-hidden onClick={close} />
-      <aside className={styles.panel} role="dialog" aria-modal="true" aria-labelledby={panelTitleId}>
+      <aside ref={panelRef} className={styles.panel} role="dialog" aria-modal="true" aria-labelledby={panelTitleId}>
         <header className={styles.panelHead}>
           <FeedbackIcon className={styles.panelIcon} />
           <div>

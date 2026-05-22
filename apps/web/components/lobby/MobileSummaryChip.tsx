@@ -1,8 +1,9 @@
 "use client";
 
-import { memo, useEffect, type Dispatch } from "react";
+import { memo, useCallback, type Dispatch } from "react";
 import { roleWarnings, type LobbyFormAction, type LobbyFormState } from "@/lib/lobby-form";
 import { StickyPreview } from "@/components/lobby/StickyPreview";
+import { useModal } from "@/lib/use-modal";
 
 function MobileSummaryChipImpl({
   state,
@@ -12,19 +13,8 @@ function MobileSummaryChipImpl({
   dispatch: Dispatch<LobbyFormAction>;
 }) {
   const warnings = roleWarnings(state);
-
-  useEffect(() => {
-    if (!state.mobileSummaryOpen) {
-      return;
-    }
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        dispatch({ type: "SET_MOBILE_SUMMARY_OPEN", open: false });
-      }
-    }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [dispatch, state.mobileSummaryOpen]);
+  const closeSummary = useCallback(() => dispatch({ type: "SET_MOBILE_SUMMARY_OPEN", open: false }), [dispatch]);
+  const { ref } = useModal({ open: state.mobileSummaryOpen, onClose: closeSummary });
 
   return (
     <>
@@ -33,12 +23,12 @@ function MobileSummaryChipImpl({
         <strong>⌃</strong>
       </button>
       {state.mobileSummaryOpen ? (
-        <div className="mobile-summary-overlay" role="dialog" aria-modal="true">
+        <div ref={ref} className="mobile-summary-overlay" role="dialog" aria-modal="true" aria-label="Преглед на стаята">
           <button
             type="button"
             className="mobile-summary-backdrop"
             aria-label="Затвори прегледа"
-            onClick={() => dispatch({ type: "SET_MOBILE_SUMMARY_OPEN", open: false })}
+            onClick={closeSummary}
           />
           <StickyPreview state={state} dispatch={dispatch} compact />
         </div>
@@ -61,6 +51,9 @@ export const MobileSummaryChip = memo(MobileSummaryChipImpl, (prev, next) => {
     p.manualRoles === n.manualRoles &&
     p.manualRolesEnabled === n.manualRolesEnabled &&
     p.rolePreset === n.rolePreset &&
+    p.tempoProfile === n.tempoProfile &&
+    p.customTimers === n.customTimers &&
+    p.customTimersTouched === n.customTimersTouched &&
     p.advanced === n.advanced;
 
   if (!summaryStable) {
@@ -71,5 +64,5 @@ export const MobileSummaryChip = memo(MobileSummaryChipImpl, (prev, next) => {
     return true;
   }
 
-  return p.roomName === n.roomName && p.tempoProfile === n.tempoProfile;
+  return p.roomName === n.roomName;
 });

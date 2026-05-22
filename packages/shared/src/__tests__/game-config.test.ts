@@ -60,6 +60,9 @@ describe("role presets", () => {
   });
 
   it("does not assign manual-only roles from default presets", () => {
+    expect(getRoleRuntimeStatus("stray_cat")).toBe("manual_only");
+    expect(getRoleRuntimeStatus("guard_dog")).toBe("manual_only");
+
     for (let playerCount = 6; playerCount <= 30; playerCount += 1) {
       for (const role of Object.keys(getWerewolvesMvpPreset(playerCount))) {
         expect(getRoleRuntimeStatus(role as keyof typeof ROLE_DEFINITIONS)).toBe("playable");
@@ -132,6 +135,36 @@ describe("role presets", () => {
     expect(config.liveMode).toBe(true);
     expect(config.roles.cupid).toBe(1);
     expect(config.timers.autoAdvanceWhenReady).toBe(false);
+  });
+
+  it("uses bounded custom timers only for manual tempo", () => {
+    const config = createGameConfigFromOptions({
+      mode: "werewolves_classic",
+      playerCount: 12,
+      tempoProfile: "manual",
+      customTimers: {
+        dayDiscussionSeconds: 420,
+        factionNightActionSeconds: 75,
+        voteSeconds: 45,
+        autoAdvanceWhenReady: true,
+      },
+    });
+
+    expect(config.tempoProfile).toBe("manual");
+    expect(config.timers.dayDiscussionSeconds).toBe(420);
+    expect(config.timers.factionNightActionSeconds).toBe(75);
+    expect(config.timers.personalNightActionSeconds).toBe(75);
+    expect(config.timers.voteSeconds).toBe(45);
+    expect(config.timers.autoAdvanceWhenReady).toBe(true);
+
+    const presetConfig = createGameConfigFromOptions({
+      mode: "werewolves_classic",
+      playerCount: 12,
+      tempoProfile: "fast_online",
+      customTimers: { dayDiscussionSeconds: 420, autoAdvanceWhenReady: false },
+    });
+    expect(presetConfig.timers.dayDiscussionSeconds).toBe(90);
+    expect(presetConfig.timers.autoAdvanceWhenReady).toBe(true);
   });
 
   it("supports manual role distribution from lobby options", () => {

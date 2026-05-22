@@ -254,6 +254,7 @@ describe("GameRoom gameplay regressions", () => {
       code: "THIEF1",
       mode: "werewolves_classic",
       playerCount: 6,
+      narratorMode: "full_human",
       roles: {
         thief: 1,
         werewolf: 1,
@@ -261,13 +262,14 @@ describe("GameRoom gameplay regressions", () => {
         seer: 1,
       },
     });
-    const clients = await connectPlayers(colyseus, serverRoom, 6, "thief");
-    const roleClients = await startGameAndCollectRoles(clients);
+    const clients = await connectPlayers(colyseus, serverRoom, 7, "thief");
+    const roleClients = await startFullHumanGameAndCollectRoles(clients);
     clients[0]?.client.send("narratorAdvance", {});
     await serverRoom.waitForNextPatch();
 
     const thief = roleClients.find((item) => item.role === "thief");
     const werewolf = roleClients.find((item) => item.role === "werewolf");
+    const villager = roleClients.find((item) => item.role === "ordinary_villager");
     expect(thief).toBeTruthy();
     expect(werewolf).toBeTruthy();
 
@@ -286,7 +288,7 @@ describe("GameRoom gameplay regressions", () => {
 
     const rejectedWerewolfAction = werewolf?.client.waitForMessage("safe_error") as Promise<{ messageBg: string }>;
     werewolf?.client.send("submitNightAction", {
-      action: { kind: "faction_kill", targetUserId: clients[0]?.userId },
+      action: { kind: "faction_kill", targetUserId: villager?.userId },
     });
     await expect(rejectedWerewolfAction).resolves.toMatchObject({
       messageBg: "Тази роля няма право на това нощно действие.",
@@ -690,14 +692,15 @@ describe("GameRoom gameplay regressions", () => {
       mode: "werewolves_classic",
       playerCount: 6,
       tempoProfile: "manual",
+      narratorMode: "full_human",
       roles: {
         stray_cat: 1,
         ordinary_villager: 4,
         werewolf: 1,
       },
     });
-    const catClients = await connectPlayers(colyseus, catRoom, 6, "stray-cat");
-    const catRoles = await startGameAndCollectRoles(catClients);
+    const catClients = await connectPlayers(colyseus, catRoom, 7, "stray-cat");
+    const catRoles = await startFullHumanGameAndCollectRoles(catClients);
     await advanceToFirstNight(catClients[0]?.client, catRoom);
     const cat = catRoles.find((item) => item.role === "stray_cat");
     const catWerewolf = catRoles.find((item) => item.role === "werewolf");
@@ -805,6 +808,7 @@ describe("GameRoom gameplay regressions", () => {
       mode: "werewolves_classic",
       playerCount: 6,
       tempoProfile: "manual",
+      narratorMode: "full_human",
       mayorMode: "public_vote",
       roles: {
         mayor: 1,
@@ -813,8 +817,8 @@ describe("GameRoom gameplay regressions", () => {
         werewolf: 1,
       },
     });
-    const clients = await connectPlayers(colyseus, serverRoom, 6, "guard-dog");
-    const roleClients = await startGameAndCollectRoles(clients);
+    const clients = await connectPlayers(colyseus, serverRoom, 7, "guard-dog");
+    const roleClients = await startFullHumanGameAndCollectRoles(clients);
     const mayor = roleClients.find((item) => item.role === "mayor");
     expect(mayor).toBeTruthy();
     await advanceToVoting(clients[0]?.client, serverRoom);
@@ -1116,8 +1120,27 @@ async function startGameAndCollectRoles(clients: JoinedClient[]): Promise<RoleCl
   return Promise.all(rolePromises);
 }
 
+async function startFullHumanGameAndCollectRoles(clients: JoinedClient[]): Promise<RoleClient[]> {
+  for (const client of clients) {
+    client.client.send("acceptFullNarrator", {});
+  }
+  await delay(50);
+
+  const playingClients = clients.slice(1);
+  const rolePromises = playingClients.map(async (client) => ({
+    ...client,
+    ...((await waitForPrivateRole(client.client)) as { role: RoleCode; roleNameBg: string }),
+  }));
+  clients[0]?.client.send("startGame", {});
+  return Promise.all(rolePromises);
+}
+
 function waitForPrivateRole(client: ClientRoom<GameRoom, GameState>) {
   return client.waitForMessage("private_role") as Promise<{ role: RoleCode; roleNameBg: string }>;
+}
+
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function advanceToVoting(client: ClientRoom<GameRoom, GameState> | undefined, room: GameRoom) {

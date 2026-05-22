@@ -27,11 +27,11 @@ export interface GameTimelineEvent {
 }
 
 export interface LeaderboardEntryRow {
-  gameId: string;
+  userId: string;
   displayName: string;
-  role: string;
-  winnerTeam: string | null;
-  endedAt: Date | null;
+  gamesPlayed: number;
+  wins: number;
+  lastPlayedAt: Date | null;
 }
 
 export interface UserAchievementRow {
@@ -196,7 +196,13 @@ export async function getPlayerRolesInGames(
   return new Map(rows.map((row) => [row.gameId, row.role]));
 }
 
-export async function getGameTimeline(db: Database, gameId: string, limit = 100): Promise<GameTimelineEvent[]> {
+export async function getGameTimeline(
+  db: Database,
+  gameId: string,
+  limit = 100,
+  options: { visibilityFilter?: "all" | "public" } = {},
+): Promise<GameTimelineEvent[]> {
+  const visibilityFilter = options.visibilityFilter ?? "all";
   return db
     .select({
       id: gameEvents.id,
@@ -210,7 +216,11 @@ export async function getGameTimeline(db: Database, gameId: string, limit = 100)
       createdAt: gameEvents.createdAt,
     })
     .from(gameEvents)
-    .where(eq(gameEvents.gameId, gameId))
+    .where(
+      visibilityFilter === "public"
+        ? and(eq(gameEvents.gameId, gameId), eq(gameEvents.visibility, "public"))
+        : eq(gameEvents.gameId, gameId),
+    )
     .orderBy(desc(gameEvents.createdAt))
     .limit(limit);
 }
@@ -295,19 +305,68 @@ export async function getGameTimelinesBatch(
   return grouped;
 }
 
-export async function getLeaderboardRows(db: Database, limit = 500): Promise<LeaderboardEntryRow[]> {
+const VILLAGE_WIN_ROLES = [
+  "ordinary_villager",
+  "healer",
+  "witch",
+  "seer",
+  "hunter",
+  "red_riding_hood",
+  "cupid",
+  "mayor",
+  "oracle",
+  "priest",
+  "cook",
+  "blacksmith",
+  "insomniac",
+  "vampire_hunter",
+  "investigator",
+  "stray_cat",
+  "guard_dog",
+  "little_girl",
+  "civilian",
+  "commissioner",
+  "doctor",
+  "detective",
+  "bodyguard",
+  "vigilante",
+  "medium",
+  "mafia_mayor",
+] as const;
+
+const MAFIA_WIN_ROLES = ["mafioso", "don", "lawyer", "informant"] as const;
+
+function roleListSql(roles: readonly string[]) {
+  return sql.join(
+    roles.map((role) => sql`${role}`),
+    sql`, `,
+  );
+}
+
+export async function getLeaderboardRows(db: Database, limit = 30): Promise<LeaderboardEntryRow[]> {
+  const gamesPlayed = sql<number>`COUNT(DISTINCT ${gamePlayers.gameId})::int`;
+  const wins = sql<number>`COALESCE(SUM(CASE WHEN (
+    (${games.winnerTeam} = 'village' AND ${gamePlayers.role} IN (${roleListSql(VILLAGE_WIN_ROLES)}))
+    OR (${games.winnerTeam} = 'werewolves' AND ${gamePlayers.role} = 'werewolf')
+    OR (${games.winnerTeam} = 'vampires' AND ${gamePlayers.role} = 'vampire')
+    OR (${games.winnerTeam} = 'mafia' AND ${gamePlayers.role} IN (${roleListSql(MAFIA_WIN_ROLES)}))
+    OR (${games.winnerTeam} = 'maniac' AND ${gamePlayers.role} = 'maniac')
+  ) THEN 1 ELSE 0 END), 0)::int`;
+  const lastPlayedAt = sql<Date | null>`MAX(${games.endedAt})`;
+
   return db
     .select({
-      gameId: gamePlayers.gameId,
-      displayName: gamePlayers.displayName,
-      role: gamePlayers.role,
-      winnerTeam: games.winnerTeam,
-      endedAt: games.endedAt,
+      userId: gamePlayers.userId,
+      displayName: sql<string>`MAX(${gamePlayers.displayName})`,
+      gamesPlayed,
+      wins,
+      lastPlayedAt,
     })
     .from(gamePlayers)
     .innerJoin(games, eq(gamePlayers.gameId, games.id))
     .where(eq(games.status, "ended"))
-    .orderBy(desc(games.endedAt))
+    .groupBy(gamePlayers.userId)
+    .orderBy(desc(wins), desc(gamesPlayed), desc(lastPlayedAt))
     .limit(limit);
 }
 

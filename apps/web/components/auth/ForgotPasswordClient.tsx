@@ -4,6 +4,7 @@ import { type FormEvent, useState } from "react";
 import Link from "next/link";
 import { KeyRound } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
+import { mapAuthError } from "@/lib/auth-errors";
 
 export function ForgotPasswordClient() {
   const [email, setEmail] = useState("");
@@ -21,7 +22,7 @@ export function ForgotPasswordClient() {
     });
 
     if (result.error) {
-      setErrorMsg(result.error.message ?? "Грешка при заявката.");
+      setErrorMsg(mapAuthError(result.error, "Грешка при заявката."));
       setStatus("error");
       return;
     }
@@ -70,7 +71,12 @@ export function ForgotPasswordClient() {
               </p>
             ) : null}
 
-            <button type="submit" className="btn btn-primary" disabled={status === "submitting"}>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={status === "submitting"}
+              aria-busy={status === "submitting"}
+            >
               {status === "submitting" ? "Изпращаме..." : "Изпрати линк"}
             </button>
           </form>

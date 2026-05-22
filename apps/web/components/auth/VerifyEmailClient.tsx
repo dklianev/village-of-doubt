@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { MailCheck } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
+import { mapAuthError } from "@/lib/auth-errors";
 
 type VerifyState = "idle" | "verifying" | "success" | "error";
 
@@ -29,19 +30,27 @@ export function VerifyEmailClient() {
       .verifyEmail({ query: { token } })
       .then((result) => {
         if (result.error) {
-          setErrorMsg(result.error.message ?? "Линкът вече е използван или изтекъл.");
+          setErrorMsg(mapAuthError(result.error, "Линкът вече е използван или изтекъл."));
           setState("error");
           return;
         }
         setState("success");
-        setTimeout(() => router.push("/"), 2000);
       })
       .catch((error) => {
         console.error("[verify-email]", error);
         setErrorMsg("Грешка при потвърждение.");
         setState("error");
       });
-  }, [token, router]);
+  }, [token]);
+
+  useEffect(() => {
+    if (state !== "success") {
+      return;
+    }
+
+    const timer = window.setTimeout(() => router.push("/"), 2000);
+    return () => window.clearTimeout(timer);
+  }, [router, state]);
 
   return (
     <section className="seal-stage">

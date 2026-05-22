@@ -6,7 +6,7 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./vitest.setup.ts"],
     globals: false,
-    include: ["lib/**/*.test.ts", "components/**/*.test.tsx", "app/**/*.test.tsx"],
+    include: ["lib/**/*.test.ts", "hooks/**/*.test.tsx", "components/**/*.test.tsx", "app/**/*.test.tsx"],
     exclude: ["node_modules", ".next"],
   },
   resolve: {

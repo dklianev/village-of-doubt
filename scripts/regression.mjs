@@ -438,10 +438,11 @@ function checkLobbyImageContracts() {
   assert(lobbyCreateClient.includes("roleThumbStyle"), "Lobby role chips must override role art with lightweight thumbnails.");
   assert(css.includes(".achievement-preview-strip span"), "Lobby achievement preview strip is missing.");
   assert(css.includes("aspect-ratio: 1"), "Lobby badge tiles must stay square to avoid sprite distortion.");
-  assert(css.includes("var(--empty-lobby) center / contain no-repeat"), "Lobby decorative empty-room art must preserve its full composition.");
+  assert(css.includes(".lobby-invite-hero-img"), "Lobby invite hero image must keep explicit image styling.");
+  assert(css.includes("object-position: center 44%"), "Lobby invite hero image must keep its tuned focal point.");
   assert(css.includes("--invite-art: var(--art-lobby)"), "Mafia invite card should swap away from the village map asset.");
-  assert(css.includes(".invite-scene-card"), "Invite card should use a mode-neutral class name.");
-  assert(css.includes("var(--invite-art) center / cover no-repeat"), "Invite card must use theme-aware invite art.");
+  assert(css.includes(".lobby-invite-v2"), "Invite page should use the current cinematic invite shell.");
+  assert(lobbyInvitePage.includes("LobbyInviteClient"), "Lobby invite page must render the invite client.");
   assert(lobbyInvitePage.includes("досие към задната стая"), "Mafia invite page should use Mafia-specific scene copy.");
 }
 
@@ -449,7 +450,9 @@ function checkLobbyWizardContracts() {
   const css = readText("apps/web/app/globals.css");
   const wizard = readText("apps/web/components/lobby/LobbyWizard.tsx");
   const stepRoles = readText("apps/web/components/lobby/StepRoles.tsx");
-  const reducer = readText("apps/web/lib/lobby-form.ts");
+  const reducer = readText("apps/web/lib/lobby-form/reducer.ts");
+  const selectors = readText("apps/web/lib/lobby-form/selectors.ts");
+  const index = readText("apps/web/lib/lobby-form/index.ts");
   const roomNames = readText("apps/web/lib/roomname-generator.ts");
 
   for (const selector of [
@@ -469,13 +472,24 @@ function checkLobbyWizardContracts() {
   assert(wizard.includes("useReducer(lobbyFormReducer"), "LobbyWizard must use the lobby form reducer.");
   assert(wizard.includes("startViewTransition"), "LobbyWizard must use view transitions for step changes.");
   assert(stepRoles.includes("playCue"), "StepRoles must trigger role-selection sound cues.");
-  assert(reducer.includes("export function lobbyFormReducer"), "lobby-form.ts must export lobbyFormReducer.");
-  assert(reducer.includes("export function estimatedDurationSeconds"), "lobby-form.ts must export estimatedDurationSeconds.");
+  assert(reducer.includes("export function lobbyFormReducer"), "lobby-form reducer module must export lobbyFormReducer.");
+  assert(selectors.includes("export function estimatedDurationSeconds"), "lobby-form selectors module must export estimatedDurationSeconds.");
+  assert(index.includes("export { lobbyFormReducer }"), "lobby-form index must re-export lobbyFormReducer.");
   assert(roomNames.includes("export function randomRoomName"), "roomname-generator.ts must export randomRoomName.");
 }
 
 function checkPlayUiContracts() {
-  const playClient = readText("apps/web/components/play-room-client.tsx");
+  const playModuleText = [
+    "apps/web/components/play-room-client.tsx",
+    ...listFilesRecursive(path.join(root, "apps/web/components/play"))
+      .filter((file) => file.endsWith(".tsx"))
+      .map((file) => path.join("apps/web/components/play", file)),
+    ...listFilesRecursive(path.join(root, "apps/web/lib/play"))
+      .filter((file) => file.endsWith(".ts"))
+      .map((file) => path.join("apps/web/lib/play", file)),
+  ]
+    .map((file) => readText(file))
+    .join("\n");
   const css = readText("apps/web/app/globals.css");
 
   for (const contract of [
@@ -497,11 +511,11 @@ function checkPlayUiContracts() {
     "MAFIA_PHASE_GUIDE_BG",
     "Мафията, Донът и Комисарят.",
   ]) {
-    assert(playClient.includes(contract), `Missing play UI contract: ${contract}`);
+    assert(playModuleText.includes(contract), `Missing play UI contract: ${contract}`);
   }
 
-  const liveDefaultIndex = playClient.indexOf("createOptions?.tempoProfile === \"live\"");
-  const cuePreferenceReadIndex = playClient.indexOf("const saved = window.localStorage.getItem(CUE_MODE_STORAGE_KEY)");
+  const liveDefaultIndex = playModuleText.indexOf("createOptions?.tempoProfile === \"live\"");
+  const cuePreferenceReadIndex = playModuleText.indexOf("const saved = window.localStorage.getItem(CUE_MODE_STORAGE_KEY)");
   assert(
     liveDefaultIndex >= 0 && cuePreferenceReadIndex >= 0 && liveDefaultIndex < cuePreferenceReadIndex,
     "Live rooms must force silent cues before reading saved cue preferences.",
@@ -515,6 +529,7 @@ function checkFrontendHygieneContracts() {
   const css = readText("apps/web/app/globals.css");
   const siteChrome = readText("apps/web/components/site-chrome.tsx");
   const stepRoom = readText("apps/web/components/lobby/StepRoom.tsx");
+  const fieldComponent = readText("apps/web/components/lobby/Field.tsx");
 
   assert(!/calc\(100%\s*-\s*\d+px\)/.test(css), "globals.css must not contain calc(100% - Npx) width patterns.");
   assert(css.includes("@media (max-width: 480px)"), "globals.css must include explicit max-width 480px mobile rules.");
@@ -525,7 +540,10 @@ function checkFrontendHygieneContracts() {
   assert(!siteChrome.includes("ТЕМА: СИСТЕМНА"), "Navbar theme control must be icon-only.");
   assert(css.includes(".field-input-wrap"), "Step 1 form must keep the in-input action wrapper.");
   assert(css.includes(".field-action"), "Step 1 form must keep icon action button styles.");
-  assert(stepRoom.includes("export function Field"), "StepRoom must use the uniform Field subcomponent.");
+  assert(
+    stepRoom.includes('from "@/components/lobby/Field"') && fieldComponent.includes("export function Field"),
+    "StepRoom must use the uniform Field subcomponent.",
+  );
 }
 
 function checkProductionGuardContracts() {

@@ -69,7 +69,6 @@ export function AuthChip({ initialSession }: { initialSession: AuthSessionView |
     setConfirmSignOut(false);
     setSigningOut(false);
     router.push("/");
-    router.refresh();
   }
 
   return (

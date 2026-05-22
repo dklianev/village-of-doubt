@@ -2,6 +2,7 @@
 
 import { ROLE_DEFINITIONS, teamLabelBg, type GameFamily, type RoleCode } from "@werewolf/shared";
 import { roleArtPath, roleThumbPath } from "@/lib/role-art";
+import { useModal } from "@/lib/use-modal";
 
 export function RoleDetailModal({
   family,
@@ -13,9 +14,10 @@ export function RoleDetailModal({
   onClose: () => void;
 }) {
   const definition = ROLE_DEFINITIONS[role];
+  const { ref } = useModal({ open: true, onClose });
 
   return (
-    <div className="role-detail-modal" role="dialog" aria-modal="true" aria-labelledby="role-detail-title">
+    <div ref={ref} className="role-detail-modal" role="dialog" aria-modal="true" aria-labelledby="role-detail-title">
       <button type="button" className="role-detail-backdrop" aria-label="Затвори ролята" onClick={onClose} />
       <article className="role-detail-card">
         <picture aria-hidden="true">

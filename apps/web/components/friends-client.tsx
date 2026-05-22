@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { Check, Copy, Trash2, UserPlus, Users } from "lucide-react";
+import { copyTextToClipboard } from "@/lib/clipboard";
 
 interface FriendItem {
   id: string;
@@ -76,8 +77,12 @@ export function FriendsClient() {
     const names = targetList.map((friend) => friend.name).join(", ");
     const prefix = names ? `${names}, ` : "";
     const text = `${prefix}${window.location.origin} — избери Върколак или Мафия и ми прати кода на стаята.`;
-    await navigator.clipboard?.writeText(text);
-    setMessage(targetList.length > 0 ? "Поканата за групата е копирана." : "Поканата е копирана.");
+    try {
+      await copyTextToClipboard(text);
+      setMessage(targetList.length > 0 ? "Поканата за групата е копирана." : "Поканата е копирана.");
+    } catch {
+      setMessage("Не успяхме да копираме. Опитай ръчно.");
+    }
   }
 
   const selectedCount = selectedIds.size;

@@ -50,7 +50,7 @@ export function AccountDashboard(props: AccountDashboardProps) {
 
         <AccountDataExport />
 
-        <AccountDangerZone />
+        <AccountDangerZone email={props.email} />
       </div>
     </div>
   );

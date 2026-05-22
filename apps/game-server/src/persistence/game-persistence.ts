@@ -189,7 +189,11 @@ class DrizzleGamePersistence implements GamePersistence {
       return;
     }
 
-    const uniquePlayers = [...new Map(players.map((player) => [player.userId, player])).values()];
+    const uniquePlayers = [...new Map(players.filter((player) => isValidUserId(player.userId)).map((player) => [player.userId, player])).values()];
+    if (uniquePlayers.length === 0) {
+      return;
+    }
+
     await this.db
       .insert(user)
       .values(
@@ -204,6 +208,10 @@ class DrizzleGamePersistence implements GamePersistence {
       )
       .onConflictDoNothing();
   }
+}
+
+function isValidUserId(userId: string) {
+  return /^[a-zA-Z0-9_-]{1,64}$/.test(userId);
 }
 
 function sanitizeUserId(userId: string) {

@@ -18,6 +18,12 @@ output
 playtest-*.png
 audit-*.png
 review-*.png
+test-results/
+audit-v3/**/*.png
+audit-v3/**/*.jpg
+audit-v3/**/*.jpeg
+audit-v3/**/*.webp
+audit-v3/**/metrics.json
 
 # Agent automation (Claude Code, Codex CLI, etc.) — kept local, never tracked.
 AGENTS.md

@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 
 const PROVIDER_LABELS: Record<string, string> = {
@@ -25,12 +24,20 @@ interface Props {
 }
 
 export function AccountProfile(props: Props) {
-  const router = useRouter();
   const [savedName, setSavedName] = useState(props.initialName);
   const [name, setName] = useState(props.initialName);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<"" | "saved" | "error">("");
   const [errorMessage, setErrorMessage] = useState("");
+  const statusTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (statusTimerRef.current !== null) {
+        window.clearTimeout(statusTimerRef.current);
+      }
+    };
+  }, []);
 
   async function saveName() {
     const next = name.trim();
@@ -54,8 +61,13 @@ export function AccountProfile(props: Props) {
     setSavedName(next);
     setName(next);
     setStatus("saved");
-    router.refresh();
-    window.setTimeout(() => setStatus(""), 2200);
+    if (statusTimerRef.current !== null) {
+      window.clearTimeout(statusTimerRef.current);
+    }
+    statusTimerRef.current = window.setTimeout(() => {
+      setStatus("");
+      statusTimerRef.current = null;
+    }, 2200);
   }
 
   return (
@@ -82,11 +94,16 @@ export function AccountProfile(props: Props) {
               className="account-save-btn"
               onClick={saveName}
               disabled={saving || name.trim() === savedName}
+              aria-busy={saving}
             >
               {saving ? "Запазваме..." : "Запази"}
             </button>
           </div>
-          {status === "saved" ? <p className="account-status account-status-ok">Запазено.</p> : null}
+          {status === "saved" ? (
+            <p className="account-status account-status-ok" role="status" aria-live="polite">
+              Запазено.
+            </p>
+          ) : null}
           {status === "error" ? (
             <p className="account-status account-status-error" role="alert">
               {errorMessage}

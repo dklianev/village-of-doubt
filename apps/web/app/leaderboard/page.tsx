@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { createDatabase, getLeaderboardRows } from "@werewolf/database";
-import { getRoleTeam, ROLE_DEFINITIONS, type RoleCode } from "@werewolf/shared";
 import { JsonLd } from "@/components/JsonLd";
 import { NewspaperEmpty } from "@/components/leaderboard/NewspaperEmpty";
 import { NewspaperPage } from "@/components/leaderboard/NewspaperPage";
@@ -72,54 +71,18 @@ async function loadLeaderboard(): Promise<LeaderboardData> {
   try {
     const db = createDatabase(process.env.DATABASE_URL);
     const rows = await getLeaderboardRows(db);
-    const issueCount = new Set(rows.map((row) => row.gameId)).size;
-    const byName = new Map<string, LeaderboardEntry>();
-    for (const row of rows) {
-      const current = byName.get(row.displayName) ?? {
-        displayName: row.displayName,
-        games: 0,
-        wins: 0,
-        lastPlayed: row.endedAt,
-      };
-      current.games += 1;
-      current.wins += didRoleWin(row.role, row.winnerTeam) ? 1 : 0;
-      current.lastPlayed = latestDate(current.lastPlayed, row.endedAt);
-      byName.set(row.displayName, current);
-    }
-
-    const entries = [...byName.values()].sort((left, right) => right.wins - left.wins || right.games - left.games).slice(0, 30);
+    const entries = rows.map((row) => ({
+      displayName: row.displayName,
+      games: row.gamesPlayed,
+      wins: row.wins,
+      lastPlayed: row.lastPlayedAt,
+    }));
+    const issueCount = Math.max(1, rows.reduce((sum, row) => sum + row.gamesPlayed, 0));
     return { entries, issueCount: Math.max(1, issueCount) };
   } catch (error) {
     console.error("[leaderboard]", error);
     return { entries: [], issueCount: 1 };
   }
-}
-
-function didRoleWin(role: string, winnerTeam: string | null) {
-  if (!winnerTeam) {
-    return false;
-  }
-  if (winnerTeam === "maniac") {
-    return role === "maniac";
-  }
-  if (winnerTeam === "lovers") {
-    return false;
-  }
-  if (!(role in ROLE_DEFINITIONS)) {
-    return false;
-  }
-  const team = getRoleTeam(role as RoleCode);
-  return team === winnerTeam;
-}
-
-function latestDate(left: Date | null, right: Date | null) {
-  if (!left) {
-    return right;
-  }
-  if (!right) {
-    return left;
-  }
-  return left > right ? left : right;
 }
 
 function fixtureLeaderboard(): LeaderboardEntry[] {

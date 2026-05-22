@@ -4,6 +4,7 @@ import { type FormEvent, useId, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import { mapAuthError } from "@/lib/auth-errors";
 import { resolveWelcomeRedirect } from "./welcome-redirect";
 
 type Mode = "sign-in" | "sign-up";
@@ -47,7 +48,7 @@ export function EmailPasswordForm({ redirectTo }: { redirectTo: string }) {
     });
 
     if (result.error) {
-      setStatus("Неуспешна заявка. Провери имейла и паролата.");
+      setStatus(mapAuthError(result.error, "Неуспешна заявка. Провери имейла и паролата."));
       return;
     }
 
@@ -125,7 +126,7 @@ export function EmailPasswordForm({ redirectTo }: { redirectTo: string }) {
         </p>
       ) : null}
 
-      <button className="btn btn-primary email-form-submit" type="submit" disabled={isPending}>
+      <button className="btn btn-primary email-form-submit" type="submit" disabled={isPending} aria-busy={isPending}>
         {mode === "sign-in" ? "Влез" : "Създай профил"}
       </button>
     </form>

@@ -7,6 +7,13 @@ type RoomPreview = {
   playerCount: number;
   capacity: number;
   family: GameFamily | null;
+  hostName: string | null;
+  players: Array<{
+    displayName: string;
+    connected: boolean;
+    ready: boolean;
+    host: boolean;
+  }>;
 };
 
 export const revalidate = 5;
@@ -16,7 +23,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ cod
   const code = normalizeRoomCodeInput(rawCode);
 
   if (!ROOM_CODE_REGEX.test(code)) {
-    return NextResponse.json({ status: "missing" } satisfies Partial<RoomPreview>, { status: 404 });
+    return missingRoomPreview();
   }
 
   try {
@@ -26,12 +33,12 @@ export async function GET(_request: Request, { params }: { params: Promise<{ cod
     });
 
     if (!response.ok) {
-      return NextResponse.json({ status: "missing" } satisfies Partial<RoomPreview>, { status: 404 });
+      return missingRoomPreview();
     }
 
     const data = toRoomPreview(await response.json());
     if (!data) {
-      return NextResponse.json({ status: "missing" } satisfies Partial<RoomPreview>, { status: 404 });
+      return missingRoomPreview();
     }
 
     return NextResponse.json(data, {
@@ -39,8 +46,18 @@ export async function GET(_request: Request, { params }: { params: Promise<{ cod
       headers: { "Cache-Control": "private, max-age=5, stale-while-revalidate=10" },
     });
   } catch {
-    return NextResponse.json({ status: "missing" } satisfies Partial<RoomPreview>, { status: 404 });
+    return missingRoomPreview();
   }
+}
+
+function missingRoomPreview() {
+  return NextResponse.json(
+    { status: "missing" } satisfies Partial<RoomPreview>,
+    {
+      status: 200,
+      headers: { "Cache-Control": "private, max-age=5, stale-while-revalidate=10" },
+    },
+  );
 }
 
 function toRoomPreview(value: unknown): RoomPreview | null {
@@ -54,6 +71,10 @@ function toRoomPreview(value: unknown): RoomPreview | null {
   const playerCount = typeof record.playerCount === "number" ? record.playerCount : Number.NaN;
   const capacity = typeof record.capacity === "number" ? record.capacity : Number.NaN;
   const family = record.family === "mafia" || record.family === "werewolves" ? record.family : null;
+  const players = Array.isArray(record.players)
+    ? record.players.flatMap((player) => toRoomPreviewPlayer(player)).slice(0, 6)
+    : [];
+  const hostName = typeof record.hostName === "string" && record.hostName.trim() ? record.hostName.slice(0, 80) : null;
 
   if (
     !ROOM_CODE_REGEX.test(code) ||
@@ -70,7 +91,28 @@ function toRoomPreview(value: unknown): RoomPreview | null {
     playerCount: Math.max(0, Math.floor(playerCount)),
     capacity: Math.max(0, Math.floor(capacity)),
     family,
+    hostName,
+    players,
   };
+}
+
+function toRoomPreviewPlayer(value: unknown): RoomPreview["players"] {
+  if (!value || typeof value !== "object") {
+    return [];
+  }
+  const record = value as Record<string, unknown>;
+  const displayName = typeof record.displayName === "string" ? record.displayName.trim().slice(0, 80) : "";
+  if (!displayName) {
+    return [];
+  }
+  return [
+    {
+      displayName,
+      connected: record.connected === true,
+      ready: record.ready === true,
+      host: record.host === true,
+    },
+  ];
 }
 
 function gameServerHttpUrl() {

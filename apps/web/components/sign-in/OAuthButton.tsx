@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { resolveWelcomeRedirect } from "./welcome-redirect";
 
@@ -24,6 +24,27 @@ export function OAuthButton({ provider, redirectTo }: Props) {
   const [isPending, setPending] = useState(false);
   const config = CONFIG[provider];
 
+  useEffect(() => {
+    if (!isPending) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => setPending(false), 15_000);
+    const resetPending = () => setPending(false);
+    const resetWhenVisible = () => {
+      if (document.visibilityState === "visible") {
+        resetPending();
+      }
+    };
+    document.addEventListener("visibilitychange", resetWhenVisible);
+    window.addEventListener("pageshow", resetPending);
+    return () => {
+      window.clearTimeout(timeout);
+      document.removeEventListener("visibilitychange", resetWhenVisible);
+      window.removeEventListener("pageshow", resetPending);
+    };
+  }, [isPending]);
+
   async function start() {
     setPending(true);
     try {
@@ -45,6 +66,7 @@ export function OAuthButton({ provider, redirectTo }: Props) {
       data-accent={config.accent}
       onClick={start}
       disabled={isPending}
+      aria-busy={isPending}
       aria-label={config.label}
     >
       <span className="oauth-button-logo" data-provider={provider} aria-hidden>

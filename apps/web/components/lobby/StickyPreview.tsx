@@ -103,6 +103,8 @@ export const StickyPreview = memo(StickyPreviewImpl, (prev, next) => {
     p.manualRolesEnabled === n.manualRolesEnabled &&
     p.rolePreset === n.rolePreset &&
     p.tempoProfile === n.tempoProfile &&
+    p.customTimers === n.customTimers &&
+    p.customTimersTouched === n.customTimersTouched &&
     p.advanced === n.advanced
   );
 });

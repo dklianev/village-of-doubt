@@ -1,5 +1,7 @@
 "use client";
 
+import { useModal } from "@/lib/use-modal";
+
 interface KeyboardShortcutsModalProps {
   onClose: () => void;
 }
@@ -13,9 +15,18 @@ const SHORTCUTS = [
 ] as const;
 
 export function KeyboardShortcutsModal({ onClose }: KeyboardShortcutsModalProps) {
+  const { ref } = useModal<HTMLElement>({ open: true, onClose });
+
   return (
     <div className="shortcut-modal-backdrop" role="presentation" onClick={onClose}>
-      <aside className="shortcut-modal" role="dialog" aria-label="Клавишни команди" onClick={(event) => event.stopPropagation()}>
+      <aside
+        ref={ref}
+        className="shortcut-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Клавишни команди"
+        onClick={(event) => event.stopPropagation()}
+      >
         <button className="shortcut-modal-close" type="button" onClick={onClose}>
           затвори
         </button>

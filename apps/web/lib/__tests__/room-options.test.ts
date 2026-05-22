@@ -68,4 +68,35 @@ describe("room options query helpers", () => {
       spectator: true,
     });
   });
+
+  it("serializes and parses manual tempo controls", () => {
+    const query = roomOptionsToQuery({
+      mode: "werewolves_classic",
+      playerCount: 12,
+      tempoProfile: "manual",
+      customTimers: {
+        dayDiscussionSeconds: 420,
+        factionNightActionSeconds: 75,
+        voteSeconds: 45,
+        autoAdvanceWhenReady: true,
+      },
+    });
+    const params = Object.fromEntries(new URLSearchParams(query.slice(1)));
+
+    expect(parseRoomCreateOptions(params)).toMatchObject({
+      tempoProfile: "manual",
+      customTimers: {
+        dayDiscussionSeconds: 420,
+        factionNightActionSeconds: 75,
+        personalNightActionSeconds: 75,
+        voteSeconds: 45,
+        autoAdvanceWhenReady: true,
+      },
+    });
+
+    expect(parseRoomCreateOptions({ tempoDay: "210" })).toMatchObject({
+      tempoProfile: "manual",
+      customTimers: { dayDiscussionSeconds: 210 },
+    });
+  });
 });

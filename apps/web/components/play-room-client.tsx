@@ -1,30 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useTransition, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition, type FormEvent } from "react";
 import type { Room } from "@colyseus/sdk";
 import {
   EyeOff,
-  Keyboard,
   MessageSquare,
-  Pause,
   Play,
-  Plus,
   Settings,
-  SkipForward,
   Users,
-  Volume2,
 } from "lucide-react";
 import {
-  ACHIEVEMENTS,
-  GAME_MODE_DEFINITIONS,
   ROLE_DEFINITIONS,
-  getRoleAssetKey,
-  getRoleShortDescriptionBg,
   getGameFamily,
-  getGameModeNameBg,
   phaseLabelBg,
-  teamLabelBg,
-  NARRATOR_VOICE_LABELS_BG,
   type ChatChannel,
   type CreateRoomOptions,
   type GameFamily,
@@ -39,118 +27,87 @@ import { createGameClient, GAME_ROOM_NAME } from "@/lib/colyseus-client";
 import { playCue, setSoundEnabled } from "@/lib/sound";
 import { useToast } from "@/lib/toast";
 import { KeyboardShortcutsModal } from "@/components/keyboard-shortcuts-modal";
+import { LiveCuePanel } from "@/components/play/LiveCuePanel";
+import { NarratorDesk } from "@/components/play/NarratorDesk";
+import { RulesSummary } from "@/components/play/RulesSummary";
+import { isCueMode, triggerDeviceCue } from "@/lib/play/device-cues";
+import { eventLineClass } from "@/lib/play/event-log";
+import { HunterRevengePanel } from "@/components/play/HunterRevengePanel";
+import { LoverCard } from "@/components/play/LoverCard";
+import { NarratorSnapshotPanel } from "@/components/play/NarratorSnapshotPanel";
+import { PhaseGuide } from "@/components/play/PhaseGuide";
+import { PrivateChatPanel } from "@/components/play/PrivateChatPanel";
+import { RoleCard } from "@/components/play/RoleCard";
+import { SummaryPill } from "@/components/play/SummaryPill";
+import { TypingIndicator } from "@/components/play/TypingIndicator";
+import { AchievementUnlockModal } from "@/components/play/AchievementUnlockModal";
+import { ConnectionBanner } from "@/components/play/ConnectionBanner";
+import { DeathRevealCinematic } from "@/components/play/DeathRevealCinematic";
+import { PhaseRail } from "@/components/play/PhaseRail";
+import { PhaseTransitionOverlay } from "@/components/play/PhaseTransitionOverlay";
+import { PlayerTile } from "@/components/play/PlayerTile";
+import { PostGameStory } from "@/components/play/PostGameStory";
+import { PreGameCountdown } from "@/components/play/PreGameCountdown";
+import { ReconnectModal } from "@/components/play/ReconnectModal";
+import { Timer } from "@/components/play/Timer";
+import { NightActionPanel } from "@/components/play/NightActionPanel";
+import { buildPrimaryNightAction, shortcutTargets } from "@/lib/play/night-actions";
+import { VotingPanel } from "@/components/play/VotingPanel";
 import { PlayerTokensSkeleton } from "@/components/skeleton";
-import { roleThumbStyle } from "@/lib/role-art";
+import { arePlayersEqual } from "@/lib/play/player-display";
+import { canFactionKill, isNightPhase } from "@/lib/play/role-rules";
+import { phaseBg, phaseSigil } from "@/lib/play/phase-display";
+import {
+  communicationBg,
+  modeBg,
+  winnerBg,
+} from "@/lib/play/copy";
+import type {
+  ConnectionStatus,
+  CueMode,
+  GameSnapshot,
+  NarratorRoleSnapshot,
+  PhaseSlice,
+  PrivateChatMessage,
+  PrivateLover,
+  PrivateResult,
+  PublicChatMessage,
+  PublicEvent,
+  PublicPlayer,
+  PublicRoleCount,
+  ShortcutState,
+  TypingNotice,
+  VoteTallyItem,
+} from "@/lib/play/types";
 
-interface PublicPlayer {
-  userId: string;
-  displayName: string;
-  connected: boolean;
-  ready: boolean;
-  playing: boolean;
-  alive: boolean;
-  host: boolean;
-  narrator: boolean;
-  acceptedFullNarrator: boolean;
-  mayor: boolean;
-  hasVoted: boolean;
-  actedThisPhase: boolean;
-  revealedRole: string;
-}
-
-interface PublicEvent {
-  id: string;
-  messageBg: string;
-}
-
-interface PublicChatMessage {
-  id: string;
-  channel: string;
-  senderName: string;
-  message: string;
-}
-
-interface PrivateChatMessage {
-  channel: ChatChannel;
-  senderUserId: string;
-  senderName: string;
-  message: string;
-  createdAt: number;
-}
-
-interface TypingNotice {
-  channel: ChatChannel;
-  senderUserId: string;
-  senderName: string;
-  active: boolean;
-  createdAt: number;
-}
-
-interface PublicRoleCount {
-  role: RoleCode;
-  count: number;
-}
-
-interface VoteTallyItem {
-  targetUserId: string;
-  targetName: string;
-  count: number;
-  hasMayorVote: boolean;
-}
-
-interface GameSnapshot {
-  code: string;
-  mode: GameMode;
-  playerCount: number;
-  narratorMode: string;
-  communicationMode: string;
-  tempoProfile: string;
-  dayDiscussionSeconds: number;
-  voteSeconds: number;
-  revealRolesOnDeath: boolean;
-  loversEnabled: boolean;
-  allowSkipVote: boolean;
-  majorityMode: string;
-  narratorVoice: NarratorVoice;
-  phase: GamePhase;
-  round: number;
-  phaseEndsAt: number;
-  winnerTeam: string;
-  winnerReasonBg: string;
-  players: PublicPlayer[];
-  roleCounts: PublicRoleCount[];
-  voteTally: VoteTallyItem[];
-  publicEvents: PublicEvent[];
-  publicChat: PublicChatMessage[];
-}
-
-interface PrivateResult {
-  targetUserId: string;
-  targetUserIds?: string[];
-  role?: RoleCode;
-  isEvil?: boolean;
-  isCommissioner?: boolean;
-  messageBg?: string;
-}
-
-interface PrivateLover {
-  loverUserId: string;
-  loverName: string;
-}
-
-interface NarratorRoleSnapshot {
-  roles: Array<{ userId: string; displayName: string; role: RoleCode; roleNameBg: string }>;
-}
-
-type ConnectionStatus = "connecting" | "connected" | "reconnecting" | "disconnected" | "error";
-type CueMode = "silent" | "visual" | "audio_vibration";
+export type { PhaseSlice, PublicPlayer } from "@/lib/play/types";
 
 const CUE_MODE_STORAGE_KEY = "werewolf-cue-mode";
+const ROOM_RECONNECT_STORAGE_PREFIX = "room-reconnect";
+const MAX_RECONNECT_ATTEMPTS = 5;
 
-export function PlayRoomClient({ code, createOptions }: { code: string; createOptions?: CreateRoomOptions }) {
+function createRoomOptionsSignature(options: CreateRoomOptions | undefined) {
+  return JSON.stringify(options ?? null);
+}
+
+export function PlayRoomClient({ code, createOptions: createOptionsRaw }: { code: string; createOptions?: CreateRoomOptions }) {
+  const createOptionsSignature = createRoomOptionsSignature(createOptionsRaw);
+  const createOptionsRef = useRef<{ signature: string; value: CreateRoomOptions | undefined }>({
+    signature: createOptionsSignature,
+    value: createOptionsRaw,
+  });
+  if (createOptionsRef.current.signature !== createOptionsSignature) {
+    createOptionsRef.current = { signature: createOptionsSignature, value: createOptionsRaw };
+  }
+  const createOptions = createOptionsRef.current.value;
   const { data: session, isPending: sessionPending } = authClient.useSession();
   const [room, setRoom] = useState<Room | null>(null);
-  const [snapshot, setSnapshot] = useState<GameSnapshot | null>(null);
+  const [baseSnapshot, setBaseSnapshot] = useState<GameSnapshot | null>(null);
+  const [playersSlice, setPlayersSlice] = useState<PublicPlayer[]>([]);
+  const [phaseSlice, setPhaseSlice] = useState<PhaseSlice | null>(null);
+  const [voteTallySlice, setVoteTallySlice] = useState<VoteTallyItem[]>([]);
+  const [publicEventsSlice, setPublicEventsSlice] = useState<PublicEvent[]>([]);
+  const [publicChatSlice, setPublicChatSlice] = useState<PublicChatMessage[]>([]);
   const [currentUserId, setCurrentUserId] = useState("");
   const [privateRole, setPrivateRole] = useState<{ role: RoleCode; roleNameBg: string } | null>(null);
   const [privateResult, setPrivateResult] = useState<PrivateResult | null>(null);
@@ -167,6 +124,7 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("connecting");
   const [cueMode, setCueMode] = useState<CueMode>("silent");
   const [phasePulse, setPhasePulse] = useState(0);
+  const [showPhaseTransition, setShowPhaseTransition] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [startCountdown, setStartCountdown] = useState<number | null>(null);
   const [unlockedAchievementIds, setUnlockedAchievementIds] = useState<string[]>([]);
@@ -174,15 +132,36 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
   const previousEventIdsRef = useRef<Set<string>>(new Set());
   const hasSeenEventsRef = useRef(false);
   const previousWinnerTeamRef = useRef("");
+  const suppressNextPhasePulseRef = useRef(false);
+  const snapshotRef = useRef<GameSnapshot | null>(null);
   const typingTimeoutsRef = useRef<Map<string, number>>(new Map());
   const lastTypingSentRef = useRef<Map<ChatChannel, number>>(new Map());
+  const startGameTimersRef = useRef<number[]>([]);
+  const achievementClearTimerRef = useRef<number | null>(null);
+  const shortcutStateRef = useRef<ShortcutState | null>(null);
+  const reconnectNowRef = useRef<(() => void) | null>(null);
   const [isPending, startTransition] = useTransition();
   const toast = useToast();
+  const snapshot = useMemo(() => {
+    if (!baseSnapshot) {
+      return null;
+    }
+    return {
+      ...baseSnapshot,
+      ...(phaseSlice ?? {}),
+      players: playersSlice,
+      voteTally: voteTallySlice,
+      publicEvents: publicEventsSlice,
+      publicChat: publicChatSlice,
+    };
+  }, [baseSnapshot, phaseSlice, playersSlice, publicChatSlice, publicEventsSlice, voteTallySlice]);
   const liveMode = (snapshot?.tempoProfile ?? createOptions?.tempoProfile) === "live";
 
   useEffect(() => {
     let active = true;
     let joinedRoom: Room | null = null;
+    let reconnectTimer: number | null = null;
+    let reconnecting = false;
 
     if (sessionPending) {
       return () => {
@@ -202,6 +181,221 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
     setConnectionStatus("connecting");
 
     setCurrentUserId(session.user.id);
+
+    const clearReconnectTimer = () => {
+      if (reconnectTimer !== null) {
+        window.clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+      }
+    };
+
+    const waitForReconnectDelay = (ms: number) =>
+      new Promise<void>((resolve) => {
+        reconnectTimer = window.setTimeout(() => {
+          reconnectTimer = null;
+          resolve();
+        }, ms);
+      });
+
+    const bindRoom = (nextRoom: Room) => {
+      joinedRoom = nextRoom;
+      persistReconnectionToken(code, nextRoom.reconnectionToken);
+      setRoom(nextRoom);
+      setStatus("Свързан");
+      setConnectionStatus("connected");
+
+      nextRoom.onStateChange((state) => {
+        const stateView = state as unknown as ColyseusGameState;
+        const previousSnapshot = snapshotRef.current;
+        const nextPlayers = playersForState(stateView);
+        const nextPhaseSlice = phaseSliceForState(stateView);
+        const nextVoteTally = voteTallyForState(stateView);
+        const nextPublicEvents = publicEventsForState(stateView);
+        const nextPublicChat = publicChatForState(stateView);
+        const nextRoleCounts = roleCountsForState(stateView);
+        const nextBaseSnapshot = snapshotShellForState(stateView, nextRoleCounts, previousSnapshot);
+
+        const playersChanged = !previousSnapshot || !arePlayerListsEqual(previousSnapshot.players, nextPlayers);
+        const phaseChanged = !previousSnapshot || !arePhaseSlicesEqual(phaseSliceFor(previousSnapshot), nextPhaseSlice);
+        const votesChanged = !previousSnapshot || !areVoteTallyEqual(previousSnapshot.voteTally, nextVoteTally);
+        const eventsChanged = !previousSnapshot || !arePublicEventsEqual(previousSnapshot.publicEvents, nextPublicEvents);
+        const chatChanged = !previousSnapshot || !arePublicChatEqual(previousSnapshot.publicChat, nextPublicChat);
+        const shellChanged = !previousSnapshot || !areSnapshotShellEqual(previousSnapshot, nextBaseSnapshot);
+
+        if (!playersChanged && !phaseChanged && !votesChanged && !eventsChanged && !chatChanged && !shellChanged) {
+          return;
+        }
+
+        const stableSnapshot = previousSnapshot ?? nextBaseSnapshot;
+        const nextSnapshot: GameSnapshot = {
+          ...nextBaseSnapshot,
+          ...nextPhaseSlice,
+          players: playersChanged ? nextPlayers : stableSnapshot.players,
+          voteTally: votesChanged ? nextVoteTally : stableSnapshot.voteTally,
+          publicEvents: eventsChanged ? nextPublicEvents : stableSnapshot.publicEvents,
+          publicChat: chatChanged ? nextPublicChat : stableSnapshot.publicChat,
+        };
+
+        snapshotRef.current = nextSnapshot;
+        startTransition(() => {
+          if (playersChanged) {
+            setPlayersSlice(nextPlayers);
+          }
+          if (phaseChanged) {
+            setPhaseSlice(nextPhaseSlice);
+          }
+          if (votesChanged) {
+            setVoteTallySlice(nextVoteTally);
+          }
+          if (eventsChanged) {
+            setPublicEventsSlice(nextPublicEvents);
+          }
+          if (chatChanged) {
+            setPublicChatSlice(nextPublicChat);
+          }
+          if (shellChanged) {
+            setBaseSnapshot(nextBaseSnapshot);
+          }
+        });
+      });
+
+      nextRoom.onMessage("private_role", (message: { role: RoleCode; roleNameBg: string }) => {
+        setPrivateRole(message);
+      });
+
+      nextRoom.onMessage("private_check_result", (message: PrivateResult) => {
+        setPrivateResult(message);
+        toast({ message: "Получен е личен резултат от нощното действие.", kind: "info" });
+      });
+
+      nextRoom.onMessage("private_lovers", (message: PrivateLover) => {
+        setPrivateLover(message);
+        toast({ message: "Купидон те свърза с Влюбен.", kind: "success" });
+      });
+
+      nextRoom.onMessage("private_blessing", () => {
+        setIsBlessed(true);
+        toast({ message: "Свещеникът те благослови. Благословията остава върху теб до края на играта.", kind: "success" });
+      });
+
+      nextRoom.onMessage("system", (message: { messageBg: string }) => {
+        toast({ message: message.messageBg, kind: "info" });
+      });
+
+      nextRoom.onMessage("private_chat", (message: PrivateChatMessage) => {
+        setPrivateChats((current) => [...current.slice(-30), message]);
+      });
+
+      nextRoom.onMessage("typing", (message: TypingNotice) => {
+        const key = `${message.channel}:${message.senderUserId}`;
+        setTypingNotices((current) => {
+          const withoutCurrent = current.filter((item) => `${item.channel}:${item.senderUserId}` !== key);
+          if (!message.active) {
+            return withoutCurrent;
+          }
+          return [...withoutCurrent, message].slice(-12);
+        });
+
+        const existingTimeout = typingTimeoutsRef.current.get(key);
+        if (existingTimeout) {
+          window.clearTimeout(existingTimeout);
+        }
+        if (message.active) {
+          const timeout = window.setTimeout(() => {
+            setTypingNotices((current) => current.filter((item) => `${item.channel}:${item.senderUserId}` !== key));
+            typingTimeoutsRef.current.delete(key);
+          }, 2600);
+          typingTimeoutsRef.current.set(key, timeout);
+        }
+      });
+
+      nextRoom.onMessage("narrator_role_snapshot", (message: NarratorRoleSnapshot) => {
+        setNarratorSnapshot(message);
+        toast({ message: "Получен е пълен преглед за Разказвача.", kind: "info" });
+      });
+
+      nextRoom.onMessage("safe_error", (message: { messageBg: string }) => {
+        toast({ message: message.messageBg, kind: "error" });
+      });
+
+      nextRoom.onMessage("achievements_unlocked", (message: { achievementIds: string[] }) => {
+        setUnlockedAchievementIds(message.achievementIds);
+        toast({ message: "Отключи ново постижение.", kind: "success" });
+        if (achievementClearTimerRef.current !== null) {
+          window.clearTimeout(achievementClearTimerRef.current);
+        }
+        achievementClearTimerRef.current = window.setTimeout(() => {
+          setUnlockedAchievementIds([]);
+          achievementClearTimerRef.current = null;
+        }, 7000);
+      });
+
+      nextRoom.onLeave((leaveCode) => {
+        if (!active) {
+          return;
+        }
+        if (leaveCode === 1000 || leaveCode === 1001) {
+          clearReconnectionToken(code);
+          setStatus("Напусна стаята.");
+          setConnectionStatus("disconnected");
+          return;
+        }
+        setStatus("Връзката прекъсна. Опитваме да те върнем в стаята.");
+        setConnectionStatus("reconnecting");
+        suppressNextPhasePulseRef.current = true;
+        if (!reconnecting) {
+          void attemptReconnect(1);
+        }
+      });
+    };
+
+    const attemptReconnect = async (attempt: number) => {
+      const reconnectToken = joinedRoom?.reconnectionToken || readReconnectionToken(code);
+      if (!reconnectToken) {
+        setStatus("Няма запазен ключ за връщане. Презареди страницата, ако стаята още е активна.");
+        setConnectionStatus("lost");
+        return;
+      }
+
+      reconnecting = true;
+      clearReconnectTimer();
+      setConnectionStatus("reconnecting");
+      setStatus(attempt === 1 ? "Възстановяваме връзката със стаята." : `Възстановяване - опит ${attempt} от ${MAX_RECONNECT_ATTEMPTS}.`);
+      await waitForReconnectDelay(Math.min(8000, 1000 * 2 ** (attempt - 1)));
+      if (!active) {
+        return;
+      }
+
+      try {
+        const reconnectedRoom = await client.reconnect(reconnectToken);
+        if (!active) {
+          reconnectedRoom.leave();
+          return;
+        }
+        reconnecting = false;
+        bindRoom(reconnectedRoom);
+        setStatus("Връзката е възстановена.");
+        toast({ message: "Върнахме те в стаята.", kind: "success" });
+      } catch {
+        if (!active) {
+          return;
+        }
+        if (attempt < MAX_RECONNECT_ATTEMPTS) {
+          void attemptReconnect(attempt + 1);
+          return;
+        }
+        reconnecting = false;
+        setConnectionStatus("lost");
+        setStatus("Не успяхме да възстановим връзката автоматично.");
+      }
+    };
+
+    const retryReconnect = () => {
+      if (!reconnecting) {
+        void attemptReconnect(1);
+      }
+    };
+    reconnectNowRef.current = retryReconnect;
 
     fetch("/api/game-token", {
       method: "POST",
@@ -228,100 +422,26 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
         });
       })
       .then((nextRoom) => {
-        joinedRoom = nextRoom;
         if (!active) {
           nextRoom.leave();
           return;
         }
-
-        setRoom(nextRoom);
-        setStatus("Свързан");
-        setConnectionStatus("connected");
-
-        nextRoom.onStateChange((state) => {
-          startTransition(() => setSnapshot(toSnapshot(state as unknown as ColyseusGameState)));
-        });
-
-        nextRoom.onMessage("private_role", (message: { role: RoleCode; roleNameBg: string }) => {
-          setPrivateRole(message);
-        });
-
-        nextRoom.onMessage("private_check_result", (message: PrivateResult) => {
-          setPrivateResult(message);
-          toast({ message: "Получен е личен резултат от нощното действие.", kind: "info" });
-        });
-
-        nextRoom.onMessage("private_lovers", (message: PrivateLover) => {
-          setPrivateLover(message);
-          toast({ message: "Купидон те свърза с Влюбен.", kind: "success" });
-        });
-
-        nextRoom.onMessage("private_blessing", () => {
-          setIsBlessed(true);
-          toast({ message: "Свещеникът те благослови. Благословията остава върху теб до края на играта.", kind: "success" });
-        });
-
-        nextRoom.onMessage("system", (message: { messageBg: string }) => {
-          toast({ message: message.messageBg, kind: "info" });
-        });
-
-        nextRoom.onMessage("private_chat", (message: PrivateChatMessage) => {
-          setPrivateChats((current) => [...current.slice(-30), message]);
-        });
-
-        nextRoom.onMessage("typing", (message: TypingNotice) => {
-          const key = `${message.channel}:${message.senderUserId}`;
-          setTypingNotices((current) => {
-            const withoutCurrent = current.filter((item) => `${item.channel}:${item.senderUserId}` !== key);
-            if (!message.active) {
-              return withoutCurrent;
-            }
-            return [...withoutCurrent, message].slice(-12);
-          });
-
-          const existingTimeout = typingTimeoutsRef.current.get(key);
-          if (existingTimeout) {
-            window.clearTimeout(existingTimeout);
-          }
-          if (message.active) {
-            const timeout = window.setTimeout(() => {
-              setTypingNotices((current) => current.filter((item) => `${item.channel}:${item.senderUserId}` !== key));
-              typingTimeoutsRef.current.delete(key);
-            }, 2600);
-            typingTimeoutsRef.current.set(key, timeout);
-          }
-        });
-
-        nextRoom.onMessage("narrator_role_snapshot", (message: NarratorRoleSnapshot) => {
-          setNarratorSnapshot(message);
-          toast({ message: "Получен е пълен преглед за Разказвача.", kind: "info" });
-        });
-
-        nextRoom.onMessage("safe_error", (message: { messageBg: string }) => {
-          toast({ message: message.messageBg, kind: "error" });
-        });
-
-        nextRoom.onMessage("achievements_unlocked", (message: { achievementIds: string[] }) => {
-          setUnlockedAchievementIds(message.achievementIds);
-          toast({ message: "Отключи ново постижение.", kind: "success" });
-          window.setTimeout(() => setUnlockedAchievementIds([]), 7000);
-        });
-
-        nextRoom.onLeave((leaveCode) => {
-          if (!active) {
-            return;
-          }
-          setStatus(leaveCode === 1000 ? "Напусна стаята." : "Връзката прекъсна.");
-          setConnectionStatus(leaveCode === 1000 ? "disconnected" : "reconnecting");
-        });
+        bindRoom(nextRoom);
       })
       .catch((error: unknown) => {
+        if (!active) {
+          return;
+        }
         setStatus(error instanceof Error ? error.message : "Неуспешно свързване.");
         setConnectionStatus("error");
       });
 
     return () => {
       active = false;
+      if (reconnectNowRef.current === retryReconnect) {
+        reconnectNowRef.current = null;
+      }
+      clearReconnectTimer();
       joinedRoom?.leave();
     };
   }, [code, createOptions, session?.user?.id, sessionPending, toast]);
@@ -350,6 +470,11 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
         window.clearTimeout(timeout);
       }
       typingTimeoutsRef.current.clear();
+      clearStartGameTimers();
+      if (achievementClearTimerRef.current !== null) {
+        window.clearTimeout(achievementClearTimerRef.current);
+        achievementClearTimerRef.current = null;
+      }
     };
   }, []);
 
@@ -376,7 +501,7 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
     if (!nextPhase) {
       return;
     }
-    setStatus("");
+    setStatus((current) => (current === "Свързан" || current === "Свързване..." ? "" : current));
   }, [snapshot?.phase]);
 
   useEffect(() => {
@@ -387,13 +512,24 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
 
     if (!previousCuePhaseRef.current) {
       previousCuePhaseRef.current = nextPhase;
+      setShowPhaseTransition(false);
       return;
     }
     if (previousCuePhaseRef.current === nextPhase) {
+      suppressNextPhasePulseRef.current = false;
+      setShowPhaseTransition(false);
+      return;
+    }
+
+    if (suppressNextPhasePulseRef.current) {
+      suppressNextPhasePulseRef.current = false;
+      previousCuePhaseRef.current = nextPhase;
+      setShowPhaseTransition(false);
       return;
     }
 
     previousCuePhaseRef.current = nextPhase;
+    setShowPhaseTransition(true);
     setPhasePulse((current) => current + 1);
     playCue("phase-change", { forceSilent: liveMode || cueMode === "silent" });
     if (cueMode === "audio_vibration") {
@@ -436,6 +572,22 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
   const family = getGameFamily(mode);
   const phase = snapshot?.phase ?? "lobby";
 
+  useEffect(() => {
+    shortcutStateRef.current = {
+      room,
+      phase,
+      selectedTargetId,
+      secondTargetId,
+      privateRole,
+      players,
+      livingPlayers,
+      currentUserId,
+      ownPlayer,
+      showShortcuts,
+      liveMode,
+    };
+  });
+
   function sendReady() {
     room?.send("ready", { ready: !ownPlayer?.ready });
   }
@@ -454,42 +606,64 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
     playCue("vote", { forceSilent: liveMode });
   }
 
-  function submitCurrentShortcutAction() {
-    if (!room) {
+  const submitCurrentShortcutAction = useCallback(() => {
+    const current = shortcutStateRef.current;
+    if (!current?.room) {
       return;
     }
 
-    if (phase === "voting" && selectedTargetId) {
-      sendVote(selectedTargetId);
+    if (current.phase === "voting" && current.selectedTargetId) {
+      current.room.send("submitVote", { targetUserId: current.selectedTargetId });
+      toast({ message: "Гласът е изпратен.", kind: "success" });
+      playCue("vote", { forceSilent: current.liveMode });
       return;
     }
 
-    if (phase === "hunter_revenge" && privateRole?.role === "hunter" && selectedTargetId) {
-      room.send("submitHunterRevenge", { targetUserId: selectedTargetId });
+    if (current.phase === "hunter_revenge" && current.privateRole?.role === "hunter" && current.selectedTargetId) {
+      current.room.send("submitHunterRevenge", { targetUserId: current.selectedTargetId });
       toast({ message: "Последният изстрел е изпратен.", kind: "success" });
       return;
     }
 
-    if (isNightPhase(phase) && privateRole) {
-      const action = buildPrimaryNightAction(privateRole.role, selectedTargetId, secondTargetId, phase);
+    if (isNightPhase(current.phase) && current.privateRole) {
+      const action = buildPrimaryNightAction(
+        current.privateRole.role,
+        current.selectedTargetId,
+        current.secondTargetId,
+        current.phase,
+      );
       if (action) {
-        sendNightAction(action);
+        current.room.send("submitNightAction", { action });
+        toast({ message: "Нощното действие е изпратено.", kind: "success" });
+        if (!current.liveMode && "vibrate" in navigator) {
+          navigator.vibrate([24]);
+        }
       }
     }
-  }
+  }, [toast]);
 
   function requestStartGame() {
     if (!room || startCountdown !== null) {
       return;
     }
 
+    const roomAtStart = room;
+    clearStartGameTimers();
     setStartCountdown(3);
-    window.setTimeout(() => setStartCountdown(2), 620);
-    window.setTimeout(() => setStartCountdown(1), 1240);
-    window.setTimeout(() => {
-      room.send("startGame");
+    startGameTimersRef.current.push(window.setTimeout(() => setStartCountdown(2), 620));
+    startGameTimersRef.current.push(window.setTimeout(() => setStartCountdown(1), 1240));
+    startGameTimersRef.current.push(window.setTimeout(() => {
+      roomAtStart.send("startGame");
       setStartCountdown(null);
-    }, 1860);
+      clearStartGameTimers();
+    }, 1860));
+  }
+
+  function clearStartGameTimers() {
+    for (const timeout of startGameTimersRef.current) {
+      window.clearTimeout(timeout);
+    }
+    startGameTimersRef.current = [];
   }
 
   function sendChat(event: FormEvent<HTMLFormElement>) {
@@ -558,7 +732,10 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
     }
   }
 
-  const fullNarratorAccepted = snapshot?.narratorMode !== "full_human" || players.every((player) => player.acceptedFullNarrator);
+  const fullNarratorAccepted = useMemo(
+    () => snapshot?.narratorMode !== "full_human" || players.every((player) => player.acceptedFullNarrator),
+    [players, snapshot?.narratorMode],
+  );
   const privateChatChannel = getAvailablePrivateChatChannel(privateRole?.role, ownPlayer, phase, snapshot?.communicationMode);
   const publicTypers = useMemo(
     () => typingNotices.filter((notice) => notice.channel === "public" && notice.senderUserId !== currentUserId),
@@ -595,7 +772,8 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
       }
 
       if (event.key === "Escape") {
-        if (showShortcuts) {
+        const current = shortcutStateRef.current;
+        if (current?.showShortcuts) {
           setShowShortcuts(false);
         } else {
           setSelectedTargetId("");
@@ -610,20 +788,38 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
         return;
       }
 
-      if (event.key === " " && (ownPlayer?.host || ownPlayer?.narrator) && phase !== "paused" && phase !== "game_over") {
-        event.preventDefault();
-        room?.send("narratorPause");
+      const current = shortcutStateRef.current;
+      if (!current) {
         return;
       }
 
-      if ((phase === "voting" || phase === "hunter_revenge" || isNightPhase(phase)) && /^[1-9]$/.test(event.key)) {
+      if (
+        event.key === " " &&
+        (current.ownPlayer?.host || current.ownPlayer?.narrator) &&
+        current.phase !== "paused" &&
+        current.phase !== "game_over"
+      ) {
+        event.preventDefault();
+        current.room?.send("narratorPause");
+        return;
+      }
+
+      if ((current.phase === "voting" || current.phase === "hunter_revenge" || isNightPhase(current.phase)) && /^[1-9]$/.test(event.key)) {
         const index = Number(event.key) - 1;
-        const targetPlayer = shortcutTargets(phase, privateRole?.role, players, livingPlayers, currentUserId)[index];
+        const targetPlayer = shortcutTargets(
+          current.phase,
+          current.privateRole?.role,
+          current.players,
+          current.livingPlayers,
+          current.currentUserId,
+        )[index];
         if (targetPlayer) {
           event.preventDefault();
           setSelectedTargetId(targetPlayer.userId);
-          if (phase === "voting") {
-            sendVote(targetPlayer.userId);
+          if (current.phase === "voting") {
+            current.room?.send("submitVote", { targetUserId: targetPlayer.userId });
+            toast({ message: "Гласът е изпратен.", kind: "success" });
+            playCue("vote", { forceSilent: current.liveMode });
           }
         }
       }
@@ -631,26 +827,14 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [
-    currentUserId,
-    livingPlayers,
-    ownPlayer?.host,
-    ownPlayer?.narrator,
-    phase,
-    players,
-    privateRole,
-    room,
-    secondTargetId,
-    selectedTargetId,
-    showShortcuts,
-  ]);
+  }, [submitCurrentShortcutAction, toast]);
 
-  const renderPlayersPanel = (variant: "desktop" | "mobile") => {
-    const eventsHeadingId = `events-heading-${variant}`;
-    const chatHeadingId = `chat-heading-${variant}`;
+  const renderPlayersPanel = () => {
+    const eventsHeadingId = "events-heading";
+    const chatHeadingId = "chat-heading";
 
     return (
-      <aside className={`play-section play-players-panel play-players-panel-${variant}`}>
+      <aside className="play-section play-players-panel">
         <p className="section-kicker play-section-kicker">
           <Users className="play-section-icon" aria-hidden strokeWidth={1.8} />
           <span>площадът</span>
@@ -665,64 +849,26 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
               <p>Поканата чака първите телефони около масата.</p>
             </div>
           ) : null}
-          {snapshot ? players.map((player) => (
-            <div key={player.userId} className={playerTokenClass(player)}>
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <span className="player-avatar" aria-hidden="true">
-                    {playerInitials(player.displayName)}
-                  </span>
-                  <div>
-                    <strong className="block leading-tight">{player.displayName}</strong>
-                    <small className="font-bold uppercase tracking-[0.16em] text-[#842f2b]/80">
-                      {playerStatusBadge(player, phase)}
-                    </small>
-                  </div>
-                </div>
-                <span className="rounded-full bg-[#221611]/10 px-3 py-1 text-sm font-bold">
-                  {player.playing
-                    ? player.alive
-                      ? "жив"
-                      : player.revealedRole
-                        ? `† ${ROLE_DEFINITIONS[player.revealedRole as RoleCode]?.nameBg ?? "елиминиран"}`
-                        : "елиминиран"
-                    : "извън играта"}
-                </span>
-              </div>
-              <small className="mt-3 block text-[#4f3829]">
-                {player.connected ? "онлайн" : "прекъсната връзка"}
-                {player.host ? " · водещ" : ""}
-                {player.narrator ? " · Разказвач" : ""}
-                {player.mayor ? " · Кмет" : ""}
-                {player.ready ? " · готов" : ""}
-                {snapshot?.narratorMode === "full_human" ? ` · ${player.acceptedFullNarrator ? "приел" : "чака приемане"}` : ""}
-                {player.actedThisPhase ? " · действал" : ""}
-                {player.hasVoted ? " · гласувал" : ""}
-              </small>
-              {ownPlayer?.host && snapshot?.narratorMode !== "automatic" && phase === "lobby" ? (
-                <button
-                  className="btn btn-secondary mt-3 min-h-0 px-3 py-2 text-sm"
-                  type="button"
-                  onClick={() => room?.send("setNarrator", { targetUserId: player.userId, narrator: true })}
-                >
-                  Направи Разказвач
-                </button>
-              ) : null}
-              {(ownPlayer?.host || ownPlayer?.narrator) &&
-              snapshot?.mode === "werewolves_classic" &&
-              (phase === "lobby" || phase === "mayor_successor") &&
-              player.playing &&
-              player.alive ? (
-                <button
-                  className="btn btn-secondary mt-3 min-h-0 px-3 py-2 text-sm"
-                  type="button"
-                  onClick={() => room?.send("setMayor", { targetUserId: player.userId })}
-                >
-                  Направи Кмет
-                </button>
-              ) : null}
-            </div>
-          )) : null}
+          {snapshot
+            ? players.map((player) => (
+                <PlayerTile
+                  key={player.userId}
+                  player={player}
+                  phase={phase}
+                  narratorMode={snapshot.narratorMode}
+                  canManageNarrator={Boolean(ownPlayer?.host && snapshot.narratorMode !== "automatic" && phase === "lobby")}
+                  canManageMayor={Boolean(
+                    (ownPlayer?.host || ownPlayer?.narrator)
+                      && snapshot.mode === "werewolves_classic"
+                      && (phase === "lobby" || phase === "mayor_successor")
+                      && player.playing
+                      && player.alive,
+                  )}
+                  onMakeNarrator={() => room?.send("setNarrator", { targetUserId: player.userId, narrator: true })}
+                  onMakeMayor={() => room?.send("setMayor", { targetUserId: player.userId })}
+                />
+              ))
+            : null}
         </div>
 
         {phase === "day_discussion" && snapshot?.communicationMode === "built_in_chat" ? (
@@ -739,10 +885,10 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
                   onChange={(event) => updatePublicChatMessage(event.target.value)}
                   placeholder="Напиши обвинение, защита или блъф..."
                   maxLength={500}
-                  aria-describedby={`chat-counter-${variant}`}
+                  aria-describedby="chat-counter"
                 />
                 <span
-                  id={`chat-counter-${variant}`}
+                  id="chat-counter"
                   className={`text-right text-xs ${chatMessage.length >= 480 ? "text-[#c18a38]" : "text-[#ead9ba]/60"}`}
                 >
                   {chatMessage.length}/500
@@ -826,9 +972,18 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
   };
 
   return (
-    <main className={`shell game-shell play-shell framed-shell phase-${phase}`} data-phase={phase} data-theme={family} data-family={family}>
-      <PhaseTransitionOverlay phase={phase} mode={mode} narratorVoice={snapshot?.narratorVoice ?? "classic"} pulseKey={phasePulse} />
+    <main className="shell game-shell play-shell framed-shell" data-phase={phase} data-family={family}>
+      {showPhaseTransition ? (
+        <PhaseTransitionOverlay phase={phase} mode={mode} narratorVoice={snapshot?.narratorVoice ?? "classic"} pulseKey={phasePulse} />
+      ) : null}
       <PreGameCountdown value={startCountdown} />
+      {connectionStatus === "reconnecting" || connectionStatus === "lost" ? (
+        <ReconnectModal
+          status={connectionStatus}
+          message={status}
+          onRetry={() => reconnectNowRef.current?.()}
+        />
+      ) : null}
       {showShortcuts ? <KeyboardShortcutsModal onClose={() => setShowShortcuts(false)} /> : null}
       {unlockedAchievementIds.length > 0 ? (
         <AchievementUnlockModal achievementIds={unlockedAchievementIds} onClose={() => setUnlockedAchievementIds([])} />
@@ -893,8 +1048,6 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
               </div>
             </div>
           ) : null}
-
-          {renderPlayersPanel("mobile")}
 
           <LiveCuePanel
             cueMode={cueMode}
@@ -1008,1136 +1161,11 @@ export function PlayRoomClient({ code, createOptions }: { code: string; createOp
           {snapshot?.winnerTeam ? <PostGameStory snapshot={snapshot} /> : null}
         </div>
 
-        {renderPlayersPanel("desktop")}
+        {renderPlayersPanel()}
       </section>
       </div>
     </main>
   );
-}
-
-function RulesSummary({ snapshot }: { snapshot: GameSnapshot }) {
-  return (
-    <section className="ritual-panel mt-8 rounded-[2rem] p-6">
-      <p className="section-kicker">правила преди старт</p>
-      <div className="mt-4 grid gap-3 md:grid-cols-2">
-        <SummaryPill label="Режим" value={modeBg(snapshot.mode)} />
-        <SummaryPill
-          label="Играчи"
-          value={`${snapshot.players.filter((player) => player.playing).length}/${snapshot.playerCount}`}
-        />
-        <SummaryPill label="Разказвач" value={narratorBg(snapshot.narratorMode)} />
-        <SummaryPill label="Комуникация" value={communicationBg(snapshot.communicationMode)} />
-        <SummaryPill label="Темпо" value={tempoBg(snapshot.tempoProfile)} />
-        <SummaryPill label="Ден/гласуване" value={`${snapshot.dayDiscussionSeconds}s / ${snapshot.voteSeconds}s`} />
-        <SummaryPill label="Глас" value={NARRATOR_VOICE_LABELS_BG[snapshot.narratorVoice]} />
-        <SummaryPill label="Гласуване" value={`${snapshot.allowSkipVote ? "може пропуск" : "без пропуск"} · ${majorityModeBg(snapshot.majorityMode)}`} />
-      </div>
-
-      <div className="mt-5 grid gap-3 md:grid-cols-2">
-        {snapshot.roleCounts.map((item) => (
-          <div key={item.role} className={`role-count-chip role-${item.role} is-dark`}>
-            <dt>
-              <span className="role-count-art" aria-hidden="true" style={roleThumbStyle(getGameFamily(snapshot.mode), item.role)} />
-              <span>{ROLE_DEFINITIONS[item.role]?.nameBg ?? item.role}</span>
-            </dt>
-            <dd>{item.count}</dd>
-          </div>
-        ))}
-      </div>
-
-      {snapshot.narratorMode === "full_human" ? (
-        <p className="mt-4 rounded-2xl bg-[#842f2b]/25 p-4 font-bold text-[#fff6e5]">
-          В тази стая Пълният Разказвач вижда всички роли и действия.
-        </p>
-      ) : null}
-    </section>
-  );
-}
-
-function PhaseTransitionOverlay({
-  phase,
-  mode,
-  narratorVoice,
-  pulseKey,
-}: {
-  phase: GamePhase;
-  mode: GameMode;
-  narratorVoice: NarratorVoice;
-  pulseKey: number;
-}) {
-  if (pulseKey === 0 || phase === "lobby") {
-    return null;
-  }
-
-  return (
-    <div key={`${phase}-${pulseKey}`} className={`phase-transition-overlay transition-${phase}`} aria-hidden="true">
-      <div>
-        <span>{phaseSigil(phase)}</span>
-        <strong>{phaseBg(phase, mode)}</strong>
-        <small>{phaseNarratorLine(phase, mode, narratorVoice)}</small>
-      </div>
-    </div>
-  );
-}
-
-function PreGameCountdown({ value }: { value: number | null }) {
-  if (value === null) {
-    return null;
-  }
-
-  return (
-    <div className="pre-game-countdown" aria-live="assertive" aria-atomic="true">
-      <span>ролите се разбъркват</span>
-      <strong>{value}</strong>
-      <small>Не показвай екрана си на другите.</small>
-    </div>
-  );
-}
-
-function AchievementUnlockModal({ achievementIds, onClose }: { achievementIds: string[]; onClose: () => void }) {
-  const achievements = ACHIEVEMENTS.filter((achievement) => achievementIds.includes(achievement.id));
-  if (achievements.length === 0) {
-    return null;
-  }
-
-  return (
-    <div className="achievement-unlock-backdrop" role="presentation" onClick={onClose}>
-      <aside className="achievement-unlock-modal" role="dialog" aria-label="Отключени постижения" onClick={(event) => event.stopPropagation()}>
-        <button type="button" onClick={onClose}>
-          затвори
-        </button>
-        <p className="section-kicker">нова легенда</p>
-        <h2>Отключи постижение</h2>
-        <div>
-          {achievements.map((achievement) => (
-            <article key={achievement.id}>
-              <span>{achievement.iconBg}</span>
-              <strong>{achievement.titleBg}</strong>
-              <p>{achievement.descriptionBg}</p>
-            </article>
-          ))}
-        </div>
-      </aside>
-    </div>
-  );
-}
-
-function DeathRevealCinematic({ players }: { players: PublicPlayer[] }) {
-  const revealed = [...players].reverse().find((player) => player.playing && !player.alive && player.revealedRole);
-  if (!revealed?.revealedRole) {
-    return null;
-  }
-
-  const role = revealed.revealedRole as RoleCode;
-  const definition = ROLE_DEFINITIONS[role];
-  if (!definition) {
-    return null;
-  }
-
-  const family = definition.availableInFamilies[0] ?? "werewolves";
-  const prefix = family === "mafia" ? "/game-art/mafia" : "/game-art";
-  const slug = `role-${getRoleAssetKey(role)}`;
-
-  return (
-    <article className={`death-reveal-card mt-8 rounded-[2rem] p-5 role-${role}`}>
-      <picture aria-hidden="true">
-        <source srcSet={`${prefix}/${slug}.webp`} type="image/webp" />
-        <img src={`${prefix}/${slug}.png`} alt="" loading="lazy" width={280} height={392} />
-      </picture>
-      <div>
-        <p className="section-kicker">разкрита карта</p>
-        <h2>{revealed.displayName} беше {definition.nameBg}</h2>
-        <p>{definition.shortDescriptionBg}</p>
-      </div>
-    </article>
-  );
-}
-
-function PostGameStory({ snapshot }: { snapshot: GameSnapshot }) {
-  const deaths = snapshot.players.filter((player) => player.playing && !player.alive).length;
-  const finalLiving = snapshot.players.filter((player) => player.playing && player.alive).length;
-  const lastEvents = snapshot.publicEvents.slice(-5);
-
-  return (
-    <section className="post-game-story mt-8 rounded-[2rem] p-6">
-      <p className="section-kicker">история на нощта</p>
-      <h2 className="mt-2 text-3xl font-black">Как ще я разказвате след играта</h2>
-      <div className="post-game-badges mt-5">
-        <span>оцеляха {finalLiving}</span>
-        <span>паднаха {deaths}</span>
-        <span>рундове {snapshot.round}</span>
-      </div>
-      <ol className="mt-5">
-        {lastEvents.map((event) => (
-          <li key={event.id}>{event.messageBg}</li>
-        ))}
-      </ol>
-    </section>
-  );
-}
-
-function SummaryPill({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="summary-pill rounded-2xl px-4 py-3">
-      <span className="block text-xs uppercase tracking-[0.2em] text-[#c18a38]">{label}</span>
-      <strong className="mt-1 block">{value}</strong>
-    </div>
-  );
-}
-
-function PhaseRail({ phase }: { phase: string }) {
-  return (
-    <nav className="phase-rail" aria-label="Фази на играта">
-      {PHASE_RAIL.map((step, index) => {
-        const active = step.phases.includes(phase);
-        return (
-          <div key={step.label} className={`phase-rail-step ${active ? "is-active" : ""}`}>
-            <span className="phase-rail-index">{String(index + 1).padStart(2, "0")}</span>
-            <span className={`phase-rail-icon phase-${step.iconPhase}`} aria-hidden="true" />
-            <span className="phase-rail-label">{step.label}</span>
-          </div>
-        );
-      })}
-    </nav>
-  );
-}
-
-function ConnectionBanner({ status, message }: { status: ConnectionStatus; message: string }) {
-  if (status === "connected") {
-    return null;
-  }
-
-  const title: Record<ConnectionStatus, string> = {
-    connecting: "Свързване със стаята",
-    connected: "Свързан",
-    reconnecting: "Връзката се възстановява",
-    disconnected: "Напусна стаята",
-    error: "Проблем със свързването",
-  };
-
-  return (
-    <div
-      className={`connection-banner connection-${status} mb-6 p-4 text-[#fff6e5]`}
-      role={status === "error" ? "alert" : "status"}
-      aria-live={status === "error" ? "assertive" : "polite"}
-      aria-busy={status === "connecting" || status === "reconnecting"}
-    >
-      <strong className="block">{title[status]}</strong>
-      <span className="mt-1 block text-sm text-[#ead9ba]">{message}</span>
-    </div>
-  );
-}
-
-function LiveCuePanel({
-  cueMode,
-  liveMode,
-  phase,
-  pulseKey,
-  onChange,
-}: {
-  cueMode: CueMode;
-  liveMode: boolean;
-  phase: string;
-  pulseKey: number;
-  onChange: (mode: CueMode) => void;
-}) {
-  return (
-    <section className={`cue-panel cue-${cueMode} ${liveMode ? "is-live" : ""} mt-6 rounded-[2rem] p-4`}>
-      <div className="cue-orb" aria-hidden="true">
-        <span key={pulseKey} />
-      </div>
-      <div>
-        <p className="section-kicker play-section-kicker">
-          <Volume2 className="play-section-icon" aria-hidden strokeWidth={1.8} />
-          <span>събуждане</span>
-        </p>
-        <h2 className="mt-1 text-2xl font-black">Лични сигнали за фазите</h2>
-        <p className="mt-2 text-sm text-[#ead9ba]">
-          {liveMode
-            ? "Игра на живо: звукът и вибрацията са изключени по подразбиране, защото телефоните са близо един до друг."
-            : "Онлайн игра: визуалният pulse е включен по подразбиране; звук/вибрация се включват само от това устройство."}
-        </p>
-      </div>
-      <div className="cue-actions">
-        <button className="btn btn-secondary" type="button" aria-pressed={cueMode === "silent"} onClick={() => onChange("silent")}>
-          <EyeOff className="play-button-icon" aria-hidden strokeWidth={1.8} />
-          Тихо
-        </button>
-        <button className="btn btn-secondary" type="button" aria-pressed={cueMode === "visual"} onClick={() => onChange("visual")}>
-          <Settings className="play-button-icon" aria-hidden strokeWidth={1.8} />
-          Визуално
-        </button>
-        <button
-          className="btn btn-primary"
-          type="button"
-          aria-pressed={cueMode === "audio_vibration"}
-          onClick={() => onChange("audio_vibration")}
-        >
-          <Volume2 className="play-button-icon" aria-hidden strokeWidth={1.8} />
-          Звук + вибрация
-        </button>
-        <button className="btn btn-secondary" type="button" onClick={() => triggerDeviceCue(phase)} disabled={cueMode === "silent"}>
-          <Play className="play-button-icon" aria-hidden strokeWidth={1.8} />
-          Тест
-        </button>
-      </div>
-    </section>
-  );
-}
-
-function NarratorDesk({
-  room,
-  snapshot,
-  phase,
-  family,
-  isNarrator,
-  onOpenShortcuts,
-}: {
-  room: Room | null;
-  snapshot: GameSnapshot;
-  phase: GamePhase;
-  family: GameFamily;
-  isNarrator: boolean;
-  onOpenShortcuts: () => void;
-}) {
-  const pendingConsent = snapshot.players.filter((player) => !player.acceptedFullNarrator).length;
-  const activePlayers = snapshot.players.filter((player) => player.playing);
-  const actedCount = activePlayers.filter((player) => player.actedThisPhase).length;
-  const votedCount = activePlayers.filter((player) => player.hasVoted).length;
-
-  return (
-    <section className="narrator-desk mt-8 rounded-[2rem] p-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <p className="section-kicker">панел на Разказвача</p>
-          <h2 className="mt-2 text-3xl font-black">{isNarrator ? "Водиш играта" : "Контрол на водещия"}</h2>
-          <p className="mt-3 max-w-2xl text-[#ead9ba]">
-            Управлявай темпото без скрити клиентски решения. Всички действия се записват като събития за проверка на Разказвача.
-          </p>
-        </div>
-        <div className="narrator-phase-seal">
-          <span>{phaseBg(phase, family)}</span>
-          <Timer endsAt={snapshot.phaseEndsAt} />
-        </div>
-      </div>
-
-      <div className="mt-5 grid gap-3 md:grid-cols-4">
-        <SummaryPill label="Активни" value={`${activePlayers.length}/${snapshot.playerCount}`} />
-        <SummaryPill label="Действали" value={`${actedCount}/${activePlayers.length}`} />
-        <SummaryPill label="Гласували" value={`${votedCount}/${activePlayers.length}`} />
-        <SummaryPill label="Режим" value={narratorBg(snapshot.narratorMode)} />
-      </div>
-
-      <div className="mt-5 flex flex-wrap gap-3">
-        <button className="btn btn-secondary" type="button" onClick={() => room?.send("narratorPause")} disabled={!room || phase === "paused"}>
-          <Pause className="play-button-icon" aria-hidden strokeWidth={1.8} />
-          Пауза
-        </button>
-        <button className="btn btn-primary" type="button" onClick={() => room?.send("narratorAdvance")} disabled={!room}>
-          <SkipForward className="play-button-icon" aria-hidden strokeWidth={1.8} />
-          Следваща фаза
-        </button>
-        {[30, 60, 180].map((seconds) => (
-          <button
-            key={seconds}
-            className="btn btn-secondary"
-            type="button"
-            onClick={() => room?.send("narratorExtendTimer", { seconds })}
-            disabled={!room || phase === "paused" || phase === "game_over"}
-          >
-            <Plus className="play-button-icon" aria-hidden strokeWidth={1.8} />
-            +{seconds} сек.
-          </button>
-        ))}
-        <button className="btn btn-secondary" type="button" onClick={onOpenShortcuts}>
-          <Keyboard className="play-button-icon" aria-hidden strokeWidth={1.8} />
-          Клавишни команди
-        </button>
-      </div>
-
-      {snapshot.narratorMode === "full_human" && pendingConsent > 0 ? (
-        <p className="mt-5 rounded-2xl bg-[#842f2b]/25 p-4 font-bold text-[#fff6e5]">
-          Изчакват се {pendingConsent} играчи да приемат, че Пълният Разказвач вижда всички роли.
-        </p>
-      ) : null}
-    </section>
-  );
-}
-
-function PhaseGuide({
-  phase,
-  mode,
-  privateRole,
-  ownPlayer,
-}: {
-  phase: GamePhase;
-  mode: GameMode;
-  privateRole: RoleCode | undefined;
-  ownPlayer: PublicPlayer | undefined;
-}) {
-  const guide = phaseGuideBg(phase, mode);
-  const personalHint = privateRole ? roleWakeHint(privateRole, phase, ownPlayer) : "Ролята ти още не е разкрита на това устройство.";
-
-  return (
-    <section className="phase-guide-card ritual-panel mt-8 rounded-[2rem] p-6">
-      <p className="section-kicker">водене на рунда</p>
-      <h2 className="mt-2 text-3xl font-black">{guide.title}</h2>
-      <p className="mt-3 text-[#ead9ba]">{guide.body}</p>
-      <div className="mt-4 grid gap-3 md:grid-cols-2">
-        <div className="rounded-2xl bg-[#f4e8d1]/10 px-4 py-3">
-          <span className="block text-xs uppercase tracking-[0.2em] text-[#c18a38]">кой се буди</span>
-          <strong className="mt-1 block">{guide.wakes}</strong>
-        </div>
-        <div className="rounded-2xl bg-[#f4e8d1]/10 px-4 py-3">
-          <span className="block text-xs uppercase tracking-[0.2em] text-[#c18a38]">за теб</span>
-          <strong className="mt-1 block">{personalHint}</strong>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function NarratorSnapshotPanel({ snapshot }: { snapshot: NarratorRoleSnapshot }) {
-  return (
-    <section className="narrator-kit-card paper-card mt-8 rounded-[2rem] p-6">
-      <p className="text-sm uppercase tracking-[0.3em] text-[#842f2b]">само за Пълния Разказвач</p>
-      <h2 className="mt-2 text-3xl font-black">Тайни роли</h2>
-      <p className="mt-3 text-[#4f3829]">
-        Това табло се изпраща само като лично събитие към избрания Пълен Разказвач.
-      </p>
-      <div className="mt-5 grid gap-3 sm:grid-cols-2">
-        {snapshot.roles.map((item) => (
-          <div key={item.userId} className="rounded-2xl bg-white/40 px-4 py-3">
-            <strong className="block">{item.displayName}</strong>
-            <span>{item.roleNameBg}</span>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function LoverCard({ lover }: { lover: PrivateLover }) {
-  return (
-    <article className="winner-card faction-lovers paper-card mt-8 rounded-[2rem] p-6">
-      <p className="text-sm uppercase tracking-[0.3em] text-[#842f2b]">само за теб</p>
-      <h2 className="mt-2 text-3xl font-black">Влюбен си в {lover.loverName}</h2>
-      <p className="mt-3 text-[#4f3829]">
-        Ако един от вас умре, другият умира от разбито сърце. Ако останете последните двама от различни страни, печелите заедно.
-      </p>
-    </article>
-  );
-}
-
-function RoleCard({
-  role,
-  result,
-  players,
-}: {
-  role: { role: RoleCode; roleNameBg: string } | null;
-  result: PrivateResult | null;
-  players: PublicPlayer[];
-}) {
-  if (!role) {
-    return null;
-  }
-
-  const definition = ROLE_DEFINITIONS[role.role];
-  const family = definition.availableInFamilies[0] ?? "werewolves";
-  const guide = ROLE_GUIDE_BG[role.role] ?? {
-    summary: getRoleShortDescriptionBg(role.role),
-    team: teamLabelBg(definition.team, family),
-    timing: definition.nightAction ? "Нощна фаза" : "Ден и гласуване",
-    win: "winConditionBg" in definition ? definition.winConditionBg : "Следвай целта на своя отбор",
-  };
-
-  return (
-    <article className={`role-card paper-card mt-8 rounded-[2rem] p-6 role-${role.role}`}>
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <p className="section-kicker text-[#842f2b]">само за теб</p>
-          <h2 className="mt-2 text-4xl font-black">{role.roleNameBg}</h2>
-        </div>
-        <div className="role-sigil" aria-hidden="true">
-          {roleSigil(role.role)}
-        </div>
-      </div>
-      <div className="mt-4 grid gap-3">
-        <p className="text-[#4f3829]">{guide.summary}</p>
-        <div className="grid gap-3 md:grid-cols-3">
-          <RoleFact label="Отбор" value={guide.team} />
-          <RoleFact label="Кога действа" value={guide.timing} />
-          <RoleFact label="Цел" value={guide.win} />
-        </div>
-      </div>
-      <p className="mt-4 rounded-2xl bg-[#221611]/10 px-4 py-3 text-sm font-bold text-[#4f3829]">
-        Сигурност: чуждите тайни роли не са в публичния state и не трябва да се виждат през DevTools/network.
-      </p>
-      {result ? (
-        <p className="mt-4 rounded-2xl bg-[#842f2b]/10 px-4 py-3 text-[#4f3829]">
-          {formatPrivateResult(result, players)}
-        </p>
-      ) : null}
-    </article>
-  );
-}
-
-function RoleFact({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl bg-white/35 px-4 py-3">
-      <span className="block text-xs uppercase tracking-[0.2em] text-[#842f2b]">{label}</span>
-      <strong className="mt-1 block text-[#221611]">{value}</strong>
-    </div>
-  );
-}
-
-function HunterRevengePanel({
-  currentUserId,
-  livingPlayers,
-  sendHunterRevenge,
-}: {
-  currentUserId: string;
-  livingPlayers: PublicPlayer[];
-  sendHunterRevenge: (targetUserId: string) => void;
-}) {
-  return (
-    <section className="ritual-panel mt-8 rounded-[2rem] p-6">
-      <p className="section-kicker">отмъщение на Ловеца</p>
-      <h2 className="mt-2 text-3xl font-black">Последен изстрел</h2>
-      <p className="mt-3 text-[#ead9ba]">Ловецът падна, но може да вземе един жив играч със себе си.</p>
-      <div className="mt-5 flex flex-wrap gap-3">
-        {livingPlayers
-          .filter((player) => player.userId !== currentUserId)
-          .map((player) => (
-            <button className="btn btn-primary action-btn ability-hunter" type="button" key={player.userId} onClick={() => sendHunterRevenge(player.userId)}>
-              Застреляй {player.displayName}
-            </button>
-          ))}
-      </div>
-    </section>
-  );
-}
-
-function TypingIndicator({ notices, compact = false }: { notices: TypingNotice[]; compact?: boolean }) {
-  const names = [...new Set(notices.map((notice) => notice.senderName))].slice(0, 3);
-  if (names.length === 0) {
-    return null;
-  }
-
-  const label =
-    names.length === 1
-      ? `${names[0]} пише...`
-      : names.length === 2
-        ? `${names[0]} и ${names[1]} пишат...`
-        : `${names[0]}, ${names[1]} и още ${notices.length - 2} пишат...`;
-
-  return (
-    <p className={`typing-indicator ${compact ? "typing-indicator-compact" : ""}`} aria-live="polite">
-      <span aria-hidden="true" />
-      {label}
-    </p>
-  );
-}
-
-function PrivateChatPanel({
-  channel,
-  messages,
-  value,
-  setValue,
-  sendPrivateChat,
-  typingNotices,
-}: {
-  channel: ChatChannel;
-  messages: PrivateChatMessage[];
-  value: string;
-  setValue: (value: string) => void;
-  sendPrivateChat: (channel: ChatChannel) => void;
-  typingNotices: TypingNotice[];
-}) {
-  return (
-    <section className="ritual-panel mt-8 rounded-[2rem] p-6">
-      <p className="section-kicker">{privateChannelBg(channel)}</p>
-      <h2 className="mt-2 text-3xl font-black">Таен канал</h2>
-      <div className="mt-4 grid gap-2 text-sm">
-        {messages.slice(-6).map((message) => (
-          <p key={`${message.createdAt}-${message.senderUserId}`} className="rounded-xl bg-[#f4e8d1]/10 px-3 py-2">
-            <strong>{message.senderName}:</strong> {message.message}
-          </p>
-        ))}
-        <TypingIndicator notices={typingNotices} compact />
-      </div>
-      <div className="mt-4 flex gap-2">
-        <input
-          className="input w-full"
-          value={value}
-          onChange={(event) => setValue(event.target.value)}
-          placeholder="Съобщение само за този канал..."
-        />
-        <button className="btn btn-primary" type="button" onClick={() => sendPrivateChat(channel)}>
-          Изпрати
-        </button>
-      </div>
-    </section>
-  );
-}
-
-function shortcutTargets(
-  phase: GamePhase,
-  privateRole: RoleCode | undefined,
-  players: PublicPlayer[],
-  livingPlayers: PublicPlayer[],
-  currentUserId: string,
-) {
-  if (phase === "voting" || phase === "hunter_revenge") {
-    return livingPlayers.filter((player) => player.userId !== currentUserId);
-  }
-  if (privateRole === "medium") {
-    return players.filter((player) => player.playing && !player.alive);
-  }
-  return livingPlayers;
-}
-
-function buildPrimaryNightAction(
-  role: RoleCode,
-  targetUserId: string,
-  secondTargetUserId: string,
-  phase: GamePhase,
-): NightActionCommand | null {
-  if (!targetUserId) {
-    return null;
-  }
-
-  if (canFactionKill(role)) {
-    return { kind: "faction_kill", targetUserId };
-  }
-  if (role === "commissioner" || role === "detective") {
-    return { kind: "check_alignment", targetUserId };
-  }
-  if (role === "informant" || role === "seer" || role === "oracle") {
-    return { kind: "check_role", targetUserId };
-  }
-  if (role === "roleblocker") {
-    return { kind: "roleblock", targetUserId };
-  }
-  if (role === "lawyer") {
-    return { kind: "lawyer_cover", targetUserId };
-  }
-  if (role === "medium") {
-    return { kind: "medium_contact", targetUserId };
-  }
-  if (role === "don") {
-    return { kind: "check_commissioner", targetUserId };
-  }
-  if (role === "investigator") {
-    return { kind: "investigator_check", targetUserId };
-  }
-  if (role === "witch") {
-    return { kind: "witch_heal", targetUserId };
-  }
-  if (role === "healer" || role === "doctor" || role === "bodyguard") {
-    return { kind: "healer_protect", targetUserId };
-  }
-  if (role === "priest") {
-    return { kind: "priest_bless", targetUserId };
-  }
-  if (role === "blacksmith" && secondTargetUserId) {
-    return { kind: "blacksmith_sword", targetUserId, receiverUserId: secondTargetUserId };
-  }
-  if (role === "stray_cat") {
-    return { kind: "stray_cat_choose", targetUserId };
-  }
-  if (role === "thief" && phase === "first_night") {
-    return { kind: "thief_steal", targetUserId };
-  }
-  if ((role === "cupid" || role === "lovers") && phase === "first_night" && secondTargetUserId) {
-    return { kind: "cupid_link", firstUserId: targetUserId, secondUserId: secondTargetUserId };
-  }
-
-  return null;
-}
-
-function NightActionPanel({
-  currentUserId,
-  players,
-  livingPlayers,
-  phase,
-  privateRole,
-  selectedTargetId,
-  secondTargetId,
-  setSelectedTargetId,
-  setSecondTargetId,
-  sendNightAction,
-}: {
-  currentUserId: string;
-  players: PublicPlayer[];
-  livingPlayers: PublicPlayer[];
-  phase: string;
-  privateRole: RoleCode;
-  selectedTargetId: string;
-  secondTargetId: string;
-  setSelectedTargetId: (value: string) => void;
-  setSecondTargetId: (value: string) => void;
-  sendNightAction: (action: NightActionCommand) => void;
-}) {
-  const selectableTargets =
-    privateRole === "medium"
-      ? players.filter((player) => player.playing && !player.alive)
-      : livingPlayers;
-  const defaultTarget = selectableTargets.find((player) => player.userId !== currentUserId)?.userId;
-  const selectedTargetStillAvailable = selectableTargets.some((player) => player.userId === selectedTargetId);
-  const targetId = selectedTargetStillAvailable ? selectedTargetId : defaultTarget || "";
-  const secondId = secondTargetId || livingPlayers.find((player) => player.userId !== targetId)?.userId || "";
-
-  return (
-    <section className="night-action-sheet ritual-panel mt-8 rounded-[2rem] p-6">
-      <p className="section-kicker">нощно действие</p>
-      <h2 className="mt-2 text-3xl font-black">{nightInstructionBg(privateRole)}</h2>
-      <p className="mt-3 text-[#ead9ba]">{nightActionHelpBg(privateRole)}</p>
-      <p className="mt-2 text-sm font-bold text-[#c18a38]">
-        Можеш да промениш избора си до края на таймера. Сървърът пази последното изпратено действие.
-      </p>
-      {privateRole === "medium" && selectableTargets.length === 0 ? (
-        <p className="mt-3 rounded-2xl border border-[#c18a38]/35 bg-[#c18a38]/10 p-3 text-sm font-bold text-[#ead9ba]">
-          Медиумът няма елиминиран играч, с когото да се свърже тази нощ.
-        </p>
-      ) : null}
-
-      <div className="mt-5 grid gap-3 sm:grid-cols-2">
-        <select className="input" value={selectedTargetId} onChange={(event) => setSelectedTargetId(event.target.value)}>
-          <option value="">Избери цел</option>
-          {selectableTargets.map((player) => (
-            <option key={player.userId} value={player.userId}>
-              {player.displayName}
-            </option>
-          ))}
-        </select>
-
-        {privateRole === "cupid" || privateRole === "lovers" || privateRole === "blacksmith" ? (
-          <select className="input" value={secondTargetId} onChange={(event) => setSecondTargetId(event.target.value)}>
-            <option value="">{privateRole === "blacksmith" ? "Кой получава меча" : "Втори влюбен"}</option>
-            {livingPlayers.map((player) => (
-              <option key={player.userId} value={player.userId}>
-                {player.displayName}
-              </option>
-            ))}
-          </select>
-        ) : null}
-      </div>
-
-      <div className="mt-5 flex flex-wrap gap-3">
-        {canFactionKill(privateRole) ? (
-          <button
-            className={`btn btn-primary action-btn ${privateRole === "vampire" ? "ability-vampire" : "ability-kill"}`}
-            type="button"
-            onClick={() => targetId && sendNightAction({ kind: "faction_kill", targetUserId: targetId })}
-          >
-            Потвърди жертва
-          </button>
-        ) : null}
-        {privateRole === "commissioner" ? (
-          <button className="btn btn-primary action-btn ability-investigate" type="button" onClick={() => targetId && sendNightAction({ kind: "check_alignment", targetUserId: targetId })}>
-            Провери дали е от Мафията
-          </button>
-        ) : null}
-        {privateRole === "detective" ? (
-          <button className="btn btn-primary action-btn ability-investigate" type="button" onClick={() => targetId && sendNightAction({ kind: "check_alignment", targetUserId: targetId })}>
-            Разследвай целта
-          </button>
-        ) : null}
-        {privateRole === "informant" ? (
-          <button className="btn btn-primary action-btn ability-investigate" type="button" onClick={() => targetId && sendNightAction({ kind: "check_role", targetUserId: targetId })}>
-            Отвори досие
-          </button>
-        ) : null}
-        {privateRole === "roleblocker" ? (
-          <button className="btn btn-primary action-btn ability-kill-alt" type="button" onClick={() => targetId && sendNightAction({ kind: "roleblock", targetUserId: targetId })}>
-            Блокирай действие
-          </button>
-        ) : null}
-        {privateRole === "lawyer" ? (
-          <button className="btn btn-secondary action-btn ability-bless" type="button" onClick={() => targetId && sendNightAction({ kind: "lawyer_cover", targetUserId: targetId })}>
-            Подготви алиби
-          </button>
-        ) : null}
-        {privateRole === "medium" ? (
-          <button className="btn btn-primary action-btn ability-investigate" type="button" disabled={!targetId} onClick={() => targetId && sendNightAction({ kind: "medium_contact", targetUserId: targetId })}>
-            Свържи се с елиминиран
-          </button>
-        ) : null}
-        {privateRole === "don" ? (
-          <button className="btn btn-secondary action-btn ability-investigate" type="button" onClick={() => targetId && sendNightAction({ kind: "check_commissioner", targetUserId: targetId })}>
-            Търси Комисаря
-          </button>
-        ) : null}
-        {privateRole === "seer" || privateRole === "oracle" ? (
-          <button className="btn btn-primary action-btn ability-investigate" type="button" onClick={() => targetId && sendNightAction({ kind: "check_role", targetUserId: targetId })}>
-            Провери заплахата
-          </button>
-        ) : null}
-        {privateRole === "investigator" ? (
-          <button className="btn btn-primary action-btn ability-investigate" type="button" onClick={() => targetId && sendNightAction({ kind: "investigator_check", targetUserId: targetId })}>
-            Провери тройка
-          </button>
-        ) : null}
-        {privateRole === "witch" ? (
-          <>
-            <button className="btn btn-secondary action-btn ability-heal" type="button" onClick={() => targetId && sendNightAction({ kind: "witch_heal", targetUserId: targetId })}>
-              Лекувай
-            </button>
-            <button className="btn btn-primary action-btn ability-kill" type="button" onClick={() => targetId && sendNightAction({ kind: "witch_poison", targetUserId: targetId })}>
-              Отрови
-            </button>
-          </>
-        ) : null}
-        {privateRole === "healer" || privateRole === "doctor" || privateRole === "bodyguard" ? (
-          <button className="btn btn-primary action-btn ability-heal" type="button" onClick={() => targetId && sendNightAction({ kind: "healer_protect", targetUserId: targetId })}>
-            Пази тази нощ
-          </button>
-        ) : null}
-        {privateRole === "priest" ? (
-          <button className="btn btn-primary action-btn ability-bless" type="button" onClick={() => targetId && sendNightAction({ kind: "priest_bless", targetUserId: targetId })}>
-            Дай благословия
-          </button>
-        ) : null}
-        {privateRole === "blacksmith" ? (
-          <button
-            className="btn btn-primary action-btn ability-kill"
-            type="button"
-            onClick={() => targetId && secondId && sendNightAction({ kind: "blacksmith_sword", receiverUserId: secondId, targetUserId: targetId })}
-          >
-            Изкови меч
-          </button>
-        ) : null}
-        {privateRole === "stray_cat" ? (
-          <button className="btn btn-primary action-btn ability-investigate" type="button" onClick={() => targetId && sendNightAction({ kind: "stray_cat_choose", targetUserId: targetId })}>
-            Избери дом
-          </button>
-        ) : null}
-        {privateRole === "thief" && phase === "first_night" ? (
-          <button className="btn btn-primary action-btn ability-steal" type="button" onClick={() => targetId && sendNightAction({ kind: "thief_steal", targetUserId: targetId })}>
-            Открадни карта
-          </button>
-        ) : null}
-        {(privateRole === "cupid" || privateRole === "lovers") && phase === "first_night" ? (
-          <button
-            className="btn btn-primary action-btn ability-lovers"
-            type="button"
-            onClick={() => targetId && secondId && sendNightAction({ kind: "cupid_link", firstUserId: targetId, secondUserId: secondId })}
-          >
-            Свържи Влюбените
-          </button>
-        ) : null}
-        <button className="btn btn-secondary" type="button" onClick={() => sendNightAction({ kind: "skip" })}>
-          Пропусни
-        </button>
-      </div>
-    </section>
-  );
-}
-
-function VotingPanel({
-  currentUserId,
-  livingPlayers,
-  voteTally,
-  allowSkipVote,
-  sendVote,
-}: {
-  currentUserId: string;
-  livingPlayers: PublicPlayer[];
-  voteTally: VoteTallyItem[];
-  allowSkipVote: boolean;
-  sendVote: (targetUserId: string) => void;
-}) {
-  const maxVotes = Math.max(1, ...voteTally.map((item) => item.count));
-
-  return (
-    <section className="ritual-panel mt-8 rounded-[2rem] p-6">
-      <p className="section-kicker">гласуване</p>
-      <h2 className="mt-2 text-3xl font-black">Кого ще изгоните от площада?</h2>
-      <VoteTallyBar items={voteTally} maxVotes={maxVotes} />
-      <div className="mt-5 flex flex-wrap gap-3">
-        {livingPlayers
-          .filter((player) => player.userId !== currentUserId)
-          .map((player) => (
-            <button className="btn btn-primary" type="button" key={player.userId} onClick={() => sendVote(player.userId)}>
-              {player.displayName}
-            </button>
-          ))}
-        {allowSkipVote ? (
-          <button className="btn btn-secondary" type="button" onClick={() => sendVote("skip")}>
-            Пропусни глас
-          </button>
-        ) : null}
-      </div>
-    </section>
-  );
-}
-
-function VoteTallyBar({ items, maxVotes }: { items: VoteTallyItem[]; maxVotes: number }) {
-  if (items.length === 0) {
-    return (
-      <div className="vote-tally-card mt-5">
-        <p>Още няма подадени гласове. Първият глас често задава посоката на целия ден.</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="vote-tally-card mt-5" aria-label="Текущо броене на гласовете">
-      {items.map((item) => (
-        <div key={item.targetUserId} className="vote-tally-row">
-          <span>{item.targetName}</span>
-          <div>
-            <i style={{ transform: `scaleX(${Math.max(0.1, Math.min(1, item.count / maxVotes))})` }} />
-          </div>
-          <strong>{item.count}</strong>
-          {item.hasMayorVote ? <small>кметски глас при равенство</small> : null}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function Timer({ endsAt }: { endsAt: number }) {
-  const [now, setNow] = useState(Date.now());
-
-  useEffect(() => {
-    setNow(Date.now());
-
-    if (!endsAt) {
-      return;
-    }
-
-    const timer = window.setInterval(() => {
-      const next = Date.now();
-      setNow(next);
-      if (next >= endsAt) {
-        window.clearInterval(timer);
-      }
-    }, 1000);
-    return () => window.clearInterval(timer);
-  }, [endsAt]);
-
-  const remaining = Math.max(0, Math.ceil((endsAt - now) / 1000));
-  const minutes = Math.floor(remaining / 60)
-    .toString()
-    .padStart(2, "0");
-  const seconds = (remaining % 60).toString().padStart(2, "0");
-
-  return (
-    <div className="timer-dial">
-      <span className="block text-xs uppercase tracking-[0.25em] text-[#c18a38]">таймер</span>
-      <strong className="text-3xl">{endsAt ? `${minutes}:${seconds}` : "--:--"}</strong>
-    </div>
-  );
-}
-
-function phaseSigil(phase: string) {
-  const sigils: Record<string, string> = {
-    lobby: "◇",
-    role_reveal: "✦",
-    first_night: "☾",
-    night: "☾",
-    day_announcement: "◉",
-    day_discussion: "☼",
-    nomination: "△",
-    defense: "▱",
-    voting: "◆",
-    resolution: "✣",
-    hunter_revenge: "✕",
-    mayor_successor: "♜",
-    paused: "Ⅱ",
-    game_over: "◈",
-  };
-
-  return sigils[phase] ?? "◇";
-}
-
-function phaseNarratorLine(phase: GamePhase, mode: GameMode, narratorVoice: NarratorVoice = "classic") {
-  const mafia = getGameFamily(mode) === "mafia";
-  if (narratorVoice !== "classic") {
-    const voiceLines = narratorVoiceLineBg(narratorVoice, mafia);
-    if (voiceLines[phase]) {
-      return voiceLines[phase];
-    }
-  }
-  const lines: Partial<Record<GamePhase, string>> = mafia
-    ? {
-        role_reveal: "Досиетата се раздават. Градът още не знае кой държи ножа.",
-        first_night: "Първият договор се подписва без свидетели.",
-        night: "Неонът трепти, а алибитата чакат сутринта.",
-        day_announcement: "Градът се буди и брои липсващите.",
-        day_discussion: "Сега всяка дума тежи повече от факт.",
-        voting: "Обвинението вече има име.",
-        resolution: "Присъдата влиза в протокола.",
-        game_over: "Последната версия остана единствената.",
-      }
-    : {
-        role_reveal: "Картите се обръщат само пред очите на собственика си.",
-        first_night: "Мъглата пада ниско. Първите сенки се будят.",
-        night: "Селото спи, но гората не.",
-        day_announcement: "Утрото казва какво е оцеляло.",
-        day_discussion: "Площадът търси глас, който звучи като истина.",
-        voting: "Сега подозрението става решение.",
-        resolution: "Картата пада на масата.",
-        hunter_revenge: "Ловецът не си тръгва сам.",
-        game_over: "Последната песен е за победителите.",
-      };
-
-  return lines[phase] ?? "Разказвачът обръща следващата страница.";
-}
-
-function narratorVoiceLineBg(voice: NarratorVoice, mafia: boolean): Partial<Record<GamePhase, string>> {
-  if (voice === "old_villager") {
-    return {
-      first_night: "Слушай старите греди. Те винаги знаят кой не спи.",
-      night: "Никой не става по това време без причина.",
-      day_discussion: "Не бързайте с обвиненията. Лъжата обича шум.",
-      voting: "Сега ръката тежи повече от думите.",
-    };
-  }
-  if (voice === "inspector") {
-    return mafia
-      ? {
-          first_night: "Първият протокол започва без свидетели.",
-          night: "Всички алибита ще бъдат проверени сутринта.",
-          day_discussion: "Запишете фактите. После ще останат само версиите.",
-          voting: "Обвинението влиза в делото.",
-        }
-      : {
-          first_night: "Първата нощ се записва като особено рискова.",
-          night: "Движението в селото се наблюдава.",
-          day_discussion: "Съберете показанията преди присъдата.",
-          voting: "Решението трябва да издържи на съмнение.",
-        };
-  }
-  if (voice === "witch") {
-    return {
-      first_night: "Имената кипват като билки в черна вода.",
-      night: "Тъмното не крие всичко. Само това, което още не си готов да видиш.",
-      day_discussion: "Думите оставят следи по-силни от кръв.",
-      voting: "Изберете внимателно. Всяка присъда има вкус.",
-    };
-  }
-  return {};
-}
-
-function roleSigil(role: RoleCode) {
-  const sigils: Partial<Record<RoleCode, string>> = {
-    civilian: "Г",
-    commissioner: "К",
-    mafioso: "М",
-    don: "Д",
-    ordinary_villager: "С",
-    werewolf: "В",
-    seer: "Я",
-    witch: "В",
-    healer: "Л",
-    priest: "С",
-    hunter: "Л",
-    cupid: "К",
-    vampire: "В",
-    jester: "Ш",
-    little_girl: "М",
-    thief: "К",
-  };
-
-  return sigils[role] ?? ROLE_DEFINITIONS[role].nameBg.slice(0, 1);
-}
-
-function playerStatusBadge(player: PublicPlayer, phase: string): string {
-  if (player.host) {
-    return "водещ";
-  }
-  if (player.narrator) {
-    return "разказвач";
-  }
-  if (phase === "lobby") {
-    return player.ready ? "готов" : "чака";
-  }
-  if (!player.playing) {
-    return "извън играта";
-  }
-  if (!player.alive) {
-    return "елиминиран";
-  }
-  if (phase === "voting") {
-    return player.hasVoted ? "гласувал" : "обмисля";
-  }
-  if (phase === "first_night" || phase === "night") {
-    return player.actedThisPhase ? "действал" : "буден";
-  }
-  if (phase === "day_discussion") {
-    return "говори";
-  }
-  if (phase === "day_announcement") {
-    return "слуша";
-  }
-  if (phase === "resolution") {
-    return "развръзка";
-  }
-  if (phase === "hunter_revenge") {
-    return "ловецът стреля";
-  }
-  if (phase === "mayor_successor") {
-    return "избор на кмет";
-  }
-  if (phase === "paused") {
-    return "пауза";
-  }
-  if (phase === "game_over") {
-    return "край";
-  }
-  return "играе";
-}
-
-function playerInitials(name: string) {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("");
-}
-
-function isCueMode(value: string | null): value is CueMode {
-  return value === "silent" || value === "visual" || value === "audio_vibration";
-}
-
-function triggerDeviceCue(phase: string, forceSilent = false) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  if (!forceSilent && "vibrate" in navigator) {
-    const pattern = phase === "voting" ? [90, 50, 90] : phase === "night" || phase === "first_night" ? [130] : [70];
-    navigator.vibrate(pattern);
-  }
-}
-
-function eventLineClass(message: string) {
-  const normalized = message.toLowerCase();
-  if (normalized.includes("ловец") || normalized.includes("изстрел") || normalized.includes("застрел")) {
-    return "event-hunter-shot";
-  }
-  if (normalized.includes("умря") || normalized.includes("смърт") || normalized.includes("елимини")) {
-    return "event-death";
-  }
-  if (normalized.includes("разкри") || normalized.includes("роля") || normalized.includes("провер")) {
-    return "event-reveal";
-  }
-  return "event-generic";
-}
-
-function playerTokenClass(player: PublicPlayer) {
-  return [
-    "player-token rounded-2xl px-4 py-3",
-    player.ready ? "is-ready" : "",
-    !player.connected ? "is-offline" : "",
-    player.playing && !player.alive ? "is-dead" : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
 }
 
 interface ColyseusGameStatePlayer extends Omit<PublicPlayer, "revealedRole"> {
@@ -2170,7 +1198,11 @@ interface ColyseusGameState {
   publicChat: Iterable<PublicChatMessage>;
 }
 
-function toSnapshot(state: ColyseusGameState): GameSnapshot {
+function snapshotShellForState(
+  state: ColyseusGameState,
+  roleCounts: PublicRoleCount[],
+  previousSnapshot: GameSnapshot | null,
+): GameSnapshot {
   return {
     code: state.code,
     mode: state.mode,
@@ -2190,24 +1222,189 @@ function toSnapshot(state: ColyseusGameState): GameSnapshot {
     phaseEndsAt: state.phaseEndsAt,
     winnerTeam: state.winnerTeam,
     winnerReasonBg: state.winnerReasonBg,
-    players: Array.from(state.players.values()).map((player) => ({
-      ...player,
-      revealedRole: player.revealedRole ?? "",
-    })),
-    roleCounts: Array.from(state.roleCounts),
-    voteTally: Array.from(state.voteTally),
-    publicEvents: Array.from(state.publicEvents),
-    publicChat: Array.from(state.publicChat),
+    players: previousSnapshot?.players ?? [],
+    roleCounts,
+    voteTally: previousSnapshot?.voteTally ?? [],
+    publicEvents: previousSnapshot?.publicEvents ?? [],
+    publicChat: previousSnapshot?.publicChat ?? [],
   };
 }
 
-function isNightPhase(phase: string) {
-  return phase === "first_night" || phase === "night";
+function playersForState(state: ColyseusGameState): PublicPlayer[] {
+  return Array.from(state.players.values()).map((player) => ({
+    ...player,
+    revealedRole: player.revealedRole ?? "",
+  }));
 }
 
-function canFactionKill(role: RoleCode) {
-  const team = ROLE_DEFINITIONS[role].team;
-  return team === "mafia" || team === "werewolves" || team === "vampires" || role === "vigilante" || role === "maniac" || role === "vampire_hunter";
+function roleCountsForState(state: ColyseusGameState): PublicRoleCount[] {
+  return Array.from(state.roleCounts);
+}
+
+function voteTallyForState(state: ColyseusGameState): VoteTallyItem[] {
+  return Array.from(state.voteTally);
+}
+
+function publicEventsForState(state: ColyseusGameState): PublicEvent[] {
+  return Array.from(state.publicEvents);
+}
+
+function publicChatForState(state: ColyseusGameState): PublicChatMessage[] {
+  return Array.from(state.publicChat);
+}
+
+function phaseSliceForState(state: ColyseusGameState): PhaseSlice {
+  return {
+    phase: state.phase,
+    round: state.round,
+    phaseEndsAt: state.phaseEndsAt,
+  };
+}
+
+function phaseSliceFor(snapshot: GameSnapshot): PhaseSlice {
+  return {
+    phase: snapshot.phase,
+    round: snapshot.round,
+    phaseEndsAt: snapshot.phaseEndsAt,
+  };
+}
+
+export function arePhaseSlicesEqual(a: PhaseSlice, b: PhaseSlice) {
+  return a.phase === b.phase && a.round === b.round && a.phaseEndsAt === b.phaseEndsAt;
+}
+
+function areSnapshotShellEqual(a: GameSnapshot, b: GameSnapshot) {
+  return a.code === b.code
+    && a.mode === b.mode
+    && a.playerCount === b.playerCount
+    && a.narratorMode === b.narratorMode
+    && a.communicationMode === b.communicationMode
+    && a.tempoProfile === b.tempoProfile
+    && a.dayDiscussionSeconds === b.dayDiscussionSeconds
+    && a.voteSeconds === b.voteSeconds
+    && a.revealRolesOnDeath === b.revealRolesOnDeath
+    && a.loversEnabled === b.loversEnabled
+    && a.allowSkipVote === b.allowSkipVote
+    && a.majorityMode === b.majorityMode
+    && a.narratorVoice === b.narratorVoice
+    && a.winnerTeam === b.winnerTeam
+    && a.winnerReasonBg === b.winnerReasonBg
+    && areRoleCountsEqual(a.roleCounts, b.roleCounts);
+}
+
+export function arePlayerListsEqual(a: PublicPlayer[], b: PublicPlayer[]) {
+  if (a.length !== b.length) {
+    return false;
+  }
+  for (let index = 0; index < a.length; index += 1) {
+    const left = a[index];
+    const right = b[index];
+    if (!left || !right || !arePlayersEqual(left, right)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function areRoleCountsEqual(a: PublicRoleCount[], b: PublicRoleCount[]) {
+  if (a.length !== b.length) {
+    return false;
+  }
+  for (let index = 0; index < a.length; index += 1) {
+    const left = a[index];
+    const right = b[index];
+    if (!left || !right || left.role !== right.role || left.count !== right.count) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function areVoteTallyEqual(a: VoteTallyItem[], b: VoteTallyItem[]) {
+  if (a.length !== b.length) {
+    return false;
+  }
+  for (let index = 0; index < a.length; index += 1) {
+    const left = a[index];
+    const right = b[index];
+    if (
+      !left
+      || !right
+      || left.targetUserId !== right.targetUserId
+      || left.targetName !== right.targetName
+      || left.count !== right.count
+      || left.hasMayorVote !== right.hasMayorVote
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function arePublicEventsEqual(a: PublicEvent[], b: PublicEvent[]) {
+  if (a.length !== b.length) {
+    return false;
+  }
+  for (let index = 0; index < a.length; index += 1) {
+    const left = a[index];
+    const right = b[index];
+    if (!left || !right || left.id !== right.id || left.messageBg !== right.messageBg) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function arePublicChatEqual(a: PublicChatMessage[], b: PublicChatMessage[]) {
+  if (a.length !== b.length) {
+    return false;
+  }
+  for (let index = 0; index < a.length; index += 1) {
+    const left = a[index];
+    const right = b[index];
+    if (
+      !left
+      || !right
+      || left.id !== right.id
+      || left.channel !== right.channel
+      || left.senderName !== right.senderName
+      || left.message !== right.message
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function reconnectStorageKey(code: string) {
+  return `${ROOM_RECONNECT_STORAGE_PREFIX}:${code}`;
+}
+
+function persistReconnectionToken(code: string, token: string | undefined) {
+  if (!token) {
+    return;
+  }
+  try {
+    window.sessionStorage.setItem(reconnectStorageKey(code), token);
+  } catch {
+    // sessionStorage can be unavailable in hardened browser modes.
+  }
+}
+
+function readReconnectionToken(code: string) {
+  try {
+    return window.sessionStorage.getItem(reconnectStorageKey(code));
+  } catch {
+    return null;
+  }
+}
+
+function clearReconnectionToken(code: string) {
+  try {
+    window.sessionStorage.removeItem(reconnectStorageKey(code));
+  } catch {
+    // sessionStorage can be unavailable in hardened browser modes.
+  }
 }
 
 function getAvailablePrivateChatChannel(
@@ -2236,493 +1433,6 @@ function getAvailablePrivateChatChannel(
   if (team === "vampires") {
     return "vampires";
   }
+
   return null;
-}
-
-const ROLE_GUIDE_BG: Partial<Record<RoleCode, { summary: string; team: string; timing: string; win: string }>> = {
-  civilian: {
-    summary: "Нямаш нощно действие. Силата ти е в дневното обсъждане, логиката и гласа.",
-    team: "Мирни граждани",
-    timing: "Ден и гласуване",
-    win: "Елиминирайте Мафията",
-  },
-  commissioner: {
-    summary: "Всяка нощ проверяваш играч и разбираш дали е от Мафията. Резултатът е само за теб.",
-    team: "Мирни граждани",
-    timing: "Всяка нощ",
-    win: "Открий Мафията без да се издадеш твърде рано",
-  },
-  mafioso: {
-    summary: "Будиш се с Мафията и участваш в избора на нощна жертва.",
-    team: "Мафия",
-    timing: "Всяка нощ",
-    win: "Мафията да достигне паритет с мирните",
-  },
-  don: {
-    summary: "Водиш Мафията. Можеш да участваш в убийството или да търсиш Комисаря.",
-    team: "Мафия",
-    timing: "Всяка нощ",
-    win: "Открий Комисаря и пази Мафията скрита",
-  },
-  ordinary_villager: {
-    summary: "Нямаш нощно действие. Наблюдавай реакциите, пази логиката и гласувай внимателно.",
-    team: "Село",
-    timing: "Ден и гласуване",
-    win: "Всички Върколаци и други зли роли да бъдат елиминирани",
-  },
-  werewolf: {
-    summary: "Будиш се с Върколаците и избирате една нощна жертва.",
-    team: "Върколаци",
-    timing: "Всяка нощ",
-    win: "Върколаците да достигнат паритет със селото",
-  },
-  seer: {
-    summary: "Всяка нощ виждаш точната роля на избран играч. Информацията е силна, но опасна за разкриване.",
-    team: "Село",
-    timing: "Всяка нощ",
-    win: "Насочи селото към злите роли",
-  },
-  witch: {
-    summary: "Имаш една лечебна отвара и една отрова. Всяка може да се използва само веднъж.",
-    team: "Село",
-    timing: "Нощ, докато имаш отвара",
-    win: "Спаси ключов играч или елиминирай подозрителен",
-  },
-  healer: {
-    summary: "Всяка нощ пазиш един играч от убийство. Можеш да пазиш себе си и същия играч в поредни нощи.",
-    team: "Село",
-    timing: "Всяка нощ",
-    win: "Прекъсвай нощните убийства без да се издаваш",
-  },
-  priest: {
-    summary: "Веднъж благославяш играч. Благословията остава до края и спира първото убийство срещу него.",
-    team: "Село",
-    timing: "Една нощ в играта",
-    win: "Дай трайна защита на най-ценния съюзник",
-  },
-  hunter: {
-    summary: "Ако умреш, получаваш последен изстрел и можеш да вземеш друг жив играч със себе си.",
-    team: "Село",
-    timing: "При смърт",
-    win: "Накарай злите роли да се страхуват да те елиминират",
-  },
-  cupid: {
-    summary: "Първата нощ избираш двама Влюбени. Ако единият умре, другият умира от разбито сърце.",
-    team: "Село",
-    timing: "Само първата нощ",
-    win: "Селото печели, освен ако Влюбените не останат последни",
-  },
-  vampire: {
-    summary: "Вампирите са отделна зла фракция. Будите се заедно и избирате нощна жертва.",
-    team: "Вампири",
-    timing: "Всяка нощ",
-    win: "Вампирите да достигнат паритет с всички останали",
-  },
-  jester: {
-    summary: "Искаш да те изгонят чрез дневното гласуване. Ако селото те линчува, печелиш лична победа.",
-    team: "Самостоятелен",
-    timing: "Ден и гласуване",
-    win: "Бъди изгонен през гласуване",
-  },
-  little_girl: {
-    summary: "Разширена роля за ръчно водени игри. Наднича, докато Върколаците са будни, но рискува да бъде разкрита.",
-    team: "Село",
-    timing: "Нощ, ръчно/разширено",
-    win: "Събирай информация без да бъдеш хваната",
-  },
-  thief: {
-    summary: "Първата нощ крадеш карта веднъж. Ти ставаш откраднатата роля, а целта става Обикновен селянин.",
-    team: "Променлив",
-    timing: "Само първата нощ",
-    win: "След кражбата печелиш с новия си отбор",
-  },
-};
-
-const PHASE_RAIL = [
-  { label: "Лоби", iconPhase: "lobby", phases: ["lobby"] },
-  { label: "Роля", iconPhase: "role_reveal", phases: ["role_reveal"] },
-  { label: "Нощ", iconPhase: "night", phases: ["first_night", "night"] },
-  {
-    label: "Ден",
-    iconPhase: "day_discussion",
-    phases: ["day_announcement", "day_discussion", "nomination", "defense"],
-  },
-  { label: "Глас", iconPhase: "voting", phases: ["voting"] },
-  {
-    label: "Развръзка",
-    iconPhase: "resolution",
-    phases: ["resolution", "hunter_revenge", "mayor_successor", "game_over"],
-  },
-];
-
-interface PhaseGuideCopy {
-  title: string;
-  body: string;
-  wakes: string;
-}
-
-const PHASE_GUIDE_BG: Partial<Record<GamePhase, PhaseGuideCopy>> = {
-  lobby: {
-    title: "Настройка на стаята",
-    body: "Водещият избира режим, роли, таймери, комуникация и Разказвач. Всички трябва да са готови преди старт.",
-    wakes: "Никой още не се буди.",
-  },
-  role_reveal: {
-    title: "Виж тайно ролята си",
-    body: "Всеки играч получава само своята карта като лично събитие. Не показвай телефона си, ако играете на живо.",
-    wakes: "Всеки гледа само собствената си роля.",
-  },
-  first_night: {
-    title: "Първа нощ",
-    body: "Първата нощ разрешава еднократните стартови роли преди обикновените нощни действия.",
-    wakes: "Крадец, Купидон, фракции, проверки и защитни роли.",
-  },
-  night: {
-    title: "Нощ",
-    body: "Играчите с нощни действия избират цел. Сървърът пази действията тайни и ги разрешава в фиксиран ред.",
-    wakes: "Мафия/Върколаци/Вампири, Комисар/Ясновидка, Вещица, Лечител, Свещеник.",
-  },
-  day_announcement: {
-    title: "Събуждане и обявяване",
-    body: "Системата обявява публичните резултати от нощта, без да разкрива скрита информация.",
-    wakes: "Всички се събуждат.",
-  },
-  day_discussion: {
-    title: "Дневно обсъждане",
-    body: "Всички живи играчи спорят, блъфират и събират подозрения. Таймерът е само видимият ритъм; сървърът е източникът на истината.",
-    wakes: "Всички живи играчи говорят.",
-  },
-  nomination: {
-    title: "Номинации",
-    body: "При спортна или ръчно водена игра тук се избират кандидати за гласуване.",
-    wakes: "Всички живи играчи участват.",
-  },
-  defense: {
-    title: "Защита",
-    body: "Номинираните получават време за последна защита преди гласуване.",
-    wakes: "Говорят номинираните.",
-  },
-  voting: {
-    title: "Гласуване",
-    body: "Всеки жив играч избира кого да елиминира. Кметът решава само ако водещите кандидати са с равен брой гласове.",
-    wakes: "Всички живи играчи гласуват.",
-  },
-  resolution: {
-    title: "Развръзка",
-    body: "Сървърът прилага елиминацията, евентуално разкрива роля и проверява условията за победа.",
-    wakes: "Никой не действа, освен ако не се задейства специална роля.",
-  },
-  hunter_revenge: {
-    title: "Последен изстрел",
-    body: "Ако Ловецът умре, той избира един жив играч за отмъщение.",
-    wakes: "Буден е само Ловецът.",
-  },
-  mayor_successor: {
-    title: "Наследник на Кмета",
-    body: "Ако Кметът умре, Разказвачът или хостът избира наследник според настройките.",
-    wakes: "Разказвачът/хостът управлява избора.",
-  },
-  paused: {
-    title: "Пауза",
-    body: "Фазата е спряна временно от Разказвача или хоста.",
-    wakes: "Никой няма задължително действие.",
-  },
-  game_over: {
-    title: "Край на играта",
-    body: "Победителят е изчислен и историята може да се прегледа след края.",
-    wakes: "Всички роли вече са приключили.",
-  },
-};
-
-const MAFIA_PHASE_GUIDE_BG: Partial<Record<GamePhase, Partial<PhaseGuideCopy>>> = {
-  role_reveal: {
-    title: "Виж тайно досието си",
-    body: "Всеки играч получава само своята карта като лично събитие. Не показвай телефона си, ако играете на живо.",
-    wakes: "Всеки гледа само собствената си роля.",
-  },
-  first_night: {
-    body: "Първият договор подрежда началните действия преди редовните нощни решения.",
-    wakes: "Мафията, Донът и Комисарят според избраните роли.",
-  },
-  night: {
-    body: "Мафията избира жертва, Донът може да търси Комисаря, а Комисарят проверява подозрителен играч.",
-    wakes: "Мафията, Донът и Комисарят.",
-  },
-  day_announcement: {
-    body: "Системата обявява публичните резултати от нощта, без да разкрива скрита информация.",
-    wakes: "Градът се събужда.",
-  },
-  day_discussion: {
-    body: "Играчите защитават версии, притискат противоречия и събират подозрения. Таймерът е видимият ритъм; сървърът е източникът на истината.",
-    wakes: "Всички живи играчи говорят.",
-  },
-  nomination: {
-    title: "Обвинения",
-    body: "При спортна или ръчно водена Мафия тук се избират кандидати за гласуване.",
-    wakes: "Всички живи играчи участват.",
-  },
-  defense: {
-    title: "Последна защита",
-    body: "Номинираните получават време да защитят версията си преди присъдата.",
-    wakes: "Говорят номинираните.",
-  },
-  voting: {
-    body: "Всеки жив играч избира кого градът да елиминира. Сървърът валидира гласа и брои резултата.",
-    wakes: "Всички живи играчи гласуват.",
-  },
-  resolution: {
-    body: "Сървърът прилага присъдата, евентуално разкрива роля и проверява условията за победа.",
-    wakes: "Никой не действа, освен ако не се задейства специална роля.",
-  },
-};
-
-function phaseGuideBg(phase: GamePhase, mode: GameMode): PhaseGuideCopy {
-  const base = PHASE_GUIDE_BG[phase] ?? {
-    title: phaseLabelBg(phase, mode),
-    body: "Следвай указанията на екрана. Сървърът пази реда на фазите и валидира действията.",
-    wakes: "Няма специално събуждане в тази фаза.",
-  };
-
-  if (getGameFamily(mode) !== "mafia") {
-    return base;
-  }
-
-  const override = MAFIA_PHASE_GUIDE_BG[phase] ?? {};
-  return {
-    ...base,
-    title: override.title ?? phaseLabelBg(phase, mode),
-    ...override,
-  };
-}
-
-function roleWakeHint(role: RoleCode, phase: string, ownPlayer: PublicPlayer | undefined) {
-  if (ownPlayer && ownPlayer.playing && !ownPlayer.alive) {
-    return "Ти си елиминиран. Следи играта, но не влияеш на живите играчи.";
-  }
-  if (role === "thief" && phase === "first_night") {
-    return "Сега е твоят единствен шанс да откраднеш карта.";
-  }
-  if (role === "cupid" && phase === "first_night") {
-    return "Сега избираш двамата Влюбени.";
-  }
-  if (isNightPhase(phase)) {
-    if (
-      canFactionKill(role) ||
-      [
-        "commissioner",
-        "detective",
-        "don",
-        "seer",
-        "oracle",
-        "witch",
-        "healer",
-        "doctor",
-        "bodyguard",
-        "priest",
-        "blacksmith",
-        "investigator",
-        "stray_cat",
-        "informant",
-        "roleblocker",
-        "lawyer",
-        "medium",
-      ].includes(role)
-    ) {
-      return "Тази фаза може да имаш активно нощно действие.";
-    }
-    return "В тази нощ нямаш задължително действие.";
-  }
-  if (phase === "hunter_revenge" && role === "hunter") {
-    return "Ако си мъртъв Ловец, избери последния си изстрел.";
-  }
-  if (phase === "voting") {
-    return "Гласувай според информацията и блъфовете от деня.";
-  }
-  return "Следвай публичната фаза и пази тайните си.";
-}
-
-function nightActionHelpBg(role: RoleCode) {
-  const labels: Partial<Record<RoleCode, string>> = {
-    mafioso: "Координирайте се в тайния канал. Ако има равенство, сървърът няма да измисля произволна жертва.",
-    don: "Можеш да помогнеш за убийството или да провериш дали някой е Комисарят.",
-    werewolf: "Изберете жертва като фракция. Лечител, Вещица или благословия могат да спрат смъртта.",
-    vampire: "Вампирите действат като отделна зла фракция и имат собствена жертва.",
-    commissioner: "Проверката казва дали целта е от Мафията, не показва точната роля.",
-    detective: "Разследването дава личен резултат според настройките на Мафия.",
-    informant: "Доносникът вижда точна карта, освен ако някой не е прикрит.",
-    roleblocker: "Избраният играч няма да може да изпълни нощното си действие.",
-    lawyer: "Адвокатът прави целта да изглежда чиста пред разследващите.",
-    medium: "Медиумът може да пита вече елиминиран играч каква е била ролята му.",
-    seer: "Ясновидката вижда точната роля, но резултатът не е публичен.",
-    oracle: "Оракулът проверява дали целта е Върколак или Вампир.",
-    witch: "Лечението и отровата са еднократни. Ако ги изразходваш, после вече не са налични.",
-    healer: "Лечителят не може да пази себе си и не може да пази един и същ играч две нощи поред.",
-    doctor: "Докторът пази един играч от нощното убийство на Мафията.",
-    bodyguard: "Бодигардът пази цел с риск за себе си според настройките.",
-    vigilante: "Вигилантето може да атакува, но грешният избор помага на Мафията.",
-    maniac: "Маниакът играе сам и може да елиминира през нощта.",
-    vampire_hunter: "Убиецът на вампири може да ловува, но губи умението си при грешна жертва.",
-    priest: "Благословията е еднократна като действие, но защитата остава до края на играта.",
-    blacksmith: "Ковачът избира кой получава меча и срещу кого се използва. Мечът е еднократен.",
-    investigator: "Следователката проверява избран играч и двамата му живи съседи като една тройка.",
-    insomniac: "Неспящата получава личен резултат в края на нощта, ако около нея е имало движение.",
-    stray_cat: "Уличната котка избира дом. Ако попадне при чудовище, и двамата излизат от играта.",
-    thief: "След кражбата ти ставаш новата роля, а целта става Обикновен селянин.",
-    cupid: "Влюбените са тайно свързани. Смъртта на единия повлича другия.",
-  };
-
-  return labels[role] ?? "Ако нямаш действие, спокойно можеш да пропуснеш фазата.";
-}
-
-function privateChannelBg(channel: ChatChannel) {
-  const labels: Record<ChatChannel, string> = {
-    public: "публичен чат",
-    mafia: "чат на Мафията",
-    werewolves: "чат на Върколаците",
-    vampires: "чат на Вампирите",
-    dead: "чат на мъртвите",
-    system: "системен канал",
-  };
-
-  return labels[channel];
-}
-
-function nightInstructionBg(role: RoleCode) {
-  const labels: Partial<Record<RoleCode, string>> = {
-    mafioso: "Мафията избира жертва",
-    don: "Донът избира жертва или търси Комисаря",
-    werewolf: "Върколаците избират жертва",
-    vampire: "Вампирите избират жертва",
-    commissioner: "Комисарят проверява подозрителен играч",
-    detective: "Детективът разследва подозрителен играч",
-    informant: "Доносникът отваря чуждо досие",
-    roleblocker: "Блокиращият спира нощно действие",
-    lawyer: "Адвокатът подготвя алиби",
-    medium: "Медиумът говори с елиминиран играч",
-    seer: "Ясновидката вижда тайна роля",
-    oracle: "Оракулът проверява заплахата",
-    witch: "Вещицата решава дали да лекува или отрови",
-    healer: "Лечителят пази един играч за тази нощ",
-    doctor: "Докторът пази един играч за тази нощ",
-    bodyguard: "Бодигардът охранява един играч",
-    vigilante: "Вигилантето избира цел",
-    maniac: "Маниакът избира жертва",
-    vampire_hunter: "Убиецът на вампири ловува",
-    priest: "Свещеникът дава една трайна благословия",
-    blacksmith: "Ковачът изковава един меч",
-    investigator: "Следователката проверява тройка",
-    insomniac: "Неспящата чака края на нощта",
-    stray_cat: "Уличната котка избира дом",
-    thief: "Крадецът краде карта веднъж през първата нощ",
-    cupid: "Купидон избира двама Влюбени",
-  };
-
-  return labels[role] ?? "Тази роля няма задължително нощно действие";
-}
-
-function formatPrivateResult(result: PrivateResult, players: PublicPlayer[]) {
-  if (result.messageBg) {
-    return result.messageBg;
-  }
-
-  const targetName = players.find((player) => player.userId === result.targetUserId)?.displayName ?? "избрания играч";
-
-  if (result.role) {
-    return `${targetName} е ${ROLE_DEFINITIONS[result.role].nameBg}.`;
-  }
-  if (typeof result.isEvil === "boolean") {
-    return result.isEvil ? `${targetName} е от злата страна.` : `${targetName} не е от злата страна.`;
-  }
-  if (typeof result.isCommissioner === "boolean") {
-    return result.isCommissioner ? `${targetName} е Комисарят.` : `${targetName} не е Комисарят.`;
-  }
-
-  return `Получен е резултат за ${targetName}.`;
-}
-
-function phaseBg(phase: string, familyOrMode: GameFamily | GameMode = "werewolves") {
-  return isKnownPhase(phase) ? phaseLabelBg(phase, familyOrMode) : phase;
-}
-
-function modeBg(mode: string) {
-  return isKnownMode(mode) ? getGameModeNameBg(mode) : mode;
-}
-
-function isKnownMode(mode: string): mode is GameMode {
-  return mode in GAME_MODE_DEFINITIONS;
-}
-
-function isKnownPhase(phase: string): phase is GamePhase {
-  return [
-    "lobby",
-    "role_reveal",
-    "first_night",
-    "night",
-    "day_announcement",
-    "day_discussion",
-    "nomination",
-    "defense",
-    "voting",
-    "resolution",
-    "hunter_revenge",
-    "mayor_successor",
-    "paused",
-    "game_over",
-  ].includes(phase);
-}
-
-function narratorBg(mode: string) {
-  const labels: Record<string, string> = {
-    automatic: "Автоматичен",
-    honest_human: "Честен човек",
-    full_human: "Пълен човек",
-  };
-
-  return labels[mode] ?? mode;
-}
-
-function communicationBg(mode: string) {
-  const labels: Record<string, string> = {
-    built_in_chat: "Вграден чат",
-    no_chat: "Без чат",
-    system_only: "Само системни",
-    secret_channels: "Тайни канали",
-  };
-
-  return labels[mode] ?? mode;
-}
-
-function tempoBg(mode: string) {
-  const labels: Record<string, string> = {
-    fast_online: "Бърза онлайн",
-    normal_online: "Нормална онлайн",
-    live: "На живо",
-    sport_mafia: "Спортна Мафия",
-    manual: "Ръчно водене",
-  };
-
-  return labels[mode] ?? mode;
-}
-
-function majorityModeBg(mode: string) {
-  const labels: Record<string, string> = {
-    simple: "обикновено мнозинство",
-    absolute: "абсолютно мнозинство",
-  };
-
-  return labels[mode] ?? mode;
-}
-
-function winnerBg(winner: string) {
-  const labels: Record<string, string> = {
-    village: "Селото печели",
-    werewolves: "Върколаците печелят",
-    vampires: "Вампирите печелят",
-    mafia: "Мафията печели",
-    maniac: "Маниакът печели",
-    lovers: "Влюбените печелят",
-    draw: "Никой не печели",
-  };
-
-  return labels[winner] ?? winner;
 }

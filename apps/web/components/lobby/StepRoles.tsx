@@ -8,10 +8,11 @@ import {
   type RoleCode,
   type RoleDistribution,
 } from "@werewolf/shared";
-import type { Dispatch } from "react";
+import { useMemo, type Dispatch } from "react";
 import {
   MANUAL_PRESET_STORAGE_KEY,
   boundedPlayerCount,
+  loversAvailableFor,
   currentConfig,
   roleBalance,
   roleWarnings,
@@ -21,6 +22,7 @@ import {
 import { PresetChips } from "@/components/lobby/PresetChips";
 import { RoleCarousel } from "@/components/lobby/RoleCarousel";
 import { RoleDetailModal } from "@/components/lobby/RoleDetailModal";
+import { roleThumbStyle } from "@/lib/role-art";
 import { playCue } from "@/lib/sound";
 
 export function StepRoles({
@@ -33,12 +35,14 @@ export function StepRoles({
   const config = currentConfig(state);
   const warnings = roleWarnings(state);
   const total = countRoles(config.roles);
-  const visibleRoles = getRolesForFamily(state.family).filter((role) => {
-    const definition = ROLE_DEFINITIONS[role];
-    const haystack = `${definition.nameBg} ${definition.shortDescriptionBg} ${definition.tags.join(" ")} ${role}`.toLowerCase();
+  const visibleRoles = useMemo(() => {
     const query = state.roleSearch.trim().toLowerCase();
-    return (query.length === 0 || haystack.includes(query)) && getRoleRuntimeStatus(role) === state.runtimeFilter;
-  });
+    return getRolesForFamily(state.family).filter((role) => {
+      const definition = ROLE_DEFINITIONS[role];
+      const haystack = `${definition.nameBg} ${definition.shortDescriptionBg} ${definition.tags.join(" ")} ${role}`.toLowerCase();
+      return (query.length === 0 || haystack.includes(query)) && getRoleRuntimeStatus(role) === state.runtimeFilter;
+    });
+  }, [state.family, state.roleSearch, state.runtimeFilter]);
 
   function changeRole(role: RoleCode, delta: number) {
     const source = state.manualRolesEnabled ? state.manualRoles : config.roles;
@@ -59,6 +63,8 @@ export function StepRoles({
         <PresetChips state={state} dispatch={dispatch} />
         {warnings.length > 0 ? <div className="roles-warning-banner">{warnings[0]}</div> : null}
       </div>
+
+      {state.family === "werewolves" ? <LoversFeatureCard state={state} dispatch={dispatch} /> : null}
 
       <div className="manual-builder-toolbar">
         <input
@@ -142,6 +148,61 @@ export function StepRoles({
       ) : null}
     </section>
   );
+}
+
+function LoversFeatureCard({
+  state,
+  dispatch,
+}: {
+  state: LobbyFormState;
+  dispatch: Dispatch<LobbyFormAction>;
+}) {
+  const players = boundedPlayerCount(state);
+  const available = loversAvailableFor(state.mode, players, state.rolePreset) && !state.manualRolesEnabled;
+  const enabled = available && state.advanced.loversEnabled;
+  const detail = loversDetail(state, players, available);
+
+  return (
+    <article className="lovers-feature-card" data-enabled={enabled ? "true" : "false"} data-disabled={available ? "false" : "true"}>
+      <span className="lovers-feature-art" aria-hidden="true" style={roleThumbStyle("werewolves", "cupid")} />
+      <div className="lovers-feature-copy">
+        <p className="section-kicker">Купидон и Влюбени</p>
+        <strong>Любовна нишка от първата нощ</strong>
+        <span>{detail}</span>
+        <small>Купидон заменя един Селянин и не променя броя играчи.</small>
+      </div>
+      <button
+        type="button"
+        className="lovers-toggle-button"
+        data-active={enabled ? "true" : "false"}
+        disabled={!available}
+        onClick={() => {
+          dispatch({ type: "SET_ADVANCED", key: "loversEnabled", value: !state.advanced.loversEnabled });
+          playCue("vote");
+        }}
+      >
+        {enabled ? "Включено" : "Включи"}
+      </button>
+    </article>
+  );
+}
+
+function loversDetail(state: LobbyFormState, players: number, available: boolean) {
+  if (available) {
+    return state.advanced.loversEnabled
+      ? "Купидон е в разпределението. Двама играчи ще бъдат тайно свързани."
+      : "Подходящо за класическа игра с повече напрежение и лични залози.";
+  }
+  if (state.manualRolesEnabled) {
+    return "При ръчни роли добави Купидон директно от картите, за да контролираш точния състав.";
+  }
+  if (players < 9) {
+    return "Включва се при 9+ играчи, за да има достатъчно място за тайна двойка.";
+  }
+  if (state.rolePreset === "beginner") {
+    return "Начинаещият шаблон остава по-чист. Избери Класика или Хаос, ако искаш Влюбени.";
+  }
+  return "Тази настройка е налична само за класически Върколак.";
 }
 
 function triggerHaptic(pattern: number | number[]) {

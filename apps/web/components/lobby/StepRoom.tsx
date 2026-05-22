@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type Dispatch, type ReactNode } from "react";
+import { useEffect, useRef, type Dispatch } from "react";
 import {
   GAME_MODE_DEFINITIONS,
   ROOM_CODE_LENGTH,
@@ -15,9 +15,12 @@ import {
   cleanRoomCode,
   createRoomCode,
   playerRange,
+  timersForState,
   type LobbyFormAction,
   type LobbyFormState,
 } from "@/lib/lobby-form";
+import { Field } from "@/components/lobby/Field";
+import { ManualTempoPanel, formatSeconds, tempoSummary } from "@/components/lobby/ManualTempoPanel";
 import { ModeTileCard } from "@/components/lobby/ModeTileCard";
 import { QuickStartRow } from "@/components/lobby/QuickStartRow";
 import { randomRoomName } from "@/lib/roomname-generator";
@@ -26,6 +29,7 @@ const TEMPO_CARDS: { value: TempoProfile; label: string; detail: string }[] = [
   { value: "fast_online", label: "Бърза", detail: "Къси фази за групи, които вече знаят правилата." },
   { value: "normal_online", label: "Нормална", detail: "Най-спокойният избор за онлайн игра." },
   { value: "live", label: "На живо", detail: "По-дълги фази и тих режим за маса в стая." },
+  { value: "manual", label: "Ръчно", detail: "Настрой деня, нощта и гласуването като водещ." },
 ];
 
 export function StepRoom({
@@ -55,12 +59,13 @@ export function StepRoom({
 
   return (
     <section className="lobby-step lobby-step-room" aria-labelledby="step-room-title">
-      <QuickStartRow dispatch={dispatch} />
       <div className="lobby-step-heading">
         <p className="step-eyebrow">Стъпка 1 / 4 · Стая</p>
-        <h1 id="step-room-title">Създай частна стая</h1>
-        <p className="step-lede">Избери име на стаята, код, игра и темпо.</p>
+        <h1 id="step-room-title">Създай игра без чудене</h1>
+        <p className="step-lede">Започни с готова рецепта или настрой стаята ръчно под нея.</p>
       </div>
+
+      <QuickStartRow state={state} dispatch={dispatch} />
 
       <div className="lobby-field-grid">
         <Field
@@ -146,11 +151,12 @@ export function StepRoom({
       <section className="lobby-panel">
         <div className="lobby-panel-title">
           <h2>Темпо</h2>
+          <span className="player-count-badge">{tempoSummary(timersForState(state))}</span>
         </div>
         <div className="tempo-card-grid">
           {(state.mode === "mafia_sport" ? [{ value: "sport_mafia" as const, label: "Спортна", detail: "Фиксирано темпо за 10 играчи." }] : TEMPO_CARDS).map(
             (tempo) => {
-              const timers = TEMPO_PRESETS[tempo.value];
+              const timers = tempo.value === "manual" ? state.customTimers : TEMPO_PRESETS[tempo.value];
               return (
                 <button
                   key={tempo.value}
@@ -169,55 +175,8 @@ export function StepRoom({
             },
           )}
         </div>
+        {state.tempoProfile === "manual" && state.mode !== "mafia_sport" ? <ManualTempoPanel state={state} dispatch={dispatch} /> : null}
       </section>
     </section>
-  );
-}
-
-export function Field({
-  label,
-  hint,
-  error = "",
-  actionLabel,
-  onAction,
-  children,
-}: {
-  label: string;
-  hint: string;
-  error?: string;
-  actionLabel?: string;
-  onAction?: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <label className="field">
-      <span className="field-label">{label}</span>
-      <span className="field-input-wrap" data-has-action={Boolean(onAction)}>
-        {children}
-        {onAction ? (
-          <button type="button" className="field-action" aria-label={actionLabel} title={actionLabel} onClick={onAction}>
-            <RefreshIcon />
-          </button>
-        ) : null}
-      </span>
-      {error ? (
-        <span className="field-error" role="alert">
-          ⚠ {error}
-        </span>
-      ) : (
-        <span className="field-hint">{hint}</span>
-      )}
-    </label>
-  );
-}
-
-function RefreshIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none">
-      <path d="M3 12a9 9 0 0 1 15.1-6.6L21 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M21 3v5h-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M21 12a9 9 0 0 1-15.1 6.6L3 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M3 21v-5h5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
   );
 }

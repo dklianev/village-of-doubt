@@ -1,10 +1,11 @@
 "use client";
 
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { KeySquare } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
+import { mapAuthError } from "@/lib/auth-errors";
 
 export function ResetPasswordClient() {
   const router = useRouter();
@@ -15,6 +16,15 @@ export function ResetPasswordClient() {
   const [confirm, setConfirm] = useState("");
   const [status, setStatus] = useState<"idle" | "submitting" | "done" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
+
+  useEffect(() => {
+    if (status !== "done") {
+      return;
+    }
+
+    const timer = window.setTimeout(() => router.push("/sign-in"), 1800);
+    return () => window.clearTimeout(timer);
+  }, [router, status]);
 
   if (!token) {
     return (
@@ -50,13 +60,12 @@ export function ResetPasswordClient() {
 
     const result = await authClient.resetPassword({ token, newPassword: password });
     if (result.error) {
-      setErrorMsg(result.error.message ?? "Грешка при смяната на парола.");
+      setErrorMsg(mapAuthError(result.error, "Грешка при смяната на парола."));
       setStatus("error");
       return;
     }
 
     setStatus("done");
-    setTimeout(() => router.push("/sign-in"), 1800);
   }
 
   return (
@@ -112,7 +121,12 @@ export function ResetPasswordClient() {
               </p>
             ) : null}
 
-            <button type="submit" className="btn btn-primary" disabled={status === "submitting"}>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={status === "submitting"}
+              aria-busy={status === "submitting"}
+            >
               {status === "submitting" ? "Заковавам..." : "Затвори ключа"}
             </button>
           </form>

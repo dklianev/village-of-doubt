@@ -1,16 +1,46 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 
-export function AccountDangerZone() {
+export function AccountDangerZone({ email }: { email: string }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
   const [status, setStatus] = useState<"idle" | "deleting" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const canDelete = confirmText.trim().toLocaleUpperCase("bg-BG") === "ИЗТРИЙ";
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) {
+      return;
+    }
+
+    if (open && !dialog.open) {
+      dialog.showModal();
+    } else if (!open && dialog.open) {
+      dialog.close();
+    }
+  }, [open]);
+
+  function closeDialog() {
+    if (status === "deleting") {
+      return;
+    }
+    setOpen(false);
+    setConfirmText("");
+    setErrorMessage("");
+    setStatus("idle");
+  }
 
   async function deleteAccount() {
+    if (!canDelete || status === "deleting") {
+      return;
+    }
+
     setStatus("deleting");
     setErrorMessage("");
 
@@ -24,8 +54,8 @@ export function AccountDangerZone() {
       }
 
       await authClient.signOut();
-      router.push("/");
-      router.refresh();
+      window.dispatchEvent(new Event("auth-session-change"));
+      router.replace("/");
     } catch {
       setErrorMessage("Грешка при изтриване.");
       setStatus("error");
@@ -45,35 +75,63 @@ export function AccountDangerZone() {
           се заменят с „Изтрит играч“, за да не се чупи историята на другите играчи.
         </p>
 
-        {open ? (
-          <div className="account-danger-confirm">
-            <p>
-              <strong>Сигурен/сигурна ли си?</strong> Това действие не може да се върне.
+        <button type="button" className="account-danger-btn" onClick={() => setOpen(true)}>
+          Изтрий моя профил
+        </button>
+
+        <dialog
+          ref={dialogRef}
+          className="danger-confirm-dialog"
+          onCancel={(event) => {
+            if (status === "deleting") {
+              event.preventDefault();
+              return;
+            }
+            closeDialog();
+          }}
+          onClose={() => setOpen(false)}
+        >
+          <p className="section-kicker">необратимо действие</p>
+          <h3>Сигурен/сигурна ли си?</h3>
+          <p>
+            За потвърждение напиши <strong>ИЗТРИЙ</strong>. Това действие премахва профила и
+            постиженията завинаги.
+          </p>
+          <p className="danger-confirm-email">
+            Профил: <strong>{email || "няма имейл"}</strong>
+          </p>
+          <label className="danger-confirm-field">
+            <span>Потвърждение</span>
+            <input
+              type="text"
+              value={confirmText}
+              onChange={(event) => setConfirmText(event.target.value)}
+              placeholder="ИЗТРИЙ"
+              aria-label="Напиши ИЗТРИЙ за потвърждение"
+              autoComplete="off"
+              autoCapitalize="characters"
+            />
+          </label>
+          {errorMessage ? (
+            <p className="account-status account-status-error" role="alert">
+              {errorMessage}
             </p>
-            {errorMessage ? (
-              <p className="account-status account-status-error" role="alert">
-                {errorMessage}
-              </p>
-            ) : null}
-            <div className="account-danger-actions">
-              <button
-                type="button"
-                className="account-danger-btn"
-                onClick={deleteAccount}
-                disabled={status === "deleting"}
-              >
-                {status === "deleting" ? "Изтриваме..." : "Да, изтрий профила"}
-              </button>
-              <button type="button" className="account-cancel-btn" onClick={() => setOpen(false)}>
-                Отказ
-              </button>
-            </div>
+          ) : null}
+          <div className="danger-confirm-actions">
+            <button type="button" className="account-cancel-btn" onClick={closeDialog}>
+              Отказ
+            </button>
+            <button
+              type="button"
+              className="account-danger-btn"
+              disabled={!canDelete || status === "deleting"}
+              aria-busy={status === "deleting"}
+              onClick={deleteAccount}
+            >
+              {status === "deleting" ? "Изтриваме..." : "Изтрий завинаги"}
+            </button>
           </div>
-        ) : (
-          <button type="button" className="account-danger-btn" onClick={() => setOpen(true)}>
-            Изтрий моя профил
-          </button>
-        )}
+        </dialog>
       </div>
     </section>
   );

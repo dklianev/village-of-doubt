@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ROLE_DEFINITIONS,
   countRoles,
@@ -15,6 +15,7 @@ import {
   type TeamCode,
 } from "@werewolf/shared";
 import { stringifyRolesParam } from "@/lib/room-options";
+import { copyTextToClipboard } from "@/lib/clipboard";
 import { roleArtPath, roleThumbPath } from "@/lib/role-art";
 
 interface ManualRoleBuilderProps {
@@ -159,12 +160,15 @@ export function useManualRoleSelection(
   const [copyMessage, setCopyMessage] = useState("");
   const total = countRoles(roles);
   const balance = getRoleBalanceScore(roles);
-  const visibleRoles = getRolesForFamily(family).filter((role) => {
-    const definition = ROLE_DEFINITIONS[role];
-    const haystack = `${definition.nameBg} ${definition.shortDescriptionBg} ${definition.tags.join(" ")} ${role}`.toLowerCase();
-    const matchesQuery = query.trim().length === 0 || haystack.includes(query.trim().toLowerCase());
-    return matchesQuery && getRoleRuntimeStatus(role) === runtimeFilter;
-  });
+  const visibleRoles = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    return getRolesForFamily(family).filter((role) => {
+      const definition = ROLE_DEFINITIONS[role];
+      const haystack = `${definition.nameBg} ${definition.shortDescriptionBg} ${definition.tags.join(" ")} ${role}`.toLowerCase();
+      const matchesQuery = normalizedQuery.length === 0 || haystack.includes(normalizedQuery);
+      return matchesQuery && getRoleRuntimeStatus(role) === runtimeFilter;
+    });
+  }, [family, query, runtimeFilter]);
 
   function commit(nextRoles: RoleDistribution) {
     setHistory((items) => [...items.slice(-11), roles]);
@@ -204,14 +208,21 @@ export function useManualRoleSelection(
       players: String(playerCount),
       roles: stringifyRolesParam(roles),
     });
-    await navigator.clipboard.writeText(params.toString()).catch(() => {});
-    setCopyMessage("Шаблонът е копиран като линк параметри.");
+    try {
+      await copyTextToClipboard(params.toString());
+      setCopyMessage("Шаблонът е копиран като линк параметри.");
+    } catch {
+      setCopyMessage("Не успяхме да копираме. Опитай ръчно.");
+    }
   }
 
-  const groups = TEAM_ORDER.map((team) => ({
-    team,
-    roles: visibleRoles.filter((role) => ROLE_DEFINITIONS[role].team === team),
-  })).filter((group) => group.roles.length > 0);
+  const groups = useMemo(
+    () => TEAM_ORDER.map((team) => ({
+      team,
+      roles: visibleRoles.filter((role) => ROLE_DEFINITIONS[role].team === team),
+    })).filter((group) => group.roles.length > 0),
+    [visibleRoles],
+  );
 
   return {
     query,

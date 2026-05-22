@@ -46,6 +46,9 @@ services:
       GAME_TOKEN_SECRET: ${GAME_TOKEN_SECRET}
       GAME_SERVER_PORT: 2567
       ALLOW_DEV_AUTH: "false"
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      PUBLIC_WEB_DOMAIN: ${PUBLIC_WEB_DOMAIN}
     depends_on:
       postgres:
         condition: service_healthy

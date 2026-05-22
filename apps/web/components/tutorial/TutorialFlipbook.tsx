@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { X } from "lucide-react";
 import { SlideDay } from "./SlideDay";
 import { SlideFinal } from "./SlideFinal";
@@ -25,11 +26,11 @@ function readInitialSlide(searchParams: Pick<URLSearchParams, "get">): number {
 }
 
 export function TutorialFlipbook() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [current, setCurrent] = useState(() => readInitialSlide(searchParams));
   const [hydrated, setHydrated] = useState(false);
   const [welcomeVisible, setWelcomeVisible] = useState(() => searchParams.get("welcome") === "1");
+  const urlUpdateTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (searchParams.get("step")) {
@@ -53,14 +54,28 @@ export function TutorialFlipbook() {
 
     const params = new URLSearchParams(searchParams.toString());
     params.set("step", String(current));
-    router.replace(`/tutorial?${params.toString()}`, { scroll: false });
+    if (urlUpdateTimerRef.current !== null) {
+      window.clearTimeout(urlUpdateTimerRef.current);
+    }
+    urlUpdateTimerRef.current = window.setTimeout(() => {
+      window.history.replaceState(null, "", `/tutorial?${params.toString()}`);
+      urlUpdateTimerRef.current = null;
+    }, 300);
     window.localStorage.setItem(STORAGE_KEY_LAST_SLIDE, String(current));
     if (current === TOTAL_SLIDES) {
       window.localStorage.setItem(STORAGE_KEY_COMPLETED, "1");
     }
     // Avoid reacting to searchParams changes caused by this same replace call.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current, hydrated, router]);
+  }, [current, hydrated]);
+
+  useEffect(() => {
+    return () => {
+      if (urlUpdateTimerRef.current !== null) {
+        window.clearTimeout(urlUpdateTimerRef.current);
+      }
+    };
+  }, []);
 
   const goTo = useCallback((slide: number) => {
     if (slide < 1 || slide > TOTAL_SLIDES) {
@@ -74,8 +89,8 @@ export function TutorialFlipbook() {
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
-      const tag = (event.target as HTMLElement | null)?.tagName ?? "";
-      if (tag === "INPUT" || tag === "TEXTAREA") {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("input, textarea, [contenteditable], button, a")) {
         return;
       }
       if (event.key === "ArrowRight") {
@@ -134,10 +149,6 @@ export function TutorialFlipbook() {
 
       <TutorialProgress current={current} total={TOTAL_SLIDES} onJump={goTo} />
 
-      <div className="tutorial-slide-stage" role="region">
-        {slide}
-      </div>
-
       <nav className="tutorial-nav" aria-label="Навигация между сцените">
         <button type="button" className="btn btn-secondary" onClick={prev} disabled={current === 1} aria-label="Предишна сцена">
           Назад
@@ -145,6 +156,9 @@ export function TutorialFlipbook() {
         <span className="tutorial-nav-counter">
           Сцена {current} от {TOTAL_SLIDES}
         </span>
+        <Link href="/werewolf/create" className="btn btn-secondary tutorial-play-link">
+          Към играта
+        </Link>
         <button
           type="button"
           className="btn btn-primary"
@@ -155,6 +169,10 @@ export function TutorialFlipbook() {
           Напред
         </button>
       </nav>
+
+      <div className="tutorial-slide-stage" role="region">
+        {slide}
+      </div>
 
       {current === 1 ? <p className="tutorial-keyboard-hint">Съвет: стрелките наляво и надясно сменят сцената.</p> : null}
     </section>

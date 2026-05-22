@@ -6,6 +6,7 @@ import type {
   MayorMode,
   NarratorMode,
   NarratorVoice,
+  PhaseTimers,
   RoleCode,
   RoleDistribution,
   RolePreset,
@@ -44,6 +45,8 @@ export function parseRoomCreateOptions(searchParams: RoomSearchParams = {}): Cre
   const narratorVoice = first(searchParams.narratorVoice);
   const roomName = first(searchParams.roomName);
   const roles = parseRolesParam(first(searchParams.roles));
+  const customTimers = parseCustomTimers(searchParams);
+  const tempoProfile = isOneOf(tempo, TEMPO_PROFILES) ? tempo : customTimers ? "manual" : undefined;
   const players = Number(first(searchParams.players));
   const maxPlayers = Number(first(searchParams.maxPlayers));
 
@@ -56,7 +59,8 @@ export function parseRoomCreateOptions(searchParams: RoomSearchParams = {}): Cre
     ...(isOneOf(preset, ROLE_PRESETS) ? { rolePreset: preset } : {}),
     ...(isOneOf(communication, COMMUNICATION_MODES) ? { communicationMode: communication } : {}),
     ...(isOneOf(narrator, NARRATOR_MODES) ? { narratorMode: narrator } : {}),
-    ...(isOneOf(tempo, TEMPO_PROFILES) ? { tempoProfile: tempo } : {}),
+    ...(tempoProfile ? { tempoProfile } : {}),
+    ...(customTimers ? { customTimers } : {}),
     ...(first(searchParams.lovers) === "1" ? { loversEnabled: true } : {}),
     ...(first(searchParams.reveal) ? { revealRolesOnDeath: first(searchParams.reveal) !== "0" } : {}),
     ...(first(searchParams.skip) ? { allowSkipVote: first(searchParams.skip) !== "0" } : {}),
@@ -109,6 +113,20 @@ export function roomOptionsToQuery(options: CreateRoomOptions) {
   }
   if (options.tempoProfile) {
     params.set("tempo", options.tempoProfile);
+  }
+  if (options.tempoProfile === "manual" && options.customTimers) {
+    if (typeof options.customTimers.dayDiscussionSeconds === "number") {
+      params.set("tempoDay", String(options.customTimers.dayDiscussionSeconds));
+    }
+    if (typeof options.customTimers.factionNightActionSeconds === "number") {
+      params.set("tempoNight", String(options.customTimers.factionNightActionSeconds));
+    }
+    if (typeof options.customTimers.voteSeconds === "number") {
+      params.set("tempoVote", String(options.customTimers.voteSeconds));
+    }
+    if (typeof options.customTimers.autoAdvanceWhenReady === "boolean") {
+      params.set("tempoReady", options.customTimers.autoAdvanceWhenReady ? "1" : "0");
+    }
   }
   if (options.loversEnabled) {
     params.set("lovers", "1");
@@ -196,6 +214,38 @@ export function parseRolesParam(value: string | undefined): RoleDistribution | u
 
 function first(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
+}
+
+function parseCustomTimers(searchParams: RoomSearchParams): Partial<PhaseTimers> | undefined {
+  const dayDiscussionSeconds = parseInteger(first(searchParams.tempoDay));
+  const factionNightActionSeconds = parseInteger(first(searchParams.tempoNight));
+  const voteSeconds = parseInteger(first(searchParams.tempoVote));
+  const tempoReady = first(searchParams.tempoReady);
+  const customTimers: Partial<PhaseTimers> = {};
+
+  if (typeof dayDiscussionSeconds === "number") {
+    customTimers.dayDiscussionSeconds = dayDiscussionSeconds;
+  }
+  if (typeof factionNightActionSeconds === "number") {
+    customTimers.factionNightActionSeconds = factionNightActionSeconds;
+    customTimers.personalNightActionSeconds = factionNightActionSeconds;
+  }
+  if (typeof voteSeconds === "number") {
+    customTimers.voteSeconds = voteSeconds;
+  }
+  if (tempoReady === "1" || tempoReady === "0") {
+    customTimers.autoAdvanceWhenReady = tempoReady === "1";
+  }
+
+  return Object.keys(customTimers).length > 0 ? customTimers : undefined;
+}
+
+function parseInteger(value: string | undefined) {
+  if (!value) {
+    return undefined;
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.round(parsed) : undefined;
 }
 
 function isOneOf<T extends string>(value: string | undefined, values: readonly T[]): value is T {

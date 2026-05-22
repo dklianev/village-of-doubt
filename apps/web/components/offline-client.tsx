@@ -12,26 +12,41 @@ export function OfflineClient() {
   useEffect(() => {
     setOnline(navigator.onLine);
 
-    function checkConnection() {
+    async function checkConnection() {
       const isOnline = navigator.onLine;
       setOnline(isOnline);
-      if (isOnline) {
+      if (!isOnline || document.hidden) {
+        return;
+      }
+
+      try {
+        await fetch("/api/health", {
+          cache: "no-store",
+          signal: AbortSignal.timeout(2000),
+        });
         window.location.reload();
+      } catch {
+        setOnline(false);
       }
     }
 
     function retry() {
+      if (document.hidden) {
+        return;
+      }
       setRetryCount((count) => count + 1);
-      checkConnection();
+      void checkConnection();
     }
 
-    window.addEventListener("online", checkConnection);
-    window.addEventListener("offline", checkConnection);
+    const handleOnline = () => void checkConnection();
+    const handleOffline = () => void checkConnection();
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
     const interval = window.setInterval(retry, 5000);
 
     return () => {
-      window.removeEventListener("online", checkConnection);
-      window.removeEventListener("offline", checkConnection);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
       window.clearInterval(interval);
     };
   }, []);

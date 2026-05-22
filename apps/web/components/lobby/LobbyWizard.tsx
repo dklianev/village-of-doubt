@@ -41,6 +41,7 @@ export function LobbyWizard({
   const [state, dispatch] = useReducer(lobbyFormReducer, initialRef.current);
   const canAdvance = isStepValid(state, state.step);
   const previousStep = useRef(state.step);
+  const submitTimerRef = useRef<number | null>(null);
 
   const transition = useCallback((update: () => void) => {
     const startViewTransition = "startViewTransition" in document ? document.startViewTransition.bind(document) : undefined;
@@ -78,6 +79,14 @@ export function LobbyWizard({
     return () => window.cancelAnimationFrame(frameId);
   }, [state.step]);
 
+  useEffect(() => {
+    return () => {
+      if (submitTimerRef.current !== null) {
+        window.clearTimeout(submitTimerRef.current);
+      }
+    };
+  }, []);
+
   function onAdvanceBlocked() {
     dispatch({ type: "SET_FORM_ERROR", formError: validationMessage(state, state.step) });
   }
@@ -87,7 +96,13 @@ export function LobbyWizard({
     dispatch({ type: "TRIGGER_CONFETTI" });
     playCue("win");
     triggerHaptic([18, 24, 18]);
-    window.setTimeout(() => router.push(href), 220);
+    if (submitTimerRef.current !== null) {
+      window.clearTimeout(submitTimerRef.current);
+    }
+    submitTimerRef.current = window.setTimeout(() => {
+      router.push(href);
+      submitTimerRef.current = null;
+    }, 220);
   }
 
   return (
@@ -108,7 +123,11 @@ export function LobbyWizard({
             <StepPreview state={state} dispatch={dispatch} onSubmit={onSubmit} />
           </div>
         </div>
-        {state.formError ? <p className="lobby-form-error">{state.formError}</p> : null}
+        {state.formError ? (
+          <p className="lobby-form-error" role="alert" aria-live="assertive">
+            {state.formError}
+          </p>
+        ) : null}
       </div>
       <StickyPreview state={state} />
       <MobileSummaryChip state={state} dispatch={dispatch} />

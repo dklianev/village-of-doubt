@@ -16,6 +16,7 @@ import {
   type LobbyFormAction,
   type LobbyFormState,
 } from "@/lib/lobby-form";
+import { copyTextToClipboard } from "@/lib/clipboard";
 import { roleThumbStyle } from "@/lib/role-art";
 
 const NARRATOR_LABELS: Record<NarratorMode, string> = {
@@ -59,6 +60,7 @@ export function StepPreview({
         <Summary label="Комуникация" value={COMMUNICATION_LABELS[state.communicationMode]} />
         <Summary label="Темпо" value={`${config.timers.dayDiscussionSeconds}/${config.timers.factionNightActionSeconds}/${config.timers.voteSeconds} сек.`} />
         <Summary label="Продължителност" value={formatEstimatedDuration(estimatedDurationSeconds(state))} />
+        {state.family === "werewolves" ? <Summary label="Купидон" value={(config.roles.cupid ?? 0) > 0 ? "Включен" : "Без Влюбени"} /> : null}
       </div>
 
       <div className="preview-role-grid">
@@ -102,6 +104,10 @@ async function shareInvite(href: string, roomName: string, dispatch: Dispatch<Lo
     return;
   }
 
-  await navigator.clipboard.writeText(url).catch(() => {});
-  dispatch({ type: "SET_FORM_ERROR", formError: "Поканата е копирана." });
+  try {
+    await copyTextToClipboard(url);
+    dispatch({ type: "SET_FORM_ERROR", formError: "Поканата е копирана." });
+  } catch {
+    dispatch({ type: "SET_FORM_ERROR", formError: "Не успяхме да копираме. Опитай ръчно." });
+  }
 }

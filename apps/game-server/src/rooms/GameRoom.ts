@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { Client, Room } from "colyseus";
 import * as Sentry from "@sentry/node";
 import {
@@ -8,6 +9,7 @@ import {
   evaluateWinCondition,
   getGameFamily,
   getRoleNameBg,
+  getRoleRuntimeStatus,
   getRoleTeam,
   phaseLabelBg,
   ROOM_CODE_ALPHABET,
@@ -73,10 +75,21 @@ export interface GameRoomPreview {
   playerCount: number;
   capacity: number;
   family: GameFamily;
+  hostName: string | null;
+  players: Array<{
+    displayName: string;
+    connected: boolean;
+    ready: boolean;
+    host: boolean;
+  }>;
 }
 
 const MAX_PUBLIC_EVENTS = 120;
 const MAX_PUBLIC_CHAT = 80;
+
+function hashRoomCode(code: string): string {
+  return createHash("sha256").update(code).digest("hex").slice(0, 8);
+}
 
 const PHASE_FLOW: Partial<Record<GamePhase, GamePhase>> = {
   role_reveal: "first_night",
@@ -98,6 +111,51 @@ export class GameRoom extends Room<{ state: GameState }> {
     family: GameFamily;
   }> = [];
   private static readonly MAX_RECENT_ENDINGS = 12;
+  private static usedNonces = new Map<string, number>();
+  private static joinAttempts = new Map<string, number[]>();
+  private static readonly JOIN_RATE_WINDOW_MS = 10_000;
+  private static readonly JOIN_RATE_LIMIT = 5;
+  private static nonceJanitorInterval: ReturnType<typeof setInterval> | undefined;
+  private static joinJanitorInterval: ReturnType<typeof setInterval> | undefined;
+
+  static {
+    GameRoom.nonceJanitorInterval = setInterval(() => {
+      const now = Date.now();
+      for (const [nonce, expiresAt] of GameRoom.usedNonces) {
+        if (expiresAt <= now) {
+          GameRoom.usedNonces.delete(nonce);
+        }
+      }
+    }, 60_000);
+    GameRoom.nonceJanitorInterval.unref?.();
+
+    GameRoom.joinJanitorInterval = setInterval(() => {
+      const cutoff = Date.now() - GameRoom.JOIN_RATE_WINDOW_MS;
+      for (const [userId, timestamps] of GameRoom.joinAttempts) {
+        const remaining = timestamps.filter((timestamp) => timestamp > cutoff);
+        if (remaining.length === 0) {
+          GameRoom.joinAttempts.delete(userId);
+        } else {
+          GameRoom.joinAttempts.set(userId, remaining);
+        }
+      }
+    }, 30_000);
+    GameRoom.joinJanitorInterval.unref?.();
+  }
+
+  private static checkJoinRateLimit(userId: string): boolean {
+    const now = Date.now();
+    const cutoff = now - GameRoom.JOIN_RATE_WINDOW_MS;
+    const timestamps = (GameRoom.joinAttempts.get(userId) ?? []).filter((timestamp) => timestamp > cutoff);
+    if (timestamps.length >= GameRoom.JOIN_RATE_LIMIT) {
+      GameRoom.joinAttempts.set(userId, timestamps);
+      return false;
+    }
+
+    timestamps.push(now);
+    GameRoom.joinAttempts.set(userId, timestamps);
+    return true;
+  }
 
   static getRuntimeStats() {
     const byFamily: Partial<Record<GameFamily, number>> = {};
@@ -111,8 +169,13 @@ export class GameRoom extends Room<{ state: GameState }> {
       activeRooms: GameRoom.liveRooms.size,
       connectedPlayers: [...GameRoom.liveRooms].reduce((sum, room) => sum + room.clients.length, 0),
       byFamily,
-      recentEndings: GameRoom.recentEndings.slice(),
-      lastWinner: GameRoom.recentEndings[0] ?? null,
+      recentEndings: GameRoom.recentEndings.map((ending) => ({
+        ...ending,
+        code: hashRoomCode(ending.code),
+      })),
+      lastWinner: GameRoom.recentEndings[0]
+        ? { ...GameRoom.recentEndings[0], code: hashRoomCode(GameRoom.recentEndings[0].code) }
+        : null,
     };
   }
 
@@ -136,6 +199,13 @@ export class GameRoom extends Room<{ state: GameState }> {
       playerCount: players.length,
       capacity: room.config.playerCount,
       family: getGameFamily(room.config.mode),
+      hostName: players.find((player) => player.host)?.displayName ?? null,
+      players: players.slice(0, 6).map((player) => ({
+        displayName: player.displayName,
+        connected: player.connected,
+        ready: player.ready,
+        host: player.host,
+      })),
     };
   }
 
@@ -147,6 +217,8 @@ export class GameRoom extends Room<{ state: GameState }> {
   private phaseTimer?: ReturnType<typeof this.clock.setTimeout>;
   private persistence: GamePersistence = createGamePersistence();
   private persistQueue: Promise<void> = Promise.resolve();
+  private persistQueueLength = 0;
+  private static readonly MAX_PENDING_PERSIST = 50;
   private persistedGameId: string | undefined;
   private hostUserId: string | undefined;
   private gameFinishedPersisted = false;
@@ -163,6 +235,7 @@ export class GameRoom extends Room<{ state: GameState }> {
     const mode = options.mode ?? "werewolves_classic";
     const playerCount = options.playerCount ?? (mode === "mafia_sport" ? 10 : 8);
     this.config = createGameConfigFromOptions({ ...options, mode, playerCount });
+    this.enforceRuntimeRoleAvailability();
 
     this.setState(new GameState());
     this.state.code = options.code ? normalizeRoomCode(options.code) : generateRoomCode();
@@ -178,13 +251,17 @@ export class GameRoom extends Room<{ state: GameState }> {
   }
 
   async onAuth(_client: Client, options: JoinRoomOptions): Promise<ClientAuth> {
-    const allowDevAuth = process.env.ALLOW_DEV_AUTH !== "false" && process.env.NODE_ENV !== "production";
+    const allowDevAuth = process.env.ALLOW_DEV_AUTH === "true" && process.env.NODE_ENV !== "production";
     if (allowDevAuth && options.userId && options.displayName) {
       return { userId: options.userId, displayName: options.displayName };
     }
 
     if (options.token) {
       const payload = verifyGameToken(options.token, getGameTokenSecret(), { roomCode: this.state.code });
+      if (GameRoom.usedNonces.has(payload.nonce)) {
+        throw new Error("Този токен вече е използван.");
+      }
+      GameRoom.usedNonces.set(payload.nonce, payload.expiresAt * 1000);
       return { userId: payload.userId, displayName: payload.displayName };
     }
 
@@ -192,6 +269,24 @@ export class GameRoom extends Room<{ state: GameState }> {
   }
 
   onJoin(client: Client, options: JoinRoomOptions, auth: ClientAuth) {
+    if (!GameRoom.checkJoinRateLimit(auth.userId)) {
+      client.send("safe_error", {
+        type: "safe_error",
+        messageBg: "Твърде много опити за вход. Изчакай малко.",
+      } satisfies ServerEvent);
+      client.leave(4029);
+      return;
+    }
+
+    const previousClient = this.clientsByUserId.get(auth.userId);
+    if (previousClient && previousClient.sessionId !== client.sessionId) {
+      previousClient.send("safe_error", {
+        type: "safe_error",
+        messageBg: "Влязохте от друго устройство.",
+      } satisfies ServerEvent);
+      previousClient.leave(1000);
+    }
+
     this.clientsByUserId.set(auth.userId, client);
     client.userData = auth;
 
@@ -309,9 +404,17 @@ export class GameRoom extends Room<{ state: GameState }> {
     }
   }
 
-  onDispose() {
+  async onDispose() {
     GameRoom.liveRooms.delete(this);
     this.phaseTimer?.clear();
+    await Promise.race([this.persistQueue, new Promise((resolve) => setTimeout(resolve, 3000))]);
+    this.clientsByUserId.clear();
+    this.privatePlayers.clear();
+    this.pendingNightActions.clear();
+    this.pendingVampireBites.clear();
+    this.achievementEvents.length = 0;
+    this.announcedAchievementUnlocks.clear();
+    this.announcedWitchVictims.clear();
   }
 
   private handleCommand(client: Client, command: ClientCommand) {
@@ -518,6 +621,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       narratorMode: this.config.narratorMode,
       communicationMode: this.config.communicationMode,
       tempoProfile: this.config.tempoProfile,
+      ...(this.config.tempoProfile === "manual" ? { customTimers: this.config.timers } : {}),
       loversEnabled: this.config.loversEnabled,
       rolePreset: this.config.rolePreset,
       revealRolesOnDeath: this.config.revealRolesOnDeath,
@@ -537,6 +641,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       narratorVoice: this.config.narratorVoice,
       ...(this.config.rolePreset === "manual" ? { roles: this.config.roles } : {}),
     });
+    this.enforceRuntimeRoleAvailability();
     this.syncPublicConfig();
     const assignments = assignRoles(
       players.map((item) => item.userId),
@@ -815,12 +920,13 @@ export class GameRoom extends Room<{ state: GameState }> {
     if (!chatChannel) {
       throw new Error("Непознат чат канал.");
     }
+    const text = normalizeChatMessage(message);
     if (this.config.communicationMode === "no_chat" || this.config.communicationMode === "system_only") {
       throw new Error("В тази стая няма играчески чат.");
     }
 
     if (chatChannel !== "public") {
-      this.sendPrivateChat(player, chatChannel, message);
+      this.sendPrivateChat(player, chatChannel, text);
       return;
     }
     if (this.config.communicationMode !== "built_in_chat") {
@@ -838,7 +944,7 @@ export class GameRoom extends Room<{ state: GameState }> {
     chat.channel = "public";
     chat.senderUserId = player.userId;
     chat.senderName = player.displayName;
-    chat.message = message.slice(0, 500);
+    chat.message = text;
     chat.createdAt = Date.now();
     this.state.publicChat.push(chat);
     while (this.state.publicChat.length > MAX_PUBLIC_CHAT) {
@@ -856,7 +962,7 @@ export class GameRoom extends Room<{ state: GameState }> {
 
   private sendPrivateChat(player: PlayerPublicState, channel: ChatChannel, message: string) {
     const privatePlayer = this.getPrivatePlayer(player.userId);
-    const text = message.slice(0, 500);
+    const text = normalizeChatMessage(message);
     const createdAt = Date.now();
     const recipients = this.getPrivateChatRecipients(player, privatePlayer, channel);
     if (recipients.length === 0) {
@@ -1962,6 +2068,9 @@ export class GameRoom extends Room<{ state: GameState }> {
       targetId: event.targetId ?? null,
       payload: event.payload ?? {},
     });
+    if (this.achievementEvents.length > 500) {
+      this.achievementEvents.shift();
+    }
 
     this.queuePersistence(async () => {
       const gameId = await this.ensurePersistedGame();
@@ -2062,6 +2171,12 @@ export class GameRoom extends Room<{ state: GameState }> {
       return;
     }
 
+    if (this.persistQueueLength >= GameRoom.MAX_PENDING_PERSIST) {
+      console.warn(`[GameRoom ${this.state.code}] persistQueue backpressure (${this.persistQueueLength}), dropping write`);
+      return;
+    }
+
+    this.persistQueueLength += 1;
     this.persistQueue = this.persistQueue
       .then(task)
       .catch((error) => {
@@ -2069,6 +2184,9 @@ export class GameRoom extends Room<{ state: GameState }> {
           Sentry.captureException(error);
         }
         console.error("[game-persistence]", error);
+      })
+      .finally(() => {
+        this.persistQueueLength = Math.max(0, this.persistQueueLength - 1);
       });
   }
 
@@ -2097,6 +2215,26 @@ export class GameRoom extends Room<{ state: GameState }> {
       roleCount.role = role;
       roleCount.count = count ?? 0;
       this.state.roleCounts.push(roleCount);
+    }
+  }
+
+  private enforceRuntimeRoleAvailability() {
+    if (this.config.narratorMode === "full_human") {
+      return;
+    }
+
+    const fallbackRole: RoleCode = getGameFamily(this.config.mode) === "mafia" ? "civilian" : "ordinary_villager";
+    let fallbackCount = this.config.roles[fallbackRole] ?? 0;
+
+    for (const [role, count] of Object.entries(this.config.roles) as [RoleCode, number | undefined][]) {
+      if ((count ?? 0) > 0 && getRoleRuntimeStatus(role) === "manual_only") {
+        fallbackCount += count ?? 0;
+        delete this.config.roles[role];
+      }
+    }
+
+    if (fallbackCount > 0) {
+      this.config.roles[fallbackRole] = fallbackCount;
     }
   }
 
@@ -2252,6 +2390,13 @@ function parseChatChannel(channel: string): ChatChannel | null {
     channel === "system"
     ? channel
     : null;
+}
+
+function normalizeChatMessage(message: unknown): string {
+  if (typeof message !== "string") {
+    throw new Error("Невалидно съобщение.");
+  }
+  return message.slice(0, 500);
 }
 
 function ensureNightActionAllowed(role: RoleCode, action: NightActionCommand, phase: string): void {

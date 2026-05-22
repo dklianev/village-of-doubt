@@ -6,6 +6,7 @@ import type {
   MayorMode,
   NarratorMode,
   NarratorVoice,
+  PhaseTimers,
   RoleDistribution,
   RolePreset,
   RoomVisibility,
@@ -41,6 +42,7 @@ export interface CreateRoomOptions {
   narratorMode?: NarratorMode;
   communicationMode?: CommunicationMode;
   tempoProfile?: TempoProfile;
+  customTimers?: Partial<PhaseTimers>;
   loversEnabled?: boolean;
   revealRolesOnDeath?: boolean;
   allowSkipVote?: boolean;

@@ -46,4 +46,39 @@ describe("LobbyWizard", () => {
 
     expect(screen.getByText("Провери името на стаята и кода.")).toBeInTheDocument();
   });
+
+  it("applies the classic lovers recipe with Cupid from the first screen", async () => {
+    const user = userEvent.setup();
+    render(<LobbyWizard family="werewolves" />);
+
+    await user.click(screen.getByRole("button", { name: /Класика с Влюбени/ }));
+
+    expect(screen.getByRole("heading", { name: "Върколак" })).toBeInTheDocument();
+    expect(screen.getAllByText("Купидон").length).toBeGreaterThan(0);
+    expect(screen.getByText("Включен")).toBeInTheDocument();
+  });
+
+  it("shows Cupid and Lovers as a visible role choice", async () => {
+    const user = userEvent.setup();
+    render(<LobbyWizard family="werewolves" />);
+
+    await user.click(screen.getByRole("button", { name: /Напред/ }));
+
+    expect(screen.getByText("Купидон и Влюбени")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Включено" })).toBeEnabled();
+  });
+
+  it("opens manual tempo controls and updates the preview", async () => {
+    const user = userEvent.setup();
+    render(<LobbyWizard family="werewolves" />);
+
+    await user.click(screen.getByRole("button", { name: /Ръчно/ }));
+
+    expect(screen.getByRole("region", { name: "Ръчно темпо" })).toBeInTheDocument();
+    expect(screen.getByText("Ти водиш ритъма")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Увеличи: Обсъждане през деня" }));
+
+    expect(screen.getAllByText(/Ден 195/).length).toBeGreaterThan(0);
+  });
 });

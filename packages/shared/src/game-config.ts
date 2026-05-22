@@ -85,6 +85,7 @@ export interface GameConfigOptions {
   narratorMode?: NarratorMode;
   communicationMode?: CommunicationMode;
   tempoProfile?: TempoProfile;
+  customTimers?: Partial<PhaseTimers>;
   loversEnabled?: boolean;
   revealRolesOnDeath?: boolean;
   tieBreaker?: TieBreaker;
@@ -109,6 +110,30 @@ export interface RoleValidationOptions {
   werewolfVariant?: WerewolfVariant;
   promoRolesEnabled?: boolean;
 }
+
+export type RoleValidationCode =
+  | "ROLE_COUNT_MISMATCH"
+  | "ROLE_WRONG_FAMILY"
+  | "BALANCE_STRONG_EVIL"
+  | "BALANCE_STRONG_GOOD"
+  | "THREAT_MISSING"
+  | "WEREWOLVES_TOO_FEW"
+  | "VILLAGERS_TOO_FEW"
+  | "INVESTIGATOR_MISSING"
+  | "ROLE_DEPENDENCY_MISSING"
+  | "DUAL_FACTION_MINIMUM"
+  | "MAYOR_MODE_REQUIRED"
+  | "ADVANCED_ROLE_NOTICE"
+  | "MAFIA_MISSING"
+  | "COMMISSIONER_MISSING"
+  | "EVIL_TOO_WEAK"
+  | "EVIL_TOO_STRONG"
+  | "PLAYER_COUNT_RECOMMENDED";
+
+export type RoleValidationIssue = {
+  code: RoleValidationCode;
+  messageBg: string;
+};
 
 const DEFAULT_RULESET_VERSION = "bg-werewolf-mafia-2026-04-28-separated-games";
 
@@ -247,6 +272,65 @@ export const TEMPO_PRESETS: Record<TempoProfile, PhaseTimers> = {
     autoAdvanceWhenReady: false,
   },
 };
+
+type NumericTimerKey = Exclude<keyof PhaseTimers, "autoAdvanceWhenReady">;
+
+const PHASE_TIMER_LIMITS: Record<NumericTimerKey, { min: number; max: number }> = {
+  roleRevealSeconds: { min: 5, max: 120 },
+  personalNightActionSeconds: { min: 10, max: 300 },
+  factionNightActionSeconds: { min: 10, max: 300 },
+  dayDiscussionSeconds: { min: 0, max: 900 },
+  playerSpeechSeconds: { min: 15, max: 240 },
+  voteSeconds: { min: 10, max: 240 },
+  resolutionSeconds: { min: 5, max: 90 },
+  minimumPhaseSeconds: { min: 3, max: 30 },
+};
+
+export function normalizePhaseTimers(
+  timers: Partial<PhaseTimers> | undefined,
+  base: PhaseTimers = TEMPO_PRESETS.manual,
+  tempoProfile: TempoProfile = "manual",
+): PhaseTimers {
+  const nightActionSeconds = timers?.factionNightActionSeconds;
+  const allowAutoAdvanceOverride = tempoProfile === "manual";
+  return {
+    roleRevealSeconds: clampTimer("roleRevealSeconds", timers?.roleRevealSeconds, base.roleRevealSeconds),
+    personalNightActionSeconds: clampTimer(
+      "personalNightActionSeconds",
+      timers?.personalNightActionSeconds ?? nightActionSeconds,
+      base.personalNightActionSeconds,
+    ),
+    factionNightActionSeconds: clampTimer(
+      "factionNightActionSeconds",
+      timers?.factionNightActionSeconds,
+      base.factionNightActionSeconds,
+    ),
+    dayDiscussionSeconds: clampTimer("dayDiscussionSeconds", timers?.dayDiscussionSeconds, base.dayDiscussionSeconds),
+    playerSpeechSeconds: clampTimer("playerSpeechSeconds", timers?.playerSpeechSeconds, base.playerSpeechSeconds),
+    voteSeconds: clampTimer("voteSeconds", timers?.voteSeconds, base.voteSeconds),
+    resolutionSeconds: clampTimer("resolutionSeconds", timers?.resolutionSeconds, base.resolutionSeconds),
+    minimumPhaseSeconds: clampTimer("minimumPhaseSeconds", timers?.minimumPhaseSeconds, base.minimumPhaseSeconds),
+    autoAdvanceWhenReady:
+      allowAutoAdvanceOverride && typeof timers?.autoAdvanceWhenReady === "boolean"
+        ? timers.autoAdvanceWhenReady
+        : base.autoAdvanceWhenReady,
+  };
+}
+
+export function resolvePhaseTimers(
+  tempoProfile: TempoProfile,
+  customTimers?: Partial<PhaseTimers>,
+): PhaseTimers {
+  return tempoProfile === "manual"
+    ? normalizePhaseTimers(customTimers, TEMPO_PRESETS.manual, tempoProfile)
+    : normalizePhaseTimers(undefined, TEMPO_PRESETS[tempoProfile], tempoProfile);
+}
+
+function clampTimer(key: NumericTimerKey, value: number | undefined, fallback: number) {
+  const limits = PHASE_TIMER_LIMITS[key];
+  const safeValue = Number.isFinite(value) ? Number(value) : fallback;
+  return Math.min(limits.max, Math.max(limits.min, Math.round(safeValue)));
+}
 
 const MAFIA_FREE_PRESETS: Record<number, RoleDistribution> = {
   4: { civilian: 2, commissioner: 1, mafioso: 1 },
@@ -406,7 +490,17 @@ export function validateRoleDistributionForMode(
   distribution: RoleDistribution,
   options: RoleValidationOptions = {},
 ): string[] {
-  const warnings: string[] = [];
+  return validateRoleDistributionIssuesForMode(mode, playerCount, distribution, options).map((issue) => issue.messageBg);
+}
+
+export function validateRoleDistributionIssuesForMode(
+  mode: GameMode,
+  playerCount: number,
+  distribution: RoleDistribution,
+  options: RoleValidationOptions = {},
+): RoleValidationIssue[] {
+  const warnings: RoleValidationIssue[] = [];
+  const push = (code: RoleValidationCode, messageBg: string) => warnings.push({ code, messageBg });
   const family = getGameFamily(mode);
   const total = countRoles(distribution);
   const evilCount =
@@ -417,12 +511,12 @@ export function validateRoleDistributionForMode(
     (distribution.maniac ?? 0);
 
   if (total !== playerCount) {
-    warnings.push(`Броят роли (${total}) не съвпада с броя играчи (${playerCount}).`);
+    push("ROLE_COUNT_MISMATCH", `Броят роли (${total}) не съвпада с броя играчи (${playerCount}).`);
   }
 
   for (const role of Object.keys(distribution) as RoleCode[]) {
     if (!isRoleAvailableInFamily(role, family)) {
-      warnings.push(`${getRoleNameBg(role)} не принадлежи към тази игра.`);
+      push("ROLE_WRONG_FAMILY", `${getRoleNameBg(role)} не принадлежи към тази игра.`);
     }
   }
 
@@ -433,64 +527,63 @@ export function validateRoleDistributionForMode(
     const villagers = distribution.ordinary_villager ?? 0;
 
     if (Math.abs(balance) > 3) {
-      warnings.push(
-        balance < 0
-          ? "Балансът е силно в полза на Върколаците или Вампирите."
-          : "Балансът е силно в полза на Селяните.",
+      push(
+        balance < 0 ? "BALANCE_STRONG_EVIL" : "BALANCE_STRONG_GOOD",
+        balance < 0 ? "Балансът е силно в полза на Върколаците или Вампирите." : "Балансът е силно в полза на Селяните.",
       );
     }
     if (werewolves === 0 && vampires === 0) {
-      warnings.push("Липсва основна заплаха: добави Върколаци или Вампири.");
+      push("THREAT_MISSING", "Липсва основна заплаха: добави Върколаци или Вампири.");
     }
     if (werewolves > 0 && werewolves < 2 && playerCount >= 6) {
-      warnings.push("Стандартна игра с Върколаци трябва да има няколко Върколака.");
+      push("WEREWOLVES_TOO_FEW", "Стандартна игра с Върколаци трябва да има няколко Върколака.");
     }
     if (villagers < 2) {
-      warnings.push("Стандартна игра трябва да има няколко Селяни.");
+      push("VILLAGERS_TOO_FEW", "Стандартна игра трябва да има няколко Селяни.");
     }
     if ((distribution.seer ?? 0) === 0 && (distribution.oracle ?? 0) === 0) {
-      warnings.push("Добави Оракул или Гадателка.");
+      push("INVESTIGATOR_MISSING", "Добави Оракул или Гадателка.");
     }
     if ((distribution.red_riding_hood ?? 0) > 0 && (distribution.hunter ?? 0) === 0) {
-      warnings.push("Червена шапчица може да се включи само ако Ловецът също е в играта.");
+      push("ROLE_DEPENDENCY_MISSING", "Червена шапчица може да се включи само ако Ловецът също е в играта.");
     }
     if ((distribution.priest ?? 0) > 0) {
       for (const dependency of ["blacksmith", "vampire_hunter", "witch"] as const) {
         if ((distribution[dependency] ?? 0) === 0) {
-          warnings.push(`Свещеникът изисква ${getRoleNameBg(dependency)}.`);
+          push("ROLE_DEPENDENCY_MISSING", `Свещеникът изисква ${getRoleNameBg(dependency)}.`);
         }
       }
     }
     if ((distribution.drunk ?? 0) > 0) {
-      warnings.push("Пияницата е разширена роля и е препоръчителна за по-опитни играчи.");
+      push("ADVANCED_ROLE_NOTICE", "Пияницата е разширена роля и е препоръчителна за по-опитни играчи.");
     }
     if (werewolves > 0 && vampires > 0 && (werewolves < 3 || vampires < 3)) {
-      warnings.push("При едновременни Върколаци и Вампири трябва да има поне 3 Върколака и 3 Вампира.");
+      push("DUAL_FACTION_MINIMUM", "При едновременни Върколаци и Вампири трябва да има поне 3 Върколака и 3 Вампира.");
     }
     if ((distribution.guard_dog ?? 0) > 0 && ((distribution.mayor ?? 0) === 0 || options.mayorMode !== "public_vote")) {
-      warnings.push("Куче пазач може да се използва само с публично избран Кмет.");
+      push("MAYOR_MODE_REQUIRED", "Куче пазач може да се използва само с публично избран Кмет.");
     }
     if ((distribution.stray_cat ?? 0) > 0) {
-      warnings.push("Улична котка е промо роля. Включвай я само в разширен режим.");
+      push("ADVANCED_ROLE_NOTICE", "Улична котка е промо роля. Включвай я само в разширен режим.");
     }
   } else {
     const mafiaCount = (distribution.mafioso ?? 0) + (distribution.don ?? 0);
     if (mafiaCount === 0) {
-      warnings.push("Липсва Мафия.");
+      push("MAFIA_MISSING", "Липсва Мафия.");
     }
     if ((distribution.commissioner ?? 0) === 0 && mafiaCount > 0) {
-      warnings.push("Липсва Комисар.");
+      push("COMMISSIONER_MISSING", "Липсва Комисар.");
     }
     if (evilCount < Math.max(1, Math.floor(playerCount / 5))) {
-      warnings.push("Мафията вероятно е твърде слаба.");
+      push("EVIL_TOO_WEAK", "Мафията вероятно е твърде слаба.");
     }
     if (evilCount > Math.ceil(playerCount / 3)) {
-      warnings.push("Мафията вероятно е твърде силна.");
+      push("EVIL_TOO_STRONG", "Мафията вероятно е твърде силна.");
     }
   }
 
   if ((distribution.thief ?? 0) > 0 && playerCount < 13) {
-    warnings.push("Крадецът е разширена роля и е по-подходящ за 13+ играчи.");
+    push("PLAYER_COUNT_RECOMMENDED", "Крадецът е разширена роля и е по-подходящ за 13+ играчи.");
   }
 
   return warnings;
@@ -549,6 +642,7 @@ export function createGameConfigFromOptions(options: GameConfigOptions = {}): Ga
   const config = createDefaultGameConfig(mode, playerCount);
 
   const tempoProfile = options.tempoProfile ?? config.tempoProfile;
+  const timers = resolvePhaseTimers(tempoProfile, options.customTimers);
   const loversEnabled = options.loversEnabled ?? config.loversEnabled;
   const rolePreset = options.roles ? "manual" : options.rolePreset ?? config.rolePreset;
   const roles = options.roles
@@ -573,7 +667,7 @@ export function createGameConfigFromOptions(options: GameConfigOptions = {}): Ga
     narratorMode: options.narratorMode ?? config.narratorMode,
     communicationMode: options.communicationMode ?? config.communicationMode,
     tempoProfile,
-    timers: TEMPO_PRESETS[tempoProfile],
+    timers,
     liveMode: tempoProfile === "live",
     loversEnabled,
     revealRolesOnDeath: options.revealRolesOnDeath ?? config.revealRolesOnDeath,

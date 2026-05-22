@@ -69,7 +69,9 @@ export function AdvancedDrawer({
         {state.family === "werewolves" ? (
           <section className="advanced-panel">
             <h3>Върколак</h3>
-            <Toggle checked={state.advanced.loversEnabled} label="Включи Купидон и Влюбени, когато разпределението го позволява" onChange={(value) => setAdvanced("loversEnabled", value)} />
+            <p className="advanced-panel-note">
+              Купидон и Влюбените вече са основна карта в стъпка „Роли“, за да се вижда ясно кога са включени.
+            </p>
           </section>
         ) : (
           <section className="advanced-panel">

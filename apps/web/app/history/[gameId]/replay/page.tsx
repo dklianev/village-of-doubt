@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { createDatabase, getGameHistoryById, getGameTimeline } from "@werewolf/database";
+import { createDatabase, getGameHistoryById, getGameTimeline, getPlayerRolesInGames } from "@werewolf/database";
 import {
   deriveAchievementsFromEvents,
   getRoleNameBg,
@@ -11,6 +11,7 @@ import {
   type GamePhase,
   type RoleCode,
 } from "@werewolf/shared";
+import { requireSession } from "@/lib/require-session";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,8 @@ export const metadata: Metadata = {
 
 export default async function ReplayPage({ params }: { params: Promise<{ gameId: string }> }) {
   const { gameId } = await params;
-  const replay = await loadReplay(gameId);
+  const session = await requireSession(`/history/${gameId}/replay`);
+  const replay = await loadReplay(gameId, session.user.id);
   if (!replay) {
     notFound();
   }
@@ -151,7 +153,7 @@ export default async function ReplayPage({ params }: { params: Promise<{ gameId:
   );
 }
 
-async function loadReplay(gameId: string) {
+async function loadReplay(gameId: string, viewerUserId: string) {
   if (!process.env.DATABASE_URL) {
     return null;
   }
@@ -162,7 +164,11 @@ async function loadReplay(gameId: string) {
     if (!game) {
       return null;
     }
-    const timeline = await getGameTimeline(db, game.id, 300);
+    const rolesByGameId = await getPlayerRolesInGames(db, viewerUserId, [game.id]);
+    const canSeeFullTimeline = game.hostId === viewerUserId || rolesByGameId.has(game.id);
+    const timeline = await getGameTimeline(db, game.id, 300, {
+      visibilityFilter: canSeeFullTimeline ? "all" : "public",
+    });
     const orderedTimeline = [...timeline].reverse();
     return { game, timeline: orderedTimeline, achievements: deriveAchievementsFromEvents(orderedTimeline) };
   } catch (error) {
