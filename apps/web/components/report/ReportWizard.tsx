@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { EmptyState } from "@werewolf/ui";
+import { EmptyState, Pill } from "@werewolf/ui";
 import { type FormEvent, useId, useMemo, useState } from "react";
 import { ArtifactImage } from "@/components/ArtifactImage";
 
@@ -370,27 +369,27 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
 
         <div className="report-wizard-actions">
           {stepIndex > 0 ? (
-            <button type="button" className="report-wizard-back" onClick={goBack}>
+            <Pill type="button" intent="ghost" onClick={goBack}>
               ← Назад
-            </button>
+            </Pill>
           ) : (
-            <Link href="/" className="report-wizard-back">
+            <Pill as="a" href="/" intent="ghost">
               Затвори
-            </Link>
+            </Pill>
           )}
 
           {step === "review" ? (
-            <button
+            <Pill
               type="submit"
-              className="report-wizard-submit"
+              intent="primary"
               disabled={status === "submitting"}
             >
               {status === "submitting" ? "Изпращаме..." : "Изпрати сигнал"}
-            </button>
+            </Pill>
           ) : (
-            <button type="button" className="report-wizard-next" onClick={advance}>
+            <Pill type="button" intent="primary" onClick={advance}>
               Напред →
-            </button>
+            </Pill>
           )}
         </div>
       </form>
@@ -445,12 +444,12 @@ function ReportSuccessState({
             )}
 
             <div className="report-success-actions">
-              <Link href="/" className="report-success-link">
+              <Pill as="a" href="/" intent="secondary">
                 Към началото
-              </Link>
-              <Link href="/account" className="report-success-link">
+              </Pill>
+              <Pill as="a" href="/account" intent="secondary">
                 Към профила
-              </Link>
+              </Pill>
             </div>
           </div>
         }
