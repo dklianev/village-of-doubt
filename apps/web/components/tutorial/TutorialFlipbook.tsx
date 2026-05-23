@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { X } from "lucide-react";
+import { Display, SceneCard } from "@werewolf/ui/server";
 import { SlideDay } from "./SlideDay";
 import { SlideFinal } from "./SlideFinal";
 import { SlideNight } from "./SlideNight";
@@ -146,6 +147,17 @@ export function TutorialFlipbook() {
           </button>
         </aside>
       ) : null}
+
+      <header className="tutorial-flipbook-hero" aria-label="Първи стъпки">
+        <SceneCard eyebrow="ПЪРВИ СТЪПКИ" density="md">
+          <div className="tutorial-flipbook-hero-copy">
+            <Display size="h2" as="h1">
+              Наръчник в шест сцени.
+            </Display>
+            <p>Мини кратка вечер на масата, преди да отвориш първата стая.</p>
+          </div>
+        </SceneCard>
+      </header>
 
       <TutorialProgress current={current} total={TOTAL_SLIDES} onJump={goTo} />
 

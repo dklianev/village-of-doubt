@@ -2253,6 +2253,23 @@ html[data-theme="light"] .landing-hero-card::before {
   gap: 20px;
 }
 
+.tutorial-flipbook-hero {
+  width: 100%;
+}
+
+.tutorial-flipbook-hero-copy {
+  display: grid;
+  max-width: 720px;
+  gap: 12px;
+}
+
+.tutorial-flipbook-hero-copy p {
+  margin: 0;
+  color: var(--ds-ink-scene-soft);
+  font-size: var(--ds-type-lede);
+  line-height: 1.6;
+}
+
 .tutorial-welcome-banner {
   display: flex;
   align-items: center;
