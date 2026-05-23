@@ -54,7 +54,7 @@ import { NightActionPanel } from "@/components/play/NightActionPanel";
 import { buildPrimaryNightAction, shortcutTargets } from "@/lib/play/night-actions";
 import { VotingPanel } from "@/components/play/VotingPanel";
 import { PlayerTokensSkeleton } from "@/components/skeleton";
-import { arePlayersEqual } from "@/lib/play/player-display";
+import { arePhaseSlicesEqual, arePlayerListsEqual } from "@/lib/play/equality";
 import { canFactionKill, isNightPhase } from "@/lib/play/role-rules";
 import { phaseBg, phaseSigil } from "@/lib/play/phase-display";
 import {
@@ -1269,10 +1269,6 @@ function phaseSliceFor(snapshot: GameSnapshot): PhaseSlice {
   };
 }
 
-export function arePhaseSlicesEqual(a: PhaseSlice, b: PhaseSlice) {
-  return a.phase === b.phase && a.round === b.round && a.phaseEndsAt === b.phaseEndsAt;
-}
-
 function areSnapshotShellEqual(a: GameSnapshot, b: GameSnapshot) {
   return a.code === b.code
     && a.mode === b.mode
@@ -1290,20 +1286,6 @@ function areSnapshotShellEqual(a: GameSnapshot, b: GameSnapshot) {
     && a.winnerTeam === b.winnerTeam
     && a.winnerReasonBg === b.winnerReasonBg
     && areRoleCountsEqual(a.roleCounts, b.roleCounts);
-}
-
-export function arePlayerListsEqual(a: PublicPlayer[], b: PublicPlayer[]) {
-  if (a.length !== b.length) {
-    return false;
-  }
-  for (let index = 0; index < a.length; index += 1) {
-    const left = a[index];
-    const right = b[index];
-    if (!left || !right || !arePlayersEqual(left, right)) {
-      return false;
-    }
-  }
-  return true;
 }
 
 function areRoleCountsEqual(a: PublicRoleCount[], b: PublicRoleCount[]) {
