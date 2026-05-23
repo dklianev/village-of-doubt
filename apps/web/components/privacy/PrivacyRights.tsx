@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { Display, PaperCard } from "@werewolf/ui";
 
 interface RightAction {
   id: string;
@@ -57,34 +60,40 @@ const RIGHTS: readonly RightAction[] = [
 
 export function PrivacyRights() {
   return (
-    <section className="privacy-section privacy-section-rights">
-      <header className="privacy-section-head">
-        <p className="privacy-section-kicker">твоите права</p>
-        <h2>Какво можеш да направиш.</h2>
-        <p className="privacy-section-lede">
-          Шест права по GDPR — всяко с конкретен начин да го упражниш.
-        </p>
-      </header>
+    <section
+      className="privacy-section privacy-section-rights"
+      style={{ padding: 0, border: "none", background: "transparent" }}
+    >
+      <PaperCard eyebrow="ТВОИТЕ ПРАВА" density="lg">
+        <header className="privacy-section-head">
+          <Display as="h2" size="h3">
+            Какво можеш да направиш.
+          </Display>
+          <p className="privacy-section-lede">
+            Шест права по GDPR — всяко с конкретен начин да го упражниш.
+          </p>
+        </header>
 
-      <ul className="privacy-rights-grid">
-        {RIGHTS.map((right) => (
-          <li key={right.id}>
-            <article className="privacy-right-card">
-              <h3>{right.title}</h3>
-              <p>{right.description}</p>
-              {right.external ? (
-                <a href={right.href} target="_blank" rel="noopener noreferrer" className="privacy-right-cta">
-                  {right.ctaLabel}
-                </a>
-              ) : (
-                <Link href={right.href} className="privacy-right-cta">
-                  {right.ctaLabel}
-                </Link>
-              )}
-            </article>
-          </li>
-        ))}
-      </ul>
+        <ul className="privacy-rights-grid">
+          {RIGHTS.map((right) => (
+            <li key={right.id}>
+              <article className="privacy-right-card">
+                <h3>{right.title}</h3>
+                <p>{right.description}</p>
+                {right.external ? (
+                  <a href={right.href} target="_blank" rel="noopener noreferrer" className="privacy-right-cta">
+                    {right.ctaLabel}
+                  </a>
+                ) : (
+                  <Link href={right.href} className="privacy-right-cta">
+                    {right.ctaLabel}
+                  </Link>
+                )}
+              </article>
+            </li>
+          ))}
+        </ul>
+      </PaperCard>
     </section>
   );
 }

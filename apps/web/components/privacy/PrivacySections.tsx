@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Display, PaperCard } from "@werewolf/ui";
 import type { ReactNode } from "react";
 
 interface SectionData {
@@ -156,30 +157,33 @@ const SECTIONS: readonly SectionData[] = [
 
 export function PrivacySections() {
   return (
-    <section className="privacy-section">
-      <header className="privacy-section-head">
-        <p className="privacy-section-kicker">детайли</p>
-        <h2>По-конкретно.</h2>
-        <p className="privacy-section-lede">
-          Детайлите зад обещанията — за тези, които искат пълен поглед.
-        </p>
-      </header>
+    <section className="privacy-section" style={{ padding: 0, border: "none", background: "transparent" }}>
+      <PaperCard eyebrow="ДЕТАЙЛИ" density="lg">
+        <header className="privacy-section-head">
+          <Display as="h2" size="h3">
+            По-конкретно.
+          </Display>
+          <p className="privacy-section-lede">
+            Детайлите зад обещанията — за тези, които искат пълен поглед.
+          </p>
+        </header>
 
-      <ol className="privacy-section-list">
-        {SECTIONS.map((section) => (
-          <li key={section.id} id={section.id} className="privacy-section-item">
-            <h3>
-              <span className="privacy-section-num">{section.number}.</span>
-              {section.title}
-            </h3>
-            <aside className="privacy-section-tldr">
-              <span className="privacy-section-tldr-label">Накратко</span>
-              <span>{section.tldr}</span>
-            </aside>
-            <div className="privacy-section-body">{section.body}</div>
-          </li>
-        ))}
-      </ol>
+        <ol className="privacy-section-list">
+          {SECTIONS.map((section) => (
+            <li key={section.id} id={section.id} className="privacy-section-item">
+              <h3>
+                <span className="privacy-section-num">{section.number}.</span>
+                {section.title}
+              </h3>
+              <aside className="privacy-section-tldr">
+                <span className="privacy-section-tldr-label">Накратко</span>
+                <span>{section.tldr}</span>
+              </aside>
+              <div className="privacy-section-body">{section.body}</div>
+            </li>
+          ))}
+        </ol>
+      </PaperCard>
     </section>
   );
 }

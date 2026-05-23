@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { PaperCard } from "@werewolf/ui";
 
 interface VersionEntry {
   date: string;
@@ -35,37 +36,39 @@ export function PrivacyVersionHistory() {
 
   return (
     <section className="privacy-section privacy-section-history">
-      <button
-        type="button"
-        className="privacy-history-toggle"
-        onClick={() => setOpen((value) => !value)}
-        aria-expanded={open}
-      >
-        <span className="privacy-history-icon" aria-hidden>
-          {open ? "−" : "+"}
-        </span>
-        <span>История на промените ({HISTORY.length})</span>
-      </button>
+      <PaperCard eyebrow="ИСТОРИЯ" density="md">
+        <button
+          type="button"
+          className="privacy-history-toggle"
+          onClick={() => setOpen((value) => !value)}
+          aria-expanded={open}
+        >
+          <span className="privacy-history-icon" aria-hidden>
+            {open ? "−" : "+"}
+          </span>
+          <span>История на промените ({HISTORY.length})</span>
+        </button>
 
-      {open ? (
-        <ol className="privacy-history-list">
-          {HISTORY.map((entry) => (
-            <li key={entry.date}>
-              <article>
-                <header>
-                  <time className="privacy-history-date">{entry.date}</time>
-                  <p className="privacy-history-summary">{entry.summary}</p>
-                </header>
-                <ul>
-                  {entry.details.map((detail) => (
-                    <li key={detail}>{detail}</li>
-                  ))}
-                </ul>
-              </article>
-            </li>
-          ))}
-        </ol>
-      ) : null}
+        {open ? (
+          <ol className="privacy-history-list">
+            {HISTORY.map((entry) => (
+              <li key={entry.date}>
+                <article>
+                  <header>
+                    <time className="privacy-history-date">{entry.date}</time>
+                    <p className="privacy-history-summary">{entry.summary}</p>
+                  </header>
+                  <ul>
+                    {entry.details.map((detail) => (
+                      <li key={detail}>{detail}</li>
+                    ))}
+                  </ul>
+                </article>
+              </li>
+            ))}
+          </ol>
+        ) : null}
+      </PaperCard>
     </section>
   );
 }
