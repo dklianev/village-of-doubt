@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Image from "next/image";
+import { Display, SceneCard } from "@werewolf/ui/server";
 import { FriendsClient } from "@/components/friends-client";
 import { requireSession } from "@/lib/require-session";
 
@@ -14,24 +14,15 @@ export default async function FriendsPage() {
   return (
     <main className="shell utility-shell friends-shell framed-shell">
       <div className="framed-shell-inner">
-        <header className="friends-hero">
-          <Image
-            src="/game-art/legal/friends-banner.webp"
-            alt=""
-            fill
-            priority
-            sizes="(max-width: 1180px) 100vw, 1180px"
-            className="friends-hero-img"
-          />
-          <div className="friends-hero-scrim" aria-hidden />
-          <div className="friends-hero-copy">
-            <p className="friends-kicker">приятели</p>
-            <h1>Покани групата за следваща маса.</h1>
-            <p>
-              Локален списък за имена, бележки и бърза покана. Данните остават само в твоя
-              браузър.
-            </p>
-          </div>
+        <header className="friends-hero-frame" aria-label="Познати на масата">
+          <SceneCard eyebrow="ПОЗНАТИ НА МАСАТА" density="lg">
+            <div className="friends-hero-copy">
+              <Display size="h1">Покани групата за следваща маса.</Display>
+              <p>
+                Локален списък за имена, бележки и бърза покана. Данните остават само в твоя браузър.
+              </p>
+            </div>
+          </SceneCard>
         </header>
         <FriendsClient />
       </div>
