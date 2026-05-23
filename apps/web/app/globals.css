@@ -17974,72 +17974,6 @@ body:has(.faq-shell)::after {
   width: 100%;
 }
 
-.status-hero {
-  position: relative;
-  overflow: hidden;
-  width: 100%;
-  min-height: clamp(280px, 38vw, 460px);
-}
-
-.status-hero-banner {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-}
-
-.status-hero-img {
-  object-fit: cover;
-  object-position: center 38%;
-}
-
-.status-hero-scrim {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(13, 10, 8, 0.22) 0%, rgba(13, 10, 8, 0.55) 50%, rgba(13, 10, 8, 0.95) 100%);
-}
-
-.status-hero-inner {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  min-height: clamp(280px, 38vw, 460px);
-  flex-direction: column;
-  justify-content: flex-end;
-  max-width: 980px;
-  margin: 0 auto;
-  padding: 32px 24px 40px;
-}
-
-.status-hero-kicker {
-  margin: 0 0 10px;
-  color: var(--status-accent) !important;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.32em;
-  text-transform: uppercase;
-}
-
-.status-hero-title {
-  max-width: 18ch;
-  margin: 0 0 12px;
-  color: #f5e8c8 !important;
-  font-family: "Noto Serif Display", "Noto Serif", serif;
-  font-size: clamp(2.4rem, 6vw, 4rem);
-  font-weight: 900;
-  letter-spacing: 0;
-  line-height: 1.05;
-  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.6);
-  text-wrap: balance;
-}
-
-.status-hero-subtitle {
-  max-width: 56ch;
-  margin: 0 0 18px;
-  color: rgba(245, 232, 200, 0.85) !important;
-  font-size: 1rem;
-  line-height: 1.55;
-}
-
 .status-hero-meta {
   display: inline-flex;
   align-self: start;
@@ -18070,19 +18004,6 @@ body:has(.faq-shell)::after {
 .status-hero-meta[data-overall="down"] .status-hero-dot {
   background: var(--status-down);
   box-shadow: 0 0 12px var(--status-down);
-}
-
-@keyframes status-pulse {
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-
-  50% {
-    opacity: 0.55;
-    transform: scale(1.18);
-  }
 }
 
 .status-hero-meta-label {
@@ -18328,70 +18249,6 @@ body:has(.faq-shell)::after {
 
 .status-legend-grid div[data-status="unknown"] .status-legend-dot {
   background: var(--status-unknown);
-}
-
-.status-incident-card {
-  padding: 18px 20px;
-  border: 1px solid var(--status-border);
-  border-radius: 12px;
-  background: var(--status-surface-strong);
-}
-
-.status-incident-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 8px;
-}
-
-.status-incident-date {
-  color: var(--status-accent);
-  font-size: 0.85rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-}
-
-.status-incident-duration {
-  padding: 2px 10px;
-  color: var(--status-down);
-  border: 1px solid rgba(217, 74, 61, 0.4);
-  border-radius: 999px;
-  background: rgba(217, 74, 61, 0.18);
-  font-size: 0.78rem;
-  font-weight: 700;
-}
-
-.status-incident-summary {
-  margin: 0 0 6px;
-  color: var(--status-text);
-  font-size: 0.95rem;
-  line-height: 1.55;
-}
-
-.status-incident-resolution {
-  margin: 0;
-  color: var(--status-text-muted);
-  font-size: 0.85rem;
-  font-style: italic;
-}
-
-.status-incident-empty {
-  margin: 0;
-  padding: 18px 20px;
-  color: var(--status-text-muted);
-  border: 1px dashed var(--status-border);
-  border-radius: 10px;
-  background: rgba(245, 232, 200, 0.04);
-  font-size: 0.92rem;
-  font-style: italic;
-}
-
-.status-incident-empty a {
-  color: var(--status-accent);
-  text-decoration: underline;
-  text-underline-offset: 3px;
 }
 
 .status-subscribe-grid {
@@ -19503,16 +19360,6 @@ html[data-theme="light"] .site-footer-tagline {
   text-shadow: var(--legal-report-hero-stat-text-shadow);
 }
 
-.status-hero-title {
-  color: var(--legal-status-hero-title-color) !important;
-  text-shadow: var(--legal-status-hero-title-text-shadow);
-}
-
-.status-hero-subtitle {
-  color: var(--legal-status-hero-subtitle-color) !important;
-  text-shadow: var(--legal-status-hero-subtitle-text-shadow);
-}
-
 .status-hero-meta-label {
   color: var(--legal-status-hero-meta-label-color) !important;
   text-shadow: var(--legal-status-hero-meta-label-text-shadow);
@@ -19533,10 +19380,6 @@ html[data-theme="light"] .site-footer-tagline {
 
 .report-hero-kicker {
   color: var(--legal-report-hero-kicker-color) !important;
-}
-
-.status-hero-kicker {
-  color: var(--legal-status-hero-kicker-color) !important;
 }
 
 .privacy-data-row {
@@ -19597,10 +19440,6 @@ html[data-theme="light"] .site-footer-tagline {
 
 .status-legend-grid > div {
   background: var(--legal-status-legend-grid-div-background);
-}
-
-.status-incident-empty {
-  background: var(--legal-status-incident-empty-background);
 }
 
 .terms-section-conflict {
@@ -20325,4 +20164,3 @@ html[data-theme="light"] .site-utility-separator {
     transform: rotate(360deg);
   }
 }
-
