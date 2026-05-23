@@ -67,3 +67,22 @@ Also removed the obsolete `/account` hero banner `ResourceHints` entry after
 
 - Delete scan: old `.account-hero*`, native `.danger-confirm-dialog`, old `.replay-hero*`, and old evidence empty shell classes have zero live JSX/TS references.
 - Kept intentionally: `.case-file` and `.case-file-ghost*` because `EvidenceWallSkeleton` still uses them.
+
+## PR D — 2026-05-23 (/achievements + /leaderboard + /friends primitive migration)
+
+Lines removed from `apps/web/app/globals.css`:
+
+| Class family | LOC removed | Replaced by |
+|---|---:|---|
+| `.achievement-hero`, `.achievement-hero-lede`, old mobile hero overrides | 25 | `/achievements` `SceneCard` hero + `Display` |
+| `.masthead-title`, `.empty-lede`, `.empty-cta` | 27 | leaderboard `Display` headline + `EmptyState` |
+| `.friends-hero`, `.friends-hero-img`, `.friends-hero-scrim`, `.friends-empty*` preview shell | 78 | `/friends` `SceneCard` hero + catalog `EmptyState` |
+
+**Net delta**: `apps/web/app/globals.css` went from 16,883 to 16,774 lines
+in this cleanup snapshot. Git diff records 130 removed CSS lines and 3
+selector adjustments in the cleanup commit.
+
+## Verification
+
+- Delete scan: old achievement hero shell, leaderboard empty CTA/lede/title rules, and old friends image hero/preview empty shell have zero live JSX/TS references.
+- Kept intentionally: `.achievement-hero-frame`, `.achievement-hero-copy`, `.masthead`, `.masthead-meta`, `.friends-hero-frame`, `.friends-hero-copy`, and `.friends-empty-state` because the migrated pages still use them.

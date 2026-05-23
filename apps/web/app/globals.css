@@ -12449,12 +12449,6 @@ html[data-theme="dark"] .utility-shell::before {
     var(--texture-paper) center / 560px 560px;
 }
 
-.achievement-hero {
-  background:
-    linear-gradient(135deg, rgba(255, 246, 226, 0.92), rgba(132, 47, 43, 0.16)),
-    var(--texture-paper) center / 560px 560px;
-}
-
 .achievement-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -12563,20 +12557,6 @@ html[data-theme="dark"] .utility-shell::before {
   content: "";
   filter: saturate(0.78) contrast(1.08);
   transform: translateX(-50%);
-}
-
-.achievement-shell .achievement-hero {
-  border-color: rgba(200, 154, 85, 0.34);
-  background:
-    radial-gradient(ellipse at 82% 12%, rgba(200, 154, 85, 0.24), transparent 24rem),
-    linear-gradient(135deg, rgba(255, 246, 226, 0.96), rgba(215, 174, 105, 0.22)),
-    var(--texture-paper) center / 560px 560px;
-  box-shadow: 0 24px 74px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.6);
-}
-
-.achievement-hero-lede {
-  color: #4f3829;
-  line-height: 1.65;
 }
 
 .achievement-wreath {
@@ -12888,15 +12868,6 @@ html[data-theme="light"] .plaque-loading {
     width: min(calc(100vw - 20px), 1240px);
   }
 
-  .achievement-shell .achievement-hero {
-    padding: 24px !important;
-  }
-
-  .achievement-shell .achievement-hero h1 {
-    font-size: clamp(2.4rem, 15vw, 3.35rem);
-    line-height: 0.98;
-  }
-
   .achievement-wreath {
     gap: 10px;
   }
@@ -13099,16 +13070,6 @@ html[data-theme="light"] .plaque-loading {
 
 .masthead-ornament {
   color: #842f2b;
-}
-
-.masthead-title {
-  color: #1a1410;
-  font-family: "Noto Serif Display", "Noto Serif", serif;
-  font-size: 3.25rem;
-  font-weight: 950;
-  letter-spacing: 0;
-  line-height: 1.05;
-  text-transform: uppercase;
 }
 
 .masthead-meta {
@@ -13386,22 +13347,6 @@ html[data-theme="light"] .plaque-loading {
   text-align: center;
 }
 
-.empty-lede {
-  max-width: 38ch;
-  color: rgba(26, 20, 16, 0.85);
-  font-size: 1.05rem;
-  font-style: italic;
-  line-height: 1.7;
-}
-
-.empty-cta {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 12px;
-}
-
 .newspaper-page .btn-secondary {
   border-color: rgba(26, 20, 16, 0.28);
   background: rgba(255, 250, 230, 0.66);
@@ -13444,10 +13389,6 @@ html[data-theme="light"] .newspaper-shell {
 @media (max-width: 767px) {
   .newspaper-page {
     padding: 32px 22px 40px;
-  }
-
-  .masthead-title {
-    font-size: 2.35rem;
   }
 
   .masthead-meta {
@@ -13494,7 +13435,6 @@ html[data-theme="light"] .newspaper-shell {
     padding-bottom: 18px;
   }
 
-  .masthead-title,
   .headline-main-title {
     font-size: 2rem;
   }
@@ -13625,25 +13565,6 @@ html[data-theme="light"] .newspaper-shell {
   --friends-accent: #d19a42;
 }
 
-.friends-hero {
-  position: relative;
-  min-height: clamp(300px, 36vw, 460px);
-  overflow: hidden;
-}
-
-.friends-hero-img {
-  object-fit: cover;
-  object-position: center 44%;
-}
-
-.friends-hero-scrim {
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(180deg, rgba(13, 10, 8, 0.12) 0%, rgba(13, 10, 8, 0.5) 55%, rgba(13, 10, 8, 0.95) 100%),
-    radial-gradient(ellipse at 52% 44%, rgba(209, 154, 66, 0.16), transparent 34rem);
-}
-
 .friends-hero-frame {
   margin-bottom: 24px;
 }
@@ -13689,8 +13610,7 @@ html[data-theme="light"] .newspaper-shell {
 }
 
 .friends-board .friend-form,
-.friends-board .friend-list,
-.friends-empty {
+.friends-board .friend-list {
   border: 1px solid var(--friends-border);
   border-radius: 18px;
   background: var(--friends-surface);
@@ -13713,8 +13633,7 @@ html[data-theme="light"] .newspaper-shell {
 }
 
 .friends-board .friend-form h2,
-.friend-list-head h2,
-.friends-empty h2 {
+.friend-list-head h2 {
   margin: 0;
   color: var(--friends-text);
   font-family: "Noto Serif Display", serif;
@@ -13856,54 +13775,14 @@ html[data-theme="light"] .newspaper-shell {
 }
 
 .friends-board .friend-card p,
-.friends-board .friend-message,
-.friends-empty p {
+.friends-board .friend-message {
   margin: 0;
   color: var(--friends-text-muted);
   line-height: 1.5;
 }
 
-.friends-empty {
-  display: grid;
-  gap: 12px;
-  padding: 22px;
-}
-
 .friends-empty-state {
   align-self: start;
-}
-
-.friends-empty-preview {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 4px;
-}
-
-.friends-empty-preview span {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 9px 12px;
-  border: 1px dashed var(--friends-border-strong);
-  border-radius: 999px;
-  color: var(--friends-text-soft);
-  opacity: 0.78;
-}
-
-.friends-empty-preview strong {
-  display: grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: rgba(209, 154, 66, 0.16);
-  color: var(--friends-accent);
-}
-
-.friends-empty-preview em {
-  font-style: normal;
-  font-weight: 750;
 }
 
 html[data-theme="light"] .friends-shell {
@@ -13915,12 +13794,6 @@ html[data-theme="light"] .friends-shell {
   --friends-border: rgba(83, 52, 31, 0.16);
   --friends-border-strong: rgba(132, 47, 43, 0.34);
   --friends-accent: #842f2b;
-}
-
-html[data-theme="light"] .friends-hero-scrim {
-  background:
-    linear-gradient(180deg, rgba(13, 10, 8, 0.08) 0%, rgba(13, 10, 8, 0.28) 55%, rgba(252, 246, 236, 0.96) 100%),
-    radial-gradient(ellipse at 52% 44%, rgba(132, 47, 43, 0.14), transparent 34rem);
 }
 
 html[data-theme="light"] .friends-board .input {
