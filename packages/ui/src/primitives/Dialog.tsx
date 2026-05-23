@@ -11,8 +11,8 @@ export interface DialogProps {
   footer?: ReactNode;
 }
 
-const MotionContent = motion.create(RDialog.Content);
-const MotionOverlay = motion.create(RDialog.Overlay);
+const MotionContent = motion(RDialog.Content);
+const MotionOverlay = motion(RDialog.Overlay);
 
 export function Dialog({ open, onOpenChange, title, description, children, footer }: DialogProps) {
   return (

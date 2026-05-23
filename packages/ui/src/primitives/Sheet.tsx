@@ -9,8 +9,8 @@ export interface SheetProps {
   children: ReactNode;
 }
 
-const MotionContent = motion.create(RDialog.Content);
-const MotionOverlay = motion.create(RDialog.Overlay);
+const MotionContent = motion(RDialog.Content);
+const MotionOverlay = motion(RDialog.Overlay);
 
 export function Sheet({ open, onOpenChange, title, children }: SheetProps) {
   return (
