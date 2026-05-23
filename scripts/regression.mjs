@@ -59,7 +59,14 @@ function checkGameArtPairing() {
 
   const totalPngBytes = sumBytes(pngs);
   const totalWebpBytes = sumBytes([...webps]);
-  assert(totalWebpBytes < totalPngBytes * 0.35, "Optimized WebP assets are unexpectedly large.");
+  const totalAssetBytes = sumBytes(files);
+  const oversizedFiles = files.filter((file) => statSync(path.join(gameArtDir, file)).size > 500 * 1024);
+  const oversizedPngs = pngs.filter((file) => statSync(path.join(gameArtDir, file)).size > 1024 * 1024);
+
+  assert(totalWebpBytes < totalPngBytes, "Optimized WebP assets should remain smaller than PNG fallbacks.");
+  assert(totalAssetBytes < 320 * 1024 * 1024, "game-art must stay under the PR B 320 MB budget.");
+  assert(oversizedPngs.length <= 5, `Too many PNG fallbacks over 1 MB: ${oversizedPngs.join(", ")}`);
+  assert(oversizedFiles.length === 0, `Assets over 500 KB budget: ${oversizedFiles.join(", ")}`);
 
   for (const critical of [
     "og-preview",
