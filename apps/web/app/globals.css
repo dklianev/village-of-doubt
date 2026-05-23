@@ -16738,85 +16738,6 @@ body:has(.faq-shell)::after {
   width: 100%;
 }
 
-.terms-hero,
-.report-hero {
-  position: relative;
-  width: 100%;
-  min-height: clamp(280px, 38vw, 460px);
-  overflow: hidden;
-}
-
-.terms-hero-banner,
-.report-hero-banner {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-}
-
-.terms-hero-img,
-.report-hero-img {
-  object-fit: cover;
-  object-position: center 38%;
-}
-
-.terms-hero-scrim,
-.report-hero-scrim {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(13, 10, 8, 0.22) 0%,
-    rgba(13, 10, 8, 0.55) 50%,
-    rgba(13, 10, 8, 0.95) 100%
-  );
-}
-
-.terms-hero-inner,
-.report-hero-inner {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  min-height: clamp(280px, 38vw, 460px);
-  flex-direction: column;
-  justify-content: flex-end;
-  max-width: 980px;
-  margin: 0 auto;
-  padding: 32px 24px 40px;
-}
-
-.terms-hero-kicker,
-.report-hero-kicker {
-  margin: 0 0 10px;
-  color: var(--legal-accent);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.32em;
-  text-transform: uppercase;
-}
-
-.terms-hero-title,
-.report-hero-title {
-  max-width: 18ch;
-  margin: 0 0 14px;
-  color: var(--legal-text);
-  font-family: "Noto Serif Display", "Noto Serif", serif;
-  font-size: clamp(2.4rem, 6vw, 4rem);
-  font-weight: 900;
-  letter-spacing: 0;
-  line-height: 1.05;
-  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.55);
-  text-wrap: balance;
-}
-
-.terms-hero-subtitle,
-.report-hero-subtitle {
-  max-width: 60ch;
-  margin: 0 0 14px;
-  color: var(--legal-text-muted);
-  font-size: 1.05rem;
-  line-height: 1.6;
-}
-
 .terms-hero-meta {
   margin: 0;
   color: var(--legal-text-soft);
@@ -16842,15 +16763,6 @@ body:has(.faq-shell)::after {
 
 .terms-section-head {
   margin-bottom: 22px;
-}
-
-.terms-section-kicker {
-  margin: 0 0 6px;
-  color: var(--legal-accent);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
 }
 
 .terms-section-head h2 {
@@ -17269,32 +17181,6 @@ body:has(.faq-shell)::after {
   line-height: 1.65;
 }
 
-.report-hero-beam {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: radial-gradient(
-    ellipse 80% 40% at 65% 38%,
-    rgba(217, 154, 66, 0.32) 0%,
-    rgba(217, 154, 66, 0.08) 28%,
-    transparent 50%
-  );
-  mix-blend-mode: screen;
-}
-
-@keyframes report-beam-pulse {
-  0%,
-  100% {
-    opacity: 0.55;
-    transform: scale(1);
-  }
-
-  50% {
-    opacity: 0.95;
-    transform: scale(1.06);
-  }
-}
-
 .report-hero-stat {
   display: inline-flex;
   align-items: center;
@@ -17648,111 +17534,11 @@ body:has(.faq-shell)::after {
   opacity: 0.6;
 }
 
-.report-success {
-  position: relative;
-  display: grid;
-  gap: 14px;
-  overflow: hidden;
-  padding: 48px 28px 32px;
-  border: 1px solid var(--legal-accent-warm);
-  border-radius: 18px;
-  background: linear-gradient(155deg, var(--legal-accent-warm-soft), var(--legal-surface));
-  text-align: center;
-}
-
-.report-success-beam {
-  position: absolute;
-  inset: -50% 0;
-  pointer-events: none;
-  background: conic-gradient(
-    from 0deg at 50% 50%,
-    transparent 0deg,
-    rgba(217, 154, 66, 0.25) 30deg,
-    transparent 60deg,
-    transparent 360deg
-  );
-  mix-blend-mode: screen;
-}
-
-@keyframes report-success-rotate {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.report-success-icon {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  place-items: center;
-  width: 88px;
-  height: 88px;
-  margin: 0 auto;
-  border: 2px solid var(--legal-ok);
-  border-radius: 50%;
-  background: var(--legal-ok-soft);
-  color: var(--legal-ok);
-  animation: report-success-pop 480ms cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-@keyframes report-success-pop {
-  0% {
-    opacity: 0;
-    transform: scale(0.4);
-  }
-
-  60% {
-    transform: scale(1.12);
-  }
-
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.report-success-icon svg {
-  width: 56px;
-  height: 56px;
-}
-
-.report-success-kicker,
-.report-success-title,
-.report-success-detail,
 .report-success-reference,
 .report-success-followup,
 .report-success-actions {
   position: relative;
   z-index: 1;
-}
-
-.report-success-kicker {
-  margin: 0;
-  color: var(--legal-accent-warm);
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.32em;
-  text-transform: uppercase;
-}
-
-.report-success-title {
-  margin: 0;
-  color: var(--legal-text);
-  font-family: "Noto Serif Display", "Noto Serif", serif;
-  font-size: clamp(1.75rem, 4vw, 2.4rem);
-  font-weight: 900;
-}
-
-.report-success-detail {
-  max-width: 50ch;
-  margin: 0 auto;
-  color: var(--legal-text-muted);
-  font-size: 1rem;
-  line-height: 1.6;
 }
 
 .report-success-reference {
@@ -17804,22 +17590,6 @@ body:has(.faq-shell)::after {
   gap: 12px;
   justify-content: center;
   margin-top: 8px;
-}
-
-.report-success-link {
-  padding: 10px 18px;
-  border: 1px solid var(--legal-border-strong);
-  border-radius: 10px;
-  color: var(--legal-text-muted);
-  font-size: 0.9rem;
-  font-weight: 600;
-  text-decoration: none;
-  transition: border-color 160ms ease, color 160ms ease;
-}
-
-.report-success-link:hover {
-  border-color: var(--legal-accent-warm);
-  color: var(--legal-text);
 }
 
 @media (max-width: 640px) {
@@ -18325,79 +18095,6 @@ html[data-theme="light"] .site-footer-tagline {
   display: grid;
   gap: 0;
   width: 100%;
-}
-
-.faq-hearth-hero {
-  position: relative;
-  overflow: hidden;
-  width: 100%;
-  min-height: clamp(280px, 38vw, 460px);
-}
-
-.faq-hearth-banner {
-  position: absolute;
-  inset: 0;
-}
-
-.faq-hearth-banner-img {
-  object-fit: cover;
-  object-position: center 38%;
-}
-
-.faq-hearth-scrim {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(13, 10, 8, 0.22) 0%, rgba(13, 10, 8, 0.55) 50%, rgba(13, 10, 8, 0.95) 100%);
-}
-
-.faq-hearth-inner {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  min-height: clamp(280px, 38vw, 460px);
-  max-width: 980px;
-  margin: 0 auto;
-  padding: 32px 24px 40px;
-}
-
-.faq-hearth-kicker {
-  display: inline-flex;
-  gap: 8px;
-  align-items: center;
-  margin: 0 0 12px;
-  color: #d19a42 !important;
-  font-size: 0.74rem;
-  font-weight: 700;
-  letter-spacing: 0.32em;
-  text-transform: uppercase;
-}
-
-.faq-hearth-kicker-icon {
-  width: 16px;
-  height: 16px;
-}
-
-.faq-hearth-title {
-  max-width: 18ch;
-  margin: 0 0 14px;
-  color: #f5e8c8 !important;
-  font-family: "Noto Serif Display", "Noto Serif", serif;
-  font-size: clamp(2.4rem, 6vw, 4rem);
-  font-weight: 900;
-  line-height: 1.05;
-  letter-spacing: -0.015em;
-  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.6);
-  text-wrap: balance;
-}
-
-.faq-hearth-subtitle {
-  max-width: 56ch;
-  margin: 0;
-  color: rgba(245, 232, 200, 0.85) !important;
-  font-size: 1.05rem;
-  line-height: 1.6;
 }
 
 .faq-hearth-toolbar {
@@ -18998,7 +18695,6 @@ html[data-theme="light"] .site-footer-tagline {
 }
 
 @media print {
-  .faq-hearth-hero,
   .faq-hearth-toolbar,
   .faq-hearth-item-footer,
   .faq-hearth-item-link,
@@ -19241,29 +18937,9 @@ html[data-theme="light"] .site-footer-tagline {
   text-shadow: var(--legal-privacy-hero-meta-text-shadow);
 }
 
-.terms-hero-title {
-  color: var(--legal-terms-hero-title-color) !important;
-  text-shadow: var(--legal-terms-hero-title-text-shadow);
-}
-
-.terms-hero-subtitle {
-  color: var(--legal-terms-hero-subtitle-color) !important;
-  text-shadow: var(--legal-terms-hero-subtitle-text-shadow);
-}
-
 .terms-hero-meta {
   color: var(--legal-terms-hero-meta-color) !important;
   text-shadow: var(--legal-terms-hero-meta-text-shadow);
-}
-
-.report-hero-title {
-  color: var(--legal-report-hero-title-color) !important;
-  text-shadow: var(--legal-report-hero-title-text-shadow);
-}
-
-.report-hero-subtitle {
-  color: var(--legal-report-hero-subtitle-color) !important;
-  text-shadow: var(--legal-report-hero-subtitle-text-shadow);
 }
 
 .report-hero-stat {
@@ -19279,14 +18955,6 @@ html[data-theme="light"] .site-footer-tagline {
 .status-hero-refresh {
   color: var(--legal-status-hero-refresh-color) !important;
   text-shadow: var(--legal-status-hero-refresh-text-shadow);
-}
-
-.terms-hero-kicker {
-  color: var(--legal-terms-hero-kicker-color) !important;
-}
-
-.report-hero-kicker {
-  color: var(--legal-report-hero-kicker-color) !important;
 }
 
 .privacy-data-row {
@@ -19351,10 +19019,6 @@ html[data-theme="light"] .site-footer-tagline {
 
 .terms-section-conflict {
   background: var(--legal-terms-section-conflict-background);
-}
-
-.report-success {
-  background: var(--legal-report-success-background);
 }
 
 .status-section-legend {
