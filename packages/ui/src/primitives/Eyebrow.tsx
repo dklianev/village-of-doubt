@@ -9,9 +9,9 @@ export interface EyebrowProps {
 
 const TONE_COLOR: Record<EyebrowTone, string> = {
   default: "var(--ds-ink-soft)",
-  muted: "var(--ds-ink-faint)",
-  blood: "var(--ds-accent-blood)",
-  gold: "var(--ds-accent-gold-deep)",
+  muted: "var(--ds-ink-soft)",
+  blood: "var(--ds-eyebrow-blood)",
+  gold: "var(--ds-eyebrow-gold)",
 };
 
 export function Eyebrow({ tone = "default", children }: EyebrowProps) {

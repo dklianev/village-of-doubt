@@ -1,5 +1,3 @@
-"use client";
-
 import { ReportHero } from "./ReportHero";
 import { ReportWizard } from "./ReportWizard";
 

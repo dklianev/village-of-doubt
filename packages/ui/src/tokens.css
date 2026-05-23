@@ -28,7 +28,12 @@
   --ds-accent-gold: oklch(0.78 0.115 75);
   --ds-accent-gold-deep: oklch(0.58 0.110 65);
   --ds-accent-gold-soft: oklch(0.85 0.085 80);
-  --ds-accent-green: oklch(0.55 0.10 145);
+  --ds-accent-green: oklch(0.50 0.10 145);
+
+  /* Context-aware primitive colors */
+  --ds-eyebrow-blood: var(--ds-accent-blood);
+  --ds-eyebrow-gold: oklch(0.46 0.11 65);
+  --ds-pill-danger-color: var(--ds-accent-blood-deep);
 
   /* Typography scale */
   --ds-type-display: 4rem;
@@ -86,12 +91,42 @@
   --ds-ink-primary: oklch(0.92 0.022 80);
   --ds-ink-soft: oklch(0.74 0.020 78);
   --ds-ink-faint: oklch(0.55 0.015 60);
+  --ds-eyebrow-blood: oklch(0.72 0.12 25);
+  --ds-eyebrow-gold: var(--ds-accent-gold);
+  --ds-pill-danger-color: oklch(0.72 0.12 25);
   --ds-focus-ring:
     0 0 0 2px oklch(0.18 0.012 60),
     0 0 0 4px oklch(0.78 0.115 75);
 }
 
-:where([data-ds]) *:focus-visible {
+:where(
+  [data-ds],
+  [data-ds-surface],
+  [data-ds-eyebrow],
+  [data-ds-display],
+  [data-ds-paper-card],
+  [data-ds-scene-card],
+  [data-ds-pill],
+  [data-ds-medallion],
+  [data-ds-toast],
+  [data-ds-dialog],
+  [data-ds-sheet],
+  [data-ds-empty-state]
+):focus-visible,
+:where(
+  [data-ds],
+  [data-ds-surface],
+  [data-ds-eyebrow],
+  [data-ds-display],
+  [data-ds-paper-card],
+  [data-ds-scene-card],
+  [data-ds-pill],
+  [data-ds-medallion],
+  [data-ds-toast],
+  [data-ds-dialog],
+  [data-ds-sheet],
+  [data-ds-empty-state]
+) *:focus-visible {
   outline: none;
   box-shadow: var(--ds-focus-ring);
   outline-offset: 2px;

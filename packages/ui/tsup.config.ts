@@ -3,6 +3,7 @@ import { defineConfig } from "tsup";
 export default defineConfig({
   entry: [
     "src/index.ts",
+    "src/server.ts",
     "src/primitives/artifacts/index.ts",
     "src/states/empty-states.ts",
   ],

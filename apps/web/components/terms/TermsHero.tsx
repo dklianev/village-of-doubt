@@ -1,6 +1,4 @@
-"use client";
-
-import { Display, SceneCard } from "@werewolf/ui";
+import { Display, SceneCard } from "@werewolf/ui/server";
 
 export function TermsHero({ lastUpdated }: { lastUpdated: string }) {
   return (

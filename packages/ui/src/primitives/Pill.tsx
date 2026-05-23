@@ -34,7 +34,7 @@ const INTENT_STYLES: Record<PillIntent, CSSProperties> = {
   },
   danger: {
     background: "transparent",
-    color: "var(--ds-accent-blood-deep)",
+    color: "var(--ds-pill-danger-color)",
     border: "1px solid var(--ds-accent-blood)",
   },
   ghost: {
@@ -66,11 +66,13 @@ const BASE_STYLE: CSSProperties = {
 
 export function Pill(props: PillProps) {
   const { intent = "primary", size = "md", children, style, ...rest } = props;
+  const isDisabledButton = props.as !== "a" && Boolean((props as PillButtonProps).disabled);
   const composed = {
     ...BASE_STYLE,
     ...SIZE_STYLES[size],
     ...INTENT_STYLES[intent],
     ...style,
+    ...(isDisabledButton ? { cursor: "not-allowed", opacity: 0.5 } : {}),
   };
 
   if (props.as === "a") {

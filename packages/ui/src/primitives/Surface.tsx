@@ -32,6 +32,13 @@ const ELEVATION_VALUE: Record<SurfaceElevation, string> = {
   scene: "var(--ds-shadow-scene)",
 };
 
+const VARIANT_COLOR: Record<SurfaceVariant, string> = {
+  paper: "var(--ds-ink-primary)",
+  "paper-deep": "var(--ds-ink-primary)",
+  scene: "var(--ds-ink-scene)",
+  "scene-deep": "var(--ds-ink-scene)",
+};
+
 export const Surface = forwardRef<HTMLElement, SurfaceProps>(function Surface(
   {
     variant = "paper",
@@ -48,6 +55,14 @@ export const Surface = forwardRef<HTMLElement, SurfaceProps>(function Surface(
     background: VARIANT_BG[variant],
     borderRadius: RADIUS_VALUE[radius],
     boxShadow: ELEVATION_VALUE[elevation],
+    color: VARIANT_COLOR[variant],
+    ...(variant === "scene" || variant === "scene-deep"
+      ? ({
+          "--ds-eyebrow-blood": "oklch(0.72 0.12 25)",
+          "--ds-eyebrow-gold": "var(--ds-accent-gold)",
+          "--ds-pill-danger-color": "oklch(0.72 0.12 25)",
+        } as CSSProperties)
+      : {}),
     ...style,
   };
   const Tag = as as "div";

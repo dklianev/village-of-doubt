@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
-import "../styles/sheet.css";
 import { Pill } from "./Pill";
 import { Sheet } from "./Sheet";
 
@@ -43,11 +42,20 @@ export const Default: Story = {
   },
 };
 
-export const WithoutTitle: Story = {
+export const LongContent: Story = {
   args: {
     open: true,
     onOpenChange: () => {},
-    children: "Кратко съдържание.",
+    title: "Дълго писмо",
+    children: (
+      <div style={{ display: "grid", gap: "12px" }}>
+        {Array.from({ length: 8 }, (_, index) => (
+          <p key={index} style={{ margin: 0, color: "var(--ds-ink-soft)", lineHeight: 1.6 }}>
+            Ред {index + 1}: съдържанието остава в рамките на листа и се скролва, когато стане дълго.
+          </p>
+        ))}
+      </div>
+    ),
   },
 };
 

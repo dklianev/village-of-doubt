@@ -12,6 +12,15 @@ React-only design system for Върколак · Мафия. No Next.js coupling
 import { Surface, PaperCard, Pill } from "@werewolf/ui";
 ```
 
+Use server-safe primitives from Server Components:
+
+```tsx
+import { Display, PaperCard, SceneCard } from "@werewolf/ui/server";
+```
+
+`Sheet` includes its required layout styles at runtime. `@werewolf/ui/styles/pill.css`
+is optional for hover/active polish; disabled state styling is built into `Pill`.
+
 ## Commands
 
 - `pnpm --filter @werewolf/ui storybook` - Dev server on port 6006

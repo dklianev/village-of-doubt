@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "playwright/test";
 
 const STORIES = [
@@ -35,6 +36,8 @@ for (const viewport of VIEWPORTS) {
         }, theme);
         await page.waitForLoadState("networkidle").catch(() => {});
         await page.waitForTimeout(700);
+        const accessibility = await new AxeBuilder({ page }).include("#storybook-root").analyze();
+        expect(accessibility.violations).toEqual([]);
         await expect(page).toHaveScreenshot(`${viewport.name}-${theme}-${story.name}.png`, {
           fullPage: true,
           maxDiffPixelRatio: 0.01,

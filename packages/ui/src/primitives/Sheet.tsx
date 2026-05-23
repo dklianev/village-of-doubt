@@ -5,9 +5,47 @@ import type { ReactNode } from "react";
 export interface SheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  title?: string;
+  title: string;
   children: ReactNode;
 }
+
+const SHEET_RUNTIME_CSS = `
+.ds-sheet-frame {
+  position: fixed;
+  inset: 0;
+  z-index: 101;
+  display: grid;
+  align-items: end;
+  justify-items: stretch;
+  pointer-events: none;
+}
+
+.ds-sheet {
+  box-sizing: border-box;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 28px;
+  border-top-left-radius: var(--ds-radius-card);
+  border-top-right-radius: var(--ds-radius-card);
+  box-shadow: 0 -20px 40px oklch(0 0 0 / 0.4);
+  pointer-events: auto;
+}
+
+@media (min-width: 768px) {
+  .ds-sheet-frame {
+    align-items: center;
+    justify-items: center;
+    padding: 24px;
+  }
+
+  .ds-sheet {
+    width: min(92vw, 600px);
+    border-radius: var(--ds-radius-card);
+    box-shadow: var(--ds-shadow-scene);
+  }
+}
+`;
 
 export function Sheet({ open, onOpenChange, title, children }: SheetProps) {
   return (
@@ -15,6 +53,7 @@ export function Sheet({ open, onOpenChange, title, children }: SheetProps) {
       <AnimatePresence>
         {open && (
           <RDialog.Portal forceMount>
+            <style>{SHEET_RUNTIME_CSS}</style>
             <RDialog.Overlay asChild forceMount>
               <motion.div
                 initial={{ opacity: 0 }}
@@ -40,18 +79,16 @@ export function Sheet({ open, onOpenChange, title, children }: SheetProps) {
                     gap: "16px",
                   }}
                 >
-                  {title && (
-                    <RDialog.Title
-                      style={{
-                        fontFamily: '"Noto Serif Display", "Noto Serif", "Iowan Old Style", serif',
-                        fontSize: "var(--ds-type-h3)",
-                        letterSpacing: 0,
-                        margin: 0,
-                      }}
-                    >
-                      {title}
-                    </RDialog.Title>
-                  )}
+                  <RDialog.Title
+                    style={{
+                      fontFamily: '"Noto Serif Display", "Noto Serif", "Iowan Old Style", serif',
+                      fontSize: "var(--ds-type-h3)",
+                      letterSpacing: 0,
+                      margin: 0,
+                    }}
+                  >
+                    {title}
+                  </RDialog.Title>
                   {children}
                 </motion.div>
               </RDialog.Content>

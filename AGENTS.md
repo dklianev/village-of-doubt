@@ -118,10 +118,14 @@ Radii са умишлено стегнати: `--ds-radius-card: 8px`, `--ds-rad
 - Toast, Dialog, Sheet — Motion via `motion/react`
 - EmptyState — CSS-only
 
+Server Components should import CSS-only primitives from `@werewolf/ui/server`.
+The root `@werewolf/ui` export includes Motion/Radix primitives for client surfaces.
+
 Motion е ограничен до 3 primitives. Проверка:
 `rg "from \"motion/react\"" packages/ui/src/primitives` → Dialog, Sheet, Toast.
 
 `Dialog` и `Sheet` използват Radix `asChild` + `motion.div`. Не обвивай Radix primitives с deprecated `motion(Component)`.
+`Sheet` винаги има видимо `title` и включва собствените си layout styles, за да не зависи от consumer CSS import.
 
 ### Empty states
 
@@ -137,7 +141,7 @@ Motion е ограничен до 3 primitives. Проверка:
 
 `docs/acceptance/*.md` съдържа per-page PR checklist.
 
-Storybook 10 (React-Vite) е reference за primitives и MDX docs. `pnpm visual:ui` покрива 11 primitives × light/dark × desktop/mobile.
+Storybook 10 (React-Vite) е reference за primitives и MDX docs. `pnpm visual:ui` покрива 11 primitives × light/dark × desktop/mobile и пуска axe върху `#storybook-root`.
 
 ## Workflow guides
 

@@ -1,7 +1,5 @@
-"use client";
-
 import Link from "next/link";
-import { Display, PaperCard } from "@werewolf/ui";
+import { Display, PaperCard } from "@werewolf/ui/server";
 import type { PrivacyUserSnapshot } from "./PrivacyDashboard";
 
 interface PrivacyDataPreviewProps {
