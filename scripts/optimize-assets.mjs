@@ -1,17 +1,31 @@
 import { pathToFileURL } from "node:url";
 import { existsSync } from "node:fs";
-import { mkdir, readdir, stat } from "node:fs/promises";
+import { mkdir, readdir, rename, rm, stat } from "node:fs/promises";
 import path from "node:path";
 
 const gameArtDir = path.resolve("apps/web/public/game-art");
 const quality = Number(process.env.WEBP_QUALITY ?? 82);
+const args = new Set(process.argv.slice(2));
+const reportOnly = args.has("--report-only");
+
+const DERIVATIVE_DIRS = new Set(["thumbs"]);
 
 async function main() {
   const sharp = await loadSharp();
   const files = await listPngs(gameArtDir);
+
+  if (reportOnly) {
+    await printReport(files);
+    return;
+  }
+
   let originalBytes = 0;
   let optimizedBytes = 0;
   let written = 0;
+  let trimmedPngBytes = 0;
+  let pngBytesAfter = 0;
+  let avifBytes = 0;
+  let avifsWritten = 0;
   let thumbnailBytes = 0;
   let thumbnailsWritten = 0;
   let mobileBytes = 0;
@@ -19,30 +33,34 @@ async function main() {
 
   for (const file of files) {
     const input = path.join(gameArtDir, file);
-    const output = path.join(gameArtDir, file.replace(/\.png$/, ".webp"));
     const before = (await stat(input)).size;
-    const image = sharp(input, { limitInputPixels: false }).rotate();
-    const metadata = await image.metadata();
-    const maxWidth = maxWidthFor(file);
-    const pipeline =
-      metadata.width && metadata.width > maxWidth
-        ? image.resize({ width: maxWidth, withoutEnlargement: true })
-        : image;
-
-    await pipeline.webp({ quality, effort: 6, smartSubsample: true }).toFile(output);
-    const after = (await stat(output)).size;
     originalBytes += before;
-    optimizedBytes += after;
+
+    const sourceBudget = sourcePngBudgetKbFor(file);
+    if (sourceBudget > 0 && before > sourceBudget * 1024) {
+      const trimmed = await trimSourcePng(sharp, input, file, before, sourceBudget);
+      trimmedPngBytes += before - trimmed;
+    }
+
+    const sourceAfter = (await stat(input)).size;
+    pngBytesAfter += sourceAfter;
+
+    const output = path.join(gameArtDir, file.replace(/\.png$/, ".webp"));
+    await writeWebp(sharp, input, output, file, maxWidthFor(file), webpBudgetKbFor(file));
+    optimizedBytes += (await stat(output)).size;
     written += 1;
+
+    if (shouldCreateAvif(file)) {
+      const avifOutput = path.join(gameArtDir, file.replace(/\.png$/, ".avif"));
+      await writeAvif(sharp, input, avifOutput, file, maxWidthFor(file), avifBudgetKbFor(file));
+      avifBytes += (await stat(avifOutput)).size;
+      avifsWritten += 1;
+    }
 
     if (shouldCreateRoleThumbnail(file)) {
       const thumbOutput = path.join(gameArtDir, "thumbs", file.replace(/\.png$/, ".webp"));
       await mkdir(path.dirname(thumbOutput), { recursive: true });
-      await sharp(input, { limitInputPixels: false })
-        .rotate()
-        .resize({ width: 520, withoutEnlargement: true })
-        .webp({ quality: 74, effort: 6, smartSubsample: true })
-        .toFile(thumbOutput);
+      await writeWebp(sharp, input, thumbOutput, file, 520, 90, 74);
       thumbnailBytes += (await stat(thumbOutput)).size;
       thumbnailsWritten += 1;
     }
@@ -51,25 +69,68 @@ async function main() {
     if (mobileWidth) {
       const mobileOutput = path.join(gameArtDir, "mobile", file.replace(/\.png$/, ".webp"));
       await mkdir(path.dirname(mobileOutput), { recursive: true });
-      await sharp(input, { limitInputPixels: false })
-        .rotate()
-        .resize({ width: mobileWidth, withoutEnlargement: true })
-        .webp({ quality: 70, effort: 6, smartSubsample: true })
-        .toFile(mobileOutput);
+      await writeWebp(sharp, input, mobileOutput, file, mobileWidth, mobileBudgetKbFor(file), 70);
       mobileBytes += (await stat(mobileOutput)).size;
       mobileWritten += 1;
     }
   }
 
-  const saved = originalBytes - optimizedBytes;
+  const saved = originalBytes - pngBytesAfter + (originalBytes - optimizedBytes);
   console.log(
-    `Optimized ${written} assets to WebP. PNG: ${formatBytes(originalBytes)}, WebP: ${formatBytes(
-      optimizedBytes,
-    )}, saved: ${formatBytes(saved)}.`,
+    `Optimized ${written} assets. PNG: ${formatBytes(originalBytes)} -> ${formatBytes(
+      pngBytesAfter,
+    )}; WebP: ${formatBytes(optimizedBytes)}; effective saved: ${formatBytes(saved)}.`,
+  );
+  console.log(
+    `Trimmed PNG fallbacks by ${formatBytes(trimmedPngBytes)}. Generated ${avifsWritten} AVIF assets (${formatBytes(
+      avifBytes,
+    )}).`,
   );
   console.log(
     `Generated ${thumbnailsWritten} role thumbnails (${formatBytes(thumbnailBytes)}) and ${mobileWritten} mobile assets (${formatBytes(mobileBytes)}).`,
   );
+}
+
+async function printReport(files) {
+  console.log(
+    [
+      "path",
+      "png_kb",
+      "webp_kb",
+      "avif_kb",
+      "png_budget_kb",
+      "webp_budget_kb",
+      "avif_budget_kb",
+      "status",
+    ].join(","),
+  );
+
+  for (const file of files) {
+    const pngKb = await fileKb(path.join(gameArtDir, file));
+    const webpKb = await fileKb(path.join(gameArtDir, file.replace(/\.png$/, ".webp")));
+    const avifKb = await fileKb(path.join(gameArtDir, file.replace(/\.png$/, ".avif")));
+    const pngBudget = sourcePngBudgetKbFor(file);
+    const webpBudget = webpBudgetKbFor(file);
+    const avifBudget = shouldCreateAvif(file) ? avifBudgetKbFor(file) : 0;
+    const overBudget = [
+      pngBudget > 0 && pngKb > pngBudget,
+      webpBudget > 0 && webpKb > webpBudget,
+      avifBudget > 0 && avifKb > avifBudget,
+    ].some(Boolean);
+
+    console.log(
+      [
+        csv(file.split(path.sep).join("/")),
+        pngKb.toFixed(1),
+        webpKb.toFixed(1),
+        avifKb.toFixed(1),
+        pngBudget,
+        webpBudget,
+        avifBudget,
+        overBudget ? "over-budget" : "ok",
+      ].join(","),
+    );
+  }
 }
 
 async function loadSharp() {
@@ -94,16 +155,162 @@ async function loadSharp() {
   }
 }
 
+async function trimSourcePng(sharp, input, file, beforeBytes, budgetKb) {
+  const tmp = `${input}.tmp-${process.pid}.png`;
+  const width = sourcePngWidthFor(file);
+
+  await sharp(input, { limitInputPixels: false })
+    .rotate()
+    .resize({ width, withoutEnlargement: true })
+    .png({ compressionLevel: 9, palette: true, quality: 78, effort: 10, adaptiveFiltering: true })
+    .toFile(tmp);
+
+  const afterBytes = (await stat(tmp)).size;
+  if (afterBytes < beforeBytes && afterBytes <= budgetKb * 1024) {
+    await rename(tmp, input);
+    return afterBytes;
+  }
+
+  if (afterBytes < beforeBytes * 0.72) {
+    await rename(tmp, input);
+    return afterBytes;
+  }
+
+  await rm(tmp, { force: true });
+  return beforeBytes;
+}
+
+async function writeWebp(sharp, input, output, file, maxWidth, budgetKb, preferredQuality = quality) {
+  await writeRasterWithBudget({
+    sharp,
+    input,
+    output,
+    maxWidth,
+    budgetKb,
+    qualities: qualitySteps(preferredQuality, 48),
+    encode: (pipeline, q) => pipeline.webp({ quality: q, effort: 6, smartSubsample: true }),
+  });
+}
+
+async function writeAvif(sharp, input, output, file, maxWidth, budgetKb) {
+  await writeRasterWithBudget({
+    sharp,
+    input,
+    output,
+    maxWidth,
+    budgetKb,
+    qualities: [60, 54, 48, 42, 36],
+    encode: (pipeline, q) => pipeline.avif({ quality: q, effort: 6 }),
+  });
+}
+
+async function writeRasterWithBudget({ sharp, input, output, maxWidth, budgetKb, qualities, encode }) {
+  await mkdir(path.dirname(output), { recursive: true });
+  const tmp = `${output}.tmp-${process.pid}${path.extname(output)}`;
+  let bestTmp = "";
+  let bestBytes = Number.POSITIVE_INFINITY;
+
+  for (const q of qualities) {
+    const candidate = `${tmp}.${q}`;
+    const image = sharp(input, { limitInputPixels: false }).rotate();
+    const metadata = await image.metadata();
+    const pipeline = metadata.width && metadata.width > maxWidth ? image.resize({ width: maxWidth, withoutEnlargement: true }) : image;
+    await encode(pipeline, q).toFile(candidate);
+    const bytes = (await stat(candidate)).size;
+
+    if (bytes < bestBytes) {
+      if (bestTmp) await rm(bestTmp, { force: true });
+      bestTmp = candidate;
+      bestBytes = bytes;
+    } else {
+      await rm(candidate, { force: true });
+    }
+
+    if (budgetKb === 0 || bytes <= budgetKb * 1024) {
+      break;
+    }
+  }
+
+  await rename(bestTmp, output);
+}
+
+function qualitySteps(start, floor) {
+  const steps = [];
+  for (let q = start; q >= floor; q -= 8) {
+    steps.push(q);
+  }
+  return steps;
+}
+
 function maxWidthFor(file) {
   const basename = path.basename(file);
 
   if (basename.startsWith("icon-") || basename.includes("-sheet")) {
-    return 1024;
+    return 960;
   }
   if (basename.startsWith("role-") || basename.startsWith("faction-")) {
-    return 1200;
+    return 1100;
   }
-  return 1600;
+  if (isHeroLike(file)) {
+    return 1440;
+  }
+  return 1400;
+}
+
+function sourcePngWidthFor(file) {
+  const basename = path.basename(file);
+  if (basename.startsWith("icon-")) {
+    return 720;
+  }
+  if (basename.startsWith("role-") || basename.startsWith("faction-")) {
+    return 900;
+  }
+  if (basename.includes("-sheet")) {
+    return 1024;
+  }
+  if (isHeroLike(file)) {
+    return 1280;
+  }
+  return 960;
+}
+
+function sourcePngBudgetKbFor(file) {
+  const basename = path.basename(file);
+  if (file.startsWith(`mobile${path.sep}`)) {
+    return 500;
+  }
+  if (basename.startsWith("icon-")) {
+    return 180;
+  }
+  if (basename.startsWith("role-") || basename.startsWith("faction-") || basename.includes("-sheet")) {
+    return 260;
+  }
+  if (isHeroLike(file)) {
+    return 500;
+  }
+  return 500;
+}
+
+function webpBudgetKbFor(file) {
+  const basename = path.basename(file);
+  if (basename.startsWith("icon-")) {
+    return 150;
+  }
+  if (basename.startsWith("role-") || basename.startsWith("faction-") || basename.includes("-sheet")) {
+    return 220;
+  }
+  if (isHeroLike(file)) {
+    return 500;
+  }
+  return 360;
+}
+
+function avifBudgetKbFor(file) {
+  return Math.min(360, webpBudgetKbFor(file));
+}
+
+function mobileBudgetKbFor(file) {
+  return Math.min(180, webpBudgetKbFor(file));
 }
 
 function shouldCreateRoleThumbnail(file) {
@@ -111,9 +318,36 @@ function shouldCreateRoleThumbnail(file) {
   return (basename.startsWith("role-") && !basename.includes("-sheet")) || basename === "card-back-secret.png";
 }
 
+function shouldCreateAvif(file) {
+  return isHeroLike(file);
+}
+
+function isHeroLike(file) {
+  const normalized = file.split(path.sep).join("/");
+  const basename = path.basename(file);
+  return (
+    basename.startsWith("bg-") ||
+    basename.startsWith("transition-") ||
+    basename.startsWith("screen-") ||
+    basename.startsWith("empty-") ||
+    basename.startsWith("og-") ||
+    basename.includes("banner") ||
+    basename === "village-map.png" ||
+    basename === "texture-parchment.png" ||
+    basename === "card-back-secret.png" ||
+    normalized.startsWith("legal/") ||
+    normalized.startsWith("account/") ||
+    normalized.startsWith("faq/")
+  );
+}
+
 function mobileWidthFor(file) {
   const normalized = file.split(path.sep).join("/");
   const basename = path.basename(file);
+
+  if (normalized.startsWith("mobile/")) {
+    return 0;
+  }
   if (normalized.startsWith("auth/")) {
     return 960;
   }
@@ -144,6 +378,10 @@ async function listPngs(dir, prefix = "") {
   const entries = await readdir(dir, { withFileTypes: true });
   const files = await Promise.all(
     entries.map(async (entry) => {
+      if (entry.isDirectory() && DERIVATIVE_DIRS.has(entry.name)) {
+        return [];
+      }
+
       const relative = path.join(prefix, entry.name);
       const absolute = path.join(dir, entry.name);
 
@@ -156,6 +394,18 @@ async function listPngs(dir, prefix = "") {
   );
 
   return files.flat().sort();
+}
+
+async function fileKb(file) {
+  try {
+    return (await stat(file)).size / 1024;
+  } catch {
+    return 0;
+  }
+}
+
+function csv(value) {
+  return `"${String(value).replaceAll('"', '""')}"`;
 }
 
 function formatBytes(bytes) {
