@@ -156,27 +156,51 @@ async function loadSharp() {
 }
 
 async function trimSourcePng(sharp, input, file, beforeBytes, budgetKb) {
-  const tmp = `${input}.tmp-${process.pid}.png`;
-  const width = sourcePngWidthFor(file);
+  const baseWidth = sourcePngWidthFor(file);
+  const widths = uniqueNumbers([
+    baseWidth,
+    Math.round(baseWidth * 0.85),
+    Math.round(baseWidth * 0.72),
+    Math.round(baseWidth * 0.6),
+    720,
+    640,
+    560,
+  ]).filter((width) => width >= 420);
+  const qualities = [78, 70, 62, 54];
+  let bestTmp = "";
+  let bestBytes = beforeBytes;
 
-  await sharp(input, { limitInputPixels: false })
-    .rotate()
-    .resize({ width, withoutEnlargement: true })
-    .png({ compressionLevel: 9, palette: true, quality: 78, effort: 10, adaptiveFiltering: true })
-    .toFile(tmp);
+  for (const width of widths) {
+    for (const qualityValue of qualities) {
+      const candidate = `${input}.tmp-${process.pid}-${width}-${qualityValue}.png`;
+      await sharp(input, { limitInputPixels: false })
+        .rotate()
+        .resize({ width, withoutEnlargement: true })
+        .png({ compressionLevel: 9, palette: true, quality: qualityValue, effort: 10, adaptiveFiltering: true })
+        .toFile(candidate);
 
-  const afterBytes = (await stat(tmp)).size;
-  if (afterBytes < beforeBytes && afterBytes <= budgetKb * 1024) {
-    await rename(tmp, input);
-    return afterBytes;
+      const candidateBytes = (await stat(candidate)).size;
+      if (candidateBytes < bestBytes) {
+        if (bestTmp) await rm(bestTmp, { force: true });
+        bestTmp = candidate;
+        bestBytes = candidateBytes;
+      } else {
+        await rm(candidate, { force: true });
+      }
+
+      if (candidateBytes <= budgetKb * 1024) {
+        await rename(bestTmp, input);
+        return candidateBytes;
+      }
+    }
   }
 
-  if (afterBytes < beforeBytes * 0.72) {
-    await rename(tmp, input);
-    return afterBytes;
+  if (bestTmp && bestBytes < beforeBytes) {
+    await rename(bestTmp, input);
+    return bestBytes;
   }
 
-  await rm(tmp, { force: true });
+  if (bestTmp) await rm(bestTmp, { force: true });
   return beforeBytes;
 }
 
@@ -242,6 +266,10 @@ function qualitySteps(start, floor) {
   return steps;
 }
 
+function uniqueNumbers(values) {
+  return [...new Set(values)].sort((a, b) => b - a);
+}
+
 function maxWidthFor(file) {
   const basename = path.basename(file);
 
@@ -275,19 +303,6 @@ function sourcePngWidthFor(file) {
 }
 
 function sourcePngBudgetKbFor(file) {
-  const basename = path.basename(file);
-  if (file.startsWith(`mobile${path.sep}`)) {
-    return 500;
-  }
-  if (basename.startsWith("icon-")) {
-    return 180;
-  }
-  if (basename.startsWith("role-") || basename.startsWith("faction-") || basename.includes("-sheet")) {
-    return 260;
-  }
-  if (isHeroLike(file)) {
-    return 500;
-  }
   return 500;
 }
 
