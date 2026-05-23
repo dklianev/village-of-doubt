@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { Display, SceneCard } from "@werewolf/ui";
 import type { ServiceStatusKind } from "@/lib/status-health";
 
 interface StatusHeroProps {
@@ -36,23 +36,22 @@ export function StatusHero({ overall, lastCheckedAt, refreshing, onRefresh }: St
   }).format(new Date(lastCheckedAt));
 
   return (
-    <header className="status-hero" aria-label="Състояние на услугите">
-      <div className="status-hero-banner">
-        <Image
-          src="/game-art/legal/status-banner.webp"
-          alt=""
-          fill
-          priority
-          sizes="100vw"
-          className="status-hero-img"
-        />
-        <div className="status-hero-scrim" aria-hidden />
-      </div>
-
-      <div className="status-hero-inner">
-        <p className="status-hero-kicker">състояние на услугите</p>
-        <h1 className="status-hero-title">{copy.title}</h1>
-        <p className="status-hero-subtitle">{copy.subtitle}</p>
+    <header
+      aria-label="Състояние на услугите"
+      style={{ maxWidth: "980px", margin: "0 auto", padding: "32px 24px 0" }}
+    >
+      <SceneCard eyebrow="СЪСТОЯНИЕ НА УСЛУГИТЕ" density="lg">
+        <Display size="h1">{copy.title}</Display>
+        <p
+          style={{
+            color: "var(--ds-ink-scene-soft)",
+            fontSize: "var(--ds-type-lede)",
+            lineHeight: 1.55,
+            margin: 0,
+          }}
+        >
+          {copy.subtitle}
+        </p>
 
         <div className="status-hero-meta" data-overall={overall}>
           <span className="status-hero-dot" aria-hidden />
@@ -72,7 +71,7 @@ export function StatusHero({ overall, lastCheckedAt, refreshing, onRefresh }: St
             {refreshing ? "Проверяваме..." : "Опресни"}
           </button>
         </div>
-      </div>
+      </SceneCard>
     </header>
   );
 }
