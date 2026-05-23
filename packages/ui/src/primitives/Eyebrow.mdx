@@ -1,0 +1,23 @@
+import { Meta, Story, ArgTypes } from "@storybook/addon-docs/blocks";
+import * as Stories from "./Eyebrow.stories";
+
+<Meta of={Stories} />
+
+# Eyebrow
+
+Кратък mono label за section контекст и card metadata.
+
+## Props
+
+<ArgTypes of={Stories} />
+
+## Usage
+
+```tsx
+<Eyebrow tone="gold">ДОСИЕ</Eyebrow>
+```
+
+## Stories
+
+<Story of={Stories.Default} />
+<Story of={Stories.AllVariants} />

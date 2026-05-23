@@ -1,0 +1,26 @@
+import { Meta, Story, ArgTypes } from "@storybook/addon-docs/blocks";
+import * as Stories from "./EmptyState.stories";
+
+<Meta of={Stories} />
+
+# EmptyState
+
+Artifact + title + body + action layout за празни или blocked states.
+
+## Props
+
+<ArgTypes of={Stories} />
+
+## Usage
+
+```tsx
+<EmptyState
+  title="Архивът чака първото си писмо."
+  body="Завърши една игра и тя ще се появи тук."
+/>
+```
+
+## Stories
+
+<Story of={Stories.Default} />
+<Story of={Stories.AllVariants} />

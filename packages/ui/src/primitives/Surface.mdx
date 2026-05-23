@@ -1,0 +1,25 @@
+import { Meta, Story, ArgTypes } from "@storybook/addon-docs/blocks";
+import * as Stories from "./Surface.stories";
+
+<Meta of={Stories} />
+
+# Surface
+
+Базова layout обвивка за paper и scene повърхности.
+
+## Props
+
+<ArgTypes of={Stories} />
+
+## Usage
+
+```tsx
+<Surface variant="paper" radius="card" elevation="card">
+  <div>Селото оцеля</div>
+</Surface>
+```
+
+## Stories
+
+<Story of={Stories.Paper} />
+<Story of={Stories.AllVariants} />

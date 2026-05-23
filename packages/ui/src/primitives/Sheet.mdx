@@ -1,0 +1,25 @@
+import { Meta, Story, ArgTypes } from "@storybook/addon-docs/blocks";
+import * as Stories from "./Sheet.stories";
+
+<Meta of={Stories} />
+
+# Sheet
+
+Radix + Motion sheet primitive: bottom-sheet на mobile, centered panel на desktop.
+
+## Props
+
+<ArgTypes of={Stories} />
+
+## Usage
+
+```tsx
+<Sheet open={open} onOpenChange={setOpen} title="Настройки">
+  <p>Промени опциите.</p>
+</Sheet>
+```
+
+## Stories
+
+<Story of={Stories.Default} />
+<Story of={Stories.AllVariants} />

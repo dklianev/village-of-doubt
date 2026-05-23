@@ -1,0 +1,23 @@
+import { Meta, Story, ArgTypes } from "@storybook/addon-docs/blocks";
+import * as Stories from "./Toast.stories";
+
+<Meta of={Stories} />
+
+# Toast
+
+Motion-backed feedback primitive за кратки system съобщения.
+
+## Props
+
+<ArgTypes of={Stories} />
+
+## Usage
+
+```tsx
+<Toast open tone="success" message="Запазено." />
+```
+
+## Stories
+
+<Story of={Stories.Info} />
+<Story of={Stories.AllVariants} />

@@ -1,0 +1,23 @@
+import { Meta, Story, ArgTypes } from "@storybook/addon-docs/blocks";
+import * as Stories from "./Medallion.stories";
+
+<Meta of={Stories} />
+
+# Medallion
+
+Кръгъл златен badge за rank, count и compact status.
+
+## Props
+
+<ArgTypes of={Stories} />
+
+## Usage
+
+```tsx
+<Medallion label="7" />
+```
+
+## Stories
+
+<Story of={Stories.Default} />
+<Story of={Stories.AllVariants} />
