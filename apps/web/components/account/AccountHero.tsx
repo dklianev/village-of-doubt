@@ -17,25 +17,13 @@ export function AccountHero(props: AccountHeroProps) {
     : null;
 
   return (
-    <header aria-label="Досие" style={{ maxWidth: "960px", margin: "0 auto", padding: "32px 24px 0" }}>
+    <header aria-label="Досие" className="account-hero-frame">
       <SceneCard eyebrow="ДОСИЕ" density="lg">
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "auto minmax(0, 1fr)",
-            alignItems: "center",
-            gap: "18px 24px",
-          }}
-        >
+        <div className="account-hero-profile">
           <div
+            className="account-hero-avatar"
             style={{
-              display: "grid",
-              width: "96px",
-              height: "96px",
-              placeItems: "center",
-              overflow: "hidden",
               border: "3px solid var(--ds-accent-gold)",
-              borderRadius: "999px",
               background: "var(--ds-surface-scene-deep)",
               boxShadow: "0 12px 28px oklch(0 0 0 / 0.45)",
             }}
@@ -57,7 +45,7 @@ export function AccountHero(props: AccountHeroProps) {
             )}
           </div>
 
-          <div style={{ display: "grid", gap: "8px", minWidth: 0, overflowWrap: "anywhere" }}>
+          <div className="account-hero-name">
             <Display size="h1">{props.name || "Без име"}</Display>
             {memberSinceLabel ? (
               <p style={{ color: "var(--ds-ink-scene-soft)", fontSize: "var(--ds-type-body-sm)", margin: 0 }}>
@@ -69,10 +57,8 @@ export function AccountHero(props: AccountHeroProps) {
 
         {props.totalGames > 0 ? (
           <dl
+            className="account-hero-stats"
             style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(96px, 1fr))",
-              gap: "12px",
               margin: 0,
               padding: 0,
             }}
