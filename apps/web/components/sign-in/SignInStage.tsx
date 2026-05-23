@@ -25,7 +25,7 @@ export function SignInStage({ redirectTo }: { redirectTo: string }) {
       <div className="sign-in-table" aria-hidden />
 
       <article className="sign-in-plaque">
-        <SceneCard eyebrow={copy.kicker.toLocaleUpperCase("bg-BG")} density="lg">
+        <SceneCard eyebrow={copy.kicker.toLocaleUpperCase("bg-BG")} density="md">
           <header className="sign-in-plaque-head">
             <Display size="h2" as="h1">
               {title}

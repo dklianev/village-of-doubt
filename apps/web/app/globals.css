@@ -14131,6 +14131,7 @@ html[data-theme="light"] .offline-status-retry {
   position: relative;
   display: grid;
   place-items: center;
+  box-sizing: border-box;
   width: min(1200px, calc(100vw - 32px));
   min-height: 760px;
   padding: 24px;
@@ -14203,6 +14204,7 @@ html[data-theme="light"] .sign-in-table {
   z-index: 1;
   width: 100%;
   max-width: 520px;
+  min-width: 0;
 }
 
 .sign-in-plaque-head {
@@ -14211,13 +14213,13 @@ html[data-theme="light"] .sign-in-table {
 }
 
 .sign-in-plaque-head [data-ds-display] {
-  color: var(--ds-ink-scene);
-  text-shadow: 0 1px 0 rgba(255, 240, 200, 0.12);
+  color: #fff1d1;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.52);
 }
 
 .sign-in-subtitle {
   margin: 0;
-  color: var(--ds-ink-scene-soft);
+  color: #ead9ba;
   font-size: 0.95rem;
   line-height: 1.55;
 }
@@ -19207,23 +19209,42 @@ html[data-theme="light"] .site-utility-separator {
 @media (max-width: 640px) {
   .sign-in-stage {
     width: min(100%, calc(100vw - 24px));
-    min-height: 100vh;
-    padding: 16px;
+    min-height: calc(100vh - 96px);
+    padding: 12px;
+  }
+
+  .sign-in-stage::before {
+    inset: 0;
   }
 
   .sign-in-table {
+    inset: 0;
     border-radius: 16px;
   }
 
+  .sign-in-plaque {
+    max-width: 100%;
+  }
+
+  .sign-in-plaque [data-ds-scene-card] {
+    max-width: 100%;
+    overflow: hidden;
+  }
+
   .sign-in-plaque [data-ds-scene-card] > div {
-    padding: 28px 22px;
+    padding: 28px 18px;
   }
 
   .sign-in-oauth .ds-pill[data-provider] {
     min-height: 54px;
-    padding-inline: 14px;
+    gap: 10px;
+    padding-inline: 12px;
   }
 
+  .oauth-button-label {
+    min-width: 0;
+    white-space: normal;
+  }
 }
 
 @media (max-width: 480px) {
