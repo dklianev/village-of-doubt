@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useMemo, useState } from "react";
 import {
   ROLE_DEFINITIONS,
@@ -16,7 +17,7 @@ import {
 } from "@werewolf/shared";
 import { stringifyRolesParam } from "@/lib/room-options";
 import { copyTextToClipboard } from "@/lib/clipboard";
-import { roleArtPath, roleThumbPath } from "@/lib/role-art";
+import { roleThumbPath } from "@/lib/role-art";
 
 interface ManualRoleBuilderProps {
   family: GameFamily;
@@ -260,8 +261,13 @@ function RoleTile({
   return (
     <article className={`manual-role-tile role-${role} ${count > 0 ? "is-selected" : ""}`}>
       <picture className="manual-role-art" aria-hidden="true">
-        <source srcSet={roleThumbPath(family, role)} type="image/webp" />
-        <img src={roleArtPath(family, role, "png")} alt="" loading="lazy" decoding="async" width={520} height={728} />
+        <Image
+          src={roleThumbPath(family, role)}
+          alt=""
+          width={520}
+          height={728}
+          sizes="(max-width: 768px) 45vw, 180px"
+        />
       </picture>
       <div className="manual-role-body">
         <div className="manual-role-title-row">

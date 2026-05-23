@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, ChevronDown, History, LogOut, Trophy, User, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -82,8 +83,7 @@ export function AuthChip({ initialSession }: { initialSession: AuthSessionView |
       >
         <span className="auth-chip-photo" aria-hidden>
           {avatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={avatarUrl} alt="" />
+            <Image src={avatarUrl} alt="" width={30} height={30} sizes="30px" unoptimized />
           ) : (
             <span className="auth-chip-initial">{initial}</span>
           )}

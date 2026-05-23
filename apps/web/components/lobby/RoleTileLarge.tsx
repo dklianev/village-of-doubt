@@ -1,7 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import { ROLE_DEFINITIONS, type GameFamily, type RoleCode } from "@werewolf/shared";
-import { roleArtPath, roleThumbPath } from "@/lib/role-art";
+import { roleThumbPath } from "@/lib/role-art";
 
 export function RoleTileLarge({
   family,
@@ -28,8 +29,7 @@ export function RoleTileLarge({
         onDecrement?.();
       }}>
         <picture aria-hidden="true">
-          <source srcSet={roleThumbPath(family, role)} type="image/webp" />
-          <img src={roleArtPath(family, role, "png")} alt="" loading="lazy" decoding="async" width={520} height={728} />
+          <Image src={roleThumbPath(family, role)} alt="" width={520} height={728} sizes="220px" />
         </picture>
         <span className="role-tile-count">{count}</span>
         <strong>{definition.nameBg}</strong>

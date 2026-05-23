@@ -1,7 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import { ROLE_DEFINITIONS, teamLabelBg, type GameFamily, type RoleCode } from "@werewolf/shared";
-import { roleArtPath, roleThumbPath } from "@/lib/role-art";
+import { roleThumbPath } from "@/lib/role-art";
 import { useModal } from "@/lib/use-modal";
 
 export function RoleDetailModal({
@@ -21,8 +22,7 @@ export function RoleDetailModal({
       <button type="button" className="role-detail-backdrop" aria-label="Затвори ролята" onClick={onClose} />
       <article className="role-detail-card">
         <picture aria-hidden="true">
-          <source srcSet={roleThumbPath(family, role)} type="image/webp" />
-          <img src={roleArtPath(family, role, "png")} alt="" width={520} height={728} />
+          <Image src={roleThumbPath(family, role)} alt="" width={520} height={728} sizes="230px" />
         </picture>
         <div>
           <p className="section-kicker">{teamLabelBg(definition.team, family)}</p>

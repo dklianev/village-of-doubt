@@ -32,8 +32,7 @@ export function AccountHero(props: AccountHeroProps) {
       <div className="account-hero-inner">
         <div className="account-hero-avatar">
           {props.image ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={props.image} alt="" />
+            <Image src={props.image} alt="" width={96} height={96} sizes="96px" unoptimized />
           ) : (
             <span className="account-hero-initial">{initial}</span>
           )}

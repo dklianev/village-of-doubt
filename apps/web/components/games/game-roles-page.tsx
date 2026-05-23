@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { memo, useCallback, useDeferredValue, useMemo, useState } from "react";
 import {
   ROLE_DEFINITIONS,
@@ -12,7 +13,7 @@ import {
   type RoleCode,
 } from "@werewolf/shared";
 import { ResourceHints } from "@/components/resource-hints";
-import { roleArtPath, roleThumbPath } from "@/lib/role-art";
+import { roleThumbPath } from "@/lib/role-art";
 import { useModal } from "@/lib/use-modal";
 
 type RoleFilter = "all" | "starter" | "advanced" | "night" | "large";
@@ -263,24 +264,16 @@ function RoleArt({ role, family, priority }: { role: RoleCode; family: GameFamil
   const hasAsset =
     family === "mafia" ? KNOWN_MAFIA_ROLE_ASSETS.has(assetKey) : KNOWN_WEREWOLF_ROLE_ASSETS.has(assetKey);
   const src = hasAsset ? roleThumbPath(family, role) : "/game-art/thumbs/card-back-secret.webp";
-  const fallbackSrc = hasAsset ? roleArtPath(family, role, "png") : "/game-art/card-back-secret.png";
 
   return (
     <picture className="role-codex-art role-codex-frame" aria-hidden="true">
-      <img
+      <Image
         src={src}
         alt=""
-        loading={priority ? "eager" : "lazy"}
-        fetchPriority={priority ? "high" : "auto"}
-        decoding="async"
         width={520}
         height={728}
-        onError={(event) => {
-          if (event.currentTarget.src.endsWith(fallbackSrc)) {
-            return;
-          }
-          event.currentTarget.src = fallbackSrc;
-        }}
+        sizes="(max-width: 768px) 44vw, 260px"
+        priority={priority}
       />
     </picture>
   );
