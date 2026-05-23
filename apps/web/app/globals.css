@@ -2519,9 +2519,13 @@ html[data-theme="light"] .tutorial-skip-link:hover {
   position: relative;
   z-index: 1;
   display: grid;
-  max-width: 720px;
-  gap: 18px;
+  width: min(760px, 100%);
   padding: 56px 48px;
+}
+
+.tutorial-slide-card-body {
+  display: grid;
+  gap: 18px;
 }
 
 .tutorial-slide-kicker {
@@ -2544,25 +2548,24 @@ html[data-theme="light"] .tutorial-skip-link:hover {
 .tutorial-slide-body p {
   max-width: 56ch;
   margin: 0 0 12px;
-  color: rgba(245, 232, 200, 0.92);
+  color: var(--ds-ink-soft);
   font-size: 1.05rem;
-  font-weight: 760;
+  font-weight: 650;
   line-height: 1.65;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
 }
 
 .tutorial-slide-callout {
   display: grid;
   max-width: 56ch;
   gap: 4px;
-  border-left: 3px solid #d94a3d;
+  border-left: 3px solid var(--ds-accent-blood);
   border-radius: 0 12px 12px 0;
   padding: 14px 18px;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--ds-surface-paper-deep);
 }
 
 .tutorial-slide-callout strong {
-  color: #d94a3d;
+  color: var(--ds-accent-blood);
   font-size: 0.78rem;
   font-weight: 950;
   letter-spacing: 0;
@@ -2570,7 +2573,7 @@ html[data-theme="light"] .tutorial-skip-link:hover {
 }
 
 .tutorial-slide-callout span {
-  color: #f5e8c8;
+  color: var(--ds-ink-soft);
   font-size: 0.95rem;
   font-weight: 750;
   line-height: 1.5;
