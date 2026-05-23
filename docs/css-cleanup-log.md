@@ -10,9 +10,12 @@ Lines removed from `apps/web/app/globals.css`:
 | `.privacy-hero*`, `.privacy-section-kicker` | 93 | `PrivacyHero` and privacy section cards with `SceneCard` / `PaperCard` |
 | `.terms-hero*`, `.terms-section-kicker`, `.report-hero*`, `.report-success*`, `.faq-hearth-*` hero shell | 336 | `TermsHero`, `ReportHero`, `ReportWizard` success `EmptyState`, `FaqHearth` `SceneCard` |
 
-**Net delta**: `wc -l apps/web/app/globals.css` went from 20,328 to 19,737 (delta -591).
+**Net delta**: `apps/web/app/globals.css` went from 17,650 to 17,136 lines
+in this worktree snapshot. Git diff records 591 removed CSS lines across the
+three cleanup commits.
 
-The v2 target for PR A was `< 19,000`, but only classes with zero live references were removed.
+The v2 target for PR A was `< 19,000`, and this conservative sweep meets it.
+Only classes with zero live references were removed.
 Rules with live references, including specialized content widgets and page-local meta/action styles, were kept for a follow-up sweep after later layout migrations settle.
 
 ## Delete Protocol Summary
