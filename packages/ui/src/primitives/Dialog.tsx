@@ -1,6 +1,6 @@
 import * as RDialog from "@radix-ui/react-dialog";
 import { AnimatePresence, motion } from "motion/react";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 export interface DialogProps {
   open: boolean;
@@ -10,6 +10,18 @@ export interface DialogProps {
   children: ReactNode;
   footer?: ReactNode;
 }
+
+const VISUALLY_HIDDEN_STYLE: CSSProperties = {
+  position: "absolute",
+  width: "1px",
+  height: "1px",
+  padding: 0,
+  margin: "-1px",
+  overflow: "hidden",
+  clip: "rect(0, 0, 0, 0)",
+  whiteSpace: "nowrap",
+  border: 0,
+};
 
 export function Dialog({ open, onOpenChange, title, description, children, footer }: DialogProps) {
   return (
@@ -84,6 +96,11 @@ export function Dialog({ open, onOpenChange, title, description, children, foote
                       }}
                     >
                       {description}
+                    </RDialog.Description>
+                  )}
+                  {!description && (
+                    <RDialog.Description style={VISUALLY_HIDDEN_STYLE}>
+                      Диалогов прозорец.
                     </RDialog.Description>
                   )}
                   <div>{children}</div>

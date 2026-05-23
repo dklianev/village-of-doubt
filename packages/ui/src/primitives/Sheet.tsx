@@ -1,13 +1,26 @@
 import * as RDialog from "@radix-ui/react-dialog";
 import { AnimatePresence, motion } from "motion/react";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 export interface SheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
+  description?: string;
   children: ReactNode;
 }
+
+const VISUALLY_HIDDEN_STYLE: CSSProperties = {
+  position: "absolute",
+  width: "1px",
+  height: "1px",
+  padding: 0,
+  margin: "-1px",
+  overflow: "hidden",
+  clip: "rect(0, 0, 0, 0)",
+  whiteSpace: "nowrap",
+  border: 0,
+};
 
 const SHEET_RUNTIME_CSS = `
 .ds-sheet-frame {
@@ -47,7 +60,7 @@ const SHEET_RUNTIME_CSS = `
 }
 `;
 
-export function Sheet({ open, onOpenChange, title, children }: SheetProps) {
+export function Sheet({ open, onOpenChange, title, description = "Допълнителен панел.", children }: SheetProps) {
   return (
     <RDialog.Root open={open} onOpenChange={onOpenChange}>
       <AnimatePresence>
@@ -89,6 +102,9 @@ export function Sheet({ open, onOpenChange, title, children }: SheetProps) {
                   >
                     {title}
                   </RDialog.Title>
+                  <RDialog.Description style={VISUALLY_HIDDEN_STYLE}>
+                    {description}
+                  </RDialog.Description>
                   {children}
                 </motion.div>
               </RDialog.Content>
