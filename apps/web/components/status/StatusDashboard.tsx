@@ -101,7 +101,7 @@ export function StatusDashboard({
       <div className="status-content">
         <StatusServiceTiles services={services} />
         <StatusLegend />
-        <StatusLastIncident />
+        <StatusLastIncident majorOutage={overall === "down"} />
         <StatusSubscribe discordUrl={discordUrl} telegramUrl={telegramUrl} />
       </div>
     </div>

@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { Display, EmptyState, PaperCard, Pill } from "@werewolf/ui";
+import { EMPTY_STATES } from "@werewolf/ui/states";
+import { ArtifactImage } from "@/components/ArtifactImage";
 
 const INCIDENT: {
   date: string;
@@ -7,33 +10,64 @@ const INCIDENT: {
   resolutionDetail: string;
 } | null = null;
 
-export function StatusLastIncident() {
-  return (
-    <section className="status-section">
-      <header className="status-section-head">
-        <p className="status-section-kicker">последен инцидент</p>
-        <h2>Какво се е счупвало напоследък.</h2>
-      </header>
+interface StatusLastIncidentProps {
+  majorOutage: boolean;
+}
 
-      {INCIDENT ? (
-        <article className="status-incident-card">
-          <header className="status-incident-head">
-            <time className="status-incident-date" dateTime={INCIDENT.date}>
-              {new Intl.DateTimeFormat("bg-BG", { dateStyle: "long", timeStyle: "short" }).format(
-                new Date(INCIDENT.date),
-              )}
-            </time>
-            <span className="status-incident-duration">{INCIDENT.durationMinutes} мин. прекъсване</span>
-          </header>
-          <p className="status-incident-summary">{INCIDENT.summary}</p>
-          <p className="status-incident-resolution">{INCIDENT.resolutionDetail}</p>
-        </article>
-      ) : (
-        <p className="status-incident-empty">
-          Няма скорошни инциденти, за които да си заслужава да говорим. Ако нещо ти изглежда счупено,{" "}
-          <Link href="/report">подай сигнал</Link>.
-        </p>
-      )}
+export function StatusLastIncident({ majorOutage }: StatusLastIncidentProps) {
+  const outageState = EMPTY_STATES["status-major-outage"];
+
+  if (majorOutage) {
+    return (
+      <section aria-label="Последен инцидент">
+        <EmptyState
+          artifact={<ArtifactImage artifact={outageState.artifact} />}
+          title={outageState.title}
+          body={outageState.body}
+          action={
+            <Pill as="a" href="#status-subscribe" intent="secondary">
+              {outageState.action?.label ?? "Абонирай се за известия"}
+            </Pill>
+          }
+        />
+      </section>
+    );
+  }
+
+  return (
+    <section aria-label="Последен инцидент">
+      <PaperCard eyebrow="ПОСЛЕДЕН ИНЦИДЕНТ" density="md">
+        <Display as="h2" size="h4">
+          Какво се е счупвало напоследък.
+        </Display>
+
+        {INCIDENT ? (
+          <article style={{ display: "grid", gap: "12px" }}>
+            <header style={{ display: "flex", flexWrap: "wrap", gap: "10px", justifyContent: "space-between" }}>
+              <time style={{ color: "var(--ds-accent-gold-deep)", fontWeight: 700 }} dateTime={INCIDENT.date}>
+                {new Intl.DateTimeFormat("bg-BG", { dateStyle: "long", timeStyle: "short" }).format(
+                  new Date(INCIDENT.date),
+                )}
+              </time>
+              <span style={{ color: "var(--ds-accent-blood-deep)", fontWeight: 700 }}>
+                {INCIDENT.durationMinutes} мин. прекъсване
+              </span>
+            </header>
+            <Display as="h3" size="h4">
+              {INCIDENT.summary}
+            </Display>
+            <p style={{ color: "var(--ds-ink-soft)", lineHeight: 1.65, margin: 0 }}>{INCIDENT.resolutionDetail}</p>
+          </article>
+        ) : (
+          <p style={{ color: "var(--ds-ink-soft)", lineHeight: 1.65, margin: 0 }}>
+            Няма скорошни инциденти, за които да си заслужава да говорим. Ако нещо ти изглежда счупено,{" "}
+            <Link href="/report" style={{ color: "var(--ds-accent-blood-deep)", fontWeight: 700 }}>
+              подай сигнал
+            </Link>
+            .
+          </p>
+        )}
+      </PaperCard>
     </section>
   );
 }
