@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import Link from "next/link";
+import { Display, PaperCard } from "@werewolf/ui/server";
 import type { GameMode } from "@werewolf/shared";
 import { topMoments, type HistoryGameView } from "@/lib/history-highlights";
 import { tiltFor } from "@/lib/history-tilt";
@@ -24,30 +25,34 @@ export function CaseFileCard({ game }: { game: HistoryGameView }) {
   const style = { "--tilt": `${tiltFor(game.id)}deg` } as CSSProperties;
 
   return (
-    <article className="case-file" data-family={family} data-outcome={outcome} style={style}>
+    <article className="case-file-shell" data-family={family} data-outcome={outcome} style={style}>
       <span className="pushpin" aria-hidden="true" />
-      <header className="case-file-head">
-        <span className="case-file-number">Дело №{game.code}</span>
-        <span className="case-file-date">{shortDate(game.endedAt)}</span>
-      </header>
-      <h2 className="case-file-verdict">{winnerBg(game.winnerTeam)}</h2>
-      <p className="case-file-mode">
-        {modeBg(game.mode)} · {playerCountBg(game)}
-      </p>
-      <ul className="case-file-highlights">
-        {moments.map((moment) => (
-          <li key={moment.id}>
-            <span className="case-file-bullet" aria-hidden="true" />
-            {moment.label}
-          </li>
-        ))}
-      </ul>
-      <footer className="case-file-foot">
-        <span className="case-file-events">{eventsBg(game.eventCount)}</span>
-        <Link href={`/history/${game.id}/replay`} className="case-file-cta">
-          Отвори дело <span aria-hidden="true">›</span>
-        </Link>
-      </footer>
+      <PaperCard eyebrow={`ДЕЛО №${game.code}`} density="md" meta={<span className="case-file-date">{shortDate(game.endedAt)}</span>}>
+        <div className="case-file-content">
+          <div className="case-file-verdict">
+            <Display size="h3" as="h2">
+              {winnerBg(game.winnerTeam)}
+            </Display>
+          </div>
+          <p className="case-file-mode">
+            {modeBg(game.mode)} · {playerCountBg(game)}
+          </p>
+          <ul className="case-file-highlights">
+            {moments.map((moment) => (
+              <li key={moment.id}>
+                <span className="case-file-bullet" aria-hidden="true" />
+                {moment.label}
+              </li>
+            ))}
+          </ul>
+          <footer className="case-file-foot">
+            <span className="case-file-events">{eventsBg(game.eventCount)}</span>
+            <Link href={`/history/${game.id}/replay`} className="case-file-cta">
+              Отвори дело <span aria-hidden="true">›</span>
+            </Link>
+          </footer>
+        </div>
+      </PaperCard>
     </article>
   );
 }

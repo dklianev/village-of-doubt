@@ -5631,6 +5631,36 @@ html[data-theme="light"] .sport-mafia-callout {
   padding: 28px 0 64px;
 }
 
+.case-file-shell {
+  position: relative;
+  transform: rotate(var(--tilt, 0deg));
+  transition:
+    transform 180ms ease,
+    filter 180ms ease;
+}
+
+.case-file-shell:hover {
+  filter: brightness(1.02);
+  transform: rotate(0deg) translateY(-4px);
+}
+
+.case-file-shell[data-outcome="win"] [data-ds-paper-card] {
+  border-left: 3px solid #2e6b2e;
+}
+
+.case-file-shell[data-outcome="loss"] [data-ds-paper-card] {
+  border-left: 3px solid #842f2b;
+}
+
+.case-file-shell[data-outcome="unknown"] [data-ds-paper-card] {
+  border-left: 3px solid rgba(83, 52, 31, 0.3);
+}
+
+.case-file-content {
+  display: grid;
+  gap: 12px;
+}
+
 .case-file {
   position: relative;
   min-height: 230px;
@@ -5707,6 +5737,10 @@ html[data-theme="light"] .sport-mafia-callout {
   background: radial-gradient(circle at 35% 35%, #d19a42 0%, #6b3f10 60%, #3a1e02 100%);
 }
 
+.case-file-shell[data-family="werewolves"] .pushpin {
+  background: radial-gradient(circle at 35% 35%, #d19a42 0%, #6b3f10 60%, #3a1e02 100%);
+}
+
 .case-file-head,
 .case-file-foot {
   display: flex;
@@ -5776,6 +5810,11 @@ html[data-theme="light"] .sport-mafia-callout {
   box-shadow: 0 0 0 3px rgba(107, 63, 16, 0.12);
 }
 
+.case-file-shell[data-family="werewolves"] .case-file-bullet {
+  background: #6b3f10;
+  box-shadow: 0 0 0 3px rgba(107, 63, 16, 0.12);
+}
+
 .case-file-foot {
   margin-top: 22px;
   padding-top: 16px;
@@ -5793,6 +5832,10 @@ html[data-theme="light"] .sport-mafia-callout {
 }
 
 .case-file[data-family="werewolves"] .case-file-cta {
+  color: #6b3f10;
+}
+
+.case-file-shell[data-family="werewolves"] .case-file-cta {
   color: #6b3f10;
 }
 
