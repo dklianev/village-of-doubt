@@ -11,10 +11,10 @@ export interface DialogProps {
   footer?: ReactNode;
 }
 
-const MotionContent = motion(RDialog.Content);
-const MotionOverlay = motion(RDialog.Overlay);
-
 export function Dialog({ open, onOpenChange, title, description, children, footer }: DialogProps) {
+  const MotionContent = motion(RDialog.Content);
+  const MotionOverlay = motion(RDialog.Overlay);
+
   return (
     <RDialog.Root open={open} onOpenChange={onOpenChange}>
       <AnimatePresence>
