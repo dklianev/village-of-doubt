@@ -11,8 +11,8 @@ import { absoluteUrl, routeMetadata } from "@/lib/seo";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = routeMetadata({
-  title: "Класация — седмичният брой на масата",
-  description: "Анонимна класация от завършени игри: участия, победи и последна активност, подредени като стар градски вестник.",
+  title: "Вечерен брой — седмичният списък на масата",
+  description: "Анонимен вечерен брой от завършени игри: участия, победи и последна активност, подредени като стар градски вестник.",
   path: "/leaderboard",
   image: "/game-art/og/og-leaderboard.png",
   imageAlt: "Празен стар вестник, пишеща машина и кафе",
@@ -22,8 +22,8 @@ export const metadata: Metadata = routeMetadata({
 const leaderboardJsonLd = {
   "@context": "https://schema.org",
   "@type": "CollectionPage",
-  name: "Класация",
-  description: "Анонимна класация от завършени игри с участия, победи и последна активност.",
+  name: "Вечерен брой",
+  description: "Анонимен вечерен брой от завършени игри с участия, победи и последна активност.",
   url: absoluteUrl("/leaderboard"),
   inLanguage: "bg-BG",
 };
