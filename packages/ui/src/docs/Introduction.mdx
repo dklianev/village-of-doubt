@@ -1,0 +1,44 @@
+import { Meta } from "@storybook/blocks";
+
+<Meta title="Foundation/Introduction" />
+
+# Върколак · Мафия design system
+
+## Foundation
+
+- **Tokens** — 32 OKLCH променливи
+- **Theme** — `html[data-theme="dark"]` обръща surface + ink
+
+## Primitives
+
+11 компонента:
+
+1. **Surface** — layout обвивка
+2. **Eyebrow** — mono uppercase label
+3. **Display** — serif heading
+4. **PaperCard** — стандартна светла card
+5. **SceneCard** — тъмен cinematic вариант
+6. **Pill** — бутон/линк/chip с 4 intent
+7. **Medallion** — кръгъл златен медальон
+8. **Toast** — feedback с 3 тона (Motion)
+9. **Dialog** — Radix-backed модал (Motion)
+10. **Sheet** — bottom-sheet mobile, centered desktop (Motion)
+11. **EmptyState** — artifact + title + body + action
+
+## Motion дисциплина
+
+Само 3 primitives импортват `motion/react`: Dialog, Sheet, Toast.
+
+## Naming
+
+- Tokens: `--ds-{category}-{role}`
+- Components: PascalCase
+- Data attributes: `data-ds-{primitive}` за инспекция
+
+## Theme switching
+
+Click "Theme" toolbar → light / dark.
+
+## Accessibility
+
+Всеки story минава axe-core. Нула violations задължително.
