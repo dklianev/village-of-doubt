@@ -24,7 +24,6 @@ import { KeyboardShortcutsModal } from "@/components/keyboard-shortcuts-modal";
 import { LiveCuePanel } from "@/components/play/LiveCuePanel";
 import { NarratorDesk } from "@/components/play/NarratorDesk";
 import { RulesSummary } from "@/components/play/RulesSummary";
-import { triggerDeviceCue } from "@/lib/play/device-cues";
 import { eventLineClass } from "@/lib/play/event-log";
 import { HunterRevengePanel } from "@/components/play/HunterRevengePanel";
 import { LoverCard } from "@/components/play/LoverCard";
@@ -52,6 +51,7 @@ import { canFactionKill, isNightPhase } from "@/lib/play/role-rules";
 import { phaseBg, phaseSigil } from "@/lib/play/phase-display";
 import { useCueMode } from "@/hooks/play/use-cue-mode";
 import { useGameRoom } from "@/hooks/play/use-game-room";
+import { usePhaseTransitions } from "@/hooks/play/use-phase-transitions";
 import {
   communicationBg,
   modeBg,
@@ -67,17 +67,9 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw }: { code
   const [secondTargetId, setSecondTargetId] = useState("");
   const [chatMessage, setChatMessage] = useState("");
   const [privateChatMessage, setPrivateChatMessage] = useState("");
-  const [phasePulse, setPhasePulse] = useState(0);
-  const [showPhaseTransition, setShowPhaseTransition] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
-  const [startCountdown, setStartCountdown] = useState<number | null>(null);
-  const previousCuePhaseRef = useRef<string | null>(null);
-  const previousEventIdsRef = useRef<Set<string>>(new Set());
-  const hasSeenEventsRef = useRef(false);
-  const previousWinnerTeamRef = useRef("");
   const suppressNextPhasePulseRef = useRef(false);
   const lastTypingSentRef = useRef<Map<ChatChannel, number>>(new Map());
-  const startGameTimersRef = useRef<number[]>([]);
   const shortcutStateRef = useRef<ShortcutState | null>(null);
   const toast = useToast();
   const {
@@ -113,10 +105,6 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw }: { code
     liveMode,
   });
 
-  useEffect(() => {
-    return () => clearStartGameTimers();
-  }, []);
-
   // When the phase changes, drop stale action-feedback strings so the previous
   // "Нощното действие е изпратено" or boilerplate "Свързан" don't linger past
   // the moment they are relevant. Players still get fresh status when they act.
@@ -128,65 +116,6 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw }: { code
     setStatus((current) => (current === "Свързан" || current === "Свързване..." ? "" : current));
   }, [snapshot?.phase]);
 
-  useEffect(() => {
-    const nextPhase = snapshot?.phase;
-    if (!nextPhase) {
-      return;
-    }
-
-    if (!previousCuePhaseRef.current) {
-      previousCuePhaseRef.current = nextPhase;
-      setShowPhaseTransition(false);
-      return;
-    }
-    if (previousCuePhaseRef.current === nextPhase) {
-      suppressNextPhasePulseRef.current = false;
-      setShowPhaseTransition(false);
-      return;
-    }
-
-    if (suppressNextPhasePulseRef.current) {
-      suppressNextPhasePulseRef.current = false;
-      previousCuePhaseRef.current = nextPhase;
-      setShowPhaseTransition(false);
-      return;
-    }
-
-    previousCuePhaseRef.current = nextPhase;
-    setShowPhaseTransition(true);
-    setPhasePulse((current) => current + 1);
-    playCue("phase-change", { forceSilent: liveMode || cueMode === "silent" });
-    if (cueMode === "audio_vibration") {
-      triggerDeviceCue(nextPhase, liveMode);
-    }
-  }, [cueMode, liveMode, snapshot?.phase]);
-
-  useEffect(() => {
-    const events = snapshot?.publicEvents ?? [];
-    if (!hasSeenEventsRef.current) {
-      previousEventIdsRef.current = new Set(events.map((event) => event.id));
-      hasSeenEventsRef.current = true;
-      return;
-    }
-
-    const previousIds = previousEventIdsRef.current;
-    const newEvents = events.filter((event) => !previousIds.has(event.id));
-    previousEventIdsRef.current = new Set(events.map((event) => event.id));
-
-    if (newEvents.some((event) => eventLineClass(event.messageBg) === "event-death")) {
-      playCue("kill", { forceSilent: liveMode });
-    }
-  }, [liveMode, snapshot?.publicEvents]);
-
-  useEffect(() => {
-    const winnerTeam = snapshot?.winnerTeam ?? "";
-    if (!winnerTeam || previousWinnerTeamRef.current === winnerTeam) {
-      return;
-    }
-    previousWinnerTeamRef.current = winnerTeam;
-    playCue("win", { forceSilent: liveMode });
-  }, [liveMode, snapshot?.winnerTeam]);
-
   const players = useMemo(() => snapshot?.players ?? [], [snapshot?.players]);
   const livingPlayers = useMemo(() => players.filter((player) => player.playing && player.alive), [players]);
   const ownPlayer = useMemo(() => players.find((player) => player.userId === currentUserId), [currentUserId, players]);
@@ -195,6 +124,20 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw }: { code
   const mode = snapshot?.mode ?? createOptions?.mode ?? "werewolves_classic";
   const family = getGameFamily(mode);
   const phase = snapshot?.phase ?? "lobby";
+  const {
+    phasePulse,
+    showPhaseTransition,
+    startCountdown,
+    requestStartGame,
+  } = usePhaseTransitions({
+    room,
+    phase: snapshot?.phase ?? null,
+    publicEvents: snapshot?.publicEvents ?? [],
+    winnerTeam: snapshot?.winnerTeam ?? "",
+    liveMode,
+    cueMode,
+    suppressNextPhasePulseRef,
+  });
 
   useEffect(() => {
     shortcutStateRef.current = {
@@ -265,30 +208,6 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw }: { code
       }
     }
   }, [toast]);
-
-  function requestStartGame() {
-    if (!room || startCountdown !== null) {
-      return;
-    }
-
-    const roomAtStart = room;
-    clearStartGameTimers();
-    setStartCountdown(3);
-    startGameTimersRef.current.push(window.setTimeout(() => setStartCountdown(2), 620));
-    startGameTimersRef.current.push(window.setTimeout(() => setStartCountdown(1), 1240));
-    startGameTimersRef.current.push(window.setTimeout(() => {
-      roomAtStart.send("startGame");
-      setStartCountdown(null);
-      clearStartGameTimers();
-    }, 1860));
-  }
-
-  function clearStartGameTimers() {
-    for (const timeout of startGameTimersRef.current) {
-      window.clearTimeout(timeout);
-    }
-    startGameTimersRef.current = [];
-  }
 
   function sendChat(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
