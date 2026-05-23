@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, type Dispatch } from "react";
+import { useEffect, type CSSProperties, type Dispatch } from "react";
 import { Pill } from "@werewolf/ui";
 import type { LobbyFormAction, LobbyFormState, LobbyStep } from "@/lib/lobby-form";
 
@@ -10,6 +10,36 @@ const STEPS: { step: LobbyStep; label: string }[] = [
   { step: 3, label: "Стил" },
   { step: 4, label: "Преглед" },
 ];
+
+type StepStatus = "active" | "visited" | "future";
+
+const STEP_PILL_STYLE: Record<StepStatus, CSSProperties> = {
+  active: {
+    justifyContent: "flex-start",
+    width: "100%",
+    border: "1px solid rgba(209, 154, 66, 0.62)",
+    background: "rgba(209, 154, 66, 0.18)",
+    color: "#fff6e5",
+    padding: "8px 10px",
+  },
+  visited: {
+    justifyContent: "flex-start",
+    width: "100%",
+    border: "1px solid rgba(248, 236, 210, 0.14)",
+    background: "rgba(248, 236, 210, 0.06)",
+    color: "#ead9ba",
+    padding: "8px 10px",
+  },
+  future: {
+    justifyContent: "flex-start",
+    width: "100%",
+    border: "1px solid rgba(248, 236, 210, 0.14)",
+    background: "rgba(248, 236, 210, 0.06)",
+    color: "#ead9ba",
+    opacity: 0.55,
+    padding: "8px 10px",
+  },
+};
 
 export function StepNav({
   state,
@@ -52,13 +82,19 @@ export function StepNav({
     <nav className="lobby-step-nav" aria-label="Стъпки за създаване на стая">
       <ol>
         {STEPS.map(({ step, label }) => {
-          const status = step === state.step ? "active" : step <= state.visitedStep ? "visited" : "future";
+          const status: StepStatus = step === state.step ? "active" : step <= state.visitedStep ? "visited" : "future";
           return (
             <li key={step}>
-              <button type="button" data-status={status} onClick={() => transition(() => dispatch({ type: "SET_STEP", step }))}>
+              <Pill
+                intent="ghost"
+                size="sm"
+                data-status={status}
+                style={STEP_PILL_STYLE[status]}
+                onClick={() => transition(() => dispatch({ type: "SET_STEP", step }))}
+              >
                 <span>{step}</span>
                 <strong>{label}</strong>
-              </button>
+              </Pill>
             </li>
           );
         })}
