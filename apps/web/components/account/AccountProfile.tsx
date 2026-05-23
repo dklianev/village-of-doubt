@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { Display, PaperCard } from "@werewolf/ui/server";
 import { authClient } from "@/lib/auth-client";
 
 const PROVIDER_LABELS: Record<string, string> = {
@@ -71,74 +72,80 @@ export function AccountProfile(props: Props) {
   }
 
   return (
-    <section className="account-section">
-      <header className="account-section-head">
-        <h2>Профил</h2>
-        <p>Името на масата и входовете към профила.</p>
-      </header>
+    <section aria-labelledby="account-profile-title">
+      <PaperCard eyebrow="ПРОФИЛ" density="md">
+        <div className="account-card-content">
+          <header className="account-section-head">
+            <Display size="h3" as="h2">
+              <span id="account-profile-title">Профил</span>
+            </Display>
+            <p>Името на масата и входовете към профила.</p>
+          </header>
 
-      <div className="account-profile-form">
-        <div className="account-field">
-          <label htmlFor="account-name">Име на масата</label>
-          <div className="account-field-inline">
-            <input
-              id="account-name"
-              type="text"
-              value={name}
-              maxLength={32}
-              onChange={(event) => setName(event.target.value)}
-              autoComplete="name"
-            />
-            <button
-              type="button"
-              className="account-save-btn"
-              onClick={saveName}
-              disabled={saving || name.trim() === savedName}
-              aria-busy={saving}
-            >
-              {saving ? "Запазваме..." : "Запази"}
-            </button>
+          <div className="account-profile-form">
+            <div className="account-field">
+              <label htmlFor="account-name">Име на масата</label>
+              <div className="account-field-inline">
+                <input
+                  id="account-name"
+                  type="text"
+                  value={name}
+                  maxLength={32}
+                  onChange={(event) => setName(event.target.value)}
+                  autoComplete="name"
+                />
+                <button
+                  type="button"
+                  className="account-save-btn"
+                  onClick={saveName}
+                  disabled={saving || name.trim() === savedName}
+                  aria-busy={saving}
+                >
+                  {saving ? "Запазваме..." : "Запази"}
+                </button>
+              </div>
+              {status === "saved" ? (
+                <p className="account-status account-status-ok" role="status" aria-live="polite">
+                  Запазено.
+                </p>
+              ) : null}
+              {status === "error" ? (
+                <p className="account-status account-status-error" role="alert">
+                  {errorMessage}
+                </p>
+              ) : null}
+            </div>
+
+            <div className="account-field">
+              <p className="account-field-label">Имейл</p>
+              <div className="account-field-static">
+                <span>{props.email}</span>
+                {props.emailVerified ? (
+                  <span className="account-badge account-badge-ok">Потвърден</span>
+                ) : (
+                  <Link href="/verify-email" className="account-badge account-badge-warn">
+                    Непотвърден · потвърди →
+                  </Link>
+                )}
+              </div>
+            </div>
+
+            <div className="account-field">
+              <p className="account-field-label">Активни входове</p>
+              <ul className="account-provider-list">
+                {props.providers.map((provider) => (
+                  <li key={provider} data-provider={provider}>
+                    <span className="account-provider-icon" aria-hidden>
+                      {PROVIDER_ICONS[provider] ?? "·"}
+                    </span>
+                    <span>{PROVIDER_LABELS[provider] ?? provider}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
-          {status === "saved" ? (
-            <p className="account-status account-status-ok" role="status" aria-live="polite">
-              Запазено.
-            </p>
-          ) : null}
-          {status === "error" ? (
-            <p className="account-status account-status-error" role="alert">
-              {errorMessage}
-            </p>
-          ) : null}
         </div>
-
-        <div className="account-field">
-          <p className="account-field-label">Имейл</p>
-          <div className="account-field-static">
-            <span>{props.email}</span>
-            {props.emailVerified ? (
-              <span className="account-badge account-badge-ok">Потвърден</span>
-            ) : (
-              <Link href="/verify-email" className="account-badge account-badge-warn">
-                Непотвърден · потвърди →
-              </Link>
-            )}
-          </div>
-        </div>
-
-        <div className="account-field">
-          <p className="account-field-label">Активни входове</p>
-          <ul className="account-provider-list">
-            {props.providers.map((provider) => (
-              <li key={provider} data-provider={provider}>
-                <span className="account-provider-icon" aria-hidden>
-                  {PROVIDER_ICONS[provider] ?? "·"}
-                </span>
-                <span>{PROVIDER_LABELS[provider] ?? provider}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
+      </PaperCard>
     </section>
   );
 }

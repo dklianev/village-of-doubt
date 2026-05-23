@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Display, PaperCard } from "@werewolf/ui/server";
 import { getGameModeNameBg, type GameMode, type WinnerTeam } from "@werewolf/shared";
 
 export interface RecentGameSummary {
@@ -21,35 +22,41 @@ const WINNER_LABEL: Record<WinnerTeam, string> = {
 
 export function AccountRecentGames({ games }: { games: RecentGameSummary[] }) {
   return (
-    <section className="account-section">
-      <header className="account-section-head">
-        <h2>Последни вечери</h2>
-        <p>Архивът помни последните ти три маси.</p>
-      </header>
+    <section aria-labelledby="account-recent-title">
+      <PaperCard eyebrow="ПОСЛЕДНИ ВЕЧЕРИ" density="md">
+        <div className="account-card-content">
+          <header className="account-section-head">
+            <Display size="h3" as="h2">
+              <span id="account-recent-title">Последни вечери</span>
+            </Display>
+            <p>Архивът помни последните ти три маси.</p>
+          </header>
 
-      <ul className="account-game-list">
-        {games.map((game) => (
-          <li key={game.id}>
-            <article className="account-game-card">
-              <header className="account-game-head">
-                <span className="account-game-code">Дело №{game.code}</span>
-                <time className="account-game-date">{formatDate(game.endedAt)}</time>
-              </header>
-              <p className="account-game-verdict">
-                {game.winnerTeam ? WINNER_LABEL[game.winnerTeam] : "Незавършена"}
-              </p>
-              <p className="account-game-mode">{getGameModeNameBg(game.mode)}</p>
-              <Link href={`/history/${game.id}/replay`} className="account-game-link">
-                Отвори дело →
-              </Link>
-            </article>
-          </li>
-        ))}
-      </ul>
+          <ul className="account-game-list">
+            {games.map((game) => (
+              <li key={game.id}>
+                <article className="account-game-card">
+                  <header className="account-game-head">
+                    <span className="account-game-code">Дело №{game.code}</span>
+                    <time className="account-game-date">{formatDate(game.endedAt)}</time>
+                  </header>
+                  <p className="account-game-verdict">
+                    {game.winnerTeam ? WINNER_LABEL[game.winnerTeam] : "Незавършена"}
+                  </p>
+                  <p className="account-game-mode">{getGameModeNameBg(game.mode)}</p>
+                  <Link href={`/history/${game.id}/replay`} className="account-game-link">
+                    Отвори дело →
+                  </Link>
+                </article>
+              </li>
+            ))}
+          </ul>
 
-      <Link href="/history" className="account-section-link">
-        Виж пълния архив →
-      </Link>
+          <Link href="/history" className="account-section-link">
+            Виж пълния архив →
+          </Link>
+        </div>
+      </PaperCard>
     </section>
   );
 }

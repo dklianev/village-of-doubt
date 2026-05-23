@@ -15310,6 +15310,24 @@ html[data-theme="light"] .auth-recovery-shell .locksmith-foot-link {
   padding: 32px 24px 0;
 }
 
+.account-card-content {
+  --account-surface: var(--ds-surface-paper);
+  --account-surface-strong: var(--ds-surface-paper-deep);
+  --account-text: var(--ds-ink-primary);
+  --account-text-muted: var(--ds-ink-soft);
+  --account-text-soft: var(--ds-ink-faint);
+  --account-border: oklch(0.86 0.035 75 / 0.78);
+  --account-border-strong: oklch(0.72 0.04 70 / 0.9);
+  --account-accent: var(--ds-accent-blood-deep);
+  --account-accent-soft: oklch(0.50 0.155 25 / 0.12);
+  --account-danger: var(--ds-accent-blood-deep);
+  --account-danger-soft: oklch(0.50 0.155 25 / 0.1);
+
+  display: grid;
+  gap: 18px;
+  color: var(--account-text);
+}
+
 .account-hero {
   position: relative;
   width: 100%;
