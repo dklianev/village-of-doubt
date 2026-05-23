@@ -13062,6 +13062,10 @@ html[data-theme="light"] .plaque-loading {
   font-family: "Noto Serif", "Times New Roman", serif;
 }
 
+.leaderboard-hero-frame {
+  margin-bottom: 32px;
+}
+
 .masthead {
   display: grid;
   justify-items: center;
@@ -13071,6 +13075,26 @@ html[data-theme="light"] .plaque-loading {
   padding-bottom: 24px;
   color: #1a1410;
   text-align: center;
+}
+
+.masthead-primitive {
+  margin-bottom: 0;
+  border-bottom: 0;
+  padding-bottom: 0;
+  color: var(--ds-ink-scene);
+}
+
+.masthead-primitive .masthead-ornament {
+  color: var(--ds-accent-gold);
+}
+
+.masthead-primitive h1 {
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.masthead-primitive .masthead-meta {
+  color: var(--ds-ink-scene-soft);
 }
 
 .masthead-ornament {
@@ -13119,6 +13143,17 @@ html[data-theme="light"] .plaque-loading {
   letter-spacing: 0;
   line-height: 1.04;
   text-transform: uppercase;
+}
+
+.headline-main-title h2 {
+  color: inherit;
+  font-size: inherit;
+  text-transform: inherit;
+}
+
+.leaderboard-empty-state {
+  max-width: 680px;
+  margin: 0 auto;
 }
 
 .headline-main-grid {

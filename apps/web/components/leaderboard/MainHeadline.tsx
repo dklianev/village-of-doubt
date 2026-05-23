@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { Display } from "@werewolf/ui/server";
 import { flavorQuoteFor, headlineFor, winRatePercent, type LeaderboardEntry } from "@/lib/leaderboard-headlines";
 
 export function MainHeadline({ entry }: { entry: LeaderboardEntry }) {
@@ -8,7 +9,11 @@ export function MainHeadline({ entry }: { entry: LeaderboardEntry }) {
   return (
     <section className="headline-main" aria-label="Главна новина">
       <p className="headline-kicker">главна новина</p>
-      <h2 className="headline-main-title">{headline}</h2>
+      <div className="headline-main-title">
+        <Display size="h2" as="h2">
+          {headline}
+        </Display>
+      </div>
 
       <div className="headline-main-grid">
         <figure className="headline-portrait">
