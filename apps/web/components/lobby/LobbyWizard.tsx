@@ -4,6 +4,7 @@ import { useCallback, useEffect, useReducer, useRef, type CSSProperties } from "
 import { useRouter, useSearchParams } from "next/navigation";
 import { ROOM_CODE_REGEX, countRoles } from "@werewolf/shared";
 import type { GameFamily, GameMode } from "@werewolf/shared";
+import { SceneCard } from "@werewolf/ui";
 import { playCue } from "@/lib/sound";
 import {
   MANUAL_PRESET_STORAGE_KEY,
@@ -107,28 +108,32 @@ export function LobbyWizard({
 
   return (
     <main data-theme={state.family} data-family={state.family} className="lobby-wizard">
-      <div className="lobby-wizard-main">
-        <StepNav state={state} dispatch={dispatch} canAdvance={canAdvance} onAdvanceBlocked={onAdvanceBlocked} transition={transition} />
-        <div className="lobby-step-pane" style={{ viewTransitionName: "lobby-step" }}>
-          <div className="lobby-step-slot" data-active={state.step === 1} aria-hidden={state.step !== 1} inert={state.step !== 1}>
-            <StepRoom state={state} dispatch={dispatch} />
+      <section className="lobby-wizard-frame" aria-label="Лоби">
+        <SceneCard eyebrow="ЛОБИ" density="lg">
+          <div className="lobby-wizard-main">
+            <StepNav state={state} dispatch={dispatch} canAdvance={canAdvance} onAdvanceBlocked={onAdvanceBlocked} transition={transition} />
+            <div className="lobby-step-pane" style={{ viewTransitionName: "lobby-step" }}>
+              <div className="lobby-step-slot" data-active={state.step === 1} aria-hidden={state.step !== 1} inert={state.step !== 1}>
+                <StepRoom state={state} dispatch={dispatch} />
+              </div>
+              <div className="lobby-step-slot" data-active={state.step === 2} aria-hidden={state.step !== 2} inert={state.step !== 2}>
+                <StepRoles state={state} dispatch={dispatch} />
+              </div>
+              <div className="lobby-step-slot" data-active={state.step === 3} aria-hidden={state.step !== 3} inert={state.step !== 3}>
+                <StepStyle state={state} dispatch={dispatch} />
+              </div>
+              <div className="lobby-step-slot" data-active={state.step === 4} aria-hidden={state.step !== 4} inert={state.step !== 4}>
+                <StepPreview state={state} dispatch={dispatch} onSubmit={onSubmit} />
+              </div>
+            </div>
+            {state.formError ? (
+              <p className="lobby-form-error" role="alert" aria-live="assertive">
+                {state.formError}
+              </p>
+            ) : null}
           </div>
-          <div className="lobby-step-slot" data-active={state.step === 2} aria-hidden={state.step !== 2} inert={state.step !== 2}>
-            <StepRoles state={state} dispatch={dispatch} />
-          </div>
-          <div className="lobby-step-slot" data-active={state.step === 3} aria-hidden={state.step !== 3} inert={state.step !== 3}>
-            <StepStyle state={state} dispatch={dispatch} />
-          </div>
-          <div className="lobby-step-slot" data-active={state.step === 4} aria-hidden={state.step !== 4} inert={state.step !== 4}>
-            <StepPreview state={state} dispatch={dispatch} onSubmit={onSubmit} />
-          </div>
-        </div>
-        {state.formError ? (
-          <p className="lobby-form-error" role="alert" aria-live="assertive">
-            {state.formError}
-          </p>
-        ) : null}
-      </div>
+        </SceneCard>
+      </section>
       <StickyPreview state={state} />
       <MobileSummaryChip state={state} dispatch={dispatch} />
       {state.confettiBurst > 0 ? <Confetti key={state.confettiBurst} /> : null}

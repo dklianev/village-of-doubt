@@ -8909,6 +8909,18 @@ html[data-theme="light"] .play-players-panel .chat-line {
   padding: clamp(20px, 4vw, 52px) 0 96px;
 }
 
+.lobby-wizard-frame {
+  min-width: 0;
+}
+
+.lobby-wizard-frame [data-ds-scene-card] {
+  height: 100%;
+}
+
+.lobby-wizard-frame [data-ds-scene-card] > div {
+  gap: 22px;
+}
+
 .lobby-wizard-main,
 .lobby-step,
 .preview-stat-list,
