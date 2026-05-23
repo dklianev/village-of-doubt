@@ -2,8 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { ACHIEVEMENTS } from "@werewolf/shared";
+import { EmptyState, Pill } from "@werewolf/ui";
+import { EMPTY_STATES } from "@werewolf/ui/states";
 import { AchievementPlaque } from "@/components/achievements/AchievementPlaque";
 import { AchievementProgressWreath } from "@/components/achievements/AchievementProgressWreath";
+import { ArtifactImage } from "@/components/ArtifactImage";
 import { authClient } from "@/lib/auth-client";
 
 interface OwnedAchievement {
@@ -37,6 +40,7 @@ export function AchievementsClient() {
 
   const ownedById = new Map(owned.map((achievement) => [achievement.achievementId, achievement]));
   const unlockedCount = ownedById.size;
+  const zeroState = EMPTY_STATES["achievements-zero"];
 
   if (!loaded) {
     return (
@@ -64,12 +68,29 @@ export function AchievementsClient() {
     <>
       <AchievementProgressWreath unlocked={unlockedCount} total={ACHIEVEMENTS.length} />
 
-      <section className="plaque-wall mt-8">
-        {ACHIEVEMENTS.map((achievement) => {
-          const unlocked = ownedById.get(achievement.id);
-          return <AchievementPlaque key={achievement.id} achievement={achievement} unlockedAt={unlocked?.unlockedAt ?? null} />;
-        })}
-      </section>
+      {unlockedCount === 0 ? (
+        <div className="achievement-empty-state">
+          <EmptyState
+            artifact={<ArtifactImage artifact={zeroState.artifact} />}
+            title={zeroState.title}
+            body={zeroState.body}
+            action={
+              zeroState.action?.href ? (
+                <Pill as="a" href={zeroState.action.href}>
+                  {zeroState.action.label}
+                </Pill>
+              ) : null
+            }
+          />
+        </div>
+      ) : (
+        <section className="plaque-wall mt-8">
+          {ACHIEVEMENTS.map((achievement) => {
+            const unlocked = ownedById.get(achievement.id);
+            return <AchievementPlaque key={achievement.id} achievement={achievement} unlockedAt={unlocked?.unlockedAt ?? null} />;
+          })}
+        </section>
+      )}
     </>
   );
 }

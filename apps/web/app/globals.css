@@ -12542,6 +12542,11 @@ html[data-theme="dark"] .utility-shell::before {
   margin-top: 24px;
 }
 
+.achievement-empty-state {
+  max-width: 680px;
+  margin: 28px auto 0;
+}
+
 .achievement-shell::before {
   position: absolute;
   top: 0;
