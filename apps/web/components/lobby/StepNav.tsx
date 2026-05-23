@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, type Dispatch } from "react";
+import { Pill } from "@werewolf/ui";
 import type { LobbyFormAction, LobbyFormState, LobbyStep } from "@/lib/lobby-form";
 
 const STEPS: { step: LobbyStep; label: string }[] = [
@@ -64,17 +65,15 @@ export function StepNav({
       </ol>
 
       <div className="lobby-step-actions">
-        <button
-          type="button"
-          className="btn btn-secondary"
+        <Pill
+          intent="secondary"
           disabled={state.step === 1}
           onClick={() => transition(() => dispatch({ type: "PREVIOUS_STEP" }))}
         >
           Назад
-        </button>
-        <button
-          type="button"
-          className="btn btn-primary"
+        </Pill>
+        <Pill
+          intent="primary"
           disabled={isLast}
           onClick={() => {
             if (!canAdvance) {
@@ -85,7 +84,7 @@ export function StepNav({
           }}
         >
           Напред
-        </button>
+        </Pill>
       </div>
     </nav>
   );

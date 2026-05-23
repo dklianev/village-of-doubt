@@ -9,6 +9,7 @@ import {
   type RoleDistribution,
 } from "@werewolf/shared";
 import { useMemo, type Dispatch } from "react";
+import { PaperCard, Pill } from "@werewolf/ui";
 import {
   MANUAL_PRESET_STORAGE_KEY,
   boundedPlayerCount,
@@ -54,19 +55,20 @@ export function StepRoles({
 
   return (
     <section className="lobby-step lobby-step-roles" aria-labelledby="step-roles-title">
-      <div className="roles-step-sticky">
-        <div className="lobby-step-heading">
-          <p className="section-kicker">стъпка 2</p>
-          <h1 id="step-roles-title">Избери ролите</h1>
-          <p>{total}/{state.playerCount} роли · баланс {roleBalance(state) > 0 ? `+${roleBalance(state)}` : roleBalance(state)}</p>
-        </div>
-        <PresetChips state={state} dispatch={dispatch} />
-        {warnings.length > 0 ? <div className="roles-warning-banner">{warnings[0]}</div> : null}
-      </div>
+      <PaperCard eyebrow="СТЪПКА 2 / 4 · РОЛИ" density="md">
+        <div className="lobby-step-paper">
+          <div className="roles-step-sticky">
+            <div className="lobby-step-heading">
+              <h1 id="step-roles-title">Избери ролите</h1>
+              <p>{total}/{state.playerCount} роли · баланс {roleBalance(state) > 0 ? `+${roleBalance(state)}` : roleBalance(state)}</p>
+            </div>
+            <PresetChips state={state} dispatch={dispatch} />
+            {warnings.length > 0 ? <div className="roles-warning-banner">{warnings[0]}</div> : null}
+          </div>
 
-      {state.family === "werewolves" ? <LoversFeatureCard state={state} dispatch={dispatch} /> : null}
+          {state.family === "werewolves" ? <LoversFeatureCard state={state} dispatch={dispatch} /> : null}
 
-      <div className="manual-builder-toolbar">
+          <div className="manual-builder-toolbar">
         <input
           className="input"
           value={state.roleSearch}
@@ -90,62 +92,64 @@ export function StepRoles({
             Разширени
           </button>
         </div>
-      </div>
+          </div>
 
-      <RoleCarousel
-        family={state.family}
-        roles={state.manualRolesEnabled ? visibleRoles : (Object.keys(config.roles) as RoleCode[])}
-        distribution={state.manualRolesEnabled ? state.manualRoles : config.roles}
-        readonly={!state.manualRolesEnabled}
-        onIncrement={(role) => changeRole(role, 1)}
-        onDecrement={(role) => changeRole(role, -1)}
-        onOpen={(role) => dispatch({ type: "SET_ROLE_DETAIL", roleDetail: { role, source: "tile" } })}
-      />
+          <RoleCarousel
+            family={state.family}
+            roles={state.manualRolesEnabled ? visibleRoles : (Object.keys(config.roles) as RoleCode[])}
+            distribution={state.manualRolesEnabled ? state.manualRoles : config.roles}
+            readonly={!state.manualRolesEnabled}
+            onIncrement={(role) => changeRole(role, 1)}
+            onDecrement={(role) => changeRole(role, -1)}
+            onOpen={(role) => dispatch({ type: "SET_ROLE_DETAIL", roleDetail: { role, source: "tile" } })}
+          />
 
-      <div className="manual-builder-actions">
-        {!state.manualRolesEnabled ? (
-          <button type="button" className="btn btn-secondary" onClick={() => dispatch({ type: "SET_MANUAL_ROLES_ENABLED", enabled: true })}>
-            Настрой ръчно
-          </button>
+        <div className="manual-builder-actions">
+          {!state.manualRolesEnabled ? (
+            <Pill intent="secondary" onClick={() => dispatch({ type: "SET_MANUAL_ROLES_ENABLED", enabled: true })}>
+              Настрой ръчно
+            </Pill>
         ) : (
           <>
-            <button type="button" className="btn btn-secondary min-h-0 px-4 py-2" onClick={() => saveManualPreset(state, dispatch)}>
+            <Pill intent="secondary" size="sm" onClick={() => saveManualPreset(state, dispatch)}>
               Запази шаблон
-            </button>
-            <button type="button" className="btn btn-secondary min-h-0 px-4 py-2" onClick={() => loadManualPreset(state, dispatch)}>
+            </Pill>
+            <Pill intent="secondary" size="sm" onClick={() => loadManualPreset(state, dispatch)}>
               Зареди шаблон
-            </button>
-            <button
-              type="button"
-              className="btn btn-secondary min-h-0 px-4 py-2"
+            </Pill>
+            <Pill
+              intent="secondary"
+              size="sm"
               disabled={state.manualRoleHistory.length === 0}
               onClick={() => dispatch({ type: "UNDO_MANUAL_ROLES" })}
             >
               Назад
-            </button>
-            <button
-              type="button"
-              className="btn btn-secondary min-h-0 px-4 py-2"
+            </Pill>
+            <Pill
+              intent="secondary"
+              size="sm"
               disabled={state.manualRoleFuture.length === 0}
               onClick={() => dispatch({ type: "REDO_MANUAL_ROLES" })}
             >
               Напред
-            </button>
-            <button type="button" className="btn btn-secondary min-h-0 px-4 py-2" onClick={() => dispatch({ type: "SET_ROLE_SEARCH", query: "" })}>
+            </Pill>
+            <Pill intent="secondary" size="sm" onClick={() => dispatch({ type: "SET_ROLE_SEARCH", query: "" })}>
               Добави роля
-            </button>
+            </Pill>
           </>
         )}
         {state.manualPresetMessage ? <span className="manual-builder-message">{state.manualPresetMessage}</span> : null}
-      </div>
+          </div>
 
-      {state.roleDetail ? (
-        <RoleDetailModal
-          family={state.family}
-          role={state.roleDetail.role}
-          onClose={() => dispatch({ type: "SET_ROLE_DETAIL", roleDetail: null })}
-        />
-      ) : null}
+          {state.roleDetail ? (
+            <RoleDetailModal
+              family={state.family}
+              role={state.roleDetail.role}
+              onClose={() => dispatch({ type: "SET_ROLE_DETAIL", roleDetail: null })}
+            />
+          ) : null}
+        </div>
+      </PaperCard>
     </section>
   );
 }
@@ -171,9 +175,9 @@ function LoversFeatureCard({
         <span>{detail}</span>
         <small>Купидон заменя един Селянин и не променя броя играчи.</small>
       </div>
-      <button
-        type="button"
-        className="lovers-toggle-button"
+      <Pill
+        intent={enabled ? "primary" : "secondary"}
+        size="sm"
         data-active={enabled ? "true" : "false"}
         disabled={!available}
         onClick={() => {
@@ -182,7 +186,7 @@ function LoversFeatureCard({
         }}
       >
         {enabled ? "Включено" : "Включи"}
-      </button>
+      </Pill>
     </article>
   );
 }

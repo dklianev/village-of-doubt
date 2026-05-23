@@ -9067,6 +9067,22 @@ html[data-theme="light"] .play-players-panel .chat-line {
   gap: 22px;
 }
 
+.lobby-step-paper {
+  display: grid;
+  gap: 22px;
+  color: var(--ds-ink-primary);
+}
+
+.lobby-step-paper .lobby-step-heading h1 {
+  color: var(--ds-ink-primary);
+  text-shadow: none;
+}
+
+.lobby-step-paper .lobby-step-heading p:not(.section-kicker),
+.lobby-step-paper .step-lede {
+  color: var(--ds-ink-soft);
+}
+
 .lobby-step-room {
   gap: clamp(20px, 2.4vw, 30px);
 }
