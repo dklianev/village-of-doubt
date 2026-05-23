@@ -3,26 +3,26 @@
   "version": "0.0.1",
   "private": true,
   "type": "module",
-  "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     },
     "./tokens.css": "./src/tokens.css",
     "./styles/*.css": "./src/styles/*.css",
     "./artifacts": {
       "types": "./dist/primitives/artifacts/index.d.ts",
-      "import": "./dist/primitives/artifacts/index.mjs",
-      "require": "./dist/primitives/artifacts/index.js"
+      "import": "./dist/primitives/artifacts/index.js",
+      "require": "./dist/primitives/artifacts/index.cjs"
     },
     "./states": {
       "types": "./dist/states/empty-states.d.ts",
-      "import": "./dist/states/empty-states.mjs",
-      "require": "./dist/states/empty-states.js"
+      "import": "./dist/states/empty-states.js",
+      "require": "./dist/states/empty-states.cjs"
     }
   },
   "files": ["dist", "src/tokens.css", "src/styles"],
