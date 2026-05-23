@@ -45,3 +45,25 @@ No visual baselines were updated.
 
 Future PRs migrating chrome to primitives must append a section here documenting which CSS class families became dead code.
 Deletion stays conservative: if a class has any live reference, keep it until the owning component migrates.
+
+## PR C — 2026-05-23 (/account + /history primitive migration)
+
+Lines removed from `apps/web/app/globals.css`:
+
+| Class family | LOC removed | Replaced by |
+|---|---:|---|
+| `.account-hero*`, `.account-section` shell, old danger dialog shell | 310 | `AccountHero` `SceneCard`, account section `PaperCard`, `AccountDangerZone` `Dialog` |
+| `.case-file-head`, `.case-file-number`, old evidence empty art/CTA/ghost row shell | 78 | `CaseFileCard` `PaperCard`, `EvidenceWallEmpty` `EmptyState` + `ArtifactImage` |
+| `.replay-hero*`, `.replay-hero-copy*` | 90 | replay page `SceneCard` + `Display` hero |
+
+**Net delta**: `apps/web/app/globals.css` went from 19,819 to 19,342 lines
+in this worktree snapshot (Δ -477). Git diff for the CSS file records 478
+removed lines and 1 added line in the cleanup commit.
+
+Also removed the obsolete `/account` hero banner `ResourceHints` entry after
+`AccountHero` stopped rendering that banner image.
+
+## Verification
+
+- Delete scan: old `.account-hero*`, native `.danger-confirm-dialog`, old `.replay-hero*`, and old evidence empty shell classes have zero live JSX/TS references.
+- Kept intentionally: `.case-file` and `.case-file-ghost*` because `EvidenceWallSkeleton` still uses them.

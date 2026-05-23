@@ -10,7 +10,6 @@ import {
 } from "@werewolf/database";
 import { ACHIEVEMENTS, type GameMode, type WinnerTeam } from "@werewolf/shared";
 import { AccountDashboard } from "@/components/account/AccountDashboard";
-import { ResourceHints } from "@/components/resource-hints";
 import { computePlayerStats } from "@/lib/account-stats";
 import { auth } from "@/lib/auth";
 
@@ -94,7 +93,6 @@ export default async function AccountPage() {
 function renderDashboard(props: AccountDashboardProps) {
   return (
     <main className="shell account-shell">
-      <ResourceHints images={["/game-art/account/account-hero-banner.webp"]} />
       <AccountDashboard {...props} />
     </main>
   );
