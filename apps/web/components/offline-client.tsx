@@ -97,7 +97,7 @@ export function OfflineClient() {
           Прочети правилата
         </Link>
         <Link className="btn btn-secondary" href="/faq">
-          Често задавани въпроси
+          Седни до огъня
         </Link>
       </section>
     </article>

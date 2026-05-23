@@ -138,11 +138,11 @@ export function FaqHearth({ items }: { items: readonly FaqItem[] }) {
   return (
     <article className="faq-hearth">
       <header
-        aria-label="Често задавани въпроси"
+        aria-label="Седни до огъня"
         style={{ maxWidth: "980px", margin: "0 auto", padding: "32px 24px 0" }}
       >
         <SceneCard eyebrow="СЕДНИ ДО ОГЪНЯ" density="lg">
-          <Display size="h1">Често задавани въпроси.</Display>
+          <Display size="h1">Седни до огъня.</Display>
           <p
             style={{
               color: "var(--ds-ink-scene-soft)",
