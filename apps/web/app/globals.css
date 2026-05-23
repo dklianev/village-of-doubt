@@ -11997,6 +11997,24 @@ html[data-vt="theme"]::view-transition-new(root) {
   font-weight: 900;
 }
 
+.replay-summary-primitive {
+  margin-top: 8px;
+}
+
+.replay-summary-primitive div {
+  border: 1px solid oklch(0.78 0.055 75 / 0.22);
+  border-radius: var(--ds-radius-tile);
+  background: oklch(1 0 0 / 0.05);
+}
+
+.replay-summary-primitive span {
+  color: var(--ds-accent-gold);
+}
+
+.replay-summary-primitive strong {
+  color: var(--ds-ink-scene);
+}
+
 .replay-verdict-card,
 .replay-participants,
 .replay-timeline-v2,

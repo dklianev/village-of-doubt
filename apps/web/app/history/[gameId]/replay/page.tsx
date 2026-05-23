@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Display, SceneCard } from "@werewolf/ui/server";
 import { createDatabase, getGameHistoryById, getGameTimeline, getPlayerRolesInGames } from "@werewolf/database";
 import {
   deriveAchievementsFromEvents,
@@ -39,30 +39,20 @@ export default async function ReplayPage({ params }: { params: Promise<{ gameId:
       data-theme={mode === "werewolves_classic" ? "werewolves" : "mafia"}
     >
       <div className="framed-shell-inner">
-        <header className="replay-hero-v2">
-          <Image
-            src="/game-art/legal/replay-banner.webp"
-            alt=""
-            fill
-            priority
-            sizes="(max-width: 1180px) 100vw, 1180px"
-            className="replay-hero-img"
-          />
-          <div className="replay-hero-scrim" aria-hidden />
-          <div className="replay-hero-copy">
-            <p className="replay-kicker">преглед след игра</p>
-            <h1>Запис на стая {replay.game.code}.</h1>
-            <p>
+        <header aria-label="Запис след игра">
+          <SceneCard eyebrow="ПРЕГЛЕД СЛЕД ИГРА" density="lg">
+            <Display size="h1">Запис на стая {replay.game.code}.</Display>
+            <p style={{ color: "var(--ds-ink-scene-soft)", fontSize: "var(--ds-type-lede)", lineHeight: 1.6, margin: 0 }}>
               Хронология от записаните събития. Тайните роли се показват само ако вече са част от
               записа.
             </p>
-            <div className="replay-summary">
+            <div className="replay-summary replay-summary-primitive">
               <Summary label="Режим" value={modeBg(mode)} />
               <Summary label="Победител" value={winnerBg(replay.game.winnerTeam)} />
               <Summary label="Времетраене" value={duration} />
               <Summary label="Събития" value={String(replay.game.eventCount)} />
             </div>
-          </div>
+          </SceneCard>
         </header>
 
         <section className="replay-verdict-card">
