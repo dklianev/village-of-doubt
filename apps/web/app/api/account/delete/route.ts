@@ -17,7 +17,7 @@ export async function POST() {
 
   const deleteUser = (auth.api as DeleteUserApi).deleteUser;
   if (!deleteUser) {
-    return NextResponse.json({ error: "Изтриването на профил не е налично." }, { status: 501 });
+    return NextResponse.json({ error: "Изтриването на досие не е налично." }, { status: 501 });
   }
 
   const userId = session.user.id;
@@ -31,7 +31,7 @@ export async function POST() {
     await deleteUser({ headers: requestHeaders, body: { userId, callbackURL: "/" } });
   } catch (error) {
     console.error("[account-delete]", error);
-    return NextResponse.json({ error: "Не успяхме да изтрием профила." }, { status: 500 });
+    return NextResponse.json({ error: "Не успяхме да изтрием досието." }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true });

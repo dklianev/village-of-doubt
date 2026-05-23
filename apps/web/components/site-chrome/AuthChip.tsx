@@ -96,7 +96,7 @@ export function AuthChip({ initialSession }: { initialSession: AuthSessionView |
         <div className="nav-dropdown nav-dropdown-user" role="menu">
           <Link href="/account" role="menuitem" prefetch={false} onClick={() => setOpen(false)} className="nav-dropdown-item">
             <User className="nav-dropdown-item-icon" aria-hidden strokeWidth={1.8} />
-            <span>Моят профил</span>
+            <span>Моето досие</span>
           </Link>
           <Link href="/history" role="menuitem" prefetch={false} onClick={() => setOpen(false)} className="nav-dropdown-item">
             <History className="nav-dropdown-item-icon" aria-hidden strokeWidth={1.8} />

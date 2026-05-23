@@ -28,7 +28,7 @@ export const SECONDARY_LINKS: ReadonlyArray<SecondaryLink> = [
   { href: "/history", label: "История", icon: Clock, group: "game" },
   { href: "/achievements", label: "Легенди", icon: Trophy, group: "game" },
   { href: "/leaderboard", label: "Вечерен брой", icon: ListOrdered, group: "game" },
-  { href: "/friends", label: "Приятели", icon: Users, group: "social" },
+  { href: "/friends", label: "Познати на масата", icon: Users, group: "social" },
   { href: "/tutorial", label: "Първа игра", icon: Sparkles, group: "help" },
   { href: "/faq", label: "Въпроси", icon: HelpCircle, group: "help" },
   { href: "/status", label: "Състояние", icon: Activity, group: "help" },

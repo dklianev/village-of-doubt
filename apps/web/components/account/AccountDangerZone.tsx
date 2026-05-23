@@ -65,24 +65,24 @@ export function AccountDangerZone({ email }: { email: string }) {
             <Display size="h3" as="h2">
               <span id="account-danger-title">Опасна зона</span>
             </Display>
-            <p>Окончателно изтриване на твоя профил.</p>
+            <p>Окончателно изтриване на твоето досие.</p>
           </header>
 
           <div className="account-danger-body">
             <p>
-              Изтриването премахва профила и легендите. Имената от твоите игри остават в архива,
+              Изтриването премахва досието и легендите. Имената от твоите игри остават в архива,
               но се заменят с „Изтрит играч“, за да не се чупи историята на другите играчи.
             </p>
 
             <Pill intent="danger" onClick={() => setOpen(true)} style={{ justifySelf: "start" }}>
-              Изтрий моя профил
+              Изтрий моето досие
             </Pill>
 
             <Dialog
               open={open}
               onOpenChange={handleOpenChange}
               title="Сигурен/сигурна ли си?"
-              description="За потвърждение напиши ИЗТРИЙ. Това действие премахва профила и легендите завинаги."
+              description="За потвърждение напиши ИЗТРИЙ. Това действие премахва досието и легендите завинаги."
               footer={
                 <>
                   <Pill intent="secondary" onClick={closeDialog} disabled={status === "deleting"}>
@@ -101,7 +101,7 @@ export function AccountDangerZone({ email }: { email: string }) {
             >
               <div style={{ display: "grid", gap: "14px" }}>
                 <p className="danger-confirm-email">
-                  Профил: <strong>{email || "няма имейл"}</strong>
+                  Досие: <strong>{email || "няма имейл"}</strong>
                 </p>
                 <label className="danger-confirm-field">
                   <span>Потвърждение</span>

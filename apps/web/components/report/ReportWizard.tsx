@@ -318,7 +318,7 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
                   required
                 />
                 {userEmail ? (
-                  <p className="report-field-hint">Предварително попълнен от твоя профил.</p>
+                  <p className="report-field-hint">Предварително попълнен от твоето досие.</p>
                 ) : null}
                 {userName ? <p className="report-field-hint">Ще отговорим на {userName}.</p> : null}
               </div>
@@ -448,7 +448,7 @@ function ReportSuccessState({
                 Към началото
               </Pill>
               <Pill as="a" href="/account" intent="secondary">
-                Към профила
+                Към досието
               </Pill>
             </div>
           </div>

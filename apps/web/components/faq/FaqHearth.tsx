@@ -13,7 +13,7 @@ import { FaqAnswerRenderer } from "./FaqAnswerRenderer";
 const CATEGORY_LABELS: Record<FaqCategory, string> = {
   "pre-game": "Преди първа игра",
   gameplay: "Геймплей",
-  account: "Профил и сесия",
+  account: "Досие и сесия",
   tech: "Технически",
   privacy: "Поверителност и контакт",
 };
@@ -151,7 +151,7 @@ export function FaqHearth({ items }: { items: readonly FaqItem[] }) {
               margin: 0,
             }}
           >
-            Отговори за геймплея, профила, техниката и поверителността — споделени на топло.
+            Отговори за геймплея, досието, техниката и поверителността — споделени на топло.
           </p>
         </SceneCard>
       </header>

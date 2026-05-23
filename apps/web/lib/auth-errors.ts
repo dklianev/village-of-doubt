@@ -18,13 +18,13 @@ export function mapAuthError(error: AuthErrorLike, fallback = "Възникна 
   }
 
   if (matchesAny(normalized, ["user_not_found", "user not found", "not found", "invalid email"])) {
-    return "Няма профил с този имейл.";
+    return "Няма досие с този имейл.";
   }
   if (matchesAny(normalized, ["invalid_password", "invalid password", "password is incorrect", "bad password"])) {
     return "Грешна парола.";
   }
   if (matchesAny(normalized, ["email_exists", "email already", "already exists", "user already exists"])) {
-    return "Този имейл вече има профил. Влез или ползвай „Забравена парола?“.";
+    return "Този имейл вече има досие. Влез или ползвай „Забравена парола?“.";
   }
   if (matchesAny(normalized, ["weak_password", "password too short", "too weak"])) {
     return "Паролата е твърде слаба.";

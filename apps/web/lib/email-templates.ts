@@ -54,7 +54,7 @@ export function renderResetPasswordEmail(params: ResetPasswordParams) {
 
   const text = `Здравей, ${params.displayName}.
 
-Получихме заявка за нова парола за твоя профил във Върколак и Мафия.
+Получихме заявка за нова парола за твоето досие във Върколак и Мафия.
 
 Ако ти си я заявил, отвори този линк за да създадеш нова парола:
 ${params.resetUrl}
@@ -70,7 +70,7 @@ ${params.resetUrl}
       Здравей, <strong>${displayName}</strong>.
     </p>
     <p style="color: #2a1b10; font-size: 16px; line-height: 1.55; margin: 0 0 24px;">
-      Получихме заявка за нова парола за твоя профил във Върколак и Мафия. Ако ти си я заявил, отвори бутона по-долу за да създадеш нова парола.
+      Получихме заявка за нова парола за твоето досие във Върколак и Мафия. Ако ти си я заявил, отвори бутона по-долу за да създадеш нова парола.
     </p>
     <p style="margin: 0 0 24px;">
       <a href="${resetUrl}" style="background: #842f2b; color: #fff5e0; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 700; display: inline-block;">Създай нова парола</a>

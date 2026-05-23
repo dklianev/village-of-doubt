@@ -77,9 +77,9 @@ export function AccountProfile(props: Props) {
         <div className="account-card-content">
           <header className="account-section-head">
             <Display size="h3" as="h2">
-              <span id="account-profile-title">Профил</span>
+              <span id="account-profile-title">Досие</span>
             </Display>
-            <p>Името на масата и входовете към профила.</p>
+            <p>Името на масата и входовете към досието.</p>
           </header>
 
           <div className="account-profile-form">

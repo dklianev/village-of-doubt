@@ -13,7 +13,7 @@ type SignInCopy = {
 const DEFAULT_COPY: SignInCopy = {
   kicker: "вход на масата",
   title: ["Покажи се", "на масата"],
-  subtitle: "Един профил пази историята, статистиките и поканите. Тайните роли остават на сървъра.",
+  subtitle: "Едно досие пази историята, статистиките и поканите. Тайните роли остават на сървъра.",
 };
 
 export function SignInStage({ redirectTo }: { redirectTo: string }) {
@@ -62,7 +62,7 @@ export function SignInStage({ redirectTo }: { redirectTo: string }) {
 function signInCopyForRedirect(redirectTo: string): SignInCopy {
   if (redirectTo.startsWith("/friends")) {
     return {
-      kicker: "приятели",
+      kicker: "познати",
       title: ["Събери", "групата"],
       subtitle: "Влез, за да пазиш списъка с хората, които каниш най-често за следващата стая.",
     };
@@ -72,7 +72,7 @@ function signInCopyForRedirect(redirectTo: string): SignInCopy {
     return {
       kicker: "легенди",
       title: ["Запази", "легендата"],
-      subtitle: "Профилът отключва значки, статистики и история от игрите, които вече си преживял.",
+      subtitle: "Досието отключва значки, статистики и история от игрите, които вече си преживял.",
     };
   }
 
@@ -88,7 +88,7 @@ function signInCopyForRedirect(redirectTo: string): SignInCopy {
     return {
       kicker: "покана",
       title: ["Влез", "с кода"],
-      subtitle: "Профилът казва на стаята кой си, без да разкрива ролята ти на никого освен на теб.",
+      subtitle: "Досието казва на стаята кой си, без да разкрива ролята ти на никого освен на теб.",
     };
   }
 
@@ -96,7 +96,7 @@ function signInCopyForRedirect(redirectTo: string): SignInCopy {
     return {
       kicker: "активна стая",
       title: ["Върни се", "в играта"],
-      subtitle: "Влез със същия профил, за да те върнем при стаята, чата и личните сигнали.",
+      subtitle: "Влез със същото досие, за да те върнем при стаята, чата и личните сигнали.",
     };
   }
 
@@ -110,8 +110,8 @@ function signInCopyForRedirect(redirectTo: string): SignInCopy {
 
   if (redirectTo.startsWith("/account")) {
     return {
-      kicker: "профил",
-      title: ["Отвори", "профила"],
+      kicker: "досие",
+      title: ["Отвори", "досието"],
       subtitle: "Тук управляваш името, сесиите и данните, които пазим за игрите ти.",
     };
   }

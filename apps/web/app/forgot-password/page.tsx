@@ -4,7 +4,7 @@ import { ResourceHints } from "@/components/resource-hints";
 
 export const metadata: Metadata = {
   title: "Загубен ключ | Върколак и Мафия",
-  description: "Заяви нова парола за твоя профил във Върколак и Мафия.",
+  description: "Заяви нова парола за твоето досие във Върколак и Мафия.",
   robots: { index: false, follow: false },
 };
 

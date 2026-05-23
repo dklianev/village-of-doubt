@@ -4,7 +4,7 @@ import { FriendsClient } from "@/components/friends-client";
 import { requireSession } from "@/lib/require-session";
 
 export const metadata: Metadata = {
-  title: "Приятели | Върколак и Мафия",
+  title: "Познати на масата | Върколак и Мафия",
   description: "Локален списък с хора за следващата стая и бърза покана за следваща игра.",
 };
 

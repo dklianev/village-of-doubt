@@ -186,7 +186,7 @@ export function AuthGatedEntryClient({
           <LoaderCircle strokeWidth={1.8} className="spin" />
         </span>
         <p className="section-kicker join-entry-kicker">{copy.kicker}</p>
-        <h2>Проверяваме профила...</h2>
+        <h2>Проверяваме досието...</h2>
         <p>След вход ще те върнем към поканата за тази стая.</p>
       </section>
     );

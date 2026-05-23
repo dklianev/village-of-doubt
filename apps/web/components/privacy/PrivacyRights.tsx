@@ -16,7 +16,7 @@ const RIGHTS: readonly RightAction[] = [
     title: "Право на достъп",
     description: "Виж точно какво пазим за теб в секция „Какво виждаме за теб точно сега“.",
     href: "/account",
-    ctaLabel: "Към профила →",
+    ctaLabel: "Към досието →",
   },
   {
     id: "portability",
@@ -28,16 +28,16 @@ const RIGHTS: readonly RightAction[] = [
   {
     id: "rectification",
     title: "Право на корекция",
-    description: "Промени име на масата или друга информация от профила.",
+    description: "Промени име на масата или друга информация от досието.",
     href: "/account",
-    ctaLabel: "Към профила →",
+    ctaLabel: "Към досието →",
   },
   {
     id: "erasure",
     title: "Право на изтриване",
-    description: "Изтрий профила окончателно. Заместваме името в игрите с „Изтрит играч“.",
+    description: "Изтрий досието окончателно. Заместваме името в игрите с „Изтрит играч“.",
     href: "/account",
-    ctaLabel: "Към профила →",
+    ctaLabel: "Към досието →",
   },
   {
     id: "objection",

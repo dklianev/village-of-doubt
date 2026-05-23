@@ -22,7 +22,7 @@ export function PrivacyDataPreview({ snapshot }: PrivacyDataPreviewProps) {
             Какво виждаме за теб точно сега.
           </Display>
           <p className="privacy-section-lede">
-            Това е целият списък с данни, които пазим за твоя профил. Нищо повече, нищо скрито.
+            Това е целият списък с данни, които пазим за твоето досие. Нищо повече, нищо скрито.
           </p>
         </header>
 

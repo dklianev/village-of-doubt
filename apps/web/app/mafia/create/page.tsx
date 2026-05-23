@@ -4,7 +4,7 @@ import { requireSession } from "@/lib/require-session";
 
 export const metadata: Metadata = {
   title: "Създай стая за Мафия | Върколак и Мафия",
-  description: "Настрой частна маса за Мафия с твоя профил.",
+  description: "Настрой частна маса за Мафия с твоето досие.",
 };
 
 export default async function MafiaCreatePage() {

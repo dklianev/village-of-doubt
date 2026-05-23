@@ -39,7 +39,7 @@ export function WelcomeModal() {
           Първа игра за теб? Имаме шест сцени, които те водят през една вечер на масата - нощ, ден и подозрение.
         </p>
         <p className={styles.body}>
-          Иначе избери семейство игри и създай първа стая. Приятели се канят с код.
+          Иначе избери семейство игри и създай първа стая. Познатите на масата се канят с код.
         </p>
         <div className={styles.actions}>
           <Link href="/tutorial?welcome=1" className="btn btn-primary" onClick={dismiss}>
