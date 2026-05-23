@@ -104,7 +104,7 @@ export function AuthChip({ initialSession }: { initialSession: AuthSessionView |
           </Link>
           <Link href="/achievements" role="menuitem" prefetch={false} onClick={() => setOpen(false)} className="nav-dropdown-item">
             <Trophy className="nav-dropdown-item-icon" aria-hidden strokeWidth={1.8} />
-            <span>Постижения</span>
+            <span>Легенди</span>
           </Link>
           <div className="nav-dropdown-divider" role="separator" />
           <button

@@ -70,7 +70,7 @@ export async function loadStatusServices(): Promise<ServiceHealth[]> {
   services.push({
     id: "database",
     name: "База данни",
-    description: "Профили, история, постижения.",
+    description: "Профили, история, легенди.",
     status: process.env.DATABASE_URL ? "ok" : "unknown",
     detail: process.env.DATABASE_URL ? "Конфигурирана" : "Не е достъпна",
     icon: "database",

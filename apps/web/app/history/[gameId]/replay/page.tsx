@@ -88,7 +88,7 @@ export default async function ReplayPage({ params }: { params: Promise<{ gameId:
         {replay.achievements.length > 0 ? (
           <article className="replay-achievements">
             <p className="replay-kicker">отключени моменти</p>
-            <h2>Постижения от тази игра</h2>
+            <h2>Легенди от тази игра</h2>
             <div className="achievement-grid">
               {replay.achievements.map((achievement) => (
                 <div key={achievement.id} className="achievement-card">

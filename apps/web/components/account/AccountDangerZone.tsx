@@ -70,7 +70,7 @@ export function AccountDangerZone({ email }: { email: string }) {
 
           <div className="account-danger-body">
             <p>
-              Изтриването премахва профила и постиженията. Имената от твоите игри остават в архива,
+              Изтриването премахва профила и легендите. Имената от твоите игри остават в архива,
               но се заменят с „Изтрит играч“, за да не се чупи историята на другите играчи.
             </p>
 
@@ -82,7 +82,7 @@ export function AccountDangerZone({ email }: { email: string }) {
               open={open}
               onOpenChange={handleOpenChange}
               title="Сигурен/сигурна ли си?"
-              description="За потвърждение напиши ИЗТРИЙ. Това действие премахва профила и постиженията завинаги."
+              description="За потвърждение напиши ИЗТРИЙ. Това действие премахва профила и легендите завинаги."
               footer={
                 <>
                   <Pill intent="secondary" onClick={closeDialog} disabled={status === "deleting"}>

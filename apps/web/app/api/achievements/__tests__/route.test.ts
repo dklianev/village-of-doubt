@@ -53,7 +53,7 @@ describe("GET /api/achievements", () => {
     await expect(response.json()).resolves.toEqual({ achievements: [] });
   });
 
-  it("зарежда постижения за потребителя от сесията", async () => {
+  it("зарежда легенди за потребителя от сесията", async () => {
     process.env.DATABASE_URL = "postgres://postgres:postgres@localhost:5432/werewolf";
     const { auth } = await import("@/lib/auth");
     const { getAchievementsForUser } = await import("@werewolf/database");

@@ -70,7 +70,7 @@ function signInCopyForRedirect(redirectTo: string): SignInCopy {
 
   if (redirectTo.startsWith("/achievements")) {
     return {
-      kicker: "постижения",
+      kicker: "легенди",
       title: ["Запази", "легендата"],
       subtitle: "Профилът отключва значки, статистики и история от игрите, които вече си преживял.",
     };

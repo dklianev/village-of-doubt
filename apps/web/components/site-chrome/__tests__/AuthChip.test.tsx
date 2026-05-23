@@ -44,7 +44,7 @@ describe("AuthChip", () => {
 
     expect(screen.getByRole("menuitem", { name: "Моят профил" })).toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: "История" })).toBeInTheDocument();
-    expect(screen.getByRole("menuitem", { name: "Постижения" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Легенди" })).toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: "Изход" })).toBeInTheDocument();
   });
 });

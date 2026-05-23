@@ -10,7 +10,7 @@ export function AchievementUnlockModal({ achievementIds, onClose }: { achievemen
 
   return (
     <div className="achievement-unlock-backdrop" role="presentation" onClick={onClose}>
-      <aside ref={ref} className="achievement-unlock-modal" role="dialog" aria-label="Отключени постижения" onClick={(event) => event.stopPropagation()}>
+      <aside ref={ref} className="achievement-unlock-modal" role="dialog" aria-label="Отключени легенди" onClick={(event) => event.stopPropagation()}>
         <button type="button" onClick={onClose}>
           затвори
         </button>

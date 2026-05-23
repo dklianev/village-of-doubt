@@ -6,19 +6,19 @@ import { requireSession } from "@/lib/require-session";
 import { absoluteUrl, routeMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = routeMetadata({
-  title: "Постижения — малките легенди",
+  title: "Легенди — малките победи",
   description: "Колекция от моменти, отключени от записите: първа кръв, спасени нощи, лични победи и финални обрати.",
   path: "/achievements",
   image: "/game-art/og/og-achievements.png",
-  imageAlt: "Стена с празни месингови плочи за постижения",
+  imageAlt: "Стена с празни месингови плочи за легенди",
   ogDescription: "Плочи за спасения, предателства, точни изстрели и лични победи.",
 });
 
 const achievementsJsonLd = {
   "@context": "https://schema.org",
   "@type": "CollectionPage",
-  name: "Постижения",
-  description: "Колекция от игрови постижения, отключени от записите и победите.",
+  name: "Легенди",
+  description: "Колекция от игрови легенди, отключени от записите и победите.",
   url: absoluteUrl("/achievements"),
   inLanguage: "bg-BG",
 };

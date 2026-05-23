@@ -85,7 +85,7 @@ export function PrivacyDataPreview({ snapshot }: PrivacyDataPreviewProps) {
               <span className="privacy-data-icon" aria-hidden>
                 ★
               </span>
-              <span>Постижения</span>
+              <span>Легенди</span>
             </dt>
             <dd>
               <code>
