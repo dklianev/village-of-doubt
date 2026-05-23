@@ -494,6 +494,9 @@ function checkPlayUiContracts() {
     ...listFilesRecursive(path.join(root, "apps/web/lib/play"))
       .filter((file) => file.endsWith(".ts"))
       .map((file) => path.join("apps/web/lib/play", file)),
+    ...listFilesRecursive(path.join(root, "apps/web/hooks/play"))
+      .filter((file) => file.endsWith(".ts") || file.endsWith(".tsx"))
+      .map((file) => path.join("apps/web/hooks/play", file)),
   ]
     .map((file) => readText(file))
     .join("\n");
@@ -506,7 +509,7 @@ function checkPlayUiContracts() {
     "LiveCuePanel",
     "NarratorDesk",
     "triggerDeviceCue",
-    "createOptions?.tempoProfile === \"live\"",
+    "tempoProfile === \"live\"",
     "Игра на живо: звукът и вибрацията са изключени по подразбиране",
     "панел на Разказвача",
     "Водиш играта",
@@ -521,7 +524,7 @@ function checkPlayUiContracts() {
     assert(playModuleText.includes(contract), `Missing play UI contract: ${contract}`);
   }
 
-  const liveDefaultIndex = playModuleText.indexOf("createOptions?.tempoProfile === \"live\"");
+  const liveDefaultIndex = playModuleText.indexOf("tempoProfile === \"live\"");
   const cuePreferenceReadIndex = playModuleText.indexOf("const saved = window.localStorage.getItem(CUE_MODE_STORAGE_KEY)");
   assert(
     liveDefaultIndex >= 0 && cuePreferenceReadIndex >= 0 && liveDefaultIndex < cuePreferenceReadIndex,

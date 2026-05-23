@@ -24,13 +24,13 @@ import {
 } from "@werewolf/shared";
 import { authClient } from "@/lib/auth-client";
 import { createGameClient, GAME_ROOM_NAME } from "@/lib/colyseus-client";
-import { playCue, setSoundEnabled } from "@/lib/sound";
+import { playCue } from "@/lib/sound";
 import { useToast } from "@/lib/toast";
 import { KeyboardShortcutsModal } from "@/components/keyboard-shortcuts-modal";
 import { LiveCuePanel } from "@/components/play/LiveCuePanel";
 import { NarratorDesk } from "@/components/play/NarratorDesk";
 import { RulesSummary } from "@/components/play/RulesSummary";
-import { isCueMode, triggerDeviceCue } from "@/lib/play/device-cues";
+import { triggerDeviceCue } from "@/lib/play/device-cues";
 import { eventLineClass } from "@/lib/play/event-log";
 import { HunterRevengePanel } from "@/components/play/HunterRevengePanel";
 import { LoverCard } from "@/components/play/LoverCard";
@@ -57,6 +57,7 @@ import { PlayerTokensSkeleton } from "@/components/skeleton";
 import { arePhaseSlicesEqual, arePlayerListsEqual } from "@/lib/play/equality";
 import { canFactionKill, isNightPhase } from "@/lib/play/role-rules";
 import { phaseBg, phaseSigil } from "@/lib/play/phase-display";
+import { useCueMode } from "@/hooks/play/use-cue-mode";
 import {
   communicationBg,
   modeBg,
@@ -64,7 +65,6 @@ import {
 } from "@/lib/play/copy";
 import type {
   ConnectionStatus,
-  CueMode,
   GameSnapshot,
   NarratorRoleSnapshot,
   PhaseSlice,
@@ -82,7 +82,6 @@ import type {
 
 export type { PhaseSlice, PublicPlayer } from "@/lib/play/types";
 
-const CUE_MODE_STORAGE_KEY = "werewolf-cue-mode";
 const ROOM_RECONNECT_STORAGE_PREFIX = "room-reconnect";
 const MAX_RECONNECT_ATTEMPTS = 5;
 
@@ -122,7 +121,6 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw }: { code
   const [isBlessed, setIsBlessed] = useState(false);
   const [status, setStatus] = useState("Свързване...");
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("connecting");
-  const [cueMode, setCueMode] = useState<CueMode>("silent");
   const [phasePulse, setPhasePulse] = useState(0);
   const [showPhaseTransition, setShowPhaseTransition] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
@@ -156,6 +154,11 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw }: { code
     };
   }, [baseSnapshot, phaseSlice, playersSlice, publicChatSlice, publicEventsSlice, voteTallySlice]);
   const liveMode = (snapshot?.tempoProfile ?? createOptions?.tempoProfile) === "live";
+  const { cueMode, changeCueMode } = useCueMode({
+    tempoProfile: createOptions?.tempoProfile,
+    phase: snapshot?.phase ?? "lobby",
+    liveMode,
+  });
 
   useEffect(() => {
     let active = true;
@@ -478,21 +481,6 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw }: { code
     };
   }, []);
 
-  useEffect(() => {
-    if (createOptions?.tempoProfile === "live") {
-      setCueMode("silent");
-      return;
-    }
-
-    const saved = window.localStorage.getItem(CUE_MODE_STORAGE_KEY);
-    if (isCueMode(saved)) {
-      setCueMode(saved);
-      return;
-    }
-
-    setCueMode("visual");
-  }, [createOptions?.tempoProfile]);
-
   // When the phase changes, drop stale action-feedback strings so the previous
   // "Нощното действие е изпратено" or boilerplate "Свързан" don't linger past
   // the moment they are relevant. Players still get fresh status when they act.
@@ -717,19 +705,6 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw }: { code
     }
 
     room.send("typing", { channel, active });
-  }
-
-  function changeCueMode(mode: CueMode) {
-    setCueMode(mode);
-    window.localStorage.setItem(CUE_MODE_STORAGE_KEY, mode);
-    if (mode === "audio_vibration") {
-      setSoundEnabled(true);
-      triggerDeviceCue(phase, liveMode);
-      playCue("phase-change", { forceSilent: liveMode });
-    }
-    if (mode === "silent") {
-      setSoundEnabled(false);
-    }
   }
 
   const fullNarratorAccepted = useMemo(
