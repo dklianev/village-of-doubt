@@ -86,3 +86,20 @@ selector adjustments in the cleanup commit.
 
 - Delete scan: old achievement hero shell, leaderboard empty CTA/lede/title rules, and old friends image hero/preview empty shell have zero live JSX/TS references.
 - Kept intentionally: `.achievement-hero-frame`, `.achievement-hero-copy`, `.masthead`, `.masthead-meta`, `.friends-hero-frame`, `.friends-hero-copy`, and `.friends-empty-state` because the migrated pages still use them.
+
+## PR E — 2026-05-23 (/tutorial + /sign-in + /lobby primitive migration)
+
+Lines removed from `apps/web/app/globals.css`:
+
+| Class family | LOC removed | Replaced by |
+|---|---:|---|
+| `.tutorial-slide-kicker`, `.tutorial-slide-title` | 25 | `TutorialSlide` `PaperCard` eyebrow + `Display` |
+| `.lovers-toggle-button*` | 26 | lobby role configuration `Pill` actions |
+
+**Net delta**: `apps/web/app/globals.css` went from 19,292 to 19,241 lines
+in this cleanup snapshot. Git diff records 51 removed CSS lines.
+
+## Verification
+
+- Delete scan: old tutorial slide title/kicker rules and old lovers toggle button rules have zero live JSX/TS references.
+- Kept intentionally: `.tutorial-slide-body`, `.tutorial-flipbook-hero*`, `.oauth-button-*`, `.lobby-wizard-*`, and `.lobby-step-*` because the migrated pages still use them for layout and specialized content.

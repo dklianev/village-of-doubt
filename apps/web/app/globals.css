@@ -2545,23 +2545,6 @@ html[data-theme="light"] .tutorial-skip-link:hover {
   gap: 18px;
 }
 
-.tutorial-slide-kicker {
-  color: #d19a42;
-  font-size: 0.75rem;
-  font-weight: 900;
-  letter-spacing: 0;
-  text-transform: uppercase;
-}
-
-.tutorial-slide-title {
-  color: #f5e8c8;
-  font-family: "Noto Serif Display", "Noto Serif", serif;
-  font-size: 4rem;
-  font-weight: 950;
-  line-height: 1.04;
-  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.7);
-}
-
 .tutorial-slide-body p {
   max-width: 56ch;
   margin: 0 0 12px;
@@ -2941,10 +2924,6 @@ html[data-theme="dark"] .tutorial-nav .btn-secondary:disabled {
 }
 
 @media (max-width: 760px) {
-  .tutorial-slide-title {
-    font-size: 3rem;
-  }
-
   .tutorial-slide-content {
     padding: 42px 30px;
   }
@@ -2963,10 +2942,6 @@ html[data-theme="dark"] .tutorial-nav .btn-secondary:disabled {
 
   .tutorial-slide-content {
     padding: 34px 22px;
-  }
-
-  .tutorial-slide-title {
-    font-size: 2.35rem;
   }
 
   .tutorial-slide-body p {
@@ -10028,27 +10003,6 @@ html[data-theme="light"] .play-players-panel .chat-line {
   font-size: 0.78rem;
 }
 
-.lovers-toggle-button {
-  min-width: 118px;
-  border: 1px solid rgba(209, 154, 66, 0.36);
-  border-radius: 999px;
-  padding: 11px 14px;
-  background: rgba(209, 154, 66, 0.16);
-  color: #fff6e5;
-  cursor: pointer;
-  font-weight: 950;
-}
-
-.lovers-toggle-button[data-active="true"] {
-  background: linear-gradient(135deg, #d19a42, #b86d37);
-  color: #2b1712;
-}
-
-.lovers-toggle-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.58;
-}
-
 .preset-chips button {
   flex: 0 0 auto;
   border: 1px solid rgba(248, 236, 210, 0.14);
@@ -10545,11 +10499,6 @@ html[data-vt="theme"]::view-transition-new(root) {
   .lovers-feature-art {
     width: 64px;
     border-radius: 16px;
-  }
-
-  .lovers-toggle-button {
-    grid-column: 1 / -1;
-    justify-self: stretch;
   }
 
   .lobby-inline-control {
