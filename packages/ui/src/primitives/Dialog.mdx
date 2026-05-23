@@ -1,0 +1,25 @@
+import { Meta, Story, ArgTypes } from "@storybook/addon-docs/blocks";
+import * as Stories from "./Dialog.stories";
+
+<Meta of={Stories} />
+
+# Dialog
+
+Radix + Motion modal primitive за потвърждения и focused tasks.
+
+## Props
+
+<ArgTypes of={Stories} />
+
+## Usage
+
+```tsx
+<Dialog open={open} onOpenChange={setOpen} title="Потвърди">
+  <p>Сигурен ли си?</p>
+</Dialog>
+```
+
+## Stories
+
+<Story of={Stories.Default} />
+<Story of={Stories.AllVariants} />

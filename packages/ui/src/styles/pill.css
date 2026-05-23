@@ -1,0 +1,13 @@
+.ds-pill:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+
+.ds-pill:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.ds-pill:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

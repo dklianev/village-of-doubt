@@ -5,7 +5,7 @@ interface StatusSubscribeProps {
 
 export function StatusSubscribe({ discordUrl, telegramUrl }: StatusSubscribeProps) {
   return (
-    <section className="status-section status-section-subscribe">
+    <section id="status-subscribe" className="status-section status-section-subscribe">
       <header className="status-section-head">
         <p className="status-section-kicker">получавай уведомления</p>
         <h2>Когато светлината мига.</h2>

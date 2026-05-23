@@ -1,4 +1,27 @@
 @import "tailwindcss";
+@import "@werewolf/ui/tokens.css";
+
+@theme {
+  --color-ds-paper: var(--ds-surface-paper);
+  --color-ds-paper-deep: var(--ds-surface-paper-deep);
+  --color-ds-paper-edge: var(--ds-surface-paper-edge);
+  --color-ds-scene: var(--ds-surface-scene);
+  --color-ds-scene-deep: var(--ds-surface-scene-deep);
+  --color-ds-ink-primary: var(--ds-ink-primary);
+  --color-ds-ink-soft: var(--ds-ink-soft);
+  --color-ds-ink-faint: var(--ds-ink-faint);
+  --color-ds-blood: var(--ds-accent-blood);
+  --color-ds-blood-deep: var(--ds-accent-blood-deep);
+  --color-ds-gold: var(--ds-accent-gold);
+  --color-ds-gold-deep: var(--ds-accent-gold-deep);
+  --color-ds-gold-soft: var(--ds-accent-gold-soft);
+  --color-ds-green: var(--ds-accent-green);
+  --radius-ds-card: var(--ds-radius-card);
+  --radius-ds-tile: var(--ds-radius-tile);
+  --radius-ds-chip: var(--ds-radius-chip);
+  --shadow-ds-card: var(--ds-shadow-card);
+  --shadow-ds-scene: var(--ds-shadow-scene);
+}
 
 :root {
   --ink: #1b100c;

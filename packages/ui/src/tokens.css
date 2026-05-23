@@ -1,0 +1,133 @@
+/**
+ * @werewolf/ui - Design tokens (OKLCH)
+ *
+ * Plain CSS variables. No Tailwind directives here: packages/ui is
+ * Tailwind-agnostic. The @theme bridge to Tailwind utilities lives
+ * in apps/web/app/globals.css.
+ *
+ * Namespace: --ds-{category}-{role}-{modifier}
+ */
+
+:where(:root, [data-ds]) {
+  /* Surface and ink */
+  --ds-surface-paper: oklch(0.94 0.022 78);
+  --ds-surface-paper-deep: oklch(0.91 0.028 78);
+  --ds-surface-paper-edge: oklch(0.86 0.035 75);
+  --ds-surface-scene: oklch(0.18 0.012 60);
+  --ds-surface-scene-deep: oklch(0.13 0.014 50);
+
+  --ds-ink-primary: oklch(0.22 0.018 60);
+  --ds-ink-soft: oklch(0.40 0.018 60);
+  --ds-ink-faint: oklch(0.55 0.015 60);
+  --ds-ink-scene: oklch(0.92 0.022 80);
+  --ds-ink-scene-soft: oklch(0.74 0.020 78);
+
+  /* Accents (theme-invariant) */
+  --ds-accent-blood: oklch(0.50 0.155 25);
+  --ds-accent-blood-deep: oklch(0.42 0.155 25);
+  --ds-accent-gold: oklch(0.78 0.115 75);
+  --ds-accent-gold-deep: oklch(0.58 0.110 65);
+  --ds-accent-gold-soft: oklch(0.85 0.085 80);
+  --ds-accent-green: oklch(0.50 0.10 145);
+
+  /* Context-aware primitive colors */
+  --ds-eyebrow-blood: var(--ds-accent-blood);
+  --ds-eyebrow-gold: oklch(0.46 0.11 65);
+  --ds-pill-danger-color: var(--ds-accent-blood-deep);
+
+  /* Typography scale */
+  --ds-type-display: 4rem;
+  --ds-type-h1: 2.75rem;
+  --ds-type-h2: 2.125rem;
+  --ds-type-h3: 1.5rem;
+  --ds-type-h4: 1.25rem;
+  --ds-type-body: 1rem;
+  --ds-type-body-sm: 0.875rem;
+  --ds-type-lede: 1.125rem;
+  --ds-type-eyebrow: 0.72rem;
+  --ds-type-meta: 0.78rem;
+
+  /* Spacing */
+  --ds-space-1: 4px;
+  --ds-space-2: 8px;
+  --ds-space-3: 12px;
+  --ds-space-4: 16px;
+  --ds-space-6: 24px;
+  --ds-space-8: 32px;
+  --ds-space-10: 40px;
+  --ds-space-12: 48px;
+
+  /* Radii (tightened per project frontend rules) */
+  --ds-radius-card: 8px;
+  --ds-radius-tile: 6px;
+  --ds-radius-chip: 999px;
+
+  /* Shadows */
+  --ds-shadow-card:
+    0 1px 0 oklch(1 0 0 / 0.45) inset,
+    0 18px 40px -28px oklch(0.20 0.05 60 / 0.55);
+  --ds-shadow-scene:
+    0 1px 0 oklch(1 0 0 / 0.04) inset,
+    0 30px 60px -30px oklch(0 0 0 / 0.65);
+
+  /* Motion (Dialog/Sheet/Toast only) */
+  --ds-duration-instant: 90ms;
+  --ds-duration-quick: 180ms;
+  --ds-duration-base: 280ms;
+  --ds-duration-stage: 500ms;
+  --ds-ease-candle: cubic-bezier(0.32, 0.72, 0, 1);
+  --ds-ease-card: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Focus ring */
+  --ds-focus-ring:
+    0 0 0 2px oklch(0.94 0.022 78),
+    0 0 0 4px oklch(0.50 0.155 25);
+}
+
+:where(html[data-theme="dark"], html[data-theme="dark"] [data-ds]) {
+  --ds-surface-paper: oklch(0.18 0.012 60);
+  --ds-surface-paper-deep: oklch(0.13 0.014 50);
+  --ds-surface-paper-edge: oklch(0.25 0.014 55);
+  --ds-ink-primary: oklch(0.92 0.022 80);
+  --ds-ink-soft: oklch(0.74 0.020 78);
+  --ds-ink-faint: oklch(0.55 0.015 60);
+  --ds-eyebrow-blood: oklch(0.72 0.12 25);
+  --ds-eyebrow-gold: var(--ds-accent-gold);
+  --ds-pill-danger-color: oklch(0.72 0.12 25);
+  --ds-focus-ring:
+    0 0 0 2px oklch(0.18 0.012 60),
+    0 0 0 4px oklch(0.78 0.115 75);
+}
+
+:where(
+  [data-ds],
+  [data-ds-surface],
+  [data-ds-eyebrow],
+  [data-ds-display],
+  [data-ds-paper-card],
+  [data-ds-scene-card],
+  [data-ds-pill],
+  [data-ds-medallion],
+  [data-ds-toast],
+  [data-ds-dialog],
+  [data-ds-sheet],
+  [data-ds-empty-state]
+):focus-visible,
+:where(
+  [data-ds],
+  [data-ds-surface],
+  [data-ds-eyebrow],
+  [data-ds-display],
+  [data-ds-paper-card],
+  [data-ds-scene-card],
+  [data-ds-pill],
+  [data-ds-medallion],
+  [data-ds-toast],
+  [data-ds-dialog],
+  [data-ds-sheet],
+  [data-ds-empty-state]
+) *:focus-visible {
+  outline: none;
+  box-shadow: var(--ds-focus-ring);
+  outline-offset: 2px;
+}

@@ -1,0 +1,25 @@
+import { Meta, Story, ArgTypes } from "@storybook/addon-docs/blocks";
+import * as Stories from "./Pill.stories";
+
+<Meta of={Stories} />
+
+# Pill
+
+Button или anchor primitive за основни actions.
+
+## Props
+
+<ArgTypes of={Stories} />
+
+## Usage
+
+```tsx
+<Pill intent="primary" type="button">
+  Запази
+</Pill>
+```
+
+## Stories
+
+<Story of={Stories.Primary} />
+<Story of={Stories.AllVariants} />

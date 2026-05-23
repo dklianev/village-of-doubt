@@ -1,31 +1,28 @@
-import Image from "next/image";
+import { Display, SceneCard } from "@werewolf/ui/server";
 
 export function TermsHero({ lastUpdated }: { lastUpdated: string }) {
   return (
-    <header className="terms-hero" aria-label="Кодекс на масата">
-      <div className="terms-hero-banner">
-        <Image
-          src="/game-art/legal/terms-banner.webp"
-          alt=""
-          fill
-          priority
-          sizes="100vw"
-          className="terms-hero-img"
-        />
-        <div className="terms-hero-scrim" aria-hidden />
-      </div>
-
-      <div className="terms-hero-inner">
-        <p className="terms-hero-kicker">кодекс на масата</p>
-        <h1 className="terms-hero-title">Сядаме на една маса.</h1>
-        <p className="terms-hero-subtitle">
+    <header
+      aria-label="Кодекс на масата"
+      style={{ maxWidth: "980px", margin: "0 auto", padding: "32px 24px 0" }}
+    >
+      <SceneCard eyebrow="КОДЕКС НА МАСАТА" density="lg">
+        <Display size="h1">Сядаме на една маса.</Display>
+        <p
+          style={{
+            color: "var(--ds-ink-scene-soft)",
+            fontSize: "var(--ds-type-lede)",
+            lineHeight: 1.55,
+            margin: 0,
+          }}
+        >
           Правилата, които правят играта честна — за блъфа, за уважението, за чистата игра. Това не
           са юридически клопки, а обещания между играчи.
         </p>
         <p className="terms-hero-meta">
           Последна актуализация: <time>{lastUpdated}</time>
         </p>
-      </div>
+      </SceneCard>
     </header>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { Display, PaperCard } from "@werewolf/ui";
 import { useState } from "react";
 
 interface Commitment {
@@ -106,73 +107,76 @@ export function TermsCommitments() {
   }
 
   return (
-    <section className="terms-section">
-      <header className="terms-section-head">
-        <p className="terms-section-kicker">обещания</p>
-        <h2>Пет обещания на масата.</h2>
-        <p className="terms-section-lede">
-          Не са правни клаузи. Са договорки между играчи — какво се прави и какво не.
-        </p>
-      </header>
+    <section className="terms-section" style={{ padding: 0, border: "none", background: "transparent" }}>
+      <PaperCard eyebrow="ОБЕЩАНИЯ" density="lg">
+        <header className="terms-section-head">
+          <Display as="h2" size="h3">
+            Пет обещания на масата.
+          </Display>
+          <p className="terms-section-lede">
+            Не са правни клаузи. Са договорки между играчи — какво се прави и какво не.
+          </p>
+        </header>
 
-      <ol className="terms-commitment-list">
-        {COMMITMENTS.map((commitment) => {
-          const isOpen = openId === commitment.id;
-          return (
-            <li key={commitment.id} className="terms-commitment-item" data-open={isOpen}>
-              <button
-                type="button"
-                className="terms-commitment-handle"
-                onClick={() => toggle(commitment.id)}
-                aria-expanded={isOpen}
-              >
-                <span className="terms-commitment-num">{commitment.number}</span>
-                <div className="terms-commitment-meta">
-                  <h3>{commitment.title}</h3>
-                  <p>{commitment.promise}</p>
-                </div>
-                <span className="terms-commitment-chevron" aria-hidden>
-                  {isOpen ? "−" : "+"}
-                </span>
-              </button>
+        <ol className="terms-commitment-list">
+          {COMMITMENTS.map((commitment) => {
+            const isOpen = openId === commitment.id;
+            return (
+              <li key={commitment.id} className="terms-commitment-item" data-open={isOpen}>
+                <button
+                  type="button"
+                  className="terms-commitment-handle"
+                  onClick={() => toggle(commitment.id)}
+                  aria-expanded={isOpen}
+                >
+                  <span className="terms-commitment-num">{commitment.number}</span>
+                  <div className="terms-commitment-meta">
+                    <h3>{commitment.title}</h3>
+                    <p>{commitment.promise}</p>
+                  </div>
+                  <span className="terms-commitment-chevron" aria-hidden>
+                    {isOpen ? "−" : "+"}
+                  </span>
+                </button>
 
-              {isOpen ? (
-                <div className="terms-commitment-detail">
-                  <div className="terms-examples-grid">
-                    <div className="terms-examples terms-examples-ok">
-                      <p className="terms-examples-label">Това е добре</p>
-                      <ul>
-                        {commitment.examplesOk.map((example) => (
-                          <li key={example}>
-                            <span className="terms-examples-icon" aria-hidden>
-                              ✓
-                            </span>
-                            <span>{example}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+                {isOpen ? (
+                  <div className="terms-commitment-detail">
+                    <div className="terms-examples-grid">
+                      <div className="terms-examples terms-examples-ok">
+                        <p className="terms-examples-label">Това е добре</p>
+                        <ul>
+                          {commitment.examplesOk.map((example) => (
+                            <li key={example}>
+                              <span className="terms-examples-icon" aria-hidden>
+                                ✓
+                              </span>
+                              <span>{example}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
 
-                    <div className="terms-examples terms-examples-not-ok">
-                      <p className="terms-examples-label">Това не е добре</p>
-                      <ul>
-                        {commitment.examplesNotOk.map((example) => (
-                          <li key={example}>
-                            <span className="terms-examples-icon" aria-hidden>
-                              ✕
-                            </span>
-                            <span>{example}</span>
-                          </li>
-                        ))}
-                      </ul>
+                      <div className="terms-examples terms-examples-not-ok">
+                        <p className="terms-examples-label">Това не е добре</p>
+                        <ul>
+                          {commitment.examplesNotOk.map((example) => (
+                            <li key={example}>
+                              <span className="terms-examples-icon" aria-hidden>
+                                ✕
+                              </span>
+                              <span>{example}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ) : null}
-            </li>
-          );
-        })}
-      </ol>
+                ) : null}
+              </li>
+            );
+          })}
+        </ol>
+      </PaperCard>
     </section>
   );
 }

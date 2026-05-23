@@ -1,0 +1,25 @@
+import { Meta, Story, ArgTypes } from "@storybook/addon-docs/blocks";
+import * as Stories from "./Display.stories";
+
+<Meta of={Stories} />
+
+# Display
+
+Serif heading primitive за page hierarchy и card headings.
+
+## Props
+
+<ArgTypes of={Stories} />
+
+## Usage
+
+```tsx
+<Display as="h2" size="h3">
+  Селото оцеля
+</Display>
+```
+
+## Stories
+
+<Story of={Stories.Hero} />
+<Story of={Stories.AllSizes} />

@@ -1,0 +1,25 @@
+import { Meta, Story, ArgTypes } from "@storybook/addon-docs/blocks";
+import * as Stories from "./SceneCard.stories";
+
+<Meta of={Stories} />
+
+# SceneCard
+
+Тъмна cinematic card за hero, status и legal-shell surfaces.
+
+## Props
+
+<ArgTypes of={Stories} />
+
+## Usage
+
+```tsx
+<SceneCard eyebrow="СЪСТОЯНИЕ">
+  <Display size="h1">Селото работи.</Display>
+</SceneCard>
+```
+
+## Stories
+
+<Story of={Stories.Default} />
+<Story of={Stories.AllVariants} />

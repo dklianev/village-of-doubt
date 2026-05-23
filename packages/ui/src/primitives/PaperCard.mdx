@@ -1,0 +1,26 @@
+import { Meta, Story, ArgTypes } from "@storybook/addon-docs/blocks";
+import * as Stories from "./PaperCard.stories";
+
+<Meta of={Stories} />
+
+# PaperCard
+
+Стандартна светла card с optional eyebrow, meta и body.
+
+## Props
+
+<ArgTypes of={Stories} />
+
+## Usage
+
+```tsx
+<PaperCard eyebrow="ДОСИЕ">
+  <Display size="h3">Селото оцеля</Display>
+  <p>Една нощ без жертви.</p>
+</PaperCard>
+```
+
+## Stories
+
+<Story of={Stories.Default} />
+<Story of={Stories.AllVariants} />

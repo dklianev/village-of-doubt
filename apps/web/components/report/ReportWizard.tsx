@@ -1,7 +1,8 @@
 "use client";
 
-import Link from "next/link";
+import { EmptyState, Pill } from "@werewolf/ui";
 import { type FormEvent, useId, useMemo, useState } from "react";
+import { ArtifactImage } from "@/components/ArtifactImage";
 
 type ReportType = "abuse" | "copyright" | "bug" | "gdpr" | "other";
 type Step = "type" | "details" | "identity" | "review" | "success";
@@ -368,27 +369,27 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
 
         <div className="report-wizard-actions">
           {stepIndex > 0 ? (
-            <button type="button" className="report-wizard-back" onClick={goBack}>
+            <Pill type="button" intent="ghost" onClick={goBack}>
               ← Назад
-            </button>
+            </Pill>
           ) : (
-            <Link href="/" className="report-wizard-back">
+            <Pill as="a" href="/" intent="ghost">
               Затвори
-            </Link>
+            </Pill>
           )}
 
           {step === "review" ? (
-            <button
+            <Pill
               type="submit"
-              className="report-wizard-submit"
+              intent="primary"
               disabled={status === "submitting"}
             >
               {status === "submitting" ? "Изпращаме..." : "Изпрати сигнал"}
-            </button>
+            </Pill>
           ) : (
-            <button type="button" className="report-wizard-next" onClick={advance}>
+            <Pill type="button" intent="primary" onClick={advance}>
               Напред →
-            </button>
+            </Pill>
           )}
         </div>
       </form>
@@ -417,56 +418,42 @@ function ReportSuccessState({
   const meta = TYPE_META[type];
 
   return (
-    <section className="report-success" role="status">
-      <div className="report-success-beam" aria-hidden />
+    <section role="status" aria-label="Сигналът е получен">
+      <EmptyState
+        artifact={<ArtifactImage artifact="sealed-letter" />}
+        title="Светилникът свети."
+        body={`Получихме сигнала ти за ${meta.label.toLowerCase()}. Преглеждаме в рамките на 48 часа.`}
+        action={
+          <div style={{ display: "grid", gap: "16px", justifyItems: "center", width: "100%" }}>
+            {referenceId ? (
+              <div className="report-success-reference">
+                <p className="report-success-ref-label">Референция</p>
+                <p className="report-success-ref-value">{referenceId}</p>
+                <p className="report-success-ref-hint">
+                  Запази я, ако искаш да се позовеш на този сигнал по-късно.
+                </p>
+              </div>
+            ) : null}
 
-      <div className="report-success-icon" aria-hidden>
-        <svg
-          viewBox="0 0 64 64"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <circle cx="32" cy="32" r="28" />
-          <path d="M20 32 L 28 40 L 44 24" />
-        </svg>
-      </div>
+            {identity === "identified" ? (
+              <p className="report-success-followup">Ще получиш отговор на посочения имейл.</p>
+            ) : (
+              <p className="report-success-followup">
+                Сигналът е анонимен — няма да получиш потвърждение.
+              </p>
+            )}
 
-      <p className="report-success-kicker">сигналът е получен</p>
-      <h2 className="report-success-title">Светилникът свети.</h2>
-      <p className="report-success-detail">
-        Получихме сигнала ти за <strong>{meta.label.toLowerCase()}</strong>. Преглеждаме в рамките
-        на <strong>48 часа</strong>.
-      </p>
-
-      {referenceId ? (
-        <div className="report-success-reference">
-          <p className="report-success-ref-label">Референция</p>
-          <p className="report-success-ref-value">{referenceId}</p>
-          <p className="report-success-ref-hint">
-            Запази я, ако искаш да се позовеш на този сигнал по-късно.
-          </p>
-        </div>
-      ) : null}
-
-      {identity === "identified" ? (
-        <p className="report-success-followup">Ще получиш отговор на посочения имейл.</p>
-      ) : (
-        <p className="report-success-followup">
-          Сигналът е анонимен — няма да получиш потвърждение.
-        </p>
-      )}
-
-      <div className="report-success-actions">
-        <Link href="/" className="report-success-link">
-          Към началото
-        </Link>
-        <Link href="/account" className="report-success-link">
-          Към профила
-        </Link>
-      </div>
+            <div className="report-success-actions">
+              <Pill as="a" href="/" intent="secondary">
+                Към началото
+              </Pill>
+              <Pill as="a" href="/account" intent="secondary">
+                Към профила
+              </Pill>
+            </div>
+          </div>
+        }
+      />
     </section>
   );
 }

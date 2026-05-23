@@ -1,25 +1,21 @@
-import Image from "next/image";
+import { Display, SceneCard } from "@werewolf/ui/server";
 
 export function ReportHero() {
   return (
-    <header className="report-hero" aria-label="Сигнал">
-      <div className="report-hero-banner">
-        <Image
-          src="/game-art/legal/report-banner.webp"
-          alt=""
-          fill
-          priority
-          sizes="100vw"
-          className="report-hero-img"
-        />
-        <div className="report-hero-scrim" aria-hidden />
-        <div className="report-hero-beam" aria-hidden />
-      </div>
-
-      <div className="report-hero-inner">
-        <p className="report-hero-kicker">сигнал</p>
-        <h1 className="report-hero-title">Светим за тебе.</h1>
-        <p className="report-hero-subtitle">
+    <header
+      aria-label="Сигнал"
+      style={{ maxWidth: "980px", margin: "0 auto", padding: "32px 24px 0" }}
+    >
+      <SceneCard eyebrow="СИГНАЛ" density="lg">
+        <Display size="h1">Светим за тебе.</Display>
+        <p
+          style={{
+            color: "var(--ds-ink-scene-soft)",
+            fontSize: "var(--ds-type-lede)",
+            lineHeight: 1.55,
+            margin: 0,
+          }}
+        >
           Ако нещо не е наред — играч с неуместно поведение, спорно съдържание или нарушение на
           авторски права — кажи ни. Светилникът няма да угасне, докато не разгледаме.
         </p>
@@ -31,7 +27,7 @@ export function ReportHero() {
             Обикновено отговаряме в <strong>24-48 часа</strong>
           </span>
         </p>
-      </div>
+      </SceneCard>
     </header>
   );
 }

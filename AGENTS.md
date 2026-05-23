@@ -74,6 +74,11 @@ agents-shared/            Cross-CLI workflow guides (за skills / Codex / др�
 | `pnpm e2e:auth` | Auth E2E flows; без локална база може да се пусне с `E2E_LOCAL_ONLY=true` |
 | `pnpm playtest` | Multi-client GameRoom regression suite |
 | `pnpm visual` | Playwright visual regression срещу baseline screenshots |
+| `pnpm visual:ui` | Storybook visual regression за `packages/ui` primitives |
+| `pnpm ui:dev` | Storybook dev server за `@werewolf/ui` на :6006 |
+| `pnpm ui:build` | Production build на `@werewolf/ui` |
+| `pnpm ui:storybook:build` | Static Storybook build |
+| `pnpm check:dict` | Audit-only Bulgarian dictionary check; предупреждава, exit 0 |
 | `pnpm perf:budget` | Проверява JS/CSS/art asset budgets след build |
 | `pnpm verify` | Пълно: optimize:assets → regression → typecheck → build → smoke → frontend:e2e → e2e:auth → playtest → test → visual → perf:budget |
 | `pnpm verify:heavy` | `pnpm verify` + migration tests + load test |
@@ -93,6 +98,50 @@ agents-shared/            Cross-CLI workflow guides (за skills / Codex / др�
 - `NEXT_PUBLIC_GAME_SERVER_URL=ws://localhost:2567`
 
 В production: всички ↑ + `PUBLIC_WEB_DOMAIN`, `PUBLIC_WS_DOMAIN`, `CORS_ORIGIN`, `ALLOW_DEV_AUTH=false` и поне един OAuth provider (`GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` или `DISCORD_CLIENT_ID`/`DISCORD_CLIENT_SECRET`). `pnpm check:prod-env` валидира.
+
+## Design system
+
+`packages/ui` държи React-only primitives, tokens и Storybook. Няма Next.js imports в този package; app-level wrappers живеят в `apps/web`.
+
+### Tokens
+
+`--ds-*` OKLCH tokens живеят в `packages/ui/src/tokens.css`. Те са паралелни на legacy `--ink`, `--paper`, `--blood` и не ги заменят масово. Нови primitives четат `--ds-*`; съществуващ CSS остава на legacy tokens до отделна миграция.
+
+Tailwind v4 bridge-ът `@theme { ... }` живее в `apps/web/app/globals.css`, не в `packages/ui`. UI package-ът остава Tailwind-agnostic.
+
+Radii са умишлено стегнати: `--ds-radius-card: 8px`, `--ds-radius-tile: 6px`, `--ds-radius-chip: 999px`.
+
+### Primitives
+
+11 components:
+- Surface, Eyebrow, Display, PaperCard, SceneCard, Pill, Medallion — CSS-only
+- Toast, Dialog, Sheet — Motion via `motion/react`
+- EmptyState — CSS-only
+
+Server Components should import CSS-only primitives from `@werewolf/ui/server`.
+The root `@werewolf/ui` export includes Motion/Radix primitives for client surfaces.
+
+Motion е ограничен до 3 primitives. Проверка:
+`rg "from \"motion/react\"" packages/ui/src/primitives` → Dialog, Sheet, Toast.
+
+`Dialog` и `Sheet` използват Radix `asChild` + `motion.div`. Не обвивай Radix primitives с deprecated `motion(Component)`.
+`Sheet` винаги има видимо `title` и включва собствените си layout styles, за да не зависи от consumer CSS import.
+
+### Empty states
+
+22-entry catalog: `packages/ui/src/states/empty-states.ts`. Geometric SVG artifacts: `packages/ui/src/primitives/artifacts/`.
+
+`apps/web/components/ArtifactImage.tsx` е app wrapper. PR 3 версията е SVG-only; optional painterly assets се добавят само при изрична заявка.
+
+### Dictionary
+
+`docs/dictionary.md` е canonical за Bulgarian copy. Run `pnpm check:dict` преди PR. Hard warnings (English in JSX, anglicisms) се оправят; legacy spec deviations като `Постижения` vs `Легенди` са допустими до copy-migration PR.
+
+### Acceptance and Storybook
+
+`docs/acceptance/*.md` съдържа per-page PR checklist.
+
+Storybook 10 (React-Vite) е reference за primitives и MDX docs. `pnpm visual:ui` покрива 11 primitives × light/dark × desktop/mobile и пуска axe върху `#storybook-root`.
 
 ## Workflow guides
 
