@@ -1,3 +1,5 @@
+"use client";
+
 import { Display, SceneCard } from "@werewolf/ui";
 import type { ServiceStatusKind } from "@/lib/status-health";
 
