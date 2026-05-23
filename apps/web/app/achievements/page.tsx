@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { Display, Pill, SceneCard } from "@werewolf/ui/server";
 import { AchievementsClient } from "@/components/achievements-client";
 import { JsonLd } from "@/components/JsonLd";
 import { requireSession } from "@/lib/require-session";
@@ -29,20 +29,25 @@ export default async function AchievementsPage() {
   return (
     <main className="shell utility-shell achievement-shell">
       <JsonLd data={achievementsJsonLd} />
-      <section className="paper-card utility-hero achievement-hero rounded-[2rem] p-8">
-        <p className="section-kicker text-[#842f2b]">постижения</p>
-        <h1 className="mt-3 text-5xl font-black">Малките легенди след всяка игра</h1>
-        <p className="achievement-hero-lede mt-4 max-w-3xl">
-          Гравираните плочи разказват какво се е случило на масата: спасение, предателство, точен изстрел или самостоятелна
-          победа.
-        </p>
+      <section className="achievement-hero-frame" aria-label="Легенди">
+        <SceneCard eyebrow="ЛЕГЕНДИ" density="lg">
+          <div className="achievement-hero-copy">
+            <Display size="h1">Малките легенди след всяка игра</Display>
+            <p>
+              Гравираните плочи разказват какво се е случило на масата: спасение, предателство, точен изстрел или
+              самостоятелна победа.
+            </p>
+          </div>
+        </SceneCard>
       </section>
 
       <AchievementsClient />
 
-      <Link className="btn btn-secondary mt-6" href="/history">
-        Виж записаните игри
-      </Link>
+      <div className="achievement-return">
+        <Pill as="a" href="/history" intent="secondary">
+          Виж записаните игри
+        </Pill>
+      </div>
     </main>
   );
 }
