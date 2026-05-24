@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import type { ReactNode } from "react";
+import "@/components/games/GameRulesPage.module.css";
 import { getRulesForFamily, phaseLabelBg, type GameFamily, type GameMode, type GamePhase } from "@werewolf/shared";
 
 interface PhaseRule {

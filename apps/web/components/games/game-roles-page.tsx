@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { memo, useCallback, useDeferredValue, useMemo, useState } from "react";
+import "@/components/games/GameRolesPage.module.css";
 import {
   ROLE_DEFINITIONS,
   getRoleAssetKey,

@@ -1,0 +1,828 @@
+/* Route-local styles for the Werewolf/Mafia rules playbook pages. */
+
+:global(.rules-playbook-hero) {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  min-height: 360px;
+  overflow: hidden;
+  border: 1px solid rgba(248, 236, 210, 0.14);
+  border-radius: 32px;
+  padding: clamp(24px, 4vw, 48px);
+  background:
+    linear-gradient(100deg, rgba(13, 8, 7, 0.98) 0%, rgba(13, 8, 7, 0.72) 44%, rgba(7, 13, 14, 0.22) 100%),
+    var(--art-landing) center / cover no-repeat;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.32), inset 0 1px rgba(255, 255, 255, 0.12);
+}
+
+:global(.rules-playbook-hero::after) {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(135deg, rgba(248, 236, 210, 0.08) 0 1px, transparent 1px 22px),
+    radial-gradient(circle at 78% 18%, rgba(209, 154, 66, 0.16), transparent 23rem);
+  content: "";
+  opacity: 0.62;
+  pointer-events: none;
+}
+
+:global(.rules-playbook-hero > *) {
+  position: relative;
+  z-index: 1;
+}
+
+:global(.rules-playbook-hero h1) {
+  max-width: 940px;
+  margin-top: 14px;
+  color: #fff6e5;
+  font-size: clamp(3.2rem, 7vw, 6.2rem);
+  font-weight: 950;
+  line-height: 0.9;
+}
+
+:global(.rules-playbook-hero p:not(.section-kicker)) {
+  max-width: 720px;
+  margin-top: 18px;
+  color: #ead9ba;
+  font-size: clamp(1rem, 1.7vw, 1.18rem);
+  font-weight: 780;
+  line-height: 1.65;
+}
+
+:global(.rules-hero-actions) {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+:global(.rules-ghost-link) {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(248, 236, 210, 0.2);
+  border-radius: 999px;
+  padding: 0 16px;
+  background: rgba(8, 10, 10, 0.42);
+  color: #fff6e5;
+  font-size: 0.82rem;
+  font-weight: 950;
+  text-decoration: none;
+}
+
+:global(.rules-hero-stat) {
+  display: grid;
+  min-width: 150px;
+  justify-items: center;
+  border: 1px solid rgba(248, 236, 210, 0.16);
+  border-radius: 26px;
+  padding: 18px;
+  background: rgba(8, 10, 10, 0.54);
+  color: #ead9ba;
+  text-align: center;
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.08);
+}
+
+:global(.rules-hero-stat strong) {
+  color: var(--gold);
+  font-size: 3.4rem;
+  font-weight: 950;
+  line-height: 0.9;
+}
+
+:global(.rules-hero-stat span) {
+  margin-top: 8px;
+  font-size: 0.76rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+:global(.rules-phase-timeline) {
+  display: grid;
+  grid-template-columns: minmax(230px, 0.7fr) minmax(340px, 1.1fr) minmax(320px, 0.9fr);
+  gap: 18px;
+  align-items: stretch;
+  margin-top: 22px;
+  border: 1px solid rgba(248, 236, 210, 0.14);
+  border-radius: 32px;
+  padding: clamp(18px, 2.4vw, 28px);
+  background:
+    linear-gradient(145deg, rgba(18, 10, 8, 0.92), rgba(8, 10, 10, 0.74)),
+    var(--art-night) center / cover no-repeat;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.3);
+}
+
+:global(.rules-phase-intro h2),
+:global(.rules-table-protocol h2),
+:global(.rules-scenario-section h2) {
+  margin-top: 10px;
+  color: #fff6e5;
+  font-size: clamp(2.1rem, 4vw, 3.6rem);
+  font-weight: 950;
+  line-height: 0.96;
+}
+
+:global(.rules-phase-intro p:not(.section-kicker)) {
+  margin-top: 14px;
+  color: #ead9ba;
+  font-weight: 820;
+  line-height: 1.62;
+}
+
+/* === phase timeline === */
+:global(.phase-timeline-section.rules-phase-timeline) {
+  display: block;
+  margin-top: 22px;
+  border: 1px solid rgba(248, 236, 210, 0.16);
+  border-radius: 34px;
+  padding: clamp(20px, 3vw, 34px);
+  background:
+    radial-gradient(circle at 14% 0%, rgba(209, 154, 66, 0.18), transparent 26rem),
+    radial-gradient(circle at 92% 16%, rgba(43, 93, 105, 0.14), transparent 30rem),
+    linear-gradient(145deg, rgba(18, 10, 8, 0.97), rgba(8, 10, 10, 0.94));
+  box-shadow: 0 32px 96px rgba(0, 0, 0, 0.38), inset 0 1px rgba(255, 255, 255, 0.1);
+}
+
+:global(.phase-timeline-header) {
+  max-width: 860px;
+}
+
+:global(.phase-timeline) {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0;
+  margin-top: clamp(22px, 3vw, 34px);
+  border: 1px solid rgba(248, 236, 210, 0.12);
+  border-radius: 28px;
+  padding: 24px 14px 104px;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(248, 236, 210, 0.08), rgba(248, 236, 210, 0.03)),
+    rgba(8, 10, 10, 0.46);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.08);
+}
+
+:global(.phase-timeline__line) {
+  position: absolute;
+  top: 68px;
+  right: calc(8.333% + 11.667px);
+  left: calc(8.333% + 11.667px);
+  z-index: 0;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(248, 236, 210, 0.26), rgba(248, 236, 210, 0.14));
+}
+
+:global(.phase-timeline__line.is-loop) {
+  right: calc(8.333% + 11.667px);
+  left: calc(41.667% + 2.333px);
+  background: linear-gradient(90deg, rgba(209, 154, 66, 0.22), rgba(209, 154, 66, 0.84));
+  box-shadow: 0 0 24px rgba(209, 154, 66, 0.24);
+}
+
+:global([data-theme="mafia"] .phase-timeline__line.is-loop) {
+  background: linear-gradient(90deg, rgba(200, 111, 62, 0.22), rgba(200, 154, 85, 0.88));
+  box-shadow: 0 0 24px rgba(200, 111, 62, 0.26);
+}
+
+:global(.phase-node) {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  min-width: 0;
+  border: 0;
+  padding: 0 8px;
+  background: transparent;
+  color: #ead9ba;
+  cursor: pointer;
+  font: inherit;
+  opacity: 0.76;
+  text-align: center;
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease,
+    color 180ms ease;
+}
+
+:global(.phase-node:hover),
+:global(.phase-node:focus-visible) {
+  color: #fff6e5;
+  opacity: 1;
+}
+
+:global(.phase-node.is-selected) {
+  color: #fff6e5;
+  opacity: 1;
+  transform: translateY(-4px);
+}
+
+:global(.phase-node-number) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  min-height: 20px;
+  border: 1px solid rgba(209, 154, 66, 0.3);
+  border-radius: 999px;
+  margin-bottom: 6px;
+  background: rgba(8, 10, 10, 0.62);
+  color: var(--gold);
+  font-size: 0.66rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+}
+
+:global(.phase-node-medallion) {
+  display: block;
+  width: 58px;
+  aspect-ratio: 1;
+  border: 1px solid rgba(248, 236, 210, 0.22);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(248, 236, 210, 0.18), transparent 50%),
+    rgba(8, 10, 10, 0.72);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.26), inset 0 1px rgba(255, 255, 255, 0.12);
+  filter: saturate(0.78) brightness(0.88);
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    filter 180ms ease,
+    transform 180ms ease;
+}
+
+:global(.phase-node:hover .phase-node-medallion),
+:global(.phase-node:focus-visible .phase-node-medallion) {
+  border-color: rgba(209, 154, 66, 0.58);
+  filter: saturate(1) brightness(1);
+}
+
+:global(.phase-node.is-selected .phase-node-medallion) {
+  border-color: rgba(209, 154, 66, 0.95);
+  box-shadow: 0 0 0 4px rgba(209, 154, 66, 0.16), 0 20px 42px rgba(0, 0, 0, 0.36), inset 0 1px rgba(255, 255, 255, 0.18);
+  filter: saturate(1.08) brightness(1.08);
+}
+
+:global(.phase-node-icon) {
+  background:
+    linear-gradient(180deg, rgba(8, 10, 10, 0.18), rgba(8, 10, 10, 0.5)),
+    var(--phase-node-icon) center / cover no-repeat;
+}
+
+:global(.phase-node-icon.phase-lobby) {
+  --phase-node-icon: image-set(url("/game-art/icon-phase-lobby.webp") type("image/webp"), url("/game-art/icon-phase-lobby.png") type("image/png"));
+}
+
+:global(.phase-node-icon.phase-role_reveal) {
+  --phase-node-icon: image-set(url("/game-art/icon-phase-role-reveal.webp") type("image/webp"), url("/game-art/icon-phase-role-reveal.png") type("image/png"));
+}
+
+:global(.phase-node-icon.phase-night) {
+  --phase-node-icon: image-set(url("/game-art/icon-phase-night.webp") type("image/webp"), url("/game-art/icon-phase-night.png") type("image/png"));
+}
+
+:global(.phase-node-icon.phase-day_discussion) {
+  --phase-node-icon: image-set(url("/game-art/icon-phase-day.webp") type("image/webp"), url("/game-art/icon-phase-day.png") type("image/png"));
+}
+
+:global(.phase-node-icon.phase-voting) {
+  --phase-node-icon: image-set(url("/game-art/icon-phase-voting.webp") type("image/webp"), url("/game-art/icon-phase-voting.png") type("image/png"));
+}
+
+:global(.phase-node-icon.phase-resolution) {
+  --phase-node-icon: image-set(url("/game-art/icon-phase-resolution.webp") type("image/webp"), url("/game-art/icon-phase-resolution.png") type("image/png"));
+}
+
+:global([data-theme="mafia"] .phase-node-icon.phase-lobby) {
+  --phase-node-icon: image-set(url("/game-art/mafia/icon-phase-lobby.webp") type("image/webp"), url("/game-art/mafia/icon-phase-lobby.png") type("image/png"));
+}
+
+:global([data-theme="mafia"] .phase-node-icon.phase-role_reveal) {
+  --phase-node-icon: image-set(url("/game-art/mafia/icon-phase-role-reveal.webp") type("image/webp"), url("/game-art/mafia/icon-phase-role-reveal.png") type("image/png"));
+}
+
+:global([data-theme="mafia"] .phase-node-icon.phase-night) {
+  --phase-node-icon: image-set(url("/game-art/mafia/icon-phase-night.webp") type("image/webp"), url("/game-art/mafia/icon-phase-night.png") type("image/png"));
+}
+
+:global([data-theme="mafia"] .phase-node-icon.phase-day_discussion) {
+  --phase-node-icon: image-set(url("/game-art/mafia/icon-phase-day.webp") type("image/webp"), url("/game-art/mafia/icon-phase-day.png") type("image/png"));
+}
+
+:global([data-theme="mafia"] .phase-node-icon.phase-voting) {
+  --phase-node-icon: image-set(url("/game-art/mafia/icon-phase-voting.webp") type("image/webp"), url("/game-art/mafia/icon-phase-voting.png") type("image/png"));
+}
+
+:global([data-theme="mafia"] .phase-node-icon.phase-resolution) {
+  --phase-node-icon: image-set(url("/game-art/mafia/icon-phase-resolution.webp") type("image/webp"), url("/game-art/mafia/icon-phase-resolution.png") type("image/png"));
+}
+
+:global(.phase-node-label),
+:global(.phase-node-short) {
+  display: block;
+  max-width: 12rem;
+}
+
+:global(.phase-node-label) {
+  margin-top: 14px;
+  font-size: clamp(0.86rem, 1.2vw, 1.06rem);
+  font-weight: 950;
+  line-height: 1.08;
+}
+
+:global(.phase-node-short) {
+  margin-top: 7px;
+  color: var(--gold);
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+:global(.phase-loop-arrow) {
+  position: absolute;
+  top: 30px;
+  right: 0;
+  left: 0;
+  z-index: 1;
+  width: 100%;
+  height: 86px;
+  color: rgba(248, 236, 210, 0.58);
+  pointer-events: none;
+}
+
+:global(.phase-loop-path) {
+  filter: drop-shadow(0 0 8px rgba(209, 154, 66, 0.18));
+}
+
+:global(.phase-loop-badge) {
+  fill: rgba(18, 10, 8, 0.92);
+  stroke: currentColor;
+  stroke-width: 1;
+}
+
+:global(.phase-loop-text) {
+  fill: rgba(248, 236, 210, 0.86);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+:global(.phase-detail-panel) {
+  margin-top: 18px;
+  border: 1px solid rgba(83, 52, 31, 0.18);
+  border-radius: 28px;
+  padding: clamp(20px, 2.6vw, 30px);
+  background:
+    radial-gradient(circle at 88% 0%, rgba(209, 154, 66, 0.18), transparent 18rem),
+    linear-gradient(145deg, rgba(255, 247, 229, 0.98), rgba(211, 180, 125, 0.9)),
+    var(--texture-paper) center / 540px 540px;
+  color: var(--ink);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.24), inset 0 1px rgba(255, 255, 255, 0.34);
+}
+
+:global(.phase-detail-panel__lead) {
+  max-width: 54rem;
+}
+
+:global(.phase-detail-panel__lead h3) {
+  margin-top: 8px;
+  color: var(--ink);
+  font-size: clamp(2.2rem, 3.8vw, 4rem);
+  font-weight: 950;
+  line-height: 0.92;
+}
+
+:global(.phase-detail-panel__lead p:not(.section-kicker)) {
+  margin-top: 16px;
+  color: #4f3829;
+  font-size: 1rem;
+  font-weight: 760;
+  line-height: 1.64;
+}
+
+:global(.phase-info-grid) {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: clamp(18px, 2vw, 24px) 0 0;
+}
+
+:global(.phase-info-chip) {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-height: 152px;
+  border: 1px solid rgba(83, 52, 31, 0.14);
+  border-radius: 22px;
+  padding: 15px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.44), rgba(255, 255, 255, 0.16)),
+    rgba(34, 22, 17, 0.05);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.34);
+}
+
+:global(.phase-info-chip dt) {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  color: var(--blood-dark);
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+:global(.phase-info-chip__icon) {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  aspect-ratio: 1;
+  border: 1px solid rgba(132, 47, 43, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.34);
+  color: var(--blood-dark);
+}
+
+:global(.phase-info-chip svg) {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+
+:global(.phase-info-chip dd) {
+  margin: 12px 0 0;
+  color: #4f3829;
+  font-size: 0.94rem;
+  font-weight: 860;
+  line-height: 1.45;
+}
+
+@media (max-width: 1023px) {
+  :global(.phase-timeline) {
+    padding-inline: 8px;
+  }
+
+  :global(.phase-node) {
+    padding-inline: 4px;
+  }
+
+  :global(.phase-node-medallion) {
+    width: 52px;
+  }
+
+  :global(.phase-node-label) {
+    font-size: 0.82rem;
+  }
+
+  :global(.phase-detail-panel) {
+    display: block;
+  }
+
+  :global(.phase-info-grid) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  :global(.phase-timeline-section.rules-phase-timeline) {
+    border-radius: 26px;
+    padding: 18px;
+  }
+
+  :global(.phase-timeline) {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 18px 14px 18px 16px;
+  }
+
+  :global(.phase-timeline__line) {
+    top: 46px;
+    bottom: 84px;
+    left: 44px;
+    width: 3px;
+    height: auto;
+    background: linear-gradient(180deg, rgba(248, 236, 210, 0.26), rgba(248, 236, 210, 0.14));
+  }
+
+  :global(.phase-timeline__line.is-loop) {
+    display: none;
+  }
+
+  :global(.phase-node) {
+    display: grid;
+    grid-template-columns: 58px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    column-gap: 14px;
+    align-items: center;
+    justify-items: start;
+    min-height: 86px;
+    border: 1px solid rgba(248, 236, 210, 0.11);
+    border-radius: 22px;
+    padding: 10px 12px;
+    background: rgba(8, 10, 10, 0.42);
+    text-align: left;
+  }
+
+  :global(.phase-node.is-selected) {
+    transform: none;
+    border-color: rgba(209, 154, 66, 0.42);
+    background:
+      radial-gradient(circle at 0% 0%, rgba(209, 154, 66, 0.18), transparent 12rem),
+      rgba(248, 236, 210, 0.08);
+  }
+
+  :global(.phase-node-number) {
+    position: absolute;
+    top: 5px;
+    left: 33px;
+    z-index: 2;
+    min-width: 24px;
+    min-height: 18px;
+    margin: 0;
+    font-size: 0.58rem;
+  }
+
+  :global(.phase-node-medallion) {
+    grid-row: 1 / span 2;
+    width: 56px;
+  }
+
+  :global(.phase-node-label),
+  :global(.phase-node-short) {
+    max-width: none;
+    margin-top: 0;
+  }
+
+  :global(.phase-loop-arrow) {
+    position: static;
+    z-index: 2;
+    display: block;
+    width: auto;
+    height: 44px;
+    margin: -2px 0 0 72px;
+    color: rgba(248, 236, 210, 0.72);
+  }
+
+  :global(.phase-loop-badge) {
+    transform: translateY(1px);
+  }
+
+  :global(.phase-info-grid) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  :global(.phase-timeline-section.rules-phase-timeline) {
+    padding: 14px;
+  }
+
+  :global(.phase-detail-panel) {
+    border-radius: 24px;
+    padding: 18px;
+  }
+
+}
+
+:global(.rules-table-mode),
+:global(.rules-table-protocol) {
+  margin-top: 22px;
+  border: 1px solid rgba(248, 236, 210, 0.14);
+  border-radius: 32px;
+  padding: clamp(18px, 2.5vw, 28px);
+  background:
+    radial-gradient(circle at 80% 0%, rgba(209, 154, 66, 0.2), transparent 22rem),
+    linear-gradient(145deg, rgba(8, 10, 10, 0.7), rgba(248, 236, 210, 0.08));
+}
+
+:global(.rules-table-protocol h2) {
+  font-size: clamp(1.9rem, 3vw, 3rem);
+}
+
+:global(.rules-table-grid) {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+:global(.rules-table-grid article) {
+  min-height: 150px;
+  border: 1px solid rgba(248, 236, 210, 0.12);
+  border-radius: 22px;
+  padding: 16px;
+  background: rgba(8, 10, 10, 0.32);
+}
+
+:global(.rules-table-grid strong),
+:global(.rules-table-grid span) {
+  display: block;
+}
+
+:global(.rules-table-grid strong) {
+  color: var(--gold);
+  font-size: 1.05rem;
+}
+
+:global(.rules-table-grid span) {
+  margin-top: 12px;
+  color: #ead9ba;
+  font-size: 0.9rem;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+:global(.rules-scenario-section) {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.55fr) minmax(0, 1fr);
+  gap: 18px;
+  margin-top: 22px;
+  border: 1px solid rgba(248, 236, 210, 0.14);
+  border-radius: 32px;
+  padding: clamp(18px, 2.5vw, 28px);
+  background:
+    linear-gradient(145deg, rgba(12, 10, 9, 0.82), rgba(8, 10, 10, 0.66)),
+    var(--texture-wood) center / 520px 520px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+}
+
+:global(.rules-scenario-grid) {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+:global(.rules-scenario-grid article) {
+  min-height: 190px;
+  border: 1px solid rgba(209, 154, 66, 0.18);
+  border-radius: 24px;
+  padding: 18px;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(209, 154, 66, 0.18), transparent 10rem),
+    rgba(248, 236, 210, 0.08);
+}
+
+:global(.rules-scenario-grid strong),
+:global(.rules-scenario-grid p),
+:global(.rules-scenario-grid span) {
+  display: block;
+}
+
+:global(.rules-scenario-grid strong) {
+  color: var(--gold);
+  font-size: 1.2rem;
+  font-weight: 950;
+  line-height: 1.1;
+}
+
+:global(.rules-scenario-grid p) {
+  margin-top: 12px;
+  color: #ead9ba;
+  font-weight: 780;
+  line-height: 1.52;
+}
+
+:global(.rules-scenario-grid span) {
+  margin-top: 12px;
+  border-radius: 16px;
+  padding: 10px 12px;
+  background: rgba(248, 236, 210, 0.1);
+  color: #fff6e5;
+  font-size: 0.86rem;
+  font-weight: 900;
+  line-height: 1.42;
+}
+
+:global(.rules-chapter-grid) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 22px;
+}
+
+:global(.rules-chapter-card) {
+  border: 1px solid rgba(248, 236, 210, 0.16);
+  border-radius: 28px;
+  padding: clamp(20px, 2.4vw, 28px);
+  background:
+    linear-gradient(145deg, rgba(255, 247, 229, 0.94), rgba(211, 180, 125, 0.88)),
+    var(--texture-paper) center / 520px 520px;
+  color: var(--ink);
+  box-shadow: 0 22px 64px rgba(0, 0, 0, 0.22), inset 0 1px rgba(255, 255, 255, 0.22);
+}
+
+:global(.rules-chapter-card h2) {
+  color: var(--ink);
+  font-size: clamp(2rem, 3vw, 3.1rem);
+  font-weight: 950;
+  line-height: 0.96;
+}
+
+:global(.rules-chapter-card p) {
+  margin-top: 14px;
+  color: #4f3829;
+  font-size: 1rem;
+  font-weight: 740;
+  line-height: 1.62;
+}
+
+:global(.rules-chapter-card ul) {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+:global(.rules-chapter-card li) {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  border-radius: 18px;
+  padding: 12px;
+  background: rgba(34, 22, 17, 0.06);
+  color: #4f3829;
+  font-weight: 880;
+  line-height: 1.45;
+}
+
+:global(.rules-chapter-card li > span:first-child) {
+  width: 8px;
+  height: 8px;
+  margin-top: 8px;
+  border-radius: 999px;
+  background: var(--blood-dark);
+}
+
+@media (max-width: 1180px) {
+  :global(.rules-playbook-hero),
+  :global(.rules-phase-timeline),
+  :global(.rules-scenario-section) {
+    grid-template-columns: 1fr;
+  }
+
+  :global(.rules-hero-stat) {
+    justify-self: start;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    text-align: left;
+  }
+
+  :global(.rules-hero-stat span) {
+    margin-top: 0;
+  }
+
+  :global(.rules-scenario-grid) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 860px) {
+  :global(.rules-table-grid),
+  :global(.rules-scenario-grid),
+  :global(.rules-chapter-grid) {
+    grid-template-columns: 1fr;
+  }
+
+}
+
+@media (max-width: 480px) {
+  :global(.rules-playbook-hero),
+  :global(.rules-phase-timeline),
+  :global(.rules-table-protocol),
+  :global(.rules-scenario-section),
+  :global(.rules-chapter-card) {
+    border-radius: 22px;
+  }
+
+  :global(.rules-playbook-hero) {
+    min-height: 0;
+    padding: 24px;
+  }
+
+  :global(.rules-playbook-hero h1) {
+    font-size: clamp(2.8rem, 15vw, 4.1rem);
+  }
+
+  :global(.rules-hero-actions > *) {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+}
+
+@media (max-width: 760px) {
+  :global(.rules-table-grid) {
+    grid-template-columns: 1fr;
+  }
+}

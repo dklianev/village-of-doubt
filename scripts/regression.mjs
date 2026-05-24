@@ -340,7 +340,7 @@ function checkFamilyQuickStartContracts() {
 function checkRolesPageContracts() {
   const rolesPage = readText("apps/web/components/games/game-roles-page.tsx");
   const legacyRolesRoute = readText("apps/web/app/roles/page.tsx");
-  const css = readText("apps/web/app/globals.css");
+  const css = readRolesStyles();
 
   assert(rolesPage.includes("getRolesForFamily"), "Roles page must filter roles by family.");
   assert(rolesPage.includes("KNOWN_WEREWOLF_ROLE_ASSETS"), "Roles page must keep an explicit Werewolf asset allow-list.");
@@ -365,7 +365,7 @@ function checkRulesPlaybookContracts() {
   const rulesPage = readText("apps/web/components/games/game-rules-page.tsx");
   const werewolfRulesRoute = readText("apps/web/app/werewolf/rules/page.tsx");
   const mafiaRulesRoute = readText("apps/web/app/mafia/rules/page.tsx");
-  const css = readText("apps/web/app/globals.css");
+  const css = readRulesStyles();
 
   assert(rulesPage.includes("getRulesForFamily"), "Rules page must keep shared rules data as its source.");
   assert(rulesPage.includes("rules-playbook-hero"), "Rules page must render the premium playbook hero.");
@@ -792,6 +792,20 @@ function readLobbyStyles() {
     "apps/web/components/lobby/LobbyWizard.module.css",
     "apps/web/components/LobbyInvite.module.css",
     "apps/web/components/games/JoinEntry.module.css",
+  );
+}
+
+function readRolesStyles() {
+  return readCssSurface(
+    "apps/web/app/globals.css",
+    "apps/web/components/games/GameRolesPage.module.css",
+  );
+}
+
+function readRulesStyles() {
+  return readCssSurface(
+    "apps/web/app/globals.css",
+    "apps/web/components/games/GameRulesPage.module.css",
   );
 }
 
