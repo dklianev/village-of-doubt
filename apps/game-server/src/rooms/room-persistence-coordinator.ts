@@ -19,10 +19,14 @@ export interface RoomPersistenceTaskApi {
 }
 
 export class RoomPersistenceCoordinator {
-  private readonly persistence = createGamePersistence();
   private persistQueue: Promise<void> = Promise.resolve();
   private persistQueueLength = 0;
   private persistedGameId: string | undefined;
+
+  constructor(
+    private readonly persistence: GamePersistence = createGamePersistence(),
+    private readonly captureException: (error: unknown) => unknown = Sentry.captureException,
+  ) {}
 
   get enabled() {
     return this.persistence.enabled;
@@ -52,7 +56,7 @@ export class RoomPersistenceCoordinator {
       )
       .catch((error) => {
         if (process.env.SENTRY_DSN) {
-          Sentry.captureException(error);
+          this.captureException(error);
         }
         console.error("[game-persistence]", error);
       })
