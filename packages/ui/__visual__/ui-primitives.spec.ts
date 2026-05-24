@@ -8,11 +8,17 @@ const STORIES = [
   { name: "paper-card", id: "primitives-papercard--all-variants" },
   { name: "scene-card", id: "primitives-scenecard--all-variants" },
   { name: "pill", id: "primitives-pill--all-variants" },
+  { name: "pill-states", id: "primitives-pill--interaction-states" },
   { name: "medallion", id: "primitives-medallion--all-variants" },
   { name: "toast", id: "primitives-toast--all-variants" },
+  { name: "toast-states", id: "primitives-toast--interaction-states" },
   { name: "dialog", id: "primitives-dialog--all-variants" },
+  { name: "dialog-states", id: "primitives-dialog--interaction-states" },
   { name: "sheet", id: "primitives-sheet--all-variants" },
+  { name: "sheet-states", id: "primitives-sheet--interaction-states" },
   { name: "empty-state", id: "primitives-emptystate--all-variants" },
+  { name: "paper-card-states", id: "primitives-papercard--interaction-states" },
+  { name: "scene-card-states", id: "primitives-scenecard--interaction-states" },
 ] as const;
 
 const VIEWPORTS = [

@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Display } from "./Display";
 import { Eyebrow } from "./Eyebrow";
 import { PaperCard } from "./PaperCard";
+import { Pill } from "./Pill";
 
 const meta = {
   title: "Primitives/PaperCard",
@@ -53,6 +54,26 @@ export const AllVariants: Story = {
       </PaperCard>
       <PaperCard eyebrow="ГОЛЯМО" density="lg">
         <Body />
+      </PaperCard>
+    </div>
+  ),
+};
+
+export const InteractionStates: Story = {
+  args: { children: <Body /> },
+  render: () => (
+    <div style={{ display: "grid", gap: "18px", padding: "32px", width: "min(90vw, 720px)" }}>
+      <PaperCard eyebrow="ДЕЙСТВИЕ" meta={<Eyebrow tone="gold">ФОКУС</Eyebrow>}>
+        <Body />
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
+          <Pill style={{ boxShadow: "var(--ds-focus-ring)" }}>Продължи</Pill>
+          <Pill intent="secondary" style={{ transform: "translateY(-1px)", filter: "brightness(1.05)" }}>
+            Hover
+          </Pill>
+          <Pill intent="secondary" disabled>
+            Недостъпен
+          </Pill>
+        </div>
       </PaperCard>
     </div>
   ),

@@ -46,3 +46,15 @@ export const AllVariants: Story = {
     </div>
   ),
 };
+
+export const InteractionStates: Story = {
+  args: { children: "Състояния" },
+  render: () => (
+    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px", padding: "32px" }}>
+      <Pill>Нормален</Pill>
+      <Pill style={{ transform: "translateY(-1px)", filter: "brightness(1.05)" }}>Hover</Pill>
+      <Pill style={{ boxShadow: "var(--ds-focus-ring)" }}>Фокус</Pill>
+      <Pill disabled>Недостъпен</Pill>
+    </div>
+  ),
+};

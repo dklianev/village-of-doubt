@@ -78,3 +78,28 @@ export const AllVariants: Story = {
   },
   render: () => <SheetDemo />,
 };
+
+export const InteractionStates: Story = {
+  args: {
+    open: true,
+    onOpenChange: () => {},
+    title: "Писма на масата",
+    children: "Кратко съдържание.",
+  },
+  render: () => (
+    <Sheet open onOpenChange={() => {}} title="Писма на масата">
+      <p style={{ margin: 0, color: "var(--ds-ink-soft)", lineHeight: 1.6 }}>
+        Действията в листа показват стабилни hover, focus и disabled състояния.
+      </p>
+      <div style={{ display: "flex", justifyContent: "flex-end", flexWrap: "wrap", gap: "12px" }}>
+        <Pill intent="ghost" style={{ transform: "translateY(-1px)", filter: "brightness(1.05)" }}>
+          Hover
+        </Pill>
+        <Pill style={{ boxShadow: "var(--ds-focus-ring)" }}>Фокус</Pill>
+        <Pill intent="secondary" disabled>
+          Недостъпен
+        </Pill>
+      </div>
+    </Sheet>
+  ),
+};

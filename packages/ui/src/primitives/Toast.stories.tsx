@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pill } from "./Pill";
 import { Toast } from "./Toast";
 
@@ -50,4 +50,22 @@ export const AllVariants: Story = {
       <Toast open tone="error" message="Нещо прекъсна. Опитай пак." />
     </div>
   ),
+};
+
+export const InteractionStates: Story = {
+  args: { open: true, message: "Състояния" },
+  render: () => {
+    useEffect(() => {
+      const closeButton = document.querySelector<HTMLButtonElement>("[data-toast-focus-root] button");
+      closeButton?.focus();
+    }, []);
+
+    return (
+      <div data-toast-focus-root style={{ display: "grid", gap: "14px", padding: "32px" }}>
+        <Toast open tone="info" message="Затварящият бутон е във фокус." onDismiss={() => {}} />
+        <Toast open tone="success" message="Успешното писмо остава видимо." />
+        <Toast open tone="error" message="Грешката остава ясно различима." />
+      </div>
+    );
+  },
 };

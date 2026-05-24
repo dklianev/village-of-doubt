@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Display } from "./Display";
 import { Eyebrow } from "./Eyebrow";
+import { Pill } from "./Pill";
 import { SceneCard } from "./SceneCard";
 
 const meta = {
@@ -53,6 +54,26 @@ export const AllVariants: Story = {
       </SceneCard>
       <SceneCard eyebrow="ГОЛЯМО" density="lg">
         <Body />
+      </SceneCard>
+    </div>
+  ),
+};
+
+export const InteractionStates: Story = {
+  args: { children: <Body /> },
+  render: () => (
+    <div style={{ display: "grid", gap: "18px", padding: "32px", width: "min(90vw, 720px)" }}>
+      <SceneCard eyebrow="ДЕЙСТВИЕ" meta={<Eyebrow tone="gold">ФОКУС</Eyebrow>}>
+        <Body />
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
+          <Pill style={{ boxShadow: "var(--ds-focus-ring)" }}>Провери</Pill>
+          <Pill intent="secondary" style={{ transform: "translateY(-1px)", filter: "brightness(1.05)" }}>
+            Hover
+          </Pill>
+          <Pill intent="secondary" disabled>
+            Недостъпен
+          </Pill>
+        </div>
       </SceneCard>
     </div>
   ),

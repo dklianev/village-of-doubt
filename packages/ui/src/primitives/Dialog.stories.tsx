@@ -80,3 +80,35 @@ export const AllVariants: Story = {
   },
   render: () => <DialogDemo />,
 };
+
+export const InteractionStates: Story = {
+  args: {
+    open: true,
+    onOpenChange: () => {},
+    title: "Потвърди действието",
+    children: "Провери детайлите преди да продължиш.",
+  },
+  render: () => (
+    <Dialog
+      open
+      onOpenChange={() => {}}
+      title="Потвърди действието"
+      description="Състояния на действията в модала."
+      footer={
+        <>
+          <Pill intent="ghost" style={{ transform: "translateY(-1px)", filter: "brightness(1.05)" }}>
+            Hover
+          </Pill>
+          <Pill style={{ boxShadow: "var(--ds-focus-ring)" }}>Фокус</Pill>
+          <Pill intent="secondary" disabled>
+            Недостъпен
+          </Pill>
+        </>
+      }
+    >
+      <p style={{ margin: 0, color: "var(--ds-ink-soft)", lineHeight: 1.6 }}>
+        Основното съдържание остава спокойно, докато действията показват състояния.
+      </p>
+    </Dialog>
+  ),
+};
