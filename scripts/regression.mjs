@@ -21,6 +21,7 @@ const checks = [
   ["launch testing contracts", checkLaunchTestingContracts],
   ["production env checker behavior", checkProductionEnvChecker],
   ["smoke/playtest/verify wiring", checkScriptWiring],
+  ["database migration workflow", checkDatabaseMigrationWorkflow],
 ];
 
 let failures = 0;
@@ -678,6 +679,29 @@ function checkScriptWiring() {
   assert(ciWorkflow.includes("pnpm/action-setup@v6"), "CI pnpm action must use a Node 24-runtime release.");
   assert(ciWorkflow.includes("actions/setup-node@v6"), "CI setup-node action must use a Node 24-runtime release.");
   assert(ciWorkflow.includes("node-version: 24"), "CI must verify against Node 24.");
+}
+
+function checkDatabaseMigrationWorkflow() {
+  const databaseReadme = readText("packages/database/README.md");
+  assert(databaseReadme.includes("db:generate"), "Database README must document migration generation.");
+  assert(databaseReadme.includes("db:migrate"), "Database README must document migration application.");
+  assert(databaseReadme.includes("drizzle-kit check"), "Database README must document the migration drift guard.");
+
+  const result =
+    process.platform === "win32"
+      ? spawnSync("cmd.exe", ["/d", "/s", "/c", "pnpm --filter @werewolf/database exec drizzle-kit check --config drizzle.config.ts"], {
+          cwd: root,
+          encoding: "utf8",
+        })
+      : spawnSync("pnpm", ["--filter", "@werewolf/database", "exec", "drizzle-kit", "check", "--config", "drizzle.config.ts"], {
+          cwd: root,
+          encoding: "utf8",
+        });
+
+  assert(
+    result.status === 0,
+    `Drizzle migration metadata check failed:\n${result.stdout ?? ""}\n${result.stderr ?? ""}\n${result.error?.message ?? ""}`,
+  );
 }
 
 function validProductionEnv() {
