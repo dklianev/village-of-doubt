@@ -1,5 +1,3 @@
-"use client";
-
 import type { ComponentType } from "react";
 import { ARTIFACT_SVG, type ArtifactKey } from "@werewolf/ui/artifacts";
 

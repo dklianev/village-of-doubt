@@ -1,5 +1,3 @@
-"use client";
-
 import { GAME_MODE_DEFINITIONS, getGameFamily, getGameModeNameBg, type GameMode } from "@werewolf/shared";
 
 export function ModeTileCard({

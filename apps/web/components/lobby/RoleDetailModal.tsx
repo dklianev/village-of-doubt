@@ -1,5 +1,3 @@
-"use client";
-
 import Image from "next/image";
 import { ROLE_DEFINITIONS, teamLabelBg, type GameFamily, type RoleCode } from "@werewolf/shared";
 import { roleThumbPath } from "@/lib/role-art";

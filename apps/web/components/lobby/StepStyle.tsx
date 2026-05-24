@@ -1,5 +1,3 @@
-"use client";
-
 import type { Dispatch } from "react";
 import { NARRATOR_VOICE_LABELS_BG, type CommunicationMode, type NarratorMode, type NarratorVoice } from "@werewolf/shared";
 import { PaperCard } from "@werewolf/ui";

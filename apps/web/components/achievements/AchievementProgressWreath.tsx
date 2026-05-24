@@ -1,5 +1,3 @@
-"use client";
-
 export function AchievementProgressWreath({ unlocked, total }: { unlocked: number; total: number }) {
   return (
     <div className="achievement-wreath" role="img" aria-label={`${unlocked} от ${total} легенди отключени`}>

@@ -1,5 +1,3 @@
-"use client";
-
 import type { Dispatch } from "react";
 import type { PhaseTimers } from "@werewolf/shared";
 import {

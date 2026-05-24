@@ -1,5 +1,3 @@
-"use client";
-
 import { Display, SceneCard } from "@werewolf/ui";
 import { EmailPasswordForm } from "@/components/sign-in/EmailPasswordForm";
 import { OAuthButton } from "@/components/sign-in/OAuthButton";

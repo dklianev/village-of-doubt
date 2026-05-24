@@ -1,5 +1,3 @@
-"use client";
-
 import { Suspense } from "react";
 import type { GameFamily, GameMode } from "@werewolf/shared";
 import { LobbyWizard } from "@/components/lobby/LobbyWizard";

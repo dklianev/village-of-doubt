@@ -1,5 +1,3 @@
-"use client";
-
 import type { AchievementDefinition } from "@werewolf/shared";
 import { AchievementIcon } from "./AchievementIcon";
 

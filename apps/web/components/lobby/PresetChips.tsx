@@ -1,5 +1,3 @@
-"use client";
-
 import { ROLE_PRESET_LABELS_BG, type RolePreset } from "@werewolf/shared";
 import { rolePresetsForMode, type LobbyFormAction, type LobbyFormState } from "@/lib/lobby-form";
 import type { Dispatch } from "react";

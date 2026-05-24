@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { Display, EmptyState, PaperCard, Pill } from "@werewolf/ui";
 import { EMPTY_STATES } from "@werewolf/ui/states";
