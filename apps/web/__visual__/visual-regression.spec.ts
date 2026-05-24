@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "playwright/test";
 
 const ROUTES = [
@@ -53,6 +54,46 @@ const DARK_UTILITY_ROUTE_NAMES = new Set([
   "status",
   "faq",
 ]);
+
+const A11Y_ROUTES = [
+  { name: "home", path: "/" },
+  { name: "status", path: "/status" },
+  { name: "privacy", path: "/privacy" },
+  { name: "terms", path: "/terms" },
+  { name: "report", path: "/report" },
+  { name: "faq", path: "/faq" },
+  { name: "account-dashboard", path: "/account" },
+  { name: "history-empty", path: "/history" },
+  { name: "achievements-gate", path: "/achievements" },
+  { name: "leaderboard-empty", path: "/leaderboard" },
+  { name: "friends", path: "/friends" },
+  { name: "tutorial", path: "/tutorial" },
+  { name: "sign-in", path: "/sign-in" },
+  { name: "create", path: "/create" },
+];
+
+for (const route of A11Y_ROUTES) {
+  test(`@a11y route ${route.name}`, async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    if (DARK_UTILITY_ROUTE_NAMES.has(route.name)) {
+      await setVisualTheme(page, "dark");
+    } else {
+      await acceptCookies(page);
+    }
+    await page.goto(route.path, { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle").catch(() => {});
+    await page.waitForTimeout(600);
+
+    const accessibility = await new AxeBuilder({ page })
+      .include("body")
+      .withTags(["wcag2a", "wcag2aa"])
+      // Legacy visual surfaces still have known contrast debt; this sweep gates structural axe regressions.
+      .disableRules(["color-contrast"])
+      .analyze();
+
+    expect(accessibility.violations).toEqual([]);
+  });
+}
 
 for (const viewport of VIEWPORTS) {
   for (const route of ROUTES) {
