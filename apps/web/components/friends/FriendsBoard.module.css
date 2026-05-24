@@ -1,5 +1,52 @@
 /* Friends board styles moved out of globals.css. */
 
+/* ============================== */
+/* Friends — companions at table  */
+/* ============================== */
+
+:global(.friends-shell) {
+  --friends-text: #f5e8c8;
+  --friends-text-muted: rgba(245, 232, 200, 0.74);
+  --friends-text-soft: rgba(245, 232, 200, 0.54);
+  --friends-surface: rgba(13, 10, 8, 0.54);
+  --friends-surface-strong: rgba(13, 10, 8, 0.74);
+  --friends-border: rgba(245, 232, 200, 0.14);
+  --friends-border-strong: rgba(209, 154, 66, 0.42);
+  --friends-accent: #d19a42;
+}
+
+:global(.friends-hero-frame) {
+  margin-bottom: 24px;
+}
+
+:global(.friends-hero-copy) {
+  display: grid;
+  gap: 16px;
+  max-width: 780px;
+}
+
+:global(.friends-kicker) {
+  margin: 0;
+  color: var(--friends-accent);
+  font-size: 0.74rem;
+  font-weight: 850;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+}
+
+:global(.friends-hero-copy h1) {
+  max-width: 16ch;
+  color: inherit;
+}
+
+:global(.friends-hero-copy p:not(.friends-kicker)) {
+  max-width: 58ch;
+  margin: 0;
+  color: var(--ds-ink-scene-soft);
+  font-size: var(--ds-type-lede);
+  line-height: 1.68;
+}
+
 :global(.friends-board) {
   width: min(980px, 92%);
   margin: 0 auto;

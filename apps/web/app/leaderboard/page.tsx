@@ -7,6 +7,7 @@ import { NewspaperPage } from "@/components/leaderboard/NewspaperPage";
 import { LeaderboardSkeleton } from "@/components/skeleton";
 import type { LeaderboardEntry } from "@/lib/leaderboard-headlines";
 import { absoluteUrl, routeMetadata } from "@/lib/seo";
+import "@/components/leaderboard/Leaderboard.module.css";
 
 export const dynamic = "force-dynamic";
 

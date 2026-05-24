@@ -548,7 +548,7 @@ function checkPlayUiContracts() {
 }
 
 function checkFrontendHygieneContracts() {
-  const css = readText("apps/web/app/globals.css");
+  const css = readAppStyles();
   const lobbyStyles = readLobbyStyles();
   const siteChrome = readText("apps/web/components/site-chrome.tsx");
   const stepRoom = readText("apps/web/components/lobby/StepRoom.tsx");
@@ -564,8 +564,8 @@ function checkFrontendHygieneContracts() {
     "apps/web/components/manual-role-builder.tsx",
   ];
 
-  assert(!/calc\(100%\s*-\s*\d+px\)/.test(css), "globals.css must not contain calc(100% - Npx) width patterns.");
-  assert(css.includes("@media (max-width: 480px)"), "globals.css must include explicit max-width 480px mobile rules.");
+  assert(!/calc\(100%\s*-\s*\d+px\)/.test(css), "App styles must not contain calc(100% - Npx) width patterns.");
+  assert(css.includes("@media (max-width: 480px)"), "App styles must include explicit max-width 480px mobile rules.");
   assert(existsSync(path.join(root, "docs/frontend-audit/REPORT.md")), "Frontend visual audit report must exist.");
   assert(css.includes("--chrome-bg"), "Navbar redesign must keep the --chrome-bg token.");
   assert(siteChrome.includes("export default function SiteChrome"), "site-chrome.tsx must export one default component named SiteChrome.");
@@ -801,12 +801,18 @@ function readLobbyStyles() {
 function readAppStyles() {
   return readCssSurface(
     "apps/web/app/globals.css",
+    "apps/web/components/account/AccountShell.module.css",
+    "apps/web/components/leaderboard/Leaderboard.module.css",
+    "apps/web/components/legal/LegalShell.module.css",
     "apps/web/components/landing/LandingSurface.module.css",
+    "apps/web/components/offline/Offline.module.css",
+    "apps/web/components/system/SystemPages.module.css",
     "apps/web/components/games/GameHomePage.module.css",
     "apps/web/components/history/History.module.css",
     "apps/web/components/achievements/Achievements.module.css",
     "apps/web/components/friends/FriendsBoard.module.css",
     "apps/web/components/auth/AuthRecovery.module.css",
+    "apps/web/components/site-chrome/SiteChrome.module.css",
     "apps/web/components/play/PlayRoom.module.css",
     "apps/web/components/play/PlayerToken.module.css",
     "apps/web/components/play/PhaseRail.module.css",

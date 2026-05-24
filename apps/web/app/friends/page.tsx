@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Display, SceneCard } from "@werewolf/ui/server";
 import { FriendsClient } from "@/components/friends-client";
 import { requireSession } from "@/lib/require-session";
+import "@/components/friends/FriendsBoard.module.css";
 
 export const metadata: Metadata = {
   title: "Познати на масата | Върколак и Мафия",

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import "@/components/legal/LegalShell.module.css";
 import { FaqHearth } from "@/components/faq/FaqHearth";
 import { JsonLd } from "@/components/JsonLd";
 import { ResourceHints } from "@/components/resource-hints";

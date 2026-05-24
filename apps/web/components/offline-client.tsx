@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { RefreshCw, WifiOff } from "lucide-react";
+import "@/components/offline/Offline.module.css";
 
 export function OfflineClient() {
   const [retryCount, setRetryCount] = useState(0);
