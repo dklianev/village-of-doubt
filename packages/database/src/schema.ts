@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   boolean,
   index,
@@ -170,3 +170,40 @@ export const userAchievements = pgTable(
     index("user_achievements_user_id_unlocked_at_idx").on(table.userId, table.unlockedAt.desc()),
   ],
 );
+
+export const userRelations = relations(user, ({ many }) => ({
+  sessions: many(session),
+  accounts: many(account),
+  hostedGames: many(games),
+  gamePlayers: many(gamePlayers),
+  achievements: many(userAchievements),
+}));
+
+export const sessionRelations = relations(session, ({ one }) => ({
+  user: one(user, { fields: [session.userId], references: [user.id] }),
+}));
+
+export const accountRelations = relations(account, ({ one }) => ({
+  user: one(user, { fields: [account.userId], references: [user.id] }),
+}));
+
+export const gamesRelations = relations(games, ({ one, many }) => ({
+  host: one(user, { fields: [games.hostId], references: [user.id] }),
+  players: many(gamePlayers),
+  events: many(gameEvents),
+  achievements: many(userAchievements),
+}));
+
+export const gamePlayersRelations = relations(gamePlayers, ({ one }) => ({
+  game: one(games, { fields: [gamePlayers.gameId], references: [games.id] }),
+  user: one(user, { fields: [gamePlayers.userId], references: [user.id] }),
+}));
+
+export const gameEventsRelations = relations(gameEvents, ({ one }) => ({
+  game: one(games, { fields: [gameEvents.gameId], references: [games.id] }),
+}));
+
+export const userAchievementsRelations = relations(userAchievements, ({ one }) => ({
+  user: one(user, { fields: [userAchievements.userId], references: [user.id] }),
+  game: one(games, { fields: [userAchievements.gameId], references: [games.id] }),
+}));
