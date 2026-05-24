@@ -19,11 +19,9 @@ import {
   type RoleCode,
   type ServerEvent,
   type CreateRoomOptions,
-  type ChatChannel,
 } from "@werewolf/shared";
 import { resolveNight, type SubmittedNightAction } from "../game-logic/night-resolver.js";
 import {
-  ChatMessageState,
   GameState,
   PlayerPublicState,
   PublicEventState,
@@ -36,6 +34,7 @@ import { PlayerPresenceManager } from "./player-presence-manager.js";
 import { PhaseStateMachine } from "./phase-state-machine.js";
 import { AchievementBroadcaster, type AchievementUnlock } from "./achievement-broadcaster.js";
 import { RoomPersistenceCoordinator, type RoomPersistenceTaskApi } from "./room-persistence-coordinator.js";
+import { RoomChatRouter } from "./room-chat-router.js";
 import {
   chooseDrunkRealRole,
   ensureNightActionAllowed,
@@ -45,31 +44,11 @@ import {
   hashRoomCode,
   isNightPhase,
   isObject,
-  MAX_PUBLIC_CHAT,
   MAX_PUBLIC_EVENTS,
-  parseChatChannel,
   PHASE_FLOW,
-  normalizeChatMessage,
   type ClientAuth,
+  type PrivatePlayerState,
 } from "./game-room-runtime.js";
-
-interface PrivatePlayerState {
-  userId: string;
-  role?: RoleCode;
-  alive: boolean;
-  loverId?: string | null;
-  witchHealUsed?: boolean;
-  witchPoisonUsed?: boolean;
-  priestBlessUsed?: boolean;
-  priestBlessed?: boolean;
-  blacksmithUsed?: boolean;
-  investigatorUsed?: boolean;
-  vampireHunterDisarmed?: boolean;
-  drunkRealRole?: RoleCode;
-  lastNightAction?: NightActionCommand;
-  lastVoteTarget?: string;
-  isMayor?: boolean;
-}
 
 interface CreateOptions extends CreateRoomOptions {}
 
@@ -158,6 +137,7 @@ export class GameRoom extends Room<{ state: GameState }> {
   private pendingNightActions = new Map<string, SubmittedNightAction[]>();
   private phaseStateMachine!: PhaseStateMachine;
   private persistenceCoordinator = new RoomPersistenceCoordinator();
+  private chatRouter!: RoomChatRouter;
   private hostUserId: string | undefined;
   private gameFinishedPersisted = false;
   private pendingHunterRevengeUserId: string | undefined;
@@ -171,6 +151,16 @@ export class GameRoom extends Room<{ state: GameState }> {
     this.phaseStateMachine = new PhaseStateMachine({
       clock: this.clock,
       onTimerElapsed: () => this.advancePhase(),
+    });
+    this.chatRouter = new RoomChatRouter({
+      getState: () => this.state,
+      getConfig: () => this.config,
+      getPublicPlayer: (client) => this.getPublicPlayer(client),
+      getPrivatePlayer: (userId) => this.getPrivatePlayer(userId),
+      getPrivatePlayers: () => this.privatePlayers,
+      clientsFor: (predicate) => this.clientsFor(predicate),
+      broadcast: (type, payload) => this.broadcast(type, payload),
+      persistGameEvent: (type, event) => this.persistGameEvent(type, event),
     });
     const mode = options.mode ?? "werewolves_classic";
     const playerCount = options.playerCount ?? (mode === "mafia_sport" ? 10 : 8);
@@ -372,10 +362,10 @@ export class GameRoom extends Room<{ state: GameState }> {
           this.submitHunterRevenge(client, command.targetUserId);
           break;
         case "sendChat":
-          this.sendChat(client, command.channel, command.message);
+          this.chatRouter.sendChat(client, command.channel, command.message);
           break;
         case "typing":
-          this.sendTyping(client, command.channel, command.active);
+          this.chatRouter.sendTyping(client, command.channel, command.active);
           break;
         case "setNarrator":
           this.setNarrator(client, command.targetUserId, command.narrator);
@@ -848,152 +838,6 @@ export class GameRoom extends Room<{ state: GameState }> {
       return;
     }
     this.transitionTo("resolution");
-  }
-
-  private sendChat(client: Client, channel: string, message: string) {
-    const player = this.getPublicPlayer(client);
-    const chatChannel = parseChatChannel(channel);
-    if (!chatChannel) {
-      throw new Error("Непознат чат канал.");
-    }
-    const text = normalizeChatMessage(message);
-    if (this.config.communicationMode === "no_chat" || this.config.communicationMode === "system_only") {
-      throw new Error("В тази стая няма играчески чат.");
-    }
-
-    if (chatChannel !== "public") {
-      this.sendPrivateChat(player, chatChannel, text);
-      return;
-    }
-    if (this.config.communicationMode !== "built_in_chat") {
-      throw new Error("Публичният чат не е активен в тази стая.");
-    }
-    if (this.state.phase !== "day_discussion") {
-      throw new Error("Публичният чат е активен само през дневното обсъждане.");
-    }
-    if (!player.playing || !player.alive) {
-      throw new Error("Само живи играчи могат да пишат в публичния дневен чат.");
-    }
-
-    const chat = new ChatMessageState();
-    chat.id = crypto.randomUUID();
-    chat.channel = "public";
-    chat.senderUserId = player.userId;
-    chat.senderName = player.displayName;
-    chat.message = text;
-    chat.createdAt = Date.now();
-    this.state.publicChat.push(chat);
-    while (this.state.publicChat.length > MAX_PUBLIC_CHAT) {
-      this.state.publicChat.shift();
-    }
-    this.persistGameEvent("chat", {
-      actorId: player.userId,
-      visibility: "public",
-      payload: {
-        channel: chat.channel,
-        message: chat.message,
-      },
-    });
-  }
-
-  private sendPrivateChat(player: PlayerPublicState, channel: ChatChannel, message: string) {
-    const privatePlayer = this.getPrivatePlayer(player.userId);
-    const text = normalizeChatMessage(message);
-    const createdAt = Date.now();
-    const recipients = this.getPrivateChatRecipients(player, privatePlayer, channel);
-    if (recipients.length === 0) {
-      throw new Error("Няма достъп до този чат канал.");
-    }
-
-    for (const recipient of recipients) {
-      recipient.send("private_chat", {
-        type: "private_chat",
-        channel,
-        senderUserId: player.userId,
-        senderName: player.displayName,
-        message: text,
-        createdAt,
-      } satisfies ServerEvent);
-    }
-
-    this.persistGameEvent("chat", {
-      actorId: player.userId,
-      visibility: channel === "dead" ? "private" : "faction",
-      payload: { channel, message: text },
-    });
-  }
-
-  private sendTyping(client: Client, channel: string, active: boolean) {
-    const player = this.getPublicPlayer(client);
-    const chatChannel = parseChatChannel(channel);
-    if (!chatChannel || this.config.communicationMode === "no_chat" || this.config.communicationMode === "system_only") {
-      return;
-    }
-
-    const payload = {
-      type: "typing",
-      channel: chatChannel,
-      senderUserId: player.userId,
-      senderName: player.displayName,
-      active: Boolean(active),
-      createdAt: Date.now(),
-    } satisfies ServerEvent;
-
-    if (chatChannel === "public") {
-      if (
-        this.config.communicationMode === "built_in_chat" &&
-        this.state.phase === "day_discussion" &&
-        player.playing &&
-        player.alive
-      ) {
-        this.broadcast("typing", payload);
-      }
-      return;
-    }
-
-    const privatePlayer = this.getPrivatePlayer(player.userId);
-    const recipients = this.getPrivateChatRecipients(player, privatePlayer, chatChannel);
-    for (const recipient of recipients) {
-      recipient.send("typing", payload);
-    }
-  }
-
-  private getPrivateChatRecipients(player: PlayerPublicState, privatePlayer: PrivatePlayerState, channel: ChatChannel) {
-    if (channel === "dead") {
-      if (player.alive) {
-        return [];
-      }
-      return this.clientsFor((candidate) => !candidate.alive);
-    }
-
-    if (channel !== "mafia" && channel !== "werewolves" && channel !== "vampires") {
-      return [];
-    }
-    if (!privatePlayer.role || !privatePlayer.alive) {
-      return [];
-    }
-
-    const team = getRoleTeam(privatePlayer.role);
-    if (channel === "mafia" && team !== "mafia") {
-      return [];
-    }
-    if (channel === "werewolves" && team !== "werewolves") {
-      return [];
-    }
-    if (channel === "vampires" && team !== "vampires") {
-      return [];
-    }
-
-    return this.clientsFor((candidate) => {
-      const privateCandidate = this.privatePlayers.get(candidate.userId);
-      return Boolean(
-        privateCandidate?.alive &&
-          privateCandidate.role &&
-          ((channel === "mafia" && getRoleTeam(privateCandidate.role) === "mafia") ||
-            (channel === "werewolves" && getRoleTeam(privateCandidate.role) === "werewolves") ||
-            (channel === "vampires" && getRoleTeam(privateCandidate.role) === "vampires")),
-      );
-    });
   }
 
   private applyImmediateNightAction(

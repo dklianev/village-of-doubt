@@ -15,6 +15,24 @@ export interface ClientAuth {
   displayName: string;
 }
 
+export interface PrivatePlayerState {
+  userId: string;
+  role?: RoleCode;
+  alive: boolean;
+  loverId?: string | null;
+  witchHealUsed?: boolean;
+  witchPoisonUsed?: boolean;
+  priestBlessUsed?: boolean;
+  priestBlessed?: boolean;
+  blacksmithUsed?: boolean;
+  investigatorUsed?: boolean;
+  vampireHunterDisarmed?: boolean;
+  drunkRealRole?: RoleCode;
+  lastNightAction?: NightActionCommand;
+  lastVoteTarget?: string;
+  isMayor?: boolean;
+}
+
 export const MAX_PUBLIC_EVENTS = 120;
 export const MAX_PUBLIC_CHAT = 80;
 
