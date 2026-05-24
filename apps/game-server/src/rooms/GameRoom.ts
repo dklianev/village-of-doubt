@@ -3,9 +3,7 @@ import { Client, Room } from "colyseus";
 import * as Sentry from "@sentry/node";
 import {
   assignRoles,
-  ACHIEVEMENTS,
   createGameConfigFromOptions,
-  evaluateAchievementUnlocks,
   evaluateWinCondition,
   getGameFamily,
   getRoleNameBg,
@@ -26,7 +24,6 @@ import {
   type ServerEvent,
   type CreateRoomOptions,
   type ChatChannel,
-  type AchievementEventLike,
 } from "@werewolf/shared";
 import { resolveNight, type SubmittedNightAction } from "../game-logic/night-resolver.js";
 import {
@@ -45,6 +42,7 @@ import {
 } from "../persistence/game-persistence.js";
 import { PlayerPresenceManager } from "./player-presence-manager.js";
 import { PhaseStateMachine } from "./phase-state-machine.js";
+import { AchievementBroadcaster, type AchievementUnlock } from "./achievement-broadcaster.js";
 
 interface ClientAuth {
   userId: string;
@@ -182,8 +180,7 @@ export class GameRoom extends Room<{ state: GameState }> {
   private pendingHunterRevengeUserId: string | undefined;
   private pendingMayorSuccessor = false;
   private pendingVampireBites = new Map<string, { round: number; causeBg: string }>();
-  private achievementEvents: AchievementEventLike[] = [];
-  private announcedAchievementUnlocks = new Set<string>();
+  private achievementBroadcaster = new AchievementBroadcaster();
   private announcedWitchVictims = new Set<string>();
 
   onCreate(options: CreateOptions) {
@@ -369,8 +366,7 @@ export class GameRoom extends Room<{ state: GameState }> {
     this.privatePlayers.clear();
     this.pendingNightActions.clear();
     this.pendingVampireBites.clear();
-    this.achievementEvents.length = 0;
-    this.announcedAchievementUnlocks.clear();
+    this.achievementBroadcaster.reset();
     this.announcedWitchVictims.clear();
   }
 
@@ -2011,7 +2007,7 @@ export class GameRoom extends Room<{ state: GameState }> {
   }
 
   private persistGameEvent(type: string, event: Omit<PersistEventInput, "round" | "phase" | "type"> = {}) {
-    this.achievementEvents.push({
+    this.achievementBroadcaster.recordEvent({
       round: this.state.round,
       phase: this.currentPhase(),
       type,
@@ -2019,9 +2015,6 @@ export class GameRoom extends Room<{ state: GameState }> {
       targetId: event.targetId ?? null,
       payload: event.payload ?? {},
     });
-    if (this.achievementEvents.length > 500) {
-      this.achievementEvents.shift();
-    }
 
     this.queuePersistence(async () => {
       const gameId = await this.ensurePersistedGame();
@@ -2039,8 +2032,7 @@ export class GameRoom extends Room<{ state: GameState }> {
   }
 
   private evaluateAchievementUnlocks() {
-    const rawUnlocks = evaluateAchievementUnlocks({
-      events: this.achievementEvents,
+    return this.achievementBroadcaster.evaluateUnlocks({
       winnerTeam: this.state.winnerTeam,
       players: [...this.privatePlayers.values()].map((player) => ({
         userId: player.userId,
@@ -2049,43 +2041,16 @@ export class GameRoom extends Room<{ state: GameState }> {
       })),
     });
 
-    const seen = new Set<string>();
-    return rawUnlocks.filter((unlock) => {
-      const key = `${unlock.userId}:${unlock.achievementId}`;
-      if (seen.has(key)) {
-        return false;
-      }
-      seen.add(key);
-      return true;
-    });
   }
 
-  private sendAchievementUnlocks(unlocks: Array<{ userId: string; achievementId: string }>) {
-    if (unlocks.length === 0) {
-      return;
-    }
-
-    const knownAchievementIds = new Set(ACHIEVEMENTS.map((achievement) => achievement.id));
-    const byUserId = new Map<string, string[]>();
-    for (const unlock of unlocks) {
-      if (!knownAchievementIds.has(unlock.achievementId)) {
-        continue;
-      }
-      const key = `${unlock.userId}:${unlock.achievementId}`;
-      if (this.announcedAchievementUnlocks.has(key)) {
-        continue;
-      }
-      this.announcedAchievementUnlocks.add(key);
-      byUserId.set(unlock.userId, [...(byUserId.get(unlock.userId) ?? []), unlock.achievementId]);
-    }
-
-    for (const [userId, achievementIds] of byUserId) {
+  private sendAchievementUnlocks(unlocks: AchievementUnlock[]) {
+    this.achievementBroadcaster.announce(unlocks, (userId, achievementIds) => {
       const client = this.playerPresence.getClient(userId);
       client?.send("achievements_unlocked", {
         type: "achievements_unlocked",
         achievementIds,
       } satisfies ServerEvent);
-    }
+    });
   }
 
   private auditNarratorAction(player: PlayerPublicState, type: string, payload: Record<string, unknown> = {}) {
