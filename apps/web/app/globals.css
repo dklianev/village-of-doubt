@@ -14693,48 +14693,6 @@ html[data-theme="light"] .auth-recovery-shell .locksmith-foot-link {
   color: #e57373;
 }
 
-.account-danger-card-content .account-section-head h2 {
-  color: var(--account-danger);
-}
-
-.account-danger-body {
-  display: grid;
-  gap: 14px;
-}
-
-.account-danger-body p {
-  margin: 0;
-  color: var(--account-text-muted);
-  font-size: 0.92rem;
-  line-height: 1.55;
-}
-
-.danger-confirm-email {
-  color: var(--ds-accent-blood-deep);
-  font-weight: 800;
-}
-
-.danger-confirm-field {
-  display: grid;
-  gap: 8px;
-  color: var(--ds-ink-soft);
-  font-size: 0.82rem;
-  font-weight: 900;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.danger-confirm-field input {
-  width: 100%;
-  border: 1px solid var(--ds-surface-paper-edge);
-  border-radius: var(--ds-radius-tile);
-  padding: 12px 14px;
-  background: var(--ds-surface-paper-deep);
-  color: var(--ds-ink-primary);
-  font: inherit;
-  letter-spacing: 0.08em;
-}
-
 /* ============================== */
 /* Utility pages — atmospheric bg */
 /* Matches homepage .landing-shell  */
@@ -15177,16 +15135,6 @@ html[data-theme="light"] .account-shell {
   --account-accent-soft: rgba(132, 47, 43, 0.14);
   --account-danger: #a02a22;
   --account-danger-soft: rgba(160, 42, 34, 0.12);
-}
-
-html[data-theme="light"] .danger-confirm-email {
-  color: #842f2b;
-}
-
-html[data-theme="light"] .danger-confirm-field input {
-  border-color: rgba(83, 52, 31, 0.2);
-  background: rgba(255, 255, 255, 0.46);
-  color: #21130d;
 }
 
 .site-utility-separator {

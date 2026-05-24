@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Dialog, Display, PaperCard, Pill } from "@werewolf/ui";
 import { authClient } from "@/lib/auth-client";
+import styles from "./AccountDangerZone.module.css";
 
 export function AccountDangerZone({ email }: { email: string }) {
   const router = useRouter();
@@ -60,7 +61,7 @@ export function AccountDangerZone({ email }: { email: string }) {
   return (
     <section aria-labelledby="account-danger-title">
       <PaperCard eyebrow="ОПАСНА ЗОНА" density="md">
-        <div className="account-card-content account-danger-card-content">
+        <div className={`account-card-content ${styles.dangerCardContent}`}>
           <header className="account-section-head">
             <Display size="h3" as="h2">
               <span id="account-danger-title">Опасна зона</span>
@@ -68,7 +69,7 @@ export function AccountDangerZone({ email }: { email: string }) {
             <p>Окончателно изтриване на твоето досие.</p>
           </header>
 
-          <div className="account-danger-body">
+          <div className={styles.dangerBody}>
             <p>
               Изтриването премахва досието и легендите. Имената от твоите игри остават в архива,
               но се заменят с „Изтрит играч“, за да не се чупи историята на другите играчи.
@@ -100,10 +101,10 @@ export function AccountDangerZone({ email }: { email: string }) {
               }
             >
               <div style={{ display: "grid", gap: "14px" }}>
-                <p className="danger-confirm-email">
+                <p className={styles.confirmEmail}>
                   Досие: <strong>{email || "няма имейл"}</strong>
                 </p>
-                <label className="danger-confirm-field">
+                <label className={styles.confirmField}>
                   <span>Потвърждение</span>
                   <input
                     type="text"
