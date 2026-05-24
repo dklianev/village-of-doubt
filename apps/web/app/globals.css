@@ -14679,77 +14679,6 @@ html[data-theme="light"] .auth-recovery-shell .locksmith-foot-link {
   }
 }
 
-.account-profile-form {
-  display: grid;
-  gap: 20px;
-}
-
-.account-field {
-  display: grid;
-  gap: 8px;
-}
-
-.account-field label,
-.account-field-label {
-  margin: 0;
-  color: var(--account-text);
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-}
-
-.account-field-inline {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.account-field input[type="text"] {
-  min-width: 200px;
-  flex: 1;
-  padding: 10px 14px;
-  color: var(--account-text);
-  border: 1px solid var(--account-border-strong);
-  border-radius: 10px;
-  background: rgba(13, 10, 8, 0.5);
-  font-family: inherit;
-  font-size: 1rem;
-  transition:
-    border-color 120ms ease,
-    box-shadow 120ms ease;
-}
-
-.account-field input[type="text"]:focus {
-  outline: none;
-  border-color: var(--account-accent);
-  box-shadow: 0 0 0 3px var(--account-accent-soft);
-}
-
-.account-save-btn {
-  min-height: 44px;
-  padding: 10px 18px;
-  color: #1a1410;
-  border: 1px solid var(--account-accent);
-  border-radius: 10px;
-  background: var(--account-accent);
-  cursor: pointer;
-  font-family: inherit;
-  font-weight: 700;
-  transition:
-    filter 160ms ease,
-    transform 160ms ease;
-}
-
-.account-save-btn:hover:not(:disabled) {
-  filter: brightness(1.08);
-  transform: translateY(-1px);
-}
-
-.account-save-btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
 .account-status {
   margin: 0;
   font-size: 0.82rem;
@@ -14762,75 +14691,6 @@ html[data-theme="light"] .auth-recovery-shell .locksmith-foot-link {
 
 .account-status-error {
   color: #e57373;
-}
-
-.account-field-static {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  border: 1px solid var(--account-border);
-  border-radius: 10px;
-  background: rgba(13, 10, 8, 0.4);
-  font-size: 0.95rem;
-}
-
-.account-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 0.74rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-decoration: none;
-  text-transform: uppercase;
-}
-
-.account-badge-ok {
-  color: #6fbf6f;
-  border: 1px solid rgba(111, 191, 111, 0.45);
-  background: rgba(111, 191, 111, 0.18);
-}
-
-.account-badge-warn {
-  color: var(--account-danger);
-  border: 1px solid var(--account-danger);
-  background: var(--account-danger-soft);
-}
-
-.account-provider-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.account-provider-list li {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  color: var(--account-text);
-  border: 1px solid var(--account-border);
-  border-radius: 10px;
-  background: rgba(13, 10, 8, 0.4);
-  font-size: 0.92rem;
-}
-
-.account-provider-icon {
-  display: grid;
-  width: 26px;
-  height: 26px;
-  place-items: center;
-  color: var(--account-accent);
-  border-radius: 50%;
-  background: var(--account-accent-soft);
-  font-family: "Noto Serif Display", "Noto Serif", serif;
-  font-weight: 700;
 }
 
 .account-danger-card-content .account-section-head h2 {
@@ -15317,12 +15177,6 @@ html[data-theme="light"] .account-shell {
   --account-accent-soft: rgba(132, 47, 43, 0.14);
   --account-danger: #a02a22;
   --account-danger-soft: rgba(160, 42, 34, 0.12);
-}
-
-html[data-theme="light"] .account-field input[type="text"],
-html[data-theme="light"] .account-field-static,
-html[data-theme="light"] .account-provider-list li {
-  background: rgba(255, 250, 238, 0.72);
 }
 
 html[data-theme="light"] .danger-confirm-email {

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Display, PaperCard } from "@werewolf/ui/server";
 import { authClient } from "@/lib/auth-client";
+import styles from "./AccountProfile.module.css";
 
 const PROVIDER_LABELS: Record<string, string> = {
   credential: "Имейл и парола",
@@ -82,10 +83,10 @@ export function AccountProfile(props: Props) {
             <p>Името на масата и входовете към досието.</p>
           </header>
 
-          <div className="account-profile-form">
-            <div className="account-field">
+          <div className={styles.profileForm}>
+            <div className={styles.field}>
               <label htmlFor="account-name">Име на масата</label>
-              <div className="account-field-inline">
+              <div className={styles.fieldInline}>
                 <input
                   id="account-name"
                   type="text"
@@ -96,7 +97,7 @@ export function AccountProfile(props: Props) {
                 />
                 <button
                   type="button"
-                  className="account-save-btn"
+                  className={styles.saveBtn}
                   onClick={saveName}
                   disabled={saving || name.trim() === savedName}
                   aria-busy={saving}
@@ -116,26 +117,26 @@ export function AccountProfile(props: Props) {
               ) : null}
             </div>
 
-            <div className="account-field">
-              <p className="account-field-label">Имейл</p>
-              <div className="account-field-static">
+            <div className={styles.field}>
+              <p className={styles.fieldLabel}>Имейл</p>
+              <div className={styles.fieldStatic}>
                 <span>{props.email}</span>
                 {props.emailVerified ? (
-                  <span className="account-badge account-badge-ok">Потвърден</span>
+                  <span className={`${styles.badge} ${styles.badgeOk}`}>Потвърден</span>
                 ) : (
-                  <Link href="/verify-email" className="account-badge account-badge-warn">
+                  <Link href="/verify-email" className={`${styles.badge} ${styles.badgeWarn}`}>
                     Непотвърден · потвърди →
                   </Link>
                 )}
               </div>
             </div>
 
-            <div className="account-field">
-              <p className="account-field-label">Активни входове</p>
-              <ul className="account-provider-list">
+            <div className={styles.field}>
+              <p className={styles.fieldLabel}>Активни входове</p>
+              <ul className={styles.providerList}>
                 {props.providers.map((provider) => (
                   <li key={provider} data-provider={provider}>
-                    <span className="account-provider-icon" aria-hidden>
+                    <span className={styles.providerIcon} aria-hidden>
                       {PROVIDER_ICONS[provider] ?? "·"}
                     </span>
                     <span>{PROVIDER_LABELS[provider] ?? provider}</span>
