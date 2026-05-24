@@ -1,12 +1,10 @@
 import Link from "next/link";
 import { Display, PaperCard } from "@werewolf/ui/server";
+import styles from "./TermsConflict.module.css";
 
 export function TermsConflict() {
   return (
-    <section
-      className="terms-section terms-section-conflict"
-      style={{ padding: 0, border: "none", background: "transparent" }}
-    >
+    <section className={`terms-section ${styles.conflictSection}`}>
       <PaperCard eyebrow="КОГАТО НЕЩО ТРЪГНЕ НАКРИВО" density="lg">
         <header className="terms-section-head">
           <Display as="h2" size="h3">
@@ -17,9 +15,9 @@ export function TermsConflict() {
           </p>
         </header>
 
-        <ol className="terms-conflict-steps">
+        <ol className={styles.conflictSteps}>
           <li>
-            <span className="terms-conflict-num">1</span>
+            <span className={styles.conflictNum}>1</span>
             <div>
               <h3>Сигнал</h3>
               <p>
@@ -29,7 +27,7 @@ export function TermsConflict() {
             </div>
           </li>
           <li>
-            <span className="terms-conflict-num">2</span>
+            <span className={styles.conflictNum}>2</span>
             <div>
               <h3>Преглед</h3>
               <p>
@@ -39,7 +37,7 @@ export function TermsConflict() {
             </div>
           </li>
           <li>
-            <span className="terms-conflict-num">3</span>
+            <span className={styles.conflictNum}>3</span>
             <div>
               <h3>Решение</h3>
               <p>
@@ -49,7 +47,7 @@ export function TermsConflict() {
             </div>
           </li>
           <li>
-            <span className="terms-conflict-num">4</span>
+            <span className={styles.conflictNum}>4</span>
             <div>
               <h3>Право на отговор</h3>
               <p>

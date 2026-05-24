@@ -2,6 +2,7 @@
 
 import { Display, PaperCard } from "@werewolf/ui";
 import { useEffect, useState } from "react";
+import styles from "./TermsAcceptance.module.css";
 
 const STORAGE_KEY = "terms-accepted-version";
 const CURRENT_VERSION = "2026-05-19";
@@ -46,10 +47,7 @@ export function TermsAcceptance({ userName }: TermsAcceptanceProps) {
     : null;
 
   return (
-    <section
-      className="terms-section terms-section-acceptance"
-      style={{ padding: 0, border: "none", background: "transparent" }}
-    >
+    <section className={`terms-section ${styles.acceptanceSection}`}>
       <PaperCard eyebrow="ПОДПИС НА МАСАТА" density="lg">
         <header className="terms-section-head">
           <Display as="h2" size="h3">
@@ -61,32 +59,32 @@ export function TermsAcceptance({ userName }: TermsAcceptanceProps) {
           </p>
         </header>
 
-        <div className="terms-acceptance-body">
+        <div className={styles.acceptanceBody}>
           {acceptedAt ? (
-            <div className="terms-acceptance-state terms-acceptance-state-signed">
-              <span className="terms-acceptance-mark" aria-hidden>
+            <div className={`${styles.acceptanceState} ${styles.acceptanceStateSigned}`}>
+              <span className={styles.acceptanceMark} aria-hidden>
                 ✓
               </span>
               <div>
-                <p className="terms-acceptance-title">Прочетен и приет</p>
-                <p className="terms-acceptance-detail">На {formattedDate}.</p>
+                <p className={styles.acceptanceTitle}>Прочетен и приет</p>
+                <p className={styles.acceptanceDetail}>На {formattedDate}.</p>
               </div>
               {justAccepted ? (
-                <p className="terms-acceptance-toast">Записано локално в твоя браузър.</p>
+                <p className={styles.acceptanceToast}>Записано локално в твоя браузър.</p>
               ) : null}
             </div>
           ) : (
-            <div className="terms-acceptance-state terms-acceptance-state-pending">
-              <span className="terms-acceptance-mark" aria-hidden>
+            <div className={`${styles.acceptanceState} ${styles.acceptanceStatePending}`}>
+              <span className={styles.acceptanceMark} aria-hidden>
                 ~
               </span>
               <div>
-                <p className="terms-acceptance-title">Още непрочетен подпис</p>
-                <p className="terms-acceptance-detail">
+                <p className={styles.acceptanceTitle}>Още непрочетен подпис</p>
+                <p className={styles.acceptanceDetail}>
                   Прелисти кодекса и натисни „Подписвам“ — само за себе си, за прозрачност.
                 </p>
               </div>
-              <button type="button" className="terms-acceptance-btn" onClick={accept}>
+              <button type="button" className={styles.acceptanceBtn} onClick={accept}>
                 Подписвам кодекса
               </button>
             </div>

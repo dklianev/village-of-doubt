@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Display, PaperCard } from "@werewolf/ui/server";
 import type { PrivacyUserSnapshot } from "./PrivacyDashboard";
+import styles from "./PrivacyDataPreview.module.css";
 
 interface PrivacyDataPreviewProps {
   snapshot: PrivacyUserSnapshot;
@@ -12,10 +13,7 @@ export function PrivacyDataPreview({ snapshot }: PrivacyDataPreviewProps) {
     : "—";
 
   return (
-    <section
-      className="privacy-section privacy-section-preview"
-      style={{ padding: 0, border: "none", background: "transparent" }}
-    >
+    <section className={`privacy-section ${styles.previewSection}`}>
       <PaperCard eyebrow="ЛИЧЕН ПРЕГЛЕД" density="lg">
         <header className="privacy-section-head">
           <Display as="h2" size="h3">
@@ -26,10 +24,10 @@ export function PrivacyDataPreview({ snapshot }: PrivacyDataPreviewProps) {
           </p>
         </header>
 
-        <dl className="privacy-data-list">
-          <div className="privacy-data-row">
+        <dl className={styles.dataList}>
+          <div className={styles.dataRow}>
             <dt>
-              <span className="privacy-data-icon" aria-hidden>
+              <span className={styles.dataIcon} aria-hidden>
                 @
               </span>
               <span>Имейл адрес</span>
@@ -37,33 +35,33 @@ export function PrivacyDataPreview({ snapshot }: PrivacyDataPreviewProps) {
             <dd>
               <code>{snapshot.email}</code>
               {snapshot.emailVerified ? (
-                <span className="privacy-data-badge privacy-data-badge-ok">потвърден</span>
+                <span className={`${styles.dataBadge} ${styles.dataBadgeOk}`}>потвърден</span>
               ) : (
-                <Link href="/verify-email" className="privacy-data-badge privacy-data-badge-warn">
+                <Link href="/verify-email" className={`${styles.dataBadge} ${styles.dataBadgeWarn}`}>
                   непотвърден →
                 </Link>
               )}
             </dd>
           </div>
 
-          <div className="privacy-data-row">
+          <div className={styles.dataRow}>
             <dt>
-              <span className="privacy-data-icon" aria-hidden>
+              <span className={styles.dataIcon} aria-hidden>
                 И
               </span>
               <span>Име на масата</span>
             </dt>
             <dd>
               <code>{snapshot.name || "—"}</code>
-              <Link href="/account" className="privacy-data-edit">
+              <Link href="/account" className={styles.dataEdit}>
                 Промени →
               </Link>
             </dd>
           </div>
 
-          <div className="privacy-data-row">
+          <div className={styles.dataRow}>
             <dt>
-              <span className="privacy-data-icon" aria-hidden>
+              <span className={styles.dataIcon} aria-hidden>
                 #
               </span>
               <span>Игрова история</span>
@@ -74,15 +72,15 @@ export function PrivacyDataPreview({ snapshot }: PrivacyDataPreviewProps) {
                   ? "още няма"
                   : `${snapshot.totalGames} ${snapshot.totalGames === 1 ? "игра" : "игри"}`}
               </code>
-              <Link href="/history" className="privacy-data-edit">
+              <Link href="/history" className={styles.dataEdit}>
                 Виж архива →
               </Link>
             </dd>
           </div>
 
-          <div className="privacy-data-row">
+          <div className={styles.dataRow}>
             <dt>
-              <span className="privacy-data-icon" aria-hidden>
+              <span className={styles.dataIcon} aria-hidden>
                 ★
               </span>
               <span>Легенди</span>
@@ -91,34 +89,34 @@ export function PrivacyDataPreview({ snapshot }: PrivacyDataPreviewProps) {
               <code>
                 {snapshot.totalAchievements} от {snapshot.achievementTotal} отключени
               </code>
-              <Link href="/achievements" className="privacy-data-edit">
+              <Link href="/achievements" className={styles.dataEdit}>
                 Виж всички →
               </Link>
             </dd>
           </div>
 
-          <div className="privacy-data-row">
+          <div className={styles.dataRow}>
             <dt>
-              <span className="privacy-data-icon" aria-hidden>
+              <span className={styles.dataIcon} aria-hidden>
                 ◷
               </span>
               <span>Регистриран</span>
             </dt>
             <dd>
               <code>{memberSinceLabel}</code>
-              <span className="privacy-data-badge">{snapshot.providersUsed} входа</span>
+              <span className={styles.dataBadge}>{snapshot.providersUsed} входа</span>
             </dd>
           </div>
         </dl>
 
-        <div className="privacy-data-actions">
-          <a href="/api/account/export" className="privacy-data-action privacy-data-action-primary">
+        <div className={styles.dataActions}>
+          <a href="/api/account/export" className={`${styles.dataAction} ${styles.dataActionPrimary}`}>
             <span>Изтегли всичките данни</span>
-            <span className="privacy-data-action-hint">JSON файл със всичко, което знаем</span>
+            <span className={styles.dataActionHint}>JSON файл със всичко, което знаем</span>
           </a>
         </div>
 
-        <p className="privacy-data-disclaimer">
+        <p className={styles.dataDisclaimer}>
           Не виждаме твоя IP адрес след сесия, не пазим клавишни последователности, не четем чат
           съобщенията извън стаите на играта. Всичко, което показваме тук, можеш да изтеглиш или
           изтриеш по всяко време.
