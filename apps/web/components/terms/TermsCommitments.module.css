@@ -1,0 +1,177 @@
+.commitmentsSection {
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+.commitmentList {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.commitmentItem {
+  overflow: hidden;
+  border: 1px solid var(--legal-border);
+  border-radius: 14px;
+  background: var(--legal-surface-strong);
+  transition: border-color 160ms ease;
+}
+
+.commitmentItem[data-open="true"] {
+  border-color: var(--legal-accent-warm);
+}
+
+.commitmentHandle {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 16px;
+  align-items: center;
+  width: 100%;
+  padding: 18px 22px;
+  border: none;
+  background: transparent;
+  color: var(--legal-text);
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+}
+
+.commitmentNum {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 2px solid var(--legal-accent-warm);
+  border-radius: 50%;
+  background: var(--legal-accent-warm-soft);
+  color: var(--legal-accent-warm);
+  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+
+.commitmentMeta h3 {
+  margin: 0 0 4px;
+  color: var(--legal-text);
+  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.commitmentMeta p {
+  margin: 0;
+  color: var(--legal-text-muted);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.commitmentChevron {
+  color: var(--legal-accent-warm);
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.commitmentDetail {
+  margin-top: -1px;
+  padding: 4px 22px 22px;
+  border-top: 1px dashed var(--legal-border);
+}
+
+.examplesGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.examples {
+  padding: 14px 16px;
+  border-left: 3px solid;
+  border-radius: 0 12px 12px 0;
+}
+
+.examplesOk {
+  border-left-color: var(--legal-ok);
+  background: var(--legal-ok-soft);
+}
+
+.examplesNotOk {
+  border-left-color: var(--legal-not-ok);
+  background: var(--legal-not-ok-soft);
+}
+
+.examplesLabel {
+  margin: 0 0 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.examplesOk .examplesLabel {
+  color: var(--legal-ok);
+}
+
+.examplesNotOk .examplesLabel {
+  color: var(--legal-not-ok);
+}
+
+.examples ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.examples li {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 10px;
+  align-items: start;
+  color: var(--legal-text);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.examplesIcon {
+  margin-top: 1px;
+  font-size: 0.95rem;
+  font-weight: 900;
+}
+
+.examplesOk .examplesIcon {
+  color: var(--legal-ok);
+}
+
+.examplesNotOk .examplesIcon {
+  color: var(--legal-not-ok);
+}
+
+@media (min-width: 768px) {
+  .examplesGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .commitmentsSection {
+    padding: 0;
+  }
+
+  .commitmentHandle {
+    grid-template-columns: auto 1fr;
+    padding: 16px;
+  }
+
+  .commitmentChevron {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .commitmentDetail {
+    padding: 4px 16px 16px;
+  }
+}

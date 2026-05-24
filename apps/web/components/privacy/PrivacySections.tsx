@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Display, PaperCard } from "@werewolf/ui/server";
 import type { ReactNode } from "react";
+import styles from "./PrivacySections.module.css";
 
 interface SectionData {
   id: string;
@@ -155,7 +156,7 @@ const SECTIONS: readonly SectionData[] = [
 
 export function PrivacySections() {
   return (
-    <section className="privacy-section" style={{ padding: 0, border: "none", background: "transparent" }}>
+    <section className={`privacy-section ${styles.sectionsShell}`}>
       <PaperCard eyebrow="ДЕТАЙЛИ" density="lg">
         <header className="privacy-section-head">
           <Display as="h2" size="h3">
@@ -166,18 +167,18 @@ export function PrivacySections() {
           </p>
         </header>
 
-        <ol className="privacy-section-list">
+        <ol className={styles.sectionList}>
           {SECTIONS.map((section) => (
-            <li key={section.id} id={section.id} className="privacy-section-item">
+            <li key={section.id} id={section.id} className={styles.sectionItem}>
               <h3>
-                <span className="privacy-section-num">{section.number}.</span>
+                <span className={styles.sectionNum}>{section.number}.</span>
                 {section.title}
               </h3>
-              <aside className="privacy-section-tldr">
-                <span className="privacy-section-tldr-label">Накратко</span>
+              <aside className={styles.sectionTldr}>
+                <span className={styles.sectionTldrLabel}>Накратко</span>
                 <span>{section.tldr}</span>
               </aside>
-              <div className="privacy-section-body">{section.body}</div>
+              <div className={styles.sectionBody}>{section.body}</div>
             </li>
           ))}
         </ol>

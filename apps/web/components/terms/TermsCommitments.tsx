@@ -2,6 +2,7 @@
 
 import { Display, PaperCard } from "@werewolf/ui";
 import { useState } from "react";
+import styles from "./TermsCommitments.module.css";
 
 interface Commitment {
   id: string;
@@ -107,7 +108,7 @@ export function TermsCommitments() {
   }
 
   return (
-    <section className="terms-section" style={{ padding: 0, border: "none", background: "transparent" }}>
+    <section className={`terms-section ${styles.commitmentsSection}`}>
       <PaperCard eyebrow="ОБЕЩАНИЯ" density="lg">
         <header className="terms-section-head">
           <Display as="h2" size="h3">
@@ -118,36 +119,36 @@ export function TermsCommitments() {
           </p>
         </header>
 
-        <ol className="terms-commitment-list">
+        <ol className={styles.commitmentList}>
           {COMMITMENTS.map((commitment) => {
             const isOpen = openId === commitment.id;
             return (
-              <li key={commitment.id} className="terms-commitment-item" data-open={isOpen}>
+              <li key={commitment.id} className={styles.commitmentItem} data-open={isOpen}>
                 <button
                   type="button"
-                  className="terms-commitment-handle"
+                  className={styles.commitmentHandle}
                   onClick={() => toggle(commitment.id)}
                   aria-expanded={isOpen}
                 >
-                  <span className="terms-commitment-num">{commitment.number}</span>
-                  <div className="terms-commitment-meta">
+                  <span className={styles.commitmentNum}>{commitment.number}</span>
+                  <div className={styles.commitmentMeta}>
                     <h3>{commitment.title}</h3>
                     <p>{commitment.promise}</p>
                   </div>
-                  <span className="terms-commitment-chevron" aria-hidden>
+                  <span className={styles.commitmentChevron} aria-hidden>
                     {isOpen ? "−" : "+"}
                   </span>
                 </button>
 
                 {isOpen ? (
-                  <div className="terms-commitment-detail">
-                    <div className="terms-examples-grid">
-                      <div className="terms-examples terms-examples-ok">
-                        <p className="terms-examples-label">Това е добре</p>
+                  <div className={styles.commitmentDetail}>
+                    <div className={styles.examplesGrid}>
+                      <div className={`${styles.examples} ${styles.examplesOk}`}>
+                        <p className={styles.examplesLabel}>Това е добре</p>
                         <ul>
                           {commitment.examplesOk.map((example) => (
                             <li key={example}>
-                              <span className="terms-examples-icon" aria-hidden>
+                              <span className={styles.examplesIcon} aria-hidden>
                                 ✓
                               </span>
                               <span>{example}</span>
@@ -156,12 +157,12 @@ export function TermsCommitments() {
                         </ul>
                       </div>
 
-                      <div className="terms-examples terms-examples-not-ok">
-                        <p className="terms-examples-label">Това не е добре</p>
+                      <div className={`${styles.examples} ${styles.examplesNotOk}`}>
+                        <p className={styles.examplesLabel}>Това не е добре</p>
                         <ul>
                           {commitment.examplesNotOk.map((example) => (
                             <li key={example}>
-                              <span className="terms-examples-icon" aria-hidden>
+                              <span className={styles.examplesIcon} aria-hidden>
                                 ✕
                               </span>
                               <span>{example}</span>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Display, PaperCard } from "@werewolf/ui";
+import styles from "./PrivacyPromiseWall.module.css";
 
 interface PrivacyPromise {
   id: string;
@@ -70,7 +71,7 @@ export function PrivacyPromiseWall() {
   }
 
   return (
-    <section className="privacy-section" style={{ padding: 0, border: "none", background: "transparent" }}>
+    <section className={`privacy-section ${styles.promiseSection}`}>
       <PaperCard eyebrow="ОБЕЩАНИЯ" density="lg">
         <header className="privacy-section-head">
           <Display as="h2" size="h3">
@@ -81,24 +82,24 @@ export function PrivacyPromiseWall() {
           </p>
         </header>
 
-        <ul className="privacy-promise-grid">
+        <ul className={styles.promiseGrid}>
           {PROMISES.map((promise) => {
             const isOpen = expandedId === promise.id;
             return (
               <li key={promise.id}>
-                <article className="privacy-promise-card" data-open={isOpen}>
-                  <PromiseIcon name={promise.icon} className="privacy-promise-icon" />
-                  <h3 className="privacy-promise-title">{promise.title}</h3>
-                  <p className="privacy-promise-summary">{promise.summary}</p>
+                <article className={styles.promiseCard} data-open={isOpen}>
+                  <PromiseIcon name={promise.icon} className={styles.promiseIcon} />
+                  <h3 className={styles.promiseTitle}>{promise.title}</h3>
+                  <p className={styles.promiseSummary}>{promise.summary}</p>
                   <button
                     type="button"
-                    className="privacy-promise-toggle"
+                    className={styles.promiseToggle}
                     onClick={() => toggle(promise.id)}
                     aria-expanded={isOpen}
                   >
                     {isOpen ? "Скрий детайла" : "Виж по-подробно"}
                   </button>
-                  {isOpen ? <p className="privacy-promise-detail">{promise.detail}</p> : null}
+                  {isOpen ? <p className={styles.promiseDetail}>{promise.detail}</p> : null}
                 </article>
               </li>
             );
@@ -114,10 +115,10 @@ function PromiseIcon({
   className,
 }: {
   name: PrivacyPromise["icon"];
-  className?: string;
+  className?: string | undefined;
 }) {
   const common = {
-    className,
+    ...(className ? { className } : {}),
     viewBox: "0 0 32 32",
     fill: "none",
     stroke: "currentColor",

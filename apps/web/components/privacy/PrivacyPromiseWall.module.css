@@ -1,0 +1,95 @@
+.promiseSection {
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+.promiseGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.promiseCard {
+  display: grid;
+  gap: 8px;
+  height: 100%;
+  padding: 18px;
+  border: 1px solid var(--privacy-border);
+  border-radius: 14px;
+  background: var(--privacy-surface-strong);
+  transition: border-color 160ms ease;
+}
+
+.promiseCard[data-open="true"] {
+  border-color: var(--privacy-accent-warm);
+}
+
+.promiseIcon {
+  width: 28px;
+  height: 28px;
+  color: var(--privacy-accent-warm);
+}
+
+.promiseTitle {
+  margin: 0;
+  color: var(--privacy-text);
+  font-family: "Noto Serif Display", serif;
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.promiseSummary {
+  margin: 0;
+  color: var(--privacy-text-muted);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.promiseToggle {
+  align-self: start;
+  padding: 4px 0;
+  border: none;
+  background: transparent;
+  color: var(--privacy-accent-warm);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.promiseDetail {
+  margin: 6px 0 0;
+  padding: 12px 14px;
+  border-left: 2px solid var(--privacy-accent-warm);
+  border-radius: 0 10px 10px 0;
+  background: var(--legal-privacy-promise-detail-background);
+  color: var(--privacy-text-muted);
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+@media (min-width: 640px) {
+  .promiseGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (min-width: 980px) {
+  .promiseGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .promiseSection {
+    padding: 0;
+  }
+}
