@@ -35,6 +35,7 @@ import { PhaseStateMachine } from "./phase-state-machine.js";
 import { AchievementBroadcaster, type AchievementUnlock } from "./achievement-broadcaster.js";
 import { RoomPersistenceCoordinator, type RoomPersistenceTaskApi } from "./room-persistence-coordinator.js";
 import { RoomChatRouter } from "./room-chat-router.js";
+import { PrivateEventDispatcher } from "./private-event-dispatcher.js";
 import {
   chooseDrunkRealRole,
   ensureNightActionAllowed,
@@ -138,6 +139,7 @@ export class GameRoom extends Room<{ state: GameState }> {
   private phaseStateMachine!: PhaseStateMachine;
   private persistenceCoordinator = new RoomPersistenceCoordinator();
   private chatRouter!: RoomChatRouter;
+  private privateEvents!: PrivateEventDispatcher;
   private hostUserId: string | undefined;
   private gameFinishedPersisted = false;
   private pendingHunterRevengeUserId: string | undefined;
@@ -161,6 +163,14 @@ export class GameRoom extends Room<{ state: GameState }> {
       clientsFor: (predicate) => this.clientsFor(predicate),
       broadcast: (type, payload) => this.broadcast(type, payload),
       persistGameEvent: (type, event) => this.persistGameEvent(type, event),
+    });
+    this.privateEvents = new PrivateEventDispatcher({
+      getConfig: () => this.config,
+      getPrivatePlayer: (userId) => this.privatePlayers.get(userId),
+      getPrivatePlayers: () => this.privatePlayers.values(),
+      getPublicPlayers: () => this.state.players.values(),
+      findPlayerByUserId: (userId) => this.findPlayerByUserId(userId),
+      playerPresence: this.playerPresence,
     });
     const mode = options.mode ?? "werewolves_classic";
     const playerCount = options.playerCount ?? (mode === "mafia_sport" ? 10 : 8);
@@ -241,8 +251,8 @@ export class GameRoom extends Room<{ state: GameState }> {
         this.addPublicEvent(`${auth.displayName} се върна в стаята.`);
       }
       existing.connected = true;
-      this.sendPrivateRole(client, auth.userId);
-      this.sendNarratorRoleSnapshot(client, auth.userId);
+      this.privateEvents.sendPrivateRole(client, auth.userId);
+      this.privateEvents.sendNarratorRoleSnapshot(client, auth.userId);
       return;
     }
 
@@ -306,8 +316,8 @@ export class GameRoom extends Room<{ state: GameState }> {
     const player = this.findPlayerByUserId(auth.userId);
     if (player) {
       player.connected = true;
-      this.sendPrivateRole(client, auth.userId);
-      this.sendNarratorRoleSnapshot(client, auth.userId);
+      this.privateEvents.sendPrivateRole(client, auth.userId);
+      this.privateEvents.sendNarratorRoleSnapshot(client, auth.userId);
       this.addPublicEvent(`${player.displayName} възстанови връзката.`);
     }
   }
@@ -647,13 +657,13 @@ export class GameRoom extends Room<{ state: GameState }> {
     for (const item of players) {
       const targetClient = this.playerPresence.getClient(item.userId);
       if (targetClient) {
-        this.sendPrivateRole(targetClient, item.userId);
+        this.privateEvents.sendPrivateRole(targetClient, item.userId);
       }
     }
     for (const item of allPlayers) {
       const targetClient = this.playerPresence.getClient(item.userId);
       if (targetClient) {
-        this.sendNarratorRoleSnapshot(targetClient, item.userId);
+        this.privateEvents.sendNarratorRoleSnapshot(targetClient, item.userId);
       }
     }
   }
@@ -972,16 +982,16 @@ export class GameRoom extends Room<{ state: GameState }> {
     const actorClient = this.playerPresence.getClient(actor.userId);
     const targetClient = this.playerPresence.getClient(targetUserId);
     if (actorClient) {
-      this.sendPrivateRole(actorClient, actor.userId);
+      this.privateEvents.sendPrivateRole(actorClient, actor.userId);
     }
     if (targetClient) {
-      this.sendPrivateRole(targetClient, targetUserId);
+      this.privateEvents.sendPrivateRole(targetClient, targetUserId);
       targetClient.send("system", {
         type: "system",
         messageBg: "Крадецът взе картата ти. Вече си Обикновен селянин.",
       } satisfies ServerEvent);
     }
-    this.sendNarratorSnapshotsToNarrators();
+    this.privateEvents.sendNarratorSnapshotsToNarrators();
     this.persistGameEvent("thief_stole_role", {
       actorId: actor.userId,
       targetId: targetUserId,
@@ -1036,8 +1046,8 @@ export class GameRoom extends Room<{ state: GameState }> {
 
     first.loverId = secondUserId;
     second.loverId = firstUserId;
-    this.sendPrivateLover(firstUserId, secondUserId);
-    this.sendPrivateLover(secondUserId, firstUserId);
+    this.privateEvents.sendPrivateLover(firstUserId, secondUserId);
+    this.privateEvents.sendPrivateLover(secondUserId, firstUserId);
     this.addPublicEvent(`${actor.displayName} избра Влюбените.`);
     this.persistGameEvent("lovers_linked", {
       actorId: actor.userId,
@@ -1722,78 +1732,6 @@ export class GameRoom extends Room<{ state: GameState }> {
     return seconds * 1000;
   }
 
-  private sendPrivateRole(client: Client, userId: string) {
-    const privatePlayer = this.privatePlayers.get(userId);
-    const role = privatePlayer?.role;
-    if (!role) {
-      return;
-    }
-
-    client.send("private_role", {
-      type: "private_role",
-      role,
-      roleNameBg: getRoleNameBg(role),
-    } satisfies ServerEvent);
-    if (privatePlayer?.loverId) {
-      this.sendPrivateLover(userId, privatePlayer.loverId);
-    }
-  }
-
-  private sendPrivateLover(userId: string, loverUserId: string) {
-    const client = this.playerPresence.getClient(userId);
-    const lover = this.findPlayerByUserId(loverUserId);
-    if (!client || !lover) {
-      return;
-    }
-
-    client.send("private_lovers", {
-      type: "private_lovers",
-      loverUserId,
-      loverName: lover.displayName,
-    } satisfies ServerEvent);
-  }
-
-  private sendNarratorRoleSnapshot(client: Client, userId: string) {
-    if (this.config.narratorMode !== "full_human") {
-      return;
-    }
-
-    const publicPlayer = this.findPlayerByUserId(userId);
-    if (!publicPlayer?.narrator) {
-      return;
-    }
-
-    const roles = [...this.privatePlayers.values()]
-      .filter((player): player is PrivatePlayerState & { role: RoleCode } => Boolean(player.role))
-      .map((player) => {
-        const publicState = this.findPlayerByUserId(player.userId);
-        return {
-          userId: player.userId,
-          displayName: publicState?.displayName ?? player.userId,
-          role: player.role,
-          roleNameBg: getRoleNameBg(player.role),
-        };
-      });
-
-    if (roles.length === 0) {
-      return;
-    }
-
-    client.send("narrator_role_snapshot", {
-      type: "narrator_role_snapshot",
-      roles,
-    } satisfies ServerEvent);
-  }
-
-  private sendNarratorSnapshotsToNarrators() {
-    for (const player of this.state.players.values()) {
-      const client = this.playerPresence.getClient(player.userId);
-      if (client) {
-        this.sendNarratorRoleSnapshot(client, player.userId);
-      }
-    }
-  }
-
   private revealDrunkRoles() {
     for (const privatePlayer of this.privatePlayers.values()) {
       if (!privatePlayer.alive || privatePlayer.role !== "drunk" || !privatePlayer.drunkRealRole) {
@@ -1804,7 +1742,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       delete privatePlayer.drunkRealRole;
       const client = this.playerPresence.getClient(privatePlayer.userId);
       if (client) {
-        this.sendPrivateRole(client, privatePlayer.userId);
+        this.privateEvents.sendPrivateRole(client, privatePlayer.userId);
         client.send("system", {
           type: "system",
           messageBg: `Пияницата изтрезня. Истинската ти роля вече е ${getRoleNameBg(newRole)}.`,
@@ -1816,7 +1754,7 @@ export class GameRoom extends Room<{ state: GameState }> {
         payload: { role: newRole },
       });
     }
-    this.sendNarratorSnapshotsToNarrators();
+    this.privateEvents.sendNarratorSnapshotsToNarrators();
   }
 
   private addPublicEvent(messageBg: string) {
