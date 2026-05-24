@@ -55,7 +55,7 @@ agents-shared/            Cross-CLI workflow guides (за skills / Codex / др�
 
 4. **Целият UI е на български**. Никакъв англ. placeholder, label, error message за крайни user-и. Системни / debug съобщения (console.error, error stack) могат да са на английски.
 
-5. **`publicEvents` и `publicChat` са capped**. 120 / 80 съответно (виж `MAX_PUBLIC_EVENTS` / `MAX_PUBLIC_CHAT` в GameRoom.ts). Ако добавяш нов public event source, провери да не го байпасваш.
+5. **`publicEvents` и `publicChat` са capped**. 120 / 80 съответно (виж `MAX_PUBLIC_EVENTS` / `MAX_PUBLIC_CHAT` в `apps/game-server/src/rooms/game-room-runtime.ts`). Ако добавяш нов public event source, провери да не го байпасваш.
 
 6. **Random source за role assignment е crypto-based**. Виж `defaultRandomSource` в [role-assignment.ts](packages/shared/src/role-assignment.ts). Не подменяй с `Math.random` освен в детерминистични тестове.
 
@@ -152,7 +152,10 @@ Storybook 10 (React-Vite) е reference за primitives и MDX docs. `pnpm visual
 - `PlayerPresenceManager` — active clients, token nonce replay guard, join rate limit и janitors
 - `PhaseStateMachine` — phase timers, pause/resume snapshot и timer cleanup
 - `AchievementBroadcaster` — in-memory achievement event buffer, duplicate suppression и targeted unlock grouping
-- `GamePersistence` — DB writes and no-op fallback без `DATABASE_URL`
+- `RoomPersistenceCoordinator` — persistence queue, backpressure, Sentry capture и no-op fallback без `DATABASE_URL`
+- `RoomChatRouter` — public/faction/dead chat routing, typing events и chat caps
+- `PrivateEventDispatcher` — private role, lovers и full narrator snapshots
+- `game-room-runtime.ts` — shared runtime helpers, room-code utilities, readiness checks и caps
 
 Sacred: `apps/game-server/src/game-logic/night-resolver.ts` и command protocol surface-ът в `GameRoom.ts`.
 Всяка промяна там минава през [role-mechanics-review.md](agents-shared/role-mechanics-review.md).
