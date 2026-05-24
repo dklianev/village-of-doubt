@@ -143,6 +143,37 @@ Motion е ограничен до 3 primitives. Проверка:
 
 Storybook 10 (React-Vite) е reference за primitives и MDX docs. `pnpm visual:ui` покрива 11 primitives × light/dark × desktop/mobile и пуска axe върху `#storybook-root`.
 
+## Post-redesign architecture
+
+### Game server modules
+
+`GameRoom.ts` композира отделни managers за най-рисковите lifecycle части:
+
+- `PlayerPresenceManager` — active clients, token nonce replay guard, join rate limit и janitors
+- `PhaseStateMachine` — phase timers, pause/resume snapshot и timer cleanup
+- `AchievementBroadcaster` — in-memory achievement event buffer, duplicate suppression и targeted unlock grouping
+- `GamePersistence` — DB writes and no-op fallback без `DATABASE_URL`
+
+Sacred: `apps/game-server/src/game-logic/night-resolver.ts` и command protocol surface-ът в `GameRoom.ts`.
+Всяка промяна там минава през [role-mechanics-review.md](agents-shared/role-mechanics-review.md).
+
+Regression contract-ът нарочно проверява production token secret guard-а в `GameRoom.ts`.
+Не мести `getGameTokenSecret` / `isProductionSecret` без едновременно да запазиш или обновиш security guard-а.
+
+### Database
+
+Drizzle relations живеят в `packages/database/src/schema.ts`. Използвай
+`db.query.<table>.findMany({ with: { ... } })` за обикновено object loading
+и explicit SQL joins за aggregate reports като leaderboard.
+
+Migration workflow:
+
+- След промяна в `schema.ts`: `pnpm --filter @werewolf/database db:generate`
+- Commit-вай schema и generated SQL migration заедно
+- Production минава през `pnpm --filter @werewolf/database db:migrate`
+- Не използвай `db:push` срещу production
+- `pnpm regression` пуска `drizzle-kit check --config drizzle.config.ts`
+
 ## Workflow guides
 
 Тези markdown файлове в [agents-shared/](agents-shared/) описват често срещани cross-cutting workflows. Skills и subagents препращат към тях — четат се и от Codex CLI и от Claude Code.
