@@ -12,10 +12,18 @@ const BUDGETS = {
 };
 
 const failures = [];
+const nextDir = path.join(root, "apps/web/.next");
 
-const jsDir = path.join(root, "apps/web/.next/static/chunks");
+if (!existsSync(nextDir)) {
+  failures.push("Missing apps/web/.next build output. Run `pnpm build` before `pnpm perf:budget`.");
+}
+
+const jsDir = path.join(nextDir, "static/chunks");
 if (existsSync(jsDir)) {
   const jsFiles = listFilesRecursive(jsDir).filter((file) => file.endsWith(".js"));
+  if (jsFiles.length === 0) {
+    failures.push("No JavaScript chunks found in apps/web/.next/static/chunks.");
+  }
   const totalJs = sumGzipKb(jsDir, jsFiles);
   const largestJs = largestGzipKb(jsDir, jsFiles);
   console.log(`Total JS gzip: ${totalJs} KB (budget: ${BUDGETS.totalJsKb} KB)`);
@@ -26,11 +34,16 @@ if (existsSync(jsDir)) {
   if (largestJs.size > BUDGETS.largestRouteKb) {
     failures.push(`Largest JS chunk gzip ${largestJs.file} ${largestJs.size} KB > budget ${BUDGETS.largestRouteKb} KB`);
   }
+} else {
+  failures.push("Missing apps/web/.next/static/chunks build output.");
 }
 
-const cssDir = path.join(root, "apps/web/.next/static/css");
+const cssDir = path.join(nextDir, "static/css");
 if (existsSync(cssDir)) {
   const cssFiles = listFilesRecursive(cssDir).filter((file) => file.endsWith(".css"));
+  if (cssFiles.length === 0) {
+    failures.push("No CSS assets found in apps/web/.next/static/css.");
+  }
   const totalCss = sumGzipKb(cssDir, cssFiles);
   console.log(`Total CSS gzip: ${totalCss} KB (budget: ${BUDGETS.totalCssKb} KB)`);
   if (totalCss > BUDGETS.totalCssKb) {
