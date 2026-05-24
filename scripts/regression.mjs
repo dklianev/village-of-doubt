@@ -443,7 +443,7 @@ function checkBulgarianCopyContracts() {
 }
 
 function checkLobbyImageContracts() {
-  const css = readText("apps/web/app/globals.css");
+  const css = readLobbyStyles();
   const lobbyInvitePage = readText("apps/web/app/lobby/[code]/page.tsx");
   const lobbyCreateClient = readText("apps/web/components/lobby-create-client.tsx");
 
@@ -463,7 +463,7 @@ function checkLobbyImageContracts() {
 }
 
 function checkLobbyWizardContracts() {
-  const css = readText("apps/web/app/globals.css");
+  const css = readLobbyStyles();
   const wizard = readText("apps/web/components/lobby/LobbyWizard.tsx");
   const stepRoles = readText("apps/web/components/lobby/StepRoles.tsx");
   const reducer = readText("apps/web/lib/lobby-form/reducer.ts");
@@ -546,6 +546,7 @@ function checkPlayUiContracts() {
 
 function checkFrontendHygieneContracts() {
   const css = readText("apps/web/app/globals.css");
+  const lobbyStyles = readLobbyStyles();
   const siteChrome = readText("apps/web/components/site-chrome.tsx");
   const stepRoom = readText("apps/web/components/lobby/StepRoom.tsx");
   const fieldComponent = readText("apps/web/components/lobby/Field.tsx");
@@ -567,8 +568,8 @@ function checkFrontendHygieneContracts() {
   assert(siteChrome.includes("export default function SiteChrome"), "site-chrome.tsx must export one default component named SiteChrome.");
   assert(!siteChrome.includes("ЗВУК: ВКЛ"), "Navbar sound control must be icon-only.");
   assert(!siteChrome.includes("ТЕМА: СИСТЕМНА"), "Navbar theme control must be icon-only.");
-  assert(css.includes(".field-input-wrap"), "Step 1 form must keep the in-input action wrapper.");
-  assert(css.includes(".field-action"), "Step 1 form must keep icon action button styles.");
+  assert(lobbyStyles.includes(".field-input-wrap"), "Step 1 form must keep the in-input action wrapper.");
+  assert(lobbyStyles.includes(".field-action"), "Step 1 form must keep icon action button styles.");
   assert(
     stepRoom.includes('from "@/components/lobby/Field"') && fieldComponent.includes("export function Field"),
     "StepRoom must use the uniform Field subcomponent.",
@@ -779,6 +780,14 @@ function listFilesRecursive(dir, prefix = "") {
 
 function readText(relativePath) {
   return readFileSync(path.join(root, relativePath), "utf8");
+}
+
+function readCssSurface(...relativePaths) {
+  return relativePaths.map((relativePath) => readText(relativePath)).join("\n");
+}
+
+function readLobbyStyles() {
+  return readCssSurface("apps/web/app/globals.css", "apps/web/components/lobby/LobbyWizard.module.css");
 }
 
 function count(haystack, needle) {
