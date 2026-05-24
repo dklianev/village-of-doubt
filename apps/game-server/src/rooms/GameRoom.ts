@@ -1,5 +1,4 @@
 import { Client, Room } from "colyseus";
-import * as Sentry from "@sentry/node";
 import {
   assignRoles,
   createGameConfigFromOptions,
@@ -32,14 +31,11 @@ import {
   VoteTallyState,
 } from "./schemas/GameState.js";
 import { normalizeRoomCode, verifyGameToken } from "@werewolf/shared/server";
-import {
-  createGamePersistence,
-  type GamePersistence,
-  type PersistEventInput,
-} from "../persistence/game-persistence.js";
+import type { PersistEventInput } from "../persistence/game-persistence.js";
 import { PlayerPresenceManager } from "./player-presence-manager.js";
 import { PhaseStateMachine } from "./phase-state-machine.js";
 import { AchievementBroadcaster, type AchievementUnlock } from "./achievement-broadcaster.js";
+import { RoomPersistenceCoordinator, type RoomPersistenceTaskApi } from "./room-persistence-coordinator.js";
 import {
   chooseDrunkRealRole,
   ensureNightActionAllowed,
@@ -161,11 +157,7 @@ export class GameRoom extends Room<{ state: GameState }> {
   private privatePlayers = new Map<string, PrivatePlayerState>();
   private pendingNightActions = new Map<string, SubmittedNightAction[]>();
   private phaseStateMachine!: PhaseStateMachine;
-  private persistence: GamePersistence = createGamePersistence();
-  private persistQueue: Promise<void> = Promise.resolve();
-  private persistQueueLength = 0;
-  private static readonly MAX_PENDING_PERSIST = 50;
-  private persistedGameId: string | undefined;
+  private persistenceCoordinator = new RoomPersistenceCoordinator();
   private hostUserId: string | undefined;
   private gameFinishedPersisted = false;
   private pendingHunterRevengeUserId: string | undefined;
@@ -352,7 +344,7 @@ export class GameRoom extends Room<{ state: GameState }> {
   async onDispose() {
     GameRoom.liveRooms.delete(this);
     this.phaseStateMachine.dispose();
-    await Promise.race([this.persistQueue, new Promise((resolve) => setTimeout(resolve, 3000))]);
+    await this.persistenceCoordinator.flush(3000);
     this.playerPresence.clear();
     this.privatePlayers.clear();
     this.pendingNightActions.clear();
@@ -633,14 +625,14 @@ export class GameRoom extends Room<{ state: GameState }> {
     this.state.round = 1;
     this.transitionTo("role_reveal");
 
-    this.queuePersistence(async () => {
-      const gameId = await this.ensurePersistedGame();
+    this.queuePersistence(async ({ persistence, ensureGame }) => {
+      const gameId = await ensureGame();
       if (!gameId) {
         return;
       }
 
-      await this.persistence.markGameActive(gameId, this.config);
-      await this.persistence.upsertPlayers(
+      await persistence.markGameActive(gameId, this.config);
+      await persistence.upsertPlayers(
         gameId,
         assignments.map((assignment) => {
           const publicPlayer = players.find((item) => item.userId === assignment.playerId);
@@ -652,7 +644,7 @@ export class GameRoom extends Room<{ state: GameState }> {
           };
         }),
       );
-      await this.persistence.recordEvent(gameId, {
+      await persistence.recordEvent(gameId, {
         round: this.state.round,
         phase: this.currentPhase(),
         type: "game_started",
@@ -1360,14 +1352,14 @@ export class GameRoom extends Room<{ state: GameState }> {
       }
       const achievementUnlocks = this.evaluateAchievementUnlocks();
       this.sendAchievementUnlocks(achievementUnlocks);
-      this.queuePersistence(async () => {
-        const gameId = await this.ensurePersistedGame();
+      this.queuePersistence(async ({ persistence, ensureGame }) => {
+        const gameId = await ensureGame();
         if (gameId) {
-          await this.persistence.finishGame(gameId, {
+          await persistence.finishGame(gameId, {
             winnerTeam: this.state.winnerTeam as never,
           });
           for (const unlock of achievementUnlocks) {
-            await this.persistence.recordAchievement(unlock.userId, unlock.achievementId, gameId);
+            await persistence.recordAchievement(unlock.userId, unlock.achievementId, gameId);
           }
         }
       });
@@ -2007,13 +1999,13 @@ export class GameRoom extends Room<{ state: GameState }> {
       payload: event.payload ?? {},
     });
 
-    this.queuePersistence(async () => {
-      const gameId = await this.ensurePersistedGame();
+    this.queuePersistence(async ({ persistence, ensureGame }) => {
+      const gameId = await ensureGame();
       if (!gameId) {
         return;
       }
 
-      await this.persistence.recordEvent(gameId, {
+      await persistence.recordEvent(gameId, {
         round: this.state.round,
         phase: this.currentPhase(),
         type,
@@ -2055,46 +2047,18 @@ export class GameRoom extends Room<{ state: GameState }> {
     });
   }
 
-  private async ensurePersistedGame() {
-    if (this.persistedGameId || !this.persistence.enabled || !this.hostUserId) {
-      return this.persistedGameId;
-    }
-
-    this.persistedGameId = await this.persistence.ensureGame({
-      code: this.state.code,
-      hostId: this.hostUserId,
-      config: this.config,
-    });
-
-    return this.persistedGameId;
-  }
-
   private currentPhase(): GamePhase {
     return this.state.phase as GamePhase;
   }
 
-  private queuePersistence(task: () => Promise<void>) {
-    if (!this.persistence.enabled) {
-      return;
-    }
-
-    if (this.persistQueueLength >= GameRoom.MAX_PENDING_PERSIST) {
-      console.warn(`[GameRoom ${this.state.code}] persistQueue backpressure (${this.persistQueueLength}), dropping write`);
-      return;
-    }
-
-    this.persistQueueLength += 1;
-    this.persistQueue = this.persistQueue
-      .then(task)
-      .catch((error) => {
-        if (process.env.SENTRY_DSN) {
-          Sentry.captureException(error);
-        }
-        console.error("[game-persistence]", error);
-      })
-      .finally(() => {
-        this.persistQueueLength = Math.max(0, this.persistQueueLength - 1);
-      });
+  private queuePersistence(task: (api: RoomPersistenceTaskApi) => Promise<void>) {
+    const context = this.hostUserId
+      ? { code: this.state.code, hostUserId: this.hostUserId, config: this.config }
+      : { code: this.state.code, config: this.config };
+    this.persistenceCoordinator.queue(
+      context,
+      task,
+    );
   }
 
   private sendSafeError(client: Client, messageBg: string) {
