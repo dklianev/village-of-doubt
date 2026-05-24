@@ -540,6 +540,16 @@ function checkFrontendHygieneContracts() {
   const siteChrome = readText("apps/web/components/site-chrome.tsx");
   const stepRoom = readText("apps/web/components/lobby/StepRoom.tsx");
   const fieldComponent = readText("apps/web/components/lobby/Field.tsx");
+  const clientComponentFiles = listFilesRecursive(path.join(root, "apps/web/components"))
+    .filter((file) => /\.(tsx|ts)$/.test(file))
+    .filter((file) => readText(`apps/web/components/${file}`).startsWith('"use client"'));
+  const serverDefaultComponents = [
+    "apps/web/components/SiteFooter.tsx",
+    "apps/web/components/JsonLd.tsx",
+    "apps/web/components/resource-hints.tsx",
+    "apps/web/components/skeleton.tsx",
+    "apps/web/components/manual-role-builder.tsx",
+  ];
 
   assert(!/calc\(100%\s*-\s*\d+px\)/.test(css), "globals.css must not contain calc(100% - Npx) width patterns.");
   assert(css.includes("@media (max-width: 480px)"), "globals.css must include explicit max-width 480px mobile rules.");
@@ -553,6 +563,18 @@ function checkFrontendHygieneContracts() {
   assert(
     stepRoom.includes('from "@/components/lobby/Field"') && fieldComponent.includes("export function Field"),
     "StepRoom must use the uniform Field subcomponent.",
+  );
+  assert(clientComponentFiles.length <= 50, `Too many apps/web client components: ${clientComponentFiles.length} > 50.`);
+  for (const file of serverDefaultComponents) {
+    assert(!readText(file).startsWith('"use client"'), `${file} should stay server-default.`);
+  }
+  assert(
+    readText("apps/web/components/manual-role-builder.tsx").includes("ManualRoleBuilderClient"),
+    "ManualRoleBuilder shell must delegate interactive form state to ManualRoleBuilderClient.",
+  );
+  assert(
+    readText("apps/web/components/manual-role-builder-client.tsx").startsWith('"use client"'),
+    "ManualRoleBuilderClient must remain the explicit client island.",
   );
 }
 
