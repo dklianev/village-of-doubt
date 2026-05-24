@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import "@/components/lobby/LobbyWizard.module.css";
+import "@/components/ManualRoleBuilder.module.css";
 import type { GameFamily, GameMode } from "@werewolf/shared";
 import { LobbyWizard } from "@/components/lobby/LobbyWizard";
 import { roleThumbStyle } from "@/lib/role-art";
