@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { Display, SceneCard } from "@werewolf/ui/server";
+import styles from "./AccountHero.module.css";
 
 interface AccountHeroProps {
   name: string;
@@ -17,11 +18,11 @@ export function AccountHero(props: AccountHeroProps) {
     : null;
 
   return (
-    <header aria-label="Досие" className="account-hero-frame">
+    <header aria-label="Досие" className={styles.heroFrame}>
       <SceneCard eyebrow="ДОСИЕ" density="lg">
-        <div className="account-hero-profile">
+        <div className={styles.heroProfile}>
           <div
-            className="account-hero-avatar"
+            className={styles.heroAvatar}
             style={{
               border: "3px solid var(--ds-accent-gold)",
               background: "var(--ds-surface-scene-deep)",
@@ -45,7 +46,7 @@ export function AccountHero(props: AccountHeroProps) {
             )}
           </div>
 
-          <div className="account-hero-name">
+          <div className={styles.heroName}>
             <Display size="h1">{props.name || "Без име"}</Display>
             {memberSinceLabel ? (
               <p style={{ color: "var(--ds-ink-scene-soft)", fontSize: "var(--ds-type-body-sm)", margin: 0 }}>
@@ -57,7 +58,7 @@ export function AccountHero(props: AccountHeroProps) {
 
         {props.totalGames > 0 ? (
           <dl
-            className="account-hero-stats"
+            className={styles.heroStats}
             style={{
               margin: 0,
               padding: 0,

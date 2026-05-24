@@ -14547,47 +14547,6 @@ html[data-theme="light"] .auth-recovery-shell .locksmith-foot-link {
   padding: 32px 24px 0;
 }
 
-.account-hero-frame {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 32px 24px 0;
-}
-
-.account-hero-profile {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: 18px 24px;
-}
-
-.account-hero-avatar {
-  display: grid;
-  width: 96px;
-  height: 96px;
-  place-items: center;
-  overflow: hidden;
-  border-radius: 999px;
-}
-
-.account-hero-name {
-  display: grid;
-  min-width: 0;
-  gap: 8px;
-  overflow-wrap: normal;
-  word-break: normal;
-}
-
-.account-hero-name h1 {
-  overflow-wrap: normal;
-  word-break: normal;
-}
-
-.account-hero-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
-  gap: 12px;
-}
-
 .account-card-content {
   --account-surface: var(--ds-surface-paper);
   --account-surface-strong: var(--ds-surface-paper-deep);
@@ -14652,31 +14611,6 @@ html[data-theme="light"] .auth-recovery-shell .locksmith-foot-link {
   background: rgba(245, 232, 200, 0.04);
   font-size: 0.9rem;
   font-style: italic;
-}
-
-@media (max-width: 640px) {
-  .account-hero-frame {
-    padding: 18px 20px 0;
-  }
-
-  .account-hero-profile {
-    grid-template-columns: 1fr;
-    justify-items: center;
-    text-align: center;
-  }
-
-  .account-hero-avatar {
-    width: 84px;
-    height: 84px;
-  }
-
-  .account-hero-name h1 {
-    font-size: var(--ds-type-h2);
-  }
-
-  .account-hero-stats {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
 }
 
 .account-status {
