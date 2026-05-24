@@ -1,0 +1,182 @@
+/* Auth recovery framed-shell polish moved out of globals.css. */
+
+:global(/* Auth recovery — framed shell polish */
+
+.auth-recovery-shell.framed-shell) {
+  width: min(1100px, 92vw);
+  min-height: auto;
+  place-items: stretch;
+}
+
+:global(.auth-recovery-shell .framed-shell-inner) {
+  padding: clamp(16px, 3vw, 28px);
+}
+
+:global(.auth-recovery-shell .locksmith-stage),
+:global(.auth-recovery-shell .forge-stage),
+:global(.auth-recovery-shell .seal-stage) {
+  max-width: none;
+  min-height: 560px;
+}
+
+:global(.auth-recovery-shell .locksmith-art),
+:global(.auth-recovery-shell .forge-art),
+:global(.auth-recovery-shell .seal-art) {
+  overflow: hidden;
+  border: 1px solid rgba(245, 232, 200, 0.14);
+  box-shadow:
+    0 24px 54px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 rgba(245, 232, 200, 0.08);
+}
+
+:global(.auth-recovery-shell .locksmith-card),
+:global(.auth-recovery-shell .forge-card),
+:global(.auth-recovery-shell .seal-card) {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+  border: 1px solid rgba(245, 232, 200, 0.14);
+  border-radius: 18px;
+  padding: clamp(24px, 4vw, 38px);
+  background: rgba(13, 10, 8, 0.68);
+  color: #f5e8c8;
+  box-shadow:
+    0 24px 54px rgba(0, 0, 0, 0.36),
+    inset 0 1px 0 rgba(245, 232, 200, 0.06);
+  backdrop-filter: blur(14px);
+}
+
+:global(.auth-recovery-icon) {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(209, 154, 66, 0.42);
+  border-radius: 50%;
+  background: rgba(209, 154, 66, 0.16);
+  color: #d19a42;
+}
+
+:global(.auth-recovery-icon svg) {
+  width: 20px;
+  height: 20px;
+}
+
+:global(.auth-recovery-shell .locksmith-kicker),
+:global(.auth-recovery-shell .forge-kicker),
+:global(.auth-recovery-shell .seal-kicker) {
+  color: #d19a42;
+}
+
+:global(.auth-recovery-shell .locksmith-card h1),
+:global(.auth-recovery-shell .forge-card h1),
+:global(.auth-recovery-shell .seal-card h1) {
+  color: #f5e8c8;
+}
+
+:global(.auth-recovery-shell .locksmith-subtitle),
+:global(.auth-recovery-shell .forge-subtitle),
+:global(.auth-recovery-shell .seal-body),
+:global(.auth-recovery-shell .forge-card p) {
+  color: rgba(245, 232, 200, 0.78);
+}
+
+:global(.auth-recovery-shell .locksmith-form input),
+:global(.auth-recovery-shell .forge-form input) {
+  min-height: 48px;
+  border: 1px solid rgba(245, 232, 200, 0.16);
+  border-radius: 12px;
+  background: rgba(13, 10, 8, 0.48);
+  color: #f5e8c8;
+}
+
+:global(.auth-recovery-shell .locksmith-form input:focus),
+:global(.auth-recovery-shell .forge-form input:focus) {
+  outline: none;
+  border-color: rgba(209, 154, 66, 0.62);
+  box-shadow: 0 0 0 4px rgba(209, 154, 66, 0.16);
+}
+
+:global(.auth-recovery-shell .locksmith-form input::placeholder),
+:global(.auth-recovery-shell .forge-form input::placeholder) {
+  color: rgba(245, 232, 200, 0.42);
+}
+
+:global(.auth-recovery-shell .locksmith-form label > span),
+:global(.auth-recovery-shell .forge-form label > span) {
+  color: #d19a42;
+}
+
+:global(.auth-recovery-shell .locksmith-success),
+:global(.auth-recovery-shell .forge-success) {
+  border-left-color: #75b36a;
+  background: rgba(117, 179, 106, 0.14);
+  color: #f5e8c8;
+}
+
+:global(.auth-recovery-shell .locksmith-success-hint),
+:global(.auth-recovery-shell .seal-hint) {
+  color: rgba(245, 232, 200, 0.62);
+}
+
+:global(.auth-recovery-shell .locksmith-foot-link) {
+  color: #d19a42;
+}
+
+:global(html[data-theme="light"] .auth-recovery-shell .locksmith-card),
+:global(html[data-theme="light"] .auth-recovery-shell .forge-card),
+:global(html[data-theme="light"] .auth-recovery-shell .seal-card) {
+  border-color: rgba(83, 52, 31, 0.18);
+  background: rgba(252, 246, 236, 0.88);
+  color: #2a1b10;
+  box-shadow:
+    0 24px 54px rgba(40, 26, 16, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+:global(html[data-theme="light"] .auth-recovery-shell .locksmith-card h1),
+:global(html[data-theme="light"] .auth-recovery-shell .forge-card h1),
+:global(html[data-theme="light"] .auth-recovery-shell .seal-card h1) {
+  color: #2a1b10;
+}
+
+:global(html[data-theme="light"] .auth-recovery-shell .locksmith-subtitle),
+:global(html[data-theme="light"] .auth-recovery-shell .forge-subtitle),
+:global(html[data-theme="light"] .auth-recovery-shell .seal-body),
+:global(html[data-theme="light"] .auth-recovery-shell .forge-card p) {
+  color: rgba(42, 27, 16, 0.74);
+}
+
+:global(html[data-theme="light"] .auth-recovery-shell .locksmith-form input),
+:global(html[data-theme="light"] .auth-recovery-shell .forge-form input) {
+  border-color: rgba(83, 52, 31, 0.18);
+  background: rgba(255, 250, 238, 0.8);
+  color: #2a1b10;
+}
+
+:global(html[data-theme="light"] .auth-recovery-shell .locksmith-form input:focus),
+:global(html[data-theme="light"] .auth-recovery-shell .forge-form input:focus) {
+  border-color: rgba(132, 47, 43, 0.5);
+  box-shadow: 0 0 0 4px rgba(132, 47, 43, 0.14);
+}
+
+:global(html[data-theme="light"] .auth-recovery-icon) {
+  border-color: rgba(132, 47, 43, 0.38);
+  background: rgba(132, 47, 43, 0.12);
+  color: #842f2b;
+}
+
+:global(html[data-theme="light"] .auth-recovery-shell .locksmith-kicker),
+:global(html[data-theme="light"] .auth-recovery-shell .forge-kicker),
+:global(html[data-theme="light"] .auth-recovery-shell .seal-kicker),
+:global(html[data-theme="light"] .auth-recovery-shell .locksmith-foot-link) {
+  color: #842f2b;
+}
+
+@media (max-width: 720px) {
+  :global(.auth-recovery-shell .locksmith-stage),
+:global(.auth-recovery-shell .forge-stage),
+:global(.auth-recovery-shell .seal-stage) {
+    min-height: auto;
+  }
+}

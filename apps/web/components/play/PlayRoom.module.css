@@ -1,0 +1,127 @@
+/* Play room shell and phase chrome styles moved out of globals.css. */
+
+:global(.game-shell) {
+  position: relative;
+}
+
+:global(.game-shell::after) {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: -1;
+  height: 26vh;
+  background:
+    linear-gradient(to top, rgba(5, 8, 9, 0.82), transparent),
+    repeating-linear-gradient(83deg, rgba(248, 236, 210, 0.07) 0 2px, transparent 2px 46px);
+  content: "";
+}
+
+:global(.game-shell) {
+  --phase-art: var(--art-lobby);
+  --phase-icon: image-set(url("/game-art/icon-phase-lobby.webp") type("image/webp"), url("/game-art/icon-phase-lobby.png") type("image/png"));
+}
+
+:global(.game-shell[data-phase="role_reveal"]) {
+  --phase-art: var(--art-reveal);
+  --phase-icon: image-set(url("/game-art/icon-phase-role-reveal.webp") type("image/webp"), url("/game-art/icon-phase-role-reveal.png") type("image/png"));
+}
+
+:global(.game-shell[data-phase="first_night"]),
+:global(.game-shell[data-phase="night"]) {
+  --phase-art: var(--transition-night);
+  --phase-icon: image-set(url("/game-art/icon-phase-night.webp") type("image/webp"), url("/game-art/icon-phase-night.png") type("image/png"));
+}
+
+:global(.game-shell[data-phase="day_announcement"]),
+:global(.game-shell[data-phase="day_discussion"]),
+:global(.game-shell[data-phase="nomination"]),
+:global(.game-shell[data-phase="defense"]) {
+  --phase-art: var(--transition-day);
+  --phase-icon: image-set(url("/game-art/icon-phase-day.webp") type("image/webp"), url("/game-art/icon-phase-day.png") type("image/png"));
+}
+
+:global(.game-shell[data-phase="voting"]) {
+  --phase-art: var(--transition-vote);
+  --phase-icon: image-set(url("/game-art/icon-phase-voting.webp") type("image/webp"), url("/game-art/icon-phase-voting.png") type("image/png"));
+}
+
+:global(.game-shell[data-phase="resolution"]),
+:global(.game-shell[data-phase="hunter_revenge"]),
+:global(.game-shell[data-phase="mayor_successor"]),
+:global(.game-shell[data-phase="game_over"]) {
+  --phase-art: var(--transition-resolution);
+  --phase-icon: image-set(url("/game-art/icon-phase-resolution.webp") type("image/webp"), url("/game-art/icon-phase-resolution.png") type("image/png"));
+}
+
+:global([data-theme="mafia"].game-shell) {
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-lobby.webp") type("image/webp"), url("/game-art/mafia/icon-phase-lobby.png") type("image/png"));
+}
+
+:global(.game-shell[data-family="mafia"][data-phase="role_reveal"]) {
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-role-reveal.webp") type("image/webp"), url("/game-art/mafia/icon-phase-role-reveal.png") type("image/png"));
+}
+
+:global(.game-shell[data-family="mafia"][data-phase="first_night"]),
+:global(.game-shell[data-family="mafia"][data-phase="night"]) {
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-night.webp") type("image/webp"), url("/game-art/mafia/icon-phase-night.png") type("image/png"));
+}
+
+:global(.game-shell[data-family="mafia"][data-phase="day_announcement"]),
+:global(.game-shell[data-family="mafia"][data-phase="day_discussion"]),
+:global(.game-shell[data-family="mafia"][data-phase="nomination"]),
+:global(.game-shell[data-family="mafia"][data-phase="defense"]) {
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-day.webp") type("image/webp"), url("/game-art/mafia/icon-phase-day.png") type("image/png"));
+}
+
+:global(.game-shell[data-family="mafia"][data-phase="voting"]) {
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-voting.webp") type("image/webp"), url("/game-art/mafia/icon-phase-voting.png") type("image/png"));
+}
+
+:global(.game-shell[data-family="mafia"][data-phase="resolution"]),
+:global(.game-shell[data-family="mafia"][data-phase="hunter_revenge"]),
+:global(.game-shell[data-family="mafia"][data-phase="mayor_successor"]),
+:global(.game-shell[data-family="mafia"][data-phase="game_over"]) {
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-resolution.webp") type("image/webp"), url("/game-art/mafia/icon-phase-resolution.png") type("image/png"));
+}
+
+:global(.game-shell::before),
+:global(.game-shell[data-phase="day_discussion"]::before),
+:global(.game-shell[data-phase="day_announcement"]::before),
+:global(.game-shell[data-phase="voting"]::before),
+:global(.game-shell[data-phase="night"]::before),
+:global(.game-shell[data-phase="first_night"]::before) {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  aspect-ratio: auto;
+  background:
+    radial-gradient(circle at 78% 12%, rgba(240, 180, 93, 0.18), transparent 20rem),
+    linear-gradient(110deg, rgba(7, 9, 9, 0.96) 0%, rgba(12, 16, 17, 0.78) 45%, rgba(7, 9, 9, 0.92) 100%),
+    var(--phase-art) center / cover no-repeat;
+  box-shadow: none;
+  content: "";
+  filter: saturate(0.92) contrast(1.08);
+  opacity: 0.98;
+}
+
+:global(.phase-hero) {
+  background:
+    linear-gradient(90deg, rgba(13, 9, 8, 0.94) 0%, rgba(16, 11, 10, 0.74) 47%, rgba(16, 11, 10, 0.28) 100%),
+    var(--phase-art) center / cover no-repeat;
+  box-shadow: 0 34px 100px rgba(0, 0, 0, 0.42), inset 0 1px rgba(255, 255, 255, 0.08);
+}
+
+:global(.phase-title) {
+  text-transform: uppercase;
+  text-wrap: balance;
+  -webkit-text-stroke: 1px rgba(248, 236, 210, 0.18);
+}
+
+:global(.phase-sigil) {
+  background:
+    linear-gradient(145deg, rgba(10, 7, 6, 0.18), rgba(10, 7, 6, 0.42)),
+    var(--phase-icon) center / cover no-repeat;
+  color: transparent;
+}

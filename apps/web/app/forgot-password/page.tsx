@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ForgotPasswordClient } from "@/components/auth/ForgotPasswordClient";
 import { ResourceHints } from "@/components/resource-hints";
+import "@/components/auth/AuthRecovery.module.css";
 
 export const metadata: Metadata = {
   title: "Загубен ключ | Върколак и Мафия",

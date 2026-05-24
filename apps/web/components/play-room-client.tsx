@@ -18,6 +18,8 @@ import {
   type NightActionCommand,
   type RoleCode,
 } from "@werewolf/shared";
+import "@/components/play/PlayRoom.module.css";
+import "@/components/play/PlayerToken.module.css";
 import { playCue } from "@/lib/sound";
 import { useToast } from "@/lib/toast";
 import { KeyboardShortcutsModal } from "@/components/keyboard-shortcuts-modal";

@@ -7,6 +7,7 @@ import { EvidenceWall } from "@/components/history/EvidenceWall";
 import { EvidenceWallSkeleton } from "@/components/skeleton";
 import type { HistoryGameView, HistoryTimelineEventView } from "@/lib/history-highlights";
 import { absoluteUrl, routeMetadata } from "@/lib/seo";
+import "@/components/history/History.module.css";
 
 export const dynamic = "force-dynamic";
 

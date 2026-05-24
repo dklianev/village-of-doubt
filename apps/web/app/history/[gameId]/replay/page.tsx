@@ -12,6 +12,8 @@ import {
   type RoleCode,
 } from "@werewolf/shared";
 import { requireSession } from "@/lib/require-session";
+import "@/components/achievements/Achievements.module.css";
+import "@/components/history/History.module.css";
 
 export const dynamic = "force-dynamic";
 

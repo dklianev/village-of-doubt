@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { useModal } from "@/lib/use-modal";
 import type { ConnectionStatus } from "@/lib/play/types";
+import "@/components/play/ReconnectModal.module.css";
 
 export function ReconnectModal({
   status,

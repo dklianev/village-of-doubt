@@ -1,4 +1,5 @@
 import type { VoteTallyItem } from "@/lib/play/types";
+import "@/components/play/VoteTallyBar.module.css";
 
 export function VoteTallyBar({ items, maxVotes }: { items: VoteTallyItem[]; maxVotes: number }) {
   if (items.length === 0) {

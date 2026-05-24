@@ -101,7 +101,7 @@ function checkGameArtPairing() {
 }
 
 function checkCssImageSet() {
-  const css = readText("apps/web/app/globals.css");
+  const css = readAppStyles();
   const imageSetCount = count(css, "image-set(url(\"/game-art/");
   const directGameArtVariables = css.match(/--[\w-]+:\s*url\("\/game-art\/[^"]+\.png"\)/g) ?? [];
 
@@ -130,7 +130,7 @@ function assertThemeVariableBlock(css, selector) {
 }
 
 function checkLandingLayoutContracts() {
-  const css = readText("apps/web/app/globals.css");
+  const css = readLandingStyles();
   const landingPage = readText("apps/web/components/landing-experience.tsx");
   const modeChoiceCards = readText("apps/web/components/landing/ModeChoiceCards.tsx");
   const universalHowToPlay = readText("apps/web/components/landing/UniversalHowToPlay.tsx");
@@ -145,7 +145,7 @@ function checkLandingLayoutContracts() {
   const chromeIconHoverStart = chromeCss.indexOf(".site-icon-button:hover");
   const chromeIconHoverBlock =
     chromeIconHoverStart >= 0 ? chromeCss.slice(chromeIconHoverStart, chromeCss.indexOf("}", chromeIconHoverStart)) : "";
-  const heroKickerPattern = /(^|\n)\.landing-hero-card > \.section-kicker\s*{/;
+  const heroKickerPattern = /(^|\n)(?::global\()?\.landing-hero-card > \.section-kicker\)?\s*{/;
   const theatreBackdropStart = css.indexOf("body:has(.landing-shell)::before");
   const theatreBackdropBlock =
     theatreBackdropStart >= 0 ? css.slice(theatreBackdropStart, css.indexOf("}", theatreBackdropStart)) : "";
@@ -207,7 +207,10 @@ function checkLandingLayoutContracts() {
   assert(publicShellCss.includes(".tutorial-shell") && publicShellCss.includes("isolation: isolate;"), "Tutorial shell must keep its isolated fixed backdrop layer.");
   assert(theatreBackdropBlock.includes("--art-landing-ambient-composited"), "Landing theatre backdrop must use the composited ambient homepage background.");
   assert(theatreBackdropBlock.includes("animation: ambient-drift 48s"), "Landing theatre backdrop must drift subtly in dark theme.");
-  assert(css.includes(".landing-shell::before,\n.game-home-shell::before"), "Landing and family shells should disable their old absolute pseudo backdrop.");
+  assert(
+    css.includes(".landing-shell::before") && css.includes(".game-home-shell::before"),
+    "Landing and family shells should disable their old absolute pseudo backdrop.",
+  );
   assert(css.includes('html[data-theme="dark"] .lobby-shell::before'), "Lobby dark backdrop should keep the original absolute pseudo system.");
   assert(!css.includes('html[data-theme="dark"] .landing-shell::before'), "Landing dark theme must not use the old zoom-prone shell pseudo.");
   assert(!css.includes('html[data-theme="dark"] .game-home-shell::before'), "Family home dark theme must not use the old zoom-prone shell pseudo.");
@@ -254,7 +257,7 @@ function checkLandingLayoutContracts() {
 }
 
 function checkFamilyQuickStartContracts() {
-  const css = readText("apps/web/app/globals.css");
+  const css = readGameHomeStyles();
   const gameHomePage = readText("apps/web/components/games/game-home-page.tsx");
   const liveTickerCard = readText("apps/web/components/landing/LiveTickerCard.tsx");
   const recentEndingsCard = readText("apps/web/components/landing/RecentEndingsCard.tsx");
@@ -509,7 +512,7 @@ function checkPlayUiContracts() {
   ]
     .map((file) => readText(file))
     .join("\n");
-  const css = readText("apps/web/app/globals.css");
+  const css = readPlayStyles();
 
   for (const contract of [
     "authClient.useSession",
@@ -792,6 +795,49 @@ function readLobbyStyles() {
     "apps/web/components/lobby/LobbyWizard.module.css",
     "apps/web/components/LobbyInvite.module.css",
     "apps/web/components/games/JoinEntry.module.css",
+  );
+}
+
+function readAppStyles() {
+  return readCssSurface(
+    "apps/web/app/globals.css",
+    "apps/web/components/landing/LandingSurface.module.css",
+    "apps/web/components/games/GameHomePage.module.css",
+    "apps/web/components/history/History.module.css",
+    "apps/web/components/achievements/Achievements.module.css",
+    "apps/web/components/friends/FriendsBoard.module.css",
+    "apps/web/components/auth/AuthRecovery.module.css",
+    "apps/web/components/play/PlayRoom.module.css",
+    "apps/web/components/play/PlayerToken.module.css",
+    "apps/web/components/play/PhaseRail.module.css",
+    "apps/web/components/play/ReconnectModal.module.css",
+    "apps/web/components/play/VoteTallyBar.module.css",
+  );
+}
+
+function readLandingStyles() {
+  return readCssSurface(
+    "apps/web/app/globals.css",
+    "apps/web/components/landing/LandingSurface.module.css",
+  );
+}
+
+function readGameHomeStyles() {
+  return readCssSurface(
+    "apps/web/app/globals.css",
+    "apps/web/components/landing/LandingSurface.module.css",
+    "apps/web/components/games/GameHomePage.module.css",
+  );
+}
+
+function readPlayStyles() {
+  return readCssSurface(
+    "apps/web/app/globals.css",
+    "apps/web/components/play/PlayRoom.module.css",
+    "apps/web/components/play/PlayerToken.module.css",
+    "apps/web/components/play/PhaseRail.module.css",
+    "apps/web/components/play/ReconnectModal.module.css",
+    "apps/web/components/play/VoteTallyBar.module.css",
   );
 }
 

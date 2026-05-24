@@ -6,6 +6,7 @@ import { EmptyState, Pill } from "@werewolf/ui";
 import { EMPTY_STATES } from "@werewolf/ui/states";
 import { ArtifactImage } from "@/components/ArtifactImage";
 import { copyTextToClipboard } from "@/lib/clipboard";
+import "@/components/friends/FriendsBoard.module.css";
 
 interface FriendItem {
   id: string;

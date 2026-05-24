@@ -2,6 +2,7 @@ import { memo } from "react";
 import { ROLE_DEFINITIONS, type GamePhase, type RoleCode } from "@werewolf/shared";
 import { arePlayersEqual, playerInitials, playerStatusBadge, playerTokenClass } from "@/lib/play/player-display";
 import type { PublicPlayer } from "@/lib/play/types";
+import "@/components/play/PlayerToken.module.css";
 
 export const PlayerTile = memo(function PlayerTile({
   player,

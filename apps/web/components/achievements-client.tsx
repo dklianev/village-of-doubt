@@ -8,6 +8,7 @@ import { AchievementPlaque } from "@/components/achievements/AchievementPlaque";
 import { AchievementProgressWreath } from "@/components/achievements/AchievementProgressWreath";
 import { ArtifactImage } from "@/components/ArtifactImage";
 import { authClient } from "@/lib/auth-client";
+import "@/components/achievements/Achievements.module.css";
 
 interface OwnedAchievement {
   achievementId: string;

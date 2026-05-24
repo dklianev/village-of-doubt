@@ -6,6 +6,7 @@ import { ModeChoiceCards, type ModeChoiceGame } from "@/components/landing/ModeC
 import { UniversalHowToPlay } from "@/components/landing/UniversalHowToPlay";
 import { LiveTickerCard, type LiveStats } from "@/components/landing/LiveTickerCard";
 import { RecentEndingsCard, type Ending } from "@/components/landing/RecentEndingsCard";
+import "@/components/landing/LandingSurface.module.css";
 
 export type LandingSession = { user: { id: string; name?: string | null } } | null;
 

@@ -1,4 +1,6 @@
 import type { CSSProperties } from "react";
+import "@/components/history/History.module.css";
+import "@/components/play/PlayerToken.module.css";
 
 interface SkeletonProps {
   className?: string;
