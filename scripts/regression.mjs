@@ -139,7 +139,9 @@ function checkLandingLayoutContracts() {
   const quickStartIcons = readText("apps/web/components/landing/quickstart-icons.tsx");
   const siteChrome = readText("apps/web/components/site-chrome.tsx");
   const siteChromeCss = readText("apps/web/components/site-chrome/SiteChrome.module.css");
+  const tutorialCss = readText("apps/web/components/tutorial/Tutorial.module.css");
   const chromeCss = `${css}\n${siteChromeCss}`;
+  const publicShellCss = `${css}\n${tutorialCss}`;
   const chromeIconHoverStart = chromeCss.indexOf(".site-icon-button:hover");
   const chromeIconHoverBlock =
     chromeIconHoverStart >= 0 ? chromeCss.slice(chromeIconHoverStart, chromeCss.indexOf("}", chromeIconHoverStart)) : "";
@@ -153,11 +155,14 @@ function checkLandingLayoutContracts() {
   const lightBackdropStart = css.indexOf('html[data-theme="light"] .landing-shell::before');
   const lightBackdropBlock =
     lightBackdropStart >= 0 ? css.slice(lightBackdropStart, css.indexOf("}", lightBackdropStart)) : "";
+  const tutorialLightBackdropStart = tutorialCss.indexOf('html[data-theme="light"] .tutorial-shell::before');
+  const tutorialLightBackdropBlock =
+    tutorialLightBackdropStart >= 0 ? tutorialCss.slice(tutorialLightBackdropStart, tutorialCss.indexOf("}", tutorialLightBackdropStart)) : "";
   const lightTheatreBackdropStart = css.indexOf('html[data-theme="light"] body:has(.landing-shell)::before');
   const lightTheatreBackdropBlock =
     lightTheatreBackdropStart >= 0 ? css.slice(lightTheatreBackdropStart, css.indexOf("}", lightTheatreBackdropStart)) : "";
   const publicShellStackPattern =
-    /\.landing-shell,\s*\.game-home-shell,\s*\.lobby-shell,\s*\.history-shell,\s*\.roles-shell,\s*\.rules-shell,\s*\.sign-in-shell,\s*\.tutorial-shell,\s*\.utility-shell\s*{[\s\S]*?z-index:\s*0;[\s\S]*?isolation:\s*isolate;/;
+    /\.landing-shell,\s*\.game-home-shell,\s*\.lobby-shell,\s*\.history-shell,\s*\.roles-shell,\s*\.rules-shell,\s*\.sign-in-shell,\s*\.utility-shell\s*{[\s\S]*?z-index:\s*0;[\s\S]*?isolation:\s*isolate;/;
 
   assert(landingPage.includes("<ModeChoiceCards"), "Landing page must render the separated game picker component.");
   assert(modeChoiceCards.includes("game-choice-grid"), "Landing mode choice component needs the game picker grid.");
@@ -199,6 +204,7 @@ function checkLandingLayoutContracts() {
   assert(css.includes("--art-landing-ambient"), "Landing page must expose the ambient outer background art variable.");
   assert(theatreBodyBlock.includes("rgba(8, 9, 9, 0.95)"), "Dark theatre pages should use a solid body color behind the fixed backdrop.");
   assert(publicShellStackPattern.test(css), "Public page shells must isolate their fixed backdrop layer above the body background.");
+  assert(publicShellCss.includes(".tutorial-shell") && publicShellCss.includes("isolation: isolate;"), "Tutorial shell must keep its isolated fixed backdrop layer.");
   assert(theatreBackdropBlock.includes("--art-landing-ambient-composited"), "Landing theatre backdrop must use the composited ambient homepage background.");
   assert(theatreBackdropBlock.includes("animation: ambient-drift 48s"), "Landing theatre backdrop must drift subtly in dark theme.");
   assert(css.includes(".landing-shell::before,\n.game-home-shell::before"), "Landing and family shells should disable their old absolute pseudo backdrop.");
@@ -215,7 +221,8 @@ function checkLandingLayoutContracts() {
     ".tutorial-shell::before",
     ".utility-shell::before",
   ]) {
-    assert(lightBackdropBlock.includes(shellSelector), `Light theme must disable page-art backdrop for ${shellSelector}.`);
+    const backdropBlock = shellSelector === ".tutorial-shell::before" ? tutorialLightBackdropBlock : lightBackdropBlock;
+    assert(backdropBlock.includes(shellSelector), `Light theme must disable page-art backdrop for ${shellSelector}.`);
   }
   assert(lightBackdropBlock.includes("display: none;"), "Light theme should use the shared homepage body background instead of page-art backdrops.");
   assert(lightTheatreBackdropBlock.includes("#f7ead0") && lightTheatreBackdropBlock.includes("animation: none;"), "Light theatre backdrop should use a static cream gradient.");
