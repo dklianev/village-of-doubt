@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { PaperCard } from "@werewolf/ui";
 import { useState, type ReactNode } from "react";
+import styles from "./TermsLegalAnnex.module.css";
 
 interface LegalSection {
   id: string;
@@ -80,20 +81,20 @@ export function TermsLegalAnnex() {
   const [open, setOpen] = useState(false);
 
   return (
-    <section className="terms-section terms-section-annex">
+    <section className={`terms-section ${styles.annexSection}`}>
       <PaperCard eyebrow="ПРАВЕН АНЕКС" density="md">
         <button
           type="button"
-          className="terms-annex-toggle"
+          className={styles.annexToggle}
           onClick={() => setOpen((value) => !value)}
           aria-expanded={open}
         >
-          <span className="terms-annex-icon" aria-hidden>
+          <span className={styles.annexIcon} aria-hidden>
             {open ? "−" : "+"}
           </span>
           <div>
-            <p className="terms-annex-title">Формалните клаузи ({SECTIONS.length})</p>
-            <p className="terms-annex-hint">
+            <p className={styles.annexTitle}>Формалните клаузи ({SECTIONS.length})</p>
+            <p className={styles.annexHint}>
               Интелектуална собственост, отговорност, приложимо право — за тези, които искат пълния
               правен текст.
             </p>
@@ -101,14 +102,14 @@ export function TermsLegalAnnex() {
         </button>
 
         {open ? (
-          <ol className="terms-annex-list">
+          <ol className={styles.annexList}>
             {SECTIONS.map((section, index) => (
-              <li key={section.id} id={section.id} className="terms-annex-item">
+              <li key={section.id} id={section.id} className={styles.annexItem}>
                 <h3>
-                  <span className="terms-annex-num">{index + 1}.</span>
+                  <span className={styles.annexNum}>{index + 1}.</span>
                   {section.title}
                 </h3>
-                <div className="terms-annex-body">{section.body}</div>
+                <div className={styles.annexBody}>{section.body}</div>
               </li>
             ))}
           </ol>

@@ -15646,88 +15646,6 @@ body:has(.faq-shell)::after {
   text-underline-offset: 3px;
 }
 
-.privacy-section-history {
-  padding: 0;
-  border: none;
-  background: transparent;
-}
-
-.privacy-history-toggle {
-  display: flex;
-  width: 100%;
-  align-items: center;
-  gap: 10px;
-  padding: 14px 20px;
-  border: 1px solid var(--privacy-border);
-  border-radius: 12px;
-  background: var(--privacy-surface);
-  color: var(--privacy-text-muted);
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 0.9rem;
-  font-weight: 600;
-  transition: border-color 160ms ease;
-}
-
-.privacy-history-toggle:hover {
-  border-color: var(--privacy-accent-warm);
-}
-
-.privacy-history-icon {
-  display: grid;
-  width: 24px;
-  height: 24px;
-  place-items: center;
-  border-radius: 50%;
-  background: var(--privacy-accent-warm-soft);
-  color: var(--privacy-accent-warm);
-  font-weight: 800;
-}
-
-.privacy-history-list {
-  display: grid;
-  gap: 14px;
-  margin: 0;
-  padding: 18px 0 0;
-  list-style: none;
-}
-
-.privacy-history-list li article {
-  padding: 14px 18px;
-  border: 1px solid var(--privacy-border);
-  border-radius: 12px;
-  background: var(--privacy-surface);
-}
-
-.privacy-history-date {
-  color: var(--privacy-accent-warm);
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.privacy-history-summary {
-  margin: 4px 0 8px;
-  color: var(--privacy-text);
-  font-size: 1rem;
-}
-
-.privacy-history-list ul {
-  display: grid;
-  gap: 4px;
-  padding: 0;
-  color: var(--privacy-text-muted);
-  font-size: 0.88rem;
-  list-style: none;
-}
-
-.privacy-history-list ul li::before {
-  margin-right: 8px;
-  color: var(--privacy-accent-warm);
-  content: "·";
-}
-
 @media (max-width: 640px) {
   .privacy-section {
     padding: 22px 18px;
@@ -16125,101 +16043,10 @@ body:has(.faq-shell)::after {
   line-height: 1.55;
 }
 
-.terms-conflict-steps a,
-.terms-annex-body a {
+.terms-conflict-steps a {
   color: var(--legal-accent-warm);
   text-decoration: underline;
   text-underline-offset: 3px;
-}
-
-.terms-section-annex {
-  padding: 0;
-  border: none;
-  background: transparent;
-}
-
-.terms-annex-toggle {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 16px;
-  width: 100%;
-  padding: 18px 22px;
-  border: 1px solid var(--legal-border);
-  border-radius: 14px;
-  background: var(--legal-surface);
-  color: var(--legal-text);
-  cursor: pointer;
-  font-family: inherit;
-  text-align: left;
-  transition: border-color 160ms ease;
-}
-
-.terms-annex-toggle:hover {
-  border-color: var(--legal-accent-warm);
-}
-
-.terms-annex-icon {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: var(--legal-accent-warm-soft);
-  color: var(--legal-accent-warm);
-  font-size: 1.2rem;
-  font-weight: 800;
-}
-
-.terms-annex-title {
-  margin: 0 0 4px;
-  color: var(--legal-text);
-  font-family: "Noto Serif Display", "Noto Serif", serif;
-  font-size: 1.05rem;
-  font-weight: 800;
-}
-
-.terms-annex-hint {
-  margin: 0;
-  color: var(--legal-text-muted);
-  font-size: 0.85rem;
-}
-
-.terms-annex-list {
-  display: grid;
-  gap: 16px;
-  margin: 0;
-  padding: 18px 0 0;
-  list-style: none;
-}
-
-.terms-annex-item {
-  padding: 16px 18px;
-  border: 1px solid var(--legal-border);
-  border-radius: 12px;
-  background: var(--legal-surface);
-  scroll-margin-top: 80px;
-}
-
-.terms-annex-item h3 {
-  display: flex;
-  gap: 10px;
-  align-items: baseline;
-  margin: 0 0 10px;
-  color: var(--legal-text);
-  font-family: "Noto Serif Display", "Noto Serif", serif;
-  font-size: 1.05rem;
-  font-weight: 800;
-}
-
-.terms-annex-num {
-  color: var(--legal-text-soft);
-  font-size: 0.8em;
-}
-
-.terms-annex-body {
-  color: var(--legal-text-muted);
-  font-size: 0.92rem;
-  line-height: 1.65;
 }
 
 .report-hero-stat {
@@ -16361,14 +16188,6 @@ body:has(.faq-shell)::after {
 
 .privacy-right-card {
   background: var(--legal-privacy-right-card-background);
-}
-
-.privacy-history-toggle {
-  background: var(--legal-privacy-history-toggle-background);
-}
-
-.privacy-history-list li article {
-  background: var(--legal-privacy-history-list-li-article-background);
 }
 
 .terms-acceptance-state {
