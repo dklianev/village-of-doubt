@@ -1,5 +1,6 @@
 "use client";
 
+import "@/components/games/JoinEntry.module.css";
 import { useEffect, useMemo, useState, useTransition, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";

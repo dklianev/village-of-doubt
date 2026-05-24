@@ -787,7 +787,12 @@ function readCssSurface(...relativePaths) {
 }
 
 function readLobbyStyles() {
-  return readCssSurface("apps/web/app/globals.css", "apps/web/components/lobby/LobbyWizard.module.css");
+  return readCssSurface(
+    "apps/web/app/globals.css",
+    "apps/web/components/lobby/LobbyWizard.module.css",
+    "apps/web/components/LobbyInvite.module.css",
+    "apps/web/components/games/JoinEntry.module.css",
+  );
 }
 
 function count(haystack, needle) {
