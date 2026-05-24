@@ -44,6 +44,7 @@ import {
   type PersistEventInput,
 } from "../persistence/game-persistence.js";
 import { PlayerPresenceManager } from "./player-presence-manager.js";
+import { PhaseStateMachine } from "./phase-state-machine.js";
 
 interface ClientAuth {
   userId: string;
@@ -170,7 +171,7 @@ export class GameRoom extends Room<{ state: GameState }> {
   private playerPresence = new PlayerPresenceManager();
   private privatePlayers = new Map<string, PrivatePlayerState>();
   private pendingNightActions = new Map<string, SubmittedNightAction[]>();
-  private phaseTimer?: ReturnType<typeof this.clock.setTimeout>;
+  private phaseStateMachine!: PhaseStateMachine;
   private persistence: GamePersistence = createGamePersistence();
   private persistQueue: Promise<void> = Promise.resolve();
   private persistQueueLength = 0;
@@ -178,7 +179,6 @@ export class GameRoom extends Room<{ state: GameState }> {
   private persistedGameId: string | undefined;
   private hostUserId: string | undefined;
   private gameFinishedPersisted = false;
-  private pausedSnapshot: { phase: GamePhase; remainingMs: number } | undefined;
   private pendingHunterRevengeUserId: string | undefined;
   private pendingMayorSuccessor = false;
   private pendingVampireBites = new Map<string, { round: number; causeBg: string }>();
@@ -188,6 +188,10 @@ export class GameRoom extends Room<{ state: GameState }> {
 
   onCreate(options: CreateOptions) {
     GameRoom.liveRooms.add(this);
+    this.phaseStateMachine = new PhaseStateMachine({
+      clock: this.clock,
+      onTimerElapsed: () => this.advancePhase(),
+    });
     const mode = options.mode ?? "werewolves_classic";
     const playerCount = options.playerCount ?? (mode === "mafia_sport" ? 10 : 8);
     this.config = createGameConfigFromOptions({ ...options, mode, playerCount });
@@ -359,7 +363,7 @@ export class GameRoom extends Room<{ state: GameState }> {
 
   async onDispose() {
     GameRoom.liveRooms.delete(this);
-    this.phaseTimer?.clear();
+    this.phaseStateMachine.dispose();
     await Promise.race([this.persistQueue, new Promise((resolve) => setTimeout(resolve, 3000))]);
     this.playerPresence.clear();
     this.privatePlayers.clear();
@@ -1227,10 +1231,10 @@ export class GameRoom extends Room<{ state: GameState }> {
     if (this.state.phase === "paused" || this.state.phase === "game_over") {
       throw new Error("Тази фаза не може да бъде паузирана.");
     }
-    this.pausedSnapshot = {
+    this.phaseStateMachine.pause({
       phase: this.currentPhase(),
       remainingMs: Math.max(0, this.state.phaseEndsAt - Date.now()),
-    };
+    });
     this.addPublicEvent(`${player.displayName} паузира играта.`);
     this.auditNarratorAction(player, "narrator_pause", { fromPhase: this.state.phase });
     this.transitionTo("paused");
@@ -1241,7 +1245,7 @@ export class GameRoom extends Room<{ state: GameState }> {
     if (!player.host && !player.narrator) {
       throw new Error("Само Разказвачът или домакинът може да смени фазата.");
     }
-    if (this.state.phase === "paused" && this.pausedSnapshot) {
+    if (this.state.phase === "paused" && this.phaseStateMachine.getPausedSnapshot()) {
       this.resumePausedPhase(player);
       return;
     }
@@ -1260,7 +1264,7 @@ export class GameRoom extends Room<{ state: GameState }> {
     }
 
     const safeSeconds = Math.min(600, Math.max(10, Math.floor(seconds)));
-    this.phaseTimer?.clear();
+    this.phaseStateMachine.clearTimer();
     this.state.phaseEndsAt += safeSeconds * 1000;
     this.scheduleCurrentPhaseTimer(Math.max(0, this.state.phaseEndsAt - Date.now()));
     this.addPublicEvent(`${player.displayName} удължи таймера с ${safeSeconds} секунди.`);
@@ -1324,7 +1328,6 @@ export class GameRoom extends Room<{ state: GameState }> {
   }
 
   private transitionTo(phase: GamePhase) {
-    this.phaseTimer?.clear();
     this.state.phase = phase;
 
     if (phase !== "paused") {
@@ -1387,13 +1390,10 @@ export class GameRoom extends Room<{ state: GameState }> {
   }
 
   private resumePausedPhase(player: PlayerPublicState) {
-    const snapshot = this.pausedSnapshot;
+    const snapshot = this.phaseStateMachine.resume();
     if (!snapshot) {
       return;
     }
-
-    this.phaseTimer?.clear();
-    this.pausedSnapshot = undefined;
     this.state.phase = snapshot.phase;
     this.state.phaseEndsAt = snapshot.remainingMs > 0 ? Date.now() + snapshot.remainingMs : 0;
     this.addPublicEvent(`${player.displayName} продължи играта от фаза: ${phaseLabelBg(snapshot.phase, this.config.mode)}.`);
@@ -1409,9 +1409,7 @@ export class GameRoom extends Room<{ state: GameState }> {
   }
 
   private scheduleCurrentPhaseTimer(durationMs: number) {
-    if (durationMs > 0 && this.state.phase !== "paused" && this.state.phase !== "game_over") {
-      this.phaseTimer = this.clock.setTimeout(() => this.advancePhase(), durationMs);
-    }
+    this.phaseStateMachine.setPhase(this.currentPhase(), durationMs);
   }
 
   private resolveNightPhase() {
