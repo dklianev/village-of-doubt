@@ -43,6 +43,7 @@ import {
   type GamePersistence,
   type PersistEventInput,
 } from "../persistence/game-persistence.js";
+import { PlayerPresenceManager } from "./player-presence-manager.js";
 
 interface ClientAuth {
   userId: string;
@@ -111,51 +112,6 @@ export class GameRoom extends Room<{ state: GameState }> {
     family: GameFamily;
   }> = [];
   private static readonly MAX_RECENT_ENDINGS = 12;
-  private static usedNonces = new Map<string, number>();
-  private static joinAttempts = new Map<string, number[]>();
-  private static readonly JOIN_RATE_WINDOW_MS = 10_000;
-  private static readonly JOIN_RATE_LIMIT = 5;
-  private static nonceJanitorInterval: ReturnType<typeof setInterval> | undefined;
-  private static joinJanitorInterval: ReturnType<typeof setInterval> | undefined;
-
-  static {
-    GameRoom.nonceJanitorInterval = setInterval(() => {
-      const now = Date.now();
-      for (const [nonce, expiresAt] of GameRoom.usedNonces) {
-        if (expiresAt <= now) {
-          GameRoom.usedNonces.delete(nonce);
-        }
-      }
-    }, 60_000);
-    GameRoom.nonceJanitorInterval.unref?.();
-
-    GameRoom.joinJanitorInterval = setInterval(() => {
-      const cutoff = Date.now() - GameRoom.JOIN_RATE_WINDOW_MS;
-      for (const [userId, timestamps] of GameRoom.joinAttempts) {
-        const remaining = timestamps.filter((timestamp) => timestamp > cutoff);
-        if (remaining.length === 0) {
-          GameRoom.joinAttempts.delete(userId);
-        } else {
-          GameRoom.joinAttempts.set(userId, remaining);
-        }
-      }
-    }, 30_000);
-    GameRoom.joinJanitorInterval.unref?.();
-  }
-
-  private static checkJoinRateLimit(userId: string): boolean {
-    const now = Date.now();
-    const cutoff = now - GameRoom.JOIN_RATE_WINDOW_MS;
-    const timestamps = (GameRoom.joinAttempts.get(userId) ?? []).filter((timestamp) => timestamp > cutoff);
-    if (timestamps.length >= GameRoom.JOIN_RATE_LIMIT) {
-      GameRoom.joinAttempts.set(userId, timestamps);
-      return false;
-    }
-
-    timestamps.push(now);
-    GameRoom.joinAttempts.set(userId, timestamps);
-    return true;
-  }
 
   static getRuntimeStats() {
     const byFamily: Partial<Record<GameFamily, number>> = {};
@@ -211,7 +167,7 @@ export class GameRoom extends Room<{ state: GameState }> {
 
   maxClients = 47;
   private config!: GameConfig;
-  private clientsByUserId = new Map<string, Client>();
+  private playerPresence = new PlayerPresenceManager();
   private privatePlayers = new Map<string, PrivatePlayerState>();
   private pendingNightActions = new Map<string, SubmittedNightAction[]>();
   private phaseTimer?: ReturnType<typeof this.clock.setTimeout>;
@@ -258,10 +214,9 @@ export class GameRoom extends Room<{ state: GameState }> {
 
     if (options.token) {
       const payload = verifyGameToken(options.token, getGameTokenSecret(), { roomCode: this.state.code });
-      if (GameRoom.usedNonces.has(payload.nonce)) {
+      if (!PlayerPresenceManager.consumeTokenNonce(payload.nonce, payload.expiresAt * 1000)) {
         throw new Error("Този токен вече е използван.");
       }
-      GameRoom.usedNonces.set(payload.nonce, payload.expiresAt * 1000);
       return { userId: payload.userId, displayName: payload.displayName };
     }
 
@@ -269,7 +224,7 @@ export class GameRoom extends Room<{ state: GameState }> {
   }
 
   onJoin(client: Client, options: JoinRoomOptions, auth: ClientAuth) {
-    if (!GameRoom.checkJoinRateLimit(auth.userId)) {
+    if (!PlayerPresenceManager.checkJoinRateLimit(auth.userId)) {
       client.send("safe_error", {
         type: "safe_error",
         messageBg: "Твърде много опити за вход. Изчакай малко.",
@@ -278,7 +233,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       return;
     }
 
-    const previousClient = this.clientsByUserId.get(auth.userId);
+    const previousClient = this.playerPresence.getClient(auth.userId);
     if (previousClient && previousClient.sessionId !== client.sessionId) {
       previousClient.send("safe_error", {
         type: "safe_error",
@@ -287,7 +242,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       previousClient.leave(1000);
     }
 
-    this.clientsByUserId.set(auth.userId, client);
+    this.playerPresence.attachClient(auth.userId, client);
     client.userData = auth;
 
     const existingEntry = this.findPlayerEntryByUserId(auth.userId);
@@ -358,7 +313,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       return;
     }
 
-    const player = this.clientsByUserId.get(auth.userId) === client ? this.findPlayerByUserId(auth.userId) : undefined;
+    const player = this.playerPresence.getClient(auth.userId) === client ? this.findPlayerByUserId(auth.userId) : undefined;
     if (player) {
       player.connected = false;
       this.addPublicEvent(`${player.displayName} загуби връзка.`);
@@ -373,7 +328,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       return;
     }
 
-    this.clientsByUserId.set(auth.userId, client);
+    this.playerPresence.attachClient(auth.userId, client);
     const player = this.findPlayerByUserId(auth.userId);
     if (player) {
       player.connected = true;
@@ -389,9 +344,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       return;
     }
 
-    if (this.clientsByUserId.get(auth.userId) === client) {
-      this.clientsByUserId.delete(auth.userId);
-    }
+    this.playerPresence.detachClient(auth.userId, client);
     const player = this.state.players.get(client.sessionId);
     if (player && this.state.phase === "lobby") {
       this.state.players.delete(client.sessionId);
@@ -408,7 +361,7 @@ export class GameRoom extends Room<{ state: GameState }> {
     GameRoom.liveRooms.delete(this);
     this.phaseTimer?.clear();
     await Promise.race([this.persistQueue, new Promise((resolve) => setTimeout(resolve, 3000))]);
-    this.clientsByUserId.clear();
+    this.playerPresence.clear();
     this.privatePlayers.clear();
     this.pendingNightActions.clear();
     this.pendingVampireBites.clear();
@@ -480,7 +433,7 @@ export class GameRoom extends Room<{ state: GameState }> {
 
     const players = [...this.state.players.values()].filter((player) => player.playing);
     const allReady = players.length >= this.config.playerCount && players.every((player) => player.ready);
-    const hostClient = this.clientsByUserId.get(this.hostUserId);
+    const hostClient = this.playerPresence.getClient(this.hostUserId);
     if (!allReady || !hostClient) {
       return;
     }
@@ -719,13 +672,13 @@ export class GameRoom extends Room<{ state: GameState }> {
     });
 
     for (const item of players) {
-      const targetClient = this.clientsByUserId.get(item.userId);
+      const targetClient = this.playerPresence.getClient(item.userId);
       if (targetClient) {
         this.sendPrivateRole(targetClient, item.userId);
       }
     }
     for (const item of allPlayers) {
-      const targetClient = this.clientsByUserId.get(item.userId);
+      const targetClient = this.playerPresence.getClient(item.userId);
       if (targetClient) {
         this.sendNarratorRoleSnapshot(targetClient, item.userId);
       }
@@ -836,7 +789,7 @@ export class GameRoom extends Room<{ state: GameState }> {
         if (!witch.alive || witch.role !== "witch") {
           continue;
         }
-        const client = this.clientsByUserId.get(witch.userId);
+        const client = this.playerPresence.getClient(witch.userId);
         if (client) {
           client.send("system", {
             type: "system",
@@ -1146,7 +1099,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       throw new Error("Няма записана роля за този играч.");
     }
 
-    const client = this.clientsByUserId.get(actor.userId);
+    const client = this.playerPresence.getClient(actor.userId);
     if (client) {
       client.send("private_check_result", {
         type: "private_check_result",
@@ -1189,8 +1142,8 @@ export class GameRoom extends Room<{ state: GameState }> {
     this.pendingNightActions.delete(targetUserId);
     publicTarget.actedThisPhase = false;
 
-    const actorClient = this.clientsByUserId.get(actor.userId);
-    const targetClient = this.clientsByUserId.get(targetUserId);
+    const actorClient = this.playerPresence.getClient(actor.userId);
+    const targetClient = this.playerPresence.getClient(targetUserId);
     if (actorClient) {
       this.sendPrivateRole(actorClient, actor.userId);
     }
@@ -1482,7 +1435,7 @@ export class GameRoom extends Room<{ state: GameState }> {
         return true;
       }
 
-      const client = this.clientsByUserId.get(submission.actorUserId);
+      const client = this.playerPresence.getClient(submission.actorUserId);
       if (client) {
         client.send("system", {
           type: "system",
@@ -1501,7 +1454,7 @@ export class GameRoom extends Room<{ state: GameState }> {
     this.pendingNightActions.clear();
 
     for (const check of resolution.checks) {
-      const targetClient = this.clientsByUserId.get(check.actorUserId);
+      const targetClient = this.playerPresence.getClient(check.actorUserId);
       if (targetClient) {
         const exactRole =
           this.config.commissionerResultMode === "exact_role" && this.isCommissionerLike(check.actorUserId)
@@ -1608,7 +1561,7 @@ export class GameRoom extends Room<{ state: GameState }> {
 
   private sendPrivateNightMessages(messages: Array<{ targetUserId: string; messageBg: string }>) {
     for (const message of messages) {
-      const client = this.clientsByUserId.get(message.targetUserId);
+      const client = this.playerPresence.getClient(message.targetUserId);
       if (client) {
         client.send("system", {
           type: "system",
@@ -1633,7 +1586,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       }
       const neighbors = this.getAdjacentLivingPlayers(player.userId, living);
       const someoneMoved = neighbors.some((neighbor) => activeNeighborIds.has(neighbor.userId));
-      const client = this.clientsByUserId.get(player.userId);
+      const client = this.playerPresence.getClient(player.userId);
       if (client) {
         client.send("private_check_result", {
           type: "private_check_result",
@@ -1855,7 +1808,7 @@ export class GameRoom extends Room<{ state: GameState }> {
         const target = this.privatePlayers.get(submission.action.targetUserId);
         if (target?.role && getRoleTeam(target.role) !== "werewolves" && getRoleTeam(target.role) !== "vampires") {
           privatePlayer.vampireHunterDisarmed = true;
-          const client = this.clientsByUserId.get(submission.actorUserId);
+          const client = this.playerPresence.getClient(submission.actorUserId);
           if (client) {
             client.send("system", {
               type: "system",
@@ -1966,7 +1919,7 @@ export class GameRoom extends Room<{ state: GameState }> {
   }
 
   private sendPrivateLover(userId: string, loverUserId: string) {
-    const client = this.clientsByUserId.get(userId);
+    const client = this.playerPresence.getClient(userId);
     const lover = this.findPlayerByUserId(loverUserId);
     if (!client || !lover) {
       return;
@@ -2013,7 +1966,7 @@ export class GameRoom extends Room<{ state: GameState }> {
 
   private sendNarratorSnapshotsToNarrators() {
     for (const player of this.state.players.values()) {
-      const client = this.clientsByUserId.get(player.userId);
+      const client = this.playerPresence.getClient(player.userId);
       if (client) {
         this.sendNarratorRoleSnapshot(client, player.userId);
       }
@@ -2028,7 +1981,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       const newRole = privatePlayer.drunkRealRole;
       privatePlayer.role = newRole;
       delete privatePlayer.drunkRealRole;
-      const client = this.clientsByUserId.get(privatePlayer.userId);
+      const client = this.playerPresence.getClient(privatePlayer.userId);
       if (client) {
         this.sendPrivateRole(client, privatePlayer.userId);
         client.send("system", {
@@ -2129,7 +2082,7 @@ export class GameRoom extends Room<{ state: GameState }> {
     }
 
     for (const [userId, achievementIds] of byUserId) {
-      const client = this.clientsByUserId.get(userId);
+      const client = this.playerPresence.getClient(userId);
       client?.send("achievements_unlocked", {
         type: "achievements_unlocked",
         achievementIds,
@@ -2334,7 +2287,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       if (!predicate(player)) {
         continue;
       }
-      const client = this.clientsByUserId.get(player.userId);
+      const client = this.playerPresence.getClient(player.userId);
       if (client) {
         clients.push(client);
       }
@@ -2473,3 +2426,4 @@ export function getGameRuntimeStats() {
 function isProductionSecret(secret: string) {
   return secret.length >= 32 && !/dev-only|replace|change-me|placeholder/i.test(secret);
 }
+
