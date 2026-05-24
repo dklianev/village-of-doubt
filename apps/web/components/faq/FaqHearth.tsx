@@ -9,6 +9,7 @@ import type { FaqCategory, FaqItem } from "@/lib/faq-data";
 import { copyTextToClipboard } from "@/lib/clipboard";
 import { CategoryIcon } from "./FaqCategoryIcon";
 import { FaqAnswerRenderer } from "./FaqAnswerRenderer";
+import "./FaqHearth.module.css";
 
 const CATEGORY_LABELS: Record<FaqCategory, string> = {
   "pre-game": "Преди първа игра",
