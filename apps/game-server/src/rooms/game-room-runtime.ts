@@ -5,6 +5,7 @@ import {
   ROOM_CODE_ALPHABET,
   ROOM_CODE_LENGTH,
   type ChatChannel,
+  type GameConfig,
   type GamePhase,
   type NightActionCommand,
   type RoleCode,
@@ -158,4 +159,79 @@ export function chooseDrunkRealRole(roles: Partial<Record<RoleCode, number>>): R
     "red_riding_hood",
   ];
   return preferred.find((role) => (roles[role] ?? 0) > 0 && role !== "drunk") ?? "ordinary_villager";
+}
+
+export function areLivingNightActorsReady(
+  privatePlayers: Iterable<PrivatePlayerState>,
+  phase: string,
+  hasPendingNightAction: (actorUserId: string, kind?: NightActionCommand["kind"]) => boolean,
+) {
+  return [...privatePlayers].every((privatePlayer) => {
+    if (!privatePlayer.alive || !privatePlayer.role) {
+      return true;
+    }
+    const team = getRoleTeam(privatePlayer.role);
+    if (privatePlayer.role === "witch") {
+      return (
+        hasPendingNightAction(privatePlayer.userId, "skip") ||
+        ((privatePlayer.witchHealUsed || hasPendingNightAction(privatePlayer.userId, "witch_heal")) &&
+          (privatePlayer.witchPoisonUsed || hasPendingNightAction(privatePlayer.userId, "witch_poison")))
+      );
+    }
+    const needsAction =
+      team === "mafia" ||
+      team === "werewolves" ||
+      team === "vampires" ||
+      privatePlayer.role === "seer" ||
+      privatePlayer.role === "oracle" ||
+      privatePlayer.role === "commissioner" ||
+      privatePlayer.role === "don" ||
+      privatePlayer.role === "healer" ||
+      privatePlayer.role === "doctor" ||
+      privatePlayer.role === "bodyguard" ||
+      privatePlayer.role === "detective" ||
+      privatePlayer.role === "vigilante" ||
+      privatePlayer.role === "maniac" ||
+      privatePlayer.role === "roleblocker" ||
+      privatePlayer.role === "lawyer" ||
+      privatePlayer.role === "informant" ||
+      privatePlayer.role === "medium" ||
+      (privatePlayer.role === "vampire_hunter" && !privatePlayer.vampireHunterDisarmed) ||
+      (privatePlayer.role === "blacksmith" && !privatePlayer.blacksmithUsed) ||
+      (privatePlayer.role === "investigator" && !privatePlayer.investigatorUsed) ||
+      privatePlayer.role === "stray_cat" ||
+      (privatePlayer.role === "priest" && !privatePlayer.priestBlessUsed) ||
+      (privatePlayer.role === "thief" && phase === "first_night") ||
+      ((privatePlayer.role === "cupid" || privatePlayer.role === "lovers") && phase === "first_night");
+
+    return !needsAction || hasPendingNightAction(privatePlayer.userId);
+  });
+}
+
+export function haveLivingPlayersVoted(
+  privatePlayers: Iterable<PrivatePlayerState>,
+  findPlayerByUserId: (userId: string) => { hasVoted?: boolean } | undefined,
+) {
+  return [...privatePlayers].every((privatePlayer) => {
+    const publicPlayer = findPlayerByUserId(privatePlayer.userId);
+    return !privatePlayer.alive || Boolean(publicPlayer?.hasVoted);
+  });
+}
+
+export function getPhaseDurationMs(config: GameConfig, phase: GamePhase) {
+  const timers = config.timers;
+  const seconds =
+    phase === "role_reveal"
+      ? timers.roleRevealSeconds
+      : isNightPhase(phase)
+        ? timers.factionNightActionSeconds
+        : phase === "day_discussion"
+          ? timers.dayDiscussionSeconds
+          : phase === "voting"
+            ? timers.voteSeconds
+            : phase === "resolution" || phase === "day_announcement"
+              ? timers.resolutionSeconds
+              : 0;
+
+  return seconds * 1000;
 }

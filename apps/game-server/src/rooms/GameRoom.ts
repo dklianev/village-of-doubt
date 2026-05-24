@@ -39,9 +39,12 @@ import { PrivateEventDispatcher } from "./private-event-dispatcher.js";
 import {
   chooseDrunkRealRole,
   ensureNightActionAllowed,
+  areLivingNightActorsReady,
   generateRoomCode,
   getActionTargetUserId,
   getAuth,
+  getPhaseDurationMs,
+  haveLivingPlayersVoted,
   hashRoomCode,
   isNightPhase,
   isObject,
@@ -701,7 +704,12 @@ export class GameRoom extends Room<{ state: GameState }> {
       round: this.state.round,
     } satisfies ServerEvent);
 
-    if (this.config.timers.autoAdvanceWhenReady && this.allLivingNightActorsReady()) {
+    if (
+      this.config.timers.autoAdvanceWhenReady &&
+      areLivingNightActorsReady(this.privatePlayers.values(), this.state.phase, (actorUserId, kind) =>
+        this.hasPendingNightAction(actorUserId, kind),
+      )
+    ) {
       this.advancePhase();
     }
   }
@@ -804,7 +812,10 @@ export class GameRoom extends Room<{ state: GameState }> {
         visibility: "public",
         payload: { skipped: true },
       });
-      if (this.config.timers.autoAdvanceWhenReady && this.allLivingPlayersVoted()) {
+      if (
+        this.config.timers.autoAdvanceWhenReady &&
+        haveLivingPlayersVoted(this.privatePlayers.values(), (userId) => this.findPlayerByUserId(userId))
+      ) {
         this.advancePhase();
       }
       return;
@@ -822,7 +833,10 @@ export class GameRoom extends Room<{ state: GameState }> {
       visibility: "public",
     });
 
-    if (this.config.timers.autoAdvanceWhenReady && this.allLivingPlayersVoted()) {
+    if (
+      this.config.timers.autoAdvanceWhenReady &&
+      haveLivingPlayersVoted(this.privatePlayers.values(), (userId) => this.findPlayerByUserId(userId))
+    ) {
       this.advancePhase();
     }
   }
@@ -1178,7 +1192,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       this.announcedWitchVictims.clear();
     }
 
-    const duration = this.getPhaseDurationMs(phase);
+    const duration = getPhaseDurationMs(this.config, phase);
     this.state.phaseEndsAt = duration > 0 ? Date.now() + duration : 0;
     this.addPublicEvent(`Фаза: ${phaseLabelBg(phase, this.config.mode)}.`);
     this.persistGameEvent("phase_change", {
@@ -1662,74 +1676,6 @@ export class GameRoom extends Room<{ state: GameState }> {
           ...(player.loverId ? { loverId: player.loverId } : {}),
         })),
     );
-  }
-
-  private allLivingNightActorsReady() {
-    return [...this.privatePlayers.values()].every((privatePlayer) => {
-      if (!privatePlayer.alive || !privatePlayer.role) {
-        return true;
-      }
-      const team = getRoleTeam(privatePlayer.role);
-      if (privatePlayer.role === "witch") {
-        return (
-          this.hasPendingNightAction(privatePlayer.userId, "skip") ||
-          ((privatePlayer.witchHealUsed || this.hasPendingNightAction(privatePlayer.userId, "witch_heal")) &&
-            (privatePlayer.witchPoisonUsed || this.hasPendingNightAction(privatePlayer.userId, "witch_poison")))
-        );
-      }
-      const needsAction =
-        team === "mafia" ||
-        team === "werewolves" ||
-        team === "vampires" ||
-        privatePlayer.role === "seer" ||
-        privatePlayer.role === "oracle" ||
-        privatePlayer.role === "commissioner" ||
-        privatePlayer.role === "don" ||
-        privatePlayer.role === "healer" ||
-        privatePlayer.role === "doctor" ||
-        privatePlayer.role === "bodyguard" ||
-        privatePlayer.role === "detective" ||
-        privatePlayer.role === "vigilante" ||
-        privatePlayer.role === "maniac" ||
-        privatePlayer.role === "roleblocker" ||
-        privatePlayer.role === "lawyer" ||
-        privatePlayer.role === "informant" ||
-        privatePlayer.role === "medium" ||
-        (privatePlayer.role === "vampire_hunter" && !privatePlayer.vampireHunterDisarmed) ||
-        (privatePlayer.role === "blacksmith" && !privatePlayer.blacksmithUsed) ||
-        (privatePlayer.role === "investigator" && !privatePlayer.investigatorUsed) ||
-        privatePlayer.role === "stray_cat" ||
-        (privatePlayer.role === "priest" && !privatePlayer.priestBlessUsed) ||
-        (privatePlayer.role === "thief" && this.state.phase === "first_night") ||
-        ((privatePlayer.role === "cupid" || privatePlayer.role === "lovers") && this.state.phase === "first_night");
-
-      return !needsAction || this.hasPendingNightAction(privatePlayer.userId);
-    });
-  }
-
-  private allLivingPlayersVoted() {
-    return [...this.privatePlayers.values()].every((privatePlayer) => {
-      const publicPlayer = this.findPlayerByUserId(privatePlayer.userId);
-      return !privatePlayer.alive || Boolean(publicPlayer?.hasVoted);
-    });
-  }
-
-  private getPhaseDurationMs(phase: GamePhase) {
-    const timers = this.config.timers;
-    const seconds =
-      phase === "role_reveal"
-        ? timers.roleRevealSeconds
-        : isNightPhase(phase)
-          ? timers.factionNightActionSeconds
-          : phase === "day_discussion"
-            ? timers.dayDiscussionSeconds
-            : phase === "voting"
-              ? timers.voteSeconds
-              : phase === "resolution" || phase === "day_announcement"
-                ? timers.resolutionSeconds
-                : 0;
-
-    return seconds * 1000;
   }
 
   private revealDrunkRoles() {
