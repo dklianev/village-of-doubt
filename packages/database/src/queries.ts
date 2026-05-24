@@ -132,14 +132,21 @@ export async function getGameHistoryById(db: Database, gameId: string): Promise<
 }
 
 export async function getGameHistoryForUser(db: Database, userId: string, limit = 500): Promise<GameHistorySummary[]> {
-  const playerGames = await db
-    .select({ gameId: gamePlayers.gameId })
-    .from(gamePlayers)
-    .innerJoin(games, eq(gamePlayers.gameId, games.id))
-    .where(eq(gamePlayers.userId, userId))
-    .orderBy(desc(games.createdAt))
-    .limit(limit);
-  const playerGameIds = [...new Set(playerGames.map((game) => game.gameId))];
+  const playerGames = await db.query.gamePlayers.findMany({
+    columns: { gameId: true },
+    where: eq(gamePlayers.userId, userId),
+    with: {
+      game: {
+        columns: { createdAt: true },
+      },
+    },
+    limit,
+  });
+  const playerGameIds = [
+    ...new Set(
+      [...playerGames].sort((a, b) => b.game.createdAt.getTime() - a.game.createdAt.getTime()).map((game) => game.gameId),
+    ),
+  ];
   const whereClause =
     playerGameIds.length > 0 ? or(eq(games.hostId, userId), inArray(games.id, playerGameIds)) : eq(games.hostId, userId);
 
