@@ -138,9 +138,11 @@ function checkLandingLayoutContracts() {
   const recentEndingsCard = readText("apps/web/components/landing/RecentEndingsCard.tsx");
   const quickStartIcons = readText("apps/web/components/landing/quickstart-icons.tsx");
   const siteChrome = readText("apps/web/components/site-chrome.tsx");
-  const chromeIconHoverStart = css.indexOf(".site-icon-button:hover");
+  const siteChromeCss = readText("apps/web/components/site-chrome/SiteChrome.module.css");
+  const chromeCss = `${css}\n${siteChromeCss}`;
+  const chromeIconHoverStart = chromeCss.indexOf(".site-icon-button:hover");
   const chromeIconHoverBlock =
-    chromeIconHoverStart >= 0 ? css.slice(chromeIconHoverStart, css.indexOf("}", chromeIconHoverStart)) : "";
+    chromeIconHoverStart >= 0 ? chromeCss.slice(chromeIconHoverStart, chromeCss.indexOf("}", chromeIconHoverStart)) : "";
   const heroKickerPattern = /(^|\n)\.landing-hero-card > \.section-kicker\s*{/;
   const theatreBackdropStart = css.indexOf("body:has(.landing-shell)::before");
   const theatreBackdropBlock =
@@ -233,7 +235,7 @@ function checkLandingLayoutContracts() {
   assert(existsSync(path.join(gameArtDir, "bg-landing-dual-world-v2.webp")), "Missing optimized current dual-world landing background WebP.");
   assert(existsSync(path.join(gameArtDir, "mobile/bg-landing-dual-world-v2.webp")), "Missing mobile current dual-world landing background WebP.");
   assert(siteChrome.includes("prefetch={false}"), "Site chrome navigation should not prefetch every secondary route on first load.");
-  assert(css.includes("/game-art/logo-chrome-mark.webp"), "Navbar brand should use the chrome-optimized micro-sigil WebP.");
+  assert(chromeCss.includes("/game-art/logo-chrome-mark.webp"), "Navbar brand should use the chrome-optimized micro-sigil WebP.");
   assert(existsSync(path.join(gameArtDir, "logo-chrome-mark.png")), "Missing chrome micro-sigil PNG asset.");
   assert(existsSync(path.join(gameArtDir, "logo-chrome-mark.webp")), "Missing optimized chrome micro-sigil WebP asset.");
   assert(siteChrome.includes("site-brand-dot"), "Navbar wordmark should keep the premium separator accent.");
