@@ -1,5 +1,6 @@
 import { Display, SceneCard } from "@werewolf/ui";
 import type { ServiceStatusKind } from "@/lib/status-health";
+import styles from "./Status.module.css";
 
 interface StatusHeroProps {
   overall: ServiceStatusKind;
@@ -53,9 +54,9 @@ export function StatusHero({ overall, lastCheckedAt, refreshing, onRefresh }: St
           {copy.subtitle}
         </p>
 
-        <div className="status-hero-meta" data-overall={overall}>
-          <span className="status-hero-dot" aria-hidden />
-          <span className="status-hero-meta-label">
+        <div className={styles.heroMeta} data-overall={overall}>
+          <span className={styles.heroDot} aria-hidden />
+          <span className={styles.heroMetaLabel}>
             Последна проверка в{" "}
             <time className="status-hero-time" dateTime={lastCheckedAt}>
               {formatted}
@@ -63,7 +64,7 @@ export function StatusHero({ overall, lastCheckedAt, refreshing, onRefresh }: St
           </span>
           <button
             type="button"
-            className="status-hero-refresh"
+            className={styles.heroRefresh}
             onClick={onRefresh}
             disabled={refreshing}
             aria-label="Опресни състоянието сега"

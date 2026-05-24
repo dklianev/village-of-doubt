@@ -7,6 +7,7 @@ import { StatusLastIncident } from "./StatusLastIncident";
 import { StatusLegend } from "./StatusLegend";
 import { StatusServiceTiles } from "./StatusServiceTiles";
 import { StatusSubscribe } from "./StatusSubscribe";
+import styles from "./Status.module.css";
 
 interface StatusDashboardProps {
   initialServices: ServiceHealth[];
@@ -90,7 +91,7 @@ export function StatusDashboard({
   const overall = computeOverallStatus(services);
 
   return (
-    <div className="status-page">
+    <div className={styles.page}>
       <StatusHero
         overall={overall}
         lastCheckedAt={lastCheckedAt}
@@ -98,7 +99,7 @@ export function StatusDashboard({
         onRefresh={refresh}
       />
 
-      <div className="status-content">
+      <div className={styles.content}>
         <StatusServiceTiles services={services} />
         <StatusLegend />
         <StatusLastIncident majorOutage={overall === "down"} />

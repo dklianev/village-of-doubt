@@ -1,4 +1,5 @@
 import type { ServiceHealth, ServiceStatusKind } from "@/lib/status-health";
+import styles from "./Status.module.css";
 
 const STATUS_LABEL: Record<ServiceStatusKind, string> = {
   ok: "Работи",
@@ -9,23 +10,23 @@ const STATUS_LABEL: Record<ServiceStatusKind, string> = {
 
 export function StatusServiceTiles({ services }: { services: ServiceHealth[] }) {
   return (
-    <section className="status-section">
-      <header className="status-section-head">
-        <p className="status-section-kicker">услуги</p>
+    <section className={styles.section}>
+      <header className={styles.sectionHead}>
+        <p className={styles.sectionKicker}>услуги</p>
         <h2>Какво проверяваме точно сега.</h2>
       </header>
 
-      <ul className="status-tile-grid">
+      <ul className={styles.tileGrid}>
         {services.map((service) => (
           <li key={service.id}>
-            <article className="status-tile" data-status={service.status}>
-              <div className="status-tile-head">
+            <article className={styles.tile} data-status={service.status}>
+              <div className={styles.tileHead}>
                 <ServiceIcon name={service.icon} />
                 <h3>{service.name}</h3>
-                <span className="status-tile-badge">{STATUS_LABEL[service.status]}</span>
+                <span className={styles.tileBadge}>{STATUS_LABEL[service.status]}</span>
               </div>
-              <p className="status-tile-description">{service.description}</p>
-              {service.detail ? <p className="status-tile-detail">{service.detail}</p> : null}
+              <p className={styles.tileDescription}>{service.description}</p>
+              {service.detail ? <p className={styles.tileDetail}>{service.detail}</p> : null}
             </article>
           </li>
         ))}
@@ -36,7 +37,7 @@ export function StatusServiceTiles({ services }: { services: ServiceHealth[] }) 
 
 function ServiceIcon({ name }: { name: ServiceHealth["icon"] }) {
   const common = {
-    className: "status-tile-icon",
+    className: styles.tileIcon,
     viewBox: "0 0 32 32",
     fill: "none",
     stroke: "currentColor",

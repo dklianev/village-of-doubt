@@ -173,7 +173,7 @@ for (const viewport of VIEWPORTS) {
     await setVisualTheme(page, "dark");
     await page.goto("/report", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle").catch(() => {});
-    await page.locator(".report-type-card").filter({ hasText: "Авторски права" }).click();
+    await page.getByText("Авторски права", { exact: true }).click();
     await page.getByRole("button", { name: "Напред →" }).click();
     await expect(page.getByText("Линк към материала и кой е автор")).toBeVisible();
     await page.waitForTimeout(600);

@@ -3,6 +3,7 @@
 import { EmptyState, Pill } from "@werewolf/ui";
 import { type FormEvent, useId, useMemo, useState } from "react";
 import { ArtifactImage } from "@/components/ArtifactImage";
+import styles from "./ReportWizard.module.css";
 
 type ReportType = "abuse" | "copyright" | "bug" | "gdpr" | "other";
 type Step = "type" | "details" | "identity" | "review" | "success";
@@ -182,31 +183,31 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
   }
 
   return (
-    <section className="report-wizard" aria-label="Сигнал — съветник">
-      <nav className="report-wizard-progress" aria-label="Стъпки">
-        <div className="report-wizard-progress-bar" aria-hidden>
+    <section className={styles.wizard} aria-label="Сигнал — съветник">
+      <nav className={styles.progress} aria-label="Стъпки">
+        <div className={styles.progressBar} aria-hidden>
           <div
-            className="report-wizard-progress-fill"
+            className={styles.progressFill}
             style={{ width: `${((stepIndex + 1) / totalSteps) * 100}%` }}
           />
         </div>
-        <p className="report-wizard-progress-label">
+        <p className={styles.progressLabel}>
           Стъпка {stepIndex + 1} от {totalSteps}
         </p>
       </nav>
 
       <form onSubmit={submit}>
         {step === "type" ? (
-          <fieldset className="report-wizard-step">
+          <fieldset className={styles.step}>
             <legend>За какво е сигналът?</legend>
-            <p className="report-wizard-step-lede">
+            <p className={styles.stepLede}>
               Избери вида, който най-точно описва ситуацията.
             </p>
-            <div className="report-type-grid">
+            <div className={styles.typeGrid}>
               {(Object.keys(TYPE_META) as ReportType[]).map((key) => {
                 const item = TYPE_META[key];
                 return (
-                  <label key={key} className="report-type-card" data-active={type === key}>
+                  <label key={key} className={styles.typeCard} data-active={type === key}>
                     <input
                       type="radio"
                       name="report-type"
@@ -214,11 +215,11 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
                       checked={type === key}
                       onChange={() => setType(key)}
                     />
-                    <span className="report-type-icon" aria-hidden>
+                    <span className={styles.typeIcon} aria-hidden>
                       {item.icon}
                     </span>
-                    <span className="report-type-label">{item.label}</span>
-                    <span className="report-type-hint">{item.hint}</span>
+                    <span className={styles.typeLabel}>{item.label}</span>
+                    <span className={styles.typeHint}>{item.hint}</span>
                   </label>
                 );
               })}
@@ -227,13 +228,13 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
         ) : null}
 
         {step === "details" ? (
-          <fieldset className="report-wizard-step">
+          <fieldset className={styles.step}>
             <legend>Какво се случи?</legend>
-            <p className="report-wizard-step-lede">
+            <p className={styles.stepLede}>
               Колкото повече подробности, толкова по-бързо реагираме.
             </p>
 
-            <div className="report-field">
+            <div className={styles.field}>
               <label htmlFor={bodyId}>Описание</label>
               <textarea
                 id={bodyId}
@@ -247,14 +248,14 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
                 aria-invalid={Boolean(errorMsg)}
                 aria-describedby={errorMsg ? bodyErrorId : undefined}
               />
-              <div className="report-field-foot">
-                <span className="report-field-count">{body.length} / 4000</span>
+              <div className={styles.fieldFoot}>
+                <span className={styles.fieldCount}>{body.length} / 4000</span>
               </div>
             </div>
 
-            <div className="report-field">
+            <div className={styles.field}>
               <label htmlFor={evidenceId}>
-                {meta.evidenceLabel} <span className="report-field-optional">(по избор)</span>
+                {meta.evidenceLabel} <span className={styles.fieldOptional}>(по избор)</span>
               </label>
               <input
                 id={evidenceId}
@@ -269,14 +270,14 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
         ) : null}
 
         {step === "identity" ? (
-          <fieldset className="report-wizard-step">
+          <fieldset className={styles.step}>
             <legend>Как искаш да отговорим?</legend>
-            <p className="report-wizard-step-lede">
+            <p className={styles.stepLede}>
               Можеш да подадеш сигнала анонимно — но няма да можем да ти отговорим лично.
             </p>
 
-            <div className="report-identity-grid">
-              <label className="report-identity-card" data-active={identity === "identified"}>
+            <div className={styles.identityGrid}>
+              <label className={styles.identityCard} data-active={identity === "identified"}>
                 <input
                   type="radio"
                   name="report-identity"
@@ -284,13 +285,13 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
                   checked={identity === "identified"}
                   onChange={() => setIdentity("identified")}
                 />
-                <span className="report-identity-title">С имейл</span>
-                <span className="report-identity-hint">
+                <span className={styles.identityTitle}>С имейл</span>
+                <span className={styles.identityHint}>
                   Получаваш отговор. Имейлът се ползва само за този сигнал.
                 </span>
               </label>
 
-              <label className="report-identity-card" data-active={identity === "private"}>
+              <label className={styles.identityCard} data-active={identity === "private"}>
                 <input
                   type="radio"
                   name="report-identity"
@@ -298,15 +299,15 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
                   checked={identity === "private"}
                   onChange={() => setIdentity("private")}
                 />
-                <span className="report-identity-title">Анонимно</span>
-                <span className="report-identity-hint">
+                <span className={styles.identityTitle}>Анонимно</span>
+                <span className={styles.identityHint}>
                   Не запазваме имейл. Действаме по сигнала, но не получаваш потвърждение.
                 </span>
               </label>
             </div>
 
             {identity === "identified" ? (
-              <div className="report-field">
+              <div className={styles.field}>
                 <label htmlFor={emailId}>Твоят имейл</label>
                 <input
                   id={emailId}
@@ -318,20 +319,20 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
                   required
                 />
                 {userEmail ? (
-                  <p className="report-field-hint">Предварително попълнен от твоето досие.</p>
+                  <p className={styles.fieldHint}>Предварително попълнен от твоето досие.</p>
                 ) : null}
-                {userName ? <p className="report-field-hint">Ще отговорим на {userName}.</p> : null}
+                {userName ? <p className={styles.fieldHint}>Ще отговорим на {userName}.</p> : null}
               </div>
             ) : null}
           </fieldset>
         ) : null}
 
         {step === "review" ? (
-          <fieldset className="report-wizard-step">
+          <fieldset className={styles.step}>
             <legend>Преглед преди изпращане.</legend>
-            <p className="report-wizard-step-lede">Виж дали всичко изглежда наред.</p>
+            <p className={styles.stepLede}>Виж дали всичко изглежда наред.</p>
 
-            <dl className="report-review">
+            <dl className={styles.review}>
               <div>
                 <dt>Вид сигнал</dt>
                 <dd>
@@ -340,7 +341,7 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
               </div>
               <div>
                 <dt>Описание</dt>
-                <dd className="report-review-body">{body}</dd>
+                <dd className={styles.reviewBody}>{body}</dd>
               </div>
               {evidence ? (
                 <div>
@@ -354,7 +355,7 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
               </div>
             </dl>
 
-            <p className="report-review-promise">
+            <p className={styles.reviewPromise}>
               Преглеждаме всеки сигнал в рамките на <strong>48 часа</strong>. При спешност можем да
               реагираме по-бързо.
             </p>
@@ -362,12 +363,12 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
         ) : null}
 
         {errorMsg ? (
-          <p id={bodyErrorId} className="report-wizard-error" role="alert">
+          <p id={bodyErrorId} className={styles.error} role="alert">
             {errorMsg}
           </p>
         ) : null}
 
-        <div className="report-wizard-actions">
+        <div className={styles.actions}>
           {stepIndex > 0 ? (
             <Pill type="button" intent="ghost" onClick={goBack}>
               ← Назад
@@ -426,24 +427,24 @@ function ReportSuccessState({
         action={
           <div style={{ display: "grid", gap: "16px", justifyItems: "center", width: "100%" }}>
             {referenceId ? (
-              <div className="report-success-reference">
-                <p className="report-success-ref-label">Референция</p>
-                <p className="report-success-ref-value">{referenceId}</p>
-                <p className="report-success-ref-hint">
+              <div className={styles.successReference}>
+                <p className={styles.successRefLabel}>Референция</p>
+                <p className={styles.successRefValue}>{referenceId}</p>
+                <p className={styles.successRefHint}>
                   Запази я, ако искаш да се позовеш на този сигнал по-късно.
                 </p>
               </div>
             ) : null}
 
             {identity === "identified" ? (
-              <p className="report-success-followup">Ще получиш отговор на посочения имейл.</p>
+              <p className={styles.successFollowup}>Ще получиш отговор на посочения имейл.</p>
             ) : (
-              <p className="report-success-followup">
+              <p className={styles.successFollowup}>
                 Сигналът е анонимен — няма да получиш потвърждение.
               </p>
             )}
 
-            <div className="report-success-actions">
+            <div className={styles.successActions}>
               <Pill as="a" href="/" intent="secondary">
                 Към началото
               </Pill>
