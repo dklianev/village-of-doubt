@@ -18,6 +18,7 @@
     "ui:storybook:build": "pnpm --filter @werewolf/ui build-storybook",
     "check:dict": "tsx scripts/check-dictionary.mjs",
     "visual:ui": "playwright test --config=playwright.ui.config.ts",
+    "audit:css": "node scripts/audit-globals-css.mjs",
     "perf:budget": "node scripts/bundle-budget.mjs",
     "loadtest": "node scripts/loadtest.mjs",
     "loadtest:heavy": "LOAD_CLIENTS=500 node scripts/loadtest.mjs",

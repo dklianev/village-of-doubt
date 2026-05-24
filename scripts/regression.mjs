@@ -17,6 +17,7 @@ const checks = [
   ["lobby wizard contracts", checkLobbyWizardContracts],
   ["play UI hardening contracts", checkPlayUiContracts],
   ["frontend hygiene contracts", checkFrontendHygieneContracts],
+  ["globals.css size budget", checkGlobalsCssBudget],
   ["production security guards", checkProductionGuardContracts],
   ["launch testing contracts", checkLaunchTestingContracts],
   ["production env checker behavior", checkProductionEnvChecker],
@@ -154,7 +155,7 @@ function checkLandingLayoutContracts() {
   const lightTheatreBackdropBlock =
     lightTheatreBackdropStart >= 0 ? css.slice(lightTheatreBackdropStart, css.indexOf("}", lightTheatreBackdropStart)) : "";
   const publicShellStackPattern =
-    /\.landing-shell,\s*\.game-home-shell,\s*\.lobby-shell,\s*\.history-shell,\s*\.roles-shell,\s*\.rules-shell,\s*\.auth-shell,\s*\.sign-in-shell,\s*\.tutorial-shell,\s*\.utility-shell\s*{[\s\S]*?z-index:\s*0;[\s\S]*?isolation:\s*isolate;/;
+    /\.landing-shell,\s*\.game-home-shell,\s*\.lobby-shell,\s*\.history-shell,\s*\.roles-shell,\s*\.rules-shell,\s*\.sign-in-shell,\s*\.tutorial-shell,\s*\.utility-shell\s*{[\s\S]*?z-index:\s*0;[\s\S]*?isolation:\s*isolate;/;
 
   assert(landingPage.includes("<ModeChoiceCards"), "Landing page must render the separated game picker component.");
   assert(modeChoiceCards.includes("game-choice-grid"), "Landing mode choice component needs the game picker grid.");
@@ -209,7 +210,6 @@ function checkLandingLayoutContracts() {
     ".history-shell::before",
     ".roles-shell::before",
     ".rules-shell::before",
-    ".auth-shell::before",
     ".tutorial-shell::before",
     ".utility-shell::before",
   ]) {
@@ -384,7 +384,6 @@ function checkRulesPlaybookContracts() {
     ".phase-info-chip",
     ".phase-loop-arrow",
     ".phase-timeline__line.is-loop",
-    ".rules-phase-detail",
     ".rules-chapter-grid",
     ".rules-chapter-card",
     ".rules-scenario-grid",
@@ -576,6 +575,24 @@ function checkFrontendHygieneContracts() {
   assert(
     readText("apps/web/components/manual-role-builder-client.tsx").startsWith('"use client"'),
     "ManualRoleBuilderClient must remain the explicit client island.",
+  );
+}
+
+function checkGlobalsCssBudget() {
+  const result =
+    process.platform === "win32"
+      ? spawnSync("cmd.exe", ["/d", "/s", "/c", "node scripts/audit-globals-css.mjs --budget"], {
+          cwd: root,
+          encoding: "utf8",
+        })
+      : spawnSync(process.execPath, ["scripts/audit-globals-css.mjs", "--budget"], {
+          cwd: root,
+          encoding: "utf8",
+        });
+
+  assert(
+    result.status === 0,
+    `globals.css budget failed:\n${result.stdout ?? ""}\n${result.stderr ?? ""}\n${result.error?.message ?? ""}`,
   );
 }
 
