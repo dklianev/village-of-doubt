@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Display, PaperCard } from "@werewolf/ui/server";
 import { ACHIEVEMENTS } from "@werewolf/shared";
 import { AchievementIcon } from "@/components/achievements/AchievementIcon";
+import styles from "./AccountAchievements.module.css";
 
 interface Props {
   unlockedIds: string[];
@@ -26,16 +27,16 @@ export function AccountAchievements({ unlockedIds, total }: Props) {
           </header>
 
           {top3.length > 0 ? (
-            <ul className="account-achievement-row">
+            <ul className={styles.achievementRow}>
               {top3.map((definition) => (
                 <li key={definition.id}>
                   <article
-                    className="account-achievement-mini"
+                    className={styles.achievementMini}
                     data-tier={definition.tier ?? "bronze"}
                     data-family={definition.family ?? "universal"}
                   >
-                    <AchievementIcon id={definition.id} className="account-achievement-icon" />
-                    <p className="account-achievement-title">{definition.titleBg}</p>
+                    <AchievementIcon id={definition.id} className={styles.achievementIcon ?? ""} />
+                    <p className={styles.achievementTitle}>{definition.titleBg}</p>
                   </article>
                 </li>
               ))}

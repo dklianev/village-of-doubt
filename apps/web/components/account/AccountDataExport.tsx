@@ -1,6 +1,7 @@
 "use client";
 
 import { Display, PaperCard } from "@werewolf/ui/server";
+import styles from "./AccountDataExport.module.css";
 
 export function AccountDataExport() {
   function exportData() {
@@ -18,7 +19,7 @@ export function AccountDataExport() {
             <p>Имаш право да изтеглиш всичко, което сме записали за теб.</p>
           </header>
 
-          <button type="button" className="account-export-btn" onClick={exportData}>
+          <button type="button" className={styles.exportBtn} onClick={exportData}>
             Изтегли моите данни (JSON)
           </button>
         </div>
