@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Display, SceneCard } from "@werewolf/ui";
+import { Display, Pill, SceneCard } from "@werewolf/ui";
 import { CaseFileCard, modeFamily, outcomeFor } from "@/components/history/CaseFileCard";
 import { EvidenceWallEmpty } from "@/components/history/EvidenceWallEmpty";
 import type { HistoryGameView } from "@/lib/history-highlights";
@@ -38,17 +38,18 @@ export function EvidenceWall({ games }: { games: HistoryGameView[] }) {
       </header>
 
       {games.length > 0 ? (
-        <div className="evidence-filters" role="group" aria-label="Филтри по дело">
+        <div className={styles.evidenceFilters} role="group" aria-label="Филтри по дело">
           {FILTERS.map((item) => (
-            <button
+            <Pill
               key={item.value}
               type="button"
+              intent={filter === item.value ? "secondary" : "ghost"}
+              size="sm"
               aria-pressed={filter === item.value}
-              data-active={filter === item.value}
               onClick={() => setFilter(item.value)}
             >
               {item.label}
-            </button>
+            </Pill>
           ))}
         </div>
       ) : null}
@@ -65,9 +66,9 @@ export function EvidenceWall({ games }: { games: HistoryGameView[] }) {
         <section className="evidence-filter-empty">
           <h2>Няма дела за този филтър</h2>
           <p>Смени филтъра или изчакай нова завършена игра.</p>
-          <button type="button" className="btn btn-secondary" onClick={() => setFilter("all")}>
+          <Pill type="button" intent="secondary" size="sm" onClick={() => setFilter("all")}>
             Покажи всички
-          </button>
+          </Pill>
         </section>
       )}
     </>
