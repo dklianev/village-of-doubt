@@ -1,6 +1,6 @@
 # Design tokens - `--ds-*` namespace
 
-32 OKLCH tokens. Plain CSS variables in `packages/ui/src/tokens.css`.
+Plain CSS variables in `packages/ui/src/tokens.css`.
 
 ## Naming
 
@@ -109,3 +109,38 @@ local cue without redefining the primitive:
 
 `pnpm regression` warns on direct primitive overrides during the restoration
 work and becomes a hard guard after the touched pages are clean.
+
+## Pill primitive (enriched)
+
+`Pill` is still framework-neutral: it renders either a `button` or an `a`
+element. It does not accept Next.js `Link` or a generic `as={ElementType}`.
+
+```tsx
+<Pill intent="primary" shimmer tracked>
+  Избери игра
+</Pill>
+
+<div data-faction="werewolves">
+  <Pill intent="faction">Влез на масата</Pill>
+</div>
+
+<Pill as="a" href="/status" intent="ghost">
+  Виж състояние
+</Pill>
+```
+
+| Prop | Values | Default | Purpose |
+|---|---|---|---|
+| `intent` | `primary` / `secondary` / `ghost` / `danger` / `faction` | `primary` | Visual emphasis |
+| `size` | `sm` / `md` / `lg` | `md` | Touch target and density |
+| `shimmer` | `boolean` | `false` | CSS-only sheen on hover |
+| `tracked` | `boolean` | `false` | Uppercase CTA treatment without changing DOM text |
+| `as` | `button` / `a` | `button` | Native element choice |
+
+`intent="faction"` reads `--ds-gradient-faction` from an ancestor. New code
+should set `data-faction="werewolves"` or `data-faction="mafia"`. During the
+restoration work, tokens also include a compatibility fallback for legacy
+`data-theme="werewolves"` / `data-theme="mafia"` containers.
+
+Shimmer is opt-in and CSS-only. Use it for primary CTAs in hero, create-flow, or
+cinematic contexts. Avoid putting shimmer on every secondary action.
