@@ -127,6 +127,40 @@ Motion е ограничен до 3 primitives. Проверка:
 `Dialog` и `Sheet` използват Radix `asChild` + `motion.div`. Не обвивай Radix primitives с deprecated `motion(Component)`.
 `Sheet` винаги има видимо `title` и включва собствените си layout styles, за да не зависи от consumer CSS import.
 
+### Hero banners
+
+Hero изображенията минават през `SceneCard.background`, не през page-local
+`<Image fill>` wrappers и не през `:global()` overrides върху primitives:
+
+```tsx
+<SceneCard
+  eyebrow="ДОСИЕ"
+  density="lg"
+  background={{ image: "var(--art-account)", overlay: "scrim" }}
+>
+  ...
+</SceneCard>
+```
+
+`background.image` трябва да ползва app-level `--art-*` token, когато има такъв.
+Виж `packages/ui/docs/tokens.md` за overlay и focal-point правилата.
+
+### Theme + faction attributes
+
+- `data-theme="light" | "dark"` живее на `<html>` и управлява surface/ink theme.
+- `data-faction="werewolves" | "mafia"` живее на page-level container и управлява faction accents.
+
+Новите primitives четат `data-faction` за faction styling. Legacy
+`[data-theme="werewolves" | "mafia"]` selectors остават като съвместимост до
+отделна cleanup миграция; не добавяй нови faction selectors върху `data-theme`.
+
+### Primitive override guard
+
+CSS modules не трябва да пренаписват primitive identity чрез `:global()`, напр.
+`:global(.paper-card)` или `:global([data-ds-scene-card])`. Използвай additive
+primitive prop или page-local wrapper accent. `pnpm regression` предупреждава за
+нарушения по време на hero restoration и ще стане hard guard след cleanup-а.
+
 ### Empty states
 
 22-entry catalog: `packages/ui/src/states/empty-states.ts`. Geometric SVG artifacts: `packages/ui/src/primitives/artifacts/`.

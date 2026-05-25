@@ -56,3 +56,56 @@ until a per-component migration PR.
 - `--ds-ink-scene` on `--ds-surface-scene`: 12.1:1 AAA
 - `--ds-ink-scene-soft` on `--ds-surface-scene`: 7.2:1 AA
 - `--ds-accent-blood` on `--ds-surface-paper`: 4.5:1 AA
+
+## Hero banners via SceneCard background
+
+`SceneCard` supports an optional `background` slot for hero images. Consumers
+pass a CSS image source, usually an app-level `--art-*` token:
+
+```tsx
+<SceneCard
+  eyebrow="ДОСИЕ"
+  density="lg"
+  background={{ image: "var(--art-account)", overlay: "scrim", focalY: 35 }}
+>
+  <Display size="h1">{userName}</Display>
+</SceneCard>
+```
+
+Overlay options:
+
+- `scrim` - strong dark gradient for maximum text legibility
+- `veil` - medium overlay for calm atmospheric banners
+- `none` - minimal tint; use only when the artwork is already dark
+
+`focalX` and `focalY` shift the background focal point from 0 to 100. Default is
+50/50. Use them when the important part of the artwork sits off-center.
+
+## Anti-pattern: `:global()` primitive overrides
+
+CSS modules must not use `:global()` selectors to redefine primitive identity:
+
+```css
+/* Wrong - fights with PaperCard identity */
+:global(.paper-card) {
+  background: dark;
+}
+
+/* Wrong - fights with SceneCard identity */
+:global([data-ds-scene-card]) {
+  color: white;
+}
+```
+
+Use the primitive that matches the surface intent, or extend the primitive with
+an additive prop and tests. Wrapper-context accents are allowed when they add a
+local cue without redefining the primitive:
+
+```css
+.caseFileShell[data-outcome="win"] [data-ds-scene-card] {
+  border-left: 2px solid var(--ds-accent-green);
+}
+```
+
+`pnpm regression` warns on direct primitive overrides during the restoration
+work and becomes a hard guard after the touched pages are clean.
