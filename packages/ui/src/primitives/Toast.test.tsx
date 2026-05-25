@@ -18,6 +18,16 @@ describe("Toast", () => {
     expect(getByRole("status").dataset.dsToast).toBe("error");
   });
 
+  it("marks stack index for stagger timing", () => {
+    const { getByRole } = render(<Toast open index={2} message="Писмо" />);
+    expect(getByRole("status").dataset.dsToastIndex).toBe("2");
+  });
+
+  it("normalizes invalid stack index values", () => {
+    const { getByRole } = render(<Toast open index={-3} message="Писмо" />);
+    expect(getByRole("status").dataset.dsToastIndex).toBe("0");
+  });
+
   it("calls onDismiss from the close button", () => {
     const onDismiss = vi.fn();
     const { getByRole } = render(<Toast open message="Писмо" onDismiss={onDismiss} />);

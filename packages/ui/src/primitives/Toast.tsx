@@ -7,6 +7,8 @@ export interface ToastProps {
   tone?: ToastTone;
   message: string;
   onDismiss?: () => void;
+  /** Position in a toast stack. Used for CSS-free stagger timing. */
+  index?: number;
 }
 
 const TONE_BG: Record<ToastTone, string> = {
@@ -15,7 +17,13 @@ const TONE_BG: Record<ToastTone, string> = {
   error: "var(--ds-accent-blood)",
 };
 
-export function Toast({ open, tone = "info", message, onDismiss }: ToastProps) {
+const TOAST_STAGGER_STEP = 0.06;
+const MAX_STAGGER_INDEX = 6;
+
+export function Toast({ open, tone = "info", message, onDismiss, index = 0 }: ToastProps) {
+  const normalizedIndex = Number.isFinite(index) ? Math.max(0, Math.floor(index)) : 0;
+  const staggerDelay = Math.min(normalizedIndex, MAX_STAGGER_INDEX) * TOAST_STAGGER_STEP;
+
   return (
     <AnimatePresence>
       {open && (
@@ -23,10 +31,18 @@ export function Toast({ open, tone = "info", message, onDismiss }: ToastProps) {
           role="status"
           aria-live="polite"
           data-ds-toast={tone}
+          data-ds-toast-index={normalizedIndex}
           initial={{ opacity: 0, y: -16 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -16 }}
-          transition={{ duration: 0.18, ease: [0.32, 0.72, 0, 1] }}
+          animate={{
+            opacity: 1,
+            y: 0,
+            transition: { delay: staggerDelay, type: "spring", stiffness: 280, damping: 24 },
+          }}
+          exit={{
+            opacity: 0,
+            y: -16,
+            transition: { duration: 0.14, ease: [0.32, 0, 0.67, 0] },
+          }}
           style={{
             background: TONE_BG[tone],
             color: "oklch(0.97 0.01 80)",

@@ -45,9 +45,9 @@ export const AllVariants: Story = {
   args: { open: true, message: "Варианти" },
   render: () => (
     <div style={{ display: "grid", gap: "14px", padding: "32px" }}>
-      <Toast open tone="info" message="Писмото е изпратено." />
-      <Toast open tone="success" message="Промяната е запазена." />
-      <Toast open tone="error" message="Нещо прекъсна. Опитай пак." />
+      <Toast open tone="info" message="Писмото е изпратено." index={0} />
+      <Toast open tone="success" message="Промяната е запазена." index={1} />
+      <Toast open tone="error" message="Нещо прекъсна. Опитай пак." index={2} />
     </div>
   ),
 };
@@ -62,9 +62,9 @@ export const InteractionStates: Story = {
 
     return (
       <div data-toast-focus-root style={{ display: "grid", gap: "14px", padding: "32px" }}>
-        <Toast open tone="info" message="Затварящият бутон е във фокус." onDismiss={() => {}} />
-        <Toast open tone="success" message="Успешното писмо остава видимо." />
-        <Toast open tone="error" message="Грешката остава ясно различима." />
+        <Toast open tone="info" message="Затварящият бутон е във фокус." onDismiss={() => {}} index={0} />
+        <Toast open tone="success" message="Успешното писмо остава видимо." index={1} />
+        <Toast open tone="error" message="Грешката остава ясно различима." index={2} />
       </div>
     );
   },
