@@ -13,7 +13,7 @@ export type { DisplayProps, DisplaySize } from "./primitives/Display";
 export { PaperCard } from "./primitives/PaperCard";
 export type { PaperCardProps } from "./primitives/PaperCard";
 export { SceneCard } from "./primitives/SceneCard";
-export type { SceneCardProps } from "./primitives/SceneCard";
+export type { SceneCardBackground, SceneCardProps } from "./primitives/SceneCard";
 export { Pill } from "./primitives/Pill";
 export type { PillIntent, PillProps, PillSize } from "./primitives/Pill";
 export { Medallion } from "./primitives/Medallion";
