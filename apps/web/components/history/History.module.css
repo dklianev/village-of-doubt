@@ -609,7 +609,7 @@
   color: var(--blood-dark);
   font-size: 0.66rem;
   font-weight: 950;
-  letter-spacing: 0.16em;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
@@ -626,7 +626,7 @@
   aspect-ratio: 1;
   border: 1px solid rgba(209, 154, 66, 0.28);
   border-radius: 18px;
-  color: var(--gold);
+  color: var(--ds-accent-gold);
   font-weight: 950;
 }
 
@@ -651,20 +651,16 @@
   color: var(--replay-accent);
   font-size: 0.74rem;
   font-weight: 850;
-  letter-spacing: 0.26em;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
-:global(.replay-verdict-card),
-:global(.replay-participants),
-:global(.replay-phase-group),
-:global(.replay-achievements),
-:global(.replay-empty-card) {
-  border: 1px solid var(--replay-border);
-  border-radius: 18px;
-  background: var(--replay-surface);
-  box-shadow: inset 0 1px 0 rgba(245, 232, 200, 0.06);
-  backdrop-filter: blur(14px);
+:global(.replay-hero-subtitle) {
+  max-width: 64ch;
+  margin: 0;
+  color: var(--ds-ink-scene-soft);
+  font-size: var(--ds-type-lede);
+  line-height: 1.6;
 }
 
 :global(.replay-summary-primitive) {
@@ -694,11 +690,7 @@
 }
 
 :global(.replay-verdict-card) {
-  display: grid;
-  gap: 10px;
   margin-top: 24px;
-  padding: 22px;
-  color: var(--replay-text);
 }
 
 :global(.replay-verdict-card h2),
@@ -706,7 +698,7 @@
 :global(.replay-achievements h2),
 :global(.replay-empty-card h2) {
   margin: 0;
-  color: var(--replay-text);
+  color: var(--ds-ink-primary);
   font-family: "Noto Serif Display", serif;
   font-size: 1.55rem;
   font-weight: 850;
@@ -716,15 +708,12 @@
 :global(.replay-empty-note),
 :global(.replay-empty-card p) {
   margin: 0;
-  color: var(--replay-text-muted);
+  color: var(--ds-ink-soft);
   line-height: 1.62;
 }
 
 :global(.replay-participants) {
-  display: grid;
-  gap: 14px;
   margin-top: 18px;
-  padding: 20px;
 }
 
 :global(.replay-section-head) {
@@ -746,9 +735,9 @@
   column-gap: 10px;
   align-items: center;
   padding: 10px 12px;
-  border: 1px solid var(--replay-border);
+  border: 1px solid var(--ds-surface-paper-edge);
   border-radius: 14px;
-  background: var(--replay-surface-strong);
+  background: color-mix(in oklch, var(--ds-surface-paper-deep) 68%, transparent);
 }
 
 :global(.replay-player-chip strong) {
@@ -758,8 +747,8 @@
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  background: rgba(209, 154, 66, 0.18);
-  color: var(--replay-accent);
+  background: oklch(0.78 0.115 75 / 0.16);
+  color: var(--ds-accent-gold-deep);
   font-family: "Noto Serif Display", serif;
 }
 
@@ -771,12 +760,12 @@
 }
 
 :global(.replay-player-chip span) {
-  color: var(--replay-text);
+  color: var(--ds-ink-primary);
   font-weight: 850;
 }
 
 :global(.replay-player-chip em) {
-  color: var(--replay-text-soft);
+  color: var(--ds-ink-soft);
   font-size: 0.76rem;
   font-style: normal;
   font-weight: 750;
@@ -790,9 +779,7 @@
 
 :global(.replay-achievements),
 :global(.replay-empty-card) {
-  display: grid;
-  gap: 14px;
-  padding: 20px;
+  min-width: 0;
 }
 
 :global(.replay-achievements .achievement-grid) {
@@ -800,39 +787,42 @@
 }
 
 :global(.replay-phase-group) {
-  overflow: hidden;
-  color: var(--replay-text);
+  min-width: 0;
 }
 
-:global(.replay-phase-group > header) {
+:global(.replay-phase-content) {
+  display: grid;
+  gap: 0;
+}
+
+:global(.replay-phase-content > header) {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 18px 20px;
-  border-bottom: 1px solid var(--replay-border);
-  background: rgba(245, 232, 200, 0.04);
+  padding-bottom: 16px;
+  border-bottom: 1px solid color-mix(in oklch, var(--ds-surface-paper-edge) 70%, transparent);
 }
 
-:global(.replay-phase-group > header > span) {
+:global(.replay-phase-content > header > span) {
   display: grid;
   place-items: center;
   width: 42px;
   height: 42px;
-  border: 1px solid var(--replay-border-strong);
+  border: 1px solid oklch(0.78 0.115 75 / 0.34);
   border-radius: 50%;
-  color: var(--replay-accent);
+  color: var(--ds-accent-gold-deep);
   font-weight: 900;
 }
 
-:global(.replay-phase-group h2) {
+:global(.replay-phase-content h2) {
   margin: 4px 0 0;
-  color: var(--replay-text);
+  color: var(--ds-ink-primary);
   font-family: "Noto Serif Display", serif;
   font-size: 1.28rem;
   font-weight: 850;
 }
 
-:global(.replay-phase-group ol) {
+:global(.replay-phase-content ol) {
   display: grid;
   gap: 0;
   margin: 0;
@@ -844,8 +834,8 @@
   display: grid;
   grid-template-columns: 48px minmax(0, 1fr);
   gap: 14px;
-  padding: 16px 20px;
-  border-top: 1px solid rgba(245, 232, 200, 0.07);
+  padding: 16px 0;
+  border-top: 1px solid color-mix(in oklch, var(--ds-surface-paper-edge) 62%, transparent);
 }
 
 :global(.replay-event-v2:first-child) {
@@ -856,7 +846,7 @@
   width: 42px;
   height: 42px;
   border-radius: 14px;
-  background: rgba(245, 232, 200, 0.06);
+  background: color-mix(in oklch, var(--ds-surface-paper-deep) 72%, transparent);
 }
 
 :global(.replay-event-v2[data-tone="danger"] .replay-index) {
@@ -873,19 +863,19 @@
 
 :global(.replay-event-v2 h3) {
   margin: 0;
-  color: var(--replay-text);
+  color: var(--ds-ink-primary);
   font-size: 1.02rem;
   font-weight: 850;
 }
 
 :global(.replay-event-v2 p) {
   margin: 6px 0;
-  color: var(--replay-text-muted);
+  color: var(--ds-ink-soft);
   line-height: 1.58;
 }
 
 :global(.replay-event-v2 small) {
-  color: var(--replay-text-soft);
+  color: var(--ds-ink-faint);
   font-size: 0.76rem;
   font-weight: 750;
 }
