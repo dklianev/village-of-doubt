@@ -55,6 +55,9 @@ const LIGHT_UTILITY_ROUTES = [
 ];
 
 const DARK_UTILITY_ROUTE_NAMES = new Set([
+  "home",
+  "werewolf-home",
+  "mafia-home",
   "account-dashboard",
   "history-empty",
   "leaderboard-empty",
