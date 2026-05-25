@@ -9,7 +9,7 @@ import type { FaqCategory, FaqItem } from "@/lib/faq-data";
 import { copyTextToClipboard } from "@/lib/clipboard";
 import { CategoryIcon } from "./FaqCategoryIcon";
 import { FaqAnswerRenderer } from "./FaqAnswerRenderer";
-import "./FaqHearth.module.css";
+import styles from "./FaqHearth.module.css";
 
 const CATEGORY_LABELS: Record<FaqCategory, string> = {
   "pre-game": "Преди първа игра",
@@ -138,20 +138,17 @@ export function FaqHearth({ items }: { items: readonly FaqItem[] }) {
 
   return (
     <article className="faq-hearth">
-      <header
-        aria-label="Седни до огъня"
-        style={{ maxWidth: "980px", margin: "0 auto", padding: "32px 24px 0" }}
-      >
-        <SceneCard eyebrow="СЕДНИ ДО ОГЪНЯ" density="lg">
+      <header aria-label="Седни до огъня" className={styles.heroFrame}>
+        <SceneCard
+          eyebrow="СЕДНИ ДО ОГЪНЯ"
+          density="lg"
+          background={{
+            image: "var(--art-faq)",
+            overlay: "scrim",
+          }}
+        >
           <Display size="h1">Седни до огъня.</Display>
-          <p
-            style={{
-              color: "var(--ds-ink-scene-soft)",
-              fontSize: "var(--ds-type-lede)",
-              lineHeight: 1.55,
-              margin: 0,
-            }}
-          >
+          <p className={styles.heroSubtitle}>
             Отговори за геймплея, досието, техниката и поверителността — споделени на топло.
           </p>
         </SceneCard>
