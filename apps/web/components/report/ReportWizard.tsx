@@ -383,12 +383,14 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
             <Pill
               type="submit"
               intent="primary"
+              shimmer
+              tracked
               disabled={status === "submitting"}
             >
               {status === "submitting" ? "Изпращаме..." : "Изпрати сигнал"}
             </Pill>
           ) : (
-            <Pill type="button" intent="primary" onClick={advance}>
+            <Pill type="button" intent="primary" shimmer tracked onClick={advance}>
               Напред →
             </Pill>
           )}
@@ -425,7 +427,7 @@ function ReportSuccessState({
         title="Светилникът свети."
         body={`Получихме сигнала ти за ${meta.label.toLowerCase()}. Преглеждаме в рамките на 48 часа.`}
         action={
-          <div style={{ display: "grid", gap: "16px", justifyItems: "center", width: "100%" }}>
+          <div className={styles.successStack}>
             {referenceId ? (
               <div className={styles.successReference}>
                 <p className={styles.successRefLabel}>Референция</p>
@@ -445,10 +447,10 @@ function ReportSuccessState({
             )}
 
             <div className={styles.successActions}>
-              <Pill as="a" href="/" intent="secondary">
+              <Pill as="a" href="/" intent="secondary" tracked>
                 Към началото
               </Pill>
-              <Pill as="a" href="/account" intent="secondary">
+              <Pill as="a" href="/account" intent="secondary" tracked>
                 Към досието
               </Pill>
             </div>
