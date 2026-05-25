@@ -69,6 +69,13 @@
   --ds-shadow-scene:
     0 1px 0 oklch(1 0 0 / 0.04) inset,
     0 30px 60px -30px oklch(0 0 0 / 0.65);
+  --ds-card-lift-y: -3px;
+  --ds-shadow-card-elevated:
+    0 1px 0 oklch(1 0 0 / 0.45) inset,
+    0 24px 56px -28px oklch(0.20 0.05 60 / 0.65);
+  --ds-shadow-scene-elevated:
+    0 1px 0 oklch(1 0 0 / 0.06) inset,
+    0 40px 80px -40px oklch(0 0 0 / 0.75);
 
   /* Rich primitive interaction */
   --ds-shimmer-duration: 360ms;
