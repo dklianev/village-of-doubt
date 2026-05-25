@@ -162,3 +162,32 @@ polish; no dead FAQ banner selectors remained after the conservative scan.
 
 - Delete scan: `rg ":global\\(\\.report-hero-stat|:global\\(\\.report-hero-stat-icon|className=\"report-hero-stat" apps/web/components/report apps/web/components/legal` returns zero.
 - `/report` and `/faq` targeted visual suites pass after the hero restorations and polish.
+
+## PR M6 — 2026-05-25 (remaining identity pages)
+
+Hero restoration continued through the remaining identity-heavy pages without
+moving page-specific chrome back into `globals.css`.
+
+| Page family | Replaced by |
+|---|---|
+| `/friends` | `SceneCard.background` with `var(--art-friends)` and local friend board polish |
+| `/achievements` | `SceneCard.background` with `var(--art-achievements)` and local shelf/medallion hierarchy |
+| `/leaderboard` | `SceneCard.background` with `var(--art-leaderboard)` and editorial ranking polish |
+| `/tutorial` | `SceneCard.background` switching between `var(--art-tutorial-day)` and `var(--art-tutorial-night)` |
+| `/sign-in` | `SceneCard.background` with `var(--art-sign-in)` and enriched `Pill` OAuth buttons |
+| `/lobby` / create flow | `SceneCard.background` with `var(--art-lobby)` and `data-faction` accent bridge |
+
+## PR M7 — 2026-05-25 (final hardening)
+
+Final metrics:
+
+| Metric | Result |
+|---|---:|
+| `apps/web/app/globals.css` | 3309 LOC |
+| `:global()` primitive class overrides | 0 |
+| `:global([data-ds-*])` primitive overrides | 0 |
+| Motion primitive files | 3 |
+| `SceneCard.background` route consumers | 14 |
+
+`scripts/regression.mjs` now fails on primitive identity overrides by default.
+The closing report lives in `docs/hero-restoration-closing-report.md`.

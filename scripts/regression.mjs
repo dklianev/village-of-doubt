@@ -649,11 +649,7 @@ function checkPrimitiveOverrideAntiPattern() {
     `Primitive identity override detected in ${violations.length} location(s):\n${detail}\n\n` +
     "Use a primitive extension or a page-local wrapper selector instead of :global() primitive overrides.";
 
-  if (process.env.PRIMITIVE_OVERRIDE_GUARD === "fail") {
-    throw new Error(message);
-  }
-
-  console.warn(`[WARN] ${message}\nSet PRIMITIVE_OVERRIDE_GUARD=fail to enforce.`);
+  throw new Error(message);
 }
 
 function checkGlobalsCssBudget() {
