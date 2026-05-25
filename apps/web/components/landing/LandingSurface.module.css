@@ -398,6 +398,24 @@
   gap: 24px;
 }
 
+:global(.quickstart-header-plaque) {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: min(100%, 620px);
+  border: 1px solid rgba(255, 247, 229, 0.54);
+  border-radius: 24px;
+  padding: clamp(14px, 2vw, 20px) clamp(18px, 3vw, 28px);
+  background:
+    radial-gradient(circle at 10% 0%, rgba(255, 255, 255, 0.52), transparent 18rem),
+    linear-gradient(120deg, rgba(255, 247, 229, 0.84), rgba(239, 216, 174, 0.68));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.58),
+    0 18px 42px -30px rgba(70, 38, 18, 0.34);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
 :global(.quickstart-header .section-kicker),
 :global(.quickstart-mini-card .section-kicker) {
   color: var(--blood);
@@ -673,6 +691,16 @@
   outline-color: rgba(209, 154, 66, 0.22);
 }
 
+:global(html[data-theme="dark"] .quickstart-header-plaque) {
+  border-color: rgba(248, 236, 210, 0.2);
+  background:
+    radial-gradient(circle at 10% 0%, rgba(248, 236, 210, 0.12), transparent 18rem),
+    linear-gradient(120deg, rgba(13, 9, 8, 0.84), rgba(34, 22, 17, 0.68));
+  box-shadow:
+    inset 0 1px 0 rgba(248, 236, 210, 0.14),
+    0 20px 46px -30px rgba(0, 0, 0, 0.62);
+}
+
 :global(html[data-theme="dark"] .quickstart-surface) {
   background: transparent;
   box-shadow: none;
@@ -896,26 +924,11 @@
 }
 
 :global(.landing-quickstart::before) {
-  position: absolute;
-  inset: clamp(-48px, -5vw, -28px) -8vw clamp(-72px, -7vw, -42px);
-  z-index: -1;
-  border-radius: clamp(38px, 6vw, 84px);
-  background:
-    radial-gradient(ellipse at 50% 8%, rgba(255, 247, 229, 0.44), transparent 42rem),
-    radial-gradient(ellipse at 12% 74%, rgba(209, 154, 66, 0.14), transparent 34rem),
-    radial-gradient(ellipse at 92% 64%, rgba(80, 120, 118, 0.12), transparent 34rem);
-  content: "";
-  opacity: 0.92;
-  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 14%, #000 82%, transparent 100%);
-  mask-image: linear-gradient(180deg, transparent 0%, #000 14%, #000 82%, transparent 100%);
-  pointer-events: none;
+  content: none;
 }
 
 :global(html[data-theme="dark"] .landing-quickstart::before) {
-  background:
-    radial-gradient(ellipse at 50% 8%, rgba(13, 9, 8, 0.48), transparent 42rem),
-    radial-gradient(ellipse at 10% 72%, rgba(209, 154, 66, 0.12), transparent 34rem),
-    radial-gradient(ellipse at 92% 64%, rgba(21, 92, 95, 0.12), transparent 34rem);
+  content: none;
 }
 
 :global(.quickstart-skeleton) {
@@ -950,6 +963,11 @@
 :global(.landing-quickstart .quickstart-mini-card) {
   border: 1px solid rgba(34, 22, 17, 0.12);
   overflow: visible;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    inset 1px 1px rgba(255, 255, 255, 0.35),
+    0 14px 34px -16px rgba(70, 38, 18, 0.26),
+    0 56px 104px -62px rgba(70, 38, 18, 0.42);
 }
 
 :global(.landing-quickstart .quickstart-header .section-kicker),
@@ -987,8 +1005,8 @@
   background: rgba(255, 255, 255, 0.3);
   box-shadow:
     inset 1px 1px rgba(255, 255, 255, 0.34),
-    0 16px 34px rgba(34, 22, 17, 0.09),
-    0 44px 82px -56px rgba(34, 22, 17, 0.2);
+    0 14px 32px -12px rgba(34, 22, 17, 0.2),
+    0 44px 86px -46px rgba(34, 22, 17, 0.38);
 }
 
 :global(.landing-quickstart .quickstart-glyph),
@@ -1040,6 +1058,14 @@
     inset 1px 1px rgba(248, 236, 210, 0.1);
 }
 
+:global(html[data-theme="dark"] .landing-quickstart .quickstart-mini-card) {
+  box-shadow:
+    inset 0 1px 0 rgba(248, 236, 210, 0.14),
+    inset 1px 1px rgba(248, 236, 210, 0.1),
+    0 16px 38px -14px rgba(0, 0, 0, 0.48),
+    0 62px 112px -66px rgba(0, 0, 0, 0.78);
+}
+
 :global(html[data-theme="dark"] .landing-quickstart .quickstart-surface) {
   background: transparent;
   box-shadow: none;
@@ -1076,8 +1102,8 @@
   background: rgba(255, 247, 229, 0.075);
   box-shadow:
     inset 1px 1px rgba(248, 236, 210, 0.1),
-    0 18px 38px rgba(0, 0, 0, 0.22),
-    0 48px 86px -60px rgba(0, 0, 0, 0.58);
+    0 16px 36px -12px rgba(0, 0, 0, 0.4),
+    0 52px 92px -54px rgba(0, 0, 0, 0.72);
 }
 
 :global(html[data-theme="dark"] .landing-quickstart .quickstart-glyph) {
