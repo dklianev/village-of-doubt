@@ -17,6 +17,7 @@ const checks = [
   ["lobby wizard contracts", checkLobbyWizardContracts],
   ["play UI hardening contracts", checkPlayUiContracts],
   ["frontend hygiene contracts", checkFrontendHygieneContracts],
+  ["primitive override anti-pattern", checkPrimitiveOverrideAntiPattern],
   ["globals.css size budget", checkGlobalsCssBudget],
   ["production security guards", checkProductionGuardContracts],
   ["launch testing contracts", checkLaunchTestingContracts],
@@ -589,6 +590,70 @@ function checkFrontendHygieneContracts() {
     readText("apps/web/components/manual-role-builder-client.tsx").startsWith('"use client"'),
     "ManualRoleBuilderClient must remain the explicit client island.",
   );
+}
+
+function checkPrimitiveOverrideAntiPattern() {
+  const primitiveClassNames = [
+    "paper-card",
+    "scene-card",
+    "ds-pill",
+    "pill",
+    "medallion",
+    "surface",
+    "eyebrow",
+    "display",
+    "toast",
+    "dialog",
+    "sheet",
+    "empty-state",
+  ];
+  const primitiveDataNames = [
+    "paper-card",
+    "scene-card",
+    "pill",
+    "medallion",
+    "surface",
+    "eyebrow",
+    "display",
+    "toast",
+    "dialog",
+    "sheet",
+    "empty-state",
+  ];
+  const files = listFilesRecursive(path.join(root, "apps/web"))
+    .filter((file) => file.endsWith(".module.css"))
+    .map((file) => path.join("apps/web", file));
+  const violations = [];
+  const classPattern = new RegExp(`:global\\([^)]*\\.(${primitiveClassNames.join("|")})\\b`, "g");
+  const dataPattern = new RegExp(`:global\\([^)]*\\[data-ds-(${primitiveDataNames.join("|")})\\b`, "g");
+
+  for (const file of files) {
+    const src = readText(file);
+    for (const pattern of [classPattern, dataPattern]) {
+      for (const match of src.matchAll(pattern)) {
+        violations.push({
+          file,
+          line: src.slice(0, match.index).split("\n").length,
+          match: match[0].replace(/\s+/g, " "),
+        });
+      }
+    }
+  }
+
+  if (violations.length === 0) {
+    return;
+  }
+
+  const detail = violations.map((violation) => `  ${violation.file}:${violation.line}  ${violation.match}`).join("\n");
+  const message =
+    `Primitive identity override detected in ${violations.length} location(s):\n${detail}\n\n` +
+    "Use a primitive extension or a page-local wrapper selector instead of :global() primitive overrides.";
+
+  if (process.env.PRIMITIVE_OVERRIDE_GUARD === "fail") {
+    throw new Error(message);
+  }
+
+  console.warn(`[WARN] ${message}\nSet PRIMITIVE_OVERRIDE_GUARD=fail to enforce.`);
 }
 
 function checkGlobalsCssBudget() {
