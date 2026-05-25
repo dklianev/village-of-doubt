@@ -19,6 +19,18 @@ export const Hero: Story = {
   args: { size: "hero", children: "Селото оцеля" },
 };
 
+export const MobileHeroWrap: Story = {
+  args: { children: "Твоите тайни остават при теб." },
+  parameters: {
+    viewport: { defaultViewport: "mobile1" },
+  },
+  render: () => (
+    <div style={{ maxWidth: "343px", padding: "24px", border: "1px solid var(--ds-border-subtle)" }}>
+      <Display size="hero">Твоите тайни остават при теб.</Display>
+    </div>
+  ),
+};
+
 export const HeadingOne: Story = {
   args: { size: "h1", children: "Селото оцеля" },
 };

@@ -9,7 +9,7 @@ export interface DisplayProps {
 }
 
 const SIZE_FONT: Record<DisplaySize, string> = {
-  hero: "var(--ds-type-display)",
+  hero: "clamp(2.6rem, 8.5vw, var(--ds-type-display))",
   h1: "var(--ds-type-h1)",
   h2: "var(--ds-type-h2)",
   h3: "var(--ds-type-h3)",
