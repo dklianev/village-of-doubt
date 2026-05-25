@@ -297,6 +297,47 @@
   -webkit-backdrop-filter: none;
 }
 
+:global(html[data-theme="light"] .landing-hero-card) {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(255, 247, 229, 0.92) 0%,
+      rgba(255, 247, 229, 0.74) 40%,
+      rgba(255, 247, 229, 0.24) 72%,
+      rgba(255, 247, 229, 0.06) 100%
+    ),
+    var(--art-landing-hero-light) center top / 100% auto no-repeat,
+    linear-gradient(145deg, rgba(255, 247, 229, 0.96), rgba(231, 208, 164, 0.88));
+}
+
+:global(html[data-theme="light"] .landing-hero-card > .section-kicker) {
+  border-color: rgba(141, 47, 41, 0.2);
+  background: rgba(255, 247, 229, 0.74);
+  color: #8d2f29;
+  text-shadow: none;
+  box-shadow: 0 12px 34px rgba(67, 39, 24, 0.14);
+}
+
+:global(html[data-theme="light"] .landing-hero-card h1) {
+  color: #24160f;
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.54),
+    0 18px 44px rgba(67, 39, 24, 0.18);
+}
+
+:global(html[data-theme="light"] .landing-hero-copy) {
+  color: rgba(54, 34, 21, 0.84);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.42);
+}
+
+:global(html[data-theme="light"] .landing-logo-mark) {
+  border-color: rgba(141, 47, 41, 0.24);
+  background: radial-gradient(circle, rgba(255, 247, 229, 0.72), rgba(255, 247, 229, 0.22) 62%);
+  box-shadow:
+    0 18px 44px rgba(67, 39, 24, 0.2),
+    inset 0 1px rgba(255, 255, 255, 0.32);
+}
+
 :global(.quickstart-surface),
 :global(.quickstart-mini-card) {
   position: relative;

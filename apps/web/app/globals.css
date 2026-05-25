@@ -53,6 +53,7 @@
   --art-landing-ambient: image-set(url("/game-art/bg-landing-ambient.webp") type("image/webp"), url("/game-art/bg-landing-ambient.png") type("image/png"));
   --art-landing-dual: image-set(url("/game-art/bg-landing-dual-world-v2.webp") type("image/webp"), url("/game-art/bg-landing-dual-world-v2.png") type("image/png"));
   --art-landing-hero-composited: image-set(url("/game-art/bg-landing-hero-composited.webp?v=2") type("image/webp"), url("/game-art/bg-landing-hero-composited.png?v=2") type("image/png"));
+  --art-landing-hero-light: image-set(url("/game-art/bg-landing-hero-light-v1.webp") type("image/webp"), url("/game-art/bg-landing-hero-light-v1.png") type("image/png"));
   --art-landing-ambient-composited: image-set(url("/game-art/bg-landing-ambient-composited.webp") type("image/webp"), url("/game-art/bg-landing-ambient-composited.png") type("image/png"));
   --art-werewolf: image-set(url("/game-art/werewolf/bg-hero-v2.webp") type("image/webp"), url("/game-art/werewolf/bg-hero-v2.png") type("image/png"));
   --art-mafia: image-set(url("/game-art/mafia/bg-hero-v2.webp") type("image/webp"), url("/game-art/mafia/bg-hero-v2.png") type("image/png"));
@@ -348,6 +349,7 @@
     --art-landing-ambient: image-set(url("/game-art/mobile/bg-landing-ambient.webp") type("image/webp"));
     --art-landing-dual: image-set(url("/game-art/mobile/bg-landing-dual-world-v2.webp") type("image/webp"));
     --art-landing-hero-composited: image-set(url("/game-art/mobile/bg-landing-hero-composited.webp?v=2") type("image/webp"));
+    --art-landing-hero-light: image-set(url("/game-art/mobile/bg-landing-hero-light-v1.webp") type("image/webp"));
     --art-landing-ambient-composited: image-set(url("/game-art/mobile/bg-landing-ambient-composited.webp") type("image/webp"));
     --art-werewolf: image-set(url("/game-art/mobile/werewolf/bg-hero-v2.webp") type("image/webp"));
     --art-mafia: image-set(url("/game-art/mobile/mafia/bg-hero-v2.webp") type("image/webp"));
@@ -736,9 +738,10 @@ body:has(.game-home-shell[data-family="mafia"])::before {
 
 html[data-theme="light"] body:has(.landing-shell)::before {
   background:
-    radial-gradient(ellipse at 4% 50%, rgba(255, 230, 180, 0.42), transparent 38rem),
-    radial-gradient(ellipse at 96% 48%, rgba(180, 200, 220, 0.38), transparent 42rem),
-    var(--art-landing-ambient-composited) center / cover no-repeat,
+    linear-gradient(rgba(255, 242, 211, 0.54), rgba(255, 242, 211, 0.64)),
+    radial-gradient(ellipse at 4% 50%, rgba(255, 230, 180, 0.34), transparent 38rem),
+    radial-gradient(ellipse at 96% 48%, rgba(180, 200, 220, 0.28), transparent 42rem),
+    var(--art-landing-hero-light) center top / cover no-repeat,
     linear-gradient(135deg, #f7ead0 0%, #e7d0a4 48%, #c6d0b2 100%);
   animation: none;
 }
