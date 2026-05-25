@@ -1,7 +1,7 @@
 import { Display, SceneCard } from "@werewolf/ui";
 import { EmailPasswordForm } from "@/components/sign-in/EmailPasswordForm";
 import { OAuthButton } from "@/components/sign-in/OAuthButton";
-import "@/components/sign-in/SignInStage.module.css";
+import styles from "@/components/sign-in/SignInStage.module.css";
 
 type SignInCopy = {
   kicker: string;
@@ -23,9 +23,17 @@ export function SignInStage({ redirectTo }: { redirectTo: string }) {
     <section className="sign-in-stage">
       <div className="sign-in-table" aria-hidden />
 
-      <article className="sign-in-plaque">
-        <SceneCard eyebrow={copy.kicker.toLocaleUpperCase("bg-BG")} density="md">
-          <header className="sign-in-plaque-head">
+      <article className={`sign-in-plaque ${styles.plaqueCard}`}>
+        <SceneCard
+          eyebrow={copy.kicker.toLocaleUpperCase("bg-BG")}
+          density="md"
+          background={{
+            image: "var(--art-sign-in)",
+            overlay: "scrim",
+            focalY: 52,
+          }}
+        >
+          <header className={`sign-in-plaque-head ${styles.plaqueHead}`}>
             <Display size="h2" as="h1">
               {title}
             </Display>
