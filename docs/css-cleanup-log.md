@@ -103,3 +103,25 @@ in this cleanup snapshot. Git diff records 51 removed CSS lines.
 
 - Delete scan: old tutorial slide title/kicker rules and old lovers toggle button rules have zero live JSX/TS references.
 - Kept intentionally: `.tutorial-slide-body`, `.tutorial-flipbook-hero*`, `.oauth-button-*`, `.lobby-wizard-*`, and `.lobby-step-*` because the migrated pages still use them for layout and specialized content.
+
+## PR M3 — 2026-05-25 (/history hero restoration + archive rebuild)
+
+Lines removed from `apps/web/components/history/History.module.css`:
+
+| Class family | LOC removed | Replaced by |
+|---|---:|---|
+| `.history-shell .paper-card` primitive overrides | 20 | `SceneCard.background` for the archive hero and `SceneCard accent` for case files |
+| `.evidence-wall-header`, `.evidence-filters button` | 80 | `EvidenceWall` local module classes + enriched `Pill` filters |
+| `.case-file-shell`, `.case-file`, `.pushpin`, `.case-file-*` | 170 | `CaseFileCard` module-scoped classes + `SceneCard interactive accent` |
+| `.case-file-ghost*` skeleton rules | 18 | `history-skeleton-*` skeleton classes |
+
+**Net delta**: `History.module.css` went from 910 to 630 lines in this
+sweep (Δ -280). The history-specific primitive override guard hits are now
+zero; remaining WARN-mode guard output belongs to legacy lobby/sign-in scopes
+that are scheduled later in the restoration plan.
+
+## Verification
+
+- Delete scan: `rg "history-shell \\.paper-card|data-ds-paper-card|case-file|pushpin" apps/web/components/history apps/web/components/skeleton.tsx` returns zero.
+- `CaseFileCard` now uses `SceneCard interactive accent` with a real `Link` wrapper, so the whole case file is semantically clickable.
+- Replay sections use `PaperCard` for verdict, participants, timeline phases, achievements, and empty state; page wrappers only control layout.
