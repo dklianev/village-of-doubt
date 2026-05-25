@@ -2,6 +2,19 @@
   width: 100%;
 }
 
+.heroFrame {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 32px 24px 0;
+}
+
+.heroSubtitle {
+  margin: 0;
+  color: var(--ds-ink-scene-soft);
+  font-size: var(--ds-type-lede);
+  line-height: 1.55;
+}
+
 .heroMeta {
   display: inline-flex;
   align-self: start;
@@ -131,7 +144,7 @@
   border-left: 3px solid var(--status-unknown);
   border-radius: 12px;
   background: var(--status-surface-strong);
-  transition: border-color 200ms ease, transform 200ms ease;
+  transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
 }
 
 .tile:hover {
@@ -148,6 +161,17 @@
 
 .tile[data-status="down"] {
   border-left-color: var(--status-down);
+}
+
+.tile[data-status="down"]::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border: 1px solid var(--status-down);
+  border-radius: inherit;
+  opacity: 0.32;
+  pointer-events: none;
+  animation: statusOutagePulse 1800ms ease-out infinite;
 }
 
 .tileHead {
@@ -179,27 +203,27 @@
   border-radius: 999px;
   background: rgba(168, 163, 155, 0.18);
   font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
+  font-weight: 800;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
 .tile[data-status="ok"] .tileBadge {
-  color: var(--status-ok);
-  border-color: rgba(111, 191, 111, 0.4);
-  background: rgba(111, 191, 111, 0.16);
+  color: color-mix(in oklch, var(--status-ok) 82%, var(--status-text) 18%);
+  border-color: color-mix(in oklch, var(--status-ok) 55%, transparent);
+  background: color-mix(in oklch, var(--status-ok) 18%, transparent);
 }
 
 .tile[data-status="degraded"] .tileBadge {
-  color: var(--status-degraded);
-  border-color: rgba(209, 154, 66, 0.45);
-  background: rgba(209, 154, 66, 0.18);
+  color: color-mix(in oklch, var(--status-degraded) 82%, var(--status-text) 18%);
+  border-color: color-mix(in oklch, var(--status-degraded) 55%, transparent);
+  background: color-mix(in oklch, var(--status-degraded) 18%, transparent);
 }
 
 .tile[data-status="down"] .tileBadge {
-  color: var(--status-down);
-  border-color: rgba(217, 74, 61, 0.5);
-  background: rgba(217, 74, 61, 0.18);
+  color: color-mix(in oklch, var(--status-down) 82%, var(--status-text) 18%);
+  border-color: color-mix(in oklch, var(--status-down) 58%, transparent);
+  background: color-mix(in oklch, var(--status-down) 20%, transparent);
 }
 
 .tileDescription {
@@ -352,5 +376,18 @@
 
   .heroMeta {
     border-radius: 18px;
+  }
+}
+
+@keyframes statusOutagePulse {
+  0% {
+    opacity: 0.36;
+    transform: scale(0.995);
+  }
+
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(1.025);
   }
 }

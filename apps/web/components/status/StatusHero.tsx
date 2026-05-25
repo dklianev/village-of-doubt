@@ -37,22 +37,17 @@ export function StatusHero({ overall, lastCheckedAt, refreshing, onRefresh }: St
   }).format(new Date(lastCheckedAt));
 
   return (
-    <header
-      aria-label="Състояние на услугите"
-      style={{ maxWidth: "980px", margin: "0 auto", padding: "32px 24px 0" }}
-    >
-      <SceneCard eyebrow="СЪСТОЯНИЕ НА УСЛУГИТЕ" density="lg">
+    <header aria-label="Състояние на услугите" className={styles.heroFrame}>
+      <SceneCard
+        eyebrow="СЪСТОЯНИЕ НА УСЛУГИТЕ"
+        density="lg"
+        background={{
+          image: "var(--art-status)",
+          overlay: "veil",
+        }}
+      >
         <Display size="h1">{copy.title}</Display>
-        <p
-          style={{
-            color: "var(--ds-ink-scene-soft)",
-            fontSize: "var(--ds-type-lede)",
-            lineHeight: 1.55,
-            margin: 0,
-          }}
-        >
-          {copy.subtitle}
-        </p>
+        <p className={styles.heroSubtitle}>{copy.subtitle}</p>
 
         <div className={styles.heroMeta} data-overall={overall}>
           <span className={styles.heroDot} aria-hidden />
