@@ -357,6 +357,10 @@
 }
 
 @media (max-width: 640px) {
+  .heroFrame [data-ds-display="hero"] {
+    font-size: clamp(2.65rem, 12vw, 3rem) !important;
+  }
+
   .section {
     padding: 22px 18px;
   }

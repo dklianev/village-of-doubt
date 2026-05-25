@@ -18,6 +18,9 @@ const ROUTES = [
   { name: "history-empty", path: "/history" },
   { name: "leaderboard-empty", path: "/leaderboard" },
   { name: "achievements-gate", path: "/achievements" },
+  { name: "achievements", path: "/achievements?visualAuth=1" },
+  { name: "friends", path: "/friends?visualAuth=1" },
+  { name: "create", path: "/create?visualAuth=1" },
   { name: "forgot-password", path: "/forgot-password" },
   { name: "reset-password-invalid", path: "/reset-password" },
   { name: "verify-email-invalid", path: "/verify-email?token=fake" },
@@ -37,6 +40,10 @@ const VIEWPORTS = [
 
 const LIGHT_UTILITY_ROUTES = [
   { name: "account-dashboard", path: "/account" },
+  { name: "history-empty", path: "/history" },
+  { name: "leaderboard-empty", path: "/leaderboard" },
+  { name: "achievements", path: "/achievements?visualAuth=1" },
+  { name: "friends", path: "/friends?visualAuth=1" },
   { name: "privacy", path: "/privacy" },
   { name: "terms", path: "/terms" },
   { name: "report", path: "/report" },
@@ -46,6 +53,10 @@ const LIGHT_UTILITY_ROUTES = [
 
 const DARK_UTILITY_ROUTE_NAMES = new Set([
   "account-dashboard",
+  "history-empty",
+  "leaderboard-empty",
+  "achievements",
+  "friends",
   "privacy",
   "privacy-auth",
   "terms",
@@ -65,11 +76,12 @@ const A11Y_ROUTES = [
   { name: "account-dashboard", path: "/account" },
   { name: "history-empty", path: "/history" },
   { name: "achievements-gate", path: "/achievements" },
+  { name: "achievements", path: "/achievements?visualAuth=1" },
   { name: "leaderboard-empty", path: "/leaderboard" },
-  { name: "friends", path: "/friends" },
+  { name: "friends", path: "/friends?visualAuth=1" },
   { name: "tutorial", path: "/tutorial" },
   { name: "sign-in", path: "/sign-in" },
-  { name: "create", path: "/create" },
+  { name: "create", path: "/create?visualAuth=1" },
 ];
 
 for (const route of A11Y_ROUTES) {

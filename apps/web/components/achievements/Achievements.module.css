@@ -399,6 +399,10 @@
     width: min(calc(100vw - 20px), 1240px);
   }
 
+  :global(.achievement-hero-copy h1) {
+    font-size: clamp(3rem, 12vw, 3.35rem) !important;
+  }
+
   :global(.achievement-wreath) {
     gap: 10px;
   }
