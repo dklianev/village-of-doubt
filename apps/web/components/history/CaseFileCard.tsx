@@ -1,9 +1,8 @@
-import type { CSSProperties } from "react";
 import Link from "next/link";
-import { Display, PaperCard } from "@werewolf/ui/server";
+import { Display, SceneCard } from "@werewolf/ui/server";
 import type { GameMode } from "@werewolf/shared";
 import { topMoments, type HistoryGameView } from "@/lib/history-highlights";
-import { tiltFor } from "@/lib/history-tilt";
+import styles from "./History.module.css";
 
 type GameFamilyView = "werewolves" | "mafia";
 type CaseOutcome = "win" | "loss" | "unknown";
@@ -22,37 +21,41 @@ export function CaseFileCard({ game }: { game: HistoryGameView }) {
   const family = modeFamily(game.mode);
   const outcome = outcomeFor(game);
   const moments = topMoments(game.timeline, 2);
-  const style = { "--tilt": `${tiltFor(game.id)}deg` } as CSSProperties;
 
   return (
-    <article className="case-file-shell" data-family={family} data-outcome={outcome} style={style}>
-      <span className="pushpin" aria-hidden="true" />
-      <PaperCard eyebrow={`ДЕЛО №${game.code}`} density="md" meta={<span className="case-file-date">{shortDate(game.endedAt)}</span>}>
-        <div className="case-file-content">
-          <div className="case-file-verdict">
+    <article className={styles.caseFileShell} data-family={family}>
+      <Link href={`/history/${game.id}/replay`} className={styles.caseFileLink}>
+        <SceneCard
+          eyebrow={`ДЕЛО №${game.code}`}
+          density="md"
+          interactive
+          accent={accentFor(outcome)}
+          meta={<span className={styles.caseFileDate}>{shortDate(game.endedAt)}</span>}
+        >
+          <div className={styles.caseFileContent}>
             <Display size="h3" as="h2">
               {winnerBg(game.winnerTeam)}
             </Display>
+            <p className={styles.caseFileMode}>
+              {modeBg(game.mode)} · {playerCountBg(game)}
+            </p>
+            <ul className={styles.caseFileHighlights}>
+              {moments.map((moment) => (
+                <li key={moment.id}>
+                  <span className={styles.caseFileBullet} aria-hidden="true" />
+                  {moment.label}
+                </li>
+              ))}
+            </ul>
+            <footer className={styles.caseFileFoot}>
+              <span className={styles.caseFileEvents}>{eventsBg(game.eventCount)}</span>
+              <span className={styles.caseFileAction} aria-hidden="true">
+                Отвори дело →
+              </span>
+            </footer>
           </div>
-          <p className="case-file-mode">
-            {modeBg(game.mode)} · {playerCountBg(game)}
-          </p>
-          <ul className="case-file-highlights">
-            {moments.map((moment) => (
-              <li key={moment.id}>
-                <span className="case-file-bullet" aria-hidden="true" />
-                {moment.label}
-              </li>
-            ))}
-          </ul>
-          <footer className="case-file-foot">
-            <span className="case-file-events">{eventsBg(game.eventCount)}</span>
-            <Link href={`/history/${game.id}/replay`} className="case-file-cta">
-              Отвори дело <span aria-hidden="true">›</span>
-            </Link>
-          </footer>
-        </div>
-      </PaperCard>
+        </SceneCard>
+      </Link>
     </article>
   );
 }
@@ -85,6 +88,18 @@ export function outcomeFor(game: HistoryGameView): CaseOutcome {
   }
 
   return "unknown";
+}
+
+function accentFor(outcome: CaseOutcome) {
+  if (outcome === "win") {
+    return "win";
+  }
+
+  if (outcome === "loss") {
+    return "loss";
+  }
+
+  return "neutral";
 }
 
 function shortDate(value: string | null) {
