@@ -12,9 +12,14 @@ export function PrivacyHero({ lastUpdated, hasSnapshot }: PrivacyHeroProps) {
       <SceneCard
         eyebrow="ПОЛИТИКА ЗА ПОВЕРИТЕЛНОСТ"
         density="lg"
-        background={{ image: "var(--art-privacy)", overlay: "scrim", focalY: 42 }}
+        background={{
+          image: "var(--art-privacy)",
+          overlay: "scrim",
+          focalY: 42,
+          minHeight: "var(--ds-scene-hero-min-standard)",
+        }}
       >
-        <Display size="h1">Твоите тайни остават при теб.</Display>
+        <Display size="hero">Твоите тайни остават при теб.</Display>
         <p className={styles.heroSubtitle}>
           Какво събираме, защо го пазим и как си господар на твоите данни.
           {hasSnapshot ? " По-долу виждаш точно какво знаем за теб." : ""}

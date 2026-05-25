@@ -11,9 +11,10 @@ export function ReportHero() {
           image: "var(--art-report)",
           overlay: "scrim",
           focalY: 40,
+          minHeight: "var(--ds-scene-hero-min-standard)",
         }}
       >
-        <Display size="h1">Светим за тебе.</Display>
+        <Display size="hero">Светим за тебе.</Display>
         <p className={styles.heroSubtitle}>
           Ако нещо не е наред — играч с неуместно поведение, спорно съдържание или нарушение на
           авторски права — кажи ни. Светилникът няма да угасне, докато не разгледаме.

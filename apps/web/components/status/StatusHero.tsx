@@ -44,9 +44,10 @@ export function StatusHero({ overall, lastCheckedAt, refreshing, onRefresh }: St
         background={{
           image: "var(--art-status)",
           overlay: "veil",
+          minHeight: "var(--ds-scene-hero-min-standard)",
         }}
       >
-        <Display size="h1">{copy.title}</Display>
+        <Display size="hero">{copy.title}</Display>
         <p className={styles.heroSubtitle}>{copy.subtitle}</p>
 
         <div className={styles.heroMeta} data-overall={overall}>

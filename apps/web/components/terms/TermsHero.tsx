@@ -7,9 +7,14 @@ export function TermsHero({ lastUpdated }: { lastUpdated: string }) {
       <SceneCard
         eyebrow="КОДЕКС НА МАСАТА"
         density="lg"
-        background={{ image: "var(--art-terms)", overlay: "scrim", focalY: 40 }}
+        background={{
+          image: "var(--art-terms)",
+          overlay: "scrim",
+          focalY: 40,
+          minHeight: "var(--ds-scene-hero-min-standard)",
+        }}
       >
-        <Display size="h1">Сядаме на една маса.</Display>
+        <Display size="hero">Сядаме на една маса.</Display>
         <p className={styles.heroSubtitle}>
           Правилата, които правят играта честна — за блъфа, за уважението, за чистата игра. Това не
           са юридически клопки, а обещания между играчи.

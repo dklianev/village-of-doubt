@@ -145,9 +145,10 @@ export function FaqHearth({ items }: { items: readonly FaqItem[] }) {
           background={{
             image: "var(--art-faq)",
             overlay: "scrim",
+            minHeight: "var(--ds-scene-hero-min-standard)",
           }}
         >
-          <Display size="h1">Седни до огъня.</Display>
+          <Display size="hero">Седни до огъня.</Display>
           <p className={styles.heroSubtitle}>
             Отговори за геймплея, досието, техниката и поверителността — споделени на топло.
           </p>
