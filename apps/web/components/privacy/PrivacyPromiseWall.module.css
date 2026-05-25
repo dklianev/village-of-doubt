@@ -14,6 +14,8 @@
 }
 
 .promiseCard {
+  position: relative;
+  overflow: hidden;
   display: grid;
   gap: 8px;
   height: 100%;
@@ -21,17 +23,60 @@
   border: 1px solid var(--privacy-border);
   border-radius: 14px;
   background: var(--privacy-surface-strong);
-  transition: border-color 160ms ease;
+  box-shadow: inset 0 1px oklch(1 0 0 / 0.05);
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    background 180ms ease;
+}
+
+.promiseCard::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, transparent, oklch(0.78 0.115 75 / 0.16), transparent),
+    radial-gradient(circle at 18% 0%, oklch(0.78 0.115 75 / 0.18), transparent 34%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease;
 }
 
 .promiseCard[data-open="true"] {
   border-color: var(--privacy-accent-warm);
+  background:
+    radial-gradient(circle at 16% 0%, oklch(0.78 0.115 75 / 0.12), transparent 38%),
+    var(--privacy-surface-strong);
+}
+
+.promiseCard:hover {
+  transform: translateY(-2px);
+  border-color: oklch(0.78 0.115 75 / 0.54);
+  box-shadow:
+    inset 0 1px oklch(1 0 0 / 0.08),
+    0 18px 42px oklch(0 0 0 / 0.18);
+}
+
+.promiseCard:hover::before,
+.promiseCard[data-open="true"]::before {
+  opacity: 1;
 }
 
 .promiseIcon {
   width: 28px;
   height: 28px;
   color: var(--privacy-accent-warm);
+  filter: drop-shadow(0 6px 16px oklch(0.78 0.115 75 / 0.24));
+  transition:
+    color 180ms ease,
+    filter 180ms ease;
+}
+
+.promiseCard:hover .promiseIcon,
+.promiseCard[data-open="true"] .promiseIcon {
+  color: oklch(0.82 0.13 78);
+  filter: drop-shadow(0 8px 22px oklch(0.78 0.115 75 / 0.4));
 }
 
 .promiseTitle {
