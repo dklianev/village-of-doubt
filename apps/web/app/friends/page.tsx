@@ -16,7 +16,15 @@ export default async function FriendsPage() {
     <main className="shell utility-shell friends-shell framed-shell">
       <div className="framed-shell-inner">
         <header className="friends-hero-frame" aria-label="Познати на масата">
-          <SceneCard eyebrow="ПОЗНАТИ НА МАСАТА" density="lg">
+          <SceneCard
+            eyebrow="ПОЗНАТИ НА МАСАТА"
+            density="lg"
+            background={{
+              image: "var(--art-friends)",
+              overlay: "scrim",
+              focalY: 42,
+            }}
+          >
             <div className="friends-hero-copy">
               <Display size="h1">Покани групата за следваща маса.</Display>
               <p>

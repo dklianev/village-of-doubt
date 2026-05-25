@@ -117,11 +117,11 @@ export function FriendsClient() {
             />
           </label>
           <div className="friend-actions">
-            <Pill type="submit">
+            <Pill type="submit" shimmer tracked>
               <UserPlus aria-hidden strokeWidth={1.9} />
               <span>Добави</span>
             </Pill>
-            <Pill intent="secondary" type="button" onClick={() => copyInvite([])}>
+            <Pill intent="secondary" type="button" onClick={() => copyInvite([])} tracked>
               <Copy aria-hidden strokeWidth={1.9} />
               <span>Копирай покана</span>
             </Pill>
@@ -136,7 +136,7 @@ export function FriendsClient() {
                 <p className="friends-kicker">твоята група</p>
                 <h2>{`${friends.length} души са наблизо`}</h2>
               </div>
-              <Pill intent="secondary" type="button" onClick={() => copyInvite()}>
+              <Pill intent="secondary" type="button" onClick={() => copyInvite()} tracked>
                 <Users aria-hidden strokeWidth={1.9} />
                 <span>{selectedCount > 0 ? `Покани избрани (${selectedCount})` : "Покани цялата група"}</span>
               </Pill>
@@ -178,7 +178,7 @@ export function FriendsClient() {
               body={emptyState.body}
               action={
                 emptyState.action ? (
-                  <Pill type="button" onClick={() => copyInvite([])}>
+                  <Pill type="button" onClick={() => copyInvite([])} shimmer tracked>
                     {emptyState.action.label}
                   </Pill>
                 ) : null
