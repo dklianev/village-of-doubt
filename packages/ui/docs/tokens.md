@@ -110,6 +110,30 @@ local cue without redefining the primitive:
 `pnpm regression` warns on direct primitive overrides during the restoration
 work and becomes a hard guard after the touched pages are clean.
 
+## PaperCard / SceneCard interactive mode
+
+`PaperCard` and `SceneCard` support two additive presentation props:
+
+```tsx
+<SceneCard interactive accent="win">
+  <Display size="h3">Селото оцеля</Display>
+</SceneCard>
+```
+
+| Prop | Values | Default | Purpose |
+|---|---|---|---|
+| `interactive` | `boolean` | `false` | Adds CSS hover lift and press feedback |
+| `accent` | `neutral` / `win` / `loss` / `warning` / `info` | none | Adds a semantic left border |
+
+Cards stay presentational. They do not accept an `as` prop and do not become
+links or buttons by themselves. If a whole card should be clickable, the app
+layer owns the real link/button semantics and can place a visible CTA inside
+the card.
+
+Use `accent` for outcome-coded lists such as history case files or achievement
+states. Keep page-specific moods in page CSS modules; do not re-skin primitive
+identity through `:global()` overrides.
+
 ## Pill primitive (enriched)
 
 `Pill` is still framework-neutral: it renders either a `button` or an `a`

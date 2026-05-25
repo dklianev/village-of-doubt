@@ -22,4 +22,23 @@ describe("PaperCard", () => {
     const { container } = render(<PaperCard density="lg">Съдържание</PaperCard>);
     expect((container.firstChild as HTMLElement).dataset.dsPaperCard).toBe("lg");
   });
+
+  it("marks interactive cards without changing semantics", () => {
+    const { container } = render(<PaperCard interactive>Съдържание</PaperCard>);
+    const surface = container.firstChild as HTMLElement;
+    expect(surface.dataset.interactive).toBe("true");
+    expect(surface.tagName).toBe("DIV");
+  });
+
+  it("marks semantic accents on the surface", () => {
+    const { container } = render(<PaperCard accent="win">Съдържание</PaperCard>);
+    expect((container.firstChild as HTMLElement).dataset.accent).toBe("win");
+  });
+
+  it("omits interaction and accent attributes by default", () => {
+    const { container } = render(<PaperCard>Съдържание</PaperCard>);
+    const surface = container.firstChild as HTMLElement;
+    expect(surface.dataset.interactive).toBeUndefined();
+    expect(surface.dataset.accent).toBeUndefined();
+  });
 });

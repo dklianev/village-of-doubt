@@ -126,3 +126,49 @@ export const InteractionStates: Story = {
     </div>
   ),
 };
+
+export const Interactive: Story = {
+  args: {
+    eyebrow: "ДЕЙСТВИЕ",
+    interactive: true,
+    children: <Body />,
+  },
+};
+
+export const WithAccentWin: Story = {
+  args: {
+    eyebrow: "ПОБЕДА",
+    accent: "win",
+    children: <Body />,
+  },
+};
+
+export const WithAccentLoss: Story = {
+  args: {
+    eyebrow: "ЗАГУБА",
+    accent: "loss",
+    children: (
+      <>
+        <Display size="h3">Нощта не прости</Display>
+        <p style={{ color: "var(--ds-ink-scene-soft)", lineHeight: 1.6, margin: 0, maxWidth: "28rem" }}>
+          Случаят остава отворен за следващата маса.
+        </p>
+      </>
+    ),
+  },
+};
+
+export const WithAccentWarning: Story = {
+  args: {
+    eyebrow: "ВНИМАНИЕ",
+    accent: "warning",
+    children: (
+      <>
+        <Display size="h3">Сигналът е слаб</Display>
+        <p style={{ color: "var(--ds-ink-scene-soft)", lineHeight: 1.6, margin: 0, maxWidth: "28rem" }}>
+          Провери връзката преди да поканиш още играчи.
+        </p>
+      </>
+    ),
+  },
+};

@@ -78,3 +78,49 @@ export const InteractionStates: Story = {
     </div>
   ),
 };
+
+export const Interactive: Story = {
+  args: {
+    eyebrow: "ДЕЙСТВИЕ",
+    interactive: true,
+    children: <Body />,
+  },
+};
+
+export const WithAccentWin: Story = {
+  args: {
+    eyebrow: "ПОБЕДА",
+    accent: "win",
+    children: <Body />,
+  },
+};
+
+export const WithAccentLoss: Story = {
+  args: {
+    eyebrow: "ЗАГУБА",
+    accent: "loss",
+    children: (
+      <>
+        <Display size="h3">Мафията надделя</Display>
+        <p style={{ color: "var(--ds-ink-soft)", lineHeight: 1.6, margin: 0, maxWidth: "28rem" }}>
+          Последният вот не стигна и архивът пази следата.
+        </p>
+      </>
+    ),
+  },
+};
+
+export const WithAccentWarning: Story = {
+  args: {
+    eyebrow: "ВНИМАНИЕ",
+    accent: "warning",
+    children: (
+      <>
+        <Display size="h3">Нужен е избор</Display>
+        <p style={{ color: "var(--ds-ink-soft)", lineHeight: 1.6, margin: 0, maxWidth: "28rem" }}>
+          Изчакай още един глас преди следващата фаза.
+        </p>
+      </>
+    ),
+  },
+};

@@ -23,6 +23,25 @@ describe("SceneCard", () => {
     expect((container.firstChild as HTMLElement).dataset.dsSceneCard).toBe("lg");
   });
 
+  it("marks interactive cards without changing semantics", () => {
+    const { container } = render(<SceneCard interactive>Съдържание</SceneCard>);
+    const surface = container.firstChild as HTMLElement;
+    expect(surface.dataset.interactive).toBe("true");
+    expect(surface.tagName).toBe("DIV");
+  });
+
+  it("marks semantic accents on the surface", () => {
+    const { container } = render(<SceneCard accent="loss">Съдържание</SceneCard>);
+    expect((container.firstChild as HTMLElement).dataset.accent).toBe("loss");
+  });
+
+  it("omits interaction and accent attributes by default", () => {
+    const { container } = render(<SceneCard>Съдържание</SceneCard>);
+    const surface = container.firstChild as HTMLElement;
+    expect(surface.dataset.interactive).toBeUndefined();
+    expect(surface.dataset.accent).toBeUndefined();
+  });
+
   it("renders a background layer when background.image is provided", () => {
     const { container } = render(
       <SceneCard background={{ image: "linear-gradient(red, blue)" }}>Съдържание</SceneCard>,
