@@ -59,6 +59,54 @@ export const AllVariants: Story = {
   ),
 };
 
+const ArchiveBody = () => (
+  <>
+    <Display size="h1">Архив на масата</Display>
+    <p style={{ color: "var(--ds-ink-scene-soft)", lineHeight: 1.6, margin: 0, maxWidth: "34rem" }}>
+      Всяко дело носи дата, играчите, ролите и развръзката.
+    </p>
+  </>
+);
+
+const STORY_BACKGROUND =
+  "radial-gradient(circle at 28% 34%, oklch(0.72 0.09 76 / 0.62), transparent 24%), linear-gradient(135deg, oklch(0.23 0.045 42), oklch(0.12 0.02 35))";
+
+export const WithBackground: Story = {
+  args: {
+    eyebrow: "АРХИВ",
+    density: "lg",
+    background: { image: STORY_BACKGROUND, overlay: "scrim" },
+    children: <ArchiveBody />,
+  },
+};
+
+export const WithBackgroundVeil: Story = {
+  args: {
+    eyebrow: "АРХИВ",
+    density: "lg",
+    background: { image: STORY_BACKGROUND, overlay: "veil" },
+    children: <ArchiveBody />,
+  },
+};
+
+export const WithBackgroundNoOverlay: Story = {
+  args: {
+    eyebrow: "АРХИВ",
+    density: "lg",
+    background: { image: STORY_BACKGROUND, overlay: "none" },
+    children: <ArchiveBody />,
+  },
+};
+
+export const WithBackgroundFocalShift: Story = {
+  args: {
+    eyebrow: "АРХИВ",
+    density: "lg",
+    background: { image: STORY_BACKGROUND, overlay: "scrim", focalX: 24, focalY: 72 },
+    children: <ArchiveBody />,
+  },
+};
+
 export const InteractionStates: Story = {
   args: { children: <Body /> },
   render: () => (
