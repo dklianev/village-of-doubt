@@ -107,6 +107,26 @@ export const WithBackgroundFocalShift: Story = {
   },
 };
 
+export const WithBackgroundTallHero: Story = {
+  args: {
+    eyebrow: "ПОВЕРИТЕЛНОСТ",
+    density: "lg",
+    background: {
+      image: STORY_BACKGROUND,
+      overlay: "scrim",
+      minHeight: "var(--ds-scene-hero-min-standard)",
+    },
+    children: (
+      <>
+        <Display size="hero">Открит трезор за данните ти</Display>
+        <p style={{ color: "var(--ds-ink-scene-soft)", fontSize: "var(--ds-type-lede)", lineHeight: 1.6, margin: 0 }}>
+          Виж точно какво пазим, защо и как можеш да го изтриеш.
+        </p>
+      </>
+    ),
+  },
+};
+
 export const InteractionStates: Story = {
   args: { children: <Body /> },
   render: () => (

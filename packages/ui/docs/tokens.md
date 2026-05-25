@@ -81,6 +81,34 @@ Overlay options:
 `focalX` and `focalY` shift the background focal point from 0 to 100. Default is
 50/50. Use them when the important part of the artwork sits off-center.
 
+### Tall hero presence
+
+Background-backed hero cards size to their content by default. Thin heroes can
+use `background.minHeight` to give the artwork enough room while keeping the
+text vertically centered:
+
+```tsx
+<SceneCard
+  eyebrow="ПОВЕРИТЕЛНОСТ"
+  density="lg"
+  background={{
+    image: "var(--art-privacy)",
+    overlay: "scrim",
+    minHeight: "var(--ds-scene-hero-min-standard)",
+  }}
+>
+  <Display size="hero">Открит трезор за данните ти</Display>
+</SceneCard>
+```
+
+Suggested height tokens:
+
+| Token | Use |
+|---|---|
+| `--ds-scene-hero-min-compact` | Flow-first pages where the form or wizard remains dominant |
+| `--ds-scene-hero-min-standard` | Typical page heroes with headline and short supporting copy |
+| `--ds-scene-hero-min-cinematic` | Archive, legends, or other identity-heavy heroes where the artwork should breathe |
+
 ## Anti-pattern: `:global()` primitive overrides
 
 CSS modules must not use `:global()` selectors to redefine primitive identity:
@@ -107,8 +135,7 @@ local cue without redefining the primitive:
 }
 ```
 
-`pnpm regression` warns on direct primitive overrides during the restoration
-work and becomes a hard guard after the touched pages are clean.
+`pnpm regression` is a hard guard against direct primitive overrides.
 
 ## PaperCard / SceneCard interactive mode
 

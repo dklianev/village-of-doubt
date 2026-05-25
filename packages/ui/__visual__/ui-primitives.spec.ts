@@ -19,6 +19,7 @@ const STORIES = [
   { name: "scene-card-background-veil", id: "primitives-scenecard--with-background-veil" },
   { name: "scene-card-background-none", id: "primitives-scenecard--with-background-no-overlay" },
   { name: "scene-card-background-focal", id: "primitives-scenecard--with-background-focal-shift" },
+  { name: "scene-card-background-tall-hero", id: "primitives-scenecard--with-background-tall-hero" },
   { name: "pill", id: "primitives-pill--all-variants" },
   { name: "pill-states", id: "primitives-pill--interaction-states" },
   { name: "pill-shimmer", id: "primitives-pill--with-shimmer" },

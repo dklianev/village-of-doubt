@@ -67,4 +67,22 @@ describe("SceneCard", () => {
     expect(style).toContain("0.78");
     expect(style).toContain("25% 70%");
   });
+
+  it("applies minHeight to the surface when background.minHeight is provided", () => {
+    const { container } = render(
+      <SceneCard background={{ image: "linear-gradient(red, blue)", minHeight: "400px" }}>Съдържание</SceneCard>,
+    );
+    const surface = container.firstChild as HTMLElement;
+    expect(surface.style.minHeight).toBe("400px");
+    expect(surface.style.display).toBe("grid");
+  });
+
+  it("does not set minHeight when background.minHeight is omitted", () => {
+    const { container } = render(
+      <SceneCard background={{ image: "linear-gradient(red, blue)" }}>Съдържание</SceneCard>,
+    );
+    const surface = container.firstChild as HTMLElement;
+    expect(surface.style.minHeight).toBe("");
+    expect(surface.style.display).toBe("");
+  });
 });
