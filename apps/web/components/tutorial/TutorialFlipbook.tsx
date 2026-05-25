@@ -133,6 +133,7 @@ export function TutorialFlipbook() {
         return <SlideSetup />;
     }
   }, [current]);
+  const heroArt = current === 3 || current === 5 ? "var(--art-tutorial-day)" : "var(--art-tutorial-night)";
 
   return (
     <section className="tutorial-flipbook" aria-label="Наръчник за първа игра">
@@ -149,7 +150,15 @@ export function TutorialFlipbook() {
       ) : null}
 
       <header className="tutorial-flipbook-hero" aria-label="Първи стъпки">
-        <SceneCard eyebrow="ПЪРВИ СТЪПКИ" density="md">
+        <SceneCard
+          eyebrow="ПЪРВИ СТЪПКИ"
+          density="md"
+          background={{
+            image: heroArt,
+            overlay: "scrim",
+            focalY: current === 3 ? 44 : 38,
+          }}
+        >
           <div className="tutorial-flipbook-hero-copy">
             <Display size="h2" as="h1">
               Наръчник в шест сцени.
