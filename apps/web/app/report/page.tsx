@@ -8,13 +8,12 @@ import { auth } from "@/lib/auth";
 import { absoluteUrl, routeMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = routeMetadata({
-  title: "Сигнал | Върколак и Мафия",
+  title: "Сигнал",
   description: "Подай сигнал — за нарушение, авторски права, бъг или жалба. Преглеждаме в 48 часа.",
   path: "/report",
   image: "/game-art/legal/report-banner.png",
   imageAlt: "Каменен фар сред мъгла",
   robots: { index: false, follow: false },
-  absoluteTitle: true,
 });
 
 interface ReportPageProps {

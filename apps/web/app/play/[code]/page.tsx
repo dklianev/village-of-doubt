@@ -10,7 +10,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { code } = await params;
   return {
-    title: `Игра ${code} | Върколак и Мафия`,
+    title: `Игра ${code}`,
     description: "Игрова стая с авторитетен сървър, тайни роли и български интерфейс.",
   };
 }

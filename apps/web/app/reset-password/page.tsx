@@ -5,7 +5,7 @@ import { ResourceHints } from "@/components/resource-hints";
 import "@/components/auth/AuthRecovery.module.css";
 
 export const metadata: Metadata = {
-  title: "Нов ключ | Върколак и Мафия",
+  title: "Нов ключ",
   description: "Създай нова парола за твоето досие.",
   robots: { index: false, follow: false },
 };

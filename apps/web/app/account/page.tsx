@@ -15,7 +15,7 @@ import { auth } from "@/lib/auth";
 import "@/components/account/AccountShell.module.css";
 
 export const metadata: Metadata = {
-  title: "Твоето досие | Върколак и Мафия",
+  title: "Твоето досие",
   description: "Досие, статистики, легенди и контрол на твоите данни.",
   robots: { index: false, follow: false },
 };

@@ -4,7 +4,7 @@ import { requireSession } from "@/lib/require-session";
 import { GAME_MODE_DEFINITIONS, getGameFamily, type GameMode } from "@werewolf/shared";
 
 export const metadata: Metadata = {
-  title: "Създай игра | Върколак и Мафия",
+  title: "Създай игра",
   description: "Избери готова рецепта за Върколак или Мафия и създай частна стая за секунди.",
 };
 

@@ -5,7 +5,7 @@ import { requireSession } from "@/lib/require-session";
 import "@/components/friends/FriendsBoard.module.css";
 
 export const metadata: Metadata = {
-  title: "Познати на масата | Върколак и Мафия",
+  title: "Познати на масата",
   description: "Локален списък с хора за следващата стая и бърза покана за следваща игра.",
 };
 

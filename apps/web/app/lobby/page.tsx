@@ -3,7 +3,7 @@ import { LobbyCreateClient } from "@/components/lobby-create-client";
 import { GAME_MODE_DEFINITIONS, getGameFamily, type GameMode } from "@werewolf/shared";
 
 export const metadata: Metadata = {
-  title: "Лоби | Върколак и Мафия",
+  title: "Лоби",
   description: "Създай частна стая, избери игра, роли, Разказвач и темпо.",
 };
 

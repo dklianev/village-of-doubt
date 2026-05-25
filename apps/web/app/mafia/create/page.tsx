@@ -3,7 +3,7 @@ import { LobbyCreateClient } from "@/components/lobby-create-client";
 import { requireSession } from "@/lib/require-session";
 
 export const metadata: Metadata = {
-  title: "Създай стая за Мафия | Върколак и Мафия",
+  title: "Създай стая за Мафия",
   description: "Настрой частна маса за Мафия с твоето досие.",
 };
 

@@ -11,7 +11,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { code } = await params;
   return {
-    title: `Лоби ${code} | Върколак и Мафия`,
+    title: `Лоби ${code}`,
     description: "Покана за частна стая с отделни настройки за Върколак или Мафия.",
   };
 }

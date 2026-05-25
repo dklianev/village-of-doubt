@@ -5,7 +5,7 @@ import { ResourceHints } from "@/components/resource-hints";
 import "@/components/auth/AuthRecovery.module.css";
 
 export const metadata: Metadata = {
-  title: "Потвърждение | Върколак и Мафия",
+  title: "Потвърждение",
   description: "Потвърди имейла си за достъп до масата.",
   robots: { index: false, follow: false },
 };

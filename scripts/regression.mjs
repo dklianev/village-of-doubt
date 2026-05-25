@@ -17,6 +17,7 @@ const checks = [
   ["lobby wizard contracts", checkLobbyWizardContracts],
   ["play UI hardening contracts", checkPlayUiContracts],
   ["frontend hygiene contracts", checkFrontendHygieneContracts],
+  ["metadata title contracts", checkMetadataTitleContracts],
   ["primitive override anti-pattern", checkPrimitiveOverrideAntiPattern],
   ["globals.css size budget", checkGlobalsCssBudget],
   ["production security guards", checkProductionGuardContracts],
@@ -119,6 +120,26 @@ function checkCssImageSet() {
   assert(css.includes('[data-theme="mafia"]'), "Missing Mafia theme selector.");
   assert(css.includes('/game-art/mafia/bg-landing-hero.webp'), "Missing Mafia image-set CSS references.");
   assert(css.includes('/game-art/mobile/bg-landing-hero.webp'), "Missing mobile image-set CSS references.");
+}
+
+function checkMetadataTitleContracts() {
+  const appDir = path.join(root, "apps/web/app");
+  const files = listFilesRecursive(appDir).filter((file) => file.endsWith(".tsx"));
+  const duplicateBrandSuffix = [];
+
+  for (const file of files) {
+    const absolute = path.join(appDir, file);
+    const source = readFileSync(absolute, "utf8");
+    const titleSuffixMatches = source.matchAll(/title:\s*(?:`[^`]*|\{[^}]*|["'][^"']*)\|\s*Върколак и Мафия/g);
+    for (const match of titleSuffixMatches) {
+      duplicateBrandSuffix.push(`${path.join("apps/web/app", file)}:${lineForIndex(source, match.index ?? 0)}`);
+    }
+  }
+
+  assert(
+    duplicateBrandSuffix.length === 0,
+    `Per-route metadata titles must not include the site suffix manually; layout.tsx applies it. Found:\n${duplicateBrandSuffix.join("\n")}`,
+  );
 }
 
 function assertThemeVariableBlock(css, selector) {
@@ -940,6 +961,10 @@ function readRulesStyles() {
 
 function count(haystack, needle) {
   return haystack.split(needle).length - 1;
+}
+
+function lineForIndex(source, index) {
+  return source.slice(0, index).split("\n").length;
 }
 
 function assert(condition, message) {
