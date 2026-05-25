@@ -21,6 +21,8 @@
 }
 
 :global(html[data-theme="light"] .game-home-hero) {
+  border-color: rgba(116, 73, 39, 0.22);
+  background: rgba(255, 246, 228, 0.74);
   box-shadow:
     0 32px 92px rgba(67, 39, 24, 0.24),
     0 80px 120px -40px rgba(67, 39, 24, 0.42),
@@ -80,6 +82,12 @@
   transform: scale(1.01);
 }
 
+:global(html[data-theme="light"] .game-home-hero__art) {
+  background-position: center right;
+  filter: saturate(0.96) contrast(0.98);
+  transform: scale(1.004);
+}
+
 :global(.game-home-hero__scrim) {
   z-index: 1;
   background: linear-gradient(90deg, rgba(13, 9, 8, 0.96) 0%, rgba(13, 9, 8, 0.84) 38%, rgba(13, 9, 8, 0.3) 70%, transparent 100%);
@@ -93,12 +101,43 @@
   background: linear-gradient(90deg, rgba(15, 8, 6, 0.97) 0%, rgba(20, 11, 8, 0.86) 38%, rgba(47, 22, 12, 0.33) 70%, transparent 100%);
 }
 
+:global(html[data-theme="light"] .game-home-hero__scrim),
+:global(html[data-theme="light"] .game-home-hero.is-werewolf .game-home-hero__scrim),
+:global(html[data-theme="light"] .game-home-hero.is-mafia .game-home-hero__scrim) {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 246, 226, 0.98) 0%,
+    rgba(255, 246, 226, 0.82) 38%,
+    rgba(255, 246, 226, 0.34) 68%,
+    rgba(255, 246, 226, 0.06) 100%
+  );
+}
+
+:global(html[data-theme="light"] .game-home-hero.is-werewolf .game-home-hero__scrim) {
+  background:
+    radial-gradient(circle at 14% 18%, rgba(111, 125, 75, 0.12), transparent 18rem),
+    linear-gradient(90deg, rgba(255, 247, 229, 0.98) 0%, rgba(255, 247, 229, 0.82) 38%, rgba(235, 226, 202, 0.34) 68%, rgba(235, 226, 202, 0.06) 100%);
+}
+
+:global(html[data-theme="light"] .game-home-hero.is-mafia .game-home-hero__scrim) {
+  background:
+    radial-gradient(circle at 14% 18%, rgba(141, 47, 41, 0.1), transparent 18rem),
+    linear-gradient(90deg, rgba(255, 244, 224, 0.98) 0%, rgba(255, 244, 224, 0.82) 38%, rgba(245, 226, 202, 0.34) 68%, rgba(245, 226, 202, 0.06) 100%);
+}
+
 :global(.game-home-hero__vignette) {
   z-index: 2;
   background:
     radial-gradient(circle at 92% 12%, rgba(255, 247, 229, 0.09), transparent 20rem),
     radial-gradient(circle at 50% 110%, rgba(0, 0, 0, 0.62), transparent 34rem),
     linear-gradient(180deg, rgba(0, 0, 0, 0.36), transparent 30%, rgba(0, 0, 0, 0.46));
+}
+
+:global(html[data-theme="light"] .game-home-hero__vignette) {
+  background:
+    radial-gradient(circle at 88% 12%, rgba(255, 247, 229, 0.22), transparent 20rem),
+    radial-gradient(circle at 50% 110%, rgba(91, 55, 26, 0.16), transparent 34rem),
+    linear-gradient(180deg, rgba(255, 247, 229, 0.12), transparent 34%, rgba(104, 63, 31, 0.12));
 }
 
 :global(.game-home-hero__grain) {
@@ -121,6 +160,11 @@
   opacity: 0.42;
 }
 
+:global(html[data-theme="light"] .game-home-hero__fog) {
+  opacity: 0.2;
+  mix-blend-mode: soft-light;
+}
+
 :global(.game-home-hero__rain) {
   z-index: 2;
   background:
@@ -128,6 +172,11 @@
     linear-gradient(90deg, transparent, rgba(209, 154, 66, 0.09), transparent);
   background-size: 220px 220px, auto;
   opacity: 0.16;
+}
+
+:global(html[data-theme="light"] .game-home-hero__rain) {
+  opacity: 0.1;
+  mix-blend-mode: multiply;
 }
 
 :global(.game-home-hero__content) {
@@ -144,6 +193,11 @@
   letter-spacing: 0.3em;
 }
 
+:global(html[data-theme="light"] .game-home-hero .section-kicker) {
+  color: #8d2f29;
+  text-shadow: none;
+}
+
 :global(.game-home-hero h1) {
   margin: 14px 0 0;
   color: #fff6e5;
@@ -151,6 +205,13 @@
   font-weight: 950;
   line-height: 0.92;
   text-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+}
+
+:global(html[data-theme="light"] .game-home-hero h1) {
+  color: #24160f;
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.58),
+    0 18px 42px rgba(67, 39, 24, 0.18);
 }
 
 :global(.game-home-title-accent) {
@@ -163,6 +224,11 @@
   box-shadow: 0 0 22px rgba(209, 154, 66, 0.32);
 }
 
+:global(html[data-theme="light"] .game-home-title-accent) {
+  background: linear-gradient(90deg, #8d2f29, rgba(169, 111, 34, 0.28));
+  box-shadow: 0 0 24px rgba(169, 111, 34, 0.18);
+}
+
 :global(.game-home-hero__lede) {
   max-width: 680px;
   margin: 22px 0 0;
@@ -171,6 +237,11 @@
   font-weight: 760;
   line-height: 1.65;
   text-shadow: 0 8px 26px rgba(0, 0, 0, 0.48);
+}
+
+:global(html[data-theme="light"] .game-home-hero__lede) {
+  color: rgba(54, 34, 21, 0.84);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
 }
 
 :global(.game-home-hero__actions) {
@@ -245,12 +316,21 @@
     text-shadow 160ms ease;
 }
 
+:global(html[data-theme="light"] .game-home-hero__secondary-links a) {
+  color: rgba(54, 34, 21, 0.72);
+  text-shadow: none;
+}
+
 :global(.game-home-hero__secondary-links a + a::before) {
   position: absolute;
   left: 0;
   color: rgba(209, 154, 66, 0.56);
   content: "·";
   transform: translateX(-2px);
+}
+
+:global(html[data-theme="light"] .game-home-hero__secondary-links a + a::before) {
+  color: rgba(141, 47, 41, 0.45);
 }
 
 :global(.game-home-hero__secondary-links a::after) {
@@ -273,6 +353,11 @@
   text-shadow: 0 0 18px rgba(209, 154, 66, 0.32);
 }
 
+:global(html[data-theme="light"] .game-home-hero__secondary-links a:hover) {
+  color: #8d2f29;
+  text-shadow: 0 0 18px rgba(169, 111, 34, 0.2);
+}
+
 :global(.game-home-hero__secondary-links a:hover::after) {
   opacity: 1;
   transform: scaleX(1);
@@ -287,6 +372,12 @@
 :global(.game-home-hero.is-werewolf .game-home-hero__scrim),
 :global(.game-home-hero.is-mafia .game-home-hero__scrim) {
     background: linear-gradient(90deg, rgba(13, 9, 8, 0.98) 0%, rgba(13, 9, 8, 0.9) 48%, rgba(13, 9, 8, 0.54) 82%, rgba(13, 9, 8, 0.12) 100%);
+  }
+
+  :global(html[data-theme="light"] .game-home-hero__scrim),
+:global(html[data-theme="light"] .game-home-hero.is-werewolf .game-home-hero__scrim),
+:global(html[data-theme="light"] .game-home-hero.is-mafia .game-home-hero__scrim) {
+    background: linear-gradient(90deg, rgba(255, 247, 229, 0.98) 0%, rgba(255, 247, 229, 0.9) 48%, rgba(255, 247, 229, 0.5) 82%, rgba(255, 247, 229, 0.12) 100%);
   }
 
   :global(.game-home-hero__content) {
@@ -309,6 +400,12 @@
 :global(.game-home-hero.is-werewolf .game-home-hero__scrim),
 :global(.game-home-hero.is-mafia .game-home-hero__scrim) {
     background: linear-gradient(180deg, rgba(13, 9, 8, 0.55) 0%, rgba(13, 9, 8, 0.86) 44%, rgba(13, 9, 8, 0.96) 100%);
+  }
+
+  :global(html[data-theme="light"] .game-home-hero__scrim),
+:global(html[data-theme="light"] .game-home-hero.is-werewolf .game-home-hero__scrim),
+:global(html[data-theme="light"] .game-home-hero.is-mafia .game-home-hero__scrim) {
+    background: linear-gradient(180deg, rgba(255, 247, 229, 0.1) 0%, rgba(255, 247, 229, 0.78) 48%, rgba(255, 247, 229, 0.98) 100%);
   }
 
   :global(.game-home-hero__content) {

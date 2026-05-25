@@ -297,15 +297,31 @@ function checkFamilyQuickStartContracts() {
   for (const asset of [
     "werewolf/bg-hero-v2.png",
     "werewolf/bg-hero-v2.webp",
+    "werewolf/bg-hero-light-v1.png",
+    "werewolf/bg-hero-light-v1.webp",
     "mafia/bg-hero-v2.png",
     "mafia/bg-hero-v2.webp",
+    "mafia/bg-hero-light-v1.png",
+    "mafia/bg-hero-light-v1.webp",
     "mobile/werewolf/bg-hero-v2.webp",
+    "mobile/werewolf/bg-hero-light-v1.webp",
     "mobile/mafia/bg-hero-v2.webp",
+    "mobile/mafia/bg-hero-light-v1.webp",
   ]) {
     assert(existsSync(path.join(gameArtDir, asset)), `Missing cinematic hero asset ${asset}.`);
   }
-  assert(werewolfTheatreBlock.includes("/game-art/werewolf/bg-hero-v2.webp"), "Werewolf home theatre backdrop should use the family forest hero art.");
-  assert(mafiaTheatreBlock.includes("/game-art/mafia/bg-hero-v2.webp"), "Mafia home theatre backdrop should use the family noir city hero art.");
+  assert(
+    werewolfTheatreBlock.includes("var(--art-werewolf)") &&
+      css.includes("/game-art/werewolf/bg-hero-v2.webp") &&
+      css.includes("/game-art/werewolf/bg-hero-light-v1.webp"),
+    "Werewolf home theatre backdrop should use theme-aware --art-werewolf hero art.",
+  );
+  assert(
+    mafiaTheatreBlock.includes("var(--art-mafia)") &&
+      css.includes("/game-art/mafia/bg-hero-v2.webp") &&
+      css.includes("/game-art/mafia/bg-hero-light-v1.webp"),
+    "Mafia home theatre backdrop should use theme-aware --art-mafia hero art.",
+  );
   assert(!gameHomePage.includes("QuickStartSection"), "GameHomePage must not render deprecated QuickStartSection.");
   assert(!werewolfTimeline.includes("IntersectionObserver") && !mafiaTimeline.includes("IntersectionObserver"), "Family timelines should not ship IntersectionObserver for reveal.");
   assert(css.includes("content-visibility: auto"), "Family quickstart should use CSS paint containment instead of JS viewport observers.");
