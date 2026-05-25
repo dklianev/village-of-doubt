@@ -35,7 +35,7 @@ export default async function LobbyCodePage({
   const routeLabel = family === "mafia" ? "досие към задната стая" : "маршрут до площада";
 
   return (
-    <main className="shell lobby-shell framed-shell" data-theme={family} data-family={family}>
+    <main className="shell lobby-shell framed-shell" data-theme={family} data-faction={family} data-family={family}>
       <div className="framed-shell-inner">
         <LobbyInviteClient
           code={code}

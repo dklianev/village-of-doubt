@@ -11,7 +11,7 @@ export default async function WerewolfCreatePage() {
   await requireSession("/werewolf/create");
 
   return (
-    <main className="shell lobby-shell" data-theme="werewolves" data-family="werewolves">
+    <main className="shell lobby-shell" data-theme="werewolves" data-faction="werewolves" data-family="werewolves">
       <LobbyCreateClient initialMode="werewolves_classic" family="werewolves" />
     </main>
   );

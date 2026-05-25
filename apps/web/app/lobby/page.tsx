@@ -10,9 +10,10 @@ export const metadata: Metadata = {
 export default async function LobbyPage({ searchParams }: { searchParams?: Promise<{ mode?: string }> }) {
   const params = await searchParams;
   const initialMode = parseMode(params?.mode);
+  const family = getGameFamily(initialMode);
 
   return (
-    <main className="shell lobby-shell" data-theme={getGameFamily(initialMode)}>
+    <main className="shell lobby-shell" data-theme={family} data-faction={family}>
       <LobbyCreateClient initialMode={initialMode} />
     </main>
   );

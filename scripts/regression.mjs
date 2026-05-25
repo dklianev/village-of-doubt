@@ -218,7 +218,6 @@ function checkLandingLayoutContracts() {
   for (const shellSelector of [
     ".landing-shell::before",
     ".game-home-shell::before",
-    ".lobby-shell::before",
     ".history-shell::before",
     ".roles-shell::before",
     ".rules-shell::before",
@@ -228,6 +227,7 @@ function checkLandingLayoutContracts() {
     const backdropBlock = shellSelector === ".tutorial-shell::before" ? tutorialLightBackdropBlock : lightBackdropBlock;
     assert(backdropBlock.includes(shellSelector), `Light theme must disable page-art backdrop for ${shellSelector}.`);
   }
+  assert(!lightBackdropBlock.includes(".lobby-shell::before"), "Light theme must keep the lobby tavern backdrop visible.");
   assert(lightBackdropBlock.includes("display: none;"), "Light theme should use the shared homepage body background instead of page-art backdrops.");
   assert(lightTheatreBackdropBlock.includes("#f7ead0") && lightTheatreBackdropBlock.includes("animation: none;"), "Light theatre backdrop should use a static cream gradient.");
   assert(css.includes("/game-art/bg-landing-ambient-composited.webp"), "Landing page must reference the optimized composited ambient outer background.");

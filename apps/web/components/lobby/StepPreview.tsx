@@ -76,7 +76,7 @@ export function StepPreview({
           </div>
 
           <div className="preview-action-row">
-            <Pill intent="primary" onClick={() => onSubmit(playHref)}>
+            <Pill intent="faction" shimmer onClick={() => onSubmit(playHref)}>
               Създай и влез
             </Pill>
             <Pill intent="secondary" onClick={() => void shareInvite(lobbyHref, state.roomName, dispatch)}>

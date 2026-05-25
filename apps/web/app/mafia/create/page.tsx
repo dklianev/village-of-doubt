@@ -11,7 +11,7 @@ export default async function MafiaCreatePage() {
   await requireSession("/mafia/create");
 
   return (
-    <main className="shell lobby-shell" data-theme="mafia" data-family="mafia">
+    <main className="shell lobby-shell" data-theme="mafia" data-faction="mafia" data-family="mafia">
       <LobbyCreateClient initialMode="mafia_free" family="mafia" />
     </main>
   );

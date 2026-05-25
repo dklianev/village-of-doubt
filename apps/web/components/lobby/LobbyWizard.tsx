@@ -25,6 +25,7 @@ import { StepRoles } from "@/components/lobby/StepRoles";
 import { StepRoom } from "@/components/lobby/StepRoom";
 import { StepStyle } from "@/components/lobby/StepStyle";
 import { StickyPreview } from "@/components/lobby/StickyPreview";
+import styles from "./LobbyWizard.module.css";
 
 export function LobbyWizard({
   initialMode = "werewolves_classic",
@@ -107,9 +108,17 @@ export function LobbyWizard({
   }
 
   return (
-    <main data-theme={state.family} data-family={state.family} className="lobby-wizard">
-      <section className="lobby-wizard-frame" aria-label="Лоби">
-        <SceneCard eyebrow="ЛОБИ" density="lg">
+    <main data-theme={state.family} data-faction={state.family} data-family={state.family} className="lobby-wizard">
+      <section className={`lobby-wizard-frame ${styles.wizardFrame}`} aria-label="Лоби">
+        <SceneCard
+          eyebrow="ЛОБИ"
+          density="lg"
+          background={{
+            image: "var(--art-lobby)",
+            overlay: "scrim",
+            focalY: 42,
+          }}
+        >
           <div className="lobby-wizard-main">
             <StepNav state={state} dispatch={dispatch} canAdvance={canAdvance} onAdvanceBlocked={onAdvanceBlocked} transition={transition} />
             <div className="lobby-step-pane" style={{ viewTransitionName: "lobby-step" }}>

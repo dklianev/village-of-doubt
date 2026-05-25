@@ -11,11 +11,12 @@ export const metadata: Metadata = {
 export default async function CreatePage({ searchParams }: { searchParams?: Promise<{ mode?: string }> }) {
   const params = await searchParams;
   const initialMode = parseMode(params?.mode);
+  const family = getGameFamily(initialMode);
   const redirectTo = params?.mode ? `/create?mode=${encodeURIComponent(params.mode)}` : "/create";
   await requireSession(redirectTo);
 
   return (
-    <main className="shell lobby-shell" data-theme={getGameFamily(initialMode)}>
+    <main className="shell lobby-shell" data-theme={family} data-faction={family}>
       <LobbyCreateClient initialMode={initialMode} />
     </main>
   );
