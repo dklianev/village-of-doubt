@@ -9,11 +9,15 @@ export interface SceneCardBackground {
   focalY?: number;
 }
 
+export type SceneCardAccent = "neutral" | "win" | "loss" | "warning" | "info";
+
 export interface SceneCardProps {
   eyebrow?: string;
   density?: "sm" | "md" | "lg";
   meta?: ReactNode;
   background?: SceneCardBackground;
+  interactive?: boolean;
+  accent?: SceneCardAccent;
   children: ReactNode;
 }
 
@@ -32,7 +36,15 @@ const OVERLAY_GRADIENT = {
     "linear-gradient(180deg, oklch(0.13 0.014 50 / 0.3) 0%, oklch(0.18 0.012 60 / 0.2) 100%)",
 } as const;
 
-export function SceneCard({ eyebrow, density = "md", meta, background, children }: SceneCardProps) {
+export function SceneCard({
+  eyebrow,
+  density = "md",
+  meta,
+  background,
+  interactive,
+  accent,
+  children,
+}: SceneCardProps) {
   const hasBackground = Boolean(background?.image);
   const overlay = background?.overlay ?? "scrim";
   const focalX = background?.focalX ?? 50;
@@ -44,6 +56,8 @@ export function SceneCard({ eyebrow, density = "md", meta, background, children 
       radius="card"
       elevation="scene"
       data-ds-scene-card={density}
+      data-interactive={interactive ? "true" : undefined}
+      data-accent={accent}
       style={hasBackground ? { position: "relative", overflow: "hidden" } : undefined}
     >
       {hasBackground ? (
