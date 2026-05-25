@@ -57,6 +57,11 @@
   --ds-space-10: 40px;
   --ds-space-12: 48px;
 
+  /* Scene hero presence */
+  --ds-scene-hero-min-compact: clamp(260px, 30vh, 380px);
+  --ds-scene-hero-min-standard: clamp(320px, 36vh, 460px);
+  --ds-scene-hero-min-cinematic: clamp(360px, 42vh, 520px);
+
   /* Radii (tightened per project frontend rules) */
   --ds-radius-card: 8px;
   --ds-radius-tile: 6px;

@@ -7,6 +7,8 @@ export interface SceneCardBackground {
   overlay?: "scrim" | "veil" | "none";
   focalX?: number;
   focalY?: number;
+  /** Min-height for background-backed hero cards. Prefer a responsive clamp() token. */
+  minHeight?: string;
 }
 
 export type SceneCardAccent = "neutral" | "win" | "loss" | "warning" | "info";
@@ -49,6 +51,7 @@ export function SceneCard({
   const overlay = background?.overlay ?? "scrim";
   const focalX = background?.focalX ?? 50;
   const focalY = background?.focalY ?? 50;
+  const minHeight = background?.minHeight;
 
   return (
     <Surface
@@ -58,7 +61,16 @@ export function SceneCard({
       data-ds-scene-card={density}
       data-interactive={interactive ? "true" : undefined}
       data-accent={accent}
-      style={hasBackground ? { position: "relative", overflow: "hidden" } : undefined}
+      style={
+        hasBackground
+          ? {
+              position: "relative",
+              overflow: "hidden",
+              minHeight,
+              display: minHeight ? "grid" : undefined,
+            }
+          : undefined
+      }
     >
       {hasBackground ? (
         <div
@@ -82,6 +94,7 @@ export function SceneCard({
           color: "var(--ds-ink-scene)",
           position: hasBackground ? "relative" : undefined,
           zIndex: hasBackground ? 1 : undefined,
+          alignSelf: minHeight ? "center" : undefined,
         }}
       >
         {(eyebrow || meta) && (
