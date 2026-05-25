@@ -125,3 +125,22 @@ that are scheduled later in the restoration plan.
 - Delete scan: `rg "history-shell \\.paper-card|data-ds-paper-card|case-file|pushpin" apps/web/components/history apps/web/components/skeleton.tsx` returns zero.
 - `CaseFileCard` now uses `SceneCard interactive accent` with a real `Link` wrapper, so the whole case file is semantically clickable.
 - Replay sections use `PaperCard` for verdict, participants, timeline phases, achievements, and empty state; page wrappers only control layout.
+
+## PR M4 — 2026-05-25 (/privacy + /terms hero restoration)
+
+Lines removed from `apps/web/components/legal/LegalShell.module.css`:
+
+| Class family | LOC removed | Replaced by |
+|---|---:|---|
+| `.privacy-hero-meta`, `.terms-hero-meta` | 19 | `PrivacyHero.module.css` and `TermsHero.module.css` local meta styles |
+
+**Net delta**: `LegalShell.module.css` removed the last privacy/terms hero
+meta selectors after both heroes moved to `SceneCard.background` and local CSS
+modules. Legacy `--legal-*-hero-*` tokens in `globals.css` were left in place
+for now because this restoration pass is intentionally conservative around
+legacy token families.
+
+## Verification
+
+- Delete scan: `rg "privacy-hero-meta|terms-hero-meta" apps/web/components/privacy apps/web/components/terms apps/web/components/legal` returns zero.
+- `/privacy` uses `background={{ image: "var(--art-privacy)" }}` and `/terms` uses `background={{ image: "var(--art-terms)" }}`.

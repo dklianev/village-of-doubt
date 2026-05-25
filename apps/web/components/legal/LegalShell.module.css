@@ -142,13 +142,6 @@
   padding: 32px 24px 0;
 }
 
-:global(.privacy-hero-meta) {
-  margin: 0;
-  color: var(--privacy-text-soft);
-  font-size: 0.85rem;
-  letter-spacing: 0.04em;
-}
-
 :global(.privacy-section) {
   padding: 28px;
   border: 1px solid var(--privacy-border);
@@ -222,13 +215,6 @@
 :global(.terms-page),
 :global(.report-page) {
   width: 100%;
-}
-
-:global(.terms-hero-meta) {
-  margin: 0;
-  color: var(--legal-text-soft);
-  font-size: 0.85rem;
-  letter-spacing: 0.04em;
 }
 
 :global(.terms-content),
@@ -348,16 +334,6 @@
   --doc-border-strong: var(--legal-faq-shell-doc-border-strong, rgba(217, 154, 66, 0.42));
   --doc-accent: var(--legal-faq-shell-doc-accent, #d19a42);
   --doc-accent-soft: var(--legal-faq-shell-doc-accent-soft, rgba(217, 154, 66, 0.18));
-}
-
-:global(.privacy-hero-meta) {
-  color: var(--legal-privacy-hero-meta-color) !important;
-  text-shadow: var(--legal-privacy-hero-meta-text-shadow);
-}
-
-:global(.terms-hero-meta) {
-  color: var(--legal-terms-hero-meta-color) !important;
-  text-shadow: var(--legal-terms-hero-meta-text-shadow);
 }
 
 :global(.report-hero-stat) {
