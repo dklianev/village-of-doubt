@@ -48,9 +48,10 @@ export default async function ReplayPage({ params }: { params: Promise<{ gameId:
             background={{
               image: "var(--art-replay)",
               overlay: "scrim",
+              minHeight: "var(--ds-scene-hero-min-standard)",
             }}
           >
-            <Display size="h1">Запис на стая {replay.game.code}.</Display>
+            <Display size="hero">Запис на стая {replay.game.code}.</Display>
             <p className="replay-hero-subtitle">
               Хронология от записаните събития. Тайните роли се показват само ако вече са част от
               записа.

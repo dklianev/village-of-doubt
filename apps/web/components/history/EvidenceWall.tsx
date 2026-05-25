@@ -30,9 +30,10 @@ export function EvidenceWall({ games }: { games: HistoryGameView[] }) {
           background={{
             image: "var(--art-history)",
             overlay: "scrim",
+            minHeight: "var(--ds-scene-hero-min-cinematic)",
           }}
         >
-          <Display size="h1">Архив на масата</Display>
+          <Display size="hero">Архив на масата</Display>
           <p className={styles.heroSubtitle}>Всяко дело носи дата, играчите, ролите и развръзката.</p>
         </SceneCard>
       </header>
