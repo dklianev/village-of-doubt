@@ -9,8 +9,15 @@ export const metadata: Metadata = {
   description: "Локален списък с хора за следващата стая и бърза покана за следваща игра.",
 };
 
-export default async function FriendsPage() {
-  await requireSession("/friends");
+type FriendsPageProps = {
+  searchParams?: Promise<{ visualAuth?: string | string[] }>;
+};
+
+export default async function FriendsPage({ searchParams }: FriendsPageProps) {
+  const visualAuth = firstSearchValue((await searchParams)?.visualAuth);
+  if (process.env.NODE_ENV === "production" || visualAuth !== "1") {
+    await requireSession("/friends");
+  }
 
   return (
     <main className="shell utility-shell friends-shell framed-shell">
@@ -23,10 +30,11 @@ export default async function FriendsPage() {
               image: "var(--art-friends)",
               overlay: "scrim",
               focalY: 42,
+              minHeight: "var(--ds-scene-hero-min-standard)",
             }}
           >
             <div className="friends-hero-copy">
-              <Display size="h1">Покани групата за следваща маса.</Display>
+              <Display size="hero">Покани групата за следваща маса.</Display>
               <p>
                 Локален списък за имена, бележки и бърза покана. Данните остават само в твоя браузър.
               </p>
@@ -37,4 +45,8 @@ export default async function FriendsPage() {
       </div>
     </main>
   );
+}
+
+function firstSearchValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
 }

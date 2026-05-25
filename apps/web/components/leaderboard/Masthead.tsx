@@ -13,6 +13,7 @@ export function Masthead({ issueCount }: { issueCount: number }) {
           image: "var(--art-leaderboard)",
           overlay: "scrim",
           focalX: 42,
+          minHeight: "var(--ds-scene-hero-min-standard)",
         }}
       >
         <div className="masthead masthead-primitive">
@@ -22,7 +23,7 @@ export function Masthead({ issueCount }: { issueCount: number }) {
               <circle cx="30" cy="7" r="2" fill="currentColor" />
             </svg>
           </div>
-          <Display size="h1">Вечерен Брой на Масата</Display>
+          <Display size="hero">Вечерен Брой на Масата</Display>
           <p className="masthead-meta">
             Брой № {issueNumber(issueCount)} · {formatNewspaperDate(today)} · Издание след игра
           </p>

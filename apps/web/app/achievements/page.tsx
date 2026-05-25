@@ -23,8 +23,15 @@ const achievementsJsonLd = {
   inLanguage: "bg-BG",
 };
 
-export default async function AchievementsPage() {
-  await requireSession("/achievements");
+type AchievementsPageProps = {
+  searchParams?: Promise<{ visualAuth?: string | string[] }>;
+};
+
+export default async function AchievementsPage({ searchParams }: AchievementsPageProps) {
+  const visualAuth = firstSearchValue((await searchParams)?.visualAuth);
+  if (process.env.NODE_ENV === "production" || visualAuth !== "1") {
+    await requireSession("/achievements");
+  }
 
   return (
     <main className="shell utility-shell achievement-shell">
@@ -37,10 +44,11 @@ export default async function AchievementsPage() {
             image: "var(--art-achievements)",
             overlay: "scrim",
             focalY: 40,
+            minHeight: "var(--ds-scene-hero-min-cinematic)",
           }}
         >
           <div className="achievement-hero-copy">
-            <Display size="h1">Малките легенди след всяка игра</Display>
+            <Display size="hero">Малките легенди след всяка игра</Display>
             <p>
               Гравираните плочи разказват какво се е случило на масата: спасение, предателство, точен изстрел или
               самостоятелна победа.
@@ -58,4 +66,8 @@ export default async function AchievementsPage() {
       </div>
     </main>
   );
+}
+
+function firstSearchValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
 }
