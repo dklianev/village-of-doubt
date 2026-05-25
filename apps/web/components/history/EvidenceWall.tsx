@@ -1,9 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Display, SceneCard } from "@werewolf/ui";
 import { CaseFileCard, modeFamily, outcomeFor } from "@/components/history/CaseFileCard";
 import { EvidenceWallEmpty } from "@/components/history/EvidenceWallEmpty";
 import type { HistoryGameView } from "@/lib/history-highlights";
+import styles from "./History.module.css";
 
 type EvidenceFilter = "all" | "werewolves" | "mafia" | "wins" | "losses";
 
@@ -21,10 +23,18 @@ export function EvidenceWall({ games }: { games: HistoryGameView[] }) {
 
   return (
     <>
-      <header className="evidence-wall-header">
-        <p className="section-kicker">архив</p>
-        <h1>Архив на масата</h1>
-        <p className="evidence-wall-subtitle">Всяко дело носи дата, играчите, ролите и развръзката.</p>
+      <header aria-label="Архив на масата" className={styles.heroFrame}>
+        <SceneCard
+          eyebrow="АРХИВ"
+          density="lg"
+          background={{
+            image: "var(--art-history)",
+            overlay: "scrim",
+          }}
+        >
+          <Display size="h1">Архив на масата</Display>
+          <p className={styles.heroSubtitle}>Всяко дело носи дата, играчите, ролите и развръзката.</p>
+        </SceneCard>
       </header>
 
       {games.length > 0 ? (
