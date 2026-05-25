@@ -19,89 +19,51 @@ export function AccountHero(props: AccountHeroProps) {
 
   return (
     <header aria-label="Досие" className={styles.heroFrame}>
-      <SceneCard eyebrow="ДОСИЕ" density="lg">
+      <SceneCard
+        eyebrow="ДОСИЕ"
+        density="lg"
+        background={{
+          image: "var(--art-account)",
+          overlay: "scrim",
+          focalY: 35,
+        }}
+      >
         <div className={styles.heroProfile}>
-          <div
-            className={styles.heroAvatar}
-            style={{
-              border: "3px solid var(--ds-accent-gold)",
-              background: "var(--ds-surface-scene-deep)",
-              boxShadow: "0 12px 28px oklch(0 0 0 / 0.45)",
-            }}
-          >
+          <div className={styles.heroAvatar}>
             {props.image ? (
               <Image src={props.image} alt="" width={96} height={96} sizes="96px" unoptimized />
             ) : (
-              <span
-                style={{
-                  color: "var(--ds-accent-gold)",
-                  fontFamily: '"Noto Serif Display", "Noto Serif", "Iowan Old Style", serif',
-                  fontSize: "2.4rem",
-                  fontWeight: 900,
-                  lineHeight: 1,
-                }}
-              >
-                {initial}
-              </span>
+              <span className={styles.heroInitial}>{initial}</span>
             )}
           </div>
 
           <div className={styles.heroName}>
             <Display size="h1">{props.name || "Без име"}</Display>
             {memberSinceLabel ? (
-              <p style={{ color: "var(--ds-ink-scene-soft)", fontSize: "var(--ds-type-body-sm)", margin: 0 }}>
-                Член от {memberSinceLabel}
-              </p>
+              <p className={styles.heroMember}>Член от {memberSinceLabel}</p>
             ) : null}
           </div>
         </div>
 
         {props.totalGames > 0 ? (
-          <dl
-            className={styles.heroStats}
-            style={{
-              margin: 0,
-              padding: 0,
-            }}
-          >
+          <dl className={styles.heroStats}>
             <div>
-              <dt style={quickStatLabelStyle}>Игри</dt>
-              <dd style={quickStatValueStyle}>{props.totalGames}</dd>
+              <dt className={styles.statLabel}>Игри</dt>
+              <dd className={styles.statValue}>{props.totalGames}</dd>
             </div>
             <div>
-              <dt style={quickStatLabelStyle}>Победи</dt>
-              <dd style={quickStatValueStyle}>{props.totalWins}</dd>
+              <dt className={styles.statLabel}>Победи</dt>
+              <dd className={styles.statValue}>{props.totalWins}</dd>
             </div>
             <div>
-              <dt style={quickStatLabelStyle}>Процент</dt>
-              <dd style={quickStatValueStyle}>{props.winRate}%</dd>
+              <dt className={styles.statLabel}>Процент</dt>
+              <dd className={styles.statValue}>{props.winRate}%</dd>
             </div>
           </dl>
         ) : (
-          <p style={{ color: "var(--ds-ink-scene-soft)", fontSize: "var(--ds-type-body)", fontStyle: "italic", margin: 0 }}>
-            Първото дело още чака име.
-          </p>
+          <p className={styles.heroEmpty}>Първото дело още чака име.</p>
         )}
       </SceneCard>
     </header>
   );
 }
-
-const quickStatLabelStyle = {
-  color: "var(--ds-ink-scene-soft)",
-  fontFamily: "ui-monospace, 'Cascadia Mono', monospace",
-  fontSize: "var(--ds-type-meta)",
-  fontWeight: 700,
-  letterSpacing: "0.12em",
-  margin: "0 0 4px",
-  textTransform: "uppercase",
-} as const;
-
-const quickStatValueStyle = {
-  color: "var(--ds-ink-scene)",
-  fontFamily: '"Noto Serif Display", "Noto Serif", "Iowan Old Style", serif',
-  fontSize: "var(--ds-type-h3)",
-  fontWeight: 900,
-  lineHeight: 1,
-  margin: 0,
-} as const;

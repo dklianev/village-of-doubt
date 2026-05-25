@@ -8,16 +8,45 @@
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  gap: 18px 24px;
+  gap: 22px 28px;
 }
 
 .heroAvatar {
+  position: relative;
   display: grid;
   width: 96px;
   height: 96px;
   place-items: center;
   overflow: hidden;
+  border: 3px solid var(--ds-accent-gold);
   border-radius: 999px;
+  background:
+    radial-gradient(circle at 35% 28%, oklch(0.78 0.115 75 / 0.16), transparent 34%),
+    var(--ds-surface-scene-deep);
+  box-shadow: 0 12px 28px oklch(0 0 0 / 0.45);
+}
+
+.heroAvatar::after {
+  content: "";
+  position: absolute;
+  inset: -7px;
+  border: 1px solid oklch(0.78 0.115 75 / 0.36);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.heroAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.heroInitial {
+  color: var(--ds-accent-gold);
+  font-family: "Noto Serif Display", "Noto Serif", "Iowan Old Style", serif;
+  font-size: 2.4rem;
+  font-weight: 900;
+  line-height: 1;
 }
 
 .heroName {
@@ -33,10 +62,45 @@
   word-break: normal;
 }
 
+.heroMember {
+  margin: 0;
+  color: var(--ds-ink-scene-soft);
+  font-size: var(--ds-type-body-sm);
+}
+
 .heroStats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
-  gap: 12px;
+  gap: 18px 32px;
+  margin: 0;
+  padding: 16px 0 0;
+  border-top: 1px solid oklch(0.78 0.115 75 / 0.28);
+}
+
+.statLabel {
+  margin: 0 0 5px;
+  color: var(--ds-ink-scene-soft);
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: var(--ds-type-meta);
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.statValue {
+  margin: 0;
+  color: var(--ds-ink-scene);
+  font-family: "Noto Serif Display", "Noto Serif", "Iowan Old Style", serif;
+  font-size: var(--ds-type-h3);
+  font-weight: 900;
+  line-height: 1;
+}
+
+.heroEmpty {
+  margin: 0;
+  color: var(--ds-ink-scene-soft);
+  font-size: var(--ds-type-body);
+  font-style: italic;
 }
 
 @media (max-width: 640px) {
@@ -55,11 +119,22 @@
     height: 84px;
   }
 
+  .heroInitial {
+    font-size: 2.1rem;
+  }
+
   .heroName h1 {
     font-size: var(--ds-type-h2);
   }
 
   .heroStats {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .statValue {
+    font-size: clamp(1.35rem, 9vw, var(--ds-type-h3));
   }
 }
