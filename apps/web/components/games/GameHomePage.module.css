@@ -759,13 +759,57 @@
 
 :global(html[data-theme="light"] .night-phase),
 :global(html[data-theme="light"] .role-spotlight__tile) {
-  border-color: rgba(83, 52, 31, 0.18);
-  background: linear-gradient(180deg, rgba(252, 246, 236, 0.4) 0%, rgba(252, 246, 236, 0.7) 100%);
+  border-color: rgba(116, 73, 39, 0.18);
+  background:
+    radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.44), transparent 12rem),
+    linear-gradient(180deg, rgba(255, 249, 238, 0.76) 0%, rgba(239, 220, 186, 0.66) 100%),
+    var(--texture-paper) center / 520px 520px;
   box-shadow:
-    0 2px 4px rgba(70, 38, 18, 0.16),
-    0 18px 42px rgba(70, 38, 18, 0.14),
-    0 44px 86px -52px rgba(70, 38, 18, 0.28),
-    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+    0 2px 4px rgba(70, 38, 18, 0.12),
+    0 18px 38px rgba(70, 38, 18, 0.12),
+    0 52px 96px -64px rgba(70, 38, 18, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.62);
+}
+
+:global(html[data-theme="light"] .night-phase__art) {
+  border-bottom: 1px solid rgba(116, 73, 39, 0.16);
+  background:
+    linear-gradient(180deg, rgba(42, 27, 16, 0.16), rgba(42, 27, 16, 0.08)),
+    rgba(255, 247, 229, 0.5);
+}
+
+:global(html[data-theme="light"] .night-phase__art::after),
+:global(html[data-theme="light"] .role-spotlight__art::after) {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at 30% 18%, rgba(255, 247, 229, 0.18), transparent 55%),
+    linear-gradient(180deg, transparent 48%, rgba(255, 244, 224, 0.16) 100%);
+  content: "";
+  pointer-events: none;
+}
+
+:global(html[data-theme="light"] .night-phase__art img) {
+  filter: saturate(0.92) contrast(0.94) brightness(1.04);
+}
+
+:global(html[data-theme="light"] .night-phase__step) {
+  box-shadow:
+    0 2px 5px rgba(70, 38, 18, 0.24),
+    0 10px 20px rgba(70, 38, 18, 0.18),
+    inset 0 1px rgba(255, 247, 229, 0.44);
+}
+
+:global(html[data-theme="light"] .role-spotlight__art) {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(116, 73, 39, 0.2);
+  box-shadow:
+    0 10px 24px rgba(70, 38, 18, 0.18),
+    0 0 0 4px rgba(255, 247, 229, 0.42),
+    inset 0 1px rgba(255, 247, 229, 0.14);
+  filter: saturate(0.92) contrast(0.94) brightness(1.04);
 }
 
 :global(html[data-theme="light"] .night-phase__body h3),
@@ -782,10 +826,18 @@
 
 :global(html[data-theme="light"] .variant-chip),
 :global(html[data-theme="light"] .mafia-mechanic) {
-  background: rgba(252, 246, 236, 0.5);
+  border-color: rgba(116, 73, 39, 0.18);
+  background:
+    radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.42), transparent 12rem),
+    linear-gradient(180deg, rgba(255, 249, 238, 0.72), rgba(239, 220, 186, 0.58)),
+    var(--texture-paper) center / 520px 520px;
   box-shadow:
-    0 16px 38px -30px rgba(70, 38, 18, 0.26),
-    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    0 14px 32px -26px rgba(70, 38, 18, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.58);
+}
+
+:global(html[data-theme="light"] .mafia-mechanic) {
+  border-color: rgba(132, 47, 43, 0.22);
 }
 
 :global(html[data-theme="light"] .sport-mafia-callout) {
