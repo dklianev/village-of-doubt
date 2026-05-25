@@ -16,7 +16,7 @@ const CALLOUTS = [
 export function MafiaMechanicsCallouts() {
   return (
     <section className="mafia-mechanics" aria-label="Механики на Мафия">
-      <header className="mafia-mechanics__header">
+      <header className="mafia-mechanics__header family-section-plaque">
         <p className="section-kicker">тънкости</p>
         <h2>Как се играе Мафия наистина</h2>
       </header>
