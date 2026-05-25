@@ -84,7 +84,7 @@
     radial-gradient(ellipse at 18% 18%, rgba(132, 47, 43, 0.22), transparent 34rem),
     radial-gradient(ellipse at 88% 28%, rgba(200, 154, 85, 0.16), transparent 38rem),
     linear-gradient(115deg, rgba(8, 8, 8, 0.94), rgba(26, 16, 12, 0.82) 44%, rgba(8, 9, 9, 0.96)),
-    var(--art-history) center / cover no-repeat;
+    var(--art-achievements) center / cover no-repeat;
   content: "";
   filter: saturate(0.78) contrast(1.08);
   transform: translateX(-50%);
@@ -361,7 +361,7 @@
   background:
     radial-gradient(ellipse at 18% 18%, rgba(169, 111, 34, 0.12), transparent 34rem),
     linear-gradient(180deg, rgba(255, 247, 229, 0.86), rgba(247, 231, 200, 0.94)),
-    var(--art-history) center / cover no-repeat;
+    var(--art-achievements) center / cover no-repeat;
   filter: saturate(0.66) contrast(0.94);
   opacity: 0.72;
 }

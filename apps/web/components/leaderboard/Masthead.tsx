@@ -6,7 +6,15 @@ export function Masthead({ issueCount }: { issueCount: number }) {
 
   return (
     <header className="leaderboard-hero-frame">
-      <SceneCard eyebrow="ВЕЧЕРЕН БРОЙ" density="lg">
+      <SceneCard
+        eyebrow="ВЕЧЕРЕН БРОЙ"
+        density="lg"
+        background={{
+          image: "var(--art-leaderboard)",
+          overlay: "scrim",
+          focalX: 42,
+        }}
+      >
         <div className="masthead masthead-primitive">
           <div className="masthead-ornament" aria-hidden="true">
             <svg viewBox="0 0 60 14" width="60" height="14">

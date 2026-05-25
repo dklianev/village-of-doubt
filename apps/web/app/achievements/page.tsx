@@ -30,7 +30,15 @@ export default async function AchievementsPage() {
     <main className="shell utility-shell achievement-shell">
       <JsonLd data={achievementsJsonLd} />
       <section className="achievement-hero-frame" aria-label="Легенди">
-        <SceneCard eyebrow="ЛЕГЕНДИ" density="lg">
+        <SceneCard
+          eyebrow="ЛЕГЕНДИ"
+          density="lg"
+          background={{
+            image: "var(--art-achievements)",
+            overlay: "scrim",
+            focalY: 40,
+          }}
+        >
           <div className="achievement-hero-copy">
             <Display size="h1">Малките легенди след всяка игра</Display>
             <p>
@@ -44,7 +52,7 @@ export default async function AchievementsPage() {
       <AchievementsClient />
 
       <div className="achievement-return">
-        <Pill as="a" href="/history" intent="secondary">
+        <Pill as="a" href="/history" intent="secondary" tracked>
           Виж записаните игри
         </Pill>
       </div>
