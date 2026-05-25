@@ -255,24 +255,6 @@
   line-height: 1.55;
 }
 
-:global(.report-hero-stat) {
-  display: inline-flex;
-  align-items: center;
-  align-self: start;
-  gap: 8px;
-  margin: 0;
-  padding: 8px 14px;
-  border: 1px solid var(--legal-border-strong);
-  border-radius: 999px;
-  background: rgba(13, 10, 8, 0.55);
-  color: var(--legal-text-muted);
-  font-size: 0.92rem;
-}
-
-:global(.report-hero-stat-icon) {
-  font-size: 1rem;
-}
-
 @media (max-width: 640px) {:global(.terms-section) {
     padding: 22px 18px;
   }
@@ -334,11 +316,6 @@
   --doc-border-strong: var(--legal-faq-shell-doc-border-strong, rgba(217, 154, 66, 0.42));
   --doc-accent: var(--legal-faq-shell-doc-accent, #d19a42);
   --doc-accent-soft: var(--legal-faq-shell-doc-accent-soft, rgba(217, 154, 66, 0.18));
-}
-
-:global(.report-hero-stat) {
-  color: var(--legal-report-hero-stat-color) !important;
-  text-shadow: var(--legal-report-hero-stat-text-shadow);
 }
 
 :global(.privacy-shell),

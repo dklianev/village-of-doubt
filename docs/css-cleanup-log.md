@@ -144,3 +144,21 @@ legacy token families.
 
 - Delete scan: `rg "privacy-hero-meta|terms-hero-meta" apps/web/components/privacy apps/web/components/terms apps/web/components/legal` returns zero.
 - `/privacy` uses `background={{ image: "var(--art-privacy)" }}` and `/terms` uses `background={{ image: "var(--art-terms)" }}`.
+
+## PR M5 — 2026-05-25 (/report + /faq hero restoration)
+
+Lines removed from `apps/web/components/legal/LegalShell.module.css`:
+
+| Class family | LOC removed | Replaced by |
+|---|---:|---|
+| `.report-hero-stat`, `.report-hero-stat-icon` | 22 | `ReportHero.module.css` local stat styles |
+
+`/report` now uses `SceneCard.background` with `var(--art-report)` and a
+page-local hero module for the lighthouse stat chip. `/faq` now uses
+`SceneCard.background` with `var(--art-faq)` and page-local hearth glow
+polish; no dead FAQ banner selectors remained after the conservative scan.
+
+## Verification
+
+- Delete scan: `rg ":global\\(\\.report-hero-stat|:global\\(\\.report-hero-stat-icon|className=\"report-hero-stat" apps/web/components/report apps/web/components/legal` returns zero.
+- `/report` and `/faq` targeted visual suites pass after the hero restorations and polish.
