@@ -31,6 +31,7 @@ export function SignInStage({ redirectTo }: { redirectTo: string }) {
             image: "var(--art-sign-in)",
             overlay: "scrim",
             focalY: 52,
+            minHeight: "var(--ds-scene-hero-min-compact)",
           }}
         >
           <header className={`sign-in-plaque-head ${styles.plaqueHead}`}>

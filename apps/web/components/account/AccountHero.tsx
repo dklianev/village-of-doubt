@@ -26,6 +26,7 @@ export function AccountHero(props: AccountHeroProps) {
           image: "var(--art-account)",
           overlay: "scrim",
           focalY: 35,
+          minHeight: "var(--ds-scene-hero-min-compact)",
         }}
       >
         <div className={styles.heroProfile}>

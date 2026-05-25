@@ -157,6 +157,7 @@ export function TutorialFlipbook() {
             image: heroArt,
             overlay: "scrim",
             focalY: current === 3 ? 44 : 38,
+            minHeight: "var(--ds-scene-hero-min-compact)",
           }}
         >
           <div className="tutorial-flipbook-hero-copy">

@@ -117,6 +117,7 @@ export function LobbyWizard({
             image: "var(--art-lobby)",
             overlay: "scrim",
             focalY: 42,
+            minHeight: "var(--ds-scene-hero-min-compact)",
           }}
         >
           <div className="lobby-wizard-main">
