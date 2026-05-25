@@ -36,7 +36,7 @@ const PHASES = [
 export function WerewolfNightTimeline() {
   return (
     <section className="night-timeline night-timeline--werewolves" aria-label="Как протича нощ в село Върколак">
-      <header className="night-timeline__header">
+      <header className="night-timeline__header family-section-plaque">
         <p className="section-kicker">нощ над селото</p>
         <h2>Това е една нощ</h2>
         <p>Всичко започва с тишина. Завършва с име, изречено на глас.</p>

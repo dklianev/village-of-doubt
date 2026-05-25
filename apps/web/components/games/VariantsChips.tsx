@@ -18,7 +18,7 @@ export function VariantsChips({ family }: { family: GameFamily }) {
 
   return (
     <section className="variants-chips" data-family={family} aria-label={family === "mafia" ? "Варианти на Мафия" : "Варианти на Върколак"}>
-      <header className="variants-chips__header">
+      <header className="variants-chips__header family-section-plaque">
         <p className="section-kicker">варианти</p>
         <h2>{family === "mafia" ? "Различни кройки на града" : "Различни вечери в селото"}</h2>
       </header>
