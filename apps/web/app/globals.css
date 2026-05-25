@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "@werewolf/ui/tokens.css";
+@import "@werewolf/ui/styles/pill.css";
 
 @theme {
   --color-ds-paper: var(--ds-surface-paper);
