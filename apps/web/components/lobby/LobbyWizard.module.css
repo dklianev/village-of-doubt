@@ -16,7 +16,30 @@
 }
 
 .wizardFrame [data-ds-scene-card] {
+  border: 1px solid rgba(248, 236, 210, 0.16);
   height: 100%;
+  box-shadow:
+    0 24px 56px -28px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition:
+    border-color 220ms ease,
+    box-shadow 220ms ease;
+}
+
+:where([data-faction="werewolves"]) .wizardFrame [data-ds-scene-card] {
+  border-color: oklch(0.55 0.10 145 / 0.35);
+  box-shadow:
+    0 26px 62px -30px oklch(0.20 0.05 60 / 0.52),
+    0 0 0 1px oklch(0.55 0.10 145 / 0.09),
+    inset 0 1px 0 oklch(1 0 0 / 0.06);
+}
+
+:where([data-faction="mafia"]) .wizardFrame [data-ds-scene-card] {
+  border-color: oklch(0.50 0.155 25 / 0.35);
+  box-shadow:
+    0 26px 62px -30px oklch(0.20 0.05 60 / 0.52),
+    0 0 0 1px oklch(0.50 0.155 25 / 0.1),
+    inset 0 1px 0 oklch(1 0 0 / 0.06);
 }
 
 .wizardFrame [data-ds-scene-card] > div {
@@ -881,11 +904,98 @@
   background: rgba(132, 47, 43, 0.22);
 }
 
+html[data-theme="light"] :global(.lobby-step-pane) {
+  border-color: rgba(85, 54, 33, 0.13);
+  background:
+    radial-gradient(circle at 10% 0%, rgba(169, 111, 34, 0.14), transparent 24rem),
+    linear-gradient(145deg, rgba(255, 250, 238, 0.78), rgba(231, 207, 164, 0.34));
+  box-shadow:
+    0 22px 54px rgba(67, 39, 24, 0.12),
+    inset 0 1px rgba(255, 255, 255, 0.62);
+}
+
+html[data-theme="light"] :global(.lobby-step-room .lobby-panel),
+html[data-theme="light"] :global(.advanced-panel) {
+  border-color: rgba(85, 54, 33, 0.13);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(169, 111, 34, 0.12), transparent 18rem),
+    linear-gradient(180deg, rgba(255, 250, 238, 0.82), rgba(231, 207, 164, 0.42));
+}
+
+html[data-theme="light"] :global(.create-recipes-heading h2) {
+  color: #24160f;
+}
+
+html[data-theme="light"] :global(.create-recipes-heading p:not(.section-kicker)),
+html[data-theme="light"] :global(.lobby-field small),
+html[data-theme="light"] :global(.field-hint) {
+  color: rgba(42, 27, 16, 0.72);
+}
+
+html[data-theme="light"] :global(.lobby-step-room .create-recipe-card) {
+  border-color: rgba(85, 54, 33, 0.15);
+  background:
+    radial-gradient(circle at 14% 0%, rgba(255, 255, 255, 0.42), transparent 14rem),
+    linear-gradient(145deg, rgba(255, 250, 238, 0.86), rgba(231, 207, 164, 0.58));
+  box-shadow:
+    0 14px 28px rgba(67, 39, 24, 0.14),
+    inset 0 1px rgba(255, 255, 255, 0.72);
+}
+
+html[data-theme="light"] :global(.lobby-step-room .create-recipe-card:hover),
+html[data-theme="light"] :global(.lobby-step-room .create-recipe-card:focus-visible) {
+  border-color: rgba(169, 111, 34, 0.56);
+  box-shadow:
+    0 18px 38px rgba(67, 39, 24, 0.18),
+    0 0 0 3px rgba(169, 111, 34, 0.11),
+    inset 0 1px rgba(255, 255, 255, 0.76);
+}
+
+html[data-theme="light"] :global(.lobby-step-room .create-recipe-card[data-active="true"]),
+html[data-theme="light"] :global(.lobby-step-room .create-recipe-card[data-featured="true"]) {
+  border-color: rgba(169, 111, 34, 0.62);
+  background:
+    radial-gradient(circle at 14% 0%, rgba(169, 111, 34, 0.18), transparent 14rem),
+    linear-gradient(145deg, rgba(255, 250, 238, 0.9), rgba(231, 207, 164, 0.64));
+}
+
+html[data-theme="light"] :global(.lobby-step-room .create-recipe-card[data-family="mafia"][data-featured="true"]) {
+  border-color: rgba(141, 47, 41, 0.54);
+  background:
+    radial-gradient(circle at 14% 0%, rgba(141, 47, 41, 0.14), transparent 14rem),
+    linear-gradient(145deg, rgba(255, 250, 238, 0.9), rgba(231, 207, 164, 0.6));
+}
+
+html[data-theme="light"] :global(.lobby-step-room .create-recipe-card strong) {
+  color: #24160f;
+}
+
+html[data-theme="light"] :global(.lobby-step-room .create-recipe-card span:not(.create-recipe-eyebrow)),
+html[data-theme="light"] :global(.lobby-step-room .create-recipe-card small) {
+  color: rgba(42, 27, 16, 0.74);
+}
+
+html[data-theme="light"] :global(.lobby-step-room .create-recipe-card b) {
+  border-color: rgba(169, 111, 34, 0.34);
+  background: rgba(169, 111, 34, 0.12);
+  color: #5d3a15;
+}
+
+html[data-theme="light"] :global(.lobby-step-room .create-recipe-card[data-family="mafia"] b) {
+  border-color: rgba(141, 47, 41, 0.32);
+  background: rgba(141, 47, 41, 0.1);
+  color: #7b1f1b;
+}
+
 :global(.advanced-panel-note) {
   color: #ead9ba;
   font-size: 0.86rem;
   font-weight: 780;
   line-height: 1.45;
+}
+
+html[data-theme="light"] :global(.advanced-panel-note) {
+  color: rgba(42, 27, 16, 0.72);
 }
 
 :global(.advanced-drawer) {
