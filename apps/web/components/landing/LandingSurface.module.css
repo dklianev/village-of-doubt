@@ -1129,11 +1129,9 @@
   color: rgba(248, 236, 210, 0.42);
 }
 
-/* INTENTIONAL DEVIATION: light homepage quickstart uses smoked-glass cards
-   on the warm parchment world. Pale parchment cards on the light background
-   erased depth; amber glass creates focal islands without returning to a
-   boxed section. Do not spread this pattern to other light pages without
-   explicit design review. */
+/* INTENTIONAL DEVIATION: light homepage quickstart uses parchment-glass
+   cards on the warm world, matched to the lower homepage card family.
+   Keep the section transparent; do not reintroduce a full-width panel. */
 :global(html[data-theme="light"] .landing-quickstart) {
   isolation: isolate;
 }
@@ -1150,74 +1148,71 @@
 }
 
 :global(html[data-theme="light"] .landing-quickstart::before) {
-  position: absolute;
-  inset: -8% -4%;
-  z-index: -1;
-  display: block;
-  background:
-    radial-gradient(ellipse at center, oklch(0.2 0.038 60 / 0.24) 0%, oklch(0.2 0.038 60 / 0.13) 42%, transparent 70%),
-    radial-gradient(ellipse at 50% 12%, oklch(0.74 0.105 75 / 0.16), transparent 52%);
-  content: "";
-  mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
-  pointer-events: none;
-  -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+  content: none;
+  display: none;
 }
 
 :global(html[data-theme="light"] .landing-quickstart .quickstart-header-plaque) {
-  border-color: oklch(0.74 0.105 75 / 0.36);
+  border-color: rgba(132, 92, 48, 0.28);
+  outline: 1px solid rgba(209, 154, 66, 0.16);
+  outline-offset: -5px;
   background:
-    radial-gradient(circle at 12% 0%, oklch(0.9 0.045 82 / 0.16), transparent 16rem),
-    linear-gradient(135deg, oklch(0.2 0.038 60 / 0.78), oklch(0.16 0.032 55 / 0.68));
+    radial-gradient(circle at 16% 0%, rgba(255, 255, 255, 0.52), transparent 18rem),
+    linear-gradient(145deg, rgba(255, 247, 229, 0.94), rgba(223, 193, 137, 0.9)),
+    var(--texture-paper) center / 540px 540px;
   box-shadow:
-    inset 0 1px 0 oklch(0.96 0.02 82 / 0.14),
-    0 18px 44px -26px oklch(0.14 0.03 55 / 0.58),
-    0 46px 86px -58px oklch(0.14 0.03 55 / 0.72);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+    0 2px 4px rgba(70, 38, 18, 0.18),
+    0 12px 32px rgba(70, 38, 18, 0.22),
+    0 28px 64px rgba(70, 38, 18, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    inset 1px 1px rgba(255, 255, 255, 0.32);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 :global(html[data-theme="light"] .landing-quickstart .quickstart-header .section-kicker),
 :global(html[data-theme="light"] .landing-quickstart .quickstart-step h3) {
-  color: oklch(0.79 0.112 75);
+  color: var(--blood);
 }
 
 :global(html[data-theme="light"] .landing-quickstart .quickstart-header h2) {
-  color: oklch(0.95 0.026 82);
-  text-shadow: 0 12px 32px oklch(0.08 0.02 50 / 0.5);
+  color: var(--ink);
+  text-shadow: none;
 }
 
 :global(html[data-theme="light"] .landing-quickstart .quickstart-header p:not(.section-kicker)),
 :global(html[data-theme="light"] .landing-quickstart .quickstart-step p) {
-  color: oklch(0.89 0.03 82 / 0.88);
+  color: rgba(34, 22, 17, 0.66);
 }
 
 :global(html[data-theme="light"] .landing-quickstart .quickstart-step) {
-  border-color: oklch(0.76 0.105 75 / 0.32);
+  border-color: rgba(132, 92, 48, 0.28);
+  outline: 1px solid rgba(209, 154, 66, 0.16);
+  outline-offset: -5px;
   background:
-    radial-gradient(circle at 18% 0%, oklch(0.92 0.04 82 / 0.12), transparent 12rem),
-    linear-gradient(145deg, oklch(0.2 0.038 60 / 0.72), oklch(0.15 0.032 55 / 0.66));
+    radial-gradient(circle at 16% 0%, rgba(255, 255, 255, 0.52), transparent 18rem),
+    linear-gradient(145deg, rgba(255, 247, 229, 0.94), rgba(223, 193, 137, 0.9)),
+    var(--texture-paper) center / 540px 540px;
   box-shadow:
-    inset 0 1px 0 oklch(0.96 0.02 82 / 0.12),
-    inset 1px 1px oklch(0.96 0.02 82 / 0.08),
-    0 18px 38px -14px oklch(0.16 0.035 55 / 0.48),
-    0 58px 104px -62px oklch(0.16 0.035 55 / 0.74);
+    0 2px 4px rgba(70, 38, 18, 0.18),
+    0 12px 32px rgba(70, 38, 18, 0.22),
+    0 28px 64px rgba(70, 38, 18, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    inset 1px 1px rgba(255, 255, 255, 0.32);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
 
 :global(html[data-theme="light"] .landing-quickstart .quickstart-glyph) {
-  color: oklch(0.92 0.03 82 / 0.66);
+  color: rgba(34, 22, 17, 0.82);
 }
 
 :global(html[data-theme="light"] .landing-quickstart .quickstart-connector) {
-  border-top-color: oklch(0.79 0.112 75 / 0.38);
+  border-top-color: rgba(34, 22, 17, 0.28);
 }
 
 :global(html[data-theme="light"] .landing-quickstart .quickstart-rules-cta) {
-  box-shadow:
-    0 16px 36px -18px oklch(0.46 0.13 42 / 0.48),
-    0 34px 64px -42px oklch(0.24 0.05 55 / 0.44),
-    inset 0 1px oklch(1 0 0 / 0.24);
+  box-shadow: 0 16px 36px rgba(132, 47, 43, 0.22), inset 0 1px rgba(255, 255, 255, 0.22);
 }
 
 @media (max-width: 760px) {
