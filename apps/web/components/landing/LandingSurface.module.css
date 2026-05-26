@@ -302,9 +302,9 @@
     linear-gradient(
       90deg,
       rgba(255, 247, 229, 0.92) 0%,
-      rgba(255, 247, 229, 0.74) 40%,
-      rgba(255, 247, 229, 0.24) 72%,
-      rgba(255, 247, 229, 0.06) 100%
+      rgba(255, 247, 229, 0.72) 34%,
+      rgba(255, 247, 229, 0.3) 58%,
+      rgba(255, 247, 229, 0.08) 100%
     ),
     var(--art-landing-hero-light) center top / 100% auto no-repeat,
     linear-gradient(145deg, rgba(255, 247, 229, 0.96), rgba(231, 208, 164, 0.88));
