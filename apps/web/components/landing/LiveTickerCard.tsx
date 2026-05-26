@@ -24,18 +24,34 @@ export function LiveTickerCard({ family, liveStats }: LiveTickerCardProps) {
     <article className="quickstart-live quickstart-mini-card">
       <p className="section-kicker">в момента играят</p>
       {isEmpty ? (
-        <div className="quickstart-empty-live">
-          <span className="quickstart-dice" aria-hidden="true">
-            ⚂
-          </span>
-          <div>
-            <h3>{emptyHeading(family)}</h3>
-            <p>{emptyBody(family)}</p>
-            <Link href={`${root}/create`} className="quickstart-card-cta">
-              Създай стая <span aria-hidden="true">→</span>
-            </Link>
+        family === null ? (
+          <div className="quickstart-empty-live quickstart-empty-live--homepage">
+            <span className="quickstart-dice quickstart-dice--sealed" aria-hidden="true">
+              ⚂
+            </span>
+            <div className="quickstart-invitation-copy">
+              <p className="quickstart-sealed-tag">ОЧАКВАТ СЕ ГОСТИ</p>
+              <h3>{emptyHeading(family)}</h3>
+              <p>Покани приятели или сподели кода — стаята започва с теб.</p>
+              <Link href={`${root}/create`} className="quickstart-card-cta">
+                Създай стая <span aria-hidden="true">→</span>
+              </Link>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="quickstart-empty-live">
+            <span className="quickstart-dice" aria-hidden="true">
+              ⚂
+            </span>
+            <div>
+              <h3>{emptyHeading(family)}</h3>
+              <p>{emptyBody(family)}</p>
+              <Link href={`${root}/create`} className="quickstart-card-cta">
+                Създай стая <span aria-hidden="true">→</span>
+              </Link>
+            </div>
+          </div>
+        )
       ) : (
         <div className="quickstart-live-active">
           <span className="quickstart-pulse" aria-hidden="true" />

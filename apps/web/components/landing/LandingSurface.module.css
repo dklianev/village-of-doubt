@@ -611,8 +611,32 @@
   flex-wrap: wrap;
 }
 
+:global(.quickstart-empty-live--homepage) {
+  align-items: stretch;
+  flex-wrap: nowrap;
+}
+
 :global(.quickstart-empty-live .quickstart-card-cta) {
   margin-top: 12px;
+}
+
+:global(.quickstart-invitation-copy) {
+  min-width: 0;
+}
+
+:global(.quickstart-sealed-tag) {
+  display: inline-flex;
+  width: fit-content;
+  margin: 0 0 8px;
+  border: 1px solid rgba(132, 92, 48, 0.2);
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: rgba(255, 247, 229, 0.32);
+  color: var(--blood);
+  font-size: 0.62rem;
+  font-weight: 950;
+  letter-spacing: 0.14em;
+  line-height: 1;
 }
 
 :global(.quickstart-dice) {
@@ -628,6 +652,31 @@
   font-size: 1.55rem;
   font-weight: 950;
   box-shadow: inset 1px 1px rgba(255, 255, 255, 0.36);
+}
+
+:global(.quickstart-dice--sealed) {
+  position: relative;
+  width: 62px;
+  height: 62px;
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgba(255, 247, 229, 0.72), rgba(223, 193, 137, 0.48)),
+    var(--texture-paper) center / 220px 220px;
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.5),
+    0 16px 28px rgba(70, 38, 18, 0.16);
+}
+
+:global(.quickstart-dice--sealed::after) {
+  position: absolute;
+  right: 12px;
+  bottom: 10px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 45% 36%, #f3c674, #a83d35 74%);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.34);
+  content: "";
 }
 
 :global(.quickstart-live h3),
@@ -670,6 +719,75 @@
   height: 48px;
   flex: 0 0 auto;
   color: rgba(34, 22, 17, 0.4);
+}
+
+:global(.quickstart-winner-empty--homepage) {
+  display: grid;
+  gap: 16px;
+}
+
+:global(.quickstart-winner-copy) {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+:global(.ghost-case-file) {
+  position: relative;
+  display: grid;
+  gap: 7px;
+  border: 1px dashed rgba(132, 92, 48, 0.26);
+  border-radius: 18px;
+  padding: 16px 18px;
+  background:
+    linear-gradient(135deg, rgba(255, 247, 229, 0.42), rgba(223, 193, 137, 0.2)),
+    var(--texture-paper) center / 420px 420px;
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.34),
+    0 18px 36px rgba(70, 38, 18, 0.1);
+  opacity: 0.72;
+  filter: saturate(0.86);
+}
+
+:global(.ghost-example-tag) {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  border: 1px solid rgba(132, 92, 48, 0.22);
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: rgba(255, 247, 229, 0.62);
+  color: var(--blood);
+  font-size: 0.58rem;
+  font-weight: 950;
+  letter-spacing: 0.14em;
+  line-height: 1;
+}
+
+:global(.ghost-case-eyebrow) {
+  margin: 0;
+  color: var(--blood);
+  font-size: 0.62rem;
+  font-weight: 950;
+  letter-spacing: 0.14em;
+  line-height: 1;
+}
+
+:global(.ghost-case-file h3) {
+  max-width: calc(100% - 76px);
+  margin: 0;
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 950;
+  line-height: 1.12;
+}
+
+:global(.ghost-case-file p:last-child) {
+  margin: 0;
+  color: rgba(34, 22, 17, 0.62);
+  font-size: 0.82rem;
+  font-weight: 720;
+  line-height: 1.42;
 }
 
 :global(html[data-theme="dark"] .quickstart-surface),
@@ -760,6 +878,49 @@
 
 :global(html[data-theme="dark"] .quickstart-dim-glyph) {
   color: rgba(248, 236, 210, 0.42);
+}
+
+:global(html[data-theme="dark"] .quickstart-sealed-tag) {
+  border-color: rgba(248, 236, 210, 0.14);
+  background: rgba(255, 247, 229, 0.08);
+  color: #e7ad5b;
+}
+
+:global(html[data-theme="dark"] .quickstart-dice--sealed) {
+  background:
+    linear-gradient(135deg, rgba(255, 247, 229, 0.08), rgba(200, 154, 85, 0.12)),
+    var(--texture-paper) center / 220px 220px;
+  box-shadow:
+    inset 0 1px rgba(248, 236, 210, 0.14),
+    0 18px 32px rgba(0, 0, 0, 0.32);
+}
+
+:global(html[data-theme="dark"] .ghost-case-file) {
+  border-color: rgba(248, 236, 210, 0.16);
+  background:
+    linear-gradient(135deg, rgba(255, 247, 229, 0.07), rgba(200, 154, 85, 0.08)),
+    var(--texture-paper) center / 420px 420px;
+  box-shadow:
+    inset 0 1px rgba(248, 236, 210, 0.1),
+    0 20px 42px rgba(0, 0, 0, 0.22);
+}
+
+:global(html[data-theme="dark"] .ghost-example-tag) {
+  border-color: rgba(248, 236, 210, 0.14);
+  background: rgba(255, 247, 229, 0.08);
+  color: #e7ad5b;
+}
+
+:global(html[data-theme="dark"] .ghost-case-eyebrow) {
+  color: #e7ad5b;
+}
+
+:global(html[data-theme="dark"] .ghost-case-file h3) {
+  color: #fff7e5;
+}
+
+:global(html[data-theme="dark"] .ghost-case-file p:last-child) {
+  color: rgba(234, 217, 186, 0.68);
 }
 
 @keyframes quickstartConnectorIn {
