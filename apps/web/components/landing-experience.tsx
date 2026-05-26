@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import Image from "next/image";
-import Link from "next/link";
-import { Display } from "@werewolf/ui/server";
+import { Display, Pill } from "@werewolf/ui/server";
 import type { GameFamily } from "@werewolf/shared";
 import { ResourceHints } from "@/components/resource-hints";
 import { ModeChoiceCards, type ModeChoiceGame } from "@/components/landing/ModeChoiceCards";
@@ -99,14 +98,12 @@ function FinalLandingCta() {
           <p>Избери коя игра започва вечерта ти.</p>
         </div>
         <div className="landing-final-actions">
-          <Link className="landing-final-ticket landing-final-ticket--werewolves" href="/werewolf" data-faction="werewolves">
-            <span className="landing-final-ticket-seal" aria-hidden="true" />
-            <span>Към върколаците</span>
-          </Link>
-          <Link className="landing-final-ticket landing-final-ticket--mafia" href="/mafia" data-faction="mafia">
-            <span className="landing-final-ticket-seal" aria-hidden="true" />
-            <span>Към мафията</span>
-          </Link>
+          <Pill as="a" href="/werewolf" intent="faction" size="lg" shimmer tracked data-faction="werewolves">
+            Към върколаците
+          </Pill>
+          <Pill as="a" href="/mafia" intent="faction" size="lg" shimmer tracked data-faction="mafia">
+            Към мафията
+          </Pill>
         </div>
       </div>
     </section>
