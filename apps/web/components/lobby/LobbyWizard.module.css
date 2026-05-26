@@ -46,6 +46,24 @@
   gap: 22px;
 }
 
+html[data-theme="light"] .wizardFrame [data-ds-scene-card] {
+  background:
+    radial-gradient(circle at 50% 0%, oklch(1 0 0 / 0.32), transparent 32rem),
+    linear-gradient(145deg, oklch(0.96 0.018 82 / 0.78), oklch(0.88 0.04 76 / 0.46)) !important;
+  border-color: oklch(0.72 0.075 70 / 0.28);
+  color: var(--ds-ink-primary);
+  box-shadow:
+    0 28px 70px -38px oklch(0.24 0.045 55 / 0.48),
+    inset 0 1px 0 oklch(1 0 0 / 0.5);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+html[data-theme="light"] .wizardFrame [data-ds-scene-card-background] {
+  opacity: 0.34;
+  filter: saturate(0.82) brightness(1.18);
+}
+
 :global(.lobby-wizard-main),
 :global(.lobby-step),
 :global(.preview-stat-list),
@@ -416,6 +434,73 @@
   color: #ead9ba;
   font-size: 0.86rem;
   font-weight: 750;
+}
+
+html[data-theme="light"] :global(.mode-tile-card),
+html[data-theme="light"] :global(.tempo-tile),
+html[data-theme="light"] :global(.narrator-tile),
+html[data-theme="light"] :global(.communication-tile),
+html[data-theme="light"] :global(.voice-tile),
+html[data-theme="light"] :global(.quick-start-row button) {
+  border-color: rgba(85, 54, 33, 0.14);
+  background:
+    radial-gradient(circle at 16% 0%, rgba(255, 255, 255, 0.4), transparent 14rem),
+    linear-gradient(145deg, rgba(255, 250, 238, 0.86), rgba(231, 207, 164, 0.52));
+  color: #2a1b10;
+  box-shadow:
+    0 10px 24px rgba(67, 39, 24, 0.1),
+    inset 0 1px rgba(255, 255, 255, 0.7);
+}
+
+html[data-theme="light"] :global(.mode-tile-card[data-active="true"]),
+html[data-theme="light"] :global(.tempo-tile[data-active="true"]),
+html[data-theme="light"] :global(.narrator-tile[data-active="true"]),
+html[data-theme="light"] :global(.communication-tile[data-active="true"]),
+html[data-theme="light"] :global(.voice-tile[data-active="true"]),
+html[data-theme="light"] :global(.preset-chips button[data-active="true"]) {
+  border-color: rgba(169, 111, 34, 0.64);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(169, 111, 34, 0.18), transparent 14rem),
+    linear-gradient(145deg, rgba(255, 250, 238, 0.9), rgba(231, 207, 164, 0.58));
+  color: #24160f;
+}
+
+html[data-theme="light"] :global(.mode-tile-card strong),
+html[data-theme="light"] :global(.tempo-tile strong),
+html[data-theme="light"] :global(.narrator-tile strong),
+html[data-theme="light"] :global(.communication-tile strong),
+html[data-theme="light"] :global(.voice-tile strong),
+html[data-theme="light"] :global(.quick-start-row strong) {
+  color: #24160f;
+}
+
+html[data-theme="light"] :global(.mode-tile-card small),
+html[data-theme="light"] :global(.tempo-tile small),
+html[data-theme="light"] :global(.narrator-tile span),
+html[data-theme="light"] :global(.communication-tile span),
+html[data-theme="light"] :global(.voice-tile span),
+html[data-theme="light"] :global(.quick-start-row span) {
+  color: rgba(42, 27, 16, 0.72);
+}
+
+html[data-theme="light"] :global(.locked-mode-badge),
+html[data-theme="light"] :global(.player-count-badge),
+html[data-theme="light"] :global(.preview-summary-chip) {
+  background: oklch(0.86 0.055 78 / 0.58);
+  color: #5d351c;
+}
+
+html[data-theme="light"] :global(.locked-mode-card),
+html[data-theme="light"] :global(.fixed-player-count) {
+  border-color: oklch(0.72 0.075 70 / 0.38);
+  background:
+    radial-gradient(circle at 0% 0%, oklch(0.82 0.095 72 / 0.16), transparent 12rem),
+    oklch(0.98 0.014 84 / 0.66);
+  color: #24160f;
+}
+
+html[data-theme="light"] :global(.locked-mode-card span) {
+  color: rgba(42, 27, 16, 0.72);
 }
 
 :global(.manual-tempo-panel) {

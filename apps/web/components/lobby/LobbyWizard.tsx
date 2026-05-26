@@ -115,7 +115,7 @@ export function LobbyWizard({
           density="lg"
           background={{
             image: "var(--wizard-art, var(--art-lobby))",
-            overlay: "veil",
+            overlay: "none",
             focalY: 42,
             minHeight: "var(--ds-scene-hero-min-compact)",
           }}
