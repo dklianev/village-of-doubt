@@ -734,29 +734,47 @@
 
 :global(.ghost-case-file) {
   position: relative;
+  isolation: isolate;
   display: grid;
-  gap: 7px;
-  border: 1px dashed rgba(132, 92, 48, 0.26);
-  border-radius: 18px;
-  padding: 16px 18px;
+  gap: 8px;
+  overflow: hidden;
+  border: 1px solid oklch(0.72 0.075 72 / 0.32);
+  border-left: 3px solid oklch(0.58 0.12 34 / 0.48);
+  border-radius: 16px;
+  padding: 18px 20px 18px 18px;
   background:
-    linear-gradient(135deg, rgba(255, 247, 229, 0.42), rgba(223, 193, 137, 0.2)),
-    var(--texture-paper) center / 420px 420px;
+    radial-gradient(circle at 12% 0%, oklch(1 0 0 / 0.5), transparent 15rem),
+    linear-gradient(135deg, oklch(0.96 0.026 82 / 0.94), oklch(0.88 0.056 76 / 0.82));
   box-shadow:
-    inset 0 1px rgba(255, 255, 255, 0.34),
-    0 18px 36px rgba(70, 38, 18, 0.1);
-  opacity: 0.72;
-  filter: saturate(0.86);
+    inset 0 1px oklch(1 0 0 / 0.58),
+    0 16px 34px oklch(0.28 0.06 58 / 0.14);
+}
+
+:global(.ghost-case-file::before) {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 22px,
+      oklch(0.55 0.05 70 / 0.08) 22px 23px
+    ),
+    var(--texture-paper) center / 560px 560px;
+  opacity: 0.24;
+  mix-blend-mode: multiply;
+  pointer-events: none;
 }
 
 :global(.ghost-example-tag) {
   position: absolute;
   top: 12px;
   right: 12px;
-  border: 1px solid rgba(132, 92, 48, 0.22);
+  border: 1px solid oklch(0.58 0.12 34 / 0.24);
   border-radius: 999px;
-  padding: 4px 8px;
-  background: rgba(255, 247, 229, 0.62);
+  padding: 4px 9px;
+  background: oklch(0.98 0.02 82 / 0.82);
   color: var(--blood);
   font-size: 0.58rem;
   font-weight: 950;
@@ -766,7 +784,7 @@
 
 :global(.ghost-case-eyebrow) {
   margin: 0;
-  color: var(--blood);
+  color: oklch(0.39 0.105 34);
   font-size: 0.62rem;
   font-weight: 950;
   letter-spacing: 0.14em;
@@ -776,7 +794,7 @@
 :global(.ghost-case-file h3) {
   max-width: 24rem;
   margin: 0;
-  color: var(--ink);
+  color: oklch(0.23 0.035 56);
   font-size: 1rem;
   font-weight: 950;
   line-height: 1.12;
@@ -784,7 +802,7 @@
 
 :global(.ghost-case-file p:last-child) {
   margin: 0;
-  color: rgba(34, 22, 17, 0.62);
+  color: oklch(0.31 0.035 58 / 0.86);
   font-size: 0.82rem;
   font-weight: 720;
   line-height: 1.42;
@@ -896,31 +914,37 @@
 }
 
 :global(html[data-theme="dark"] .ghost-case-file) {
-  border-color: rgba(248, 236, 210, 0.16);
+  border-color: oklch(0.78 0.09 75 / 0.18);
+  border-left-color: oklch(0.74 0.13 74 / 0.42);
   background:
-    linear-gradient(135deg, rgba(255, 247, 229, 0.07), rgba(200, 154, 85, 0.08)),
-    var(--texture-paper) center / 420px 420px;
+    radial-gradient(circle at 12% 0%, oklch(0.92 0.05 82 / 0.1), transparent 15rem),
+    linear-gradient(135deg, oklch(0.21 0.028 54 / 0.92), oklch(0.15 0.024 52 / 0.88));
   box-shadow:
-    inset 0 1px rgba(248, 236, 210, 0.1),
-    0 20px 42px rgba(0, 0, 0, 0.22);
+    inset 0 1px oklch(1 0 0 / 0.12),
+    0 20px 42px oklch(0 0 0 / 0.24);
+}
+
+:global(html[data-theme="dark"] .ghost-case-file::before) {
+  opacity: 0.16;
+  mix-blend-mode: screen;
 }
 
 :global(html[data-theme="dark"] .ghost-example-tag) {
-  border-color: rgba(248, 236, 210, 0.14);
-  background: rgba(255, 247, 229, 0.08);
+  border-color: oklch(0.78 0.09 75 / 0.18);
+  background: oklch(0.24 0.035 56 / 0.88);
   color: #e7ad5b;
 }
 
 :global(html[data-theme="dark"] .ghost-case-eyebrow) {
-  color: #e7ad5b;
+  color: oklch(0.78 0.12 75);
 }
 
 :global(html[data-theme="dark"] .ghost-case-file h3) {
-  color: #fff7e5;
+  color: oklch(0.96 0.026 82);
 }
 
 :global(html[data-theme="dark"] .ghost-case-file p:last-child) {
-  color: rgba(234, 217, 186, 0.68);
+  color: oklch(0.86 0.038 82 / 0.82);
 }
 
 @keyframes quickstartConnectorIn {
