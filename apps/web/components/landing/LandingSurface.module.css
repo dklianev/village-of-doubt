@@ -919,8 +919,8 @@
   margin-top: clamp(36px, 5vw, 72px);
   overflow: visible;
   padding-block: clamp(18px, 3vw, 40px) clamp(40px, 5vw, 76px);
-  content-visibility: auto;
-  contain-intrinsic-size: 880px 980px;
+  content-visibility: visible;
+  contain-intrinsic-size: none;
 }
 
 :global(.landing-quickstart::before) {

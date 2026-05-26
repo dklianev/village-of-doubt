@@ -743,7 +743,9 @@ html[data-theme="light"] body:has(.landing-shell)::before {
     radial-gradient(ellipse at 96% 48%, rgba(180, 200, 220, 0.28), transparent 42rem),
     var(--art-landing-hero-light) center top / cover no-repeat,
     linear-gradient(135deg, #f7ead0 0%, #e7d0a4 48%, #c6d0b2 100%);
-  animation: none;
+  animation: ambient-drift-light 72s ease-in-out infinite alternate;
+  transform: translate3d(-0.6%, 0, 0) scale(1.02);
+  will-change: transform;
 }
 
 html[data-theme="light"] body:has(.game-home-shell)::before {

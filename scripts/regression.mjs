@@ -216,7 +216,8 @@ function checkLandingLayoutContracts() {
   assert(landingPage.includes("LiveTickerCard") && landingPage.includes("RecentEndingsCard"), "Landing page must render shared stats cards.");
   assert(!landingPage.includes("QuickStartSection"), "Landing page must not render deprecated QuickStartSection.");
   assert(!universalHowToPlay.includes("IntersectionObserver"), "Landing how-to-play should not ship IntersectionObserver for below-fold connector reveal.");
-  assert(css.includes("content-visibility: auto;"), "Landing quickstart should use content-visibility to defer below-fold paint.");
+  assert(css.includes("content-visibility: visible;"), "Landing quickstart must render hover shadows outside its bounds.");
+  assert(css.includes("contain-intrinsic-size: none;"), "Landing quickstart must not use paint containment that clips CTA hover shadows.");
   assert(liveTickerCard.includes("Бъди първият на масата"), "Landing live empty state must invite the first room.");
   assert(recentEndingsCard.includes("Първите герои ще се появят тук."), "Landing winner empty state must use designed Bulgarian copy.");
   for (const exportName of ["PersonIcon", "HouseIcon", "MaskIcon", "MoonIcon", "BallotIcon", "LastWinnerEmptyGlyph"]) {
@@ -250,7 +251,12 @@ function checkLandingLayoutContracts() {
   }
   assert(!lightBackdropBlock.includes(".lobby-shell::before"), "Light theme must keep the lobby tavern backdrop visible.");
   assert(lightBackdropBlock.includes("display: none;"), "Light theme should use the shared homepage body background instead of page-art backdrops.");
-  assert(lightTheatreBackdropBlock.includes("#f7ead0") && lightTheatreBackdropBlock.includes("animation: none;"), "Light theatre backdrop should use a static cream gradient.");
+  assert(
+    lightTheatreBackdropBlock.includes("#f7ead0") &&
+      lightTheatreBackdropBlock.includes("animation: ambient-drift-light 72s") &&
+      lightTheatreBackdropBlock.includes("transform: translate3d(-0.6%, 0, 0) scale(1.02)"),
+    "Light theatre backdrop should use the cream gradient with subtle ambient drift.",
+  );
   assert(css.includes("/game-art/bg-landing-ambient-composited.webp"), "Landing page must reference the optimized composited ambient outer background.");
   assert(existsSync(path.join(gameArtDir, "bg-landing-ambient-composited.png")), "Missing composited ambient landing background PNG.");
   assert(existsSync(path.join(gameArtDir, "bg-landing-ambient-composited.webp")), "Missing optimized composited ambient landing background WebP.");
@@ -345,7 +351,7 @@ function checkFamilyQuickStartContracts() {
   );
   assert(!gameHomePage.includes("QuickStartSection"), "GameHomePage must not render deprecated QuickStartSection.");
   assert(!werewolfTimeline.includes("IntersectionObserver") && !mafiaTimeline.includes("IntersectionObserver"), "Family timelines should not ship IntersectionObserver for reveal.");
-  assert(css.includes("content-visibility: auto"), "Family quickstart should use CSS paint containment instead of JS viewport observers.");
+  assert(css.includes("content-visibility: visible"), "Family quickstart should avoid paint containment that clips CTA hover shadows.");
   assert(liveTickerCard.includes("Бъди първият на масата") && liveTickerCard.includes("Запали първия огън"), "Live ticker empty states must be family-aware.");
   assert(recentEndingsCard.includes("Първите легенди ще се появят тук.") && recentEndingsCard.includes("Първите досиета ще се появят тук."), "Recent endings empty states must be family-aware.");
   assert(recentEndingsCard.includes("LastWinnerEmptyGlyph"), "Family winner empty state must use the shared designed glyph.");
