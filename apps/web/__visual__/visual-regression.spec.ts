@@ -21,6 +21,9 @@ const ROUTES = [
   { name: "achievements", path: "/achievements?visualAuth=1" },
   { name: "friends", path: "/friends?visualAuth=1" },
   { name: "create", path: "/create?visualAuth=1" },
+  { name: "lobby", path: "/lobby" },
+  { name: "werewolf-create", path: "/werewolf/create?visualAuth=1" },
+  { name: "mafia-create", path: "/mafia/create?visualAuth=1" },
   { name: "forgot-password", path: "/forgot-password" },
   { name: "reset-password-invalid", path: "/reset-password" },
   { name: "verify-email-invalid", path: "/verify-email?token=fake" },
@@ -47,6 +50,10 @@ const LIGHT_UTILITY_ROUTES = [
   { name: "leaderboard-empty", path: "/leaderboard" },
   { name: "achievements", path: "/achievements?visualAuth=1" },
   { name: "friends", path: "/friends?visualAuth=1" },
+  { name: "create", path: "/create?visualAuth=1" },
+  { name: "lobby", path: "/lobby" },
+  { name: "werewolf-create", path: "/werewolf/create?visualAuth=1" },
+  { name: "mafia-create", path: "/mafia/create?visualAuth=1" },
   { name: "privacy", path: "/privacy" },
   { name: "terms", path: "/terms" },
   { name: "report", path: "/report" },
@@ -70,6 +77,10 @@ const DARK_UTILITY_ROUTE_NAMES = new Set([
   "report",
   "status",
   "faq",
+  "create",
+  "lobby",
+  "werewolf-create",
+  "mafia-create",
 ]);
 
 const A11Y_ROUTES = [
@@ -88,6 +99,9 @@ const A11Y_ROUTES = [
   { name: "tutorial", path: "/tutorial" },
   { name: "sign-in", path: "/sign-in" },
   { name: "create", path: "/create?visualAuth=1" },
+  { name: "lobby", path: "/lobby" },
+  { name: "werewolf-create", path: "/werewolf/create?visualAuth=1" },
+  { name: "mafia-create", path: "/mafia/create?visualAuth=1" },
 ];
 
 for (const route of A11Y_ROUTES) {
