@@ -774,7 +774,7 @@
 }
 
 :global(.ghost-case-file h3) {
-  max-width: calc(100% - 76px);
+  max-width: 24rem;
   margin: 0;
   color: var(--ink);
   font-size: 1rem;
