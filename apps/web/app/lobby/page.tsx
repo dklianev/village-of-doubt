@@ -13,7 +13,7 @@ export default async function LobbyPage({ searchParams }: { searchParams?: Promi
   const family = getGameFamily(initialMode);
 
   return (
-    <main className="shell lobby-shell" data-theme={family} data-faction={family}>
+    <main className="shell lobby-shell" data-faction={family} data-family={family}>
       <LobbyCreateClient initialMode={initialMode} />
     </main>
   );

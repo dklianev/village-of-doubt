@@ -19,7 +19,7 @@ export default async function CreatePage({ searchParams }: { searchParams?: Prom
   }
 
   return (
-    <main className="shell lobby-shell" data-theme={family} data-faction={family}>
+    <main className="shell lobby-shell" data-faction={family} data-family={family}>
       <LobbyCreateClient initialMode={initialMode} />
     </main>
   );

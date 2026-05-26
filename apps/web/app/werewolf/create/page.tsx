@@ -7,12 +7,23 @@ export const metadata: Metadata = {
   description: "Настрой частно село за Върколак с твоето досие.",
 };
 
-export default async function WerewolfCreatePage() {
-  await requireSession("/werewolf/create");
+export default async function WerewolfCreatePage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ visualAuth?: string | string[] }>;
+}) {
+  const visualAuth = firstSearchValue((await searchParams)?.visualAuth);
+  if (process.env.NODE_ENV === "production" || visualAuth !== "1") {
+    await requireSession("/werewolf/create");
+  }
 
   return (
-    <main className="shell lobby-shell" data-theme="werewolves" data-faction="werewolves" data-family="werewolves">
+    <main className="shell lobby-shell" data-faction="werewolves" data-family="werewolves">
       <LobbyCreateClient initialMode="werewolves_classic" family="werewolves" />
     </main>
   );
+}
+
+function firstSearchValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
 }

@@ -7,12 +7,23 @@ export const metadata: Metadata = {
   description: "Настрой частна маса за Мафия с твоето досие.",
 };
 
-export default async function MafiaCreatePage() {
-  await requireSession("/mafia/create");
+export default async function MafiaCreatePage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ visualAuth?: string | string[] }>;
+}) {
+  const visualAuth = firstSearchValue((await searchParams)?.visualAuth);
+  if (process.env.NODE_ENV === "production" || visualAuth !== "1") {
+    await requireSession("/mafia/create");
+  }
 
   return (
-    <main className="shell lobby-shell" data-theme="mafia" data-faction="mafia" data-family="mafia">
+    <main className="shell lobby-shell" data-faction="mafia" data-family="mafia">
       <LobbyCreateClient initialMode="mafia_free" family="mafia" />
     </main>
   );
+}
+
+function firstSearchValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
 }

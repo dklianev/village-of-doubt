@@ -108,14 +108,14 @@ export function LobbyWizard({
   }
 
   return (
-    <main data-theme={state.family} data-faction={state.family} data-family={state.family} className="lobby-wizard">
+    <main data-faction={state.family} data-family={state.family} className="lobby-wizard">
       <section className={`lobby-wizard-frame ${styles.wizardFrame}`} aria-label="Лоби">
         <SceneCard
           eyebrow="ЛОБИ"
           density="lg"
           background={{
-            image: "var(--art-lobby)",
-            overlay: "scrim",
+            image: "var(--wizard-art, var(--art-lobby))",
+            overlay: "veil",
             focalY: 42,
             minHeight: "var(--ds-scene-hero-min-compact)",
           }}

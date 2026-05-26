@@ -61,6 +61,9 @@
   --hero-card-scrim: linear-gradient(180deg, rgba(4, 7, 8, 0) 0%, rgba(4, 7, 8, 0.16) 100%);
   --hero-card-shadow: 0 32px 92px rgba(0, 0, 0, 0.46), inset 0 1px rgba(255, 247, 229, 0.1);
   --art-lobby: image-set(url("/game-art/bg-lobby-tavern.webp") type("image/webp"), url("/game-art/bg-lobby-tavern.png") type("image/png"));
+  --art-create-default: var(--art-lobby);
+  --art-create-werewolves: var(--art-lobby);
+  --art-create-mafia: image-set(url("/game-art/mafia/bg-lobby-tavern.webp") type("image/webp"), url("/game-art/mafia/bg-lobby-tavern.png") type("image/png"));
   --art-reveal: image-set(url("/game-art/bg-role-reveal.webp") type("image/webp"), url("/game-art/bg-role-reveal.png") type("image/png"));
   --art-night: image-set(url("/game-art/bg-night-phase.webp") type("image/webp"), url("/game-art/bg-night-phase.png") type("image/png"));
   --art-day: image-set(url("/game-art/bg-day-discussion.webp") type("image/webp"), url("/game-art/bg-day-discussion.png") type("image/png"));
@@ -354,6 +357,9 @@
     --art-werewolf: image-set(url("/game-art/mobile/werewolf/bg-hero-v2.webp") type("image/webp"));
     --art-mafia: image-set(url("/game-art/mobile/mafia/bg-hero-v2.webp") type("image/webp"));
     --art-lobby: image-set(url("/game-art/mobile/bg-lobby-tavern.webp") type("image/webp"));
+    --art-create-default: var(--art-lobby);
+    --art-create-werewolves: var(--art-lobby);
+    --art-create-mafia: image-set(url("/game-art/mobile/mafia/bg-lobby-tavern.webp") type("image/webp"));
     --art-reveal: image-set(url("/game-art/mobile/bg-role-reveal.webp") type("image/webp"));
     --art-night: image-set(url("/game-art/mobile/bg-night-phase.webp") type("image/webp"));
     --art-day: image-set(url("/game-art/mobile/bg-day-discussion.webp") type("image/webp"));
@@ -816,6 +822,18 @@ html[data-theme="light"] body:has(.landing-shell)::after {
   }
   100% {
     transform: translate3d(-0.4%, 0.5%, 0) scale(1.02);
+  }
+}
+
+@keyframes lobby-ambient-drift {
+  0% {
+    transform: translateX(-50%) translate3d(-0.8%, 0, 0) scale(1.025);
+  }
+  50% {
+    transform: translateX(-50%) translate3d(0.8%, -0.5%, 0) scale(1.03);
+  }
+  100% {
+    transform: translateX(-50%) translate3d(-0.5%, 0.6%, 0) scale(1.025);
   }
 }
 
@@ -1295,9 +1313,68 @@ html[data-theme="light"] .utility-shell::before {
 
 
 .lobby-shell {
-  --page-art: var(--art-lobby);
+  --page-art: var(--art-create-default);
+  --wizard-art: var(--art-create-default);
   width: min(1360px, calc(100vw - 32px));
   overflow-x: hidden;
+}
+
+.lobby-shell[data-faction="werewolves"] {
+  --page-art: var(--art-create-werewolves);
+  --wizard-art: var(--art-create-werewolves);
+}
+
+.lobby-shell[data-faction="mafia"] {
+  --page-art: var(--art-create-mafia);
+  --wizard-art: var(--art-create-mafia);
+}
+
+.lobby-shell::before {
+  top: -5vh;
+  bottom: -5vh;
+  min-height: calc(100vh + 10vh);
+  background:
+    linear-gradient(115deg, rgba(8, 9, 9, 0.9) 0%, rgba(21, 12, 9, 0.66) 44%, rgba(8, 9, 9, 0.92) 100%),
+    var(--page-art, var(--art-create-default)) center / cover no-repeat;
+  filter: saturate(0.98) contrast(1.05) brightness(0.9);
+  transform: translateX(-50%) translate3d(-0.8%, 0, 0) scale(1.025);
+  animation: lobby-ambient-drift 56s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+.lobby-shell::after {
+  position: absolute;
+  inset: -2rem 50% -4rem auto;
+  z-index: -1;
+  width: 100vw;
+  transform: translateX(50%);
+  background:
+    radial-gradient(
+      ellipse 70vw 60vh at 50% 36%,
+      transparent 0%,
+      rgba(8, 9, 12, 0.16) 55%,
+      rgba(8, 9, 12, 0.58) 100%
+    );
+  content: "";
+  pointer-events: none;
+}
+
+html[data-theme="light"] .lobby-shell::before {
+  background:
+    linear-gradient(180deg, rgba(255, 242, 211, 0.2), rgba(255, 242, 211, 0.4)),
+    radial-gradient(ellipse at 8% 18%, rgba(255, 230, 180, 0.18), transparent 34rem),
+    var(--page-art, var(--art-create-default)) center / cover no-repeat;
+  filter: saturate(0.92) contrast(0.96) brightness(1.04);
+}
+
+html[data-theme="light"] .lobby-shell::after {
+  background:
+    radial-gradient(
+      ellipse 70vw 60vh at 50% 36%,
+      transparent 0%,
+      rgba(252, 244, 230, 0.14) 55%,
+      rgba(252, 244, 230, 0.64) 100%
+    );
 }
 
 
@@ -1350,7 +1427,7 @@ html[data-theme="light"] .utility-shell::before {
 .lobby-shell .card {
   background:
     linear-gradient(90deg, rgba(18, 10, 8, 0.96) 0%, rgba(18, 10, 8, 0.84) 48%, rgba(18, 10, 8, 0.34) 100%),
-    var(--art-lobby) center / cover no-repeat;
+    var(--wizard-art, var(--art-lobby)) center / cover no-repeat;
 }
 
 
