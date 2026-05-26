@@ -1451,6 +1451,40 @@
   padding-block: clamp(6px, 1.5vw, 18px) clamp(22px, 3.5vw, 46px);
 }
 
+:global(.landing-final-cta) {
+  --landing-final-art: var(--art-landing-hero-composited);
+  position: relative;
+  z-index: 2;
+  margin-top: clamp(12px, 2.4vw, 34px);
+  padding-block: clamp(12px, 2vw, 24px) clamp(38px, 6vw, 86px);
+}
+
+:global(html[data-theme="light"] .landing-final-cta) {
+  --landing-final-art: var(--art-landing-hero-light);
+}
+
+:global(.landing-final-copy) {
+  display: grid;
+  gap: 10px;
+  max-width: 34rem;
+}
+
+:global(.landing-final-copy p) {
+  max-width: 30rem;
+  margin: 0;
+  color: var(--ds-ink-scene-soft);
+  font-size: var(--ds-type-lede);
+  font-weight: 720;
+  line-height: 1.45;
+}
+
+:global(.landing-final-actions) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
 :global(.recent-endings-list) {
   display: grid;
   gap: 10px;
@@ -1519,6 +1553,11 @@
 
   :global(.landing-stats-row) {
     grid-template-columns: 1fr;
+  }
+
+  :global(.landing-final-actions) {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   :global(.landing-quickstart .quickstart-connector i),
