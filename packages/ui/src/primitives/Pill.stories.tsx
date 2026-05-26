@@ -76,12 +76,12 @@ export const Tracked: Story = {
 };
 
 export const FactionWerewolves: Story = {
-  args: { intent: "faction", children: "Влез на масата" },
+  args: { intent: "faction", size: "lg", shimmer: true, tracked: true, children: "Към върколаците" },
   decorators: [(Story) => <div data-faction="werewolves" style={{ padding: 24 }}><Story /></div>],
 };
 
 export const FactionMafia: Story = {
-  args: { intent: "faction", children: "Влез на масата" },
+  args: { intent: "faction", size: "lg", shimmer: true, tracked: true, children: "Към мафията" },
   decorators: [(Story) => <div data-faction="mafia" style={{ padding: 24 }}><Story /></div>],
 };
 
