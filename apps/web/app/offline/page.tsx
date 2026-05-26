@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { OfflineClient } from "@/components/offline-client";
 
 export const metadata: Metadata = {
-  title: "Без връзка | Върколак и Мафия",
+  title: "Без връзка",
   description: "Страница за възстановяване, когато връзката временно прекъсне.",
 };
 

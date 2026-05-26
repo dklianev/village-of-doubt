@@ -15,7 +15,7 @@ export function RoleSpotlight({ family }: { family: GameFamily }) {
       data-family={family}
       aria-label={family === "mafia" ? "Класически роли в Мафия" : "Класически роли във Върколак"}
     >
-      <header className="role-spotlight__header">
+      <header className="role-spotlight__header family-section-plaque">
         <p className="section-kicker">{family === "mafia" ? "градът" : "селото"}</p>
         <h2>{family === "mafia" ? "Кой седи на масата" : "Кой се събужда нощем"}</h2>
         <p>{family === "mafia" ? "Пет роли формират гръбнака на всяка игра." : "Пет роли водят всяка фолклорна нощ."}</p>

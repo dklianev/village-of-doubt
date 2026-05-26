@@ -17,7 +17,7 @@ import "@/components/history/History.module.css";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Запис | Върколак и Мафия",
+  title: "Запис",
   description: "Преглед на завършена игра: фази, гласове, смърти и победител.",
 };
 

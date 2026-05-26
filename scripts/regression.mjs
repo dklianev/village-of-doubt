@@ -17,6 +17,7 @@ const checks = [
   ["lobby wizard contracts", checkLobbyWizardContracts],
   ["play UI hardening contracts", checkPlayUiContracts],
   ["frontend hygiene contracts", checkFrontendHygieneContracts],
+  ["metadata title contracts", checkMetadataTitleContracts],
   ["primitive override anti-pattern", checkPrimitiveOverrideAntiPattern],
   ["globals.css size budget", checkGlobalsCssBudget],
   ["production security guards", checkProductionGuardContracts],
@@ -121,6 +122,26 @@ function checkCssImageSet() {
   assert(css.includes('/game-art/mobile/bg-landing-hero.webp'), "Missing mobile image-set CSS references.");
 }
 
+function checkMetadataTitleContracts() {
+  const appDir = path.join(root, "apps/web/app");
+  const files = listFilesRecursive(appDir).filter((file) => file.endsWith(".tsx"));
+  const duplicateBrandSuffix = [];
+
+  for (const file of files) {
+    const absolute = path.join(appDir, file);
+    const source = readFileSync(absolute, "utf8");
+    const titleSuffixMatches = source.matchAll(/title:\s*(?:`[^`]*|\{[^}]*|["'][^"']*)\|\s*Върколак и Мафия/g);
+    for (const match of titleSuffixMatches) {
+      duplicateBrandSuffix.push(`${path.join("apps/web/app", file)}:${lineForIndex(source, match.index ?? 0)}`);
+    }
+  }
+
+  assert(
+    duplicateBrandSuffix.length === 0,
+    `Per-route metadata titles must not include the site suffix manually; layout.tsx applies it. Found:\n${duplicateBrandSuffix.join("\n")}`,
+  );
+}
+
 function assertThemeVariableBlock(css, selector) {
   const start = css.indexOf(selector);
   assert(start >= 0, `Missing ${selector} theme selector.`);
@@ -195,7 +216,8 @@ function checkLandingLayoutContracts() {
   assert(landingPage.includes("LiveTickerCard") && landingPage.includes("RecentEndingsCard"), "Landing page must render shared stats cards.");
   assert(!landingPage.includes("QuickStartSection"), "Landing page must not render deprecated QuickStartSection.");
   assert(!universalHowToPlay.includes("IntersectionObserver"), "Landing how-to-play should not ship IntersectionObserver for below-fold connector reveal.");
-  assert(css.includes("content-visibility: auto;"), "Landing quickstart should use content-visibility to defer below-fold paint.");
+  assert(css.includes("content-visibility: visible;"), "Landing quickstart must render hover shadows outside its bounds.");
+  assert(css.includes("contain-intrinsic-size: none;"), "Landing quickstart must not use paint containment that clips CTA hover shadows.");
   assert(liveTickerCard.includes("Бъди първият на масата"), "Landing live empty state must invite the first room.");
   assert(recentEndingsCard.includes("Първите герои ще се появят тук."), "Landing winner empty state must use designed Bulgarian copy.");
   for (const exportName of ["PersonIcon", "HouseIcon", "MaskIcon", "MoonIcon", "BallotIcon", "LastWinnerEmptyGlyph"]) {
@@ -229,7 +251,12 @@ function checkLandingLayoutContracts() {
   }
   assert(!lightBackdropBlock.includes(".lobby-shell::before"), "Light theme must keep the lobby tavern backdrop visible.");
   assert(lightBackdropBlock.includes("display: none;"), "Light theme should use the shared homepage body background instead of page-art backdrops.");
-  assert(lightTheatreBackdropBlock.includes("#f7ead0") && lightTheatreBackdropBlock.includes("animation: none;"), "Light theatre backdrop should use a static cream gradient.");
+  assert(
+    lightTheatreBackdropBlock.includes("#f7ead0") &&
+      lightTheatreBackdropBlock.includes("animation: ambient-drift-light 72s") &&
+      lightTheatreBackdropBlock.includes("transform: translate3d(-0.6%, 0, 0) scale(1.02)"),
+    "Light theatre backdrop should use the cream gradient with subtle ambient drift.",
+  );
   assert(css.includes("/game-art/bg-landing-ambient-composited.webp"), "Landing page must reference the optimized composited ambient outer background.");
   assert(existsSync(path.join(gameArtDir, "bg-landing-ambient-composited.png")), "Missing composited ambient landing background PNG.");
   assert(existsSync(path.join(gameArtDir, "bg-landing-ambient-composited.webp")), "Missing optimized composited ambient landing background WebP.");
@@ -297,18 +324,34 @@ function checkFamilyQuickStartContracts() {
   for (const asset of [
     "werewolf/bg-hero-v2.png",
     "werewolf/bg-hero-v2.webp",
+    "werewolf/bg-hero-light-v1.png",
+    "werewolf/bg-hero-light-v1.webp",
     "mafia/bg-hero-v2.png",
     "mafia/bg-hero-v2.webp",
+    "mafia/bg-hero-light-v1.png",
+    "mafia/bg-hero-light-v1.webp",
     "mobile/werewolf/bg-hero-v2.webp",
+    "mobile/werewolf/bg-hero-light-v1.webp",
     "mobile/mafia/bg-hero-v2.webp",
+    "mobile/mafia/bg-hero-light-v1.webp",
   ]) {
     assert(existsSync(path.join(gameArtDir, asset)), `Missing cinematic hero asset ${asset}.`);
   }
-  assert(werewolfTheatreBlock.includes("/game-art/werewolf/bg-hero-v2.webp"), "Werewolf home theatre backdrop should use the family forest hero art.");
-  assert(mafiaTheatreBlock.includes("/game-art/mafia/bg-hero-v2.webp"), "Mafia home theatre backdrop should use the family noir city hero art.");
+  assert(
+    werewolfTheatreBlock.includes("var(--art-werewolf)") &&
+      css.includes("/game-art/werewolf/bg-hero-v2.webp") &&
+      css.includes("/game-art/werewolf/bg-hero-light-v1.webp"),
+    "Werewolf home theatre backdrop should use theme-aware --art-werewolf hero art.",
+  );
+  assert(
+    mafiaTheatreBlock.includes("var(--art-mafia)") &&
+      css.includes("/game-art/mafia/bg-hero-v2.webp") &&
+      css.includes("/game-art/mafia/bg-hero-light-v1.webp"),
+    "Mafia home theatre backdrop should use theme-aware --art-mafia hero art.",
+  );
   assert(!gameHomePage.includes("QuickStartSection"), "GameHomePage must not render deprecated QuickStartSection.");
   assert(!werewolfTimeline.includes("IntersectionObserver") && !mafiaTimeline.includes("IntersectionObserver"), "Family timelines should not ship IntersectionObserver for reveal.");
-  assert(css.includes("content-visibility: auto"), "Family quickstart should use CSS paint containment instead of JS viewport observers.");
+  assert(css.includes("content-visibility: visible"), "Family quickstart should avoid paint containment that clips CTA hover shadows.");
   assert(liveTickerCard.includes("Бъди първият на масата") && liveTickerCard.includes("Запали първия огън"), "Live ticker empty states must be family-aware.");
   assert(recentEndingsCard.includes("Първите легенди ще се появят тук.") && recentEndingsCard.includes("Първите досиета ще се появят тук."), "Recent endings empty states must be family-aware.");
   assert(recentEndingsCard.includes("LastWinnerEmptyGlyph"), "Family winner empty state must use the shared designed glyph.");
@@ -924,6 +967,10 @@ function readRulesStyles() {
 
 function count(haystack, needle) {
   return haystack.split(needle).length - 1;
+}
+
+function lineForIndex(source, index) {
+  return source.slice(0, index).split("\n").length;
 }
 
 function assert(condition, message) {

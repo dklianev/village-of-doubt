@@ -12,6 +12,8 @@ export function SiteFooter() {
         <Link href="/report">Сигнал</Link>
         <span aria-hidden>·</span>
         <Link href="/status">Състояние</Link>
+        <span aria-hidden>·</span>
+        <Link href="/faq">Помощ</Link>
       </div>
       <p className={styles.tagline}>© {new Date().getFullYear()} Върколак и Мафия · Бета</p>
     </footer>

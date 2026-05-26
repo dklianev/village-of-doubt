@@ -3,7 +3,7 @@ import { AuthGatedEntryClient } from "@/components/games/auth-gated-entry-client
 import { requireSession } from "@/lib/require-session";
 
 export const metadata: Metadata = {
-  title: "Влез в селото | Върколак и Мафия",
+  title: "Влез в селото",
   description: "Покажи знака на селото и премини през оградата във Върколак.",
 };
 

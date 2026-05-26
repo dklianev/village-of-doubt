@@ -14,8 +14,11 @@ export function useAuthSession(initialSession: AuthSessionView | null = null) {
   const [data, setData] = useState<AuthSessionView | null>(initialSession ?? null);
   const [isPending, setPending] = useState(false);
 
-  const refresh = useCallback(async () => {
-    setPending(true);
+  const refresh = useCallback(async (options?: { showPending?: boolean }) => {
+    const showPending = options?.showPending ?? true;
+    if (showPending) {
+      setPending(true);
+    }
     try {
       const response = await fetch("/api/auth/get-session", {
         cache: "no-store",
@@ -30,21 +33,27 @@ export function useAuthSession(initialSession: AuthSessionView | null = null) {
     } catch {
       setData(null);
     } finally {
-      setPending(false);
+      if (showPending) {
+        setPending(false);
+      }
     }
   }, []);
 
   useEffect(() => {
-    window.addEventListener("focus", refresh);
-    window.addEventListener("auth-session-change", refresh);
+    const refreshOnEvent = () => {
+      void refresh();
+    };
+
+    window.addEventListener("focus", refreshOnEvent);
+    window.addEventListener("auth-session-change", refreshOnEvent);
 
     if (!initialSession?.user?.id) {
-      void refresh();
+      void refresh({ showPending: false });
     }
 
     return () => {
-      window.removeEventListener("focus", refresh);
-      window.removeEventListener("auth-session-change", refresh);
+      window.removeEventListener("focus", refreshOnEvent);
+      window.removeEventListener("auth-session-change", refreshOnEvent);
     };
   }, [initialSession?.user?.id, refresh]);
 

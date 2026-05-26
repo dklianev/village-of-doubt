@@ -39,6 +39,9 @@ const VIEWPORTS = [
 ];
 
 const LIGHT_UTILITY_ROUTES = [
+  { name: "home", path: "/" },
+  { name: "werewolf-home", path: "/werewolf" },
+  { name: "mafia-home", path: "/mafia" },
   { name: "account-dashboard", path: "/account" },
   { name: "history-empty", path: "/history" },
   { name: "leaderboard-empty", path: "/leaderboard" },
@@ -52,6 +55,9 @@ const LIGHT_UTILITY_ROUTES = [
 ];
 
 const DARK_UTILITY_ROUTE_NAMES = new Set([
+  "home",
+  "werewolf-home",
+  "mafia-home",
   "account-dashboard",
   "history-empty",
   "leaderboard-empty",

@@ -15,7 +15,7 @@ export function AccountAchievements({ unlockedIds, total }: Props) {
 
   return (
     <section aria-labelledby="account-achievements-title">
-      <PaperCard eyebrow="ПОСТИЖЕНИЯ" density="md">
+      <PaperCard eyebrow="ЛЕГЕНДИ" density="md">
         <div className="account-card-content">
           <header className="account-section-head">
             <Display size="h3" as="h2">

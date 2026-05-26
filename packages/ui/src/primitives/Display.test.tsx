@@ -26,4 +26,9 @@ describe("Display", () => {
     const { getByText } = render(<Display size="h4">Малко</Display>);
     expect(getByText("Малко").dataset.dsDisplay).toBe("h4");
   });
+
+  it("uses responsive clamp scaling for hero headings", () => {
+    const { getByText } = render(<Display size="hero">Голямо</Display>);
+    expect(getByText("Голямо").style.fontSize).toBe("clamp(2.6rem, 8.5vw, var(--ds-type-display))");
+  });
 });

@@ -130,9 +130,7 @@
   border-color: var(--ds-accent-faction);
   background: var(--ds-gradient-faction, var(--ds-gradient-primary-rich));
   color: oklch(0.97 0.01 80);
-  box-shadow:
-    0 14px 34px oklch(0 0 0 / 0.34),
-    inset 0 1px oklch(1 0 0 / 0.18);
+  box-shadow: var(--ds-shadow-faction);
 }
 
 .ds-pill[data-intent="faction"]:hover:not(:disabled, [aria-disabled="true"]) {

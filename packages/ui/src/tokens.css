@@ -90,9 +90,18 @@
   --ds-press-duration: 80ms;
   --ds-gradient-primary-rich: linear-gradient(135deg, oklch(0.55 0.165 25), oklch(0.42 0.155 25));
   --ds-gradient-secondary-paper: linear-gradient(135deg, oklch(0.94 0.022 78 / 0.075), oklch(0.94 0.022 78 / 0.12));
-  --ds-gradient-faction-werewolves: linear-gradient(135deg, oklch(0.55 0.14 145), oklch(0.40 0.13 145));
-  --ds-gradient-faction-mafia: linear-gradient(135deg, oklch(0.55 0.165 25), oklch(0.32 0.16 25));
+  --ds-gradient-faction-werewolves: linear-gradient(135deg, oklch(0.52 0.13 145) 0%, oklch(0.38 0.12 148) 100%);
+  --ds-gradient-faction-mafia: linear-gradient(135deg, oklch(0.52 0.16 25) 0%, oklch(0.36 0.15 22) 100%);
   --ds-gradient-faction: var(--ds-gradient-primary-rich);
+  --ds-shadow-faction-werewolves:
+    0 14px 34px oklch(0.38 0.12 148 / 0.38),
+    inset 0 1px oklch(1 0 0 / 0.16);
+  --ds-shadow-faction-mafia:
+    0 14px 34px oklch(0.36 0.15 22 / 0.42),
+    inset 0 1px oklch(1 0 0 / 0.18);
+  --ds-shadow-faction:
+    0 14px 34px oklch(0 0 0 / 0.34),
+    inset 0 1px oklch(1 0 0 / 0.18);
   --ds-accent-faction: var(--ds-accent-blood);
 
   /* Motion (Dialog/Sheet/Toast only) */
@@ -126,11 +135,13 @@
 
 :where([data-faction="werewolves"], [data-theme="werewolves"]) {
   --ds-gradient-faction: var(--ds-gradient-faction-werewolves);
+  --ds-shadow-faction: var(--ds-shadow-faction-werewolves);
   --ds-accent-faction: oklch(0.55 0.10 145);
 }
 
 :where([data-faction="mafia"], [data-theme="mafia"]) {
   --ds-gradient-faction: var(--ds-gradient-faction-mafia);
+  --ds-shadow-faction: var(--ds-shadow-faction-mafia);
   --ds-accent-faction: var(--ds-accent-blood);
 }
 

@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import Image from "next/image";
+import { Display, Pill } from "@werewolf/ui/server";
 import type { GameFamily } from "@werewolf/shared";
 import { ResourceHints } from "@/components/resource-hints";
 import { ModeChoiceCards, type ModeChoiceGame } from "@/components/landing/ModeChoiceCards";
@@ -62,6 +63,7 @@ export function LandingExperience({ initialSession }: { initialSession: LandingS
       <Suspense fallback={<LandingStatsSkeleton />}>
         <LandingStatsRow />
       </Suspense>
+      <FinalLandingCta />
     </main>
   );
 }
@@ -83,6 +85,28 @@ function LandingStatsSkeleton() {
       <div className="quickstart-mini-card quickstart-skeleton" />
       <div className="quickstart-mini-card quickstart-skeleton" />
     </div>
+  );
+}
+
+function FinalLandingCta() {
+  return (
+    <section className="landing-final-cta" aria-label="Готов ли си да седнеш на масата">
+      <div className="landing-final-invitation">
+        <div className="landing-final-copy">
+          <p className="section-kicker">ГОТОВ ЛИ СИ?</p>
+          <Display size="h2">Сядаме на масата.</Display>
+          <p>Избери коя игра започва вечерта ти.</p>
+        </div>
+        <div className="landing-final-actions">
+          <Pill as="a" href="/werewolf" intent="faction" size="lg" shimmer tracked data-faction="werewolves">
+            Към върколаците
+          </Pill>
+          <Pill as="a" href="/mafia" intent="faction" size="lg" shimmer tracked data-faction="mafia">
+            Към мафията
+          </Pill>
+        </div>
+      </div>
+    </section>
   );
 }
 

@@ -9,13 +9,12 @@ import { loadStatusServices } from "@/lib/status-health";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = routeMetadata({
-  title: "Състояние | Върколак и Мафия",
+  title: "Състояние",
   description: "Преглед на здравето на услугите ни. Колко бързо отговаряме, кога нещо се е счупило.",
   path: "/status",
   image: "/game-art/legal/status-banner.png",
   imageAlt: "Каменно пристанище в полумрак",
   robots: { index: false, follow: true },
-  absoluteTitle: true,
 });
 
 export default async function StatusPage() {
