@@ -3,12 +3,13 @@
 import { useEffect, type Dispatch } from "react";
 import { Pill } from "@werewolf/ui";
 import type { LobbyFormAction, LobbyFormState, LobbyStep } from "@/lib/lobby-form";
+import styles from "./StepNav.module.css";
 
-const STEPS: { step: LobbyStep; label: string }[] = [
-  { step: 1, label: "Стая" },
-  { step: 2, label: "Роли" },
-  { step: 3, label: "Стил" },
-  { step: 4, label: "Преглед" },
+const STEPS: { step: LobbyStep; numeral: string; label: string }[] = [
+  { step: 1, numeral: "I", label: "Стая" },
+  { step: 2, numeral: "II", label: "Роли" },
+  { step: 3, numeral: "III", label: "Стил" },
+  { step: 4, numeral: "IV", label: "Преглед" },
 ];
 
 type StepStatus = "active" | "visited" | "future";
@@ -51,27 +52,37 @@ export function StepNav({
   }, [canAdvance, dispatch, onAdvanceBlocked, transition]);
 
   return (
-    <nav className="lobby-step-nav" aria-label="Стъпки за създаване на стая">
-      <ol>
-        {STEPS.map(({ step, label }) => {
+    <nav className={styles.stepNav} aria-label="Стъпки за създаване на стая">
+      <ol className={styles.stepList}>
+        {STEPS.map(({ step, numeral, label }) => {
           const status: StepStatus = step === state.step ? "active" : step <= state.visitedStep ? "visited" : "future";
+          const disabled = status === "future";
           return (
-            <li key={step}>
-              <Pill
-                intent={status === "active" ? "faction" : "ghost"}
-                size="sm"
+            <li key={step} className={styles.stepItem}>
+              <button
+                type="button"
+                className={styles.stepChip}
                 data-status={status}
-                onClick={() => transition(() => dispatch({ type: "SET_STEP", step }))}
+                disabled={disabled}
+                aria-current={status === "active" ? "step" : undefined}
+                onClick={() => {
+                  if (disabled) {
+                    return;
+                  }
+                  transition(() => dispatch({ type: "SET_STEP", step }));
+                }}
               >
-                <span>{step}</span>
-                <strong>{label}</strong>
-              </Pill>
+                <span className={styles.stepNumeral} aria-hidden="true">
+                  {status === "visited" ? "✓" : numeral}
+                </span>
+                <span className={styles.stepLabel}>{label}</span>
+              </button>
             </li>
           );
         })}
       </ol>
 
-      <div className="lobby-step-actions">
+      <div className={styles.stepActions}>
         <Pill
           intent="secondary"
           disabled={state.step === 1}

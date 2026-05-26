@@ -32,7 +32,6 @@
   gap: 14px;
 }
 
-:global(.lobby-step-nav),
 :global(.lobby-step-pane),
 :global(.lobby-panel),
 :global(.advanced-drawer),
@@ -41,16 +40,6 @@
   box-shadow: inset 0 1px rgba(255, 255, 255, 0.08);
 }
 
-:global(.lobby-step-nav) {
-  display: grid;
-  gap: 14px;
-  border-radius: 28px;
-  padding: 14px;
-  background: rgba(8, 10, 10, 0.46);
-}
-
-:global(.lobby-step-nav ol),
-:global(.lobby-step-actions),
 :global(.preview-action-row),
 :global(.quick-start-row),
 :global(.preset-chips),
@@ -62,59 +51,10 @@
   flex-wrap: wrap;
 }
 
-:global(.lobby-step-nav ol) {
-  justify-content: space-between;
-  padding: 0;
-  margin: 0;
-  list-style: none;
-}
-
-:global(.lobby-step-nav li) {
-  flex: 1 1 120px;
-}
-
-:global(.lobby-step-nav button[data-status]) {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  border: 1px solid rgba(248, 236, 210, 0.14);
-  border-radius: 999px;
-  padding: 8px 10px;
-  background: rgba(248, 236, 210, 0.06);
-  color: #ead9ba;
-  cursor: pointer;
-  font-weight: 950;
-}
-
-:global(.lobby-step-nav button[data-status] span) {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  aspect-ratio: 1;
-  border-radius: 999px;
-  background: rgba(248, 236, 210, 0.14);
-}
-
-:global(.lobby-step-nav button[data-status="active"]) {
-  border-color: color-mix(in oklch, var(--ds-accent-faction) 72%, transparent);
-  background: color-mix(in oklch, var(--ds-accent-faction) 24%, transparent);
-  color: #fff6e5;
-}
-
-:global(.lobby-step-nav button[data-status="active"] span),
 :global(.player-count-control button),
 :global(.role-tile-controls button) {
   background: var(--ds-accent-faction);
   color: var(--ink);
-}
-
-:global(.lobby-step-nav button[data-status="future"]) {
-  opacity: 0.55;
-}
-
-:global(.lobby-step-actions) {
-  justify-content: flex-end;
 }
 
 :global(.lobby-step-pane) {
@@ -1475,19 +1415,6 @@
   }
 
   :global(.lobby-step-slot:not([data-active="true"])) {
-    display: none;
-  }
-
-  :global(.lobby-step-nav ol) {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  :global(.lobby-step-nav button[data-status]) {
-    justify-content: center;
-  }
-
-  :global(.lobby-step-nav button[data-status] strong) {
     display: none;
   }
 
