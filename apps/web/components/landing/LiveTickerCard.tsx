@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { GameFamily } from "@werewolf/shared";
+import { SealedInvitationGlyph } from "@/components/landing/quickstart-icons";
 
 export type LiveStats = {
   activeRooms: number;
@@ -27,7 +28,7 @@ export function LiveTickerCard({ family, liveStats }: LiveTickerCardProps) {
         family === null ? (
           <div className="quickstart-empty-live quickstart-empty-live--homepage">
             <span className="quickstart-dice quickstart-dice--sealed" aria-hidden="true">
-              ⚂
+              <SealedInvitationGlyph className="quickstart-invitation-glyph" />
             </span>
             <div className="quickstart-invitation-copy">
               <p className="quickstart-sealed-tag">ОЧАКВАТ СЕ ГОСТИ</p>
@@ -41,7 +42,7 @@ export function LiveTickerCard({ family, liveStats }: LiveTickerCardProps) {
         ) : (
           <div className="quickstart-empty-live">
             <span className="quickstart-dice" aria-hidden="true">
-              ⚂
+              <SealedInvitationGlyph className="quickstart-invitation-glyph" />
             </span>
             <div>
               <h3>{emptyHeading(family)}</h3>

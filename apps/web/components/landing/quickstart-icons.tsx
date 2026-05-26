@@ -81,6 +81,30 @@ export function BallotIcon({ className }: IconProps) {
   );
 }
 
+export function SealedInvitationGlyph({ className }: IconProps) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 64 64"
+      aria-hidden="true"
+      focusable="false"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M14 20.5h36v25H14z" />
+      <path d="m15.5 22 16.3 13.2L48.5 22" opacity="0.74" />
+      <path d="m15.8 44.2 12-10.2M48.2 44.2 36 34" opacity="0.46" />
+      <path d="M22 16.8c5.7-2.6 13.2-2.6 20 0" opacity="0.42" />
+      <circle cx="42.4" cy="42.2" r="6.4" fill="currentColor" stroke="none" opacity="0.26" />
+      <circle cx="42.4" cy="42.2" r="4" />
+      <path d="M39.8 42.2h5.2M42.4 39.6v5.2" opacity="0.72" />
+    </svg>
+  );
+}
+
 export function LastWinnerEmptyGlyph({ className }: IconProps) {
   return (
     <svg
@@ -94,13 +118,12 @@ export function LastWinnerEmptyGlyph({ className }: IconProps) {
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <path d="M18.5 12.5c3.8-4 8.3-6 13.5-6s9.7 2 13.5 6" opacity="0.58" />
-      <path d="M21.5 29.5h21" />
-      <path d="M25 16.5h14l-1.7 13H26.7l-1.7-13Z" />
-      <path d="M25 16.5c-4.8.4-7.3 2-7.3 4.6 0 2.3 1.8 3.8 5.5 4.5M39 16.5c4.8.4 7.3 2 7.3 4.6 0 2.3-1.8 3.8-5.5 4.5" />
-      <path d="M28.4 11.2 32 7.6l3.6 3.6M32 7.6v16.8" />
-      <path d="M30 34.2h4" />
-      <path d="M12.5 14.2l1.7 1.7 1.7-1.7M48.1 14.2l1.7 1.7 1.7-1.7" opacity="0.62" />
+      <path d="M11.5 13.8h15.2l3.2-4.2h22.6v21.2h-41z" />
+      <path d="M17.6 9.7h10.6l2.9 3.6" opacity="0.5" />
+      <path d="M18.2 18.6h27.6M18.2 23.5h20.4M18.2 28.3h14.6" opacity="0.62" />
+      <path d="M47.6 20.1c2.2 1.4 3.5 3.3 3.5 5.4 0 4.8-8.4 8.7-18.8 8.7s-18.8-3.9-18.8-8.7c0-2.1 1.6-4.1 4.2-5.6" opacity="0.28" />
+      <circle cx="45.8" cy="26.6" r="3.7" />
+      <path d="m43.6 26.6 1.5 1.5 3.2-3.4" opacity="0.72" />
     </svg>
   );
 }
