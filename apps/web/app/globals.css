@@ -749,9 +749,10 @@ html[data-theme="light"] body:has(.landing-shell)::before {
 html[data-theme="light"] body:has(.game-home-shell)::before {
   background-position: center;
   background-size: cover;
-  animation: none;
+  animation: ambient-drift-light 72s ease-in-out infinite alternate;
   filter: saturate(0.95) brightness(1.04);
-  transform: translate3d(0, 0, 0) scale(1.02);
+  transform: translate3d(-0.6%, 0, 0) scale(1.02);
+  will-change: transform;
 }
 
 /* Layer 2 - radial spotlight vignette */
@@ -791,6 +792,18 @@ html[data-theme="light"] body:has(.game-home-shell)::after {
   }
   100% {
     transform: translate3d(-0.8%, 0.9%, 0) scale(1.035);
+  }
+}
+
+@keyframes ambient-drift-light {
+  0% {
+    transform: translate3d(-0.6%, 0, 0) scale(1.02);
+  }
+  50% {
+    transform: translate3d(0.6%, -0.4%, 0) scale(1.025);
+  }
+  100% {
+    transform: translate3d(-0.4%, 0.5%, 0) scale(1.02);
   }
 }
 
