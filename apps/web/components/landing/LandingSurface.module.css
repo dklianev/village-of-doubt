@@ -967,6 +967,8 @@
     display: grid;
     gap: 4px;
     border-top: 0;
+    background: none;
+    box-shadow: none;
     transform: translateX(-50%);
   }
 
@@ -1168,6 +1170,22 @@
     inset 1px 1px rgba(255, 255, 255, 0.34),
     0 14px 32px -12px rgba(34, 22, 17, 0.2),
     0 44px 86px -46px rgba(34, 22, 17, 0.38);
+  transition:
+    transform 220ms ease,
+    border-color 220ms ease,
+    box-shadow 220ms ease,
+    background 220ms ease;
+}
+
+:global(.landing-quickstart .quickstart-step:hover),
+:global(.landing-quickstart .quickstart-step:focus-within) {
+  transform: translateY(-3px);
+  border-color: rgba(200, 154, 85, 0.5);
+  background: rgba(255, 247, 229, 0.42);
+  box-shadow:
+    inset 1px 1px rgba(255, 255, 255, 0.4),
+    0 18px 38px -14px rgba(34, 22, 17, 0.24),
+    0 58px 96px -54px rgba(34, 22, 17, 0.44);
 }
 
 :global(.landing-quickstart .quickstart-glyph),
@@ -1182,7 +1200,14 @@
 
 :global(.landing-quickstart .quickstart-connector),
 :global(html[data-theme="dark"] .landing-quickstart .quickstart-connector) {
-  border-top-color: rgba(34, 22, 17, 0.28);
+  height: 2px;
+  border-top: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(169, 111, 34, 0.58) 0 5px,
+    transparent 5px 12px
+  );
+  box-shadow: 0 0 18px rgba(209, 154, 66, 0.14);
 }
 
 :global(.landing-quickstart .quickstart-dice),
@@ -1267,12 +1292,27 @@
     0 52px 92px -54px rgba(0, 0, 0, 0.72);
 }
 
+:global(html[data-theme="dark"] .landing-quickstart .quickstart-step:hover),
+:global(html[data-theme="dark"] .landing-quickstart .quickstart-step:focus-within) {
+  border-color: rgba(231, 173, 91, 0.42);
+  background: rgba(255, 247, 229, 0.105);
+  box-shadow:
+    inset 1px 1px rgba(248, 236, 210, 0.14),
+    0 18px 42px -16px rgba(0, 0, 0, 0.56),
+    0 66px 104px -62px rgba(0, 0, 0, 0.86);
+}
+
 :global(html[data-theme="dark"] .landing-quickstart .quickstart-glyph) {
   color: rgba(255, 247, 229, 0.84);
 }
 
 :global(html[data-theme="dark"] .landing-quickstart .quickstart-connector) {
-  border-top-color: rgba(248, 236, 210, 0.24);
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(231, 173, 91, 0.52) 0 5px,
+    transparent 5px 12px
+  );
+  box-shadow: 0 0 20px rgba(231, 173, 91, 0.16);
 }
 
 :global(html[data-theme="dark"] .landing-quickstart .quickstart-dice) {
@@ -1364,12 +1404,31 @@
   -webkit-backdrop-filter: blur(10px);
 }
 
+:global(html[data-theme="light"] .landing-quickstart .quickstart-step:hover),
+:global(html[data-theme="light"] .landing-quickstart .quickstart-step:focus-within) {
+  border-color: rgba(169, 111, 34, 0.48);
+  background:
+    radial-gradient(circle at 16% 0%, rgba(255, 255, 255, 0.62), transparent 18rem),
+    linear-gradient(145deg, rgba(255, 247, 229, 0.98), rgba(223, 193, 137, 0.94)),
+    var(--texture-paper) center / 540px 540px;
+  box-shadow:
+    0 3px 6px rgba(70, 38, 18, 0.18),
+    0 18px 38px rgba(70, 38, 18, 0.24),
+    0 42px 78px rgba(70, 38, 18, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65),
+    inset 1px 1px rgba(255, 255, 255, 0.36);
+}
+
 :global(html[data-theme="light"] .landing-quickstart .quickstart-glyph) {
   color: rgba(34, 22, 17, 0.82);
 }
 
 :global(html[data-theme="light"] .landing-quickstart .quickstart-connector) {
-  border-top-color: rgba(34, 22, 17, 0.28);
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(169, 111, 34, 0.54) 0 5px,
+    transparent 5px 12px
+  );
 }
 
 :global(html[data-theme="light"] .landing-quickstart .quickstart-rules-cta) {
