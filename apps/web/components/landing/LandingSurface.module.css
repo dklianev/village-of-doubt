@@ -667,9 +667,15 @@
 }
 
 :global(.quickstart-invitation-glyph) {
-  width: 42px;
-  height: 42px;
-  filter: drop-shadow(0 8px 12px rgba(70, 38, 18, 0.12));
+  display: block;
+  width: 31px;
+  height: 31px;
+  filter: drop-shadow(0 8px 12px rgba(70, 38, 18, 0.14));
+}
+
+:global(.quickstart-dice--sealed .quickstart-invitation-glyph) {
+  width: 34px;
+  height: 34px;
 }
 
 :global(.quickstart-live h3),
@@ -708,10 +714,11 @@
 }
 
 :global(.quickstart-dim-glyph) {
-  width: 76px;
-  height: 48px;
+  display: block;
+  width: 46px;
+  height: 46px;
   flex: 0 0 auto;
-  color: rgba(34, 22, 17, 0.4);
+  color: rgba(34, 22, 17, 0.34);
 }
 
 :global(.quickstart-winner-empty--homepage) {
