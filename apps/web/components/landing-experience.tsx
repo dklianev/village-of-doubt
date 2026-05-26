@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Image from "next/image";
-import { Display, Pill, SceneCard } from "@werewolf/ui/server";
+import Link from "next/link";
+import { Display } from "@werewolf/ui/server";
 import type { GameFamily } from "@werewolf/shared";
 import { ResourceHints } from "@/components/resource-hints";
 import { ModeChoiceCards, type ModeChoiceGame } from "@/components/landing/ModeChoiceCards";
@@ -91,28 +92,23 @@ function LandingStatsSkeleton() {
 function FinalLandingCta() {
   return (
     <section className="landing-final-cta" aria-label="Готов ли си да седнеш на масата">
-      <SceneCard
-        eyebrow="ГОТОВ ЛИ СИ?"
-        density="md"
-        background={{
-          image: "var(--landing-final-art)",
-          overlay: "scrim",
-          minHeight: "clamp(260px, 30vh, 360px)",
-        }}
-      >
+      <div className="landing-final-invitation">
         <div className="landing-final-copy">
+          <p className="section-kicker">ГОТОВ ЛИ СИ?</p>
           <Display size="h2">Сядаме на масата.</Display>
           <p>Избери коя игра започва вечерта ти.</p>
         </div>
         <div className="landing-final-actions">
-          <Pill as="a" href="/werewolf" intent="faction" shimmer tracked data-faction="werewolves">
-            Към върколаците
-          </Pill>
-          <Pill as="a" href="/mafia" intent="faction" shimmer tracked data-faction="mafia">
-            Към мафията
-          </Pill>
+          <Link className="landing-final-ticket landing-final-ticket--werewolves" href="/werewolf" data-faction="werewolves">
+            <span className="landing-final-ticket-seal" aria-hidden="true" />
+            <span>Към върколаците</span>
+          </Link>
+          <Link className="landing-final-ticket landing-final-ticket--mafia" href="/mafia" data-faction="mafia">
+            <span className="landing-final-ticket-seal" aria-hidden="true" />
+            <span>Към мафията</span>
+          </Link>
         </div>
-      </SceneCard>
+      </div>
     </section>
   );
 }
