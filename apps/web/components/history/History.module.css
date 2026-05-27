@@ -728,6 +728,44 @@
     var(--art-history) center / cover no-repeat;
 }
 
+.caseFileShell[data-variant="featured"] .caseFileHead {
+  min-height: 88px;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.caseFileShell[data-variant="featured"] .caseFileEyebrow {
+  position: absolute;
+  top: -6px;
+  right: -2px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 92px;
+  min-height: 92px;
+  border: 2px solid var(--case-accent, oklch(0.50 0.155 25 / 0.58));
+  border-radius: 50%;
+  padding: 12px;
+  color: var(--case-accent, oklch(0.58 0.16 25));
+  background:
+    radial-gradient(circle at 40% 32%, oklch(1 0 0 / 0.36), transparent 34%),
+    radial-gradient(circle, oklch(0.94 0.022 78 / 0.8), oklch(0.82 0.052 74 / 0.58));
+  box-shadow:
+    0 12px 28px -20px oklch(0 0 0 / 0.64),
+    inset 0 1px 0 oklch(1 0 0 / 0.36);
+  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-size: 0.64rem;
+  line-height: 1.3;
+  text-align: center;
+  text-shadow: none;
+  transform: rotate(-8deg);
+  pointer-events: none;
+}
+
+.caseFileShell[data-variant="featured"] .caseOutcomeRibbon {
+  margin-right: 112px;
+}
+
 .caseFileShell[data-variant="featured"] .caseFileContent {
   padding-top: clamp(80px, 16vh, 180px);
 }
@@ -1103,6 +1141,21 @@
 
   .caseFileContent {
     grid-template-columns: 1fr;
+  }
+
+  .caseFileShell[data-variant="featured"] .caseFileHead {
+    min-height: 74px;
+  }
+
+  .caseFileShell[data-variant="featured"] .caseFileEyebrow {
+    width: 74px;
+    min-height: 74px;
+    padding: 9px;
+    font-size: 0.56rem;
+  }
+
+  .caseFileShell[data-variant="featured"] .caseOutcomeRibbon {
+    margin-right: 86px;
   }
 
   .caseFactionSeal {
