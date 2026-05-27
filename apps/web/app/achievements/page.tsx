@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import { ACHIEVEMENTS } from "@werewolf/shared";
 import { Display, Pill, SceneCard } from "@werewolf/ui/server";
-import { AchievementsClient } from "@/components/achievements-client";
+import { AchievementsClient, type OwnedAchievement } from "@/components/achievements-client";
 import { JsonLd } from "@/components/JsonLd";
 import { requireSession } from "@/lib/require-session";
 import { absoluteUrl, routeMetadata } from "@/lib/seo";
@@ -24,14 +25,21 @@ const achievementsJsonLd = {
 };
 
 type AchievementsPageProps = {
-  searchParams?: Promise<{ visualAuth?: string | string[] }>;
+  searchParams?: Promise<{ visualAuth?: string | string[]; visualAchievements?: string | string[] }>;
 };
 
 export default async function AchievementsPage({ searchParams }: AchievementsPageProps) {
-  const visualAuth = firstSearchValue((await searchParams)?.visualAuth);
+  const resolvedSearchParams = await searchParams;
+  const visualAuth = firstSearchValue(resolvedSearchParams?.visualAuth);
+  const visualAchievements = firstSearchValue(resolvedSearchParams?.visualAchievements);
   if (process.env.NODE_ENV === "production" || visualAuth !== "1") {
     await requireSession("/achievements");
   }
+
+  const initialOwned =
+    process.env.NODE_ENV !== "production" && visualAuth === "1" && visualAchievements === "fixture"
+      ? visualAchievementFixture()
+      : undefined;
 
   return (
     <main className="shell utility-shell achievement-shell">
@@ -42,7 +50,7 @@ export default async function AchievementsPage({ searchParams }: AchievementsPag
           density="lg"
           background={{
             image: "var(--art-achievements)",
-            overlay: "scrim",
+            overlay: "veil",
             focalY: 40,
             minHeight: "var(--ds-scene-hero-min-cinematic)",
           }}
@@ -57,7 +65,7 @@ export default async function AchievementsPage({ searchParams }: AchievementsPag
         </SceneCard>
       </section>
 
-      <AchievementsClient />
+      <AchievementsClient initialOwned={initialOwned} />
 
       <div className="achievement-return">
         <Pill as="a" href="/history" intent="secondary" tracked>
@@ -70,4 +78,13 @@ export default async function AchievementsPage({ searchParams }: AchievementsPag
 
 function firstSearchValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
+}
+
+function visualAchievementFixture(): OwnedAchievement[] {
+  const unlockedIds = new Set(["first_blood", "jester_win", "hunter_revenge", "maniac_endgame"]);
+  return ACHIEVEMENTS.filter((achievement) => unlockedIds.has(achievement.id)).map((achievement, index) => ({
+    achievementId: achievement.id,
+    gameId: `visual-game-${index + 1}`,
+    unlockedAt: new Date(Date.UTC(2026, 4, 20 + index, 18, 30)).toISOString(),
+  }));
 }

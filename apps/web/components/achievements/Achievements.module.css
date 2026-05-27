@@ -39,7 +39,10 @@
 }
 
 :global(.achievement-shell) {
+  --page-art: var(--art-achievements);
   width: min(1240px, calc(100vw - 32px));
+  isolation: isolate;
+  z-index: 0;
 }
 
 :global(.achievement-hero-frame) {
@@ -70,24 +73,6 @@
 :global(.achievement-empty-state) {
   max-width: 680px;
   margin: 28px auto 0;
-}
-
-:global(.achievement-shell::before) {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 50%;
-  z-index: -1;
-  width: 100vw;
-  min-height: 100vh;
-  background:
-    radial-gradient(ellipse at 18% 18%, rgba(132, 47, 43, 0.22), transparent 34rem),
-    radial-gradient(ellipse at 88% 28%, rgba(200, 154, 85, 0.16), transparent 38rem),
-    linear-gradient(115deg, rgba(8, 8, 8, 0.94), rgba(26, 16, 12, 0.82) 44%, rgba(8, 9, 9, 0.96)),
-    var(--art-achievements) center / cover no-repeat;
-  content: "";
-  filter: saturate(0.78) contrast(1.08);
-  transform: translateX(-50%);
 }
 
 :global(.achievement-wreath) {
@@ -354,16 +339,6 @@
   font-weight: 800;
   text-align: center;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
-}
-
-:global(html[data-theme="light"] .achievement-shell::before) {
-  display: block;
-  background:
-    radial-gradient(ellipse at 18% 18%, rgba(169, 111, 34, 0.12), transparent 34rem),
-    linear-gradient(180deg, rgba(255, 247, 229, 0.86), rgba(247, 231, 200, 0.94)),
-    var(--art-achievements) center / cover no-repeat;
-  filter: saturate(0.66) contrast(0.94);
-  opacity: 0.72;
 }
 
 :global(html[data-theme="light"] .achievement-wreath) {

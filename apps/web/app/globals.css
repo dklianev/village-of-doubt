@@ -770,6 +770,40 @@ html[data-theme="light"] body:has(.game-home-shell)::before {
   will-change: transform;
 }
 
+body:has(.achievement-shell) {
+  position: relative;
+  z-index: 0;
+}
+
+html[data-theme="dark"] body:has(.achievement-shell) {
+  background: rgba(8, 9, 9, 0.95);
+}
+
+html[data-theme="light"] body:has(.achievement-shell) {
+  background: rgba(252, 244, 230, 0.96);
+}
+
+body:has(.achievement-shell)::before {
+  inset: -4vh -4vw;
+  display: block;
+  z-index: -2;
+  background: var(--page-art, var(--art-achievements)) center / cover no-repeat;
+  animation: ambient-drift 48s ease-in-out infinite alternate;
+  mask-image: none;
+  transform: translate3d(-1%, 0, 0) scale(1.035);
+  will-change: transform;
+}
+
+html[data-theme="light"] body:has(.achievement-shell)::before {
+  animation: ambient-drift-light 72s ease-in-out infinite alternate;
+  filter: saturate(0.92) brightness(1.06);
+  transform: translate3d(-0.6%, 0, 0) scale(1.02);
+}
+
+html[data-theme="dark"] body:has(.achievement-shell)::before {
+  filter: saturate(0.95) brightness(0.86);
+}
+
 /* Layer 2 - radial spotlight vignette */
 
 body:has(.landing-shell)::after,
@@ -805,6 +839,30 @@ html[data-theme="light"] body:has(.landing-shell)::after {
       transparent 0%,
       rgba(252, 244, 230, 0.1) 58%,
       rgba(252, 244, 230, 0.36) 100%
+    );
+}
+
+body:has(.achievement-shell)::after {
+  display: block;
+  z-index: -1;
+  opacity: 1;
+  background:
+    radial-gradient(
+      ellipse 72vw 60vh at 50% 38%,
+      transparent 0%,
+      rgba(18, 12, 8, 0.18) 55%,
+      rgba(8, 9, 9, 0.62) 100%
+    );
+  background-size: auto;
+}
+
+html[data-theme="light"] body:has(.achievement-shell)::after {
+  background:
+    radial-gradient(
+      ellipse 72vw 60vh at 50% 38%,
+      transparent 0%,
+      rgba(252, 244, 230, 0.22) 55%,
+      rgba(252, 244, 230, 0.62) 100%
     );
 }
 
