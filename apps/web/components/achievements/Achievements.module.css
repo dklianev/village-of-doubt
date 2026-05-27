@@ -76,18 +76,21 @@
 }
 
 :global(.achievement-wreath) {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(220px, 360px) auto;
   align-items: center;
   justify-content: center;
-  gap: 20px;
-  margin-top: 28px;
-  color: #d19a42;
+  gap: 18px;
+  max-width: 640px;
+  margin: clamp(36px, 5vw, 64px) auto 0;
+  padding: 16px 24px;
+  color: rgba(211, 154, 66, 0.82);
 }
 
 :global(.achievement-wreath-branch) {
   width: 64px;
   height: 80px;
-  filter: drop-shadow(0 1px 0 rgba(255, 238, 196, 0.2));
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.42));
 }
 
 :global(.achievement-wreath-branch-right) {
@@ -95,27 +98,42 @@
 }
 
 :global(.achievement-wreath-count) {
+  position: relative;
   display: grid;
-  justify-items: center;
+  place-items: center;
   gap: 4px;
-  min-width: 116px;
+  min-width: 220px;
+  padding: 18px 32px;
+  border: 1px solid #76521e;
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 30% 25%, rgba(244, 198, 100, 0.95), rgba(165, 105, 33, 0.9) 70%),
+    linear-gradient(135deg, rgba(255, 247, 202, 0.36), rgba(73, 42, 11, 0.22));
+  box-shadow:
+    inset 0 2px 4px rgba(255, 255, 255, 0.5),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.32),
+    inset 0 0 24px rgba(103, 66, 20, 0.42),
+    0 4px 12px rgba(0, 0, 0, 0.38),
+    0 1px 0 rgba(255, 255, 255, 0.5);
+  color: #2d1a07;
   text-align: center;
 }
 
 :global(.achievement-wreath-count strong) {
-  color: #f1d18a;
   font-family: "Noto Serif", serif;
-  font-size: 2.75rem;
+  font-size: clamp(2.4rem, 4vw, 3.2rem);
   font-weight: 950;
   line-height: 1;
-  text-shadow: 0 1px 0 rgba(72, 42, 12, 0.8), 0 0 18px rgba(209, 154, 66, 0.24);
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.48),
+    0 -1px 0 rgba(0, 0, 0, 0.38);
 }
 
 :global(.achievement-wreath-count span) {
-  color: rgba(242, 216, 168, 0.9);
+  color: #3f250c;
   font-size: 0.78rem;
   font-weight: 900;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
 }
 
@@ -371,7 +389,7 @@
 }
 
 :global(html[data-theme="light"] .achievement-wreath) {
-  color: #842f2b;
+  color: rgba(132, 47, 43, 0.82);
 }
 
 :global(html[data-theme="light"] .plaque-wall) {
@@ -402,11 +420,17 @@
 }
 
 :global(html[data-theme="light"] .achievement-wreath-count strong) {
-  color: #842f2b;
-  text-shadow: 0 1px 0 rgba(255, 240, 200, 0.45);
+  color: #3a2109;
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.55),
+    0 -1px 0 rgba(0, 0, 0, 0.28);
 }
 
-:global(html[data-theme="light"] .achievement-wreath-count span),
+:global(html[data-theme="light"] .achievement-wreath-count span) {
+  color: #4a2d0f;
+  text-shadow: none;
+}
+
 :global(html[data-theme="light"] .plaque-loading) {
   color: #5a3c2a;
   text-shadow: none;
@@ -435,7 +459,9 @@
   }
 
   :global(.achievement-wreath) {
+    grid-template-columns: auto minmax(0, 1fr) auto;
     gap: 10px;
+    padding: 10px 0;
   }
 
   :global(.achievement-wreath-branch) {
@@ -444,7 +470,8 @@
   }
 
   :global(.achievement-wreath-count) {
-    min-width: 94px;
+    min-width: 0;
+    padding: 14px 18px;
   }
 
   :global(.achievement-wreath-count strong) {
