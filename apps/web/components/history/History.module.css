@@ -330,6 +330,9 @@
 .filterTray,
 .emptyArchive,
 .evidenceFilterEmpty {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
   border: 1px solid oklch(0.78 0.055 75 / 0.22);
   border-radius: var(--ds-radius-card);
   background:
