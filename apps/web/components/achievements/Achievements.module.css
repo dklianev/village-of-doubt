@@ -310,6 +310,28 @@
   pointer-events: none;
 }
 
+:global(.achievement-plaque-lock-deco) {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  z-index: 3;
+  width: 64px;
+  height: 64px;
+  opacity: 0;
+  background:
+    repeating-conic-gradient(
+      from 0deg at 0% 0%,
+      transparent 0deg,
+      rgba(231, 228, 210, 0.22) 1deg,
+      transparent 2deg,
+      transparent 15deg
+    );
+  mask-image: radial-gradient(circle at 0% 0%, black 0%, transparent 75%);
+  -webkit-mask-image: radial-gradient(circle at 0% 0%, black 0%, transparent 75%);
+  pointer-events: none;
+  transition: opacity 320ms ease;
+}
+
 :global(.achievement-icon) {
   width: 58px;
   height: 58px;
@@ -466,10 +488,21 @@
   --plaque-edge-dark: rgba(14, 32, 21, 0.68);
   --plaque-filter: grayscale(0.5) sepia(0.44) hue-rotate(50deg) brightness(0.7) contrast(0.96);
   --plaque-overlay: linear-gradient(155deg, rgba(120, 155, 110, 0.18), rgba(8, 22, 14, 0.36));
+  opacity: 0.6;
+  filter: saturate(0.55);
 }
 
 :global(.achievement-plaque[data-locked="true"]::after) {
   opacity: 0.54;
+}
+
+:global(.achievement-plaque[data-locked="true"] .achievement-icon) {
+  opacity: 0.5;
+  filter: grayscale(0.5) drop-shadow(0 1px 0 rgba(255, 240, 200, 0.34));
+}
+
+:global(.achievement-plaque[data-locked="true"] .achievement-plaque-lock-deco) {
+  opacity: 1;
 }
 
 :global(.achievement-plaque[data-locked="true"] .achievement-plaque-title),
@@ -480,6 +513,35 @@
 
 :global(.achievement-plaque[data-locked="true"]:hover) {
   --plaque-filter: grayscale(0.42) sepia(0.34) hue-rotate(40deg) brightness(0.78) contrast(0.98);
+  opacity: 0.75;
+}
+
+:global(.achievement-plaque[data-locked="true"]:hover .achievement-plaque-lock-deco) {
+  opacity: 0.3;
+}
+
+:global(.achievement-plaque[data-locked="false"]) {
+  box-shadow:
+    inset 0 0 0 1px var(--plaque-edge-light),
+    inset 0 0 0 5px var(--plaque-edge-dark),
+    inset 0 0 0 7px var(--plaque-edge-light),
+    inset 0 0 24px rgba(236, 190, 84, 0.08),
+    0 0 0 1px rgba(236, 190, 84, 0.18),
+    0 2px 4px rgba(0, 0, 0, 0.36),
+    0 16px 34px -16px rgba(0, 0, 0, 0.7),
+    0 28px 54px -34px rgba(0, 0, 0, 0.8);
+}
+
+:global(.achievement-plaque[data-locked="false"]:hover) {
+  box-shadow:
+    inset 0 0 0 1px var(--plaque-edge-light),
+    inset 0 0 0 5px var(--plaque-edge-dark),
+    inset 0 0 0 7px var(--plaque-edge-light),
+    inset 0 0 32px rgba(236, 190, 84, 0.18),
+    0 0 0 1px rgba(236, 190, 84, 0.32),
+    0 4px 6px rgba(0, 0, 0, 0.44),
+    0 20px 42px -16px rgba(0, 0, 0, 0.78),
+    0 34px 64px -34px rgba(0, 0, 0, 0.86);
 }
 
 :global(.achievement-plaque-skeleton) {
