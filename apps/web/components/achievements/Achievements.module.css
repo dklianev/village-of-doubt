@@ -239,9 +239,19 @@
 }
 
 :global(.achievement-plaque-inner) {
+  position: relative;
+  z-index: 2;
   display: grid;
   justify-items: center;
   gap: 12px;
+}
+
+:global(.achievement-plaque-tier-deco) {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  pointer-events: none;
 }
 
 :global(.achievement-icon) {
@@ -281,6 +291,23 @@
   text-transform: uppercase;
 }
 
+:global(.achievement-plaque[data-tier="bronze"]) {
+  --plaque-bg-color: #b7773d;
+  --plaque-fg-color: #29170c;
+  --plaque-muted-color: rgba(41, 23, 12, 0.82);
+  --plaque-meta-color: rgba(41, 23, 12, 0.92);
+  --plaque-edge-light: rgba(255, 224, 170, 0.48);
+  --plaque-edge-dark: rgba(71, 38, 14, 0.64);
+  --plaque-filter: saturate(1.08) contrast(1.03);
+  --plaque-overlay: linear-gradient(155deg, rgba(255, 224, 170, 0.26), rgba(63, 34, 10, 0.24));
+}
+
+:global(.achievement-plaque[data-tier="bronze"] .achievement-plaque-tier-deco) {
+  background:
+    radial-gradient(circle at 0% 0%, rgba(77, 164, 127, 0.16) 0%, transparent 20%),
+    radial-gradient(circle at 100% 100%, rgba(77, 164, 127, 0.14) 0%, transparent 18%);
+}
+
 :global(.achievement-plaque[data-tier="silver"]) {
   --plaque-bg-color: #b6b1a6;
   --plaque-fg-color: #1e2526;
@@ -292,6 +319,15 @@
   --plaque-overlay: linear-gradient(155deg, rgba(255, 255, 246, 0.3), rgba(42, 48, 48, 0.2));
 }
 
+:global(.achievement-plaque[data-tier="silver"] .achievement-plaque-tier-deco) {
+  inset: 6px;
+  border: 1px double rgba(238, 238, 228, 0.46);
+  border-radius: calc(var(--ds-radius-card) - 2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -1px 0 rgba(28, 31, 31, 0.18);
+}
+
 :global(.achievement-plaque[data-tier="gold"]) {
   --plaque-bg-color: #e6c25e;
   --plaque-fg-color: #2d1a07;
@@ -301,6 +337,24 @@
   --plaque-edge-dark: rgba(80, 44, 10, 0.64);
   --plaque-filter: saturate(1.38) brightness(1.08) contrast(1.05);
   --plaque-overlay: linear-gradient(155deg, rgba(255, 248, 190, 0.38), rgba(114, 67, 11, 0.18));
+}
+
+:global(.achievement-plaque[data-tier="gold"] .achievement-plaque-tier-deco) {
+  inset: 8px 8px auto auto;
+  width: 34px;
+  height: 34px;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255, 235, 150, 0.36) 0%, transparent 58%),
+    repeating-linear-gradient(
+      45deg,
+      transparent 0,
+      transparent 2px,
+      rgba(255, 235, 150, 0.42) 2px,
+      rgba(255, 235, 150, 0.42) 3px
+    );
+  border-radius: 50%;
+  mask-image: radial-gradient(circle at 50% 50%, black 0%, transparent 70%);
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, black 0%, transparent 70%);
 }
 
 :global(.achievement-plaque[data-family="werewolves"]) {

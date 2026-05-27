@@ -13,6 +13,7 @@ export function AchievementPlaque({ achievement, unlockedAt }: PlaqueProps) {
 
   return (
     <article className="achievement-plaque" data-tier={tier} data-family={family} data-locked={!isUnlocked}>
+      <span className="achievement-plaque-tier-deco" aria-hidden="true" />
       <div className="achievement-plaque-inner">
         <AchievementIcon id={achievement.id} />
         <h3 className="achievement-plaque-title">{achievement.titleBg}</h3>
