@@ -307,6 +307,687 @@
 
 }
 
+/* M14 archive desk composition. Replay styles below keep their legacy shell. */
+.heroFrame {
+  padding: clamp(28px, 5vw, 60px) 0 0;
+}
+
+.heroCopy {
+  display: grid;
+  max-width: 760px;
+  gap: 14px;
+}
+
+.archiveDesk {
+  display: grid;
+  gap: 16px;
+  margin: clamp(22px, 4vw, 36px) 0 clamp(22px, 4vw, 40px);
+}
+
+.ledgerStrip,
+.filterTray,
+.emptyArchive,
+.evidenceFilterEmpty {
+  border: 1px solid oklch(0.78 0.055 75 / 0.22);
+  border-radius: var(--ds-radius-card);
+  background:
+    radial-gradient(circle at 12% 0%, oklch(0.78 0.115 75 / 0.18), transparent 22rem),
+    linear-gradient(135deg, oklch(0.16 0.016 55 / 0.76), oklch(0.10 0.012 45 / 0.72));
+  box-shadow:
+    0 1px 0 oklch(1 0 0 / 0.08) inset,
+    0 28px 70px -38px oklch(0 0 0 / 0.68);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.ledgerStrip {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+}
+
+.ledgerStat {
+  display: grid;
+  min-height: 96px;
+  align-content: center;
+  gap: 6px;
+  padding: 18px clamp(14px, 2vw, 22px);
+  background: oklch(1 0 0 / 0.035);
+}
+
+.ledgerStat span,
+.filterTrayLabel,
+.boardKicker,
+.caseFileEyebrow,
+.caseStampRow,
+.exampleTag {
+  color: var(--ds-accent-gold);
+  font-size: var(--ds-type-meta);
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.ledgerStat strong {
+  color: var(--ds-ink-scene);
+  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-size: clamp(1.45rem, 2vw, 2.2rem);
+  font-weight: 900;
+}
+
+.filterTray {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px 18px;
+  padding: 16px clamp(16px, 2.4vw, 24px);
+}
+
+.evidenceFilters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0;
+}
+
+.archiveBoard {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.72fr) minmax(0, 1fr);
+  gap: clamp(18px, 3vw, 32px);
+  align-items: start;
+  padding-bottom: clamp(58px, 8vw, 104px);
+}
+
+.featuredCase,
+.caseDrawerGrid {
+  min-width: 0;
+}
+
+.featuredCase {
+  position: sticky;
+  top: 96px;
+  display: grid;
+  gap: 12px;
+}
+
+.caseDrawerGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(18px, 2.2vw, 28px);
+}
+
+.caseFileShell {
+  position: relative;
+  min-width: 0;
+  transform: rotate(var(--case-tilt, 0deg));
+}
+
+.caseDrawerGrid .caseFileShell:nth-child(4n + 1) {
+  --case-tilt: -0.45deg;
+}
+
+.caseDrawerGrid .caseFileShell:nth-child(4n + 2) {
+  --case-tilt: 0.35deg;
+}
+
+.caseDrawerGrid .caseFileShell:nth-child(4n + 3) {
+  --case-tilt: -0.2deg;
+}
+
+.caseFileLink {
+  display: block;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+  outline: none;
+}
+
+.caseDossier {
+  position: relative;
+  display: grid;
+  min-height: 100%;
+  gap: 15px;
+  overflow: hidden;
+  border: 1px solid oklch(0.78 0.055 75 / 0.2);
+  border-radius: var(--ds-radius-card);
+  padding: clamp(18px, 2.3vw, 28px);
+  color: var(--ds-ink-scene);
+  background:
+    linear-gradient(135deg, oklch(0.94 0.022 78 / 0.08), transparent 44%),
+    linear-gradient(145deg, oklch(0.16 0.016 55 / 0.82), oklch(0.09 0.012 45 / 0.78)),
+    var(--texture-paper) center / 520px 520px;
+  box-shadow:
+    0 1px 0 oklch(1 0 0 / 0.08) inset,
+    0 18px 34px -20px oklch(0 0 0 / 0.72),
+    0 44px 80px -46px oklch(0 0 0 / 0.72);
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.caseDossier::before {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 88% 8%, var(--case-glow, oklch(0.78 0.115 75 / 0.16)), transparent 12rem),
+    linear-gradient(90deg, transparent, oklch(1 0 0 / 0.04) 48%, transparent);
+  content: "";
+  pointer-events: none;
+}
+
+.caseFileLink:hover .caseDossier,
+.caseFileLink:focus-visible .caseDossier {
+  border-color: var(--case-accent, oklch(0.78 0.115 75 / 0.42));
+  box-shadow:
+    0 1px 0 oklch(1 0 0 / 0.12) inset,
+    0 26px 48px -24px var(--case-shadow, oklch(0 0 0 / 0.72)),
+    0 54px 90px -46px oklch(0 0 0 / 0.78);
+  transform: translateY(-3px);
+}
+
+.caseFileShell[data-family="werewolves"] {
+  --case-accent: oklch(0.58 0.11 145 / 0.52);
+  --case-glow: oklch(0.58 0.11 145 / 0.16);
+  --case-shadow: oklch(0.26 0.08 145 / 0.62);
+}
+
+.caseFileShell[data-family="mafia"] {
+  --case-accent: oklch(0.52 0.16 25 / 0.56);
+  --case-glow: oklch(0.52 0.16 25 / 0.18);
+  --case-shadow: oklch(0.30 0.12 25 / 0.62);
+}
+
+.caseFileHead,
+.caseStampRow,
+.caseFileFoot {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.caseOutcomeRibbon {
+  border: 1px solid var(--case-accent, oklch(0.78 0.115 75 / 0.42));
+  border-radius: var(--ds-radius-chip);
+  padding: 6px 10px;
+  color: var(--ds-ink-scene);
+  font-size: var(--ds-type-meta);
+  font-weight: 900;
+  background: var(--case-glow, oklch(0.78 0.115 75 / 0.12));
+}
+
+.caseStampRow {
+  justify-content: flex-start;
+  color: var(--ds-ink-scene-soft);
+  letter-spacing: 0.1em;
+}
+
+.caseStampRow span + span::before {
+  margin-right: 12px;
+  color: var(--case-accent, var(--ds-accent-gold));
+  content: "•";
+}
+
+.caseFileContent {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+}
+
+.caseFileMode {
+  margin: 8px 0 0;
+  color: var(--ds-ink-scene-soft);
+  font-size: var(--ds-type-body-sm);
+  font-weight: 780;
+}
+
+.caseFactionSeal {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border: 1px solid var(--case-accent, oklch(0.78 0.115 75 / 0.5));
+  border-radius: 50%;
+  color: var(--ds-ink-scene);
+  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-size: 1.45rem;
+  font-weight: 900;
+  background:
+    radial-gradient(circle at 35% 25%, oklch(1 0 0 / 0.26), transparent 40%),
+    var(--case-glow, oklch(0.78 0.115 75 / 0.16));
+  box-shadow: 0 12px 28px -18px var(--case-shadow, oklch(0 0 0 / 0.5));
+}
+
+.caseFileHighlights {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 10px;
+  margin: 4px 0 0;
+  padding: 0;
+  color: var(--ds-ink-scene-soft);
+  list-style: none;
+}
+
+.caseFileHighlights li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 9px;
+  align-items: start;
+  font-size: var(--ds-type-body-sm);
+  font-weight: 740;
+  line-height: 1.45;
+}
+
+.caseFileBullet {
+  width: 8px;
+  height: 8px;
+  margin-top: 0.42em;
+  border-radius: 50%;
+  background: var(--case-accent, var(--ds-accent-gold));
+  box-shadow: 0 0 0 3px var(--case-glow, oklch(0.78 0.115 75 / 0.14));
+}
+
+.caseFileFoot {
+  grid-column: 1 / -1;
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid oklch(0.78 0.055 75 / 0.18);
+}
+
+.caseFileEvents {
+  color: var(--ds-ink-scene-soft);
+  font-size: var(--ds-type-meta);
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.caseFileAction {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  border: 1px solid var(--case-accent, oklch(0.78 0.115 75 / 0.34));
+  border-radius: var(--ds-radius-chip);
+  padding: 0 13px;
+  color: var(--ds-ink-scene);
+  font-size: var(--ds-type-body-sm);
+  font-weight: 850;
+  white-space: nowrap;
+  background: oklch(0.94 0.022 78 / 0.08);
+}
+
+.caseFileShell[data-variant="featured"] .caseDossier {
+  min-height: clamp(420px, 48vh, 620px);
+  align-content: end;
+  background:
+    linear-gradient(180deg, oklch(0.08 0.012 45 / 0.12), oklch(0.08 0.012 45 / 0.72)),
+    var(--art-history) center / cover no-repeat;
+}
+
+.caseFileShell[data-variant="featured"] .caseFileContent {
+  padding-top: clamp(80px, 16vh, 180px);
+}
+
+.emptyArchive {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(260px, 0.8fr) minmax(280px, 1fr);
+  gap: clamp(20px, 4vw, 42px);
+  overflow: hidden;
+  margin: clamp(22px, 4vw, 38px) 0 clamp(58px, 8vw, 104px);
+  padding: clamp(26px, 5vw, 54px);
+}
+
+.emptyArchiveTable {
+  position: relative;
+  min-height: 300px;
+  border: 1px solid oklch(0.78 0.055 75 / 0.16);
+  border-radius: var(--ds-radius-card);
+  background:
+    radial-gradient(circle at 24% 28%, oklch(0.78 0.115 75 / 0.2), transparent 10rem),
+    linear-gradient(145deg, oklch(0.94 0.022 78 / 0.12), oklch(0.08 0.012 45 / 0.52)),
+    var(--texture-wood) center / 540px 540px;
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.08);
+}
+
+.emptyFolder,
+.emptyInkBottle,
+.emptyThread {
+  position: absolute;
+  display: block;
+}
+
+.emptyFolder {
+  right: 12%;
+  bottom: 18%;
+  width: 58%;
+  height: 38%;
+  border: 1px solid oklch(0.78 0.055 75 / 0.28);
+  border-radius: var(--ds-radius-tile);
+  background:
+    linear-gradient(135deg, oklch(0.86 0.05 78 / 0.74), oklch(0.66 0.06 72 / 0.5)),
+    var(--texture-paper) center / 360px 360px;
+  transform: rotate(-4deg);
+  box-shadow: 0 26px 48px -32px oklch(0 0 0 / 0.78);
+}
+
+.emptyInkBottle {
+  left: 14%;
+  top: 18%;
+  width: 54px;
+  height: 66px;
+  border: 1px solid oklch(0.78 0.115 75 / 0.3);
+  border-radius: 12px 12px 22px 22px;
+  background:
+    radial-gradient(circle at 35% 20%, oklch(1 0 0 / 0.25), transparent 22%),
+    linear-gradient(180deg, oklch(0.30 0.035 55), oklch(0.08 0.012 45));
+  box-shadow: 0 20px 34px -26px oklch(0 0 0 / 0.9);
+}
+
+.emptyInkBottle::before {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  width: 26px;
+  height: 18px;
+  border: 1px solid oklch(0.78 0.115 75 / 0.24);
+  border-bottom: 0;
+  border-radius: 9px 9px 3px 3px;
+  background: linear-gradient(180deg, oklch(0.28 0.03 55), oklch(0.14 0.016 45));
+  content: "";
+  transform: translateX(-50%);
+}
+
+.emptyThread {
+  left: 20%;
+  right: 16%;
+  top: 54%;
+  height: 2px;
+  background-image: linear-gradient(90deg, oklch(0.78 0.115 75 / 0.6) 0 8px, transparent 8px 18px);
+  transform: rotate(-7deg);
+}
+
+.emptyArchiveCopy {
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: 16px;
+}
+
+.emptyArchiveCopy p {
+  max-width: 48ch;
+  margin: 0;
+  color: var(--ds-ink-scene-soft);
+  font-size: var(--ds-type-lede);
+  font-weight: 760;
+  line-height: 1.58;
+}
+
+.ghostCaseFile {
+  position: relative;
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 10px;
+  max-width: 720px;
+  margin-left: auto;
+  border: 1px dashed oklch(0.78 0.115 75 / 0.24);
+  border-radius: var(--ds-radius-card);
+  padding: 22px 24px;
+  color: var(--ds-ink-scene-soft);
+  background:
+    linear-gradient(135deg, oklch(0.94 0.022 78 / 0.1), oklch(0.08 0.012 45 / 0.22)),
+    var(--texture-paper) center / 460px 460px;
+  opacity: 0.82;
+}
+
+.ghostCaseFile strong {
+  color: var(--ds-ink-scene);
+  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-size: 1.35rem;
+}
+
+.ghostCaseFile p {
+  max-width: 62ch;
+  margin: 0;
+  font-weight: 720;
+  line-height: 1.5;
+}
+
+.exampleTag {
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  border: 1px solid oklch(0.78 0.115 75 / 0.3);
+  border-radius: var(--ds-radius-chip);
+  padding: 5px 10px;
+  background: oklch(0.78 0.115 75 / 0.1);
+}
+
+.evidenceFilterEmpty {
+  display: grid;
+  gap: 14px;
+  justify-items: start;
+  max-width: 620px;
+  margin: 28px 0 68px;
+  padding: 26px;
+}
+
+.evidenceFilterEmpty h2 {
+  margin: 0;
+  color: var(--ds-ink-scene);
+  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-size: 1.8rem;
+  font-weight: 900;
+}
+
+.evidenceFilterEmpty p {
+  margin: 0;
+  color: var(--ds-ink-scene-soft);
+  line-height: 1.6;
+}
+
+:global(html[data-theme="light"] .history-shell.evidence-shell::before) {
+  display: block;
+  background:
+    linear-gradient(115deg, oklch(0.96 0.02 82 / 0.52), oklch(0.88 0.038 76 / 0.28)),
+    var(--page-art, var(--art-history)) center / cover no-repeat;
+  filter: saturate(1.06) contrast(1.04);
+  opacity: 0.74;
+}
+
+:global(html[data-theme="light"] .evidence-shell::after) {
+  background:
+    radial-gradient(ellipse at 18% 20%, oklch(0.78 0.115 75 / 0.16), transparent 34rem),
+    radial-gradient(ellipse at 82% 16%, oklch(0.52 0.16 25 / 0.1), transparent 30rem),
+    linear-gradient(180deg, oklch(0.97 0.018 82 / 0.42), oklch(0.94 0.022 78 / 0.78));
+}
+
+:global(html[data-theme="light"]) .emptyArchiveCopy p,
+:global(html[data-theme="light"]) .evidenceFilterEmpty p {
+  color: var(--ds-ink-soft);
+  text-shadow: none;
+}
+
+:global(html[data-theme="light"]) .heroSubtitle {
+  color: var(--ds-ink-scene-soft);
+  text-shadow: 0 2px 14px oklch(0 0 0 / 0.54);
+}
+
+:global(html[data-theme="light"]) .ledgerStrip,
+:global(html[data-theme="light"]) .filterTray,
+:global(html[data-theme="light"]) .emptyArchive,
+:global(html[data-theme="light"]) .evidenceFilterEmpty {
+  border-color: oklch(0.64 0.05 74 / 0.22);
+  background:
+    radial-gradient(circle at 12% 0%, oklch(0.78 0.115 75 / 0.14), transparent 22rem),
+    linear-gradient(135deg, oklch(0.98 0.012 82 / 0.8), oklch(0.88 0.045 78 / 0.64));
+  box-shadow:
+    0 1px 0 oklch(1 0 0 / 0.52) inset,
+    0 26px 58px -36px oklch(0.28 0.04 64 / 0.34);
+}
+
+:global(html[data-theme="light"]) .ledgerStat {
+  background: oklch(1 0 0 / 0.26);
+}
+
+:global(html[data-theme="light"]) .ledgerStat strong,
+:global(html[data-theme="light"]) .caseDossier,
+:global(html[data-theme="light"]) .caseOutcomeRibbon,
+:global(html[data-theme="light"]) .caseFileAction,
+:global(html[data-theme="light"]) .caseFactionSeal,
+:global(html[data-theme="light"]) .emptyArchiveCopy,
+:global(html[data-theme="light"]) .ghostCaseFile strong,
+:global(html[data-theme="light"]) .evidenceFilterEmpty h2 {
+  color: var(--ds-ink-primary);
+}
+
+:global(html[data-theme="light"]) .caseDossier {
+  border-color: oklch(0.64 0.05 74 / 0.22);
+  background:
+    linear-gradient(135deg, oklch(1 0 0 / 0.58), transparent 44%),
+    linear-gradient(145deg, oklch(0.98 0.012 82 / 0.88), oklch(0.86 0.05 78 / 0.68)),
+    var(--texture-paper) center / 520px 520px;
+  box-shadow:
+    0 1px 0 oklch(1 0 0 / 0.58) inset,
+    0 18px 34px -22px oklch(0.28 0.04 64 / 0.34),
+    0 44px 80px -48px oklch(0.28 0.04 64 / 0.28);
+}
+
+:global(html[data-theme="light"]) .caseFileShell[data-variant="featured"] .caseDossier {
+  background:
+    linear-gradient(180deg, oklch(0.98 0.012 82 / 0.08), oklch(0.12 0.012 45 / 0.58)),
+    var(--art-history) center / cover no-repeat;
+}
+
+:global(html[data-theme="light"]) .caseFileShell[data-variant="featured"] .caseFileContent,
+:global(html[data-theme="light"]) .caseFileShell[data-variant="featured"] .caseFileMode,
+:global(html[data-theme="light"]) .caseFileShell[data-variant="featured"] .caseFileHighlights,
+:global(html[data-theme="light"]) .caseFileShell[data-variant="featured"] .caseFileEvents,
+:global(html[data-theme="light"]) .caseFileShell[data-variant="featured"] .caseFileAction {
+  color: var(--ds-ink-scene);
+  text-shadow: 0 2px 14px oklch(0 0 0 / 0.44);
+}
+
+:global(html[data-theme="light"]) .caseFileShell[data-variant="featured"] .caseFileAction {
+  background: oklch(0.08 0.012 45 / 0.34);
+}
+
+:global(html[data-theme="light"]) .caseFileMode,
+:global(html[data-theme="light"]) .caseFileHighlights,
+:global(html[data-theme="light"]) .caseFileEvents,
+:global(html[data-theme="light"]) .caseStampRow,
+:global(html[data-theme="light"]) .ghostCaseFile {
+  color: var(--ds-ink-soft);
+}
+
+:global(html[data-theme="light"]) .emptyArchiveTable {
+  background:
+    radial-gradient(circle at 24% 28%, oklch(0.78 0.115 75 / 0.18), transparent 10rem),
+    linear-gradient(145deg, oklch(1 0 0 / 0.48), oklch(0.78 0.07 78 / 0.36)),
+    var(--texture-wood) center / 540px 540px;
+}
+
+:global(html[data-theme="light"]) .ghostCaseFile {
+  background:
+    linear-gradient(135deg, oklch(1 0 0 / 0.52), oklch(0.78 0.07 78 / 0.34)),
+    var(--texture-paper) center / 460px 460px;
+}
+
+@media (max-width: 1040px) {
+  .archiveBoard {
+    grid-template-columns: 1fr;
+  }
+
+  .featuredCase {
+    position: static;
+  }
+
+  .caseFileShell[data-variant="featured"] .caseDossier {
+    min-height: clamp(360px, 42vh, 520px);
+  }
+}
+
+@media (max-width: 760px) {
+  .ledgerStrip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ledgerStat {
+    min-height: 82px;
+  }
+
+  .filterTray {
+    align-items: stretch;
+  }
+
+  .filterTrayLabel {
+    width: 100%;
+  }
+
+  .evidenceFilters > * {
+    flex: 1 1 auto;
+  }
+
+  .caseDrawerGrid,
+  .emptyArchive {
+    grid-template-columns: 1fr;
+  }
+
+  .emptyArchiveTable {
+    min-height: 220px;
+  }
+
+  .emptyInkBottle {
+    left: 12%;
+    top: 24%;
+    width: 42px;
+    height: 52px;
+  }
+
+  .emptyInkBottle::before {
+    top: -11px;
+    width: 21px;
+    height: 14px;
+  }
+
+  .emptyFolder {
+    right: 9%;
+    bottom: 22%;
+    width: 62%;
+    height: 34%;
+  }
+
+  .caseFileShell {
+    transform: none;
+  }
+
+  .caseFileContent {
+    grid-template-columns: 1fr;
+  }
+
+  .caseFactionSeal {
+    width: 48px;
+    height: 48px;
+    font-size: 1.2rem;
+  }
+
+  .ghostCaseFile {
+    margin-left: 0;
+  }
+
+  .exampleTag {
+    position: static;
+    justify-self: start;
+  }
+}
+
 :global(.replay-summary) {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

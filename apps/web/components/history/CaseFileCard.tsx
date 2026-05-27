@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Display, SceneCard } from "@werewolf/ui/server";
+import { Display } from "@werewolf/ui/server";
 import type { GameMode } from "@werewolf/shared";
 import { topMoments, type HistoryGameView } from "@/lib/history-highlights";
 import styles from "./History.module.css";
@@ -17,28 +17,33 @@ const WINNER_LABELS: Record<string, string> = {
   draw: "Равенство",
 };
 
-export function CaseFileCard({ game }: { game: HistoryGameView }) {
+export function CaseFileCard({ game, variant = "drawer" }: { game: HistoryGameView; variant?: "featured" | "drawer" }) {
   const family = modeFamily(game.mode);
   const outcome = outcomeFor(game);
   const moments = topMoments(game.timeline, 2);
 
   return (
-    <article className={styles.caseFileShell} data-family={family}>
+    <article className={styles.caseFileShell} data-family={family} data-outcome={outcome} data-variant={variant}>
       <Link href={`/history/${game.id}/replay`} className={styles.caseFileLink}>
-        <SceneCard
-          eyebrow={`ДЕЛО №${game.code}`}
-          density="md"
-          interactive
-          accent={accentFor(outcome)}
-          meta={<span className={styles.caseFileDate}>{shortDate(game.endedAt)}</span>}
-        >
+        <div className={styles.caseDossier}>
+          <header className={styles.caseFileHead}>
+            <span className={styles.caseFileEyebrow}>ДЕЛО №{game.code}</span>
+            <span className={styles.caseOutcomeRibbon}>{outcomeBg(outcome)}</span>
+          </header>
+          <div className={styles.caseStampRow}>
+            <span>{shortDate(game.endedAt)}</span>
+            <span>{modeBg(game.mode)}</span>
+          </div>
           <div className={styles.caseFileContent}>
-            <Display size="h3" as="h2">
-              {winnerBg(game.winnerTeam)}
-            </Display>
-            <p className={styles.caseFileMode}>
-              {modeBg(game.mode)} · {playerCountBg(game)}
-            </p>
+            <div>
+              <Display size={variant === "featured" ? "h2" : "h3"} as="h2">
+                {winnerBg(game.winnerTeam)}
+              </Display>
+              <p className={styles.caseFileMode}>{playerCountBg(game)}</p>
+            </div>
+            <span className={styles.caseFactionSeal} aria-hidden="true">
+              {family === "werewolves" ? "В" : "М"}
+            </span>
             <ul className={styles.caseFileHighlights}>
               {moments.map((moment) => (
                 <li key={moment.id}>
@@ -54,7 +59,7 @@ export function CaseFileCard({ game }: { game: HistoryGameView }) {
               </span>
             </footer>
           </div>
-        </SceneCard>
+        </div>
       </Link>
     </article>
   );
@@ -90,19 +95,19 @@ export function outcomeFor(game: HistoryGameView): CaseOutcome {
   return "unknown";
 }
 
-function accentFor(outcome: CaseOutcome) {
+function outcomeBg(outcome: CaseOutcome) {
   if (outcome === "win") {
-    return "win";
+    return "Победа";
   }
 
   if (outcome === "loss") {
-    return "loss";
+    return "Опасно дело";
   }
 
-  return "neutral";
+  return "Неясно дело";
 }
 
-function shortDate(value: string | null) {
+export function shortDate(value: string | null) {
   if (!value) {
     return "без дата";
   }
@@ -110,7 +115,7 @@ function shortDate(value: string | null) {
   return new Intl.DateTimeFormat("bg-BG", { day: "2-digit", month: "short", year: "2-digit" }).format(new Date(value));
 }
 
-function playerCountBg(game: HistoryGameView) {
+export function playerCountBg(game: HistoryGameView) {
   const count = playerCountFromConfig(game.config);
   return count ? `${count} души` : "неизвестен брой";
 }
@@ -124,7 +129,7 @@ function playerCountFromConfig(config: unknown) {
   return null;
 }
 
-function eventsBg(count: number) {
+export function eventsBg(count: number) {
   if (count === 1) {
     return "1 следа";
   }

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Display, Pill, SceneCard } from "@werewolf/ui";
-import { CaseFileCard, modeFamily, outcomeFor } from "@/components/history/CaseFileCard";
+import { CaseFileCard, eventsBg, modeFamily, outcomeFor } from "@/components/history/CaseFileCard";
 import { EvidenceWallEmpty } from "@/components/history/EvidenceWallEmpty";
 import type { HistoryGameView } from "@/lib/history-highlights";
 import styles from "./History.module.css";
@@ -20,6 +20,9 @@ const FILTERS: Array<{ value: EvidenceFilter; label: string }> = [
 export function EvidenceWall({ games }: { games: HistoryGameView[] }) {
   const [filter, setFilter] = useState<EvidenceFilter>("all");
   const filteredGames = useMemo(() => games.filter((game) => matchesFilter(game, filter)), [filter, games]);
+  const stats = useMemo(() => archiveStats(games), [games]);
+  const featuredCase = filteredGames[0];
+  const drawerCases = filteredGames.slice(1);
 
   return (
     <>
@@ -33,38 +36,62 @@ export function EvidenceWall({ games }: { games: HistoryGameView[] }) {
             minHeight: "var(--ds-scene-hero-min-cinematic)",
           }}
         >
-          <Display size="hero">Архив на масата</Display>
-          <p className={styles.heroSubtitle}>Всяко дело носи дата, играчите, ролите и развръзката.</p>
+          <div className={styles.heroCopy}>
+            <Display size="hero">Архив на масата</Display>
+            <p className={styles.heroSubtitle}>Всяко дело лежи като папка върху нощно бюро: дата, играчи, роли и развръзка.</p>
+          </div>
         </SceneCard>
       </header>
 
       {games.length > 0 ? (
-        <div className={styles.evidenceFilters} role="group" aria-label="Филтри по дело">
-          {FILTERS.map((item) => (
-            <Pill
-              key={item.value}
-              type="button"
-              intent={filter === item.value ? "secondary" : "ghost"}
-              size="sm"
-              aria-pressed={filter === item.value}
-              onClick={() => setFilter(item.value)}
-            >
-              {item.label}
-            </Pill>
-          ))}
-        </div>
+        <section className={styles.archiveDesk} aria-label="Архивен плот">
+          <div className={styles.ledgerStrip} aria-label="Статистика на архива">
+            <LedgerStat label="Дела" value={stats.total} />
+            <LedgerStat label="Върколак" value={stats.werewolves} />
+            <LedgerStat label="Мафия" value={stats.mafia} />
+            <LedgerStat label="Победи" value={stats.wins} />
+            <LedgerStat label="Следи" value={eventsBg(stats.events)} />
+          </div>
+
+          <div className={styles.filterTray} role="group" aria-label="Филтри по дело">
+            <span className={styles.filterTrayLabel}>Нишка на доказателствата</span>
+            <div className={styles.evidenceFilters}>
+              {FILTERS.map((item) => (
+                <Pill
+                  key={item.value}
+                  type="button"
+                  intent={filter === item.value ? "secondary" : "ghost"}
+                  size="sm"
+                  tracked
+                  aria-pressed={filter === item.value}
+                  onClick={() => setFilter(item.value)}
+                >
+                  {item.label}
+                </Pill>
+              ))}
+            </div>
+          </div>
+        </section>
       ) : null}
 
       {games.length === 0 ? (
         <EvidenceWallEmpty />
       ) : filteredGames.length > 0 ? (
-        <section className="evidence-wall" aria-label="Списък с дела">
-          {filteredGames.map((game) => (
-            <CaseFileCard key={game.id} game={game} />
-          ))}
+        <section className={styles.archiveBoard} aria-label="Списък с дела">
+          <div className={styles.featuredCase}>
+            <span className={styles.boardKicker}>Последно заведено дело</span>
+            <CaseFileCard key={featuredCase!.id} game={featuredCase!} variant="featured" />
+          </div>
+          {drawerCases.length > 0 ? (
+            <div className={styles.caseDrawerGrid} aria-label="Останали дела">
+              {drawerCases.map((game) => (
+                <CaseFileCard key={game.id} game={game} />
+              ))}
+            </div>
+          ) : null}
         </section>
       ) : (
-        <section className="evidence-filter-empty">
+        <section className={styles.evidenceFilterEmpty}>
           <h2>Няма дела за този филтър</h2>
           <p>Смени филтъра или изчакай нова завършена игра.</p>
           <Pill type="button" intent="secondary" size="sm" onClick={() => setFilter("all")}>
@@ -73,6 +100,37 @@ export function EvidenceWall({ games }: { games: HistoryGameView[] }) {
         </section>
       )}
     </>
+  );
+}
+
+function LedgerStat({ label, value }: { label: string; value: number | string }) {
+  return (
+    <div className={styles.ledgerStat}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
+function archiveStats(games: HistoryGameView[]) {
+  return games.reduce(
+    (stats, game) => {
+      stats.total += 1;
+      stats.events += game.eventCount;
+
+      if (modeFamily(game.mode) === "werewolves") {
+        stats.werewolves += 1;
+      } else {
+        stats.mafia += 1;
+      }
+
+      if (outcomeFor(game) === "win") {
+        stats.wins += 1;
+      }
+
+      return stats;
+    },
+    { total: 0, werewolves: 0, mafia: 0, wins: 0, events: 0 },
   );
 }
 
