@@ -32,7 +32,7 @@ export function EvidenceWall({ games }: { games: HistoryGameView[] }) {
           density="lg"
           background={{
             image: "var(--art-history)",
-            overlay: "scrim",
+            overlay: "veil",
             minHeight: "var(--ds-scene-hero-min-cinematic)",
           }}
         >

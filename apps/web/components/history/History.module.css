@@ -4,6 +4,22 @@
   --page-art: var(--art-history);
 }
 
+:global(.history-shell.evidence-shell::before) {
+  position: fixed;
+  inset: -4vh -4vw;
+  display: block;
+  width: auto;
+  min-height: calc(100vh + 8vh);
+  background:
+    linear-gradient(115deg, oklch(0.08 0.012 45 / 0.88), oklch(0.18 0.012 60 / 0.48) 44%, oklch(0.08 0.012 45 / 0.9)),
+    var(--page-art, var(--art-history)) center / cover no-repeat;
+  filter: saturate(0.95) brightness(0.88) contrast(1.08);
+  opacity: 1;
+  transform: translate3d(-1%, 0, 0) scale(1.035);
+  animation: ambient-drift 48s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
 :global(.history-empty) {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -235,8 +251,9 @@
   background:
     linear-gradient(115deg, rgba(248, 236, 210, 0.72), rgba(229, 205, 166, 0.52)),
     var(--page-art, var(--art-history)) center / cover no-repeat;
-  filter: saturate(0.72) contrast(0.95);
-  opacity: 0.38;
+  filter: saturate(1.02) brightness(1.06) contrast(1.02);
+  opacity: 0.78;
+  animation: ambient-drift-light 72s ease-in-out infinite alternate;
 }
 
 :global(html[data-theme="light"] .evidence-shell::after) {
@@ -798,8 +815,9 @@
   background:
     linear-gradient(115deg, oklch(0.96 0.02 82 / 0.52), oklch(0.88 0.038 76 / 0.28)),
     var(--page-art, var(--art-history)) center / cover no-repeat;
-  filter: saturate(1.06) contrast(1.04);
-  opacity: 0.74;
+  filter: saturate(1.02) brightness(1.06) contrast(1.02);
+  opacity: 0.78;
+  animation: ambient-drift-light 72s ease-in-out infinite alternate;
 }
 
 :global(html[data-theme="light"] .evidence-shell::after) {
