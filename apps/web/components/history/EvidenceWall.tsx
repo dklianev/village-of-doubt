@@ -84,6 +84,11 @@ export function EvidenceWall({ games }: { games: HistoryGameView[] }) {
             <CaseFileCard key={featuredCase!.id} game={featuredCase!} variant="featured" />
           </div>
           {drawerCases.length > 0 ? (
+            <svg className={styles.redThread} aria-hidden="true" focusable="false" viewBox="0 0 200 100" preserveAspectRatio="none">
+              <path d="M 12 52 C 48 28, 83 73, 122 46 S 170 37, 194 55" />
+            </svg>
+          ) : null}
+          {drawerCases.length > 0 ? (
             <div className={styles.caseDrawerGrid} aria-label="Останали дела">
               {drawerCases.map((game) => (
                 <CaseFileCard key={game.id} game={game} />
