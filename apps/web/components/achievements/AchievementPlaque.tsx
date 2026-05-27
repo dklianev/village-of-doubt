@@ -12,15 +12,18 @@ export function AchievementPlaque({ achievement, unlockedAt }: PlaqueProps) {
   const isUnlocked = unlockedAt !== null;
 
   return (
-    <article className="achievement-plaque" data-tier={tier} data-family={family} data-locked={!isUnlocked}>
-      <span className="achievement-plaque-tier-deco" aria-hidden="true" />
-      <div className="achievement-plaque-inner">
-        <AchievementIcon id={achievement.id} />
-        <h3 className="achievement-plaque-title">{achievement.titleBg}</h3>
-        <p className="achievement-plaque-desc">{achievement.descriptionBg}</p>
-        <p className="achievement-plaque-meta">{unlockedAt ? `Отключено · ${formatDate(unlockedAt)}` : "Заключено"}</p>
-      </div>
-    </article>
+    <div className="achievement-plaque-mount" data-family={family}>
+      <span className="achievement-plaque-family-backing" aria-hidden="true" />
+      <article className="achievement-plaque" data-tier={tier} data-family={family} data-locked={!isUnlocked}>
+        <span className="achievement-plaque-tier-deco" aria-hidden="true" />
+        <div className="achievement-plaque-inner">
+          <AchievementIcon id={achievement.id} />
+          <h3 className="achievement-plaque-title">{achievement.titleBg}</h3>
+          <p className="achievement-plaque-desc">{achievement.descriptionBg}</p>
+          <p className="achievement-plaque-meta">{unlockedAt ? `Отключено · ${formatDate(unlockedAt)}` : "Заключено"}</p>
+        </div>
+      </article>
+    </div>
   );
 }
 
