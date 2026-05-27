@@ -84,7 +84,10 @@
   --art-sign-in: image-set(url("/game-art/sign-in-table.webp") type("image/webp"), url("/game-art/sign-in-table.png") type("image/png"));
   --art-tutorial-day: image-set(url("/game-art/tutorial-day-scene.webp") type("image/webp"), url("/game-art/tutorial-day-scene.png") type("image/png"));
   --art-tutorial-night: image-set(url("/game-art/tutorial-night-scene.webp") type("image/webp"), url("/game-art/tutorial-night-scene.png") type("image/png"));
-  --art-achievements: image-set(url("/game-art/og/og-achievements.webp") type("image/webp"), url("/game-art/og/og-achievements.png") type("image/png"));
+  --art-achievements: image-set(
+    url("/game-art/achievements/bg-legends-hall-v1.webp") type("image/webp"),
+    url("/game-art/achievements/bg-legends-hall-v1.png") type("image/png")
+  );
   --transition-night: image-set(url("/game-art/transition-night-falls.webp") type("image/webp"), url("/game-art/transition-night-falls.png") type("image/png"));
   --transition-day: image-set(url("/game-art/transition-village-wakes.webp") type("image/webp"), url("/game-art/transition-village-wakes.png") type("image/png"));
   --transition-vote: image-set(url("/game-art/transition-voting-starts.webp") type("image/webp"), url("/game-art/transition-voting-starts.png") type("image/png"));
@@ -368,6 +371,7 @@
     --art-resolution: image-set(url("/game-art/mobile/bg-resolution.webp") type("image/webp"));
     --art-history: image-set(url("/game-art/mobile/history/bg-history-archive-desk-v1.webp") type("image/webp"));
     --art-history-light: image-set(url("/game-art/mobile/history/bg-history-archive-desk-light-v1.webp") type("image/webp"));
+    --art-achievements: image-set(url("/game-art/mobile/achievements/bg-legends-hall-v1.webp") type("image/webp"));
     --transition-night: image-set(url("/game-art/mobile/transition-night-falls.webp") type("image/webp"));
     --transition-day: image-set(url("/game-art/mobile/transition-village-wakes.webp") type("image/webp"));
     --transition-vote: image-set(url("/game-art/mobile/transition-voting-starts.webp") type("image/webp"));
