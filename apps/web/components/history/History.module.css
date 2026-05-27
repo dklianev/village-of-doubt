@@ -944,6 +944,10 @@
     min-height: 220px;
   }
 
+  .emptyArchiveCopy {
+    padding-left: 22px;
+  }
+
   .emptyInkBottle {
     left: 12%;
     top: 24%;
