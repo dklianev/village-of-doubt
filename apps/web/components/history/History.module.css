@@ -368,9 +368,37 @@
   display: grid;
   min-height: 96px;
   align-content: center;
-  gap: 6px;
+  gap: 5px;
   padding: 18px clamp(14px, 2vw, 22px);
   background: oklch(1 0 0 / 0.035);
+}
+
+.ledgerIcon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  margin-bottom: 3px;
+  color: var(--ds-accent-gold);
+  opacity: 0.9;
+}
+
+.ledgerIcon svg {
+  width: 22px;
+  height: 22px;
+  stroke-width: 1.7;
+}
+
+.ledgerStat[data-tone="werewolves"] .ledgerIcon {
+  color: oklch(0.68 0.14 145);
+}
+
+.ledgerStat[data-tone="mafia"] .ledgerIcon {
+  color: oklch(0.68 0.16 25);
+}
+
+.ledgerStat[data-tone="win"] .ledgerIcon {
+  color: oklch(0.72 0.13 95);
 }
 
 .ledgerStat span,
@@ -391,6 +419,14 @@
   font-family: "Noto Serif Display", "Noto Serif", serif;
   font-size: clamp(1.45rem, 2vw, 2.2rem);
   font-weight: 900;
+}
+
+.ledgerStat[data-tone="werewolves"] strong {
+  color: oklch(0.80 0.12 145);
+}
+
+.ledgerStat[data-tone="mafia"] strong {
+  color: oklch(0.82 0.13 25);
 }
 
 .filterTray {

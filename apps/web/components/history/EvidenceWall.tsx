@@ -1,6 +1,8 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
+import { BriefcaseBusiness, PawPrint, Scale, ScrollText, Search } from "lucide-react";
 import { Display, Pill, SceneCard } from "@werewolf/ui";
 import { CaseFileCard, eventsBg, modeFamily, outcomeFor } from "@/components/history/CaseFileCard";
 import { EvidenceWallEmpty } from "@/components/history/EvidenceWallEmpty";
@@ -46,11 +48,11 @@ export function EvidenceWall({ games }: { games: HistoryGameView[] }) {
       {games.length > 0 ? (
         <section className={styles.archiveDesk} aria-label="Архивен плот">
           <div className={styles.ledgerStrip} aria-label="Статистика на архива">
-            <LedgerStat label="Дела" value={stats.total} />
-            <LedgerStat label="Върколак" value={stats.werewolves} />
-            <LedgerStat label="Мафия" value={stats.mafia} />
-            <LedgerStat label="Победи" value={stats.wins} />
-            <LedgerStat label="Следи" value={eventsBg(stats.events)} />
+            <LedgerStat icon={<ScrollText />} label="Дела" value={stats.total} />
+            <LedgerStat icon={<PawPrint />} label="Върколак" value={stats.werewolves} tone="werewolves" />
+            <LedgerStat icon={<BriefcaseBusiness />} label="Мафия" value={stats.mafia} tone="mafia" />
+            <LedgerStat icon={<Scale />} label="Победи" value={stats.wins} tone="win" />
+            <LedgerStat icon={<Search />} label="Следи" value={eventsBg(stats.events)} />
           </div>
 
           <div className={styles.filterTray} role="group" aria-label="Филтри по дело">
@@ -103,9 +105,22 @@ export function EvidenceWall({ games }: { games: HistoryGameView[] }) {
   );
 }
 
-function LedgerStat({ label, value }: { label: string; value: number | string }) {
+function LedgerStat({
+  icon,
+  label,
+  value,
+  tone = "default",
+}: {
+  icon: ReactNode;
+  label: string;
+  value: number | string;
+  tone?: "werewolves" | "mafia" | "win" | "default";
+}) {
   return (
-    <div className={styles.ledgerStat}>
+    <div className={styles.ledgerStat} data-tone={tone}>
+      <span className={styles.ledgerIcon} aria-hidden="true">
+        {icon}
+      </span>
       <span>{label}</span>
       <strong>{value}</strong>
     </div>
