@@ -21,9 +21,10 @@ export function CaseFileCard({ game, variant = "drawer" }: { game: HistoryGameVi
   const family = modeFamily(game.mode);
   const outcome = outcomeFor(game);
   const moments = topMoments(game.timeline, 2);
+  const tiltSlot = variant === "featured" ? 0 : tiltSlotForId(game.id);
 
   return (
-    <article className={styles.caseFileShell} data-family={family} data-outcome={outcome} data-variant={variant}>
+    <article className={styles.caseFileShell} data-family={family} data-outcome={outcome} data-variant={variant} data-tilt={tiltSlot}>
       <Link href={`/history/${game.id}/replay`} className={styles.caseFileLink}>
         <div className={styles.caseDossier}>
           <header className={styles.caseFileHead}>
@@ -63,6 +64,15 @@ export function CaseFileCard({ game, variant = "drawer" }: { game: HistoryGameVi
       </Link>
     </article>
   );
+}
+
+function tiltSlotForId(id: string): number {
+  let hash = 2166136261;
+  for (let i = 0; i < id.length; i += 1) {
+    hash ^= id.charCodeAt(i);
+    hash = Math.imul(hash, 16777619) >>> 0;
+  }
+  return (hash % 5) + 1;
 }
 
 export function winnerBg(winner: string | null) {
