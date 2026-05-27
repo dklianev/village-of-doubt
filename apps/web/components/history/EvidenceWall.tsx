@@ -57,19 +57,18 @@ export function EvidenceWall({ games }: { games: HistoryGameView[] }) {
 
           <div className={styles.filterTray} role="group" aria-label="Филтри по дело">
             <span className={styles.filterTrayLabel}>Нишка на доказателствата</span>
-            <div className={styles.evidenceFilters}>
+            <div className={styles.filterTabs}>
               {FILTERS.map((item) => (
-                <Pill
+                <button
                   key={item.value}
                   type="button"
-                  intent={filter === item.value ? "secondary" : "ghost"}
-                  size="sm"
-                  tracked
+                  className={styles.filterTab}
+                  data-active={filter === item.value ? "true" : "false"}
                   aria-pressed={filter === item.value}
                   onClick={() => setFilter(item.value)}
                 >
                   {item.label}
-                </Pill>
+                </button>
               ))}
             </div>
           </div>
