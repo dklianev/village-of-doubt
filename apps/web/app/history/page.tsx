@@ -32,24 +32,35 @@ const historyJsonLd = {
   inLanguage: "bg-BG",
 };
 
-export default function HistoryPage() {
+type HistoryPageProps = {
+  searchParams?: Promise<{ visualHistory?: string | string[] }>;
+};
+
+export default function HistoryPage({ searchParams }: HistoryPageProps) {
   return (
     <main className="shell history-shell evidence-shell">
       <JsonLd data={historyJsonLd} />
       <Suspense fallback={<EvidenceWallSkeleton />}>
-        <HistoryContent />
+        <HistoryContent searchParams={searchParams} />
       </Suspense>
     </main>
   );
 }
 
-async function HistoryContent() {
-  const games = await loadHistory();
+async function HistoryContent({ searchParams }: HistoryPageProps) {
+  const visualHistory = firstSearchValue((await searchParams)?.visualHistory);
+  const games = await loadHistory(visualHistory);
   return <EvidenceWall games={games} />;
 }
 
-async function loadHistory(): Promise<HistoryGameView[]> {
+async function loadHistory(visualHistory?: string): Promise<HistoryGameView[]> {
   if (process.env.NODE_ENV !== "production") {
+    if (visualHistory === "empty") {
+      return [];
+    }
+    if (visualHistory === "fixture") {
+      return fixtureHistory();
+    }
     if (process.env.HISTORY_EVIDENCE_FIXTURE === "empty") {
       return [];
     }
@@ -88,6 +99,10 @@ async function loadHistory(): Promise<HistoryGameView[]> {
     console.error("[history]", error);
     return [];
   }
+}
+
+function firstSearchValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
 }
 
 function serializeTimelineEvent(event: {
