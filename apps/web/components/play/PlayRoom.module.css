@@ -119,6 +119,34 @@
   --phase-icon: image-set(url("/game-art/mafia/icon-phase-resolution.webp") type("image/webp"), url("/game-art/mafia/icon-phase-resolution.png") type("image/png"));
 }
 
+/* Keep phase art more specific than faction-level --phase-art defaults. */
+:global(.game-shell[data-family][data-phase="role_reveal"]) {
+  --phase-art: var(--art-reveal);
+}
+
+:global(.game-shell[data-family][data-phase="first_night"]),
+:global(.game-shell[data-family][data-phase="night"]) {
+  --phase-art: var(--art-night);
+}
+
+:global(.game-shell[data-family][data-phase="day_announcement"]),
+:global(.game-shell[data-family][data-phase="day_discussion"]),
+:global(.game-shell[data-family][data-phase="nomination"]),
+:global(.game-shell[data-family][data-phase="defense"]) {
+  --phase-art: var(--art-day);
+}
+
+:global(.game-shell[data-family][data-phase="voting"]) {
+  --phase-art: var(--art-vote);
+}
+
+:global(.game-shell[data-family][data-phase="resolution"]),
+:global(.game-shell[data-family][data-phase="hunter_revenge"]),
+:global(.game-shell[data-family][data-phase="mayor_successor"]),
+:global(.game-shell[data-family][data-phase="game_over"]) {
+  --phase-art: var(--art-resolution);
+}
+
 :global(.game-shell::before),
 :global(.game-shell[data-phase="day_discussion"]::before),
 :global(.game-shell[data-phase="day_announcement"]::before),
