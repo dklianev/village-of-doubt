@@ -192,19 +192,19 @@ function round2Routes() {
     },
     {
       name: "create",
-      oldPath: "/create",
+      oldPath: "/create?visualAuth=1",
       currentPath: "/create?visualAuth=1",
       note: "Old server may need a local-only create auth bypass.",
     },
     {
       name: "werewolf-create",
-      oldPath: "/werewolf/create",
+      oldPath: "/werewolf/create?visualAuth=1",
       currentPath: "/werewolf/create?visualAuth=1",
       note: "Old server may need a local-only create auth bypass.",
     },
     {
       name: "mafia-create",
-      oldPath: "/mafia/create",
+      oldPath: "/mafia/create?visualAuth=1",
       currentPath: "/mafia/create?visualAuth=1",
       note: "Old server may need a local-only create auth bypass.",
     },
