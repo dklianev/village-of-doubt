@@ -100,10 +100,13 @@ export function PlayStage({
           ) : null}
           {seatedPlayers.map((player, index) => {
             const seatAngle = (360 / seatCount) * index - 90;
+            const seatState = getSeatState(player, phase);
             return (
               <div
                 key={player.userId}
                 className="play-seat"
+                data-current={player.userId === ownPlayer?.userId ? "true" : undefined}
+                data-seat-state={seatState}
                 style={{
                   "--seat-angle": `${seatAngle}deg`,
                   "--seat-angle-reverse": `${seatAngle * -1}deg`,
@@ -136,4 +139,20 @@ export function PlayStage({
       </div>
     </section>
   );
+}
+
+function getSeatState(player: PublicPlayer, phase: GamePhase) {
+  if (!player.playing) {
+    return "bench";
+  }
+  if (!player.alive) {
+    return "dead";
+  }
+  if (player.actedThisPhase || player.hasVoted) {
+    return "active";
+  }
+  if (phase === "lobby" && player.ready) {
+    return "ready";
+  }
+  return "idle";
 }

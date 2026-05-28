@@ -267,8 +267,82 @@
   left: 50%;
   z-index: 2;
   width: clamp(142px, 13vw, 184px);
+  isolation: isolate;
   transform: translate(-50%, -50%) rotate(var(--seat-angle)) translateY(calc(var(--stage-radius) * -1)) rotate(var(--seat-angle-reverse));
   transform-origin: center;
+}
+
+:global(.play-seat)::before,
+:global(.play-seat)::after {
+  position: absolute;
+  content: "";
+  pointer-events: none;
+}
+
+:global(.play-seat)::before {
+  inset: -9px;
+  z-index: -1;
+  border: 1px solid transparent;
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(209, 154, 66, 0.16), transparent 68%),
+    rgba(8, 6, 5, 0.18);
+  opacity: 0;
+  transform: scale(0.96);
+  transition:
+    opacity 220ms ease,
+    transform 220ms ease,
+    border-color 220ms ease;
+}
+
+:global(.play-seat[data-current="true"])::before {
+  border-color: rgba(245, 232, 200, 0.36);
+  opacity: 0.72;
+}
+
+:global(.play-seat[data-seat-state="active"])::before {
+  border-color: rgba(209, 154, 66, 0.58);
+  opacity: 0.86;
+  transform: scale(1);
+  box-shadow:
+    0 0 0 1px rgba(209, 154, 66, 0.16),
+    0 0 34px rgba(209, 154, 66, 0.22);
+}
+
+:global(.play-seat[data-seat-state="ready"])::before {
+  border-color: rgba(128, 153, 83, 0.42);
+  background:
+    radial-gradient(circle at 50% 45%, rgba(128, 153, 83, 0.22), transparent 70%),
+    rgba(8, 6, 5, 0.16);
+  opacity: 0.62;
+}
+
+:global(.play-seat[data-seat-state="dead"]) {
+  opacity: 0.74;
+}
+
+:global(.play-seat[data-seat-state="dead"] .player-token) {
+  border-color: rgba(245, 232, 200, 0.08);
+  background:
+    linear-gradient(135deg, rgba(245, 232, 200, 0.07), rgba(245, 232, 200, 0.025)),
+    rgba(10, 9, 8, 0.7);
+  filter: grayscale(0.72) saturate(0.58);
+  transform: rotate(-1.8deg);
+}
+
+:global(.play-seat[data-seat-state="dead"])::after {
+  inset: -5px;
+  z-index: 3;
+  border-radius: 24px;
+  background:
+    repeating-linear-gradient(
+      128deg,
+      transparent 0 16px,
+      rgba(245, 232, 200, 0.07) 16px 18px,
+      transparent 18px 34px
+    ),
+    linear-gradient(135deg, rgba(8, 6, 5, 0.04), rgba(8, 6, 5, 0.24));
+  opacity: 0.72;
 }
 
 :global(.play-stage[data-seat-density="full"]) {
@@ -508,6 +582,39 @@
   color: rgba(42, 27, 16, 0.84);
 }
 
+:global(html[data-theme="light"] .play-seat[data-seat-state="active"])::before {
+  border-color: rgba(132, 47, 43, 0.34);
+  background:
+    radial-gradient(circle at 50% 44%, rgba(209, 154, 66, 0.2), transparent 68%),
+    rgba(252, 246, 236, 0.2);
+}
+
+:global(html[data-theme="light"] .play-seat[data-seat-state="ready"])::before {
+  border-color: rgba(89, 99, 59, 0.32);
+  background:
+    radial-gradient(circle at 50% 44%, rgba(89, 99, 59, 0.18), transparent 70%),
+    rgba(252, 246, 236, 0.18);
+}
+
+:global(html[data-theme="light"] .play-seat[data-seat-state="dead"] .player-token) {
+  border-color: rgba(42, 27, 16, 0.08);
+  background:
+    linear-gradient(135deg, rgba(42, 27, 16, 0.12), rgba(255, 255, 255, 0.22)),
+    rgba(222, 211, 190, 0.64);
+  filter: grayscale(0.72) saturate(0.54);
+}
+
+:global(html[data-theme="light"] .play-seat[data-seat-state="dead"])::after {
+  background:
+    repeating-linear-gradient(
+      128deg,
+      transparent 0 16px,
+      rgba(42, 27, 16, 0.08) 16px 18px,
+      transparent 18px 34px
+    ),
+    linear-gradient(135deg, rgba(42, 27, 16, 0.02), rgba(42, 27, 16, 0.16));
+}
+
 :global(html[data-theme="light"] .play-table-core) {
   background:
     radial-gradient(circle at 50% 38%, rgba(255, 255, 255, 0.42), transparent 38%),
@@ -633,6 +740,29 @@
   }
 
   :global(.play-seat-ring) {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  :global(.play-stage .player-token) {
+    min-width: 0;
+    padding: 10px;
+  }
+
+  :global(.play-stage .player-avatar) {
+    width: 34px;
+    border-radius: 12px;
+  }
+
+  :global(.play-stage .player-token strong) {
+    font-size: 0.9rem;
+  }
+
+  :global(.play-stage .player-token > div) {
+    gap: 8px;
+  }
+
+  :global(.play-stage .player-token > div > span:last-child) {
+    display: none;
   }
 }
