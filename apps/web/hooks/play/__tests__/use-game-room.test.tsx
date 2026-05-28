@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { authClient } from "@/lib/auth-client";
 import { createGameClient, GAME_ROOM_NAME } from "@/lib/colyseus-client";
 import { useGameRoom } from "@/hooks/play/use-game-room";
+import { isVisualGameFixtureEnabled, parseVisualGameFixture } from "@/hooks/play/visual-game-fixture";
 
 const mocks = vi.hoisted(() => ({
   useSession: vi.fn(),
@@ -131,6 +132,48 @@ describe("useGameRoom", () => {
       }),
     }));
     window.sessionStorage.clear();
+    window.history.pushState({}, "", "/");
+  });
+
+  it("uses the dev visual fixture without requesting a game token or opening a room", () => {
+    window.history.pushState(
+      {},
+      "",
+      "/play/VISUAL?visualGame=1&phase=voting&family=mafia&players=10&dead=2&role=commissioner&voteTally=full",
+    );
+    mocks.useSession.mockReturnValue({ data: null, isPending: false });
+    const toast = vi.fn();
+
+    const { result } = renderHook(() => useGameRoom({ code: "VISUAL", createOptions: undefined, toast }));
+
+    expect(result.current.snapshot?.code).toBe("VISUAL");
+    expect(result.current.snapshot?.phase).toBe("voting");
+    expect(result.current.snapshot?.mode).toBe("mafia_sport");
+    expect(result.current.snapshot?.players).toHaveLength(10);
+    expect(result.current.snapshot?.players.filter((player) => player.playing && !player.alive)).toHaveLength(2);
+    expect(result.current.snapshot?.voteTally).toHaveLength(3);
+    expect(result.current.privateRole?.role).toBe("commissioner");
+    expect(result.current.currentUserId).toBe("visual-player-1");
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+    expect(createGameClient).not.toHaveBeenCalled();
+  });
+
+  it("keeps the visual fixture disabled in production", () => {
+    expect(isVisualGameFixtureEnabled("?visualGame=1", "production")).toBe(false);
+    expect(isVisualGameFixtureEnabled("?visualGame=1", "test")).toBe(true);
+  });
+
+  it("clamps visual fixture player and death counts", () => {
+    const fixture = parseVisualGameFixture(
+      "?visualGame=1&players=99&dead=99&viewer=dead&family=werewolves",
+      "VISUAL",
+      undefined,
+      "test",
+    );
+
+    expect(fixture?.snapshot.players).toHaveLength(18);
+    expect(fixture?.snapshot.players.filter((player) => player.playing && !player.alive)).toHaveLength(17);
+    expect(fixture?.snapshot.players[0]?.alive).toBe(false);
   });
 
   it("blocks unauthenticated users before creating a room client", async () => {

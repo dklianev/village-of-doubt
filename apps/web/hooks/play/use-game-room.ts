@@ -22,6 +22,7 @@ import { authClient } from "@/lib/auth-client";
 import { createGameClient, GAME_ROOM_NAME } from "@/lib/colyseus-client";
 import type { pushToast } from "@/lib/toast";
 import { arePhaseSlicesEqual, arePlayerListsEqual } from "@/lib/play/equality";
+import { useVisualGameRoomFixture } from "@/hooks/play/visual-game-fixture";
 import type {
   ConnectionStatus,
   GameSnapshot,
@@ -83,6 +84,8 @@ export function useGameRoom({
     createOptionsRef.current = { signature: createOptionsSignature, value: createOptions };
   }
   const stableCreateOptions = createOptionsRef.current.value;
+  const visualFixture = useVisualGameRoomFixture({ code, createOptions: stableCreateOptions });
+  const hasVisualFixture = visualFixture !== null;
   const { data: session, isPending: sessionPending } = authClient.useSession();
   const [room, setRoom] = useState<Room | null>(null);
   const [baseSnapshot, setBaseSnapshot] = useState<GameSnapshot | null>(null);
@@ -136,6 +139,13 @@ export function useGameRoom({
     let joinedRoom: Room | null = null;
     let reconnectTimer: number | null = null;
     let reconnecting = false;
+
+    if (hasVisualFixture) {
+      reconnectNowRef.current = visualFixture.reconnectNow;
+      return () => {
+        active = false;
+      };
+    }
 
     if (sessionPending) {
       return () => {
@@ -417,7 +427,7 @@ export function useGameRoom({
       clearReconnectTimer();
       joinedRoom?.leave();
     };
-  }, [code, session?.user?.id, sessionPending, stableCreateOptions, toast]);
+  }, [code, hasVisualFixture, session?.user?.id, sessionPending, stableCreateOptions, toast, visualFixture]);
 
   useEffect(() => {
     function handleOffline() {
@@ -449,6 +459,10 @@ export function useGameRoom({
       }
     };
   }, []);
+
+  if (visualFixture) {
+    return visualFixture;
+  }
 
   return {
     room,

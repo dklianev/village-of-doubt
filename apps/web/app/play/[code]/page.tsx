@@ -20,11 +20,14 @@ export default async function PlayPage({
   searchParams,
 }: {
   params: Promise<{ code: string }>;
-  searchParams?: Promise<RoomSearchParams>;
+  searchParams?: Promise<RoomSearchParams & { visualGame?: string | string[] }>;
 }) {
   const [{ code }, resolvedSearchParams] = await Promise.all([params, searchParams]);
   const query = stringifySearchParams(resolvedSearchParams);
-  await requireSession(`/play/${code}${query ? `?${query}` : ""}`);
+  const visualGame = firstSearchValue(resolvedSearchParams?.visualGame);
+  if (process.env.NODE_ENV === "production" || visualGame !== "1") {
+    await requireSession(`/play/${code}${query ? `?${query}` : ""}`);
+  }
 
   return <PlayRoomClient code={code} createOptions={parseRoomCreateOptions(resolvedSearchParams)} />;
 }
@@ -39,4 +42,8 @@ function stringifySearchParams(searchParams: RoomSearchParams | undefined) {
     }
   }
   return params.toString();
+}
+
+function firstSearchValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
 }
