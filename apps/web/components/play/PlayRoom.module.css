@@ -208,7 +208,7 @@
 }
 
 :global(.play-stage) {
-  --stage-radius: clamp(190px, 27vw, 300px);
+  --stage-radius: clamp(168px, min(22vw, 27svh), 286px);
   position: relative;
   min-height: clamp(620px, 68vw, 780px);
   overflow: hidden;
@@ -247,23 +247,21 @@
 :global(.play-stage-hud) {
   position: relative;
   z-index: 3;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 20px;
+  display: grid;
+  gap: 10px;
 }
 
 :global(.play-stage-copy) {
-  max-width: min(34rem, 68%);
+  max-width: min(46rem, 100%);
 }
 
 :global(.play-stage-title) {
-  margin: 14px 0 0;
-  max-width: 12ch;
+  margin: 10px 0 0;
+  max-width: 18ch;
   color: #fff7df;
-  font-size: clamp(2.4rem, 5vw, 4.9rem);
+  font-size: clamp(1.85rem, 3.6vw, 3.35rem);
   font-weight: 950;
-  line-height: 0.88;
+  line-height: 0.95;
   text-transform: uppercase;
   text-wrap: balance;
   text-shadow: 0 18px 58px rgba(0, 0, 0, 0.58);
@@ -271,7 +269,7 @@
 }
 
 :global(.play-stage-status) {
-  margin: 16px 0 0;
+  margin: 10px 0 0;
   max-width: 36rem;
   border: 1px solid rgba(209, 154, 66, 0.24);
   border-radius: 999px;
@@ -293,7 +291,7 @@
 
 :global(.play-table) {
   position: absolute;
-  inset: clamp(72px, 9vw, 118px) clamp(18px, 3vw, 42px) clamp(34px, 5vw, 58px);
+  inset: clamp(118px, 14vw, 154px) clamp(18px, 3vw, 42px) clamp(28px, 4vw, 48px);
   z-index: 1;
   isolation: isolate;
 }
@@ -361,11 +359,12 @@
   z-index: 2;
   display: grid;
   place-items: center;
-  min-width: clamp(180px, 22vw, 270px);
-  min-height: clamp(150px, 18vw, 230px);
+  min-width: clamp(168px, 20vw, 250px);
+  min-height: clamp(176px, 20vw, 260px);
   border: 1px solid rgba(209, 154, 66, 0.34);
   border-radius: 999px;
-  padding: 28px;
+  gap: 8px;
+  padding: 20px;
   background:
     radial-gradient(circle at 50% 38%, rgba(245, 232, 200, 0.17), transparent 38%),
     radial-gradient(circle at 50% 58%, rgba(132, 47, 43, 0.3), transparent 58%),
@@ -385,9 +384,38 @@
 
 :global(.play-table-sigil) {
   color: #f5e8c8;
-  font-size: clamp(2.8rem, 6vw, 5.2rem);
+  font-size: clamp(2.15rem, 4.8vw, 4.2rem);
   line-height: 1;
   text-shadow: 0 0 34px rgba(209, 154, 66, 0.44);
+}
+
+:global(.play-table-core .timer-dial) {
+  min-width: clamp(116px, 12vw, 148px);
+  border-radius: 22px;
+  padding: 12px 14px;
+  text-align: center;
+  background:
+    radial-gradient(circle at 50% 46%, rgba(209, 154, 66, 0.24), transparent 48%),
+    rgba(8, 6, 5, 0.45);
+}
+
+:global(.play-table-core .timer-dial::before) {
+  inset: 7px;
+  border-radius: 17px;
+}
+
+:global(.play-table-core .timer-dial strong) {
+  font-size: clamp(2rem, 3.8vw, 3.2rem);
+}
+
+:global(.play-table-counts) {
+  max-width: 22ch;
+  color: rgba(245, 232, 200, 0.78);
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.14em;
+  line-height: 1.35;
+  text-transform: uppercase;
 }
 
 :global(.play-seat-ring) {
@@ -665,7 +693,7 @@
 }
 
 :global(.play-stage[data-seat-density="full"]) {
-  --stage-radius: clamp(205px, 29vw, 318px);
+  --stage-radius: clamp(182px, min(23vw, 28svh), 304px);
 }
 
 :global(.play-stage[data-seat-density="full"] .play-seat) {
@@ -673,7 +701,7 @@
 }
 
 :global(.play-stage[data-seat-density="crowded"]) {
-  --stage-radius: clamp(220px, 30vw, 332px);
+  --stage-radius: clamp(194px, min(24vw, 29svh), 318px);
 }
 
 :global(.play-stage[data-seat-density="crowded"] .play-seat) {
@@ -1211,7 +1239,7 @@
   :global(.play-stage) {
     grid-area: stage;
     height: 100%;
-    min-height: clamp(560px, calc(100svh - 310px), 760px);
+    min-height: clamp(610px, calc(100svh - 280px), 790px);
   }
 
   :global(.play-action-dock) {

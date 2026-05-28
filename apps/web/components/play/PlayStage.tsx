@@ -84,19 +84,16 @@ export function PlayStage({
             </p>
           ) : null}
         </div>
-        <div className="play-stage-clock">
-          <div className="phase-sigil" aria-hidden="true">
-            {phaseSigil(phase)}
-          </div>
-          <Timer endsAt={phaseEndsAt} />
-        </div>
       </div>
 
       <div className="play-table" aria-label="Игрална маса">
-        <div className="play-table-core" aria-hidden="true">
-          <span className="play-table-sigil">{phaseSigil(phase)}</span>
-          <span>{aliveCount} живи</span>
-          {eliminatedCount > 0 ? <span>{eliminatedCount} елиминирани</span> : null}
+        <div className="play-table-core" aria-label="Център на масата">
+          <span className="play-table-sigil" aria-hidden="true">{phaseSigil(phase)}</span>
+          <Timer endsAt={phaseEndsAt} />
+          <span className="play-table-counts">
+            {aliveCount} живи
+            {eliminatedCount > 0 ? ` · ${eliminatedCount} елиминирани` : ""}
+          </span>
         </div>
 
         <div className="play-seat-ring">
