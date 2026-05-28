@@ -39,6 +39,11 @@
   --ember: #f0b45d;
   --fog: #efe4ce;
   --moss: #59633b;
+  --accent-faction: var(--gold);
+  --accent-faction-bright: var(--ember);
+  --accent-faction-tint: color-mix(in srgb, var(--gold) 18%, transparent);
+  --accent-faction-border: color-mix(in srgb, var(--gold) 58%, transparent);
+  --accent-faction-contrast: var(--ink);
   --glass: rgba(35, 22, 16, 0.72);
   --hairline: rgba(248, 236, 210, 0.18);
   --shadow-deep: 0 34px 110px rgba(0, 0, 0, 0.48);
@@ -344,6 +349,22 @@
   --phase-art: var(--art-lobby);
   --phase-icon: image-set(url("/game-art/mafia/icon-phase-lobby.webp") type("image/webp"), url("/game-art/mafia/icon-phase-lobby.png") type("image/png"));
   --faction-art: var(--faction-mafia);
+}
+
+:where([data-family="werewolves"], [data-faction="werewolves"], [data-theme="werewolves"]) {
+  --accent-faction: #59633b;
+  --accent-faction-bright: #7a8a4f;
+  --accent-faction-tint: rgba(89, 99, 59, 0.22);
+  --accent-faction-border: rgba(122, 138, 79, 0.62);
+  --accent-faction-contrast: #fff6e5;
+}
+
+:where([data-family="mafia"], [data-faction="mafia"], [data-theme="mafia"]) {
+  --accent-faction: #7b1f1b;
+  --accent-faction-bright: #9e342d;
+  --accent-faction-tint: rgba(123, 31, 27, 0.22);
+  --accent-faction-border: rgba(158, 52, 45, 0.62);
+  --accent-faction-contrast: #fff6e5;
 }
 
 @media (max-width: 720px) {
