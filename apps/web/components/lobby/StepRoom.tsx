@@ -129,6 +129,7 @@ export function StepRoom({
             </button>
             <input
               type="range"
+              aria-label="Брой играчи"
               min={range.min}
               max={range.max}
               value={players}
