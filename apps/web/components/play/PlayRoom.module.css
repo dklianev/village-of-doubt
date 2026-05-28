@@ -723,6 +723,110 @@
   color: rgba(42, 27, 16, 0.84);
 }
 
+:global(.play-stage[data-family="werewolves"] .play-table-core) {
+  border-color: rgba(196, 224, 226, 0.28);
+  background:
+    radial-gradient(circle at 50% 34%, rgba(196, 224, 226, 0.16), transparent 36%),
+    radial-gradient(circle at 50% 60%, rgba(89, 99, 59, 0.26), transparent 58%),
+    linear-gradient(145deg, rgba(24, 32, 27, 0.7), rgba(7, 12, 12, 0.78));
+  box-shadow:
+    0 34px 90px rgba(0, 0, 0, 0.44),
+    0 0 70px rgba(196, 224, 226, 0.1),
+    inset 0 0 0 1px rgba(196, 224, 226, 0.09),
+    inset 0 -38px 70px rgba(0, 0, 0, 0.32);
+}
+
+:global(.play-stage[data-family="werewolves"] .play-table-sigil) {
+  color: #d6e8c8;
+  text-shadow: 0 0 34px rgba(196, 224, 226, 0.42);
+}
+
+:global(.play-stage[data-family="werewolves"] .player-token) {
+  border-color: rgba(196, 224, 226, 0.17);
+  background:
+    linear-gradient(135deg, rgba(214, 232, 200, 0.12), rgba(89, 99, 59, 0.08)),
+    rgba(8, 14, 13, 0.72);
+}
+
+:global(.play-stage[data-family="werewolves"] .player-token:hover) {
+  border-color: rgba(196, 224, 226, 0.42);
+  box-shadow:
+    0 24px 52px rgba(0, 0, 0, 0.42),
+    0 0 0 1px rgba(196, 224, 226, 0.16);
+}
+
+:global(.play-stage[data-family="werewolves"] .play-seat[data-seat-state="active"])::before {
+  border-color: rgba(196, 224, 226, 0.5);
+  box-shadow:
+    0 0 0 1px rgba(196, 224, 226, 0.12),
+    0 0 34px rgba(196, 224, 226, 0.18);
+}
+
+:global(.play-stage[data-family="mafia"] .play-table-core) {
+  border-color: rgba(209, 154, 66, 0.38);
+  background:
+    radial-gradient(circle at 48% 36%, rgba(245, 232, 200, 0.16), transparent 34%),
+    radial-gradient(circle at 50% 60%, rgba(26, 86, 58, 0.44), transparent 62%),
+    linear-gradient(145deg, rgba(25, 75, 53, 0.76), rgba(38, 13, 13, 0.82));
+  box-shadow:
+    0 34px 90px rgba(0, 0, 0, 0.46),
+    0 0 74px rgba(209, 154, 66, 0.12),
+    inset 0 0 0 1px rgba(255, 226, 180, 0.12),
+    inset 0 -38px 70px rgba(26, 6, 6, 0.36);
+}
+
+:global(.play-stage[data-family="mafia"] .play-table-sigil) {
+  color: #f5e8c8;
+  text-shadow: 0 0 34px rgba(209, 154, 66, 0.5);
+}
+
+:global(.play-stage[data-family="mafia"] .player-token) {
+  border-color: rgba(209, 154, 66, 0.2);
+  background:
+    linear-gradient(135deg, rgba(209, 154, 66, 0.14), rgba(132, 47, 43, 0.08)),
+    rgba(18, 9, 8, 0.74);
+}
+
+:global(.play-stage[data-family="mafia"] .player-token:hover) {
+  border-color: rgba(209, 154, 66, 0.5);
+  box-shadow:
+    0 24px 52px rgba(0, 0, 0, 0.44),
+    0 0 0 1px rgba(209, 154, 66, 0.18);
+}
+
+:global(.play-stage[data-family="mafia"] .play-seat[data-seat-state="active"])::before {
+  border-color: rgba(209, 154, 66, 0.6);
+  box-shadow:
+    0 0 0 1px rgba(209, 154, 66, 0.16),
+    0 0 34px rgba(209, 154, 66, 0.22);
+}
+
+:global(.game-shell[data-family="werewolves"] .play-side-rail),
+:global(.game-shell[data-family="werewolves"] .play-action-dock) {
+  border-color: rgba(196, 224, 226, 0.12);
+  box-shadow: 0 28px 80px rgba(4, 9, 9, 0.22);
+}
+
+:global(.game-shell[data-family="mafia"] .play-side-rail),
+:global(.game-shell[data-family="mafia"] .play-action-dock) {
+  border-color: rgba(209, 154, 66, 0.14);
+  box-shadow: 0 28px 80px rgba(38, 8, 8, 0.26);
+}
+
+:global(html[data-theme="light"] .play-stage[data-family="werewolves"] .player-token) {
+  border-color: rgba(89, 99, 59, 0.18);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.72), rgba(89, 99, 59, 0.12)),
+    rgba(245, 246, 233, 0.7);
+}
+
+:global(html[data-theme="light"] .play-stage[data-family="mafia"] .player-token) {
+  border-color: rgba(132, 47, 43, 0.18);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.72), rgba(209, 154, 66, 0.14)),
+    rgba(252, 246, 236, 0.7);
+}
+
 @media (min-width: 1024px) {
   :global(.play-stage) {
     grid-column: 1;
