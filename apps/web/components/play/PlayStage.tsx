@@ -14,6 +14,9 @@ interface PlayStageProps {
   family: GameFamily;
   round: number;
   phaseEndsAt: number;
+  status: string;
+  isStatusInformative: boolean;
+  isPending: boolean;
   players: PublicPlayer[];
   hasSnapshot: boolean;
   narratorMode: string;
@@ -30,6 +33,9 @@ export function PlayStage({
   family,
   round,
   phaseEndsAt,
+  status,
+  isStatusInformative,
+  isPending,
   players,
   hasSnapshot,
   narratorMode,
@@ -61,6 +67,12 @@ export function PlayStage({
             <span>Фаза: {phaseBg(phase, mode)}</span>
           </div>
           <h1 id={titleId} className="play-stage-title">{phaseBg(phase, mode)}</h1>
+          {isStatusInformative || isPending ? (
+            <p className="play-stage-status" aria-live="polite" aria-atomic="true">
+              {isStatusInformative ? status : ""}
+              {isPending ? " Обновяване..." : ""}
+            </p>
+          ) : null}
         </div>
         <div className="play-stage-clock">
           <div className="phase-sigil" aria-hidden="true">

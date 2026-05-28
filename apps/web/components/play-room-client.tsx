@@ -11,7 +11,6 @@ import {
 import {
   ROLE_DEFINITIONS,
   getGameFamily,
-  phaseLabelBg,
   type ChatChannel,
   type CreateRoomOptions,
   type GamePhase,
@@ -44,20 +43,14 @@ import { PlayStage } from "@/components/play/PlayStage";
 import { PostGameStory } from "@/components/play/PostGameStory";
 import { PreGameCountdown } from "@/components/play/PreGameCountdown";
 import { ReconnectModal } from "@/components/play/ReconnectModal";
-import { Timer } from "@/components/play/Timer";
 import { NightActionPanel } from "@/components/play/NightActionPanel";
 import { buildPrimaryNightAction, shortcutTargets } from "@/lib/play/night-actions";
 import { VotingPanel } from "@/components/play/VotingPanel";
-import { canFactionKill, isNightPhase } from "@/lib/play/role-rules";
-import { phaseBg, phaseSigil } from "@/lib/play/phase-display";
+import { isNightPhase } from "@/lib/play/role-rules";
 import { useCueMode } from "@/hooks/play/use-cue-mode";
 import { useGameRoom } from "@/hooks/play/use-game-room";
 import { usePhaseTransitions } from "@/hooks/play/use-phase-transitions";
-import {
-  communicationBg,
-  modeBg,
-  winnerBg,
-} from "@/lib/play/copy";
+import { winnerBg } from "@/lib/play/copy";
 import type { PhaseSlice, PublicPlayer, ShortcutState } from "@/lib/play/types";
 
 export type { PhaseSlice, PublicPlayer } from "@/lib/play/types";
@@ -295,7 +288,7 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
       || phase === "voting"
       || privateChatChannel,
   );
-  // Connection state already lives in the ConnectionBanner; the phase-status
+  // Connection state already lives in the ConnectionBanner; the stage-status
   // line is only useful for transient action feedback. Hide the boilerplate
   // "Свързан" / "Свързване..." strings so the player doesn't see them linger.
   const isStatusInformative = status.length > 0 && status !== "Свързан" && status !== "Свързване...";
@@ -593,6 +586,9 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
             family={family}
             round={snapshot?.round ?? 0}
             phaseEndsAt={snapshot?.phaseEndsAt ?? 0}
+            status={status}
+            isStatusInformative={isStatusInformative}
+            isPending={isPending}
             players={players}
             hasSnapshot={Boolean(snapshot)}
             narratorMode={snapshot?.narratorMode ?? "automatic"}
@@ -604,40 +600,6 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
           {renderActionDock()}
           <div className="card play-main-stack play-section rounded-[2rem] p-5 md:p-7">
             <ConnectionBanner status={connectionStatus} message={status} />
-
-          <div className="phase-hero">
-            <div>
-              <p className="phase-kicker">стая {code} · рунд {snapshot?.round ?? 0}</p>
-              <div className="play-phase-pill" aria-label={`Фаза: ${phaseBg(phase, mode)}`}>
-                <span className="play-phase-dot" aria-hidden />
-                <span>Фаза: {phaseBg(phase, mode)}</span>
-              </div>
-              <h1 className="phase-title mt-5 font-black">{phaseBg(phase, mode)}</h1>
-              {isStatusInformative || isPending ? (
-                <p className="phase-status mt-6" aria-live="polite" aria-atomic="true">
-                  {isStatusInformative ? status : ""}
-                  {isPending ? " Обновяване..." : ""}
-                </p>
-              ) : null}
-              <div className="mt-6 flex flex-wrap gap-2">
-                <span className="rounded-full border border-[#f4e8d1]/15 bg-[#f4e8d1]/10 px-3 py-2 text-sm font-bold text-[#ead9ba]">
-                  {players.filter((player) => player.playing && player.alive).length} живи
-                </span>
-                <span className="rounded-full border border-[#f4e8d1]/15 bg-[#f4e8d1]/10 px-3 py-2 text-sm font-bold text-[#ead9ba]">
-                  {modeBg(mode)}
-                </span>
-                <span className="rounded-full border border-[#f4e8d1]/15 bg-[#f4e8d1]/10 px-3 py-2 text-sm font-bold text-[#ead9ba]">
-                  {communicationBg(snapshot?.communicationMode ?? "built_in_chat")}
-                </span>
-              </div>
-            </div>
-            <div className="relative z-[1] grid gap-4 justify-self-end">
-              <div className="phase-sigil" aria-hidden="true">
-                {phaseSigil(phase)}
-              </div>
-              <Timer endsAt={snapshot?.phaseEndsAt ?? 0} />
-            </div>
-          </div>
 
           {phase === "lobby" ? (
             <div className="action-bar">
