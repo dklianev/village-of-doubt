@@ -919,7 +919,7 @@ function readLobbyStyles() {
   return readCssSurface(
     "apps/web/app/globals.css",
     "apps/web/components/lobby/LobbyWizard.module.css",
-    "apps/web/components/LobbyInvite.module.css",
+    "apps/web/components/LegacyLobby.module.css",
     "apps/web/components/games/JoinEntry.module.css",
   );
 }

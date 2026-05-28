@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import Image from "next/image";
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Display, PaperCard, Pill, SceneCard } from "@werewolf/ui/server";
 import { createDatabase, getGameHistoryById, getGameTimeline, getPlayerRolesInGames } from "@werewolf/database";
 import {
   deriveAchievementsFromEvents,
@@ -13,6 +14,7 @@ import {
 import { requireSession } from "@/lib/require-session";
 import "@/components/achievements/Achievements.module.css";
 import "@/components/history/History.module.css";
+import "@/components/history/LegacyReplay.module.css";
 
 export const dynamic = "force-dynamic";
 
@@ -49,121 +51,114 @@ export default async function ReplayPage({
       data-faction={mode === "werewolves_classic" ? "werewolves" : "mafia"}
     >
       <div className="framed-shell-inner">
-        <header aria-label="Запис след игра">
-          <SceneCard
-            eyebrow="ПРЕГЛЕД СЛЕД ИГРА"
-            density="lg"
-            background={{
-              image: "var(--art-replay)",
-              overlay: "scrim",
-              minHeight: "var(--ds-scene-hero-min-standard)",
-            }}
-          >
-            <Display size="hero">Запис на стая {replay.game.code}.</Display>
-            <p className="replay-hero-subtitle">
+        <header className="replay-hero-v2">
+          <Image
+            src="/game-art/legal/replay-banner.webp"
+            alt=""
+            fill
+            priority
+            sizes="(max-width: 1180px) 100vw, 1180px"
+            className="replay-hero-img"
+          />
+          <div className="replay-hero-scrim" aria-hidden />
+          <div className="replay-hero-copy">
+            <p className="replay-kicker">преглед след игра</p>
+            <h1>Запис на стая {replay.game.code}.</h1>
+            <p>
               Хронология от записаните събития. Тайните роли се показват само ако вече са част от
               записа.
             </p>
-            <div className="replay-summary replay-summary-primitive">
+            <div className="replay-summary">
               <Summary label="Режим" value={modeBg(mode)} />
               <Summary label="Победител" value={winnerBg(replay.game.winnerTeam)} />
               <Summary label="Времетраене" value={duration} />
               <Summary label="Събития" value={String(replay.game.eventCount)} />
             </div>
-          </SceneCard>
+          </div>
         </header>
 
         <section className="replay-verdict-card">
-          <PaperCard eyebrow="ПОБЕДАТА" density="md">
-            <h2>{winnerBg(replay.game.winnerTeam)}</h2>
-            <p>
-              Финалът е записан на {formatDate(replay.game.endedAt)}. В хронологията има{" "}
-              {replay.timeline.length} събития, групирани по фаза за по-лесен преглед.
-            </p>
-          </PaperCard>
+          <p className="replay-kicker">победата</p>
+          <h2>{winnerBg(replay.game.winnerTeam)}</h2>
+          <p>
+            Финалът е записан на {formatDate(replay.game.endedAt)}. В хронологията има{" "}
+            {replay.timeline.length} събития, групирани по фаза за по-лесен преглед.
+          </p>
         </section>
 
         <section className="replay-participants" aria-label="Играчите в записа">
-          <PaperCard eyebrow="ИГРАЧИ" density="md">
-            <div className="replay-section-head">
-              <h2>Участници от записа</h2>
-            </div>
-            <div className="replay-player-grid">
-              {participants.length > 0 ? (
-                participants.map((participant) => (
-                  <span key={participant.id} className="replay-player-chip">
-                    <strong>{participant.initial}</strong>
-                    <span>{participant.label}</span>
-                    <em>{participant.role ?? "роля в записа"}</em>
-                  </span>
-                ))
-              ) : (
-                <p className="replay-empty-note">В събитията няма отделно записани имена на играчи.</p>
-              )}
-            </div>
-          </PaperCard>
+          <div className="replay-section-head">
+            <p className="replay-kicker">играчи</p>
+            <h2>Участници от записа</h2>
+          </div>
+          <div className="replay-player-grid">
+            {participants.length > 0 ? (
+              participants.map((participant) => (
+                <span key={participant.id} className="replay-player-chip">
+                  <strong>{participant.initial}</strong>
+                  <span>{participant.label}</span>
+                  <em>{participant.role ?? "роля в записа"}</em>
+                </span>
+              ))
+            ) : (
+              <p className="replay-empty-note">В събитията няма отделно записани имена на играчи.</p>
+            )}
+          </div>
         </section>
 
         <section className="replay-timeline-v2" aria-label="Хронология на играта">
           {replay.achievements.length > 0 ? (
             <article className="replay-achievements">
-              <PaperCard eyebrow="ОТКЛЮЧЕНИ МОМЕНТИ" density="md">
-                <h2>Легенди от тази игра</h2>
-                <div className="achievement-grid">
-                  {replay.achievements.map((achievement) => (
-                    <div key={achievement.id} className="achievement-card">
-                      <span>{achievement.iconBg}</span>
-                      <strong>{achievement.titleBg}</strong>
-                      <p>{achievement.descriptionBg}</p>
-                    </div>
-                  ))}
-                </div>
-              </PaperCard>
+              <p className="replay-kicker">отключени моменти</p>
+              <h2>Легенди от тази игра</h2>
+              <div className="achievement-grid">
+                {replay.achievements.map((achievement) => (
+                  <div key={achievement.id} className="achievement-card">
+                    <span>{achievement.iconBg}</span>
+                    <strong>{achievement.titleBg}</strong>
+                    <p>{achievement.descriptionBg}</p>
+                  </div>
+                ))}
+              </div>
             </article>
           ) : null}
           {groupedTimeline.map((group) => (
             <article key={group.key} className="replay-phase-group">
-              <PaperCard density="sm">
-                <div className="replay-phase-content">
-                  <header>
-                    <span>{group.events.length}</span>
-                    <div>
-                      <p className="replay-kicker">рунд {group.round}</p>
-                      <h2>{group.phaseLabel}</h2>
-                    </div>
-                  </header>
-                  <ol>
-                    {group.events.map((event, index) => (
-                      <li key={event.id} className="replay-event-v2" data-tone={eventTone(event.type)}>
-                        <span className="replay-index">{String(index + 1).padStart(2, "0")}</span>
-                        <div>
-                          <h3>{eventTypeBg(event.type)}</h3>
-                          <p>{formatPayload(event.payload)}</p>
-                          <small>
-                            {visibilityBg(event.visibility)} · {formatDate(event.createdAt)}
-                          </small>
-                        </div>
-                      </li>
-                    ))}
-                  </ol>
+              <header>
+                <span>{group.events.length}</span>
+                <div>
+                  <p className="replay-kicker">рунд {group.round}</p>
+                  <h2>{group.phaseLabel}</h2>
                 </div>
-              </PaperCard>
+              </header>
+              <ol>
+                {group.events.map((event, index) => (
+                  <li key={event.id} className="replay-event-v2" data-tone={eventTone(event.type)}>
+                    <span className="replay-index">{String(index + 1).padStart(2, "0")}</span>
+                    <div>
+                      <h3>{eventTypeBg(event.type)}</h3>
+                      <p>{formatPayload(event.payload)}</p>
+                      <small>
+                        {visibilityBg(event.visibility)} · {formatDate(event.createdAt)}
+                      </small>
+                    </div>
+                  </li>
+                ))}
+              </ol>
             </article>
           ))}
           {replay.timeline.length === 0 ? (
             <article className="replay-empty-card">
-              <PaperCard density="md">
-                <h2>Няма записани събития</h2>
-                <p>Играта съществува, но записът е празен.</p>
-              </PaperCard>
+              <h2>Няма записани събития</h2>
+              <p>Играта съществува, но записът е празен.</p>
             </article>
           ) : null}
         </section>
 
         <nav className="replay-actions" aria-label="Действия със записа">
-          <Pill as="a" href="/history" intent="secondary">
+          <Link className="btn btn-secondary" href="/history">
             Назад към историята
-          </Pill>
+          </Link>
         </nav>
       </div>
     </main>
