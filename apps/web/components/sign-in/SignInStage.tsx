@@ -1,7 +1,6 @@
-import { Display, SceneCard } from "@werewolf/ui";
 import { EmailPasswordForm } from "@/components/sign-in/EmailPasswordForm";
 import { OAuthButton } from "@/components/sign-in/OAuthButton";
-import styles from "@/components/sign-in/SignInStage.module.css";
+import "@/components/sign-in/LegacySignIn.module.css";
 
 type SignInCopy = {
   kicker: string;
@@ -23,45 +22,36 @@ export function SignInStage({ redirectTo }: { redirectTo: string }) {
     <section className="sign-in-stage">
       <div className="sign-in-table" aria-hidden />
 
-      <article className={`sign-in-plaque ${styles.plaqueCard}`}>
-        <SceneCard
-          eyebrow={copy.kicker.toLocaleUpperCase("bg-BG")}
-          density="md"
-          background={{
-            image: "var(--art-sign-in)",
-            overlay: "scrim",
-            focalY: 52,
-            minHeight: "var(--ds-scene-hero-min-compact)",
-          }}
-        >
-          <header className={`sign-in-plaque-head ${styles.plaqueHead}`}>
-            <Display size="h2" as="h1">
-              {title}
-            </Display>
-            <p className="sign-in-subtitle">{copy.subtitle}</p>
-          </header>
+      <article className="sign-in-plaque">
+        <header className="sign-in-plaque-head">
+          <p className="sign-in-kicker">{copy.kicker}</p>
+          <h1 aria-label={title}>
+            <span>{copy.title[0]}</span>{" "}
+            <span>{copy.title[1]}</span>
+          </h1>
+          <p className="sign-in-subtitle">{copy.subtitle}</p>
+        </header>
 
-          <div className="sign-in-oauth">
-            <OAuthButton provider="google" redirectTo={redirectTo} />
-            <OAuthButton provider="discord" redirectTo={redirectTo} />
-          </div>
+        <div className="sign-in-oauth">
+          <OAuthButton provider="google" redirectTo={redirectTo} />
+          <OAuthButton provider="discord" redirectTo={redirectTo} />
+        </div>
 
-          <div className="sign-in-divider" role="separator" aria-label="или с имейл">
-            <span>или с имейл</span>
-          </div>
+        <div className="sign-in-divider" role="separator" aria-label="или с имейл">
+          <span>или с имейл</span>
+        </div>
 
-          <EmailPasswordForm redirectTo={redirectTo} />
+        <EmailPasswordForm redirectTo={redirectTo} />
 
-          <footer className="sign-in-foot">
-            <a href="/privacy" className="sign-in-foot-link">
-              Поверителност
-            </a>
-            <span aria-hidden>·</span>
-            <a href="/terms" className="sign-in-foot-link">
-              Условия
-            </a>
-          </footer>
-        </SceneCard>
+        <footer className="sign-in-foot">
+          <a href="/privacy" className="sign-in-foot-link">
+            Поверителност
+          </a>
+          <span aria-hidden>·</span>
+          <a href="/terms" className="sign-in-foot-link">
+            Условия
+          </a>
+        </footer>
       </article>
     </section>
   );

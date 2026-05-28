@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Pill } from "@werewolf/ui";
 import { authClient } from "@/lib/auth-client";
 import { resolveWelcomeRedirect } from "./welcome-redirect";
 
@@ -60,11 +59,9 @@ export function OAuthButton({ provider, redirectTo }: Props) {
   }
 
   return (
-    <Pill
-      intent="secondary"
+    <button
       type="button"
-      className="oauth-button-pill"
-      shimmer
+      className="oauth-button"
       data-provider={provider}
       data-accent={config.accent}
       onClick={start}
@@ -77,7 +74,7 @@ export function OAuthButton({ provider, redirectTo }: Props) {
       </span>
       <span className="oauth-button-label">{config.label}</span>
       {isPending ? <span className="oauth-button-spinner" aria-hidden /> : null}
-    </Pill>
+    </button>
   );
 }
 
