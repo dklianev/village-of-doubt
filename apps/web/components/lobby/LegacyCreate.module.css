@@ -268,8 +268,8 @@
 }
 
 :global(.field-input-wrap:focus-within) {
-  border-color: rgba(209, 154, 66, 0.95);
-  box-shadow: 0 0 0 2px var(--gold), inset 0 1px rgba(255, 255, 255, 0.56);
+  border-color: var(--accent-faction-border);
+  box-shadow: 0 0 0 2px var(--accent-faction), inset 0 1px rgba(255, 255, 255, 0.56);
 }
 
 :global(.field-action) {
@@ -584,14 +584,14 @@
 :global(.manual-timer-control button:focus-visible),
 :global(.manual-timer-presets button:hover),
 :global(.manual-timer-presets button:focus-visible) {
-  border-color: rgba(209, 154, 66, 0.58);
-  background: rgba(209, 154, 66, 0.16);
+  border-color: var(--accent-faction-border);
+  background: var(--accent-faction-tint);
   outline: 0;
 }
 
 :global(.manual-timer-control input) {
   width: 100%;
-  accent-color: var(--gold);
+  accent-color: var(--accent-faction);
 }
 
 :global(.manual-timer-presets) {
@@ -634,7 +634,7 @@
   width: 20px;
   height: 20px;
   margin-top: 1px;
-  accent-color: var(--gold);
+  accent-color: var(--accent-faction);
 }
 
 :global(.manual-tempo-ready span) {
@@ -702,7 +702,7 @@
   inline-size: 100%;
   min-block-size: 44px;
   margin: 0;
-  accent-color: var(--gold);
+  accent-color: var(--accent-faction);
   cursor: pointer;
 }
 
@@ -733,7 +733,7 @@
 }
 
 :global(.player-dot-row i[data-filled="true"]) {
-  background: var(--gold);
+  background: var(--accent-faction);
 }
 
 :global(.quick-start-row),
@@ -1292,7 +1292,7 @@
   transform-origin: left center;
   transition: transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--blood), var(--gold));
+  background: linear-gradient(90deg, var(--blood), var(--accent-faction-bright));
 }
 
 :global(.preview-warning),
@@ -1309,8 +1309,8 @@
 }
 
 :global(.preview-warning.is-clean) {
-  background: rgba(44, 120, 74, 0.14);
-  color: #1f6f47;
+  background: var(--accent-faction-tint);
+  color: var(--accent-faction-bright);
 }
 
 :global(.preview-stat-list div),
