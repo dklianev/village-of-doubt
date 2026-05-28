@@ -927,7 +927,7 @@ function readLobbyStyles() {
 function readAppStyles() {
   return readCssSurface(
     "apps/web/app/globals.css",
-    "apps/web/components/account/AccountShell.module.css",
+    "apps/web/components/account/LegacyAccount.module.css",
     "apps/web/components/leaderboard/Leaderboard.module.css",
     "apps/web/components/legal/LegalShell.module.css",
     "apps/web/components/landing/LandingSurface.module.css",

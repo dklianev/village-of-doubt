@@ -12,7 +12,7 @@ import { ACHIEVEMENTS, type GameMode, type WinnerTeam } from "@werewolf/shared";
 import { AccountDashboard } from "@/components/account/AccountDashboard";
 import { computePlayerStats } from "@/lib/account-stats";
 import { auth } from "@/lib/auth";
-import "@/components/account/AccountShell.module.css";
+import "@/components/account/LegacyAccount.module.css";
 
 export const metadata: Metadata = {
   title: "Твоето досие",

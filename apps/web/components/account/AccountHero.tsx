@@ -1,6 +1,4 @@
 import Image from "next/image";
-import { Display, SceneCard } from "@werewolf/ui/server";
-import styles from "./AccountHero.module.css";
 
 interface AccountHeroProps {
   name: string;
@@ -18,53 +16,54 @@ export function AccountHero(props: AccountHeroProps) {
     : null;
 
   return (
-    <header aria-label="Досие" className={styles.heroFrame}>
-      <SceneCard
-        eyebrow="ДОСИЕ"
-        density="lg"
-        background={{
-          image: "var(--art-account)",
-          overlay: "scrim",
-          focalY: 35,
-          minHeight: "var(--ds-scene-hero-min-compact)",
-        }}
-      >
-        <div className={styles.heroProfile}>
-          <div className={styles.heroAvatar}>
-            {props.image ? (
-              <Image src={props.image} alt="" width={96} height={96} sizes="96px" unoptimized />
-            ) : (
-              <span className={styles.heroInitial}>{initial}</span>
-            )}
-          </div>
+    <header className="account-hero" aria-label="Досие">
+      <div className="account-hero-banner">
+        <Image
+          src="/game-art/account/account-hero-banner.webp"
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="account-hero-img"
+        />
+        <div className="account-hero-scrim" aria-hidden />
+      </div>
 
-          <div className={styles.heroName}>
-            <Display size="h1">{props.name || "Без име"}</Display>
-            {memberSinceLabel ? (
-              <p className={styles.heroMember}>Член от {memberSinceLabel}</p>
-            ) : null}
-          </div>
+      <div className="account-hero-inner">
+        <div className="account-hero-avatar">
+          {props.image ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={props.image} alt="" />
+          ) : (
+            <span className="account-hero-initial">{initial}</span>
+          )}
+        </div>
+
+        <div className="account-hero-identity">
+          <p className="account-hero-kicker">досие</p>
+          <h1 className="account-hero-name">{props.name || "Без име"}</h1>
+          {memberSinceLabel ? <p className="account-hero-meta">Член от {memberSinceLabel}</p> : null}
         </div>
 
         {props.totalGames > 0 ? (
-          <dl className={styles.heroStats}>
+          <dl className="account-hero-quickstats">
             <div>
-              <dt className={styles.statLabel}>Игри</dt>
-              <dd className={styles.statValue}>{props.totalGames}</dd>
+              <dt>Игри</dt>
+              <dd>{props.totalGames}</dd>
             </div>
             <div>
-              <dt className={styles.statLabel}>Победи</dt>
-              <dd className={styles.statValue}>{props.totalWins}</dd>
+              <dt>Победи</dt>
+              <dd>{props.totalWins}</dd>
             </div>
             <div>
-              <dt className={styles.statLabel}>Процент</dt>
-              <dd className={styles.statValue}>{props.winRate}%</dd>
+              <dt>Процент</dt>
+              <dd>{props.winRate}%</dd>
             </div>
           </dl>
         ) : (
-          <p className={styles.heroEmpty}>Първото дело още чака име.</p>
+          <p className="account-hero-empty">Първото дело още чака име.</p>
         )}
-      </SceneCard>
+      </div>
     </header>
   );
 }
