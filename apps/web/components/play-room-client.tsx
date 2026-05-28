@@ -40,7 +40,6 @@ import { ConnectionBanner } from "@/components/play/ConnectionBanner";
 import { DeathRevealCinematic } from "@/components/play/DeathRevealCinematic";
 import { PhaseRail } from "@/components/play/PhaseRail";
 import { PhaseTransitionOverlay } from "@/components/play/PhaseTransitionOverlay";
-import { PlayerTile } from "@/components/play/PlayerTile";
 import { PlayStage } from "@/components/play/PlayStage";
 import { PostGameStory } from "@/components/play/PostGameStory";
 import { PreGameCountdown } from "@/components/play/PreGameCountdown";
@@ -49,7 +48,6 @@ import { Timer } from "@/components/play/Timer";
 import { NightActionPanel } from "@/components/play/NightActionPanel";
 import { buildPrimaryNightAction, shortcutTargets } from "@/lib/play/night-actions";
 import { VotingPanel } from "@/components/play/VotingPanel";
-import { PlayerTokensSkeleton } from "@/components/skeleton";
 import { canFactionKill, isNightPhase } from "@/lib/play/role-rules";
 import { phaseBg, phaseSigil } from "@/lib/play/phase-display";
 import { useCueMode } from "@/hooks/play/use-cue-mode";
@@ -374,42 +372,12 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
     const chatHeadingId = "chat-heading";
 
     return (
-      <aside className="play-section play-players-panel">
+      <aside className="play-section play-players-panel play-side-rail">
         <p className="section-kicker play-section-kicker">
-          <Users className="play-section-icon" aria-hidden strokeWidth={1.8} />
-          <span>площадът</span>
+          <Settings className="play-section-icon" aria-hidden strokeWidth={1.8} />
+          <span>хроника</span>
         </p>
-        <h2 className="mt-3 text-3xl font-black">Играчите на площада</h2>
-        <div className="mt-6 grid gap-3">
-          {!snapshot ? <PlayerTokensSkeleton /> : null}
-          {snapshot && players.length === 0 ? (
-            <div className="empty-state-card empty-players-card rounded-[2rem] p-5">
-              <span aria-hidden="true" />
-              <strong>Площадът още е празен</strong>
-              <p>Поканата чака първите телефони около масата.</p>
-            </div>
-          ) : null}
-          {snapshot
-            ? players.map((player) => (
-                <PlayerTile
-                  key={player.userId}
-                  player={player}
-                  phase={phase}
-                  narratorMode={snapshot.narratorMode}
-                  canManageNarrator={Boolean(ownPlayer?.host && snapshot.narratorMode !== "automatic" && phase === "lobby")}
-                  canManageMayor={Boolean(
-                    (ownPlayer?.host || ownPlayer?.narrator)
-                      && snapshot.mode === "werewolves_classic"
-                      && (phase === "lobby" || phase === "mayor_successor")
-                      && player.playing
-                      && player.alive,
-                  )}
-                  onMakeNarrator={() => room?.send("setNarrator", { targetUserId: player.userId, narrator: true })}
-                  onMakeMayor={() => room?.send("setMayor", { targetUserId: player.userId })}
-                />
-              ))
-            : null}
-        </div>
+        <h2 className="mt-3 text-3xl font-black">Пулсът на стаята</h2>
 
         {phase === "day_discussion" && snapshot?.communicationMode === "built_in_chat" ? (
           ownPlayer?.playing && ownPlayer?.alive ? (
