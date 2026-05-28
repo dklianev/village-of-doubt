@@ -1,4 +1,4 @@
-/* Leaderboard newspaper styles moved out of globals.css. */
+/* Legacy visual island. Fidelity target: 69bbcca8. Do not migrate to primitives without design approval. */
 
 :global(.newspaper-shell) {
   display: grid;
@@ -46,10 +46,6 @@
   font-family: "Noto Serif", "Times New Roman", serif;
 }
 
-:global(.leaderboard-hero-frame) {
-  margin-bottom: 32px;
-}
-
 :global(.masthead) {
   display: grid;
   justify-items: center;
@@ -61,28 +57,18 @@
   text-align: center;
 }
 
-:global(.masthead-primitive) {
-  margin-bottom: 0;
-  border-bottom: 0;
-  padding-bottom: 0;
-  color: var(--ds-ink-scene);
-}
-
-:global(.masthead-primitive .masthead-ornament) {
-  color: var(--ds-accent-gold);
-}
-
-:global(.masthead-primitive h1) {
-  text-align: center;
-  text-transform: uppercase;
-}
-
-:global(.masthead-primitive .masthead-meta) {
-  color: var(--ds-ink-scene-soft);
-}
-
 :global(.masthead-ornament) {
   color: #842f2b;
+}
+
+:global(.masthead-title) {
+  color: #1a1410;
+  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-size: 3.25rem;
+  font-weight: 950;
+  letter-spacing: 0;
+  line-height: 1.05;
+  text-transform: uppercase;
 }
 
 :global(.masthead-meta) {
@@ -117,17 +103,6 @@
   letter-spacing: 0;
   line-height: 1.04;
   text-transform: uppercase;
-}
-
-:global(.headline-main-title h2) {
-  color: inherit;
-  font-size: inherit;
-  text-transform: inherit;
-}
-
-:global(.leaderboard-empty-state) {
-  max-width: 680px;
-  margin: 0 auto;
 }
 
 :global(.headline-main-grid) {
@@ -364,6 +339,30 @@
   color: #842f2b;
 }
 
+:global(.newspaper-page-empty .empty-headline) {
+  display: grid;
+  justify-items: center;
+  gap: 18px;
+  padding: 48px 16px 24px;
+  text-align: center;
+}
+
+:global(.empty-lede) {
+  max-width: 38ch;
+  color: rgba(26, 20, 16, 0.85);
+  font-size: 1.05rem;
+  font-style: italic;
+  line-height: 1.7;
+}
+
+:global(.empty-cta) {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
 :global(.newspaper-skeleton .skeleton) {
   background: linear-gradient(90deg, rgba(90, 62, 32, 0.12), rgba(90, 62, 32, 0.24), rgba(90, 62, 32, 0.12));
 }
@@ -385,13 +384,19 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.58);
 }
 
-@media (max-width: 1023px) {:global(.classifieds-list) {
+@media (max-width: 1023px) {
+  :global(.classifieds-list) {
     column-count: 2;
   }
 }
 
-@media (max-width: 767px) {:global(.newspaper-page) {
+@media (max-width: 767px) {
+  :global(.newspaper-page) {
     padding: 32px 22px 40px;
+  }
+
+  :global(.masthead-title) {
+    font-size: 2.35rem;
   }
 
   :global(.masthead-meta) {
@@ -403,7 +408,7 @@
   }
 
   :global(.headline-main-grid),
-:global(.secondary-stories) {
+  :global(.secondary-stories) {
     grid-template-columns: 1fr;
   }
 
@@ -421,7 +426,8 @@
   }
 }
 
-@media (max-width: 639px) {:global(.newspaper-shell) {
+@media (max-width: 639px) {
+  :global(.newspaper-shell) {
     width: min(calc(100vw - 16px), 1160px);
     margin-top: 12px;
     padding: 8px;
