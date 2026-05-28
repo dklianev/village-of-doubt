@@ -291,7 +291,7 @@
 
 :global(.play-table) {
   position: absolute;
-  inset: clamp(118px, 14vw, 154px) clamp(18px, 3vw, 42px) clamp(28px, 4vw, 48px);
+  inset: clamp(178px, 16vw, 216px) clamp(18px, 3vw, 42px) clamp(28px, 4vw, 48px);
   z-index: 1;
   isolation: isolate;
 }
@@ -733,7 +733,7 @@
 }
 
 :global(.play-stage[data-seat-density="full"] .play-seat) {
-  width: clamp(126px, 11vw, 158px);
+  width: clamp(118px, 9.8vw, 140px);
 }
 
 :global(.play-stage[data-seat-density="crowded"]) {
@@ -741,7 +741,7 @@
 }
 
 :global(.play-stage[data-seat-density="crowded"] .play-seat) {
-  width: clamp(104px, 9.4vw, 132px);
+  width: clamp(96px, 8.5vw, 118px);
 }
 
 :global(.play-stage .player-token) {
@@ -1417,7 +1417,7 @@
   :global(.play-stage) {
     grid-area: stage;
     height: 100%;
-    min-height: clamp(610px, calc(100svh - 280px), 790px);
+    min-height: clamp(720px, calc(100svh - 110px), 860px);
   }
 
   :global(.play-action-dock) {
@@ -1428,7 +1428,7 @@
   :global(.play-players-panel) {
     grid-area: rail;
     height: 100%;
-    max-height: calc(100svh - 170px);
+    max-height: calc(100svh - 110px);
     align-self: stretch;
     overflow: auto;
     overscroll-behavior: contain;

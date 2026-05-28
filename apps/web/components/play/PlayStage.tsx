@@ -106,7 +106,7 @@ export function PlayStage({
             </div>
           ) : null}
           {seatedPlayers.map((player, index) => {
-            const seatAngle = (360 / seatCount) * index - 90;
+            const seatAngle = getSeatAngle(index, seatCount);
             const seatState = getSeatState(player, phase);
             const targetable = targetableIds.has(player.userId);
             const selected = selectedTargetId === player.userId;
@@ -158,6 +158,15 @@ export function PlayStage({
       </div>
     </section>
   );
+}
+
+function getSeatAngle(index: number, seatCount: number) {
+  if (seatCount <= 1) {
+    return 180;
+  }
+
+  const [start, end] = seatCount <= 2 ? [120, 240] : seatCount <= 4 ? [90, 270] : [70, 290];
+  return start + ((end - start) / (seatCount - 1)) * index;
 }
 
 function getSeatState(player: PublicPlayer, phase: GamePhase) {
