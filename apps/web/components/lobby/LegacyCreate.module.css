@@ -1296,8 +1296,8 @@
 }
 
 :global(.preview-warning.is-clean) {
-  background: var(--accent-faction-tint);
-  color: var(--accent-faction-bright);
+  background: rgba(44, 120, 74, 0.14);
+  color: #1f6f47;
 }
 
 :global(.preview-stat-list div),
