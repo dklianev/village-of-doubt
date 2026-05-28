@@ -229,8 +229,8 @@ describe("PlayRoomClient orchestrator", () => {
 
       render(<PlayRoomClient code="ABCD" createOptions={{ mode: "werewolves_classic" }} />);
 
-      expect(screen.getByText(/стая ABCD/i)).toBeInTheDocument();
-      expect(screen.getByText("Играч")).toBeInTheDocument();
+      expect(screen.getAllByText(/стая ABCD/i).length).toBeGreaterThan(0);
+      expect(screen.getAllByText("Играч").length).toBeGreaterThan(0);
     },
   );
 

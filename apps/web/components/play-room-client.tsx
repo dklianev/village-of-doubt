@@ -41,6 +41,7 @@ import { DeathRevealCinematic } from "@/components/play/DeathRevealCinematic";
 import { PhaseRail } from "@/components/play/PhaseRail";
 import { PhaseTransitionOverlay } from "@/components/play/PhaseTransitionOverlay";
 import { PlayerTile } from "@/components/play/PlayerTile";
+import { PlayStage } from "@/components/play/PlayStage";
 import { PostGameStory } from "@/components/play/PostGameStory";
 import { PreGameCountdown } from "@/components/play/PreGameCountdown";
 import { ReconnectModal } from "@/components/play/ReconnectModal";
@@ -528,9 +529,24 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
         <AchievementUnlockModal achievementIds={unlockedAchievementIds} onClose={() => setUnlockedAchievementIds([])} />
       ) : null}
       <div className="framed-shell-inner play-shell-inner">
-      <section className="play-layout">
-        <div className="card play-main-stack play-section rounded-[2rem] p-5 md:p-7">
-          <ConnectionBanner status={connectionStatus} message={status} />
+        <section className="play-layout">
+          <PlayStage
+            code={code}
+            phase={phase}
+            mode={mode}
+            family={family}
+            round={snapshot?.round ?? 0}
+            phaseEndsAt={snapshot?.phaseEndsAt ?? 0}
+            players={players}
+            hasSnapshot={Boolean(snapshot)}
+            narratorMode={snapshot?.narratorMode ?? "automatic"}
+            communicationMode={snapshot?.communicationMode ?? "built_in_chat"}
+            ownPlayer={ownPlayer}
+            onMakeNarrator={(targetUserId) => room?.send("setNarrator", { targetUserId, narrator: true })}
+            onMakeMayor={(targetUserId) => room?.send("setMayor", { targetUserId })}
+          />
+          <div className="card play-main-stack play-section rounded-[2rem] p-5 md:p-7">
+            <ConnectionBanner status={connectionStatus} message={status} />
 
           <div className="phase-hero">
             <div>
