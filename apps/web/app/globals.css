@@ -3285,6 +3285,13 @@ html[data-vt="theme"]::view-transition-new(root) {
   }
 }
 
+:root {
+  --play-moon-breathe-animation: play-moon-breathe 11s ease-in-out infinite alternate;
+  --play-fog-drift-animation: play-fog-drift 38s ease-in-out infinite alternate;
+  --play-blinds-drift-animation: play-blinds-drift 26s linear infinite;
+  --play-lamp-flicker-animation: play-lamp-flicker 7.5s ease-in-out infinite alternate;
+}
+
 @media (max-width: 760px) {
   .shell {
     width: min(calc(100vw - 20px), 1180px);
