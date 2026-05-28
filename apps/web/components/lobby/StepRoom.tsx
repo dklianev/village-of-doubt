@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useRef, type Dispatch } from "react";
 import {
   GAME_MODE_DEFINITIONS,
@@ -9,7 +7,6 @@ import {
   type GameMode,
   type TempoProfile,
 } from "@werewolf/shared";
-import { PaperCard } from "@werewolf/ui";
 import {
   availableModes,
   boundedPlayerCount,
@@ -60,42 +57,41 @@ export function StepRoom({
 
   return (
     <section className="lobby-step lobby-step-room" aria-labelledby="step-room-title">
-      <PaperCard eyebrow="СТЪПКА 1 / 4 · СТАЯ" density="md">
-        <div className="lobby-step-paper">
-          <div className="lobby-step-heading">
-            <h1 id="step-room-title">Създай игра без чудене</h1>
-            <p className="step-lede">Започни с готова рецепта или настрой стаята ръчно под нея.</p>
-          </div>
+      <div className="lobby-step-heading">
+        <p className="step-eyebrow">Стъпка 1 / 4 · Стая</p>
+        <h1 id="step-room-title">Създай игра без чудене</h1>
+        <p className="step-lede">Започни с готова рецепта или настрой стаята ръчно под нея.</p>
+      </div>
 
-          <QuickStartRow state={state} dispatch={dispatch} />
+      <QuickStartRow state={state} dispatch={dispatch} />
 
-          <div className="lobby-field-grid">
-            <Field
-              label="Име на стаята"
-              hint="Може да го смениш преди поканата."
-              actionLabel="Ново име на стаята"
-              onAction={() => dispatch({ type: "SET_ROOM_NAME", roomName: randomRoomName(state.family) })}
-            >
-              <input
-                className="field-input"
-                ref={roomNameRef}
-                value={state.roomName}
-                maxLength={42}
-                onChange={(event) => dispatch({ type: "SET_ROOM_NAME", roomName: event.target.value })}
-              />
-            </Field>
+      <div className="lobby-field-grid">
+        <Field
+          label="Име на стаята"
+          hint="Може да го смениш преди поканата."
+          actionLabel="Ново име на стаята"
+          onAction={() => dispatch({ type: "SET_ROOM_NAME", roomName: randomRoomName(state.family) })}
+        >
+          <input
+            className="field-input"
+            ref={roomNameRef}
+            value={state.roomName}
+            maxLength={42}
+            onChange={(event) => dispatch({ type: "SET_ROOM_NAME", roomName: event.target.value })}
+          />
+        </Field>
 
-            <Field label="Код" hint="6 символа, споделим лесно." actionLabel="Нов код" onAction={() => dispatch({ type: "SET_CODE", code: createRoomCode() })}>
-              <input
-                className="field-input"
-                value={state.code}
-                maxLength={ROOM_CODE_LENGTH}
-                onChange={(event) => dispatch({ type: "SET_CODE", code: cleanRoomCode(event.target.value) })}
-              />
-            </Field>
-          </div>
+        <Field label="Код" hint="6 символа, споделим лесно." actionLabel="Нов код" onAction={() => dispatch({ type: "SET_CODE", code: createRoomCode() })}>
+          <input
+            className="field-input"
+            value={state.code}
+            maxLength={ROOM_CODE_LENGTH}
+            onChange={(event) => dispatch({ type: "SET_CODE", code: cleanRoomCode(event.target.value) })}
+          />
+        </Field>
+      </div>
 
-          <section className="lobby-panel">
+      <section className="lobby-panel">
         <div className="lobby-panel-title">
           <h2>Режим</h2>
           {state.lockedFamily ? <span className="locked-mode-badge">{getGameModeNameBg(state.mode)}</span> : null}
@@ -117,9 +113,9 @@ export function StepRoom({
             ))}
           </div>
         )}
-          </section>
+      </section>
 
-          <section className="lobby-panel">
+      <section className="lobby-panel">
         <div className="lobby-panel-title">
           <h2>Брой играчи</h2>
           <span className="player-count-badge">{players} играчи</span>
@@ -133,7 +129,6 @@ export function StepRoom({
             </button>
             <input
               type="range"
-              aria-label="Брой играчи"
               min={range.min}
               max={range.max}
               value={players}
@@ -149,9 +144,9 @@ export function StepRoom({
             <i key={index} data-filled={index < players} />
           ))}
         </div>
-          </section>
+      </section>
 
-          <section className="lobby-panel">
+      <section className="lobby-panel">
         <div className="lobby-panel-title">
           <h2>Темпо</h2>
           <span className="player-count-badge">{tempoSummary(timersForState(state))}</span>
@@ -179,9 +174,7 @@ export function StepRoom({
           )}
         </div>
         {state.tempoProfile === "manual" && state.mode !== "mafia_sport" ? <ManualTempoPanel state={state} dispatch={dispatch} /> : null}
-          </section>
-        </div>
-      </PaperCard>
+      </section>
     </section>
   );
 }

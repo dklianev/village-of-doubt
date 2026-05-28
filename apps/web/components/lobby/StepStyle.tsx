@@ -1,6 +1,5 @@
 import type { Dispatch } from "react";
 import { NARRATOR_VOICE_LABELS_BG, type CommunicationMode, type NarratorMode, type NarratorVoice } from "@werewolf/shared";
-import { PaperCard } from "@werewolf/ui";
 import type { LobbyFormAction, LobbyFormState } from "@/lib/lobby-form";
 import { AdvancedDrawer } from "@/components/lobby/AdvancedDrawer";
 import { playCue } from "@/lib/sound";
@@ -33,14 +32,13 @@ export function StepStyle({
 }) {
   return (
     <section className="lobby-step lobby-step-style" aria-labelledby="step-style-title">
-      <PaperCard eyebrow="СТЪПКА 3 / 4 · СТИЛ" density="md">
-        <div className="lobby-step-paper">
-          <div className="lobby-step-heading">
-            <h1 id="step-style-title">Стил на водене</h1>
-            <p>Избери колко автоматична да бъде играта и как да общуват играчите.</p>
-          </div>
+      <div className="lobby-step-heading">
+        <p className="section-kicker">стъпка 3</p>
+        <h1 id="step-style-title">Стил на водене</h1>
+        <p>Избери колко автоматична да бъде играта и как да общуват играчите.</p>
+      </div>
 
-          <section className="lobby-panel">
+      <section className="lobby-panel">
         <div className="lobby-panel-title">
           <h2>Разказвач</h2>
         </div>
@@ -63,10 +61,10 @@ export function StepStyle({
             Пълен Разказвач вижда всички роли и действия. Играчите ще трябва да го приемат съзнателно преди старт.
           </p>
         ) : null}
-          </section>
+      </section>
 
-          {state.narratorMode === "automatic" ? (
-            <section className="lobby-panel">
+      {state.narratorMode === "automatic" ? (
+        <section className="lobby-panel">
           <div className="lobby-panel-title">
             <h2>Глас</h2>
           </div>
@@ -88,10 +86,10 @@ export function StepStyle({
               </button>
             ))}
           </div>
-            </section>
-          ) : null}
+        </section>
+      ) : null}
 
-          <section className="lobby-panel">
+      <section className="lobby-panel">
         <div className="lobby-panel-title">
           <h2>Комуникация</h2>
         </div>
@@ -109,11 +107,9 @@ export function StepStyle({
             </button>
           ))}
         </div>
-          </section>
+      </section>
 
-          <AdvancedDrawer state={state} dispatch={dispatch} />
-        </div>
-      </PaperCard>
+      <AdvancedDrawer state={state} dispatch={dispatch} />
     </section>
   );
 }

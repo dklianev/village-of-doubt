@@ -1,4 +1,4 @@
-/* Route-local styles for the create/lobby wizard.
+/* Legacy visual island. Fidelity target: 69bbcca8. Do not migrate to primitives without design approval.
  * Keyframes and root view-transition selectors stay in app/globals.css.
  */
 
@@ -9,59 +9,6 @@
   width: 100%;
   margin: 0 auto;
   padding: clamp(20px, 4vw, 52px) 0 96px;
-}
-
-:global(.lobby-wizard-frame) {
-  min-width: 0;
-}
-
-.wizardFrame [data-ds-scene-card] {
-  border: 1px solid rgba(248, 236, 210, 0.16);
-  height: 100%;
-  box-shadow:
-    0 24px 56px -28px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  transition:
-    border-color 220ms ease,
-    box-shadow 220ms ease;
-}
-
-:where([data-faction="werewolves"]) .wizardFrame [data-ds-scene-card] {
-  border-color: oklch(0.55 0.10 145 / 0.35);
-  box-shadow:
-    0 26px 62px -30px oklch(0.20 0.05 60 / 0.52),
-    0 0 0 1px oklch(0.55 0.10 145 / 0.09),
-    inset 0 1px 0 oklch(1 0 0 / 0.06);
-}
-
-:where([data-faction="mafia"]) .wizardFrame [data-ds-scene-card] {
-  border-color: oklch(0.50 0.155 25 / 0.35);
-  box-shadow:
-    0 26px 62px -30px oklch(0.20 0.05 60 / 0.52),
-    0 0 0 1px oklch(0.50 0.155 25 / 0.1),
-    inset 0 1px 0 oklch(1 0 0 / 0.06);
-}
-
-.wizardFrame [data-ds-scene-card] > div {
-  gap: 22px;
-}
-
-html[data-theme="light"] .wizardFrame [data-ds-scene-card] {
-  background:
-    radial-gradient(circle at 50% 0%, oklch(1 0 0 / 0.32), transparent 32rem),
-    linear-gradient(145deg, oklch(0.96 0.018 82 / 0.78), oklch(0.88 0.04 76 / 0.46)) !important;
-  border-color: oklch(0.72 0.075 70 / 0.28);
-  color: var(--ds-ink-primary);
-  box-shadow:
-    0 28px 70px -38px oklch(0.24 0.045 55 / 0.48),
-    inset 0 1px 0 oklch(1 0 0 / 0.5);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-
-html[data-theme="light"] .wizardFrame [data-ds-scene-card-background] {
-  opacity: 0.34;
-  filter: saturate(0.82) brightness(1.18);
 }
 
 :global(.lobby-wizard-main),
@@ -81,6 +28,16 @@ html[data-theme="light"] .wizardFrame [data-ds-scene-card-background] {
   box-shadow: inset 0 1px rgba(255, 255, 255, 0.08);
 }
 
+:global(.lobby-step-nav) {
+  display: grid;
+  gap: 14px;
+  border-radius: 28px;
+  padding: 14px;
+  background: rgba(8, 10, 10, 0.46);
+}
+
+:global(.lobby-step-nav ol),
+:global(.lobby-step-actions),
 :global(.preview-action-row),
 :global(.quick-start-row),
 :global(.preset-chips),
@@ -92,20 +49,68 @@ html[data-theme="light"] .wizardFrame [data-ds-scene-card-background] {
   flex-wrap: wrap;
 }
 
+:global(.lobby-step-nav ol) {
+  justify-content: space-between;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+:global(.lobby-step-nav li) {
+  flex: 1 1 120px;
+}
+
+:global(.lobby-step-nav button[data-status]) {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: 1px solid rgba(248, 236, 210, 0.14);
+  border-radius: 999px;
+  padding: 8px 10px;
+  background: rgba(248, 236, 210, 0.06);
+  color: #ead9ba;
+  cursor: pointer;
+  font-weight: 850;
+}
+
+:global(.lobby-step-nav button[data-status] span) {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: rgba(248, 236, 210, 0.12);
+  color: #fff6e5;
+}
+
+:global(.lobby-step-nav button[data-status="active"]) {
+  border-color: rgba(209, 154, 66, 0.58);
+  background: rgba(209, 154, 66, 0.16);
+  color: #fff6e5;
+}
+
+:global(.lobby-step-nav button[data-status="active"] span),
 :global(.player-count-control button),
 :global(.role-tile-controls button) {
-  background: var(--ds-accent-faction);
+  background: var(--gold);
   color: var(--ink);
+}
+
+:global(.lobby-step-nav button[data-status="future"]) {
+  opacity: 0.45;
+}
+
+:global(.lobby-step-actions) {
+  justify-content: flex-end;
 }
 
 :global(.lobby-step-pane) {
   display: grid;
   align-items: start;
-  border-radius: 32px;
+  border-radius: 28px;
   padding: clamp(18px, 3vw, 34px);
-  background:
-    radial-gradient(circle at 10% 0%, rgba(209, 154, 66, 0.16), transparent 24rem),
-    linear-gradient(145deg, rgba(8, 10, 10, 0.72), rgba(248, 236, 210, 0.06));
+  background: rgba(8, 10, 10, 0.46);
   min-height: clamp(560px, 70vh, 880px);
   contain: layout paint;
 }
@@ -148,22 +153,6 @@ html[data-theme="light"] .wizardFrame [data-ds-scene-card-background] {
 
 :global(.lobby-step) {
   gap: 22px;
-}
-
-:global(.lobby-step-paper) {
-  display: grid;
-  gap: 22px;
-  color: var(--ds-ink-primary);
-}
-
-:global(.lobby-step-paper .lobby-step-heading h1) {
-  color: var(--ds-ink-primary);
-  text-shadow: none;
-}
-
-:global(.lobby-step-paper .lobby-step-heading p:not(.section-kicker)),
-:global(.lobby-step-paper .step-lede) {
-  color: var(--ds-ink-soft);
 }
 
 :global(.lobby-step-room) {
@@ -436,72 +425,12 @@ html[data-theme="light"] .wizardFrame [data-ds-scene-card-background] {
   font-weight: 750;
 }
 
-html[data-theme="light"] :global(.mode-tile-card),
-html[data-theme="light"] :global(.tempo-tile),
-html[data-theme="light"] :global(.narrator-tile),
-html[data-theme="light"] :global(.communication-tile),
-html[data-theme="light"] :global(.voice-tile),
-html[data-theme="light"] :global(.quick-start-row button) {
-  border-color: rgba(85, 54, 33, 0.14);
-  background:
-    radial-gradient(circle at 16% 0%, rgba(255, 255, 255, 0.4), transparent 14rem),
-    linear-gradient(145deg, rgba(255, 250, 238, 0.86), rgba(231, 207, 164, 0.52));
-  color: #2a1b10;
-  box-shadow:
-    0 10px 24px rgba(67, 39, 24, 0.1),
-    inset 0 1px rgba(255, 255, 255, 0.7);
-}
 
-html[data-theme="light"] :global(.mode-tile-card[data-active="true"]),
-html[data-theme="light"] :global(.tempo-tile[data-active="true"]),
-html[data-theme="light"] :global(.narrator-tile[data-active="true"]),
-html[data-theme="light"] :global(.communication-tile[data-active="true"]),
-html[data-theme="light"] :global(.voice-tile[data-active="true"]),
-html[data-theme="light"] :global(.preset-chips button[data-active="true"]) {
-  border-color: rgba(169, 111, 34, 0.64);
-  background:
-    radial-gradient(circle at 0% 0%, rgba(169, 111, 34, 0.18), transparent 14rem),
-    linear-gradient(145deg, rgba(255, 250, 238, 0.9), rgba(231, 207, 164, 0.58));
-  color: #24160f;
-}
 
-html[data-theme="light"] :global(.mode-tile-card strong),
-html[data-theme="light"] :global(.tempo-tile strong),
-html[data-theme="light"] :global(.narrator-tile strong),
-html[data-theme="light"] :global(.communication-tile strong),
-html[data-theme="light"] :global(.voice-tile strong),
-html[data-theme="light"] :global(.quick-start-row strong) {
-  color: #24160f;
-}
 
-html[data-theme="light"] :global(.mode-tile-card small),
-html[data-theme="light"] :global(.tempo-tile small),
-html[data-theme="light"] :global(.narrator-tile span),
-html[data-theme="light"] :global(.communication-tile span),
-html[data-theme="light"] :global(.voice-tile span),
-html[data-theme="light"] :global(.quick-start-row span) {
-  color: rgba(42, 27, 16, 0.72);
-}
 
-html[data-theme="light"] :global(.locked-mode-badge),
-html[data-theme="light"] :global(.player-count-badge),
-html[data-theme="light"] :global(.preview-summary-chip) {
-  background: oklch(0.86 0.055 78 / 0.58);
-  color: #5d351c;
-}
 
-html[data-theme="light"] :global(.locked-mode-card),
-html[data-theme="light"] :global(.fixed-player-count) {
-  border-color: oklch(0.72 0.075 70 / 0.38);
-  background:
-    radial-gradient(circle at 0% 0%, oklch(0.82 0.095 72 / 0.16), transparent 12rem),
-    oklch(0.98 0.014 84 / 0.66);
-  color: #24160f;
-}
 
-html[data-theme="light"] :global(.locked-mode-card span) {
-  color: rgba(42, 27, 16, 0.72);
-}
 
 :global(.manual-tempo-panel) {
   display: grid;
@@ -989,88 +918,17 @@ html[data-theme="light"] :global(.locked-mode-card span) {
   background: rgba(132, 47, 43, 0.22);
 }
 
-html[data-theme="light"] :global(.lobby-step-pane) {
-  border-color: rgba(85, 54, 33, 0.13);
-  background:
-    radial-gradient(circle at 10% 0%, rgba(169, 111, 34, 0.14), transparent 24rem),
-    linear-gradient(145deg, rgba(255, 250, 238, 0.78), rgba(231, 207, 164, 0.34));
-  box-shadow:
-    0 22px 54px rgba(67, 39, 24, 0.12),
-    inset 0 1px rgba(255, 255, 255, 0.62);
-}
 
-html[data-theme="light"] :global(.lobby-step-room .lobby-panel),
-html[data-theme="light"] :global(.advanced-panel) {
-  border-color: rgba(85, 54, 33, 0.13);
-  background:
-    radial-gradient(circle at 100% 0%, rgba(169, 111, 34, 0.12), transparent 18rem),
-    linear-gradient(180deg, rgba(255, 250, 238, 0.82), rgba(231, 207, 164, 0.42));
-}
 
-html[data-theme="light"] :global(.create-recipes-heading h2) {
-  color: #24160f;
-}
 
-html[data-theme="light"] :global(.create-recipes-heading p:not(.section-kicker)),
-html[data-theme="light"] :global(.lobby-field small),
-html[data-theme="light"] :global(.field-hint) {
-  color: rgba(42, 27, 16, 0.72);
-}
 
-html[data-theme="light"] :global(.lobby-step-room .create-recipe-card) {
-  border-color: rgba(85, 54, 33, 0.15);
-  background:
-    radial-gradient(circle at 14% 0%, rgba(255, 255, 255, 0.42), transparent 14rem),
-    linear-gradient(145deg, rgba(255, 250, 238, 0.86), rgba(231, 207, 164, 0.58));
-  box-shadow:
-    0 14px 28px rgba(67, 39, 24, 0.14),
-    inset 0 1px rgba(255, 255, 255, 0.72);
-}
 
-html[data-theme="light"] :global(.lobby-step-room .create-recipe-card:hover),
-html[data-theme="light"] :global(.lobby-step-room .create-recipe-card:focus-visible) {
-  border-color: rgba(169, 111, 34, 0.56);
-  box-shadow:
-    0 18px 38px rgba(67, 39, 24, 0.18),
-    0 0 0 3px rgba(169, 111, 34, 0.11),
-    inset 0 1px rgba(255, 255, 255, 0.76);
-}
 
-html[data-theme="light"] :global(.lobby-step-room .create-recipe-card[data-active="true"]),
-html[data-theme="light"] :global(.lobby-step-room .create-recipe-card[data-featured="true"]) {
-  border-color: rgba(169, 111, 34, 0.62);
-  background:
-    radial-gradient(circle at 14% 0%, rgba(169, 111, 34, 0.18), transparent 14rem),
-    linear-gradient(145deg, rgba(255, 250, 238, 0.9), rgba(231, 207, 164, 0.64));
-}
 
-html[data-theme="light"] :global(.lobby-step-room .create-recipe-card[data-family="mafia"][data-featured="true"]) {
-  border-color: rgba(141, 47, 41, 0.54);
-  background:
-    radial-gradient(circle at 14% 0%, rgba(141, 47, 41, 0.14), transparent 14rem),
-    linear-gradient(145deg, rgba(255, 250, 238, 0.9), rgba(231, 207, 164, 0.6));
-}
 
-html[data-theme="light"] :global(.lobby-step-room .create-recipe-card strong) {
-  color: #24160f;
-}
 
-html[data-theme="light"] :global(.lobby-step-room .create-recipe-card span:not(.create-recipe-eyebrow)),
-html[data-theme="light"] :global(.lobby-step-room .create-recipe-card small) {
-  color: rgba(42, 27, 16, 0.74);
-}
 
-html[data-theme="light"] :global(.lobby-step-room .create-recipe-card b) {
-  border-color: rgba(169, 111, 34, 0.34);
-  background: rgba(169, 111, 34, 0.12);
-  color: #5d3a15;
-}
 
-html[data-theme="light"] :global(.lobby-step-room .create-recipe-card[data-family="mafia"] b) {
-  border-color: rgba(141, 47, 41, 0.32);
-  background: rgba(141, 47, 41, 0.1);
-  color: #7b1f1b;
-}
 
 :global(.advanced-panel-note) {
   color: #ead9ba;
@@ -1079,9 +937,6 @@ html[data-theme="light"] :global(.lobby-step-room .create-recipe-card[data-famil
   line-height: 1.45;
 }
 
-html[data-theme="light"] :global(.advanced-panel-note) {
-  color: rgba(42, 27, 16, 0.72);
-}
 
 :global(.advanced-drawer) {
   border-radius: 24px;

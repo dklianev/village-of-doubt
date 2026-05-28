@@ -1,5 +1,3 @@
-"use client";
-
 import { memo, useCallback, type Dispatch } from "react";
 import { roleWarnings, type LobbyFormAction, type LobbyFormState } from "@/lib/lobby-form";
 import { StickyPreview } from "@/components/lobby/StickyPreview";

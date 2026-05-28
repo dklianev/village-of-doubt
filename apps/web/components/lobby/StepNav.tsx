@@ -1,18 +1,12 @@
-"use client";
-
 import { useEffect, type Dispatch } from "react";
-import { Pill } from "@werewolf/ui";
 import type { LobbyFormAction, LobbyFormState, LobbyStep } from "@/lib/lobby-form";
-import styles from "./StepNav.module.css";
 
-const STEPS: { step: LobbyStep; numeral: string; label: string }[] = [
-  { step: 1, numeral: "I", label: "Стая" },
-  { step: 2, numeral: "II", label: "Роли" },
-  { step: 3, numeral: "III", label: "Стил" },
-  { step: 4, numeral: "IV", label: "Преглед" },
+const STEPS: { step: LobbyStep; label: string }[] = [
+  { step: 1, label: "Стая" },
+  { step: 2, label: "Роли" },
+  { step: 3, label: "Стил" },
+  { step: 4, label: "Преглед" },
 ];
-
-type StepStatus = "active" | "visited" | "future";
 
 export function StepNav({
   state,
@@ -52,16 +46,15 @@ export function StepNav({
   }, [canAdvance, dispatch, onAdvanceBlocked, transition]);
 
   return (
-    <nav className={styles.stepNav} aria-label="Стъпки за създаване на стая">
-      <ol className={styles.stepList}>
-        {STEPS.map(({ step, numeral, label }) => {
-          const status: StepStatus = step === state.step ? "active" : step <= state.visitedStep ? "visited" : "future";
+    <nav className="lobby-step-nav" aria-label="Стъпки за създаване на стая">
+      <ol>
+        {STEPS.map(({ step, label }) => {
+          const status = step === state.step ? "active" : step <= state.visitedStep ? "visited" : "future";
           const disabled = status === "future";
           return (
-            <li key={step} className={styles.stepItem}>
+            <li key={step}>
               <button
                 type="button"
-                className={styles.stepChip}
                 data-status={status}
                 disabled={disabled}
                 aria-current={status === "active" ? "step" : undefined}
@@ -72,27 +65,26 @@ export function StepNav({
                   transition(() => dispatch({ type: "SET_STEP", step }));
                 }}
               >
-                <span className={styles.stepNumeral} aria-hidden="true">
-                  {status === "visited" ? "✓" : numeral}
-                </span>
-                <span className={styles.stepLabel}>{label}</span>
+                <span>{step}</span>
+                <strong>{label}</strong>
               </button>
             </li>
           );
         })}
       </ol>
 
-      <div className={styles.stepActions}>
-        <Pill
-          intent="secondary"
+      <div className="lobby-step-actions">
+        <button
+          type="button"
+          className="btn btn-secondary"
           disabled={state.step === 1}
           onClick={() => transition(() => dispatch({ type: "PREVIOUS_STEP" }))}
         >
           Назад
-        </Pill>
-        <Pill
-          intent="faction"
-          shimmer
+        </button>
+        <button
+          type="button"
+          className="btn btn-primary"
           disabled={isLast}
           onClick={() => {
             if (!canAdvance) {
@@ -103,7 +95,7 @@ export function StepNav({
           }}
         >
           Напред
-        </Pill>
+        </button>
       </div>
     </nav>
   );
