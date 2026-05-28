@@ -2829,6 +2829,26 @@ html[data-theme="light"] .play-players-panel .chat-line {
   }
 }
 
+@keyframes mafia-blinds-drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(42px, 0, 0);
+  }
+}
+
+@keyframes mafia-lamp-flicker {
+  from {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+}
+
 ::view-transition-old(lobby-step),
 ::view-transition-new(lobby-step) {
   animation-duration: 260ms;

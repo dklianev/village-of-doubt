@@ -58,6 +58,33 @@
   animation: wolf-fog-drift 38s ease-in-out infinite alternate;
 }
 
+:global(.lobby-wizard[data-faction="mafia"]::before) {
+  inset: clamp(-32px, -4vw, -12px) -42px;
+  background: repeating-linear-gradient(
+    118deg,
+    transparent 0 38px,
+    rgba(255, 226, 180, 0.055) 38px 42px
+  );
+  opacity: 0.88;
+  transform: translate3d(0, 0, 0);
+  animation: mafia-blinds-drift 26s linear infinite;
+}
+
+:global(.lobby-wizard[data-faction="mafia"]::after) {
+  inset: clamp(-28px, -4vw, -10px);
+  background:
+    radial-gradient(ellipse at 16% 6%, rgba(190, 95, 42, 0.15), transparent 55%),
+    radial-gradient(
+      ellipse 112% 86% at 50% 52%,
+      transparent 0%,
+      transparent 48%,
+      rgba(123, 31, 27, 0.13) 78%,
+      rgba(58, 14, 17, 0.3) 100%
+    );
+  opacity: 0.9;
+  animation: mafia-lamp-flicker 7.5s ease-in-out infinite alternate;
+}
+
 :global(.lobby-wizard-main),
 :global(.lobby-step),
 :global(.preview-stat-list),
