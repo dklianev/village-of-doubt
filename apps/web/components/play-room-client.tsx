@@ -68,6 +68,8 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
   const [chatMessage, setChatMessage] = useState("");
   const [privateChatMessage, setPrivateChatMessage] = useState("");
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [actionDockExpanded, setActionDockExpanded] = useState(true);
+  const [mobileRailTab, setMobileRailTab] = useState<"events" | "chat">("events");
   const suppressNextPhasePulseRef = useRef(false);
   const lastTypingSentRef = useRef<Map<ChatChannel, number>>(new Map());
   const shortcutStateRef = useRef<ShortcutState | null>(null);
@@ -482,55 +484,76 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
 
         <DeathRevealCinematic players={players} />
 
-        {phase === "day_discussion" && snapshot?.communicationMode === "built_in_chat" ? (
-          ownPlayer?.playing && ownPlayer?.alive ? (
-            <form className="mt-8 grid gap-3" onSubmit={sendChat}>
-              <h3 className="play-panel-subhead">
-                <MessageSquare className="play-section-icon" aria-hidden strokeWidth={1.8} />
-                <span>Дневен чат</span>
-              </h3>
-              <div className="grid gap-1">
-                <input
-                  className="input"
-                  value={chatMessage}
-                  onChange={(event) => updatePublicChatMessage(event.target.value)}
-                  placeholder="Напиши обвинение, защита или блъф..."
-                  maxLength={500}
-                  aria-describedby="chat-counter"
-                />
-                <span
-                  id="chat-counter"
-                  className={`text-right text-xs ${chatMessage.length >= 480 ? "text-[#c18a38]" : "text-[#ead9ba]/60"}`}
-                >
-                  {chatMessage.length}/500
+        <div className="play-rail-tabs" role="tablist" aria-label="Хроника и чат">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mobileRailTab === "events"}
+            onClick={() => setMobileRailTab("events")}
+          >
+            Събития
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mobileRailTab === "chat"}
+            onClick={() => setMobileRailTab("chat")}
+          >
+            Чат
+          </button>
+        </div>
+
+        <div className="play-rail-panel" data-mobile-panel="chat" data-active={mobileRailTab === "chat" ? "true" : undefined}>
+          {phase === "day_discussion" && snapshot?.communicationMode === "built_in_chat" ? (
+            ownPlayer?.playing && ownPlayer?.alive ? (
+              <form className="mt-8 grid gap-3" onSubmit={sendChat}>
+                <h3 className="play-panel-subhead">
+                  <MessageSquare className="play-section-icon" aria-hidden strokeWidth={1.8} />
+                  <span>Дневен чат</span>
+                </h3>
+                <div className="grid gap-1">
+                  <input
+                    className="input"
+                    value={chatMessage}
+                    onChange={(event) => updatePublicChatMessage(event.target.value)}
+                    placeholder="Напиши обвинение, защита или блъф..."
+                    maxLength={500}
+                    aria-describedby="chat-counter"
+                  />
+                  <span
+                    id="chat-counter"
+                    className={`text-right text-xs ${chatMessage.length >= 480 ? "text-[#c18a38]" : "text-[#ead9ba]/60"}`}
+                  >
+                    {chatMessage.length}/500
+                  </span>
+                </div>
+                <TypingIndicator notices={publicTypers} />
+                <button className="btn btn-primary" type="submit" disabled={chatMessage.trim().length === 0}>
+                  <MessageSquare className="play-button-icon" aria-hidden strokeWidth={1.8} />
+                  <span>Изпрати</span>
+                </button>
+              </form>
+            ) : (
+              <div className="play-muted-note mt-8">
+                <EyeOff className="play-section-icon" aria-hidden strokeWidth={1.8} />
+                <span>
+                  {ownPlayer?.playing
+                    ? "Елиминираните играчи могат да четат, но не и да пишат в дневния чат."
+                    : "Разказвачите и наблюдателите не пишат в дневния чат."}
                 </span>
               </div>
-              <TypingIndicator notices={publicTypers} />
-              <button className="btn btn-primary" type="submit" disabled={chatMessage.trim().length === 0}>
-                <MessageSquare className="play-button-icon" aria-hidden strokeWidth={1.8} />
-                <span>Изпрати</span>
-              </button>
-            </form>
-          ) : (
+            )
+          ) : null}
+
+          {phase === "day_discussion" && snapshot?.communicationMode !== "built_in_chat" ? (
             <div className="play-muted-note mt-8">
               <EyeOff className="play-section-icon" aria-hidden strokeWidth={1.8} />
-              <span>
-                {ownPlayer?.playing
-                  ? "Елиминираните играчи могат да четат, но не и да пишат в дневния чат."
-                  : "Разказвачите и наблюдателите не пишат в дневния чат."}
-              </span>
+              <span>В тази стая публичният чат е изключен. Използвайте външен разговор, игра на живо или указанията на Разказвача.</span>
             </div>
-          )
-        ) : null}
+          ) : null}
+        </div>
 
-        {phase === "day_discussion" && snapshot?.communicationMode !== "built_in_chat" ? (
-          <div className="play-muted-note mt-8">
-            <EyeOff className="play-section-icon" aria-hidden strokeWidth={1.8} />
-            <span>В тази стая публичният чат е изключен. Използвайте външен разговор, игра на живо или указанията на Разказвача.</span>
-          </div>
-        ) : null}
-
-        <div className="mt-8">
+        <div className="play-rail-panel mt-8" data-mobile-panel="events" data-active={mobileRailTab === "events" ? "true" : undefined}>
           <h3 className="play-panel-subhead" id={eventsHeadingId}>
             <Settings className="play-section-icon" aria-hidden strokeWidth={1.8} />
             <span>Събития</span>
@@ -555,7 +578,7 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
           </div>
         </div>
 
-        <div className="mt-8">
+        <div className="play-rail-panel mt-8" data-mobile-panel="chat" data-active={mobileRailTab === "chat" ? "true" : undefined}>
           <h3 className="play-panel-subhead" id={chatHeadingId}>
             <MessageSquare className="play-section-icon" aria-hidden strokeWidth={1.8} />
             <span>Чат лог</span>
@@ -633,7 +656,7 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
     }
 
     return (
-      <section className="play-action-dock play-section" aria-labelledby="play-action-dock-heading">
+      <section className="play-action-dock play-section" data-expanded={actionDockExpanded ? "true" : "false"} aria-labelledby="play-action-dock-heading">
         <div className="play-action-dock-head">
           <div>
             <p className="section-kicker play-section-kicker">
@@ -642,6 +665,9 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
             </p>
             <h2 id="play-action-dock-heading">Твоят таен ъгъл</h2>
           </div>
+          <button className="play-action-dock-toggle" type="button" onClick={() => setActionDockExpanded((value) => !value)}>
+            {actionDockExpanded ? "Скрий" : "Покажи"}
+          </button>
         </div>
 
         <div className="play-action-dock-grid">
