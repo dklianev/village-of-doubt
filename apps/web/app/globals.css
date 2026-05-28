@@ -3241,6 +3241,50 @@ html[data-vt="theme"]::view-transition-new(root) {
   }
 }
 
+@keyframes play-moon-breathe {
+  from {
+    opacity: 0.78;
+    transform: scale(1);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes play-fog-drift {
+  from {
+    opacity: 0.72;
+    transform: translate3d(-3%, 0, 0) scale(1.02);
+  }
+  to {
+    opacity: 0.92;
+    transform: translate3d(3%, -1%, 0) scale(1.04);
+  }
+}
+
+@keyframes play-blinds-drift {
+  from {
+    opacity: 0.72;
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    opacity: 0.86;
+    transform: translate3d(42px, 0, 0);
+  }
+}
+
+@keyframes play-lamp-flicker {
+  from {
+    opacity: 0.84;
+    transform: scale(1);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+}
+
 @media (max-width: 760px) {
   .shell {
     width: min(calc(100vw - 20px), 1180px);
