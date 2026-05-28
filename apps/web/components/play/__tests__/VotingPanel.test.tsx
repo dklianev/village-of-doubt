@@ -35,11 +35,12 @@ const voteTally: VoteTallyItem[] = [
 ];
 
 describe("VotingPanel", () => {
-  it("renders living vote targets except the current player", () => {
+  it("shows the selected table target instead of duplicating the roster", () => {
     render(
       <VotingPanel
         currentUserId="u1"
         livingPlayers={livingPlayers}
+        selectedTargetId="u2"
         voteTally={voteTally}
         allowSkipVote={false}
         sendVote={vi.fn()}
@@ -47,11 +48,11 @@ describe("VotingPanel", () => {
     );
 
     expect(screen.queryByRole("button", { name: "Анна" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Борис" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Вяра" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Потвърди гласа за Борис" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Вяра" })).not.toBeInTheDocument();
   });
 
-  it("sends a vote for the clicked player", async () => {
+  it("sends a vote for the selected table target", async () => {
     const user = userEvent.setup();
     const sendVote = vi.fn();
 
@@ -59,13 +60,14 @@ describe("VotingPanel", () => {
       <VotingPanel
         currentUserId="u1"
         livingPlayers={livingPlayers}
+        selectedTargetId="u2"
         voteTally={voteTally}
         allowSkipVote={false}
         sendVote={sendVote}
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "Борис" }));
+    await user.click(screen.getByRole("button", { name: "Потвърди гласа за Борис" }));
 
     expect(sendVote).toHaveBeenCalledWith("u2");
   });
@@ -78,6 +80,7 @@ describe("VotingPanel", () => {
       <VotingPanel
         currentUserId="u1"
         livingPlayers={livingPlayers}
+        selectedTargetId=""
         voteTally={[]}
         allowSkipVote={false}
         sendVote={sendVote}
@@ -90,6 +93,7 @@ describe("VotingPanel", () => {
       <VotingPanel
         currentUserId="u1"
         livingPlayers={livingPlayers}
+        selectedTargetId=""
         voteTally={[]}
         allowSkipVote
         sendVote={sendVote}

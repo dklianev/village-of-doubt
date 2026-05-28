@@ -4,7 +4,7 @@ import { communicationBg, modeBg } from "@/lib/play/copy";
 import { phaseBg, phaseSigil } from "@/lib/play/phase-display";
 import type { PublicPlayer } from "@/lib/play/types";
 import { PlayerTokensSkeleton } from "@/components/skeleton";
-import { PlayerTile } from "@/components/play/PlayerTile";
+import { PlaySeat } from "@/components/play/PlaySeat";
 import { Timer } from "@/components/play/Timer";
 
 interface PlayStageProps {
@@ -22,6 +22,11 @@ interface PlayStageProps {
   narratorMode: string;
   communicationMode: string;
   ownPlayer: PublicPlayer | undefined;
+  targetableIds: Set<string>;
+  selectedTargetId: string;
+  secondTargetId: string;
+  voteCounts: Map<string, number>;
+  onSelectSeat: (targetUserId: string) => void;
   onMakeNarrator: (targetUserId: string) => void;
   onMakeMayor: (targetUserId: string) => void;
 }
@@ -41,6 +46,11 @@ export function PlayStage({
   narratorMode,
   communicationMode,
   ownPlayer,
+  targetableIds,
+  selectedTargetId,
+  secondTargetId,
+  voteCounts,
+  onSelectSeat,
   onMakeNarrator,
   onMakeMayor,
 }: PlayStageProps) {
@@ -101,21 +111,32 @@ export function PlayStage({
           {seatedPlayers.map((player, index) => {
             const seatAngle = (360 / seatCount) * index - 90;
             const seatState = getSeatState(player, phase);
+            const targetable = targetableIds.has(player.userId);
+            const selected = selectedTargetId === player.userId;
+            const secondSelected = secondTargetId === player.userId;
             return (
               <div
                 key={player.userId}
                 className="play-seat"
                 data-current={player.userId === ownPlayer?.userId ? "true" : undefined}
+                data-targetable={targetable ? "true" : undefined}
+                data-selected={selected ? "true" : undefined}
+                data-second-selected={secondSelected ? "true" : undefined}
+                data-voted={player.hasVoted ? "true" : undefined}
                 data-seat-state={seatState}
                 style={{
                   "--seat-angle": `${seatAngle}deg`,
                   "--seat-angle-reverse": `${seatAngle * -1}deg`,
                 } as CSSProperties}
               >
-                <PlayerTile
+                <PlaySeat
                   player={player}
                   phase={phase}
                   narratorMode={narratorMode}
+                  targetable={targetable}
+                  selected={selected}
+                  secondSelected={secondSelected}
+                  voteCount={voteCounts.get(player.userId) ?? 0}
                   canManageNarrator={Boolean(ownPlayer?.host && narratorMode !== "automatic" && phase === "lobby")}
                   canManageMayor={Boolean(
                     (ownPlayer?.host || ownPlayer?.narrator)
@@ -124,6 +145,7 @@ export function PlayStage({
                       && player.playing
                       && player.alive,
                   )}
+                  onSelect={() => onSelectSeat(player.userId)}
                   onMakeNarrator={() => onMakeNarrator(player.userId)}
                   onMakeMayor={() => onMakeMayor(player.userId)}
                 />

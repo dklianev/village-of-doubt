@@ -125,6 +125,23 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
   const mode = snapshot?.mode ?? createOptions?.mode ?? "werewolves_classic";
   const family = getGameFamily(mode);
   const phase = snapshot?.phase ?? "lobby";
+  const actionTargets = useMemo(() => {
+    if (phase === "hunter_revenge" && privateRole?.role !== "hunter") {
+      return [];
+    }
+    if (isNightPhase(phase) && !privateRole) {
+      return [];
+    }
+    if (phase !== "voting" && phase !== "hunter_revenge" && !isNightPhase(phase)) {
+      return [];
+    }
+    return shortcutTargets(phase, privateRole?.role, players, livingPlayers, currentUserId);
+  }, [currentUserId, livingPlayers, phase, players, privateRole?.role]);
+  const targetableIds = useMemo(() => new Set(actionTargets.map((player) => player.userId)), [actionTargets]);
+  const voteCounts = useMemo(
+    () => new Map((snapshot?.voteTally ?? []).map((item) => [item.targetUserId, item.count])),
+    [snapshot?.voteTally],
+  );
 
   useEffect(() => {
     const preloadHref = nextPhaseArtPreloadHref(phase, family);
@@ -185,6 +202,27 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
     toast({ message: "Гласът е изпратен.", kind: "success" });
     playCue("vote", { forceSilent: liveMode });
   }
+
+  const selectSeatTarget = useCallback((targetUserId: string) => {
+    if (!targetableIds.has(targetUserId)) {
+      return;
+    }
+
+    const role = privateRole?.role;
+    const needsSecondSeat =
+      (role === "blacksmith")
+      || ((role === "cupid" || role === "lovers") && phase === "first_night");
+
+    if (needsSecondSeat && selectedTargetId && selectedTargetId !== targetUserId) {
+      setSecondTargetId((current) => (current === targetUserId ? "" : targetUserId));
+      return;
+    }
+
+    setSelectedTargetId((current) => (current === targetUserId ? "" : targetUserId));
+    if (secondTargetId === targetUserId) {
+      setSecondTargetId("");
+    }
+  }, [phase, privateRole?.role, secondTargetId, selectedTargetId, targetableIds]);
 
   const submitCurrentShortcutAction = useCallback(() => {
     const current = shortcutStateRef.current;
@@ -368,11 +406,6 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
         if (targetPlayer) {
           event.preventDefault();
           setSelectedTargetId(targetPlayer.userId);
-          if (current.phase === "voting") {
-            current.room?.send("submitVote", { targetUserId: targetPlayer.userId });
-            toast({ message: "Гласът е изпратен.", kind: "success" });
-            playCue("vote", { forceSilent: current.liveMode });
-          }
         }
       }
     }
@@ -630,15 +663,12 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
 
           {isNightPhase(phase) && privateRole ? (
             <NightActionPanel
-              currentUserId={currentUserId}
               players={players}
               livingPlayers={livingPlayers}
               phase={phase}
               privateRole={privateRole.role}
               selectedTargetId={selectedTargetId}
               secondTargetId={secondTargetId}
-              setSelectedTargetId={setSelectedTargetId}
-              setSecondTargetId={setSecondTargetId}
               sendNightAction={sendNightAction}
             />
           ) : null}
@@ -647,6 +677,7 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
             <VotingPanel
               currentUserId={currentUserId}
               livingPlayers={livingPlayers}
+              selectedTargetId={selectedTargetId}
               voteTally={snapshot?.voteTally ?? []}
               allowSkipVote={Boolean(snapshot?.allowSkipVote)}
               sendVote={sendVote}
@@ -657,6 +688,7 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
             <HunterRevengePanel
               currentUserId={currentUserId}
               livingPlayers={livingPlayers}
+              selectedTargetId={selectedTargetId}
               sendHunterRevenge={(targetUserId) => room?.send("submitHunterRevenge", { targetUserId })}
             />
           ) : null}
@@ -710,6 +742,11 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
             narratorMode={snapshot?.narratorMode ?? "automatic"}
             communicationMode={snapshot?.communicationMode ?? "built_in_chat"}
             ownPlayer={ownPlayer}
+            targetableIds={targetableIds}
+            selectedTargetId={selectedTargetId}
+            secondTargetId={secondTargetId}
+            voteCounts={voteCounts}
+            onSelectSeat={selectSeatTarget}
             onMakeNarrator={(targetUserId) => room?.send("setNarrator", { targetUserId, narrator: true })}
             onMakeMayor={(targetUserId) => room?.send("setMayor", { targetUserId })}
           />

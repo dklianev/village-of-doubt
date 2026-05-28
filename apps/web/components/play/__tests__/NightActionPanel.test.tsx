@@ -32,15 +32,12 @@ function renderPanel(overrides: Partial<Parameters<typeof NightActionPanel>[0]> 
   const livingPlayers = players.filter((item) => item.alive);
 
   const props: Parameters<typeof NightActionPanel>[0] = {
-    currentUserId: "u1",
     players,
     livingPlayers,
     phase: "night",
     privateRole: "werewolf",
     selectedTargetId: "",
     secondTargetId: "",
-    setSelectedTargetId: vi.fn(),
-    setSecondTargetId: vi.fn(),
     sendNightAction: vi.fn(),
     ...overrides,
   };
