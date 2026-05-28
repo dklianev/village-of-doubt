@@ -63,7 +63,13 @@ import type { PhaseSlice, PublicPlayer, ShortcutState } from "@/lib/play/types";
 
 export type { PhaseSlice, PublicPlayer } from "@/lib/play/types";
 
-export function PlayRoomClient({ code, createOptions: createOptionsRaw }: { code: string; createOptions?: CreateRoomOptions }) {
+interface PlayRoomClientProps {
+  code: string;
+  createOptions?: CreateRoomOptions;
+  visualFixtureSearch?: string | undefined;
+}
+
+export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFixtureSearch }: PlayRoomClientProps) {
   const createOptions = createOptionsRaw;
   const [selectedTargetId, setSelectedTargetId] = useState("");
   const [secondTargetId, setSecondTargetId] = useState("");
@@ -95,6 +101,7 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw }: { code
   } = useGameRoom({
     code,
     createOptions,
+    visualFixtureSearch,
     toast,
     onReconnectSuppressed: () => {
       suppressNextPhasePulseRef.current = true;

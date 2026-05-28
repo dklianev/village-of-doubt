@@ -28,8 +28,16 @@ export default async function PlayPage({
   if (process.env.NODE_ENV === "production" || visualGame !== "1") {
     await requireSession(`/play/${code}${query ? `?${query}` : ""}`);
   }
+  const visualFixtureSearch =
+    process.env.NODE_ENV !== "production" && visualGame === "1" ? query : undefined;
 
-  return <PlayRoomClient code={code} createOptions={parseRoomCreateOptions(resolvedSearchParams)} />;
+  return (
+    <PlayRoomClient
+      code={code}
+      createOptions={parseRoomCreateOptions(resolvedSearchParams)}
+      visualFixtureSearch={visualFixtureSearch}
+    />
+  );
 }
 
 function stringifySearchParams(searchParams: RoomSearchParams | undefined) {

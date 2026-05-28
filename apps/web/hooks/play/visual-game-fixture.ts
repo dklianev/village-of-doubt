@@ -33,6 +33,7 @@ type VisualVoteTally = "empty" | "full" | "tie";
 interface VisualGameRoomFixtureOptions {
   code: string;
   createOptions: CreateRoomOptions | undefined;
+  search?: string | undefined;
 }
 
 export interface VisualGameRoomFixtureResult {
@@ -184,8 +185,9 @@ interface ParsedVisualQuery {
 export function useVisualGameRoomFixture({
   code,
   createOptions,
+  search: explicitSearch,
 }: VisualGameRoomFixtureOptions): VisualGameRoomFixtureResult | null {
-  const search = typeof window === "undefined" ? "" : window.location.search;
+  const search = explicitSearch ?? (typeof window === "undefined" ? "" : window.location.search);
   const config = useMemo(
     () => parseVisualGameFixture(search, code, createOptions),
     [code, createOptions, search],

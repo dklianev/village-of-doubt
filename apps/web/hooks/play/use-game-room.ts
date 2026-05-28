@@ -45,6 +45,7 @@ const MAX_RECONNECT_ATTEMPTS = 5;
 interface UseGameRoomOptions {
   code: string;
   createOptions: CreateRoomOptions | undefined;
+  visualFixtureSearch?: string | undefined;
   toast: typeof pushToast;
   onReconnectSuppressed?: () => void;
 }
@@ -72,6 +73,7 @@ export interface UseGameRoomResult {
 export function useGameRoom({
   code,
   createOptions,
+  visualFixtureSearch,
   toast,
   onReconnectSuppressed,
 }: UseGameRoomOptions): UseGameRoomResult {
@@ -84,7 +86,11 @@ export function useGameRoom({
     createOptionsRef.current = { signature: createOptionsSignature, value: createOptions };
   }
   const stableCreateOptions = createOptionsRef.current.value;
-  const visualFixture = useVisualGameRoomFixture({ code, createOptions: stableCreateOptions });
+  const visualFixture = useVisualGameRoomFixture({
+    code,
+    createOptions: stableCreateOptions,
+    search: visualFixtureSearch,
+  });
   const hasVisualFixture = visualFixture !== null;
   const { data: session, isPending: sessionPending } = authClient.useSession();
   const [room, setRoom] = useState<Room | null>(null);
