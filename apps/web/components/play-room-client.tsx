@@ -13,6 +13,7 @@ import {
   getGameFamily,
   type ChatChannel,
   type CreateRoomOptions,
+  type GameFamily,
   type GamePhase,
   type NightActionCommand,
   type RoleCode,
@@ -125,6 +126,18 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
   const mode = snapshot?.mode ?? createOptions?.mode ?? "werewolves_classic";
   const family = getGameFamily(mode);
   const phase = snapshot?.phase ?? "lobby";
+
+  useEffect(() => {
+    const preloadHref = nextPhaseArtPreloadHref(phase, family);
+    if (!preloadHref || typeof window.Image !== "function") {
+      return;
+    }
+
+    const image = new window.Image();
+    image.decoding = "async";
+    image.src = preloadHref;
+  }, [family, phase]);
+
   const {
     phasePulse,
     showPhaseTransition,
@@ -713,4 +726,65 @@ function getAvailablePrivateChatChannel(
   }
 
   return null;
+}
+
+function nextPhaseArtPreloadHref(phase: GamePhase, family: GameFamily) {
+  const nextPhase = nextVisualPhase(phase);
+  const artFile = phaseArtFile(nextPhase);
+  const isMobile = typeof window.matchMedia === "function" && window.matchMedia("(max-width: 720px)").matches;
+  const mobileSegment = isMobile ? "mobile/" : "";
+  const familySegment = family === "mafia" ? "mafia/" : "";
+  return `/game-art/${mobileSegment}${familySegment}${artFile}.webp`;
+}
+
+function nextVisualPhase(phase: GamePhase): GamePhase {
+  switch (phase) {
+    case "lobby":
+      return "role_reveal";
+    case "role_reveal":
+      return "first_night";
+    case "first_night":
+    case "night":
+      return "day_announcement";
+    case "day_announcement":
+    case "day_discussion":
+    case "nomination":
+    case "defense":
+      return "voting";
+    case "voting":
+      return "resolution";
+    case "resolution":
+    case "hunter_revenge":
+    case "mayor_successor":
+      return "night";
+    case "game_over":
+      return "resolution";
+    case "paused":
+      return "lobby";
+  }
+}
+
+function phaseArtFile(phase: GamePhase) {
+  switch (phase) {
+    case "lobby":
+    case "paused":
+      return "bg-lobby-tavern";
+    case "role_reveal":
+      return "bg-role-reveal";
+    case "first_night":
+    case "night":
+      return "bg-night-phase";
+    case "day_announcement":
+    case "day_discussion":
+    case "nomination":
+    case "defense":
+      return "bg-day-discussion";
+    case "voting":
+      return "bg-voting";
+    case "resolution":
+    case "hunter_revenge":
+    case "mayor_successor":
+    case "game_over":
+      return "bg-resolution";
+  }
 }
