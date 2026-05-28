@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "@/components/legal/LegalShell.module.css";
+import "@/components/report/LegacyReport.module.css";
 import { headers } from "next/headers";
 import { JsonLd } from "@/components/JsonLd";
 import { ReportLighthouse } from "@/components/report/ReportLighthouse";

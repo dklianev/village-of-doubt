@@ -1,9 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { PaperCard } from "@werewolf/ui";
 import { useState, type ReactNode } from "react";
-import styles from "./TermsLegalAnnex.module.css";
 
 interface LegalSection {
   id: string;
@@ -81,40 +79,39 @@ export function TermsLegalAnnex() {
   const [open, setOpen] = useState(false);
 
   return (
-    <section className={`terms-section ${styles.annexSection}`}>
-      <PaperCard eyebrow="ПРАВЕН АНЕКС" density="md">
-        <button
-          type="button"
-          className={styles.annexToggle}
-          onClick={() => setOpen((value) => !value)}
-          aria-expanded={open}
-        >
-          <span className={styles.annexIcon} aria-hidden>
-            {open ? "−" : "+"}
-          </span>
-          <div>
-            <p className={styles.annexTitle}>Формалните клаузи ({SECTIONS.length})</p>
-            <p className={styles.annexHint}>
-              Интелектуална собственост, отговорност, приложимо право — за тези, които искат пълния
-              правен текст.
-            </p>
-          </div>
-        </button>
+    <section className="terms-section terms-section-annex">
+      <button
+        type="button"
+        className="terms-annex-toggle"
+        onClick={() => setOpen((value) => !value)}
+        aria-expanded={open}
+      >
+        <span className="terms-annex-icon" aria-hidden>
+          {open ? "−" : "+"}
+        </span>
+        <div>
+          <p className="terms-annex-kicker">правен анекс</p>
+          <p className="terms-annex-title">Формалните клаузи ({SECTIONS.length})</p>
+          <p className="terms-annex-hint">
+            Интелектуална собственост, отговорност, приложимо право — за тези, които искат пълния
+            правен текст.
+          </p>
+        </div>
+      </button>
 
-        {open ? (
-          <ol className={styles.annexList}>
-            {SECTIONS.map((section, index) => (
-              <li key={section.id} id={section.id} className={styles.annexItem}>
-                <h3>
-                  <span className={styles.annexNum}>{index + 1}.</span>
-                  {section.title}
-                </h3>
-                <div className={styles.annexBody}>{section.body}</div>
-              </li>
-            ))}
-          </ol>
-        ) : null}
-      </PaperCard>
+      {open ? (
+        <ol className="terms-annex-list">
+          {SECTIONS.map((section, index) => (
+            <li key={section.id} id={section.id} className="terms-annex-item">
+              <h3>
+                <span className="terms-annex-num">{index + 1}.</span>
+                {section.title}
+              </h3>
+              <div className="terms-annex-body">{section.body}</div>
+            </li>
+          ))}
+        </ol>
+      ) : null}
     </section>
   );
 }

@@ -1,8 +1,8 @@
+import type { CSSProperties } from "react";
 import Link from "next/link";
-import { Display } from "@werewolf/ui/server";
 import type { GameMode } from "@werewolf/shared";
 import { topMoments, type HistoryGameView } from "@/lib/history-highlights";
-import styles from "./History.module.css";
+import { tiltFor } from "@/lib/history-tilt";
 
 type GameFamilyView = "werewolves" | "mafia";
 type CaseOutcome = "win" | "loss" | "unknown";
@@ -17,62 +17,39 @@ const WINNER_LABELS: Record<string, string> = {
   draw: "Равенство",
 };
 
-export function CaseFileCard({ game, variant = "drawer" }: { game: HistoryGameView; variant?: "featured" | "drawer" }) {
+export function CaseFileCard({ game }: { game: HistoryGameView }) {
   const family = modeFamily(game.mode);
   const outcome = outcomeFor(game);
   const moments = topMoments(game.timeline, 2);
-  const tiltSlot = variant === "featured" ? 0 : tiltSlotForId(game.id);
+  const style = { "--tilt": `${tiltFor(game.id)}deg` } as CSSProperties;
 
   return (
-    <article className={styles.caseFileShell} data-family={family} data-outcome={outcome} data-variant={variant} data-tilt={tiltSlot}>
-      <Link href={`/history/${game.id}/replay`} className={styles.caseFileLink}>
-        <div className={styles.caseDossier}>
-          <header className={styles.caseFileHead}>
-            <span className={styles.caseFileEyebrow}>ДЕЛО №{game.code}</span>
-            <span className={styles.caseOutcomeRibbon}>{outcomeBg(outcome)}</span>
-          </header>
-          <div className={styles.caseStampRow}>
-            <span>{shortDate(game.endedAt)}</span>
-            <span>{modeBg(game.mode)}</span>
-          </div>
-          <div className={styles.caseFileContent}>
-            <div>
-              <Display size={variant === "featured" ? "h2" : "h3"} as="h2">
-                {winnerBg(game.winnerTeam)}
-              </Display>
-              <p className={styles.caseFileMode}>{playerCountBg(game)}</p>
-            </div>
-            <span className={styles.caseFactionSeal} aria-hidden="true">
-              {family === "werewolves" ? "В" : "М"}
-            </span>
-            <ul className={styles.caseFileHighlights}>
-              {moments.map((moment) => (
-                <li key={moment.id}>
-                  <span className={styles.caseFileBullet} aria-hidden="true" />
-                  {moment.label}
-                </li>
-              ))}
-            </ul>
-            <footer className={styles.caseFileFoot}>
-              <span className={styles.caseFileEvents}>{eventsBg(game.eventCount)}</span>
-              <span className={styles.caseFileAction} aria-hidden="true">
-                Отвори дело →
-              </span>
-            </footer>
-          </div>
-        </div>
-      </Link>
+    <article className="case-file" data-family={family} data-outcome={outcome} style={style}>
+      <span className="pushpin" aria-hidden="true" />
+      <header className="case-file-head">
+        <span className="case-file-number">Дело №{game.code}</span>
+        <span className="case-file-date">{shortDate(game.endedAt)}</span>
+      </header>
+      <h2 className="case-file-verdict">{winnerBg(game.winnerTeam)}</h2>
+      <p className="case-file-mode">
+        {modeBg(game.mode)} · {playerCountBg(game)}
+      </p>
+      <ul className="case-file-highlights">
+        {moments.map((moment) => (
+          <li key={moment.id}>
+            <span className="case-file-bullet" aria-hidden="true" />
+            {moment.label}
+          </li>
+        ))}
+      </ul>
+      <footer className="case-file-foot">
+        <span className="case-file-events">{eventsBg(game.eventCount)}</span>
+        <Link href={`/history/${game.id}/replay`} className="case-file-cta">
+          Отвори дело <span aria-hidden="true">›</span>
+        </Link>
+      </footer>
     </article>
   );
-}
-
-function tiltSlotForId(id: string): number {
-  let hash = 2166136261;
-  for (let i = 0; i < id.length; i += 1) {
-    hash ^= id.charCodeAt(i);
-    hash = Math.imul(hash, 16777619) >>> 0;
-  }
-  return (hash % 5) + 1;
 }
 
 export function winnerBg(winner: string | null) {
@@ -105,19 +82,7 @@ export function outcomeFor(game: HistoryGameView): CaseOutcome {
   return "unknown";
 }
 
-function outcomeBg(outcome: CaseOutcome) {
-  if (outcome === "win") {
-    return "Победа";
-  }
-
-  if (outcome === "loss") {
-    return "Опасно дело";
-  }
-
-  return "Неясно дело";
-}
-
-export function shortDate(value: string | null) {
+function shortDate(value: string | null) {
   if (!value) {
     return "без дата";
   }
@@ -125,7 +90,7 @@ export function shortDate(value: string | null) {
   return new Intl.DateTimeFormat("bg-BG", { day: "2-digit", month: "short", year: "2-digit" }).format(new Date(value));
 }
 
-export function playerCountBg(game: HistoryGameView) {
+function playerCountBg(game: HistoryGameView) {
   const count = playerCountFromConfig(game.config);
   return count ? `${count} души` : "неизвестен брой";
 }
@@ -139,7 +104,7 @@ function playerCountFromConfig(config: unknown) {
   return null;
 }
 
-export function eventsBg(count: number) {
+function eventsBg(count: number) {
   if (count === 1) {
     return "1 следа";
   }

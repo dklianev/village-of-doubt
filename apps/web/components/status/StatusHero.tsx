@@ -1,6 +1,5 @@
-import { Display, SceneCard } from "@werewolf/ui";
+import Image from "next/image";
 import type { ServiceStatusKind } from "@/lib/status-health";
-import styles from "./Status.module.css";
 
 interface StatusHeroProps {
   overall: ServiceStatusKind;
@@ -37,22 +36,27 @@ export function StatusHero({ overall, lastCheckedAt, refreshing, onRefresh }: St
   }).format(new Date(lastCheckedAt));
 
   return (
-    <header aria-label="Състояние на услугите" className={styles.heroFrame}>
-      <SceneCard
-        eyebrow="СЪСТОЯНИЕ НА УСЛУГИТЕ"
-        density="lg"
-        background={{
-          image: "var(--art-status)",
-          overlay: "veil",
-          minHeight: "var(--ds-scene-hero-min-standard)",
-        }}
-      >
-        <Display size="hero">{copy.title}</Display>
-        <p className={styles.heroSubtitle}>{copy.subtitle}</p>
+    <header className="status-hero" aria-label="Състояние на услугите">
+      <div className="status-hero-banner">
+        <Image
+          src="/game-art/legal/status-banner.webp"
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="status-hero-img"
+        />
+        <div className="status-hero-scrim" aria-hidden />
+      </div>
 
-        <div className={styles.heroMeta} data-overall={overall}>
-          <span className={styles.heroDot} aria-hidden />
-          <span className={styles.heroMetaLabel}>
+      <div className="status-hero-inner">
+        <p className="status-hero-kicker">състояние на услугите</p>
+        <h1 className="status-hero-title">{copy.title}</h1>
+        <p className="status-hero-subtitle">{copy.subtitle}</p>
+
+        <div className="status-hero-meta" data-overall={overall}>
+          <span className="status-hero-dot" aria-hidden />
+          <span className="status-hero-meta-label">
             Последна проверка в{" "}
             <time className="status-hero-time" dateTime={lastCheckedAt}>
               {formatted}
@@ -60,7 +64,7 @@ export function StatusHero({ overall, lastCheckedAt, refreshing, onRefresh }: St
           </span>
           <button
             type="button"
-            className={styles.heroRefresh}
+            className="status-hero-refresh"
             onClick={onRefresh}
             disabled={refreshing}
             aria-label="Опресни състоянието сега"
@@ -68,7 +72,7 @@ export function StatusHero({ overall, lastCheckedAt, refreshing, onRefresh }: St
             {refreshing ? "Проверяваме..." : "Опресни"}
           </button>
         </div>
-      </SceneCard>
+      </div>
     </header>
   );
 }

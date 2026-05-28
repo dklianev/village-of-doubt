@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { Display, PaperCard } from "@werewolf/ui/server";
 
 interface TutorialSlideProps {
   bg: "night" | "day" | "day-low" | "day-zoom" | "night-cropped" | "split";
@@ -27,19 +26,16 @@ export function TutorialSlide({ bg, kicker, title, body, callout, children }: Tu
     <article className={`tutorial-slide ${BG_CLASS[bg]}`}>
       <div className="tutorial-slide-scrim" aria-hidden="true" />
       <div className="tutorial-slide-content">
-        <PaperCard eyebrow={kicker} density="lg">
-          <div className="tutorial-slide-card-body">
-            <Display size="h2">{title}</Display>
-            <div className="tutorial-slide-body">{body}</div>
-            {callout ? (
-              <aside className="tutorial-slide-callout">
-                <strong>{callout.label}</strong>
-                <span>{callout.text}</span>
-              </aside>
-            ) : null}
-            {children}
-          </div>
-        </PaperCard>
+        <p className="tutorial-slide-kicker">{kicker}</p>
+        <h2 className="tutorial-slide-title">{title}</h2>
+        <div className="tutorial-slide-body">{body}</div>
+        {callout ? (
+          <aside className="tutorial-slide-callout">
+            <strong>{callout.label}</strong>
+            <span>{callout.text}</span>
+          </aside>
+        ) : null}
+        {children}
       </div>
     </article>
   );

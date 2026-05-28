@@ -19,6 +19,7 @@ const checks = [
   ["frontend hygiene contracts", checkFrontendHygieneContracts],
   ["metadata title contracts", checkMetadataTitleContracts],
   ["primitive override anti-pattern", checkPrimitiveOverrideAntiPattern],
+  ["faction theme attribute contracts", checkFactionThemeAttributeContracts],
   ["globals.css size budget", checkGlobalsCssBudget],
   ["production security guards", checkProductionGuardContracts],
   ["launch testing contracts", checkLaunchTestingContracts],
@@ -695,6 +696,27 @@ function checkPrimitiveOverrideAntiPattern() {
   throw new Error(message);
 }
 
+function checkFactionThemeAttributeContracts() {
+  const roots = [path.join(root, "apps/web/app"), path.join(root, "apps/web/components")];
+  const files = roots
+    .flatMap((dir) => listFilesRecursive(dir).map((file) => path.join(path.relative(root, dir), file)))
+    .filter((file) => /\.(tsx|ts)$/.test(file));
+  const violations = [];
+  const factionThemePattern = /data-theme\s*=\s*(?:"(?:mafia|werewolves)"|{["'](?:mafia|werewolves)["']})/g;
+
+  for (const file of files) {
+    const source = readText(file);
+    for (const match of source.matchAll(factionThemePattern)) {
+      violations.push(`${file}:${lineForIndex(source, match.index ?? 0)}`);
+    }
+  }
+
+  assert(
+    violations.length === 0,
+    `Faction context must use data-faction/data-family, not data-theme. Found:\n${violations.join("\n")}`,
+  );
+}
+
 function checkGlobalsCssBudget() {
   const result =
     process.platform === "win32"
@@ -914,7 +936,7 @@ function readAppStyles() {
     "apps/web/components/games/GameHomePage.module.css",
     "apps/web/components/history/History.module.css",
     "apps/web/components/achievements/Achievements.module.css",
-    "apps/web/components/friends/FriendsBoard.module.css",
+    "apps/web/components/friends/LegacyFriends.module.css",
     "apps/web/components/auth/AuthRecovery.module.css",
     "apps/web/components/site-chrome/SiteChrome.module.css",
     "apps/web/components/play/PlayRoom.module.css",

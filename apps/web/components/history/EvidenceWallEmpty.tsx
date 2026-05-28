@@ -1,30 +1,47 @@
-import { Display, Pill } from "@werewolf/ui";
-import styles from "./History.module.css";
+import type { CSSProperties } from "react";
+import Image from "next/image";
+import Link from "next/link";
 
 export function EvidenceWallEmpty() {
   return (
-    <section className={styles.emptyArchive} aria-label="Празен архив">
-      <div className={styles.emptyArchiveTable} aria-hidden="true">
-        <span className={styles.emptyInkBottle} />
-        <span className={styles.emptyFolder} />
-        <span className={styles.emptyThread} />
+    <section className="evidence-empty">
+      <figure className="evidence-empty-figure">
+        <Image
+          src="/game-art/history-empty-hero-v2.webp"
+          alt=""
+          width={768}
+          height={512}
+          sizes="(max-width: 768px) 100vw, 768px"
+          priority
+          className="evidence-empty-art"
+        />
+        <figcaption className="evidence-empty-tag">Първата нощ ще остави следа тук.</figcaption>
+      </figure>
+      <div className="evidence-empty-cta">
+        <Link href="/werewolf/create" className="btn btn-primary">
+          Започни първото дело
+        </Link>
+        <Link href="/tutorial" className="btn btn-secondary">
+          Виж как изглежда дело
+        </Link>
       </div>
-      <div className={styles.emptyArchiveCopy}>
-        <span className={styles.boardKicker}>Няма заведени дела</span>
-        <Display size="h2" as="h2">
-          Първото дело още не е заведено.
-        </Display>
-        <p>Завърши игра и архиварят ще сложи папката на масата.</p>
-        <Pill as="a" href="/create" intent="secondary" shimmer>
-          Създай първото дело
-        </Pill>
+      <div className="evidence-ghost-row" aria-hidden="true">
+        {[0, 1, 2].map((item) => (
+          <div
+            key={item}
+            className="case-file case-file-ghost"
+            data-family={item === 1 ? "werewolves" : "mafia"}
+            style={{ "--tilt": `${item === 1 ? -2 : item === 0 ? 1.5 : -1}deg` } as CSSProperties}
+          >
+            <span className="pushpin" />
+            <div className="case-file-ghost-lines">
+              <span style={{ width: "60%" }} />
+              <span style={{ width: "85%" }} />
+              <span style={{ width: "40%" }} />
+            </div>
+          </div>
+        ))}
       </div>
-      <article className={styles.ghostCaseFile} aria-hidden="true">
-        <span className={styles.exampleTag}>ПРИМЕР</span>
-        <span className={styles.caseFileEyebrow}>ДЕЛО №4821</span>
-        <strong>Селото оцеля през три нощи.</strong>
-        <p>Гадателката разпозна Върколака преди последното гласуване. Никой не повярва, докато сутринта камбаната не зазвъня.</p>
-      </article>
     </section>
   );
 }

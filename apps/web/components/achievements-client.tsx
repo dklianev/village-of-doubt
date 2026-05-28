@@ -2,13 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { ACHIEVEMENTS } from "@werewolf/shared";
-import { Pill } from "@werewolf/ui";
-import { EMPTY_STATES } from "@werewolf/ui/states";
 import { AchievementPlaque } from "@/components/achievements/AchievementPlaque";
 import { AchievementProgressWreath } from "@/components/achievements/AchievementProgressWreath";
-import { ArtifactImage } from "@/components/ArtifactImage";
 import { authClient } from "@/lib/auth-client";
-import "@/components/achievements/Achievements.module.css";
 
 export interface OwnedAchievement {
   achievementId: string;
@@ -51,7 +47,6 @@ export function AchievementsClient({ initialOwned }: AchievementsClientProps) {
 
   const ownedById = new Map(owned.map((achievement) => [achievement.achievementId, achievement]));
   const unlockedCount = ownedById.size;
-  const zeroState = EMPTY_STATES["achievements-zero"];
 
   if (!loaded) {
     return (
@@ -79,32 +74,12 @@ export function AchievementsClient({ initialOwned }: AchievementsClientProps) {
     <>
       <AchievementProgressWreath unlocked={unlockedCount} total={ACHIEVEMENTS.length} />
 
-      {unlockedCount === 0 ? (
-        <section className="achievement-empty-hall mt-8" aria-labelledby="achievements-empty-title">
-          <div className="achievement-empty-hall-wall" aria-hidden="true">
-            {Array.from({ length: 6 }).map((_, index) => (
-              <div key={index} className="achievement-ghost-plaque" data-slot={index + 1} aria-hidden="true" />
-            ))}
-          </div>
-          <div className="achievement-empty-hall-copy">
-            <ArtifactImage artifact={zeroState.artifact} />
-            <h2 id="achievements-empty-title">{zeroState.title}</h2>
-            <p>{zeroState.body}</p>
-            {zeroState.action?.href ? (
-              <Pill as="a" href={zeroState.action.href} intent="primary" shimmer tracked size="lg">
-                {zeroState.action.label}
-              </Pill>
-            ) : null}
-          </div>
-        </section>
-      ) : (
-        <section className="plaque-wall mt-8">
-          {ACHIEVEMENTS.map((achievement) => {
-            const unlocked = ownedById.get(achievement.id);
-            return <AchievementPlaque key={achievement.id} achievement={achievement} unlockedAt={unlocked?.unlockedAt ?? null} />;
-          })}
-        </section>
-      )}
+      <section className="plaque-wall mt-8">
+        {ACHIEVEMENTS.map((achievement) => {
+          const unlocked = ownedById.get(achievement.id);
+          return <AchievementPlaque key={achievement.id} achievement={achievement} unlockedAt={unlocked?.unlockedAt ?? null} />;
+        })}
+      </section>
     </>
   );
 }

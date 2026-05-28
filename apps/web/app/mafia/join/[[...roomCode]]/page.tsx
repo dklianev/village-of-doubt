@@ -13,7 +13,7 @@ export default async function MafiaJoinPage({ params }: { params: Promise<{ room
   await requireSession(`/mafia/join${initialCode ? `/${initialCode}` : ""}`);
 
   return (
-    <main className="shell lobby-shell join-shell" data-theme="mafia" data-faction="mafia" data-family="mafia">
+    <main className="shell lobby-shell join-shell" data-faction="mafia" data-family="mafia">
       <div className="join-shell-inner">
         <AuthGatedEntryClient family="mafia" mode="mafia_free" initialCode={initialCode} />
       </div>

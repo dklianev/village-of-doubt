@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { X } from "lucide-react";
-import { Display, SceneCard } from "@werewolf/ui/server";
 import { SlideDay } from "./SlideDay";
 import { SlideFinal } from "./SlideFinal";
 import { SlideNight } from "./SlideNight";
@@ -133,8 +132,6 @@ export function TutorialFlipbook() {
         return <SlideSetup />;
     }
   }, [current]);
-  const heroArt = current === 3 || current === 5 ? "var(--art-tutorial-day)" : "var(--art-tutorial-night)";
-
   return (
     <section className="tutorial-flipbook" aria-label="Наръчник за първа игра">
       {welcomeVisible ? (
@@ -148,26 +145,6 @@ export function TutorialFlipbook() {
           </button>
         </aside>
       ) : null}
-
-      <header className="tutorial-flipbook-hero" aria-label="Първи стъпки">
-        <SceneCard
-          eyebrow="ПЪРВИ СТЪПКИ"
-          density="md"
-          background={{
-            image: heroArt,
-            overlay: "scrim",
-            focalY: current === 3 ? 44 : 38,
-            minHeight: "var(--ds-scene-hero-min-compact)",
-          }}
-        >
-          <div className="tutorial-flipbook-hero-copy">
-            <Display size="h2" as="h1">
-              Наръчник в шест сцени.
-            </Display>
-            <p>Мини кратка вечер на масата, преди да отвориш първата стая.</p>
-          </div>
-        </SceneCard>
-      </header>
 
       <TutorialProgress current={current} total={TOTAL_SLIDES} onJump={goTo} />
 

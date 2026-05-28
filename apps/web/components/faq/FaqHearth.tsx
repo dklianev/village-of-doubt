@@ -2,14 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronDown, Copy, Search, ThumbsDown, ThumbsUp } from "lucide-react";
-import { Display, SceneCard } from "@werewolf/ui";
+import { ChevronDown, Copy, Flame, Search, ThumbsDown, ThumbsUp } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FaqCategory, FaqItem } from "@/lib/faq-data";
 import { copyTextToClipboard } from "@/lib/clipboard";
 import { CategoryIcon } from "./FaqCategoryIcon";
 import { FaqAnswerRenderer } from "./FaqAnswerRenderer";
-import styles from "./FaqHearth.module.css";
+import "./LegacyFaq.module.css";
 
 const CATEGORY_LABELS: Record<FaqCategory, string> = {
   "pre-game": "Преди първа игра",
@@ -138,21 +137,29 @@ export function FaqHearth({ items }: { items: readonly FaqItem[] }) {
 
   return (
     <article className="faq-hearth">
-      <header aria-label="Седни до огъня" className={styles.heroFrame}>
-        <SceneCard
-          eyebrow="СЕДНИ ДО ОГЪНЯ"
-          density="lg"
-          background={{
-            image: "var(--art-faq)",
-            overlay: "scrim",
-            minHeight: "var(--ds-scene-hero-min-standard)",
-          }}
-        >
-          <Display size="hero">Седни до огъня.</Display>
-          <p className={styles.heroSubtitle}>
+      <header className="faq-hearth-hero" aria-label="Седни до огъня">
+        <div className="faq-hearth-banner">
+          <Image
+            src="/game-art/legal/faq-hearth-banner.webp"
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            className="faq-hearth-banner-img"
+          />
+          <div className="faq-hearth-scrim" aria-hidden />
+        </div>
+
+        <div className="faq-hearth-inner">
+          <p className="faq-hearth-kicker">
+            <Flame className="faq-hearth-kicker-icon" aria-hidden strokeWidth={2} />
+            <span>седни до огъня</span>
+          </p>
+          <h1 className="faq-hearth-title">Седни до огъня.</h1>
+          <p className="faq-hearth-subtitle">
             Отговори за геймплея, досието, техниката и поверителността — споделени на топло.
           </p>
-        </SceneCard>
+        </div>
       </header>
 
       <div className="faq-hearth-toolbar">
@@ -205,9 +212,7 @@ export function FaqHearth({ items }: { items: readonly FaqItem[] }) {
             <section key={category} className="faq-hearth-section" data-category={category}>
               <header className="faq-hearth-section-head">
                 <CategoryIcon category={category} className="faq-hearth-section-icon" />
-                <Display as="h2" size="h4">
-                  {CATEGORY_LABELS[category]}
-                </Display>
+                <h2>{CATEGORY_LABELS[category]}</h2>
               </header>
 
               <ul className="faq-hearth-list">

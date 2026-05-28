@@ -2,11 +2,8 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { Check, Copy, Trash2, UserPlus, Users } from "lucide-react";
-import { EmptyState, Pill } from "@werewolf/ui";
-import { EMPTY_STATES } from "@werewolf/ui/states";
-import { ArtifactImage } from "@/components/ArtifactImage";
 import { copyTextToClipboard } from "@/lib/clipboard";
-import "@/components/friends/FriendsBoard.module.css";
+import "@/components/friends/LegacyFriends.module.css";
 
 interface FriendItem {
   id: string;
@@ -90,7 +87,6 @@ export function FriendsClient() {
   }
 
   const selectedCount = selectedIds.size;
-  const emptyState = EMPTY_STATES["friends-empty"];
 
   return (
     <section className="friends-board">
@@ -117,32 +113,37 @@ export function FriendsClient() {
             />
           </label>
           <div className="friend-actions">
-            <Pill type="submit" shimmer tracked>
+            <button className="btn btn-primary" type="submit">
               <UserPlus aria-hidden strokeWidth={1.9} />
               <span>Добави</span>
-            </Pill>
-            <Pill intent="secondary" type="button" onClick={() => copyInvite([])} tracked>
+            </button>
+            <button className="btn btn-secondary" type="button" onClick={() => copyInvite([])}>
               <Copy aria-hidden strokeWidth={1.9} />
               <span>Копирай покана</span>
-            </Pill>
+            </button>
           </div>
           {message ? <p className="friend-message">{message}</p> : null}
         </form>
 
-        {friends.length > 0 ? (
-          <div className="friend-list" aria-label="Твоята група">
-            <div className="friend-list-head">
-              <div>
-                <p className="friends-kicker">твоята група</p>
-                <h2>{`${friends.length} души са наблизо`}</h2>
-              </div>
-              <Pill intent="secondary" type="button" onClick={() => copyInvite()} tracked>
-                <Users aria-hidden strokeWidth={1.9} />
-                <span>{selectedCount > 0 ? `Покани избрани (${selectedCount})` : "Покани цялата група"}</span>
-              </Pill>
+        <div className="friend-list" aria-label="Твоята група">
+          <div className="friend-list-head">
+            <div>
+              <p className="friends-kicker">твоята група</p>
+              <h2>{friends.length > 0 ? `${friends.length} души са наблизо` : "Списъкът още чака"}</h2>
             </div>
+            <button
+              className="btn btn-secondary"
+              type="button"
+              onClick={() => copyInvite()}
+              disabled={friends.length === 0}
+            >
+              <Users aria-hidden strokeWidth={1.9} />
+              <span>{selectedCount > 0 ? `Покани избрани (${selectedCount})` : "Покани цялата група"}</span>
+            </button>
+          </div>
 
-            {friends.map((friend) => (
+          {friends.length > 0 ? (
+            friends.map((friend) => (
               <article key={friend.id} className="friend-card" data-selected={selectedIds.has(friend.id)}>
                 <button
                   type="button"
@@ -168,24 +169,22 @@ export function FriendsClient() {
                   <Trash2 aria-hidden strokeWidth={1.9} />
                 </button>
               </article>
-            ))}
-          </div>
-        ) : (
-          <div className="friends-empty-state">
-            <EmptyState
-              artifact={<ArtifactImage artifact={emptyState.artifact} />}
-              title={emptyState.title}
-              body={emptyState.body}
-              action={
-                emptyState.action ? (
-                  <Pill type="button" onClick={() => copyInvite([])} shimmer tracked>
-                    {emptyState.action.label}
-                  </Pill>
-                ) : null
-              }
-            />
-          </div>
-        )}
+            ))
+          ) : (
+            <div className="friends-empty">
+              <h2>Така ще изглежда списъкът ти</h2>
+              <p>Добави хората, които най-често каниш. Бележките помагат да помниш стила им.</p>
+              <div className="friends-empty-preview" aria-hidden>
+                {["Мила", "Петко", "Ники"].map((example) => (
+                  <span key={example}>
+                    <strong>{example[0]}</strong>
+                    <em>{example}</em>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </section>
   );

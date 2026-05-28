@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { ACHIEVEMENTS } from "@werewolf/shared";
-import { Display, Pill, SceneCard } from "@werewolf/ui/server";
+import Link from "next/link";
 import { AchievementsClient, type OwnedAchievement } from "@/components/achievements-client";
 import { JsonLd } from "@/components/JsonLd";
 import { requireSession } from "@/lib/require-session";
 import { absoluteUrl, routeMetadata } from "@/lib/seo";
+import "@/components/achievements/LegacyAchievements.module.css";
 
 export const metadata: Metadata = routeMetadata({
   title: "Легенди — малките победи",
@@ -44,34 +45,20 @@ export default async function AchievementsPage({ searchParams }: AchievementsPag
   return (
     <main className="shell utility-shell achievement-shell">
       <JsonLd data={achievementsJsonLd} />
-      <section className="achievement-hero-frame" aria-label="Легенди">
-        <SceneCard
-          eyebrow="ЛЕГЕНДИ"
-          density="lg"
-          background={{
-            image: "var(--art-achievements)",
-            overlay: "veil",
-            focalY: 40,
-            minHeight: "var(--ds-scene-hero-min-cinematic)",
-          }}
-        >
-          <div className="achievement-hero-copy">
-            <Display size="hero">Малките легенди след всяка игра</Display>
-            <p>
-              Гравираните плочи разказват какво се е случило на масата: спасение, предателство, точен изстрел или
-              самостоятелна победа.
-            </p>
-          </div>
-        </SceneCard>
+      <section className="achievement-hero-card utility-hero achievement-hero rounded-[2rem] p-8">
+        <p className="section-kicker text-[#842f2b]">легенди</p>
+        <h1 className="mt-3 text-5xl font-black">Малките легенди след всяка игра</h1>
+        <p className="achievement-hero-lede mt-4 max-w-3xl">
+          Гравираните плочи разказват какво се е случило на масата: спасение, предателство, точен изстрел или
+          самостоятелна победа.
+        </p>
       </section>
 
       <AchievementsClient initialOwned={initialOwned} />
 
-      <div className="achievement-return">
-        <Pill as="a" href="/history" intent="secondary" tracked>
-          Виж записаните игри
-        </Pill>
-      </div>
+      <Link className="btn btn-secondary mt-6" href="/history">
+        Виж записаните игри
+      </Link>
     </main>
   );
 }

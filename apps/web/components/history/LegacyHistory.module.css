@@ -1,0 +1,1298 @@
+/* Legacy visual island. Fidelity target: 69bbcca8. Do not migrate to primitives without design approval. */
+:global(.history-shell::before),
+:global(.game-home-shell::before),
+:global(.rules-shell::before) {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  z-index: -1;
+  width: 100vw;
+  min-height: 100vh;
+  background:
+    linear-gradient(115deg, rgba(8, 9, 9, 0.92) 0%, rgba(21, 12, 9, 0.7) 44%, rgba(8, 9, 9, 0.95) 100%),
+    var(--page-art, var(--art-landing)) center / cover no-repeat;
+  content: "";
+  filter: saturate(0.95) contrast(1.08);
+  transform: translateX(-50%);
+}
+
+:global(.landing-shell),
+:global(.game-home-shell),
+:global(.lobby-shell),
+:global(.history-shell),
+:global(.roles-shell),
+:global(.rules-shell),
+:global(.auth-shell),
+:global(.sign-in-shell),
+:global(.tutorial-shell),
+
+:global(.evidence-wall-header) {
+  max-width: 900px;
+  padding: clamp(28px, 5vw, 56px) 0 0;
+  color: #fff6e5;
+}
+
+:global(.evidence-wall-header .section-kicker) {
+  color: #d19a42;
+  letter-spacing: 0.28em;
+}
+
+:global(.evidence-wall-header h1) {
+  margin-top: 12px;
+  color: #fff6e5;
+  font-size: clamp(3rem, 6.6vw, 5.35rem);
+  font-weight: 950;
+  line-height: 0.94;
+  text-shadow: 0 18px 42px rgba(0, 0, 0, 0.44);
+}
+
+:global(.evidence-wall-subtitle) {
+  max-width: 58ch;
+  margin-top: 18px;
+  color: #ead8b8;
+  font-size: clamp(1rem, 1.7vw, 1.18rem);
+  font-weight: 780;
+  line-height: 1.65;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.54);
+}
+
+:global(.evidence-filters) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 24px 0 36px;
+}
+
+:global(.evidence-filters button) {
+  min-height: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  padding: 8px 16px;
+  background: rgba(34, 22, 17, 0.42);
+  color: #e8d9bb;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 850;
+  transition:
+    background 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease,
+    transform 120ms ease;
+}
+
+:global(.evidence-filters button[data-active="true"]) {
+  border-color: rgba(217, 74, 61, 0.9);
+  background: rgba(132, 47, 43, 0.78);
+  color: #fff5e0;
+}
+
+:global(.evidence-filters button:hover) {
+  transform: translateY(-1px);
+}
+
+:global(.evidence-filters button:hover:not([data-active="true"])) {
+  background: rgba(34, 22, 17, 0.58);
+}
+
+:global(.evidence-wall) {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px 24px;
+  padding: 28px 0 64px;
+}
+
+:global(.case-file) {
+  position: relative;
+  min-height: 230px;
+  border: 1px solid rgba(83, 52, 31, 0.28);
+  border-left: 3px solid rgba(83, 52, 31, 0.3);
+  border-radius: 6px;
+  padding: 24px 22px 20px;
+  background-color: #f0e0c4;
+  background-image:
+    linear-gradient(155deg, rgba(255, 250, 238, 0.55), rgba(238, 222, 196, 0.35)),
+    image-set(
+      url("/game-art/textures/case-file-paper-v2.webp") type("image/webp"),
+      url("/game-art/textures/case-file-paper-v2.png") type("image/png")
+    );
+  background-position: center, center;
+  background-size: cover, cover;
+  background-blend-mode: normal, multiply;
+  box-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.08),
+    0 12px 28px rgba(0, 0, 0, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  color: #2a1b10;
+  transform: rotate(var(--tilt, 0deg));
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+:global(.case-file:hover) {
+  box-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.08),
+    0 18px 38px rgba(0, 0, 0, 0.44),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  transform: rotate(0deg) translateY(-4px);
+}
+
+:global(.case-file[data-outcome="win"]) {
+  border-left-color: #2e6b2e;
+}
+
+:global(.case-file[data-outcome="loss"]) {
+  border-left-color: #842f2b;
+}
+
+:global(.case-file[data-outcome="unknown"]) {
+  border-left-color: rgba(83, 52, 31, 0.3);
+}
+
+:global(.case-file h2),
+:global(.case-file p),
+:global(.case-file li),
+:global(.case-file span),
+:global(.case-file .case-file-number),
+:global(.case-file .case-file-date) {
+  color: #2a1b10;
+}
+
+:global(.pushpin) {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  z-index: 2;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #d94a3d 0%, #842f2b 60%, #4a1a18 100%);
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.4),
+    inset 0 1px 1px rgba(255, 255, 255, 0.4);
+  transform: translateX(-50%);
+}
+
+:global(.case-file[data-family="werewolves"] .pushpin) {
+  background: radial-gradient(circle at 35% 35%, #d19a42 0%, #6b3f10 60%, #3a1e02 100%);
+}
+
+:global(.case-file-head),
+:global(.case-file-foot) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+:global(.case-file-number),
+:global(.case-file-date),
+:global(.case-file-events) {
+  font-size: 0.73rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+:global(.case-file-date),
+:global(.case-file-events) {
+  color: rgba(42, 27, 16, 0.68);
+}
+
+:global(.case-file-verdict) {
+  margin-top: 22px;
+  font-size: clamp(1.65rem, 2.6vw, 2.35rem);
+  font-weight: 950;
+  line-height: 0.98;
+}
+
+:global(.case-file-mode) {
+  margin-top: 10px;
+  color: #4f3829;
+  font-size: 0.94rem;
+  font-weight: 850;
+}
+
+:global(.case-file-highlights) {
+  display: grid;
+  gap: 10px;
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+:global(.case-file-highlights li) {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 9px;
+  align-items: start;
+  color: #4f3829;
+  font-size: 0.92rem;
+  font-weight: 760;
+  line-height: 1.45;
+}
+
+:global(.case-file-bullet) {
+  width: 8px;
+  height: 8px;
+  margin-top: 0.42em;
+  border-radius: 50%;
+  background: #842f2b;
+  box-shadow: 0 0 0 3px rgba(132, 47, 43, 0.1);
+}
+
+:global(.case-file[data-family="werewolves"] .case-file-bullet) {
+  background: #6b3f10;
+  box-shadow: 0 0 0 3px rgba(107, 63, 16, 0.12);
+}
+
+:global(.case-file-foot) {
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(83, 52, 31, 0.18);
+}
+
+:global(.case-file-cta) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #842f2b;
+  font-size: 0.9rem;
+  font-weight: 950;
+  text-decoration: none;
+}
+
+:global(.case-file[data-family="werewolves"] .case-file-cta) {
+  color: #6b3f10;
+}
+
+:global(.evidence-empty) {
+  display: grid;
+  justify-items: center;
+  gap: 24px;
+  padding: 28px 24px 64px;
+  text-align: center;
+}
+
+:global(.evidence-empty-figure) {
+  position: relative;
+  max-width: 560px;
+  margin: 0;
+}
+
+:global(.evidence-empty-art) {
+  width: 100%;
+  height: auto;
+  border-radius: 18px;
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  mask-image: radial-gradient(ellipse 90% 80% at center, #000 65%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 90% 80% at center, #000 65%, transparent 100%);
+}
+
+:global(.evidence-empty-tag) {
+  max-width: 28ch;
+  margin: 18px auto 0;
+  color: #ead8b8;
+  font-size: 1.125rem;
+  font-style: italic;
+  font-weight: 760;
+  line-height: 1.6;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+:global(.evidence-empty-cta) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+}
+
+:global(.evidence-ghost-row) {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 24px;
+  width: 100%;
+  max-width: 920px;
+  margin-top: 20px;
+  padding: 0 24px;
+}
+
+:global(.case-file-ghost) {
+  min-height: 160px;
+  opacity: 0.32;
+  filter: blur(0.4px);
+  pointer-events: none;
+}
+
+:global(.case-file-ghost-lines) {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+:global(.case-file-ghost-lines span) {
+  display: block;
+  height: 10px;
+  border-radius: 4px;
+  background: rgba(83, 52, 31, 0.32);
+}
+
+:global(.evidence-filter-empty) {
+  display: grid;
+  gap: 14px;
+  justify-items: start;
+  max-width: 560px;
+  margin-top: 28px;
+  border: 1px solid rgba(234, 216, 184, 0.18);
+  border-radius: 24px;
+  padding: 26px;
+  background: rgba(34, 22, 17, 0.42);
+  color: #ead8b8;
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.28);
+}
+
+:global(.evidence-filter-empty h2) {
+  color: #fff6e5;
+  font-size: 1.8rem;
+  font-weight: 950;
+}
+
+:global(.evidence-filter-empty p) {
+  color: #ead8b8;
+  line-height: 1.6;
+}
+
+:global(html[data-theme="light"] .history-shell.evidence-shell::before) {
+  display: block;
+  background:
+    linear-gradient(115deg, rgba(248, 236, 210, 0.72), rgba(229, 205, 166, 0.52)),
+    var(--page-art, var(--art-history)) center / cover no-repeat;
+  filter: saturate(0.72) contrast(0.95);
+  opacity: 0.38;
+}
+
+:global(html[data-theme="light"] .evidence-shell::after) {
+  background:
+    radial-gradient(ellipse at 18% 22%, rgba(169, 111, 34, 0.14), transparent 32rem),
+    linear-gradient(180deg, rgba(255, 247, 229, 0.72), rgba(255, 247, 229, 0.94));
+}
+
+:global(html[data-theme="light"] .evidence-wall-header h1),
+:global(html[data-theme="light"] .evidence-filter-empty h2) {
+  color: #221611;
+  text-shadow: none;
+}
+
+:global(html[data-theme="light"] .evidence-wall-subtitle),
+:global(html[data-theme="light"] .evidence-empty-tag),
+:global(html[data-theme="light"] .evidence-filter-empty),
+:global(html[data-theme="light"] .evidence-filter-empty p) {
+  color: #4f3829;
+  text-shadow: none;
+}
+
+:global(html[data-theme="light"] .evidence-filters button) {
+  border-color: rgba(83, 52, 31, 0.18);
+  background: rgba(255, 247, 229, 0.68);
+  color: #4f3829;
+}
+
+:global(html[data-theme="light"] .evidence-filters button[data-active="true"]) {
+  border-color: rgba(132, 47, 43, 0.68);
+  background: rgba(132, 47, 43, 0.88);
+  color: #fff6e5;
+}
+
+:global(html[data-theme="light"] .evidence-empty .btn-secondary) {
+  border-color: rgba(83, 52, 31, 0.24);
+  background: rgba(255, 247, 229, 0.78);
+  color: #4f3829;
+}
+
+@media (min-width: 640px) {
+  :global(.evidence-wall) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  :global(.evidence-wall) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 56px 32px;
+  }
+}
+
+@media (min-width: 1440px) {
+  :global(.evidence-wall) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  :global(.evidence-shell) {
+    width: min(calc(100vw - 20px), 1360px);
+  }
+
+  :global(.evidence-wall-header) {
+    padding-top: 24px;
+  }
+
+  :global(.evidence-filters) {
+    margin-bottom: 20px;
+  }
+
+  :global(.evidence-filters button) {
+    flex: 1 1 auto;
+  }
+
+  :global(.evidence-wall) {
+    gap: 28px;
+    padding-top: 22px;
+  }
+
+  :global(.case-file) {
+    padding: 22px 20px 18px;
+  }
+
+  :global(.case-file-head),
+  :global(.case-file-foot) {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  :global(.evidence-empty) {
+    padding: 28px 0 54px;
+  }
+
+  :global(.evidence-ghost-row) {
+    grid-template-columns: 1fr;
+    padding: 0;
+  }
+}
+
+:global(.game-shell) {
+  --phase-art: var(--art-lobby);
+  --phase-icon: image-set(url("/game-art/icon-phase-lobby.webp") type("image/webp"), url("/game-art/icon-phase-lobby.png") type("image/png"));
+}
+
+:global(.game-shell[data-phase="role_reveal"]) {
+  --phase-art: var(--art-reveal);
+  --phase-icon: image-set(url("/game-art/icon-phase-role-reveal.webp") type("image/webp"), url("/game-art/icon-phase-role-reveal.png") type("image/png"));
+}
+
+:global(.game-shell[data-phase="first_night"]),
+:global(.game-shell[data-phase="night"]) {
+  --phase-art: var(--transition-night);
+  --phase-icon: image-set(url("/game-art/icon-phase-night.webp") type("image/webp"), url("/game-art/icon-phase-night.png") type("image/png"));
+}
+
+:global(.game-shell[data-phase="day_announcement"]),
+:global(.game-shell[data-phase="day_discussion"]),
+:global(.game-shell[data-phase="nomination"]),
+:global(.game-shell[data-phase="defense"]) {
+  --phase-art: var(--transition-day);
+  --phase-icon: image-set(url("/game-art/icon-phase-day.webp") type("image/webp"), url("/game-art/icon-phase-day.png") type("image/png"));
+}
+
+:global(.game-shell[data-phase="voting"]) {
+  --phase-art: var(--transition-vote);
+  --phase-icon: image-set(url("/game-art/icon-phase-voting.webp") type("image/webp"), url("/game-art/icon-phase-voting.png") type("image/png"));
+}
+
+:global(.game-shell[data-phase="resolution"]),
+:global(.game-shell[data-phase="hunter_revenge"]),
+:global(.game-shell[data-phase="mayor_successor"]),
+:global(.game-shell[data-phase="game_over"]) {
+  --phase-art: var(--transition-resolution);
+  --phase-icon: image-set(url("/game-art/icon-phase-resolution.webp") type("image/webp"), url("/game-art/icon-phase-resolution.png") type("image/png"));
+}
+
+[data-theme="mafia"].game-shell {
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-lobby.webp") type("image/webp"), url("/game-art/mafia/icon-phase-lobby.png") type("image/png"));
+}
+
+:global(.game-shell[data-family="mafia"][data-phase="role_reveal"]) {
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-role-reveal.webp") type("image/webp"), url("/game-art/mafia/icon-phase-role-reveal.png") type("image/png"));
+}
+
+:global(.game-shell[data-family="mafia"][data-phase="first_night"]),
+:global(.game-shell[data-family="mafia"][data-phase="night"]) {
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-night.webp") type("image/webp"), url("/game-art/mafia/icon-phase-night.png") type("image/png"));
+}
+
+:global(.game-shell[data-family="mafia"][data-phase="day_announcement"]),
+:global(.game-shell[data-family="mafia"][data-phase="day_discussion"]),
+:global(.game-shell[data-family="mafia"][data-phase="nomination"]),
+:global(.game-shell[data-family="mafia"][data-phase="defense"]) {
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-day.webp") type("image/webp"), url("/game-art/mafia/icon-phase-day.png") type("image/png"));
+}
+
+:global(.game-shell[data-family="mafia"][data-phase="voting"]) {
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-voting.webp") type("image/webp"), url("/game-art/mafia/icon-phase-voting.png") type("image/png"));
+}
+
+:global(.game-shell[data-family="mafia"][data-phase="resolution"]),
+:global(.game-shell[data-family="mafia"][data-phase="hunter_revenge"]),
+:global(.game-shell[data-family="mafia"][data-phase="mayor_successor"]),
+:global(.game-shell[data-family="mafia"][data-phase="game_over"]) {
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-resolution.webp") type("image/webp"), url("/game-art/mafia/icon-phase-resolution.png") type("image/png"));
+}
+
+:global(.game-shell::before),
+:global(.game-shell[data-phase="day_discussion"]::before),
+:global(.game-shell[data-phase="day_announcement"]::before),
+:global(.game-shell[data-phase="voting"]::before),
+:global(.game-shell[data-phase="night"]::before),
+:global(.game-shell[data-phase="first_night"]::before) {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  aspect-ratio: auto;
+  background:
+    radial-gradient(circle at 78% 12%, rgba(240, 180, 93, 0.18), transparent 20rem),
+    linear-gradient(110deg, rgba(7, 9, 9, 0.96) 0%, rgba(12, 16, 17, 0.78) 45%, rgba(7, 9, 9, 0.92) 100%),
+    var(--phase-art) center / cover no-repeat;
+  box-shadow: none;
+  content: "";
+  filter: saturate(0.92) contrast(1.08);
+  opacity: 0.98;
+}
+
+:global(.phase-hero) {
+  background:
+    linear-gradient(90deg, rgba(13, 9, 8, 0.94) 0%, rgba(16, 11, 10, 0.74) 47%, rgba(16, 11, 10, 0.28) 100%),
+    var(--phase-art) center / cover no-repeat;
+  box-shadow: 0 34px 100px rgba(0, 0, 0, 0.42), inset 0 1px rgba(255, 255, 255, 0.08);
+}
+
+:global(.phase-title) {
+  text-transform: uppercase;
+  text-wrap: balance;
+  -webkit-text-stroke: 1px rgba(248, 236, 210, 0.18);
+}
+
+:global(.phase-sigil) {
+  background:
+    linear-gradient(145deg, rgba(10, 7, 6, 0.18), rgba(10, 7, 6, 0.42)),
+    var(--phase-icon) center / cover no-repeat;
+  color: transparent;
+}
+
+:global(.phase-rail) {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 18px;
+}
+
+:global(.phase-rail-step) {
+  position: relative;
+  min-height: 98px;
+  overflow: hidden;
+  border: 1px solid rgba(248, 236, 210, 0.1);
+  border-radius: 22px;
+  padding: 12px;
+  background:
+    linear-gradient(145deg, rgba(248, 236, 210, 0.08), rgba(248, 236, 210, 0.03)),
+    rgba(13, 9, 8, 0.38);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.06);
+  opacity: 0.62;
+  transition:
+    transform 180ms ease,
+    opacity 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+:global(.phase-rail-step::after) {
+  position: absolute;
+  inset: auto 12px 10px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(209, 154, 66, 0.48), transparent);
+  content: "";
+}
+
+:global(.phase-rail-step.is-active) {
+  transform: translateY(-4px);
+  border-color: rgba(209, 154, 66, 0.42);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.28), 0 0 32px rgba(209, 154, 66, 0.12);
+  opacity: 1;
+}
+
+:global(.phase-rail-index) {
+  display: block;
+  color: rgba(248, 236, 210, 0.52);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+}
+
+:global(.phase-rail-icon) {
+  display: block;
+  width: 42px;
+  aspect-ratio: 1;
+  margin-top: 9px;
+  border: 1px solid rgba(248, 236, 210, 0.16);
+  border-radius: 14px;
+  background:
+    linear-gradient(145deg, rgba(10, 7, 6, 0.08), rgba(10, 7, 6, 0.36)),
+    var(--phase-icon) center / cover no-repeat;
+}
+
+:global(.phase-rail-icon.phase-lobby) {
+  --phase-icon: image-set(url("/game-art/icon-phase-lobby.webp") type("image/webp"), url("/game-art/icon-phase-lobby.png") type("image/png"));
+}
+
+:global(.phase-rail-icon.phase-role_reveal) {
+  --phase-icon: image-set(url("/game-art/icon-phase-role-reveal.webp") type("image/webp"), url("/game-art/icon-phase-role-reveal.png") type("image/png"));
+}
+
+:global(.phase-rail-icon.phase-night) {
+  --phase-icon: image-set(url("/game-art/icon-phase-night.webp") type("image/webp"), url("/game-art/icon-phase-night.png") type("image/png"));
+}
+
+:global(.phase-rail-icon.phase-day_discussion) {
+  --phase-icon: image-set(url("/game-art/icon-phase-day.webp") type("image/webp"), url("/game-art/icon-phase-day.png") type("image/png"));
+}
+
+:global(.phase-rail-icon.phase-voting) {
+  --phase-icon: image-set(url("/game-art/icon-phase-voting.webp") type("image/webp"), url("/game-art/icon-phase-voting.png") type("image/png"));
+}
+
+:global(.phase-rail-icon.phase-resolution) {
+  --phase-icon: image-set(url("/game-art/icon-phase-resolution.webp") type("image/webp"), url("/game-art/icon-phase-resolution.png") type("image/png"));
+}
+
+[data-theme="mafia"] .phase-rail-icon.phase-lobby {
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-lobby.webp") type("image/webp"), url("/game-art/mafia/icon-phase-lobby.png") type("image/png"));
+}
+
+[data-theme="mafia"] .phase-rail-icon.phase-role_reveal {
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-role-reveal.webp") type("image/webp"), url("/game-art/mafia/icon-phase-role-reveal.png") type("image/png"));
+}
+
+[data-theme="mafia"] .phase-rail-icon.phase-night,
+[data-theme="mafia"] .phase-rail-icon.phase-first_night {
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-night.webp") type("image/webp"), url("/game-art/mafia/icon-phase-night.png") type("image/png"));
+}
+
+[data-theme="mafia"] .phase-rail-icon.phase-day_discussion,
+[data-theme="mafia"] .phase-rail-icon.phase-day_announcement,
+[data-theme="mafia"] .phase-rail-icon.phase-nomination,
+[data-theme="mafia"] .phase-rail-icon.phase-defense {
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-day.webp") type("image/webp"), url("/game-art/mafia/icon-phase-day.png") type("image/png"));
+}
+
+[data-theme="mafia"] .phase-rail-icon.phase-voting {
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-voting.webp") type("image/webp"), url("/game-art/mafia/icon-phase-voting.png") type("image/png"));
+}
+
+[data-theme="mafia"] .phase-rail-icon.phase-resolution,
+[data-theme="mafia"] .phase-rail-icon.phase-hunter_revenge,
+[data-theme="mafia"] .phase-rail-icon.phase-mayor_successor,
+[data-theme="mafia"] .phase-rail-icon.phase-game_over {
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-resolution.webp") type("image/webp"), url("/game-art/mafia/icon-phase-resolution.png") type("image/png"));
+}
+
+:global(.phase-rail-label) {
+  display: block;
+  margin-top: 8px;
+  color: #ead9ba;
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+:global(.timer-dial) {
+  background:
+    radial-gradient(circle at 50% 46%, rgba(209, 154, 66, 0.26), transparent 45%),
+    var(--texture-wax) center / 260px 260px;
+  box-shadow: 0 0 50px rgba(209, 154, 66, 0.18), inset 0 1px rgba(255, 255, 255, 0.11);
+}
+
+:global(.action-btn) {
+  --ability-icon: image-set(url("/game-art/icon-ability-investigate.webp") type("image/webp"), url("/game-art/icon-ability-investigate.png") type("image/png"));
+  min-height: 58px;
+  padding-left: 66px;
+}
+
+:global(.action-btn::after) {
+  position: absolute;
+  left: 8px;
+  width: 44px;
+  aspect-ratio: 1;
+  border: 1px solid rgba(248, 236, 210, 0.2);
+  border-radius: 16px;
+  background:
+    linear-gradient(145deg, rgba(10, 7, 6, 0.08), rgba(10, 7, 6, 0.36)),
+    var(--ability-icon) center / cover no-repeat;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.25), inset 0 1px rgba(255, 255, 255, 0.14);
+  content: "";
+}
+
+:global(.ability-investigate) {
+  --ability-icon: image-set(url("/game-art/icon-ability-investigate.webp") type("image/webp"), url("/game-art/icon-ability-investigate.png") type("image/png"));
+}
+
+:global(.ability-heal) {
+  --ability-icon: image-set(url("/game-art/icon-ability-heal.webp") type("image/webp"), url("/game-art/icon-ability-heal.png") type("image/png"));
+}
+
+:global(.ability-kill) {
+  --ability-icon: image-set(url("/game-art/icon-ability-kill.webp") type("image/webp"), url("/game-art/icon-ability-kill.png") type("image/png"));
+}
+
+:global(.ability-bless) {
+  --ability-icon: image-set(url("/game-art/icon-ability-bless.webp") type("image/webp"), url("/game-art/icon-ability-bless.png") type("image/png"));
+}
+
+:global(.ability-steal) {
+  --ability-icon: image-set(url("/game-art/icon-ability-steal.webp") type("image/webp"), url("/game-art/icon-ability-steal.png") type("image/png"));
+}
+
+:global(.ability-vampire) {
+  --ability-icon: image-set(url("/game-art/icon-ability-vampire.webp") type("image/webp"), url("/game-art/icon-ability-vampire.png") type("image/png"));
+}
+
+:global(.ability-jester) {
+  --ability-icon: image-set(url("/game-art/icon-ability-jester.webp") type("image/webp"), url("/game-art/icon-ability-jester.png") type("image/png"));
+}
+
+:global(.ability-hunter) {
+  --ability-icon: image-set(url("/game-art/icon-ability-hunter.webp") type("image/webp"), url("/game-art/icon-ability-hunter.png") type("image/png"));
+}
+
+:global(.ability-lovers) {
+  --ability-icon: image-set(url("/game-art/icon-ability-lovers.webp") type("image/webp"), url("/game-art/icon-ability-lovers.png") type("image/png"));
+}
+
+:global(.role-count-chip) {
+  --role-art: image-set(url("/game-art/card-back-secret.webp") type("image/webp"), url("/game-art/card-back-secret.png") type("image/png"));
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 70px;
+  overflow: hidden;
+  border: 1px solid rgba(83, 52, 31, 0.12);
+  border-radius: 22px;
+  padding: 10px 14px 10px 10px;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(255, 255, 255, 0.42), transparent 11rem),
+    rgba(255, 255, 255, 0.3);
+}
+
+:global(.role-count-chip dt) {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+:global(.role-count-chip dd) {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  min-width: 38px;
+  height: 38px;
+  border-radius: 14px;
+  background: rgba(34, 22, 17, 0.12);
+  color: var(--ink);
+  font-weight: 950;
+}
+
+:global(.role-count-chip.is-dark) {
+  border-color: rgba(248, 236, 210, 0.12);
+  background:
+    linear-gradient(135deg, rgba(248, 236, 210, 0.1), rgba(248, 236, 210, 0.045)),
+    rgba(12, 8, 7, 0.36);
+}
+
+:global(.role-count-chip.is-dark dd) {
+  background: rgba(248, 236, 210, 0.12);
+  color: #fff6e5;
+}
+
+:global(.role-count-chip.is-dark span) {
+  color: #ead9ba;
+}
+
+:global(.role-count-art) {
+  flex: 0 0 auto;
+  width: 54px;
+  aspect-ratio: 1;
+  border: 1px solid rgba(132, 47, 43, 0.18);
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, transparent 10%, rgba(9, 6, 5, 0.52) 100%),
+    var(--role-art) center / contain no-repeat,
+    #0d0908;
+  box-shadow: 0 8px 18px rgba(34, 22, 17, 0.18), inset 0 1px rgba(255, 255, 255, 0.16);
+}
+
+:global(.btn) {
+  isolation: isolate;
+  overflow: hidden;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+:global(.btn::before) {
+  position: absolute;
+  inset: -120% auto -120% -40%;
+  z-index: -1;
+  width: 46%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.18), transparent);
+  content: "";
+  transform: rotate(18deg);
+  transition: transform 360ms ease;
+}
+
+:global(.btn:hover:not(:disabled)::before) {
+  transform: translateX(280%) rotate(18deg);
+}
+
+:global(.role-card) {
+  --role-art: image-set(url("/game-art/card-back-secret.webp") type("image/webp"), url("/game-art/card-back-secret.png") type("image/png"));
+  min-height: 360px;
+  padding-right: clamp(1.5rem, 6vw, 9rem);
+  background:
+    linear-gradient(105deg, rgba(255, 247, 229, 0.98) 0%, rgba(236, 207, 151, 0.96) 48%, rgba(62, 30, 24, 0.3) 100%),
+    var(--texture-paper) center / 540px 540px;
+}
+
+:global(.role-card::before) {
+  z-index: 2;
+  border-color: rgba(132, 47, 43, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.24);
+}
+
+:global(.role-card::after) {
+  position: absolute;
+  inset: 0 0 0 auto;
+  z-index: 1;
+  width: min(34%, 280px);
+  background:
+    linear-gradient(90deg, rgba(255, 247, 229, 0.95), rgba(255, 247, 229, 0.12) 38%, transparent 64%),
+    var(--role-art) center / cover no-repeat;
+  content: "";
+  filter: saturate(0.92) contrast(1.06);
+  pointer-events: none;
+}
+
+:global(.role-card > *) {
+  position: relative;
+  z-index: 3;
+}
+
+:global(.role-sigil) {
+  background:
+    radial-gradient(circle at 50% 48%, rgba(255, 246, 225, 0.3), transparent 52%),
+    var(--texture-wax) center / 190px 190px;
+  color: #fff6e5;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.46);
+}
+
+:global(.role-ordinary_villager) {
+  --role-art: image-set(url("/game-art/role-ordinary-villager.webp") type("image/webp"), url("/game-art/role-ordinary-villager.png") type("image/png"));
+}
+
+:global(.role-werewolf) {
+  --role-art: image-set(url("/game-art/role-werewolf.webp") type("image/webp"), url("/game-art/role-werewolf.png") type("image/png"));
+}
+
+:global(.role-seer) {
+  --role-art: image-set(url("/game-art/role-seer.webp") type("image/webp"), url("/game-art/role-seer.png") type("image/png"));
+}
+
+:global(.role-witch) {
+  --role-art: image-set(url("/game-art/role-witch.webp") type("image/webp"), url("/game-art/role-witch.png") type("image/png"));
+}
+
+:global(.role-healer) {
+  --role-art: image-set(url("/game-art/role-healer.webp") type("image/webp"), url("/game-art/role-healer.png") type("image/png"));
+}
+
+:global(.role-priest) {
+  --role-art: image-set(url("/game-art/role-priest.webp") type("image/webp"), url("/game-art/role-priest.png") type("image/png"));
+}
+
+:global(.role-hunter) {
+  --role-art: image-set(url("/game-art/role-hunter.webp") type("image/webp"), url("/game-art/role-hunter.png") type("image/png"));
+}
+
+:global(.role-cupid) {
+  --role-art: image-set(url("/game-art/role-cupid.webp") type("image/webp"), url("/game-art/role-cupid.png") type("image/png"));
+}
+
+:global(.role-vampire) {
+  --role-art: image-set(url("/game-art/role-vampire.webp") type("image/webp"), url("/game-art/role-vampire.png") type("image/png"));
+}
+
+:global(.role-red_riding_hood) {
+  --role-art: image-set(url("/game-art/role-red-riding-hood.webp") type("image/webp"), url("/game-art/role-red-riding-hood.png") type("image/png"));
+}
+
+:global(.role-oracle) {
+  --role-art: image-set(url("/game-art/role-oracle.webp") type("image/webp"), url("/game-art/role-oracle.png") type("image/png"));
+}
+
+:global(.role-cook) {
+  --role-art: image-set(url("/game-art/role-cook.webp") type("image/webp"), url("/game-art/role-cook.png") type("image/png"));
+}
+
+:global(.role-blacksmith) {
+  --role-art: image-set(url("/game-art/role-blacksmith.webp") type("image/webp"), url("/game-art/role-blacksmith.png") type("image/png"));
+}
+
+:global(.role-insomniac) {
+  --role-art: image-set(url("/game-art/role-insomniac.webp") type("image/webp"), url("/game-art/role-insomniac.png") type("image/png"));
+}
+
+:global(.role-vampire_hunter) {
+  --role-art: image-set(url("/game-art/role-vampire-hunter.webp") type("image/webp"), url("/game-art/role-vampire-hunter.png") type("image/png"));
+}
+
+:global(.role-investigator) {
+  --role-art: image-set(url("/game-art/role-investigator.webp") type("image/webp"), url("/game-art/role-investigator.png") type("image/png"));
+}
+
+:global(.role-drunk) {
+  --role-art: image-set(url("/game-art/role-drunk.webp") type("image/webp"), url("/game-art/role-drunk.png") type("image/png"));
+}
+
+:global(.role-stray_cat) {
+  --role-art: image-set(url("/game-art/role-stray-cat.webp") type("image/webp"), url("/game-art/role-stray-cat.png") type("image/png"));
+}
+
+:global(.role-guard_dog) {
+  --role-art: image-set(url("/game-art/role-guard-dog.webp") type("image/webp"), url("/game-art/role-guard-dog.png") type("image/png"));
+}
+
+:global(.role-jester) {
+  --role-art: image-set(url("/game-art/role-jester.webp") type("image/webp"), url("/game-art/role-jester.png") type("image/png"));
+}
+
+:global(.role-little_girl) {
+  --role-art: image-set(url("/game-art/role-little-girl.webp") type("image/webp"), url("/game-art/role-little-girl.png") type("image/png"));
+}
+
+:global(.role-thief) {
+  --role-art: image-set(url("/game-art/role-thief.webp") type("image/webp"), url("/game-art/role-thief.png") type("image/png"));
+}
+
+:global(.role-mayor) {
+  --role-art: image-set(url("/game-art/role-mayor.webp") type("image/webp"), url("/game-art/role-mayor.png") type("image/png"));
+}
+
+:global(.role-civilian) {
+  --role-art: image-set(url("/game-art/role-civilian.webp") type("image/webp"), url("/game-art/role-civilian.png") type("image/png"));
+}
+
+:global(.role-commissioner) {
+  --role-art: image-set(url("/game-art/role-commissioner.webp") type("image/webp"), url("/game-art/role-commissioner.png") type("image/png"));
+}
+
+:global(.role-mafioso) {
+  --role-art: image-set(url("/game-art/role-mafioso.webp") type("image/webp"), url("/game-art/role-mafioso.png") type("image/png"));
+}
+
+:global(.role-don) {
+  --role-art: image-set(url("/game-art/role-don.webp") type("image/webp"), url("/game-art/role-don.png") type("image/png"));
+}
+
+[data-theme="mafia"] .role-civilian,
+:global(.role-civilian[data-theme="mafia"]) {
+  --role-art: image-set(url("/game-art/mafia/role-civilian.webp") type("image/webp"), url("/game-art/mafia/role-civilian.png") type("image/png"));
+}
+
+[data-theme="mafia"] .role-commissioner,
+:global(.role-commissioner[data-theme="mafia"]) {
+  --role-art: image-set(url("/game-art/mafia/role-commissioner.webp") type("image/webp"), url("/game-art/mafia/role-commissioner.png") type("image/png"));
+}
+
+[data-theme="mafia"] .role-mafioso,
+:global(.role-mafioso[data-theme="mafia"]) {
+  --role-art: image-set(url("/game-art/mafia/role-mafioso.webp") type("image/webp"), url("/game-art/mafia/role-mafioso.png") type("image/png"));
+}
+
+[data-theme="mafia"] .role-don,
+:global(.role-don[data-theme="mafia"]) {
+  --role-art: image-set(url("/game-art/mafia/role-don.webp") type("image/webp"), url("/game-art/mafia/role-don.png") type("image/png"));
+}
+
+[data-theme="mafia"] .role-doctor,
+:global(.role-doctor[data-theme="mafia"]) {
+  --role-art: image-set(url("/game-art/mafia/role-doctor.webp") type("image/webp"), url("/game-art/mafia/role-doctor.png") type("image/png"));
+}
+
+[data-theme="mafia"] .role-detective,
+:global(.role-detective[data-theme="mafia"]) {
+  --role-art: image-set(url("/game-art/mafia/role-detective.webp") type("image/webp"), url("/game-art/mafia/role-detective.png") type("image/png"));
+}
+
+[data-theme="mafia"] .role-bodyguard,
+:global(.role-bodyguard[data-theme="mafia"]) {
+  --role-art: image-set(url("/game-art/mafia/role-bodyguard.webp") type("image/webp"), url("/game-art/mafia/role-bodyguard.png") type("image/png"));
+}
+
+[data-theme="mafia"] .role-vigilante,
+:global(.role-vigilante[data-theme="mafia"]) {
+  --role-art: image-set(url("/game-art/mafia/role-vigilante.webp") type("image/webp"), url("/game-art/mafia/role-vigilante.png") type("image/png"));
+}
+
+[data-theme="mafia"] .role-medium,
+:global(.role-medium[data-theme="mafia"]) {
+  --role-art: image-set(url("/game-art/mafia/role-medium.webp") type("image/webp"), url("/game-art/mafia/role-medium.png") type("image/png"));
+}
+
+[data-theme="mafia"] .role-roleblocker,
+:global(.role-roleblocker[data-theme="mafia"]) {
+  --role-art: image-set(url("/game-art/mafia/role-roleblocker.webp") type("image/webp"), url("/game-art/mafia/role-roleblocker.png") type("image/png"));
+}
+
+[data-theme="mafia"] .role-lawyer,
+:global(.role-lawyer[data-theme="mafia"]) {
+  --role-art: image-set(url("/game-art/mafia/role-lawyer.webp") type("image/webp"), url("/game-art/mafia/role-lawyer.png") type("image/png"));
+}
+
+[data-theme="mafia"] .role-informant,
+:global(.role-informant[data-theme="mafia"]) {
+  --role-art: image-set(url("/game-art/mafia/role-informant.webp") type("image/webp"), url("/game-art/mafia/role-informant.png") type("image/png"));
+}
+
+[data-theme="mafia"] .role-maniac,
+:global(.role-maniac[data-theme="mafia"]) {
+  --role-art: image-set(url("/game-art/mafia/role-maniac.webp") type("image/webp"), url("/game-art/mafia/role-maniac.png") type("image/png"));
+}
+
+[data-theme="mafia"] .role-jester,
+:global(.role-jester[data-theme="mafia"]) {
+  --role-art: image-set(url("/game-art/mafia/role-jester.webp") type("image/webp"), url("/game-art/mafia/role-jester.png") type("image/png"));
+}
+
+[data-theme="mafia"] .role-mafia_mayor,
+:global(.role-mafia_mayor[data-theme="mafia"]) {
+  --role-art: image-set(url("/game-art/mafia/role-mayor.webp") type("image/webp"), url("/game-art/mafia/role-mayor.png") type("image/png"));
+}
+
+[data-theme="mafia"] .role-lovers,
+:global(.role-lovers[data-theme="mafia"]) {
+  --role-art: image-set(url("/game-art/mafia/role-lovers.webp") type("image/webp"), url("/game-art/mafia/role-lovers.png") type("image/png"));
+}
+
+:global(.connection-banner) {
+  --connection-art: var(--screen-loading);
+  position: relative;
+  display: grid;
+  min-height: 118px;
+  overflow: hidden;
+  padding-left: min(148px, 34vw);
+  background:
+    linear-gradient(90deg, rgba(12, 8, 7, 0.72), rgba(12, 8, 7, 0.9) 52%, rgba(132, 47, 43, 0.18)),
+    var(--connection-art) left center / auto 130% no-repeat;
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.24), inset 0 1px rgba(255, 255, 255, 0.08);
+}
+
+:global(.connection-banner::after) {
+  position: absolute;
+  inset: 12px;
+  border: 1px solid rgba(209, 154, 66, 0.18);
+  border-radius: 1.1rem;
+  content: "";
+  pointer-events: none;
+}
+
+:global(.connection-reconnecting) {
+  --connection-art: var(--screen-reconnect);
+}
+
+:global(.connection-disconnected),
+:global(.connection-lost),
+:global(.connection-error) {
+  --connection-art: var(--screen-error);
+}
+
+:global(.reconnect-modal-backdrop) {
+  position: fixed;
+  inset: 0;
+  z-index: 86;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(209, 154, 66, 0.22), transparent 20rem),
+    linear-gradient(145deg, rgba(7, 8, 10, 0.74), rgba(7, 8, 10, 0.82));
+  backdrop-filter: blur(6px);
+}
+
+:global(.reconnect-modal) {
+  position: relative;
+  width: min(460px, 100%);
+  overflow: hidden;
+  border: 1px solid rgba(209, 154, 66, 0.34);
+  border-radius: 28px;
+  padding: clamp(22px, 5vw, 30px);
+  color: #fff6e5;
+  background:
+    linear-gradient(145deg, rgba(34, 22, 17, 0.96), rgba(8, 10, 10, 0.94)),
+    var(--texture-paper) center / 560px 560px;
+  box-shadow:
+    0 32px 92px rgba(0, 0, 0, 0.52),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  animation: toastSlideUp 260ms cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+:global(.reconnect-modal::before),
+:global(.reconnect-modal::after) {
+  position: absolute;
+  right: 24px;
+  left: 24px;
+  height: 1px;
+  content: "";
+  background: linear-gradient(90deg, transparent, rgba(209, 154, 66, 0.78), transparent);
+  pointer-events: none;
+}
+
+:global(.reconnect-modal::before) {
+  top: 0;
+}
+
+:global(.reconnect-modal::after) {
+  bottom: 0;
+}
+
+:global(.reconnect-modal-orb) {
+  position: absolute;
+  top: -82px;
+  right: -82px;
+  width: 190px;
+  aspect-ratio: 1;
+  border: 1px solid rgba(209, 154, 66, 0.22);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle, rgba(209, 154, 66, 0.26), transparent 58%),
+    var(--screen-reconnect) center / cover no-repeat;
+  opacity: 0.72;
+  filter: saturate(0.9);
+}
+
+:global(.reconnect-modal h2) {
+  position: relative;
+  max-width: 12ch;
+  margin-top: 8px;
+  color: #fff6e5;
+  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-size: clamp(2rem, 7vw, 3.15rem);
+  font-weight: 950;
+  line-height: 0.96;
+  text-wrap: balance;
+}
+
+:global(.reconnect-modal p:not(.section-kicker)) {
+  position: relative;
+  max-width: 42ch;
+  margin-top: 14px;
+  color: #ead9ba;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+:global(.reconnect-modal-actions) {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+:global(.reconnect-modal-actions .btn) {
+  flex: 1 1 150px;
+}
+
+:global(html[data-theme="light"] .reconnect-modal-backdrop) {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(209, 154, 66, 0.22), transparent 20rem),
+    linear-gradient(145deg, rgba(70, 38, 18, 0.28), rgba(252, 244, 230, 0.66));
+}
+
+:global(html[data-theme="light"] .reconnect-modal) {
+  color: #2a1b10;
+  background:
+    linear-gradient(145deg, rgba(255, 247, 229, 0.96), rgba(232, 205, 154, 0.94)),
+    var(--texture-paper) center / 560px 560px;
+  box-shadow:
+    0 32px 92px rgba(70, 38, 18, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.58);
+}
+
+:global(html[data-theme="light"] .reconnect-modal h2) {
+  color: #2a1b10;
+}
+
+:global(html[data-theme="light"] .reconnect-modal p:not(.section-kicker)) {
+  color: rgba(42, 27, 16, 0.76);
+}
+
+:global(.mode-preview-strip) {
+  --mode-preview-position: 0% 0%;
+  position: relative;
+  min-height: 214px;
+  margin-top: 22px;
+  overflow: hidden;
+  border: 1px solid rgba(132, 47, 43, 0.16);
+  border-radius: 28px;
+  background:
+    linear-gradient(180deg, transparent 32%, rgba(14, 8, 6, 0.82) 100%),
+    var(--preset-cards-sheet) var(--mode-preview-position) / 200% auto no-repeat,
+    #0d0908;
+  box-shadow: 0 24px 64px rgba(34, 22, 17, 0.2), inset 0 1px rgba(255, 255, 255, 0.2);
+}
+
+:global(.mode-preview-strip::before) {
+  position: absolute;
+  inset: 12px;
+  border: 1px solid rgba(248, 236, 210, 0.22);
+  border-radius: 20px;
+  content: "";
+  pointer-events: none;
+}
+
+:global(.mode-preview-strip span) {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 16px;
+  color: #fff6e5;
+  font-size: 0.84rem;
+  font-weight: 950;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.82);
+}
+
+:global(.mode-werewolves_classic) {
+  --mode-preview-position: 0% 0%;
+}
+
+:global(.mode-mafia_sport) {
+  --mode-preview-position: 100% 0%;
+}
+
+:global(.mode-mafia_free) {
+  --mode-preview-position: 0% 100%;
+}

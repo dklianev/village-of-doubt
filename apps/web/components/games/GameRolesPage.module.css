@@ -248,7 +248,7 @@
   pointer-events: none;
 }
 
-:global([data-theme="mafia"] .role-codex-card) {
+:global([data-faction="mafia"] .role-codex-card) {
   border-color: rgba(239, 224, 189, 0.16);
   background:
     linear-gradient(145deg, rgba(235, 220, 187, 0.94), rgba(181, 146, 91, 0.82)),
@@ -256,7 +256,7 @@
     var(--texture-paper) center / 520px 520px;
 }
 
-:global([data-theme="mafia"] .role-codex-frame) {
+:global([data-faction="mafia"] .role-codex-frame) {
   background:
     linear-gradient(180deg, rgba(239, 224, 189, 0.18), rgba(239, 224, 189, 0.02) 24%, rgba(0, 0, 0, 0.34) 100%),
     radial-gradient(circle at 50% 18%, rgba(200, 154, 85, 0.28), transparent 42%),
@@ -295,14 +295,8 @@
   transform: translateY(-3px);
 }
 
-:global(.role-codex-frame::before),
-:global(.role-codex-frame::after) {
-  position: absolute;
-  content: "";
-  pointer-events: none;
-}
-
 :global(.role-codex-frame::before) {
+  position: absolute;
   inset: 7px;
   z-index: 2;
   border: 1px solid rgba(248, 236, 210, 0.28);
@@ -310,9 +304,12 @@
   box-shadow:
     inset 0 0 0 1px rgba(0, 0, 0, 0.28),
     inset 0 0 26px rgba(0, 0, 0, 0.22);
+  content: "";
+  pointer-events: none;
 }
 
 :global(.role-codex-frame::after) {
+  position: absolute;
   inset: 8px;
   z-index: 3;
   border-radius: 14px;
@@ -320,6 +317,8 @@
     radial-gradient(circle at 50% 20%, transparent 0 38%, rgba(9, 6, 5, 0.04) 60%, rgba(9, 6, 5, 0.5) 100%),
     linear-gradient(180deg, rgba(255, 246, 225, 0.12), transparent 22%, rgba(9, 6, 5, 0.22) 100%),
     linear-gradient(120deg, rgba(255, 255, 255, 0.16), transparent 22% 72%, rgba(0, 0, 0, 0.14));
+  content: "";
+  pointer-events: none;
 }
 
 :global(.role-codex-frame img) {

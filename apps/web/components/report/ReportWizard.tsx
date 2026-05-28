@@ -1,9 +1,7 @@
 "use client";
 
-import { EmptyState, Pill } from "@werewolf/ui";
+import Link from "next/link";
 import { type FormEvent, useId, useMemo, useState } from "react";
-import { ArtifactImage } from "@/components/ArtifactImage";
-import styles from "./ReportWizard.module.css";
 
 type ReportType = "abuse" | "copyright" | "bug" | "gdpr" | "other";
 type Step = "type" | "details" | "identity" | "review" | "success";
@@ -183,31 +181,31 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
   }
 
   return (
-    <section className={styles.wizard} aria-label="Сигнал — съветник">
-      <nav className={styles.progress} aria-label="Стъпки">
-        <div className={styles.progressBar} aria-hidden>
+    <section className="report-wizard" aria-label="Сигнал — съветник">
+      <nav className="report-wizard-progress" aria-label="Стъпки">
+        <div className="report-wizard-progress-bar" aria-hidden>
           <div
-            className={styles.progressFill}
+            className="report-wizard-progress-fill"
             style={{ width: `${((stepIndex + 1) / totalSteps) * 100}%` }}
           />
         </div>
-        <p className={styles.progressLabel}>
+        <p className="report-wizard-progress-label">
           Стъпка {stepIndex + 1} от {totalSteps}
         </p>
       </nav>
 
       <form onSubmit={submit}>
         {step === "type" ? (
-          <fieldset className={styles.step}>
+          <fieldset className="report-wizard-step">
             <legend>За какво е сигналът?</legend>
-            <p className={styles.stepLede}>
+            <p className="report-wizard-step-lede">
               Избери вида, който най-точно описва ситуацията.
             </p>
-            <div className={styles.typeGrid}>
+            <div className="report-type-grid">
               {(Object.keys(TYPE_META) as ReportType[]).map((key) => {
                 const item = TYPE_META[key];
                 return (
-                  <label key={key} className={styles.typeCard} data-active={type === key}>
+                  <label key={key} className="report-type-card" data-active={type === key}>
                     <input
                       type="radio"
                       name="report-type"
@@ -215,11 +213,11 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
                       checked={type === key}
                       onChange={() => setType(key)}
                     />
-                    <span className={styles.typeIcon} aria-hidden>
+                    <span className="report-type-icon" aria-hidden>
                       {item.icon}
                     </span>
-                    <span className={styles.typeLabel}>{item.label}</span>
-                    <span className={styles.typeHint}>{item.hint}</span>
+                    <span className="report-type-label">{item.label}</span>
+                    <span className="report-type-hint">{item.hint}</span>
                   </label>
                 );
               })}
@@ -228,13 +226,13 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
         ) : null}
 
         {step === "details" ? (
-          <fieldset className={styles.step}>
+          <fieldset className="report-wizard-step">
             <legend>Какво се случи?</legend>
-            <p className={styles.stepLede}>
+            <p className="report-wizard-step-lede">
               Колкото повече подробности, толкова по-бързо реагираме.
             </p>
 
-            <div className={styles.field}>
+            <div className="report-field">
               <label htmlFor={bodyId}>Описание</label>
               <textarea
                 id={bodyId}
@@ -248,14 +246,14 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
                 aria-invalid={Boolean(errorMsg)}
                 aria-describedby={errorMsg ? bodyErrorId : undefined}
               />
-              <div className={styles.fieldFoot}>
-                <span className={styles.fieldCount}>{body.length} / 4000</span>
+              <div className="report-field-foot">
+                <span className="report-field-count">{body.length} / 4000</span>
               </div>
             </div>
 
-            <div className={styles.field}>
+            <div className="report-field">
               <label htmlFor={evidenceId}>
-                {meta.evidenceLabel} <span className={styles.fieldOptional}>(по избор)</span>
+                {meta.evidenceLabel} <span className="report-field-optional">(по избор)</span>
               </label>
               <input
                 id={evidenceId}
@@ -270,14 +268,14 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
         ) : null}
 
         {step === "identity" ? (
-          <fieldset className={styles.step}>
+          <fieldset className="report-wizard-step">
             <legend>Как искаш да отговорим?</legend>
-            <p className={styles.stepLede}>
+            <p className="report-wizard-step-lede">
               Можеш да подадеш сигнала анонимно — но няма да можем да ти отговорим лично.
             </p>
 
-            <div className={styles.identityGrid}>
-              <label className={styles.identityCard} data-active={identity === "identified"}>
+            <div className="report-identity-grid">
+              <label className="report-identity-card" data-active={identity === "identified"}>
                 <input
                   type="radio"
                   name="report-identity"
@@ -285,13 +283,13 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
                   checked={identity === "identified"}
                   onChange={() => setIdentity("identified")}
                 />
-                <span className={styles.identityTitle}>С имейл</span>
-                <span className={styles.identityHint}>
+                <span className="report-identity-title">С имейл</span>
+                <span className="report-identity-hint">
                   Получаваш отговор. Имейлът се ползва само за този сигнал.
                 </span>
               </label>
 
-              <label className={styles.identityCard} data-active={identity === "private"}>
+              <label className="report-identity-card" data-active={identity === "private"}>
                 <input
                   type="radio"
                   name="report-identity"
@@ -299,15 +297,15 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
                   checked={identity === "private"}
                   onChange={() => setIdentity("private")}
                 />
-                <span className={styles.identityTitle}>Анонимно</span>
-                <span className={styles.identityHint}>
+                <span className="report-identity-title">Анонимно</span>
+                <span className="report-identity-hint">
                   Не запазваме имейл. Действаме по сигнала, но не получаваш потвърждение.
                 </span>
               </label>
             </div>
 
             {identity === "identified" ? (
-              <div className={styles.field}>
+              <div className="report-field">
                 <label htmlFor={emailId}>Твоят имейл</label>
                 <input
                   id={emailId}
@@ -319,20 +317,20 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
                   required
                 />
                 {userEmail ? (
-                  <p className={styles.fieldHint}>Предварително попълнен от твоето досие.</p>
+                  <p className="report-field-hint">Предварително попълнен от твоето досие.</p>
                 ) : null}
-                {userName ? <p className={styles.fieldHint}>Ще отговорим на {userName}.</p> : null}
+                {userName ? <p className="report-field-hint">Ще отговорим на {userName}.</p> : null}
               </div>
             ) : null}
           </fieldset>
         ) : null}
 
         {step === "review" ? (
-          <fieldset className={styles.step}>
+          <fieldset className="report-wizard-step">
             <legend>Преглед преди изпращане.</legend>
-            <p className={styles.stepLede}>Виж дали всичко изглежда наред.</p>
+            <p className="report-wizard-step-lede">Виж дали всичко изглежда наред.</p>
 
-            <dl className={styles.review}>
+            <dl className="report-review">
               <div>
                 <dt>Вид сигнал</dt>
                 <dd>
@@ -341,7 +339,7 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
               </div>
               <div>
                 <dt>Описание</dt>
-                <dd className={styles.reviewBody}>{body}</dd>
+                <dd className="report-review-body">{body}</dd>
               </div>
               {evidence ? (
                 <div>
@@ -355,7 +353,7 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
               </div>
             </dl>
 
-            <p className={styles.reviewPromise}>
+            <p className="report-review-promise">
               Преглеждаме всеки сигнал в рамките на <strong>48 часа</strong>. При спешност можем да
               реагираме по-бързо.
             </p>
@@ -363,36 +361,34 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
         ) : null}
 
         {errorMsg ? (
-          <p id={bodyErrorId} className={styles.error} role="alert">
+          <p id={bodyErrorId} className="report-wizard-error" role="alert">
             {errorMsg}
           </p>
         ) : null}
 
-        <div className={styles.actions}>
+        <div className="report-wizard-actions">
           {stepIndex > 0 ? (
-            <Pill type="button" intent="ghost" onClick={goBack}>
+            <button type="button" className="report-wizard-back" onClick={goBack}>
               ← Назад
-            </Pill>
+            </button>
           ) : (
-            <Pill as="a" href="/" intent="ghost">
+            <Link href="/" className="report-wizard-back">
               Затвори
-            </Pill>
+            </Link>
           )}
 
           {step === "review" ? (
-            <Pill
+            <button
               type="submit"
-              intent="primary"
-              shimmer
-              tracked
+              className="report-wizard-submit"
               disabled={status === "submitting"}
             >
               {status === "submitting" ? "Изпращаме..." : "Изпрати сигнал"}
-            </Pill>
+            </button>
           ) : (
-            <Pill type="button" intent="primary" shimmer tracked onClick={advance}>
+            <button type="button" className="report-wizard-next" onClick={advance}>
               Напред →
-            </Pill>
+            </button>
           )}
         </div>
       </form>
@@ -421,42 +417,56 @@ function ReportSuccessState({
   const meta = TYPE_META[type];
 
   return (
-    <section role="status" aria-label="Сигналът е получен">
-      <EmptyState
-        artifact={<ArtifactImage artifact="sealed-letter" />}
-        title="Светилникът свети."
-        body={`Получихме сигнала ти за ${meta.label.toLowerCase()}. Преглеждаме в рамките на 48 часа.`}
-        action={
-          <div className={styles.successStack}>
-            {referenceId ? (
-              <div className={styles.successReference}>
-                <p className={styles.successRefLabel}>Референция</p>
-                <p className={styles.successRefValue}>{referenceId}</p>
-                <p className={styles.successRefHint}>
-                  Запази я, ако искаш да се позовеш на този сигнал по-късно.
-                </p>
-              </div>
-            ) : null}
+    <section className="report-success" role="status">
+      <div className="report-success-beam" aria-hidden />
 
-            {identity === "identified" ? (
-              <p className={styles.successFollowup}>Ще получиш отговор на посочения имейл.</p>
-            ) : (
-              <p className={styles.successFollowup}>
-                Сигналът е анонимен — няма да получиш потвърждение.
-              </p>
-            )}
+      <div className="report-success-icon" aria-hidden>
+        <svg
+          viewBox="0 0 64 64"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <circle cx="32" cy="32" r="28" />
+          <path d="M20 32 L 28 40 L 44 24" />
+        </svg>
+      </div>
 
-            <div className={styles.successActions}>
-              <Pill as="a" href="/" intent="secondary" tracked>
-                Към началото
-              </Pill>
-              <Pill as="a" href="/account" intent="secondary" tracked>
-                Към досието
-              </Pill>
-            </div>
-          </div>
-        }
-      />
+      <p className="report-success-kicker">сигналът е получен</p>
+      <h2 className="report-success-title">Светилникът свети.</h2>
+      <p className="report-success-detail">
+        Получихме сигнала ти за <strong>{meta.label.toLowerCase()}</strong>. Преглеждаме в рамките
+        на <strong>48 часа</strong>.
+      </p>
+
+      {referenceId ? (
+        <div className="report-success-reference">
+          <p className="report-success-ref-label">Референция</p>
+          <p className="report-success-ref-value">{referenceId}</p>
+          <p className="report-success-ref-hint">
+            Запази я, ако искаш да се позовеш на този сигнал по-късно.
+          </p>
+        </div>
+      ) : null}
+
+      {identity === "identified" ? (
+        <p className="report-success-followup">Ще получиш отговор на посочения имейл.</p>
+      ) : (
+        <p className="report-success-followup">
+          Сигналът е анонимен — няма да получиш потвърждение.
+        </p>
+      )}
+
+      <div className="report-success-actions">
+        <Link href="/" className="report-success-link">
+          Към началото
+        </Link>
+        <Link href="/account" className="report-success-link">
+          Към досието
+        </Link>
+      </div>
     </section>
   );
 }

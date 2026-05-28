@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "@/components/legal/LegalShell.module.css";
+import "@/components/privacy/LegacyPrivacy.module.css";
 import { headers } from "next/headers";
 import { createDatabase, getAchievementsForUser, getGameHistoryForUser } from "@werewolf/database";
 import { ACHIEVEMENTS } from "@werewolf/shared";

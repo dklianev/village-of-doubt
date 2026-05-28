@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { PaperCard } from "@werewolf/ui";
-import styles from "./PrivacyVersionHistory.module.css";
 
 interface VersionEntry {
   date: string;
@@ -36,40 +34,38 @@ export function PrivacyVersionHistory() {
   const [open, setOpen] = useState(false);
 
   return (
-    <section className={`privacy-section ${styles.historySection}`}>
-      <PaperCard eyebrow="ИСТОРИЯ" density="md">
-        <button
-          type="button"
-          className={styles.historyToggle}
-          onClick={() => setOpen((value) => !value)}
-          aria-expanded={open}
-        >
-          <span className={styles.historyIcon} aria-hidden>
-            {open ? "−" : "+"}
-          </span>
-          <span>История на промените ({HISTORY.length})</span>
-        </button>
+    <section className="privacy-section privacy-section-history">
+      <button
+        type="button"
+        className="privacy-history-toggle"
+        onClick={() => setOpen((value) => !value)}
+        aria-expanded={open}
+      >
+        <span className="privacy-history-icon" aria-hidden>
+          {open ? "−" : "+"}
+        </span>
+        <span>История на промените ({HISTORY.length})</span>
+      </button>
 
-        {open ? (
-          <ol className={styles.historyList}>
-            {HISTORY.map((entry) => (
-              <li key={entry.date}>
-                <article>
-                  <header>
-                    <time className={styles.historyDate}>{entry.date}</time>
-                    <p className={styles.historySummary}>{entry.summary}</p>
-                  </header>
-                  <ul>
-                    {entry.details.map((detail) => (
-                      <li key={detail}>{detail}</li>
-                    ))}
-                  </ul>
-                </article>
-              </li>
-            ))}
-          </ol>
-        ) : null}
-      </PaperCard>
+      {open ? (
+        <ol className="privacy-history-list">
+          {HISTORY.map((entry) => (
+            <li key={entry.date}>
+              <article>
+                <header>
+                  <time className="privacy-history-date">{entry.date}</time>
+                  <p className="privacy-history-summary">{entry.summary}</p>
+                </header>
+                <ul>
+                  {entry.details.map((detail) => (
+                    <li key={detail}>{detail}</li>
+                  ))}
+                </ul>
+              </article>
+            </li>
+          ))}
+        </ol>
+      ) : null}
     </section>
   );
 }
