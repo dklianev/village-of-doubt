@@ -120,30 +120,42 @@
 }
 
 /* Keep phase art more specific than faction-level --phase-art defaults. */
-:global(.game-shell[data-family][data-phase="role_reveal"]) {
+:global(.game-shell[data-family][data-phase="role_reveal"]),
+:global(.game-shell[data-family][data-phase="role_reveal"] .play-stage[data-family]) {
   --phase-art: var(--art-reveal);
 }
 
 :global(.game-shell[data-family][data-phase="first_night"]),
-:global(.game-shell[data-family][data-phase="night"]) {
+:global(.game-shell[data-family][data-phase="night"]),
+:global(.game-shell[data-family][data-phase="first_night"] .play-stage[data-family]),
+:global(.game-shell[data-family][data-phase="night"] .play-stage[data-family]) {
   --phase-art: var(--art-night);
 }
 
 :global(.game-shell[data-family][data-phase="day_announcement"]),
 :global(.game-shell[data-family][data-phase="day_discussion"]),
 :global(.game-shell[data-family][data-phase="nomination"]),
-:global(.game-shell[data-family][data-phase="defense"]) {
+:global(.game-shell[data-family][data-phase="defense"]),
+:global(.game-shell[data-family][data-phase="day_announcement"] .play-stage[data-family]),
+:global(.game-shell[data-family][data-phase="day_discussion"] .play-stage[data-family]),
+:global(.game-shell[data-family][data-phase="nomination"] .play-stage[data-family]),
+:global(.game-shell[data-family][data-phase="defense"] .play-stage[data-family]) {
   --phase-art: var(--art-day);
 }
 
-:global(.game-shell[data-family][data-phase="voting"]) {
+:global(.game-shell[data-family][data-phase="voting"]),
+:global(.game-shell[data-family][data-phase="voting"] .play-stage[data-family]) {
   --phase-art: var(--art-vote);
 }
 
 :global(.game-shell[data-family][data-phase="resolution"]),
 :global(.game-shell[data-family][data-phase="hunter_revenge"]),
 :global(.game-shell[data-family][data-phase="mayor_successor"]),
-:global(.game-shell[data-family][data-phase="game_over"]) {
+:global(.game-shell[data-family][data-phase="game_over"]),
+:global(.game-shell[data-family][data-phase="resolution"] .play-stage[data-family]),
+:global(.game-shell[data-family][data-phase="hunter_revenge"] .play-stage[data-family]),
+:global(.game-shell[data-family][data-phase="mayor_successor"] .play-stage[data-family]),
+:global(.game-shell[data-family][data-phase="game_over"] .play-stage[data-family]) {
   --phase-art: var(--art-resolution);
 }
 
