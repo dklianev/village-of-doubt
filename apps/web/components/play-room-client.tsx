@@ -287,6 +287,14 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
     () => privateChats.filter((message) => message.channel === privateChatChannel),
     [privateChatChannel, privateChats],
   );
+  const hasActionDock = Boolean(
+    privateRole
+      || privateResult
+      || privateLover
+      || isBlessed
+      || phase === "voting"
+      || privateChatChannel,
+  );
   // Connection state already lives in the ConnectionBanner; the phase-status
   // line is only useful for transient action feedback. Hide the boilerplate
   // "Свързан" / "Свързване..." strings so the player doesn't see them linger.
@@ -479,6 +487,86 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
     );
   };
 
+  const renderActionDock = () => {
+    if (!hasActionDock) {
+      return null;
+    }
+
+    return (
+      <section className="play-action-dock play-section" aria-labelledby="play-action-dock-heading">
+        <div className="play-action-dock-head">
+          <div>
+            <p className="section-kicker play-section-kicker">
+              <EyeOff className="play-section-icon" aria-hidden strokeWidth={1.8} />
+              <span>личен ход</span>
+            </p>
+            <h2 id="play-action-dock-heading">Твоят таен ъгъл</h2>
+          </div>
+        </div>
+
+        <div className="play-action-dock-grid">
+          {privateLover ? <LoverCard lover={privateLover} /> : null}
+
+          {isBlessed ? (
+            <article className="play-blessed-card paper-card mt-8 rounded-[2rem] border-2 border-[#c18a38]/45 p-5">
+              <p className="section-kicker text-[#842f2b]">тайна закрила</p>
+              <h2 className="mt-2 text-2xl font-black">Свещеникът те благослови</h2>
+              <p className="mt-2 text-sm text-[#4f3829]">
+                Благословията остава върху теб до края на играта и спира нощни убийства срещу теб.
+              </p>
+            </article>
+          ) : null}
+
+          <RoleCard role={privateRole} result={privateResult} players={players} />
+
+          {isNightPhase(phase) && privateRole ? (
+            <NightActionPanel
+              currentUserId={currentUserId}
+              players={players}
+              livingPlayers={livingPlayers}
+              phase={phase}
+              privateRole={privateRole.role}
+              selectedTargetId={selectedTargetId}
+              secondTargetId={secondTargetId}
+              setSelectedTargetId={setSelectedTargetId}
+              setSecondTargetId={setSecondTargetId}
+              sendNightAction={sendNightAction}
+            />
+          ) : null}
+
+          {phase === "voting" ? (
+            <VotingPanel
+              currentUserId={currentUserId}
+              livingPlayers={livingPlayers}
+              voteTally={snapshot?.voteTally ?? []}
+              allowSkipVote={Boolean(snapshot?.allowSkipVote)}
+              sendVote={sendVote}
+            />
+          ) : null}
+
+          {phase === "hunter_revenge" && privateRole?.role === "hunter" ? (
+            <HunterRevengePanel
+              currentUserId={currentUserId}
+              livingPlayers={livingPlayers}
+              sendHunterRevenge={(targetUserId) => room?.send("submitHunterRevenge", { targetUserId })}
+            />
+          ) : null}
+
+          {privateChatChannel ? (
+            <PrivateChatPanel
+              channel={privateChatChannel}
+              messages={privateChannelMessages}
+              value={privateChatMessage}
+              setValue={(value) => updatePrivateChatMessage(privateChatChannel, value)}
+              sendPrivateChat={sendPrivateChat}
+              typingNotices={privateTypers}
+            />
+          ) : null}
+        </div>
+      </section>
+    );
+  };
+
   return (
     <main className="shell game-shell play-shell framed-shell" data-phase={phase} data-family={family}>
       {showPhaseTransition ? (
@@ -513,6 +601,7 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
             onMakeNarrator={(targetUserId) => room?.send("setNarrator", { targetUserId, narrator: true })}
             onMakeMayor={(targetUserId) => room?.send("setMayor", { targetUserId })}
           />
+          {renderActionDock()}
           <div className="card play-main-stack play-section rounded-[2rem] p-5 md:p-7">
             <ConnectionBanner status={connectionStatus} message={status} />
 
@@ -615,64 +704,7 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
             <NarratorSnapshotPanel snapshot={narratorSnapshot} />
           ) : null}
 
-          {privateLover ? <LoverCard lover={privateLover} /> : null}
-
-          {isBlessed ? (
-            <article className="paper-card mt-8 rounded-[2rem] border-2 border-[#c18a38]/45 p-5">
-              <p className="section-kicker text-[#842f2b]">тайна закрила</p>
-              <h2 className="mt-2 text-2xl font-black">Свещеникът те благослови</h2>
-              <p className="mt-2 text-sm text-[#4f3829]">
-                Благословията остава върху теб до края на играта и спира нощни убийства срещу теб.
-              </p>
-            </article>
-          ) : null}
-
-          <RoleCard role={privateRole} result={privateResult} players={players} />
           <DeathRevealCinematic players={players} />
-
-          {isNightPhase(phase) && privateRole ? (
-            <NightActionPanel
-              currentUserId={currentUserId}
-              players={players}
-              livingPlayers={livingPlayers}
-              phase={phase}
-              privateRole={privateRole.role}
-              selectedTargetId={selectedTargetId}
-              secondTargetId={secondTargetId}
-              setSelectedTargetId={setSelectedTargetId}
-              setSecondTargetId={setSecondTargetId}
-              sendNightAction={sendNightAction}
-            />
-          ) : null}
-
-          {phase === "voting" ? (
-            <VotingPanel
-              currentUserId={currentUserId}
-              livingPlayers={livingPlayers}
-              voteTally={snapshot?.voteTally ?? []}
-              allowSkipVote={Boolean(snapshot?.allowSkipVote)}
-              sendVote={sendVote}
-            />
-          ) : null}
-
-          {phase === "hunter_revenge" && privateRole?.role === "hunter" ? (
-            <HunterRevengePanel
-              currentUserId={currentUserId}
-              livingPlayers={livingPlayers}
-              sendHunterRevenge={(targetUserId) => room?.send("submitHunterRevenge", { targetUserId })}
-            />
-          ) : null}
-
-          {privateChatChannel ? (
-            <PrivateChatPanel
-              channel={privateChatChannel}
-              messages={privateChannelMessages}
-              value={privateChatMessage}
-              setValue={(value) => updatePrivateChatMessage(privateChatChannel, value)}
-              sendPrivateChat={sendPrivateChat}
-              typingNotices={privateTypers}
-            />
-          ) : null}
 
           {snapshot?.winnerTeam ? (
             <article className={`winner-card paper-card mt-8 rounded-[2rem] p-6 faction-${snapshot.winnerTeam}`}>

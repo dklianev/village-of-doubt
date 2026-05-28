@@ -387,6 +387,80 @@
     var(--phase-icon) center / cover no-repeat;
 }
 
+:global(.play-action-dock) {
+  overflow: hidden;
+  border-radius: 2rem;
+  padding: clamp(18px, 2.6vw, 30px);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(209, 154, 66, 0.16), transparent 18rem),
+    linear-gradient(145deg, rgba(20, 12, 9, 0.86), rgba(10, 7, 6, 0.7));
+}
+
+:global(.play-action-dock-head) {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+:global(.play-action-dock-head h2) {
+  margin: 8px 0 0;
+  color: #f5e8c8;
+  font-size: clamp(1.7rem, 2.8vw, 2.5rem);
+  font-weight: 950;
+  line-height: 1;
+}
+
+:global(.play-action-dock-grid) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(14px, 2vw, 22px);
+  align-items: stretch;
+}
+
+:global(.play-action-dock .role-card),
+:global(.play-action-dock .winner-card),
+:global(.play-action-dock .ritual-panel),
+:global(.play-action-dock .play-blessed-card) {
+  height: 100%;
+  margin-top: 0;
+}
+
+:global(.play-action-dock .role-card) {
+  grid-column: span 2;
+}
+
+:global(.play-action-dock .ritual-panel .input) {
+  border-color: rgba(245, 232, 200, 0.18);
+  background: rgba(10, 7, 6, 0.46);
+  color: #f5e8c8;
+}
+
+:global(html[data-theme="light"] .play-action-dock) {
+  background:
+    radial-gradient(circle at 12% 0%, rgba(132, 47, 43, 0.1), transparent 18rem),
+    linear-gradient(145deg, rgba(252, 246, 236, 0.92), rgba(245, 230, 204, 0.72));
+}
+
+:global(html[data-theme="light"] .play-action-dock-head h2) {
+  color: #2a1b10;
+}
+
+:global(html[data-theme="light"] .play-action-dock .ritual-panel) {
+  border-color: rgba(132, 47, 43, 0.18);
+  background:
+    radial-gradient(circle at 18% 0%, rgba(209, 154, 66, 0.18), transparent 16rem),
+    linear-gradient(145deg, rgba(36, 18, 14, 0.88), rgba(68, 30, 24, 0.76));
+  color: #f5e8c8;
+}
+
+:global(html[data-theme="light"] .play-action-dock .ritual-panel .input) {
+  border-color: rgba(132, 47, 43, 0.18);
+  background: rgba(255, 255, 255, 0.6);
+  color: #2a1b10;
+}
+
 :global(.play-stage-empty) {
   position: absolute;
   top: 50%;
@@ -442,9 +516,13 @@
     grid-column: 1;
   }
 
+  :global(.play-action-dock) {
+    grid-column: 1;
+  }
+
   :global(.play-players-panel) {
     grid-column: 2;
-    grid-row: 1 / span 2;
+    grid-row: 1 / span 3;
   }
 }
 
@@ -503,6 +581,14 @@
     bottom: auto;
     margin-top: 16px;
     justify-content: flex-start;
+  }
+
+  :global(.play-action-dock-grid) {
+    grid-template-columns: 1fr;
+  }
+
+  :global(.play-action-dock .role-card) {
+    grid-column: auto;
   }
 }
 
