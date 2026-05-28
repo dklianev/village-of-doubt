@@ -119,6 +119,7 @@ function checkCssImageSet() {
   assertThemeVariableBlock(css, '[data-theme="dark"]');
   assertThemeVariableBlock(css, '[data-theme="light"]');
   assert(css.includes('[data-theme="mafia"]'), "Missing Mafia theme selector.");
+  assert(css.includes('[data-family="mafia"]') && css.includes('[data-faction="mafia"]'), "Faction selectors must support data-family/data-faction for Mafia.");
   assert(css.includes('/game-art/mafia/bg-landing-hero.webp'), "Missing Mafia image-set CSS references.");
   assert(css.includes('/game-art/mobile/bg-landing-hero.webp'), "Missing mobile image-set CSS references.");
 }
@@ -319,8 +320,8 @@ function checkFamilyQuickStartContracts() {
   for (const selector of [".game-home-hero__art", ".game-home-hero__scrim", ".game-home-hero__content", ".game-home-hero__fog", ".game-home-hero__rain"]) {
     assert(css.includes(selector), `Missing cinematic game hero selector ${selector}.`);
   }
-  assert(css.includes('[data-theme="werewolves"]') && css.includes("--family-hero"), "Werewolf theme must expose --family-hero.");
-  assert(css.includes('[data-theme="mafia"]') && css.includes("--family-hero"), "Mafia theme must expose --family-hero.");
+  assert(css.includes('[data-family="werewolves"]') && css.includes('[data-faction="werewolves"]') && css.includes("--family-hero"), "Werewolf faction selectors must expose --family-hero.");
+  assert(css.includes('[data-family="mafia"]') && css.includes('[data-faction="mafia"]') && css.includes("--family-hero"), "Mafia faction selectors must expose --family-hero.");
   assert(css.includes("@keyframes fog-drift"), "Werewolf hero needs fog-drift keyframes.");
   assert(css.includes("@keyframes rain-veil"), "Mafia hero needs rain-veil keyframes.");
   for (const asset of [

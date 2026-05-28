@@ -456,8 +456,8 @@
   transition: transform 160ms ease, filter 160ms ease;
 }
 
-:global([data-theme="mafia"] .quickstart-rules-cta),
-:global([data-theme="mafia"] .quickstart-card-cta) {
+:global([data-family="mafia"] .quickstart-rules-cta),
+:global([data-family="mafia"] .quickstart-card-cta) {
   background: linear-gradient(135deg, #c89a55, #7f3a2b);
 }
 

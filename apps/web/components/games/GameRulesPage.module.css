@@ -184,7 +184,7 @@
   box-shadow: 0 0 24px rgba(209, 154, 66, 0.24);
 }
 
-:global([data-theme="mafia"] .phase-timeline__line.is-loop) {
+:global([data-family="mafia"] .phase-timeline__line.is-loop) {
   background: linear-gradient(90deg, rgba(200, 111, 62, 0.22), rgba(200, 154, 85, 0.88));
   box-shadow: 0 0 24px rgba(200, 111, 62, 0.26);
 }
@@ -297,27 +297,27 @@
   --phase-node-icon: image-set(url("/game-art/icon-phase-resolution.webp") type("image/webp"), url("/game-art/icon-phase-resolution.png") type("image/png"));
 }
 
-:global([data-theme="mafia"] .phase-node-icon.phase-lobby) {
+:global([data-family="mafia"] .phase-node-icon.phase-lobby) {
   --phase-node-icon: image-set(url("/game-art/mafia/icon-phase-lobby.webp") type("image/webp"), url("/game-art/mafia/icon-phase-lobby.png") type("image/png"));
 }
 
-:global([data-theme="mafia"] .phase-node-icon.phase-role_reveal) {
+:global([data-family="mafia"] .phase-node-icon.phase-role_reveal) {
   --phase-node-icon: image-set(url("/game-art/mafia/icon-phase-role-reveal.webp") type("image/webp"), url("/game-art/mafia/icon-phase-role-reveal.png") type("image/png"));
 }
 
-:global([data-theme="mafia"] .phase-node-icon.phase-night) {
+:global([data-family="mafia"] .phase-node-icon.phase-night) {
   --phase-node-icon: image-set(url("/game-art/mafia/icon-phase-night.webp") type("image/webp"), url("/game-art/mafia/icon-phase-night.png") type("image/png"));
 }
 
-:global([data-theme="mafia"] .phase-node-icon.phase-day_discussion) {
+:global([data-family="mafia"] .phase-node-icon.phase-day_discussion) {
   --phase-node-icon: image-set(url("/game-art/mafia/icon-phase-day.webp") type("image/webp"), url("/game-art/mafia/icon-phase-day.png") type("image/png"));
 }
 
-:global([data-theme="mafia"] .phase-node-icon.phase-voting) {
+:global([data-family="mafia"] .phase-node-icon.phase-voting) {
   --phase-node-icon: image-set(url("/game-art/mafia/icon-phase-voting.webp") type("image/webp"), url("/game-art/mafia/icon-phase-voting.png") type("image/png"));
 }
 
-:global([data-theme="mafia"] .phase-node-icon.phase-resolution) {
+:global([data-family="mafia"] .phase-node-icon.phase-resolution) {
   --phase-node-icon: image-set(url("/game-art/mafia/icon-phase-resolution.webp") type("image/webp"), url("/game-art/mafia/icon-phase-resolution.png") type("image/png"));
 }
 

@@ -260,8 +260,7 @@
   --legal-terms-section-conflict-background: linear-gradient(155deg, rgba(58, 79, 122, 0.16), rgba(26, 20, 16, 0.72));
 }
 
-[data-theme="dark"],
-[data-theme="werewolves"] {
+:where([data-theme="dark"], [data-family="werewolves"], [data-faction="werewolves"], [data-theme="werewolves"]) {
   --ink: #1b100c;
   --ink-soft: #2a1a14;
   --paper: #f8ecd2;
@@ -307,7 +306,7 @@
   --art-mafia: image-set(url("/game-art/mafia/bg-hero-light-v1.webp") type("image/webp"), url("/game-art/mafia/bg-hero-light-v1.png") type("image/png"));
 }
 
-[data-theme="mafia"] {
+:where([data-family="mafia"], [data-faction="mafia"], [data-theme="mafia"]) {
   --ink: #17120f;
   --ink-soft: #211914;
   --paper: #efe0bd;
@@ -388,7 +387,7 @@
     --role-state-sheet: image-set(url("/game-art/mobile/role-state-sheet.webp") type("image/webp"));
   }
 
-  [data-theme="mafia"] {
+  :where([data-family="mafia"], [data-faction="mafia"], [data-theme="mafia"]) {
     --art-landing: image-set(url("/game-art/mobile/mafia/bg-landing-hero.webp") type("image/webp"));
     --art-lobby: image-set(url("/game-art/mobile/mafia/bg-lobby-tavern.webp") type("image/webp"));
     --art-reveal: image-set(url("/game-art/mobile/mafia/bg-role-reveal.webp") type("image/webp"));
@@ -403,7 +402,7 @@
     --family-hero: var(--art-mafia);
   }
 
-  [data-theme="werewolves"] {
+  :where([data-family="werewolves"], [data-faction="werewolves"], [data-theme="werewolves"]) {
     --family-hero: var(--art-werewolf);
   }
 
@@ -1732,82 +1731,82 @@ html[data-theme="light"] .utility-shell::before {
   --role-art: image-set(url("/game-art/role-don.webp") type("image/webp"), url("/game-art/role-don.png") type("image/png"));
 }
 
-[data-theme="mafia"] .role-civilian,
+:where([data-family="mafia"], [data-faction="mafia"], [data-theme="mafia"]) .role-civilian,
 .role-civilian[data-theme="mafia"] {
   --role-art: image-set(url("/game-art/mafia/role-civilian.webp") type("image/webp"), url("/game-art/mafia/role-civilian.png") type("image/png"));
 }
 
-[data-theme="mafia"] .role-commissioner,
+:where([data-family="mafia"], [data-faction="mafia"], [data-theme="mafia"]) .role-commissioner,
 .role-commissioner[data-theme="mafia"] {
   --role-art: image-set(url("/game-art/mafia/role-commissioner.webp") type("image/webp"), url("/game-art/mafia/role-commissioner.png") type("image/png"));
 }
 
-[data-theme="mafia"] .role-mafioso,
+:where([data-family="mafia"], [data-faction="mafia"], [data-theme="mafia"]) .role-mafioso,
 .role-mafioso[data-theme="mafia"] {
   --role-art: image-set(url("/game-art/mafia/role-mafioso.webp") type("image/webp"), url("/game-art/mafia/role-mafioso.png") type("image/png"));
 }
 
-[data-theme="mafia"] .role-don,
+:where([data-family="mafia"], [data-faction="mafia"], [data-theme="mafia"]) .role-don,
 .role-don[data-theme="mafia"] {
   --role-art: image-set(url("/game-art/mafia/role-don.webp") type("image/webp"), url("/game-art/mafia/role-don.png") type("image/png"));
 }
 
-[data-theme="mafia"] .role-doctor,
+:where([data-family="mafia"], [data-faction="mafia"], [data-theme="mafia"]) .role-doctor,
 .role-doctor[data-theme="mafia"] {
   --role-art: image-set(url("/game-art/mafia/role-doctor.webp") type("image/webp"), url("/game-art/mafia/role-doctor.png") type("image/png"));
 }
 
-[data-theme="mafia"] .role-detective,
+:where([data-family="mafia"], [data-faction="mafia"], [data-theme="mafia"]) .role-detective,
 .role-detective[data-theme="mafia"] {
   --role-art: image-set(url("/game-art/mafia/role-detective.webp") type("image/webp"), url("/game-art/mafia/role-detective.png") type("image/png"));
 }
 
-[data-theme="mafia"] .role-bodyguard,
+:where([data-family="mafia"], [data-faction="mafia"], [data-theme="mafia"]) .role-bodyguard,
 .role-bodyguard[data-theme="mafia"] {
   --role-art: image-set(url("/game-art/mafia/role-bodyguard.webp") type("image/webp"), url("/game-art/mafia/role-bodyguard.png") type("image/png"));
 }
 
-[data-theme="mafia"] .role-vigilante,
+:where([data-family="mafia"], [data-faction="mafia"], [data-theme="mafia"]) .role-vigilante,
 .role-vigilante[data-theme="mafia"] {
   --role-art: image-set(url("/game-art/mafia/role-vigilante.webp") type("image/webp"), url("/game-art/mafia/role-vigilante.png") type("image/png"));
 }
 
-[data-theme="mafia"] .role-medium,
+:where([data-family="mafia"], [data-faction="mafia"], [data-theme="mafia"]) .role-medium,
 .role-medium[data-theme="mafia"] {
   --role-art: image-set(url("/game-art/mafia/role-medium.webp") type("image/webp"), url("/game-art/mafia/role-medium.png") type("image/png"));
 }
 
-[data-theme="mafia"] .role-roleblocker,
+:where([data-family="mafia"], [data-faction="mafia"], [data-theme="mafia"]) .role-roleblocker,
 .role-roleblocker[data-theme="mafia"] {
   --role-art: image-set(url("/game-art/mafia/role-roleblocker.webp") type("image/webp"), url("/game-art/mafia/role-roleblocker.png") type("image/png"));
 }
 
-[data-theme="mafia"] .role-lawyer,
+:where([data-family="mafia"], [data-faction="mafia"], [data-theme="mafia"]) .role-lawyer,
 .role-lawyer[data-theme="mafia"] {
   --role-art: image-set(url("/game-art/mafia/role-lawyer.webp") type("image/webp"), url("/game-art/mafia/role-lawyer.png") type("image/png"));
 }
 
-[data-theme="mafia"] .role-informant,
+:where([data-family="mafia"], [data-faction="mafia"], [data-theme="mafia"]) .role-informant,
 .role-informant[data-theme="mafia"] {
   --role-art: image-set(url("/game-art/mafia/role-informant.webp") type("image/webp"), url("/game-art/mafia/role-informant.png") type("image/png"));
 }
 
-[data-theme="mafia"] .role-maniac,
+:where([data-family="mafia"], [data-faction="mafia"], [data-theme="mafia"]) .role-maniac,
 .role-maniac[data-theme="mafia"] {
   --role-art: image-set(url("/game-art/mafia/role-maniac.webp") type("image/webp"), url("/game-art/mafia/role-maniac.png") type("image/png"));
 }
 
-[data-theme="mafia"] .role-jester,
+:where([data-family="mafia"], [data-faction="mafia"], [data-theme="mafia"]) .role-jester,
 .role-jester[data-theme="mafia"] {
   --role-art: image-set(url("/game-art/mafia/role-jester.webp") type("image/webp"), url("/game-art/mafia/role-jester.png") type("image/png"));
 }
 
-[data-theme="mafia"] .role-mafia_mayor,
+:where([data-family="mafia"], [data-faction="mafia"], [data-theme="mafia"]) .role-mafia_mayor,
 .role-mafia_mayor[data-theme="mafia"] {
   --role-art: image-set(url("/game-art/mafia/role-mayor.webp") type("image/webp"), url("/game-art/mafia/role-mayor.png") type("image/png"));
 }
 
-[data-theme="mafia"] .role-lovers,
+:where([data-family="mafia"], [data-faction="mafia"], [data-theme="mafia"]) .role-lovers,
 .role-lovers[data-theme="mafia"] {
   --role-art: image-set(url("/game-art/mafia/role-lovers.webp") type("image/webp"), url("/game-art/mafia/role-lovers.png") type("image/png"));
 }
