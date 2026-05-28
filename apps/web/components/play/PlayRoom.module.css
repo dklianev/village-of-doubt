@@ -18,38 +18,74 @@
 :global(.game-shell) {
   --phase-art: var(--art-lobby);
   --phase-icon: image-set(url("/game-art/icon-phase-lobby.webp") type("image/webp"), url("/game-art/icon-phase-lobby.png") type("image/png"));
+  --play-body-glow: radial-gradient(circle at 78% 12%, rgba(240, 180, 93, 0.18), transparent 20rem);
+  --play-body-scrim: linear-gradient(110deg, rgba(7, 9, 9, 0.96) 0%, rgba(12, 16, 17, 0.78) 45%, rgba(7, 9, 9, 0.92) 100%);
+  --play-body-filter: saturate(0.92) contrast(1.08);
+  --play-stage-glow: radial-gradient(circle at 50% 50%, rgba(209, 154, 66, 0.18), transparent 22rem);
+  --play-stage-scrim: linear-gradient(180deg, rgba(8, 7, 6, 0.3), rgba(8, 7, 6, 0.76));
+  --play-stage-vignette: radial-gradient(ellipse at center, transparent 48%, rgba(3, 4, 4, 0.54) 100%);
+  --play-stage-art-position: center;
 }
 
 :global(.game-shell[data-phase="role_reveal"]) {
   --phase-art: var(--art-reveal);
   --phase-icon: image-set(url("/game-art/icon-phase-role-reveal.webp") type("image/webp"), url("/game-art/icon-phase-role-reveal.png") type("image/png"));
+  --play-body-glow: radial-gradient(circle at 70% 14%, rgba(209, 154, 66, 0.24), transparent 22rem);
+  --play-stage-glow: radial-gradient(circle at 50% 44%, rgba(209, 154, 66, 0.24), transparent 24rem);
+  --play-stage-scrim: linear-gradient(180deg, rgba(8, 7, 6, 0.24), rgba(8, 7, 6, 0.7));
 }
 
 :global(.game-shell[data-phase="first_night"]),
 :global(.game-shell[data-phase="night"]) {
-  --phase-art: var(--transition-night);
+  --phase-art: var(--art-night);
   --phase-icon: image-set(url("/game-art/icon-phase-night.webp") type("image/webp"), url("/game-art/icon-phase-night.png") type("image/png"));
+  --play-body-glow: radial-gradient(circle at 76% 10%, rgba(196, 224, 226, 0.2), transparent 20rem);
+  --play-body-scrim: linear-gradient(110deg, rgba(4, 7, 9, 0.97) 0%, rgba(8, 17, 18, 0.79) 45%, rgba(4, 7, 9, 0.94) 100%);
+  --play-body-filter: saturate(0.94) contrast(1.12) brightness(0.9);
+  --play-stage-glow: radial-gradient(circle at 70% 22%, rgba(196, 224, 226, 0.24), transparent 23rem);
+  --play-stage-scrim: linear-gradient(180deg, rgba(4, 7, 9, 0.34), rgba(3, 6, 7, 0.82));
+  --play-stage-vignette: radial-gradient(ellipse at center, transparent 44%, rgba(1, 5, 5, 0.68) 100%);
+  --play-stage-art-position: center top;
 }
 
 :global(.game-shell[data-phase="day_announcement"]),
 :global(.game-shell[data-phase="day_discussion"]),
 :global(.game-shell[data-phase="nomination"]),
 :global(.game-shell[data-phase="defense"]) {
-  --phase-art: var(--transition-day);
+  --phase-art: var(--art-day);
   --phase-icon: image-set(url("/game-art/icon-phase-day.webp") type("image/webp"), url("/game-art/icon-phase-day.png") type("image/png"));
+  --play-body-glow: radial-gradient(circle at 24% 14%, rgba(245, 210, 146, 0.22), transparent 22rem);
+  --play-body-scrim: linear-gradient(110deg, rgba(22, 13, 8, 0.9) 0%, rgba(24, 18, 12, 0.62) 48%, rgba(13, 8, 6, 0.84) 100%);
+  --play-body-filter: saturate(0.98) contrast(1.04) brightness(1.03);
+  --play-stage-glow: radial-gradient(circle at 38% 20%, rgba(245, 210, 146, 0.24), transparent 24rem);
+  --play-stage-scrim: linear-gradient(180deg, rgba(30, 18, 10, 0.18), rgba(10, 7, 5, 0.62));
+  --play-stage-vignette: radial-gradient(ellipse at center, transparent 50%, rgba(26, 15, 9, 0.5) 100%);
+  --play-stage-art-position: center;
 }
 
 :global(.game-shell[data-phase="voting"]) {
-  --phase-art: var(--transition-vote);
+  --phase-art: var(--art-vote);
   --phase-icon: image-set(url("/game-art/icon-phase-voting.webp") type("image/webp"), url("/game-art/icon-phase-voting.png") type("image/png"));
+  --play-body-glow: radial-gradient(circle at 50% 8%, rgba(209, 154, 66, 0.26), transparent 20rem);
+  --play-body-scrim: linear-gradient(110deg, rgba(12, 5, 5, 0.97) 0%, rgba(26, 12, 10, 0.76) 48%, rgba(9, 5, 5, 0.94) 100%);
+  --play-body-filter: saturate(1.02) contrast(1.12) brightness(0.92);
+  --play-stage-glow: radial-gradient(circle at 50% 24%, rgba(209, 154, 66, 0.3), transparent 21rem);
+  --play-stage-scrim: linear-gradient(180deg, rgba(18, 8, 7, 0.3), rgba(8, 4, 4, 0.82));
+  --play-stage-vignette: radial-gradient(ellipse at center, transparent 42%, rgba(11, 3, 3, 0.7) 100%);
 }
 
 :global(.game-shell[data-phase="resolution"]),
 :global(.game-shell[data-phase="hunter_revenge"]),
 :global(.game-shell[data-phase="mayor_successor"]),
 :global(.game-shell[data-phase="game_over"]) {
-  --phase-art: var(--transition-resolution);
+  --phase-art: var(--art-resolution);
   --phase-icon: image-set(url("/game-art/icon-phase-resolution.webp") type("image/webp"), url("/game-art/icon-phase-resolution.png") type("image/png"));
+  --play-body-glow: radial-gradient(circle at 50% 10%, rgba(248, 236, 210, 0.22), transparent 22rem);
+  --play-body-scrim: linear-gradient(110deg, rgba(9, 7, 6, 0.95) 0%, rgba(24, 18, 13, 0.72) 46%, rgba(9, 7, 6, 0.9) 100%);
+  --play-body-filter: saturate(0.94) contrast(1.08) brightness(0.95);
+  --play-stage-glow: radial-gradient(circle at 50% 32%, rgba(248, 236, 210, 0.24), transparent 24rem);
+  --play-stage-scrim: linear-gradient(180deg, rgba(9, 7, 6, 0.26), rgba(8, 6, 5, 0.76));
+  --play-stage-vignette: radial-gradient(ellipse at center, transparent 46%, rgba(5, 4, 4, 0.64) 100%);
 }
 
 :global(.game-shell[data-family="mafia"]) {
@@ -97,12 +133,12 @@
   border-radius: 0;
   aspect-ratio: auto;
   background:
-    radial-gradient(circle at 78% 12%, rgba(240, 180, 93, 0.18), transparent 20rem),
-    linear-gradient(110deg, rgba(7, 9, 9, 0.96) 0%, rgba(12, 16, 17, 0.78) 45%, rgba(7, 9, 9, 0.92) 100%),
+    var(--play-body-glow),
+    var(--play-body-scrim),
     var(--phase-art) center / cover no-repeat;
   box-shadow: none;
   content: "";
-  filter: saturate(0.92) contrast(1.08);
+  filter: var(--play-body-filter);
   opacity: 0.98;
 }
 
@@ -151,9 +187,9 @@
   inset: 0;
   z-index: -2;
   background:
-    radial-gradient(circle at 50% 50%, rgba(209, 154, 66, 0.18), transparent 22rem),
-    linear-gradient(180deg, rgba(8, 7, 6, 0.3), rgba(8, 7, 6, 0.76)),
-    var(--phase-art) center / cover no-repeat;
+    var(--play-stage-glow),
+    var(--play-stage-scrim),
+    var(--phase-art) var(--play-stage-art-position) / cover no-repeat;
   opacity: 0.95;
 }
 
@@ -164,7 +200,7 @@
   border-radius: 2rem;
   background:
     radial-gradient(ellipse at center, rgba(245, 232, 200, 0.08), transparent 42%),
-    radial-gradient(ellipse at center, transparent 48%, rgba(3, 4, 4, 0.54) 100%);
+    var(--play-stage-vignette);
 }
 
 :global(.play-stage-hud) {
