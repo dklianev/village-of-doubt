@@ -7,6 +7,7 @@ const root = process.cwd();
 const DEFAULT_CURRENT_BASE = "http://localhost:3000";
 const DEFAULT_OLD_BASE = "http://localhost:3101";
 const DEFAULT_OUTPUT = "docs/frontend-audit-v3/legacy-reference";
+const DEFAULT_ROUND_2_OUTPUT = "docs/frontend-audit-v3/legacy-reference/round-2";
 
 const VIEWPORTS = [
   { name: "desktop", width: 1280, height: 900 },
@@ -15,7 +16,7 @@ const VIEWPORTS = [
 
 const THEMES = ["dark", "light"];
 
-const ROUTES = [
+const ROUND_1_ROUTES = [
   { name: "privacy", path: "/privacy" },
   { name: "terms", path: "/terms" },
   { name: "report", path: "/report" },
@@ -47,11 +48,13 @@ if (options.help) {
   process.exit(0);
 }
 
+const round = options.round ?? "1";
+const routeSet = round === "2" ? round2Routes() : ROUND_1_ROUTES;
 const currentBase = options.currentBase ?? DEFAULT_CURRENT_BASE;
 const oldBase = options.oldBase ?? DEFAULT_OLD_BASE;
-const outputDir = path.resolve(root, options.output ?? DEFAULT_OUTPUT);
-const selectedNames = new Set(options.routes ?? ROUTES.map((route) => route.name));
-const selectedRoutes = ROUTES.filter((route) => selectedNames.has(route.name));
+const outputDir = path.resolve(root, options.output ?? (round === "2" ? DEFAULT_ROUND_2_OUTPUT : DEFAULT_OUTPUT));
+const selectedNames = new Set(options.routes ?? routeSet.map((route) => route.name));
+const selectedRoutes = routeSet.filter((route) => selectedNames.has(route.name));
 
 if (selectedRoutes.length === 0) {
   throw new Error("No matching routes selected.");
@@ -133,6 +136,12 @@ function parseArgs(args) {
           .map((item) => item.trim())
           .filter(Boolean);
         break;
+      case "--round":
+        parsed.round = args[++index];
+        if (parsed.round !== "1" && parsed.round !== "2") {
+          throw new Error("--round must be 1 or 2.");
+        }
+        break;
       case "--help":
       case "-h":
         parsed.help = true;
@@ -151,11 +160,17 @@ Options:
   --old-base <url>      Old pre-primitives app base URL. Default: ${DEFAULT_OLD_BASE}
   --current-base <url>  Current app base URL. Default: ${DEFAULT_CURRENT_BASE}
   --output <dir>        Screenshot output directory. Default: ${DEFAULT_OUTPUT}
+  --round <1|2>         Capture Round 1 or Round 2 route set. Default: 1.
   --routes <names>      Comma-separated route names to capture.
   --help                Show this help.
 
-Route names:
-  ${ROUTES.map((route) => route.name).join(", ")}
+Round 1 route names:
+  ${ROUND_1_ROUTES.map((route) => route.name).join(", ")}
+
+Round 2 route names:
+  ${round2Routes()
+    .map((route) => route.name)
+    .join(", ")}
 
 Notes:
   - Start the old worktree separately on :3101.
@@ -163,4 +178,47 @@ Notes:
   - For old /history fixture parity, start old app with HISTORY_EVIDENCE_FIXTURE=1.
   - For old auth-gated pages, use only temporary local old-worktree bypasses; never commit them.
 `);
+}
+
+function round2Routes() {
+  return [
+    { name: "sign-in", path: "/sign-in?redirect=%2Flobby%2FABC123" },
+    { name: "leaderboard", path: "/leaderboard" },
+    {
+      name: "account",
+      oldPath: "/account",
+      currentPath: "/account?visualAuth=1",
+      note: "Old server needs a local-only account auth/session fixture for parity.",
+    },
+    {
+      name: "create",
+      oldPath: "/create",
+      currentPath: "/create?visualAuth=1",
+      note: "Old server may need a local-only create auth bypass.",
+    },
+    {
+      name: "werewolf-create",
+      oldPath: "/werewolf/create",
+      currentPath: "/werewolf/create?visualAuth=1",
+      note: "Old server may need a local-only create auth bypass.",
+    },
+    {
+      name: "mafia-create",
+      oldPath: "/mafia/create",
+      currentPath: "/mafia/create?visualAuth=1",
+      note: "Old server may need a local-only create auth bypass.",
+    },
+    {
+      name: "replay-fixture",
+      oldPath: "/history/fixture-replay/replay",
+      currentPath: "/history/fixture-replay/replay?visualReplay=fixture",
+      note: "Old server needs a local-only deterministic replay fixture/bypass.",
+    },
+    {
+      name: "lobby-fixture",
+      oldPath: "/lobby/ABC123?mode=werewolves_classic",
+      currentPath: "/lobby/ABC123?mode=werewolves_classic&visualAuth=1",
+      note: "Old server needs a local-only waiting-room auth fixture/bypass.",
+    },
+  ];
 }

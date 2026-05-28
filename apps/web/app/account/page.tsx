@@ -26,8 +26,13 @@ type AccountHistoryGame = Awaited<ReturnType<typeof getGameHistoryForUser>>[numb
 
 type AccountDashboardProps = ComponentProps<typeof AccountDashboard>;
 
-export default async function AccountPage() {
-  if (process.env.NODE_ENV !== "production" && process.env.ACCOUNT_DASHBOARD_FIXTURE === "1") {
+export default async function AccountPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ visualAuth?: string | string[] }>;
+}) {
+  const visualAuth = firstSearchValue((await searchParams)?.visualAuth);
+  if (process.env.NODE_ENV !== "production" && (process.env.ACCOUNT_DASHBOARD_FIXTURE === "1" || visualAuth === "1")) {
     return renderDashboard(fixtureDashboardProps());
   }
 
@@ -178,4 +183,8 @@ function winnerTeamFromValue(value: string | null): WinnerTeam | null {
   }
 
   return null;
+}
+
+function firstSearchValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
 }
