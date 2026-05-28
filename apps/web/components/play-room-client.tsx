@@ -33,7 +33,6 @@ import { NarratorSnapshotPanel } from "@/components/play/NarratorSnapshotPanel";
 import { PhaseGuide } from "@/components/play/PhaseGuide";
 import { PrivateChatPanel } from "@/components/play/PrivateChatPanel";
 import { RoleCard } from "@/components/play/RoleCard";
-import { SummaryPill } from "@/components/play/SummaryPill";
 import { TypingIndicator } from "@/components/play/TypingIndicator";
 import { AchievementUnlockModal } from "@/components/play/AchievementUnlockModal";
 import { ConnectionBanner } from "@/components/play/ConnectionBanner";
@@ -298,6 +297,7 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
       || privateResult
       || privateLover
       || isBlessed
+      || phase === "lobby"
       || phase === "voting"
       || privateChatChannel,
   );
@@ -384,14 +384,70 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
   const renderPlayersPanel = () => {
     const eventsHeadingId = "events-heading";
     const chatHeadingId = "chat-heading";
+    const guideHeadingId = "play-rail-guide-heading";
 
     return (
       <aside className="play-section play-players-panel play-side-rail">
-        <p className="section-kicker play-section-kicker">
-          <Settings className="play-section-icon" aria-hidden strokeWidth={1.8} />
-          <span>хроника</span>
-        </p>
-        <h2 className="mt-3 text-3xl font-black">Пулсът на стаята</h2>
+        <ConnectionBanner status={connectionStatus} message={status} />
+
+        <div className="play-rail-intro">
+          <p className="section-kicker play-section-kicker">
+            <Settings className="play-section-icon" aria-hidden strokeWidth={1.8} />
+            <span>хроника</span>
+          </p>
+          <h2 className="mt-3 text-3xl font-black">Пулсът на стаята</h2>
+        </div>
+
+        <LiveCuePanel
+          cueMode={cueMode}
+          liveMode={liveMode}
+          phase={phase}
+          pulseKey={phasePulse}
+          onChange={changeCueMode}
+        />
+
+        <PhaseRail phase={phase} />
+
+        {snapshot ? (
+          <details className="play-rail-disclosure mt-8" open={phase === "lobby"}>
+            <summary id={guideHeadingId}>Правила и подсказки</summary>
+            <div aria-labelledby={guideHeadingId}>
+              <RulesSummary snapshot={snapshot} />
+              <PhaseGuide phase={phase} mode={mode} privateRole={privateRole?.role} ownPlayer={ownPlayer} />
+            </div>
+          </details>
+        ) : null}
+
+        {snapshot && (ownPlayer?.host || ownPlayer?.narrator) ? (
+          <NarratorDesk
+            room={room}
+            snapshot={snapshot}
+            phase={phase}
+            family={family}
+            isNarrator={Boolean(ownPlayer?.narrator)}
+            onOpenShortcuts={() => setShowShortcuts(true)}
+          />
+        ) : null}
+
+        {snapshot?.narratorMode === "full_human" && ownPlayer && !ownPlayer.acceptedFullNarrator ? (
+          <article className="narrator-warning-card mt-8 rounded-[2rem] border border-[#842f2b]/50 bg-[#842f2b]/25 p-6">
+            <p className="text-sm uppercase tracking-[0.3em] text-[#c18a38]">важно предупреждение</p>
+            <h2 className="mt-2 text-3xl font-black">Пълен Разказвач вижда всички роли</h2>
+            <p className="mt-3 text-[#ead9ba]">
+              При този режим човекът Разказвач може да види тайните роли и действия, за да води играта ръчно.
+              Натисни приемане само ако си съгласен с това.
+            </p>
+            <button className="btn btn-primary mt-5" type="button" onClick={() => room?.send("acceptFullNarrator")}>
+              Приемам
+            </button>
+          </article>
+        ) : null}
+
+        {narratorSnapshot && ownPlayer?.narrator ? (
+          <NarratorSnapshotPanel snapshot={narratorSnapshot} />
+        ) : null}
+
+        <DeathRevealCinematic players={players} />
 
         {phase === "day_discussion" && snapshot?.communicationMode === "built_in_chat" ? (
           ownPlayer?.playing && ownPlayer?.alive ? (
@@ -493,6 +549,51 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
     );
   };
 
+  const renderLobbyControls = () => {
+    if (phase !== "lobby") {
+      return null;
+    }
+
+    return (
+      <div className="action-bar play-lobby-dock-actions">
+        <div className="action-bar-inner">
+          <button data-testid="ready-toggle" className="btn btn-secondary" type="button" onClick={sendReady} disabled={!room}>
+            <Users className="play-button-icon" aria-hidden strokeWidth={1.8} />
+            {ownPlayer?.ready ? "Не съм готов" : "Готов"}
+          </button>
+          {ownPlayer?.host ? (
+            <button
+              className="btn btn-primary"
+              type="button"
+              onClick={requestStartGame}
+              disabled={!room || !fullNarratorAccepted || startCountdown !== null}
+            >
+              <Play className="play-button-icon" aria-hidden strokeWidth={1.8} />
+              {startCountdown ? "Започваме..." : "Започни игра"}
+            </button>
+          ) : null}
+        </div>
+      </div>
+    );
+  };
+
+  const renderStageTakeover = () => {
+    if (!snapshot?.winnerTeam) {
+      return null;
+    }
+
+    return (
+      <div className="play-stage-takeover" aria-live="polite">
+        <article className={`winner-card paper-card rounded-[2rem] p-6 faction-${snapshot.winnerTeam}`}>
+          <p className="text-sm uppercase tracking-[0.3em] text-[#842f2b]">край на играта</p>
+          <h2 className="mt-2 text-4xl font-black">{winnerBg(snapshot.winnerTeam)}</h2>
+          <p className="mt-3 text-[#4f3829]">{snapshot.winnerReasonBg}</p>
+        </article>
+        <PostGameStory snapshot={snapshot} />
+      </div>
+    );
+  };
+
   const renderActionDock = () => {
     if (!hasActionDock) {
       return null;
@@ -511,6 +612,8 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
         </div>
 
         <div className="play-action-dock-grid">
+          {renderLobbyControls()}
+
           {privateLover ? <LoverCard lover={privateLover} /> : null}
 
           {isBlessed ? (
@@ -610,88 +713,9 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
             onMakeNarrator={(targetUserId) => room?.send("setNarrator", { targetUserId, narrator: true })}
             onMakeMayor={(targetUserId) => room?.send("setMayor", { targetUserId })}
           />
+          {renderStageTakeover()}
           {renderActionDock()}
-          <div className="card play-main-stack play-section rounded-[2rem] p-5 md:p-7">
-            <ConnectionBanner status={connectionStatus} message={status} />
-
-          {phase === "lobby" ? (
-            <div className="action-bar">
-              <div className="action-bar-inner">
-                <button data-testid="ready-toggle" className="btn btn-secondary" type="button" onClick={sendReady} disabled={!room}>
-                  <Users className="play-button-icon" aria-hidden strokeWidth={1.8} />
-                  {ownPlayer?.ready ? "Не съм готов" : "Готов"}
-                </button>
-                {ownPlayer?.host ? (
-                  <button
-                    className="btn btn-primary"
-                    type="button"
-                    onClick={requestStartGame}
-                    disabled={!room || !fullNarratorAccepted || startCountdown !== null}
-                  >
-                    <Play className="play-button-icon" aria-hidden strokeWidth={1.8} />
-                    {startCountdown ? "Започваме..." : "Започни игра"}
-                  </button>
-                ) : null}
-              </div>
-            </div>
-          ) : null}
-
-          <LiveCuePanel
-            cueMode={cueMode}
-            liveMode={liveMode}
-            phase={phase}
-            pulseKey={phasePulse}
-            onChange={changeCueMode}
-          />
-
-          <PhaseRail phase={phase} />
-
-          {snapshot ? <RulesSummary snapshot={snapshot} /> : null}
-
-          {snapshot ? <PhaseGuide phase={phase} mode={mode} privateRole={privateRole?.role} ownPlayer={ownPlayer} /> : null}
-
-          {snapshot && (ownPlayer?.host || ownPlayer?.narrator) ? (
-            <NarratorDesk
-              room={room}
-              snapshot={snapshot}
-              phase={phase}
-              family={family}
-              isNarrator={Boolean(ownPlayer?.narrator)}
-              onOpenShortcuts={() => setShowShortcuts(true)}
-            />
-          ) : null}
-
-          {snapshot?.narratorMode === "full_human" && ownPlayer && !ownPlayer.acceptedFullNarrator ? (
-            <article className="narrator-warning-card mt-8 rounded-[2rem] border border-[#842f2b]/50 bg-[#842f2b]/25 p-6">
-              <p className="text-sm uppercase tracking-[0.3em] text-[#c18a38]">важно предупреждение</p>
-              <h2 className="mt-2 text-3xl font-black">Пълен Разказвач вижда всички роли</h2>
-              <p className="mt-3 text-[#ead9ba]">
-                При този режим човекът Разказвач може да види тайните роли и действия, за да води играта ръчно.
-                Натисни приемане само ако си съгласен с това.
-              </p>
-              <button className="btn btn-primary mt-5" type="button" onClick={() => room?.send("acceptFullNarrator")}>
-                Приемам
-              </button>
-            </article>
-          ) : null}
-
-          {narratorSnapshot && ownPlayer?.narrator ? (
-            <NarratorSnapshotPanel snapshot={narratorSnapshot} />
-          ) : null}
-
-          <DeathRevealCinematic players={players} />
-
-          {snapshot?.winnerTeam ? (
-            <article className={`winner-card paper-card mt-8 rounded-[2rem] p-6 faction-${snapshot.winnerTeam}`}>
-              <p className="text-sm uppercase tracking-[0.3em] text-[#842f2b]">край на играта</p>
-              <h2 className="mt-2 text-4xl font-black">{winnerBg(snapshot.winnerTeam)}</h2>
-              <p className="mt-3 text-[#4f3829]">{snapshot.winnerReasonBg}</p>
-            </article>
-          ) : null}
-          {snapshot?.winnerTeam ? <PostGameStory snapshot={snapshot} /> : null}
-        </div>
-
-        {renderPlayersPanel()}
+          {renderPlayersPanel()}
       </section>
       </div>
     </main>
