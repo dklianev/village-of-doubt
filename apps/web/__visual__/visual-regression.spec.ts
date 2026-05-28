@@ -1,6 +1,23 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "playwright/test";
 
+const PLAY_VISUAL_ROUTES = [
+  { name: "play-werewolves-lobby", path: "/play/VISUAL?visualGame=1&phase=lobby&family=werewolves&viewer=host" },
+  { name: "play-werewolves-role-reveal", path: "/play/VISUAL?visualGame=1&phase=role_reveal&family=werewolves&role=seer" },
+  { name: "play-werewolves-night", path: "/play/VISUAL?visualGame=1&phase=night&family=werewolves&role=seer" },
+  { name: "play-werewolves-day", path: "/play/VISUAL?visualGame=1&phase=day_discussion&family=werewolves&dead=1" },
+  { name: "play-werewolves-voting", path: "/play/VISUAL?visualGame=1&phase=voting&family=werewolves&voteTally=full" },
+  { name: "play-werewolves-resolution", path: "/play/VISUAL?visualGame=1&phase=resolution&family=werewolves&dead=2" },
+  { name: "play-werewolves-game-over", path: "/play/VISUAL?visualGame=1&phase=game_over&family=werewolves&winner=werewolves&dead=5" },
+  { name: "play-mafia-lobby", path: "/play/VISUAL?visualGame=1&phase=lobby&family=mafia&viewer=host" },
+  { name: "play-mafia-role-reveal", path: "/play/VISUAL?visualGame=1&phase=role_reveal&family=mafia&role=commissioner" },
+  { name: "play-mafia-night", path: "/play/VISUAL?visualGame=1&phase=night&family=mafia&role=commissioner" },
+  { name: "play-mafia-day", path: "/play/VISUAL?visualGame=1&phase=day_discussion&family=mafia&dead=1" },
+  { name: "play-mafia-voting", path: "/play/VISUAL?visualGame=1&phase=voting&family=mafia&voteTally=full" },
+  { name: "play-mafia-resolution", path: "/play/VISUAL?visualGame=1&phase=resolution&family=mafia&dead=2" },
+  { name: "play-mafia-game-over", path: "/play/VISUAL?visualGame=1&phase=game_over&family=mafia&winner=mafia&dead=4" },
+];
+
 const ROUTES = [
   { name: "home", path: "/" },
   { name: "werewolf-home", path: "/werewolf" },
@@ -25,6 +42,7 @@ const ROUTES = [
   { name: "lobby", path: "/lobby" },
   { name: "werewolf-create", path: "/werewolf/create?visualAuth=1" },
   { name: "mafia-create", path: "/mafia/create?visualAuth=1" },
+  ...PLAY_VISUAL_ROUTES,
   { name: "forgot-password", path: "/forgot-password" },
   { name: "reset-password-invalid", path: "/reset-password" },
   { name: "verify-email-invalid", path: "/verify-email?token=fake" },
@@ -84,6 +102,7 @@ const DARK_UTILITY_ROUTE_NAMES = new Set([
   "lobby",
   "werewolf-create",
   "mafia-create",
+  ...PLAY_VISUAL_ROUTES.map((route) => route.name),
 ]);
 
 const A11Y_ROUTES = [
@@ -140,9 +159,18 @@ for (const viewport of VIEWPORTS) {
       } else {
         await acceptCookies(page);
       }
+      if (route.name.startsWith("play-")) {
+        await installNextDevIndicatorGuard(page);
+      }
       await page.goto(route.path, { waitUntil: "domcontentloaded" });
       await page.waitForLoadState("networkidle").catch(() => {});
+      if (route.name.startsWith("play-")) {
+        await hideNextDevIndicator(page);
+      }
       await page.waitForTimeout(600);
+      if (route.name.startsWith("play-")) {
+        await hideNextDevIndicator(page);
+      }
       await expect(page).toHaveScreenshot(`${viewport.name}-${route.name}.png`, {
         fullPage: true,
         maxDiffPixelRatio: 0.01,
@@ -267,6 +295,35 @@ async function setVisualTheme(page: Page, theme: "dark" | "light") {
     window.localStorage.setItem("cookie-consent", "1");
     window.localStorage.setItem("werewolf-theme", selectedTheme);
   }, theme);
+}
+
+async function hideNextDevIndicator(page: Page) {
+  await page.addStyleTag({
+    content: "nextjs-portal { display: none !important; }",
+  });
+  await page.evaluate(() => {
+    document.querySelectorAll("nextjs-portal").forEach((element) => element.remove());
+  });
+}
+
+async function installNextDevIndicatorGuard(page: Page) {
+  await page.addInitScript(() => {
+    const hideNextPortal = () => {
+      document.querySelectorAll("nextjs-portal").forEach((element) => element.remove());
+    };
+    const installObserver = () => {
+      hideNextPortal();
+      new MutationObserver(hideNextPortal).observe(document.documentElement, {
+        childList: true,
+        subtree: true,
+      });
+    };
+    if (document.documentElement) {
+      installObserver();
+    } else {
+      window.addEventListener("DOMContentLoaded", installObserver, { once: true });
+    }
+  });
 }
 
 async function mockFeedbackSession(page: Page) {
