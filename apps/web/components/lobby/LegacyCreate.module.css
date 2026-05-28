@@ -27,6 +27,37 @@
   will-change: transform, opacity;
 }
 
+:global(.lobby-wizard[data-faction="werewolves"]::before),
+:global(.lobby-wizard:not([data-faction])::before) {
+  inset: clamp(-36px, -4vw, -14px);
+  background: radial-gradient(
+    circle at 80% 8%,
+    rgba(214, 232, 200, 0.16),
+    rgba(120, 150, 110, 0.06) 32%,
+    transparent 62%
+  );
+  opacity: 0.85;
+  animation: wolf-moon-breathe 11s ease-in-out infinite alternate;
+}
+
+:global(.lobby-wizard[data-faction="werewolves"]::after),
+:global(.lobby-wizard:not([data-faction])::after) {
+  inset: clamp(-28px, -4vw, -10px) auto clamp(-28px, -4vw, -10px) -12%;
+  width: 124%;
+  background:
+    linear-gradient(0deg, rgba(89, 99, 59, 0.12), transparent 42%),
+    radial-gradient(
+      ellipse 108% 82% at 50% 52%,
+      transparent 0%,
+      transparent 52%,
+      rgba(37, 54, 35, 0.16) 80%,
+      rgba(18, 32, 24, 0.28) 100%
+    );
+  opacity: 0.92;
+  transform: translate3d(-3%, 0, 0);
+  animation: wolf-fog-drift 38s ease-in-out infinite alternate;
+}
+
 :global(.lobby-wizard-main),
 :global(.lobby-step),
 :global(.preview-stat-list),

@@ -2809,6 +2809,26 @@ html[data-theme="light"] .play-players-panel .chat-line {
   }
 }
 
+@keyframes wolf-moon-breathe {
+  from {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes wolf-fog-drift {
+  from {
+    transform: translate3d(-3%, 0, 0);
+  }
+  to {
+    transform: translate3d(3%, 0, 0);
+  }
+}
+
 ::view-transition-old(lobby-step),
 ::view-transition-new(lobby-step) {
   animation-duration: 260ms;
