@@ -143,7 +143,6 @@
 }
 
 :global(.lobby-step-slot:not([data-active="true"])) {
-  content-visibility: hidden;
   overflow: hidden;
 }
 
@@ -1462,10 +1461,6 @@
 
   :global(.lobby-step-pane) {
     min-height: clamp(480px, 80vh, 720px);
-  }
-
-  :global(.lobby-step-slot:not([data-active="true"])) {
-    display: none;
   }
 
   :global(.lobby-step-room .quick-start-row) {
