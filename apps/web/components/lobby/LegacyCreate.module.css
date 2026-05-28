@@ -50,7 +50,9 @@
 }
 
 :global(.lobby-step-nav ol) {
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  width: 100%;
   padding: 0;
   margin: 0;
   list-style: none;
@@ -58,6 +60,7 @@
 
 :global(.lobby-step-nav li) {
   flex: 1 1 120px;
+  min-width: 0;
 }
 
 :global(.lobby-step-nav button[data-status]) {
@@ -72,6 +75,7 @@
   color: #ead9ba;
   cursor: pointer;
   font-weight: 850;
+  min-width: 0;
 }
 
 :global(.lobby-step-nav button[data-status] span) {
@@ -99,6 +103,12 @@
 
 :global(.lobby-step-nav button[data-status="future"]) {
   opacity: 0.45;
+}
+
+:global(.lobby-step-nav button[data-status] strong) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 :global(.lobby-step-actions) {
