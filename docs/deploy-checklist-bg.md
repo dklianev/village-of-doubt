@@ -3,12 +3,17 @@
 ## Преди първи deploy
 
 - Създай Droplet във Frankfurt с Ubuntu LTS, Docker и Docker Compose plugin.
-- Насочи `A` records: основен домейн към web и `ws.` домейн към същия IP.
-- Попълни `.env` от `.env.example` с истински `DB_PASSWORD`, `BETTER_AUTH_SECRET`, `GAME_TOKEN_SECRET`, домейни и OAuth ключове.
+- Насочи `A` records: `tisi.lol` към web и `ws.tisi.lol` към същия IP.
+- Попълни `.env` от `.env.example` с истински `DB_PASSWORD`, `BETTER_AUTH_SECRET`, `GAME_TOKEN_SECRET`, OAuth ключове и production URL-и:
+  - `PUBLIC_WEB_DOMAIN=tisi.lol`
+  - `PUBLIC_WS_DOMAIN=ws.tisi.lol`
+  - `BETTER_AUTH_URL=https://tisi.lol`
+  - `NEXT_PUBLIC_APP_URL=https://tisi.lol`
+  - `CORS_ORIGIN=https://tisi.lol`
 - Изпълни `pnpm check:prod-env` с production env променливите.
 - Увери се, че `ALLOW_DEV_AUTH=false` или липсва в production.
 - Стартирай `docker compose up -d --build`.
-- Провери `https://PUBLIC_WEB_DOMAIN` и `wss://PUBLIC_WS_DOMAIN`.
+- Провери `https://tisi.lol` и `wss://ws.tisi.lol`.
 
 ## Backup И Restore
 

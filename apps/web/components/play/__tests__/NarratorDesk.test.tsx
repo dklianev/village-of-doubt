@@ -42,6 +42,7 @@ function snapshot(overrides: Partial<GameSnapshot> = {}): GameSnapshot {
     voteSeconds: 45,
     revealRolesOnDeath: true,
     loversEnabled: true,
+    doctorCanSelfProtect: false,
     allowSkipVote: true,
     majorityMode: "simple",
     narratorVoice: "classic",

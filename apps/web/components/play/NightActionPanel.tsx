@@ -1,11 +1,14 @@
-import type { NightActionCommand, RoleCode } from "@werewolf/shared";
+import type { GamePhase, NightActionCommand, RoleCode } from "@werewolf/shared";
 import { nightActionHelpBg, nightInstructionBg } from "@/lib/play/copy";
 import { canFactionKill } from "@/lib/play/role-rules";
+import { needsSecondNightTarget, secondaryShortcutTargets, shortcutTargets } from "@/lib/play/night-actions";
 import type { PublicPlayer } from "@/lib/play/types";
 
 export function NightActionPanel({
   players,
   livingPlayers,
+  currentUserId,
+  doctorCanSelfProtect,
   phase,
   privateRole,
   selectedTargetId,
@@ -14,23 +17,25 @@ export function NightActionPanel({
 }: {
   players: PublicPlayer[];
   livingPlayers: PublicPlayer[];
-  phase: string;
+  currentUserId: string;
+  doctorCanSelfProtect: boolean;
+  phase: GamePhase;
   privateRole: RoleCode;
   selectedTargetId: string;
   secondTargetId: string;
   sendNightAction: (action: NightActionCommand) => void;
 }) {
-  const selectableTargets =
-    privateRole === "medium"
-      ? players.filter((player) => player.playing && !player.alive)
-      : livingPlayers;
+  const selectableTargets = shortcutTargets(phase, privateRole, players, livingPlayers, currentUserId, {
+    doctorCanSelfProtect,
+  });
   const selectedTargetStillAvailable = selectableTargets.some((player) => player.userId === selectedTargetId);
   const targetId = selectedTargetStillAvailable ? selectedTargetId : "";
   const selectedTarget = selectableTargets.find((player) => player.userId === targetId);
-  const needsSecondTarget =
-    privateRole === "blacksmith"
-    || ((privateRole === "cupid" || privateRole === "lovers") && phase === "first_night");
-  const secondTarget = livingPlayers.find((player) => player.userId === secondTargetId && player.userId !== targetId);
+  const needsSecondTarget = needsSecondNightTarget(privateRole, phase);
+  const secondaryTargets = needsSecondTarget
+    ? secondaryShortcutTargets(phase, privateRole, livingPlayers, currentUserId, targetId)
+    : [];
+  const secondTarget = secondaryTargets.find((player) => player.userId === secondTargetId);
   const secondId = secondTarget?.userId ?? "";
   const canSubmitTarget = Boolean(targetId) && (!needsSecondTarget || Boolean(secondId));
   const secondTargetLabel = privateRole === "blacksmith" ? "кой получава меча" : "втора цел";
@@ -39,30 +44,20 @@ export function NightActionPanel({
     <section className="night-action-sheet ritual-panel mt-8 rounded-[2rem] p-6">
       <p className="section-kicker">нощно действие</p>
       <h2 className="mt-2 text-3xl font-black">{nightInstructionBg(privateRole)}</h2>
-      <p className="mt-3 text-[#ead9ba]">{nightActionHelpBg(privateRole)}</p>
-      <p className="mt-2 text-sm font-bold text-[#c18a38]">
-        Можеш да промениш избора си до края на таймера. Сървърът пази последното изпратено действие.
-      </p>
-      {privateRole === "medium" && selectableTargets.length === 0 ? (
-        <p className="mt-3 rounded-2xl border border-[#c18a38]/35 bg-[#c18a38]/10 p-3 text-sm font-bold text-[#ead9ba]">
-          Медиумът няма елиминиран играч, с когото да се свърже тази нощ.
-        </p>
-      ) : null}
-
       <div className="play-selected-targets mt-5">
-        <div className="play-selected-target">
+        <div className="play-selected-target" data-filled={selectedTarget ? "true" : undefined}>
           <span>цел от масата</span>
           <strong>{selectedTarget?.displayName ?? "избери място"}</strong>
         </div>
         {needsSecondTarget ? (
-          <div className="play-selected-target">
+          <div className="play-selected-target" data-filled={secondTarget ? "true" : undefined}>
             <span>{secondTargetLabel}</span>
             <strong>{secondTarget?.displayName ?? "избери второ място"}</strong>
           </div>
         ) : null}
       </div>
 
-      <div className="mt-5 flex flex-wrap gap-3">
+      <div className="play-action-buttons mt-5 flex flex-wrap gap-3">
         {canFactionKill(privateRole) ? (
           <button
             className={`btn btn-primary action-btn ${privateRole === "vampire" ? "ability-vampire" : "ability-kill"}`}
@@ -172,6 +167,15 @@ export function NightActionPanel({
           Пропусни
         </button>
       </div>
+      <p className="mt-3 text-[#ead9ba]">{nightActionHelpBg(privateRole)}</p>
+      <p className="mt-2 text-sm font-bold text-[#c18a38]">
+        Можеш да промениш избора си до края на таймера. Сървърът пази последното изпратено действие.
+      </p>
+      {privateRole === "medium" && selectableTargets.length === 0 ? (
+        <p className="mt-3 rounded-2xl border border-[#c18a38]/35 bg-[#c18a38]/10 p-3 text-sm font-bold text-[#ead9ba]">
+          Медиумът няма елиминиран играч, с когото да се свърже тази нощ.
+        </p>
+      ) : null}
     </section>
   );
 }

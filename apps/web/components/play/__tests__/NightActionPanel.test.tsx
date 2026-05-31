@@ -34,6 +34,8 @@ function renderPanel(overrides: Partial<Parameters<typeof NightActionPanel>[0]> 
   const props: Parameters<typeof NightActionPanel>[0] = {
     players,
     livingPlayers,
+    currentUserId: "u1",
+    doctorCanSelfProtect: false,
     phase: "night",
     privateRole: "werewolf",
     selectedTargetId: "",
@@ -83,5 +85,34 @@ describe("NightActionPanel", () => {
     await user.click(screen.getByRole("button", { name: "Пропусни" }));
 
     expect(props.sendNightAction).toHaveBeenCalledWith({ kind: "skip" });
+  });
+
+  it("does not offer doctor self-protect when the room option is not in the client snapshot", () => {
+    renderPanel({ privateRole: "doctor", selectedTargetId: "u1" });
+
+    expect(screen.getByText("избери място")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Пази тази нощ" })).toBeDisabled();
+  });
+
+  it("offers doctor self-protect when the room option allows it", () => {
+    renderPanel({ privateRole: "doctor", selectedTargetId: "u1", doctorCanSelfProtect: true });
+
+    expect(screen.getByText("Анна")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Пази тази нощ" })).toBeEnabled();
+  });
+
+  it("allows the witch to target herself with either potion", () => {
+    renderPanel({ privateRole: "witch", selectedTargetId: "u1" });
+
+    expect(screen.getByText("Анна")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Лекувай" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Отрови" })).toBeEnabled();
+  });
+
+  it("does not treat the Blacksmith actor as a valid sword receiver", () => {
+    renderPanel({ privateRole: "blacksmith", selectedTargetId: "u2", secondTargetId: "u1" });
+
+    expect(screen.getByText("избери второ място")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Изкови меч" })).toBeDisabled();
   });
 });

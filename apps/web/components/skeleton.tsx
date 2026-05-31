@@ -1,7 +1,6 @@
 import type { CSSProperties } from "react";
 import "@/components/history/History.module.css";
 import "@/components/leaderboard/Leaderboard.module.css";
-import "@/components/play/PlayerToken.module.css";
 
 interface SkeletonProps {
   className?: string;
@@ -126,7 +125,7 @@ export function PlayerTokensSkeleton() {
   return (
     <>
       {[0, 1, 2, 3].map((item) => (
-        <div key={item} className="player-token skeleton-card rounded-2xl px-4 py-3">
+        <div key={item} className="skeleton-card rounded-2xl px-4 py-3">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3">
               <Skeleton className="h-12 w-12 rounded-2xl" />

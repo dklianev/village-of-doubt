@@ -86,6 +86,7 @@ function makeState() {
     voteSeconds: 45,
     revealRolesOnDeath: true,
     loversEnabled: true,
+    doctorCanSelfProtect: true,
     allowSkipVote: false,
     majorityMode: "simple",
     narratorVoice: "classic",
@@ -206,6 +207,7 @@ describe("useGameRoom", () => {
     await waitFor(() => expect(result.current.snapshot?.code).toBe("ABCD"));
     expect(result.current.currentUserId).toBe("u1");
     expect(result.current.snapshot?.players[0]?.displayName).toBe("Играч");
+    expect(result.current.snapshot?.doctorCanSelfProtect).toBe(true);
   });
 
   it("reconnects with the persisted room token after an abnormal leave", async () => {

@@ -1,4 +1,4 @@
-import type { GameMode, GamePhase, NarratorVoice } from "@werewolf/shared";
+import { getGameFamily, type GameMode, type GamePhase, type NarratorVoice } from "@werewolf/shared";
 import { phaseBg, phaseNarratorLine, phaseSigil } from "@/lib/play/phase-display";
 
 export function PhaseTransitionOverlay({
@@ -16,8 +16,15 @@ export function PhaseTransitionOverlay({
     return null;
   }
 
+  const family = getGameFamily(mode);
+
   return (
-    <div key={`${phase}-${pulseKey}`} className={`phase-transition-overlay transition-${phase}`} aria-hidden="true">
+    <div
+      key={`${phase}-${pulseKey}`}
+      className={`phase-transition-overlay transition-${phase}`}
+      data-family={family}
+      aria-hidden="true"
+    >
       <div>
         <span>{phaseSigil(phase)}</span>
         <strong>{phaseBg(phase, mode)}</strong>

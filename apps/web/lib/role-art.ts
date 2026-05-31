@@ -1,13 +1,20 @@
 import type { CSSProperties } from "react";
-import { getRoleAssetKey, type GameFamily, type RoleCode } from "@werewolf/shared";
+import { ROLE_DEFINITIONS, getRoleAssetKey, type GameFamily, type RoleCode } from "@werewolf/shared";
+
+function visualFamilyForRole(family: GameFamily, role: RoleCode): GameFamily {
+  const availableFamilies = ROLE_DEFINITIONS[role].availableInFamilies as readonly GameFamily[];
+  return availableFamilies.includes(family) ? family : availableFamilies[0] ?? family;
+}
 
 export function roleArtPath(family: GameFamily, role: RoleCode, extension: "png" | "webp" = "webp") {
-  const prefix = family === "mafia" ? "/game-art/mafia" : "/game-art";
+  const visualFamily = visualFamilyForRole(family, role);
+  const prefix = visualFamily === "mafia" ? "/game-art/mafia" : "/game-art";
   return `${prefix}/role-${getRoleAssetKey(role)}.${extension}`;
 }
 
 export function roleThumbPath(family: GameFamily, role: RoleCode) {
-  const prefix = family === "mafia" ? "/game-art/thumbs/mafia" : "/game-art/thumbs";
+  const visualFamily = visualFamilyForRole(family, role);
+  const prefix = visualFamily === "mafia" ? "/game-art/thumbs/mafia" : "/game-art/thumbs";
   return `${prefix}/role-${getRoleAssetKey(role)}.webp`;
 }
 

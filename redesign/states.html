@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="bg">
+<head>
+<meta charset="utf-8">
+<title>Състояния · Подробен спецификат</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="crest">W</div>
+    <div class="brand">
+      <div class="brand-title">Върколак · Мафия</div>
+      <div class="brand-sub">Състояния · 22 empty + 9 error</div>
+    </div>
+    <nav>
+      <a href="index.html">Преглед</a>
+      <a href="tokens.html">Tokens</a>
+      <a href="primitives.html">Компоненти</a>
+      <a href="dictionary.html">Речник</a>
+      <a href="motion.html">Движение</a>
+      <a href="states.html" class="active">Състояния</a>
+      <a href="acceptance.html">Acceptance</a>
+      <a href="prompts.html">Промпти</a>
+    </nav>
+  </div>
+</div>
+
+<main>
+
+<header class="hero">
+  <div class="hero-card">
+    <div class="eyebrow">05 · Foundation · Edges</div>
+    <h1>Всеки <em>ръб</em> е дизайнерски момент.</h1>
+    <p class="hero-lede">
+      Празните и грешковите състояния са там, където повечето приложения изоставят
+      бранда си. В село като нашето — там е точно обратното. Празното носи смисъл.
+      Грешката е разказ. Този каталог покрива двадесет и две празни състояния и девет
+      грешкови повърхности.
+    </p>
+    <div class="hero-meta">
+      <span>Empty · <b>22</b></span>
+      <span>Error · <b>9</b></span>
+      <span>Loading · <b>3 категории</b></span>
+      <span>Boundary · <b>5 ръба</b></span>
+    </div>
+  </div>
+</header>
+
+<!-- EMPTY STATES -->
+<section class="wrap">
+  <div class="section-head">
+    <div>
+      <div class="num">01 / Empty states</div>
+      <h2>Двадесет и две празни състояния.</h2>
+    </div>
+    <p>Всяко с конкретна метафора, артефакт от <code>EmptyState</code> компонента, копирайт и action.</p>
+  </div>
+
+  <div class="paper-card">
+    <table class="spec">
+      <thead><tr><th>Страница</th><th>Артефакт</th><th>Заглавие (✓)</th><th>Описание</th><th>Action</th></tr></thead>
+      <tbody>
+        <tr><td class="name">/ (home)</td><td class="val">empty-chair</td><td class="use">Бъди първият на масата.</td><td class="use">Няма активни стаи в момента.</td><td class="use">Създай стая</td></tr>
+        <tr><td class="name">/ (last-story)</td><td class="val">closed-book</td><td class="use">Първите герои ще се появят тук.</td><td class="use">След първата завършена игра.</td><td class="use">—</td></tr>
+        <tr><td class="name">/lobby (list)</td><td class="val">empty-chair</td><td class="use">Тихо е. Започни ти.</td><td class="use">Никой не е създал стая в последния час.</td><td class="use">Създай стая</td></tr>
+        <tr><td class="name">/lobby (search no match)</td><td class="val">closed-book</td><td class="use">Не намерихме такава стая.</td><td class="use">Провери кода или потърси друга.</td><td class="use">Изчисти търсенето</td></tr>
+        <tr><td class="name">/play (lobby waiting)</td><td class="val">open-door</td><td class="use">Първи влизаш — мястото е твое.</td><td class="use">Сподели кода с приятели.</td><td class="use">Копирай код · QR код</td></tr>
+        <tr><td class="name">/history</td><td class="val">sealed-letter</td><td class="use">Архивът чака първото си писмо.</td><td class="use">Завърши една игра и тя ще се появи тук.</td><td class="use">Седни на маса</td></tr>
+        <tr><td class="name">/history (filter no match)</td><td class="val">closed-book</td><td class="use">Не намерихме дело с тези критерии.</td><td class="use">Опитай с по-широко търсене.</td><td class="use">Изчисти филтри</td></tr>
+        <tr><td class="name">/achievements (0/7)</td><td class="val">dusty-shelf</td><td class="use">Легендите още не са започнали.</td><td class="use">Първата победа отключва първата легенда.</td><td class="use">Играй сега</td></tr>
+        <tr><td class="name">/achievements (locked card)</td><td class="val">closed-book</td><td class="use">Заключена легенда.</td><td class="use">Подсказка: спечели 3 нощи поредно.</td><td class="use">—</td></tr>
+        <tr><td class="name">/friends</td><td class="val">empty-chair</td><td class="use">Покани първия си гост.</td><td class="use">Сподели линк с приятели.</td><td class="use">Копирай покана</td></tr>
+        <tr><td class="name">/friends (pending)</td><td class="val">sealed-letter</td><td class="use">Поканите чакат отговор.</td><td class="use">Изпрати напомняне, ако е минала седмица.</td><td class="use">—</td></tr>
+        <tr><td class="name">/leaderboard</td><td class="val">unprinted-paper</td><td class="use">Изданието още не е тиражирано.</td><td class="use">Утрешният брой ще носи първото име. Завърши една игра.</td><td class="use">Започни първото издание</td></tr>
+        <tr><td class="name">/leaderboard (week empty)</td><td class="val">unprinted-paper</td><td class="use">Тази седмица е без новини.</td><td class="use">Виж класирането от миналата седмица.</td><td class="use">Виж миналата седмица</td></tr>
+        <tr><td class="name">/account (no email confirmed)</td><td class="val">sealed-letter</td><td class="use">Изпратихме ти писмо.</td><td class="use">Отвори имейла и потвърди адреса.</td><td class="use">Изпрати отново</td></tr>
+        <tr><td class="name">/account (no avatar)</td><td class="val">empty-chair</td><td class="use">Покажи лицето си.</td><td class="use">Избери от 8 портрета от епохата.</td><td class="use">Избери аватар</td></tr>
+        <tr><td class="name">/faq (no results)</td><td class="val">closed-book</td><td class="use">Огънят не познава този въпрос.</td><td class="use">Изпрати ни го — ще намерим отговор.</td><td class="use">Дай ни бележка</td></tr>
+        <tr><td class="name">/report (no reports)</td><td class="val">closed-book</td><td class="use">Нямаш отворени сигнали.</td><td class="use">Когато подадеш, ще се появят тук.</td><td class="use">—</td></tr>
+        <tr><td class="name">/status (all healthy)</td><td class="val">balanced-scale</td><td class="use">Селото работи.</td><td class="use">Всички услуги отговарят нормално.</td><td class="use">—</td></tr>
+        <tr><td class="name">/status (partial outage)</td><td class="val">broken-candle</td><td class="use">Селото е тихо.</td><td class="use">Една услуга не отговаря — работим по нея.</td><td class="use">Виж детайли</td></tr>
+        <tr><td class="name">/status (major outage)</td><td class="val">broken-candle</td><td class="use">Селото спи.</td><td class="use">Сериозен проблем. Опитай след малко.</td><td class="use">Абонирай се за известия</td></tr>
+        <tr><td class="name">Search global</td><td class="val">closed-book</td><td class="use">Не намерихме нищо за това.</td><td class="use">Опитай с по-кратък термин.</td><td class="use">—</td></tr>
+        <tr><td class="name">Notifications panel</td><td class="val">sealed-letter</td><td class="use">Никакви известия.</td><td class="use">Когато се случи нещо важно, ще намериш писмо тук.</td><td class="use">—</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ERROR STATES -->
+<section class="wrap">
+  <div class="section-head">
+    <div>
+      <div class="num">02 / Error states</div>
+      <h2>Девет грешкови повърхности.</h2>
+    </div>
+    <p>Никаква техническа терминология. Никакви stack traces. Селото поглъща грешката и я разказва.</p>
+  </div>
+
+  <div class="paper-card">
+    <table class="spec">
+      <thead><tr><th>Грешка</th><th>HTTP / Контекст</th><th>Заглавие (✓)</th><th>Тяло</th><th>Action(s)</th></tr></thead>
+      <tbody>
+        <tr><td class="name">Not found</td><td class="val">404</td><td class="use">Тази уличка не съществува в картите ни.</td><td class="use">Може да си загубил пътя. Върни се на масата.</td><td class="use">Към началото · Доклад</td></tr>
+        <tr><td class="name">Internal error</td><td class="val">500</td><td class="use">Нещо се счупи в архивите.</td><td class="use">Малък код: <code>X-91A</code>. Опитай отново или прати ни го.</td><td class="use">Опитай отново · Доклад</td></tr>
+        <tr><td class="name">Offline</td><td class="val">no network</td><td class="use">Селото потъва в мъгла.</td><td class="use">Изгубихме връзка. Ще те върнем, щом интернетът се пробуди.</td><td class="use">Опитай отново (auto-retry)</td></tr>
+        <tr><td class="name">Disconnect mid-game</td><td class="val">socket close</td><td class="use">Сервърът те чака. Не бързай.</td><td class="use">Опитваме се да се върнем на масата. Не затваряй прозореца.</td><td class="use">— (auto-reconnect)</td></tr>
+        <tr><td class="name">Session expired</td><td class="val">401</td><td class="use">Свещта догоря.</td><td class="use">Профилът ти излезе. Влез отново и продължи.</td><td class="use">Влез отново</td></tr>
+        <tr><td class="name">Forbidden / Banned</td><td class="val">403</td><td class="use">Масата вече е затворена за теб.</td><td class="use">Ако смяташ, че това е грешка, отвори сигнал.</td><td class="use">Отвори сигнал</td></tr>
+        <tr><td class="name">Rate limited</td><td class="val">429</td><td class="use">Огънят се успокоява.</td><td class="use">Изчакай минута и опитай отново.</td><td class="use">— (countdown)</td></tr>
+        <tr><td class="name">Form validation</td><td class="val">inline</td><td class="use">Тук нещо не съвпада.</td><td class="use">[Конкретна корекция, напр. „Имейлът няма @"]</td><td class="use">— (inline)</td></tr>
+        <tr><td class="name">Token expired (reset/verify)</td><td class="val">410</td><td class="use">Това писмо е стояло твърде дълго.</td><td class="use">Поискай нов линк — старите изтичат след час.</td><td class="use">Изпрати нов линк</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="code">
+    <div class="code-bar"><span class="label">app/global-error.tsx · 500 страница</span><button onclick="copyCode(this)">Копирай</button></div>
+    <div class="code-body"><span class="s">'use client'</span>;
+
+<span class="k">import</span> { SceneCard, Eyebrow, Display, Pill } <span class="k">from</span> <span class="s">'@village/ui'</span>;
+
+<span class="k">export default function</span> <span class="t">GlobalError</span>({
+  error,
+  reset,
+}: {
+  error: <span class="t">Error</span> &amp; { digest?: <span class="t">string</span> };
+  reset: () =&gt; <span class="t">void</span>;
+}) {
+  <span class="k">return</span> (
+    &lt;<span class="t">html</span> lang=<span class="s">"bg"</span>&gt;
+      &lt;<span class="t">body</span>&gt;
+        &lt;<span class="t">SceneCard</span> density=<span class="s">"lg"</span>&gt;
+          &lt;<span class="t">Eyebrow</span>&gt;Грешка в архивите&lt;/<span class="t">Eyebrow</span>&gt;
+          &lt;<span class="t">Display</span> size=<span class="s">"h1"</span>&gt;
+            Нещо се &lt;em&gt;счупи&lt;/em&gt; в архивите.
+          &lt;/<span class="t">Display</span>&gt;
+          &lt;p&gt;
+            Малък код за поддръжка:&nbsp;
+            &lt;<span class="t">code</span>&gt;{error.digest ?? <span class="s">'X-000'</span>}&lt;/<span class="t">code</span>&gt;
+          &lt;/p&gt;
+          &lt;<span class="t">Pill</span> variant=<span class="s">"primary"</span> onClick={reset}&gt;
+            Опитай отново
+          &lt;/<span class="t">Pill</span>&gt;
+          &lt;<span class="t">Pill</span> variant=<span class="s">"ghost"</span> href=<span class="s">"/report"</span>&gt;
+            Изпрати ни сигнал
+          &lt;/<span class="t">Pill</span>&gt;
+        &lt;/<span class="t">SceneCard</span>&gt;
+      &lt;/<span class="t">body</span>&gt;
+    &lt;/<span class="t">html</span>&gt;
+  );
+}</div>
+  </div>
+</section>
+
+<!-- LOADING STATES -->
+<section class="wrap">
+  <div class="section-head">
+    <div>
+      <div class="num">03 / Loading</div>
+      <h2>Три категории на изчакване.</h2>
+    </div>
+    <p>Не всеки loading е еднакъв. Микро (&lt;200ms) се скрива; средно (200ms–2s) skeleton; дълго (&gt;2s) — атмосферен момент.</p>
+  </div>
+
+  <div class="paper-card">
+    <table class="spec">
+      <thead><tr><th>Категория</th><th>Време</th><th>Поведение</th><th>Употреба</th></tr></thead>
+      <tbody>
+        <tr><td class="name">Micro</td><td class="val">&lt; 200ms</td><td class="use">Нищо не се показва — оптимистично UI</td><td class="use">Button clicks, form submits</td></tr>
+        <tr><td class="name">Standard</td><td class="val">200ms – 2s</td><td class="use">Skeleton placeholders, същата структура</td><td class="use">List loading, page navigation</td></tr>
+        <tr><td class="name">Long</td><td class="val">&gt; 2s</td><td class="use">Атмосферен loader с копирайт</td><td class="use">Game start, role reveal, large search</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="grid-2" style="margin-top: 18px;">
+    <div class="paper-card" style="margin-top: 0;">
+      <h3 class="section-title">Skeleton правила</h3>
+      <ul class="tight">
+        <li>Skeleton повтаря <b>точно</b> layout-а на готовото съдържание (същи височини, същи ширини).</li>
+        <li>Background: <code>linear-gradient</code> с tone <code>--surface-paper-deep</code>.</li>
+        <li>Pulse animation — само ако reduced-motion не е активен.</li>
+        <li>Никакви „spinner" иконки. Никакви „..." точки.</li>
+      </ul>
+    </div>
+    <div class="paper-card" style="margin-top: 0;">
+      <h3 class="section-title">Long-loading копирайт</h3>
+      <ul class="tight">
+        <li><b>Game start:</b> „Картите се раздават…"</li>
+        <li><b>Role reveal:</b> „Свещникът подава ти твоята…"</li>
+        <li><b>Search:</b> „Огънят прелиства…"</li>
+        <li><b>Reconnect:</b> „Сервърът те чака. Не бързай."</li>
+        <li><b>Generic:</b> „Селото се събира…"</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- BOUNDARY CASES -->
+<section class="wrap">
+  <div class="section-head">
+    <div>
+      <div class="num">04 / Гранични случаи</div>
+      <h2>Пет ръба, които не са нито empty, нито error.</h2>
+    </div>
+    <p>Тук системата трябва да отговори бавно и с тон, не с alert dialog.</p>
+  </div>
+
+  <div class="paper-card">
+    <table class="spec">
+      <thead><tr><th>Ситуация</th><th>UI поведение</th><th>Копирайт</th></tr></thead>
+      <tbody>
+        <tr><td class="name">Невъзможност да се влезе в стая (пълна)</td><td class="use">Toast (warning), оставаш на /lobby</td><td class="use">Тази маса вече е пълна. Опитай друга.</td></tr>
+        <tr><td class="name">Стая е приключила преди да влезеш</td><td class="use">Toast (info), редирект към /lobby</td><td class="use">Тази вечер вече свърши. Сядай на нова.</td></tr>
+        <tr><td class="name">Host напуска по време на игра</td><td class="use">Inline banner в горната част на /play</td><td class="use">Водещият стана. Сега ти държиш масата.</td></tr>
+        <tr><td class="name">Браузър prompt за разрешение (notifications, audio)</td><td class="use">Първо custom prompt в нашия стил, после native</td><td class="use">Селото иска да ти изпраща тих звън. Разрешаваш ли?</td></tr>
+        <tr><td class="name">First-time user след auth (no profile name)</td><td class="use">Modal с задължително поле „Име на масата"</td><td class="use">Как искаш да те виждат на масата?</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<footer class="foot">
+  <span>Подробен спецификат · Състояния</span>
+  <span class="sign">„Нулата носи смисъл."</span>
+  <span>Следва · <a href="acceptance.html" style="border: none; color: inherit;">Acceptance →</a></span>
+</footer>
+
+</main>
+
+<script>
+function copyCode(btn) {
+  const text = btn.closest('.code').querySelector('.code-body').innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ Копирано';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Копирай'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+</script>
+
+</body>
+</html>

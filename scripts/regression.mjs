@@ -942,7 +942,6 @@ function readAppStyles() {
     "apps/web/components/auth/AuthRecovery.module.css",
     "apps/web/components/site-chrome/SiteChrome.module.css",
     "apps/web/components/play/PlayRoom.module.css",
-    "apps/web/components/play/PlayerToken.module.css",
     "apps/web/components/play/PhaseRail.module.css",
     "apps/web/components/play/ReconnectModal.module.css",
     "apps/web/components/play/VoteTallyBar.module.css",
@@ -968,7 +967,6 @@ function readPlayStyles() {
   return readCssSurface(
     "apps/web/app/globals.css",
     "apps/web/components/play/PlayRoom.module.css",
-    "apps/web/components/play/PlayerToken.module.css",
     "apps/web/components/play/PhaseRail.module.css",
     "apps/web/components/play/ReconnectModal.module.css",
     "apps/web/components/play/VoteTallyBar.module.css",

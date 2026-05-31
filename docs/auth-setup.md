@@ -7,10 +7,14 @@
 - Google: `http://localhost:3000/api/auth/callback/google`
 - Discord: `http://localhost:3000/api/auth/callback/discord`
 
-За production замени домейна:
+За production използвай домейна на играта:
 
-- Google: `https://<домейн>/api/auth/callback/google`
-- Discord: `https://<домейн>/api/auth/callback/discord`
+- Google: `https://tisi.lol/api/auth/callback/google`
+- Discord: `https://tisi.lol/api/auth/callback/discord`
+
+Authorized origin за production:
+
+- `https://tisi.lol`
 
 ## Env променливи
 

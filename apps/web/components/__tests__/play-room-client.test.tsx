@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
@@ -59,10 +59,6 @@ vi.mock("@/components/play/PhaseGuide", () => ({
   PhaseGuide: () => <div data-testid="phase-guide" />,
 }));
 
-vi.mock("@/components/play/PlayerTile", () => ({
-  PlayerTile: ({ player }: { player: PublicPlayer }) => <div>{player.displayName}</div>,
-}));
-
 vi.mock("@/components/play/Timer", () => ({
   Timer: () => <div data-testid="timer" />,
 }));
@@ -104,7 +100,15 @@ vi.mock("@/components/play/DeathRevealCinematic", () => ({
 }));
 
 vi.mock("@/components/play/NightActionPanel", () => ({
-  NightActionPanel: () => <div data-testid="night-action" />,
+  NightActionPanel: ({
+    selectedTargetId,
+    secondTargetId,
+    doctorCanSelfProtect,
+  }: {
+    selectedTargetId: string;
+    secondTargetId: string;
+    doctorCanSelfProtect: boolean;
+  }) => <div data-testid="night-action" data-doctor-self={String(doctorCanSelfProtect)}>{selectedTargetId}|{secondTargetId}</div>,
 }));
 
 vi.mock("@/components/play/VotingPanel", () => ({
@@ -163,6 +167,7 @@ function snapshotForPhase(phase: GamePhase): GameSnapshot {
     voteSeconds: 45,
     revealRolesOnDeath: true,
     loversEnabled: true,
+    doctorCanSelfProtect: false,
     allowSkipVote: false,
     majorityMode: "simple",
     narratorVoice: "classic",
@@ -256,5 +261,274 @@ describe("PlayRoomClient orchestrator", () => {
     await userEvent.click(screen.getByRole("button", { name: "Опитай пак" }));
 
     expect(mocks.reconnectNow).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the private role dock expanded during role reveal", async () => {
+    mockHooks("role_reveal", {
+      privateRole: { role: "seer", roleNameBg: "Гадателка" },
+    });
+
+    render(<PlayRoomClient code="ABCD" createOptions={{ mode: "werewolves_classic" }} />);
+
+    await waitFor(() => {
+    expect(screen.getByRole("button", { name: "Скрий" })).toHaveAttribute("aria-expanded", "true");
+    });
+    expect(screen.getByTestId("role-card")).toBeInTheDocument();
+  });
+
+  it("marks explicit shell layout modes for CSS without relying on descendant selectors", () => {
+    mockHooks("lobby");
+
+    render(<PlayRoomClient code="ABCD" createOptions={{ mode: "werewolves_classic" }} />);
+
+    expect(document.querySelector(".play-layout")).toHaveAttribute("data-has-narrator-deck", "true");
+    expect(document.querySelector(".play-layout")).not.toHaveAttribute("data-stage-takeover");
+  });
+
+  it("lets the winner takeover own game over without private or narrator chrome", () => {
+    mockHooks("game_over", {
+      privateRole: { role: "seer", roleNameBg: "Гадателка" },
+      narratorSnapshot: { players: [] },
+    });
+
+    render(<PlayRoomClient code="ABCD" createOptions={{ mode: "werewolves_classic" }} />);
+
+    expect(screen.getByText("Селото печели")).toBeInTheDocument();
+    expect(screen.getByTestId("post-game-story")).toBeInTheDocument();
+    expect(screen.queryByTestId("role-card")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("narrator-desk")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("narrator-snapshot")).not.toBeInTheDocument();
+    expect(screen.queryByText("Пулсът на стаята")).not.toBeInTheDocument();
+    expect(document.querySelector(".play-layout")).toHaveAttribute("data-stage-takeover", "true");
+    expect(document.querySelector(".play-layout")).not.toHaveAttribute("data-has-narrator-deck");
+  });
+
+  it("does not steal Enter from focused action dock controls", async () => {
+    const user = userEvent.setup();
+    mockHooks("role_reveal", {
+      privateRole: { role: "seer", roleNameBg: "Гадателка" },
+    });
+
+    render(<PlayRoomClient code="ABCD" createOptions={{ mode: "werewolves_classic" }} />);
+
+    const toggle = await screen.findByRole("button", { name: "Скрий" });
+    toggle.focus();
+    await user.keyboard("{Enter}");
+
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("clears seat selection with Escape even when an action control is focused", async () => {
+    const user = userEvent.setup();
+    const players: PublicPlayer[] = [
+      { ...player, userId: "u1", displayName: "Искра" },
+      { ...player, userId: "u2", displayName: "Борил", host: false },
+      { ...player, userId: "u3", displayName: "Рада", host: false },
+    ];
+    mockHooks("first_night", {
+      snapshot: {
+        ...snapshotForPhase("first_night"),
+        playerCount: players.length,
+        players,
+      },
+      currentUserId: "u1",
+      privateRole: { role: "blacksmith", roleNameBg: "Ковач" },
+    });
+
+    render(<PlayRoomClient code="ABCD" createOptions={{ mode: "werewolves_classic" }} />);
+
+    await user.click(screen.getByRole("button", { name: "Избери Борил: онлайн" }));
+    expect(screen.getByTestId("night-action")).toHaveTextContent("u2|");
+
+    const toggle = await screen.findByRole("button", { name: "Скрий" });
+    toggle.focus();
+    fireEvent.keyDown(toggle, { key: "Escape" });
+
+    expect(screen.getByTestId("night-action")).toHaveTextContent("|");
+  });
+
+  it("clears a two-target role's secondary seat when the primary target is toggled off", async () => {
+    const user = userEvent.setup();
+    const players: PublicPlayer[] = [
+      { ...player, userId: "u1", displayName: "Искра" },
+      { ...player, userId: "u2", displayName: "Борил", host: false },
+      { ...player, userId: "u3", displayName: "Рада", host: false },
+    ];
+    mockHooks("first_night", {
+      snapshot: {
+        ...snapshotForPhase("first_night"),
+        playerCount: players.length,
+        players,
+      },
+      currentUserId: "u1",
+      privateRole: { role: "blacksmith", roleNameBg: "Ковач" },
+    });
+
+    render(<PlayRoomClient code="ABCD" createOptions={{ mode: "werewolves_classic" }} />);
+
+    await user.click(screen.getByRole("button", { name: "Избери Борил: онлайн" }));
+    expect(screen.getByTestId("night-action")).toHaveTextContent("u2|");
+
+    await user.click(screen.getByRole("button", { name: "Избери Рада: онлайн" }));
+    expect(screen.getByTestId("night-action")).toHaveTextContent("u2|u3");
+
+    await user.click(screen.getByRole("button", { name: "Избери Борил: онлайн, избрана цел" }));
+    expect(screen.getByTestId("night-action")).toHaveTextContent("|");
+  });
+
+  it("uses number shortcuts for the current secondary target list on two-target roles", async () => {
+    const user = userEvent.setup();
+    const players: PublicPlayer[] = [
+      { ...player, userId: "u1", displayName: "Искра" },
+      { ...player, userId: "u2", displayName: "Борил", host: false },
+      { ...player, userId: "u3", displayName: "Рада", host: false },
+      { ...player, userId: "u4", displayName: "Неда", host: false },
+    ];
+    mockHooks("first_night", {
+      snapshot: {
+        ...snapshotForPhase("first_night"),
+        playerCount: players.length,
+        players,
+      },
+      currentUserId: "u1",
+      privateRole: { role: "blacksmith", roleNameBg: "Ковач" },
+    });
+
+    render(<PlayRoomClient code="ABCD" createOptions={{ mode: "werewolves_classic" }} />);
+
+    await user.keyboard("2");
+    expect(screen.getByTestId("night-action")).toHaveTextContent("u2|");
+
+    await user.keyboard("1");
+    expect(screen.getByTestId("night-action")).toHaveTextContent("u2|u3");
+  });
+
+  it("does not arm voting seats or show the voting panel for an eliminated viewer", () => {
+    const players: PublicPlayer[] = [
+      { ...player, userId: "u1", displayName: "Искра", alive: false, revealedRole: "seer" },
+      { ...player, userId: "u2", displayName: "Борил", host: false },
+    ];
+    mockHooks("voting", {
+      snapshot: {
+        ...snapshotForPhase("voting"),
+        playerCount: players.length,
+        players,
+      },
+      currentUserId: "u1",
+      privateRole: { role: "seer", roleNameBg: "Гадателка" },
+    });
+
+    render(<PlayRoomClient code="ABCD" createOptions={{ mode: "werewolves_classic" }} />);
+
+    expect(screen.queryByRole("button", { name: "Избери Борил: онлайн" })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("voting-panel")).not.toBeInTheDocument();
+    expect(screen.getByTestId("role-card")).toBeInTheDocument();
+  });
+
+  it("does not show voting actions for a spectator", () => {
+    const players: PublicPlayer[] = [
+      { ...player, userId: "u1", displayName: "Искра", playing: false, host: false },
+      { ...player, userId: "u2", displayName: "Борил", host: false },
+    ];
+    mockHooks("voting", {
+      snapshot: {
+        ...snapshotForPhase("voting"),
+        playerCount: players.length,
+        players,
+      },
+      currentUserId: "u1",
+      privateRole: null,
+    });
+
+    render(<PlayRoomClient code="ABCD" createOptions={{ mode: "werewolves_classic" }} />);
+
+    expect(screen.queryByRole("button", { name: "Избери Борил: онлайн" })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("voting-panel")).not.toBeInTheDocument();
+  });
+
+  it("shows hunter revenge actions only for an eliminated Hunter viewer", async () => {
+    const user = userEvent.setup();
+    const players: PublicPlayer[] = [
+      { ...player, userId: "u1", displayName: "Искра", alive: false, revealedRole: "hunter" },
+      { ...player, userId: "u2", displayName: "Борил", host: false },
+    ];
+    mockHooks("hunter_revenge", {
+      snapshot: {
+        ...snapshotForPhase("hunter_revenge"),
+        playerCount: players.length,
+        players,
+      },
+      currentUserId: "u1",
+      privateRole: { role: "hunter", roleNameBg: "Ловец" },
+    });
+
+    render(<PlayRoomClient code="ABCD" createOptions={{ mode: "werewolves_classic" }} />);
+
+    expect(screen.getByTestId("hunter-revenge")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Избери Борил: онлайн" }));
+    expect(screen.getByRole("button", { name: "Избери Борил: онлайн, избрана цел" })).toBeInTheDocument();
+  });
+
+  it("does not show hunter revenge actions for a living Hunter viewer", () => {
+    const players: PublicPlayer[] = [
+      { ...player, userId: "u1", displayName: "Искра" },
+      { ...player, userId: "u2", displayName: "Борил", host: false },
+    ];
+    mockHooks("hunter_revenge", {
+      snapshot: {
+        ...snapshotForPhase("hunter_revenge"),
+        playerCount: players.length,
+        players,
+      },
+      currentUserId: "u1",
+      privateRole: { role: "hunter", roleNameBg: "Ловец" },
+    });
+
+    render(<PlayRoomClient code="ABCD" createOptions={{ mode: "werewolves_classic" }} />);
+
+    expect(screen.queryByTestId("hunter-revenge")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Избери Борил: онлайн" })).not.toBeInTheDocument();
+  });
+
+  it("keeps voting seats and panel available for a living voter", () => {
+    const players: PublicPlayer[] = [
+      { ...player, userId: "u1", displayName: "Искра" },
+      { ...player, userId: "u2", displayName: "Борил", host: false },
+    ];
+    mockHooks("voting", {
+      snapshot: {
+        ...snapshotForPhase("voting"),
+        playerCount: players.length,
+        players,
+      },
+      currentUserId: "u1",
+      privateRole: { role: "seer", roleNameBg: "Гадателка" },
+    });
+
+    render(<PlayRoomClient code="ABCD" createOptions={{ mode: "werewolves_classic" }} />);
+
+    expect(screen.getByRole("button", { name: "Избери Борил: онлайн" })).toBeInTheDocument();
+    expect(screen.getByTestId("voting-panel")).toBeInTheDocument();
+  });
+
+  it("falls back to create options for Doctor self-protection when the public snapshot omits the field", () => {
+    const players: PublicPlayer[] = [
+      { ...player, userId: "u1", displayName: "Искра" },
+      { ...player, userId: "u2", displayName: "Борил", host: false },
+    ];
+    const { doctorCanSelfProtect: _omitted, ...snapshotWithoutDoctorOption } = snapshotForPhase("night");
+    mockHooks("night", {
+      snapshot: {
+        ...snapshotWithoutDoctorOption,
+        playerCount: players.length,
+        players,
+      },
+      currentUserId: "u1",
+      privateRole: { role: "doctor", roleNameBg: "Доктор" },
+    });
+
+    render(<PlayRoomClient code="ABCD" createOptions={{ mode: "mafia_sport", doctorCanSelfProtect: true }} />);
+
+    expect(screen.getByTestId("night-action")).toHaveAttribute("data-doctor-self", "true");
   });
 });

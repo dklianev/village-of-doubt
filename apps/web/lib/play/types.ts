@@ -68,6 +68,7 @@ export interface GameSnapshot {
   voteSeconds: number;
   revealRolesOnDeath: boolean;
   loversEnabled: boolean;
+  doctorCanSelfProtect?: boolean;
   allowSkipVote: boolean;
   majorityMode: string;
   narratorVoice: NarratorVoice;
@@ -118,6 +119,7 @@ export type ShortcutState = {
   privateRole: { role: RoleCode; roleNameBg: string } | null;
   players: PublicPlayer[];
   livingPlayers: PublicPlayer[];
+  actionTargets: PublicPlayer[];
   currentUserId: string;
   ownPlayer: PublicPlayer | undefined;
   showShortcuts: boolean;

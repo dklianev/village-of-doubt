@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="bg">
+<head>
+<meta charset="utf-8">
+<title>Подробен спецификат · Върколак · Мафия</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="crest">W</div>
+    <div class="brand">
+      <div class="brand-title">Върколак · Мафия</div>
+      <div class="brand-sub">Подробен спецификат · v0.1</div>
+    </div>
+    <nav>
+      <a href="index.html" class="active">Преглед</a>
+      <a href="tokens.html">Tokens</a>
+      <a href="primitives.html">Компоненти</a>
+      <a href="dictionary.html">Речник</a>
+      <a href="motion.html">Движение</a>
+      <a href="states.html">Състояния</a>
+      <a href="acceptance.html">Acceptance</a>
+      <a href="prompts.html">Промпти</a>
+    </nav>
+  </div>
+</div>
+
+<main>
+
+<header class="hero">
+  <div class="hero-card">
+    <div class="eyebrow">Подробен спецификат · 8 раздела</div>
+    <h1>Всичко, от което <em>Codex</em> се нуждае.</h1>
+    <p class="hero-lede">
+      Този комплект документи замества „инженерният състав предполага".
+      Всеки токен, всеки primitive компонент, всяка дума на български,
+      всяка анимация, всяко празно състояние, всяка грешкова повърхност,
+      всеки критерий за „готово", и шест отделни промпта (по един за всеки спринт).
+    </p>
+    <div class="hero-meta">
+      <span>Tokens · <b>32</b></span>
+      <span>Primitives · <b>14</b></span>
+      <span>Речник · <b>48 термина</b></span>
+      <span>Empty states · <b>22</b></span>
+      <span>Error states · <b>9</b></span>
+      <span>Промпти · <b>6 + 1 общ</b></span>
+    </div>
+  </div>
+</header>
+
+<section class="wrap">
+  <div class="section-head">
+    <div>
+      <div class="num">00 / Начало</div>
+      <h2>Откъде да тръгнеш.</h2>
+    </div>
+    <p>Всеки раздел е самостоятелен. Прочети ги в реда, в който се ползват — токени → компоненти → език → движение → ръбове → acceptance → промпти.</p>
+  </div>
+
+  <div class="grid-2">
+
+    <a href="tokens.html" style="text-decoration: none; border: none; color: inherit;">
+      <div class="paper-card" style="cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+        <div class="eyebrow" style="color: var(--gold-deep)">01 · Foundation</div>
+        <h3 class="section-title">Token каталог</h3>
+        <p class="section-desc">32 семантични OKLCH променливи. Целият цветови, типографски и пространствен език на едно място.</p>
+        <ul class="tight">
+          <li>9 surface / ink tokens</li>
+          <li>5 accent tokens (blood, gold, green)</li>
+          <li>10 type scale tokens</li>
+          <li>8 spacing tokens + radii + shadows</li>
+        </ul>
+      </div>
+    </a>
+
+    <a href="primitives.html" style="text-decoration: none; border: none; color: inherit;">
+      <div class="paper-card" style="cursor: pointer;">
+        <div class="eyebrow" style="color: var(--gold-deep)">02 · Components</div>
+        <h3 class="section-title">Primitive библиотека</h3>
+        <p class="section-desc">14 компонента с пълни TypeScript сигнатури и примери — Surface, Eyebrow, Display, Medallion, PhaseStrip и още.</p>
+        <ul class="tight">
+          <li>Surface, PaperCard, SceneCard</li>
+          <li>Display, Eyebrow, Pill, Medallion</li>
+          <li>PhaseStrip, PlayerDiary, VoteCircle</li>
+          <li>Toast, Sheet, Dialog, EmptyState</li>
+        </ul>
+      </div>
+    </a>
+
+    <a href="dictionary.html" style="text-decoration: none; border: none; color: inherit;">
+      <div class="paper-card" style="cursor: pointer;">
+        <div class="eyebrow" style="color: var(--gold-deep)">03 · Language</div>
+        <h3 class="section-title">Речник на масата</h3>
+        <p class="section-desc">48 термина — какво се казва правилно, какво никога. Заключва тоналността при разрастване на екипа.</p>
+        <ul class="tight">
+          <li>Геймплей термини (вечер, нощ, ден)</li>
+          <li>UI термини (досие, архив, маса)</li>
+          <li>Действия (влез, седни, стани)</li>
+          <li>Времеви и количествени думи</li>
+        </ul>
+      </div>
+    </a>
+
+    <a href="motion.html" style="text-decoration: none; border: none; color: inherit;">
+      <div class="paper-card" style="cursor: pointer;">
+        <div class="eyebrow" style="color: var(--gold-deep)">04 · Motion</div>
+        <h3 class="section-title">Анимационна система</h3>
+        <p class="section-desc">Точни durations, easings и transforms. Какво се анимира, как, и какво се изключва при reduced-motion.</p>
+        <ul class="tight">
+          <li>5 duration tier-а (instant → epic)</li>
+          <li>4 easing криви (named)</li>
+          <li>12 типа анимация с спецификации</li>
+          <li>Reduced-motion правила</li>
+        </ul>
+      </div>
+    </a>
+
+    <a href="states.html" style="text-decoration: none; border: none; color: inherit;">
+      <div class="paper-card" style="cursor: pointer;">
+        <div class="eyebrow" style="color: var(--gold-deep)">05 · Edges</div>
+        <h3 class="section-title">Празни и грешкови състояния</h3>
+        <p class="section-desc">22 empty states + 9 error states — каталогизирани с метафора, копи­райт и acceptance.</p>
+        <ul class="tight">
+          <li>Empty: лоби, архив, приятели, история…</li>
+          <li>Loading: skeletons + atmospheric</li>
+          <li>Error: 404, 500, offline, disconnect</li>
+          <li>Boundary cases (rate limit, banned)</li>
+        </ul>
+      </div>
+    </a>
+
+    <a href="acceptance.html" style="text-decoration: none; border: none; color: inherit;">
+      <div class="paper-card" style="cursor: pointer;">
+        <div class="eyebrow" style="color: var(--gold-deep)">06 · Done definition</div>
+        <h3 class="section-title">Acceptance criteria</h3>
+        <p class="section-desc">За всяка от 23-те страници — измерими критерии за „готово". Lighthouse, axe, screenshots, копирайт.</p>
+        <ul class="tight">
+          <li>Per-page checklist (десетки точки)</li>
+          <li>Visual regression матрица</li>
+          <li>Lighthouse targets</li>
+          <li>A11y задължителни проверки</li>
+        </ul>
+      </div>
+    </a>
+
+    <a href="prompts.html" style="text-decoration: none; border: none; color: inherit; grid-column: span 2;">
+      <div class="scene-card" style="cursor: pointer;">
+        <div class="eyebrow" style="color: var(--gold)">07 · Codex prompts</div>
+        <h3 class="section-title" style="color: var(--scene-text)">Шест фокусирани промпта за Codex.</h3>
+        <p class="section-desc" style="color: var(--scene-text-soft)">Един master промпт + шест per-sprint. Всеки самодостатъчен — копи­райш и стартираш.</p>
+        <ul class="tight" style="color: var(--scene-text)">
+          <li><b>Master</b> — общ контекст, правила, дисциплина</li>
+          <li><b>Sprint 1</b> — Foundation (tokens + primitives + a11y + assets)</li>
+          <li><b>Sprint 2</b> — Entry (home, /werewolf, /mafia, /sign-in, /tutorial)</li>
+          <li><b>Sprint 3</b> — Game core (split play-room, 4 сцени)</li>
+          <li><b>Sprint 4</b> — Identity (/account, /history, /achievements, /friends)</li>
+          <li><b>Sprint 5</b> — Social (/leaderboard, /report)</li>
+          <li><b>Sprint 6</b> — Periphery (/faq, /privacy, /terms, /status, errors)</li>
+        </ul>
+      </div>
+    </a>
+
+  </div>
+</section>
+
+<footer class="foot">
+  <span>Подробен спецификат · 22.05.2026</span>
+  <span class="sign">„Селото има часовник, не само таймер."</span>
+  <span>8 документа</span>
+</footer>
+
+</main>
+
+</body>
+</html>

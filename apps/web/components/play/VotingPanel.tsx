@@ -23,12 +23,11 @@ export function VotingPanel({
     <section className="ritual-panel mt-8 rounded-[2rem] p-6">
       <p className="section-kicker">гласуване</p>
       <h2 className="mt-2 text-3xl font-black">Кого ще изгоните от площада?</h2>
-      <VoteTallyBar items={voteTally} maxVotes={maxVotes} />
-      <div className="play-selected-target mt-5">
+      <div className="play-selected-target mt-5" data-filled={selectedTarget ? "true" : undefined}>
         <span>Избрано място</span>
         <strong>{selectedTarget?.displayName ?? "избери играч от масата"}</strong>
       </div>
-      <div className="mt-5 flex flex-wrap gap-3">
+      <div className="play-action-buttons mt-5 flex flex-wrap gap-3">
         <button
           className="btn btn-primary"
           type="button"
@@ -43,6 +42,7 @@ export function VotingPanel({
           </button>
         ) : null}
       </div>
+      <VoteTallyBar items={voteTally} maxVotes={maxVotes} />
     </section>
   );
 }

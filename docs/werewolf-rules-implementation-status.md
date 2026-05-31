@@ -1,6 +1,6 @@
 # Върколак rules implementation status
 
-Source of truth: project-owned role summaries and regression tests, aligned with the Bulgarian large-box Werewolf ruleset.
+Source of truth: project-owned role summaries and regression tests, aligned with the Bulgarian large-box Werewolf ruleset (`върколаци-голяма-кутия-правила.pdf`, audited 2026-05-21).
 
 Статуси:
 - `implemented` означава, че ролята/правилото има runtime механика и regression покритие или съществуващ contract test.
@@ -30,8 +30,8 @@ Source of truth: project-owned role summaries and regression tests, aligned with
 | Убиец на вампири | +3 | implemented | Ловува нощем и губи умението при грешна жертва. |
 | Следователка | +3 | implemented | Веднъж проверява избран играч и двамата му живи съседи за заплаха. |
 | Пияница | -2 | implemented | Научава истинската си роля в началото на втората нощ. |
-| Улична котка | +6 | implemented | Избира дом; ако избере Върколак/Вампир, и двамата излизат. |
-| Куче пазач | +2 | implemented | Докато е живо, блокира дневното елиминиране на Кмета. |
+| Улична котка | +6 | manual-only | Канонично е открита промо карта, която сменя условен собственик; текущата автоматизация е опростена и не е default. |
+| Куче пазач | +2 | manual-only | Канонично е отделна открита карта до публичния Кмет; текущата автоматизация не моделира кучето като отделна публична цел. |
 | Крадец | 0 | manual-only | Дигитална разширена роля; работи в тестове, но не е част от основния автоматичен комплект и остава извън defaults. |
 | Малко момиче | 0 | manual-only | Live-only/legacy поведение; не се назначава автоматично. |
 
@@ -46,7 +46,7 @@ Source of truth: project-owned role summaries and regression tests, aligned with
 | Пияница е за опитни играчи. | implemented warning | Runtime reveal във втората нощ; regression `DRUNK1`. |
 | Вампирите могат да заменят Върколаците. | implemented | `vampires_vs_village`/manual config работи с delayed bite. |
 | Върколаци + Вампири едновременно изискват поне 3 от всеки. | implemented | Трите отбора имат отделна нощна атака, delayed vampire death и validation за минимален брой. |
-| Куче пазач изисква публично избран Кмет. | implemented | Validation + runtime block при гласуване; regression `GDOG01`. |
+| Куче пазач изисква публично избран Кмет. | mvp-basic/manual-only | Validation + runtime block при гласуване; regression `GDOG01`. Остава ръчен режим, докато кучето не стане отделна публична карта/цел. |
 | Кметът решава само равенство. | implemented | GameRoom regression: mayor tie-break and non-tie behavior. |
 | Вампирската жертва умира в края на следващия ден. | implemented | Regression `VAMPD1`. |
 | Ковашкият меч се използва веднага. | implemented | Regression `BLACK1`; дигиталното действие избира получател и цел в една стъпка. |
@@ -55,13 +55,14 @@ Source of truth: project-owned role summaries and regression tests, aligned with
 ## MVP playable defaults
 
 Default presets may only use `runtimeStatus: "playable"` roles:
-- Върколак: всички роли с runtime механика са playable, но default presets остават консервативни и не назначават хаотични/промо роли автоматично.
+- Върколак: всички 1:1 runtime роли са playable, но default presets остават консервативни и не назначават хаотични/промо роли автоматично.
 - Мафия: Гражданин, Мафиот, Дон, Комисар, Доктор.
 
-Manual-only за Върколак остават само роли, които не са чист runtime за дигитален автоматичен режим: Крадец и Малко момиче.
+Manual-only за Върколак остават роли, които не са чист runtime за дигитален автоматичен режим: Улична котка, Куче пазач, Крадец и Малко момиче.
 
 ## Оставащи продуктови различия
 
 - Крадец и Малко момиче стоят извън default presets, защото изискват допълнителни карти или ръчно водене.
+- Улична котка и Куче пазач стоят извън playable автоматичния филтър, защото голямата кутия ги описва като открити/условни промо карти, не като обикновени тайни роли.
 - Ковачът е автоматизиран като една дигитална стъпка, вместо отделно будене на получателя на меча.
 - Дневното гласуване все още е директно гласуване в автоматичен режим; пълният flow с номинация, подкрепяне, защита и вот върху един кандидат остава следващата голяма стъпка.

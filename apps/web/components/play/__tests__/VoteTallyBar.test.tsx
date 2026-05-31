@@ -20,7 +20,7 @@ describe("VoteTallyBar", () => {
       />,
     );
 
-    expect(screen.getByLabelText("Текущо броене на гласовете")).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Текущо броене на гласовете" })).toHaveAttribute("tabindex", "0");
     expect(screen.getByText("Борис")).toBeInTheDocument();
     expect(screen.getByText("Вяра")).toBeInTheDocument();
     expect(screen.getByText("кметски глас при равенство")).toBeInTheDocument();

@@ -510,6 +510,7 @@ interface ColyseusGameState {
   voteSeconds: number;
   revealRolesOnDeath: boolean;
   loversEnabled: boolean;
+  doctorCanSelfProtect?: boolean;
   allowSkipVote: boolean;
   majorityMode: string;
   narratorVoice: NarratorVoice;
@@ -541,6 +542,7 @@ function snapshotShellForState(
     voteSeconds: state.voteSeconds,
     revealRolesOnDeath: state.revealRolesOnDeath,
     loversEnabled: state.loversEnabled,
+    ...(state.doctorCanSelfProtect === undefined ? {} : { doctorCanSelfProtect: state.doctorCanSelfProtect }),
     allowSkipVote: state.allowSkipVote,
     majorityMode: state.majorityMode,
     narratorVoice: state.narratorVoice,
@@ -607,6 +609,7 @@ function areSnapshotShellEqual(a: GameSnapshot, b: GameSnapshot) {
     && a.voteSeconds === b.voteSeconds
     && a.revealRolesOnDeath === b.revealRolesOnDeath
     && a.loversEnabled === b.loversEnabled
+    && a.doctorCanSelfProtect === b.doctorCanSelfProtect
     && a.allowSkipVote === b.allowSkipVote
     && a.majorityMode === b.majorityMode
     && a.narratorVoice === b.narratorVoice

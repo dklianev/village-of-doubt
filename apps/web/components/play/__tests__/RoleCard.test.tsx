@@ -42,7 +42,7 @@ describe("RoleCard", () => {
     expect(screen.getByText("Отбор")).toBeInTheDocument();
     expect(screen.getByText("Кога действа")).toBeInTheDocument();
     expect(screen.getByText("Цел")).toBeInTheDocument();
-    expect(screen.getByText(/чуждите тайни роли не са в публичния state/)).toBeInTheDocument();
+    expect(screen.getByText(/чуждите тайни роли не са в публичното състояние/)).toBeInTheDocument();
   });
 
   it("formats private investigation results against the public player list", () => {

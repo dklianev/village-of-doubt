@@ -1,0 +1,536 @@
+<!doctype html>
+<html lang="bg">
+<head>
+<meta charset="utf-8">
+<title>Primitives · Подробен спецификат</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="crest">W</div>
+    <div class="brand">
+      <div class="brand-title">Върколак · Мафия</div>
+      <div class="brand-sub">Primitives · 14 компонента</div>
+    </div>
+    <nav>
+      <a href="index.html">Преглед</a>
+      <a href="tokens.html">Tokens</a>
+      <a href="primitives.html" class="active">Компоненти</a>
+      <a href="dictionary.html">Речник</a>
+      <a href="motion.html">Движение</a>
+      <a href="states.html">Състояния</a>
+      <a href="acceptance.html">Acceptance</a>
+      <a href="prompts.html">Промпти</a>
+    </nav>
+  </div>
+</div>
+
+<main>
+
+<header class="hero">
+  <div class="hero-card">
+    <div class="eyebrow">02 · Foundation · Primitives</div>
+    <h1>Четиринадесет <em>атома.</em></h1>
+    <p class="hero-lede">
+      Всичко в продукта се построява от тези 14 компонента. Никакви ad-hoc <code>&lt;div&gt;</code>
+      с inline стилове на ниво страница — ако ти трябва нещо, то трябва или вече да съществува, или
+      да се добави като нов primitive с обсъждане.
+    </p>
+    <div class="hero-meta">
+      <span>Пакет · <b>packages/ui/primitives</b></span>
+      <span>Стек · <b>React 18 + TypeScript</b></span>
+      <span>Стилизиране · <b>CSS Modules + tokens</b></span>
+      <span>Тестове · <b>Storybook + axe</b></span>
+    </div>
+  </div>
+</header>
+
+<!-- LIST OVERVIEW -->
+<section class="wrap">
+  <div class="section-head">
+    <div>
+      <div class="num">01 / Списък</div>
+      <h2>Четиринадесет primitives.</h2>
+    </div>
+    <p>Подредени по честота на употреба. Първите 6 са в почти всяка страница.</p>
+  </div>
+
+  <div class="paper-card">
+    <table class="spec">
+      <thead><tr><th>№</th><th>Име</th><th>Категория</th><th>Употреба</th><th>Зависимости</th></tr></thead>
+      <tbody>
+        <tr><td>01</td><td class="name">Surface</td><td class="use">Layout</td><td class="use">Обвивка с paper или scene вариант</td><td class="note">—</td></tr>
+        <tr><td>02</td><td class="name">PaperCard</td><td class="use">Layout</td><td class="use">Светла карта с meta + body</td><td class="note">Surface</td></tr>
+        <tr><td>03</td><td class="name">SceneCard</td><td class="use">Layout</td><td class="use">Тъмна cinematic карта</td><td class="note">Surface</td></tr>
+        <tr><td>04</td><td class="name">Eyebrow</td><td class="use">Type</td><td class="use">All-caps mono label над heading</td><td class="note">—</td></tr>
+        <tr><td>05</td><td class="name">Display</td><td class="use">Type</td><td class="use">Полу-курсив display heading</td><td class="note">—</td></tr>
+        <tr><td>06</td><td class="name">Pill</td><td class="use">Action</td><td class="use">Бутон / линк / chip</td><td class="note">—</td></tr>
+        <tr><td>07</td><td class="name">Medallion</td><td class="use">Symbol</td><td class="use">Кръгъл златен медальон с цифра/глиф</td><td class="note">—</td></tr>
+        <tr><td>08</td><td class="name">PhaseStrip</td><td class="use">In-game</td><td class="use">5–6 медальон линия с активна фаза</td><td class="note">Medallion</td></tr>
+        <tr><td>09</td><td class="name">PlayerDiary</td><td class="use">In-game</td><td class="use">Личен дневник на ролята</td><td class="note">PaperCard, Eyebrow</td></tr>
+        <tr><td>10</td><td class="name">VoteCircle</td><td class="use">In-game</td><td class="use">Кръгово подреждане на играчи за гласуване</td><td class="note">Medallion</td></tr>
+        <tr><td>11</td><td class="name">EmptyState</td><td class="use">Edge</td><td class="use">„Физически артефакт" empty state</td><td class="note">PaperCard, Display</td></tr>
+        <tr><td>12</td><td class="name">Toast</td><td class="use">Feedback</td><td class="use">Системно съобщение, 3 тона</td><td class="note">—</td></tr>
+        <tr><td>13</td><td class="name">Sheet</td><td class="use">Overlay</td><td class="use">Bottom sheet (mobile) / centered modal (desktop)</td><td class="note">—</td></tr>
+        <tr><td>14</td><td class="name">Dialog</td><td class="use">Overlay</td><td class="use">Confirm / destructive action</td><td class="note">Sheet</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- DETAILED SPECS -->
+<section class="wrap">
+  <div class="section-head">
+    <div>
+      <div class="num">02 / TypeScript сигнатури</div>
+      <h2>Точни props на всеки компонент.</h2>
+    </div>
+    <p>Това е договор. Когато Codex имплементира компонент, тези props са задължителни.</p>
+  </div>
+
+  <!-- Surface -->
+  <div class="code">
+    <div class="code-bar"><span class="label">01 · Surface · primitives/Surface.tsx</span><button onclick="copyCode(this)">Копирай</button></div>
+    <div class="code-body"><span class="c">/**
+ * Surface — основна обвивка. Всяка card в продукта започва с Surface.
+ * Не съдържа padding/typography — само фон, border, radius, shadow.
+ */</span>
+<span class="k">import</span> { <span class="t">ReactNode</span>, <span class="t">HTMLAttributes</span> } <span class="k">from</span> <span class="s">'react'</span>;
+
+<span class="k">export interface</span> <span class="t">SurfaceProps</span> <span class="k">extends</span> <span class="t">HTMLAttributes</span>&lt;<span class="t">HTMLDivElement</span>&gt; {
+  <span class="c">/** Цветова семантика */</span>
+  variant?: <span class="s">'paper'</span> | <span class="s">'paper-deep'</span> | <span class="s">'scene'</span> | <span class="s">'scene-deep'</span>;
+  <span class="c">/** Размер на radius — 'card' (22px), 'tile' (14px), 'none' (0) */</span>
+  radius?: <span class="s">'card'</span> | <span class="s">'tile'</span> | <span class="s">'none'</span>;
+  <span class="c">/** Включи shadow */</span>
+  elevation?: <span class="s">'none'</span> | <span class="s">'card'</span> | <span class="s">'scene'</span>;
+  <span class="c">/** Render като различен HTML element */</span>
+  as?: <span class="s">'div'</span> | <span class="s">'section'</span> | <span class="s">'article'</span> | <span class="s">'aside'</span>;
+  children: <span class="t">ReactNode</span>;
+}
+
+<span class="c">// Default: variant='paper', radius='tile', elevation='card', as='div'</span></div>
+  </div>
+
+  <!-- PaperCard / SceneCard -->
+  <div class="code">
+    <div class="code-bar"><span class="label">02-03 · PaperCard &amp; SceneCard</span><button onclick="copyCode(this)">Копирай</button></div>
+    <div class="code-body"><span class="c">/**
+ * PaperCard / SceneCard — Surface + standardized padding + slot за meta + body.
+ * Заглавието е винаги слот, не prop, за да поддържа богат markup.
+ */</span>
+<span class="k">export interface</span> <span class="t">PaperCardProps</span> {
+  <span class="c">/** Eyebrow text (mono, all-caps) над заглавието */</span>
+  eyebrow?: <span class="t">string</span>;
+  <span class="c">/** Размер на padding — 'sm' (16px), 'md' (28px), 'lg' (48px) */</span>
+  density?: <span class="s">'sm'</span> | <span class="s">'md'</span> | <span class="s">'lg'</span>;
+  <span class="c">/** Право-aligned meta info вдясно от заглавието */</span>
+  meta?: <span class="t">ReactNode</span>;
+  children: <span class="t">ReactNode</span>;
+}
+
+<span class="c">// SceneCard има идентичен API, само че variant='scene'.</span>
+<span class="c">// Употреба:</span>
+&lt;<span class="t">PaperCard</span> eyebrow=<span class="s">"Досие"</span> meta={&lt;<span class="t">Eyebrow</span>&gt;14.05&lt;/<span class="t">Eyebrow</span>&gt;}&gt;
+  &lt;<span class="t">Display</span>&gt;Селото оцеля&lt;/<span class="t">Display</span>&gt;
+  &lt;p&gt;Върколак&lt;/p&gt;
+&lt;/<span class="t">PaperCard</span>&gt;</div>
+  </div>
+
+  <!-- Eyebrow -->
+  <div class="code">
+    <div class="code-bar"><span class="label">04 · Eyebrow · primitives/Eyebrow.tsx</span><button onclick="copyCode(this)">Копирай</button></div>
+    <div class="code-body"><span class="c">/**
+ * Eyebrow — кратък all-caps mono label.
+ * Винаги стои НАД heading-а, не вместо него.
+ * Цвят се определя от тона на родителя (Surface).
+ */</span>
+<span class="k">export interface</span> <span class="t">EyebrowProps</span> {
+  <span class="c">/** Сила на тона — 'default' (gold), 'muted' (ink-faint), 'blood' */</span>
+  tone?: <span class="s">'default'</span> | <span class="s">'muted'</span> | <span class="s">'blood'</span>;
+  <span class="c">/** Render като span (inline) или div (block, with margin) */</span>
+  inline?: <span class="t">boolean</span>;
+  children: <span class="t">ReactNode</span>;
+}
+
+<span class="c">// Винаги Bulgarian, винаги ≤ 4 думи, винаги в Cyrillic capitalization.</span></div>
+  </div>
+
+  <!-- Display -->
+  <div class="code">
+    <div class="code-bar"><span class="label">05 · Display · primitives/Display.tsx</span><button onclick="copyCode(this)">Копирай</button></div>
+    <div class="code-body"><span class="c">/**
+ * Display — основното heading семейство.
+ * Винаги Cormorant Garamond. Никога не bold над 500.
+ */</span>
+<span class="k">export interface</span> <span class="t">DisplayProps</span> {
+  <span class="c">/** Размерен tier — мапва се към --text-display/h1/h2/h3 */</span>
+  size?: <span class="s">'hero'</span> | <span class="s">'h1'</span> | <span class="s">'h2'</span> | <span class="s">'h3'</span> | <span class="s">'h4'</span>;
+  <span class="c">/** HTML семантика (отделена от visual size) */</span>
+  as?: <span class="s">'h1'</span> | <span class="s">'h2'</span> | <span class="s">'h3'</span> | <span class="s">'h4'</span>;
+  <span class="c">/** Активен italic accent на части от текста — wrap с &lt;em&gt; */</span>
+  children: <span class="t">ReactNode</span>;
+}
+
+<span class="c">// Default: size='h2', as=auto from size.</span>
+<span class="c">// &lt;em&gt; вътре в Display получава gold курсив автоматично.</span></div>
+  </div>
+
+  <!-- Pill -->
+  <div class="code">
+    <div class="code-bar"><span class="label">06 · Pill · primitives/Pill.tsx</span><button onclick="copyCode(this)">Копирай</button></div>
+    <div class="code-body"><span class="c">/**
+ * Pill — универсален бутон / линк / chip.
+ * Един компонент, четири роли. Никога два компонента за „button-like".
+ */</span>
+<span class="k">export interface</span> <span class="t">PillProps</span> {
+  <span class="c">/** Визуална тежест */</span>
+  variant?: <span class="s">'primary'</span> | <span class="s">'ghost'</span> | <span class="s">'oauth-google'</span> | <span class="s">'oauth-discord'</span>;
+  <span class="c">/** Размер */</span>
+  size?: <span class="s">'sm'</span> | <span class="s">'md'</span> | <span class="s">'lg'</span>;
+  <span class="c">/** Ако подаваш href → render като &lt;a&gt;; иначе &lt;button&gt; */</span>
+  href?: <span class="t">string</span>;
+  <span class="c">/** Loading state със spinner */</span>
+  loading?: <span class="t">boolean</span>;
+  <span class="c">/** Префикс символ — никога emoji, само геометричен глиф */</span>
+  leading?: <span class="s">'play'</span> | <span class="s">'arrow'</span> | <span class="s">'check'</span> | <span class="s">'cross'</span>;
+  disabled?: <span class="t">boolean</span>;
+  onClick?: () =&gt; <span class="t">void</span>;
+  children: <span class="t">ReactNode</span>;
+}
+
+<span class="c">// Disabled не само opacity — pointer-events: none + focus skip.</span>
+<span class="c">// Primary винаги blood; ghost винаги bordered с тон от родителя.</span></div>
+  </div>
+
+  <!-- Medallion -->
+  <div class="code">
+    <div class="code-bar"><span class="label">07 · Medallion · primitives/Medallion.tsx</span><button onclick="copyCode(this)">Копирай</button></div>
+    <div class="code-body"><span class="c">/**
+ * Medallion — кръгъл златен елемент с цифра или глиф.
+ * Сигнатурният елемент на бранда. Употреба пестелива.
+ */</span>
+<span class="k">export interface</span> <span class="t">MedallionProps</span> {
+  <span class="c">/** Размер — 'sm' (40px), 'md' (76px), 'lg' (124px) */</span>
+  size?: <span class="s">'sm'</span> | <span class="s">'md'</span> | <span class="s">'lg'</span>;
+  <span class="c">/** Съдържание — цифра или geometric glyph (никога emoji) */</span>
+  glyph: <span class="t">number</span> | <span class="t">ReactNode</span>;
+  <span class="c">/** Активно състояние — добавя glow и динамика */</span>
+  active?: <span class="t">boolean</span>;
+  <span class="c">/** Завършено състояние — потъмнен, dust overlay */</span>
+  done?: <span class="t">boolean</span>;
+  <span class="c">/** Lock — заключен (за achievements) */</span>
+  locked?: <span class="t">boolean</span>;
+  <span class="c">/** Accessible label — задължителен ако glyph е number или icon */</span>
+  ariaLabel: <span class="t">string</span>;
+}</div>
+  </div>
+
+  <!-- PhaseStrip -->
+  <div class="code">
+    <div class="code-bar"><span class="label">08 · PhaseStrip · primitives/PhaseStrip.tsx</span><button onclick="copyCode(this)">Копирай</button></div>
+    <div class="code-body"><span class="c">/**
+ * PhaseStrip — линия от Medallion-и съединени с златна линия.
+ * Употреба: правилата (статично) + in-game (live, signature момент).
+ */</span>
+<span class="k">export interface</span> <span class="t">Phase</span> {
+  id: <span class="t">string</span>;
+  label: <span class="t">string</span>;        <span class="c">// „Нощ", „Ден", „Глас"</span>
+  sub?: <span class="t">string</span>;          <span class="c">// „02:14", „следваща"</span>
+  glyph?: <span class="t">ReactNode</span>;     <span class="c">// заместител на цифра</span>
+}
+
+<span class="k">export interface</span> <span class="t">PhaseStripProps</span> {
+  phases: <span class="t">Phase</span>[];
+  <span class="c">/** Индекс на активната фаза */</span>
+  activeIndex: <span class="t">number</span>;
+  <span class="c">/** Размер на медальоните */</span>
+  size?: <span class="s">'sm'</span> | <span class="s">'md'</span>;
+  <span class="c">/** Кога една фаза е „в цикъл" (Нощ → Ден → Глас → Нощ) */</span>
+  loopFrom?: <span class="t">number</span>;
+}
+
+<span class="c">// Активната фаза получава glow + breathing animation (3s, gated by reduced-motion).</span>
+<span class="c">// Минали фази: opacity 0.45 + dust overlay.</span>
+<span class="c">// Бъдещи: opacity 0.7, без glow.</span></div>
+  </div>
+
+  <!-- PlayerDiary -->
+  <div class="code">
+    <div class="code-bar"><span class="label">09 · PlayerDiary · primitives/PlayerDiary.tsx</span><button onclick="copyCode(this)">Копирай</button></div>
+    <div class="code-body"><span class="c">/**
+ * PlayerDiary — личният дневник на играч в текущата игра.
+ * Тайното оръжие на социалните игри. След игра се вгражда в делото.
+ */</span>
+<span class="k">export interface</span> <span class="t">DiaryEntry</span> {
+  id: <span class="t">string</span>;
+  phase: <span class="s">'night'</span> | <span class="s">'day'</span> | <span class="s">'vote'</span> | <span class="s">'reveal'</span>;
+  phaseIndex: <span class="t">number</span>;     <span class="c">// „Нощ #2", „Ден #1"</span>
+  text: <span class="t">string</span>;            <span class="c">// „Иван — невинен"</span>
+  outcome?: <span class="s">'positive'</span> | <span class="s">'negative'</span> | <span class="s">'neutral'</span>;
+  isSecret?: <span class="t">boolean</span>;       <span class="c">// само ти го виждаш</span>
+}
+
+<span class="k">export interface</span> <span class="t">PlayerDiaryProps</span> {
+  entries: <span class="t">DiaryEntry</span>[];
+  <span class="c">/** Дали показваме placeholder за следваща фаза */</span>
+  showPending?: <span class="t">boolean</span>;
+  <span class="c">/** Compact mode за in-game right rail */</span>
+  compact?: <span class="t">boolean</span>;
+}</div>
+  </div>
+
+  <!-- VoteCircle -->
+  <div class="code">
+    <div class="code-bar"><span class="label">10 · VoteCircle · primitives/VoteCircle.tsx</span><button onclick="copyCode(this)">Копирай</button></div>
+    <div class="code-body"><span class="c">/**
+ * VoteCircle — играчите подредени в окръжност (масата).
+ * Tap = vote. Long press = защита (зависи от роля).
+ */</span>
+<span class="k">export interface</span> <span class="t">Player</span> {
+  id: <span class="t">string</span>;
+  name: <span class="t">string</span>;
+  avatar?: <span class="t">string</span>;
+  alive: <span class="t">boolean</span>;
+  isYou?: <span class="t">boolean</span>;
+  votesAgainst?: <span class="t">number</span>;
+}
+
+<span class="k">export interface</span> <span class="t">VoteCircleProps</span> {
+  players: <span class="t">Player</span>[];
+  <span class="c">/** Текуща стъпка — определя кои действия са разрешени */</span>
+  mode: <span class="s">'idle'</span> | <span class="s">'voting'</span> | <span class="s">'targeting'</span>;
+  <span class="c">/** Кой е избран в момента (един за гласуване, многократно за targeting) */</span>
+  selectedIds: <span class="t">string</span>[];
+  onSelect: (playerId: <span class="t">string</span>) =&gt; <span class="t">void</span>;
+  <span class="c">/** Може ли да гласува за себе си */</span>
+  allowSelf?: <span class="t">boolean</span>;
+}
+
+<span class="c">// Кръговото подреждане е CSS трик (rotate + translate).</span>
+<span class="c">// Под 6 играчи — semicircle отдолу. Над 12 — двоен пръстен.</span></div>
+  </div>
+
+  <!-- EmptyState -->
+  <div class="code">
+    <div class="code-bar"><span class="label">11 · EmptyState · primitives/EmptyState.tsx</span><button onclick="copyCode(this)">Копирай</button></div>
+    <div class="code-body"><span class="c">/**
+ * EmptyState — физически артефакт за празно състояние.
+ * Никога generic „No data" иконка.
+ */</span>
+<span class="k">export interface</span> <span class="t">EmptyStateProps</span> {
+  <span class="c">/** Кой артефакт — определя SVG илюстрацията */</span>
+  artifact:
+    | <span class="s">'sealed-letter'</span>      <span class="c">// архив празен</span>
+    | <span class="s">'empty-chair'</span>         <span class="c">// лоби / приятели</span>
+    | <span class="s">'dusty-shelf'</span>         <span class="c">// постижения</span>
+    | <span class="s">'open-door'</span>           <span class="c">// стая празна</span>
+    | <span class="s">'balanced-scale'</span>      <span class="c">// равни резултати</span>
+    | <span class="s">'unprinted-paper'</span>     <span class="c">// leaderboard преди първа игра</span>
+    | <span class="s">'broken-candle'</span>       <span class="c">// сесия изтекла</span>
+    | <span class="s">'closed-book'</span>;        <span class="c">// история празна</span>
+  title: <span class="t">string</span>;
+  description?: <span class="t">string</span>;
+  <span class="c">/** Action бутон, ако empty state има изход */</span>
+  action?: { label: <span class="t">string</span>; href?: <span class="t">string</span>; onClick?: () =&gt; <span class="t">void</span> };
+}</div>
+  </div>
+
+  <!-- Toast -->
+  <div class="code">
+    <div class="code-bar"><span class="label">12 · Toast · primitives/Toast.tsx</span><button onclick="copyCode(this)">Копирай</button></div>
+    <div class="code-body"><span class="c">/**
+ * Toast — системно съобщение. Един компонент, три тона.
+ */</span>
+<span class="k">export interface</span> <span class="t">ToastProps</span> {
+  <span class="c">/** Тоналност */</span>
+  tone: <span class="s">'info'</span> | <span class="s">'warning'</span> | <span class="s">'error'</span> | <span class="s">'success'</span>;
+  <span class="c">/** Заглавие — eyebrow стил */</span>
+  title: <span class="t">string</span>;
+  <span class="c">/** Тяло — едно изречение, не повече */</span>
+  description?: <span class="t">string</span>;
+  <span class="c">/** Auto-dismiss след X ms; 0 = persistent */</span>
+  duration?: <span class="t">number</span>;
+  <span class="c">/** Action бутон отдясно (напр. „Опитай отново") */</span>
+  action?: { label: <span class="t">string</span>; onClick: () =&gt; <span class="t">void</span> };
+}
+
+<span class="c">// Position: top-center в in-game, bottom-right навсякъде другаде.</span>
+<span class="c">// Animation: slide-in 200ms cubic-bezier(0.16, 1, 0.3, 1).</span></div>
+  </div>
+
+  <!-- Sheet -->
+  <div class="code">
+    <div class="code-bar"><span class="label">13 · Sheet · primitives/Sheet.tsx</span><button onclick="copyCode(this)">Копирай</button></div>
+    <div class="code-body"><span class="c">/**
+ * Sheet — bottom sheet (mobile) / centered modal (desktop).
+ * Един компонент, две поведения в зависимост от viewport.
+ */</span>
+<span class="k">export interface</span> <span class="t">SheetProps</span> {
+  open: <span class="t">boolean</span>;
+  onClose: () =&gt; <span class="t">void</span>;
+  <span class="c">/** Заглавие — рендерира се в sheet header */</span>
+  title?: <span class="t">string</span>;
+  <span class="c">/** Eyebrow над заглавието */</span>
+  eyebrow?: <span class="t">string</span>;
+  <span class="c">/** Mobile-only: drag-to-dismiss handle */</span>
+  draggable?: <span class="t">boolean</span>;
+  <span class="c">/** Disable close-on-outside-click (за destructive actions) */</span>
+  insistent?: <span class="t">boolean</span>;
+  children: <span class="t">ReactNode</span>;
+}
+
+<span class="c">// ESC винаги затваря.</span>
+<span class="c">// Focus trap е задължителен.</span>
+<span class="c">// При close focus се връща на trigger.</span></div>
+  </div>
+
+  <!-- Dialog -->
+  <div class="code">
+    <div class="code-bar"><span class="label">14 · Dialog · primitives/Dialog.tsx</span><button onclick="copyCode(this)">Копирай</button></div>
+    <div class="code-body"><span class="c">/**
+ * Dialog — confirm / destructive action. Заразиен потвърждение.
+ * Sheet с предефинирана структура за confirm flow-и.
+ */</span>
+<span class="k">export interface</span> <span class="t">DialogProps</span> {
+  open: <span class="t">boolean</span>;
+  onClose: () =&gt; <span class="t">void</span>;
+  title: <span class="t">string</span>;
+  description: <span class="t">string</span>;
+  <span class="c">/** Действия — destructive вижда blood; иначе ghost + primary */</span>
+  confirm: {
+    label: <span class="t">string</span>;
+    onClick: () =&gt; <span class="t">void</span>;
+    destructive?: <span class="t">boolean</span>;
+    <span class="c">/** Изисквай typed confirmation („напиши името си") */</span>
+    typedConfirmation?: <span class="t">string</span>;
+  };
+  cancel?: {
+    label: <span class="t">string</span>;
+  };
+}
+
+<span class="c">// destructive=true автоматично прави confirm бутона blood и иска фокус.</span>
+<span class="c">// typedConfirmation добавя input — submit disabled докато не съвпадне.</span></div>
+  </div>
+
+</section>
+
+<!-- USAGE PATTERNS -->
+<section class="wrap">
+  <div class="section-head">
+    <div>
+      <div class="num">03 / Композиция</div>
+      <h2>Как се комбинират.</h2>
+    </div>
+    <p>Три типични страници от продукта — изградени само от primitives. Никакъв друг код освен композиция.</p>
+  </div>
+
+  <div class="code">
+    <div class="code-bar"><span class="label">Пример · landing hero (home page)</span><button onclick="copyCode(this)">Копирай</button></div>
+    <div class="code-body"><span class="k">import</span> { <span class="t">SceneCard</span>, <span class="t">Eyebrow</span>, <span class="t">Display</span>, <span class="t">Pill</span> } <span class="k">from</span> <span class="s">'@village/ui'</span>;
+
+<span class="k">export function</span> <span class="t">HomeHero</span>() {
+  <span class="k">return</span> (
+    &lt;<span class="t">SceneCard</span> density=<span class="s">"lg"</span>&gt;
+      &lt;<span class="t">Eyebrow</span>&gt;Избери игра&lt;/<span class="t">Eyebrow</span>&gt;
+      &lt;<span class="t">Display</span> size=<span class="s">"hero"</span>&gt;
+        Върколак или &lt;em&gt;Мафия&lt;/em&gt;
+      &lt;/<span class="t">Display</span>&gt;
+      &lt;p&gt;Две отделни игри, два отделни речника, два отделни набора роли.&lt;/p&gt;
+      &lt;<span class="t">Pill</span> variant=<span class="s">"primary"</span> size=<span class="s">"lg"</span> leading=<span class="s">"play"</span> href=<span class="s">"/play"</span>&gt;
+        Играй
+      &lt;/<span class="t">Pill</span>&gt;
+    &lt;/<span class="t">SceneCard</span>&gt;
+  );
+}</div>
+  </div>
+
+  <div class="code">
+    <div class="code-bar"><span class="label">Пример · /play night scene</span><button onclick="copyCode(this)">Копирай</button></div>
+    <div class="code-body"><span class="k">import</span> { <span class="t">SceneCard</span>, <span class="t">PhaseStrip</span>, <span class="t">Medallion</span>, <span class="t">PlayerDiary</span>, <span class="t">Pill</span> } <span class="k">from</span> <span class="s">'@village/ui'</span>;
+
+<span class="k">export function</span> <span class="t">NightScene</span>({ phases, diary, role, onAction }) {
+  <span class="k">return</span> (
+    &lt;<span class="t">SceneCard</span> density=<span class="s">"lg"</span>&gt;
+      &lt;<span class="t">Eyebrow</span>&gt;Нощ #2 · Действай&lt;/<span class="t">Eyebrow</span>&gt;
+      &lt;<span class="t">Display</span> size=<span class="s">"h1"</span>&gt;{role.name}&lt;/<span class="t">Display</span>&gt;
+      &lt;p&gt;{role.instruction}&lt;/p&gt;
+      &lt;<span class="t">Timer</span> seconds={134} /&gt;
+      &lt;<span class="t">Pill</span> variant=<span class="s">"primary"</span> onClick={onAction}&gt;Избери жертва&lt;/<span class="t">Pill</span>&gt;
+      &lt;<span class="t">PhaseStrip</span> phases={phases} activeIndex={2} /&gt;
+      &lt;<span class="t">PlayerDiary</span> entries={diary} compact /&gt;
+    &lt;/<span class="t">SceneCard</span>&gt;
+  );
+}</div>
+  </div>
+
+  <div class="code">
+    <div class="code-bar"><span class="label">Пример · /history dело №X карточка</span><button onclick="copyCode(this)">Копирай</button></div>
+    <div class="code-body"><span class="k">import</span> { <span class="t">PaperCard</span>, <span class="t">Eyebrow</span>, <span class="t">Display</span>, <span class="t">Pill</span> } <span class="k">from</span> <span class="s">'@village/ui'</span>;
+
+<span class="k">export function</span> <span class="t">CaseCard</span>({ id, title, faction, date, onOpen }) {
+  <span class="k">return</span> (
+    &lt;<span class="t">PaperCard</span>
+      eyebrow={<span class="s">`Дело №${id}`</span>}
+      meta={&lt;<span class="t">Eyebrow</span> tone=<span class="s">"muted"</span>&gt;{date}&lt;/<span class="t">Eyebrow</span>&gt;}
+    &gt;
+      &lt;<span class="t">Display</span> size=<span class="s">"h3"</span>&gt;{title}&lt;/<span class="t">Display</span>&gt;
+      &lt;<span class="t">Eyebrow</span> tone=<span class="s">"muted"</span>&gt;{faction}&lt;/<span class="t">Eyebrow</span>&gt;
+      &lt;<span class="t">Pill</span> variant=<span class="s">"ghost"</span> size=<span class="s">"sm"</span> onClick={onOpen}&gt;
+        Отвори дело →
+      &lt;/<span class="t">Pill</span>&gt;
+    &lt;/<span class="t">PaperCard</span>&gt;
+  );
+}</div>
+  </div>
+</section>
+
+<!-- DISCIPLINE -->
+<section class="wrap">
+  <div class="section-head">
+    <div>
+      <div class="num">04 / Дисциплина</div>
+      <h2>Правила за добавяне на нов primitive.</h2>
+    </div>
+    <p>Тези пет правила пазят броя от експлозия.</p>
+  </div>
+
+  <div class="paper-card">
+    <ul class="tight" style="font-size: 17px;">
+      <li><b>2x правило.</b> Нов primitive се добавя само ако ще се ползва на 2+ места. На едно място — той е компонент на страницата.</li>
+      <li><b>Един отговорност.</b> Eyebrow прави text styling. PaperCard прави layout. Не се смесват.</li>
+      <li><b>Никакви бизнес зависимости.</b> Primitive не знае нищо за gameState, auth, или роли. Само props.</li>
+      <li><b>Storybook story задължителен.</b> Без story PR се blocking-ва.</li>
+      <li><b>A11y от старта.</b> Всеки primitive минава axe-core преди да се мерджне.</li>
+    </ul>
+  </div>
+</section>
+
+<footer class="foot">
+  <span>Подробен спецификат · Primitives</span>
+  <span class="sign">„Четиринадесет атома. Безкрайно много молекули."</span>
+  <span>Следва · <a href="dictionary.html" style="border: none; color: inherit;">Речник →</a></span>
+</footer>
+
+</main>
+
+<script>
+function copyCode(btn) {
+  const text = btn.closest('.code').querySelector('.code-body').innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ Копирано';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Копирай'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+</script>
+
+</body>
+</html>

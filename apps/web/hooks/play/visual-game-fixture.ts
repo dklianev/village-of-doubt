@@ -180,6 +180,7 @@ interface ParsedVisualQuery {
   winner: string;
   voteTally: VisualVoteTally;
   connection: ConnectionStatus;
+  doctorCanSelfProtect: boolean;
 }
 
 export function useVisualGameRoomFixture({
@@ -250,6 +251,7 @@ export function parseVisualGameFixture(
     voteSeconds: 60,
     revealRolesOnDeath: true,
     loversEnabled: parsed.family === "werewolves",
+    doctorCanSelfProtect: parsed.doctorCanSelfProtect,
     allowSkipVote: parsed.phase === "voting",
     majorityMode: "simple",
     narratorVoice: parsed.family === "mafia" ? "inspector" : "classic",
@@ -260,7 +262,8 @@ export function parseVisualGameFixture(
     winnerReasonBg: winner ? winnerReasonBg(winner, parsed.family) : "",
     players,
     roleCounts,
-    voteTally: parsed.voteTally === "empty" ? [] : buildVoteTally(players, parsed.voteTally),
+    voteTally:
+      parsed.phase === "voting" && parsed.voteTally !== "empty" ? buildVoteTally(players, parsed.voteTally) : [],
     publicEvents: buildPublicEvents(parsed),
     publicChat: buildPublicChat(parsed.family),
   };
@@ -306,6 +309,7 @@ function parseVisualQuery(params: URLSearchParams, createOptions: CreateRoomOpti
     winner: parseWinner(winnerParam),
     voteTally: parseVoteTally(params.get("voteTally") ?? preset.voteTally),
     connection: parseConnection(params.get("connection") ?? preset.connection),
+    doctorCanSelfProtect: parseBooleanParam(params.get("doctorSelf"), createOptions?.doctorCanSelfProtect ?? false),
   };
 }
 
@@ -570,6 +574,16 @@ function parseVoteTally(value: string | undefined): VisualVoteTally {
 
 function parseConnection(value: string | undefined): ConnectionStatus {
   return value === "reconnecting" || value === "lost" || value === "error" ? value : "connected";
+}
+
+function parseBooleanParam(value: string | null, fallback: boolean) {
+  if (value === "1" || value === "true") {
+    return true;
+  }
+  if (value === "0" || value === "false") {
+    return false;
+  }
+  return fallback;
 }
 
 function clampInteger(value: string | number | undefined, min: number, max: number, fallback: number) {

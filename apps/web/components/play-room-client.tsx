@@ -19,7 +19,6 @@ import {
   type RoleCode,
 } from "@werewolf/shared";
 import "@/components/play/PlayRoom.module.css";
-import "@/components/play/PlayerToken.module.css";
 import { playCue } from "@/lib/sound";
 import { useToast } from "@/lib/toast";
 import { KeyboardShortcutsModal } from "@/components/keyboard-shortcuts-modal";
@@ -44,7 +43,14 @@ import { PostGameStory } from "@/components/play/PostGameStory";
 import { PreGameCountdown } from "@/components/play/PreGameCountdown";
 import { ReconnectModal } from "@/components/play/ReconnectModal";
 import { NightActionPanel } from "@/components/play/NightActionPanel";
-import { buildPrimaryNightAction, shortcutTargets } from "@/lib/play/night-actions";
+import {
+  buildPrimaryNightAction,
+  needsSecondNightTarget,
+  requiresExplicitNightActionChoice,
+  roleHasNightAction,
+  secondaryShortcutTargets,
+  shortcutTargets,
+} from "@/lib/play/night-actions";
 import { VotingPanel } from "@/components/play/VotingPanel";
 import { isNightPhase } from "@/lib/play/role-rules";
 import { useCueMode } from "@/hooks/play/use-cue-mode";
@@ -68,7 +74,8 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
   const [chatMessage, setChatMessage] = useState("");
   const [privateChatMessage, setPrivateChatMessage] = useState("");
   const [showShortcuts, setShowShortcuts] = useState(false);
-  const [actionDockExpanded, setActionDockExpanded] = useState(true);
+  const [actionDockExpanded, setActionDockExpanded] = useState(false);
+  const [isCompactViewport, setIsCompactViewport] = useState(false);
   const [mobileRailTab, setMobileRailTab] = useState<"events" | "chat">("events");
   const suppressNextPhasePulseRef = useRef(false);
   const lastTypingSentRef = useRef<Map<ChatChannel, number>>(new Map());
@@ -127,19 +134,56 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
   const mode = snapshot?.mode ?? createOptions?.mode ?? "werewolves_classic";
   const family = getGameFamily(mode);
   const phase = snapshot?.phase ?? "lobby";
+  const doctorCanSelfProtect =
+    snapshot?.doctorCanSelfProtect ?? createOptions?.doctorCanSelfProtect ?? false;
+  const canVote = phase === "voting" && Boolean(ownPlayer?.playing && ownPlayer.alive);
+  const canUseHunterRevenge =
+    phase === "hunter_revenge"
+    && privateRole?.role === "hunter"
+    && Boolean(ownPlayer?.playing && !ownPlayer.alive);
+  const canUseNightAction = isNightPhase(phase)
+    && Boolean(
+      privateRole
+        && ownPlayer?.playing
+        && ownPlayer.alive
+        && roleHasNightAction(privateRole.role, phase),
+    );
   const actionTargets = useMemo(() => {
-    if (phase === "hunter_revenge" && privateRole?.role !== "hunter") {
+    if (!canVote && !canUseHunterRevenge && !canUseNightAction) {
       return [];
     }
-    if (isNightPhase(phase) && !privateRole) {
+    return shortcutTargets(phase, privateRole?.role, players, livingPlayers, currentUserId, {
+      doctorCanSelfProtect,
+    });
+  }, [canUseHunterRevenge, canUseNightAction, canVote, currentUserId, doctorCanSelfProtect, livingPlayers, phase, players, privateRole?.role]);
+  const secondaryActionTargets = useMemo(() => {
+    if (!canUseNightAction || !needsSecondNightTarget(privateRole?.role, phase) || !selectedTargetId) {
       return [];
     }
-    if (phase !== "voting" && phase !== "hunter_revenge" && !isNightPhase(phase)) {
-      return [];
+
+    return secondaryShortcutTargets(phase, privateRole?.role, livingPlayers, currentUserId, selectedTargetId);
+  }, [canUseNightAction, currentUserId, livingPlayers, phase, privateRole?.role, selectedTargetId]);
+  const targetableIds = useMemo(() => {
+    const primaryIds = new Set(actionTargets.map((player) => player.userId));
+    if (needsSecondNightTarget(privateRole?.role, phase) && selectedTargetId && primaryIds.has(selectedTargetId)) {
+      const ids = new Set(secondaryActionTargets.map((player) => player.userId));
+      ids.add(selectedTargetId);
+      return ids;
     }
-    return shortcutTargets(phase, privateRole?.role, players, livingPlayers, currentUserId);
-  }, [currentUserId, livingPlayers, phase, players, privateRole?.role]);
-  const targetableIds = useMemo(() => new Set(actionTargets.map((player) => player.userId)), [actionTargets]);
+
+    return primaryIds;
+  }, [actionTargets, phase, privateRole?.role, secondaryActionTargets, selectedTargetId]);
+  const keyboardActionTargets = useMemo(() => {
+    if (
+      needsSecondNightTarget(privateRole?.role, phase)
+      && selectedTargetId
+      && actionTargets.some((player) => player.userId === selectedTargetId)
+    ) {
+      return secondaryActionTargets;
+    }
+
+    return actionTargets;
+  }, [actionTargets, phase, privateRole?.role, secondaryActionTargets, selectedTargetId]);
   const voteCounts = useMemo(
     () => new Map((snapshot?.voteTally ?? []).map((item) => [item.targetUserId, item.count])),
     [snapshot?.voteTally],
@@ -155,6 +199,20 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
     image.decoding = "async";
     image.src = preloadHref;
   }, [family, phase]);
+
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") {
+      return;
+    }
+
+    const query = window.matchMedia("(max-width: 1023px)");
+    const updateCompactViewport = () => setIsCompactViewport(query.matches);
+
+    updateCompactViewport();
+    query.addEventListener("change", updateCompactViewport);
+
+    return () => query.removeEventListener("change", updateCompactViewport);
+  }, []);
 
   const {
     phasePulse,
@@ -180,6 +238,7 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
       privateRole,
       players,
       livingPlayers,
+      actionTargets: keyboardActionTargets,
       currentUserId,
       ownPlayer,
       showShortcuts,
@@ -205,12 +264,31 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
     playCue("vote", { forceSilent: liveMode });
   }
 
+  // Keep the seat-selection logic in a ref so the callback identity is stable.
+  // Seats are memoised and the keyboard handler is bound once; a closure that
+  // captured stale selectedTargetId/secondTargetId would break two-target roles
+  // (the second click would overwrite the primary instead of setting a second).
+  const seatSelectionRef = useRef({
+    selectedTargetId,
+    secondTargetId,
+    role: privateRole?.role,
+    phase,
+    targetableIds,
+  });
+  seatSelectionRef.current = {
+    selectedTargetId,
+    secondTargetId,
+    role: privateRole?.role,
+    phase,
+    targetableIds,
+  };
+
   const selectSeatTarget = useCallback((targetUserId: string) => {
+    const { selectedTargetId, secondTargetId, role, phase, targetableIds } = seatSelectionRef.current;
     if (!targetableIds.has(targetUserId)) {
       return;
     }
 
-    const role = privateRole?.role;
     const needsSecondSeat =
       (role === "blacksmith")
       || ((role === "cupid" || role === "lovers") && phase === "first_night");
@@ -220,11 +298,58 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
       return;
     }
 
-    setSelectedTargetId((current) => (current === targetUserId ? "" : targetUserId));
+    if (selectedTargetId === targetUserId) {
+      setSelectedTargetId("");
+      setSecondTargetId("");
+      return;
+    }
+
+    setSelectedTargetId(targetUserId);
     if (secondTargetId === targetUserId) {
       setSecondTargetId("");
     }
-  }, [phase, privateRole?.role, secondTargetId, selectedTargetId, targetableIds]);
+  }, []);
+
+  // Stable management callbacks (seats are memoised and ignore callback props, so
+  // these must keep a constant identity and read the live room from a ref).
+  const roomRef = useRef(room);
+  roomRef.current = room;
+  const handleMakeNarrator = useCallback((targetUserId: string) => {
+    roomRef.current?.send("setNarrator", { targetUserId, narrator: true });
+  }, []);
+  const handleMakeMayor = useCallback((targetUserId: string) => {
+    roomRef.current?.send("setMayor", { targetUserId });
+  }, []);
+
+  useEffect(() => {
+    const phaseHasPrimaryDockAction =
+      phase === "lobby"
+      || canVote
+      || canUseHunterRevenge
+      || canUseNightAction;
+    const shouldForceExpandDock =
+      phase === "role_reveal"
+      || Boolean(selectedTargetId)
+      || Boolean(secondTargetId);
+    const shouldAutoExpand =
+      shouldForceExpandDock
+      || (!isCompactViewport && phaseHasPrimaryDockAction);
+
+    if (shouldAutoExpand) {
+      setActionDockExpanded(true);
+    } else if (isCompactViewport && phaseHasPrimaryDockAction) {
+      setActionDockExpanded(false);
+    }
+  }, [canUseHunterRevenge, canUseNightAction, canVote, isCompactViewport, phase, secondTargetId, selectedTargetId]);
+
+  useEffect(() => {
+    if (selectedTargetId && !targetableIds.has(selectedTargetId)) {
+      setSelectedTargetId("");
+    }
+    if (secondTargetId && !targetableIds.has(secondTargetId)) {
+      setSecondTargetId("");
+    }
+  }, [secondTargetId, selectedTargetId, targetableIds]);
 
   const submitCurrentShortcutAction = useCallback(() => {
     const current = shortcutStateRef.current;
@@ -258,6 +383,8 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
         if (!current.liveMode && "vibrate" in navigator) {
           navigator.vibrate([24]);
         }
+      } else if (current.selectedTargetId && requiresExplicitNightActionChoice(current.privateRole.role, current.phase)) {
+        toast({ message: "Избери конкретния бутон за това нощно действие.", kind: "info" });
       }
     }
   }, [toast]);
@@ -332,15 +459,36 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
     () => privateChats.filter((message) => message.channel === privateChatChannel),
     [privateChatChannel, privateChats],
   );
-  const hasActionDock = Boolean(
-    privateRole
-      || privateResult
-      || privateLover
-      || isBlessed
-      || phase === "lobby"
-      || phase === "voting"
-      || privateChatChannel,
+  const hasStageTakeover = Boolean(snapshot?.winnerTeam);
+  const hasNarratorDesk = Boolean(snapshot && (ownPlayer?.host || ownPlayer?.narrator));
+  const hasNarratorWarning = Boolean(
+    snapshot?.narratorMode === "full_human" && ownPlayer && !ownPlayer.acceptedFullNarrator,
   );
+  const hasNarratorSnapshotPanel = Boolean(narratorSnapshot && ownPlayer?.narrator);
+  const hasNarratorDeck = Boolean(
+    !hasStageTakeover && (hasNarratorDesk || hasNarratorWarning || hasNarratorSnapshotPanel),
+  );
+  const hasActionDock = Boolean(
+    !hasStageTakeover
+      && (
+        privateRole
+        || privateResult
+        || privateLover
+        || isBlessed
+        || phase === "lobby"
+        || canVote
+        || canUseHunterRevenge
+        || canUseNightAction
+        || privateChatChannel
+      ),
+  );
+  const hasDockRitualPanel = Boolean(canVote || canUseHunterRevenge || canUseNightAction || privateChatChannel);
+  const actionDockKind =
+    canVote || canUseHunterRevenge || canUseNightAction
+      ? "action"
+      : phase === "lobby"
+        ? "lobby"
+        : "quiet";
   // Connection state already lives in the ConnectionBanner; the stage-status
   // line is only useful for transient action feedback. Hide the boilerplate
   // "Свързан" / "Свързване..." strings so the player doesn't see them linger.
@@ -348,29 +496,29 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       const target = event.target as HTMLElement | null;
-      if (
-        target?.tagName === "INPUT" ||
-        target?.tagName === "TEXTAREA" ||
-        target?.tagName === "SELECT" ||
-        target?.isContentEditable
-      ) {
-        return;
-      }
-
-      if (event.key === "?") {
-        event.preventDefault();
-        setShowShortcuts((value) => !value);
-        return;
-      }
 
       if (event.key === "Escape") {
+        if (isTextEntryShortcutTarget(target)) {
+          return;
+        }
         const current = shortcutStateRef.current;
+        event.preventDefault();
         if (current?.showShortcuts) {
           setShowShortcuts(false);
         } else {
           setSelectedTargetId("");
           setSecondTargetId("");
         }
+        return;
+      }
+
+      if (isInteractiveShortcutTarget(target)) {
+        return;
+      }
+
+      if (event.key === "?") {
+        event.preventDefault();
+        setShowShortcuts((value) => !value);
         return;
       }
 
@@ -398,31 +546,30 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
 
       if ((current.phase === "voting" || current.phase === "hunter_revenge" || isNightPhase(current.phase)) && /^[1-9]$/.test(event.key)) {
         const index = Number(event.key) - 1;
-        const targetPlayer = shortcutTargets(
-          current.phase,
-          current.privateRole?.role,
-          current.players,
-          current.livingPlayers,
-          current.currentUserId,
-        )[index];
+        const targetPlayer = current.actionTargets[index];
         if (targetPlayer) {
           event.preventDefault();
-          setSelectedTargetId(targetPlayer.userId);
+          selectSeatTarget(targetPlayer.userId);
         }
       }
     }
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [submitCurrentShortcutAction, toast]);
+  }, [selectSeatTarget, submitCurrentShortcutAction, toast]);
 
   const renderPlayersPanel = () => {
     const eventsHeadingId = "events-heading";
     const chatHeadingId = "chat-heading";
     const guideHeadingId = "play-rail-guide-heading";
+    const railHeadingId = "play-rail-heading";
+    const eventsTabId = "play-rail-tab-events";
+    const chatTabId = "play-rail-tab-chat";
+    const eventsPanelId = "play-rail-panel-events";
+    const chatPanelId = "play-rail-panel-chat";
 
     return (
-      <aside className="play-section play-players-panel play-side-rail">
+      <section className="play-section play-players-panel play-side-rail" aria-labelledby={railHeadingId}>
         <ConnectionBanner status={connectionStatus} message={status} />
 
         <div className="play-rail-intro">
@@ -430,7 +577,7 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
             <Settings className="play-section-icon" aria-hidden strokeWidth={1.8} />
             <span>хроника</span>
           </p>
-          <h2 className="mt-3 text-3xl font-black">Пулсът на стаята</h2>
+          <h2 id={railHeadingId} className="mt-3 text-3xl font-black">Пулсът на стаята</h2>
         </div>
 
         <LiveCuePanel
@@ -444,7 +591,7 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
         <PhaseRail phase={phase} />
 
         {snapshot ? (
-          <details className="play-rail-disclosure mt-8" open={phase === "lobby"}>
+          <details className="play-rail-disclosure mt-8">
             <summary id={guideHeadingId}>Правила и подсказки</summary>
             <div aria-labelledby={guideHeadingId}>
               <RulesSummary snapshot={snapshot} />
@@ -453,60 +600,76 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
           </details>
         ) : null}
 
-        {snapshot && (ownPlayer?.host || ownPlayer?.narrator) ? (
-          <NarratorDesk
-            room={room}
-            snapshot={snapshot}
-            phase={phase}
-            family={family}
-            isNarrator={Boolean(ownPlayer?.narrator)}
-            onOpenShortcuts={() => setShowShortcuts(true)}
-          />
-        ) : null}
-
-        {snapshot?.narratorMode === "full_human" && ownPlayer && !ownPlayer.acceptedFullNarrator ? (
-          <article className="narrator-warning-card mt-8 rounded-[2rem] border border-[#842f2b]/50 bg-[#842f2b]/25 p-6">
-            <p className="text-sm uppercase tracking-[0.3em] text-[#c18a38]">важно предупреждение</p>
-            <h2 className="mt-2 text-3xl font-black">Пълен Разказвач вижда всички роли</h2>
-            <p className="mt-3 text-[#ead9ba]">
-              При този режим човекът Разказвач може да види тайните роли и действия, за да води играта ръчно.
-              Натисни приемане само ако си съгласен с това.
-            </p>
-            <button className="btn btn-primary mt-5" type="button" onClick={() => room?.send("acceptFullNarrator")}>
-              Приемам
-            </button>
-          </article>
-        ) : null}
-
-        {narratorSnapshot && ownPlayer?.narrator ? (
-          <NarratorSnapshotPanel snapshot={narratorSnapshot} />
-        ) : null}
-
         <DeathRevealCinematic players={players} />
 
         <div className="play-rail-tabs" role="tablist" aria-label="Хроника и чат">
           <button
+            id={eventsTabId}
+            className="play-rail-tab"
             type="button"
             role="tab"
             aria-selected={mobileRailTab === "events"}
+            aria-controls={eventsPanelId}
             onClick={() => setMobileRailTab("events")}
           >
             Събития
           </button>
           <button
+            id={chatTabId}
+            className="play-rail-tab"
             type="button"
             role="tab"
             aria-selected={mobileRailTab === "chat"}
+            aria-controls={chatPanelId}
             onClick={() => setMobileRailTab("chat")}
           >
             Чат
           </button>
         </div>
 
-        <div className="play-rail-panel" data-mobile-panel="chat" data-active={mobileRailTab === "chat" ? "true" : undefined}>
+        <div
+          id={eventsPanelId}
+          className="play-rail-panel mt-8"
+          role="tabpanel"
+          aria-labelledby={eventsTabId}
+          data-mobile-panel="events"
+          data-active={mobileRailTab === "events" ? "true" : undefined}
+        >
+          <h3 className="play-panel-subhead" id={eventsHeadingId}>
+            <Settings className="play-section-icon" aria-hidden strokeWidth={1.8} />
+            <span>Събития</span>
+          </h3>
+          <div
+            className="mt-3 grid gap-2 text-sm"
+            role="log"
+            aria-labelledby={eventsHeadingId}
+            aria-live="polite"
+            aria-relevant="additions"
+          >
+            {(snapshot?.publicEvents ?? []).length === 0 ? (
+              <p className="event-line event-line-empty rounded-xl px-3 py-2">
+                Събитията ще се появят тук, когато играта започне.
+              </p>
+            ) : null}
+            {recentPublicEvents.map((event) => (
+              <p key={event.id} className={`event-line ${eventLineClass(event.messageBg)} rounded-xl px-3 py-2`}>
+                {event.messageBg}
+              </p>
+            ))}
+          </div>
+        </div>
+
+        <div
+          id={chatPanelId}
+          className="play-rail-panel mt-8"
+          role="tabpanel"
+          aria-labelledby={chatTabId}
+          data-mobile-panel="chat"
+          data-active={mobileRailTab === "chat" ? "true" : undefined}
+        >
           {phase === "day_discussion" && snapshot?.communicationMode === "built_in_chat" ? (
             ownPlayer?.playing && ownPlayer?.alive ? (
-              <form className="mt-8 grid gap-3" onSubmit={sendChat}>
+              <form className="grid gap-3" onSubmit={sendChat}>
                 <h3 className="play-panel-subhead">
                   <MessageSquare className="play-section-icon" aria-hidden strokeWidth={1.8} />
                   <span>Дневен чат</span>
@@ -534,7 +697,7 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
                 </button>
               </form>
             ) : (
-              <div className="play-muted-note mt-8">
+              <div className="play-muted-note">
                 <EyeOff className="play-section-icon" aria-hidden strokeWidth={1.8} />
                 <span>
                   {ownPlayer?.playing
@@ -546,39 +709,12 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
           ) : null}
 
           {phase === "day_discussion" && snapshot?.communicationMode !== "built_in_chat" ? (
-            <div className="play-muted-note mt-8">
+            <div className="play-muted-note">
               <EyeOff className="play-section-icon" aria-hidden strokeWidth={1.8} />
               <span>В тази стая публичният чат е изключен. Използвайте външен разговор, игра на живо или указанията на Разказвача.</span>
             </div>
           ) : null}
-        </div>
 
-        <div className="play-rail-panel mt-8" data-mobile-panel="events" data-active={mobileRailTab === "events" ? "true" : undefined}>
-          <h3 className="play-panel-subhead" id={eventsHeadingId}>
-            <Settings className="play-section-icon" aria-hidden strokeWidth={1.8} />
-            <span>Събития</span>
-          </h3>
-          <div
-            className="mt-3 grid gap-2 text-sm"
-            role="log"
-            aria-labelledby={eventsHeadingId}
-            aria-live="polite"
-            aria-relevant="additions"
-          >
-            {(snapshot?.publicEvents ?? []).length === 0 ? (
-              <p className="event-line event-line-empty rounded-xl px-3 py-2">
-                Събитията ще се появят тук, когато играта започне.
-              </p>
-            ) : null}
-            {recentPublicEvents.map((event) => (
-              <p key={event.id} className={`event-line ${eventLineClass(event.messageBg)} rounded-xl px-3 py-2`}>
-                {event.messageBg}
-              </p>
-            ))}
-          </div>
-        </div>
-
-        <div className="play-rail-panel mt-8" data-mobile-panel="chat" data-active={mobileRailTab === "chat" ? "true" : undefined}>
           <h3 className="play-panel-subhead" id={chatHeadingId}>
             <MessageSquare className="play-section-icon" aria-hidden strokeWidth={1.8} />
             <span>Чат лог</span>
@@ -601,7 +737,7 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
             <TypingIndicator notices={publicTypers} compact />
           </div>
         </div>
-      </aside>
+      </section>
     );
   };
 
@@ -634,16 +770,16 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
   };
 
   const renderStageTakeover = () => {
-    if (!snapshot?.winnerTeam) {
+    if (!hasStageTakeover || !snapshot?.winnerTeam) {
       return null;
     }
 
     return (
       <div className="play-stage-takeover" aria-live="polite">
-        <article className={`winner-card paper-card rounded-[2rem] p-6 faction-${snapshot.winnerTeam}`}>
-          <p className="text-sm uppercase tracking-[0.3em] text-[#842f2b]">край на играта</p>
-          <h2 className="mt-2 text-4xl font-black">{winnerBg(snapshot.winnerTeam)}</h2>
-          <p className="mt-3 text-[#4f3829]">{snapshot.winnerReasonBg}</p>
+        <article className={`play-winner faction-${snapshot.winnerTeam}`} data-winner={snapshot.winnerTeam}>
+          <p className="play-winner-kicker">край на играта</p>
+          <h2 className="play-winner-title">{winnerBg(snapshot.winnerTeam)}</h2>
+          {snapshot.winnerReasonBg ? <p className="play-winner-reason">{snapshot.winnerReasonBg}</p> : null}
         </article>
         <PostGameStory snapshot={snapshot} />
       </div>
@@ -656,7 +792,12 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
     }
 
     return (
-      <section className="play-action-dock play-section" data-expanded={actionDockExpanded ? "true" : "false"} aria-labelledby="play-action-dock-heading">
+      <section
+        className="play-action-dock play-section"
+        data-dock-kind={actionDockKind}
+        data-expanded={actionDockExpanded ? "true" : "false"}
+        aria-labelledby="play-action-dock-heading"
+      >
         <div className="play-action-dock-head">
           <div>
             <p className="section-kicker play-section-kicker">
@@ -665,12 +806,18 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
             </p>
             <h2 id="play-action-dock-heading">Твоят таен ъгъл</h2>
           </div>
-          <button className="play-action-dock-toggle" type="button" onClick={() => setActionDockExpanded((value) => !value)}>
+          <button
+            className="play-action-dock-toggle"
+            type="button"
+            aria-expanded={actionDockExpanded}
+            aria-controls="play-action-dock-grid"
+            onClick={() => setActionDockExpanded((value) => !value)}
+          >
             {actionDockExpanded ? "Скрий" : "Покажи"}
           </button>
         </div>
 
-        <div className="play-action-dock-grid">
+        <div id="play-action-dock-grid" className="play-action-dock-grid">
           {renderLobbyControls()}
 
           {privateLover ? <LoverCard lover={privateLover} /> : null}
@@ -687,10 +834,12 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
 
           <RoleCard role={privateRole} result={privateResult} players={players} />
 
-          {isNightPhase(phase) && privateRole ? (
+          {canUseNightAction && privateRole ? (
             <NightActionPanel
               players={players}
               livingPlayers={livingPlayers}
+              currentUserId={currentUserId}
+              doctorCanSelfProtect={doctorCanSelfProtect}
               phase={phase}
               privateRole={privateRole.role}
               selectedTargetId={selectedTargetId}
@@ -699,7 +848,7 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
             />
           ) : null}
 
-          {phase === "voting" ? (
+          {canVote ? (
             <VotingPanel
               currentUserId={currentUserId}
               livingPlayers={livingPlayers}
@@ -710,7 +859,7 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
             />
           ) : null}
 
-          {phase === "hunter_revenge" && privateRole?.role === "hunter" ? (
+          {canUseHunterRevenge ? (
             <HunterRevengePanel
               currentUserId={currentUserId}
               livingPlayers={livingPlayers}
@@ -728,6 +877,47 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
               sendPrivateChat={sendPrivateChat}
               typingNotices={privateTypers}
             />
+          ) : null}
+        </div>
+      </section>
+    );
+  };
+
+  const renderNarratorDeck = () => {
+    if (!hasNarratorDeck) {
+      return null;
+    }
+
+    return (
+      <section className="play-narrator-deck" aria-label="Команден панел на Разказвача">
+        <div className="play-narrator-deck-scroll">
+          {hasNarratorDesk && snapshot ? (
+            <NarratorDesk
+              room={room}
+              snapshot={snapshot}
+              phase={phase}
+              family={family}
+              isNarrator={Boolean(ownPlayer?.narrator)}
+              onOpenShortcuts={() => setShowShortcuts(true)}
+            />
+          ) : null}
+
+          {hasNarratorWarning ? (
+            <article className="narrator-warning-card mt-8 rounded-[2rem] border border-[#842f2b]/50 bg-[#842f2b]/25 p-6">
+              <p className="text-sm uppercase tracking-[0.3em] text-[#c18a38]">важно предупреждение</p>
+              <h2 className="mt-2 text-3xl font-black">Пълен Разказвач вижда всички роли</h2>
+              <p className="mt-3 text-[#ead9ba]">
+                При този режим човекът Разказвач може да види тайните роли и действия, за да води играта ръчно.
+                Натисни приемане само ако си съгласен с това.
+              </p>
+              <button className="btn btn-primary mt-5" type="button" onClick={() => room?.send("acceptFullNarrator")}>
+                Приемам
+              </button>
+            </article>
+          ) : null}
+
+          {hasNarratorSnapshotPanel && narratorSnapshot ? (
+            <NarratorSnapshotPanel snapshot={narratorSnapshot} />
           ) : null}
         </div>
       </section>
@@ -752,7 +942,12 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
         <AchievementUnlockModal achievementIds={unlockedAchievementIds} onClose={() => setUnlockedAchievementIds([])} />
       ) : null}
       <div className="framed-shell-inner play-shell-inner">
-        <section className="play-layout">
+        <section
+          className="play-layout"
+          data-has-narrator-deck={hasNarratorDeck ? "true" : undefined}
+          data-dock-has-ritual={hasDockRitualPanel ? "true" : undefined}
+          data-stage-takeover={hasStageTakeover ? "true" : undefined}
+        >
           <PlayStage
             code={code}
             phase={phase}
@@ -773,16 +968,38 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
             secondTargetId={secondTargetId}
             voteCounts={voteCounts}
             onSelectSeat={selectSeatTarget}
-            onMakeNarrator={(targetUserId) => room?.send("setNarrator", { targetUserId, narrator: true })}
-            onMakeMayor={(targetUserId) => room?.send("setMayor", { targetUserId })}
+            onMakeNarrator={handleMakeNarrator}
+            onMakeMayor={handleMakeMayor}
           />
           {renderStageTakeover()}
           {renderActionDock()}
-          {renderPlayersPanel()}
+          {hasStageTakeover ? null : renderPlayersPanel()}
+          {renderNarratorDeck()}
       </section>
       </div>
     </main>
   );
+}
+
+function isInteractiveShortcutTarget(target: HTMLElement | null) {
+  if (!target) {
+    return false;
+  }
+
+  return Boolean(target.closest(
+    "a, button, input, textarea, select, summary, [role='button'], [role='tab'], [role='switch'], [role='menuitem'], [contenteditable='true']",
+  ));
+}
+
+function isTextEntryShortcutTarget(target: HTMLElement | null) {
+  if (!target) {
+    return false;
+  }
+  if (target.isContentEditable) {
+    return true;
+  }
+
+  return Boolean(target.closest("input, textarea, select, [contenteditable='true']"));
 }
 
 function getAvailablePrivateChatChannel(

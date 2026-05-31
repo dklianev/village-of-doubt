@@ -33,6 +33,7 @@ const snapshot: GameSnapshot = {
   voteSeconds: 60,
   revealRolesOnDeath: true,
   loversEnabled: true,
+  doctorCanSelfProtect: false,
   allowSkipVote: false,
   majorityMode: "simple",
   narratorVoice: "classic",

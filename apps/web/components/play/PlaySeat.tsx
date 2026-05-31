@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { MoreHorizontal } from "lucide-react";
 import { ROLE_DEFINITIONS, type GamePhase, type RoleCode } from "@werewolf/shared";
 import { arePlayersEqual, playerInitials, playerStatusBadge } from "@/lib/play/player-display";
 import type { PublicPlayer } from "@/lib/play/types";
@@ -33,20 +34,30 @@ export const PlaySeat = memo(function PlaySeat({
   onMakeMayor,
 }: PlaySeatProps) {
   const status = seatStatusText(player, phase, narratorMode);
+  // The portrait (avatar + badges) is aria-hidden, so fold the vote count and
+  // selection state into the accessible name instead of on hidden children.
+  const stateParts: string[] = [];
+  if (voteCount > 0) {
+    stateParts.push(`${voteCount} гласа`);
+  }
+  if (secondSelected) {
+    stateParts.push("втора цел");
+  } else if (selected) {
+    stateParts.push("избрана цел");
+  }
+  const stateSuffix = stateParts.length > 0 ? `, ${stateParts.join(", ")}` : "";
+  const hasManagementControls = canManageNarrator || canManageMayor;
   const content = (
     <>
-      <span className="play-seat-avatar" aria-hidden="true">
-        {playerInitials(player.displayName)}
+      <span className="play-seat-portrait" aria-hidden="true">
+        <span className="play-seat-avatar">{playerInitials(player.displayName)}</span>
+        {voteCount > 0 ? <span className="play-seat-vote-count">{voteCount}</span> : null}
+        {selected || secondSelected ? (
+          <span className="play-seat-selected-mark">{secondSelected ? "2" : "✓"}</span>
+        ) : null}
       </span>
-      <span className="play-seat-copy">
-        <strong>{player.displayName}</strong>
-        <small>{playerStatusBadge(player, phase)}</small>
-      </span>
+      <span className="play-seat-name">{player.displayName}</span>
       <span className="play-seat-state">{status}</span>
-      {voteCount > 0 ? <span className="play-seat-vote-count" aria-label={`${voteCount} гласа`}>{voteCount}</span> : null}
-      {selected || secondSelected ? (
-        <span className="play-seat-selected-mark">{secondSelected ? "втора цел" : "цел"}</span>
-      ) : null}
     </>
   );
 
@@ -56,7 +67,7 @@ export const PlaySeat = memo(function PlaySeat({
         className="play-seat-token"
         type="button"
         aria-pressed={selected || secondSelected}
-        aria-label={`Избери ${player.displayName}`}
+        aria-label={`Избери ${player.displayName}: ${status}${stateSuffix}`}
         onClick={onSelect}
       >
         {content}
@@ -65,21 +76,30 @@ export const PlaySeat = memo(function PlaySeat({
   }
 
   return (
-    <div className="play-seat-token" aria-label={`${player.displayName}: ${status}`}>
+    <div
+      className="play-seat-token"
+      role={hasManagementControls ? "group" : undefined}
+      aria-label={`${player.displayName}: ${status}${stateSuffix}`}
+    >
       {content}
-      {canManageNarrator || canManageMayor ? (
-        <span className="play-seat-controls">
-          {canManageNarrator ? (
-            <button type="button" onClick={onMakeNarrator}>
-              Разказвач
-            </button>
-          ) : null}
-          {canManageMayor ? (
-            <button type="button" onClick={onMakeMayor}>
-              Кмет
-            </button>
-          ) : null}
-        </span>
+      {hasManagementControls ? (
+        <details className="play-seat-menu">
+          <summary aria-label={`Управление за ${player.displayName}`}>
+            <MoreHorizontal aria-hidden="true" strokeWidth={2.4} />
+          </summary>
+          <span className="play-seat-controls">
+            {canManageNarrator ? (
+              <button type="button" onClick={onMakeNarrator}>
+                Разказвач
+              </button>
+            ) : null}
+            {canManageMayor ? (
+              <button type="button" onClick={onMakeMayor}>
+                Кмет
+              </button>
+            ) : null}
+          </span>
+        </details>
       ) : null}
     </div>
   );

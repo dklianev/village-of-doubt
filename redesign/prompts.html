@@ -1,0 +1,841 @@
+<!doctype html>
+<html lang="bg">
+<head>
+<meta charset="utf-8">
+<title>Промпти · Подробен спецификат</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+  .prompt {
+    background: oklch(0.10 0.012 50);
+    border-radius: var(--r-tile);
+    overflow: hidden;
+    border: 1px solid oklch(0.30 0.03 60 / 0.5);
+    box-shadow: var(--shadow-scene);
+    margin-top: 20px;
+  }
+  .prompt-bar {
+    padding: 14px 22px;
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 16px;
+    border-bottom: 1px solid oklch(0.30 0.03 60 / 0.5);
+    background: oklch(0.14 0.012 50);
+    flex-wrap: wrap;
+  }
+  .prompt-bar .left {
+    display: flex; gap: 12px; align-items: center;
+    flex-wrap: wrap;
+  }
+  .prompt-bar .dots { display: flex; gap: 6px; }
+  .prompt-bar .dots span {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: oklch(0.30 0.03 60);
+  }
+  .prompt-bar .name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--gold-soft);
+  }
+  .prompt-bar .meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 0.14em;
+    color: oklch(0.65 0.04 75);
+  }
+  .prompt-bar button {
+    appearance: none; border: 1px solid var(--gold-deep);
+    background: transparent; color: var(--gold-soft);
+    padding: 6px 14px; border-radius: 999px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
+    cursor: pointer; transition: background 0.15s;
+  }
+  .prompt-bar button:hover { background: oklch(0.40 0.07 60 / 0.2); }
+  .prompt-bar button.copied { background: var(--green); color: oklch(0.97 0.01 80); border-color: transparent; }
+  .prompt-body {
+    padding: 28px 32px;
+    color: oklch(0.86 0.018 78);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-x: auto;
+    max-height: 600px;
+    overflow-y: auto;
+  }
+  .prompt-body .h { color: var(--gold-soft); font-weight: 600; }
+  .prompt-body .c { color: var(--ink-faint); font-style: italic; }
+  .prompt-body .v { color: oklch(0.78 0.13 145); }
+  .prompt-body .b { color: var(--blood); filter: brightness(1.4); }
+  .prompt-toc {
+    background: var(--scene); color: var(--scene-text);
+    padding: 24px 28px; border-radius: var(--r-tile);
+    margin-top: 18px;
+  }
+  .prompt-toc ol { padding-left: 20px; margin: 0; }
+  .prompt-toc ol li {
+    margin-bottom: 8px;
+    font-size: 15px;
+    color: var(--scene-text-soft);
+  }
+  .prompt-toc ol li a {
+    color: var(--gold-soft); border: none; font-weight: 500;
+  }
+  .prompt-toc ol li::marker { color: var(--gold); font-family: 'JetBrains Mono', monospace; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="crest">W</div>
+    <div class="brand">
+      <div class="brand-title">Върколак · Мафия</div>
+      <div class="brand-sub">Codex промпти · 1 master + 6 спринта</div>
+    </div>
+    <nav>
+      <a href="index.html">Преглед</a>
+      <a href="tokens.html">Tokens</a>
+      <a href="primitives.html">Компоненти</a>
+      <a href="dictionary.html">Речник</a>
+      <a href="motion.html">Движение</a>
+      <a href="states.html">Състояния</a>
+      <a href="acceptance.html">Acceptance</a>
+      <a href="prompts.html" class="active">Промпти</a>
+    </nav>
+  </div>
+</div>
+
+<main>
+
+<header class="hero">
+  <div class="hero-card">
+    <div class="eyebrow">07 · Codex prompts</div>
+    <h1>Седем <em>промпта.</em></h1>
+    <p class="hero-lede">
+      Един master, който задава общия контекст и дисциплината. Шест per-sprint, всеки самодостатъчен —
+      копи­райш в Codex и стартираш. Препоръчителната последователност: master → sprint 1 → review →
+      sprint 2 и т.н. Не пускай два спринта едновременно — рефакторите се блокират помежду си.
+    </p>
+    <div class="hero-meta">
+      <span>Модел · <b>GPT-5.5 xhigh</b></span>
+      <span>Употреба · <b>Codex CLI или ChatGPT</b></span>
+      <span>Препоръка · <b>един спринт = един работен ден</b></span>
+    </div>
+  </div>
+</header>
+
+<section class="wrap">
+  <div class="section-head">
+    <div>
+      <div class="num">00 / Съдържание</div>
+      <h2>Седем промпта.</h2>
+    </div>
+    <p>Скочи направо към този, който ти трябва.</p>
+  </div>
+
+  <div class="prompt-toc">
+    <ol>
+      <li><a href="#master">Master · общ контекст, правила, дисциплина</a></li>
+      <li><a href="#s1">Sprint 1 · Foundation (tokens + primitives + a11y + assets)</a></li>
+      <li><a href="#s2">Sprint 2 · Entry (home, /werewolf, /mafia, /sign-in, /tutorial, auth peripheral)</a></li>
+      <li><a href="#s3">Sprint 3 · Game core (split play-room, 4 сцени, /lobby, /roles)</a></li>
+      <li><a href="#s4">Sprint 4 · Identity (/account, /history, /achievements, /friends)</a></li>
+      <li><a href="#s5">Sprint 5 · Social (/leaderboard, /report)</a></li>
+      <li><a href="#s6">Sprint 6 · Periphery (/faq, /privacy, /terms, /status, errors)</a></li>
+    </ol>
+  </div>
+</section>
+
+<!-- MASTER -->
+<section class="wrap" id="master">
+  <div class="section-head">
+    <div>
+      <div class="num">01 / Master</div>
+      <h2>Общ контекст за всички спринтове.</h2>
+    </div>
+    <p>Прочети това веднъж. Стой като отворен tab. Препрати го преди да започнеш всеки спринт.</p>
+  </div>
+
+  <div class="prompt">
+    <div class="prompt-bar">
+      <div class="left">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="name">master · prompt</span>
+        <span class="meta">≈ 1200 tokens</span>
+      </div>
+      <button onclick="copyP(this)">Копирай</button>
+    </div>
+    <div class="prompt-body"><span class="h"># Role</span>
+You are a senior frontend engineer joining the <span class="v">dklianev/village-of-doubt</span> codebase.
+The product is "Върколак · Мафия" — a Bulgarian social-deduction game (Werewolf + Mafia)
+with two distinct visual worlds sharing one chrome.
+
+<span class="h">Stack:</span> Next.js 15 App Router · TypeScript · CSS Modules · Colyseus client ·
+Better Auth · Drizzle · pnpm workspaces · Playwright (visual regression).
+
+You will execute a 6-sprint frontend refactor. Work in small, reviewable PRs.
+Never break visual regression without updating snapshots in the same PR.
+
+<span class="h"># Context to read first (in this exact order)</span>
+1. <span class="v">AGENTS.md</span> — repo conventions
+2. <span class="v">README.md</span> — product overview
+3. <span class="v">apps/web/app/layout.tsx</span> + <span class="v">globals.css</span> — current chrome &amp; styles
+4. <span class="v">apps/web/components/site-chrome.tsx</span> — top bar
+5. <span class="v">apps/web/components/landing-experience.tsx</span> — home shape
+6. <span class="v">apps/web/components/play-room-client.tsx</span> — the 108KB monolith (Sprint 3)
+7. <span class="v">apps/web/__visual__/__baseline__/*.png</span> — actually look at these
+8. The full design spec at <span class="v">docs/spec/*</span> (8 documents):
+   <span class="c">- spec/tokens.md       — 32 design tokens (OKLCH, semantic names)
+   - spec/primitives.md   — 14 primitive components (TypeScript signatures)
+   - spec/dictionary.md   — 48 Bulgarian terms (locked microcopy)
+   - spec/motion.md       — 5 durations, 4 easings, 12 animation types
+   - spec/states.md       — 22 empty states + 9 error states
+   - spec/acceptance.md   — per-page acceptance criteria</span>
+
+Then run <span class="v">pnpm verify</span> locally to confirm baseline is green before starting.
+
+<span class="h"># Design system (non-negotiable)</span>
+- One serif family: <span class="b">Cormorant Garamond</span>. Never sans-serif in primary chrome.
+- One monospace: <span class="b">JetBrains Mono</span> (eyebrow labels, code, meta).
+- Color tokens in <span class="b">OKLCH</span>, semantic names only. NEVER <span class="v">--orange-500</span> —
+  always <span class="v">--accent-blood</span>, <span class="v">--surface-paper</span>, etc.
+- Two surface modes: <span class="b">paper</span> (cream parchment) and <span class="b">scene</span> (dark cinematic).
+  EVERY card is one or the other. No middle ground.
+- Tight accent palette: <span class="v">blood</span> (oklch 0.50 0.155 25), <span class="v">gold</span> (oklch 0.78 0.115 75).
+- <span class="b">No emoji in primary UI.</span> No filled-corner gradient cards.
+  No AI-illustrated SVGs (use placeholders if asset missing).
+- All photography stays photographic; placeholders use striped paper, not icons.
+- <span class="b">Bulgarian-only user-facing copy.</span> Follow <span class="v">docs/spec/dictionary.md</span> strictly.
+
+<span class="h"># Engineering rules (enforced by CI)</span>
+1. <span class="b">One PR per page</span> (or one logical group). Never combine sprints.
+2. <span class="b">Update visual snapshots</span> in the same PR. Include before/after in description.
+3. <span class="b">No new dependencies</span> without explicit approval in PR description.
+4. <span class="b">Keep <span class="v">pnpm verify</span> green</span> on every commit pushed to main.
+5. <span class="b">Bulgarian first.</span> All user strings reviewed against dictionary.
+6. <span class="b">No client-side fetching</span> from server components when SSR works.
+7. <span class="b">New shared components go to <span class="v">packages/ui</span></span> if reused 2+ times,
+   else <span class="v">apps/web/components/</span>.
+8. <span class="b">Every page renders without JS</span> for first paint. Hydration enhances.
+9. <span class="b">Type strictly.</span> No <span class="v">any</span>. No <span class="v">@ts-ignore</span> without explanatory comment.
+
+<span class="h"># Acceptance criteria per PR (universal)</span>
+- [ ] <span class="v">pnpm typecheck</span> · <span class="v">pnpm test</span> · <span class="v">pnpm regression</span> green
+- [ ] <span class="v">./scripts/check-dictionary.sh</span> green
+- [ ] Lighthouse: Performance ≥85 desktop / ≥75 mobile, Accessibility ≥95
+- [ ] axe-core: zero violations on touched pages
+- [ ] Verified 375 / 768 / 1280 / 1920 viewports
+- [ ] <span class="v">prefers-reduced-motion</span> verified — no motion &gt; 90ms plays
+- [ ] Keyboard navigation works; ESC closes modals
+- [ ] Bundle delta &lt; +20 KB gzip (or explanation)
+- [ ] PR description includes: files (new/modified/deleted), screenshots,
+      Lighthouse delta, open questions
+
+<span class="h"># When something is ambiguous</span>
+DO NOT GUESS. Three options:
+1. Stop and ask in PR description under <span class="b">"Open questions"</span>.
+2. Mark with <span class="v">// TODO(design): &lt;question&gt;</span> in code; continue.
+3. If blocking — stop work, surface immediately.
+
+NEVER invent design decisions. NEVER add filler content. NEVER add icons that
+aren't in the spec. NEVER expand scope beyond the current sprint's pages.
+
+<span class="h"># Reporting</span>
+After every PR, add to description:
+- Files touched (grouped: new / modified / deleted)
+- Before/after screenshots (desktop + mobile, at minimum)
+- Lighthouse delta (perf / a11y)
+- Lines changed (net)
+- Open questions for design review
+
+Wait for human review approval before opening next PR in same sprint.
+</div>
+  </div>
+</section>
+
+<!-- SPRINT 1 -->
+<section class="wrap" id="s1">
+  <div class="section-head">
+    <div>
+      <div class="num">02 / Sprint 1</div>
+      <h2>Foundation.</h2>
+    </div>
+    <p>Tokens + primitives + a11y база + asset pipeline. Без този спринт следващите се влачат.</p>
+  </div>
+
+  <div class="prompt">
+    <div class="prompt-bar">
+      <div class="left">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="name">sprint-1 · foundation</span>
+        <span class="meta">≈ 900 tokens · ~5-7 PR-а</span>
+      </div>
+      <button onclick="copyP(this)">Копирай</button>
+    </div>
+    <div class="prompt-body"><span class="h"># Sprint 1: Foundation (Weeks 1–2)</span>
+
+<span class="c">Goal: extract all design decisions into one source of truth so the next 5
+sprints can move fast. NO user-facing UI changes in this sprint.</span>
+
+<span class="h">## Deliverables</span>
+
+<span class="b">PR 1.1 · feat(ui): introduce design tokens package</span>
+- Create <span class="v">packages/ui</span> workspace package.
+- Add <span class="v">packages/ui/tokens.css</span> with all 32 tokens from <span class="v">docs/spec/tokens.md</span>:
+  - 9 surface/ink (paper, paper-deep, paper-edge, scene, scene-deep, ink-primary, ink-soft, ink-faint, scene-text, scene-text-soft)
+  - 6 accents (blood, blood-deep, gold, gold-deep, gold-soft, green)
+  - 10 type scale (display, h1-h4, body, body-sm, lede, eyebrow, meta)
+  - 8 spacing (1-12, base 4px)
+  - 3 radii + 2 shadows + focus-ring
+- Add <span class="v">@media (prefers-reduced-motion)</span> guard at end of tokens.css.
+- Add <span class="v">:focus-visible</span> global rule using <span class="v">--focus-ring</span>.
+- Export from <span class="v">packages/ui/index.ts</span>.
+
+<span class="b">PR 1.2 · feat(ui): primitive components — Surface, Eyebrow, Display</span>
+- Add to <span class="v">packages/ui/primitives/</span>:
+  - <span class="v">Surface.tsx</span> (paper|scene variants, radii, elevation, as=)
+  - <span class="v">Eyebrow.tsx</span> (tone=default|muted|blood, inline)
+  - <span class="v">Display.tsx</span> (size=hero|h1|h2|h3|h4, as=auto-derived)
+- Storybook stories for each (set up Storybook in <span class="v">packages/ui/.storybook</span>).
+- Unit tests for prop combinations.
+- TypeScript signatures EXACTLY as in <span class="v">docs/spec/primitives.md</span>.
+
+<span class="b">PR 1.3 · feat(ui): more primitives — PaperCard, SceneCard, Pill, Medallion</span>
+- Same conventions as PR 1.2.
+
+<span class="b">PR 1.4 · feat(ui): in-game primitives — PhaseStrip, PlayerDiary, VoteCircle</span>
+- These are more complex; each gets its own PR if needed.
+
+<span class="b">PR 1.5 · feat(ui): overlay primitives — Toast, Sheet, Dialog, EmptyState</span>
+- EmptyState includes 8 inline-SVG artifacts (sealed-letter, empty-chair, etc).
+  Use SIMPLE geometric SVG; if uncertain about artistry, leave a TODO(design):
+  comment and use a striped placeholder.
+
+<span class="b">PR 1.6 · refactor: migrate globals.css to consume tokens</span>
+- Strip everything from <span class="v">apps/web/app/globals.css</span> that's now in tokens.
+- Replace hardcoded colors with <span class="v">var(--...)</span>.
+- Visual regression MUST stay green — this is a pure refactor.
+
+<span class="b">PR 1.7 · feat: asset pipeline (AVIF + responsive)</span>
+- Convert all hero photos in <span class="v">apps/web/public/</span> to AVIF + WebP fallback.
+- Create <span class="v">components/AtmosphericImage.tsx</span> wrapping <span class="v">next/image</span>:
+  - srcset 800/1400/2000w
+  - blurhash placeholder (use <span class="v">plaiceholder</span> if not already installed)
+  - <span class="v">priority</span> only for above-the-fold heroes
+- Font subset: Cormorant + JetBrains Mono limited to <span class="v">U+0020-007F</span> and
+  <span class="v">U+0400-04FF</span> (Latin + Cyrillic). Add via <span class="v">next/font/google</span> with subset arrays.
+
+<span class="b">PR 1.8 · docs: add dictionary check script + CI integration</span>
+- Add <span class="v">scripts/check-dictionary.sh</span> (see <span class="v">docs/spec/dictionary.md</span> for content).
+- Wire into <span class="v">pnpm verify</span>.
+- Add <span class="v">docs/dictionary.md</span> with all 48 terms in markdown table format.
+
+<span class="h">## Done criteria for Sprint 1</span>
+- [ ] <span class="v">packages/ui</span> is published in workspace; <span class="v">apps/web</span> imports from it.
+- [ ] Storybook runs on its own port; covers all 14 primitives.
+- [ ] Visual regression baseline UNCHANGED (this sprint is invisible to users).
+- [ ] Lighthouse Performance &gt;= current baseline (assets shouldn't regress).
+- [ ] <span class="v">./scripts/check-dictionary.sh</span> in CI.
+
+<span class="h">## What to do FIRST</span>
+1. Read context files listed in master prompt.
+2. Run <span class="v">pnpm verify</span> — confirm green baseline.
+3. Open PR 1.1. Wait for review.
+4. Don't bundle multiple PRs into one. Each is reviewable separately.
+</div>
+  </div>
+</section>
+
+<!-- SPRINT 2 -->
+<section class="wrap" id="s2">
+  <div class="section-head">
+    <div>
+      <div class="num">03 / Sprint 2</div>
+      <h2>Entry.</h2>
+    </div>
+    <p>Първите 30 секунди от потребителската сесия.</p>
+  </div>
+
+  <div class="prompt">
+    <div class="prompt-bar">
+      <div class="left">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="name">sprint-2 · entry</span>
+        <span class="meta">≈ 800 tokens · 8 страници</span>
+      </div>
+      <button onclick="copyP(this)">Копирай</button>
+    </div>
+    <div class="prompt-body"><span class="h"># Sprint 2: Entry (Weeks 3–4)</span>
+
+<span class="c">Goal: every entry-point page rebuilt on packages/ui primitives.
+Visual polish on first-impression surfaces.</span>
+
+<span class="h">## Pages (in this order)</span>
+1. <span class="v">/</span> (home)              — 1 PR
+2. <span class="v">/werewolf</span>             — 1 PR
+3. <span class="v">/mafia</span>                — 1 PR
+4. <span class="v">/sign-in</span>              — 1 PR
+5. <span class="v">/forgot-password</span> · <span class="v">/reset-password</span> · <span class="v">/verify-email</span> — 1 PR (grouped)
+6. <span class="v">/tutorial</span>             — 1 PR (the big one)
+
+<span class="h">## Per-page acceptance</span>
+See <span class="v">docs/spec/acceptance.md</span> section "Sprint 2". For each page:
+
+<span class="b">/</span>
+- Hero is <span class="v">&lt;SceneCard density="lg"&gt;</span>, NOT custom div.
+- Two game cards share one component (DRY).
+- "How a good game starts" uses PhaseStrip-like layout.
+- Real "active rooms" data or EmptyState (empty-chair).
+- Real "last story" data or EmptyState (closed-book).
+- Title: <span class="v">"Върколак или &lt;em&gt;Мафия&lt;/em&gt;"</span> — exact markup.
+- Primary CTA: <span class="v">"▶ Играй"</span> — exact label.
+
+<span class="b">/werewolf · /mafia</span>
+- Hero video loop (mp4, 5-8s, autoplay muted playsinline).
+- Poster fallback for reduced-motion.
+- Eyebrows: <span class="v">"НОЩ НАД СЕЛОТО"</span> · <span class="v">"ГРАД ПОД НАПРЕЖЕНИЕ"</span>.
+- Three info cards: Роли / Правила / Последни вечери.
+- "Влез с код" opens Sheet, not new page.
+
+<span class="b">/sign-in</span>
+- Wood-grain background preserved.
+- "Имам профил" / "Нов профил" → SegmentedControl (one component).
+- Google/Discord equal visual weight.
+- OAuth buttons collapse under <span class="v">&lt;details&gt;</span> if user previously used email.
+- Password strength: 3 dots (NOT bar).
+- Inline errors, NO shake.
+- Heading: <span class="v">"Покажи се на масата"</span>.
+
+<span class="b">/forgot-password · /reset-password · /verify-email</span>
+- Shared "letter on the table" template.
+- Wax seal iconography (NOT key icon).
+- Verify-email success: cracked seal animation (gated).
+- Token expired: <span class="v">"Това писмо е стояло твърде дълго."</span>
+
+<span class="b">/tutorial</span>
+- Progress = PhaseStrip with 5 medallions, NOT dots.
+- 6 scenes; each gets 3-5s micro animation (gated).
+- Arrow keys ← → navigate.
+- "Прескочи" top-right → Dialog confirmation.
+- Final step CTA: <span class="v">"Седни на първата си маса"</span>.
+- Feedback modal AFTER finish, not during.
+
+<span class="h">## What to use, what to avoid</span>
+- USE: all primitives from <span class="v">packages/ui</span> (Surface, Eyebrow, Display, Pill,
+  Medallion, PhaseStrip, EmptyState, Sheet).
+- AVOID: any inline <span class="v">style={{}}</span> on layout. If primitive doesn't cover it,
+  STOP and ask.
+- AVOID: hardcoded colors. Always <span class="v">var(--...)</span>.
+- AVOID: emoji in any page (FAQ category emojis come out in Sprint 6).
+
+<span class="h">## Visual regression</span>
+For each page touched: update 2 snapshots (desktop + mobile). Total ≈ 16 new
+baseline updates. Include all in PR description.
+
+<span class="h">## Sprint done when</span>
+All 6 PRs merged. Visual regression updated. axe-core clean.
+Manual smoke test: complete a fresh sign-up flow end-to-end on mobile + desktop.
+</div>
+  </div>
+</section>
+
+<!-- SPRINT 3 -->
+<section class="wrap" id="s3">
+  <div class="section-head">
+    <div>
+      <div class="num">04 / Sprint 3</div>
+      <h2>Game core.</h2>
+    </div>
+    <p>Най-важният и най-голям спринт. Тук <code>play-room-client.tsx</code> се разбива.</p>
+  </div>
+
+  <div class="prompt">
+    <div class="prompt-bar">
+      <div class="left">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="name">sprint-3 · game-core</span>
+        <span class="meta">≈ 1100 tokens · най-голям</span>
+      </div>
+      <button onclick="copyP(this)">Копирай</button>
+    </div>
+    <div class="prompt-body"><span class="h"># Sprint 3: Game Core (Weeks 5–7)</span>
+
+<span class="c">Goal: split the play-room monolith into 4 named scenes. This is the heart
+of the product — anything you do here matters more than anywhere else.
+Take 3 weeks, not 2.</span>
+
+<span class="h">## The big refactor</span>
+
+<span class="v">components/play-room-client.tsx</span> is 108KB — split into 4 scenes:
+
+<span class="b">PR 3.1 · refactor: extract play state machine</span>
+- Move all game-state logic from <span class="v">play-room-client.tsx</span> into a custom hook:
+  <span class="v">hooks/useGameMachine.ts</span> (or XState if already in repo).
+- Hook exposes: <span class="v">{ scene, role, players, phase, timer, actions }</span>.
+- Pure UI render is what remains in scene files.
+- This PR: NO visual change. Refactor only.
+
+<span class="b">PR 3.2 · feat(play): Lobby scene</span>
+- File: <span class="v">components/play/scenes/Lobby.tsx</span>
+- Players in CIRCLE (VoteCircle component, mode='idle').
+- Huge room code, copy-to-clipboard, QR Sheet.
+- Manual role builder: 3 preset buttons + Accordion for advanced.
+- Mobile: bottom tab bar appears (handed off from non-game chrome).
+
+<span class="b">PR 3.3 · feat(play): RoleReveal scene</span>
+- File: <span class="v">components/play/scenes/RoleReveal.tsx</span>
+- Card flip animation: rotateY 180°→0°, duration=stage, easing=card.
+- Reduced-motion: crossfade only.
+- Auto-hide "Запомних" after 5s on visibilitychange=hidden.
+
+<span class="b">PR 3.4 · feat(play): Night scene</span>
+- File: <span class="v">components/play/scenes/Night.tsx</span>
+- Background: <span class="v">--surface-scene-deep</span> with indigo radial gradient.
+- Active role: action selector + monospace timer (02:14 format).
+- Passive role: "спиш" screen + breathing animation (gated).
+- PlayerDiary in right rail (desktop) / Sheet (mobile).
+- Phase header uses PhaseStrip with activeIndex.
+
+<span class="b">PR 3.5 · feat(play): Day/Vote scene</span>
+- File: <span class="v">components/play/scenes/Day.tsx</span>
+- Background gradient swings to gold accent.
+- VoteCircle in mode='voting'.
+- Tap = vote · long-press = защита (role-dependent).
+- Post-vote: "newspaper headline" summary card before night returns.
+
+<span class="b">PR 3.6 · feat(play): cross-cutting + mobile chrome</span>
+- Persistent PhaseStrip at bottom.
+- Mobile: bottom tab bar (Маса / Роля / Архив) + "Изход" button top-left.
+- Disconnect → Toast "Сервърът те чака. Не бързай." + auto-reconnect.
+- Visual regression: 4 new snapshots × 2 viewports = 8 baseline images.
+
+<span class="h">## Other pages</span>
+
+<span class="b">PR 3.7 · feat: /lobby (list)</span>
+- EmptyState (empty-chair).
+- Room card: code, host, mode, X/Y players.
+- "Създай стая" FAB bottom-right (always accessible).
+- Filter by mode → segmented control.
+- Live update (polling or WS).
+
+<span class="b">PR 3.8 · feat: /roles</span>
+- Card deck layout, 3-4 columns responsive.
+- Click → Sheet with full description.
+- Faction filter (segmented).
+- ⌘K search (fuzzy).
+- Names match dictionary EXACTLY (Ясновидка not "Seer").
+
+<span class="h">## Watch out for</span>
+- The 108KB file may have hidden coupling — extract carefully.
+- Colyseus state updates: don't break the room subscription.
+- Reconnect logic is tricky — preserve current behavior unless explicitly improving.
+- Don't add new gameplay features. This is presentation refactor only.
+
+<span class="h">## Visual regression strategy</span>
+- Sprint 3 ADDS snapshots (currently /play has none).
+- Each scene gets dedicated snapshots in 2 game states minimum.
+- Document the state-machine inputs for each snapshot in <span class="v">__visual__/README.md</span>.
+
+<span class="h">## Sprint done when</span>
+- 4 scenes mergeable as independent components.
+- play-room-client.tsx renamed/deleted (or vestigial &lt; 5 KB).
+- All 4 scenes have visual regression coverage.
+- Mobile dual chrome works on Android Chrome + iOS Safari.
+- 10-player playtest with team — no regression in flow.
+</div>
+  </div>
+</section>
+
+<!-- SPRINT 4 -->
+<section class="wrap" id="s4">
+  <div class="section-head">
+    <div>
+      <div class="num">05 / Sprint 4</div>
+      <h2>Identity.</h2>
+    </div>
+    <p>Account, History, Achievements, Friends.</p>
+  </div>
+
+  <div class="prompt">
+    <div class="prompt-bar">
+      <div class="left">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="name">sprint-4 · identity</span>
+        <span class="meta">≈ 700 tokens · 4 страници</span>
+      </div>
+      <button onclick="copyP(this)">Копирай</button>
+    </div>
+    <div class="prompt-body"><span class="h"># Sprint 4: Identity (Weeks 8–9)</span>
+
+<span class="c">Goal: the personal pages — where players go AFTER a game. Turn data screens
+into a museum: artifacts, not tables.</span>
+
+<span class="h">## Pages</span>
+1. <span class="v">/account</span>
+2. <span class="v">/history</span>
+3. <span class="v">/achievements</span>
+4. <span class="v">/friends</span>
+
+<span class="h">## Per-page</span>
+
+<span class="b">/account · "Досие"</span>
+- Hero: SceneCard with stats inline (Игри / Победи / Процент).
+- Avatar: pick from 8 predefined portraits (NO initials, NO upload).
+- "Следата ти" block: 4 paper stat cards (NOT bars).
+- "Победна следа" stat shows percent with %₀ suffix on small.
+- "Последни вечери" block: 3 most recent dela with "Отвори дело →" links.
+- Profile form collapsed under <span class="v">&lt;Accordion title="Настройки на профила"&gt;</span>.
+- Email shows "Потвърден" green pill if verified.
+- Danger zone: <span class="v">&lt;Dialog typedConfirmation="&lt;имеТо ти&gt;"&gt;</span> for delete.
+- Export data → GDPR-compliant JSON.
+
+<span class="b">/history · "Архив на делата"</span>
+- EmptyState (sealed-letter): "Архивът чака първото си писмо."
+- Each match is a "folder with seal" card.
+- Faction seal differs (Селяни / Върколаци / Вампири).
+- Click → detail view (or /history/[id] page).
+- Detail includes: player list with roles, phase timeline, votes per phase,
+  embedded PlayerDiary (re-render of in-game diary).
+- Filters: faction · period · length.
+
+<span class="b">/achievements · "Легенди"</span>
+- 7 cards in "tarot" style — each with UNIQUE illustration (if available, else
+  geometric placeholder + TODO(design):).
+- Locked cards: silhouette + hint only.
+- Progress indicator per achievement (% if measurable).
+- Unlock ceremony: full-screen animation, duration=epic, gated.
+- Shareable link per unlocked legend.
+
+<span class="b">/friends · "Познати на масата"</span>
+- EmptyState (empty-chair): "Покани първия си гост."
+- Visiting-card layout: name, last game, brief stat.
+- Section 2: "Минавали покрай твоята маса" (played together, not friended).
+- "Покани" CTA always under name.
+
+<span class="h">## Reuse heavily</span>
+- All four pages should be ~80% primitives, ~20% page-specific.
+- PlayerDiary extracted in Sprint 3 — reuse on /history.
+- EmptyState component covers all empty cases.
+- Dialog with typedConfirmation covers delete/destructive.
+
+<span class="h">## Sprint done when</span>
+- All 4 pages migrated to primitives.
+- /history detail view re-uses Sprint 3's PlayerDiary.
+- Achievement unlock flow demo-able from /achievements directly (debug menu).
+</div>
+  </div>
+</section>
+
+<!-- SPRINT 5 -->
+<section class="wrap" id="s5">
+  <div class="section-head">
+    <div>
+      <div class="num">06 / Sprint 5</div>
+      <h2>Social.</h2>
+    </div>
+    <p>Leaderboard и Report.</p>
+  </div>
+
+  <div class="prompt">
+    <div class="prompt-bar">
+      <div class="left">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="name">sprint-5 · social</span>
+        <span class="meta">≈ 500 tokens · 2 страници</span>
+      </div>
+      <button onclick="copyP(this)">Копирай</button>
+    </div>
+    <div class="prompt-body"><span class="h"># Sprint 5: Social (Week 10)</span>
+
+<span class="c">Goal: the two pages where the outside world looks in. Both have strong
+existing concepts (newspaper, report wizard) — lean harder into them.</span>
+
+<span class="h">## /leaderboard · "Вечерен брой"</span>
+
+<span class="b">PR 5.1 · feat: leaderboard newspaper</span>
+- Two-column newspaper layout (think NYT homepage).
+- Top 3 players: "front page" treatment — large portraits, headline-style names,
+  win-rate as subhead.
+- Players 4-10: classified section, smaller, denser.
+- Real date of the "issue" (NOT "last updated"). Show day, month, year.
+- Archive of last 7 issues accessible from bottom corner.
+- EmptyState (unprinted-paper): "Изданието още не е тиражирано."
+- Filter: this week / this month / all time → segmented above the fold.
+
+<span class="b">/report · "Сигнал"</span>
+
+<span class="b">PR 5.2 · feat: report wizard</span>
+- 3-step wizard:
+  Step 1: За какво (category select — Abuse / Copyright / Bug / Друго)
+  Step 2: Детайли (textarea, attachments if applicable)
+  Step 3: Преглед (read-back before submit)
+- Category-appropriate seriousness in visual (Abuse darker, Bug lighter tone).
+- Success screen: "Получено" stamp, clear next step ("Ще ти отговорим до 48 ч.").
+- Tone: "Благодарим, че държиш масата чиста."
+- Form validation inline, NO modal errors.
+
+<span class="h">## Sprint done when</span>
+- Both pages migrated to primitives.
+- Newspaper layout responsive (single column &lt; 768px).
+- Report wizard works keyboard-only end-to-end.
+- Both have shareable URLs (leaderboard issue date in URL, report ID in success).
+</div>
+  </div>
+</section>
+
+<!-- SPRINT 6 -->
+<section class="wrap" id="s6">
+  <div class="section-head">
+    <div>
+      <div class="num">07 / Sprint 6</div>
+      <h2>Periphery.</h2>
+    </div>
+    <p>FAQ, юридическо, статус, грешки. Малки страници, голям ефект на бранд.</p>
+  </div>
+
+  <div class="prompt">
+    <div class="prompt-bar">
+      <div class="left">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="name">sprint-6 · periphery</span>
+        <span class="meta">≈ 700 tokens · 7-10 страници</span>
+      </div>
+      <button onclick="copyP(this)">Копирай</button>
+    </div>
+    <div class="prompt-body"><span class="h"># Sprint 6: Periphery (Weeks 11–12)</span>
+
+<span class="c">Goal: the small pages no one visits often — but everyone remembers when
+they need them. This sprint is where brand quality compounds.</span>
+
+<span class="h">## Pages</span>
+
+<span class="b">/faq · "Седни до огъня"</span>
+- ⌘K search "Питай огъня…" with fuzzy match (Fuse.js or similar; check pkg first).
+- Category tabs as "book chapter" headers with Roman numerals (I, II, III, IV).
+- Each question has shareable link: <span class="v">?question=&lt;slug&gt;</span>.
+- REMOVE all emoji from category labels.
+- EmptyState for no-results: "Огънят не познава този въпрос. Изпрати ни го."
+- "Дай ни бележка" CTA at bottom — opens /report.
+
+<span class="b">/privacy &amp; /terms</span>
+- Layout: parchment with wax seal, effective date stamped.
+- Reading time indicator at top ("≈ 8 мин чисто четене").
+- Table of contents: side rail (desktop) / accordion (mobile).
+- "Last updated" date top-right.
+- Archive of previous versions linked in bottom corner (NOT hidden).
+- Body text: <span class="v">--text-body</span>, <span class="v">max-width: 70ch</span>.
+
+<span class="b">/status · "Състояние"</span>
+- ONE big indicator: "Селото работи" (green) / "Селото е тихо" (gold) /
+  "Селото спи" (blood). Live state from API.
+- 3 services: Маса (game server) · Архив (DB) · Входове (auth).
+- 72-hour chart with dots at 30-min intervals.
+- RSS feed link in footer for Discord integration.
+- Incident history: brief summaries, NOT log dump.
+
+<span class="b">Error pages (3 total)</span>
+- <span class="v">/offline</span>: "Селото потъва в мъгла." + auto-retry indicator
+  (countdown to next attempt).
+- <span class="v">app/not-found.tsx</span> (404): "Тази уличка не съществува в картите ни."
+  + "Към началото" + "Доклад" CTAs.
+- <span class="v">app/global-error.tsx</span> (500): "Нещо се счупи в архивите."
+  + support code (digest) + "Опитай отново" + "Доклад".
+- All three use SceneCard hero (NOT custom).
+- NO stack traces in production. NO React error overlays exposed.
+
+<span class="h">## Cross-cutting cleanup</span>
+
+<span class="b">PR 6.X · refactor: site-chrome polish</span>
+- Top bar gets breadcrumbs only for deep paths (account/* and play/*).
+- Sound toggle + theme toggle → first-time tooltip (LocalStorage flag).
+- Footer signature rotates italic quotes from the game on each render.
+
+<span class="b">PR 6.Y · feat: enhanced keyboard shortcuts modal</span>
+- Existing <span class="v">components/keyboard-shortcuts-modal.tsx</span> gets:
+  - Global: <span class="v">g h</span> → home · <span class="v">g p</span> → play · <span class="v">?</span> → this modal.
+  - Visual: keys rendered as "runes" — uppercase serif in stone-textured frames.
+  - Keep current shortcuts; add only documented ones from this list.
+
+<span class="h">## Sprint done when</span>
+- All small pages migrated to primitives.
+- FAQ search works without page reload.
+- /status shows real-time data (or clearly indicates if mock).
+- All 3 error pages reachable in dev via debug routes.
+- Final visual regression run: ≈110 baseline images, all green.
+- Lighthouse final report on home + play + account: Perf ≥85, A11y ≥95.
+
+<span class="h">## Project handoff</span>
+At end of Sprint 6:
+- Tag <span class="v">v1.0-frontend-refactor</span> on main.
+- Write final summary to <span class="v">docs/refactor-summary.md</span>:
+  - LOC delta
+  - Bundle size delta
+  - Lighthouse delta (per page)
+  - Visual regression coverage growth
+  - Open follow-ups
+</div>
+  </div>
+</section>
+
+<!-- USAGE GUIDE -->
+<section class="wrap">
+  <div class="section-head">
+    <div>
+      <div class="num">08 / Как се ползват</div>
+      <h2>Препоръчителен workflow.</h2>
+    </div>
+    <p>Тези промпти са оптимизирани за итеративна работа с human review между всеки спринт.</p>
+  </div>
+
+  <div class="paper-card">
+    <h3 class="section-title">Стъпки</h3>
+    <ol style="font-size: 16px; padding-left: 22px;">
+      <li style="margin-bottom: 10px;">Качи <code>docs/spec/*</code> в репото (всеки от 8-те документа като markdown файл).</li>
+      <li style="margin-bottom: 10px;">Започни нов Codex сесия. Прати <b>Master промпта</b> първи.</li>
+      <li style="margin-bottom: 10px;">Изчакай Codex да потвърди, че е прочел контекста.</li>
+      <li style="margin-bottom: 10px;">Прати <b>Sprint 1 промпта</b>.</li>
+      <li style="margin-bottom: 10px;">Codex ще отвори PR 1.1. Прегледай го <b>персонално</b>. Не пращай PR 1.2 преди да си approve-нал 1.1.</li>
+      <li style="margin-bottom: 10px;">Когато всички 8 PR-а от Sprint 1 са merged → нова сесия, master + Sprint 2.</li>
+      <li style="margin-bottom: 10px;">Никога не пускай два спринта едновременно.</li>
+      <li style="margin-bottom: 10px;">Ако Codex започне да измисля — стопирай и попитай защо.</li>
+    </ol>
+  </div>
+
+  <div class="paper-card" style="margin-top: 14px;">
+    <h3 class="section-title">Червени флагове</h3>
+    <ul class="tight" style="font-size: 16px;">
+      <li>Codex предлага нова библиотека → блокирай, попитай защо.</li>
+      <li>Codex „опростява" tokens (сменя <code>oklch</code> на <code>hex</code>) → блокирай.</li>
+      <li>Codex добавя icon library → блокирай.</li>
+      <li>Codex предлага да премахне фотография в полза на SVG → блокирай.</li>
+      <li>Codex пише копирайт извън речника → блокирай, поискай ревизия.</li>
+      <li>PR е по-голям от 800 LOC → разделяй го преди да започнеш ревю.</li>
+    </ul>
+  </div>
+</section>
+
+<footer class="foot">
+  <span>Подробен спецификат · Промпти</span>
+  <span class="sign">„Една сесия, един спринт. Едно ревю, един merge."</span>
+  <span>Готово · <a href="index.html" style="border: none; color: inherit;">Към преглед →</a></span>
+</footer>
+
+</main>
+
+<script>
+function copyP(btn) {
+  const text = btn.closest('.prompt').querySelector('.prompt-body').innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ Копирано';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Копирай'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+</script>
+
+</body>
+</html>
