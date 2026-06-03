@@ -7,6 +7,7 @@
 /* === navbar v2 === */
 :global(.site-chrome[data-version="v2"]) {
   --chrome-accent: var(--blood);
+  --chrome-cta-ink: #fff6e5;
   --chrome-glow: rgba(158, 52, 45, 0.32);
   position: sticky;
   top: 0;
@@ -23,6 +24,7 @@
 
 :global(.site-chrome[data-version="v2"][data-family="mafia"]) {
   --chrome-accent: var(--brass);
+  --chrome-cta-ink: var(--ink);
   --chrome-glow: rgba(200, 154, 85, 0.32);
 }
 
@@ -111,7 +113,7 @@
 }
 
 :global(.site-brand-subtitle) {
-  color: rgba(209, 154, 66, 0.76);
+  color: color-mix(in srgb, var(--gold) 82%, #fff6e5 18%);
   font-size: 0.54rem;
   font-weight: 900;
   letter-spacing: 0.16em;
@@ -147,7 +149,7 @@
   border-radius: 999px;
   padding: 0 18px;
   background: var(--chrome-accent);
-  color: #fff6e5;
+  color: var(--chrome-cta-ink);
   box-shadow: 0 0 24px var(--chrome-glow);
   font-size: 0.78rem;
   font-weight: 800;
@@ -456,6 +458,10 @@
 :global(html[data-theme="light"] .site-mobile-menu:hover) {
   background: rgba(34, 22, 17, 0.1);
   color: var(--ink);
+}
+
+:global(html[data-theme="light"] .site-brand-subtitle) {
+  color: #6a4324;
 }
 
 :global(.site-mobile-menu),

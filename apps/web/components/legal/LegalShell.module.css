@@ -194,7 +194,7 @@
   --legal-accent-warm-soft: var(--legal-terms-shell-legal-accent-warm-soft, rgba(209, 154, 66, 0.18));
   --legal-ok: var(--legal-terms-shell-legal-ok, #6fbf6f);
   --legal-ok-soft: var(--legal-terms-shell-legal-ok-soft, rgba(111, 191, 111, 0.16));
-  --legal-not-ok: var(--legal-terms-shell-legal-not-ok, #d94a3d);
+  --legal-not-ok: var(--legal-terms-shell-legal-not-ok, #f07b6c);
   --legal-not-ok-soft: var(--legal-terms-shell-legal-not-ok-soft, rgba(217, 74, 61, 0.18));
 
   min-height: 100vh;
@@ -205,7 +205,7 @@
 }
 
 :global(.terms-shell) {
-  --legal-accent: var(--legal-terms-shell-legal-accent, #8a6a4a);
+  --legal-accent: var(--legal-terms-shell-legal-accent, #b88958);
 }
 
 :global(.report-shell) {
