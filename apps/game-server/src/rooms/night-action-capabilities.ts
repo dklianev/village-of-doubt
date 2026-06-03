@@ -10,17 +10,22 @@ interface PublicCapabilityPlayer {
   userId: string;
   playing: boolean;
   alive: boolean;
+  priestBlessed?: boolean;
 }
 
 interface BuildNightActionCapabilitiesOptions {
   actor: PrivatePlayerState;
   phase: GamePhase;
   players: Iterable<PublicCapabilityPlayer>;
+  pendingKinds?: Iterable<NightActionKind>;
 }
 
 const WITCH_HEAL_USED_REASON = "Лечебната отвара вече е използвана.";
 const WITCH_POISON_USED_REASON = "Отровата вече е използвана.";
+const WITCH_HEAL_PENDING_REASON = "Вещицата вече избра лечебната отвара тази нощ.";
+const WITCH_POISON_PENDING_REASON = "Вещицата вече избра отровата тази нощ.";
 const PRIEST_BLESS_USED_REASON = "Благословията вече е дадена.";
+const PRIEST_TARGET_BLESSED_REASON = "Този играч вече е благословен.";
 const BLACKSMITH_USED_REASON = "Мечът вече е изкован.";
 const INVESTIGATOR_USED_REASON = "Проверката вече е използвана.";
 const VAMPIRE_HUNTER_DISARMED_REASON = "Убиецът на вампири е обезоръжен.";
@@ -30,6 +35,7 @@ export function buildNightActionCapabilities({
   actor,
   phase,
   players,
+  pendingKinds,
 }: BuildNightActionCapabilitiesOptions): NightActionCapabilities {
   const capabilities: NightActionCapabilities = {
     availableKinds: [],
@@ -41,6 +47,8 @@ export function buildNightActionCapabilities({
     return capabilities;
   }
 
+  const playerList = [...players];
+  const pendingKindSet = new Set(pendingKinds ?? []);
   const addAvailable = (kind: NightActionKind) => {
     capabilities.availableKinds.push(kind);
   };
@@ -98,11 +106,15 @@ export function buildNightActionCapabilities({
   if (role === "witch") {
     if (actor.witchHealUsed) {
       markUsed("witch_heal", WITCH_HEAL_USED_REASON);
+    } else if (pendingKindSet.has("witch_heal")) {
+      markUsed("witch_heal", WITCH_HEAL_PENDING_REASON);
     } else {
       addAvailable("witch_heal");
     }
     if (actor.witchPoisonUsed) {
       markUsed("witch_poison", WITCH_POISON_USED_REASON);
+    } else if (pendingKindSet.has("witch_poison")) {
+      markUsed("witch_poison", WITCH_POISON_PENDING_REASON);
     } else {
       addAvailable("witch_poison");
     }
@@ -113,7 +125,7 @@ export function buildNightActionCapabilities({
   }
   if (role === "healer" && actor.lastResolvedHealerTargetUserId) {
     const previousTargetId = actor.lastResolvedHealerTargetUserId;
-    const previousTarget = [...players].find((player) => player.userId === previousTargetId);
+    const previousTarget = playerList.find((player) => player.userId === previousTargetId);
     if (previousTarget?.playing && previousTarget.alive) {
       capabilities.disallowedTargetsByKind.healer_protect = [{
         id: previousTarget.userId,
@@ -127,6 +139,15 @@ export function buildNightActionCapabilities({
       markUsed("priest_bless", PRIEST_BLESS_USED_REASON);
     } else {
       addAvailable("priest_bless");
+      const blessedTargets = playerList
+        .filter((player) => player.playing && player.alive && player.priestBlessed)
+        .map((player) => ({
+          id: player.userId,
+          reasonBg: PRIEST_TARGET_BLESSED_REASON,
+        }));
+      if (blessedTargets.length > 0) {
+        capabilities.disallowedTargetsByKind.priest_bless = blessedTargets;
+      }
     }
   }
 

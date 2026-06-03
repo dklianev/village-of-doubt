@@ -753,10 +753,18 @@ export class GameRoom extends Room<{ state: GameState }> {
       return;
     }
 
+    const players = [...this.state.players.values()].map((player) => ({
+      userId: player.userId,
+      playing: player.playing,
+      alive: player.alive,
+      priestBlessed: this.privatePlayers.get(player.userId)?.priestBlessed === true,
+    }));
+    const pendingKinds = (this.pendingNightActions.get(userId) ?? []).map((submission) => submission.action.kind);
     const capabilities = buildNightActionCapabilities({
       actor: privatePlayer,
       phase: this.state.phase,
-      players: this.state.players.values(),
+      players,
+      pendingKinds,
     });
     if (!hasNightActionCapabilities(capabilities)) {
       return;
@@ -820,6 +828,7 @@ export class GameRoom extends Room<{ state: GameState }> {
             type: "system",
             messageBg: `${target.displayName} е нарочен за смърт тази нощ.`,
           } satisfies ServerEvent);
+          this.sendNightActionCapabilities(witch.userId, client);
         }
       }
     }

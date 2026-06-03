@@ -76,6 +76,24 @@ describe("night action capabilities", () => {
     expect(spent.usedFlags.priest_bless).toEqual({ reasonBg: "Благословията вече е дадена." });
   });
 
+  it("marks already blessed Priest targets as unavailable", () => {
+    const capabilities = buildNightActionCapabilities({
+      phase: "night",
+      players: [
+        { userId: "actor", playing: true, alive: true },
+        { userId: "target", playing: true, alive: true, priestBlessed: true },
+        { userId: "receiver", playing: true, alive: true },
+      ],
+      actor: actor({ role: "priest" }),
+    });
+
+    expect(capabilities.availableKinds).toContain("priest_bless");
+    expect(capabilities.disallowedTargetsByKind.priest_bless).toEqual([{
+      id: "target",
+      reasonBg: "Този играч вече е благословен.",
+    }]);
+  });
+
   it("removes Blacksmith and Investigator one-shot actions once spent", () => {
     const blacksmith = buildNightActionCapabilities({
       phase: "night",
