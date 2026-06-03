@@ -59,8 +59,22 @@ export function PlayStage({
   const aliveCount = players.filter((player) => player.playing && player.alive).length;
   const eliminatedCount = players.filter((player) => player.playing && !player.alive).length;
   const seatDensity = seatCount >= 13 ? "crowded" : seatCount >= 9 ? "full" : "open";
+  const openSeatWidth = seatDensity === "open" ? Math.max(52, Math.min(92, 116 - seatCount * 8)) : undefined;
+  const openSeatAvatar = openSeatWidth ? Math.max(40, Math.min(66, Math.round(openSeatWidth * 0.72))) : undefined;
   const isNight = phase === "first_night" || phase === "night";
   const titleId = "play-stage-title";
+  const stageStyle = {
+    "--seat-count": seatCount,
+    ...(openSeatWidth
+      ? {
+          "--open-seat-width": `${openSeatWidth}px`,
+          "--open-seat-avatar": `${openSeatAvatar}px`,
+          "--open-seat-gap": openSeatWidth >= 76 ? "6px" : "4px",
+          "--open-seat-padding": openSeatWidth >= 76 ? "5px 4px 7px" : "3px 2px 5px",
+          "--open-seat-name-size": openSeatWidth >= 84 ? "0.78rem" : openSeatWidth >= 76 ? "0.72rem" : "0.66rem",
+        }
+      : {}),
+  } as CSSProperties;
 
   return (
     <section
@@ -69,7 +83,7 @@ export function PlayStage({
       data-night={isNight ? "true" : undefined}
       data-seat-density={seatDensity}
       aria-labelledby={titleId}
-      style={{ "--seat-count": seatCount } as CSSProperties}
+      style={stageStyle}
     >
       <div className="play-stage-hud">
         <div className="play-stage-copy">
@@ -216,8 +230,8 @@ function getSeatPosition(index: number, seatCount: number) {
     // the bottom-centre, so no medallion ever lands on the central timer core.
     const rx = 48;
     const ry = 38;
-    const topGap = seatCount <= 4 ? 160 : 112;
-    const bottomGap = seatCount <= 4 ? 128 : 46;
+    const topGap = seatCount <= 4 ? 90 : seatCount === 5 ? 70 : seatCount === 6 ? 80 : 112;
+    const bottomGap = seatCount <= 4 ? 70 : seatCount === 5 ? 80 : seatCount === 6 ? 60 : 46;
     const rightCount = Math.ceil(seatCount / 2);
     const leftCount = seatCount - rightCount;
     let deg: number;
@@ -245,7 +259,7 @@ function getSeatPosition(index: number, seatCount: number) {
   const leftCount = sideSlots - rightCount;
 
   if (index < topCount) {
-    return { x: spread(crowded ? 78 : 72, crowded ? 22 : 28, topCount, index), y: crowded ? 7 : 8 };
+    return { x: spread(crowded ? 78 : 72, crowded ? 22 : 28, topCount, index), y: crowded ? 0 : 8 };
   }
 
   const rightIndex = index - topCount;
@@ -255,7 +269,7 @@ function getSeatPosition(index: number, seatCount: number) {
 
   const bottomIndex = rightIndex - rightCount;
   if (bottomIndex < bottomCount) {
-    return { x: spread(crowded ? 78 : 72, crowded ? 22 : 28, bottomCount, bottomIndex), y: crowded ? 97 : 98 };
+    return { x: spread(crowded ? 78 : 72, crowded ? 22 : 28, bottomCount, bottomIndex), y: crowded ? 100 : 98 };
   }
 
   const leftIndex = bottomIndex - bottomCount;

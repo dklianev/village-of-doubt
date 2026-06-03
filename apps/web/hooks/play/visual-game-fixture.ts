@@ -294,7 +294,7 @@ function parseVisualQuery(params: URLSearchParams, createOptions: CreateRoomOpti
   const phase = parsePhase(params.get("phase") ?? preset.phase ?? (winnerParam ? "game_over" : "night"));
   const viewer = parseViewer(params.get("viewer") ?? preset.viewer);
   const basePlayers = family === "mafia" ? 10 : 12;
-  const playerCount = clampInteger(params.get("players") ?? preset.players, 4, 18, basePlayers);
+  const playerCount = clampInteger(params.get("players") ?? preset.players, 3, 18, basePlayers);
   const deadMinimum = viewer === "dead" ? 1 : 0;
   const dead = Math.max(deadMinimum, clampInteger(params.get("dead") ?? preset.dead, 0, playerCount - 1, phase === "lobby" ? 0 : 1));
   const roleFallback = family === "mafia" ? "commissioner" : "seer";
