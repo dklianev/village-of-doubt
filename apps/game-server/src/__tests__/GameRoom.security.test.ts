@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { boot, type ColyseusTestServer } from "@colyseus/testing";
 import type { Room as ClientRoom } from "@colyseus/sdk";
+import type { NightActionCapabilities, RoleCode } from "@werewolf/shared";
 import { createGameToken } from "@werewolf/shared/server";
 import appConfig from "../app.config.js";
 import type { GameRoom } from "../rooms/GameRoom.js";
@@ -54,6 +55,53 @@ describe("GameRoom security boundaries", () => {
       expect(Object.prototype.hasOwnProperty.call(player, "role")).toBe(false);
       // revealedRole must be an empty string for living players — never leak the secret role.
       expect(player.revealedRole).toBe("");
+    }
+  });
+
+  it("keeps night action capabilities private to the acting viewer", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "CAP001",
+      mode: "werewolves_classic",
+      playerCount: 6,
+      tempoProfile: "manual",
+      roles: {
+        healer: 1,
+        ordinary_villager: 4,
+        werewolf: 1,
+      },
+    });
+
+    const clients = await connectPlayers(colyseus, serverRoom, 6, "cap-user");
+    const rolePromises = clients.map(async (client, index) => ({
+      client,
+      userId: `cap-user-${index + 1}`,
+      ...((await waitForPrivateRole(client)) as { role: RoleCode; roleNameBg: string }),
+    }));
+    clients[0]?.send("startGame", {});
+    const roleClients = await Promise.all(rolePromises);
+    const healer = roleClients.find((client) => client.role === "healer");
+    const villager = roleClients.find((client) => client.role === "ordinary_villager");
+    expect(healer).toBeTruthy();
+    expect(villager).toBeTruthy();
+
+    const healerCapabilities = healer?.client.waitForMessage("night_action_capabilities") as Promise<{
+      capabilities: NightActionCapabilities;
+    }>;
+    const villagerCapabilities = villager?.client.waitForMessage("night_action_capabilities", 150) as Promise<unknown>;
+    clients[0]?.send("narratorAdvance", {});
+
+    await expect(healerCapabilities).resolves.toMatchObject({
+      capabilities: expect.objectContaining({
+        availableKinds: expect.arrayContaining(["healer_protect"]),
+      }),
+    });
+    await expect(villagerCapabilities).rejects.toThrow("timed out");
+
+    const state = clients[1]?.state as GameState;
+    expect("nightActionCapabilities" in (state as unknown as Record<string, unknown>)).toBe(false);
+    for (const player of state.players.values()) {
+      expect("nightActionCapabilities" in (player as unknown as Record<string, unknown>)).toBe(false);
+      expect("role" in player).toBe(false);
     }
   });
 

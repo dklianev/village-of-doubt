@@ -1,5 +1,12 @@
 import type { Room } from "@colyseus/sdk";
-import type { ChatChannel, GameMode, GamePhase, NarratorVoice, RoleCode } from "@werewolf/shared";
+import type {
+  ChatChannel,
+  GameMode,
+  GamePhase,
+  NarratorVoice,
+  NightActionCapabilities,
+  RoleCode,
+} from "@werewolf/shared";
 
 export interface PublicPlayer {
   userId: string;
@@ -107,6 +114,8 @@ export interface PrivateLover {
 export interface NarratorRoleSnapshot {
   roles: Array<{ userId: string; displayName: string; role: RoleCode; roleNameBg: string }>;
 }
+
+export type { NightActionCapabilities };
 
 export type ConnectionStatus = "connecting" | "connected" | "reconnecting" | "disconnected" | "lost" | "error";
 export type CueMode = "silent" | "visual" | "audio_vibration";

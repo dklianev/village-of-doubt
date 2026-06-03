@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { boot, type ColyseusTestServer } from "@colyseus/testing";
+import type { NightActionCapabilities } from "@werewolf/shared";
 import appConfig from "../app.config.js";
 import type { GameRoom } from "../rooms/GameRoom.js";
 import type { GameState } from "../rooms/schemas/GameState.js";
@@ -50,7 +51,15 @@ describe("GameRoom reconnect resilience", () => {
     expect(werewolf).toBeTruthy();
     expect(target).toBeTruthy();
 
+    const initialCapabilities = werewolf?.client.waitForMessage("night_action_capabilities") as Promise<{
+      capabilities: NightActionCapabilities;
+    }>;
     await advanceToFirstNight(clients[0]?.client, serverRoom);
+    await expect(initialCapabilities).resolves.toMatchObject({
+      capabilities: expect.objectContaining({
+        availableKinds: expect.arrayContaining(["faction_kill"]),
+      }),
+    });
     werewolf?.client.leave();
     await delay(40);
 
@@ -59,9 +68,15 @@ describe("GameRoom reconnect resilience", () => {
       userId: werewolf?.userId ?? "",
       displayName: werewolf?.displayName ?? "",
     });
-    const privateRole = await waitForPrivateRole(reconnected);
+    const privateRolePromise = waitForPrivateRole(reconnected);
+    const capabilitiesPromise = reconnected.waitForMessage("night_action_capabilities") as Promise<{
+      capabilities: NightActionCapabilities;
+    }>;
+    const privateRole = await privateRolePromise;
+    const capabilities = await capabilitiesPromise;
 
     expect(privateRole.role).toBe(werewolf?.role);
+    expect(capabilities.capabilities.availableKinds).toContain("faction_kill");
     expect(publicEvents(serverRoom).some((message) => message.includes("се върна в стаята"))).toBe(true);
 
     const reconnectedState = reconnected.state as GameState;

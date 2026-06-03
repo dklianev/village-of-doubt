@@ -29,7 +29,7 @@ export interface PrivatePlayerState {
   investigatorUsed?: boolean;
   vampireHunterDisarmed?: boolean;
   drunkRealRole?: RoleCode;
-  lastNightAction?: NightActionCommand;
+  lastResolvedHealerTargetUserId?: string;
   lastVoteTarget?: string;
   isMayor?: boolean;
 }

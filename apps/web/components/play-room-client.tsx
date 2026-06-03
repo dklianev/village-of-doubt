@@ -88,6 +88,7 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
     privateRole,
     privateResult,
     privateLover,
+    nightActionCapabilities,
     narratorSnapshot,
     privateChats,
     typingNotices,
@@ -154,15 +155,18 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
     }
     return shortcutTargets(phase, privateRole?.role, players, livingPlayers, currentUserId, {
       doctorCanSelfProtect,
+      nightActionCapabilities,
     });
-  }, [canUseHunterRevenge, canUseNightAction, canVote, currentUserId, doctorCanSelfProtect, livingPlayers, phase, players, privateRole?.role]);
+  }, [canUseHunterRevenge, canUseNightAction, canVote, currentUserId, doctorCanSelfProtect, livingPlayers, nightActionCapabilities, phase, players, privateRole?.role]);
   const secondaryActionTargets = useMemo(() => {
     if (!canUseNightAction || !needsSecondNightTarget(privateRole?.role, phase) || !selectedTargetId) {
       return [];
     }
 
-    return secondaryShortcutTargets(phase, privateRole?.role, livingPlayers, currentUserId, selectedTargetId);
-  }, [canUseNightAction, currentUserId, livingPlayers, phase, privateRole?.role, selectedTargetId]);
+    return secondaryShortcutTargets(phase, privateRole?.role, livingPlayers, currentUserId, selectedTargetId, {
+      nightActionCapabilities,
+    });
+  }, [canUseNightAction, currentUserId, livingPlayers, nightActionCapabilities, phase, privateRole?.role, selectedTargetId]);
   const targetableIds = useMemo(() => {
     const primaryIds = new Set(actionTargets.map((player) => player.userId));
     if (needsSecondNightTarget(privateRole?.role, phase) && selectedTargetId && primaryIds.has(selectedTargetId)) {
@@ -376,6 +380,7 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
         current.selectedTargetId,
         current.secondTargetId,
         current.phase,
+        { nightActionCapabilities },
       );
       if (action) {
         current.room.send("submitNightAction", { action });
@@ -387,7 +392,7 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
         toast({ message: "Избери конкретния бутон за това нощно действие.", kind: "info" });
       }
     }
-  }, [toast]);
+  }, [nightActionCapabilities, toast]);
 
   function sendChat(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -842,6 +847,7 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
               doctorCanSelfProtect={doctorCanSelfProtect}
               phase={phase}
               privateRole={privateRole.role}
+              nightActionCapabilities={nightActionCapabilities}
               selectedTargetId={selectedTargetId}
               secondTargetId={secondTargetId}
               sendNightAction={sendNightAction}

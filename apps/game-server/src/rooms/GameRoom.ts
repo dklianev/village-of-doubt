@@ -36,6 +36,7 @@ import { AchievementBroadcaster, type AchievementUnlock } from "./achievement-br
 import { RoomPersistenceCoordinator, type RoomPersistenceTaskApi } from "./room-persistence-coordinator.js";
 import { RoomChatRouter } from "./room-chat-router.js";
 import { PrivateEventDispatcher } from "./private-event-dispatcher.js";
+import { buildNightActionCapabilities, hasNightActionCapabilities } from "./night-action-capabilities.js";
 import {
   chooseDrunkRealRole,
   ensureNightActionAllowed,
@@ -256,6 +257,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       existing.connected = true;
       this.privateEvents.sendPrivateRole(client, auth.userId);
       this.privateEvents.sendNarratorRoleSnapshot(client, auth.userId);
+      this.sendNightActionCapabilities(auth.userId, client);
       return;
     }
 
@@ -321,6 +323,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       player.connected = true;
       this.privateEvents.sendPrivateRole(client, auth.userId);
       this.privateEvents.sendNarratorRoleSnapshot(client, auth.userId);
+      this.sendNightActionCapabilities(auth.userId, client);
       this.addPublicEvent(`${player.displayName} възстанови връзката.`);
     }
   }
@@ -612,7 +615,7 @@ export class GameRoom extends Room<{ state: GameState }> {
         } else {
           delete privatePlayer.drunkRealRole;
         }
-        delete privatePlayer.lastNightAction;
+        delete privatePlayer.lastResolvedHealerTargetUserId;
         delete privatePlayer.lastVoteTarget;
       }
       if (assignment.role === "mafia_mayor" || (assignment.role === "mayor" && this.config.mayorMode === "public_vote")) {
@@ -686,7 +689,6 @@ export class GameRoom extends Room<{ state: GameState }> {
     ensureNightActionAllowed(privatePlayer.role, action, this.state.phase);
     this.applyImmediateNightAction(publicPlayer, privatePlayer, action);
 
-    privatePlayer.lastNightAction = action;
     publicPlayer.actedThisPhase = true;
     this.queueNightAction(publicPlayer.userId, privatePlayer.role, action);
     if (action.kind === "faction_kill") {
@@ -703,6 +705,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       phase: this.state.phase,
       round: this.state.round,
     } satisfies ServerEvent);
+    this.sendNightActionCapabilities(publicPlayer.userId, client);
 
     if (
       this.config.timers.autoAdvanceWhenReady &&
@@ -738,6 +741,37 @@ export class GameRoom extends Room<{ state: GameState }> {
       return submissions.length > 0;
     }
     return submissions.some((submission) => submission.action.kind === kind);
+  }
+
+  private sendNightActionCapabilities(userId: string, client = this.playerPresence.getClient(userId)) {
+    if (!client || !isNightPhase(this.state.phase)) {
+      return;
+    }
+
+    const privatePlayer = this.privatePlayers.get(userId);
+    if (!privatePlayer) {
+      return;
+    }
+
+    const capabilities = buildNightActionCapabilities({
+      actor: privatePlayer,
+      phase: this.state.phase,
+      players: this.state.players.values(),
+    });
+    if (!hasNightActionCapabilities(capabilities)) {
+      return;
+    }
+
+    client.send("night_action_capabilities", {
+      type: "night_action_capabilities",
+      capabilities,
+    } satisfies ServerEvent);
+  }
+
+  private sendNightActionCapabilitiesToActors() {
+    for (const player of this.privatePlayers.values()) {
+      this.sendNightActionCapabilities(player.userId);
+    }
   }
 
   private notifyWitchesOfFactionVictim() {
@@ -886,8 +920,7 @@ export class GameRoom extends Room<{ state: GameState }> {
         throw new Error("Лечителят не може да лекува себе си.");
       }
       if (
-        privatePlayer.lastNightAction?.kind === "healer_protect" &&
-        privatePlayer.lastNightAction.targetUserId === action.targetUserId
+        privatePlayer.lastResolvedHealerTargetUserId === action.targetUserId
       ) {
         throw new Error("Лечителят не може да лекува същия играч две нощи поред.");
       }
@@ -989,7 +1022,7 @@ export class GameRoom extends Room<{ state: GameState }> {
     const stolenRole = target.role;
     thief.role = stolenRole;
     target.role = "ordinary_villager";
-    delete target.lastNightAction;
+    delete target.lastResolvedHealerTargetUserId;
     this.pendingNightActions.delete(targetUserId);
     publicTarget.actedThisPhase = false;
 
@@ -997,9 +1030,11 @@ export class GameRoom extends Room<{ state: GameState }> {
     const targetClient = this.playerPresence.getClient(targetUserId);
     if (actorClient) {
       this.privateEvents.sendPrivateRole(actorClient, actor.userId);
+      this.sendNightActionCapabilities(actor.userId, actorClient);
     }
     if (targetClient) {
       this.privateEvents.sendPrivateRole(targetClient, targetUserId);
+      this.sendNightActionCapabilities(targetUserId, targetClient);
       targetClient.send("system", {
         type: "system",
         messageBg: "Крадецът взе картата ти. Вече си Обикновен селянин.",
@@ -1204,6 +1239,9 @@ export class GameRoom extends Room<{ state: GameState }> {
 
     if (phase === "night" && this.state.round === 2) {
       this.revealDrunkRoles();
+    }
+    if (isNightPhase(phase)) {
+      this.sendNightActionCapabilitiesToActors();
     }
 
     if (phase === "game_over" && this.state.winnerTeam && !this.gameFinishedPersisted) {
@@ -1648,6 +1686,9 @@ export class GameRoom extends Room<{ state: GameState }> {
       }
       if (submission.action.kind === "investigator_check") {
         privatePlayer.investigatorUsed = true;
+      }
+      if (submission.action.kind === "healer_protect" && privatePlayer.role === "healer") {
+        privatePlayer.lastResolvedHealerTargetUserId = submission.action.targetUserId;
       }
       if (submission.action.kind === "faction_kill" && privatePlayer.role === "vampire_hunter") {
         const target = this.privatePlayers.get(submission.action.targetUserId);

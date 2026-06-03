@@ -109,6 +109,45 @@ describe("NightActionPanel", () => {
     expect(screen.getByRole("button", { name: "Отрови" })).toBeEnabled();
   });
 
+  it("disables a spent Witch potion and shows the private reason", () => {
+    renderPanel({
+      privateRole: "witch",
+      selectedTargetId: "u2",
+      nightActionCapabilities: {
+        availableKinds: ["witch_heal"],
+        usedFlags: {
+          witch_poison: { reasonBg: "Отровата вече е използвана." },
+        },
+        disallowedTargetsByKind: {},
+      },
+    });
+
+    expect(screen.getByRole("button", { name: "Лекувай" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Отрови" })).toBeDisabled();
+    expect(screen.getByText("Отровата вече е използвана.")).toBeInTheDocument();
+  });
+
+  it("removes a disallowed Healer repeat target and shows the private reason", () => {
+    renderPanel({
+      privateRole: "healer",
+      selectedTargetId: "u2",
+      nightActionCapabilities: {
+        availableKinds: ["healer_protect"],
+        usedFlags: {},
+        disallowedTargetsByKind: {
+          healer_protect: [{
+            id: "u2",
+            reasonBg: "Не можеш да лекуваш същия играч две нощи поред.",
+          }],
+        },
+      },
+    });
+
+    expect(screen.getByText("избери място")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Пази тази нощ" })).toBeDisabled();
+    expect(screen.getByText("Не можеш да лекуваш същия играч две нощи поред.")).toBeInTheDocument();
+  });
+
   it("does not treat the Blacksmith actor as a valid sword receiver", () => {
     renderPanel({ privateRole: "blacksmith", selectedTargetId: "u2", secondTargetId: "u1" });
 

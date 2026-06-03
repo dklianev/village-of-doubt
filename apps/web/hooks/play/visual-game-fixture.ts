@@ -14,6 +14,7 @@ import {
 import type {
   ConnectionStatus,
   GameSnapshot,
+  NightActionCapabilities,
   NarratorRoleSnapshot,
   PrivateChatMessage,
   PrivateLover,
@@ -43,6 +44,7 @@ export interface VisualGameRoomFixtureResult {
   privateRole: { role: RoleCode; roleNameBg: string } | null;
   privateResult: PrivateResult | null;
   privateLover: PrivateLover | null;
+  nightActionCapabilities: NightActionCapabilities | null;
   narratorSnapshot: NarratorRoleSnapshot | null;
   privateChats: PrivateChatMessage[];
   typingNotices: TypingNotice[];
@@ -62,6 +64,7 @@ export interface VisualGameFixtureConfig {
   privateRole: { role: RoleCode; roleNameBg: string } | null;
   privateResult: PrivateResult | null;
   privateLover: PrivateLover | null;
+  nightActionCapabilities: NightActionCapabilities | null;
   narratorSnapshot: NarratorRoleSnapshot | null;
   privateChats: PrivateChatMessage[];
   typingNotices: TypingNotice[];
@@ -208,6 +211,7 @@ export function useVisualGameRoomFixture({
       privateRole: config.privateRole,
       privateResult: config.privateResult,
       privateLover: config.privateLover,
+      nightActionCapabilities: config.nightActionCapabilities,
       narratorSnapshot: config.narratorSnapshot,
       privateChats: config.privateChats,
       typingNotices: config.typingNotices,
@@ -275,6 +279,7 @@ export function parseVisualGameFixture(
     privateRole: viewerRole ? { role: viewerRole, roleNameBg: ROLE_DEFINITIONS[viewerRole].nameBg } : null,
     privateResult: viewerRole ? privateResultForRole(viewerRole, players, parsed.family) : null,
     privateLover: viewerRole === "cupid" ? privateLoverForPlayers(players) : null,
+    nightActionCapabilities: null,
     narratorSnapshot: parsed.viewer === "narrator" ? narratorSnapshotFor(players, assignedRoles) : null,
     privateChats: buildPrivateChats(viewerRole, parsed.family),
     typingNotices: buildTypingNotices(parsed),

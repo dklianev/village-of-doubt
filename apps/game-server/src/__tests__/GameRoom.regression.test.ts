@@ -348,6 +348,61 @@ describe("GameRoom gameplay regressions", () => {
     expect(savedState?.alive).toBe(true);
   });
 
+  it("keeps the Healer repeat-target guard tied to the last resolved night", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "HEAL02",
+      mode: "werewolves_classic",
+      playerCount: 6,
+      tempoProfile: "manual",
+      roles: {
+        healer: 1,
+        ordinary_villager: 4,
+        werewolf: 1,
+      },
+    });
+    const clients = await connectPlayers(colyseus, serverRoom, 6, "healer-repeat");
+    const roleClients = await startGameAndCollectRoles(clients);
+    await advanceToFirstNight(clients[0]?.client, serverRoom);
+
+    const healer = roleClients.find((item) => item.role === "healer");
+    const werewolf = roleClients.find((item) => item.role === "werewolf");
+    const firstTarget = roleClients.find((item) => item.role === "ordinary_villager");
+    const alternateTarget = roleClients.find(
+      (item) => item.role === "ordinary_villager" && item.userId !== firstTarget?.userId,
+    );
+    expect(healer).toBeTruthy();
+    expect(werewolf).toBeTruthy();
+    expect(firstTarget).toBeTruthy();
+    expect(alternateTarget).toBeTruthy();
+
+    healer?.client.send("submitNightAction", {
+      action: { kind: "healer_protect", targetUserId: firstTarget?.userId },
+    });
+    werewolf?.client.send("submitNightAction", {
+      action: { kind: "faction_kill", targetUserId: firstTarget?.userId },
+    });
+    clients[0]?.client.send("narratorAdvance", {});
+    await serverRoom.waitForNextPatch(20).catch(() => undefined);
+    expect(findPublicPlayer(serverRoom, firstTarget?.userId)?.alive).toBe(true);
+
+    await advanceToPhase(clients[0]?.client, serverRoom, "night");
+
+    const alternateAck = healer?.client.waitForMessage("night_action_ack") as Promise<{ phase: string }>;
+    healer?.client.send("submitNightAction", {
+      action: { kind: "healer_protect", targetUserId: alternateTarget?.userId },
+    });
+    await expect(alternateAck).resolves.toMatchObject({ phase: "night" });
+
+    const repeatError = healer?.client.waitForMessage("safe_error") as Promise<{ messageBg: string }>;
+    healer?.client.send("submitNightAction", {
+      action: { kind: "healer_protect", targetUserId: firstTarget?.userId },
+    });
+
+    await expect(repeatError).resolves.toMatchObject({
+      messageBg: "Лечителят не може да лекува същия играч две нощи поред.",
+    });
+  });
+
   it("enters hunter revenge when the Hunter dies at night", async () => {
     const serverRoom = await colyseus.createRoom<GameRoom>("game", {
       code: "HUNT01",

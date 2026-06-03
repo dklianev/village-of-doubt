@@ -26,6 +26,7 @@ import { useVisualGameRoomFixture } from "@/hooks/play/visual-game-fixture";
 import type {
   ConnectionStatus,
   GameSnapshot,
+  NightActionCapabilities,
   NarratorRoleSnapshot,
   PhaseSlice,
   PrivateChatMessage,
@@ -57,6 +58,7 @@ export interface UseGameRoomResult {
   privateRole: { role: RoleCode; roleNameBg: string } | null;
   privateResult: PrivateResult | null;
   privateLover: PrivateLover | null;
+  nightActionCapabilities: NightActionCapabilities | null;
   narratorSnapshot: NarratorRoleSnapshot | null;
   privateChats: PrivateChatMessage[];
   typingNotices: TypingNotice[];
@@ -104,6 +106,7 @@ export function useGameRoom({
   const [privateRole, setPrivateRole] = useState<{ role: RoleCode; roleNameBg: string } | null>(null);
   const [privateResult, setPrivateResult] = useState<PrivateResult | null>(null);
   const [privateLover, setPrivateLover] = useState<PrivateLover | null>(null);
+  const [nightActionCapabilities, setNightActionCapabilities] = useState<NightActionCapabilities | null>(null);
   const [narratorSnapshot, setNarratorSnapshot] = useState<NarratorRoleSnapshot | null>(null);
   const [privateChats, setPrivateChats] = useState<PrivateChatMessage[]>([]);
   const [typingNotices, setTypingNotices] = useState<TypingNotice[]>([]);
@@ -260,6 +263,10 @@ export function useGameRoom({
       nextRoom.onMessage("private_lovers", (message: PrivateLover) => {
         setPrivateLover(message);
         toast({ message: "Купидон те свърза с Влюбен.", kind: "success" });
+      });
+
+      nextRoom.onMessage("night_action_capabilities", (message: { capabilities: NightActionCapabilities }) => {
+        setNightActionCapabilities(message.capabilities);
       });
 
       nextRoom.onMessage("private_blessing", () => {
@@ -477,6 +484,7 @@ export function useGameRoom({
     privateRole,
     privateResult,
     privateLover,
+    nightActionCapabilities,
     narratorSnapshot,
     privateChats,
     typingNotices,
