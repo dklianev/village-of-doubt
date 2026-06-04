@@ -3648,11 +3648,11 @@ html[data-vt="theme"]::view-transition-new(root) {
 
 @keyframes play-fog-drift {
   from {
-    opacity: 0.72;
+    opacity: 0.26;
     transform: translate3d(-3%, 0, 0) scale(1.02);
   }
   to {
-    opacity: 0.92;
+    opacity: 0.42;
     transform: translate3d(3%, -1%, 0) scale(1.04);
   }
 }

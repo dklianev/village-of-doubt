@@ -44,7 +44,9 @@
   --play-body-filter: saturate(0.94) contrast(1.12) brightness(0.9);
   --play-stage-glow: radial-gradient(circle at 70% 22%, rgba(196, 224, 226, 0.24), transparent 23rem);
   --play-stage-scrim: linear-gradient(180deg, rgba(4, 7, 9, 0.34), rgba(3, 6, 7, 0.82));
-  --play-stage-vignette: radial-gradient(ellipse at center, transparent 44%, rgba(1, 5, 5, 0.68) 100%);
+  /* Almost no vignette — keep the frame evenly lit edge to edge instead of a
+   * centre spotlight with dark corners. */
+  --play-stage-vignette: radial-gradient(ellipse at center, transparent 92%, rgba(1, 5, 5, 0.12) 100%);
   --play-stage-art-position: center top;
 }
 
@@ -262,7 +264,7 @@
     /* Sink the bottom of the stage into the dark room so the backdrop art never
      * bleeds an off-palette band and the stage blends into the dock below. */
     linear-gradient(to top, rgba(8, 7, 6, 0.97) 0%, rgba(8, 7, 6, 0.6) 13%, rgba(8, 7, 6, 0) 32%),
-    radial-gradient(ellipse at center, rgba(245, 232, 200, 0.08), transparent 42%),
+    radial-gradient(ellipse at center, rgba(245, 232, 200, 0.045), transparent 64%),
     var(--play-stage-vignette);
 }
 
@@ -346,13 +348,27 @@
   animation: var(--play-moon-breathe-animation);
 }
 
-:global(.play-stage[data-night="true"][data-family="werewolves"] .play-table)::after {
-  inset: auto -16% -16%;
-  height: 48%;
+/* Night mist is a full-stage layer (not anchored to the central table) so the
+ * haze spreads wall-to-wall across the whole backdrop instead of pooling in the
+ * middle. Sits above the backdrop art (::before/::after) and behind the seats. */
+:global(.play-stage-fog) {
+  position: absolute;
+  inset: -6%;
+  z-index: 0;
+  border-radius: inherit;
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+:global(.play-stage[data-night="true"][data-family="werewolves"] .play-stage-fog) {
   background:
-    linear-gradient(0deg, rgba(89, 99, 59, 0.18), transparent 58%),
-    radial-gradient(ellipse at center, transparent 38%, rgba(20, 34, 22, 0.34) 100%),
-    var(--texture-fog) center bottom / 124% auto repeat-x;
+    radial-gradient(ellipse 72% 60% at 12% 20%, rgba(196, 224, 226, 0.2), transparent 82%),
+    radial-gradient(ellipse 72% 60% at 88% 28%, rgba(148, 178, 164, 0.22), transparent 82%),
+    radial-gradient(ellipse 120% 72% at 50% 98%, rgba(120, 150, 110, 0.28), transparent 86%),
+    linear-gradient(180deg, rgba(150, 190, 196, 0.12), rgba(82, 104, 104, 0.15) 50%, rgba(30, 50, 48, 0.22));
+  mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.96) 5%, rgba(0, 0, 0, 1) 50%, rgba(0, 0, 0, 0.96) 95%, transparent 100%);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.96) 5%, rgba(0, 0, 0, 1) 50%, rgba(0, 0, 0, 0.96) 95%, transparent 100%);
   animation: var(--play-fog-drift-animation);
 }
 
@@ -1203,6 +1219,74 @@
   padding: 16px;
 }
 
+:global(.play-side-rail .rules-summary-metrics-grid),
+:global(.play-side-rail .rules-summary-roles-grid),
+:global(.play-side-rail .phase-guide-card .grid) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+:global(.play-side-rail .summary-pill),
+:global(.play-side-rail .phase-guide-card .grid > div) {
+  min-width: 0;
+  border-radius: 16px;
+  padding: 12px;
+}
+
+:global(.play-side-rail .summary-pill span),
+:global(.play-side-rail .phase-guide-card .grid span) {
+  overflow-wrap: anywhere;
+  letter-spacing: 0.14em;
+}
+
+:global(.play-side-rail .summary-pill strong),
+:global(.play-side-rail .phase-guide-card .grid strong) {
+  overflow-wrap: anywhere;
+  line-height: 1.25;
+}
+
+:global(.rules-summary-roles-heading) {
+  margin: 18px 0 0;
+  color: rgba(245, 232, 200, 0.9);
+  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-size: 1rem;
+  font-weight: 950;
+}
+
+:global(.play-side-rail .role-count-chip) {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  overflow: visible;
+  padding: 9px 10px;
+}
+
+:global(.play-side-rail .role-count-chip dt) {
+  display: contents;
+  min-width: 0;
+}
+
+:global(.play-side-rail .role-count-art) {
+  width: 42px;
+  min-width: 42px;
+  border-radius: 12px;
+}
+
+:global(.play-side-rail .role-count-chip dt span:last-child) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:global(.play-side-rail .role-count-chip dd) {
+  display: grid;
+  place-items: center;
+  min-width: 34px;
+  margin: 0;
+}
+
 :global(.play-side-rail > .mt-8:first-of-type) {
   margin-top: 28px;
 }
@@ -1484,11 +1568,12 @@
   position: relative;
   z-index: 9;
   display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   isolation: isolate;
   gap: 12px;
   width: min(760px, 92%);
   max-height: min(100%, 760px);
-  overflow: auto;
+  overflow: hidden;
   align-self: center;
   justify-self: center;
   border: 1px solid rgba(245, 232, 200, 0.1);
@@ -1518,13 +1603,14 @@
 
 :global(.play-stage-takeover)::before {
   position: absolute;
-  inset: -18%;
+  inset: 0;
   z-index: -1;
   background:
     radial-gradient(circle at 50% 16%, var(--winner-scene-tone), transparent 32%),
     radial-gradient(ellipse at 50% 82%, rgba(0, 0, 0, 0.52), transparent 64%);
   content: "";
   pointer-events: none;
+  transform: scale(1.36);
 }
 
 :global(.play-stage-takeover > :not(.play-winner-scene)) {
@@ -1617,6 +1703,8 @@
 }
 
 :global(.play-stage-takeover .post-game-story) {
+  min-height: 0;
+  overflow: hidden;
   border-color: rgba(245, 232, 200, 0.16);
   border-radius: 1.8rem;
   background:
@@ -1625,6 +1713,17 @@
   box-shadow:
     0 24px 70px rgba(0, 0, 0, 0.34),
     inset 0 1px rgba(255, 255, 255, 0.07);
+}
+
+:global(.play-stage-takeover .post-game-story ol) {
+  max-height: clamp(6.5rem, 17svh, 10.5rem);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+:global(.play-stage-takeover .post-game-story ol::-webkit-scrollbar) {
+  display: none;
 }
 
 :global(.play-winner[data-winner="werewolves"]) {
@@ -2160,7 +2259,11 @@
     position: relative;
     z-index: 1;
     max-height: clamp(214px, 27svh, 248px);
-    padding-right: clamp(96px, 10vw, 132px);
+    padding-right: clamp(132px, 15vw, 188px);
+  }
+
+  :global(.play-action-dock[data-dock-kind="quiet"] .role-card)::after {
+    width: min(34%, 184px);
   }
 
   :global(.play-action-dock[data-dock-kind="quiet"] .role-card-facts) {
@@ -2198,6 +2301,11 @@
     grid-column: 2;
     grid-row: 1;
     max-width: none;
+    padding-right: clamp(144px, 16vw, 196px);
+  }
+
+  :global(.play-action-dock[data-dock-kind="lobby"] .role-card)::after {
+    width: min(34%, 188px);
   }
 
   :global(.play-action-dock[data-dock-kind="lobby"] .role-card-facts) {
@@ -2566,6 +2674,87 @@
     max-height: clamp(234px, 26svh, 244px);
   }
 
+  :global(.play-action-dock[data-dock-kind="action"]) {
+    max-height: none;
+    overflow: visible;
+    contain: none;
+  }
+
+  :global(.play-action-dock[data-dock-kind="action"] .play-action-dock-grid) {
+    grid-template-columns: minmax(244px, 0.42fr) minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  :global(.play-action-dock[data-dock-kind="action"] .role-card) {
+    min-height: clamp(184px, 24svh, 232px);
+    max-height: none;
+    padding-right: clamp(92px, 9vw, 136px);
+    background:
+      radial-gradient(circle at 18% 0%, rgba(255, 248, 226, 0.42), transparent 12rem),
+      radial-gradient(circle at 92% 42%, rgba(132, 47, 43, 0.16), transparent 14rem),
+      var(--texture-paper) center / 520px 520px,
+      linear-gradient(105deg, rgba(255, 244, 216, 0.98) 0 64%, rgba(57, 34, 20, 0.94) 64% 100%);
+    box-shadow:
+      0 24px 70px rgba(0, 0, 0, 0.32),
+      inset 0 1px rgba(255, 255, 255, 0.58),
+      inset 0 0 0 1px rgba(132, 47, 43, 0.16);
+  }
+
+  :global(.play-action-dock[data-dock-kind="action"] .role-card)::after {
+    width: min(38%, 172px);
+    opacity: 0.92;
+    mask-image: linear-gradient(90deg, transparent 0, black 16%, black 100%);
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, black 16%, black 100%);
+  }
+
+  :global(.play-action-dock[data-dock-kind="action"] .role-card h2) {
+    font-size: clamp(1.55rem, 2vw, 2.1rem);
+  }
+
+  :global(.play-action-dock[data-dock-kind="action"] .role-card-body > p) {
+    -webkit-line-clamp: 2;
+  }
+
+  :global(.play-action-dock[data-dock-kind="action"] .ritual-panel),
+  :global(.play-action-dock[data-dock-kind="action"] .night-action-sheet) {
+    min-height: 100%;
+    max-height: none;
+    overflow: visible;
+    padding: clamp(14px, 1.6vw, 18px);
+  }
+
+  :global(.play-action-dock[data-dock-kind="action"] .night-action-help),
+  :global(.play-action-dock[data-dock-kind="action"] .night-action-empty-note) {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+  }
+
+  :global(.play-action-dock[data-dock-kind="action"] .night-action-help) {
+    -webkit-line-clamp: 2;
+  }
+
+  :global(.play-action-dock[data-dock-kind="action"] .night-action-server-note) {
+    display: block;
+    overflow: visible;
+    grid-column: 1 / -1;
+    margin-top: 4px;
+    font-size: 0.78rem;
+    line-height: 1.25;
+    opacity: 0.78;
+    text-wrap: pretty;
+  }
+
+  :global(.play-action-dock[data-dock-kind="action"] .night-action-empty-note) {
+    -webkit-line-clamp: 2;
+  }
+
+  :global(.play-action-dock[data-dock-kind="action"] .night-action-reasons) {
+    grid-column: 1 / -1;
+    max-height: 78px;
+    overflow: auto;
+  }
+
   :global(.play-layout[data-has-narrator-deck="true"][data-dock-has-ritual="true"] .play-selected-target) {
     display: flex;
     align-items: center;
@@ -2872,6 +3061,69 @@
     left: 7px;
     width: 34px;
     border-radius: 12px;
+  }
+
+  :global(.play-action-dock[data-dock-kind="action"]) {
+    max-height: none;
+    overflow: visible;
+    padding: 12px;
+    contain: none;
+  }
+
+  :global(.play-action-dock[data-dock-kind="action"] .play-action-dock-grid) {
+    grid-template-columns: minmax(206px, 0.38fr) minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  :global(.play-action-dock[data-dock-kind="action"] .role-card) {
+    min-height: clamp(160px, 22svh, 186px);
+    max-height: none;
+    padding: 12px clamp(68px, 8vw, 104px) 12px 12px;
+  }
+
+  :global(.play-action-dock[data-dock-kind="action"] .role-card)::after {
+    width: min(36%, 128px);
+  }
+
+  :global(.play-action-dock[data-dock-kind="action"] .role-card-body > p) {
+    -webkit-line-clamp: 2;
+  }
+
+  :global(.play-action-dock[data-dock-kind="action"] .role-card > p:not(.role-card-security-note)) {
+    -webkit-line-clamp: 2;
+  }
+
+  :global(.play-action-dock[data-dock-kind="action"] .ritual-panel),
+  :global(.play-action-dock[data-dock-kind="action"] .night-action-sheet) {
+    max-height: none;
+    overflow: visible;
+    padding: 12px;
+  }
+
+  :global(.play-action-dock[data-dock-kind="action"] .night-action-help) {
+    -webkit-line-clamp: 1;
+  }
+
+  :global(.play-action-dock[data-dock-kind="action"] .night-action-server-note) {
+    display: block;
+    overflow: visible;
+    font-size: 0.74rem;
+    line-height: 1.22;
+  }
+
+  :global(.play-action-dock[data-dock-kind="action"] .night-action-reasons) {
+    max-height: 58px;
+    padding: 8px;
+  }
+
+  :global(.play-action-dock[data-dock-kind="lobby"] .role-card),
+  :global(.play-action-dock[data-dock-kind="quiet"] .role-card) {
+    padding-right: clamp(118px, 14vw, 168px);
+  }
+
+  :global(.play-action-dock[data-dock-kind="lobby"] .role-card)::after,
+  :global(.play-action-dock[data-dock-kind="quiet"] .role-card)::after {
+    width: min(34%, 164px);
   }
 }
 

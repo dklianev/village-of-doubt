@@ -184,19 +184,19 @@ export function NightActionPanel({
           Пропусни
         </button>
       </div>
-      <p className="mt-3 text-[#ead9ba]">{nightActionHelpBg(privateRole)}</p>
+      <p className="night-action-help mt-3 text-[#ead9ba]">{nightActionHelpBg(privateRole)}</p>
       {unavailableReasons.length > 0 ? (
-        <div className="mt-3 rounded-2xl border border-[#c18a38]/35 bg-[#c18a38]/10 p-3 text-sm font-bold text-[#ead9ba]">
+        <div className="night-action-reasons mt-3 rounded-2xl border border-[#c18a38]/35 bg-[#c18a38]/10 p-3 text-sm font-bold text-[#ead9ba]">
           {unavailableReasons.map((reason) => (
             <p key={reason}>{reason}</p>
           ))}
         </div>
       ) : null}
-      <p className="mt-2 text-sm font-bold text-[#c18a38]">
+      <p className="night-action-server-note mt-2 text-sm font-bold text-[#c18a38]">
         Можеш да промениш избора си до края на таймера. Сървърът пази последното изпратено действие.
       </p>
       {privateRole === "medium" && selectableTargets.length === 0 ? (
-        <p className="mt-3 rounded-2xl border border-[#c18a38]/35 bg-[#c18a38]/10 p-3 text-sm font-bold text-[#ead9ba]">
+        <p className="night-action-empty-note mt-3 rounded-2xl border border-[#c18a38]/35 bg-[#c18a38]/10 p-3 text-sm font-bold text-[#ead9ba]">
           Медиумът няма елиминиран играч, с когото да се свърже тази нощ.
         </p>
       ) : null}

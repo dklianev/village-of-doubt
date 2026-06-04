@@ -572,6 +572,7 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
     const chatTabId = "play-rail-tab-chat";
     const eventsPanelId = "play-rail-panel-events";
     const chatPanelId = "play-rail-panel-chat";
+    const showRailDeathReveal = phase === "day_announcement" || phase === "resolution" || phase === "hunter_revenge";
 
     return (
       <section className="play-section play-players-panel play-side-rail" aria-labelledby={railHeadingId}>
@@ -604,8 +605,6 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
             </div>
           </details>
         ) : null}
-
-        <DeathRevealCinematic family={family} players={players} />
 
         <div className="play-rail-tabs" role="tablist" aria-label="Хроника и чат">
           <button
@@ -720,6 +719,13 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
             </div>
           ) : null}
 
+          {phase !== "day_discussion" && snapshot?.communicationMode === "built_in_chat" ? (
+            <div className="play-muted-note">
+              <MessageSquare className="play-section-icon" aria-hidden strokeWidth={1.8} />
+              <span>Писането в публичния чат се отваря през дневната дискусия.</span>
+            </div>
+          ) : null}
+
           <h3 className="play-panel-subhead" id={chatHeadingId}>
             <MessageSquare className="play-section-icon" aria-hidden strokeWidth={1.8} />
             <span>Чат лог</span>
@@ -742,6 +748,8 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
             <TypingIndicator notices={publicTypers} compact />
           </div>
         </div>
+
+        {showRailDeathReveal ? <DeathRevealCinematic family={family} players={players} /> : null}
       </section>
     );
   };

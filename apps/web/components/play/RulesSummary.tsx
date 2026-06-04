@@ -8,7 +8,7 @@ export function RulesSummary({ snapshot }: { snapshot: GameSnapshot }) {
   return (
     <section className="ritual-panel mt-8 rounded-[2rem] p-6">
       <p className="section-kicker">правила преди старт</p>
-      <div className="mt-4 grid gap-3 md:grid-cols-2">
+      <div className="rules-summary-metrics-grid mt-4 grid gap-3 md:grid-cols-2">
         <SummaryPill label="Режим" value={modeBg(snapshot.mode)} />
         <SummaryPill
           label="Играчи"
@@ -22,7 +22,8 @@ export function RulesSummary({ snapshot }: { snapshot: GameSnapshot }) {
         <SummaryPill label="Гласуване" value={`${snapshot.allowSkipVote ? "може пропуск" : "без пропуск"} · ${majorityModeBg(snapshot.majorityMode)}`} />
       </div>
 
-      <div className="mt-5 grid gap-3 md:grid-cols-2">
+      <h3 className="rules-summary-roles-heading">Роли в стаята</h3>
+      <div className="rules-summary-roles-grid mt-3 grid gap-3 md:grid-cols-2">
         {snapshot.roleCounts.map((item) => (
           <div key={item.role} className={`role-count-chip role-${item.role} is-dark`}>
             <dt>

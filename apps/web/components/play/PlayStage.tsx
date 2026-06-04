@@ -85,6 +85,7 @@ export function PlayStage({
       aria-labelledby={titleId}
       style={stageStyle}
     >
+      <div className="play-stage-fog" aria-hidden="true" />
       <div className="play-stage-hud">
         <div className="play-stage-copy">
           <p className="phase-kicker">стая {code} · рунд {round}</p>
