@@ -605,7 +605,7 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
           </details>
         ) : null}
 
-        <DeathRevealCinematic players={players} />
+        <DeathRevealCinematic family={family} players={players} />
 
         <div className="play-rail-tabs" role="tablist" aria-label="Хроника и чат">
           <button
