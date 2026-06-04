@@ -1218,6 +1218,24 @@ select {
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.24);
 }
 
+html[data-theme="light"] .btn-secondary {
+  border-color: rgba(132, 47, 43, 0.34);
+  background: rgba(255, 250, 238, 0.84);
+  color: #5f201d;
+  box-shadow:
+    0 8px 20px rgba(83, 52, 31, 0.1),
+    inset 0 1px rgba(255, 255, 255, 0.52);
+}
+
+html[data-theme="light"] .btn-secondary:hover:not(:disabled) {
+  border-color: rgba(132, 47, 43, 0.62);
+  background: rgba(255, 250, 238, 0.94);
+  color: #4d1a18;
+  box-shadow:
+    0 14px 34px rgba(83, 52, 31, 0.16),
+    inset 0 1px rgba(255, 255, 255, 0.56);
+}
+
 .input {
   min-height: 44px;
   border: 1px solid rgba(34, 22, 17, 0.24);
