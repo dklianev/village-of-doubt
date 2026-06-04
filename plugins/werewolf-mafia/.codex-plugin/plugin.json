@@ -1,0 +1,24 @@
+{
+  "name": "werewolf-mafia",
+  "version": "0.1.0",
+  "description": "Project-local workflows for the Bulgarian Werewolf/Mafia monorepo.",
+  "author": {
+    "name": "Werewolf Mafia"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Върколак и Мафия",
+    "shortDescription": "Project gates, play QA, BG copy, and role-mechanics review.",
+    "longDescription": "Local Codex workflows for the Bulgarian Werewolf/Mafia monorepo: authoritative game-server safety, private role boundaries, Bulgarian copy, visual /play fixture QA, and release verification gates.",
+    "developerName": "Werewolf Mafia",
+    "category": "Productivity",
+    "capabilities": [
+      "role-mechanics-review",
+      "bg-copy-review",
+      "play-visual-qa",
+      "frontend-polish-gate",
+      "release-gate"
+    ],
+    "defaultPrompt": "Follow AGENTS.md and the project-local Werewolf/Mafia workflows before changing this repo."
+  }
+}
