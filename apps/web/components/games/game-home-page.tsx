@@ -10,6 +10,8 @@ import { VariantsChips } from "@/components/games/VariantsChips";
 import { WerewolfNightTimeline } from "@/components/games/WerewolfNightTimeline";
 import { LiveTickerCard, type LiveStats } from "@/components/landing/LiveTickerCard";
 import { RecentEndingsCard, type Ending } from "@/components/landing/RecentEndingsCard";
+import "@/components/landing/LandingSurface.module.css";
+import "@/components/games/GameHomePage.module.css";
 
 export function GameHomePage({ family }: { family: GameFamily }) {
   const isMafia = family === "mafia";
@@ -24,7 +26,7 @@ export function GameHomePage({ family }: { family: GameFamily }) {
     : ["/game-art/werewolf/bg-hero-v2.webp", "/game-art/mobile/werewolf/bg-hero-v2.webp"];
 
   return (
-    <main className="shell game-home-shell" data-theme={family} data-family={family}>
+    <main className="shell game-home-shell" data-theme={family} data-faction={family} data-family={family}>
       <ResourceHints images={heroImages} />
       <GameHero family={family} root={root} eyebrow={eyebrow} title={title} subtitle={subtitle} />
 

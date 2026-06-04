@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import "@/components/legal/LegalShell.module.css";
+import "@/components/privacy/LegacyPrivacy.module.css";
 import { headers } from "next/headers";
 import { createDatabase, getAchievementsForUser, getGameHistoryForUser } from "@werewolf/database";
 import { ACHIEVEMENTS } from "@werewolf/shared";
@@ -11,13 +13,12 @@ import { absoluteUrl, routeMetadata } from "@/lib/seo";
 const LAST_UPDATED = "17 май 2026";
 
 export const metadata: Metadata = routeMetadata({
-  title: "Поверителност | Върколак и Мафия",
+  title: "Поверителност",
   description: "Какви данни събираме, защо ги пазим и как можеш да упражниш правата си.",
   path: "/privacy",
   image: "/game-art/legal/privacy-banner.png",
   imageAlt: "Месингов сандък в светлина на свещ",
   robots: { index: true, follow: true },
-  absoluteTitle: true,
 });
 
 interface PrivacyPageProps {

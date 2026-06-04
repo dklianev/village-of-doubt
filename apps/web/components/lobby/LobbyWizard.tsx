@@ -106,7 +106,7 @@ export function LobbyWizard({
   }
 
   return (
-    <main data-theme={state.family} data-family={state.family} className="lobby-wizard">
+    <main data-faction={state.family} data-family={state.family} className="lobby-wizard">
       <div className="lobby-wizard-main">
         <StepNav state={state} dispatch={dispatch} canAdvance={canAdvance} onAdvanceBlocked={onAdvanceBlocked} transition={transition} />
         <div className="lobby-step-pane" style={{ viewTransitionName: "lobby-step" }}>

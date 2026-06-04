@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, ChevronDown, History, LogOut, Trophy, User, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -82,8 +83,7 @@ export function AuthChip({ initialSession }: { initialSession: AuthSessionView |
       >
         <span className="auth-chip-photo" aria-hidden>
           {avatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={avatarUrl} alt="" />
+            <Image src={avatarUrl} alt="" width={30} height={30} sizes="30px" unoptimized />
           ) : (
             <span className="auth-chip-initial">{initial}</span>
           )}
@@ -96,7 +96,7 @@ export function AuthChip({ initialSession }: { initialSession: AuthSessionView |
         <div className="nav-dropdown nav-dropdown-user" role="menu">
           <Link href="/account" role="menuitem" prefetch={false} onClick={() => setOpen(false)} className="nav-dropdown-item">
             <User className="nav-dropdown-item-icon" aria-hidden strokeWidth={1.8} />
-            <span>Моят профил</span>
+            <span>Моето досие</span>
           </Link>
           <Link href="/history" role="menuitem" prefetch={false} onClick={() => setOpen(false)} className="nav-dropdown-item">
             <History className="nav-dropdown-item-icon" aria-hidden strokeWidth={1.8} />
@@ -104,7 +104,7 @@ export function AuthChip({ initialSession }: { initialSession: AuthSessionView |
           </Link>
           <Link href="/achievements" role="menuitem" prefetch={false} onClick={() => setOpen(false)} className="nav-dropdown-item">
             <Trophy className="nav-dropdown-item-icon" aria-hidden strokeWidth={1.8} />
-            <span>Постижения</span>
+            <span>Легенди</span>
           </Link>
           <div className="nav-dropdown-divider" role="separator" />
           <button

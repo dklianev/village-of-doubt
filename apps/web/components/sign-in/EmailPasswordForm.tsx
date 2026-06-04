@@ -66,7 +66,7 @@ export function EmailPasswordForm({ redirectTo }: { redirectTo: string }) {
           className={mode === "sign-in" ? "is-active" : ""}
           onClick={() => setMode("sign-in")}
         >
-          Имам профил
+          Имам досие
         </button>
         <button
           type="button"
@@ -75,7 +75,7 @@ export function EmailPasswordForm({ redirectTo }: { redirectTo: string }) {
           className={mode === "sign-up" ? "is-active" : ""}
           onClick={() => setMode("sign-up")}
         >
-          Нов профил
+          Ново досие
         </button>
       </div>
 
@@ -127,7 +127,7 @@ export function EmailPasswordForm({ redirectTo }: { redirectTo: string }) {
       ) : null}
 
       <button className="btn btn-primary email-form-submit" type="submit" disabled={isPending} aria-busy={isPending}>
-        {mode === "sign-in" ? "Влез" : "Създай профил"}
+        {mode === "sign-in" ? "Влез" : "Създай досие"}
       </button>
     </form>
   );

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pill } from "./Pill";
 import { Toast } from "./Toast";
 
@@ -45,9 +45,27 @@ export const AllVariants: Story = {
   args: { open: true, message: "Варианти" },
   render: () => (
     <div style={{ display: "grid", gap: "14px", padding: "32px" }}>
-      <Toast open tone="info" message="Писмото е изпратено." />
-      <Toast open tone="success" message="Промяната е запазена." />
-      <Toast open tone="error" message="Нещо прекъсна. Опитай пак." />
+      <Toast open tone="info" message="Писмото е изпратено." index={0} />
+      <Toast open tone="success" message="Промяната е запазена." index={1} />
+      <Toast open tone="error" message="Нещо прекъсна. Опитай пак." index={2} />
     </div>
   ),
+};
+
+export const InteractionStates: Story = {
+  args: { open: true, message: "Състояния" },
+  render: () => {
+    useEffect(() => {
+      const closeButton = document.querySelector<HTMLButtonElement>("[data-toast-focus-root] button");
+      closeButton?.focus();
+    }, []);
+
+    return (
+      <div data-toast-focus-root style={{ display: "grid", gap: "14px", padding: "32px" }}>
+        <Toast open tone="info" message="Затварящият бутон е във фокус." onDismiss={() => {}} index={0} />
+        <Toast open tone="success" message="Успешното писмо остава видимо." index={1} />
+        <Toast open tone="error" message="Грешката остава ясно различима." index={2} />
+      </div>
+    );
+  },
 };

@@ -2,18 +2,18 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronDown, Copy, Search, ThumbsDown, ThumbsUp } from "lucide-react";
-import { Display, SceneCard } from "@werewolf/ui";
+import { ChevronDown, Copy, Flame, Search, ThumbsDown, ThumbsUp } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FaqCategory, FaqItem } from "@/lib/faq-data";
 import { copyTextToClipboard } from "@/lib/clipboard";
 import { CategoryIcon } from "./FaqCategoryIcon";
 import { FaqAnswerRenderer } from "./FaqAnswerRenderer";
+import "./LegacyFaq.module.css";
 
 const CATEGORY_LABELS: Record<FaqCategory, string> = {
   "pre-game": "Преди първа игра",
   gameplay: "Геймплей",
-  account: "Профил и сесия",
+  account: "Досие и сесия",
   tech: "Технически",
   privacy: "Поверителност и контакт",
 };
@@ -137,23 +137,29 @@ export function FaqHearth({ items }: { items: readonly FaqItem[] }) {
 
   return (
     <article className="faq-hearth">
-      <header
-        aria-label="Често задавани въпроси"
-        style={{ maxWidth: "980px", margin: "0 auto", padding: "32px 24px 0" }}
-      >
-        <SceneCard eyebrow="СЕДНИ ДО ОГЪНЯ" density="lg">
-          <Display size="h1">Често задавани въпроси.</Display>
-          <p
-            style={{
-              color: "var(--ds-ink-scene-soft)",
-              fontSize: "var(--ds-type-lede)",
-              lineHeight: 1.55,
-              margin: 0,
-            }}
-          >
-            Отговори за геймплея, профила, техниката и поверителността — споделени на топло.
+      <header className="faq-hearth-hero" aria-label="Седни до огъня">
+        <div className="faq-hearth-banner">
+          <Image
+            src="/game-art/legal/faq-hearth-banner.webp"
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            className="faq-hearth-banner-img"
+          />
+          <div className="faq-hearth-scrim" aria-hidden />
+        </div>
+
+        <div className="faq-hearth-inner">
+          <p className="faq-hearth-kicker">
+            <Flame className="faq-hearth-kicker-icon" aria-hidden strokeWidth={2} />
+            <span>седни до огъня</span>
           </p>
-        </SceneCard>
+          <h1 className="faq-hearth-title">Седни до огъня.</h1>
+          <p className="faq-hearth-subtitle">
+            Отговори за геймплея, досието, техниката и поверителността — споделени на топло.
+          </p>
+        </div>
       </header>
 
       <div className="faq-hearth-toolbar">
@@ -206,9 +212,7 @@ export function FaqHearth({ items }: { items: readonly FaqItem[] }) {
             <section key={category} className="faq-hearth-section" data-category={category}>
               <header className="faq-hearth-section-head">
                 <CategoryIcon category={category} className="faq-hearth-section-icon" />
-                <Display as="h2" size="h4">
-                  {CATEGORY_LABELS[category]}
-                </Display>
+                <h2>{CATEGORY_LABELS[category]}</h2>
               </header>
 
               <ul className="faq-hearth-list">

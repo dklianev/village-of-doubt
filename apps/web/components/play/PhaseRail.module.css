@@ -1,0 +1,129 @@
+/* Phase rail styles moved out of globals.css. */
+
+:global(.phase-rail) {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 18px;
+}
+
+:global(.phase-rail-step) {
+  position: relative;
+  min-height: 98px;
+  overflow: hidden;
+  border: 1px solid rgba(248, 236, 210, 0.1);
+  border-radius: 22px;
+  padding: 12px;
+  background:
+    linear-gradient(145deg, rgba(248, 236, 210, 0.08), rgba(248, 236, 210, 0.03)),
+    rgba(13, 9, 8, 0.38);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.06);
+  opacity: 0.62;
+  transition:
+    transform 180ms ease,
+    opacity 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+:global(.phase-rail-step::after) {
+  position: absolute;
+  inset: auto 12px 10px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(209, 154, 66, 0.48), transparent);
+  content: "";
+}
+
+:global(.phase-rail-step.is-active) {
+  transform: translateY(-4px);
+  border-color: rgba(209, 154, 66, 0.42);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.28), 0 0 32px rgba(209, 154, 66, 0.12);
+  opacity: 1;
+}
+
+:global(.phase-rail-index) {
+  display: block;
+  color: rgba(248, 236, 210, 0.52);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+}
+
+:global(.phase-rail-icon) {
+  display: block;
+  width: 42px;
+  aspect-ratio: 1;
+  margin-top: 9px;
+  border: 1px solid rgba(248, 236, 210, 0.16);
+  border-radius: 14px;
+  background:
+    linear-gradient(145deg, rgba(10, 7, 6, 0.08), rgba(10, 7, 6, 0.36)),
+    var(--phase-icon) center / cover no-repeat;
+}
+
+:global(.phase-rail-icon.phase-lobby) {
+  --phase-icon: image-set(url("/game-art/icon-phase-lobby.webp") type("image/webp"), url("/game-art/icon-phase-lobby.png") type("image/png"));
+}
+
+:global(.phase-rail-icon.phase-role_reveal) {
+  --phase-icon: image-set(url("/game-art/icon-phase-role-reveal.webp") type("image/webp"), url("/game-art/icon-phase-role-reveal.png") type("image/png"));
+}
+
+:global(.phase-rail-icon.phase-night) {
+  --phase-icon: image-set(url("/game-art/icon-phase-night.webp") type("image/webp"), url("/game-art/icon-phase-night.png") type("image/png"));
+}
+
+:global(.phase-rail-icon.phase-day_discussion) {
+  --phase-icon: image-set(url("/game-art/icon-phase-day.webp") type("image/webp"), url("/game-art/icon-phase-day.png") type("image/png"));
+}
+
+:global(.phase-rail-icon.phase-voting) {
+  --phase-icon: image-set(url("/game-art/icon-phase-voting.webp") type("image/webp"), url("/game-art/icon-phase-voting.png") type("image/png"));
+}
+
+:global(.phase-rail-icon.phase-resolution) {
+  --phase-icon: image-set(url("/game-art/icon-phase-resolution.webp") type("image/webp"), url("/game-art/icon-phase-resolution.png") type("image/png"));
+}
+
+:global([data-family="mafia"] .phase-rail-icon.phase-lobby) {
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-lobby.webp") type("image/webp"), url("/game-art/mafia/icon-phase-lobby.png") type("image/png"));
+}
+
+:global([data-family="mafia"] .phase-rail-icon.phase-role_reveal) {
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-role-reveal.webp") type("image/webp"), url("/game-art/mafia/icon-phase-role-reveal.png") type("image/png"));
+}
+
+:global([data-family="mafia"] .phase-rail-icon.phase-night),
+:global([data-family="mafia"] .phase-rail-icon.phase-first_night) {
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-night.webp") type("image/webp"), url("/game-art/mafia/icon-phase-night.png") type("image/png"));
+}
+
+:global([data-family="mafia"] .phase-rail-icon.phase-day_discussion),
+:global([data-family="mafia"] .phase-rail-icon.phase-day_announcement),
+:global([data-family="mafia"] .phase-rail-icon.phase-nomination),
+:global([data-family="mafia"] .phase-rail-icon.phase-defense) {
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-day.webp") type("image/webp"), url("/game-art/mafia/icon-phase-day.png") type("image/png"));
+}
+
+:global([data-family="mafia"] .phase-rail-icon.phase-voting) {
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-voting.webp") type("image/webp"), url("/game-art/mafia/icon-phase-voting.png") type("image/png"));
+}
+
+:global([data-family="mafia"] .phase-rail-icon.phase-resolution),
+:global([data-family="mafia"] .phase-rail-icon.phase-hunter_revenge),
+:global([data-family="mafia"] .phase-rail-icon.phase-mayor_successor),
+:global([data-family="mafia"] .phase-rail-icon.phase-game_over) {
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-resolution.webp") type("image/webp"), url("/game-art/mafia/icon-phase-resolution.png") type("image/png"));
+}
+
+:global(.phase-rail-label) {
+  display: block;
+  margin-top: 8px;
+  color: #ead9ba;
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}

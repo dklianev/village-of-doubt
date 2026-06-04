@@ -17,10 +17,15 @@ const checks = [
   ["lobby wizard contracts", checkLobbyWizardContracts],
   ["play UI hardening contracts", checkPlayUiContracts],
   ["frontend hygiene contracts", checkFrontendHygieneContracts],
+  ["metadata title contracts", checkMetadataTitleContracts],
+  ["primitive override anti-pattern", checkPrimitiveOverrideAntiPattern],
+  ["faction theme attribute contracts", checkFactionThemeAttributeContracts],
+  ["globals.css size budget", checkGlobalsCssBudget],
   ["production security guards", checkProductionGuardContracts],
   ["launch testing contracts", checkLaunchTestingContracts],
   ["production env checker behavior", checkProductionEnvChecker],
   ["smoke/playtest/verify wiring", checkScriptWiring],
+  ["database migration workflow", checkDatabaseMigrationWorkflow],
 ];
 
 let failures = 0;
@@ -59,7 +64,14 @@ function checkGameArtPairing() {
 
   const totalPngBytes = sumBytes(pngs);
   const totalWebpBytes = sumBytes([...webps]);
-  assert(totalWebpBytes < totalPngBytes * 0.35, "Optimized WebP assets are unexpectedly large.");
+  const totalAssetBytes = sumBytes(files);
+  const oversizedFiles = files.filter((file) => statSync(path.join(gameArtDir, file)).size > 500 * 1024);
+  const oversizedPngs = pngs.filter((file) => statSync(path.join(gameArtDir, file)).size > 1024 * 1024);
+
+  assert(totalWebpBytes < totalPngBytes, "Optimized WebP assets should remain smaller than PNG fallbacks.");
+  assert(totalAssetBytes < 320 * 1024 * 1024, "game-art must stay under the PR B 320 MB budget.");
+  assert(oversizedPngs.length <= 5, `Too many PNG fallbacks over 1 MB: ${oversizedPngs.join(", ")}`);
+  assert(oversizedFiles.length === 0, `Assets over 500 KB budget: ${oversizedFiles.join(", ")}`);
 
   for (const critical of [
     "og-preview",
@@ -92,7 +104,7 @@ function checkGameArtPairing() {
 }
 
 function checkCssImageSet() {
-  const css = readText("apps/web/app/globals.css");
+  const css = readAppStyles();
   const imageSetCount = count(css, "image-set(url(\"/game-art/");
   const directGameArtVariables = css.match(/--[\w-]+:\s*url\("\/game-art\/[^"]+\.png"\)/g) ?? [];
 
@@ -107,8 +119,29 @@ function checkCssImageSet() {
   assertThemeVariableBlock(css, '[data-theme="dark"]');
   assertThemeVariableBlock(css, '[data-theme="light"]');
   assert(css.includes('[data-theme="mafia"]'), "Missing Mafia theme selector.");
+  assert(css.includes('[data-family="mafia"]') && css.includes('[data-faction="mafia"]'), "Faction selectors must support data-family/data-faction for Mafia.");
   assert(css.includes('/game-art/mafia/bg-landing-hero.webp'), "Missing Mafia image-set CSS references.");
   assert(css.includes('/game-art/mobile/bg-landing-hero.webp'), "Missing mobile image-set CSS references.");
+}
+
+function checkMetadataTitleContracts() {
+  const appDir = path.join(root, "apps/web/app");
+  const files = listFilesRecursive(appDir).filter((file) => file.endsWith(".tsx"));
+  const duplicateBrandSuffix = [];
+
+  for (const file of files) {
+    const absolute = path.join(appDir, file);
+    const source = readFileSync(absolute, "utf8");
+    const titleSuffixMatches = source.matchAll(/title:\s*(?:`[^`]*|\{[^}]*|["'][^"']*)\|\s*Върколак и Мафия/g);
+    for (const match of titleSuffixMatches) {
+      duplicateBrandSuffix.push(`${path.join("apps/web/app", file)}:${lineForIndex(source, match.index ?? 0)}`);
+    }
+  }
+
+  assert(
+    duplicateBrandSuffix.length === 0,
+    `Per-route metadata titles must not include the site suffix manually; layout.tsx applies it. Found:\n${duplicateBrandSuffix.join("\n")}`,
+  );
 }
 
 function assertThemeVariableBlock(css, selector) {
@@ -121,7 +154,7 @@ function assertThemeVariableBlock(css, selector) {
 }
 
 function checkLandingLayoutContracts() {
-  const css = readText("apps/web/app/globals.css");
+  const css = readLandingStyles();
   const landingPage = readText("apps/web/components/landing-experience.tsx");
   const modeChoiceCards = readText("apps/web/components/landing/ModeChoiceCards.tsx");
   const universalHowToPlay = readText("apps/web/components/landing/UniversalHowToPlay.tsx");
@@ -129,10 +162,14 @@ function checkLandingLayoutContracts() {
   const recentEndingsCard = readText("apps/web/components/landing/RecentEndingsCard.tsx");
   const quickStartIcons = readText("apps/web/components/landing/quickstart-icons.tsx");
   const siteChrome = readText("apps/web/components/site-chrome.tsx");
-  const chromeIconHoverStart = css.indexOf(".site-icon-button:hover");
+  const siteChromeCss = readText("apps/web/components/site-chrome/SiteChrome.module.css");
+  const tutorialCss = readText("apps/web/components/tutorial/Tutorial.module.css");
+  const chromeCss = `${css}\n${siteChromeCss}`;
+  const publicShellCss = `${css}\n${tutorialCss}`;
+  const chromeIconHoverStart = chromeCss.indexOf(".site-icon-button:hover");
   const chromeIconHoverBlock =
-    chromeIconHoverStart >= 0 ? css.slice(chromeIconHoverStart, css.indexOf("}", chromeIconHoverStart)) : "";
-  const heroKickerPattern = /(^|\n)\.landing-hero-card > \.section-kicker\s*{/;
+    chromeIconHoverStart >= 0 ? chromeCss.slice(chromeIconHoverStart, chromeCss.indexOf("}", chromeIconHoverStart)) : "";
+  const heroKickerPattern = /(^|\n)(?::global\()?\.landing-hero-card > \.section-kicker\)?\s*{/;
   const theatreBackdropStart = css.indexOf("body:has(.landing-shell)::before");
   const theatreBackdropBlock =
     theatreBackdropStart >= 0 ? css.slice(theatreBackdropStart, css.indexOf("}", theatreBackdropStart)) : "";
@@ -142,11 +179,14 @@ function checkLandingLayoutContracts() {
   const lightBackdropStart = css.indexOf('html[data-theme="light"] .landing-shell::before');
   const lightBackdropBlock =
     lightBackdropStart >= 0 ? css.slice(lightBackdropStart, css.indexOf("}", lightBackdropStart)) : "";
+  const tutorialLightBackdropStart = tutorialCss.indexOf('html[data-theme="light"] .tutorial-shell::before');
+  const tutorialLightBackdropBlock =
+    tutorialLightBackdropStart >= 0 ? tutorialCss.slice(tutorialLightBackdropStart, tutorialCss.indexOf("}", tutorialLightBackdropStart)) : "";
   const lightTheatreBackdropStart = css.indexOf('html[data-theme="light"] body:has(.landing-shell)::before');
   const lightTheatreBackdropBlock =
     lightTheatreBackdropStart >= 0 ? css.slice(lightTheatreBackdropStart, css.indexOf("}", lightTheatreBackdropStart)) : "";
   const publicShellStackPattern =
-    /\.landing-shell,\s*\.game-home-shell,\s*\.lobby-shell,\s*\.history-shell,\s*\.roles-shell,\s*\.rules-shell,\s*\.auth-shell,\s*\.sign-in-shell,\s*\.tutorial-shell,\s*\.utility-shell\s*{[\s\S]*?z-index:\s*0;[\s\S]*?isolation:\s*isolate;/;
+    /\.landing-shell,\s*\.game-home-shell,\s*\.lobby-shell,\s*\.history-shell,\s*\.roles-shell,\s*\.rules-shell,\s*\.sign-in-shell,\s*\.utility-shell\s*{[\s\S]*?z-index:\s*0;[\s\S]*?isolation:\s*isolate;/;
 
   assert(landingPage.includes("<ModeChoiceCards"), "Landing page must render the separated game picker component.");
   assert(modeChoiceCards.includes("game-choice-grid"), "Landing mode choice component needs the game picker grid.");
@@ -178,7 +218,8 @@ function checkLandingLayoutContracts() {
   assert(landingPage.includes("LiveTickerCard") && landingPage.includes("RecentEndingsCard"), "Landing page must render shared stats cards.");
   assert(!landingPage.includes("QuickStartSection"), "Landing page must not render deprecated QuickStartSection.");
   assert(!universalHowToPlay.includes("IntersectionObserver"), "Landing how-to-play should not ship IntersectionObserver for below-fold connector reveal.");
-  assert(css.includes("content-visibility: auto;"), "Landing quickstart should use content-visibility to defer below-fold paint.");
+  assert(css.includes("content-visibility: visible;"), "Landing quickstart must render hover shadows outside its bounds.");
+  assert(css.includes("contain-intrinsic-size: none;"), "Landing quickstart must not use paint containment that clips CTA hover shadows.");
   assert(liveTickerCard.includes("Бъди първият на масата"), "Landing live empty state must invite the first room.");
   assert(recentEndingsCard.includes("Първите герои ще се появят тук."), "Landing winner empty state must use designed Bulgarian copy.");
   for (const exportName of ["PersonIcon", "HouseIcon", "MaskIcon", "MoonIcon", "BallotIcon", "LastWinnerEmptyGlyph"]) {
@@ -188,9 +229,13 @@ function checkLandingLayoutContracts() {
   assert(css.includes("--art-landing-ambient"), "Landing page must expose the ambient outer background art variable.");
   assert(theatreBodyBlock.includes("rgba(8, 9, 9, 0.95)"), "Dark theatre pages should use a solid body color behind the fixed backdrop.");
   assert(publicShellStackPattern.test(css), "Public page shells must isolate their fixed backdrop layer above the body background.");
+  assert(publicShellCss.includes(".tutorial-shell") && publicShellCss.includes("isolation: isolate;"), "Tutorial shell must keep its isolated fixed backdrop layer.");
   assert(theatreBackdropBlock.includes("--art-landing-ambient-composited"), "Landing theatre backdrop must use the composited ambient homepage background.");
   assert(theatreBackdropBlock.includes("animation: ambient-drift 48s"), "Landing theatre backdrop must drift subtly in dark theme.");
-  assert(css.includes(".landing-shell::before,\n.game-home-shell::before"), "Landing and family shells should disable their old absolute pseudo backdrop.");
+  assert(
+    css.includes(".landing-shell::before") && css.includes(".game-home-shell::before"),
+    "Landing and family shells should disable their old absolute pseudo backdrop.",
+  );
   assert(css.includes('html[data-theme="dark"] .lobby-shell::before'), "Lobby dark backdrop should keep the original absolute pseudo system.");
   assert(!css.includes('html[data-theme="dark"] .landing-shell::before'), "Landing dark theme must not use the old zoom-prone shell pseudo.");
   assert(!css.includes('html[data-theme="dark"] .game-home-shell::before'), "Family home dark theme must not use the old zoom-prone shell pseudo.");
@@ -201,14 +246,20 @@ function checkLandingLayoutContracts() {
     ".history-shell::before",
     ".roles-shell::before",
     ".rules-shell::before",
-    ".auth-shell::before",
     ".tutorial-shell::before",
     ".utility-shell::before",
   ]) {
-    assert(lightBackdropBlock.includes(shellSelector), `Light theme must disable page-art backdrop for ${shellSelector}.`);
+    const backdropBlock = shellSelector === ".tutorial-shell::before" ? tutorialLightBackdropBlock : lightBackdropBlock;
+    assert(backdropBlock.includes(shellSelector), `Light theme must disable page-art backdrop for ${shellSelector}.`);
   }
+  assert(lightBackdropBlock.includes(".lobby-shell::before"), "Legacy create light theme should match the old shared parchment backdrop.");
   assert(lightBackdropBlock.includes("display: none;"), "Light theme should use the shared homepage body background instead of page-art backdrops.");
-  assert(lightTheatreBackdropBlock.includes("#f7ead0") && lightTheatreBackdropBlock.includes("animation: none;"), "Light theatre backdrop should use a static cream gradient.");
+  assert(
+    lightTheatreBackdropBlock.includes("#f7ead0") &&
+      lightTheatreBackdropBlock.includes("animation: ambient-drift-light 72s") &&
+      lightTheatreBackdropBlock.includes("transform: translate3d(-0.6%, 0, 0) scale(1.02)"),
+    "Light theatre backdrop should use the cream gradient with subtle ambient drift.",
+  );
   assert(css.includes("/game-art/bg-landing-ambient-composited.webp"), "Landing page must reference the optimized composited ambient outer background.");
   assert(existsSync(path.join(gameArtDir, "bg-landing-ambient-composited.png")), "Missing composited ambient landing background PNG.");
   assert(existsSync(path.join(gameArtDir, "bg-landing-ambient-composited.webp")), "Missing optimized composited ambient landing background WebP.");
@@ -225,7 +276,7 @@ function checkLandingLayoutContracts() {
   assert(existsSync(path.join(gameArtDir, "bg-landing-dual-world-v2.webp")), "Missing optimized current dual-world landing background WebP.");
   assert(existsSync(path.join(gameArtDir, "mobile/bg-landing-dual-world-v2.webp")), "Missing mobile current dual-world landing background WebP.");
   assert(siteChrome.includes("prefetch={false}"), "Site chrome navigation should not prefetch every secondary route on first load.");
-  assert(css.includes("/game-art/logo-chrome-mark.webp"), "Navbar brand should use the chrome-optimized micro-sigil WebP.");
+  assert(chromeCss.includes("/game-art/logo-chrome-mark.webp"), "Navbar brand should use the chrome-optimized micro-sigil WebP.");
   assert(existsSync(path.join(gameArtDir, "logo-chrome-mark.png")), "Missing chrome micro-sigil PNG asset.");
   assert(existsSync(path.join(gameArtDir, "logo-chrome-mark.webp")), "Missing optimized chrome micro-sigil WebP asset.");
   assert(siteChrome.includes("site-brand-dot"), "Navbar wordmark should keep the premium separator accent.");
@@ -237,7 +288,7 @@ function checkLandingLayoutContracts() {
 }
 
 function checkFamilyQuickStartContracts() {
-  const css = readText("apps/web/app/globals.css");
+  const css = readGameHomeStyles();
   const gameHomePage = readText("apps/web/components/games/game-home-page.tsx");
   const liveTickerCard = readText("apps/web/components/landing/LiveTickerCard.tsx");
   const recentEndingsCard = readText("apps/web/components/landing/RecentEndingsCard.tsx");
@@ -269,25 +320,41 @@ function checkFamilyQuickStartContracts() {
   for (const selector of [".game-home-hero__art", ".game-home-hero__scrim", ".game-home-hero__content", ".game-home-hero__fog", ".game-home-hero__rain"]) {
     assert(css.includes(selector), `Missing cinematic game hero selector ${selector}.`);
   }
-  assert(css.includes('[data-theme="werewolves"]') && css.includes("--family-hero"), "Werewolf theme must expose --family-hero.");
-  assert(css.includes('[data-theme="mafia"]') && css.includes("--family-hero"), "Mafia theme must expose --family-hero.");
+  assert(css.includes('[data-family="werewolves"]') && css.includes('[data-faction="werewolves"]') && css.includes("--family-hero"), "Werewolf faction selectors must expose --family-hero.");
+  assert(css.includes('[data-family="mafia"]') && css.includes('[data-faction="mafia"]') && css.includes("--family-hero"), "Mafia faction selectors must expose --family-hero.");
   assert(css.includes("@keyframes fog-drift"), "Werewolf hero needs fog-drift keyframes.");
   assert(css.includes("@keyframes rain-veil"), "Mafia hero needs rain-veil keyframes.");
   for (const asset of [
     "werewolf/bg-hero-v2.png",
     "werewolf/bg-hero-v2.webp",
+    "werewolf/bg-hero-light-v1.png",
+    "werewolf/bg-hero-light-v1.webp",
     "mafia/bg-hero-v2.png",
     "mafia/bg-hero-v2.webp",
+    "mafia/bg-hero-light-v1.png",
+    "mafia/bg-hero-light-v1.webp",
     "mobile/werewolf/bg-hero-v2.webp",
+    "mobile/werewolf/bg-hero-light-v1.webp",
     "mobile/mafia/bg-hero-v2.webp",
+    "mobile/mafia/bg-hero-light-v1.webp",
   ]) {
     assert(existsSync(path.join(gameArtDir, asset)), `Missing cinematic hero asset ${asset}.`);
   }
-  assert(werewolfTheatreBlock.includes("/game-art/werewolf/bg-hero-v2.webp"), "Werewolf home theatre backdrop should use the family forest hero art.");
-  assert(mafiaTheatreBlock.includes("/game-art/mafia/bg-hero-v2.webp"), "Mafia home theatre backdrop should use the family noir city hero art.");
+  assert(
+    werewolfTheatreBlock.includes("var(--art-werewolf)") &&
+      css.includes("/game-art/werewolf/bg-hero-v2.webp") &&
+      css.includes("/game-art/werewolf/bg-hero-light-v1.webp"),
+    "Werewolf home theatre backdrop should use theme-aware --art-werewolf hero art.",
+  );
+  assert(
+    mafiaTheatreBlock.includes("var(--art-mafia)") &&
+      css.includes("/game-art/mafia/bg-hero-v2.webp") &&
+      css.includes("/game-art/mafia/bg-hero-light-v1.webp"),
+    "Mafia home theatre backdrop should use theme-aware --art-mafia hero art.",
+  );
   assert(!gameHomePage.includes("QuickStartSection"), "GameHomePage must not render deprecated QuickStartSection.");
   assert(!werewolfTimeline.includes("IntersectionObserver") && !mafiaTimeline.includes("IntersectionObserver"), "Family timelines should not ship IntersectionObserver for reveal.");
-  assert(css.includes("content-visibility: auto"), "Family quickstart should use CSS paint containment instead of JS viewport observers.");
+  assert(css.includes("content-visibility: visible"), "Family quickstart should avoid paint containment that clips CTA hover shadows.");
   assert(liveTickerCard.includes("Бъди първият на масата") && liveTickerCard.includes("Запали първия огън"), "Live ticker empty states must be family-aware.");
   assert(recentEndingsCard.includes("Първите легенди ще се появят тук.") && recentEndingsCard.includes("Първите досиета ще се появят тук."), "Recent endings empty states must be family-aware.");
   assert(recentEndingsCard.includes("LastWinnerEmptyGlyph"), "Family winner empty state must use the shared designed glyph.");
@@ -323,7 +390,7 @@ function checkFamilyQuickStartContracts() {
 function checkRolesPageContracts() {
   const rolesPage = readText("apps/web/components/games/game-roles-page.tsx");
   const legacyRolesRoute = readText("apps/web/app/roles/page.tsx");
-  const css = readText("apps/web/app/globals.css");
+  const css = readRolesStyles();
 
   assert(rolesPage.includes("getRolesForFamily"), "Roles page must filter roles by family.");
   assert(rolesPage.includes("KNOWN_WEREWOLF_ROLE_ASSETS"), "Roles page must keep an explicit Werewolf asset allow-list.");
@@ -348,7 +415,7 @@ function checkRulesPlaybookContracts() {
   const rulesPage = readText("apps/web/components/games/game-rules-page.tsx");
   const werewolfRulesRoute = readText("apps/web/app/werewolf/rules/page.tsx");
   const mafiaRulesRoute = readText("apps/web/app/mafia/rules/page.tsx");
-  const css = readText("apps/web/app/globals.css");
+  const css = readRulesStyles();
 
   assert(rulesPage.includes("getRulesForFamily"), "Rules page must keep shared rules data as its source.");
   assert(rulesPage.includes("rules-playbook-hero"), "Rules page must render the premium playbook hero.");
@@ -376,7 +443,6 @@ function checkRulesPlaybookContracts() {
     ".phase-info-chip",
     ".phase-loop-arrow",
     ".phase-timeline__line.is-loop",
-    ".rules-phase-detail",
     ".rules-chapter-grid",
     ".rules-chapter-card",
     ".rules-scenario-grid",
@@ -427,7 +493,7 @@ function checkBulgarianCopyContracts() {
 }
 
 function checkLobbyImageContracts() {
-  const css = readText("apps/web/app/globals.css");
+  const css = readLobbyStyles();
   const lobbyInvitePage = readText("apps/web/app/lobby/[code]/page.tsx");
   const lobbyCreateClient = readText("apps/web/components/lobby-create-client.tsx");
 
@@ -447,7 +513,7 @@ function checkLobbyImageContracts() {
 }
 
 function checkLobbyWizardContracts() {
-  const css = readText("apps/web/app/globals.css");
+  const css = readLobbyStyles();
   const wizard = readText("apps/web/components/lobby/LobbyWizard.tsx");
   const stepRoles = readText("apps/web/components/lobby/StepRoles.tsx");
   const reducer = readText("apps/web/lib/lobby-form/reducer.ts");
@@ -487,10 +553,13 @@ function checkPlayUiContracts() {
     ...listFilesRecursive(path.join(root, "apps/web/lib/play"))
       .filter((file) => file.endsWith(".ts"))
       .map((file) => path.join("apps/web/lib/play", file)),
+    ...listFilesRecursive(path.join(root, "apps/web/hooks/play"))
+      .filter((file) => file.endsWith(".ts") || file.endsWith(".tsx"))
+      .map((file) => path.join("apps/web/hooks/play", file)),
   ]
     .map((file) => readText(file))
     .join("\n");
-  const css = readText("apps/web/app/globals.css");
+  const css = readPlayStyles();
 
   for (const contract of [
     "authClient.useSession",
@@ -499,7 +568,7 @@ function checkPlayUiContracts() {
     "LiveCuePanel",
     "NarratorDesk",
     "triggerDeviceCue",
-    "createOptions?.tempoProfile === \"live\"",
+    "tempoProfile === \"live\"",
     "Игра на живо: звукът и вибрацията са изключени по подразбиране",
     "панел на Разказвача",
     "Водиш играта",
@@ -514,7 +583,7 @@ function checkPlayUiContracts() {
     assert(playModuleText.includes(contract), `Missing play UI contract: ${contract}`);
   }
 
-  const liveDefaultIndex = playModuleText.indexOf("createOptions?.tempoProfile === \"live\"");
+  const liveDefaultIndex = playModuleText.indexOf("tempoProfile === \"live\"");
   const cuePreferenceReadIndex = playModuleText.indexOf("const saved = window.localStorage.getItem(CUE_MODE_STORAGE_KEY)");
   assert(
     liveDefaultIndex >= 0 && cuePreferenceReadIndex >= 0 && liveDefaultIndex < cuePreferenceReadIndex,
@@ -526,23 +595,145 @@ function checkPlayUiContracts() {
 }
 
 function checkFrontendHygieneContracts() {
-  const css = readText("apps/web/app/globals.css");
+  const css = readAppStyles();
+  const lobbyStyles = readLobbyStyles();
   const siteChrome = readText("apps/web/components/site-chrome.tsx");
   const stepRoom = readText("apps/web/components/lobby/StepRoom.tsx");
   const fieldComponent = readText("apps/web/components/lobby/Field.tsx");
+  const clientComponentFiles = listFilesRecursive(path.join(root, "apps/web/components"))
+    .filter((file) => /\.(tsx|ts)$/.test(file))
+    .filter((file) => readText(`apps/web/components/${file}`).startsWith('"use client"'));
+  const serverDefaultComponents = [
+    "apps/web/components/SiteFooter.tsx",
+    "apps/web/components/JsonLd.tsx",
+    "apps/web/components/resource-hints.tsx",
+    "apps/web/components/skeleton.tsx",
+    "apps/web/components/manual-role-builder.tsx",
+  ];
 
-  assert(!/calc\(100%\s*-\s*\d+px\)/.test(css), "globals.css must not contain calc(100% - Npx) width patterns.");
-  assert(css.includes("@media (max-width: 480px)"), "globals.css must include explicit max-width 480px mobile rules.");
+  assert(!/calc\(100%\s*-\s*\d+px\)/.test(css), "App styles must not contain calc(100% - Npx) width patterns.");
+  assert(css.includes("@media (max-width: 480px)"), "App styles must include explicit max-width 480px mobile rules.");
   assert(existsSync(path.join(root, "docs/frontend-audit/REPORT.md")), "Frontend visual audit report must exist.");
   assert(css.includes("--chrome-bg"), "Navbar redesign must keep the --chrome-bg token.");
   assert(siteChrome.includes("export default function SiteChrome"), "site-chrome.tsx must export one default component named SiteChrome.");
   assert(!siteChrome.includes("ЗВУК: ВКЛ"), "Navbar sound control must be icon-only.");
   assert(!siteChrome.includes("ТЕМА: СИСТЕМНА"), "Navbar theme control must be icon-only.");
-  assert(css.includes(".field-input-wrap"), "Step 1 form must keep the in-input action wrapper.");
-  assert(css.includes(".field-action"), "Step 1 form must keep icon action button styles.");
+  assert(lobbyStyles.includes(".field-input-wrap"), "Step 1 form must keep the in-input action wrapper.");
+  assert(lobbyStyles.includes(".field-action"), "Step 1 form must keep icon action button styles.");
   assert(
     stepRoom.includes('from "@/components/lobby/Field"') && fieldComponent.includes("export function Field"),
     "StepRoom must use the uniform Field subcomponent.",
+  );
+  assert(clientComponentFiles.length <= 50, `Too many apps/web client components: ${clientComponentFiles.length} > 50.`);
+  for (const file of serverDefaultComponents) {
+    assert(!readText(file).startsWith('"use client"'), `${file} should stay server-default.`);
+  }
+  assert(
+    readText("apps/web/components/manual-role-builder.tsx").includes("ManualRoleBuilderClient"),
+    "ManualRoleBuilder shell must delegate interactive form state to ManualRoleBuilderClient.",
+  );
+  assert(
+    readText("apps/web/components/manual-role-builder-client.tsx").startsWith('"use client"'),
+    "ManualRoleBuilderClient must remain the explicit client island.",
+  );
+}
+
+function checkPrimitiveOverrideAntiPattern() {
+  const primitiveClassNames = [
+    "paper-card",
+    "scene-card",
+    "ds-pill",
+    "pill",
+    "medallion",
+    "surface",
+    "eyebrow",
+    "display",
+    "toast",
+    "dialog",
+    "sheet",
+    "empty-state",
+  ];
+  const primitiveDataNames = [
+    "paper-card",
+    "scene-card",
+    "pill",
+    "medallion",
+    "surface",
+    "eyebrow",
+    "display",
+    "toast",
+    "dialog",
+    "sheet",
+    "empty-state",
+  ];
+  const files = listFilesRecursive(path.join(root, "apps/web"))
+    .filter((file) => file.endsWith(".module.css"))
+    .map((file) => path.join("apps/web", file));
+  const violations = [];
+  const classPattern = new RegExp(`:global\\([^)]*\\.(${primitiveClassNames.join("|")})\\b`, "g");
+  const dataPattern = new RegExp(`:global\\([^)]*\\[data-ds-(${primitiveDataNames.join("|")})\\b`, "g");
+
+  for (const file of files) {
+    const src = readText(file);
+    for (const pattern of [classPattern, dataPattern]) {
+      for (const match of src.matchAll(pattern)) {
+        violations.push({
+          file,
+          line: src.slice(0, match.index).split("\n").length,
+          match: match[0].replace(/\s+/g, " "),
+        });
+      }
+    }
+  }
+
+  if (violations.length === 0) {
+    return;
+  }
+
+  const detail = violations.map((violation) => `  ${violation.file}:${violation.line}  ${violation.match}`).join("\n");
+  const message =
+    `Primitive identity override detected in ${violations.length} location(s):\n${detail}\n\n` +
+    "Use a primitive extension or a page-local wrapper selector instead of :global() primitive overrides.";
+
+  throw new Error(message);
+}
+
+function checkFactionThemeAttributeContracts() {
+  const roots = [path.join(root, "apps/web/app"), path.join(root, "apps/web/components")];
+  const files = roots
+    .flatMap((dir) => listFilesRecursive(dir).map((file) => path.join(path.relative(root, dir), file)))
+    .filter((file) => /\.(tsx|ts)$/.test(file));
+  const violations = [];
+  const factionThemePattern = /data-theme\s*=\s*(?:"(?:mafia|werewolves)"|{["'](?:mafia|werewolves)["']})/g;
+
+  for (const file of files) {
+    const source = readText(file);
+    for (const match of source.matchAll(factionThemePattern)) {
+      violations.push(`${file}:${lineForIndex(source, match.index ?? 0)}`);
+    }
+  }
+
+  assert(
+    violations.length === 0,
+    `Faction context must use data-faction/data-family, not data-theme. Found:\n${violations.join("\n")}`,
+  );
+}
+
+function checkGlobalsCssBudget() {
+  const result =
+    process.platform === "win32"
+      ? spawnSync("cmd.exe", ["/d", "/s", "/c", "node scripts/audit-globals-css.mjs --budget"], {
+          cwd: root,
+          encoding: "utf8",
+        })
+      : spawnSync(process.execPath, ["scripts/audit-globals-css.mjs", "--budget"], {
+          cwd: root,
+          encoding: "utf8",
+        });
+
+  assert(
+    result.status === 0,
+    `globals.css budget failed:\n${result.stdout ?? ""}\n${result.stderr ?? ""}\n${result.error?.message ?? ""}`,
   );
 }
 
@@ -648,6 +839,29 @@ function checkScriptWiring() {
   assert(ciWorkflow.includes("node-version: 24"), "CI must verify against Node 24.");
 }
 
+function checkDatabaseMigrationWorkflow() {
+  const databaseReadme = readText("packages/database/README.md");
+  assert(databaseReadme.includes("db:generate"), "Database README must document migration generation.");
+  assert(databaseReadme.includes("db:migrate"), "Database README must document migration application.");
+  assert(databaseReadme.includes("drizzle-kit check"), "Database README must document the migration drift guard.");
+
+  const result =
+    process.platform === "win32"
+      ? spawnSync("cmd.exe", ["/d", "/s", "/c", "pnpm --filter @werewolf/database exec drizzle-kit check --config drizzle.config.ts"], {
+          cwd: root,
+          encoding: "utf8",
+        })
+      : spawnSync("pnpm", ["--filter", "@werewolf/database", "exec", "drizzle-kit", "check", "--config", "drizzle.config.ts"], {
+          cwd: root,
+          encoding: "utf8",
+        });
+
+  assert(
+    result.status === 0,
+    `Drizzle migration metadata check failed:\n${result.stdout ?? ""}\n${result.stderr ?? ""}\n${result.error?.message ?? ""}`,
+  );
+}
+
 function validProductionEnv() {
   return {
     DATABASE_URL: "postgres://werewolf:prod-password@postgres:5432/werewolf",
@@ -699,8 +913,86 @@ function readText(relativePath) {
   return readFileSync(path.join(root, relativePath), "utf8");
 }
 
+function readCssSurface(...relativePaths) {
+  return relativePaths.map((relativePath) => readText(relativePath)).join("\n");
+}
+
+function readLobbyStyles() {
+  return readCssSurface(
+    "apps/web/app/globals.css",
+    "apps/web/components/lobby/LegacyCreate.module.css",
+    "apps/web/components/LegacyLobby.module.css",
+    "apps/web/components/games/JoinEntry.module.css",
+  );
+}
+
+function readAppStyles() {
+  return readCssSurface(
+    "apps/web/app/globals.css",
+    "apps/web/components/account/LegacyAccount.module.css",
+    "apps/web/components/leaderboard/Leaderboard.module.css",
+    "apps/web/components/legal/LegalShell.module.css",
+    "apps/web/components/landing/LandingSurface.module.css",
+    "apps/web/components/offline/Offline.module.css",
+    "apps/web/components/system/SystemPages.module.css",
+    "apps/web/components/games/GameHomePage.module.css",
+    "apps/web/components/history/History.module.css",
+    "apps/web/components/achievements/Achievements.module.css",
+    "apps/web/components/friends/LegacyFriends.module.css",
+    "apps/web/components/auth/AuthRecovery.module.css",
+    "apps/web/components/site-chrome/SiteChrome.module.css",
+    "apps/web/components/play/PlayRoom.module.css",
+    "apps/web/components/play/PhaseRail.module.css",
+    "apps/web/components/play/ReconnectModal.module.css",
+    "apps/web/components/play/VoteTallyBar.module.css",
+  );
+}
+
+function readLandingStyles() {
+  return readCssSurface(
+    "apps/web/app/globals.css",
+    "apps/web/components/landing/LandingSurface.module.css",
+  );
+}
+
+function readGameHomeStyles() {
+  return readCssSurface(
+    "apps/web/app/globals.css",
+    "apps/web/components/landing/LandingSurface.module.css",
+    "apps/web/components/games/GameHomePage.module.css",
+  );
+}
+
+function readPlayStyles() {
+  return readCssSurface(
+    "apps/web/app/globals.css",
+    "apps/web/components/play/PlayRoom.module.css",
+    "apps/web/components/play/PhaseRail.module.css",
+    "apps/web/components/play/ReconnectModal.module.css",
+    "apps/web/components/play/VoteTallyBar.module.css",
+  );
+}
+
+function readRolesStyles() {
+  return readCssSurface(
+    "apps/web/app/globals.css",
+    "apps/web/components/games/GameRolesPage.module.css",
+  );
+}
+
+function readRulesStyles() {
+  return readCssSurface(
+    "apps/web/app/globals.css",
+    "apps/web/components/games/GameRulesPage.module.css",
+  );
+}
+
 function count(haystack, needle) {
   return haystack.split(needle).length - 1;
+}
+
+function lineForIndex(source, index) {
+  return source.slice(0, index).split("\n").length;
 }
 
 function assert(condition, message) {

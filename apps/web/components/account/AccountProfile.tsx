@@ -73,8 +73,8 @@ export function AccountProfile(props: Props) {
   return (
     <section className="account-section">
       <header className="account-section-head">
-        <h2>Профил</h2>
-        <p>Името на масата и входовете към профила.</p>
+        <h2>Досие</h2>
+        <p>Името на масата и входовете към досието.</p>
       </header>
 
       <div className="account-profile-form">

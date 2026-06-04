@@ -1,5 +1,25 @@
-import type { GameMode, GamePhase, NarratorVoice } from "@werewolf/shared";
+import { getGameFamily, type GameMode, type GamePhase, type NarratorVoice } from "@werewolf/shared";
 import { phaseBg, phaseNarratorLine, phaseSigil } from "@/lib/play/phase-display";
+
+function transitionKindForPhase(phase: GamePhase) {
+  if (phase === "role_reveal") {
+    return "role";
+  }
+
+  if (phase === "night" || phase === "first_night") {
+    return "night";
+  }
+
+  if (phase === "day_announcement" || phase === "day_discussion" || phase === "nomination" || phase === "defense") {
+    return "day";
+  }
+
+  if (phase === "voting") {
+    return "vote";
+  }
+
+  return "resolution";
+}
 
 export function PhaseTransitionOverlay({
   phase,
@@ -16,8 +36,18 @@ export function PhaseTransitionOverlay({
     return null;
   }
 
+  const family = getGameFamily(mode);
+  const transitionKind = transitionKindForPhase(phase);
+
   return (
-    <div key={`${phase}-${pulseKey}`} className={`phase-transition-overlay transition-${phase}`} aria-hidden="true">
+    <div
+      key={`${phase}-${pulseKey}`}
+      className={`phase-transition-overlay transition-${phase}`}
+      data-family={family}
+      data-phase={phase}
+      data-transition-kind={transitionKind}
+      aria-hidden="true"
+    >
       <div>
         <span>{phaseSigil(phase)}</span>
         <strong>{phaseBg(phase, mode)}</strong>

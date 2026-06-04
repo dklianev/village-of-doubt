@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import "@/components/system/SystemPages.module.css";
 
 export const metadata: Metadata = {
-  title: "Страницата я няма | Върколак и Мафия",
+  title: "Страницата я няма",
   description: "Тази страница не съществува. Върни се към масата.",
 };
 

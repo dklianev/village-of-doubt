@@ -66,17 +66,17 @@ export function AccountDangerZone({ email }: { email: string }) {
     <section className="account-section account-danger">
       <header className="account-section-head">
         <h2>Опасна зона</h2>
-        <p>Окончателно изтриване на твоя профил.</p>
+        <p>Окончателно изтриване на твоето досие.</p>
       </header>
 
       <div className="account-danger-body">
         <p>
-          Изтриването премахва профила и постиженията. Имената от твоите игри остават в архива, но
-          се заменят с „Изтрит играч“, за да не се чупи историята на другите играчи.
+          Изтриването премахва досието и легендите. Имената от твоите игри остават в архива, но се
+          заменят с „Изтрит играч“, за да не се чупи историята на другите играчи.
         </p>
 
         <button type="button" className="account-danger-btn" onClick={() => setOpen(true)}>
-          Изтрий моя профил
+          Изтрий моето досие
         </button>
 
         <dialog
@@ -94,11 +94,11 @@ export function AccountDangerZone({ email }: { email: string }) {
           <p className="section-kicker">необратимо действие</p>
           <h3>Сигурен/сигурна ли си?</h3>
           <p>
-            За потвърждение напиши <strong>ИЗТРИЙ</strong>. Това действие премахва профила и
-            постиженията завинаги.
+            За потвърждение напиши <strong>ИЗТРИЙ</strong>. Това действие премахва досието и
+            легендите завинаги.
           </p>
           <p className="danger-confirm-email">
-            Профил: <strong>{email || "няма имейл"}</strong>
+            Досие: <strong>{email || "няма имейл"}</strong>
           </p>
           <label className="danger-confirm-field">
             <span>Потвърждение</span>

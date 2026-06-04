@@ -1,7 +1,7 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { boot, type ColyseusTestServer } from "@colyseus/testing";
 import type { Room as ClientRoom } from "@colyseus/sdk";
-import type { RoleCode } from "@werewolf/shared";
+import type { NightActionCapabilities, RoleCode } from "@werewolf/shared";
 import appConfig from "../app.config.js";
 import type { GameRoom } from "../rooms/GameRoom.js";
 import type { GameState } from "../rooms/schemas/GameState.js";
@@ -209,6 +209,53 @@ describe("GameRoom gameplay regressions", () => {
     expect(findPublicPlayer(serverRoom, poisonedTarget?.userId)?.alive).toBe(false);
   });
 
+  it("refreshes Witch capabilities after a faction victim is announced", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "WCAP01",
+      mode: "werewolves_classic",
+      playerCount: 6,
+      tempoProfile: "manual",
+      roles: {
+        witch: 1,
+        ordinary_villager: 4,
+        werewolf: 1,
+      },
+    });
+    const clients = await connectPlayers(colyseus, serverRoom, 6, "witch-cap");
+    const roleClients = await startGameAndCollectRoles(clients);
+    await advanceToFirstNight(clients[0]?.client, serverRoom);
+
+    const witch = roleClients.find((item) => item.role === "witch");
+    const werewolf = roleClients.find((item) => item.role === "werewolf");
+    const savedTarget = roleClients.find((item) => item.role === "ordinary_villager");
+    expect(witch).toBeTruthy();
+    expect(werewolf).toBeTruthy();
+    expect(savedTarget).toBeTruthy();
+
+    const healAck = witch?.client.waitForMessage("night_action_ack") as Promise<{ phase: string }>;
+    witch?.client.send("submitNightAction", {
+      action: { kind: "witch_heal", targetUserId: savedTarget?.userId },
+    });
+    await expect(healAck).resolves.toMatchObject({ phase: "first_night" });
+    await drainNightActionCapabilities(witch?.client);
+
+    const refreshedCapabilities = waitForNightActionCapabilitiesMatching(
+      witch?.client,
+      (capabilities) => Boolean(capabilities.usedFlags.witch_heal),
+    );
+    werewolf?.client.send("submitNightAction", {
+      action: { kind: "faction_kill", targetUserId: savedTarget?.userId },
+    });
+
+    await expect(refreshedCapabilities).resolves.toMatchObject({
+      usedFlags: expect.objectContaining({
+        witch_heal: expect.objectContaining({
+          reasonBg: "Вещицата вече избра лечебната отвара тази нощ.",
+        }),
+      }),
+    });
+  });
+
   it("lets the Priest give one persistent blessing that blocks a night death", async () => {
     const serverRoom = await colyseus.createRoom<GameRoom>("game", {
       code: "PRIEST",
@@ -346,6 +393,61 @@ describe("GameRoom gameplay regressions", () => {
 
     const savedState = [...serverRoom.state.players.values()].find((player) => player.userId === savedTarget?.userId);
     expect(savedState?.alive).toBe(true);
+  });
+
+  it("keeps the Healer repeat-target guard tied to the last resolved night", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "HEAL02",
+      mode: "werewolves_classic",
+      playerCount: 6,
+      tempoProfile: "manual",
+      roles: {
+        healer: 1,
+        ordinary_villager: 4,
+        werewolf: 1,
+      },
+    });
+    const clients = await connectPlayers(colyseus, serverRoom, 6, "healer-repeat");
+    const roleClients = await startGameAndCollectRoles(clients);
+    await advanceToFirstNight(clients[0]?.client, serverRoom);
+
+    const healer = roleClients.find((item) => item.role === "healer");
+    const werewolf = roleClients.find((item) => item.role === "werewolf");
+    const firstTarget = roleClients.find((item) => item.role === "ordinary_villager");
+    const alternateTarget = roleClients.find(
+      (item) => item.role === "ordinary_villager" && item.userId !== firstTarget?.userId,
+    );
+    expect(healer).toBeTruthy();
+    expect(werewolf).toBeTruthy();
+    expect(firstTarget).toBeTruthy();
+    expect(alternateTarget).toBeTruthy();
+
+    healer?.client.send("submitNightAction", {
+      action: { kind: "healer_protect", targetUserId: firstTarget?.userId },
+    });
+    werewolf?.client.send("submitNightAction", {
+      action: { kind: "faction_kill", targetUserId: firstTarget?.userId },
+    });
+    clients[0]?.client.send("narratorAdvance", {});
+    await serverRoom.waitForNextPatch(20).catch(() => undefined);
+    expect(findPublicPlayer(serverRoom, firstTarget?.userId)?.alive).toBe(true);
+
+    await advanceToPhase(clients[0]?.client, serverRoom, "night");
+
+    const alternateAck = healer?.client.waitForMessage("night_action_ack") as Promise<{ phase: string }>;
+    healer?.client.send("submitNightAction", {
+      action: { kind: "healer_protect", targetUserId: alternateTarget?.userId },
+    });
+    await expect(alternateAck).resolves.toMatchObject({ phase: "night" });
+
+    const repeatError = healer?.client.waitForMessage("safe_error") as Promise<{ messageBg: string }>;
+    healer?.client.send("submitNightAction", {
+      action: { kind: "healer_protect", targetUserId: firstTarget?.userId },
+    });
+
+    await expect(repeatError).resolves.toMatchObject({
+      messageBg: "Лечителят не може да лекува същия играч две нощи поред.",
+    });
   });
 
   it("enters hunter revenge when the Hunter dies at night", async () => {
@@ -1162,6 +1264,42 @@ async function advanceToPhase(client: ClientRoom<GameRoom, GameState> | undefine
     client?.send("narratorAdvance", {});
     await room.waitForNextPatch(20);
   }
+}
+
+async function drainNightActionCapabilities(client: ClientRoom<GameRoom, GameState> | undefined) {
+  if (!client) {
+    return;
+  }
+
+  while (true) {
+    try {
+      await client.waitForMessage("night_action_capabilities", 50);
+    } catch {
+      return;
+    }
+  }
+}
+
+async function waitForNightActionCapabilitiesMatching(
+  client: ClientRoom<GameRoom, GameState> | undefined,
+  matches: (capabilities: NightActionCapabilities) => boolean,
+) {
+  if (!client) {
+    throw new Error("Missing client for night action capabilities assertion.");
+  }
+
+  let lastCapabilities: NightActionCapabilities | undefined;
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const message = await client.waitForMessage("night_action_capabilities", 300) as {
+      capabilities: NightActionCapabilities;
+    };
+    lastCapabilities = message.capabilities;
+    if (matches(message.capabilities)) {
+      return message.capabilities;
+    }
+  }
+
+  throw new Error(`No matching night action capabilities received. Last payload: ${JSON.stringify(lastCapabilities)}`);
 }
 
 function findPublicPlayer(room: GameRoom, userId: string | undefined) {

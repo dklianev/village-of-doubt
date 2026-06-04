@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import "@/components/system/SystemPages.module.css";
 
 export default function GlobalError({
   error,

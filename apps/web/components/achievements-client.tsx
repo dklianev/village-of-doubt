@@ -6,18 +6,28 @@ import { AchievementPlaque } from "@/components/achievements/AchievementPlaque";
 import { AchievementProgressWreath } from "@/components/achievements/AchievementProgressWreath";
 import { authClient } from "@/lib/auth-client";
 
-interface OwnedAchievement {
+export interface OwnedAchievement {
   achievementId: string;
   gameId: string | null;
   unlockedAt: string;
 }
 
-export function AchievementsClient() {
+interface AchievementsClientProps {
+  initialOwned?: OwnedAchievement[] | undefined;
+}
+
+export function AchievementsClient({ initialOwned }: AchievementsClientProps) {
   const { data: session, isPending } = authClient.useSession();
-  const [owned, setOwned] = useState<OwnedAchievement[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const [owned, setOwned] = useState<OwnedAchievement[]>(initialOwned ?? []);
+  const [loaded, setLoaded] = useState(initialOwned !== undefined);
 
   useEffect(() => {
+    if (initialOwned !== undefined) {
+      setOwned(initialOwned);
+      setLoaded(true);
+      return;
+    }
+
     if (isPending) {
       return;
     }
@@ -33,7 +43,7 @@ export function AchievementsClient() {
       .then((body: { achievements?: OwnedAchievement[] }) => setOwned(body.achievements ?? []))
       .catch(() => setOwned([]))
       .finally(() => setLoaded(true));
-  }, [isPending, session?.user?.id]);
+  }, [initialOwned, isPending, session?.user?.id]);
 
   const ownedById = new Map(owned.map((achievement) => [achievement.achievementId, achievement]));
   const unlockedCount = ownedById.size;

@@ -42,9 +42,9 @@ describe("AuthChip", () => {
     render(<AuthChip initialSession={null} />);
     await user.click(screen.getByRole("button", { name: "Меню на Анна" }));
 
-    expect(screen.getByRole("menuitem", { name: "Моят профил" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Моето досие" })).toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: "История" })).toBeInTheDocument();
-    expect(screen.getByRole("menuitem", { name: "Постижения" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Легенди" })).toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: "Изход" })).toBeInTheDocument();
   });
 });

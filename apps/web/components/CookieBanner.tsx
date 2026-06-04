@@ -23,7 +23,7 @@ export function CookieBanner() {
   }
 
   return (
-    <aside className={styles.banner} role="dialog" aria-label="Бисквитки">
+    <div className={styles.banner} role="dialog" aria-label="Бисквитки" data-cookie-banner>
       <p>
         Използваме само необходими бисквитки за вход и сесия. Прочети{" "}
         <Link href="/privacy">политиката за поверителност</Link>.
@@ -31,6 +31,6 @@ export function CookieBanner() {
       <button type="button" className="btn btn-primary" onClick={accept}>
         Разбрах
       </button>
-    </aside>
+    </div>
   );
 }

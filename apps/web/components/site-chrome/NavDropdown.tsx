@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { GROUP_LABELS, GROUP_ORDER, SECONDARY_LINKS } from "@/components/site-chrome/nav-links";
 

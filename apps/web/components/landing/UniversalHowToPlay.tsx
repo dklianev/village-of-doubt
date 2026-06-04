@@ -41,7 +41,7 @@ export function UniversalHowToPlay() {
     <section className="landing-quickstart how-to-play" aria-label="Първа игра за 30 секунди">
       <div className="quickstart-surface">
         <div className="quickstart-header">
-          <div>
+          <div className="quickstart-header-plaque">
             <p className="section-kicker">първа игра за 30 секунди</p>
             <h2>Как започва добра игра</h2>
             <p>Влез, избери стая, играй.</p>

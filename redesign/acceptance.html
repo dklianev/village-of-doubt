@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="bg">
+<head>
+<meta charset="utf-8">
+<title>Acceptance · Подробен спецификат</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+  .crit-card {
+    background: oklch(0.96 0.018 80);
+    border: 1px solid oklch(0.82 0.035 70 / 0.7);
+    border-radius: var(--r-tile);
+    padding: 24px 26px;
+    box-shadow: var(--shadow-card);
+    margin-top: 16px;
+  }
+  .crit-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    gap: 16px;
+    border-bottom: 1px solid oklch(0.82 0.04 70 / 0.7);
+    padding-bottom: 12px;
+    margin-bottom: 14px;
+  }
+  .crit-head .route {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--gold-deep);
+  }
+  .crit-head h3 {
+    font-family: 'Cormorant Garamond'; font-weight: 500;
+    font-size: 24px; margin: 0; line-height: 1.05;
+  }
+  .crit-check {
+    display: grid; grid-template-columns: 24px 1fr;
+    gap: 10px 12px;
+    font-size: 15px;
+    margin: 0;
+    list-style: none;
+    padding: 0;
+  }
+  .crit-check li {
+    display: contents;
+  }
+  .crit-check .box {
+    width: 18px; height: 18px;
+    border: 1.5px solid var(--ink-faint);
+    border-radius: 4px;
+    margin-top: 3px;
+    background: white;
+    position: relative;
+  }
+  .crit-check .box::before {
+    content: ""; position: absolute; inset: 3px;
+    border-radius: 1px;
+  }
+  .crit-section {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--gold-deep);
+    margin: 18px 0 8px;
+    grid-column: span 2;
+  }
+  .crit-section:first-child { margin-top: 0; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="crest">W</div>
+    <div class="brand">
+      <div class="brand-title">Върколак · Мафия</div>
+      <div class="brand-sub">Acceptance · 23 страници</div>
+    </div>
+    <nav>
+      <a href="index.html">Преглед</a>
+      <a href="tokens.html">Tokens</a>
+      <a href="primitives.html">Компоненти</a>
+      <a href="dictionary.html">Речник</a>
+      <a href="motion.html">Движение</a>
+      <a href="states.html">Състояния</a>
+      <a href="acceptance.html" class="active">Acceptance</a>
+      <a href="prompts.html">Промпти</a>
+    </nav>
+  </div>
+</div>
+
+<main>
+
+<header class="hero">
+  <div class="hero-card">
+    <div class="eyebrow">06 · Done definition</div>
+    <h1>Какво значи <em>„готово".</em></h1>
+    <p class="hero-lede">
+      Без този документ всеки PR ще има различна интерпретация на „готово". Тук
+      имаш базови критерии за всяка страница, плюс страница-специфични acceptance.
+      Codex проверява тези checkbox-и преди да отвори PR. Reviewer ги проверява
+      повторно — нарушение блокира merge.
+    </p>
+    <div class="hero-meta">
+      <span>Страници · <b>23</b></span>
+      <span>Универсални критерии · <b>14</b></span>
+      <span>Страница-специфични · <b>~120</b></span>
+      <span>Visual regression · <b>3 viewports × 1-4 states</b></span>
+    </div>
+  </div>
+</header>
+
+<!-- UNIVERSAL -->
+<section class="wrap">
+  <div class="section-head">
+    <div>
+      <div class="num">00 / Универсални</div>
+      <h2>Тези 14 критерия се прилагат към всеки PR.</h2>
+    </div>
+    <p>Преди да се прочетат page-specific критериите.</p>
+  </div>
+
+  <div class="paper-card">
+    <ul class="crit-check">
+      <li class="crit-section">Build &amp; type safety</li>
+      <li><div class="box"></div><div><code>pnpm typecheck</code> минава без warnings</div></li>
+      <li><div class="box"></div><div><code>pnpm test</code> минава всички unit + integration тестове</div></li>
+      <li><div class="box"></div><div>Нула <code>any</code>, нула <code>@ts-ignore</code> без обяснителен коментар</div></li>
+
+      <li class="crit-section">Visual</li>
+      <li><div class="box"></div><div><code>pnpm regression</code> минава или snapshots са обновени в същия PR</div></li>
+      <li><div class="box"></div><div>Before / after screenshot-и (desktop + mobile) в PR description</div></li>
+      <li><div class="box"></div><div>Проверено на 375px (mobile), 768px (tablet), 1280px (desktop), 1920px (large)</div></li>
+
+      <li class="crit-section">Performance</li>
+      <li><div class="box"></div><div>Lighthouse Performance ≥85 (desktop) / ≥75 (mobile)</div></li>
+      <li><div class="box"></div><div>LCP ≤2.5s на 4G</div></li>
+      <li><div class="box"></div><div>Bundle delta &lt; +20 KB gzip (или обяснение в PR)</div></li>
+
+      <li class="crit-section">Accessibility</li>
+      <li><div class="box"></div><div>Lighthouse Accessibility ≥95</div></li>
+      <li><div class="box"></div><div>axe-core: нула violations на всяка докосната страница</div></li>
+      <li><div class="box"></div><div>Keyboard navigation: всеки interactive елемент достъпен с Tab; Esc затваря модали</div></li>
+      <li><div class="box"></div><div>prefers-reduced-motion: проверено — никакви движения над 90ms не се изпълняват</div></li>
+
+      <li class="crit-section">Език</li>
+      <li><div class="box"></div><div><code>./scripts/check-dictionary.sh</code> минава — никакви забранени термини</div></li>
+    </ul>
+  </div>
+</section>
+
+<!-- SPRINT 2 PAGES -->
+<section class="wrap">
+  <div class="section-head">
+    <div>
+      <div class="num">02 / Sprint 2 · Entry</div>
+      <h2>Acceptance за пет страници.</h2>
+    </div>
+    <p>Home, Werewolf, Mafia, Sign-in, Tutorial. Плюс трите помощни (forgot-password, reset, verify).</p>
+  </div>
+
+  <div class="crit-card">
+    <div class="crit-head"><h3>Home · /</h3><div class="route">app/page.tsx</div></div>
+    <ul class="crit-check">
+      <li class="crit-section">Структура</li>
+      <li><div class="box"></div><div>Hero е <code>SceneCard density="lg"</code>, не custom div</div></li>
+      <li><div class="box"></div><div>Двете game cards (Върколак / Мафия) ползват същата шаблона, не дублиран код</div></li>
+      <li><div class="box"></div><div>„Как започва добра игра" секция ползва <code>PhaseStrip</code>-like layout</div></li>
+      <li class="crit-section">Поведение</li>
+      <li><div class="box"></div><div>Логото в crest има subtle hover анимация (изключена при reduced-motion)</div></li>
+      <li><div class="box"></div><div>Active rooms блок показва реална данни или EmptyState (empty-chair)</div></li>
+      <li><div class="box"></div><div>Last story блок показва реални данни или EmptyState (closed-book)</div></li>
+      <li class="crit-section">Microcopy</li>
+      <li><div class="box"></div><div>Заглавието е „Върколак или Мафия" с <code>&lt;em&gt;Мафия&lt;/em&gt;</code> в italic gold</div></li>
+      <li><div class="box"></div><div>CTA е „▶ Играй" — точно тази формула</div></li>
+    </ul>
+  </div>
+
+  <div class="crit-card">
+    <div class="crit-head"><h3>Werewolf hub · /werewolf</h3><div class="route">app/werewolf/*</div></div>
+    <ul class="crit-check">
+      <li class="crit-section">Hero</li>
+      <li><div class="box"></div><div>Hero video loop (mp4, 5–8 sec, autoplay muted, playsinline)</div></li>
+      <li><div class="box"></div><div>Poster fallback видим преди video load и при reduced-motion</div></li>
+      <li><div class="box"></div><div>Eyebrow „НОЩ НАД СЕЛОТО"</div></li>
+      <li class="crit-section">Информационни секции</li>
+      <li><div class="box"></div><div>Три cards: Роли / Правила / Последни вечери</div></li>
+      <li><div class="box"></div><div>„Влез с код" отваря Sheet, не нова страница</div></li>
+      <li class="crit-section">Tab състояние</li>
+      <li><div class="box"></div><div>Топ-bar tab „Върколак" е active state-нат</div></li>
+    </ul>
+  </div>
+
+  <div class="crit-card">
+    <div class="crit-head"><h3>Mafia hub · /mafia</h3><div class="route">app/mafia/*</div></div>
+    <ul class="crit-check">
+      <li><div class="box"></div><div>Идентична структура с /werewolf (hero video, 3 cards, sheet)</div></li>
+      <li><div class="box"></div><div>Eyebrow „ГРАД ПОД НАПРЕЖЕНИЕ"</div></li>
+      <li><div class="box"></div><div>Атмосферата е urban noir (дъжд, неон), не folk horror</div></li>
+      <li><div class="box"></div><div>Топ-bar tab „Мафия" active</div></li>
+    </ul>
+  </div>
+
+  <div class="crit-card">
+    <div class="crit-head"><h3>Sign-in · /sign-in</h3><div class="route">app/sign-in/*</div></div>
+    <ul class="crit-check">
+      <li class="crit-section">Layout</li>
+      <li><div class="box"></div><div>Wood-grain background се запазва (сигнатура)</div></li>
+      <li><div class="box"></div><div>„Имам профил" / „Нов профил" е segmented control (1 компонент), не 2 tabs</div></li>
+      <li class="crit-section">OAuth</li>
+      <li><div class="box"></div><div>Google и Discord бутоните имат еднаква visual тежест</div></li>
+      <li><div class="box"></div><div>OAuth бутоните се прибират в <code>&lt;details&gt;</code> ако потребител е влизал с email преди</div></li>
+      <li class="crit-section">Form</li>
+      <li><div class="box"></div><div>Password strength indicator — 3 точки (не bar)</div></li>
+      <li><div class="box"></div><div>Грешки показват inline без shake</div></li>
+      <li><div class="box"></div><div>„Забравена парола?" линк под полето, не отделна страница за първо посещение</div></li>
+      <li class="crit-section">CTA</li>
+      <li><div class="box"></div><div>Заглавие „Покажи се на масата" (точно тази формула)</div></li>
+    </ul>
+  </div>
+
+  <div class="crit-card">
+    <div class="crit-head"><h3>Tutorial · /tutorial</h3><div class="route">app/tutorial/*</div></div>
+    <ul class="crit-check">
+      <li class="crit-section">Прогрес</li>
+      <li><div class="box"></div><div>Прогрес индикаторът е <code>PhaseStrip</code> (5 медальона), не точки</div></li>
+      <li class="crit-section">Сцени</li>
+      <li><div class="box"></div><div>Всяка от 6 сцени има 3–5 sec micro animation в hero (gated by reduced-motion)</div></li>
+      <li><div class="box"></div><div>Caption card има само title + 1–2 параграфа + eyebrow</div></li>
+      <li class="crit-section">Навигация</li>
+      <li><div class="box"></div><div>Arrow keys ← → работят за prev/next</div></li>
+      <li><div class="box"></div><div>„Прескочи" вдясно горе, отваря Dialog за потвърждение</div></li>
+      <li><div class="box"></div><div>Последна стъпка води към „Седни на първата си маса", не „Влез"</div></li>
+      <li><div class="box"></div><div>Feedback модалът се отваря СЛЕД завършване, не по време</div></li>
+    </ul>
+  </div>
+
+  <div class="crit-card">
+    <div class="crit-head"><h3>Forgot / Reset / Verify · auth peripheral</h3><div class="route">app/forgot-password app/reset-password app/verify-email</div></div>
+    <ul class="crit-check">
+      <li><div class="box"></div><div>Трите страници ползват общ „писмо на масата" template</div></li>
+      <li><div class="box"></div><div>Иконография: восъчен печат, не „икона на ключ"</div></li>
+      <li><div class="box"></div><div>Verify-email success: анимация на счупен печат (gated by reduced-motion)</div></li>
+      <li><div class="box"></div><div>Reset token expired: empty state „Това писмо е стояло твърде дълго."</div></li>
+    </ul>
+  </div>
+</section>
+
+<!-- SPRINT 3 -->
+<section class="wrap">
+  <div class="section-head">
+    <div>
+      <div class="num">03 / Sprint 3 · Game core</div>
+      <h2>Acceptance за играта.</h2>
+    </div>
+    <p>Най-критичния спринт. Visual regression покритие тук е задължително.</p>
+  </div>
+
+  <div class="crit-card">
+    <div class="crit-head"><h3>Play room · /play (всички 4 сцени)</h3><div class="route">app/play/* components/play/scenes/*</div></div>
+    <ul class="crit-check">
+      <li class="crit-section">Архитектура</li>
+      <li><div class="box"></div><div>play-room-client.tsx разделен на 4 файла, всеки &lt; 25 KB</div></li>
+      <li><div class="box"></div><div>Общ state машина в <code>useGameMachine.ts</code> — сцените са pure render</div></li>
+      <li class="crit-section">Сцена 1: Лоби</li>
+      <li><div class="box"></div><div>Играчите подредени с <code>VoteCircle</code> компонент (mode=idle)</div></li>
+      <li><div class="box"></div><div>Код на стаята огромен, copy-to-clipboard, QR sheet при click</div></li>
+      <li><div class="box"></div><div>Manual role builder с 3 preset бутона + accordion за advanced</div></li>
+      <li class="crit-section">Сцена 2: Разкриване на роля</li>
+      <li><div class="box"></div><div>Card flip анимация (rotateY 180°→0°, duration: stage, easing: card)</div></li>
+      <li><div class="box"></div><div>Reduced-motion: crossfade без rotate</div></li>
+      <li><div class="box"></div><div>Auto-hide CTA „Запомних" след 5 sec на спящ режим (visibility API)</div></li>
+      <li class="crit-section">Сцена 3: Нощ</li>
+      <li><div class="box"></div><div>Background gradient е <code>--surface-scene-deep</code> с индиго accent</div></li>
+      <li><div class="box"></div><div>За активни роли: action selector + timer (mono, 02:14 формат)</div></li>
+      <li><div class="box"></div><div>За пасивни роли: „спиш" screen с breathing animation (gated)</div></li>
+      <li><div class="box"></div><div>PlayerDiary видим в right rail (desktop) / drawer (mobile)</div></li>
+      <li class="crit-section">Сцена 4: Ден / Гласуване</li>
+      <li><div class="box"></div><div>Background gradient мени към gold accent</div></li>
+      <li><div class="box"></div><div>VoteCircle активен (mode='voting'), tap = vote, long-press = защита</div></li>
+      <li><div class="box"></div><div>След гласуване — резюме като „вестник заглавие" преди следваща нощ</div></li>
+      <li class="crit-section">Persistent UI</li>
+      <li><div class="box"></div><div>PhaseStrip на дъното, винаги видим</div></li>
+      <li><div class="box"></div><div>Mobile: bottom tab bar (Маса / Роля / Архив) + persistent „Изход"</div></li>
+      <li><div class="box"></div><div>Disconnect: toast „Сервърът те чака. Не бързай.", auto-reconnect</div></li>
+      <li class="crit-section">Visual regression</li>
+      <li><div class="box"></div><div>4 snapshots × 2 viewports = 8 нови baseline images</div></li>
+    </ul>
+  </div>
+
+  <div class="crit-card">
+    <div class="crit-head"><h3>Lobby (списък) · /lobby</h3><div class="route">app/lobby/*</div></div>
+    <ul class="crit-check">
+      <li><div class="box"></div><div>EmptyState (empty-chair) при липса на стаи</div></li>
+      <li><div class="box"></div><div>Карта на стая показва: код, домакин, режим, брой/макс играчи</div></li>
+      <li><div class="box"></div><div>„Създай стая" FAB в долен десен ъгъл (винаги достъпен)</div></li>
+      <li><div class="box"></div><div>Филтър по режим — segmented control</div></li>
+      <li><div class="box"></div><div>Live update — нови стаи се появяват без refresh</div></li>
+    </ul>
+  </div>
+
+  <div class="crit-card">
+    <div class="crit-head"><h3>Roles · /roles</h3><div class="route">app/roles/*</div></div>
+    <ul class="crit-check">
+      <li><div class="box"></div><div>Layout е „колода от карти", grid с 3-4 колони (responsive)</div></li>
+      <li><div class="box"></div><div>Click отваря Sheet с пълно описание</div></li>
+      <li><div class="box"></div><div>Филтър по фракция — segmented control (Селяни/Върколаци/Вампири/Самостоятелни)</div></li>
+      <li><div class="box"></div><div>Search ⌘K с fuzzy matching</div></li>
+      <li><div class="box"></div><div>Имената съответстват на dictionary (Ясновидка, не „Seer")</div></li>
+    </ul>
+  </div>
+</section>
+
+<!-- SPRINT 4 -->
+<section class="wrap">
+  <div class="section-head">
+    <div>
+      <div class="num">04 / Sprint 4 · Identity</div>
+      <h2>Acceptance за личните страници.</h2>
+    </div>
+    <p>Account, History, Achievements, Friends.</p>
+  </div>
+
+  <div class="crit-card">
+    <div class="crit-head"><h3>Account · /account</h3><div class="route">app/account/*</div></div>
+    <ul class="crit-check">
+      <li class="crit-section">Hero (досие)</li>
+      <li><div class="box"></div><div>Hero е SceneCard с „Досие" eyebrow + stats (игри / победи / процент) inline</div></li>
+      <li><div class="box"></div><div>Аватар е избор от 8 предефинирани портрета</div></li>
+      <li class="crit-section">„Следата ти"</li>
+      <li><div class="box"></div><div>4 stat cards в paper, не bars</div></li>
+      <li><div class="box"></div><div>„Победна следа" статистиката показва процент с %₀ суфикс</div></li>
+      <li class="crit-section">„Последни вечери"</li>
+      <li><div class="box"></div><div>3 последни дела с „Отвори дело →" линкове</div></li>
+      <li class="crit-section">Профил форма</li>
+      <li><div class="box"></div><div>Прибрана в accordion „Настройки на профила"</div></li>
+      <li><div class="box"></div><div>Имейл се показва с „Потвърден" pill (green) ако активен</div></li>
+      <li class="crit-section">Опасна зона</li>
+      <li><div class="box"></div><div>Delete account изисква typed confirmation („напиши името си")</div></li>
+      <li><div class="box"></div><div>Изтегли данни (JSON) задължително в GDPR-съвместим формат</div></li>
+    </ul>
+  </div>
+
+  <div class="crit-card">
+    <div class="crit-head"><h3>History · /history</h3><div class="route">app/history/*</div></div>
+    <ul class="crit-check">
+      <li><div class="box"></div><div>EmptyState (sealed-letter): „Архивът чака първото си писмо."</div></li>
+      <li><div class="box"></div><div>Списък делата като папки с печат (faction печат — Селяни / Върколаци / Вампири)</div></li>
+      <li><div class="box"></div><div>Click отваря detail view (или /history/[id] page)</div></li>
+      <li><div class="box"></div><div>Detail включва: списък играчи + ролите, фази, гласувания, embedded PlayerDiary</div></li>
+      <li><div class="box"></div><div>Филтри: по фракция, по период, по дължина</div></li>
+    </ul>
+  </div>
+
+  <div class="crit-card">
+    <div class="crit-head"><h3>Achievements · /achievements</h3><div class="route">app/achievements/*</div></div>
+    <ul class="crit-check">
+      <li><div class="box"></div><div>7 cards в „tarot" стил — всяка с уникална илюстрация</div></li>
+      <li><div class="box"></div><div>Locked cards показват само силует и подсказка</div></li>
+      <li><div class="box"></div><div>Прогрес индикатор за всяка (% completion ако measurable)</div></li>
+      <li><div class="box"></div><div>Unlock ceremony — full-screen анимация (epic duration, gated)</div></li>
+      <li><div class="box"></div><div>Споделяем линк за всяка отключена легенда</div></li>
+    </ul>
+  </div>
+
+  <div class="crit-card">
+    <div class="crit-head"><h3>Friends · /friends</h3><div class="route">app/friends/*</div></div>
+    <ul class="crit-check">
+      <li><div class="box"></div><div>EmptyState (empty-chair): „Покани първия си гост."</div></li>
+      <li><div class="box"></div><div>„Картa за визита" layout — име, последна игра, кратка статистика</div></li>
+      <li><div class="box"></div><div>Втора секция „Минавали покрай твоята маса" (играли заедно, но не приятели още)</div></li>
+      <li><div class="box"></div><div>„Покани" CTA винаги под името</div></li>
+    </ul>
+  </div>
+</section>
+
+<!-- SPRINT 5 -->
+<section class="wrap">
+  <div class="section-head">
+    <div>
+      <div class="num">05 / Sprint 5 · Social</div>
+      <h2>Acceptance за социалните страници.</h2>
+    </div>
+    <p>Leaderboard, Report.</p>
+  </div>
+
+  <div class="crit-card">
+    <div class="crit-head"><h3>Leaderboard · /leaderboard</h3><div class="route">app/leaderboard/*</div></div>
+    <ul class="crit-check">
+      <li><div class="box"></div><div>Newspaper layout — две колони, headline area</div></li>
+      <li><div class="box"></div><div>Top 3 играчи са „front page" treatment (едри портрети, заглавия)</div></li>
+      <li><div class="box"></div><div>Останалите (4–10) в classified section</div></li>
+      <li><div class="box"></div><div>Дата на броя — реална, не „last updated"</div></li>
+      <li><div class="box"></div><div>Архив на последните 7 броя достъпен от долен ъгъл</div></li>
+      <li><div class="box"></div><div>EmptyState (unprinted-paper): „Изданието още не е тиражирано."</div></li>
+    </ul>
+  </div>
+
+  <div class="crit-card">
+    <div class="crit-head"><h3>Report · /report</h3><div class="route">app/report/*</div></div>
+    <ul class="crit-check">
+      <li><div class="box"></div><div>3-стъпков wizard: <i>За какво</i> → <i>Детайли</i> → <i>Преглед</i></div></li>
+      <li><div class="box"></div><div>Категории: Abuse / Copyright / Bug / Друго — всяка със собствена сериозност на визуала</div></li>
+      <li><div class="box"></div><div>Success екран — печат „Получено", ясна next step</div></li>
+      <li><div class="box"></div><div>Тон: „Благодарим, че държиш масата чиста."</div></li>
+    </ul>
+  </div>
+</section>
+
+<!-- SPRINT 6 -->
+<section class="wrap">
+  <div class="section-head">
+    <div>
+      <div class="num">06 / Sprint 6 · Periphery</div>
+      <h2>Acceptance за периферията.</h2>
+    </div>
+    <p>FAQ, Privacy, Terms, Status, error pages.</p>
+  </div>
+
+  <div class="crit-card">
+    <div class="crit-head"><h3>FAQ · /faq</h3><div class="route">app/faq/*</div></div>
+    <ul class="crit-check">
+      <li><div class="box"></div><div>Search bar „Питай огъня…" с ⌘K и fuzzy match</div></li>
+      <li><div class="box"></div><div>Категории като „глави на книгата" с римски цифри</div></li>
+      <li><div class="box"></div><div>Всеки въпрос има shareable link <code>?question=slug</code></div></li>
+      <li><div class="box"></div><div>Никакви emoji в категориите</div></li>
+      <li><div class="box"></div><div>EmptyState за search no results: „Огънят не познава този въпрос."</div></li>
+    </ul>
+  </div>
+
+  <div class="crit-card">
+    <div class="crit-head"><h3>Privacy &amp; Terms · /privacy · /terms</h3><div class="route">app/privacy/* app/terms/*</div></div>
+    <ul class="crit-check">
+      <li><div class="box"></div><div>Layout: парчмент с восъчен печат, дата на влизане в сила</div></li>
+      <li><div class="box"></div><div>Reading time индикатор горе („≈ 8 мин")</div></li>
+      <li><div class="box"></div><div>ToC в страничен rail (desktop) или accordion (mobile)</div></li>
+      <li><div class="box"></div><div>Последна обновена дата в горен десен ъгъл</div></li>
+      <li><div class="box"></div><div>Архив на предишни версии (линк в долен ъгъл, не скрит)</div></li>
+    </ul>
+  </div>
+
+  <div class="crit-card">
+    <div class="crit-head"><h3>Status · /status</h3><div class="route">app/status/*</div></div>
+    <ul class="crit-check">
+      <li><div class="box"></div><div>Един голям индикатор: „Селото работи" / „Селото е тихо" / „Селото спи"</div></li>
+      <li><div class="box"></div><div>3 услуги: Маса (game server) · Архив (DB) · Входове (auth)</div></li>
+      <li><div class="box"></div><div>72-часова графика с точки на 30 мин интервал</div></li>
+      <li><div class="box"></div><div>RSS feed link за Discord интеграция</div></li>
+      <li><div class="box"></div><div>Incident history като кратки сводки, не лог</div></li>
+    </ul>
+  </div>
+
+  <div class="crit-card">
+    <div class="crit-head"><h3>Error pages · /offline · 404 · 500</h3><div class="route">app/offline app/not-found.tsx app/global-error.tsx</div></div>
+    <ul class="crit-check">
+      <li><div class="box"></div><div>Offline: „Селото потъва в мъгла." + auto-retry indicator</div></li>
+      <li><div class="box"></div><div>404: „Тази уличка не съществува в картите ни." + Към началото / Доклад</div></li>
+      <li><div class="box"></div><div>500: „Нещо се счупи в архивите." + support code + Опитай отново / Доклад</div></li>
+      <li><div class="box"></div><div>Без stack trace в production</div></li>
+      <li><div class="box"></div><div>И трите страници ползват SceneCard hero, не custom layout</div></li>
+    </ul>
+  </div>
+</section>
+
+<!-- VR MATRIX -->
+<section class="wrap">
+  <div class="section-head">
+    <div>
+      <div class="num">07 / Visual regression матрица</div>
+      <h2>Какво се снима, на какъв viewport.</h2>
+    </div>
+    <p>Базата има 60+ baseline images. След рефактора те трябва да са поне 90, разделени логично.</p>
+  </div>
+
+  <div class="paper-card">
+    <table class="spec">
+      <thead><tr><th>Страница</th><th>Десktop</th><th>Mobile</th><th>States</th><th>Total</th></tr></thead>
+      <tbody>
+        <tr><td class="name">/</td><td>✓</td><td>✓</td><td class="use">default + dark mode</td><td>4</td></tr>
+        <tr><td class="name">/werewolf, /mafia</td><td>✓</td><td>✓</td><td class="use">default + dark</td><td>8</td></tr>
+        <tr><td class="name">/werewolf/rules</td><td>✓</td><td>✓</td><td class="use">default</td><td>2</td></tr>
+        <tr><td class="name">/tutorial</td><td>✓</td><td>✓</td><td class="use">scene 1–6 (12 total)</td><td>12</td></tr>
+        <tr><td class="name">/sign-in</td><td>✓</td><td>✓</td><td class="use">default + error</td><td>4</td></tr>
+        <tr><td class="name">/forgot, /reset, /verify</td><td>✓</td><td>—</td><td class="use">success + expired</td><td>6</td></tr>
+        <tr><td class="name">/lobby</td><td>✓</td><td>✓</td><td class="use">empty + populated</td><td>4</td></tr>
+        <tr><td class="name">/play (4 scenes)</td><td>✓</td><td>✓</td><td class="use">всяка сцена</td><td>8</td></tr>
+        <tr><td class="name">/roles</td><td>✓</td><td>✓</td><td class="use">default + sheet open</td><td>4</td></tr>
+        <tr><td class="name">/account</td><td>✓</td><td>✓</td><td class="use">empty + populated + light</td><td>6</td></tr>
+        <tr><td class="name">/history</td><td>✓</td><td>✓</td><td class="use">empty + populated + detail</td><td>6</td></tr>
+        <tr><td class="name">/achievements</td><td>✓</td><td>✓</td><td class="use">gate + unlocked</td><td>4</td></tr>
+        <tr><td class="name">/friends</td><td>✓</td><td>✓</td><td class="use">empty + populated</td><td>4</td></tr>
+        <tr><td class="name">/leaderboard</td><td>✓</td><td>✓</td><td class="use">empty + populated + light</td><td>6</td></tr>
+        <tr><td class="name">/report</td><td>✓</td><td>✓</td><td class="use">3 steps + success</td><td>8</td></tr>
+        <tr><td class="name">/faq</td><td>✓</td><td>✓</td><td class="use">default + light + search</td><td>6</td></tr>
+        <tr><td class="name">/privacy, /terms</td><td>✓</td><td>✓</td><td class="use">default + light</td><td>8</td></tr>
+        <tr><td class="name">/status</td><td>✓</td><td>—</td><td class="use">healthy + outage</td><td>4</td></tr>
+        <tr><td class="name">404, 500, offline</td><td>✓</td><td>✓</td><td class="use">default</td><td>6</td></tr>
+        <tr><td><b>ВСИЧКО</b></td><td colspan="3"></td><td><b>~110 baseline images</b></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<footer class="foot">
+  <span>Подробен спецификат · Acceptance</span>
+  <span class="sign">„Готово е, когато reviewer-ът каже „готово"."</span>
+  <span>Следва · <a href="prompts.html" style="border: none; color: inherit;">Промпти →</a></span>
+</footer>
+
+</main>
+
+</body>
+</html>

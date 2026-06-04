@@ -1,5 +1,3 @@
-"use client";
-
 import {
   ROLE_DEFINITIONS,
   countRoles,

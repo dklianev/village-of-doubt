@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="bg">
+<head>
+<meta charset="utf-8">
+<title>Речник · Подробен спецификат</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="crest">W</div>
+    <div class="brand">
+      <div class="brand-title">Върколак · Мафия</div>
+      <div class="brand-sub">Речник · 48 термина</div>
+    </div>
+    <nav>
+      <a href="index.html">Преглед</a>
+      <a href="tokens.html">Tokens</a>
+      <a href="primitives.html">Компоненти</a>
+      <a href="dictionary.html" class="active">Речник</a>
+      <a href="motion.html">Движение</a>
+      <a href="states.html">Състояния</a>
+      <a href="acceptance.html">Acceptance</a>
+      <a href="prompts.html">Промпти</a>
+    </nav>
+  </div>
+</div>
+
+<main>
+
+<header class="hero">
+  <div class="hero-card">
+    <div class="eyebrow">03 · Foundation · Language</div>
+    <h1>Една дума за <em>всяко нещо.</em></h1>
+    <p class="hero-lede">
+      Микрокопирайтът е тонът на бранда, превърнат в текст. Този речник заключва
+      кое е правилно, кое никога. Codex и хората ползват точно тези думи — нито една
+      друга. При несигурност, отваряш този файл.
+    </p>
+    <div class="hero-meta">
+      <span>Файл · <b>docs/dictionary.md</b></span>
+      <span>Термини · <b>48</b></span>
+      <span>Категории · <b>5</b></span>
+      <span>PR проверка · <b>автоматична grep</b></span>
+    </div>
+  </div>
+</header>
+
+<!-- 01 Gameplay -->
+<section class="wrap">
+  <div class="section-head">
+    <div>
+      <div class="num">01 / Геймплей</div>
+      <h2>Думите на масата.</h2>
+    </div>
+    <p>Това са думите, които се появяват по време на игра. Те носят атмосферата — пази ги най-стриктно.</p>
+  </div>
+
+  <div class="paper-card">
+    <table class="spec">
+      <thead><tr><th>Концепт</th><th>Правилно (✓)</th><th>Никога (✗)</th><th>Бележка</th></tr></thead>
+      <tbody>
+        <tr><td>Една сесия от игра</td><td class="name">Вечер · Дело</td><td class="val">Game · Match · Session · Раунд</td><td class="use">„Вечер" в наратив, „Дело №X" в архив</td></tr>
+        <tr><td>Площта за играчи</td><td class="name">Масата</td><td class="val">Room · Lobby · Game board</td><td class="use">Лоби е валидно само за <i>списък</i> от маси</td></tr>
+        <tr><td>Запис в архива</td><td class="name">Дело №4821</td><td class="val">Match #4821 · Game ID</td><td class="use">Винаги с „№", винаги 4 цифри минимум</td></tr>
+        <tr><td>Времеви интервал</td><td class="name">Фаза</td><td class="val">Phase · Step · Turn · Ход</td><td class="use">„Ход" е твърде шахматно</td></tr>
+        <tr><td>Тъмният период</td><td class="name">Нощ</td><td class="val">Night phase · Тъмнина</td><td class="use">Просто „Нощ", без „фаза"</td></tr>
+        <tr><td>Светлият период</td><td class="name">Ден</td><td class="val">Day · Day phase · Утро</td><td class="use">„Утро" се ползва само в наратив („тази сутрин се намери…")</td></tr>
+        <tr><td>Гласуване</td><td class="name">Глас</td><td class="val">Voting · Vote phase · Гласоподаване</td><td class="use">Кратко, едносрично — заради ритъма</td></tr>
+        <tr><td>Лична карта</td><td class="name">Роля</td><td class="val">Card · Character · Класа</td><td class="use">Никога „характер"</td></tr>
+        <tr><td>Групировка</td><td class="name">Фракция · Отбор</td><td class="val">Team · Side · Faction</td><td class="use">„Отбор" в casual, „Фракция" в правила</td></tr>
+        <tr><td>Победа</td><td class="name">Селото оцеля · Мафията владее · Равенство</td><td class="val">Village wins · Victory</td><td class="use">Винаги в перфект, никога абстрактно</td></tr>
+        <tr><td>Краен резултат на играч</td><td class="name">Жив · Мъртъв · Прокълнат</td><td class="val">Alive · Dead · Active</td><td class="use">„Прокълнат" е за специфични роли (вампирска жертва)</td></tr>
+        <tr><td>Игра приключи равенство</td><td class="name">Селото си легна тихо</td><td class="val">Draw · Tie · Равна игра</td><td class="use">Метафора, не математика</td></tr>
+        <tr><td>Тайни действия</td><td class="name">Будиш се · Действаш</td><td class="val">Active turn · Special ability</td><td class="use">Никаква геймърска терминология</td></tr>
+        <tr><td>Защита от смърт</td><td class="name">Спасен · Защитен</td><td class="val">Saved · Protected · Healed</td><td class="use">„Лекуван" е окей само за ролята Лечител</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 02 Roles & factions -->
+<section class="wrap">
+  <div class="section-head">
+    <div>
+      <div class="num">02 / Роли и фракции</div>
+      <h2>Имена на ролите.</h2>
+    </div>
+    <p>Тези имена са канонични. Множествено число и падеж — внимавай.</p>
+  </div>
+
+  <div class="paper-card">
+    <table class="spec">
+      <thead><tr><th>Роля</th><th>ед. ч.</th><th>мн. ч.</th><th>Фракция</th><th>Свят</th></tr></thead>
+      <tbody>
+        <tr><td class="use">Selyanin</td><td class="name">Селянин</td><td class="name">Селяни</td><td class="use">Селото</td><td class="use">общо</td></tr>
+        <tr><td class="use">Werewolf</td><td class="name">Върколак</td><td class="name">Върколаци</td><td class="use">Звяра</td><td class="use">Върколак</td></tr>
+        <tr><td class="use">Vampire</td><td class="name">Вампир</td><td class="name">Вампири</td><td class="use">Кръвта</td><td class="use">Върколак</td></tr>
+        <tr><td class="use">Mafia member</td><td class="name">Мафиот</td><td class="name">Мафията</td><td class="use">Мафията</td><td class="use">Мафия</td></tr>
+        <tr><td class="use">Don</td><td class="name">Дон</td><td class="name">—</td><td class="use">Мафията</td><td class="use">Мафия</td></tr>
+        <tr><td class="use">Seer</td><td class="name">Ясновидка</td><td class="name">—</td><td class="use">Селото</td><td class="use">Върколак</td></tr>
+        <tr><td class="use">Witch</td><td class="name">Вещица</td><td class="name">—</td><td class="use">Селото</td><td class="use">Върколак</td></tr>
+        <tr><td class="use">Healer</td><td class="name">Лечител</td><td class="name">Лечители</td><td class="use">Селото</td><td class="use">Върколак</td></tr>
+        <tr><td class="use">Priest</td><td class="name">Свещеник</td><td class="name">—</td><td class="use">Селото</td><td class="use">Върколак</td></tr>
+        <tr><td class="use">Hunter</td><td class="name">Ловец</td><td class="name">—</td><td class="use">Селото</td><td class="use">Върколак</td></tr>
+        <tr><td class="use">Cupid</td><td class="name">Купидон</td><td class="name">—</td><td class="use">самостоятелен</td><td class="use">Върколак</td></tr>
+        <tr><td class="use">Jester</td><td class="name">Шут</td><td class="name">—</td><td class="use">самостоятелен</td><td class="use">Върколак</td></tr>
+        <tr><td class="use">Thief</td><td class="name">Крадец</td><td class="name">—</td><td class="use">самостоятелен</td><td class="use">общо</td></tr>
+        <tr><td class="use">Inspector</td><td class="name">Комисар</td><td class="name">—</td><td class="use">Селото</td><td class="use">Мафия</td></tr>
+        <tr><td class="use">Doctor</td><td class="name">Доктор</td><td class="name">—</td><td class="use">Селото</td><td class="use">Мафия</td></tr>
+        <tr><td class="use">Godfather (alt)</td><td class="name">Кръстник</td><td class="name">—</td><td class="use">Мафията</td><td class="use">Мафия</td></tr>
+        <tr><td class="use">Narrator</td><td class="name">Разказвач</td><td class="name">—</td><td class="use">водещ</td><td class="use">общо</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 03 UI / Navigation -->
+<section class="wrap">
+  <div class="section-head">
+    <div>
+      <div class="num">03 / Интерфейс</div>
+      <h2>Думите на навигацията.</h2>
+    </div>
+    <p>Никога английски технически думи. „Логин", „профил", „dashboard" — забранени.</p>
+  </div>
+
+  <div class="paper-card">
+    <table class="spec">
+      <thead><tr><th>Концепт</th><th>Правилно (✓)</th><th>Никога (✗)</th><th>Бележка</th></tr></thead>
+      <tbody>
+        <tr><td>Профил на играч</td><td class="name">Досие</td><td class="val">Profile · Account · Профил</td><td class="use">Сигнатурна метафора — пази я</td></tr>
+        <tr><td>История на игрите</td><td class="name">Архив на делата</td><td class="val">History · Past games</td><td class="use">Кратко: само „Архив"</td></tr>
+        <tr><td>Класация</td><td class="name">Вечерен брой</td><td class="val">Leaderboard · Rankings · Top</td><td class="use">Вестникарска метафора — пази я</td></tr>
+        <tr><td>Постижения</td><td class="name">Легенди</td><td class="val">Achievements · Badges</td><td class="use">„Легенди" носи правилния тон</td></tr>
+        <tr><td>Социална мрежа</td><td class="name">Познати на масата</td><td class="val">Friends · Network · Contacts</td><td class="use">Само „Приятели" в чек-листи</td></tr>
+        <tr><td>Помощ и въпроси</td><td class="name">Седни до огъня</td><td class="val">FAQ · Help · Support</td><td class="use">FAQ е акроним — пиши „Често задавани въпроси" в title</td></tr>
+        <tr><td>Доклад за злоупотреба</td><td class="name">Сигнал</td><td class="val">Report · Abuse · Flag</td><td class="use">Кратко, неутрално</td></tr>
+        <tr><td>Технически статус</td><td class="name">Състояние</td><td class="val">Status · Uptime · System health</td><td class="use">„Селото работи" / „Селото е тихо"</td></tr>
+        <tr><td>Поверителност</td><td class="name">Поверителност</td><td class="val">Privacy · Privacy policy</td><td class="use">—</td></tr>
+        <tr><td>Юридическо</td><td class="name">Условия</td><td class="val">Terms · ToS · Legal</td><td class="use">—</td></tr>
+        <tr><td>Настройки</td><td class="name">Настройки</td><td class="val">Settings · Preferences · Options</td><td class="use">—</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 04 Actions / verbs -->
+<section class="wrap">
+  <div class="section-head">
+    <div>
+      <div class="num">04 / Действия</div>
+      <h2>Глаголи и CTA-та.</h2>
+    </div>
+    <p>Бутоните винаги в повелително наклонение. Кратки, едносрични където може.</p>
+  </div>
+
+  <div class="paper-card">
+    <table class="spec">
+      <thead><tr><th>Действие</th><th>Правилно (✓)</th><th>Никога (✗)</th><th>Бележка</th></tr></thead>
+      <tbody>
+        <tr><td>Започни игра</td><td class="name">Играй</td><td class="val">Start · Begin · Започни</td><td class="use">CTA primary, винаги с ▶ префикс</td></tr>
+        <tr><td>Влез в съществуваща</td><td class="name">Влез</td><td class="val">Join · Enter</td><td class="use">Употребяваме и за auth, и за стая</td></tr>
+        <tr><td>Авторизация</td><td class="name">Покажи се на масата</td><td class="val">Sign in · Log in</td><td class="use">CTA на /sign-in page</td></tr>
+        <tr><td>Излез от игра</td><td class="name">Стани от масата</td><td class="val">Leave · Quit · Exit</td><td class="use">In-game persistent action</td></tr>
+        <tr><td>Излез от профил</td><td class="name">Излез</td><td class="val">Log out · Sign out</td><td class="use">Тихо, без церемония</td></tr>
+        <tr><td>Създай стая</td><td class="name">Създай стая</td><td class="val">Create room · New game</td><td class="use">—</td></tr>
+        <tr><td>Влез с код</td><td class="name">Влез с код</td><td class="val">Join with code · Enter code</td><td class="use">—</td></tr>
+        <tr><td>Покани приятел</td><td class="name">Покани</td><td class="val">Invite · Share invite</td><td class="use">—</td></tr>
+        <tr><td>Гласувай</td><td class="name">Гласувай</td><td class="val">Vote · Cast vote</td><td class="use">—</td></tr>
+        <tr><td>Защити играч</td><td class="name">Защити</td><td class="val">Protect · Save · Cover</td><td class="use">Lечител / Доктор action</td></tr>
+        <tr><td>Виж пълните правила</td><td class="name">Виж пълните правила</td><td class="val">Read rules · View rules</td><td class="use">→ суфикс задължителен</td></tr>
+        <tr><td>Отвори дело</td><td class="name">Отвори дело</td><td class="val">View match · Open game</td><td class="use">→ суфикс задължителен</td></tr>
+        <tr><td>Запази промени</td><td class="name">Запази</td><td class="val">Save · Update</td><td class="use">—</td></tr>
+        <tr><td>Откажи действие</td><td class="name">Откажи</td><td class="val">Cancel · Discard</td><td class="use">—</td></tr>
+        <tr><td>Изтрий профил</td><td class="name">Изтрий моя профил</td><td class="val">Delete account · Erase</td><td class="use">Винаги първо лице („моя"), за поемане на отговорност</td></tr>
+        <tr><td>Изтегли данни</td><td class="name">Изтегли моите данни</td><td class="val">Export data · Download</td><td class="use">GDPR-съвместимо</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 05 Tone / states -->
+<section class="wrap">
+  <div class="section-head">
+    <div>
+      <div class="num">05 / Тон и състояния</div>
+      <h2>Микрокопирайт за empty, loading, error.</h2>
+    </div>
+    <p>Тук е реалната проверка на тоналността. Дори в грешки — селото остава метафора.</p>
+  </div>
+
+  <div class="paper-card">
+    <table class="spec">
+      <thead><tr><th>Ситуация</th><th>Правилно (✓)</th><th>Никога (✗)</th></tr></thead>
+      <tbody>
+        <tr><td>Архив празен</td><td class="name">Архивът чака първото си писмо.</td><td class="val">No games yet · You have no history</td></tr>
+        <tr><td>Лоби празно</td><td class="name">Бъди първият на масата.</td><td class="val">No active rooms · Be the first</td></tr>
+        <tr><td>Приятели 0</td><td class="name">Покани първия си гост.</td><td class="val">No friends yet · Invite to start</td></tr>
+        <tr><td>Постижения 0/7</td><td class="name">Легендите още не са започнали.</td><td class="val">No achievements yet</td></tr>
+        <tr><td>Leaderboard преди първа игра</td><td class="name">Изданието още не е тиражирано.</td><td class="val">Leaderboard not yet available</td></tr>
+        <tr><td>Стая празна (новосъздадена)</td><td class="name">Първи влизаш — мястото е твое.</td><td class="val">You're the host · Waiting for players</td></tr>
+        <tr><td>Loading (general)</td><td class="name">Селото се събира…</td><td class="val">Loading… · Please wait</td></tr>
+        <tr><td>Loading (game start)</td><td class="name">Картите се раздават…</td><td class="val">Initializing game…</td></tr>
+        <tr><td>Loading (search)</td><td class="name">Огънят прелиства…</td><td class="val">Searching…</td></tr>
+        <tr><td>Disconnect</td><td class="name">Сервърът те чака. Не бързай.</td><td class="val">Connection lost · Reconnecting…</td></tr>
+        <tr><td>Reconnected</td><td class="name">Върнахме те на масата.</td><td class="val">Connected · Back online</td></tr>
+        <tr><td>404</td><td class="name">Тази уличка не съществува в картите ни.</td><td class="val">Page not found · 404</td></tr>
+        <tr><td>500 / Internal error</td><td class="name">Нещо се счупи в архивите.</td><td class="val">Something went wrong · Internal error</td></tr>
+        <tr><td>Offline</td><td class="name">Селото потъва в мъгла.</td><td class="val">You are offline · No connection</td></tr>
+        <tr><td>Session expired</td><td class="name">Свещта догоря. Влез отново.</td><td class="val">Session expired · Please log in again</td></tr>
+        <tr><td>Rate limited</td><td class="name">Огънят се успокоява. Опитай след минута.</td><td class="val">Too many requests · Slow down</td></tr>
+        <tr><td>Banned</td><td class="name">Масата вече е затворена за теб.</td><td class="val">Account banned · Access denied</td></tr>
+        <tr><td>Email потвърден</td><td class="name">Печатът се счупи. Добре дошъл.</td><td class="val">Email verified successfully</td></tr>
+        <tr><td>Token expired (reset link)</td><td class="name">Това писмо е стояло твърде дълго.</td><td class="val">Token expired · Link invalid</td></tr>
+        <tr><td>Form validation error</td><td class="name">Тук нещо не съвпада.</td><td class="val">Invalid input · Error</td></tr>
+        <tr><td>Save success</td><td class="name">Запазено.</td><td class="val">Saved successfully ✓</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 06 Numerical / time -->
+<section class="wrap">
+  <div class="section-head">
+    <div>
+      <div class="num">06 / Числа и време</div>
+      <h2>Малки правила, които никой не помни.</h2>
+    </div>
+    <p>Бройни форми, времеви изрази, дати. Тук кодът чест и греши.</p>
+  </div>
+
+  <div class="paper-card">
+    <table class="spec">
+      <thead><tr><th>Концепт</th><th>Правилно (✓)</th><th>Никога (✗)</th><th>Бележка</th></tr></thead>
+      <tbody>
+        <tr><td>1 играч</td><td class="name">1 играч</td><td class="val">1 играчи · 1 player</td><td class="use">Бройна форма за мъжки род</td></tr>
+        <tr><td>2-4 играчи</td><td class="name">2 играчи</td><td class="val">2 player · 2 players</td><td class="use">Множествено</td></tr>
+        <tr><td>1 минута</td><td class="name">1 минута</td><td class="val">1 мин · 1m</td><td class="use">Пълно изписване в empty states</td></tr>
+        <tr><td>Преди X дни</td><td class="name">преди 3 дни</td><td class="val">3 days ago · 3d</td><td class="use">Винаги lowercase, без префикс</td></tr>
+        <tr><td>Дата</td><td class="name">14.05 · 14.05.2026</td><td class="val">May 14 · 14/05</td><td class="use">Точки, не наклонени черти</td></tr>
+        <tr><td>Час в игра</td><td class="name">02:14</td><td class="val">2:14 · 0214 · 2m14s</td><td class="use">Винаги с водеща нула</td></tr>
+        <tr><td>Игри (брой)</td><td class="name">Игри · 8</td><td class="val">Games played · 8</td><td class="use">Eyebrow + цифра отделно</td></tr>
+        <tr><td>Победи</td><td class="name">Победи · 5</td><td class="val">Wins · 5</td><td class="use">—</td></tr>
+        <tr><td>Процент победи</td><td class="name">Процент · 63%</td><td class="val">Win rate · 63%</td><td class="use">„%" залепено без интервал</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- AUTOMATION -->
+<section class="wrap">
+  <div class="section-head">
+    <div>
+      <div class="num">07 / Автоматизация</div>
+      <h2>PR check за нарушения.</h2>
+    </div>
+    <p>Този grep се пуска в CI. Намери ли забранена дума — PR не минава.</p>
+  </div>
+
+  <div class="code">
+    <div class="code-bar"><span class="label">scripts/check-dictionary.sh</span><button onclick="copyCode(this)">Копирай</button></div>
+    <div class="code-body"><span class="c">#!/usr/bin/env bash
+# check-dictionary.sh — блокира PR ако открие забранени термини в потребителски facing strings.</span>
+
+<span class="k">set</span> -e
+
+<span class="t">FORBIDDEN</span>=(
+  <span class="s">"Match"</span>
+  <span class="s">"Lobby"</span>
+  <span class="s">"Leaderboard"</span>
+  <span class="s">"Profile"</span>
+  <span class="s">"Dashboard"</span>
+  <span class="s">"Settings"</span>            <span class="c"># English — БГ е „Настройки"</span>
+  <span class="s">"Sign in"</span>
+  <span class="s">"Log in"</span>
+  <span class="s">"Log out"</span>
+  <span class="s">"Loading…"</span>
+  <span class="s">"Coming soon"</span>
+  <span class="s">"TODO"</span>                 <span class="c"># допустимо само като // TODO(design):</span>
+)
+
+<span class="t">SEARCH_PATHS</span>=(
+  <span class="s">"apps/web/app"</span>
+  <span class="s">"apps/web/components"</span>
+  <span class="s">"packages/ui"</span>
+)
+
+<span class="t">FOUND</span>=0
+<span class="k">for</span> word <span class="k">in</span> <span class="s">"${FORBIDDEN[@]}"</span>; <span class="k">do</span>
+  <span class="t">MATCHES</span>=$(grep -rn --include=<span class="s">"*.tsx"</span> --include=<span class="s">"*.ts"</span> \
+    --include=<span class="s">"*.mdx"</span> --include=<span class="s">"*.md"</span> \
+    -i <span class="s">"$word"</span> <span class="s">"${SEARCH_PATHS[@]}"</span> || <span class="k">true</span>)
+  <span class="k">if</span> [ -n <span class="s">"$MATCHES"</span> ]; <span class="k">then</span>
+    echo <span class="s">"✗ Забранен термин „$word" намерен в:"</span>
+    echo <span class="s">"$MATCHES"</span>
+    <span class="t">FOUND</span>=1
+  <span class="k">fi</span>
+<span class="k">done</span>
+
+<span class="k">if</span> [ <span class="s">"$FOUND"</span> = <span class="s">"1"</span> ]; <span class="k">then</span>
+  echo <span class="s">""</span>
+  echo <span class="s">"Виж docs/dictionary.md за правилните термини."</span>
+  exit 1
+<span class="k">fi</span>
+
+echo <span class="s">"✓ Речникът е чист."</span></div>
+  </div>
+
+  <p class="section-desc" style="margin-top: 20px;">
+    Този скрипт се извиква от <code>pnpm verify</code> и от GitHub Actions. Изключения се
+    добавят в <code>scripts/dictionary-allowlist.txt</code> (напр. файлове в <code>__tests__</code>).
+  </p>
+</section>
+
+<footer class="foot">
+  <span>Подробен спецификат · Речник</span>
+  <span class="sign">„Една дума за всяко нещо. Едно нещо за всяка дума."</span>
+  <span>Следва · <a href="motion.html" style="border: none; color: inherit;">Движение →</a></span>
+</footer>
+
+</main>
+
+<script>
+function copyCode(btn) {
+  const text = btn.closest('.code').querySelector('.code-body').innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ Копирано';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Копирай'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+</script>
+
+</body>
+</html>

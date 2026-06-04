@@ -1,5 +1,3 @@
-"use client";
-
 import { ROLE_DEFINITIONS, teamLabelBg, type GameFamily, type RoleCode } from "@werewolf/shared";
 import { roleArtPath, roleThumbPath } from "@/lib/role-art";
 import { useModal } from "@/lib/use-modal";

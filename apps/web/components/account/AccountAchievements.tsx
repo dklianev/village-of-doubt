@@ -14,7 +14,7 @@ export function AccountAchievements({ unlockedIds, total }: Props) {
   return (
     <section className="account-section">
       <header className="account-section-head">
-        <h2>Постижения</h2>
+        <h2>Легенди</h2>
         <p>
           {unlockedIds.length} от {total} легенди отключени.
         </p>
@@ -42,7 +42,7 @@ export function AccountAchievements({ unlockedIds, total }: Props) {
       )}
 
       <Link href="/achievements" className="account-section-link">
-        Виж всички постижения →
+        Виж всички легенди →
       </Link>
     </section>
   );

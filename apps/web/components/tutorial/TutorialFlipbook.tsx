@@ -132,7 +132,6 @@ export function TutorialFlipbook() {
         return <SlideSetup />;
     }
   }, [current]);
-
   return (
     <section className="tutorial-flipbook" aria-label="Наръчник за първа игра">
       {welcomeVisible ? (

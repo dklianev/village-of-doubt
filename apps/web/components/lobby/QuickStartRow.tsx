@@ -1,5 +1,3 @@
-"use client";
-
 import { useMemo, type Dispatch } from "react";
 import type { GameFamily, GameMode, RolePreset, TempoProfile } from "@werewolf/shared";
 import type { AdvancedFlags, LobbyFormAction, LobbyFormState, LobbyStep } from "@/lib/lobby-form";

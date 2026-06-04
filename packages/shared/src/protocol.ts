@@ -105,6 +105,23 @@ export type NightActionCommand =
   | { kind: "medium_contact"; targetUserId: string }
   | { kind: "skip" };
 
+export type NightActionKind = NightActionCommand["kind"];
+
+export interface NightActionCapabilityReason {
+  reasonBg: string;
+}
+
+export interface NightActionDisallowedTarget {
+  id: string;
+  reasonBg: string;
+}
+
+export interface NightActionCapabilities {
+  availableKinds: NightActionKind[];
+  usedFlags: Partial<Record<NightActionKind, NightActionCapabilityReason>>;
+  disallowedTargetsByKind: Partial<Record<NightActionKind, NightActionDisallowedTarget[]>>;
+}
+
 export type ServerEvent =
   | { type: "private_role"; role: RoleCode; roleNameBg: string }
   | {
@@ -113,6 +130,7 @@ export type ServerEvent =
     }
   | { type: "private_lovers"; loverUserId: string; loverName: string }
   | { type: "private_blessing"; targetUserId: string; targetName: string }
+  | { type: "night_action_capabilities"; capabilities: NightActionCapabilities }
   | {
       type: "private_check_result";
       targetUserId: string;

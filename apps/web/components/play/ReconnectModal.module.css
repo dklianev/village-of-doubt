@@ -1,0 +1,104 @@
+/* Reconnect modal styles moved out of globals.css. */
+
+:global(.reconnect-modal-backdrop) {
+  position: fixed;
+  inset: 0;
+  z-index: 86;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(209, 154, 66, 0.22), transparent 20rem),
+    linear-gradient(145deg, rgba(7, 8, 10, 0.74), rgba(7, 8, 10, 0.82));
+  backdrop-filter: blur(6px);
+}
+
+:global(.reconnect-modal) {
+  position: relative;
+  width: min(460px, 100%);
+  overflow: hidden;
+  border: 1px solid rgba(209, 154, 66, 0.34);
+  border-radius: 28px;
+  padding: clamp(22px, 5vw, 30px);
+  color: #fff6e5;
+  background:
+    linear-gradient(145deg, rgba(34, 22, 17, 0.96), rgba(8, 10, 10, 0.94)),
+    var(--texture-paper) center / 560px 560px;
+  box-shadow:
+    0 32px 92px rgba(0, 0, 0, 0.52),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  animation: toastSlideUp 260ms cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+:global(.reconnect-modal::before),
+:global(.reconnect-modal::after) {
+  position: absolute;
+  right: 24px;
+  left: 24px;
+  height: 1px;
+  content: "";
+  background: linear-gradient(90deg, transparent, rgba(209, 154, 66, 0.78), transparent);
+  pointer-events: none;
+}
+
+:global(.reconnect-modal::before) {
+  top: 0;
+}
+
+:global(.reconnect-modal::after) {
+  bottom: 0;
+}
+
+:global(.reconnect-modal-orb) {
+  position: absolute;
+  top: -82px;
+  right: -82px;
+  width: 190px;
+  aspect-ratio: 1;
+  border: 1px solid rgba(209, 154, 66, 0.22);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle, rgba(209, 154, 66, 0.26), transparent 58%),
+    var(--screen-reconnect) center / cover no-repeat;
+  opacity: 0.72;
+  filter: saturate(0.9);
+}
+
+:global(.reconnect-modal h2) {
+  position: relative;
+  max-width: 12ch;
+  margin-top: 8px;
+  color: #fff6e5;
+  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-size: clamp(2rem, 7vw, 3.15rem);
+  font-weight: 950;
+  line-height: 0.96;
+  text-wrap: balance;
+}
+
+:global(.reconnect-modal p:not(.section-kicker)) {
+  position: relative;
+  max-width: 42ch;
+  margin-top: 14px;
+  color: #ead9ba;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+:global(.reconnect-modal-actions) {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+:global(.reconnect-modal-actions .btn) {
+  flex: 1 1 150px;
+}
+
+:global(html[data-theme="light"] .reconnect-modal-backdrop) {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(209, 154, 66, 0.22), transparent 20rem),
+    linear-gradient(145deg, rgba(70, 38, 18, 0.28), rgba(252, 244, 230, 0.66));
+}

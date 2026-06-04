@@ -27,7 +27,7 @@ export function RoleCard({
 
   return (
     <article className={`role-card paper-card mt-8 rounded-[2rem] p-6 role-${role.role}`}>
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="role-card-header flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="section-kicker text-[#842f2b]">само за теб</p>
           <h2 className="mt-2 text-4xl font-black">{role.roleNameBg}</h2>
@@ -36,19 +36,19 @@ export function RoleCard({
           {roleSigil(role.role)}
         </div>
       </div>
-      <div className="mt-4 grid gap-3">
+      <div className="role-card-body mt-4 grid gap-3">
         <p className="text-[#4f3829]">{guide.summary}</p>
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="role-card-facts grid gap-3 md:grid-cols-3">
           <RoleFact label="Отбор" value={guide.team} />
           <RoleFact label="Кога действа" value={guide.timing} />
           <RoleFact label="Цел" value={guide.win} />
         </div>
       </div>
-      <p className="mt-4 rounded-2xl bg-[#221611]/10 px-4 py-3 text-sm font-bold text-[#4f3829]">
-        Сигурност: чуждите тайни роли не са в публичния state и не трябва да се виждат през DevTools/network.
+      <p className="role-card-security-note mt-4 rounded-2xl bg-[#221611]/10 px-4 py-3 text-sm font-bold text-[#4f3829]">
+        Сигурност: чуждите тайни роли не са в публичното състояние и не трябва да се виждат през инструментите на браузъра или мрежовите заявки.
       </p>
       {result ? (
-        <p className="mt-4 rounded-2xl bg-[#842f2b]/10 px-4 py-3 text-[#4f3829]">
+        <p className="role-card-result mt-4 rounded-2xl bg-[#842f2b]/10 px-4 py-3 text-[#4f3829]">
           {formatPrivateResult(result, players)}
         </p>
       ) : null}

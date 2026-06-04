@@ -1,4 +1,6 @@
 import type { CSSProperties } from "react";
+import "@/components/history/History.module.css";
+import "@/components/leaderboard/Leaderboard.module.css";
 
 interface SkeletonProps {
   className?: string;
@@ -74,21 +76,20 @@ export function HistoryListSkeleton() {
 export function EvidenceWallSkeleton() {
   return (
     <>
-      <header className="evidence-wall-header">
+      <header className="history-skeleton-hero">
         <Skeleton className="h-4 w-24 rounded-full" />
         <Skeleton className="mt-5 h-16 w-full max-w-[520px] rounded-2xl" />
         <Skeleton className="mt-5 h-5 w-full max-w-[480px] rounded-full" />
       </header>
-      <div className="evidence-filters">
+      <div className="history-skeleton-filters">
         {[0, 1, 2, 3, 4].map((item) => (
           <Skeleton key={item} className="h-10 w-24 rounded-full" />
         ))}
       </div>
       <section className="evidence-wall">
         {[0, 1, 2, 3, 4, 5].map((item) => (
-          <article key={item} className="case-file case-file-ghost">
-            <span className="pushpin" />
-            <div className="case-file-ghost-lines">
+          <article key={item} className="history-skeleton-card">
+            <div className="history-skeleton-lines">
               <Skeleton className="h-4 w-2/3 rounded-full" />
               <Skeleton className="h-8 w-full rounded-xl" />
               <Skeleton className="h-4 w-5/6 rounded-full" />
@@ -124,7 +125,7 @@ export function PlayerTokensSkeleton() {
   return (
     <>
       {[0, 1, 2, 3].map((item) => (
-        <div key={item} className="player-token skeleton-card rounded-2xl px-4 py-3">
+        <div key={item} className="skeleton-card rounded-2xl px-4 py-3">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3">
               <Skeleton className="h-12 w-12 rounded-2xl" />

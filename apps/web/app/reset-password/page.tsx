@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { ResetPasswordClient } from "@/components/auth/ResetPasswordClient";
 import { ResourceHints } from "@/components/resource-hints";
+import "@/components/auth/AuthRecovery.module.css";
 
 export const metadata: Metadata = {
-  title: "Нов ключ | Върколак и Мафия",
-  description: "Създай нова парола за твоя профил.",
+  title: "Нов ключ",
+  description: "Създай нова парола за твоето досие.",
   robots: { index: false, follow: false },
 };
 

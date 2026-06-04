@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Display, PaperCard } from "@werewolf/ui/server";
 import type { ReactNode } from "react";
 
 interface SectionData {
@@ -15,7 +14,7 @@ const SECTIONS: readonly SectionData[] = [
     id: "what-and-why",
     number: 1,
     title: "Какво събираме и защо",
-    tldr: "Имейл, име, OAuth ID, игрова история, постижения. Нищо повече.",
+    tldr: "Имейл, име, OAuth ID, игрова история, легенди. Нищо повече.",
     body: (
       <>
         <p>
@@ -28,7 +27,7 @@ const SECTIONS: readonly SectionData[] = [
           добавен и постоянен адрес за кореспонденция.
         </p>
         <p>
-          Когато създаваш профил и играеш, ние обработваме само следните категории данни, и то само
+          Когато създаваш досие и играеш, ние обработваме само следните категории данни, и то само
           за конкретни цели:
         </p>
         <ul>
@@ -46,7 +45,7 @@ const SECTIONS: readonly SectionData[] = [
             <strong>Игрова история</strong> — стаи, роли, резултат, ходове, край на играта.
           </li>
           <li>
-            <strong>Постижения</strong> — кои са отключени и кога.
+            <strong>Легенди</strong> — кои са отключени и кога.
           </li>
           <li>
             <strong>Сесийни данни</strong> — технически записи за вход, защита и предотвратяване на
@@ -59,8 +58,8 @@ const SECTIONS: readonly SectionData[] = [
         </p>
         <p>Пазим тези данни само за да:</p>
         <ul>
-          <li>работи профилът между стаи и устройства;</li>
-          <li>показваме история, постижения и класации;</li>
+          <li>работи досието между стаи и устройства;</li>
+          <li>показваме история, легенди и място във вечерния брой;</li>
           <li>пазим играта от измами и автоматизирано натоварване;</li>
           <li>изпращаме служебни писма за потвърждение, нова парола и важни промени.</li>
         </ul>
@@ -100,11 +99,11 @@ const SECTIONS: readonly SectionData[] = [
     id: "retention",
     number: 3,
     title: "Колко дълго пазим",
-    tldr: "Профил докато не го изтриеш. Сесии 30 дни. Игрова история до 24 месеца.",
+    tldr: "Досие докато не го изтриеш. Сесии 30 дни. Игрова история до 24 месеца.",
     body: (
       <ul>
         <li>
-          <strong>Профил</strong> — докато го поддържаш или докато не поискаш изтриване.
+          <strong>Досие</strong> — докато го поддържаш или докато не поискаш изтриване.
         </li>
         <li>
           <strong>Сесии</strong> — до 30 дни от последна активност.
@@ -145,8 +144,8 @@ const SECTIONS: readonly SectionData[] = [
     body: (
       <p>
         Платформата не е предназначена за деца под 13 години. Не събираме съзнателно данни от лица
-        под тази възраст. Ако родител или настойник установи, че дете е създало профил, може да
-        поиска изтриване чрез <Link href="/report">страницата за сигнал</Link>. Ще премахнем профила
+        под тази възраст. Ако родител или настойник установи, че дете е създало досие, може да
+        поиска изтриване чрез <Link href="/report">страницата за сигнал</Link>. Ще премахнем досието
         в рамките на 7 работни дни.
       </p>
     ),
@@ -155,33 +154,30 @@ const SECTIONS: readonly SectionData[] = [
 
 export function PrivacySections() {
   return (
-    <section className="privacy-section" style={{ padding: 0, border: "none", background: "transparent" }}>
-      <PaperCard eyebrow="ДЕТАЙЛИ" density="lg">
-        <header className="privacy-section-head">
-          <Display as="h2" size="h3">
-            По-конкретно.
-          </Display>
-          <p className="privacy-section-lede">
-            Детайлите зад обещанията — за тези, които искат пълен поглед.
-          </p>
-        </header>
+    <section className="privacy-section">
+      <header className="privacy-section-head">
+        <p className="privacy-section-kicker">детайли</p>
+        <h2>По-конкретно.</h2>
+        <p className="privacy-section-lede">
+          Детайлите зад обещанията — за тези, които искат пълен поглед.
+        </p>
+      </header>
 
-        <ol className="privacy-section-list">
-          {SECTIONS.map((section) => (
-            <li key={section.id} id={section.id} className="privacy-section-item">
-              <h3>
-                <span className="privacy-section-num">{section.number}.</span>
-                {section.title}
-              </h3>
-              <aside className="privacy-section-tldr">
-                <span className="privacy-section-tldr-label">Накратко</span>
-                <span>{section.tldr}</span>
-              </aside>
-              <div className="privacy-section-body">{section.body}</div>
-            </li>
-          ))}
-        </ol>
-      </PaperCard>
+      <ol className="privacy-section-list">
+        {SECTIONS.map((section) => (
+          <li key={section.id} id={section.id} className="privacy-section-item">
+            <h3>
+              <span className="privacy-section-num">{section.number}.</span>
+              {section.title}
+            </h3>
+            <aside className="privacy-section-tldr">
+              <span className="privacy-section-tldr-label">Накратко</span>
+              <span>{section.tldr}</span>
+            </aside>
+            <div className="privacy-section-body">{section.body}</div>
+          </li>
+        ))}
+      </ol>
     </section>
   );
 }

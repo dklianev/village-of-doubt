@@ -1,0 +1,57 @@
+.footer {
+  position: relative;
+  z-index: 1;
+  padding: 24px 16px;
+  margin-top: 24px;
+  border-top: 1px solid rgba(255, 240, 200, 0.16);
+  background: linear-gradient(180deg, rgba(5, 7, 8, 0.12), rgba(5, 7, 8, 0.56));
+  color: rgba(245, 232, 200, 0.68);
+  font-size: 0.84rem;
+  text-align: center;
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 4px;
+  color: rgba(245, 232, 200, 0.92);
+  font-weight: 700;
+  text-decoration: none;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.44);
+}
+
+.links a:hover {
+  color: #d19a42;
+  text-decoration: underline;
+}
+
+.tagline {
+  margin: 8px 0 0;
+  color: rgba(245, 232, 200, 0.48);
+  font-size: 0.78rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+}
+
+:global(html[data-theme="light"]) .footer {
+  border-top-color: rgba(83, 52, 31, 0.18);
+  background: linear-gradient(180deg, rgba(255, 246, 226, 0.24), rgba(132, 47, 43, 0.08));
+  color: rgba(42, 27, 16, 0.58);
+}
+
+:global(html[data-theme="light"]) .links a {
+  color: rgba(83, 52, 31, 0.9);
+  text-shadow: none;
+}
+
+:global(html[data-theme="light"]) .tagline {
+  color: rgba(42, 27, 16, 0.52);
+}

@@ -36,7 +36,7 @@ const PHASES = [
 export function MafiaNightTimeline() {
   return (
     <section className="night-timeline night-timeline--mafia" aria-label="Как протича нощ в града">
-      <header className="night-timeline__header">
+      <header className="night-timeline__header family-section-plaque">
         <p className="section-kicker">град под напрежение</p>
         <h2>Тази нощ в града</h2>
         <p>Всичко е тихо, докато не излезе сутрешният вестник.</p>

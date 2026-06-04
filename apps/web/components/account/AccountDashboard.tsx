@@ -1,5 +1,3 @@
-"use client";
-
 import { AccountAchievements } from "./AccountAchievements";
 import { AccountDangerZone } from "./AccountDangerZone";
 import { AccountDataExport } from "./AccountDataExport";

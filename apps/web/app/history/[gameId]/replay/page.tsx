@@ -12,18 +12,30 @@ import {
   type RoleCode,
 } from "@werewolf/shared";
 import { requireSession } from "@/lib/require-session";
+import "@/components/achievements/Achievements.module.css";
+import "@/components/history/History.module.css";
+import "@/components/history/LegacyReplay.module.css";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Запис | Върколак и Мафия",
+  title: "Запис",
   description: "Преглед на завършена игра: фази, гласове, смърти и победител.",
 };
 
-export default async function ReplayPage({ params }: { params: Promise<{ gameId: string }> }) {
+export default async function ReplayPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ gameId: string }>;
+  searchParams?: Promise<{ visualReplay?: string | string[] }>;
+}) {
   const { gameId } = await params;
-  const session = await requireSession(`/history/${gameId}/replay`);
-  const replay = await loadReplay(gameId, session.user.id);
+  const visualReplay = firstSearchValue((await searchParams)?.visualReplay);
+  const replay =
+    process.env.NODE_ENV !== "production" && visualReplay === "fixture"
+      ? fixtureReplay(gameId)
+      : await loadReplayForSession(gameId);
   if (!replay) {
     notFound();
   }
@@ -36,7 +48,7 @@ export default async function ReplayPage({ params }: { params: Promise<{ gameId:
   return (
     <main
       className="shell history-shell replay-shell framed-shell"
-      data-theme={mode === "werewolves_classic" ? "werewolves" : "mafia"}
+      data-faction={mode === "werewolves_classic" ? "werewolves" : "mafia"}
     >
       <div className="framed-shell-inner">
         <header className="replay-hero-v2">
@@ -95,21 +107,21 @@ export default async function ReplayPage({ params }: { params: Promise<{ gameId:
         </section>
 
         <section className="replay-timeline-v2" aria-label="Хронология на играта">
-        {replay.achievements.length > 0 ? (
-          <article className="replay-achievements">
-            <p className="replay-kicker">отключени моменти</p>
-            <h2>Постижения от тази игра</h2>
-            <div className="achievement-grid">
-              {replay.achievements.map((achievement) => (
-                <div key={achievement.id} className="achievement-card">
-                  <span>{achievement.iconBg}</span>
-                  <strong>{achievement.titleBg}</strong>
-                  <p>{achievement.descriptionBg}</p>
-                </div>
-              ))}
-            </div>
-          </article>
-        ) : null}
+          {replay.achievements.length > 0 ? (
+            <article className="replay-achievements">
+              <p className="replay-kicker">отключени моменти</p>
+              <h2>Легенди от тази игра</h2>
+              <div className="achievement-grid">
+                {replay.achievements.map((achievement) => (
+                  <div key={achievement.id} className="achievement-card">
+                    <span>{achievement.iconBg}</span>
+                    <strong>{achievement.titleBg}</strong>
+                    <p>{achievement.descriptionBg}</p>
+                  </div>
+                ))}
+              </div>
+            </article>
+          ) : null}
           {groupedTimeline.map((group) => (
             <article key={group.key} className="replay-phase-group">
               <header>
@@ -153,6 +165,11 @@ export default async function ReplayPage({ params }: { params: Promise<{ gameId:
   );
 }
 
+async function loadReplayForSession(gameId: string) {
+  const session = await requireSession(`/history/${gameId}/replay`);
+  return loadReplay(gameId, session.user.id);
+}
+
 async function loadReplay(gameId: string, viewerUserId: string) {
   if (!process.env.DATABASE_URL) {
     return null;
@@ -175,6 +192,66 @@ async function loadReplay(gameId: string, viewerUserId: string) {
     console.error("[replay]", error);
     return null;
   }
+}
+
+function fixtureReplay(gameId: string): NonNullable<Awaited<ReturnType<typeof loadReplay>>> {
+  const startedAt = new Date("2026-05-14T20:30:00.000Z");
+  const endedAt = new Date("2026-05-14T21:18:00.000Z");
+  const timeline = [
+    fixtureReplayEvent(gameId, 0, "role_reveal", 1, startedAt, {
+      type: "role_assignment",
+      payload: { actorNameBg: "Разказвачът", roleNameBg: "Селянин" },
+    }),
+    fixtureReplayEvent(gameId, 1, "first_night", 1, new Date("2026-05-14T20:42:00.000Z"), {
+      type: "night_action_submitted",
+      payload: { actorNameBg: "Гадателката", targetNameBg: "Борис", roleNameBg: "Върколак" },
+    }),
+    fixtureReplayEvent(gameId, 2, "day_discussion", 2, new Date("2026-05-14T20:58:00.000Z"), {
+      type: "vote_tally",
+      payload: { actorNameBg: "Масата", targetNameBg: "Борис" },
+    }),
+    fixtureReplayEvent(gameId, 3, "game_over", 3, endedAt, {
+      type: "game_over",
+      payload: { actorNameBg: "Селото", targetNameBg: "Върколака" },
+    }),
+  ];
+
+  return {
+    game: {
+      id: gameId,
+      code: "4821",
+      config: { mode: "werewolves_classic" },
+      winnerTeam: "village",
+      startedAt,
+      endedAt,
+      eventCount: timeline.length,
+      hostId: "visual-host",
+    } as NonNullable<Awaited<ReturnType<typeof getGameHistoryById>>>,
+    timeline: timeline as Awaited<ReturnType<typeof getGameTimeline>>,
+    achievements: [],
+  };
+}
+
+function fixtureReplayEvent(
+  gameId: string,
+  index: number,
+  phase: GamePhase,
+  round: number,
+  createdAt: Date,
+  event: { type: string; payload: Record<string, unknown> },
+) {
+  return {
+    id: `fixture-replay-${index + 1}`,
+    gameId,
+    createdAt,
+    type: event.type,
+    phase,
+    round,
+    visibility: "public",
+    actorId: index === 2 ? null : `fixture-actor-${index + 1}`,
+    targetId: index === 0 ? null : `fixture-target-${index + 1}`,
+    payload: event.payload,
+  };
 }
 
 function Summary({ label, value }: { label: string; value: string }) {
@@ -429,4 +506,8 @@ function payloadKeyBg(key: string) {
 
 function formatDate(value: Date | null) {
   return value ? new Intl.DateTimeFormat("bg-BG", { dateStyle: "medium", timeStyle: "short" }).format(value) : "няма данни";
+}
+
+function firstSearchValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
 }

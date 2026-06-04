@@ -1,0 +1,48 @@
+[data-ds-paper-card][data-interactive="true"],
+[data-ds-scene-card][data-interactive="true"] {
+  cursor: pointer;
+  transition:
+    transform 200ms ease,
+    box-shadow 200ms ease;
+}
+
+[data-ds-paper-card][data-interactive="true"]:hover {
+  transform: translateY(var(--ds-card-lift-y));
+  box-shadow: var(--ds-shadow-card-elevated);
+}
+
+[data-ds-scene-card][data-interactive="true"]:hover {
+  transform: translateY(var(--ds-card-lift-y));
+  box-shadow: var(--ds-shadow-scene-elevated);
+}
+
+[data-ds-paper-card][data-interactive="true"]:active,
+[data-ds-scene-card][data-interactive="true"]:active {
+  transform: scale(0.99);
+  transition: transform 80ms ease;
+}
+
+[data-ds-paper-card][data-accent="win"],
+[data-ds-scene-card][data-accent="win"] {
+  border-left: 2px solid var(--ds-accent-green);
+}
+
+[data-ds-paper-card][data-accent="loss"],
+[data-ds-scene-card][data-accent="loss"] {
+  border-left: 2px solid var(--ds-accent-blood);
+}
+
+[data-ds-paper-card][data-accent="warning"],
+[data-ds-scene-card][data-accent="warning"] {
+  border-left: 2px solid var(--ds-accent-gold);
+}
+
+[data-ds-paper-card][data-accent="info"],
+[data-ds-scene-card][data-accent="info"] {
+  border-left: 2px solid oklch(0.55 0.12 220);
+}
+
+[data-ds-paper-card][data-accent="neutral"],
+[data-ds-scene-card][data-accent="neutral"] {
+  border-left: 2px solid oklch(0.55 0.015 60 / 0.4);
+}

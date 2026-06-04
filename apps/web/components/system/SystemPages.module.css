@@ -1,0 +1,30 @@
+/* System page styles moved out of globals.css. */
+
+:global(.global-error-screen) {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(158, 52, 45, 0.25), transparent 32rem),
+    linear-gradient(135deg, #0b1114, #20130f);
+  color: var(--paper);
+}
+
+:global(.global-error-card) {
+  max-width: 34rem;
+  padding: clamp(1.5rem, 5vw, 3rem);
+  text-align: center;
+}
+
+:global(.not-found-shell) {
+  display: grid;
+  place-items: center;
+  min-height: calc(100vh - 80px);
+  padding: 64px 16px;
+}
+
+:global(.not-found-card) {
+  max-width: 720px;
+  text-align: left;
+}

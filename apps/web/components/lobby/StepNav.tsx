@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, type Dispatch } from "react";
 import type { LobbyFormAction, LobbyFormState, LobbyStep } from "@/lib/lobby-form";
 
@@ -52,9 +50,21 @@ export function StepNav({
       <ol>
         {STEPS.map(({ step, label }) => {
           const status = step === state.step ? "active" : step <= state.visitedStep ? "visited" : "future";
+          const disabled = status === "future";
           return (
             <li key={step}>
-              <button type="button" data-status={status} onClick={() => transition(() => dispatch({ type: "SET_STEP", step }))}>
+              <button
+                type="button"
+                data-status={status}
+                disabled={disabled}
+                aria-current={status === "active" ? "step" : undefined}
+                onClick={() => {
+                  if (disabled) {
+                    return;
+                  }
+                  transition(() => dispatch({ type: "SET_STEP", step }));
+                }}
+              >
                 <span>{step}</span>
                 <strong>{label}</strong>
               </button>

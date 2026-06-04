@@ -79,17 +79,6 @@ export function playerInitials(name: string) {
     .join("");
 }
 
-export function playerTokenClass(player: PublicPlayer) {
-  return [
-    "player-token rounded-2xl px-4 py-3",
-    player.ready ? "is-ready" : "",
-    !player.connected ? "is-offline" : "",
-    player.playing && !player.alive ? "is-dead" : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
-}
-
 export function arePlayersEqual(a: PublicPlayer, b: PublicPlayer) {
   return a.userId === b.userId
     && a.displayName === b.displayName

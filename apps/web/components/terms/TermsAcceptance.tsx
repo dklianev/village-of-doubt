@@ -1,6 +1,5 @@
 "use client";
 
-import { Display, PaperCard } from "@werewolf/ui";
 import { useEffect, useState } from "react";
 
 const STORAGE_KEY = "terms-accepted-version";
@@ -46,53 +45,47 @@ export function TermsAcceptance({ userName }: TermsAcceptanceProps) {
     : null;
 
   return (
-    <section
-      className="terms-section terms-section-acceptance"
-      style={{ padding: 0, border: "none", background: "transparent" }}
-    >
-      <PaperCard eyebrow="ПОДПИС НА МАСАТА" density="lg">
-        <header className="terms-section-head">
-          <Display as="h2" size="h3">
-            {userName ? `${userName}, прочете ли кодекса?` : "Прочете ли кодекса?"}
-          </Display>
-          <p className="terms-section-lede">
-            Като играеш, ти приемаш правилата по подразбиране. Този подпис е символичен — показва,
-            че съзнателно си се запознал с обещанията на масата.
-          </p>
-        </header>
+    <section className="terms-section terms-section-acceptance">
+      <header className="terms-section-head">
+        <p className="terms-section-kicker">подпис на масата</p>
+        <h2>{userName ? `${userName}, прочете ли кодекса?` : "Прочете ли кодекса?"}</h2>
+        <p className="terms-section-lede">
+          Като играеш, ти приемаш правилата по подразбиране. Този подпис е символичен — показва, че
+          съзнателно си се запознал с обещанията на масата.
+        </p>
+      </header>
 
-        <div className="terms-acceptance-body">
-          {acceptedAt ? (
-            <div className="terms-acceptance-state terms-acceptance-state-signed">
-              <span className="terms-acceptance-mark" aria-hidden>
-                ✓
-              </span>
-              <div>
-                <p className="terms-acceptance-title">Прочетен и приет</p>
-                <p className="terms-acceptance-detail">На {formattedDate}.</p>
-              </div>
-              {justAccepted ? (
-                <p className="terms-acceptance-toast">Записано локално в твоя браузър.</p>
-              ) : null}
+      <div className="terms-acceptance-body">
+        {acceptedAt ? (
+          <div className="terms-acceptance-state terms-acceptance-state-signed">
+            <span className="terms-acceptance-mark" aria-hidden>
+              ✓
+            </span>
+            <div>
+              <p className="terms-acceptance-title">Прочетен и приет</p>
+              <p className="terms-acceptance-detail">На {formattedDate}.</p>
             </div>
-          ) : (
-            <div className="terms-acceptance-state terms-acceptance-state-pending">
-              <span className="terms-acceptance-mark" aria-hidden>
-                ~
-              </span>
-              <div>
-                <p className="terms-acceptance-title">Още непрочетен подпис</p>
-                <p className="terms-acceptance-detail">
-                  Прелисти кодекса и натисни „Подписвам“ — само за себе си, за прозрачност.
-                </p>
-              </div>
-              <button type="button" className="terms-acceptance-btn" onClick={accept}>
-                Подписвам кодекса
-              </button>
+            {justAccepted ? (
+              <p className="terms-acceptance-toast">Записано локално в твоя браузър.</p>
+            ) : null}
+          </div>
+        ) : (
+          <div className="terms-acceptance-state terms-acceptance-state-pending">
+            <span className="terms-acceptance-mark" aria-hidden>
+              ~
+            </span>
+            <div>
+              <p className="terms-acceptance-title">Още непрочетен подпис</p>
+              <p className="terms-acceptance-detail">
+                Прелисти кодекса и натисни „Подписвам“ — само за себе си, за прозрачност.
+              </p>
             </div>
-          )}
-        </div>
-      </PaperCard>
+            <button type="button" className="terms-acceptance-btn" onClick={accept}>
+              Подписвам кодекса
+            </button>
+          </div>
+        )}
+      </div>
     </section>
   );
 }

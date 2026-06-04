@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Display, PaperCard } from "@werewolf/ui";
 
 interface PrivacyPromise {
   id: string;
@@ -47,10 +46,10 @@ const PROMISES: readonly PrivacyPromise[] = [
   {
     id: "delete-anytime",
     icon: "delete-anytime",
-    title: "Изтриваш профила по всяко време.",
-    summary: "Бутон в твоя профил. Backup следите се изчистват до 30 дни.",
+    title: "Изтриваш досието по всяко време.",
+    summary: "Бутон в твоето досие. Backup следите се изчистват до 30 дни.",
     detail:
-      "Профилът, постиженията и личните данни изчезват веднага. Имената от игрите ти се заменят с „Изтрит играч“, за да не се чупи историята на другите играчи на масата.",
+      "Досието, легендите и личните данни изчезват веднага. Имената от игрите ти се заменят с „Изтрит играч“, за да не се чупи историята на другите играчи на масата.",
   },
   {
     id: "export-anytime",
@@ -58,7 +57,7 @@ const PROMISES: readonly PrivacyPromise[] = [
     title: "Извличаш всичко по всяко време.",
     summary: "GDPR право на преносимост — JSON download с цялата ти история.",
     detail:
-      "Един клик — получаваш JSON файл с профила, игрите, постиженията и настройките. Файлът е структуриран и четим.",
+      "Един клик — получаваш JSON файл с досието, игрите, легендите и настройките. Файлът е структуриран и четим.",
   },
 ];
 
@@ -70,41 +69,38 @@ export function PrivacyPromiseWall() {
   }
 
   return (
-    <section className="privacy-section" style={{ padding: 0, border: "none", background: "transparent" }}>
-      <PaperCard eyebrow="ОБЕЩАНИЯ" density="lg">
-        <header className="privacy-section-head">
-          <Display as="h2" size="h3">
-            Какво гарантираме.
-          </Display>
-          <p className="privacy-section-lede">
-            Шест обещания, които стоят зад всичко в детайлите по-долу.
-          </p>
-        </header>
+    <section className="privacy-section">
+      <header className="privacy-section-head">
+        <p className="privacy-section-kicker">обещания</p>
+        <h2>Какво гарантираме.</h2>
+        <p className="privacy-section-lede">
+          Шест обещания, които стоят зад всичко в детайлите по-долу.
+        </p>
+      </header>
 
-        <ul className="privacy-promise-grid">
-          {PROMISES.map((promise) => {
-            const isOpen = expandedId === promise.id;
-            return (
-              <li key={promise.id}>
-                <article className="privacy-promise-card" data-open={isOpen}>
-                  <PromiseIcon name={promise.icon} className="privacy-promise-icon" />
-                  <h3 className="privacy-promise-title">{promise.title}</h3>
-                  <p className="privacy-promise-summary">{promise.summary}</p>
-                  <button
-                    type="button"
-                    className="privacy-promise-toggle"
-                    onClick={() => toggle(promise.id)}
-                    aria-expanded={isOpen}
-                  >
-                    {isOpen ? "Скрий детайла" : "Виж по-подробно"}
-                  </button>
-                  {isOpen ? <p className="privacy-promise-detail">{promise.detail}</p> : null}
-                </article>
-              </li>
-            );
-          })}
-        </ul>
-      </PaperCard>
+      <ul className="privacy-promise-grid">
+        {PROMISES.map((promise) => {
+          const isOpen = expandedId === promise.id;
+          return (
+            <li key={promise.id}>
+              <article className="privacy-promise-card" data-open={isOpen}>
+                <PromiseIcon name={promise.icon} className="privacy-promise-icon" />
+                <h3 className="privacy-promise-title">{promise.title}</h3>
+                <p className="privacy-promise-summary">{promise.summary}</p>
+                <button
+                  type="button"
+                  className="privacy-promise-toggle"
+                  onClick={() => toggle(promise.id)}
+                  aria-expanded={isOpen}
+                >
+                  {isOpen ? "Скрий детайла" : "Виж по-подробно"}
+                </button>
+                {isOpen ? <p className="privacy-promise-detail">{promise.detail}</p> : null}
+              </article>
+            </li>
+          );
+        })}
+      </ul>
     </section>
   );
 }

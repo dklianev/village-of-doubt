@@ -25,6 +25,6 @@ export async function GET() {
     });
   } catch (error) {
     console.error("[achievements]", error);
-    return NextResponse.json({ error: "Грешка при зареждане на постижения." }, { status: 500 });
+    return NextResponse.json({ error: "Грешка при зареждане на легенди." }, { status: 500 });
   }
 }

@@ -1,4 +1,5 @@
 import { PHASE_RAIL } from "@/lib/play/phase-display";
+import "@/components/play/PhaseRail.module.css";
 
 export function PhaseRail({ phase }: { phase: string }) {
   return (

@@ -1,4 +1,5 @@
 import type { VoteTallyItem } from "@/lib/play/types";
+import "@/components/play/VoteTallyBar.module.css";
 
 export function VoteTallyBar({ items, maxVotes }: { items: VoteTallyItem[]; maxVotes: number }) {
   if (items.length === 0) {
@@ -10,7 +11,7 @@ export function VoteTallyBar({ items, maxVotes }: { items: VoteTallyItem[]; maxV
   }
 
   return (
-    <div className="vote-tally-card mt-5" aria-label="Текущо броене на гласовете">
+    <div className="vote-tally-card mt-5" role="region" tabIndex={0} aria-label="Текущо броене на гласовете">
       {items.map((item) => (
         <div key={item.targetUserId} className="vote-tally-row">
           <span>{item.targetName}</span>

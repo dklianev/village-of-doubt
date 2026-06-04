@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Check, Copy, Trash2, UserPlus, Users } from "lucide-react";
 import { copyTextToClipboard } from "@/lib/clipboard";
+import "@/components/friends/LegacyFriends.module.css";
 
 interface FriendItem {
   id: string;

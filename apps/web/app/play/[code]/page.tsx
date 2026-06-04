@@ -10,7 +10,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { code } = await params;
   return {
-    title: `Игра ${code} | Върколак и Мафия`,
+    title: `Игра ${code}`,
     description: "Игрова стая с авторитетен сървър, тайни роли и български интерфейс.",
   };
 }
@@ -20,13 +20,24 @@ export default async function PlayPage({
   searchParams,
 }: {
   params: Promise<{ code: string }>;
-  searchParams?: Promise<RoomSearchParams>;
+  searchParams?: Promise<RoomSearchParams & { visualGame?: string | string[] }>;
 }) {
   const [{ code }, resolvedSearchParams] = await Promise.all([params, searchParams]);
   const query = stringifySearchParams(resolvedSearchParams);
-  await requireSession(`/play/${code}${query ? `?${query}` : ""}`);
+  const visualGame = firstSearchValue(resolvedSearchParams?.visualGame);
+  if (process.env.NODE_ENV === "production" || visualGame !== "1") {
+    await requireSession(`/play/${code}${query ? `?${query}` : ""}`);
+  }
+  const visualFixtureSearch =
+    process.env.NODE_ENV !== "production" && visualGame === "1" ? query : undefined;
 
-  return <PlayRoomClient code={code} createOptions={parseRoomCreateOptions(resolvedSearchParams)} />;
+  return (
+    <PlayRoomClient
+      code={code}
+      createOptions={parseRoomCreateOptions(resolvedSearchParams)}
+      visualFixtureSearch={visualFixtureSearch}
+    />
+  );
 }
 
 function stringifySearchParams(searchParams: RoomSearchParams | undefined) {
@@ -39,4 +50,8 @@ function stringifySearchParams(searchParams: RoomSearchParams | undefined) {
     }
   }
   return params.toString();
+}
+
+function firstSearchValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
 }

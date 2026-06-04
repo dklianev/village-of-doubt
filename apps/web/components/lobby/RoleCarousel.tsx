@@ -1,5 +1,3 @@
-"use client";
-
 import type { GameFamily, RoleCode, RoleDistribution } from "@werewolf/shared";
 import { RoleTileLarge } from "@/components/lobby/RoleTileLarge";
 

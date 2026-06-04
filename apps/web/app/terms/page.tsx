@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import "@/components/legal/LegalShell.module.css";
+import "@/components/terms/LegacyTerms.module.css";
 import { headers } from "next/headers";
 import { JsonLd } from "@/components/JsonLd";
 import { ResourceHints } from "@/components/resource-hints";
@@ -9,13 +11,12 @@ import { absoluteUrl, routeMetadata } from "@/lib/seo";
 const LAST_UPDATED = "19 май 2026";
 
 export const metadata: Metadata = routeMetadata({
-  title: "Кодекс на масата | Върколак и Мафия",
+  title: "Кодекс на масата",
   description: "Правилата, които правят масата честна — за блъфа, за уважението, за чистата игра.",
   path: "/terms",
   image: "/game-art/legal/terms-banner.png",
   imageAlt: "Ръкостискане над масата под светлина на свещ",
   robots: { index: true, follow: true },
-  absoluteTitle: true,
 });
 
 interface TermsPageProps {

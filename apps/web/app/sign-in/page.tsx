@@ -6,7 +6,7 @@ import { routeMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = routeMetadata({
   title: "Вход — седни на масата",
-  description: "Влез с Google, Discord или имейл. Един профил пази историята, постиженията и поканите за частни стаи.",
+  description: "Влез с Google, Discord или имейл. Едно досие пази историята, легендите и поканите за частни стаи.",
   path: "/sign-in",
   image: "/game-art/og/og-sign-in.png",
   imageAlt: "Карти, свещ и ключ върху дървена маса",

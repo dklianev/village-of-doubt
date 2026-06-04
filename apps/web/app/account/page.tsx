@@ -10,13 +10,13 @@ import {
 } from "@werewolf/database";
 import { ACHIEVEMENTS, type GameMode, type WinnerTeam } from "@werewolf/shared";
 import { AccountDashboard } from "@/components/account/AccountDashboard";
-import { ResourceHints } from "@/components/resource-hints";
 import { computePlayerStats } from "@/lib/account-stats";
 import { auth } from "@/lib/auth";
+import "@/components/account/LegacyAccount.module.css";
 
 export const metadata: Metadata = {
-  title: "Твоето досие | Върколак и Мафия",
-  description: "Профил, статистики, постижения и контрол на твоите данни.",
+  title: "Твоето досие",
+  description: "Досие, статистики, легенди и контрол на твоите данни.",
   robots: { index: false, follow: false },
 };
 
@@ -26,8 +26,13 @@ type AccountHistoryGame = Awaited<ReturnType<typeof getGameHistoryForUser>>[numb
 
 type AccountDashboardProps = ComponentProps<typeof AccountDashboard>;
 
-export default async function AccountPage() {
-  if (process.env.NODE_ENV !== "production" && process.env.ACCOUNT_DASHBOARD_FIXTURE === "1") {
+export default async function AccountPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ visualAuth?: string | string[] }>;
+}) {
+  const visualAuth = firstSearchValue((await searchParams)?.visualAuth);
+  if (process.env.NODE_ENV !== "production" && (process.env.ACCOUNT_DASHBOARD_FIXTURE === "1" || visualAuth === "1")) {
     return renderDashboard(fixtureDashboardProps());
   }
 
@@ -94,7 +99,6 @@ export default async function AccountPage() {
 function renderDashboard(props: AccountDashboardProps) {
   return (
     <main className="shell account-shell">
-      <ResourceHints images={["/game-art/account/account-hero-banner.webp"]} />
       <AccountDashboard {...props} />
     </main>
   );
@@ -179,4 +183,8 @@ function winnerTeamFromValue(value: string | null): WinnerTeam | null {
   }
 
   return null;
+}
+
+function firstSearchValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
 }

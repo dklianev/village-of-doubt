@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="bg">
+<head>
+<meta charset="utf-8">
+<title>Движение · Подробен спецификат</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="crest">W</div>
+    <div class="brand">
+      <div class="brand-title">Върколак · Мафия</div>
+      <div class="brand-sub">Движение · 5 durations, 4 easings, 12 типа</div>
+    </div>
+    <nav>
+      <a href="index.html">Преглед</a>
+      <a href="tokens.html">Tokens</a>
+      <a href="primitives.html">Компоненти</a>
+      <a href="dictionary.html">Речник</a>
+      <a href="motion.html" class="active">Движение</a>
+      <a href="states.html">Състояния</a>
+      <a href="acceptance.html">Acceptance</a>
+      <a href="prompts.html">Промпти</a>
+    </nav>
+  </div>
+</div>
+
+<main>
+
+<header class="hero">
+  <div class="hero-card">
+    <div class="eyebrow">04 · Foundation · Motion</div>
+    <h1>Движение с <em>тегло.</em></h1>
+    <p class="hero-lede">
+      Анимациите в селото никога не правят shoo-wee-pop. Те носят тегло,
+      бавно, като свещ. Тази система фиксира пет durations, четири easing криви,
+      и дванадесет специфични типа анимация — всеки със собствено име, продължителност
+      и употреба.
+    </p>
+    <div class="hero-meta">
+      <span>Файл · <b>packages/ui/motion.ts</b></span>
+      <span>Engine · <b>Framer Motion (вече в репото)</b></span>
+      <span>Reduced motion · <b>100% покритие</b></span>
+    </div>
+  </div>
+</header>
+
+<!-- DURATIONS -->
+<section class="wrap">
+  <div class="section-head">
+    <div>
+      <div class="num">01 / Продължителности</div>
+      <h2>Пет tier-а.</h2>
+    </div>
+    <p>Всяко движение в продукта избира една от тези пет. Нищо извън скалата.</p>
+  </div>
+
+  <div class="paper-card">
+    <table class="spec">
+      <thead><tr><th>Token</th><th>Стойност</th><th>Категория</th><th>Употреба</th></tr></thead>
+      <tbody>
+        <tr><td class="name">--motion-instant</td><td class="val">90ms</td><td class="use">Tactile</td><td class="use">Button press, focus glow, checkbox</td></tr>
+        <tr><td class="name">--motion-quick</td><td class="val">180ms</td><td class="use">Snappy</td><td class="use">Toast slide, dropdown, hover transitions</td></tr>
+        <tr><td class="name">--motion-base</td><td class="val">280ms</td><td class="use">Standard</td><td class="use">Modal open, sheet, tab swap</td></tr>
+        <tr><td class="name">--motion-stage</td><td class="val">500ms</td><td class="use">Cinematic</td><td class="use">Scene transition (Night → Day), role reveal flip</td></tr>
+        <tr><td class="name">--motion-epic</td><td class="val">1200ms</td><td class="use">Ceremony</td><td class="use">Achievement unlock, game-end victory screen</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- EASINGS -->
+<section class="wrap">
+  <div class="section-head">
+    <div>
+      <div class="num">02 / Easing криви</div>
+      <h2>Четири именувани криви.</h2>
+    </div>
+    <p>Никакви линейни или ease-in-out по default. Всяка крива има специфична семантика.</p>
+  </div>
+
+  <div class="paper-card">
+    <table class="spec">
+      <thead><tr><th>Име</th><th>cubic-bezier</th><th>Семантика</th><th>Употреба</th></tr></thead>
+      <tbody>
+        <tr><td class="name">--ease-candle</td><td class="val">cubic-bezier(0.32, 0.72, 0, 1)</td><td class="use">Тегло, естествено замиране</td><td class="use">Default за повечето transitions</td></tr>
+        <tr><td class="name">--ease-card</td><td class="val">cubic-bezier(0.16, 1, 0.3, 1)</td><td class="use">Card flip, бързо начало, бавен край</td><td class="use">Role reveal, modal entry</td></tr>
+        <tr><td class="name">--ease-breath</td><td class="val">cubic-bezier(0.5, 0, 0.5, 1)</td><td class="use">Симетрично, дишащо</td><td class="use">Pulsing glow, breathing scale</td></tr>
+        <tr><td class="name">--ease-fall</td><td class="val">cubic-bezier(0.6, 0, 0.74, 0.05)</td><td class="use">Резко падане, без отскок</td><td class="use">Death animation, dialog dismiss</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="code">
+    <div class="code-bar"><span class="label">packages/ui/motion.ts · готов за import</span><button onclick="copyCode(this)">Копирай</button></div>
+    <div class="code-body"><span class="c">/**
+ * Motion tokens — durations + easings + presets.
+ * Изисква Framer Motion 11+. Reduced-motion safe.
+ */</span>
+
+<span class="k">export const</span> <span class="t">durations</span> = {
+  instant: <span class="v">0.09</span>,
+  quick:   <span class="v">0.18</span>,
+  base:    <span class="v">0.28</span>,
+  stage:   <span class="v">0.50</span>,
+  epic:    <span class="v">1.20</span>,
+} <span class="k">as const</span>;
+
+<span class="k">export const</span> <span class="t">easings</span> = {
+  candle: [<span class="v">0.32</span>, <span class="v">0.72</span>, <span class="v">0</span>, <span class="v">1</span>],
+  card:   [<span class="v">0.16</span>, <span class="v">1</span>,    <span class="v">0.3</span>, <span class="v">1</span>],
+  breath: [<span class="v">0.5</span>,  <span class="v">0</span>,    <span class="v">0.5</span>, <span class="v">1</span>],
+  fall:   [<span class="v">0.6</span>,  <span class="v">0</span>,    <span class="v">0.74</span>, <span class="v">0.05</span>],
+} <span class="k">as const</span>;
+
+<span class="c">/* ----- Presets за чести анимации ----- */</span>
+
+<span class="k">export const</span> <span class="t">fadeIn</span> = {
+  initial: { opacity: <span class="v">0</span> },
+  animate: { opacity: <span class="v">1</span> },
+  transition: { duration: durations.base, ease: easings.candle },
+};
+
+<span class="k">export const</span> <span class="t">slideUp</span> = {
+  initial: { opacity: <span class="v">0</span>, y: <span class="v">12</span> },
+  animate: { opacity: <span class="v">1</span>, y: <span class="v">0</span> },
+  transition: { duration: durations.base, ease: easings.candle },
+};
+
+<span class="k">export const</span> <span class="t">modalIn</span> = {
+  initial: { opacity: <span class="v">0</span>, scale: <span class="v">0.96</span> },
+  animate: { opacity: <span class="v">1</span>, scale: <span class="v">1</span> },
+  transition: { duration: durations.base, ease: easings.card },
+};
+
+<span class="k">export const</span> <span class="t">sheetMobile</span> = {
+  initial: { y: <span class="s">'100%'</span> },
+  animate: { y: <span class="v">0</span> },
+  exit:    { y: <span class="s">'100%'</span> },
+  transition: { duration: durations.base, ease: easings.candle },
+};
+
+<span class="k">export const</span> <span class="t">roleReveal</span> = {
+  initial: { rotateY: <span class="v">180</span>, opacity: <span class="v">0</span> },
+  animate: { rotateY: <span class="v">0</span>,  opacity: <span class="v">1</span> },
+  transition: { duration: durations.stage, ease: easings.card },
+};
+
+<span class="c">/* ----- Hook: респект към prefers-reduced-motion ----- */</span>
+
+<span class="k">import</span> { useReducedMotion } <span class="k">from</span> <span class="s">'framer-motion'</span>;
+
+<span class="k">export function</span> <span class="t">useMotion</span>(preset: { transition: <span class="t">any</span> }) {
+  <span class="k">const</span> reduce = useReducedMotion();
+  <span class="k">if</span> (reduce) {
+    <span class="k">return</span> {
+      ...preset,
+      transition: { duration: <span class="v">0.01</span> },
+    };
+  }
+  <span class="k">return</span> preset;
+}</div>
+  </div>
+</section>
+
+<!-- 12 ANIMATION TYPES -->
+<section class="wrap">
+  <div class="section-head">
+    <div>
+      <div class="num">03 / Дванадесет типа</div>
+      <h2>Специфични анимации в продукта.</h2>
+    </div>
+    <p>Всеки тип има точна продължителност, easing и acceptance тест.</p>
+  </div>
+
+  <div class="paper-card">
+    <table class="spec">
+      <thead><tr><th>Тип</th><th>Duration</th><th>Easing</th><th>Описание</th><th>Reduced-motion fallback</th></tr></thead>
+      <tbody>
+        <tr><td class="name">Page transition</td><td class="val">base</td><td class="val">candle</td><td class="use">Opacity 0→1 + 12px slide up</td><td class="use">Само opacity</td></tr>
+        <tr><td class="name">Modal/sheet open</td><td class="val">base</td><td class="val">card</td><td class="use">Scale 0.96→1, opacity 0→1; mobile slide-up</td><td class="use">Само fade</td></tr>
+        <tr><td class="name">Toast slide</td><td class="val">quick</td><td class="val">card</td><td class="use">Translate 20px + opacity</td><td class="use">Само opacity, без translate</td></tr>
+        <tr><td class="name">Button press</td><td class="val">instant</td><td class="val">candle</td><td class="use">Scale 0.96 на mousedown</td><td class="use">Без</td></tr>
+        <tr><td class="name">Focus glow</td><td class="val">instant</td><td class="val">candle</td><td class="use">Box-shadow появяване</td><td class="use">Веднага видим</td></tr>
+        <tr><td class="name">Hover lift</td><td class="val">quick</td><td class="val">candle</td><td class="use">Translate -2px + shadow увеличение</td><td class="use">Без</td></tr>
+        <tr><td class="name">Phase strip activation</td><td class="val">stage</td><td class="val">breath</td><td class="use">Glow pulse + crossfade на label</td><td class="use">Само цветова смяна, без pulse</td></tr>
+        <tr><td class="name">Role reveal</td><td class="val">stage</td><td class="val">card</td><td class="use">3D flip 180° + opacity</td><td class="use">Crossfade без rotate</td></tr>
+        <tr><td class="name">Night → Day transition</td><td class="val">stage</td><td class="val">candle</td><td class="use">Background gradient morph + sound fade</td><td class="use">Само background instant swap</td></tr>
+        <tr><td class="name">Achievement unlock</td><td class="val">epic</td><td class="val">card</td><td class="use">Card flip + particle burst + text reveal</td><td class="use">Static reveal с opacity</td></tr>
+        <tr><td class="name">Death animation</td><td class="val">stage</td><td class="val">fall</td><td class="use">Opacity 1→0.45 + line-through + dust overlay</td><td class="use">Без dust, само opacity</td></tr>
+        <tr><td class="name">Candle flicker (ambient)</td><td class="val">epic (loop)</td><td class="val">breath</td><td class="use">Brightness 0.95↔1.05, irregular timing</td><td class="use">Изключено</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- REDUCED MOTION RULES -->
+<section class="wrap">
+  <div class="section-head">
+    <div>
+      <div class="num">04 / Reduced motion</div>
+      <h2>Какво се случва при опцията „по-малко движение".</h2>
+    </div>
+    <p>Това не е „nice to have". Това е задължителен default — около 8% от потребителите имат активиран prefers-reduced-motion.</p>
+  </div>
+
+  <div class="paper-card">
+    <ul class="tight" style="font-size: 17px;">
+      <li><b>Всичко с duration &lt; base</b> се запазва (focus rings, button press) — те носят функционална обратна връзка.</li>
+      <li><b>Всичко с duration ≥ base</b> се намалява до <code>0.01ms</code> — instant.</li>
+      <li><b>Ambient анимации</b> (candle flicker, breathing glow, particle drift) се изключват напълно.</li>
+      <li><b>Crossfade-ове</b> се запазват, но без translate/scale съпровод.</li>
+      <li><b>Auto-play видеа</b> (hero loops на /werewolf, /mafia) — заменят се със static poster frame.</li>
+      <li><b>Sound design</b> остава активен — той не е „motion".</li>
+    </ul>
+  </div>
+
+  <div class="code">
+    <div class="code-bar"><span class="label">apps/web/app/globals.css · global guard</span><button onclick="copyCode(this)">Копирай</button></div>
+    <div class="code-body"><span class="c">/* Глобален guard. Винаги пръв в globals.css. */</span>
+
+<span class="k">@media</span> (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: <span class="v">0.01ms</span> <span class="h">!important</span>;
+    animation-iteration-count: <span class="v">1</span> <span class="h">!important</span>;
+    transition-duration: <span class="v">0.01ms</span> <span class="h">!important</span>;
+    scroll-behavior: auto <span class="h">!important</span>;
+  }
+
+  <span class="c">/* Спри auto-play видеата */</span>
+  <span class="k">video</span>[autoplay] {
+    display: <span class="t">none</span>;
+  }
+  <span class="k">video</span>[autoplay] + <span class="k">.poster-fallback</span> {
+    display: <span class="t">block</span>;
+  }
+
+  <span class="c">/* Спри ambient SVG анимации */</span>
+  <span class="k">.candle-flicker</span>,
+  <span class="k">.breath-glow</span>,
+  <span class="k">.particle-drift</span> {
+    animation: <span class="t">none</span> <span class="h">!important</span>;
+  }
+}</div>
+  </div>
+</section>
+
+<!-- TESTING -->
+<section class="wrap">
+  <div class="section-head">
+    <div>
+      <div class="num">05 / Тестване</div>
+      <h2>Как се проверява в CI.</h2>
+    </div>
+    <p>Playwright симулира prefers-reduced-motion и сравнява screenshot. Ако анимацията все още се изпълнява — fail.</p>
+  </div>
+
+  <div class="code">
+    <div class="code-bar"><span class="label">apps/web/__visual__/reduced-motion.spec.ts</span><button onclick="copyCode(this)">Копирай</button></div>
+    <div class="code-body"><span class="k">import</span> { test, expect } <span class="k">from</span> <span class="s">'@playwright/test'</span>;
+
+test.describe(<span class="s">'reduced motion'</span>, () =&gt; {
+  test.use({
+    <span class="c">/* симулираме prefers-reduced-motion: reduce */</span>
+    contextOptions: { reducedMotion: <span class="s">'reduce'</span> },
+  });
+
+  <span class="k">const</span> routes = [
+    <span class="s">'/'</span>,
+    <span class="s">'/werewolf'</span>,
+    <span class="s">'/mafia'</span>,
+    <span class="s">'/sign-in'</span>,
+    <span class="s">'/tutorial'</span>,
+    <span class="s">'/account'</span>,
+    <span class="s">'/leaderboard'</span>,
+  ];
+
+  <span class="k">for</span> (<span class="k">const</span> route <span class="k">of</span> routes) {
+    test(<span class="s">`${route} renders without motion`</span>, <span class="k">async</span> ({ page }) =&gt; {
+      <span class="k">await</span> page.goto(route);
+
+      <span class="c">// Изчакай 2 sec — ако нещо се движи още, ще се види</span>
+      <span class="k">await</span> page.waitForTimeout(<span class="v">2000</span>);
+
+      <span class="c">// Provoke navigation</span>
+      <span class="k">await</span> page.screenshot({ fullPage: <span class="k">true</span>, animations: <span class="s">'disabled'</span> });
+
+      <span class="c">// Втора snapshot след още 500ms; ако се различава — анимация продължава</span>
+      <span class="k">const</span> a = <span class="k">await</span> page.screenshot();
+      <span class="k">await</span> page.waitForTimeout(<span class="v">500</span>);
+      <span class="k">const</span> b = <span class="k">await</span> page.screenshot();
+
+      expect(a).toEqual(b);
+    });
+  }
+});</div>
+  </div>
+</section>
+
+<footer class="foot">
+  <span>Подробен спецификат · Движение</span>
+  <span class="sign">„Свещ, не светкавица."</span>
+  <span>Следва · <a href="states.html" style="border: none; color: inherit;">Състояния →</a></span>
+</footer>
+
+</main>
+
+<script>
+function copyCode(btn) {
+  const text = btn.closest('.code').querySelector('.code-body').innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ Копирано';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Копирай'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+</script>
+
+</body>
+</html>

@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-  arePhaseSlicesEqual,
-  arePlayerListsEqual,
-  type PhaseSlice,
-  type PublicPlayer,
-} from "@/components/play-room-client";
+import { arePhaseSlicesEqual, arePlayerListsEqual } from "@/lib/play/equality";
+import type { PhaseSlice, PublicPlayer } from "@/lib/play/types";
 
 describe("play room slice comparators", () => {
   it("keeps equal phase slices stable", () => {

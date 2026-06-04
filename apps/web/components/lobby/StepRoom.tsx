@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useRef, type Dispatch } from "react";
 import {
   GAME_MODE_DEFINITIONS,
@@ -131,6 +129,7 @@ export function StepRoom({
             </button>
             <input
               type="range"
+              aria-label="Брой играчи"
               min={range.min}
               max={range.max}
               value={players}

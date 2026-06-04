@@ -16,7 +16,7 @@ export function AccountHero(props: AccountHeroProps) {
     : null;
 
   return (
-    <header className="account-hero" aria-label="Профил">
+    <header className="account-hero" aria-label="Досие">
       <div className="account-hero-banner">
         <Image
           src="/game-art/account/account-hero-banner.webp"

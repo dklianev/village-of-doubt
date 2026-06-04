@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import "@/components/legal/LegalShell.module.css";
 import { FaqHearth } from "@/components/faq/FaqHearth";
 import { JsonLd } from "@/components/JsonLd";
 import { ResourceHints } from "@/components/resource-hints";
@@ -6,12 +7,11 @@ import { FAQ_DATA, flattenAnswerForSchema } from "@/lib/faq-data";
 import { absoluteUrl, routeMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = routeMetadata({
-  title: "Седни до огъня | Върколак и Мафия",
-  description: "Отговори за геймплея, профила, техническите детайли и поверителността — споделени до огъня.",
+  title: "Седни до огъня",
+  description: "Отговори за геймплея, досието, техническите детайли и поверителността — споделени до огъня.",
   path: "/faq",
   image: "/game-art/legal/faq-hearth-banner.png",
   imageAlt: "Каменно огнище с книги и свещ",
-  absoluteTitle: true,
 });
 
 const faqJsonLd = {

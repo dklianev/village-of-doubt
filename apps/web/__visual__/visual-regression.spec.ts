@@ -1,4 +1,22 @@
+import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "playwright/test";
+
+const PLAY_VISUAL_ROUTES = [
+  { name: "play-werewolves-lobby", path: "/play/VISUAL?visualGame=1&phase=lobby&family=werewolves&viewer=host" },
+  { name: "play-werewolves-role-reveal", path: "/play/VISUAL?visualGame=1&phase=role_reveal&family=werewolves&role=seer" },
+  { name: "play-werewolves-night", path: "/play/VISUAL?visualGame=1&phase=night&family=werewolves&role=seer" },
+  { name: "play-werewolves-day", path: "/play/VISUAL?visualGame=1&phase=day_discussion&family=werewolves&dead=1" },
+  { name: "play-werewolves-voting", path: "/play/VISUAL?visualGame=1&phase=voting&family=werewolves&voteTally=full" },
+  { name: "play-werewolves-resolution", path: "/play/VISUAL?visualGame=1&phase=resolution&family=werewolves&dead=2" },
+  { name: "play-werewolves-game-over", path: "/play/VISUAL?visualGame=1&phase=game_over&family=werewolves&winner=werewolves&dead=5" },
+  { name: "play-mafia-lobby", path: "/play/VISUAL?visualGame=1&phase=lobby&family=mafia&viewer=host" },
+  { name: "play-mafia-role-reveal", path: "/play/VISUAL?visualGame=1&phase=role_reveal&family=mafia&role=commissioner" },
+  { name: "play-mafia-night", path: "/play/VISUAL?visualGame=1&phase=night&family=mafia&role=commissioner" },
+  { name: "play-mafia-day", path: "/play/VISUAL?visualGame=1&phase=day_discussion&family=mafia&dead=1" },
+  { name: "play-mafia-voting", path: "/play/VISUAL?visualGame=1&phase=voting&family=mafia&voteTally=full" },
+  { name: "play-mafia-resolution", path: "/play/VISUAL?visualGame=1&phase=resolution&family=mafia&dead=2" },
+  { name: "play-mafia-game-over", path: "/play/VISUAL?visualGame=1&phase=game_over&family=mafia&winner=mafia&dead=4" },
+];
 
 const ROUTES = [
   { name: "home", path: "/" },
@@ -15,8 +33,16 @@ const ROUTES = [
   { name: "sign-in", path: "/sign-in" },
   { name: "account-dashboard", path: "/account" },
   { name: "history-empty", path: "/history" },
+  { name: "history", path: "/history?visualHistory=fixture" },
   { name: "leaderboard-empty", path: "/leaderboard" },
   { name: "achievements-gate", path: "/achievements" },
+  { name: "achievements", path: "/achievements?visualAuth=1" },
+  { name: "friends", path: "/friends?visualAuth=1" },
+  { name: "create", path: "/create?visualAuth=1" },
+  { name: "lobby", path: "/lobby" },
+  { name: "werewolf-create", path: "/werewolf/create?visualAuth=1" },
+  { name: "mafia-create", path: "/mafia/create?visualAuth=1" },
+  ...PLAY_VISUAL_ROUTES,
   { name: "forgot-password", path: "/forgot-password" },
   { name: "reset-password-invalid", path: "/reset-password" },
   { name: "verify-email-invalid", path: "/verify-email?token=fake" },
@@ -35,7 +61,19 @@ const VIEWPORTS = [
 ];
 
 const LIGHT_UTILITY_ROUTES = [
+  { name: "home", path: "/" },
+  { name: "werewolf-home", path: "/werewolf" },
+  { name: "mafia-home", path: "/mafia" },
   { name: "account-dashboard", path: "/account" },
+  { name: "history-empty", path: "/history" },
+  { name: "history", path: "/history?visualHistory=fixture" },
+  { name: "leaderboard-empty", path: "/leaderboard" },
+  { name: "achievements", path: "/achievements?visualAuth=1" },
+  { name: "friends", path: "/friends?visualAuth=1" },
+  { name: "create", path: "/create?visualAuth=1" },
+  { name: "lobby", path: "/lobby" },
+  { name: "werewolf-create", path: "/werewolf/create?visualAuth=1" },
+  { name: "mafia-create", path: "/mafia/create?visualAuth=1" },
   { name: "privacy", path: "/privacy" },
   { name: "terms", path: "/terms" },
   { name: "report", path: "/report" },
@@ -44,7 +82,15 @@ const LIGHT_UTILITY_ROUTES = [
 ];
 
 const DARK_UTILITY_ROUTE_NAMES = new Set([
+  "home",
+  "werewolf-home",
+  "mafia-home",
   "account-dashboard",
+  "history-empty",
+  "history",
+  "leaderboard-empty",
+  "achievements",
+  "friends",
   "privacy",
   "privacy-auth",
   "terms",
@@ -52,7 +98,57 @@ const DARK_UTILITY_ROUTE_NAMES = new Set([
   "report",
   "status",
   "faq",
+  "create",
+  "lobby",
+  "werewolf-create",
+  "mafia-create",
+  ...PLAY_VISUAL_ROUTES.map((route) => route.name),
 ]);
+
+const A11Y_ROUTES = [
+  { name: "home", path: "/" },
+  { name: "status", path: "/status" },
+  { name: "privacy", path: "/privacy" },
+  { name: "terms", path: "/terms" },
+  { name: "report", path: "/report" },
+  { name: "faq", path: "/faq" },
+  { name: "account-dashboard", path: "/account" },
+  { name: "history-empty", path: "/history" },
+  { name: "history", path: "/history?visualHistory=fixture" },
+  { name: "achievements-gate", path: "/achievements" },
+  { name: "achievements", path: "/achievements?visualAuth=1" },
+  { name: "leaderboard-empty", path: "/leaderboard" },
+  { name: "friends", path: "/friends?visualAuth=1" },
+  { name: "tutorial", path: "/tutorial" },
+  { name: "sign-in", path: "/sign-in" },
+  { name: "create", path: "/create?visualAuth=1" },
+  { name: "lobby", path: "/lobby" },
+  { name: "werewolf-create", path: "/werewolf/create?visualAuth=1" },
+  { name: "mafia-create", path: "/mafia/create?visualAuth=1" },
+];
+
+for (const route of A11Y_ROUTES) {
+  test(`@a11y route ${route.name}`, async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    if (DARK_UTILITY_ROUTE_NAMES.has(route.name)) {
+      await setVisualTheme(page, "dark");
+    } else {
+      await acceptCookies(page);
+    }
+    await page.goto(route.path, { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle").catch(() => {});
+    await page.waitForTimeout(600);
+
+    const accessibility = await new AxeBuilder({ page })
+      .include("body")
+      .withTags(["wcag2a", "wcag2aa"])
+      // Legacy visual surfaces still have known contrast debt; this sweep gates structural axe regressions.
+      .disableRules(["color-contrast"])
+      .analyze();
+
+    expect(accessibility.violations).toEqual([]);
+  });
+}
 
 for (const viewport of VIEWPORTS) {
   for (const route of ROUTES) {
@@ -63,9 +159,18 @@ for (const viewport of VIEWPORTS) {
       } else {
         await acceptCookies(page);
       }
+      if (route.name.startsWith("play-")) {
+        await installNextDevIndicatorGuard(page);
+      }
       await page.goto(route.path, { waitUntil: "domcontentloaded" });
       await page.waitForLoadState("networkidle").catch(() => {});
+      if (route.name.startsWith("play-")) {
+        await hideNextDevIndicator(page);
+      }
       await page.waitForTimeout(600);
+      if (route.name.startsWith("play-")) {
+        await hideNextDevIndicator(page);
+      }
       await expect(page).toHaveScreenshot(`${viewport.name}-${route.name}.png`, {
         fullPage: true,
         maxDiffPixelRatio: 0.01,
@@ -132,7 +237,7 @@ for (const viewport of VIEWPORTS) {
     await setVisualTheme(page, "dark");
     await page.goto("/report", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle").catch(() => {});
-    await page.locator(".report-type-card").filter({ hasText: "Авторски права" }).click();
+    await page.getByText("Авторски права", { exact: true }).click();
     await page.getByRole("button", { name: "Напред →" }).click();
     await expect(page.getByText("Линк към материала и кой е автор")).toBeVisible();
     await page.waitForTimeout(600);
@@ -190,6 +295,35 @@ async function setVisualTheme(page: Page, theme: "dark" | "light") {
     window.localStorage.setItem("cookie-consent", "1");
     window.localStorage.setItem("werewolf-theme", selectedTheme);
   }, theme);
+}
+
+async function hideNextDevIndicator(page: Page) {
+  await page.addStyleTag({
+    content: "nextjs-portal { display: none !important; }",
+  });
+  await page.evaluate(() => {
+    document.querySelectorAll("nextjs-portal").forEach((element) => element.remove());
+  });
+}
+
+async function installNextDevIndicatorGuard(page: Page) {
+  await page.addInitScript(() => {
+    const hideNextPortal = () => {
+      document.querySelectorAll("nextjs-portal").forEach((element) => element.remove());
+    };
+    const installObserver = () => {
+      hideNextPortal();
+      new MutationObserver(hideNextPortal).observe(document.documentElement, {
+        childList: true,
+        subtree: true,
+      });
+    };
+    if (document.documentElement) {
+      installObserver();
+    } else {
+      window.addEventListener("DOMContentLoaded", installObserver, { once: true });
+    }
+  });
 }
 
 async function mockFeedbackSession(page: Page) {

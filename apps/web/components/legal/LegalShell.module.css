@@ -1,0 +1,347 @@
+/* Legal/status/FAQ shell styles moved out of globals.css. */
+
+/* ============================== */
+/* Utility pages — atmospheric bg */
+/* Matches homepage .landing-shell  */
+/* ============================== */
+
+:global(.privacy-shell),
+:global(.terms-shell),
+:global(.report-shell),
+:global(.status-shell),
+:global(.faq-shell) {
+  position: relative;
+  z-index: 0;
+  isolation: isolate;
+  background: transparent;
+}
+
+:global(body:has(.privacy-shell)),
+:global(body:has(.terms-shell)),
+:global(body:has(.report-shell)),
+:global(body:has(.status-shell)),
+:global(body:has(.faq-shell)) {
+  position: relative;
+  z-index: 0;
+  background: var(--art-landing-ambient) center top / 100% auto repeat-y;
+}
+
+:global(html[data-theme="dark"] body:has(.privacy-shell)),
+:global(html[data-theme="dark"] body:has(.terms-shell)),
+:global(html[data-theme="dark"] body:has(.report-shell)),
+:global(html[data-theme="dark"] body:has(.status-shell)),
+:global(html[data-theme="dark"] body:has(.faq-shell)) {
+  background: #080909;
+}
+
+:global(html:has(.faq-shell)) {
+  scrollbar-gutter: stable;
+}
+
+:global(html[data-theme="light"] body:has(.privacy-shell)),
+:global(html[data-theme="light"] body:has(.terms-shell)),
+:global(html[data-theme="light"] body:has(.report-shell)),
+:global(html[data-theme="light"] body:has(.status-shell)),
+:global(html[data-theme="light"] body:has(.faq-shell)) {
+  background:
+    var(--texture-paper) center / 620px 620px repeat,
+    var(--art-landing-ambient) center top / 100% auto repeat-y;
+}
+
+:global(body:has(.privacy-shell)::before),
+:global(body:has(.terms-shell)::before),
+:global(body:has(.report-shell)::before),
+:global(body:has(.status-shell)::before),
+:global(body:has(.faq-shell)::before) {
+  content: "";
+  position: fixed;
+  inset: 0;
+  display: block;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 4% 50%, rgba(200, 154, 85, 0.18), transparent 34rem),
+    radial-gradient(ellipse at 96% 48%, rgba(43, 93, 105, 0.18), transparent 38rem),
+    linear-gradient(115deg,
+      rgba(5, 7, 8, 0.58) 0%,
+      rgba(6, 8, 9, 0.34) 47%,
+      rgba(5, 7, 8, 0.64) 100%);
+}
+
+:global(html[data-theme="dark"] body:has(.privacy-shell)::before),
+:global(html[data-theme="dark"] body:has(.terms-shell)::before),
+:global(html[data-theme="dark"] body:has(.report-shell)::before),
+:global(html[data-theme="dark"] body:has(.status-shell)::before),
+:global(html[data-theme="dark"] body:has(.faq-shell)::before) {
+  background:
+    radial-gradient(ellipse at 4% 50%, rgba(200, 154, 85, 0.18), transparent 34rem),
+    radial-gradient(ellipse at 96% 48%, rgba(43, 93, 105, 0.18), transparent 38rem),
+    linear-gradient(115deg,
+      rgba(5, 7, 8, 0.62) 0%,
+      rgba(6, 8, 9, 0.28) 47%,
+      rgba(5, 7, 8, 0.66) 100%),
+    var(--art-landing-ambient) center top / 100% auto repeat-y;
+}
+
+:global(html[data-theme="light"] body:has(.privacy-shell)::before),
+:global(html[data-theme="light"] body:has(.terms-shell)::before),
+:global(html[data-theme="light"] body:has(.report-shell)::before),
+:global(html[data-theme="light"] body:has(.status-shell)::before),
+:global(html[data-theme="light"] body:has(.faq-shell)::before) {
+  background:
+    radial-gradient(ellipse at 4% 50%, rgba(255, 230, 180, 0.32), transparent 34rem),
+    radial-gradient(ellipse at 96% 48%, rgba(180, 200, 220, 0.28), transparent 38rem),
+    linear-gradient(115deg,
+      rgba(252, 244, 230, 0.58) 0%,
+      rgba(252, 244, 230, 0.34) 47%,
+      rgba(252, 244, 230, 0.64) 100%);
+}
+
+:global(body:has(.privacy-shell)::after),
+:global(body:has(.terms-shell)::after),
+:global(body:has(.report-shell)::after),
+:global(body:has(.status-shell)::after),
+:global(body:has(.faq-shell)::after) {
+  display: none;
+}
+
+/* ============================== */
+/* Privacy trust dashboard        */
+/* ============================== */
+
+:global(.privacy-shell) {
+  --privacy-bg: var(--legal-privacy-shell-privacy-bg, #0d0a08);
+  --privacy-surface: var(--legal-privacy-shell-privacy-surface, rgba(26, 20, 16, 0.72));
+  --privacy-surface-strong: var(--legal-privacy-shell-privacy-surface-strong, rgba(36, 28, 22, 0.9));
+  --privacy-text: var(--legal-privacy-shell-privacy-text, #f5e8c8);
+  --privacy-text-muted: var(--legal-privacy-shell-privacy-text-muted, rgba(245, 232, 200, 0.74));
+  --privacy-text-soft: var(--legal-privacy-shell-privacy-text-soft, rgba(245, 232, 200, 0.5));
+  --privacy-border: var(--legal-privacy-shell-privacy-border, rgba(245, 232, 200, 0.12));
+  --privacy-border-strong: var(--legal-privacy-shell-privacy-border-strong, rgba(245, 232, 200, 0.22));
+  --privacy-accent: var(--legal-privacy-shell-privacy-accent, #3a4f7a);
+  --privacy-accent-warm: var(--legal-privacy-shell-privacy-accent-warm, #d19a42);
+  --privacy-accent-soft: var(--legal-privacy-shell-privacy-accent-soft, rgba(58, 79, 122, 0.22));
+  --privacy-accent-warm-soft: var(--legal-privacy-shell-privacy-accent-warm-soft, rgba(209, 154, 66, 0.18));
+
+  min-height: 100vh;
+  padding: 0 0 64px;
+  background: var(--privacy-bg);
+  color: var(--privacy-text);
+  font-family: "Noto Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+:global(.privacy-page) {
+  width: 100%;
+}
+
+:global(.privacy-content) {
+  display: grid;
+  max-width: 980px;
+  gap: 28px;
+  margin: 0 auto;
+  padding: 32px 24px 0;
+}
+
+:global(.privacy-section) {
+  padding: 28px;
+  border: 1px solid var(--privacy-border);
+  border-radius: 18px;
+  background: var(--privacy-surface);
+}
+
+:global(.privacy-section-head) {
+  margin-bottom: 22px;
+}
+
+:global(.privacy-section-head h2) {
+  margin: 0 0 8px;
+  color: var(--privacy-text);
+  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-size: clamp(1.5rem, 3.2vw, 2rem);
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1.1;
+}
+
+:global(.privacy-section-lede) {
+  max-width: 60ch;
+  margin: 0;
+  color: var(--privacy-text-muted);
+  font-size: 0.98rem;
+  line-height: 1.55;
+}
+
+@media (max-width: 640px) {:global(.privacy-section) {
+    padding: 22px 18px;
+  }
+}
+
+/* ============================== */
+/* Terms and report utility pages  */
+/* ============================== */
+
+:global(.terms-shell),
+:global(.report-shell) {
+  --legal-bg: var(--legal-terms-shell-legal-bg, #0d0a08);
+  --legal-surface: var(--legal-terms-shell-legal-surface, rgba(26, 20, 16, 0.72));
+  --legal-surface-strong: var(--legal-terms-shell-legal-surface-strong, rgba(36, 28, 22, 0.9));
+  --legal-text: var(--legal-terms-shell-legal-text, #f5e8c8);
+  --legal-text-muted: var(--legal-terms-shell-legal-text-muted, rgba(245, 232, 200, 0.74));
+  --legal-text-soft: var(--legal-terms-shell-legal-text-soft, rgba(245, 232, 200, 0.5));
+  --legal-border: var(--legal-terms-shell-legal-border, rgba(245, 232, 200, 0.12));
+  --legal-border-strong: var(--legal-terms-shell-legal-border-strong, rgba(245, 232, 200, 0.22));
+  --legal-accent-warm: var(--legal-terms-shell-legal-accent-warm, #d19a42);
+  --legal-accent-warm-soft: var(--legal-terms-shell-legal-accent-warm-soft, rgba(209, 154, 66, 0.18));
+  --legal-ok: var(--legal-terms-shell-legal-ok, #6fbf6f);
+  --legal-ok-soft: var(--legal-terms-shell-legal-ok-soft, rgba(111, 191, 111, 0.16));
+  --legal-not-ok: var(--legal-terms-shell-legal-not-ok, #f07b6c);
+  --legal-not-ok-soft: var(--legal-terms-shell-legal-not-ok-soft, rgba(217, 74, 61, 0.18));
+
+  min-height: 100vh;
+  padding: 0 0 64px;
+  background: var(--legal-bg);
+  color: var(--legal-text);
+  font-family: "Noto Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+:global(.terms-shell) {
+  --legal-accent: var(--legal-terms-shell-legal-accent, #b88958);
+}
+
+:global(.report-shell) {
+  --legal-accent: var(--legal-report-shell-legal-accent, #d94a3d);
+}
+
+:global(.terms-page),
+:global(.report-page) {
+  width: 100%;
+}
+
+:global(.terms-content),
+:global(.report-content) {
+  display: grid;
+  gap: 28px;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 32px 24px 0;
+}
+
+:global(.terms-section) {
+  padding: 28px;
+  border: 1px solid var(--legal-border);
+  border-radius: 18px;
+  background: var(--legal-surface);
+}
+
+:global(.terms-section-head) {
+  margin-bottom: 22px;
+}
+
+:global(.terms-section-head h2) {
+  margin: 0 0 8px;
+  color: var(--legal-text);
+  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-size: clamp(1.5rem, 3.2vw, 2rem);
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1.1;
+}
+
+:global(.terms-section-lede) {
+  max-width: 60ch;
+  margin: 0;
+  color: var(--legal-text-muted);
+  font-size: 0.98rem;
+  line-height: 1.55;
+}
+
+@media (max-width: 640px) {:global(.terms-section) {
+    padding: 22px 18px;
+  }
+}
+
+/* ============================== */
+/* Status — service tiles         */
+/* ============================== */
+
+:global(.status-shell) {
+  --status-bg: var(--legal-status-shell-status-bg, #0d0a08);
+  --status-surface: var(--legal-status-shell-status-surface, rgba(26, 20, 16, 0.72));
+  --status-surface-strong: var(--legal-status-shell-status-surface-strong, rgba(36, 28, 22, 0.9));
+  --status-text: var(--legal-status-shell-status-text, #f5e8c8);
+  --status-text-muted: var(--legal-status-shell-status-text-muted, rgba(245, 232, 200, 0.74));
+  --status-text-soft: var(--legal-status-shell-status-text-soft, rgba(245, 232, 200, 0.5));
+  --status-border: var(--legal-status-shell-status-border, rgba(245, 232, 200, 0.12));
+  --status-border-strong: var(--legal-status-shell-status-border-strong, rgba(245, 232, 200, 0.22));
+  --status-accent: var(--legal-status-shell-status-accent, #d19a42);
+  --status-accent-soft: var(--legal-status-shell-status-accent-soft, rgba(209, 154, 66, 0.18));
+  --status-ok: var(--legal-status-shell-status-ok, #6fbf6f);
+  --status-degraded: var(--legal-status-shell-status-degraded, #d19a42);
+  --status-down: var(--legal-status-shell-status-down, #d94a3d);
+  --status-unknown: var(--legal-status-shell-status-unknown, #a8a39b);
+
+  min-height: 100vh;
+  padding: 0 0 64px;
+  color: var(--status-text);
+  background: var(--status-bg);
+  font-family: "Noto Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+/* ============================== */
+/* FAQ - Hearth concept           */
+/* ============================== */
+
+:global(.faq-shell) {
+  --faq-ink: #f5e8c8;
+  --faq-ink-muted: rgba(245, 232, 200, 0.78);
+  --faq-ink-soft: rgba(245, 232, 200, 0.56);
+  --faq-bg: rgba(13, 10, 8, 0.42);
+  --faq-bg-strong: rgba(13, 10, 8, 0.62);
+  --faq-border: rgba(245, 232, 200, 0.12);
+  --faq-border-strong: rgba(217, 154, 66, 0.42);
+  --faq-accent: #d19a42;
+  --faq-accent-strong: #d94a3d;
+  --faq-accent-soft: rgba(217, 154, 66, 0.18);
+}
+
+/* Migrated legal shell selector fallbacks. */
+:global(.faq-shell) {
+  --doc-bg: var(--legal-faq-shell-doc-bg, transparent);
+  --doc-surface: var(--legal-faq-shell-doc-surface, rgba(245, 232, 200, 0.06));
+  --doc-surface-strong: var(--legal-faq-shell-doc-surface-strong, rgba(245, 232, 200, 0.1));
+  --doc-text: var(--legal-faq-shell-doc-text, #f5e8c8);
+  --doc-text-muted: var(--legal-faq-shell-doc-text-muted, rgba(245, 232, 200, 0.78));
+  --doc-text-soft: var(--legal-faq-shell-doc-text-soft, rgba(245, 232, 200, 0.56));
+  --doc-border: var(--legal-faq-shell-doc-border, rgba(245, 232, 200, 0.12));
+  --doc-border-strong: var(--legal-faq-shell-doc-border-strong, rgba(217, 154, 66, 0.42));
+  --doc-accent: var(--legal-faq-shell-doc-accent, #d19a42);
+  --doc-accent-soft: var(--legal-faq-shell-doc-accent-soft, rgba(217, 154, 66, 0.18));
+}
+
+:global(.privacy-shell),
+:global(.terms-shell),
+:global(.report-shell),
+:global(.status-shell),
+:global(.faq-shell) {
+  position: relative;
+  z-index: 0;
+  overflow: hidden;
+  isolation: isolate;
+  margin: 24px auto 96px;
+  padding: 0 0 56px;
+  border: 1px solid var(--legal-shell-border);
+  border-radius: 28px;
+  background: var(--legal-shell-bg);
+  box-shadow: var(--legal-shell-shadow);
+}
+
+@media (max-width: 640px) {:global(.privacy-shell),
+:global(.terms-shell),
+:global(.report-shell),
+:global(.status-shell),
+:global(.faq-shell) {
+    margin: 16px auto 64px;
+    padding: 0 0 40px;
+    border-radius: 20px;
+  }
+}

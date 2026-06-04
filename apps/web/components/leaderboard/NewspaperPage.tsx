@@ -17,7 +17,7 @@ export function NewspaperPage({ entries, issueCount }: { entries: LeaderboardEnt
   }
 
   return (
-    <article className="newspaper-page" aria-label="Вечерен брой на класацията">
+    <article className="newspaper-page" aria-label="Вечерен брой">
       <Masthead issueCount={issueCount} />
       <MainHeadline entry={top1} />
       <SecondaryStories second={top2} third={top3} />

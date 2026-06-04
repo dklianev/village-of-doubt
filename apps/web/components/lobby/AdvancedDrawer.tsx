@@ -1,5 +1,3 @@
-"use client";
-
 import type { Dispatch } from "react";
 import type { CommissionerResultMode, MajorityMode } from "@werewolf/shared";
 import { boundedPlayerCount, type AdvancedFlags, type LobbyFormAction, type LobbyFormState } from "@/lib/lobby-form";

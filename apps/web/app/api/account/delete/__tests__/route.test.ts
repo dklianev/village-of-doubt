@@ -43,7 +43,7 @@ describe("POST /api/account/delete", () => {
     expect(response.status).toBe(401);
   });
 
-  it("анонимизира историята преди да изтрие профила", async () => {
+  it("анонимизира историята преди да изтрие досието", async () => {
     process.env.DATABASE_URL = "postgres://postgres:postgres@localhost:5432/werewolf";
     const { auth } = await import("@/lib/auth");
     const { anonymizeUserGameHistory: anonymize, createDatabase } = await import("@werewolf/database");

@@ -1,13 +1,152 @@
-.ds-pill:hover:not(:disabled) {
-  transform: translateY(-1px);
-  filter: brightness(1.05);
+.ds-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 20px;
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid transparent;
+  border-radius: var(--ds-radius-chip);
+  font-family: "Noto Serif", "Iowan Old Style", Georgia, serif;
+  font-size: var(--ds-type-body);
+  font-weight: 800;
+  line-height: 1;
+  color: var(--ds-ink-primary);
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease,
+    filter 180ms ease;
 }
 
-.ds-pill:active:not(:disabled) {
-  transform: scale(0.98);
+.ds-pill:hover:not(:disabled, [aria-disabled="true"]) {
+  transform: translateY(var(--ds-lift-y));
 }
 
-.ds-pill:disabled {
-  opacity: 0.5;
+.ds-pill:active:not(:disabled, [aria-disabled="true"]) {
+  transform: scale(var(--ds-press-scale));
+  transition: transform var(--ds-press-duration) ease;
+}
+
+.ds-pill:focus-visible {
+  outline: none;
+  box-shadow: var(--ds-focus-ring);
+}
+
+.ds-pill:disabled,
+.ds-pill[aria-disabled="true"] {
   cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.ds-pill:disabled:hover,
+.ds-pill[aria-disabled="true"]:hover {
+  transform: none;
+}
+
+.ds-pill[data-shimmer="true"]::before {
+  content: "";
+  position: absolute;
+  inset: -120% auto -120% -44%;
+  z-index: 0;
+  width: 46%;
+  background: var(--ds-shimmer-overlay);
+  opacity: 0;
+  transform: rotate(18deg);
+  transition:
+    transform var(--ds-shimmer-duration) ease,
+    opacity var(--ds-shimmer-duration) ease;
+  pointer-events: none;
+}
+
+.ds-pill[data-shimmer="true"]:hover:not(:disabled, [aria-disabled="true"])::before {
+  opacity: 1;
+  transform: translateX(290%) rotate(18deg);
+}
+
+.ds-pill[data-tracked="true"] {
+  text-transform: uppercase;
+  letter-spacing: 0;
+}
+
+.ds-pill[data-intent="primary"] {
+  border-color: var(--ds-accent-blood-deep);
+  background: var(--ds-gradient-primary-rich), var(--ds-accent-blood);
+  color: oklch(0.97 0.01 80);
+  box-shadow:
+    0 14px 34px oklch(0.42 0.155 25 / 0.34),
+    inset 0 1px oklch(1 0 0 / 0.18);
+}
+
+.ds-pill[data-intent="primary"]:hover:not(:disabled, [aria-disabled="true"]) {
+  box-shadow:
+    0 20px 48px oklch(0.42 0.155 25 / 0.48),
+    inset 0 1px oklch(1 0 0 / 0.18);
+}
+
+.ds-pill[data-intent="secondary"] {
+  border-color: oklch(0.40 0.018 60 / 0.2);
+  background: var(--ds-gradient-secondary-paper);
+  color: var(--ds-ink-primary);
+  box-shadow: inset 0 1px oklch(1 0 0 / 0.08);
+}
+
+.ds-pill[data-intent="secondary"]:hover:not(:disabled, [aria-disabled="true"]) {
+  border-color: var(--ds-accent-gold);
+  background: oklch(0.94 0.022 78 / 0.12);
+  box-shadow: 0 14px 34px oklch(0 0 0 / 0.18);
+}
+
+.ds-pill[data-intent="danger"] {
+  border-color: var(--ds-accent-blood);
+  background: transparent;
+  color: var(--ds-pill-danger-color);
+}
+
+.ds-pill[data-intent="danger"]:hover:not(:disabled, [aria-disabled="true"]) {
+  background: oklch(0.50 0.155 25 / 0.1);
+}
+
+.ds-pill[data-intent="ghost"] {
+  border-color: oklch(0.40 0.018 60 / 0.2);
+  background: transparent;
+  color: currentColor;
+}
+
+.ds-pill[data-intent="ghost"]:hover:not(:disabled, [aria-disabled="true"]) {
+  border-color: var(--ds-accent-gold);
+  background: oklch(0.94 0.022 78 / 0.18);
+}
+
+.ds-pill[data-intent="faction"] {
+  border-color: var(--ds-accent-faction);
+  background: var(--ds-gradient-faction, var(--ds-gradient-primary-rich));
+  color: oklch(0.97 0.01 80);
+  box-shadow: var(--ds-shadow-faction);
+}
+
+.ds-pill[data-intent="faction"]:hover:not(:disabled, [aria-disabled="true"]) {
+  box-shadow:
+    0 20px 48px oklch(0 0 0 / 0.48),
+    inset 0 1px oklch(1 0 0 / 0.18);
+}
+
+.ds-pill[data-size="sm"] {
+  min-height: 36px;
+  padding: 0 14px;
+  font-size: var(--ds-type-body-sm);
+}
+
+.ds-pill[data-size="lg"] {
+  min-height: 52px;
+  padding: 0 28px;
+  font-size: var(--ds-type-lede);
 }

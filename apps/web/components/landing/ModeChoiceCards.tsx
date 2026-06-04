@@ -30,7 +30,8 @@ export function ModeChoiceCards({ games, initialSession }: { games: readonly Mod
           <article
             key={game.id}
             className={`game-choice-card game-choice-${game.id}`}
-            data-theme={game.family}
+            data-faction={game.family}
+            data-family={game.family}
           >
             <LastFamilyPill family={game.family} />
             <span className="section-kicker">{game.eyebrow}</span>

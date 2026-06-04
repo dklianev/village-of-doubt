@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { JsonLd } from "@/components/JsonLd";
 import { TutorialFlipbook } from "@/components/tutorial/TutorialFlipbook";
+import "@/components/tutorial/Tutorial.module.css";
 import { routeMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = routeMetadata({

@@ -17,6 +17,7 @@ import {
 import { AuthChip } from "@/components/site-chrome/AuthChip";
 import { getSoundEnabled, playCue, setSoundEnabled } from "@/lib/sound";
 import type { AuthSessionView } from "@/lib/use-auth-session";
+import "@/components/site-chrome/SiteChrome.module.css";
 
 type ThemePreference = "light" | "dark";
 type ChromeFamily = "werewolves" | "mafia";

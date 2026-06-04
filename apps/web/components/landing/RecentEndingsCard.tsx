@@ -21,13 +21,34 @@ export function RecentEndingsCard({ family, endings }: RecentEndingsCardProps) {
     <article className="quickstart-winner quickstart-mini-card recent-endings-card">
       <p className="section-kicker">{kicker(family)}</p>
       {visible.length === 0 ? (
-        <div className="quickstart-winner-empty">
-          <LastWinnerEmptyGlyph className="quickstart-dim-glyph" />
-          <div>
-            <h3>{emptyHeading(family)}</h3>
-            <p>След първата завършена игра.</p>
+        family === null ? (
+          <div className="quickstart-winner-empty quickstart-winner-empty--homepage">
+            <div className="quickstart-winner-copy">
+              <LastWinnerEmptyGlyph className="quickstart-dim-glyph" />
+              <div>
+                <h3>{emptyHeading(family)}</h3>
+                <p>След първата завършена игра.</p>
+              </div>
+            </div>
+            <article className="ghost-case-file" aria-hidden="true">
+              <span className="ghost-example-tag">ПРИМЕР</span>
+              <p className="ghost-case-eyebrow">ДЕЛО №4821</p>
+              <h3>Селото оцеля през три нощи.</h3>
+              <p>
+                Гадателката разпозна Върколака преди последното гласуване. Никой не повярва,
+                докато сутринта камбаната не зазвъня.
+              </p>
+            </article>
           </div>
-        </div>
+        ) : (
+          <div className="quickstart-winner-empty">
+            <LastWinnerEmptyGlyph className="quickstart-dim-glyph" />
+            <div>
+              <h3>{emptyHeading(family)}</h3>
+              <p>След първата завършена игра.</p>
+            </div>
+          </div>
+        )
       ) : (
         <ul className="recent-endings-list">
           {visible.map((ending, index) => (

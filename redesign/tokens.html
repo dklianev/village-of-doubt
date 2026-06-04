@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="bg">
+<head>
+<meta charset="utf-8">
+<title>Tokens · Подробен спецификат</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="crest">W</div>
+    <div class="brand">
+      <div class="brand-title">Върколак · Мафия</div>
+      <div class="brand-sub">Tokens · 32 променливи</div>
+    </div>
+    <nav>
+      <a href="index.html">Преглед</a>
+      <a href="tokens.html" class="active">Tokens</a>
+      <a href="primitives.html">Компоненти</a>
+      <a href="dictionary.html">Речник</a>
+      <a href="motion.html">Движение</a>
+      <a href="states.html">Състояния</a>
+      <a href="acceptance.html">Acceptance</a>
+      <a href="prompts.html">Промпти</a>
+    </nav>
+  </div>
+</div>
+
+<main>
+
+<header class="hero">
+  <div class="hero-card">
+    <div class="eyebrow">01 · Foundation · Tokens</div>
+    <h1>Тридесет и две <em>променливи.</em></h1>
+    <p class="hero-lede">
+      Целият цветови, типографски и пространствен език на проекта живее тук. Всичко
+      друго (компоненти, страници, теми) се обръща към тези стойности — никога към
+      сурови hex кодове или px размери.
+    </p>
+    <div class="hero-meta">
+      <span>Файл · <b>packages/ui/tokens.css</b></span>
+      <span>Формат · <b>OKLCH + rem</b></span>
+      <span>WCAG · <b>всички двойки ≥4.5:1</b></span>
+    </div>
+  </div>
+</header>
+
+<!-- COLORS -->
+<section class="wrap">
+  <div class="section-head">
+    <div>
+      <div class="num">01 / Цветове</div>
+      <h2>14 цветови tokens.</h2>
+    </div>
+    <p>Защо OKLCH: позволява перцептивно-еднакво модифициране на тон (за бъдеща „Карнавал" кожа) при запазен контраст.</p>
+  </div>
+
+  <div class="paper-card">
+    <h3 class="section-title">Surface &amp; Ink</h3>
+    <p class="section-desc">Фонове и текст върху paper. Всеки контраст е проверен срещу WCAG AA.</p>
+    <table class="spec">
+      <thead><tr><th></th><th>Token</th><th>Стойност</th><th>Употреба</th><th>Contrast vs paper</th></tr></thead>
+      <tbody>
+        <tr><td><span class="swatch" style="background: oklch(0.94 0.022 78);"></span></td><td class="name">--surface-paper</td><td class="val">oklch(0.94 0.022 78)</td><td class="use">Основен фон, light режим</td><td class="note">—</td></tr>
+        <tr><td><span class="swatch" style="background: oklch(0.91 0.028 78);"></span></td><td class="name">--surface-paper-deep</td><td class="val">oklch(0.91 0.028 78)</td><td class="use">Recessed зони (cards отзад)</td><td class="note">—</td></tr>
+        <tr><td><span class="swatch" style="background: oklch(0.86 0.035 75);"></span></td><td class="name">--surface-paper-edge</td><td class="val">oklch(0.86 0.035 75)</td><td class="use">Borders, dividers</td><td class="note">—</td></tr>
+        <tr><td><span class="swatch" style="background: oklch(0.22 0.018 60);"></span></td><td class="name">--ink-primary</td><td class="val">oklch(0.22 0.018 60)</td><td class="use">Основен текст</td><td class="note">10.4 : 1 ✓</td></tr>
+        <tr><td><span class="swatch" style="background: oklch(0.40 0.018 60);"></span></td><td class="name">--ink-soft</td><td class="val">oklch(0.40 0.018 60)</td><td class="use">Lede, meta, captions</td><td class="note">5.8 : 1 ✓</td></tr>
+        <tr><td><span class="swatch" style="background: oklch(0.55 0.015 60);"></span></td><td class="name">--ink-faint</td><td class="val">oklch(0.55 0.015 60)</td><td class="use">Disabled, helper текст</td><td class="note">3.6 : 1 (large only)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="scene-card">
+    <h3 class="section-title" style="color: var(--scene-text)">Scene &amp; Scene text</h3>
+    <p class="section-desc" style="color: var(--scene-text-soft)">Тъмни cinematic повърхности. Hero hero panel, in-game нощни сцени.</p>
+    <table class="spec">
+      <thead><tr><th></th><th>Token</th><th>Стойност</th><th>Употреба</th><th>Contrast vs scene</th></tr></thead>
+      <tbody>
+        <tr><td><span class="swatch" style="background: oklch(0.18 0.012 60);"></span></td><td class="name">--surface-scene</td><td class="val">oklch(0.18 0.012 60)</td><td class="use">Hero card background</td><td class="note">—</td></tr>
+        <tr><td><span class="swatch" style="background: oklch(0.13 0.014 50);"></span></td><td class="name">--surface-scene-deep</td><td class="val">oklch(0.13 0.014 50)</td><td class="use">In-game нощна сцена</td><td class="note">—</td></tr>
+        <tr><td><span class="swatch" style="background: oklch(0.92 0.022 80);"></span></td><td class="name">--scene-text</td><td class="val">oklch(0.92 0.022 80)</td><td class="use">Основен текст върху scene</td><td class="note">12.1 : 1 ✓</td></tr>
+        <tr><td><span class="swatch" style="background: oklch(0.74 0.020 78);"></span></td><td class="name">--scene-text-soft</td><td class="val">oklch(0.74 0.020 78)</td><td class="use">Lede върху scene</td><td class="note">7.2 : 1 ✓</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="paper-card">
+    <h3 class="section-title">Accents</h3>
+    <p class="section-desc">Кървав за действие, златен за ритуал, зелен за потвърждение. Никакви други акценти.</p>
+    <table class="spec">
+      <thead><tr><th></th><th>Token</th><th>Стойност</th><th>Употреба</th><th>Бележки</th></tr></thead>
+      <tbody>
+        <tr><td><span class="swatch" style="background: oklch(0.50 0.155 25);"></span></td><td class="name">--accent-blood</td><td class="val">oklch(0.50 0.155 25)</td><td class="use">Primary CTA, opasna zona</td><td class="note">4.5:1 на paper, на scene също минава</td></tr>
+        <tr><td><span class="swatch" style="background: oklch(0.42 0.155 25);"></span></td><td class="name">--accent-blood-deep</td><td class="val">oklch(0.42 0.155 25)</td><td class="use">Hover/pressed на CTA</td><td class="note">—</td></tr>
+        <tr><td><span class="swatch" style="background: oklch(0.78 0.115 75);"></span></td><td class="name">--accent-gold</td><td class="val">oklch(0.78 0.115 75)</td><td class="use">Медальони, ритуал, фази</td><td class="note">Само върху scene (на paper твърде блед)</td></tr>
+        <tr><td><span class="swatch" style="background: oklch(0.58 0.110 65);"></span></td><td class="name">--accent-gold-deep</td><td class="val">oklch(0.58 0.110 65)</td><td class="use">Eyebrow labels върху paper</td><td class="note">4.6 : 1 на paper ✓</td></tr>
+        <tr><td><span class="swatch" style="background: oklch(0.85 0.085 80);"></span></td><td class="name">--accent-gold-soft</td><td class="val">oklch(0.85 0.085 80)</td><td class="use">Glow върху scene, hover states</td><td class="note">—</td></tr>
+        <tr><td><span class="swatch" style="background: oklch(0.55 0.10 145);"></span></td><td class="name">--accent-green</td><td class="val">oklch(0.55 0.10 145)</td><td class="use">Success, „жив", confirm</td><td class="note">Употреба пестелива</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- TYPE -->
+<section class="wrap">
+  <div class="section-head">
+    <div>
+      <div class="num">02 / Типография</div>
+      <h2>10 типографски tokens.</h2>
+    </div>
+    <p>Една фамилия (Cormorant Garamond), един моноспейс (JetBrains Mono). Скалата е модулна с base 18px.</p>
+  </div>
+
+  <div class="paper-card">
+    <h3 class="section-title">Type scale</h3>
+    <table class="spec">
+      <thead><tr><th>Token</th><th>Размер</th><th>Line-height</th><th>Letter-spacing</th><th>Weight</th><th>Употреба</th></tr></thead>
+      <tbody>
+        <tr><td class="name">--text-display</td><td class="val">clamp(46px, 7vw, 88px)</td><td>0.98</td><td>-0.015em</td><td>500</td><td class="use">Hero h1, „Върколак или Мафия"</td></tr>
+        <tr><td class="name">--text-h1</td><td class="val">clamp(34px, 4vw, 48px)</td><td>1.0</td><td>-0.01em</td><td>500</td><td class="use">Page headings</td></tr>
+        <tr><td class="name">--text-h2</td><td class="val">clamp(28px, 3vw, 38px)</td><td>1.05</td><td>-0.01em</td><td>500</td><td class="use">Section headings</td></tr>
+        <tr><td class="name">--text-h3</td><td class="val">24px</td><td>1.15</td><td>0</td><td>600</td><td class="use">Card titles</td></tr>
+        <tr><td class="name">--text-h4</td><td class="val">18px</td><td>1.2</td><td>0</td><td>600</td><td class="use">Sub-card titles</td></tr>
+        <tr><td class="name">--text-body</td><td class="val">18px</td><td>1.55</td><td>0</td><td>400</td><td class="use">Body параграфи</td></tr>
+        <tr><td class="name">--text-body-sm</td><td class="val">15px</td><td>1.5</td><td>0</td><td>400</td><td class="use">Captions, list items</td></tr>
+        <tr><td class="name">--text-lede</td><td class="val">22px</td><td>1.45</td><td>0</td><td>400</td><td class="use">Hero lede</td></tr>
+        <tr><td class="name">--text-eyebrow</td><td class="val">11px</td><td>1</td><td>0.26em</td><td>500</td><td class="use">All-caps category labels (mono)</td></tr>
+        <tr><td class="name">--text-meta</td><td class="val">12px</td><td>1.4</td><td>0.14em</td><td>500</td><td class="use">Meta footer info (mono)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- SPACING -->
+<section class="wrap">
+  <div class="section-head">
+    <div>
+      <div class="num">03 / Пространство</div>
+      <h2>8 spacing tokens + 3 radii + 2 shadows.</h2>
+    </div>
+    <p>Spacing скала на база 4px. Всичко друго (margin, padding, gap) се изразява чрез тези.</p>
+  </div>
+
+  <div class="grid-2">
+    <div class="paper-card">
+      <h3 class="section-title">Spacing scale</h3>
+      <table class="spec">
+        <thead><tr><th>Token</th><th>px</th><th>Употреба</th></tr></thead>
+        <tbody>
+          <tr><td class="name">--space-1</td><td class="val">4px</td><td class="use">Tight inline gaps</td></tr>
+          <tr><td class="name">--space-2</td><td class="val">8px</td><td class="use">Между близки елементи</td></tr>
+          <tr><td class="name">--space-3</td><td class="val">12px</td><td class="use">Card вътрешен padding малък</td></tr>
+          <tr><td class="name">--space-4</td><td class="val">16px</td><td class="use">Стандартен gap</td></tr>
+          <tr><td class="name">--space-5</td><td class="val">20px</td><td class="use">Между paragraph и след него</td></tr>
+          <tr><td class="name">--space-6</td><td class="val">24px</td><td class="use">Между cards, секции</td></tr>
+          <tr><td class="name">--space-8</td><td class="val">32px</td><td class="use">Card padding (стандарт)</td></tr>
+          <tr><td class="name">--space-12</td><td class="val">48px</td><td class="use">Hero padding, между sections</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="paper-card">
+      <h3 class="section-title">Radii &amp; Shadows</h3>
+      <table class="spec">
+        <thead><tr><th>Token</th><th>Стойност</th><th>Употреба</th></tr></thead>
+        <tbody>
+          <tr><td class="name">--radius-card</td><td class="val">22px</td><td class="use">Hero cards, large surfaces</td></tr>
+          <tr><td class="name">--radius-tile</td><td class="val">14px</td><td class="use">Standard cards</td></tr>
+          <tr><td class="name">--radius-chip</td><td class="val">999px</td><td class="use">Pills, кръгли бутони</td></tr>
+          <tr><td class="name">--shadow-card</td><td class="val" style="font-size: 9px;">0 1px 0 inset, 0 18px 40px -28px</td><td class="use">Paper cards</td></tr>
+          <tr><td class="name">--shadow-scene</td><td class="val" style="font-size: 9px;">0 1px 0 inset, 0 30px 60px -30px</td><td class="use">Scene cards (по-агресивна)</td></tr>
+          <tr><td class="name">--focus-ring</td><td class="val" style="font-size: 9px;">0 0 0 2px gold, 0 0 0 4px paper</td><td class="use">Keyboard focus всички елементи</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- FULL CSS -->
+<section class="wrap">
+  <div class="section-head">
+    <div>
+      <div class="num">04 / Готов файл</div>
+      <h2>tokens.css — копи-paste готов.</h2>
+    </div>
+    <p>Това е целият packages/ui/tokens.css. Никакви други tokens се добавят без обсъждане.</p>
+  </div>
+
+  <div class="code">
+    <div class="code-bar">
+      <span class="label">packages/ui/tokens.css · 32 променливи</span>
+      <button onclick="copyCode(this)">Копирай</button>
+    </div>
+    <div class="code-body"><span class="c">/* =========================================================
+   Върколак · Мафия — Design Tokens
+   Един източник на истина. Никакви други CSS променливи
+   не се добавят извън този файл.
+   ========================================================= */</span>
+
+<span class="k">:root</span> {
+  <span class="c">/* ----- Surfaces ----- */</span>
+  <span class="v">--surface-paper</span>:        oklch(0.94 0.022 78);
+  <span class="v">--surface-paper-deep</span>:   oklch(0.91 0.028 78);
+  <span class="v">--surface-paper-edge</span>:   oklch(0.86 0.035 75);
+  <span class="v">--surface-scene</span>:        oklch(0.18 0.012 60);
+  <span class="v">--surface-scene-deep</span>:   oklch(0.13 0.014 50);
+
+  <span class="c">/* ----- Ink ----- */</span>
+  <span class="v">--ink-primary</span>:          oklch(0.22 0.018 60);
+  <span class="v">--ink-soft</span>:             oklch(0.40 0.018 60);
+  <span class="v">--ink-faint</span>:            oklch(0.55 0.015 60);
+  <span class="v">--scene-text</span>:           oklch(0.92 0.022 80);
+  <span class="v">--scene-text-soft</span>:      oklch(0.74 0.020 78);
+
+  <span class="c">/* ----- Accents ----- */</span>
+  <span class="v">--accent-blood</span>:         oklch(0.50 0.155 25);
+  <span class="v">--accent-blood-deep</span>:    oklch(0.42 0.155 25);
+  <span class="v">--accent-gold</span>:          oklch(0.78 0.115 75);
+  <span class="v">--accent-gold-deep</span>:     oklch(0.58 0.110 65);
+  <span class="v">--accent-gold-soft</span>:     oklch(0.85 0.085 80);
+  <span class="v">--accent-green</span>:         oklch(0.55 0.10 145);
+
+  <span class="c">/* ----- Type scale ----- */</span>
+  <span class="v">--text-display</span>:         clamp(46px, 7vw, 88px);
+  <span class="v">--text-h1</span>:              clamp(34px, 4vw, 48px);
+  <span class="v">--text-h2</span>:              clamp(28px, 3vw, 38px);
+  <span class="v">--text-h3</span>:              24px;
+  <span class="v">--text-h4</span>:              18px;
+  <span class="v">--text-body</span>:            18px;
+  <span class="v">--text-body-sm</span>:         15px;
+  <span class="v">--text-lede</span>:            22px;
+  <span class="v">--text-eyebrow</span>:         11px;
+  <span class="v">--text-meta</span>:            12px;
+
+  <span class="c">/* ----- Spacing (4px base) ----- */</span>
+  <span class="v">--space-1</span>:  4px;
+  <span class="v">--space-2</span>:  8px;
+  <span class="v">--space-3</span>:  12px;
+  <span class="v">--space-4</span>:  16px;
+  <span class="v">--space-5</span>:  20px;
+  <span class="v">--space-6</span>:  24px;
+  <span class="v">--space-8</span>:  32px;
+  <span class="v">--space-12</span>: 48px;
+
+  <span class="c">/* ----- Radii ----- */</span>
+  <span class="v">--radius-card</span>: 22px;
+  <span class="v">--radius-tile</span>: 14px;
+  <span class="v">--radius-chip</span>: 999px;
+
+  <span class="c">/* ----- Shadows ----- */</span>
+  <span class="v">--shadow-card</span>:
+    0 1px 0 oklch(1 0 0 / 0.45) inset,
+    0 18px 40px -28px oklch(0.20 0.05 60 / 0.55);
+  <span class="v">--shadow-scene</span>:
+    0 1px 0 oklch(1 0 0 / 0.04) inset,
+    0 30px 60px -30px oklch(0 0 0 / 0.65);
+
+  <span class="c">/* ----- Focus ----- */</span>
+  <span class="v">--focus-ring</span>:
+    0 0 0 2px var(--accent-gold),
+    0 0 0 4px var(--surface-paper);
+}
+
+<span class="c">/* ----- Global focus styles (paired with token) ----- */</span>
+<span class="k">:focus-visible</span> {
+  outline: <span class="t">none</span>;
+  box-shadow: <span class="t">var</span>(--focus-ring);
+  border-radius: <span class="t">var</span>(--radius-chip);
+}
+
+<span class="c">/* ----- Reduced motion ----- */</span>
+<span class="k">@media</span> (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms <span class="h">!important</span>;
+    animation-iteration-count: 1 <span class="h">!important</span>;
+    transition-duration: 0.01ms <span class="h">!important</span>;
+    scroll-behavior: auto <span class="h">!important</span>;
+  }
+}
+</div>
+  </div>
+</section>
+
+<!-- USAGE RULES -->
+<section class="wrap">
+  <div class="section-head">
+    <div>
+      <div class="num">05 / Дисциплина</div>
+      <h2>Правила за употреба.</h2>
+    </div>
+    <p>Тези пет правила се проверяват в PR review. Нарушение блокира merge.</p>
+  </div>
+
+  <div class="paper-card">
+    <ul class="tight" style="font-size: 17px;">
+      <li><b>Никога сурови стойности.</b> Не пишеш <code>color: #d97757</code>. Пишеш <code>color: var(--accent-blood)</code>. Дори ако „това е специален случай".</li>
+      <li><b>Никога нови tokens без обсъждане.</b> Ако нямаш token за това, което искаш, проблемът е дизайн решението, не липсата на token.</li>
+      <li><b>Никога <code>!important</code> върху tokens.</b> Ако token-ът не работи на конкретно място, то ползваш грешен token.</li>
+      <li><b>Никога tokens в JS логиката.</b> Cetn tokens живеят в CSS. Никакви <code>const COLORS = {...}</code> в TS файлове.</li>
+      <li><b>Никога локални копия в компоненти.</b> Surface цвят на SceneCard.tsx? — Не. Чакаш <code>var(--surface-scene)</code>.</li>
+    </ul>
+  </div>
+</section>
+
+<footer class="foot">
+  <span>Подробен спецификат · Tokens</span>
+  <span class="sign">„Всяка стойност има име. Всяко име има значение."</span>
+  <span>Следва · <a href="primitives.html" style="border: none; color: inherit;">Компоненти →</a></span>
+</footer>
+
+</main>
+
+<script>
+function copyCode(btn) {
+  const text = btn.closest('.code').querySelector('.code-body').innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ Копирано';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Копирай'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+</script>
+
+</body>
+</html>

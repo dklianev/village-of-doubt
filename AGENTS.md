@@ -55,7 +55,7 @@ agents-shared/            Cross-CLI workflow guides (за skills / Codex / др�
 
 4. **Целият UI е на български**. Никакъв англ. placeholder, label, error message за крайни user-и. Системни / debug съобщения (console.error, error stack) могат да са на английски.
 
-5. **`publicEvents` и `publicChat` са capped**. 120 / 80 съответно (виж `MAX_PUBLIC_EVENTS` / `MAX_PUBLIC_CHAT` в GameRoom.ts). Ако добавяш нов public event source, провери да не го байпасваш.
+5. **`publicEvents` и `publicChat` са capped**. 120 / 80 съответно (виж `MAX_PUBLIC_EVENTS` / `MAX_PUBLIC_CHAT` в `apps/game-server/src/rooms/game-room-runtime.ts`). Ако добавяш нов public event source, провери да не го байпасваш.
 
 6. **Random source за role assignment е crypto-based**. Виж `defaultRandomSource` в [role-assignment.ts](packages/shared/src/role-assignment.ts). Не подменяй с `Math.random` освен в детерминистични тестове.
 
@@ -127,6 +127,40 @@ Motion е ограничен до 3 primitives. Проверка:
 `Dialog` и `Sheet` използват Radix `asChild` + `motion.div`. Не обвивай Radix primitives с deprecated `motion(Component)`.
 `Sheet` винаги има видимо `title` и включва собствените си layout styles, за да не зависи от consumer CSS import.
 
+### Hero banners
+
+Hero изображенията минават през `SceneCard.background`, не през page-local
+`<Image fill>` wrappers и не през `:global()` overrides върху primitives:
+
+```tsx
+<SceneCard
+  eyebrow="ДОСИЕ"
+  density="lg"
+  background={{ image: "var(--art-account)", overlay: "scrim" }}
+>
+  ...
+</SceneCard>
+```
+
+`background.image` трябва да ползва app-level `--art-*` token, когато има такъв.
+Виж `packages/ui/docs/tokens.md` за overlay и focal-point правилата.
+
+### Theme + faction attributes
+
+- `data-theme="light" | "dark"` живее на `<html>` и управлява surface/ink theme.
+- `data-faction="werewolves" | "mafia"` живее на page-level container и управлява faction accents.
+
+Новите primitives четат `data-faction` за faction styling. Legacy
+`[data-theme="werewolves" | "mafia"]` selectors остават като съвместимост до
+отделна cleanup миграция; не добавяй нови faction selectors върху `data-theme`.
+
+### Primitive override guard
+
+CSS modules не трябва да пренаписват primitive identity чрез `:global()`, напр.
+`:global(.paper-card)` или `:global([data-ds-scene-card])`. Използвай additive
+primitive prop или page-local wrapper accent. `pnpm regression` предупреждава за
+нарушения по време на hero restoration и ще стане hard guard след cleanup-а.
+
 ### Empty states
 
 22-entry catalog: `packages/ui/src/states/empty-states.ts`. Geometric SVG artifacts: `packages/ui/src/primitives/artifacts/`.
@@ -142,6 +176,40 @@ Motion е ограничен до 3 primitives. Проверка:
 `docs/acceptance/*.md` съдържа per-page PR checklist.
 
 Storybook 10 (React-Vite) е reference за primitives и MDX docs. `pnpm visual:ui` покрива 11 primitives × light/dark × desktop/mobile и пуска axe върху `#storybook-root`.
+
+## Post-redesign architecture
+
+### Game server modules
+
+`GameRoom.ts` композира отделни managers за най-рисковите lifecycle части:
+
+- `PlayerPresenceManager` — active clients, token nonce replay guard, join rate limit и janitors
+- `PhaseStateMachine` — phase timers, pause/resume snapshot и timer cleanup
+- `AchievementBroadcaster` — in-memory achievement event buffer, duplicate suppression и targeted unlock grouping
+- `RoomPersistenceCoordinator` — persistence queue, backpressure, Sentry capture и no-op fallback без `DATABASE_URL`
+- `RoomChatRouter` — public/faction/dead chat routing, typing events и chat caps
+- `PrivateEventDispatcher` — private role, lovers и full narrator snapshots
+- `game-room-runtime.ts` — shared runtime helpers, room-code utilities, readiness checks и caps
+
+Sacred: `apps/game-server/src/game-logic/night-resolver.ts` и command protocol surface-ът в `GameRoom.ts`.
+Всяка промяна там минава през [role-mechanics-review.md](agents-shared/role-mechanics-review.md).
+
+Regression contract-ът нарочно проверява production token secret guard-а в `GameRoom.ts`.
+Не мести `getGameTokenSecret` / `isProductionSecret` без едновременно да запазиш или обновиш security guard-а.
+
+### Database
+
+Drizzle relations живеят в `packages/database/src/schema.ts`. Използвай
+`db.query.<table>.findMany({ with: { ... } })` за обикновено object loading
+и explicit SQL joins за aggregate reports като leaderboard.
+
+Migration workflow:
+
+- След промяна в `schema.ts`: `pnpm --filter @werewolf/database db:generate`
+- Commit-вай schema и generated SQL migration заедно
+- Production минава през `pnpm --filter @werewolf/database db:migrate`
+- Не използвай `db:push` срещу production
+- `pnpm regression` пуска `drizzle-kit check --config drizzle.config.ts`
 
 ## Workflow guides
 

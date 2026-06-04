@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { memo, useCallback, useDeferredValue, useMemo, useState } from "react";
+import "@/components/games/GameRolesPage.module.css";
 import {
   ROLE_DEFINITIONS,
   getRoleAssetKey,
@@ -129,7 +130,7 @@ export function GameRolesPage({ family }: { family: GameFamily }) {
   }, []);
 
   return (
-    <main className="shell roles-shell" data-theme={family} data-family={family}>
+    <main className="shell roles-shell" data-faction={family} data-family={family}>
       <ResourceHints images={allRoles.slice(0, 4).map((role) => roleThumbPath(family, role))} />
       <section className="role-codex-hero">
         <div className="role-codex-hero-copy">
