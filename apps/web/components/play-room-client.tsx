@@ -780,7 +780,8 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
     }
 
     return (
-      <div className="play-stage-takeover" aria-live="polite">
+      <div className="play-stage-takeover" data-family={family} data-winner={snapshot.winnerTeam} aria-live="polite">
+        <div className="play-winner-scene" aria-hidden="true" />
         <article className={`play-winner faction-${snapshot.winnerTeam}`} data-winner={snapshot.winnerTeam}>
           <p className="play-winner-kicker">край на играта</p>
           <h2 className="play-winner-title">{winnerBg(snapshot.winnerTeam)}</h2>

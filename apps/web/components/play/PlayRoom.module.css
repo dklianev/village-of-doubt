@@ -1479,6 +1479,8 @@
 }
 
 :global(.play-stage-takeover) {
+  --winner-scene: var(--art-resolution);
+  --winner-scene-tone: rgba(209, 154, 66, 0.18);
   position: relative;
   z-index: 9;
   display: grid;
@@ -1500,15 +1502,34 @@
     inset 0 1px rgba(255, 255, 255, 0.06);
 }
 
+:global(.play-winner-scene) {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(circle at 50% 12%, var(--winner-scene-tone), transparent 24rem),
+    linear-gradient(180deg, rgba(4, 4, 5, 0.38), rgba(4, 4, 5, 0.86)),
+    linear-gradient(90deg, rgba(4, 4, 5, 0.78), transparent 30%, transparent 70%, rgba(4, 4, 5, 0.78)),
+    var(--winner-scene) center / cover no-repeat;
+  opacity: 0.72;
+  transform: scale(1.02);
+  pointer-events: none;
+}
+
 :global(.play-stage-takeover)::before {
   position: absolute;
   inset: -18%;
   z-index: -1;
   background:
-    radial-gradient(circle at 50% 16%, var(--winner-glow, rgba(209, 154, 66, 0.22)), transparent 32%),
+    radial-gradient(circle at 50% 16%, var(--winner-scene-tone), transparent 32%),
     radial-gradient(ellipse at 50% 82%, rgba(0, 0, 0, 0.52), transparent 64%);
   content: "";
   pointer-events: none;
+}
+
+:global(.play-stage-takeover > :not(.play-winner-scene)) {
+  position: relative;
+  z-index: 1;
 }
 
 :global(.play-stage-takeover .play-winner),
@@ -1644,6 +1665,38 @@
   --winner-surface: linear-gradient(160deg, rgba(18, 16, 14, 0.92), rgba(5, 5, 5, 0.98));
   --winner-text: #d8cdb8;
   --winner-texture: var(--texture-paper);
+}
+
+:global(.play-stage-takeover[data-winner="village"]) {
+  --winner-scene: var(--faction-village);
+  --winner-scene-tone: rgba(209, 154, 66, 0.2);
+}
+
+:global(.play-stage-takeover[data-winner="werewolves"]) {
+  --winner-scene: var(--faction-werewolves);
+  --winner-scene-tone: rgba(89, 99, 59, 0.22);
+}
+
+:global(.play-stage-takeover[data-winner="vampires"]) {
+  --winner-scene: var(--faction-vampires);
+  --winner-scene-tone: rgba(126, 47, 85, 0.2);
+}
+
+:global(.play-stage-takeover[data-winner="mafia"]) {
+  --winner-scene: var(--faction-mafia);
+  --winner-scene-tone: rgba(123, 31, 27, 0.24);
+}
+
+:global(.play-stage-takeover[data-winner="lovers"]) {
+  --winner-scene: var(--faction-lovers);
+  --winner-scene-tone: rgba(150, 60, 80, 0.2);
+}
+
+:global(.play-stage-takeover[data-winner="neutral"]),
+:global(.play-stage-takeover[data-winner="maniac"]),
+:global(.play-stage-takeover[data-winner="draw"]) {
+  --winner-scene: var(--faction-neutral);
+  --winner-scene-tone: rgba(184, 172, 150, 0.18);
 }
 
 :global(.play-action-dock-head) {
