@@ -1,6 +1,7 @@
 import { defineConfig } from "playwright/test";
 
 const port = Number(process.env.VISUAL_WEB_PORT ?? 3420);
+const browserChannel = process.env.PLAYWRIGHT_CHANNEL;
 
 export default defineConfig({
   testDir: "./apps/web/__visual__",
@@ -10,6 +11,7 @@ export default defineConfig({
   timeout: 45_000,
   use: {
     baseURL: `http://127.0.0.1:${port}`,
+    ...(browserChannel ? { channel: browserChannel } : {}),
   },
   webServer: {
     command: `pnpm --filter @werewolf/web dev --hostname 127.0.0.1 --port ${port}`,

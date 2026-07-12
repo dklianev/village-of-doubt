@@ -50,7 +50,10 @@ async function main() {
 
   await waitForJson(`${baseUrl}/api/health`, "web");
 
-  activeBrowser = await chromium.launch({ headless: true });
+  activeBrowser = await chromium.launch({
+    headless: true,
+    channel: process.env.PLAYWRIGHT_CHANNEL || undefined,
+  });
 
   await runCheck("landing desktop layout and theme picker", testLandingDesktop);
   await runCheck("landing mobile layout", testLandingMobile);

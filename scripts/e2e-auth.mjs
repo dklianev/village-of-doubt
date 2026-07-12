@@ -36,7 +36,10 @@ if (!process.env.E2E_AUTH_BASE_URL && !(await isHealthy(`${baseUrl}/api/health`)
   await waitForHealth(`${baseUrl}/api/health`, "auth web");
 }
 
-const browser = await chromium.launch({ headless: true });
+const browser = await chromium.launch({
+  headless: true,
+  channel: process.env.PLAYWRIGHT_CHANNEL || undefined,
+});
 let failures = 0;
 
 const scenarios = [

@@ -62,7 +62,9 @@ if (selectedRoutes.length === 0) {
 
 await mkdir(outputDir, { recursive: true });
 
-const browser = await chromium.launch();
+const browser = await chromium.launch({
+  channel: process.env.PLAYWRIGHT_CHANNEL || undefined,
+});
 try {
   for (const route of selectedRoutes) {
     for (const viewport of VIEWPORTS) {

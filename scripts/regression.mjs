@@ -778,7 +778,10 @@ function checkLaunchTestingContracts() {
     ? listFilesRecursive(visualBaselineDir).filter((file) => file.endsWith(".png"))
     : [];
 
-  assert(packageJson.scripts["perf:budget"] === "node scripts/bundle-budget.mjs", "package.json must expose pnpm perf:budget.");
+  assert(
+    packageJson.scripts["perf:budget"] === "node --test scripts/bundle-budget.test.mjs && node scripts/bundle-budget.mjs",
+    "package.json must expose pnpm perf:budget with parser tests.",
+  );
   assert(packageJson.scripts.visual?.includes("playwright.config.ts"), "package.json must expose pnpm visual with the Playwright config.");
   assert(packageJson.scripts["e2e:auth"] === "node scripts/e2e-auth.mjs", "package.json must expose pnpm e2e:auth.");
   assert(packageJson.scripts.verify.includes("pnpm visual"), "pnpm verify must run visual regression.");

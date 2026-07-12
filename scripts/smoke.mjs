@@ -46,6 +46,11 @@ async function main() {
     "Върни се в играта",
     "live-safe play page",
   );
+  await waitForText(
+    "http://127.0.0.1:3300/play/VISUAL?visualGame=1&phase=night&family=werewolves",
+    "Върни се в играта",
+    "production visual fixture auth gate",
+  );
   await waitForText("http://127.0.0.1:3300/werewolf/roles", "Роли във Върколак", "werewolf roles page");
   await waitForText("http://127.0.0.1:3300/mafia/roles", "Роли в Мафия", "mafia roles page");
   await waitForText("http://127.0.0.1:3300/history", "Архив на масата", "history page");
