@@ -62,58 +62,58 @@
 }
 
 :global(.phase-rail-icon.phase-lobby) {
-  --phase-icon: image-set(url("/game-art/icon-phase-lobby.webp") type("image/webp"), url("/game-art/icon-phase-lobby.png") type("image/png"));
+  --phase-icon: url("/game-art/phase-rail/v1/werewolves/icon-phase-lobby-128.webp");
 }
 
 :global(.phase-rail-icon.phase-role_reveal) {
-  --phase-icon: image-set(url("/game-art/icon-phase-role-reveal.webp") type("image/webp"), url("/game-art/icon-phase-role-reveal.png") type("image/png"));
+  --phase-icon: url("/game-art/phase-rail/v1/werewolves/icon-phase-role-reveal-128.webp");
 }
 
 :global(.phase-rail-icon.phase-night) {
-  --phase-icon: image-set(url("/game-art/icon-phase-night.webp") type("image/webp"), url("/game-art/icon-phase-night.png") type("image/png"));
+  --phase-icon: url("/game-art/phase-rail/v1/werewolves/icon-phase-night-128.webp");
 }
 
 :global(.phase-rail-icon.phase-day_discussion) {
-  --phase-icon: image-set(url("/game-art/icon-phase-day.webp") type("image/webp"), url("/game-art/icon-phase-day.png") type("image/png"));
+  --phase-icon: url("/game-art/phase-rail/v1/werewolves/icon-phase-day-128.webp");
 }
 
 :global(.phase-rail-icon.phase-voting) {
-  --phase-icon: image-set(url("/game-art/icon-phase-voting.webp") type("image/webp"), url("/game-art/icon-phase-voting.png") type("image/png"));
+  --phase-icon: url("/game-art/phase-rail/v1/werewolves/icon-phase-voting-128.webp");
 }
 
 :global(.phase-rail-icon.phase-resolution) {
-  --phase-icon: image-set(url("/game-art/icon-phase-resolution.webp") type("image/webp"), url("/game-art/icon-phase-resolution.png") type("image/png"));
+  --phase-icon: url("/game-art/phase-rail/v1/werewolves/icon-phase-resolution-128.webp");
 }
 
 :global([data-family="mafia"] .phase-rail-icon.phase-lobby) {
-  --phase-icon: image-set(url("/game-art/mafia/icon-phase-lobby.webp") type("image/webp"), url("/game-art/mafia/icon-phase-lobby.png") type("image/png"));
+  --phase-icon: url("/game-art/phase-rail/v1/mafia/icon-phase-lobby-128.webp");
 }
 
 :global([data-family="mafia"] .phase-rail-icon.phase-role_reveal) {
-  --phase-icon: image-set(url("/game-art/mafia/icon-phase-role-reveal.webp") type("image/webp"), url("/game-art/mafia/icon-phase-role-reveal.png") type("image/png"));
+  --phase-icon: url("/game-art/phase-rail/v1/mafia/icon-phase-role-reveal-128.webp");
 }
 
 :global([data-family="mafia"] .phase-rail-icon.phase-night),
 :global([data-family="mafia"] .phase-rail-icon.phase-first_night) {
-  --phase-icon: image-set(url("/game-art/mafia/icon-phase-night.webp") type("image/webp"), url("/game-art/mafia/icon-phase-night.png") type("image/png"));
+  --phase-icon: url("/game-art/phase-rail/v1/mafia/icon-phase-night-128.webp");
 }
 
 :global([data-family="mafia"] .phase-rail-icon.phase-day_discussion),
 :global([data-family="mafia"] .phase-rail-icon.phase-day_announcement),
 :global([data-family="mafia"] .phase-rail-icon.phase-nomination),
 :global([data-family="mafia"] .phase-rail-icon.phase-defense) {
-  --phase-icon: image-set(url("/game-art/mafia/icon-phase-day.webp") type("image/webp"), url("/game-art/mafia/icon-phase-day.png") type("image/png"));
+  --phase-icon: url("/game-art/phase-rail/v1/mafia/icon-phase-day-128.webp");
 }
 
 :global([data-family="mafia"] .phase-rail-icon.phase-voting) {
-  --phase-icon: image-set(url("/game-art/mafia/icon-phase-voting.webp") type("image/webp"), url("/game-art/mafia/icon-phase-voting.png") type("image/png"));
+  --phase-icon: url("/game-art/phase-rail/v1/mafia/icon-phase-voting-128.webp");
 }
 
 :global([data-family="mafia"] .phase-rail-icon.phase-resolution),
 :global([data-family="mafia"] .phase-rail-icon.phase-hunter_revenge),
 :global([data-family="mafia"] .phase-rail-icon.phase-mayor_successor),
 :global([data-family="mafia"] .phase-rail-icon.phase-game_over) {
-  --phase-icon: image-set(url("/game-art/mafia/icon-phase-resolution.webp") type("image/webp"), url("/game-art/mafia/icon-phase-resolution.png") type("image/png"));
+  --phase-icon: url("/game-art/phase-rail/v1/mafia/icon-phase-resolution-128.webp");
 }
 
 :global(.phase-rail-label) {
