@@ -40,6 +40,7 @@ function renderPanel(overrides: Partial<Parameters<typeof NightActionPanel>[0]> 
     privateRole: "werewolf",
     selectedTargetId: "",
     secondTargetId: "",
+    onResetPrimaryTarget: vi.fn(),
     sendNightAction: vi.fn(),
     ...overrides,
   };

@@ -314,6 +314,14 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
     }
   }, []);
 
+  const resetPrimaryNightTarget = useCallback(() => {
+    setSelectedTargetId("");
+    setSecondTargetId("");
+    if (isCompactViewport) {
+      setActionDockExpanded(false);
+    }
+  }, [isCompactViewport]);
+
   // Stable management callbacks (seats are memoised and ignore callback props, so
   // these must keep a constant identity and read the live room from a ref).
   const roomRef = useRef(room);
@@ -331,10 +339,15 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
       || canVote
       || canUseHunterRevenge
       || canUseNightAction;
+    const isAwaitingSecondTarget =
+      isCompactViewport
+      && needsSecondNightTarget(privateRole?.role, phase)
+      && Boolean(selectedTargetId)
+      && !secondTargetId;
     const shouldForceExpandDock =
       phase === "role_reveal"
-      || Boolean(selectedTargetId)
-      || Boolean(secondTargetId);
+      || Boolean(secondTargetId)
+      || (Boolean(selectedTargetId) && !isAwaitingSecondTarget);
     const shouldAutoExpand =
       shouldForceExpandDock
       || (!isCompactViewport && phaseHasPrimaryDockAction);
@@ -344,7 +357,7 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
     } else if (isCompactViewport && phaseHasPrimaryDockAction) {
       setActionDockExpanded(false);
     }
-  }, [canUseHunterRevenge, canUseNightAction, canVote, isCompactViewport, phase, secondTargetId, selectedTargetId]);
+  }, [canUseHunterRevenge, canUseNightAction, canVote, isCompactViewport, phase, privateRole?.role, secondTargetId, selectedTargetId]);
 
   useEffect(() => {
     if (selectedTargetId && !targetableIds.has(selectedTargetId)) {
@@ -502,6 +515,10 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
     function onKeyDown(event: KeyboardEvent) {
       const target = event.target as HTMLElement | null;
 
+      if (event.defaultPrevented) {
+        return;
+      }
+
       if (event.key === "Escape") {
         if (isTextEntryShortcutTarget(target)) {
           return;
@@ -599,7 +616,7 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
         {snapshot ? (
           <details className="play-rail-disclosure mt-8">
             <summary id={guideHeadingId}>Правила и подсказки</summary>
-            <div aria-labelledby={guideHeadingId}>
+            <div className="play-rail-guide-body" role="region" aria-labelledby={guideHeadingId}>
               <RulesSummary snapshot={snapshot} />
               <PhaseGuide phase={phase} mode={mode} privateRole={privateRole?.role} ownPlayer={ownPlayer} />
             </div>
@@ -859,6 +876,7 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
               nightActionCapabilities={nightActionCapabilities}
               selectedTargetId={selectedTargetId}
               secondTargetId={secondTargetId}
+              onResetPrimaryTarget={resetPrimaryNightTarget}
               sendNightAction={sendNightAction}
             />
           ) : null}

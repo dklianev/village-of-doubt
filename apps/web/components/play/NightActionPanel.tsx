@@ -21,6 +21,7 @@ export function NightActionPanel({
   nightActionCapabilities,
   selectedTargetId,
   secondTargetId,
+  onResetPrimaryTarget,
   sendNightAction,
 }: {
   players: PublicPlayer[];
@@ -32,6 +33,7 @@ export function NightActionPanel({
   nightActionCapabilities?: NightActionCapabilities | null;
   selectedTargetId: string;
   secondTargetId: string;
+  onResetPrimaryTarget: () => void;
   sendNightAction: (action: NightActionCommand) => void;
 }) {
   const selectableTargets = shortcutTargets(phase, privateRole, players, livingPlayers, currentUserId, {
@@ -51,6 +53,7 @@ export function NightActionPanel({
   const secondId = secondTarget?.userId ?? "";
   const canSubmitTarget = Boolean(targetId) && (!needsSecondTarget || Boolean(secondId));
   const secondTargetLabel = privateRole === "blacksmith" ? "кой получава меча" : "втора цел";
+  const selectionStep = !targetId ? 1 : secondId ? 2 : 2;
   const unavailableReasons = nightActionUnavailableReasons(
     nightActionCapabilities,
     targetKindsForRole(privateRole, phase),
@@ -61,9 +64,14 @@ export function NightActionPanel({
     <section className="night-action-sheet ritual-panel mt-8 rounded-[2rem] p-6">
       <p className="section-kicker">нощно действие</p>
       <h2 className="mt-2 text-3xl font-black">{nightInstructionBg(privateRole)}</h2>
+      {needsSecondTarget ? (
+        <p className="night-action-step mt-3" aria-live="polite">
+          Стъпка {selectionStep} от 2
+        </p>
+      ) : null}
       <div className="play-selected-targets mt-5">
         <div className="play-selected-target" data-filled={selectedTarget ? "true" : undefined}>
-          <span>цел от масата</span>
+          <span>{needsSecondTarget ? "първа цел" : "цел от масата"}</span>
           <strong>{selectedTarget?.displayName ?? "избери място"}</strong>
         </div>
         {needsSecondTarget ? (
@@ -73,6 +81,12 @@ export function NightActionPanel({
           </div>
         ) : null}
       </div>
+
+      {needsSecondTarget && selectedTarget ? (
+        <button className="btn btn-secondary mt-3" type="button" onClick={onResetPrimaryTarget}>
+          Промени първата цел
+        </button>
+      ) : null}
 
       <div className="play-action-buttons mt-5 flex flex-wrap gap-3">
         {canFactionKill(privateRole) ? (
