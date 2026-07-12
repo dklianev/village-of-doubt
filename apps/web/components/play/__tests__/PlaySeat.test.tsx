@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -28,12 +29,17 @@ function renderSeat(overrides: Partial<Parameters<typeof PlaySeat>[0]> = {}) {
     player: player(),
     phase: "voting",
     narratorMode: "automatic",
+    portraitSlot: 4,
     targetable: false,
     selected: false,
     secondSelected: false,
     voteCount: 0,
     canManageNarrator: false,
     canManageMayor: false,
+    menuId: "seat-menu-test",
+    menuOpen: false,
+    menuTriggerRef: vi.fn(),
+    onMenuToggle: vi.fn(),
     onSelect: vi.fn(),
     onMakeNarrator: vi.fn(),
     onMakeMayor: vi.fn(),
@@ -79,16 +85,37 @@ describe("PlaySeat", () => {
     const onMakeNarrator = vi.fn();
     const onMakeMayor = vi.fn();
 
-    renderSeat({
-      canManageNarrator: true,
-      canManageMayor: true,
-      onMakeNarrator,
-      onMakeMayor,
-    });
+    function Harness() {
+      const [open, setOpen] = useState(false);
+      return (
+        <PlaySeat
+          player={player()}
+          phase="lobby"
+          narratorMode="honest_human"
+          portraitSlot={2}
+          targetable={false}
+          selected={false}
+          secondSelected={false}
+          voteCount={0}
+          canManageNarrator
+          canManageMayor
+          menuId="seat-menu-test"
+          menuOpen={open}
+          menuTriggerRef={vi.fn()}
+          onMenuToggle={setOpen}
+          onSelect={vi.fn()}
+          onMakeNarrator={onMakeNarrator}
+          onMakeMayor={onMakeMayor}
+        />
+      );
+    }
+
+    render(<Harness />);
 
     await user.click(screen.getByLabelText("Управление за Анна Иванова"));
-    await user.click(screen.getByRole("button", { name: "Разказвач" }));
-    await user.click(screen.getByRole("button", { name: "Кмет" }));
+    await user.click(screen.getByRole("menuitem", { name: "Разказвач" }));
+    await user.click(screen.getByLabelText("Управление за Анна Иванова"));
+    await user.click(screen.getByRole("menuitem", { name: "Кмет" }));
 
     expect(onMakeNarrator).toHaveBeenCalledTimes(1);
     expect(onMakeMayor).toHaveBeenCalledTimes(1);
