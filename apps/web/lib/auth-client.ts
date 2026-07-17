@@ -1,4 +1,6 @@
 import { createAuthClient } from "better-auth/react";
+import { inferAdditionalFields } from "better-auth/client/plugins";
+import type { auth } from "@/lib/auth";
 
 const authBaseUrl =
   typeof window === "undefined"
@@ -7,4 +9,5 @@ const authBaseUrl =
 
 export const authClient = createAuthClient({
   baseURL: authBaseUrl,
+  plugins: [inferAdditionalFields<typeof auth>()],
 });

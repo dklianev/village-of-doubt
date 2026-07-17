@@ -7,3 +7,4 @@ export * from "./win-conditions.js";
 export * from "./achievements.js";
 export * from "./protocol.js";
 export * from "./room-code.js";
+export * from "./avatar-catalog.js";

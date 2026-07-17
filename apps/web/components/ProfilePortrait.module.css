@@ -1,0 +1,15 @@
+.portrait {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: inherit;
+  background:
+    linear-gradient(rgba(8, 8, 7, 0.02), rgba(8, 8, 7, 0.1)),
+    var(--avatar-image) center / cover no-repeat,
+    #100c09;
+}
+
+.portrait[data-muted="true"] {
+  filter: grayscale(0.82) brightness(0.64);
+}

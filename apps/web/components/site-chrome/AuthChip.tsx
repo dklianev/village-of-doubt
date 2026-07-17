@@ -1,11 +1,12 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, ChevronDown, History, LogOut, Trophy, User, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import { ProfilePortrait } from "@/components/ProfilePortrait";
+import { avatarIdForUser } from "@/lib/avatar-catalog";
 import { type AuthSessionView, useAuthSession } from "@/lib/use-auth-session";
 
 export function AuthChip({ initialSession }: { initialSession: AuthSessionView | null }) {
@@ -59,8 +60,7 @@ export function AuthChip({ initialSession }: { initialSession: AuthSessionView |
   }
 
   const displayName = session.user.name ?? "Играч";
-  const avatarUrl = session.user.image ?? "";
-  const initial = displayName.charAt(0).toUpperCase();
+  const avatarId = avatarIdForUser(session.user.id, session.user.avatarId);
 
   async function confirmLogout() {
     setSigningOut(true);
@@ -82,11 +82,7 @@ export function AuthChip({ initialSession }: { initialSession: AuthSessionView |
         aria-label={`Меню на ${displayName}`}
       >
         <span className="auth-chip-photo" aria-hidden>
-          {avatarUrl ? (
-            <Image src={avatarUrl} alt="" width={30} height={30} sizes="30px" unoptimized />
-          ) : (
-            <span className="auth-chip-initial">{initial}</span>
-          )}
+          <ProfilePortrait avatarId={avatarId} decorative />
         </span>
         <span className="auth-chip-name">{displayName}</span>
         <ChevronDown className="auth-chip-chevron" aria-hidden strokeWidth={2.2} />

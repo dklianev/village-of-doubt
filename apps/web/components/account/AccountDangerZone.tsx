@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import styles from "./Account.module.css";
 
 export function AccountDangerZone({ email }: { email: string }) {
   const router = useRouter();
@@ -45,7 +46,11 @@ export function AccountDangerZone({ email }: { email: string }) {
     setErrorMessage("");
 
     try {
-      const response = await fetch("/api/account/delete", { method: "POST" });
+      const response = await fetch("/api/account/delete", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ intent: "delete-account" }),
+      });
       if (!response.ok) {
         const data = (await response.json().catch(() => ({}))) as { error?: string };
         setErrorMessage(data.error ?? "Грешка при изтриване.");
@@ -63,25 +68,26 @@ export function AccountDangerZone({ email }: { email: string }) {
   }
 
   return (
-    <section className="account-section account-danger">
-      <header className="account-section-head">
+    <section className={`${styles.archivePanel} ${styles.dangerSection}`}>
+      <header className={styles.sectionHead}>
+        <p className={styles.sectionKicker}>унищожаване на дело</p>
         <h2>Опасна зона</h2>
         <p>Окончателно изтриване на твоето досие.</p>
       </header>
 
-      <div className="account-danger-body">
+      <div className={styles.dangerBody}>
         <p>
           Изтриването премахва досието и легендите. Имената от твоите игри остават в архива, но се
           заменят с „Изтрит играч“, за да не се чупи историята на другите играчи.
         </p>
 
-        <button type="button" className="account-danger-btn" onClick={() => setOpen(true)}>
+        <button type="button" className={styles.dangerButton} onClick={() => setOpen(true)}>
           Изтрий моето досие
         </button>
 
         <dialog
           ref={dialogRef}
-          className="danger-confirm-dialog"
+          className={styles.dialog}
           onCancel={(event) => {
             if (status === "deleting") {
               event.preventDefault();
@@ -91,16 +97,16 @@ export function AccountDangerZone({ email }: { email: string }) {
           }}
           onClose={() => setOpen(false)}
         >
-          <p className="section-kicker">необратимо действие</p>
+          <p className={styles.dialogKicker}>необратимо действие</p>
           <h3>Сигурен/сигурна ли си?</h3>
           <p>
             За потвърждение напиши <strong>ИЗТРИЙ</strong>. Това действие премахва досието и
             легендите завинаги.
           </p>
-          <p className="danger-confirm-email">
+          <p className={styles.dialogEmail}>
             Досие: <strong>{email || "няма имейл"}</strong>
           </p>
-          <label className="danger-confirm-field">
+          <label className={styles.dialogField}>
             <span>Потвърждение</span>
             <input
               type="text"
@@ -110,20 +116,21 @@ export function AccountDangerZone({ email }: { email: string }) {
               aria-label="Напиши ИЗТРИЙ за потвърждение"
               autoComplete="off"
               autoCapitalize="characters"
+              autoFocus
             />
           </label>
           {errorMessage ? (
-            <p className="account-status account-status-error" role="alert">
+            <p className={`${styles.status} ${styles.statusError}`} role="alert">
               {errorMessage}
             </p>
           ) : null}
-          <div className="danger-confirm-actions">
-            <button type="button" className="account-cancel-btn" onClick={closeDialog}>
+          <div className={styles.dialogActions}>
+            <button type="button" className={styles.cancelButton} onClick={closeDialog}>
               Отказ
             </button>
             <button
               type="button"
-              className="account-danger-btn"
+              className={styles.dangerButton}
               disabled={!canDelete || status === "deleting"}
               aria-busy={status === "deleting"}
               onClick={deleteAccount}

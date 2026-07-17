@@ -1,6 +1,8 @@
 import { createDatabase } from "@werewolf/database";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { APIError, createAuthMiddleware } from "better-auth/api";
+import { DEFAULT_AVATAR_ID, isAvatarId } from "@werewolf/shared";
 import { sendEmail } from "./email";
 import { renderResetPasswordEmail, renderVerifyEmail } from "./email-templates";
 
@@ -48,9 +50,36 @@ export const auth = betterAuth({
     },
   },
   user: {
+    additionalFields: {
+      avatarId: {
+        type: "string",
+        required: true,
+        defaultValue: DEFAULT_AVATAR_ID,
+        input: true,
+      },
+    },
     deleteUser: {
       enabled: true,
     },
+  },
+  hooks: {
+    before: createAuthMiddleware(async (ctx) => {
+      if (ctx.path !== "/update-user" || !ctx.body) {
+        return;
+      }
+
+      const body = ctx.body as Record<string, unknown>;
+      if (Object.hasOwn(body, "avatarId") && !isAvatarId(body.avatarId)) {
+        throw new APIError("BAD_REQUEST", { message: "Избраният портрет не е наличен." });
+      }
+
+      return {
+        context: {
+          ...ctx,
+          body: { ...body },
+        },
+      };
+    }),
   },
   socialProviders: buildSocialProviders(),
 });

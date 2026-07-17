@@ -74,7 +74,28 @@
   --art-narrator: image-set(url("/game-art/bg-narrator-panel.webp") type("image/webp"), url("/game-art/bg-narrator-panel.png") type("image/png"));
   --art-history: image-set(url("/game-art/history/bg-history-archive-desk-v1.webp") type("image/webp"), url("/game-art/history/bg-history-archive-desk-v1.png") type("image/png"));
   --art-history-light: image-set(url("/game-art/history/bg-history-archive-desk-light-v1.webp") type("image/webp"), url("/game-art/history/bg-history-archive-desk-light-v1.png") type("image/png"));
-  --art-account: image-set(url("/game-art/account/account-hero-banner.webp") type("image/webp"), url("/game-art/account/account-hero-banner.png") type("image/png"));
+  --art-account-dark: image-set(
+    url("/game-art/account/bg-account-dossier-dark-v2.avif") type("image/avif"),
+    url("/game-art/account/bg-account-dossier-dark-v2.webp") type("image/webp"),
+    url("/game-art/account/bg-account-dossier-dark-v2.png") type("image/png")
+  );
+  --art-account-light: image-set(
+    url("/game-art/account/bg-account-dossier-light-v2.avif") type("image/avif"),
+    url("/game-art/account/bg-account-dossier-light-v2.webp") type("image/webp"),
+    url("/game-art/account/bg-account-dossier-light-v2.png") type("image/png")
+  );
+  --art-account: var(--art-account-dark);
+  --art-account-ambient-dark: image-set(
+    url("/game-art/account/bg-account-archive-room-dark-v1.avif") type("image/avif"),
+    url("/game-art/account/bg-account-archive-room-dark-v1.webp") type("image/webp"),
+    url("/game-art/account/bg-account-archive-room-dark-v1.png") type("image/png")
+  );
+  --art-account-ambient-light: image-set(
+    url("/game-art/account/bg-account-archive-room-light-v1.avif") type("image/avif"),
+    url("/game-art/account/bg-account-archive-room-light-v1.webp") type("image/webp"),
+    url("/game-art/account/bg-account-archive-room-light-v1.png") type("image/png")
+  );
+  --art-account-ambient: var(--art-account-ambient-dark);
   --art-privacy: image-set(url("/game-art/legal/privacy-banner.webp") type("image/webp"), url("/game-art/legal/privacy-banner.png") type("image/png"));
   --art-terms: image-set(url("/game-art/legal/terms-banner.webp") type("image/webp"), url("/game-art/legal/terms-banner.png") type("image/png"));
   --art-report: image-set(url("/game-art/legal/report-banner.webp") type("image/webp"), url("/game-art/legal/report-banner.png") type("image/png"));
@@ -385,6 +406,10 @@
     --art-resolution: image-set(url("/game-art/mobile/bg-resolution.webp") type("image/webp"));
     --art-history: image-set(url("/game-art/mobile/history/bg-history-archive-desk-v1.webp") type("image/webp"));
     --art-history-light: image-set(url("/game-art/mobile/history/bg-history-archive-desk-light-v1.webp") type("image/webp"));
+    --art-account-dark: image-set(url("/game-art/mobile/account/bg-account-dossier-dark-v2.webp") type("image/webp"));
+    --art-account-light: image-set(url("/game-art/mobile/account/bg-account-dossier-light-v2.webp") type("image/webp"));
+    --art-account-ambient-dark: image-set(url("/game-art/mobile/account/bg-account-archive-room-dark-v1.webp") type("image/webp"));
+    --art-account-ambient-light: image-set(url("/game-art/mobile/account/bg-account-archive-room-light-v1.webp") type("image/webp"));
     --art-achievements: image-set(url("/game-art/mobile/achievements/bg-legends-hall-v1.webp") type("image/webp"));
     --transition-night: image-set(url("/game-art/mobile/transition-night-falls.webp") type("image/webp"));
     --transition-day: image-set(url("/game-art/mobile/transition-village-wakes.webp") type("image/webp"));
@@ -450,6 +475,8 @@ html[data-theme="light"] {
   color-scheme: light;
   background: #f5e7cc;
   --art-history: var(--art-history-light);
+  --art-account: var(--art-account-light);
+  --art-account-ambient: var(--art-account-ambient-light);
 
   /* Legal-shell light theme overrides. */
   --legal-shell-bg: rgba(252, 246, 236, 0.94);
@@ -789,6 +816,54 @@ body:has(.achievement-shell) {
   z-index: 0;
 }
 
+body:has(.account-shell) {
+  position: relative;
+  z-index: 0;
+  background: rgba(8, 9, 9, 0.96);
+}
+
+html[data-theme="light"] body:has(.account-shell) {
+  background: rgba(244, 237, 224, 0.96);
+}
+
+body:has(.account-shell)::before {
+  inset: -4vh -4vw;
+  display: block;
+  z-index: -2;
+  background: var(--art-account-ambient) center / cover no-repeat;
+  animation: ambient-drift 64s ease-in-out infinite alternate;
+  mask-image: none;
+  transform: translate3d(-0.8%, 0, 0) scale(1.035);
+  will-change: transform;
+}
+
+html[data-theme="light"] body:has(.account-shell)::before {
+  animation: ambient-drift-light 76s ease-in-out infinite alternate;
+  filter: saturate(0.92) contrast(1.02) brightness(1.02);
+  transform: translate3d(-0.5%, 0, 0) scale(1.02);
+}
+
+body:has(.account-shell)::after {
+  display: block;
+  z-index: -1;
+  opacity: 1;
+  background: radial-gradient(
+    ellipse 66vw 72vh at 50% 36%,
+    rgba(6, 8, 10, 0.08) 0%,
+    rgba(6, 8, 10, 0.3) 58%,
+    rgba(4, 5, 6, 0.72) 100%
+  );
+  background-size: auto;
+}
+
+html[data-theme="light"] body:has(.account-shell)::after {
+  background: radial-gradient(
+    ellipse 66vw 72vh at 50% 36%,
+    rgba(255, 252, 244, 0.04) 0%,
+    rgba(244, 237, 224, 0.14) 58%,
+    rgba(227, 216, 196, 0.5) 100%
+  );
+}
 html[data-theme="dark"] body:has(.achievement-shell) {
   background: rgba(8, 9, 9, 0.95);
 }

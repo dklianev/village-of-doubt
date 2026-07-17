@@ -36,6 +36,13 @@
       "when": 1779319881014,
       "tag": "0004_nostalgic_northstar",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1784320024474,
+      "tag": "0005_sparkling_christian_walker",
+      "breakpoints": true
     }
   ]
 }

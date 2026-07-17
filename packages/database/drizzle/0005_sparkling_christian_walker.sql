@@ -1,0 +1,1 @@
+ALTER TABLE "user" ADD COLUMN "avatar_id" text DEFAULT 'portrait-m01' NOT NULL;

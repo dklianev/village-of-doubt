@@ -8,11 +8,12 @@ import {
   getGameHistoryForUser,
   getPlayerRolesInGames,
 } from "@werewolf/database";
-import { ACHIEVEMENTS, type GameMode, type WinnerTeam } from "@werewolf/shared";
+import { ACHIEVEMENTS, normalizeAvatarId, type GameMode, type WinnerTeam } from "@werewolf/shared";
 import { AccountDashboard } from "@/components/account/AccountDashboard";
 import { computePlayerStats } from "@/lib/account-stats";
 import { auth } from "@/lib/auth";
-import "@/components/account/LegacyAccount.module.css";
+import { publicGameReference } from "@/lib/game-reference";
+import styles from "@/components/account/Account.module.css";
 
 export const metadata: Metadata = {
   title: "Твоето досие",
@@ -43,21 +44,21 @@ export default async function AccountPage({
     redirect("/sign-in?redirect=/account");
   }
 
-  const accounts = await auth.api.listUserAccounts({ headers: requestHeaders }).catch(() => []);
-  const providerIds = new Set(accounts.map((account) => account.providerId));
-  if (session.user.email) {
-    providerIds.add("credential");
-  }
+  const accountsPromise = auth.api.listUserAccounts({ headers: requestHeaders }).catch(() => []);
 
   let games: AccountHistoryGame[] = [];
   let achievements: Awaited<ReturnType<typeof getAchievementsForUser>> = [];
+  let activityState: AccountDashboardProps["activityState"] = "unavailable";
   const memberSince = parseMemberSince(session.user.createdAt);
 
   if (process.env.DATABASE_URL) {
     try {
       const db = createDatabase(process.env.DATABASE_URL);
-      const historyRows = await getGameHistoryForUser(db, session.user.id, 50);
-      achievements = await getAchievementsForUser(db, session.user.id);
+      const [historyRows, achievementRows] = await Promise.all([
+        getGameHistoryForUser(db, session.user.id, 50),
+        getAchievementsForUser(db, session.user.id),
+      ]);
+      achievements = achievementRows;
 
       const gameIds = historyRows.map((game) => game.id);
       const rolesByGameId = await getPlayerRolesInGames(db, session.user.id, gameIds);
@@ -65,9 +66,16 @@ export default async function AccountPage({
         ...game,
         playerRole: rolesByGameId.get(game.id) ?? null,
       }));
+      activityState = historyRows.some((game) => game.status === "ended") ? "ready" : "empty";
     } catch (error) {
       console.error("[account]", error);
     }
+  }
+
+  const accounts = await accountsPromise;
+  const providerIds = new Set(accounts.map((account) => account.providerId));
+  if (session.user.email) {
+    providerIds.add("credential");
   }
 
   const endedGames = games.filter((game) => game.status === "ended");
@@ -80,13 +88,14 @@ export default async function AccountPage({
     userId: session.user.id,
     email: session.user.email ?? "",
     name: session.user.name ?? "",
-    image: session.user.image ?? null,
+    avatarId: normalizeAvatarId(session.user.avatarId),
     emailVerified: session.user.emailVerified ?? false,
     providers: [...providerIds],
+    activityState,
     stats,
     recentGames: endedGames.slice(0, 3).map((game) => ({
       id: game.id,
-      code: game.code,
+      code: publicGameReference(game.id),
       mode: modeFromConfig(game.config),
       winnerTeam: winnerTeamFromValue(game.winnerTeam),
       endedAt: game.endedAt,
@@ -98,7 +107,7 @@ export default async function AccountPage({
 
 function renderDashboard(props: AccountDashboardProps) {
   return (
-    <main className="shell account-shell">
+    <main className={`shell account-shell ${styles.shell}`}>
       <AccountDashboard {...props} />
     </main>
   );
@@ -109,9 +118,10 @@ function fixtureDashboardProps(): AccountDashboardProps {
     userId: "visual-account-user",
     email: "visual@example.com",
     name: "Визуален играч",
-    image: null,
+    avatarId: "portrait-f04",
     emailVerified: true,
     providers: ["credential", "google", "discord"],
+    activityState: "ready",
     stats: {
       totalGames: 8,
       totalWins: 5,
