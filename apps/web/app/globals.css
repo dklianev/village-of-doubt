@@ -102,7 +102,17 @@
   --art-faq: image-set(url("/game-art/legal/faq-hearth-banner.webp") type("image/webp"), url("/game-art/legal/faq-hearth-banner.png") type("image/png"));
   --art-status: image-set(url("/game-art/legal/status-banner.webp") type("image/webp"), url("/game-art/legal/status-banner.png") type("image/png"));
   --art-replay: image-set(url("/game-art/legal/replay-banner.webp") type("image/webp"), url("/game-art/legal/replay-banner.png") type("image/png"));
-  --art-friends: image-set(url("/game-art/legal/friends-banner.webp") type("image/webp"), url("/game-art/legal/friends-banner.png") type("image/png"));
+  --art-friends-dark: image-set(
+    url("/game-art/friends/bg-friends-invitation-dark-v1.avif") type("image/avif"),
+    url("/game-art/friends/bg-friends-invitation-dark-v1.webp") type("image/webp"),
+    url("/game-art/friends/bg-friends-invitation-dark-v1.png") type("image/png")
+  );
+  --art-friends-light: image-set(
+    url("/game-art/friends/bg-friends-invitation-light-v1.avif") type("image/avif"),
+    url("/game-art/friends/bg-friends-invitation-light-v1.webp") type("image/webp"),
+    url("/game-art/friends/bg-friends-invitation-light-v1.png") type("image/png")
+  );
+  --art-friends: var(--art-friends-dark);
   --art-leaderboard: image-set(url("/game-art/leaderboard-headline-portrait.webp") type("image/webp"), url("/game-art/leaderboard-headline-portrait.png") type("image/png"));
   --art-sign-in: image-set(url("/game-art/sign-in-table.webp") type("image/webp"), url("/game-art/sign-in-table.png") type("image/png"));
   --art-tutorial-day: image-set(url("/game-art/tutorial-day-scene.webp") type("image/webp"), url("/game-art/tutorial-day-scene.png") type("image/png"));
@@ -423,6 +433,8 @@
     --art-account-ambient-light: image-set(url("/game-art/mobile/account/bg-account-archive-room-light-v1.webp") type("image/webp"));
     --art-tutorial-dark: image-set(url("/game-art/mobile/tutorial/bg-tutorial-hall-dark-v1.webp") type("image/webp"));
     --art-tutorial-light: image-set(url("/game-art/mobile/tutorial/bg-tutorial-hall-light-v1.webp") type("image/webp"));
+    --art-friends-dark: image-set(url("/game-art/mobile/friends/bg-friends-invitation-dark-v1.webp") type("image/webp"));
+    --art-friends-light: image-set(url("/game-art/mobile/friends/bg-friends-invitation-light-v1.webp") type("image/webp"));
     --art-achievements: image-set(url("/game-art/mobile/achievements/bg-legends-hall-v1.webp") type("image/webp"));
     --transition-night: image-set(url("/game-art/mobile/transition-night-falls.webp") type("image/webp"));
     --transition-day: image-set(url("/game-art/mobile/transition-village-wakes.webp") type("image/webp"));
@@ -491,6 +503,7 @@ html[data-theme="light"] {
   --art-account: var(--art-account-light);
   --art-account-ambient: var(--art-account-ambient-light);
   --art-tutorial: var(--art-tutorial-light);
+  --art-friends: var(--art-friends-light);
 
   /* Legal-shell light theme overrides. */
   --legal-shell-bg: rgba(252, 246, 236, 0.94);
@@ -879,6 +892,57 @@ body:has(.tutorial-shell)::after {
 }
 
 html[data-theme="light"] body:has(.tutorial-shell)::after {
+  background: radial-gradient(
+    ellipse 72vw 68vh at 50% 34%,
+    rgba(255, 252, 244, 0.02) 0%,
+    rgba(244, 237, 224, 0.12) 58%,
+    rgba(227, 216, 196, 0.5) 100%
+  );
+}
+
+html[data-theme="dark"] body:has(.friends-shell) {
+  position: relative;
+  z-index: 0;
+  background: rgba(7, 8, 9, 0.97);
+}
+
+html[data-theme="light"] body:has(.friends-shell) {
+  position: relative;
+  z-index: 0;
+  background: rgba(247, 239, 222, 0.98);
+}
+
+body:has(.friends-shell)::before {
+  inset: -4vh -4vw;
+  display: block;
+  z-index: -2;
+  background: var(--art-friends) center / cover no-repeat;
+  animation: ambient-drift 64s ease-in-out infinite alternate;
+  mask-image: none;
+  transform: translate3d(-0.8%, 0, 0) scale(1.035);
+  will-change: transform;
+}
+
+html[data-theme="light"] body:has(.friends-shell)::before {
+  animation: ambient-drift-light 76s ease-in-out infinite alternate;
+  filter: saturate(0.94) contrast(1.02) brightness(1.02);
+  transform: translate3d(-0.5%, 0, 0) scale(1.02);
+}
+
+body:has(.friends-shell)::after {
+  display: block;
+  z-index: -1;
+  opacity: 1;
+  background: radial-gradient(
+    ellipse 72vw 68vh at 50% 34%,
+    rgba(6, 8, 10, 0.02) 0%,
+    rgba(6, 8, 10, 0.24) 58%,
+    rgba(4, 5, 6, 0.68) 100%
+  );
+  background-size: auto;
+}
+
+html[data-theme="light"] body:has(.friends-shell)::after {
   background: radial-gradient(
     ellipse 72vw 68vh at 50% 34%,
     rgba(255, 252, 244, 0.02) 0%,
