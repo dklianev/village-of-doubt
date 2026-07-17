@@ -31,14 +31,17 @@ describe("FeedbackWidget", () => {
     expect(screen.queryByRole("button", { name: "Дай ни бележка" })).not.toBeInTheDocument();
   });
 
-  it("hides feedback on the formal report route", () => {
-    pathname = "/report";
-    session = { user: { email: "anna@example.com", name: "Анна" } };
+  it.each(["/privacy", "/terms", "/faq", "/status", "/report"])(
+    "shows feedback on the service route %s",
+    (servicePath) => {
+      pathname = servicePath;
+      session = { user: { email: "anna@example.com", name: "Анна" } };
 
-    render(<FeedbackWidget />);
+      render(<FeedbackWidget />);
 
-    expect(screen.queryByRole("button", { name: "Дай ни бележка" })).not.toBeInTheDocument();
-  });
+      expect(screen.getByRole("button", { name: "Дай ни бележка" })).toBeInTheDocument();
+    },
+  );
 
   it("opens for authenticated product routes and submits category context", async () => {
     session = { user: { email: "anna@example.com", name: "Анна" } };

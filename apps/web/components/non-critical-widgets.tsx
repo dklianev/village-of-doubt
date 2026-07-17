@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import type { AuthSessionView } from "@/lib/use-auth-session";
+import { shouldMountFeedback } from "@/components/feedback/route-policy";
 
 const CookieBanner = dynamic(() => import("@/components/CookieBanner").then((mod) => mod.CookieBanner), {
   loading: () => null,
@@ -23,30 +24,6 @@ const WelcomeModal = dynamic(() => import("@/components/onboarding/WelcomeModal"
 const COOKIE_STORAGE_KEY = "cookie-consent";
 const WELCOME_STORAGE_KEY = "welcome-modal-shown";
 const TUTORIAL_STORAGE_KEY = "tutorial-completed";
-
-const FEEDBACK_HIDDEN_ROUTES = new Set([
-  "/",
-  "/werewolf",
-  "/mafia",
-  "/werewolf/rules",
-  "/mafia/rules",
-  "/werewolf/roles",
-  "/mafia/roles",
-  "/roles",
-  "/create",
-  "/lobby",
-  "/werewolf/create",
-  "/mafia/create",
-  "/sign-in",
-  "/forgot-password",
-  "/reset-password",
-  "/verify-email",
-  "/privacy",
-  "/terms",
-  "/faq",
-  "/status",
-  "/report",
-]);
 
 type WidgetMountState = {
   cookie: boolean;
@@ -86,14 +63,4 @@ export function NonCriticalWidgets({ initialSession }: { initialSession: AuthSes
       {mount.feedback ? <FeedbackWidget /> : null}
     </>
   );
-}
-
-function shouldMountFeedback(pathname: string) {
-  if (FEEDBACK_HIDDEN_ROUTES.has(pathname)) {
-    return false;
-  }
-  if (pathname.startsWith("/api/")) {
-    return false;
-  }
-  return true;
 }

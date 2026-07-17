@@ -5,31 +5,10 @@ import { usePathname } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { useModal } from "@/lib/use-modal";
 import styles from "./FeedbackWidget.module.css";
+import { shouldMountFeedback } from "./route-policy";
 
 type FeedbackCategory = "bug" | "idea" | "praise" | "other";
 type Status = "idle" | "submitting" | "sent" | "error";
-
-// Marketing, info, formal report, and auth-flow routes do not need product-context feedback.
-// Keep matching exact so /werewolf/create and /werewolf/join/CODE still show it.
-const HIDDEN_ROUTES = [
-  "/",
-  "/werewolf",
-  "/mafia",
-  "/werewolf/rules",
-  "/mafia/rules",
-  "/werewolf/roles",
-  "/mafia/roles",
-  "/roles",
-  "/sign-in",
-  "/forgot-password",
-  "/reset-password",
-  "/verify-email",
-  "/privacy",
-  "/terms",
-  "/faq",
-  "/status",
-  "/report",
-] as const;
 
 const CATEGORY_LABELS: Record<FeedbackCategory, string> = {
   bug: "Бъг",
@@ -51,10 +30,6 @@ const CATEGORY_PLACEHOLDERS: Record<FeedbackCategory, string> = {
   praise: "Какво харесваш?",
   other: "Кажи ни накратко.",
 };
-
-function shouldHideFeedback(pathname: string): boolean {
-  return HIDDEN_ROUTES.some((route) => route === pathname);
-}
 
 function FeedbackIcon({ className }: { className?: string | undefined }) {
   return (
@@ -95,7 +70,7 @@ export function FeedbackWidget() {
   const panelTitleId = useId();
   const firstFieldRef = useRef<HTMLTextAreaElement>(null);
 
-  const hidden = isPending || !session || shouldHideFeedback(pathname);
+  const hidden = isPending || !session || !shouldMountFeedback(pathname);
   const submittedEmail = useMemo(() => email.trim(), [email]);
 
   const close = useCallback(() => {
