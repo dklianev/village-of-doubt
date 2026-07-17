@@ -8,28 +8,34 @@ interface TutorialProgressProps {
 }
 
 export function TutorialProgress({ current, total, onJump }: TutorialProgressProps) {
+  const scenes = ["Събиране", "Нощ", "Ден", "Глас", "Развръзка", "Начало"].slice(0, total);
+
   return (
-    <header className="tutorial-progress">
+    <nav className="tutorial-progress" aria-label="Ход на репетицията">
       <div className="tutorial-progress-bar" aria-hidden="true">
         <div className="tutorial-progress-fill" style={{ width: `${(current / total) * 100}%` }} />
       </div>
 
-      <div className="tutorial-progress-dots" role="tablist" aria-label="Сцени">
-        {Array.from({ length: total }, (_, index) => {
+      <div className="tutorial-progress-dots">
+        {scenes.map((label, index) => {
           const slide = index + 1;
           const isActive = slide === current;
           const isPast = slide < current;
           return (
             <button
-              key={slide}
+              key={label}
               type="button"
-              role="tab"
-              aria-selected={isActive}
-              aria-label={`Сцена ${slide}`}
+              aria-current={isActive ? "step" : undefined}
+              aria-label={`${slide}. ${label}`}
               data-state={isActive ? "active" : isPast ? "past" : "future"}
               onClick={() => onJump(slide)}
               className="tutorial-progress-dot"
-            />
+            >
+              <span className="tutorial-progress-number" aria-hidden>
+                {String(slide).padStart(2, "0")}
+              </span>
+              <span>{label}</span>
+            </button>
           );
         })}
       </div>
@@ -38,6 +44,6 @@ export function TutorialProgress({ current, total, onJump }: TutorialProgressPro
         <span>Прескочи</span>
         <ChevronRight className="tutorial-skip-icon" aria-hidden strokeWidth={2} />
       </Link>
-    </header>
+    </nav>
   );
 }

@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { X } from "lucide-react";
+import { safeLocalStorage } from "@/lib/safe-storage";
+import { safeInternalRedirect } from "@/lib/safe-internal-redirect";
 import { SlideDay } from "./SlideDay";
 import { SlideFinal } from "./SlideFinal";
 import { SlideNight } from "./SlideNight";
@@ -13,6 +15,8 @@ import { SlideVote } from "./SlideVote";
 import { TutorialProgress } from "./TutorialProgress";
 
 const TOTAL_SLIDES = 6;
+const SCENE_IDS = ["setup", "night", "day", "vote", "resolution", "final"] as const;
+const SCENE_LABELS = ["Събиране", "Нощ", "Ден", "Глас", "Развръзка", "Начало"] as const;
 const STORAGE_KEY_COMPLETED = "tutorial-completed";
 const STORAGE_KEY_LAST_SLIDE = "tutorial-last-slide";
 
@@ -30,6 +34,7 @@ export function TutorialFlipbook() {
   const [current, setCurrent] = useState(() => readInitialSlide(searchParams));
   const [hydrated, setHydrated] = useState(false);
   const [welcomeVisible, setWelcomeVisible] = useState(() => searchParams.get("welcome") === "1");
+  const continueHref = safeInternalRedirect(searchParams.get("redirect"), "/werewolf/create");
   const urlUpdateTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -38,7 +43,7 @@ export function TutorialFlipbook() {
       return;
     }
 
-    const stored = Number(window.localStorage.getItem(STORAGE_KEY_LAST_SLIDE));
+    const stored = Number(safeLocalStorage.getItem(STORAGE_KEY_LAST_SLIDE));
     if (Number.isFinite(stored) && stored >= 1 && stored <= TOTAL_SLIDES) {
       setCurrent(stored);
     }
@@ -61,9 +66,9 @@ export function TutorialFlipbook() {
       window.history.replaceState(null, "", `/tutorial?${params.toString()}`);
       urlUpdateTimerRef.current = null;
     }, 300);
-    window.localStorage.setItem(STORAGE_KEY_LAST_SLIDE, String(current));
+    safeLocalStorage.setItem(STORAGE_KEY_LAST_SLIDE, String(current));
     if (current === TOTAL_SLIDES) {
-      window.localStorage.setItem(STORAGE_KEY_COMPLETED, "1");
+      safeLocalStorage.setItem(STORAGE_KEY_COMPLETED, "1");
     }
     // Avoid reacting to searchParams changes caused by this same replace call.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -148,15 +153,25 @@ export function TutorialFlipbook() {
 
       <TutorialProgress current={current} total={TOTAL_SLIDES} onJump={goTo} />
 
+      <div
+        className="tutorial-slide-stage"
+        role="region"
+        aria-label={`Сцена ${current}: ${SCENE_LABELS[current - 1]}`}
+        data-tutorial-scene={SCENE_IDS[current - 1]}
+      >
+        {slide}
+      </div>
+
       <nav className="tutorial-nav" aria-label="Навигация между сцените">
         <button type="button" className="btn btn-secondary" onClick={prev} disabled={current === 1} aria-label="Предишна сцена">
           Назад
         </button>
         <span className="tutorial-nav-counter">
-          Сцена {current} от {TOTAL_SLIDES}
+          <strong>{SCENE_LABELS[current - 1]}</strong>
+          <span>Сцена {current} от {TOTAL_SLIDES}</span>
         </span>
-        <Link href="/werewolf/create" className="btn btn-secondary tutorial-play-link">
-          Към играта
+        <Link href={continueHref} className="btn btn-secondary tutorial-play-link">
+          Продължи към игра
         </Link>
         <button
           type="button"
@@ -169,11 +184,13 @@ export function TutorialFlipbook() {
         </button>
       </nav>
 
-      <div className="tutorial-slide-stage" role="region">
-        {slide}
-      </div>
-
-      {current === 1 ? <p className="tutorial-keyboard-hint">Съвет: стрелките наляво и надясно сменят сцената.</p> : null}
+      <p
+        className="tutorial-keyboard-hint"
+        data-visible={current === 1 ? "true" : "false"}
+        aria-hidden={current === 1 ? undefined : true}
+      >
+        Съвет: стрелките наляво и надясно сменят сцената.
+      </p>
     </section>
   );
 }

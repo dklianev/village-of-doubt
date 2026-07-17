@@ -28,7 +28,7 @@ export function DayClueChips() {
   return (
     <div className="clue-chips" role="group" aria-label="Примерни играчи">
       <p className="clue-chips-hint">
-        Кликни две-три карти и прочети масата. Посетени: {visited} / {PLAYERS.length}
+        Разкрий 2-3 карти. Посетени: {visited} / {PLAYERS.length}
       </p>
       <div className="clue-chips-row">
         {PLAYERS.map((player) => {
