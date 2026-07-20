@@ -36,7 +36,7 @@ const ROUTES = [
   { name: "history", path: "/history?visualHistory=fixture" },
   { name: "leaderboard-empty", path: "/leaderboard" },
   { name: "achievements-gate", path: "/achievements" },
-  { name: "achievements", path: "/achievements?visualAuth=1" },
+  { name: "achievements", path: "/achievements?visualAuth=1&visualAchievements=fixture" },
   { name: "friends", path: "/friends?visualAuth=1" },
   { name: "create", path: "/create?visualAuth=1" },
   { name: "lobby", path: "/lobby" },
@@ -68,7 +68,7 @@ const LIGHT_UTILITY_ROUTES = [
   { name: "history-empty", path: "/history" },
   { name: "history", path: "/history?visualHistory=fixture" },
   { name: "leaderboard-empty", path: "/leaderboard" },
-  { name: "achievements", path: "/achievements?visualAuth=1" },
+  { name: "achievements", path: "/achievements?visualAuth=1&visualAchievements=fixture" },
   { name: "friends", path: "/friends?visualAuth=1" },
   { name: "create", path: "/create?visualAuth=1" },
   { name: "lobby", path: "/lobby" },
@@ -116,7 +116,7 @@ const A11Y_ROUTES = [
   { name: "history-empty", path: "/history" },
   { name: "history", path: "/history?visualHistory=fixture" },
   { name: "achievements-gate", path: "/achievements" },
-  { name: "achievements", path: "/achievements?visualAuth=1" },
+  { name: "achievements", path: "/achievements?visualAuth=1&visualAchievements=fixture" },
   { name: "leaderboard-empty", path: "/leaderboard" },
   { name: "friends", path: "/friends?visualAuth=1" },
   { name: "tutorial", path: "/tutorial" },
@@ -142,11 +142,14 @@ for (const route of A11Y_ROUTES) {
     const accessibility = await new AxeBuilder({ page })
       .include("body")
       .withTags(["wcag2a", "wcag2aa"])
-      // Legacy visual surfaces still have known contrast debt; this sweep gates structural axe regressions.
-      .disableRules(["color-contrast"])
       .analyze();
 
-    expect(accessibility.violations).toEqual([]);
+    const contrastViolations = accessibility.violations
+      .filter((violation) => violation.id === "color-contrast")
+      .flatMap((violation) => violation.nodes.map((node) => node.target));
+    console.log(`CONTRAST_BASELINE ${route.name} ${JSON.stringify(contrastViolations)}`);
+    expect(contrastViolations).toEqual([]);
+    expect(accessibility.violations.filter((violation) => violation.id !== "color-contrast")).toEqual([]);
   });
 }
 
