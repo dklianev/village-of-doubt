@@ -152,6 +152,7 @@ export function QuickStartRow({
             data-family={recipe.family}
             data-featured={recipe.featured ? "true" : "false"}
             data-active={activeRecipe?.id === recipe.id ? "true" : "false"}
+            aria-pressed={activeRecipe?.id === recipe.id}
             onClick={() => dispatch({ type: "APPLY_TEMPLATE", template: recipe })}
           >
             <span className="create-recipe-eyebrow">{recipe.eyebrow}</span>

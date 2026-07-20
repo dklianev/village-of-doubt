@@ -4,7 +4,7 @@ import "@/components/games/JoinEntry.module.css";
 import { useEffect, useMemo, useState, useTransition, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Eye, Gamepad2, KeyRound, LoaderCircle, Martini, Moon, Plus, Users } from "lucide-react";
+import { Eye, Gamepad2, KeyRound, LoaderCircle, Martini, Moon, Plus, RefreshCw, Users } from "lucide-react";
 import {
   ROOM_CODE_LENGTH,
   ROOM_CODE_REGEX,
@@ -21,11 +21,18 @@ import { useRecentRooms } from "@/lib/use-recent-rooms";
 
 type RoomPreview = {
   code: string;
-  status: "lobby" | "in_game" | "finished" | "missing";
+  status: "lobby" | "in_game" | "finished";
   playerCount: number;
   capacity: number;
   family: GameFamily | null;
 };
+
+type RoomPreviewState =
+  | { kind: "idle" }
+  | { kind: "loading"; code: string }
+  | { kind: "room"; room: RoomPreview }
+  | { kind: "missing"; code: string }
+  | { kind: "network_error"; code: string };
 
 const FAMILY_COPY = {
   mafia: {
@@ -75,8 +82,8 @@ export function AuthGatedEntryClient({
   const [roomCode, setRoomCode] = useState(normalizedInitialCode);
   const [spectator, setSpectator] = useState(false);
   const [error, setError] = useState("");
-  const [preview, setPreview] = useState<RoomPreview | null>(null);
-  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewState, setPreviewState] = useState<RoomPreviewState>({ kind: "idle" });
+  const [previewAttempt, setPreviewAttempt] = useState(0);
   const [isJoining, startTransition] = useTransition();
   const isMafia = family === "mafia";
   const copy = FAMILY_COPY[isMafia ? "mafia" : "werewolves"];
@@ -113,44 +120,59 @@ export function AuthGatedEntryClient({
 
   useEffect(() => {
     if (!ROOM_CODE_REGEX.test(roomCode)) {
-      setPreview(null);
-      setPreviewLoading(false);
+      setPreviewState({ kind: "idle" });
       return;
     }
 
-    let cancelled = false;
-    setPreviewLoading(true);
-    fetch(`/api/rooms/${roomCode}/preview`)
-      .then((response) => (response.ok ? (response.json() as Promise<RoomPreview>) : Promise.reject()))
-      .then((data) => {
-        if (!cancelled) {
-          setPreview(data.status === "missing" ? null : data);
+    const controller = new AbortController();
+    setPreviewState({ kind: "loading", code: roomCode });
+
+    async function loadPreview() {
+      try {
+        const response = await fetch(`/api/rooms/${roomCode}/preview`, { signal: controller.signal });
+        if (!response.ok) {
+          throw new Error(`Room preview failed with ${response.status}`);
         }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setPreview(null);
+
+        const data = (await response.json()) as unknown;
+        if (isMissingRoomPreview(data)) {
+          setPreviewState({ kind: "missing", code: roomCode });
+          return;
         }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setPreviewLoading(false);
+        if (!isRoomPreview(data)) {
+          throw new Error("Invalid room preview response");
         }
-      });
+
+        setPreviewState({ kind: "room", room: data });
+      } catch (loadError) {
+        if (controller.signal.aborted) {
+          return;
+        }
+        console.error("Room preview request failed", loadError);
+        setPreviewState({ kind: "network_error", code: roomCode });
+      }
+    }
+
+    void loadPreview();
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
-  }, [roomCode]);
+  }, [previewAttempt, roomCode]);
+
+  const previewRoom = previewState.kind === "room" && previewState.room.code === roomCode ? previewState.room : null;
+  const roomInProgress = previewRoom?.status === "in_game";
+  const roomAcceptsEntry = previewRoom?.status === "lobby" || roomInProgress;
 
   useEffect(() => {
-    if (preview?.status === "in_game") {
+    if (roomInProgress) {
       setSpectator(true);
     }
-  }, [preview?.status]);
+  }, [roomInProgress]);
 
   function handleCodeChange(next: string) {
     setRoomCode(normalizeRoomCodeInput(next));
+    setPreviewState({ kind: "idle" });
     if (error) {
       setError("");
     }
@@ -161,6 +183,10 @@ export function AuthGatedEntryClient({
       const validationError = getRoomCodeError(roomCode);
       if (validationError) {
         setError(validationError);
+        return;
+      }
+      if (!roomAcceptsEntry) {
+        setError(joinAvailabilityError(previewState));
         return;
       }
     }
@@ -194,7 +220,7 @@ export function AuthGatedEntryClient({
   }
 
   const friendlyName = session.user.name?.trim() || "приятел";
-  const canSubmit = !isJoining;
+  const canSubmit = !isJoining && roomAcceptsEntry;
 
   return (
     <section className="auth-entry-card join-entry-card" data-theme={family} data-family={family}>
@@ -216,7 +242,7 @@ export function AuthGatedEntryClient({
           </p>
         ) : null}
 
-        <div className="join-entry-code-panel">
+        <div className="join-entry-code-panel" aria-busy={previewState.kind === "loading"}>
           <div className="join-entry-code-field">
             <span>
               <KeyRound aria-hidden strokeWidth={1.8} />
@@ -239,8 +265,13 @@ export function AuthGatedEntryClient({
             </div>
           ) : null}
 
-          {preview ? <RoomPreviewBanner preview={preview} /> : null}
-          {previewLoading && !preview ? <p className="join-preview-loading">Проверяваме стаята...</p> : null}
+          <RoomPreviewStatus
+            state={previewState}
+            onRetry={() => {
+              setError("");
+              setPreviewAttempt((attempt) => attempt + 1);
+            }}
+          />
 
           <div className="join-spectator-row">
             <button
@@ -248,6 +279,7 @@ export function AuthGatedEntryClient({
               className="join-spectator-toggle"
               data-active={spectator}
               aria-pressed={spectator}
+              disabled={roomInProgress}
               onClick={() => setSpectator((value) => !value)}
             >
               <span className="join-spectator-dot" aria-hidden />
@@ -290,9 +322,48 @@ export function AuthGatedEntryClient({
   );
 }
 
+function RoomPreviewStatus({ state, onRetry }: { state: RoomPreviewState; onRetry: () => void }) {
+  if (state.kind === "idle") {
+    return null;
+  }
+  if (state.kind === "loading") {
+    return (
+      <p className="join-preview-loading" role="status" aria-live="polite">
+        Проверяваме стаята...
+      </p>
+    );
+  }
+  if (state.kind === "missing") {
+    return (
+      <div className="join-preview-banner" data-status="missing" role="status" aria-live="polite">
+        <span className="join-preview-dot" aria-hidden />
+        <div className="join-preview-text">
+          <strong>Не открихме стая {state.code}.</strong> Провери кода или поискай нов.
+        </div>
+      </div>
+    );
+  }
+  if (state.kind === "network_error") {
+    return (
+      <div className="join-preview-banner" data-status="network_error" role="status" aria-live="polite">
+        <span className="join-preview-dot" aria-hidden />
+        <div className="join-preview-text">
+          <strong>Не успяхме да проверим стаята.</strong> Провери връзката и опитай отново.
+        </div>
+        <button type="button" className="join-preview-retry" onClick={onRetry}>
+          <RefreshCw aria-hidden strokeWidth={1.8} />
+          Провери отново
+        </button>
+      </div>
+    );
+  }
+
+  return <RoomPreviewBanner preview={state.room} />;
+}
+
 function RoomPreviewBanner({ preview }: { preview: RoomPreview }) {
   return (
-    <div className="join-preview-banner" data-status={preview.status}>
+    <div className="join-preview-banner" data-status={preview.status} role="status" aria-live="polite">
       <span className="join-preview-dot" aria-hidden />
       <div className="join-preview-text">
         {preview.status === "lobby" ? (
@@ -311,6 +382,37 @@ function RoomPreviewBanner({ preview }: { preview: RoomPreview }) {
       </div>
     </div>
   );
+}
+
+function isMissingRoomPreview(value: unknown): value is { status: "missing" } {
+  return Boolean(value && typeof value === "object" && (value as { status?: unknown }).status === "missing");
+}
+
+function isRoomPreview(value: unknown): value is RoomPreview {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  const record = value as Record<string, unknown>;
+  return (
+    typeof record.code === "string" &&
+    (record.status === "lobby" || record.status === "in_game" || record.status === "finished") &&
+    typeof record.playerCount === "number" &&
+    typeof record.capacity === "number" &&
+    (record.family === "mafia" || record.family === "werewolves" || record.family === null)
+  );
+}
+
+function joinAvailabilityError(state: RoomPreviewState) {
+  if (state.kind === "loading" || state.kind === "idle") {
+    return "Изчакай да проверим стаята.";
+  }
+  if (state.kind === "missing") {
+    return "Тази стая не е налична.";
+  }
+  if (state.kind === "network_error") {
+    return "Провери връзката и опитай отново.";
+  }
+  return "Играта в тази стая е приключила.";
 }
 
 function getRoomCodeError(code: string) {

@@ -11,7 +11,14 @@ export function ModeTileCard({
 }) {
   const family = getGameFamily(mode);
   return (
-    <button type="button" className="mode-tile-card" data-active={active} data-family={family} onClick={() => onSelect(mode)}>
+    <button
+      type="button"
+      className="mode-tile-card"
+      data-active={active}
+      data-family={family}
+      aria-pressed={active}
+      onClick={() => onSelect(mode)}
+    >
       <span className={`mode-preview-strip mode-${mode}`} aria-hidden="true">
         <span>{getGameModeNameBg(mode)}</span>
       </span>

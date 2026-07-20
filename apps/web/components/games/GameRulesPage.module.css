@@ -12,8 +12,35 @@
   padding: clamp(24px, 4vw, 48px);
   background:
     linear-gradient(100deg, rgba(13, 8, 7, 0.98) 0%, rgba(13, 8, 7, 0.72) 44%, rgba(7, 13, 14, 0.22) 100%),
-    var(--art-landing) center / cover no-repeat;
+    var(--page-art, var(--art-landing)) center / cover no-repeat;
   box-shadow: 0 28px 90px rgba(0, 0, 0, 0.32), inset 0 1px rgba(255, 255, 255, 0.12);
+}
+
+:global(.rules-shell[data-family="werewolves"]) {
+  --page-art: var(--art-werewolf);
+}
+
+:global(.rules-shell[data-family="mafia"]) {
+  --page-art: var(--art-mafia);
+}
+
+:global(.rules-shell::before) {
+  position: fixed;
+  inset: 64px 0 0;
+  width: auto;
+  min-height: 0;
+  background:
+    linear-gradient(115deg, rgba(8, 9, 9, 0.9), rgba(21, 12, 9, 0.62) 48%, rgba(8, 9, 9, 0.92)),
+    var(--page-art) center / cover no-repeat;
+  transform: none;
+}
+
+:global(html[data-theme="light"] .rules-shell::before) {
+  background:
+    linear-gradient(115deg, rgba(250, 240, 218, 0.58), rgba(235, 215, 180, 0.34) 48%, rgba(250, 240, 218, 0.62)),
+    var(--page-art) center / cover no-repeat;
+  filter: saturate(0.86) contrast(0.98);
+  opacity: 1;
 }
 
 :global(.rules-playbook-hero::after) {
@@ -298,27 +325,27 @@
 }
 
 :global([data-family="mafia"] .phase-node-icon.phase-lobby) {
-  --phase-node-icon: image-set(url("/game-art/mafia/icon-phase-lobby.webp") type("image/webp"), url("/game-art/mafia/icon-phase-lobby.png") type("image/png"));
+  --phase-node-icon: var(--art-lobby);
 }
 
 :global([data-family="mafia"] .phase-node-icon.phase-role_reveal) {
-  --phase-node-icon: image-set(url("/game-art/mafia/icon-phase-role-reveal.webp") type("image/webp"), url("/game-art/mafia/icon-phase-role-reveal.png") type("image/png"));
+  --phase-node-icon: var(--art-reveal);
 }
 
 :global([data-family="mafia"] .phase-node-icon.phase-night) {
-  --phase-node-icon: image-set(url("/game-art/mafia/icon-phase-night.webp") type("image/webp"), url("/game-art/mafia/icon-phase-night.png") type("image/png"));
+  --phase-node-icon: var(--art-night);
 }
 
 :global([data-family="mafia"] .phase-node-icon.phase-day_discussion) {
-  --phase-node-icon: image-set(url("/game-art/mafia/icon-phase-day.webp") type("image/webp"), url("/game-art/mafia/icon-phase-day.png") type("image/png"));
+  --phase-node-icon: var(--art-day);
 }
 
 :global([data-family="mafia"] .phase-node-icon.phase-voting) {
-  --phase-node-icon: image-set(url("/game-art/mafia/icon-phase-voting.webp") type("image/webp"), url("/game-art/mafia/icon-phase-voting.png") type("image/png"));
+  --phase-node-icon: var(--art-vote);
 }
 
 :global([data-family="mafia"] .phase-node-icon.phase-resolution) {
-  --phase-node-icon: image-set(url("/game-art/mafia/icon-phase-resolution.webp") type("image/webp"), url("/game-art/mafia/icon-phase-resolution.png") type("image/png"));
+  --phase-node-icon: var(--art-resolution);
 }
 
 :global(.phase-node-label),
@@ -824,5 +851,391 @@
 @media (max-width: 760px) {
   :global(.rules-table-grid) {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Cinematic phase board: the phase art is the navigation, not a row of utility tokens. */
+:global(.phase-timeline-section.rules-phase-timeline) {
+  --phase-board-accent: #d49d45;
+  --phase-board-accent-soft: rgba(212, 157, 69, 0.22);
+  --phase-board-line: rgba(247, 231, 199, 0.16);
+  --phase-board-panel: rgba(12, 15, 14, 0.9);
+  border-radius: 8px;
+  padding: clamp(22px, 3vw, 38px);
+  background:
+    linear-gradient(90deg, rgba(212, 157, 69, 0.08) 0 1px, transparent 1px 100%) 0 0 / 25% 100%,
+    radial-gradient(circle at 8% 0%, rgba(91, 117, 72, 0.2), transparent 30rem),
+    linear-gradient(145deg, rgba(24, 17, 12, 0.98), rgba(7, 12, 12, 0.97));
+  box-shadow:
+    0 34px 90px rgba(0, 0, 0, 0.38),
+    inset 0 1px rgba(255, 255, 255, 0.1),
+    inset 0 0 70px rgba(0, 0, 0, 0.3);
+}
+
+:global([data-family="mafia"] .phase-timeline-section.rules-phase-timeline) {
+  --phase-board-accent: #cf9b59;
+  --phase-board-accent-soft: rgba(138, 45, 37, 0.28);
+  background:
+    repeating-linear-gradient(90deg, transparent 0 54px, rgba(255, 236, 204, 0.018) 54px 55px),
+    radial-gradient(circle at 88% 0%, rgba(132, 47, 43, 0.2), transparent 30rem),
+    linear-gradient(145deg, rgba(25, 15, 13, 0.99), rgba(8, 10, 11, 0.98));
+}
+
+:global(.phase-timeline-header) {
+  display: grid;
+  grid-template-columns: minmax(0, 0.72fr) minmax(320px, 1fr);
+  align-items: end;
+  gap: clamp(18px, 4vw, 64px);
+  max-width: none;
+  border-bottom: 1px solid var(--phase-board-line);
+  padding-bottom: clamp(18px, 2.5vw, 28px);
+}
+
+:global(.phase-timeline-header .section-kicker),
+:global(.phase-timeline-header h2) {
+  grid-column: 1;
+}
+
+:global(.phase-timeline-header h2) {
+  margin-top: 8px;
+}
+
+:global(.phase-timeline-header p:not(.section-kicker)) {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: end;
+  margin: 0;
+  border-left: 2px solid var(--phase-board-accent);
+  padding-left: 18px;
+  color: rgba(247, 231, 199, 0.8);
+}
+
+:global(.phase-timeline) {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(10px, 1.4vw, 16px);
+  margin-top: clamp(18px, 2.5vw, 28px);
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  overflow: visible;
+  background: transparent;
+  box-shadow: none;
+}
+
+:global(.phase-cycle-note) {
+  margin: 18px 0 0;
+  color: rgba(247, 231, 199, 0.72);
+  font-size: 0.82rem;
+  font-weight: 760;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+:global(.phase-node) {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto;
+  align-content: end;
+  justify-items: stretch;
+  min-height: clamp(210px, 23vw, 310px);
+  overflow: hidden;
+  border: 1px solid rgba(247, 231, 199, 0.16);
+  border-radius: 6px;
+  padding: 0;
+  background: #090c0c;
+  color: #fff5df;
+  opacity: 0.82;
+  text-align: left;
+  box-shadow:
+    0 16px 36px rgba(0, 0, 0, 0.3),
+    inset 0 1px rgba(255, 255, 255, 0.08);
+  transform: none;
+  transition:
+    border-color 220ms ease,
+    box-shadow 220ms ease,
+    opacity 220ms ease,
+    transform 220ms ease;
+}
+
+:global(.phase-node::after) {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(180deg, rgba(4, 7, 8, 0.06) 26%, rgba(4, 7, 8, 0.88) 76%, rgba(4, 7, 8, 0.98) 100%),
+    linear-gradient(90deg, rgba(212, 157, 69, 0.1), transparent 32%);
+  content: "";
+  pointer-events: none;
+}
+
+:global([data-family="mafia"] .phase-node::after) {
+  background:
+    linear-gradient(180deg, rgba(9, 5, 5, 0.04) 26%, rgba(11, 7, 7, 0.88) 76%, rgba(9, 6, 6, 0.98) 100%),
+    linear-gradient(90deg, rgba(154, 48, 39, 0.16), transparent 40%);
+}
+
+:global(.phase-node:hover),
+:global(.phase-node:focus-visible),
+:global(.phase-node.is-selected) {
+  border-color: var(--phase-board-accent);
+  color: #fff9eb;
+  opacity: 1;
+  transform: translateY(-3px);
+  box-shadow:
+    0 0 0 1px var(--phase-board-accent-soft),
+    0 22px 48px rgba(0, 0, 0, 0.44),
+    inset 0 1px rgba(255, 255, 255, 0.12);
+}
+
+:global(.phase-node:focus-visible) {
+  outline: 3px solid rgba(255, 246, 224, 0.86);
+  outline-offset: 3px;
+}
+
+:global(.phase-node.is-selected::before) {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 3;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--phase-board-accent) 18% 82%, transparent);
+  content: "";
+  box-shadow: 0 0 20px var(--phase-board-accent-soft);
+}
+
+:global(.phase-node-number) {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 3;
+  min-width: 36px;
+  min-height: 24px;
+  margin: 0;
+  border-color: rgba(255, 245, 223, 0.24);
+  background: rgba(7, 9, 9, 0.76);
+  color: var(--phase-board-accent);
+  font-size: 0.68rem;
+  backdrop-filter: none;
+}
+
+:global(.phase-node-medallion) {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  width: auto;
+  aspect-ratio: auto;
+  border: 0;
+  border-radius: 0;
+  background-position: center;
+  background-size: cover;
+  box-shadow: none;
+  filter: saturate(0.72) brightness(0.72);
+  transform: scale(1.025);
+  transition:
+    filter 260ms ease,
+    transform 500ms ease;
+}
+
+:global(.phase-node:hover .phase-node-medallion),
+:global(.phase-node:focus-visible .phase-node-medallion),
+:global(.phase-node.is-selected .phase-node-medallion) {
+  border: 0;
+  box-shadow: none;
+  filter: saturate(1.04) brightness(0.9);
+  transform: scale(1.065);
+}
+
+:global(.phase-node-copy) {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  width: 100%;
+  padding: clamp(16px, 2vw, 22px);
+}
+
+:global(.phase-node-label),
+:global(.phase-node-short) {
+  display: block;
+  max-width: none;
+  margin: 0;
+}
+
+:global(.phase-node-label) {
+  color: #fff7e7;
+  font-size: clamp(1.12rem, 1.6vw, 1.45rem);
+  font-weight: 950;
+  line-height: 1.04;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.78);
+}
+
+:global(.phase-node-short) {
+  color: var(--phase-board-accent);
+  font-size: 0.66rem;
+  line-height: 1.25;
+}
+
+:global(.phase-detail-panel) {
+  display: grid;
+  grid-template-columns: minmax(250px, 0.75fr) minmax(0, 1.65fr);
+  gap: clamp(20px, 3vw, 38px);
+  margin-top: clamp(14px, 2vw, 20px);
+  border: 1px solid rgba(98, 63, 34, 0.5);
+  border-radius: 6px;
+  padding: clamp(20px, 3vw, 34px);
+  background:
+    linear-gradient(90deg, rgba(83, 52, 31, 0.08) 0 1px, transparent 1px 100%) 0 0 / 25% 100%,
+    radial-gradient(circle at 92% 0%, rgba(209, 154, 66, 0.24), transparent 20rem),
+    linear-gradient(145deg, #f7e9ca, #d5ae70);
+  color: #261811;
+  box-shadow:
+    0 22px 52px rgba(0, 0, 0, 0.3),
+    inset 0 1px rgba(255, 255, 255, 0.5),
+    inset 0 0 36px rgba(85, 47, 24, 0.12);
+}
+
+:global([data-family="mafia"] .phase-detail-panel) {
+  border-color: rgba(116, 39, 34, 0.52);
+  background:
+    repeating-linear-gradient(0deg, transparent 0 29px, rgba(79, 48, 34, 0.045) 29px 30px),
+    radial-gradient(circle at 92% 0%, rgba(139, 45, 38, 0.18), transparent 22rem),
+    linear-gradient(145deg, #f6ead2, #d9bd91);
+}
+
+:global(.phase-detail-panel__lead) {
+  align-self: stretch;
+  container-type: inline-size;
+  min-width: 0;
+  max-width: none;
+  border-right: 1px solid rgba(63, 38, 24, 0.2);
+  padding-right: clamp(18px, 3vw, 34px);
+}
+
+:global(.phase-detail-panel__lead h3) {
+  max-width: 100%;
+  font-size: clamp(2.35rem, calc(1.6rem + 1.2vw), 3.4rem);
+  font-size: clamp(2.35rem, 17cqw, 4.25rem);
+  letter-spacing: 0;
+}
+
+:global(.phase-detail-panel__lead p:not(.section-kicker)) {
+  color: #4a3021;
+}
+
+:global(.phase-info-grid) {
+  align-self: stretch;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+:global(.phase-info-chip) {
+  min-height: 132px;
+  border-radius: 6px;
+  padding: 14px;
+  background: rgba(255, 252, 242, 0.3);
+}
+
+:global(.phase-info-chip__icon) {
+  border-radius: 50%;
+}
+
+@media (max-width: 980px) {
+  :global(.phase-timeline-header) {
+    grid-template-columns: 1fr;
+  }
+
+  :global(.phase-timeline-header p:not(.section-kicker)) {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  :global(.phase-timeline) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  :global(.phase-node) {
+    min-height: clamp(200px, 36vw, 280px);
+  }
+
+  :global(.phase-detail-panel) {
+    grid-template-columns: 1fr;
+  }
+
+  :global(.phase-detail-panel__lead) {
+    border-right: 0;
+    border-bottom: 1px solid rgba(63, 38, 24, 0.2);
+    padding: 0 0 20px;
+  }
+}
+
+@media (max-width: 560px) {
+  :global(.phase-timeline-section.rules-phase-timeline) {
+    border-radius: 6px;
+    padding: 16px;
+  }
+
+  :global(.phase-timeline) {
+    gap: 8px;
+  }
+
+  :global(.phase-node) {
+    min-height: 166px;
+    border-radius: 5px;
+  }
+
+  :global(.phase-node-medallion) {
+    filter: saturate(0.92) brightness(0.9);
+  }
+
+  :global(.phase-node:hover .phase-node-medallion),
+  :global(.phase-node:focus-visible .phase-node-medallion),
+  :global(.phase-node.is-selected .phase-node-medallion) {
+    filter: saturate(1.04) brightness(1);
+  }
+
+  :global([data-family="mafia"] .phase-node-medallion) {
+    filter: saturate(0.98) brightness(1.22);
+  }
+
+  :global([data-family="mafia"] .phase-node:hover .phase-node-medallion),
+  :global([data-family="mafia"] .phase-node:focus-visible .phase-node-medallion),
+  :global([data-family="mafia"] .phase-node.is-selected .phase-node-medallion) {
+    filter: saturate(1.08) brightness(1.34);
+  }
+
+  :global(.phase-node-number) {
+    top: 10px;
+    left: 10px;
+  }
+
+  :global(.phase-node-copy) {
+    padding: 14px 12px;
+  }
+
+  :global(.phase-node-label) {
+    font-size: 1rem;
+  }
+
+  :global(.phase-node-short) {
+    font-size: 0.58rem;
+    letter-spacing: 0.12em;
+  }
+
+  :global(.phase-detail-panel) {
+    padding: 18px;
+  }
+
+  :global(.phase-info-grid) {
+    grid-template-columns: 1fr;
+  }
+
+  :global(.phase-info-chip) {
+    min-height: 0;
   }
 }

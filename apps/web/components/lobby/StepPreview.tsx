@@ -47,7 +47,7 @@ export function StepPreview({
     <section className="lobby-step lobby-step-preview" aria-labelledby="step-preview-title">
       <div className="lobby-step-heading">
         <p className="section-kicker">стъпка 4</p>
-        <h1 id="step-preview-title">{getGameModeNameBg(state.mode)}</h1>
+        <h1 id="step-preview-title" tabIndex={-1}>{getGameModeNameBg(state.mode)}</h1>
         <p>{state.roomName} · {formatEstimatedDuration(estimatedDurationSeconds(state))}</p>
       </div>
 

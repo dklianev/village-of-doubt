@@ -55,7 +55,7 @@ export function StepRoles({
       <div className="roles-step-sticky">
         <div className="lobby-step-heading">
           <p className="section-kicker">стъпка 2</p>
-          <h1 id="step-roles-title">Избери ролите</h1>
+          <h1 id="step-roles-title" tabIndex={-1}>Избери ролите</h1>
           <p>{total}/{state.playerCount} роли · баланс {roleBalance(state) > 0 ? `+${roleBalance(state)}` : roleBalance(state)}</p>
         </div>
         <PresetChips state={state} dispatch={dispatch} />
@@ -76,6 +76,7 @@ export function StepRoles({
           <button
             type="button"
             className={state.runtimeFilter === "playable" ? "is-active" : ""}
+            aria-pressed={state.runtimeFilter === "playable"}
             onClick={() => dispatch({ type: "SET_RUNTIME_FILTER", runtimeFilter: "playable" })}
           >
             Работещи
@@ -83,6 +84,7 @@ export function StepRoles({
           <button
             type="button"
             className={state.runtimeFilter === "manual_only" ? "is-active" : ""}
+            aria-pressed={state.runtimeFilter === "manual_only"}
             onClick={() => dispatch({ type: "SET_RUNTIME_FILTER", runtimeFilter: "manual_only" })}
           >
             Разширени
@@ -174,6 +176,7 @@ function LoversFeatureCard({
         className="lovers-toggle-button"
         data-active={enabled ? "true" : "false"}
         disabled={!available}
+        aria-pressed={enabled}
         onClick={() => {
           dispatch({ type: "SET_ADVANCED", key: "loversEnabled", value: !state.advanced.loversEnabled });
           playCue("vote");

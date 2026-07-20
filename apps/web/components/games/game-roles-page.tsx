@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { memo, useCallback, useDeferredValue, useMemo, useState } from "react";
 import "@/components/games/GameRolesPage.module.css";
 import {
@@ -12,7 +13,6 @@ import {
   type GameFamily,
   type RoleCode,
 } from "@werewolf/shared";
-import { ResourceHints } from "@/components/resource-hints";
 import { roleArtPath, roleThumbPath } from "@/lib/role-art";
 import { useModal } from "@/lib/use-modal";
 
@@ -131,7 +131,6 @@ export function GameRolesPage({ family }: { family: GameFamily }) {
 
   return (
     <main className="shell roles-shell" data-faction={family} data-family={family}>
-      <ResourceHints images={allRoles.slice(0, 4).map((role) => roleThumbPath(family, role))} />
       <section className="role-codex-hero">
         <div className="role-codex-hero-copy">
           <p className="section-kicker">{isMafia ? "досиета на града" : "книга на персонажите"}</p>
@@ -201,7 +200,7 @@ export function GameRolesPage({ family }: { family: GameFamily }) {
       <div className="role-codex-grid">
         {roles.map((role, index) => {
           return (
-            <RoleCodexCard key={role} family={family} role={role} priority={index < 4} onSelect={selectRole} />
+            <RoleCodexCard key={role} family={family} role={role} eager={index === 0} onSelect={selectRole} />
           );
         })}
       </div>
@@ -224,12 +223,12 @@ export function GameRolesPage({ family }: { family: GameFamily }) {
 const RoleCodexCard = memo(function RoleCodexCard({
   family,
   role,
-  priority,
+  eager,
   onSelect,
 }: {
   family: GameFamily;
   role: RoleCode;
-  priority: boolean;
+  eager: boolean;
   onSelect: (role: RoleCode) => void;
 }) {
   const definition = ROLE_DEFINITIONS[role];
@@ -238,7 +237,7 @@ const RoleCodexCard = memo(function RoleCodexCard({
   return (
     <article className={`role-codex-card role-codex-card-compact role-${role}`}>
       <button type="button" className="role-codex-card-button" onClick={() => onSelect(role)}>
-        <RoleArt role={role} family={family} priority={priority} />
+        <RoleArt role={role} family={family} eager={eager} />
         <div className="role-codex-copy">
           <div className="role-codex-card-topline">
             <span>{teamLabelBg(definition.team, family)}</span>
@@ -259,29 +258,26 @@ const RoleCodexCard = memo(function RoleCodexCard({
   );
 });
 
-function RoleArt({ role, family, priority }: { role: RoleCode; family: GameFamily; priority: boolean }) {
+function RoleArt({ role, family, eager = false }: { role: RoleCode; family: GameFamily; eager?: boolean }) {
   const assetKey = getRoleAssetKey(role);
   const hasAsset =
     family === "mafia" ? KNOWN_MAFIA_ROLE_ASSETS.has(assetKey) : KNOWN_WEREWOLF_ROLE_ASSETS.has(assetKey);
   const src = hasAsset ? roleThumbPath(family, role) : "/game-art/thumbs/card-back-secret.webp";
   const fallbackSrc = hasAsset ? roleArtPath(family, role, "png") : "/game-art/card-back-secret.png";
+  const [didFail, setDidFail] = useState(false);
+  const imageSrc = didFail ? fallbackSrc : src;
 
   return (
     <picture className="role-codex-art role-codex-frame" aria-hidden="true">
-      <img
-        src={src}
+      <Image
+        src={imageSrc}
         alt=""
-        loading={priority ? "eager" : "lazy"}
-        fetchPriority={priority ? "high" : "auto"}
-        decoding="async"
+        loading={eager ? "eager" : "lazy"}
+        fetchPriority={eager ? "high" : "auto"}
         width={520}
         height={728}
-        onError={(event) => {
-          if (event.currentTarget.src.endsWith(fallbackSrc)) {
-            return;
-          }
-          event.currentTarget.src = fallbackSrc;
-        }}
+        sizes="(max-width: 639px) 44vw, (max-width: 1023px) 28vw, 22vw"
+        onError={didFail ? undefined : () => setDidFail(true)}
       />
     </picture>
   );
@@ -299,7 +295,7 @@ function RoleCodexDetail({ family, role, onClose }: { family: GameFamily; role: 
         <button type="button" className="role-codex-detail-close" aria-label="Затвори досието" onClick={onClose}>
           ×
         </button>
-        <RoleArt role={role} family={family} priority />
+        <RoleArt role={role} family={family} />
         <div className="role-codex-detail-copy">
           <p className="section-kicker">{teamLabelBg(definition.team, family)}</p>
           <h2 id="role-codex-detail-title">{definition.nameBg}</h2>

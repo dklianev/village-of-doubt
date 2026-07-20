@@ -171,7 +171,7 @@
   border-radius: 7px;
   padding: 8px 10px;
   background: rgba(12, 10, 8, 0.58);
-  color: rgba(245, 232, 200, 0.62);
+  color: #ead9ba;
   cursor: pointer;
   font-family: inherit;
   font-size: 0.76rem;
@@ -192,7 +192,7 @@
 :global(.tutorial-progress-dot[data-state="past"]) {
   border-color: rgba(217, 154, 66, 0.34);
   background: rgba(69, 49, 27, 0.62);
-  color: rgba(245, 232, 200, 0.82);
+  color: #ead9ba;
 }
 
 :global(.tutorial-progress-dot:hover),
@@ -219,7 +219,7 @@
   align-items: center;
   gap: 6px;
   padding: 8px 14px;
-  color: rgba(245, 232, 200, 0.75);
+  color: #ead9ba;
   background: rgba(13, 10, 8, 0.45);
   border: 1px solid rgba(245, 232, 200, 0.16);
   border-radius: 999px;
@@ -491,7 +491,7 @@
 :global(.tutorial-nav-counter) {
   display: grid;
   gap: 2px;
-  color: rgba(245, 232, 200, 0.7);
+  color: #ead9ba;
   font-size: 0.72rem;
   font-weight: 900;
   letter-spacing: 0;
@@ -506,7 +506,7 @@
 }
 
 :global(.tutorial-keyboard-hint) {
-  color: rgba(79, 56, 41, 0.58);
+  color: #ead9ba;
   font-size: 0.78rem;
   font-style: italic;
   letter-spacing: 0;
@@ -621,7 +621,7 @@
 }
 
 :global(.clue-chip[data-revealed="true"] .clue-chip-status) {
-  color: rgba(245, 232, 200, 0.68);
+  color: #ead9ba;
 }
 
 :global(.clue-chip-detail) {
@@ -702,7 +702,7 @@
 }
 
 :global(.tutorial-final-line) {
-  color: rgba(245, 232, 200, 0.8);
+  color: #ead9ba;
   font-size: 0.95rem;
   font-style: italic;
 }
@@ -747,7 +747,7 @@
 }
 
 :global(.tutorial-final-secondary-hint) {
-  color: rgba(232, 217, 187, 0.6);
+  color: #ead9ba;
   font-size: 0.78rem;
   font-style: italic;
 }
@@ -776,11 +776,15 @@
 }
 
 :global(html[data-theme="dark"] .tutorial-nav-counter) {
-  color: rgba(232, 217, 187, 0.72);
+  color: #ead9ba;
 }
 
 :global(html[data-theme="dark"] .tutorial-keyboard-hint) {
-  color: rgba(232, 217, 187, 0.58);
+  color: #ead9ba;
+}
+
+:global(html[data-theme="light"] .tutorial-keyboard-hint) {
+  color: #4a2f20;
 }
 
 :global(html[data-theme="light"] .tutorial-nav) {

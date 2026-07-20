@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { LobbyWizard } from "../LobbyWizard";
@@ -16,11 +16,12 @@ vi.mock("@/lib/sound", () => ({
 
 describe("LobbyWizard", () => {
   it("shows the four setup steps", () => {
-    render(<LobbyWizard family="werewolves" />);
+    const { container } = render(<LobbyWizard family="werewolves" />);
 
     for (const label of ["Стая", "Роли", "Стил", "Преглед"]) {
       expect(screen.getAllByText(label).length).toBeGreaterThan(0);
     }
+    expect(container.querySelector("main")).not.toBeInTheDocument();
   });
 
   it("navigates forward and backward between steps", async () => {
@@ -49,11 +50,22 @@ describe("LobbyWizard", () => {
 
   it("applies the classic lovers recipe with Cupid from the first screen", async () => {
     const user = userEvent.setup();
+    const scrollIntoView = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+      configurable: true,
+      value: scrollIntoView,
+    });
     render(<LobbyWizard family="werewolves" />);
 
-    await user.click(screen.getByRole("button", { name: /Класика с Влюбени/ }));
+    const recipe = screen.getByRole("button", { name: /Класика с Влюбени/ });
+    expect(recipe).toHaveAttribute("aria-pressed", "true");
+    await user.click(recipe);
 
-    expect(screen.getByRole("heading", { name: "Върколак" })).toBeInTheDocument();
+    const previewHeading = screen.getByRole("heading", { name: "Върколак" });
+    expect(previewHeading).toBeInTheDocument();
+    await waitFor(() => expect(previewHeading).toHaveFocus());
+    expect(scrollIntoView).toHaveBeenCalledWith({ behavior: "smooth", block: "start" });
+    expect(recipe).toHaveAttribute("aria-pressed", "true");
     expect(screen.getAllByText("Купидон").length).toBeGreaterThan(0);
     expect(screen.getByText("Включен")).toBeInTheDocument();
   });

@@ -322,9 +322,7 @@ function PhaseTimeline({ phases, mode }: { phases: PhaseRule[]; mode: GameMode }
         <p>Натисни фаза, за да видиш кой действа, какъв таймер е подходящ и какво да следиш.</p>
       </header>
 
-      <div className="phase-timeline" role="tablist" aria-label="Фази">
-        <span className="phase-timeline__line" aria-hidden="true" />
-        <span className="phase-timeline__line is-loop" aria-hidden="true" />
+      <div className="phase-timeline" role="group" aria-label="Фази">
         {phases.map((phase, index) => (
           <PhaseNode
             key={phase.id}
@@ -335,8 +333,9 @@ function PhaseTimeline({ phases, mode }: { phases: PhaseRule[]; mode: GameMode }
             onSelect={() => setActivePhaseId(phase.id)}
           />
         ))}
-        <PhaseLoopArrow />
       </div>
+
+      <p className="phase-cycle-note">След развръзката започва нова нощ, докато една страна не спечели.</p>
 
       <PhaseDetailPanel phase={activePhase} title={phaseLabelBg(activePhase.phase, mode)} />
     </section>
@@ -359,50 +358,26 @@ function PhaseNode({
   return (
     <button
       type="button"
-      role="tab"
-      aria-selected={selected}
       aria-pressed={selected}
       aria-current={selected ? "step" : undefined}
+      aria-controls="phase-detail-panel"
       className={selected ? "phase-node is-selected" : "phase-node"}
+      data-phase={phase.phase}
       onClick={onSelect}
     >
       <span className="phase-node-number">{String(index + 1).padStart(2, "0")}</span>
       <span className={`phase-node-medallion phase-node-icon phase-${PHASE_ICONS[phase.phase]}`} aria-hidden="true" />
-      <span className="phase-node-label">{label}</span>
-      <span className="phase-node-short">{phase.short}</span>
+      <span className="phase-node-copy">
+        <span className="phase-node-label">{label}</span>
+        <span className="phase-node-short">{phase.short}</span>
+      </span>
     </button>
-  );
-}
-
-function PhaseLoopArrow() {
-  return (
-    <svg className="phase-loop-arrow" viewBox="0 0 600 86" aria-hidden="true" preserveAspectRatio="none">
-      <defs>
-        <marker id="phase-loop-arrowhead" markerWidth="10" markerHeight="10" refX="7" refY="5" orient="auto">
-          <path d="M0 0 L10 5 L0 10 Z" fill="currentColor" />
-        </marker>
-      </defs>
-      <path
-        className="phase-loop-path"
-        d="M 520 55 Q 300 -34 80 55"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeDasharray="7 6"
-        strokeLinecap="round"
-        markerEnd="url(#phase-loop-arrowhead)"
-      />
-      <rect className="phase-loop-badge" x="232" y="2" width="136" height="24" rx="12" />
-      <text className="phase-loop-text" x="300" y="18" textAnchor="middle">
-        ПОВТАРЯ СЕ
-      </text>
-    </svg>
   );
 }
 
 function PhaseDetailPanel({ phase, title }: { phase: PhaseRule; title: string }) {
   return (
-    <article className="phase-detail-panel" key={phase.id}>
+    <article id="phase-detail-panel" className="phase-detail-panel" key={phase.id} aria-live="polite" aria-atomic="true">
       <div className="phase-detail-panel__lead">
         <p className="section-kicker">{phase.short}</p>
         <h3>{title}</h3>

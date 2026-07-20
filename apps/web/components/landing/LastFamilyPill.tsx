@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { safeLocalStorage } from "@/lib/safe-storage";
 
 type LastFamily = "werewolves" | "mafia";
 
@@ -8,7 +9,7 @@ export function LastFamilyPill({ family }: { family: LastFamily }) {
   const [lastFamily, setLastFamily] = useState<LastFamily | null>(null);
 
   useEffect(() => {
-    const saved = window.localStorage.getItem("last-family");
+    const saved = safeLocalStorage.getItem("last-family");
     if (saved === "werewolves" || saved === "mafia") {
       setLastFamily(saved);
     }

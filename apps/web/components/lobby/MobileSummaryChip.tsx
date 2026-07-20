@@ -1,4 +1,5 @@
-import { memo, useCallback, type Dispatch } from "react";
+import { ChevronUp } from "lucide-react";
+import { memo, useCallback, useId, type Dispatch } from "react";
 import { roleWarnings, type LobbyFormAction, type LobbyFormState } from "@/lib/lobby-form";
 import { StickyPreview } from "@/components/lobby/StickyPreview";
 import { useModal } from "@/lib/use-modal";
@@ -11,17 +12,25 @@ function MobileSummaryChipImpl({
   dispatch: Dispatch<LobbyFormAction>;
 }) {
   const warnings = roleWarnings(state);
+  const summaryId = useId();
   const closeSummary = useCallback(() => dispatch({ type: "SET_MOBILE_SUMMARY_OPEN", open: false }), [dispatch]);
   const { ref } = useModal({ open: state.mobileSummaryOpen, onClose: closeSummary });
 
   return (
     <>
-      <button type="button" className="mobile-summary-chip" onClick={() => dispatch({ type: "SET_MOBILE_SUMMARY_OPEN", open: true })}>
+      <button
+        type="button"
+        className="mobile-summary-chip"
+        aria-expanded={state.mobileSummaryOpen}
+        aria-controls={summaryId}
+        aria-haspopup="dialog"
+        onClick={() => dispatch({ type: "SET_MOBILE_SUMMARY_OPEN", open: true })}
+      >
         <span>{state.playerCount} играчи · {warnings.length > 0 ? `⚠ ${warnings.length}` : "готово"}</span>
-        <strong>⌃</strong>
+        <ChevronUp aria-hidden />
       </button>
       {state.mobileSummaryOpen ? (
-        <div ref={ref} className="mobile-summary-overlay" role="dialog" aria-modal="true" aria-label="Преглед на стаята">
+        <div id={summaryId} ref={ref} className="mobile-summary-overlay" role="dialog" aria-modal="true" aria-label="Преглед на стаята">
           <button
             type="button"
             className="mobile-summary-backdrop"

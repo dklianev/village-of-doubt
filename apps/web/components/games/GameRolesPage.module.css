@@ -2,7 +2,37 @@
 
 
 :global(.roles-shell) {
-  overflow-x: clip;
+  overflow: visible;
+}
+
+/* Keep the long catalog from scaling the body artwork to the document height. */
+:global(html[data-theme="dark"] body:has(.roles-shell)) {
+  background: #080d0f;
+}
+
+:global(html[data-theme="dark"] .roles-shell::before) {
+  position: fixed;
+  inset: 64px 0 0;
+  z-index: -1;
+  display: block;
+  width: auto;
+  min-height: 0;
+  background:
+    linear-gradient(180deg, rgba(7, 12, 14, 0.56), rgba(7, 10, 11, 0.9)),
+    radial-gradient(circle at 18% 18%, rgba(89, 99, 59, 0.2), transparent 34rem),
+    var(--art-night) center 28% / cover no-repeat;
+  content: "";
+  filter: saturate(0.82) brightness(0.72);
+  pointer-events: none;
+  transform: none;
+}
+
+:global(html[data-theme="dark"] .roles-shell[data-family="mafia"]::before) {
+  background:
+    linear-gradient(180deg, rgba(8, 10, 11, 0.48), rgba(8, 7, 7, 0.92)),
+    radial-gradient(circle at 82% 16%, rgba(200, 154, 85, 0.16), transparent 30rem),
+    var(--art-night) center 30% / cover no-repeat;
+  filter: saturate(0.78) brightness(0.68);
 }
 
 :global(.role-codex-hero) {
@@ -18,7 +48,9 @@
   background:
     linear-gradient(100deg, rgba(13, 8, 7, 0.98) 0%, rgba(13, 8, 7, 0.74) 42%, rgba(7, 13, 14, 0.28) 100%),
     var(--art-reveal) center / cover no-repeat;
-  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.32), inset 0 1px rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 18px 48px -28px rgba(0, 0, 0, 0.58),
+    inset 0 1px rgba(255, 255, 255, 0.12);
 }
 
 :global(.role-codex-hero::after) {
@@ -119,7 +151,9 @@
   border-radius: 24px;
   padding: 14px;
   background: rgba(12, 10, 9, 0.76);
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.22), inset 0 1px rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 14px 34px -24px rgba(0, 0, 0, 0.62),
+    inset 0 1px rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(14px) saturate(1.08);
 }
 
@@ -221,7 +255,9 @@
   background:
     linear-gradient(145deg, rgba(255, 247, 229, 0.96), rgba(211, 180, 125, 0.9)),
     var(--texture-paper) center / 480px 480px;
-  box-shadow: 0 22px 58px rgba(0, 0, 0, 0.22), inset 0 1px rgba(255, 255, 255, 0.2);
+  box-shadow:
+    0 14px 32px -24px rgba(0, 0, 0, 0.48),
+    inset 0 1px rgba(255, 255, 255, 0.2);
   isolation: isolate;
 }
 
@@ -764,7 +800,7 @@
   }
 }
 
-@media (max-width: 1100px) {
+@media (min-width: 761px) and (max-width: 1100px) {
   :global(.role-codex-grid) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

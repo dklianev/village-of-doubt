@@ -118,7 +118,12 @@ function ManualTimerControl({
         <b>{formatSeconds(value)}</b>
       </div>
       <div className="manual-timer-control">
-        <button type="button" aria-label={`Намали: ${field.label}`} onClick={() => setValue(value - field.step)}>
+        <button
+          type="button"
+          aria-label={`Намали: ${field.label}`}
+          disabled={value <= field.min}
+          onClick={() => setValue(value - field.step)}
+        >
           -
         </button>
         <input
@@ -130,7 +135,12 @@ function ManualTimerControl({
           aria-label={field.label}
           onChange={(event) => setValue(Number(event.target.value))}
         />
-        <button type="button" aria-label={`Увеличи: ${field.label}`} onClick={() => setValue(value + field.step)}>
+        <button
+          type="button"
+          aria-label={`Увеличи: ${field.label}`}
+          disabled={value >= field.max}
+          onClick={() => setValue(value + field.step)}
+        >
           +
         </button>
       </div>
@@ -140,6 +150,7 @@ function ManualTimerControl({
             key={preset}
             type="button"
             data-active={value === preset ? "true" : "false"}
+            aria-pressed={value === preset}
             onClick={() => setValue(preset)}
           >
             {formatSeconds(preset)}

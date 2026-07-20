@@ -20,11 +20,17 @@ export type ModeChoiceGame = {
 export function ModeChoiceCards({ games, initialSession }: { games: readonly ModeChoiceGame[]; initialSession: LandingSession }) {
   const sessionQuery = authClient.useSession();
   const session = sessionQuery.data ?? initialSession;
+  const sessionPending = sessionQuery.isPending && !initialSession;
 
   return (
     <div className="game-choice-grid landing-split-grid mt-8">
       {games.map((game) => {
-        const primaryHref = session ? `${game.href}/create` : `/sign-in?redirect=${encodeURIComponent(`${game.href}/create`)}`;
+        const createHref = `${game.href}/create`;
+        const primaryHref = sessionPending
+          ? createHref
+          : session
+            ? createHref
+            : `/sign-in?redirect=${encodeURIComponent(createHref)}`;
 
         return (
           <article
@@ -39,8 +45,8 @@ export function ModeChoiceCards({ games, initialSession }: { games: readonly Mod
             <blockquote>{game.line}</blockquote>
             <p>{game.description}</p>
             <div className="game-choice-actions">
-              <Link href={primaryHref} className="btn btn-primary">
-                {session ? "Избери игра" : "Влез и играй"}
+              <Link href={primaryHref} className="btn btn-primary" aria-busy={sessionPending || undefined}>
+                {sessionPending ? "Играй" : session ? "Избери игра" : "Влез и играй"}
               </Link>
               <Link href={`${game.href}/roles`} className="btn btn-secondary">
                 Роли

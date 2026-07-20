@@ -215,6 +215,7 @@
   background: rgba(8, 10, 10, 0.46);
   min-height: clamp(560px, 70vh, 880px);
   contain: layout paint;
+  scroll-margin-top: 6rem;
 }
 
 :global(.lobby-step-slot) {
@@ -1481,6 +1482,11 @@
   backdrop-filter: blur(14px);
 }
 
+:global(.mobile-summary-chip svg) {
+  width: 18px;
+  height: 18px;
+}
+
 :global(.mobile-summary-overlay .sticky-preview) {
   position: relative;
   z-index: 1;
@@ -1526,6 +1532,40 @@
 }
 
 @media (max-width: 767px) {
+  :global(.lobby-step-nav) {
+    gap: 10px;
+    padding: 10px;
+  }
+
+  :global(.lobby-step-nav button[data-status]) {
+    min-height: 58px;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    border-radius: 14px;
+    padding: 6px 2px;
+    text-align: center;
+  }
+
+  :global(.lobby-step-nav button[data-status] span) {
+    width: 24px;
+    height: 24px;
+    font-size: 0.76rem;
+  }
+
+  :global(.lobby-step-nav button[data-status] strong) {
+    width: 100%;
+    overflow: visible;
+    font-size: 0.72rem;
+    line-height: 1.1;
+    text-overflow: clip;
+    white-space: normal;
+  }
+
+  :global(.lobby-step-actions .btn) {
+    flex: 1 1 0;
+  }
+
   :global(.lobby-field-grid),
   :global(.preview-stats-grid),
   :global(.advanced-drawer-grid),
@@ -1583,6 +1623,12 @@
 
   :global(.mobile-summary-chip) {
     display: flex;
+  }
+
+  :global(body:has(.lobby-wizard) [data-cookie-banner]),
+  :global(body:has(.lobby-wizard) .toast-host),
+  :global(body:has(.lobby-wizard) button[aria-label="Дай ни бележка"]) {
+    bottom: calc(82px + env(safe-area-inset-bottom));
   }
 
   :global(.preview-close-button) {

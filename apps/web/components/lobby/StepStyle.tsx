@@ -34,7 +34,7 @@ export function StepStyle({
     <section className="lobby-step lobby-step-style" aria-labelledby="step-style-title">
       <div className="lobby-step-heading">
         <p className="section-kicker">стъпка 3</p>
-        <h1 id="step-style-title">Стил на водене</h1>
+        <h1 id="step-style-title" tabIndex={-1}>Стил на водене</h1>
         <p>Избери колко автоматична да бъде играта и как да общуват играчите.</p>
       </div>
 
@@ -49,6 +49,7 @@ export function StepStyle({
               type="button"
               className="narrator-tile"
               data-active={state.narratorMode === card.value}
+              aria-pressed={state.narratorMode === card.value}
               onClick={() => dispatch({ type: "SET_NARRATOR_MODE", narratorMode: card.value })}
             >
               <strong>{card.label}</strong>
@@ -75,6 +76,7 @@ export function StepStyle({
                 type="button"
                 className="voice-tile"
                 data-active={state.advanced.narratorVoice === voice}
+                aria-pressed={state.advanced.narratorVoice === voice}
                 onClick={() => {
                   dispatch({ type: "SET_ADVANCED", key: "narratorVoice", value: voice });
                   playCue("vote");
@@ -100,6 +102,7 @@ export function StepStyle({
               type="button"
               className="communication-tile"
               data-active={state.communicationMode === card.value}
+              aria-pressed={state.communicationMode === card.value}
               onClick={() => dispatch({ type: "SET_COMMUNICATION_MODE", communicationMode: card.value })}
             >
               <strong>{card.label}</strong>

@@ -21,4 +21,33 @@ describe("tutorial presentation contract", () => {
     expect(tutorialCss).toContain('[data-tutorial-scene="day"] .tutorial-slide-title');
     expect(clueChipsSource).toContain("Разкрий 2-3 карти. Посетени:");
   });
+
+  it("uses fully opaque light foreground text on dark tutorial controls", () => {
+    expect(tutorialCss).toContain(".tutorial-keyboard-hint");
+    expect(tutorialCss).toContain("color: #ead9ba");
+    expect(tutorialCss).toContain(".tutorial-final-secondary-hint");
+  });
+
+  it("gives the keyboard hint a WCAG AA light-theme foreground", () => {
+    const lightHintRule = tutorialCss.match(
+      /html\[data-theme="light"\][^\n]*\.tutorial-keyboard-hint[^\{]*\{[^}]*color:\s*(#[0-9a-f]{6})/i,
+    );
+
+    expect(lightHintRule?.[1]).toBeDefined();
+    expect(contrastRatio(lightHintRule?.[1] ?? "#ffffff", "#fcf6ec")).toBeGreaterThanOrEqual(4.5);
+  });
 });
+
+function contrastRatio(foreground: string, background: string) {
+  const luminance = (hex: string) => {
+    const channels = hex
+      .slice(1)
+      .match(/.{2}/g)!
+      .map((value) => Number.parseInt(value, 16) / 255)
+      .map((value) => (value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4));
+    return channels[0]! * 0.2126 + channels[1]! * 0.7152 + channels[2]! * 0.0722;
+  };
+  const lighter = Math.max(luminance(foreground), luminance(background));
+  const darker = Math.min(luminance(foreground), luminance(background));
+  return (lighter + 0.05) / (darker + 0.05);
+}

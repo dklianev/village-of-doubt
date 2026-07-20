@@ -16,6 +16,7 @@ export function PresetChips({
           key={preset}
           type="button"
           data-active={(state.manualRolesEnabled ? "manual" : state.rolePreset) === preset}
+          aria-pressed={(state.manualRolesEnabled ? "manual" : state.rolePreset) === preset}
           onClick={() => dispatch({ type: "SET_ROLE_PRESET", rolePreset: preset })}
         >
           {shortPresetLabel(preset)}

@@ -42,6 +42,7 @@ export function LobbyWizard({
   const canAdvance = isStepValid(state, state.step);
   const previousStep = useRef(state.step);
   const submitTimerRef = useRef<number | null>(null);
+  const stepPaneRef = useRef<HTMLDivElement | null>(null);
 
   const transition = useCallback((update: () => void) => {
     const startViewTransition = "startViewTransition" in document ? document.startViewTransition.bind(document) : undefined;
@@ -73,6 +74,14 @@ export function LobbyWizard({
     }
     previousStep.current = state.step;
     const frameId = window.requestAnimationFrame(() => {
+      const activeStep = stepPaneRef.current?.querySelector<HTMLElement>(':scope > .lobby-step-slot[data-active="true"]');
+      const heading = activeStep?.querySelector<HTMLElement>("h1");
+
+      stepPaneRef.current?.scrollIntoView?.({
+        behavior: "smooth",
+        block: "start",
+      });
+      heading?.focus({ preventScroll: true });
       playCue("phase-change");
       triggerHaptic([12]);
     });
@@ -106,10 +115,10 @@ export function LobbyWizard({
   }
 
   return (
-    <main data-faction={state.family} data-family={state.family} className="lobby-wizard">
+    <div data-faction={state.family} data-family={state.family} className="lobby-wizard">
       <div className="lobby-wizard-main">
         <StepNav state={state} dispatch={dispatch} canAdvance={canAdvance} onAdvanceBlocked={onAdvanceBlocked} transition={transition} />
-        <div className="lobby-step-pane" style={{ viewTransitionName: "lobby-step" }}>
+        <div ref={stepPaneRef} className="lobby-step-pane" style={{ viewTransitionName: "lobby-step" }}>
           <div className="lobby-step-slot" data-active={state.step === 1} aria-hidden={state.step !== 1} inert={state.step !== 1}>
             <StepRoom state={state} dispatch={dispatch} />
           </div>
@@ -132,7 +141,7 @@ export function LobbyWizard({
       <StickyPreview state={state} />
       <MobileSummaryChip state={state} dispatch={dispatch} />
       {state.confettiBurst > 0 ? <Confetti key={state.confettiBurst} /> : null}
-    </main>
+    </div>
   );
 }
 

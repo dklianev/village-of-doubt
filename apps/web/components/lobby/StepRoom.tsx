@@ -59,7 +59,7 @@ export function StepRoom({
     <section className="lobby-step lobby-step-room" aria-labelledby="step-room-title">
       <div className="lobby-step-heading">
         <p className="step-eyebrow">Стъпка 1 / 4 · Стая</p>
-        <h1 id="step-room-title">Създай игра без чудене</h1>
+        <h1 id="step-room-title" tabIndex={-1}>Създай игра без чудене</h1>
         <p className="step-lede">Започни с готова рецепта или настрой стаята ръчно под нея.</p>
       </div>
 
@@ -124,7 +124,12 @@ export function StepRoom({
           <p className="fixed-player-count">Точно 10 играчи</p>
         ) : (
           <div className="player-count-control">
-            <button type="button" onClick={() => dispatch({ type: "SET_PLAYER_COUNT", playerCount: players - 1 })}>
+            <button
+              type="button"
+              aria-label="Намали броя играчи"
+              disabled={players <= range.min}
+              onClick={() => dispatch({ type: "SET_PLAYER_COUNT", playerCount: players - 1 })}
+            >
               -
             </button>
             <input
@@ -135,7 +140,12 @@ export function StepRoom({
               value={players}
               onChange={(event) => dispatch({ type: "SET_PLAYER_COUNT", playerCount: Number(event.target.value) })}
             />
-            <button type="button" onClick={() => dispatch({ type: "SET_PLAYER_COUNT", playerCount: players + 1 })}>
+            <button
+              type="button"
+              aria-label="Увеличи броя играчи"
+              disabled={players >= range.max}
+              onClick={() => dispatch({ type: "SET_PLAYER_COUNT", playerCount: players + 1 })}
+            >
               +
             </button>
           </div>
@@ -162,6 +172,7 @@ export function StepRoom({
                   type="button"
                   className="tempo-tile"
                   data-active={state.tempoProfile === tempo.value}
+                  aria-pressed={state.tempoProfile === tempo.value}
                   onClick={() => dispatch({ type: "SET_TEMPO_PROFILE", tempoProfile: tempo.value })}
                 >
                   <strong>{tempo.label}</strong>

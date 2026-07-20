@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { type GameFamily } from "@werewolf/shared";
 import { ResourceHints } from "@/components/resource-hints";
+import { NextLinkPill } from "@/components/next-link-pill";
 import { MafiaMechanicsCallouts } from "@/components/games/MafiaMechanicsCallouts";
 import { MafiaNightTimeline } from "@/components/games/MafiaNightTimeline";
 import { RoleSpotlight } from "@/components/games/RoleSpotlight";
@@ -96,9 +97,16 @@ function GameHero({
         <span className="game-home-title-accent" aria-hidden="true" />
         <p className="game-home-hero__lede">{subtitle}</p>
         <div className="game-home-hero__actions">
-          <Link href={`${root}/create`} className="game-home-hero__primary">
+          <NextLinkPill
+            href={`${root}/create`}
+            className="game-home-hero__primary"
+            intent="primary"
+            size="lg"
+            shimmer
+            tracked
+          >
             Играй
-          </Link>
+          </NextLinkPill>
           <div className="game-home-hero__secondary-links" aria-label="Още действия">
             <Link href={`${root}/roles`} prefetch={false}>
               Роли
