@@ -2,7 +2,9 @@ import { describe, expect, it, vi } from "vitest";
 import {
   MAX_PUBLIC_CHAT,
   MAX_PUBLIC_EVENTS,
+  PHASE_FLOW,
   areLivingNightActorsReady,
+  CommandRateLimiter,
   ensureNightActionAllowed,
   generateRoomCode,
   getActionTargetUserId,
@@ -38,10 +40,10 @@ describe("game-room-runtime helpers", () => {
   });
 
   it("hashes room codes without exposing the raw code", () => {
-    const hash = hashRoomCode("ABC123");
+    const hash = hashRoomCode("ABC323");
 
     expect(hash).toMatch(/^[a-f0-9]{8}$/);
-    expect(hash).not.toContain("ABC123");
+    expect(hash).not.toContain("ABC323");
   });
 
   it("parses chat channels and normalizes messages", () => {
@@ -86,6 +88,23 @@ describe("game-room-runtime helpers", () => {
     expect(getPhaseDurationMs(config, "paused")).toBe(0);
   });
 
+  it("maps Sport Mafia speeches and defenses to the per-player speech timer", () => {
+    const config = {
+      mode: "mafia_sport",
+      timers: {
+        ...timers,
+        dayDiscussionSeconds: 0,
+        playerSpeechSeconds: 17,
+        resolutionSeconds: 15,
+      },
+    } as GameConfig;
+
+    expect(getPhaseDurationMs(config, "day_discussion")).toBe(17_000);
+    expect(getPhaseDurationMs(config, "defense")).toBe(17_000);
+    expect(getPhaseDurationMs(config, "nomination")).toBe(15_000);
+    expect(PHASE_FLOW.day_discussion).toBe("voting");
+  });
+
   it("checks living night actor readiness without leaking role state", () => {
     const players: PrivatePlayerState[] = [
       { userId: "wolf", role: "werewolf", alive: true },
@@ -111,5 +130,31 @@ describe("game-room-runtime helpers", () => {
       haveLivingPlayersVoted(players, (userId) => ({ hasVoted: userId === "alive-1" || userId === "alive-2" })),
     ).toBe(true);
     expect(haveLivingPlayersVoted(players, (userId) => ({ hasVoted: userId === "alive-1" }))).toBe(false);
+  });
+
+  it("bounds repeated action commands per viewer and resets after the window", () => {
+    const limiter = new CommandRateLimiter();
+    for (let attempt = 0; attempt < 12; attempt += 1) {
+      expect(limiter.allow("player-1", "submitNightAction", 1_000 + attempt)).toBe(true);
+    }
+
+    expect(limiter.allow("player-1", "submitNightAction", 1_100)).toBe(false);
+    expect(limiter.allow("player-2", "submitNightAction", 1_100)).toBe(true);
+    expect(limiter.allow("player-1", "submitNightAction", 6_100)).toBe(true);
+  });
+
+  it("requires both the Don's faction vote and private investigation", () => {
+    const don: PrivatePlayerState = { userId: "don", role: "don", alive: true };
+    const pending = new Set<string>();
+    const isReady = () => areLivingNightActorsReady(
+      [don],
+      "night",
+      (_userId, kind) => Boolean(kind && pending.has(kind)),
+    );
+
+    pending.add("faction_kill");
+    expect(isReady()).toBe(false);
+    pending.add("check_commissioner");
+    expect(isReady()).toBe(true);
   });
 });

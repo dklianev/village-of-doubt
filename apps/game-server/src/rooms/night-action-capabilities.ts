@@ -6,7 +6,7 @@ import {
 } from "@werewolf/shared";
 import { isNightPhase, type PrivatePlayerState } from "./game-room-runtime.js";
 
-interface PublicCapabilityPlayer {
+interface CapabilityPlayer {
   userId: string;
   playing: boolean;
   alive: boolean;
@@ -16,16 +16,17 @@ interface PublicCapabilityPlayer {
 interface BuildNightActionCapabilitiesOptions {
   actor: PrivatePlayerState;
   phase: GamePhase;
-  players: Iterable<PublicCapabilityPlayer>;
-  pendingKinds?: Iterable<NightActionKind>;
+  players: Iterable<CapabilityPlayer>;
+  allowFactionKill?: boolean;
+  alliedTargetUserIds?: Iterable<string>;
 }
 
 const WITCH_HEAL_USED_REASON = "Лечебната отвара вече е използвана.";
 const WITCH_POISON_USED_REASON = "Отровата вече е използвана.";
-const WITCH_HEAL_PENDING_REASON = "Вещицата вече избра лечебната отвара тази нощ.";
-const WITCH_POISON_PENDING_REASON = "Вещицата вече избра отровата тази нощ.";
 const PRIEST_BLESS_USED_REASON = "Благословията вече е дадена.";
 const PRIEST_TARGET_BLESSED_REASON = "Този играч вече е благословен.";
+const FACTION_KILL_DISABLED_REASON = "Убийствата са изключени през тази нощ.";
+const FACTION_ALLY_REASON = "Не можеш да избереш свой съотборник.";
 const BLACKSMITH_USED_REASON = "Мечът вече е изкован.";
 const INVESTIGATOR_USED_REASON = "Проверката вече е използвана.";
 const VAMPIRE_HUNTER_DISARMED_REASON = "Убиецът на вампири е обезоръжен.";
@@ -35,7 +36,8 @@ export function buildNightActionCapabilities({
   actor,
   phase,
   players,
-  pendingKinds,
+  allowFactionKill = true,
+  alliedTargetUserIds,
 }: BuildNightActionCapabilitiesOptions): NightActionCapabilities {
   const capabilities: NightActionCapabilities = {
     availableKinds: [],
@@ -48,7 +50,7 @@ export function buildNightActionCapabilities({
   }
 
   const playerList = [...players];
-  const pendingKindSet = new Set(pendingKinds ?? []);
+  const alliedTargetIdSet = new Set(alliedTargetUserIds ?? []);
   const addAvailable = (kind: NightActionKind) => {
     capabilities.availableKinds.push(kind);
   };
@@ -57,6 +59,19 @@ export function buildNightActionCapabilities({
   };
   const role = actor.role;
   const team = getRoleTeam(role);
+  const addFactionKill = () => {
+    if (allowFactionKill) {
+      addAvailable("faction_kill");
+      const alliedTargets = playerList
+        .filter((player) => player.playing && player.alive && alliedTargetIdSet.has(player.userId))
+        .map((player) => ({ id: player.userId, reasonBg: FACTION_ALLY_REASON }));
+      if (alliedTargets.length > 0) {
+        capabilities.disallowedTargetsByKind.faction_kill = alliedTargets;
+      }
+    } else {
+      markUsed("faction_kill", FACTION_KILL_DISABLED_REASON);
+    }
+  };
 
   if (
     team === "mafia" ||
@@ -65,14 +80,14 @@ export function buildNightActionCapabilities({
     role === "vigilante" ||
     role === "maniac"
   ) {
-    addAvailable("faction_kill");
+    addFactionKill();
   }
 
   if (role === "vampire_hunter") {
     if (actor.vampireHunterDisarmed) {
       markUsed("faction_kill", VAMPIRE_HUNTER_DISARMED_REASON);
     } else {
-      addAvailable("faction_kill");
+      addFactionKill();
     }
   }
 
@@ -106,15 +121,11 @@ export function buildNightActionCapabilities({
   if (role === "witch") {
     if (actor.witchHealUsed) {
       markUsed("witch_heal", WITCH_HEAL_USED_REASON);
-    } else if (pendingKindSet.has("witch_heal")) {
-      markUsed("witch_heal", WITCH_HEAL_PENDING_REASON);
     } else {
       addAvailable("witch_heal");
     }
     if (actor.witchPoisonUsed) {
       markUsed("witch_poison", WITCH_POISON_USED_REASON);
-    } else if (pendingKindSet.has("witch_poison")) {
-      markUsed("witch_poison", WITCH_POISON_PENDING_REASON);
     } else {
       addAvailable("witch_poison");
     }
@@ -141,10 +152,7 @@ export function buildNightActionCapabilities({
       addAvailable("priest_bless");
       const blessedTargets = playerList
         .filter((player) => player.playing && player.alive && player.priestBlessed)
-        .map((player) => ({
-          id: player.userId,
-          reasonBg: PRIEST_TARGET_BLESSED_REASON,
-        }));
+        .map((player) => ({ id: player.userId, reasonBg: PRIEST_TARGET_BLESSED_REASON }));
       if (blessedTargets.length > 0) {
         capabilities.disallowedTargetsByKind.priest_bless = blessedTargets;
       }

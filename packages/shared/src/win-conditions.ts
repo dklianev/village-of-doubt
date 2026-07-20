@@ -7,18 +7,29 @@ export interface WinPlayerState {
   role: RoleCode;
   alive: boolean;
   loverId?: string | null;
+  personalWin?: boolean;
 }
 
 export interface WinResult {
   winner: WinnerTeam | null;
   reasonBg: string | null;
+  winnerPlayerIds: string[];
+  personalWinnerPlayerIds: string[];
 }
 
 export function evaluateWinCondition(players: WinPlayerState[]): WinResult {
   const alive = players.filter((player) => player.alive);
+  const personalWinnerPlayerIds = players.filter((player) => player.personalWin).map((player) => player.playerId);
+  const result = (
+    winner: WinnerTeam | null,
+    reasonBg: string | null,
+    winnerPlayerIds: string[] = [],
+  ): WinResult => ({ winner, reasonBg, winnerPlayerIds, personalWinnerPlayerIds });
+  const winnersForTeam = (team: ReturnType<typeof getRoleTeam>) =>
+    players.filter((player) => getRoleTeam(player.role) === team).map((player) => player.playerId);
 
   if (alive.length === 0) {
-    return { winner: "draw", reasonBg: "Няма останали живи играчи." };
+    return result("draw", "Няма останали живи играчи.");
   }
 
   if (
@@ -29,7 +40,11 @@ export function evaluateWinCondition(players: WinPlayerState[]): WinResult {
   ) {
     const teams = new Set(alive.map((player) => getRoleTeam(player.role)));
     if (teams.size > 1) {
-      return { winner: "lovers", reasonBg: "Влюбените останаха последните двама живи." };
+      return result(
+        "lovers",
+        "Влюбените останаха последните двама живи.",
+        alive.map((player) => player.playerId),
+      );
     }
   }
 
@@ -40,73 +55,75 @@ export function evaluateWinCondition(players: WinPlayerState[]): WinResult {
   const aliveManiacs = alive.filter((player) => player.role === "maniac").length;
   const aliveEvil = aliveWerewolves + aliveVampires + aliveMafia;
   const totalAlive = alive.length;
-  const aliveWerewolfOrVampire = aliveWerewolves + aliveVampires;
 
   if (aliveManiacs > 0 && aliveManiacs >= totalAlive - aliveManiacs) {
-    return { winner: "maniac", reasonBg: "Маниакът остана последната реална заплаха в града." };
+    return result(
+      "maniac",
+      "Маниакът остана последната реална заплаха в града.",
+      players.filter((player) => player.role === "maniac").map((player) => player.playerId),
+    );
   }
 
   if (aliveManiacs > 0 && aliveEvil === 0) {
-    return { winner: null, reasonBg: null };
+    return result(null, null);
   }
 
   if (aliveEvil === 0) {
     if (aliveVillage > 0) {
-      return { winner: "village", reasonBg: "Всички представители на злата страна са елиминирани." };
+      return result(
+        "village",
+        "Всички представители на злата страна са елиминирани.",
+        winnersForTeam("village"),
+      );
     }
-    return { winner: "draw", reasonBg: "Останаха само неутрални роли без отборна победа." };
+    return result("draw", "Останаха само неутрални роли без отборна победа.");
   }
 
-  // Cook stalemate clause — preserved as-is.
-  // When exactly one nightly threat (WW or Vampire) faces exactly one villager,
-  // and that villager is the Cook, the night threat cannot kill them.
-  if (
-    aliveWerewolfOrVampire === 1 &&
-    aliveMafia === 0 &&
-    aliveVillage === 1 &&
-    alive.some((player) => player.alive && player.role === "cook")
-  ) {
-    return { winner: "draw", reasonBg: "Последната нощна заплаха не може да преодолее Готвача." };
-  }
-
-  // Mixed nightly threats (Werewolves + Vampires together against village).
-  // Rare scenario; resolve at parity with tie-break by faction headcount.
+  // Competing hostile factions must eliminate each other before parity can decide a winner.
   if (aliveWerewolves > 0 && aliveVampires > 0 && aliveMafia === 0) {
-    if (aliveWerewolfOrVampire >= totalAlive - aliveWerewolfOrVampire) {
-      if (aliveWerewolves > aliveVampires) {
-        return { winner: "werewolves", reasonBg: "Върколаците надделяха в смесената нощ." };
-      }
-      if (aliveVampires > aliveWerewolves) {
-        return { winner: "vampires", reasonBg: "Вампирите надделяха в смесената нощ." };
-      }
-      return { winner: "draw", reasonBg: "Върколаци и вампири се изравниха над селото." };
-    }
-    return { winner: null, reasonBg: null };
+    return result(null, null);
   }
 
-  // Werewolves alone — parity rule per docs/rules-bg.md:667.
+  if (
+    alive.length === 2 &&
+    alive.some((player) => player.role === "cook") &&
+    alive.some((player) => getRoleTeam(player.role) === "werewolves" || getRoleTeam(player.role) === "vampires")
+  ) {
+    return result(null, null);
+  }
+
   if (aliveWerewolves > 0 && aliveVampires === 0 && aliveMafia === 0) {
     if (aliveWerewolves >= totalAlive - aliveWerewolves) {
-      return { winner: "werewolves", reasonBg: "Върколаците са равни или повече от живите селяни." };
+      return result(
+        "werewolves",
+        "Върколаците са равни или повече от живите селяни.",
+        winnersForTeam("werewolves"),
+      );
     }
-    return { winner: null, reasonBg: null };
+    return result(null, null);
   }
 
-  // Vampires alone — same parity rule as werewolves.
   if (aliveVampires > 0 && aliveWerewolves === 0 && aliveMafia === 0) {
     if (aliveVampires >= totalAlive - aliveVampires) {
-      return { winner: "vampires", reasonBg: "Вампирите са равни или повече от живите селяни." };
+      return result(
+        "vampires",
+        "Вампирите са равни или повече от живите селяни.",
+        winnersForTeam("vampires"),
+      );
     }
-    return { winner: null, reasonBg: null };
+    return result(null, null);
   }
 
-  // Mafia clause — unchanged (already parity-based).
   if (aliveMafia > 0) {
     if (aliveMafia >= totalAlive - aliveMafia) {
-      return { winner: "mafia", reasonBg: "Мафията е равна или повече от всички останали живи." };
+      return result(
+        "mafia",
+        "Мафията е равна или повече от всички останали живи.",
+        winnersForTeam("mafia"),
+      );
     }
-    return { winner: null, reasonBg: null };
+    return result(null, null);
   }
 
-  return { winner: null, reasonBg: null };
+  return result(null, null);
 }

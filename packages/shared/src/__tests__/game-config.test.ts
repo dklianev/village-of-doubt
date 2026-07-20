@@ -96,6 +96,20 @@ describe("role presets", () => {
     );
   });
 
+  it("enforces role maxCopies in validation and config creation", () => {
+    expect(validateRoleDistributionForMode("werewolves_classic", 8, {
+      ordinary_villager: 4,
+      werewolf: 2,
+      witch: 2,
+    })).toContain("Вещица може да участва най-много 1 път.");
+
+    expect(() => createGameConfigFromOptions({
+      mode: "werewolves_classic",
+      playerCount: 8,
+      roles: { ordinary_villager: 4, werewolf: 2, witch: 2 },
+    })).toThrow("Превишен е максималният брой копия");
+  });
+
   it("validates canonical role dependencies and balance warnings for werewolf", () => {
     expect(
       validateRoleDistributionForMode("werewolves_classic", 8, {
@@ -119,6 +133,46 @@ describe("role presets", () => {
     expect(getRoleBalanceScore({ werewolf: 3, ordinary_villager: 3, seer: 1, witch: 1, cupid: 1, hunter: 1, mayor: 1 })).toBe(0);
   });
 
+  it.each([
+    {
+      name: "зависимост между роли",
+      options: {
+        mode: "werewolves_classic" as const,
+        playerCount: 8,
+        roles: { ordinary_villager: 4, werewolf: 2, red_riding_hood: 1, seer: 1 },
+      },
+      message: "Червена шапчица може да се включи само ако Ловецът също е в играта.",
+    },
+    {
+      name: "минимум за две вражески фракции",
+      options: {
+        mode: "werewolves_classic" as const,
+        playerCount: 8,
+        werewolfVariant: "three_teams" as const,
+        roles: { ordinary_villager: 4, werewolf: 1, vampire: 1, seer: 1, healer: 1 },
+      },
+      message: "При едновременни Върколаци и Вампири трябва да има поне 3 Върколака и 3 Вампира.",
+    },
+    {
+      name: "публичен Кмет за Кучето пазач",
+      options: {
+        mode: "werewolves_classic" as const,
+        playerCount: 8,
+        mayorMode: "secret_role" as const,
+        promoRolesEnabled: true,
+        roles: { ordinary_villager: 3, werewolf: 2, seer: 1, mayor: 1, guard_dog: 1 },
+      },
+      message: "Куче пазач може да се използва само с публично избран Кмет.",
+    },
+  ])("rejects hard role compatibility on the strict server path: $name", ({ options, message }) => {
+    const strictOptions = {
+      ...options,
+      enforceRoleCompatibility: true,
+    } as Parameters<typeof createGameConfigFromOptions>[0];
+
+    expect(() => createGameConfigFromOptions(strictOptions)).toThrow(message);
+  });
+
   it("builds config from lobby options with matching timers and live mode", () => {
     const config = createGameConfigFromOptions({
       mode: "werewolves_classic",
@@ -135,6 +189,34 @@ describe("role presets", () => {
     expect(config.liveMode).toBe(true);
     expect(config.roles.cupid).toBe(1);
     expect(config.timers.autoAdvanceWhenReady).toBe(false);
+  });
+
+  it("preserves rule overrides and never sets capacity below playerCount", () => {
+    const config = createGameConfigFromOptions({
+      mode: "werewolves_classic",
+      playerCount: 8,
+      maxPlayers: 4,
+      tieBreaker: "revote",
+      firstNightKill: false,
+    });
+
+    expect(config.maxPlayers).toBe(8);
+    expect(config.tieBreaker).toBe("revote");
+    expect(config.firstNightKill).toBe(false);
+  });
+
+  it("caps room capacity at the supported 30-player limit", () => {
+    const config = createGameConfigFromOptions({
+      mode: "werewolves_classic",
+      playerCount: 8,
+      maxPlayers: 999,
+    });
+
+    expect(config.maxPlayers).toBe(30);
+    expect(() => createGameConfigFromOptions({
+      mode: "werewolves_classic",
+      playerCount: 31,
+    })).toThrow("Играта поддържа най-много 30 играчи.");
   });
 
   it("uses bounded custom timers only for manual tempo", () => {
@@ -231,6 +313,15 @@ describe("role presets", () => {
     expect(phaseLabelBg("day_discussion", "mafia_sport")).toBe("Речи на масата");
     expect(phaseLabelBg("resolution", "mafia_free")).toBe("Присъда");
   });
+
+  it("never exposes a skip-vote option in Sport Mafia", () => {
+    expect(createDefaultGameConfig("mafia_sport", 10).allowSkipVote).toBe(false);
+    expect(createGameConfigFromOptions({
+      mode: "mafia_sport",
+      playerCount: 10,
+      allowSkipVote: true,
+    }).allowSkipVote).toBe(false);
+  });
 });
 
 describe("assignment and win conditions", () => {
@@ -266,14 +357,14 @@ describe("assignment and win conditions", () => {
     expect(result.winner).toBe("lovers");
   });
 
-  it("declares draw when Werewolves and Vampires tie without village opposition", () => {
+  it("keeps play active when Werewolves and Vampires tie without village opposition", () => {
     const result = evaluateWinCondition([
       { playerId: "a", role: "vampire", alive: true },
       { playerId: "b", role: "werewolf", alive: true },
     ]);
 
-    expect(result.winner).toBe("draw");
-    expect(result.reasonBg).toBe("Върколаци и вампири се изравниха над селото.");
+    expect(result.winner).toBeNull();
+    expect(result.reasonBg).toBeNull();
   });
 
   it("does not let a lone neutral jester count as village", () => {

@@ -33,10 +33,11 @@ describe("GameRoom race-condition contracts", () => {
 
   it("resolves concurrent faction submissions deterministically to one death", async () => {
     const serverRoom = await colyseus.createRoom<GameRoom>("game", {
-      code: "RACE01",
+      code: "RACE23",
       mode: "werewolves_classic",
       playerCount: 6,
       tempoProfile: "manual",
+      firstNightKill: true,
       roles: {
         ordinary_villager: 4,
         werewolf: 2,

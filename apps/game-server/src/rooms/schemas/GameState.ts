@@ -3,6 +3,7 @@ import { ArraySchema, MapSchema, Schema, type } from "@colyseus/schema";
 export class PlayerPublicState extends Schema {
   @type("string") userId = "";
   @type("string") displayName = "";
+  @type("string") avatarId = "portrait-m01";
   @type("boolean") connected = true;
   @type("boolean") ready = false;
   @type("boolean") playing = true;
@@ -12,6 +13,10 @@ export class PlayerPublicState extends Schema {
   @type("boolean") acceptedFullNarrator = false;
   @type("boolean") mayor = false;
   @type("boolean") hasVoted = false;
+  /**
+   * Legacy client compatibility only. It intentionally remains false: exposing
+   * night-action completion lets observers infer which players hold active roles.
+   */
   @type("boolean") actedThisPhase = false;
   /**
    * Set only after death and only when revealRolesOnDeath is true.
@@ -50,6 +55,11 @@ export class VoteTallyState extends Schema {
   @type("boolean") hasMayorVote = false;
 }
 
+export class NominationState extends Schema {
+  @type("string") nominatorUserId = "";
+  @type("string") targetUserId = "";
+}
+
 export class GameState extends Schema {
   @type("string") code = "";
   @type("string") mode = "werewolves_classic";
@@ -58,6 +68,7 @@ export class GameState extends Schema {
   @type("string") communicationMode = "built_in_chat";
   @type("string") tempoProfile = "normal_online";
   @type("number") dayDiscussionSeconds = 0;
+  @type("number") playerSpeechSeconds = 0;
   @type("number") voteSeconds = 0;
   @type("boolean") revealRolesOnDeath = true;
   @type("boolean") loversEnabled = false;
@@ -68,11 +79,15 @@ export class GameState extends Schema {
   @type("string") rulesetVersion = "";
   @type("number") round = 0;
   @type("number") phaseEndsAt = 0;
+  @type("string") currentSpeakerUserId = "";
+  @type("string") currentDefenseUserId = "";
   @type("boolean") locked = false;
   @type("string") winnerTeam = "";
   @type("string") winnerReasonBg = "";
   @type({ map: PlayerPublicState }) players = new MapSchema<PlayerPublicState>();
   @type([RoleCountState]) roleCounts = new ArraySchema<RoleCountState>();
+  @type([NominationState]) nominations = new ArraySchema<NominationState>();
+  @type(["string"]) revoteEligibleUserIds = new ArraySchema<string>();
   @type([VoteTallyState]) voteTally = new ArraySchema<VoteTallyState>();
   @type([PublicEventState]) publicEvents = new ArraySchema<PublicEventState>();
   @type([ChatMessageState]) publicChat = new ArraySchema<ChatMessageState>();

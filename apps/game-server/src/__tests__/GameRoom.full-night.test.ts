@@ -34,10 +34,11 @@ describe("GameRoom full-night launch smoke", () => {
 
   it("runs from lobby through night result, vote and game over", async () => {
     const serverRoom = await colyseus.createRoom<GameRoom>("game", {
-      code: "FULL01",
+      code: "FULL23",
       mode: "werewolves_classic",
       playerCount: 6,
       tempoProfile: "manual",
+      firstNightKill: true,
       roles: {
         ordinary_villager: 5,
         werewolf: 1,
@@ -75,10 +76,11 @@ describe("GameRoom full-night launch smoke", () => {
 
   it("resolves Hunter revenge before declaring werewolves winner at parity", async () => {
     const serverRoom = await colyseus.createRoom<GameRoom>("game", {
-      code: "HREV01",
+      code: "HREV23",
       mode: "werewolves_classic",
       playerCount: 6,
       tempoProfile: "manual",
+      firstNightKill: true,
       roles: {
         ordinary_villager: 2,
         hunter: 1,
@@ -103,18 +105,18 @@ describe("GameRoom full-night launch smoke", () => {
     }
     await waitForPendingNightActions(serverRoom, wolves.length);
     clients[0]?.client.send("narratorAdvance", {});
-    await serverRoom.waitForNextPatch(25).catch(() => undefined);
+    await waitForPhase(serverRoom, "hunter_revenge");
 
     expect(serverRoom.state.phase).toBe("hunter_revenge");
     expect(findPublicPlayer(serverRoom, hunter?.userId)?.alive).toBe(false);
 
     hunter?.client.send("submitHunterRevenge", { targetUserId: revengeTarget?.userId });
-    await serverRoom.waitForNextPatch(25).catch(() => undefined);
+    await waitForPhase(serverRoom, "resolution");
     expect(findPublicPlayer(serverRoom, revengeTarget?.userId)?.alive).toBe(false);
     expect(serverRoom.state.phase).toBe("resolution");
 
     clients[0]?.client.send("narratorAdvance", {});
-    await serverRoom.waitForNextPatch(25).catch(() => undefined);
+    await waitForPhase(serverRoom, "game_over");
 
     expect(serverRoom.state.phase).toBe("game_over");
     expect(serverRoom.state.winnerTeam).toBe("werewolves");
@@ -128,6 +130,12 @@ async function waitForPendingNightActions(room: GameRoom, expectedCount: number)
     if ((pendingActions?.size ?? 0) >= expectedCount) {
       return;
     }
+    await delay(10);
+  }
+}
+
+async function waitForPhase(room: GameRoom, expectedPhase: string) {
+  for (let index = 0; index < 50 && room.state.phase !== expectedPhase; index += 1) {
     await delay(10);
   }
 }

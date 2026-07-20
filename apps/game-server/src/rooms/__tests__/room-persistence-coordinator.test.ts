@@ -16,7 +16,7 @@ function makePersistence(enabled = true): GamePersistence {
 }
 
 const context = {
-  code: "ROOM01",
+  code: "RPPM23",
   hostUserId: "host-1",
   config: { mode: "werewolves_classic" } as GameConfig,
 };
@@ -51,6 +51,36 @@ describe("RoomPersistenceCoordinator", () => {
     expect(persistence.finishGame).toHaveBeenCalledOnce();
   });
 
+  it("keeps the same persisted game when room ownership moves to a successor", async () => {
+    const persistence = makePersistence();
+    const coordinator = new RoomPersistenceCoordinator(persistence);
+    const firstHostContext = { ...context, roomIdempotencyKey: "room-instance-1" };
+    const successorContext = {
+      ...firstHostContext,
+      hostUserId: "host-2",
+    };
+
+    coordinator.queue(firstHostContext, async ({ ensureGame }) => {
+      await ensureGame();
+    });
+    coordinator.queue(successorContext, async ({ persistence: apiPersistence, ensureGame }) => {
+      const gameId = await ensureGame();
+      await apiPersistence.recordEvent(gameId!, {
+        round: 1,
+        phase: "night",
+        type: "host_succeeded",
+      });
+    });
+
+    await expect(coordinator.flush(100)).resolves.toBe(true);
+    expect(persistence.ensureGame).toHaveBeenCalledOnce();
+    expect(persistence.ensureGame).toHaveBeenCalledWith(expect.objectContaining({
+      hostId: "host-1",
+      idempotencyKey: "room-instance-1",
+    }));
+    expect(persistence.recordEvent).toHaveBeenCalledOnce();
+  });
+
   it("preserves FIFO ordering for queued writes", async () => {
     const persistence = makePersistence();
     const coordinator = new RoomPersistenceCoordinator(persistence);
@@ -71,6 +101,29 @@ describe("RoomPersistenceCoordinator", () => {
     expect(order).toEqual([1, 2, 3]);
   });
 
+  it("runs higher-priority writes first while preserving FIFO within a priority", async () => {
+    const persistence = makePersistence();
+    const coordinator = new RoomPersistenceCoordinator(persistence);
+    const order: string[] = [];
+
+    coordinator.queue(context, async () => {
+      order.push("normal-1");
+    });
+    coordinator.queue(context, async () => {
+      order.push("best-effort");
+    }, { priority: "best-effort" });
+    coordinator.queue(context, async () => {
+      order.push("critical");
+    }, { priority: "critical" });
+    coordinator.queue(context, async () => {
+      order.push("normal-2");
+    });
+
+    await coordinator.flush(100);
+
+    expect(order).toEqual(["critical", "normal-1", "normal-2", "best-effort"]);
+  });
+
   it("is a no-op when persistence is disabled", async () => {
     const persistence = makePersistence(false);
     const coordinator = new RoomPersistenceCoordinator(persistence);
@@ -83,17 +136,300 @@ describe("RoomPersistenceCoordinator", () => {
     expect(persistence.ensureGame).not.toHaveBeenCalled();
   });
 
-  it("drops writes above the pending queue budget", async () => {
+  it("drops only best-effort writes above the pending queue budget", async () => {
     const persistence = makePersistence();
     const coordinator = new RoomPersistenceCoordinator(persistence);
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const task = vi.fn(async () => {});
 
-    for (let i = 0; i < 51; i++) {
-      coordinator.queue(context, async () => {});
+    for (let i = 0; i < 50; i++) {
+      coordinator.queue(context, task);
     }
+    expect(coordinator.queue(context, task, { priority: "best-effort" })).toBe(false);
     await coordinator.flush(100);
 
-    expect(warn).toHaveBeenCalledWith(expect.stringContaining("persistQueue backpressure"));
+    expect(task).toHaveBeenCalledTimes(50);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("dropping best-effort write"));
+  });
+
+  it("keeps normal writes within the hard queue budget", async () => {
+    const persistence = makePersistence();
+    const coordinator = new RoomPersistenceCoordinator(persistence);
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const task = vi.fn(async () => {});
+
+    for (let i = 0; i < 50; i++) {
+      expect(coordinator.queue(context, task)).toBe(true);
+    }
+    expect(coordinator.queue(context, task)).toBe(false);
+    await coordinator.flush(100);
+
+    expect(task).toHaveBeenCalledTimes(50);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("dropping normal write"));
+  });
+
+  it("reserves capacity for a new critical write by evicting one normal write", async () => {
+    const persistence = makePersistence();
+    const coordinator = new RoomPersistenceCoordinator(persistence);
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const normal = vi.fn(async () => {});
+    const critical = vi.fn(async () => {});
+
+    for (let i = 0; i < 50; i++) {
+      coordinator.queue(context, normal);
+    }
+    expect(coordinator.queue(context, critical, { priority: "critical" })).toBe(true);
+    await coordinator.flush(100);
+
+    expect(critical).toHaveBeenCalledOnce();
+    expect(normal).toHaveBeenCalledTimes(49);
+  });
+
+  it("never evicts an accepted critical write when the queue is full", async () => {
+    const persistence = makePersistence();
+    const coordinator = new RoomPersistenceCoordinator(persistence);
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const completed: number[] = [];
+
+    for (let index = 0; index < 50; index += 1) {
+      expect(coordinator.queue(context, async () => {
+        completed.push(index);
+      }, { priority: "critical" })).toBe(true);
+    }
+
+    expect(coordinator.queue(context, async () => {
+      completed.push(50);
+    }, { priority: "critical" })).toBe(false);
+    await coordinator.flush(100);
+
+    expect(completed).toEqual(Array.from({ length: 50 }, (_, index) => index));
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("preserving accepted critical writes"));
+  });
+
+  it("retries only when a task explicitly opts in", async () => {
+    const persistence = makePersistence();
+    const retryDelay = vi.fn(async () => {});
+    const coordinator = new RoomPersistenceCoordinator(persistence, vi.fn(), retryDelay);
+    const task = vi.fn().mockRejectedValueOnce(new Error("temporary")).mockResolvedValue(undefined);
+
+    coordinator.queue(context, task, { maxAttempts: 2 });
+    await coordinator.flush(100);
+
+    expect(task).toHaveBeenCalledTimes(2);
+    expect(retryDelay).toHaveBeenCalledWith(1);
+  });
+
+  it("exposes stable game and event idempotency keys across retry attempts", async () => {
+    const persistence = makePersistence();
+    vi.mocked(persistence.ensureGame)
+      .mockRejectedValueOnce(new Error("commit result was lost"))
+      .mockResolvedValue("game-1");
+    const retryDelay = vi.fn(async () => {});
+    const coordinator = new RoomPersistenceCoordinator(persistence, vi.fn(), retryDelay);
+    const observedKeys: Array<{ game: string; event: string }> = [];
+
+    expect(coordinator.queue(
+      { ...context, roomIdempotencyKey: "room-instance-1" },
+      async ({ ensureGame, idempotencyKeys }) => {
+        if (!idempotencyKeys) {
+          throw new Error("Coordinator did not expose idempotency keys.");
+        }
+        observedKeys.push({
+          game: idempotencyKeys.game,
+          event: idempotencyKeys.event("public-event"),
+        });
+        await ensureGame();
+      },
+      { maxAttempts: 2 },
+    )).toBe(true);
+
+    await expect(coordinator.flush(100)).resolves.toBe(true);
+
+    expect(observedKeys).toEqual([
+      {
+        game: "room-instance-1",
+        event: expect.any(String),
+      },
+      {
+        game: "room-instance-1",
+        event: expect.any(String),
+      },
+    ]);
+    expect(observedKeys[0]?.event).toBe(observedKeys[1]?.event);
+    expect(observedKeys[0]?.event).not.toBe(observedKeys[0]?.game);
+    expect(persistence.ensureGame).toHaveBeenNthCalledWith(1, expect.objectContaining({
+      idempotencyKey: "room-instance-1",
+    }));
+    expect(persistence.ensureGame).toHaveBeenNthCalledWith(2, expect.objectContaining({
+      idempotencyKey: "room-instance-1",
+    }));
+  });
+
+  it("retries critical writes three times by default and then stops", async () => {
+    const persistence = makePersistence();
+    const retryDelay = vi.fn(async () => {});
+    const coordinator = new RoomPersistenceCoordinator(persistence, vi.fn(), retryDelay);
+    const task = vi.fn().mockRejectedValue(new Error("temporary"));
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    coordinator.queue(context, task, { priority: "critical" });
+    await coordinator.flush(100);
+
+    expect(task).toHaveBeenCalledTimes(3);
+    expect(retryDelay).toHaveBeenNthCalledWith(1, 1);
+    expect(retryDelay).toHaveBeenNthCalledWith(2, 2);
+  });
+
+  it("caps explicitly requested retries", async () => {
+    const persistence = makePersistence();
+    const retryDelay = vi.fn(async () => {});
+    const coordinator = new RoomPersistenceCoordinator(persistence, vi.fn(), retryDelay);
+    const task = vi.fn().mockRejectedValue(new Error("temporary"));
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    coordinator.queue(context, task, { priority: "critical", maxAttempts: 100 });
+    await coordinator.flush(100);
+
+    expect(task).toHaveBeenCalledTimes(5);
+    expect(retryDelay).toHaveBeenCalledTimes(4);
+  });
+
+  it("reserves one queue slot for critical terminal work and rejects a duplicate", async () => {
+    const persistence = makePersistence();
+    const coordinator = new RoomPersistenceCoordinator(persistence);
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const regularCritical = vi.fn(async () => {});
+    const terminal = vi.fn(async () => {});
+
+    for (let index = 0; index < 50; index += 1) {
+      expect(coordinator.queue(context, regularCritical, { priority: "critical" })).toBe(true);
+    }
+
+    expect(coordinator.queue(context, terminal, {
+      priority: "critical",
+      terminal: true,
+    })).toBe(true);
+    expect(coordinator.queue(context, terminal, {
+      priority: "critical",
+      terminal: true,
+    })).toBe(false);
+
+    await expect(coordinator.flush(100)).resolves.toBe(true);
+    expect(terminal).toHaveBeenCalledOnce();
+  });
+
+  it("keeps accepted critical work ahead of later terminal work", async () => {
+    const persistence = makePersistence();
+    const coordinator = new RoomPersistenceCoordinator(persistence);
+    const order: string[] = [];
+
+    expect(coordinator.queue(context, async () => {
+      order.push("game-start");
+    }, { priority: "critical" })).toBe(true);
+    expect(coordinator.queue(context, async () => {
+      order.push("game-finish");
+    }, { priority: "critical", terminal: true })).toBe(true);
+
+    await coordinator.flush(100);
+
+    expect(order).toEqual(["game-start", "game-finish"]);
+  });
+
+  it("returns an explicit failure when accepted terminal work exhausts retries", async () => {
+    const persistence = makePersistence();
+    const coordinator = new RoomPersistenceCoordinator(persistence, vi.fn(), vi.fn(async () => {}));
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    expect(coordinator.queue(context, async () => {
+      throw new Error("terminal write failed");
+    }, {
+      priority: "critical",
+      terminal: true,
+      maxAttempts: 2,
+    })).toBe(true);
+
+    await expect(coordinator.flush(100)).resolves.toBe(false);
+  });
+
+  it("reports when a flush deadline expires without discarding the write", async () => {
+    const persistence = makePersistence();
+    const coordinator = new RoomPersistenceCoordinator(persistence);
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    let release!: () => void;
+    const blocked = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+
+    coordinator.queue(context, async () => blocked);
+
+    await expect(coordinator.flush(1)).resolves.toBe(false);
+    expect(consoleError).toHaveBeenCalledWith(
+      "[game-persistence]",
+      expect.objectContaining({ message: expect.stringContaining("did not flush") }),
+    );
+    release();
+    await expect(coordinator.flush(100)).resolves.toBe(true);
+  });
+
+  it("stops accepting and draining queued mutations after a disposal timeout", async () => {
+    const persistence = makePersistence();
+    const coordinator = new RoomPersistenceCoordinator(persistence);
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    let release!: () => void;
+    let markStarted!: () => void;
+    const blocked = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const started = new Promise<void>((resolve) => {
+      markStarted = resolve;
+    });
+    const queuedMutation = vi.fn(async () => {});
+
+    expect(coordinator.queue(context, async () => {
+      markStarted();
+      await blocked;
+    })).toBe(true);
+    expect(coordinator.queue(context, queuedMutation)).toBe(true);
+    await started;
+
+    await expect(coordinator.dispose(1)).resolves.toBe(false);
+    expect(coordinator.queue(context, queuedMutation)).toBe(false);
+
+    release();
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+    expect(queuedMutation).not.toHaveBeenCalled();
+  });
+
+  it("fences repository calls when an active task resumes after a disposal timeout", async () => {
+    const persistence = makePersistence();
+    const coordinator = new RoomPersistenceCoordinator(persistence);
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    let release!: () => void;
+    let markStarted!: () => void;
+    const blocked = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const started = new Promise<void>((resolve) => {
+      markStarted = resolve;
+    });
+
+    expect(coordinator.queue(context, async ({ persistence: taskPersistence }) => {
+      markStarted();
+      await blocked;
+      await taskPersistence.recordEvent("game-1", {
+        round: 1,
+        phase: "day",
+        type: "late_mutation",
+      });
+    })).toBe(true);
+    await started;
+
+    await expect(coordinator.dispose(1)).resolves.toBe(false);
+    release();
+    await coordinator.flush(100);
+
+    expect(persistence.recordEvent).not.toHaveBeenCalled();
   });
 
   it("captures persistence errors when Sentry is configured", async () => {

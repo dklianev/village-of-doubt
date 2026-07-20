@@ -3,7 +3,7 @@ export const ROOM_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 export const ROOM_CODE_REGEX = new RegExp(`^[${ROOM_CODE_ALPHABET}]{${ROOM_CODE_LENGTH}}$`);
 export const ROOM_CODE_EXTRACT_REGEX = new RegExp(`[${ROOM_CODE_ALPHABET}]{${ROOM_CODE_LENGTH}}`, "g");
 
-export function normalizeRoomCodeInput(input: string) {
+export function normalizeRoomCode(input: string) {
   const upper = input.toUpperCase();
   const runs = upper.match(/[A-Z0-9]+/g) ?? [];
 
@@ -29,6 +29,10 @@ export function normalizeRoomCodeInput(input: string) {
   }
 
   return compact.slice(0, ROOM_CODE_LENGTH);
+}
+
+export function normalizeRoomCodeInput(input: string) {
+  return normalizeRoomCode(input);
 }
 
 function keepRoomCodeCharacters(input: string) {

@@ -1,19 +1,22 @@
-import { createHash } from "node:crypto";
+import { createHash, randomInt } from "node:crypto";
 import type { Client } from "colyseus";
 import {
   getRoleTeam,
   ROOM_CODE_ALPHABET,
   ROOM_CODE_LENGTH,
+  type ClientCommand,
   type ChatChannel,
   type GameConfig,
   type GamePhase,
   type NightActionCommand,
   type RoleCode,
+  type AvatarId,
 } from "@werewolf/shared";
 
 export interface ClientAuth {
   userId: string;
   displayName: string;
+  avatarId: AvatarId;
 }
 
 export interface PrivatePlayerState {
@@ -25,6 +28,7 @@ export interface PrivatePlayerState {
   witchPoisonUsed?: boolean;
   priestBlessUsed?: boolean;
   priestBlessed?: boolean;
+  priestBlessedTargetUserId?: string;
   blacksmithUsed?: boolean;
   investigatorUsed?: boolean;
   vampireHunterDisarmed?: boolean;
@@ -32,10 +36,69 @@ export interface PrivatePlayerState {
   lastResolvedHealerTargetUserId?: string;
   lastVoteTarget?: string;
   isMayor?: boolean;
+  deathRound?: number;
+  deathCause?: string;
 }
 
 export const MAX_PUBLIC_EVENTS = 120;
 export const MAX_PUBLIC_CHAT = 80;
+
+type CommandRateBucket = "action" | "control" | "typing";
+
+const COMMAND_RATE_POLICIES: Record<CommandRateBucket, { limit: number; windowMs: number }> = {
+  action: { limit: 12, windowMs: 5_000 },
+  control: { limit: 30, windowMs: 5_000 },
+  typing: { limit: 20, windowMs: 5_000 },
+};
+
+export class CommandRateLimiter {
+  private attempts = new Map<string, Map<CommandRateBucket, number[]>>();
+
+  allow(userId: string, commandType: ClientCommand["type"], now = Date.now()) {
+    if (commandType === "sendChat") {
+      return true;
+    }
+
+    const bucket = commandBucket(commandType);
+    const policy = COMMAND_RATE_POLICIES[bucket];
+    const userAttempts = this.attempts.get(userId) ?? new Map<CommandRateBucket, number[]>();
+    const cutoff = now - policy.windowMs;
+    const recent = (userAttempts.get(bucket) ?? []).filter((timestamp) => timestamp > cutoff);
+    if (recent.length >= policy.limit) {
+      userAttempts.set(bucket, recent);
+      this.attempts.set(userId, userAttempts);
+      return false;
+    }
+
+    recent.push(now);
+    userAttempts.set(bucket, recent);
+    this.attempts.set(userId, userAttempts);
+    return true;
+  }
+
+  delete(userId: string) {
+    this.attempts.delete(userId);
+  }
+
+  clear() {
+    this.attempts.clear();
+  }
+}
+
+function commandBucket(commandType: ClientCommand["type"]): CommandRateBucket {
+  if (commandType === "typing") {
+    return "typing";
+  }
+  if (
+    commandType === "submitNightAction"
+    || commandType === "submitNomination"
+    || commandType === "submitVote"
+    || commandType === "submitHunterRevenge"
+  ) {
+    return "action";
+  }
+  return "control";
+}
 
 export const PHASE_FLOW: Partial<Record<GamePhase, GamePhase>> = {
   role_reveal: "first_night",
@@ -142,7 +205,7 @@ export function ensureNightActionAllowed(role: RoleCode, action: NightActionComm
 export function generateRoomCode() {
   return Array.from(
     { length: ROOM_CODE_LENGTH },
-    () => ROOM_CODE_ALPHABET[Math.floor(Math.random() * ROOM_CODE_ALPHABET.length)],
+    () => ROOM_CODE_ALPHABET[randomInt(ROOM_CODE_ALPHABET.length)],
   ).join("");
 }
 
@@ -165,6 +228,7 @@ export function areLivingNightActorsReady(
   privatePlayers: Iterable<PrivatePlayerState>,
   phase: string,
   hasPendingNightAction: (actorUserId: string, kind?: NightActionCommand["kind"]) => boolean,
+  isFactionKillAllowed: (privatePlayer: PrivatePlayerState) => boolean = () => true,
 ) {
   return [...privatePlayers].every((privatePlayer) => {
     if (!privatePlayer.alive || !privatePlayer.role) {
@@ -178,6 +242,12 @@ export function areLivingNightActorsReady(
           (privatePlayer.witchPoisonUsed || hasPendingNightAction(privatePlayer.userId, "witch_poison")))
       );
     }
+    if (privatePlayer.role === "don") {
+      return hasPendingNightAction(privatePlayer.userId, "skip") || (
+        hasPendingNightAction(privatePlayer.userId, "check_commissioner") &&
+        (!isFactionKillAllowed(privatePlayer) || hasPendingNightAction(privatePlayer.userId, "faction_kill"))
+      );
+    }
     const needsAction =
       team === "mafia" ||
       team === "werewolves" ||
@@ -185,7 +255,6 @@ export function areLivingNightActorsReady(
       privatePlayer.role === "seer" ||
       privatePlayer.role === "oracle" ||
       privatePlayer.role === "commissioner" ||
-      privatePlayer.role === "don" ||
       privatePlayer.role === "healer" ||
       privatePlayer.role === "doctor" ||
       privatePlayer.role === "bodyguard" ||
@@ -220,6 +289,15 @@ export function haveLivingPlayersVoted(
 
 export function getPhaseDurationMs(config: GameConfig, phase: GamePhase) {
   const timers = config.timers;
+  if (config.mode === "mafia_sport") {
+    if (phase === "day_discussion" || phase === "defense") {
+      return timers.playerSpeechSeconds * 1000;
+    }
+    if (phase === "nomination") {
+      return timers.resolutionSeconds * 1000;
+    }
+  }
+
   const seconds =
     phase === "role_reveal"
       ? timers.roleRevealSeconds

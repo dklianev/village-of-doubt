@@ -2,10 +2,13 @@ import type { Client } from "colyseus";
 
 const JOIN_RATE_WINDOW_MS = 10_000;
 const JOIN_RATE_LIMIT = 5;
+const NONCE_PRUNE_INTERVAL_MS = 60_000;
 
 export class PlayerPresenceManager {
+  static readonly MAX_USED_NONCES = 10_000;
   private static usedNonces = new Map<string, number>();
   private static joinAttempts = new Map<string, number[]>();
+  private static nextNoncePruneAtMs = 0;
   private static nonceJanitorInterval: ReturnType<typeof setInterval> | undefined;
   private static joinJanitorInterval: ReturnType<typeof setInterval> | undefined;
 
@@ -13,13 +16,8 @@ export class PlayerPresenceManager {
 
   static {
     PlayerPresenceManager.nonceJanitorInterval = setInterval(() => {
-      const now = Date.now();
-      for (const [nonce, expiresAt] of PlayerPresenceManager.usedNonces) {
-        if (expiresAt <= now) {
-          PlayerPresenceManager.usedNonces.delete(nonce);
-        }
-      }
-    }, 60_000);
+      PlayerPresenceManager.pruneExpiredNonces(Date.now());
+    }, NONCE_PRUNE_INTERVAL_MS);
     PlayerPresenceManager.nonceJanitorInterval.unref?.();
 
     PlayerPresenceManager.joinJanitorInterval = setInterval(() => {
@@ -37,11 +35,34 @@ export class PlayerPresenceManager {
   }
 
   static consumeTokenNonce(nonce: string, expiresAtMs: number) {
+    const now = Date.now();
+    if (expiresAtMs <= now) {
+      return false;
+    }
     if (PlayerPresenceManager.usedNonces.has(nonce)) {
+      return false;
+    }
+    if (now >= PlayerPresenceManager.nextNoncePruneAtMs) {
+      PlayerPresenceManager.pruneExpiredNonces(now);
+      PlayerPresenceManager.nextNoncePruneAtMs = now + NONCE_PRUNE_INTERVAL_MS;
+    }
+    if (PlayerPresenceManager.usedNonces.size >= PlayerPresenceManager.MAX_USED_NONCES) {
       return false;
     }
     PlayerPresenceManager.usedNonces.set(nonce, expiresAtMs);
     return true;
+  }
+
+  private static pruneExpiredNonces(now: number) {
+    for (const [nonce, expiresAt] of PlayerPresenceManager.usedNonces) {
+      if (expiresAt <= now) {
+        PlayerPresenceManager.usedNonces.delete(nonce);
+      }
+    }
+  }
+
+  static getUsedNonceCountForTests() {
+    return PlayerPresenceManager.usedNonces.size;
   }
 
   static checkJoinRateLimit(userId: string) {
@@ -61,6 +82,7 @@ export class PlayerPresenceManager {
   static resetForTests() {
     PlayerPresenceManager.usedNonces.clear();
     PlayerPresenceManager.joinAttempts.clear();
+    PlayerPresenceManager.nextNoncePruneAtMs = 0;
   }
 
   attachClient(userId: string, client: Client) {

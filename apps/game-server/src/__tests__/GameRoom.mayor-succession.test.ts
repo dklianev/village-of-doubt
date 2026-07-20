@@ -36,6 +36,7 @@ describe("GameRoom mayor succession", () => {
       mode: "werewolves_classic",
       playerCount: 6,
       tempoProfile: "manual",
+      firstNightKill: true,
       roles: {
         hunter: 1,
         ordinary_villager: 4,

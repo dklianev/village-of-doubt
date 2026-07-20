@@ -14,6 +14,7 @@ const players: PrivatePlayerForNight[] = [
   { userId: "roleblocker", role: "roleblocker", alive: true },
   { userId: "lawyer", role: "lawyer", alive: true },
   { userId: "vigilante", role: "vigilante", alive: true },
+  { userId: "blacksmith", role: "blacksmith", alive: true },
   { userId: "priested", role: "ordinary_villager", alive: true, priestBlessed: true },
   { userId: "vampire", role: "vampire", alive: true },
   { userId: "jester", role: "jester", alive: true },
@@ -103,13 +104,16 @@ describe("resolveNight", () => {
     expect(result.delayedDeaths).toEqual([{ userId: "commissioner", causeBg: "Умря от вампирско ухапване." }]);
   });
 
-  it("lets the healer protect against a night kill", () => {
+  it("lets the Healer protect against a faction kill", () => {
     const result = resolveNight(players, [
       action("werewolf", { kind: "faction_kill", targetUserId: "civilian" }),
       action("healer", { kind: "healer_protect", targetUserId: "civilian" }),
     ]);
 
     expect(result.deaths).toEqual([]);
+    expect(result.preventedDeaths).toEqual([
+      { userId: "civilian", reasonBg: "Лечителят спря нощна атака." },
+    ]);
   });
 
   it("keeps a priest blessing active after it protects the blessed player", () => {
@@ -149,6 +153,18 @@ describe("resolveNight", () => {
     );
   });
 
+  it("applies roleblock before Witch consumables regardless of submission order", () => {
+    const result = resolveNight(players, [
+      action("witch", { kind: "witch_poison", targetUserId: "civilian" }),
+      action("roleblocker", { kind: "roleblock", targetUserId: "witch" }),
+    ]);
+
+    expect(result.deaths).toEqual([]);
+    expect(result.privateMessages).toEqual(expect.arrayContaining([
+      expect.objectContaining({ targetUserId: "witch" }),
+    ]));
+  });
+
   it("lets the lawyer cover make an evil target look clean", () => {
     const result = resolveNight(players, [
       action("lawyer", { kind: "lawyer_cover", targetUserId: "mafioso" }),
@@ -158,20 +174,75 @@ describe("resolveNight", () => {
 
     expect(result.checks).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ actorUserId: "commissioner", targetUserId: "mafioso", isEvil: false }),
-        expect.objectContaining({ actorUserId: "seer", targetUserId: "mafioso", isEvil: false }),
+        expect.objectContaining({
+          actorUserId: "commissioner",
+          targetUserId: "mafioso",
+          isEvil: false,
+          coveredByLawyer: true,
+        }),
+        expect.objectContaining({
+          actorUserId: "seer",
+          targetUserId: "mafioso",
+          isEvil: false,
+          coveredByLawyer: true,
+        }),
       ]),
     );
   });
 
-  it("does not let Healer protection stop poison", () => {
+  it("keeps the Cook protection out of public night narration", () => {
+    const result = resolveNight(
+      [
+        { userId: "cook", role: "cook", alive: true },
+        { userId: "werewolf", role: "werewolf", alive: true },
+      ],
+      [action("werewolf", { kind: "faction_kill", targetUserId: "cook" })],
+    );
+
+    expect(result.deaths).toEqual([]);
+    expect(result.preventedDeaths).toEqual([
+      expect.objectContaining({ userId: "cook", public: false }),
+    ]);
+  });
+
+  it("lets the Healer protect against Witch poison", () => {
     const result = resolveNight(players, [
       action("healer", { kind: "healer_protect", targetUserId: "civilian" }),
       action("witch", { kind: "witch_poison", targetUserId: "civilian" }),
     ]);
 
-    expect(result.deaths).toEqual([{ userId: "civilian", causeBg: "Отровен от Вещицата." }]);
-    expect(result.preventedDeaths).toEqual([]);
+    expect(result.deaths).toEqual([]);
+    expect(result.preventedDeaths).toEqual([
+      { userId: "civilian", reasonBg: "Лечителят спря нощна атака." },
+    ]);
+  });
+
+  it("lets the Healer protect against a Vigilante kill", () => {
+    const result = resolveNight(players, [
+      action("vigilante", { kind: "faction_kill", targetUserId: "civilian" }),
+      action("healer", { kind: "healer_protect", targetUserId: "civilian" }),
+    ]);
+
+    expect(result.deaths).toEqual([]);
+    expect(result.preventedDeaths).toEqual([
+      { userId: "civilian", reasonBg: "Лечителят спря нощна атака." },
+    ]);
+  });
+
+  it("lets the Healer protect against a Blacksmith sword kill", () => {
+    const result = resolveNight(players, [
+      action("blacksmith", {
+        kind: "blacksmith_sword",
+        receiverUserId: "vigilante",
+        targetUserId: "civilian",
+      }),
+      action("healer", { kind: "healer_protect", targetUserId: "civilian" }),
+    ]);
+
+    expect(result.deaths).toEqual([]);
+    expect(result.preventedDeaths).toEqual([
+      { userId: "civilian", reasonBg: "Лечителят спря нощна атака." },
+    ]);
   });
 
   it("makes the bodyguard absorb the death meant for the protected target", () => {

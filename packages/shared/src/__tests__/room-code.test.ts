@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { ROOM_CODE_REGEX, normalizeRoomCodeInput } from "../room-code.js";
+import { ROOM_CODE_REGEX, normalizeRoomCode, normalizeRoomCodeInput } from "../room-code.js";
 
 describe("room code helpers", () => {
   it("extracts a valid room code from invite links", () => {
-    expect(normalizeRoomCodeInput("https://werewolf.app/play/MN2K7A")).toBe("MN2K7A");
+    expect(normalizeRoomCode("https://werewolf.app/play/MN2K7A")).toBe("MN2K7A");
     expect(normalizeRoomCodeInput("mn2-k7a")).toBe("MN2K7A");
   });
 

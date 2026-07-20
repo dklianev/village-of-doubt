@@ -8,6 +8,7 @@ describe("game tokens", () => {
     const token = createGameToken({
       userId: "user-1",
       displayName: "Мила",
+      avatarId: "portrait-f04",
       roomCode: " ravn42 ",
       secret,
       ttlSeconds: 60,
@@ -17,6 +18,7 @@ describe("game tokens", () => {
 
     expect(payload.userId).toBe("user-1");
     expect(payload.displayName).toBe("Мила");
+    expect(payload.avatarId).toBe("portrait-f04");
     expect(payload.roomCode).toBe("RAVN42");
   });
 
@@ -81,5 +83,17 @@ describe("game tokens", () => {
 
   it("normalizes room codes", () => {
     expect(normalizeRoomCode(" ravn-42 ")).toBe("RAVN42");
+  });
+
+  it("rejects non-catalog avatar identifiers when issuing tokens", () => {
+    expect(() =>
+      createGameToken({
+        userId: "user-1",
+        displayName: "Мила",
+        avatarId: "https://example.com/avatar.png",
+        roomCode: "RAVN42",
+        secret,
+      }),
+    ).toThrow("Невалиден портрет");
   });
 });

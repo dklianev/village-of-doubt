@@ -22,6 +22,12 @@ export const user = pgTable("user", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const deletedUserIdentities = pgTable("deleted_user_identities", {
+  originalUserId: text("original_user_id").primaryKey(),
+  anonymousUserId: text("anonymous_user_id").notNull().unique(),
+  deletedAt: timestamp("deleted_at").defaultNow().notNull(),
+});
+
 export const session = pgTable(
   "session",
   {
@@ -81,7 +87,7 @@ export const games = pgTable(
   "games",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    code: text("code").notNull().unique(),
+    code: text("code").notNull(),
     hostId: text("host_id")
       .notNull()
       .references(() => user.id),
@@ -121,9 +127,11 @@ export const gamePlayers = pgTable(
     deathCause: text("death_cause"),
     isLover: boolean("is_lover").default(false).notNull(),
     loverUserId: text("lover_user_id"),
+    won: boolean("won").default(false).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [
+    uniqueIndex("game_players_game_user_idx").on(table.gameId, table.userId),
     index("game_players_game_id_idx").on(table.gameId),
     index("game_players_user_id_idx").on(table.userId),
   ],

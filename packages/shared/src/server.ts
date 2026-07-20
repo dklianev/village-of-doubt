@@ -1,8 +1,17 @@
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
+import {
+  DEFAULT_AVATAR_ID,
+  isAvatarId,
+  type AvatarId,
+} from "./avatar-catalog.js";
+import { ROOM_CODE_REGEX, normalizeRoomCode } from "./room-code.js";
+
+export { normalizeRoomCode } from "./room-code.js";
 
 export interface GameTokenPayload {
   userId: string;
   displayName: string;
+  avatarId: AvatarId;
   roomCode: string;
   issuedAt: number;
   expiresAt: number;
@@ -12,6 +21,7 @@ export interface GameTokenPayload {
 export interface CreateGameTokenInput {
   userId: string;
   displayName: string;
+  avatarId?: string;
   roomCode: string;
   secret: string;
   ttlSeconds?: number;
@@ -28,11 +38,17 @@ const MIN_SECRET_LENGTH = 32;
 export function createGameToken(input: CreateGameTokenInput): string {
   assertUsableSecret(input.secret);
 
+  if (input.avatarId !== undefined && !isAvatarId(input.avatarId)) {
+    throw new Error("Невалиден портрет.");
+  }
+
   const issuedAt = Math.floor(Date.now() / 1000);
+  const roomCode = requireCanonicalRoomCode(input.roomCode);
   const payload: GameTokenPayload = {
     userId: input.userId,
     displayName: input.displayName,
-    roomCode: normalizeRoomCode(input.roomCode),
+    avatarId: input.avatarId ?? DEFAULT_AVATAR_ID,
+    roomCode,
     issuedAt,
     expiresAt: issuedAt + (input.ttlSeconds ?? DEFAULT_TTL_SECONDS),
     nonce: randomUUID(),
@@ -75,26 +91,36 @@ export function verifyGameToken(
     throw new Error("Невалидно съдържание на game token.");
   }
 
+  if (parsed.avatarId !== undefined && !isAvatarId(parsed.avatarId)) {
+    throw new Error("Невалиден портрет в game token.");
+  }
+
   if (parsed.expiresAt < nowSeconds) {
     throw new Error("Game token-ът е изтекъл.");
   }
 
-  if (expectedRoomCode && normalizeRoomCode(parsed.roomCode) !== normalizeRoomCode(expectedRoomCode)) {
+  const roomCode = requireCanonicalRoomCode(parsed.roomCode);
+  if (expectedRoomCode && roomCode !== normalizeRoomCode(expectedRoomCode)) {
     throw new Error("Game token-ът е за друга стая.");
   }
 
   return {
     userId: parsed.userId,
     displayName: parsed.displayName,
-    roomCode: normalizeRoomCode(parsed.roomCode),
+    avatarId: parsed.avatarId ?? DEFAULT_AVATAR_ID,
+    roomCode,
     issuedAt: parsed.issuedAt,
     expiresAt: parsed.expiresAt,
     nonce: parsed.nonce,
   };
 }
 
-export function normalizeRoomCode(code: string): string {
-  return code.trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12);
+function requireCanonicalRoomCode(code: string): string {
+  const normalizedCode = normalizeRoomCode(code);
+  if (!ROOM_CODE_REGEX.test(normalizedCode)) {
+    throw new Error("Невалиден код на стая.");
+  }
+  return normalizedCode;
 }
 
 function sign(encodedPayload: string, secret: string): string {

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { boot, type ColyseusTestServer } from "@colyseus/testing";
 import type { Room as ClientRoom } from "@colyseus/sdk";
-import type { NightActionCapabilities, RoleCode } from "@werewolf/shared";
+import type { NightActionCapabilities, PrivateFactionRoster, RoleCode } from "@werewolf/shared";
 import { createGameToken } from "@werewolf/shared/server";
 import appConfig from "../app.config.js";
 import type { GameRoom } from "../rooms/GameRoom.js";
@@ -35,7 +35,7 @@ describe("GameRoom security boundaries", () => {
 
   it("keeps role data out of the synchronized public state", async () => {
     const serverRoom = await colyseus.createRoom<GameRoom>("game", {
-      code: "SEC001",
+      code: "SEC223",
       mode: "werewolves_classic",
       playerCount: 8,
     });
@@ -49,10 +49,14 @@ describe("GameRoom security boundaries", () => {
 
     const state = clients[1]?.state as GameState;
     expect(state.phase).toBe("role_reveal");
+    expect("winnerPlayerIds" in (state as unknown as Record<string, unknown>)).toBe(false);
+    expect("personalWinnerPlayerIds" in (state as unknown as Record<string, unknown>)).toBe(false);
 
     for (const player of state.players.values()) {
       expect("role" in player).toBe(false);
       expect(Object.prototype.hasOwnProperty.call(player, "role")).toBe(false);
+      expect("won" in (player as unknown as Record<string, unknown>)).toBe(false);
+      expect("loverUserId" in (player as unknown as Record<string, unknown>)).toBe(false);
       // revealedRole must be an empty string for living players — never leak the secret role.
       expect(player.revealedRole).toBe("");
     }
@@ -60,7 +64,7 @@ describe("GameRoom security boundaries", () => {
 
   it("keeps night action capabilities private to the acting viewer", async () => {
     const serverRoom = await colyseus.createRoom<GameRoom>("game", {
-      code: "CAP001",
+      code: "CAP223",
       mode: "werewolves_classic",
       playerCount: 6,
       tempoProfile: "manual",
@@ -105,24 +109,69 @@ describe("GameRoom security boundaries", () => {
     }
   });
 
+  it("sends faction rosters only to faction viewers and keeps them out of synchronized state", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "FSEC23",
+      mode: "mafia_free",
+      playerCount: 6,
+      roles: {
+        mafioso: 2,
+        civilian: 4,
+      },
+    });
+    const clients = await connectPlayers(colyseus, serverRoom, 6, "faction-user");
+    const rosterPromises = clients.map((client) =>
+      (client.waitForMessage("private_faction_roster", 600) as Promise<PrivateFactionRoster>)
+        .catch(() => null),
+    );
+    const rolePromises = clients.map((client) => waitForPrivateRole(client));
+
+    clients[0]?.send("startGame", {});
+    const roles = await Promise.all(rolePromises);
+    const rosters = await Promise.all(rosterPromises);
+    const mafiaUserIds = roles
+      .map((role, index) => role.role === "mafioso" ? `faction-user-${index + 1}` : null)
+      .filter((userId): userId is string => Boolean(userId));
+
+    expect(mafiaUserIds).toHaveLength(2);
+    for (const [index, role] of roles.entries()) {
+      const roster = rosters[index];
+      if (role.role === "mafioso") {
+        expect(roster).toMatchObject({
+          faction: "mafia",
+          members: [{ userId: mafiaUserIds.find((userId) => userId !== `faction-user-${index + 1}`) }],
+        });
+      } else {
+        expect(roster).toBeNull();
+      }
+    }
+
+    const state = clients[0]?.state as GameState;
+    expect("privateFactionRoster" in (state as unknown as Record<string, unknown>)).toBe(false);
+    for (const player of state.players.values()) {
+      expect("factionRoster" in (player as unknown as Record<string, unknown>)).toBe(false);
+      expect("priestBlessed" in (player as unknown as Record<string, unknown>)).toBe(false);
+    }
+  });
+
   it("rejects a signed game token created for another room code", async () => {
     process.env.ALLOW_DEV_AUTH = "false";
 
     const serverRoom = await colyseus.createRoom<GameRoom>("game", {
-      code: "GOOD01",
+      code: "GPPD23",
       mode: "werewolves_classic",
       playerCount: 8,
     });
     const wrongRoomToken = createGameToken({
       userId: "user-1",
       displayName: "Играч 1",
-      roomCode: "OTHER1",
+      roomCode: "PTHER3",
       secret: GAME_TOKEN_SECRET,
     });
 
     await expect(
       colyseus.connectTo(serverRoom, {
-        code: "GOOD01",
+        code: "GPPD23",
         token: wrongRoomToken,
       }),
     ).rejects.toThrow();
@@ -132,29 +181,57 @@ describe("GameRoom security boundaries", () => {
     process.env.ALLOW_DEV_AUTH = "false";
 
     const serverRoom = await colyseus.createRoom<GameRoom>("game", {
-      code: "TOK001",
+      code: "TPK223",
       mode: "werewolves_classic",
       playerCount: 8,
     });
     const token = createGameToken({
       userId: "token-user-1",
       displayName: "Играч с токен",
-      roomCode: "TOK001",
+      roomCode: "TPK223",
       secret: GAME_TOKEN_SECRET,
     });
 
-    await colyseus.connectTo(serverRoom, { code: "TOK001", token });
-    await expect(colyseus.connectTo(serverRoom, { code: "TOK001", token })).rejects.toThrow();
+    await colyseus.connectTo(serverRoom, { code: "TPK223", token });
+    await expect(colyseus.connectTo(serverRoom, { code: "TPK223", token })).rejects.toThrow();
+  });
+
+  it("publishes only the curated portrait identity carried by the signed token", async () => {
+    process.env.ALLOW_DEV_AUTH = "false";
+
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "AVTR23",
+      mode: "werewolves_classic",
+      playerCount: 8,
+    });
+    const token = createGameToken({
+      userId: "avatar-user-1",
+      displayName: "Играч с портрет",
+      avatarId: "portrait-f07",
+      roomCode: "AVTR23",
+      secret: GAME_TOKEN_SECRET,
+    });
+
+    const client = fakeClient("avatar-session");
+    const options = { code: "AVTR23", token };
+    const auth = await serverRoom.onAuth(client, options);
+    serverRoom.onJoin(client, options, auth);
+    const player = [...serverRoom.state.players.values()].find(
+      (candidate) => candidate.userId === "avatar-user-1",
+    );
+
+    expect(player?.avatarId).toBe("portrait-f07");
+    expect(player && "role" in player).toBe(false);
   });
 
   it("rate-limits rapid join attempts from the same user", async () => {
     const serverRoom = await colyseus.createRoom<GameRoom>("game", {
-      code: "RATE01",
+      code: "RATE23",
       mode: "werewolves_classic",
       playerCount: 8,
     });
-    const auth = { userId: "rate-user-1", displayName: "Митко" };
-    const options = { code: "RATE01" };
+    const auth = { userId: "rate-user-1", displayName: "Митко", avatarId: "portrait-m03" as const };
+    const options = { code: "RATE23" };
 
     for (let attempt = 0; attempt < 5; attempt += 1) {
       serverRoom.onJoin(fakeClient(`rate-session-${attempt}`), options, auth);
@@ -174,7 +251,7 @@ describe("GameRoom security boundaries", () => {
 
   it("replaces manual-only roles unless the room uses full human narrator", async () => {
     const serverRoom = await colyseus.createRoom<GameRoom>("game", {
-      code: "MAN001",
+      code: "MAN223",
       mode: "werewolves_classic",
       playerCount: 8,
       narratorMode: "automatic",
@@ -195,7 +272,7 @@ describe("GameRoom security boundaries", () => {
 
   it("requires full narrator consent and sends all roles only to the full narrator", async () => {
     const serverRoom = await colyseus.createRoom<GameRoom>("game", {
-      code: "NARR01",
+      code: "NARR23",
       mode: "mafia_free",
       playerCount: 4,
       narratorMode: "full_human",

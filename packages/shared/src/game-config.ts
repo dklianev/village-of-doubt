@@ -1,4 +1,4 @@
-import { getRoleNameBg, isRoleAvailableInFamily, type RoleCode } from "./roles.js";
+import { getRoleNameBg, isRoleAvailableInFamily, ROLE_DEFINITIONS, type RoleCode } from "./roles.js";
 import type { GamePhase } from "./protocol.js";
 
 export type GameMode = "mafia_sport" | "mafia_free" | "werewolves_classic";
@@ -89,6 +89,7 @@ export interface GameConfigOptions {
   loversEnabled?: boolean;
   revealRolesOnDeath?: boolean;
   tieBreaker?: TieBreaker;
+  firstNightKill?: boolean;
   allowSkipVote?: boolean;
   majorityMode?: MajorityMode;
   autoStart?: boolean;
@@ -103,6 +104,7 @@ export interface GameConfigOptions {
   maniacEnabled?: boolean;
   jesterEnabled?: boolean;
   narratorVoice?: NarratorVoice;
+  enforceRoleCompatibility?: boolean;
 }
 
 export interface RoleValidationOptions {
@@ -114,6 +116,7 @@ export interface RoleValidationOptions {
 export type RoleValidationCode =
   | "ROLE_COUNT_MISMATCH"
   | "ROLE_WRONG_FAMILY"
+  | "ROLE_MAX_COPIES_EXCEEDED"
   | "BALANCE_STRONG_EVIL"
   | "BALANCE_STRONG_GOOD"
   | "THREAT_MISSING"
@@ -515,6 +518,14 @@ export function validateRoleDistributionIssuesForMode(
   }
 
   for (const role of Object.keys(distribution) as RoleCode[]) {
+    const count = distribution[role] ?? 0;
+    const maxCopies = ROLE_DEFINITIONS[role]?.maxCopies;
+    if (typeof maxCopies === "number" && count > maxCopies) {
+      push(
+        "ROLE_MAX_COPIES_EXCEEDED",
+        `${getRoleNameBg(role)} може да участва най-много ${maxCopies} ${maxCopies === 1 ? "път" : "пъти"}.`,
+      );
+    }
     if (!isRoleAvailableInFamily(role, family)) {
       push("ROLE_WRONG_FAMILY", `${getRoleNameBg(role)} не принадлежи към тази игра.`);
     }
@@ -589,6 +600,25 @@ export function validateRoleDistributionIssuesForMode(
   return warnings;
 }
 
+const HARD_ROLE_COMPATIBILITY_CODES = new Set<RoleValidationCode>([
+  "ROLE_DEPENDENCY_MISSING",
+  "DUAL_FACTION_MINIMUM",
+  "MAYOR_MODE_REQUIRED",
+]);
+
+export function assertRoleCompatibilityForMode(
+  mode: GameMode,
+  playerCount: number,
+  distribution: RoleDistribution,
+  options: RoleValidationOptions = {},
+): void {
+  const issue = validateRoleDistributionIssuesForMode(mode, playerCount, distribution, options)
+    .find((candidate) => HARD_ROLE_COMPATIBILITY_CODES.has(candidate.code));
+  if (issue) {
+    throw new Error(issue.messageBg);
+  }
+}
+
 export function createDefaultGameConfig(mode: GameMode, playerCount: number): GameConfig {
   const family = getGameFamily(mode);
   const rolePreset: RolePreset = mode === "mafia_sport" ? "sport" : mode === "mafia_free" ? "free" : "classic";
@@ -615,7 +645,7 @@ export function createDefaultGameConfig(mode: GameMode, playerCount: number): Ga
     timers: TEMPO_PRESETS[tempoProfile],
     revealRolesOnDeath: true,
     tieBreaker: family === "mafia" ? "revote" : "no_elimination",
-    allowSkipVote: true,
+    allowSkipVote: mode !== "mafia_sport",
     majorityMode: "simple",
     autoStart: false,
     beginnerMode: false,
@@ -639,11 +669,17 @@ export function createDefaultGameConfig(mode: GameMode, playerCount: number): Ga
 export function createGameConfigFromOptions(options: GameConfigOptions = {}): GameConfig {
   const mode = options.mode ?? "werewolves_classic";
   const playerCount = options.playerCount ?? (mode === "mafia_sport" ? 10 : 8);
+  if (!Number.isInteger(playerCount) || playerCount > 30) {
+    throw new Error("Играта поддържа най-много 30 играчи.");
+  }
   const config = createDefaultGameConfig(mode, playerCount);
 
   const tempoProfile = options.tempoProfile ?? config.tempoProfile;
   const timers = resolvePhaseTimers(tempoProfile, options.customTimers);
   const loversEnabled = options.loversEnabled ?? config.loversEnabled;
+  const requestedMaxPlayers = Number.isFinite(options.maxPlayers)
+    ? Math.floor(options.maxPlayers as number)
+    : config.maxPlayers;
   const rolePreset = options.roles ? "manual" : options.rolePreset ?? config.rolePreset;
   const roles = options.roles
     ? normalizeRoleDistributionForMode(mode, options.roles)
@@ -657,11 +693,11 @@ export function createGameConfigFromOptions(options: GameConfigOptions = {}): Ga
           })
         : config.roles;
 
-  return {
+  const createdConfig: GameConfig = {
     ...config,
     roomName: options.roomName ?? config.roomName,
     rolePreset,
-    maxPlayers: options.maxPlayers ?? config.maxPlayers,
+    maxPlayers: Math.max(playerCount, Math.min(30, requestedMaxPlayers)),
     roomVisibility: options.roomVisibility ?? config.roomVisibility,
     roles,
     narratorMode: options.narratorMode ?? config.narratorMode,
@@ -672,7 +708,8 @@ export function createGameConfigFromOptions(options: GameConfigOptions = {}): Ga
     loversEnabled,
     revealRolesOnDeath: options.revealRolesOnDeath ?? config.revealRolesOnDeath,
     tieBreaker: options.tieBreaker ?? config.tieBreaker,
-    allowSkipVote: options.allowSkipVote ?? config.allowSkipVote,
+    firstNightKill: options.firstNightKill ?? config.firstNightKill,
+    allowSkipVote: mode === "mafia_sport" ? false : options.allowSkipVote ?? config.allowSkipVote,
     majorityMode: options.majorityMode ?? config.majorityMode,
     autoStart: options.autoStart ?? config.autoStart,
     beginnerMode: options.beginnerMode ?? (rolePreset === "beginner"),
@@ -687,6 +724,16 @@ export function createGameConfigFromOptions(options: GameConfigOptions = {}): Ga
     jesterEnabled: options.jesterEnabled ?? config.jesterEnabled,
     narratorVoice: options.narratorVoice ?? config.narratorVoice,
   };
+
+  if (options.enforceRoleCompatibility) {
+    assertRoleCompatibilityForMode(mode, playerCount, roles, {
+      mayorMode: createdConfig.mayorMode,
+      werewolfVariant: createdConfig.werewolfVariant,
+      promoRolesEnabled: createdConfig.promoRolesEnabled,
+    });
+  }
+
+  return createdConfig;
 }
 
 export function normalizeRoleDistribution(distribution: RoleDistribution): RoleDistribution {
@@ -703,6 +750,20 @@ export function normalizeRoleDistribution(distribution: RoleDistribution): RoleD
 export function normalizeRoleDistributionForMode(mode: GameMode, distribution: RoleDistribution): RoleDistribution {
   const normalized = normalizeRoleDistribution(distribution);
   const family = getGameFamily(mode);
+  const unknownRoles = Object.keys(normalized).filter((role) => !(role in ROLE_DEFINITIONS));
+  if (unknownRoles.length > 0) {
+    throw new Error(`Непознати роли: ${unknownRoles.join(", ")}.`);
+  }
+
+  const overLimitRoles = (Object.keys(normalized) as RoleCode[]).filter(
+    (role) => (normalized[role] ?? 0) > ROLE_DEFINITIONS[role].maxCopies,
+  );
+  if (overLimitRoles.length > 0) {
+    const limits = overLimitRoles
+      .map((role) => `${getRoleNameBg(role)} (максимум ${ROLE_DEFINITIONS[role].maxCopies})`)
+      .join(", ");
+    throw new Error(`Превишен е максималният брой копия: ${limits}.`);
+  }
   const invalidRoles = (Object.keys(normalized) as RoleCode[]).filter((role) => !isRoleAvailableInFamily(role, family));
 
   if (invalidRoles.length > 0) {

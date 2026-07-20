@@ -30,10 +30,13 @@ interface RoomChatRouterContext {
 }
 
 export class RoomChatRouter {
+  private readonly messageWindows = new Map<string, number[]>();
+
   constructor(private readonly context: RoomChatRouterContext) {}
 
   sendChat(client: Client, channel: string, message: string) {
     const player = this.context.getPublicPlayer(client);
+    this.enforceMessageRate(player.userId);
     const chatChannel = parseChatChannel(channel);
     if (!chatChannel) {
       throw new Error("Непознат чат канал.");
@@ -52,11 +55,9 @@ export class RoomChatRouter {
     if (config.communicationMode !== "built_in_chat") {
       throw new Error("Публичният чат не е активен в тази стая.");
     }
-    if (state.phase !== "day_discussion") {
-      throw new Error("Публичният чат е активен само през дневното обсъждане.");
-    }
-    if (!player.playing || !player.alive) {
-      throw new Error("Само живи играчи могат да пишат в публичния дневен чат.");
+    const denialReason = this.getPublicChatDenialReason(player, state, config);
+    if (denialReason) {
+      throw new Error(denialReason);
     }
 
     const chat = new ChatMessageState();
@@ -80,6 +81,17 @@ export class RoomChatRouter {
     });
   }
 
+  private enforceMessageRate(userId: string) {
+    const now = Date.now();
+    const recent = (this.messageWindows.get(userId) ?? []).filter((timestamp) => now - timestamp < 5_000);
+    if (recent.length >= 8) {
+      this.messageWindows.set(userId, recent);
+      throw new Error("Пишеш твърде бързо. Изчакай за момент.");
+    }
+    recent.push(now);
+    this.messageWindows.set(userId, recent);
+  }
+
   sendTyping(client: Client, channel: string, active: boolean) {
     const player = this.context.getPublicPlayer(client);
     const chatChannel = parseChatChannel(channel);
@@ -99,7 +111,10 @@ export class RoomChatRouter {
 
     const state = this.context.getState();
     if (chatChannel === "public") {
-      if (config.communicationMode === "built_in_chat" && state.phase === "day_discussion" && player.playing && player.alive) {
+      if (
+        config.communicationMode === "built_in_chat" &&
+        !this.getPublicChatDenialReason(player, state, config)
+      ) {
         this.context.broadcast("typing", payload);
       }
       return;
@@ -141,10 +156,10 @@ export class RoomChatRouter {
 
   private getPrivateChatRecipients(player: PlayerPublicState, privatePlayer: PrivatePlayerState, channel: ChatChannel) {
     if (channel === "dead") {
-      if (player.alive) {
+      if (!player.playing || player.alive) {
         return [];
       }
-      return this.context.clientsFor((candidate) => !candidate.alive);
+      return this.context.clientsFor((candidate) => candidate.playing && !candidate.alive);
     }
 
     if (channel !== "mafia" && channel !== "werewolves" && channel !== "vampires") {
@@ -176,5 +191,23 @@ export class RoomChatRouter {
             (channel === "vampires" && getRoleTeam(privateCandidate.role) === "vampires")),
       );
     });
+  }
+
+  private getPublicChatDenialReason(player: PlayerPublicState, state: GameState, config: GameConfig) {
+    const isSportDefense = config.mode === "mafia_sport" && state.phase === "defense";
+    if (state.phase !== "day_discussion" && !isSportDefense) {
+      return "Публичният чат е активен само през дневното обсъждане.";
+    }
+    if (!player.playing || !player.alive) {
+      return "Само живи играчи могат да пишат в публичния дневен чат.";
+    }
+    if (config.mode !== "mafia_sport") {
+      return undefined;
+    }
+
+    const authorizedUserId = state.phase === "defense" ? state.currentDefenseUserId : state.currentSpeakerUserId;
+    return authorizedUserId === player.userId
+      ? undefined
+      : "Само текущият говорител може да пише в публичния чат.";
   }
 }

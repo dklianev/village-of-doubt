@@ -77,7 +77,7 @@ describe("evaluateWinCondition", () => {
     });
   });
 
-  it("resolves mixed WW+Vampires by faction headcount tie-break", () => {
+  it("keeps the game alive while Werewolves and Vampires can still eliminate each other", () => {
     expect(
       evaluateWinCondition([
         { playerId: "w1", role: "werewolf", alive: true },
@@ -86,8 +86,8 @@ describe("evaluateWinCondition", () => {
         { playerId: "village", role: "ordinary_villager", alive: true },
       ]),
     ).toMatchObject({
-      winner: "werewolves",
-      reasonBg: "Върколаците надделяха в смесената нощ.",
+      winner: null,
+      reasonBg: null,
     });
 
     expect(
@@ -96,20 +96,48 @@ describe("evaluateWinCondition", () => {
         { playerId: "v1", role: "vampire", alive: true },
       ]),
     ).toMatchObject({
-      winner: "draw",
-      reasonBg: "Върколаци и вампири се изравниха над селото.",
+      winner: null,
+      reasonBg: null,
     });
   });
 
-  it("declares a stalemate when the last night threat cannot kill the Cook", () => {
+  it("keeps the game alive when the Cook and a night threat can still vote", () => {
     expect(
       evaluateWinCondition([
         { playerId: "wolf", role: "werewolf", alive: true },
         { playerId: "cook", role: "cook", alive: true },
       ]),
     ).toMatchObject({
-      winner: "draw",
-      reasonBg: "Последната нощна заплаха не може да преодолее Готвача.",
+      winner: null,
+      reasonBg: null,
+    });
+  });
+
+  it("reports winners from current roles and keeps a Jester personal win additive", () => {
+    expect(
+      evaluateWinCondition([
+        { playerId: "transformed", role: "werewolf", alive: true },
+        { playerId: "villager", role: "ordinary_villager", alive: true },
+        { playerId: "jester", role: "jester", alive: false, personalWin: true },
+      ]),
+    ).toMatchObject({
+      winner: "werewolves",
+      winnerPlayerIds: ["transformed"],
+      personalWinnerPlayerIds: ["jester"],
+    });
+  });
+
+  it("reports only the final cross-faction pair as Lovers winners", () => {
+    expect(
+      evaluateWinCondition([
+        { playerId: "village-lover", role: "ordinary_villager", alive: true, loverId: "wolf-lover" },
+        { playerId: "wolf-lover", role: "werewolf", alive: true, loverId: "village-lover" },
+        { playerId: "dead-villager", role: "seer", alive: false },
+      ]),
+    ).toMatchObject({
+      winner: "lovers",
+      winnerPlayerIds: ["village-lover", "wolf-lover"],
+      personalWinnerPlayerIds: [],
     });
   });
 });

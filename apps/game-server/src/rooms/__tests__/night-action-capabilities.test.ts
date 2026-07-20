@@ -76,7 +76,7 @@ describe("night action capabilities", () => {
     expect(spent.usedFlags.priest_bless).toEqual({ reasonBg: "Благословията вече е дадена." });
   });
 
-  it("marks already blessed Priest targets as unavailable", () => {
+  it("marks blessed targets unavailable when the targeted Priest view includes private blessing state", () => {
     const capabilities = buildNightActionCapabilities({
       phase: "night",
       players: [
@@ -92,6 +92,52 @@ describe("night action capabilities", () => {
       id: "target",
       reasonBg: "Този играч вече е благословен.",
     }]);
+  });
+
+  it("marks faction allies unavailable with a Bulgarian private reason", () => {
+    const capabilities = buildNightActionCapabilities({
+      phase: "night",
+      players,
+      actor: actor({ role: "mafioso" }),
+      alliedTargetUserIds: ["target"],
+    });
+
+    expect(capabilities.availableKinds).toContain("faction_kill");
+    expect(capabilities.disallowedTargetsByKind.faction_kill).toEqual([{
+      id: "target",
+      reasonBg: "Не можеш да избереш свой съотборник.",
+    }]);
+  });
+
+  it.each([
+    ["don", "check_commissioner"],
+    ["informant", "check_role"],
+    ["lawyer", "lawyer_cover"],
+  ] as const)("keeps the %s special action when faction kill is unavailable", (role, specialKind) => {
+    const capabilities = buildNightActionCapabilities({
+      phase: "first_night",
+      players,
+      actor: actor({ role }),
+      allowFactionKill: false,
+    });
+
+    expect(capabilities.availableKinds).toContain(specialKind);
+    expect(capabilities.availableKinds).not.toContain("faction_kill");
+    expect(capabilities.usedFlags.faction_kill).toEqual({
+      reasonBg: "Убийствата са изключени през тази нощ.",
+    });
+  });
+
+  it("marks disabled first-night kills without exposing targets", () => {
+    const werewolf = buildNightActionCapabilities({
+      phase: "first_night",
+      players,
+      actor: actor({ role: "werewolf" }),
+      allowFactionKill: false,
+    });
+
+    expect(werewolf.availableKinds).not.toContain("faction_kill");
+    expect(werewolf.usedFlags.faction_kill).toEqual({ reasonBg: "Убийствата са изключени през тази нощ." });
   });
 
   it("removes Blacksmith and Investigator one-shot actions once spent", () => {

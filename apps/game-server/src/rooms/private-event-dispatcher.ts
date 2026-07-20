@@ -1,7 +1,9 @@
 import type { Client } from "colyseus";
 import {
+  getRoleTeam,
   getRoleNameBg,
   type GameConfig,
+  type PrivateCheckResult,
   type RoleCode,
   type ServerEvent,
 } from "@werewolf/shared";
@@ -19,6 +21,8 @@ interface PrivateEventDispatcherContext {
 }
 
 export class PrivateEventDispatcher {
+  private readonly retainedCheckResults = new Map<string, PrivateCheckResult>();
+
   constructor(private readonly context: PrivateEventDispatcherContext) {}
 
   sendPrivateRole(client: Client, userId: string) {
@@ -36,6 +40,9 @@ export class PrivateEventDispatcher {
     if (privatePlayer.loverId) {
       this.sendPrivateLover(userId, privatePlayer.loverId);
     }
+    this.sendPrivateBlessing(client, userId);
+    this.sendPrivateFactionRoster(client, userId);
+    this.replayPrivateCheckResult(client, userId);
   }
 
   sendPrivateLover(userId: string, loverUserId: string) {
@@ -49,6 +56,72 @@ export class PrivateEventDispatcher {
       type: "private_lovers",
       loverUserId,
       loverName: lover.displayName,
+    } satisfies ServerEvent);
+  }
+
+  sendPrivateBlessing(client: Client, userId: string) {
+    const privatePlayer = this.context.getPrivatePlayer(userId);
+    const target = privatePlayer?.priestBlessed ? this.context.findPlayerByUserId(userId) : undefined;
+    if (!target) {
+      return;
+    }
+
+    client.send("private_blessing", {
+      type: "private_blessing",
+      targetUserId: userId,
+      targetName: target.displayName,
+    } satisfies ServerEvent);
+  }
+
+  sendPrivateFactionRoster(client: Client, userId: string) {
+    const privatePlayer = this.context.getPrivatePlayer(userId);
+    const faction = privatePlayer?.role ? getRoleTeam(privatePlayer.role) : undefined;
+    if (faction !== "mafia" && faction !== "werewolves") {
+      return;
+    }
+
+    const members = [...this.context.getPrivatePlayers()]
+      .filter((player) => player.userId !== userId && player.role && getRoleTeam(player.role) === faction)
+      .flatMap((player) => {
+        const publicPlayer = this.context.findPlayerByUserId(player.userId);
+        return publicPlayer ? [{ userId: player.userId, displayName: publicPlayer.displayName }] : [];
+      });
+
+    client.send("private_faction_roster", {
+      type: "private_faction_roster",
+      faction,
+      members,
+    } satisfies ServerEvent);
+  }
+
+  sendPrivateFactionRosters() {
+    for (const player of this.context.getPrivatePlayers()) {
+      const client = this.context.playerPresence.getClient(player.userId);
+      if (client) {
+        this.sendPrivateFactionRoster(client, player.userId);
+      }
+    }
+  }
+
+  sendPrivateCheckResult(userId: string, result: PrivateCheckResult) {
+    this.retainedCheckResults.set(userId, result);
+    const client = this.context.playerPresence.getClient(userId);
+    if (client) {
+      this.dispatchPrivateCheckResult(client, result);
+    }
+  }
+
+  private replayPrivateCheckResult(client: Client, userId: string) {
+    const result = this.retainedCheckResults.get(userId);
+    if (result) {
+      this.dispatchPrivateCheckResult(client, result);
+    }
+  }
+
+  private dispatchPrivateCheckResult(client: Client, result: PrivateCheckResult) {
+    client.send("private_check_result", {
+      type: "private_check_result",
+      ...result,
     } satisfies ServerEvent);
   }
 

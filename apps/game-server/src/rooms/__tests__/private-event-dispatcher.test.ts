@@ -26,22 +26,30 @@ function createDispatcher(opts?: { narratorMode?: GameConfig["narratorMode"] }) 
     ["lover", makePublicPlayer("lover", "Любим")],
     ["narrator", makePublicPlayer("narrator", "Разказвач", true)],
     ["villager", makePublicPlayer("villager", "Селянин")],
+    ["mafioso", makePublicPlayer("mafioso", "Мафиот")],
+    ["don", makePublicPlayer("don", "Дон")],
   ]);
   const privatePlayers = new Map<string, PrivatePlayerState>([
     ["seer", { userId: "seer", role: "seer", alive: true, loverId: "lover" }],
     ["lover", { userId: "lover", role: "ordinary_villager", alive: true, loverId: "seer" }],
     ["villager", { userId: "villager", role: "ordinary_villager", alive: true }],
+    ["mafioso", { userId: "mafioso", role: "mafioso", alive: true }],
+    ["don", { userId: "don", role: "don", alive: true }],
   ]);
   const clients = {
     seer: makeClient(),
     lover: makeClient(),
     narrator: makeClient(),
     villager: makeClient(),
+    mafioso: makeClient(),
+    don: makeClient(),
   };
   playerPresence.attachClient("seer", clients.seer as never);
   playerPresence.attachClient("lover", clients.lover as never);
   playerPresence.attachClient("narrator", clients.narrator as never);
   playerPresence.attachClient("villager", clients.villager as never);
+  playerPresence.attachClient("mafioso", clients.mafioso as never);
+  playerPresence.attachClient("don", clients.don as never);
 
   const dispatcher = new PrivateEventDispatcher({
     getConfig: () => ({ narratorMode: opts?.narratorMode ?? "full_human" }) as GameConfig,
@@ -87,6 +95,63 @@ describe("PrivateEventDispatcher", () => {
       "private_lovers",
       expect.objectContaining({ loverUserId: "seer", loverName: "Ясновидка" }),
     );
+    expect(clients.villager.send).not.toHaveBeenCalled();
+  });
+
+  it("replays a retained blessing only to the blessed viewer", () => {
+    const { dispatcher, clients, privatePlayers } = createDispatcher();
+    privatePlayers.set("lover", {
+      userId: "lover",
+      role: "ordinary_villager",
+      alive: true,
+      priestBlessed: true,
+    });
+
+    dispatcher.sendPrivateRole(clients.lover as never, "lover");
+
+    expect(clients.lover.send).toHaveBeenCalledWith("private_blessing", {
+      type: "private_blessing",
+      targetUserId: "lover",
+      targetName: "Любим",
+    });
+    expect(clients.seer.send).not.toHaveBeenCalled();
+    expect(clients.villager.send).not.toHaveBeenCalled();
+  });
+
+  it("discloses faction teammates only to the requested faction viewer", () => {
+    const { dispatcher, clients } = createDispatcher();
+
+    dispatcher.sendPrivateRole(clients.mafioso as never, "mafioso");
+
+    expect(clients.mafioso.send).toHaveBeenCalledWith("private_faction_roster", {
+      type: "private_faction_roster",
+      faction: "mafia",
+      members: [{ userId: "don", displayName: "Дон" }],
+    });
+    expect(clients.don.send).not.toHaveBeenCalled();
+    expect(clients.villager.send).not.toHaveBeenCalled();
+  });
+
+  it("retains and replays a check result only to its viewer", () => {
+    const { dispatcher, clients } = createDispatcher();
+    dispatcher.sendPrivateCheckResult("seer", {
+      targetUserId: "villager",
+      role: "ordinary_villager",
+      messageBg: "Личен резултат.",
+    });
+    for (const client of Object.values(clients)) {
+      client.send.mockClear();
+    }
+
+    dispatcher.sendPrivateRole(clients.seer as never, "seer");
+
+    expect(clients.seer.send).toHaveBeenCalledWith("private_check_result", {
+      type: "private_check_result",
+      targetUserId: "villager",
+      role: "ordinary_villager",
+      messageBg: "Личен резултат.",
+    });
+    expect(clients.lover.send).not.toHaveBeenCalled();
     expect(clients.villager.send).not.toHaveBeenCalled();
   });
 
