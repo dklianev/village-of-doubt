@@ -1,24 +1,72 @@
+{
+	log default {
+		output stdout
+		format filter {
+			request>uri regexp \?.*$ ""
+			wrap json
+		}
+	}
+}
+
 {$PUBLIC_WEB_DOMAIN} {
-  encode gzip zstd
-  header {
-    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-    X-Frame-Options "DENY"
-    X-Content-Type-Options "nosniff"
-    Referrer-Policy "strict-origin-when-cross-origin"
-    Permissions-Policy "camera=(), microphone=(), geolocation=()"
-    # TODO 2026-05-16: migrate to nonce-based CSP, drop 'unsafe-inline' from script-src.
-    Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https: wss:; frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
-  }
-  reverse_proxy web:3000
+	encode gzip zstd
+	log {
+		output stdout
+		format filter {
+			request>uri regexp \?.*$ ""
+			wrap json
+		}
+	}
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Frame-Options "DENY"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		# TODO 2026-05-16: migrate to nonce-based CSP, drop 'unsafe-inline' from script-src.
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https: wss:; frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
+	}
+	reverse_proxy web:3000 {
+		header_up X-Real-IP {remote_host}
+		health_uri /api/health
+		health_interval 10s
+		health_timeout 5s
+	}
 }
 
 {$PUBLIC_WS_DOMAIN} {
-  encode gzip zstd
-  header {
-    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-    X-Frame-Options "DENY"
-    X-Content-Type-Options "nosniff"
-    Referrer-Policy "strict-origin-when-cross-origin"
-  }
-  reverse_proxy game:2567
+	encode gzip zstd
+	log {
+		output stdout
+		format filter {
+			request>uri regexp \?.*$ ""
+			wrap json
+		}
+	}
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Frame-Options "DENY"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+	}
+	@disallowed_origin {
+		header Origin *
+		not header Origin {$CORS_ORIGIN}
+	}
+	respond @disallowed_origin "Forbidden" 403
+
+	@allowed_origin header Origin {$CORS_ORIGIN}
+	header @allowed_origin {
+		Access-Control-Allow-Origin "{$CORS_ORIGIN}"
+		Access-Control-Allow-Credentials "true"
+		+Vary "Origin"
+	}
+	reverse_proxy game:2567 {
+		header_up X-Real-IP {remote_host}
+		header_down -Access-Control-Allow-Origin
+		header_down -Access-Control-Allow-Credentials
+		health_uri /health
+		health_interval 10s
+		health_timeout 5s
+	}
 }

@@ -25,14 +25,17 @@
     "play:interaction": "playwright test --config=playwright.config.ts apps/web/__visual__/play-m35.spec.ts --grep @play-interaction",
     "play:matrix": "playwright test --config=playwright.config.ts apps/web/__visual__/play-m35.spec.ts --grep @play-matrix",
     "loadtest": "node scripts/loadtest.mjs",
-    "loadtest:heavy": "LOAD_CLIENTS=500 node scripts/loadtest.mjs",
+    "loadtest:heavy": "node scripts/loadtest-heavy.mjs",
+    "deploy:drain": "node scripts/deploy-drain.mjs",
+    "audit:prod": "pnpm audit --prod --audit-level high",
     "test:migrations": "node scripts/test-migrations.mjs",
     "smoke": "node scripts/smoke.mjs",
     "playtest": "node scripts/playtest.mjs",
     "optimize:assets": "node scripts/optimize-assets.mjs",
+    "verify:assets": "node scripts/verify-optimized-assets.mjs",
     "optimize:phase-rail": "node scripts/generate-phase-rail-assets.mjs",
     "regression": "node scripts/regression.mjs",
-    "verify": "pnpm optimize:assets && pnpm regression && pnpm typecheck && pnpm build && pnpm smoke && pnpm frontend:e2e && pnpm e2e:auth && pnpm playtest && pnpm test && pnpm visual && pnpm perf:budget",
+    "verify": "pnpm verify:assets && pnpm regression && pnpm typecheck && pnpm build && pnpm smoke && pnpm frontend:e2e && pnpm e2e:auth && pnpm playtest && pnpm test && pnpm visual && pnpm visual:ui && pnpm perf:budget && pnpm audit:prod && pnpm check:dict",
     "verify:heavy": "pnpm verify && pnpm test:migrations && pnpm loadtest",
     "check:prod-env": "node scripts/check-production-env.mjs",
     "db:generate": "pnpm --filter @werewolf/database db:generate",
@@ -44,19 +47,8 @@
     "@types/node": "^24.9.1",
     "playwright": "^1.59.1",
     "tsx": "4.22.3",
-    "turbo": "^2.9.6",
+    "turbo": "^2.9.14",
     "typescript": "^5.9.3",
     "vitest": "^4.0.2"
-  },
-  "pnpm": {
-    "overrides": {
-      "esbuild": "0.28.0",
-      "postcss": "8.5.14"
-    },
-    "auditConfig": {
-      "ignoreCves": [
-        "CVE-2025-14505"
-      ]
-    }
   }
 }

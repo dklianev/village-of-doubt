@@ -37,7 +37,7 @@ async function main() {
   await waitForText("http://127.0.0.1:3300/werewolf/create", "Стани", "werewolf create auth gate");
   await waitForText("http://127.0.0.1:3300/mafia/create", "Стани", "mafia create auth gate");
   await waitForText(
-    "http://127.0.0.1:3300/play/SMOKE1?mode=werewolves_classic&players=6&communication=built_in_chat&narrator=automatic&tempo=fast_online",
+    "http://127.0.0.1:3300/play/SMPKE3?mode=werewolves_classic&players=6&communication=built_in_chat&narrator=automatic&tempo=fast_online",
     "Върни се в играта",
     "play auth gate",
   );
@@ -153,13 +153,13 @@ async function waitForGameToken(url) {
       "content-type": "application/json",
     },
     body: JSON.stringify({
-      code: "SMOKE1",
+      code: "SMPKE3",
       devUserId: "smoke-user-0001",
       devDisplayName: "Смоук Играч",
     }),
   });
   const body = await response.json().catch(() => ({}));
-  if (!response.ok || body.roomCode !== "SMOKE1" || typeof body.token !== "string") {
+  if (!response.ok || body.roomCode !== "SMPKE3" || typeof body.token !== "string") {
     throw new Error(`game-token smoke failed: HTTP ${response.status}`);
   }
 }

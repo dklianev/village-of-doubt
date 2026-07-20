@@ -8,6 +8,7 @@ const BUDGETS = {
   totalJsKb: 550,
   routeJsKb: 140,
   routeCssKb: 70,
+  totalArtCorpusKb: 120_000,
   largestArtAssetKb: 800,
 };
 
@@ -133,7 +134,15 @@ function reportArtCorpus() {
     })
     .join(", ");
 
-  console.log(`Art corpus: ${formatFileCount(assets.length)}, ${roundKb(totalBytes)} KB (${formatSummary})`);
+  console.log(
+    `Art corpus: ${formatFileCount(assets.length)}, ${roundKb(totalBytes)} KB ` +
+      `(budget: ${BUDGETS.totalArtCorpusKb} KB; ${formatSummary})`,
+  );
+  if (totalBytes > kbToBytes(BUDGETS.totalArtCorpusKb)) {
+    failures.push(
+      `Art corpus ${roundKb(totalBytes)} KB > budget ${BUDGETS.totalArtCorpusKb} KB`,
+    );
+  }
 
   const largest = assets
     .filter((asset) => asset.extension === ".avif" || asset.extension === ".webp")

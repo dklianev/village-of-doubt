@@ -1,4 +1,7 @@
-export function onRouterTransitionStart() {
-  // Client-side Sentry is intentionally disabled to keep the public JS budget tight.
-  // Server and edge instrumentation still capture request/runtime failures.
+performance.mark("werewolf-web:client-start");
+
+export function onRouterTransitionStart(url: string, navigationType: "push" | "replace" | "traverse") {
+  performance.mark("werewolf-web:navigation-start", {
+    detail: { navigationType, url: new URL(url, window.location.origin).pathname },
+  });
 }

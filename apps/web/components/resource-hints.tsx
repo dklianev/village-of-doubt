@@ -1,4 +1,9 @@
-type PreloadImage = string | { href: string; media?: string; type?: string };
+type PreloadImage = string | {
+  href: string;
+  media?: string;
+  type?: string;
+  fetchPriority?: "high" | "low" | "auto";
+};
 
 export function ResourceHints({
   images = [],
@@ -16,7 +21,18 @@ export function ResourceHints({
         const href = typeof image === "string" ? image : image.href;
         const media = typeof image === "string" ? undefined : image.media;
         const type = typeof image === "string" ? "image/webp" : (image.type ?? "image/webp");
-        return <link key={`${href}:${media ?? ""}`} rel="preload" as="image" href={href} type={type} {...(media ? { media } : {})} />;
+        const fetchPriority = typeof image === "string" ? undefined : image.fetchPriority;
+        return (
+          <link
+            key={`${href}:${media ?? ""}`}
+            rel="preload"
+            as="image"
+            href={href}
+            type={type}
+            {...(media ? { media } : {})}
+            {...(fetchPriority ? { fetchPriority } : {})}
+          />
+        );
       })}
     </>
   );

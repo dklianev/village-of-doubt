@@ -198,7 +198,10 @@ function checkLandingLayoutContracts() {
   assert(landingPage.includes("/game-art/mobile/bg-landing-ambient-composited.webp"), "Landing page should preload the mobile composited ambient background.");
   assert(landingPage.includes("/game-art/mobile/bg-landing-hero-composited.webp"), "Landing page should preload the mobile composited hero background.");
   assert(landingPage.includes("/game-art/bg-landing-ambient-composited.webp"), "Landing page should preload the desktop composited ambient background.");
-  assert(landingPage.includes("/game-art/bg-landing-hero-composited.webp"), "Landing page should preload the desktop composited hero background.");
+  assert(landingPage.includes("/game-art/bg-landing-hero-composited.avif"), "Landing page should preload the desktop AVIF composited hero background selected by CSS.");
+  assert(landingPage.includes("/game-art/bg-lobby-tavern.webp"), "Landing page should preload the first desktop game-card backdrop used as LCP content.");
+  assert(landingPage.includes("/game-art/mobile/bg-lobby-tavern.webp"), "Landing page should preload the first mobile game-card backdrop used as LCP content.");
+  assert(css.includes("/game-art/mobile/mafia/bg-lobby-tavern.webp"), "Landing cards must use the optimized Mafia backdrop on mobile.");
   assert(!landingPage.includes("Село под съмнение"), "Landing page must not use the old Werewolf branding.");
   assert(!landingPage.includes("Българска Мафия"), "Landing page must not use the old Mafia branding.");
   assert(css.includes(".game-choice-grid"), "Game picker grid needs dedicated styling.");
@@ -758,6 +761,11 @@ function checkProductionGuardContracts() {
   assert(caddyfile.includes("Strict-Transport-Security"), "Caddyfile must enable HSTS.");
   assert(caddyfile.includes("X-Frame-Options \"DENY\""), "Caddyfile must block framing.");
   assert(caddyfile.includes("Content-Security-Policy"), "Caddyfile must include a baseline CSP.");
+  assert(caddyfile.includes("health_uri /api/health\n"), "Caddy web upstream health must use shallow liveness.");
+  assert(!caddyfile.includes("health_uri /api/health/ready"), "Caddy must not remove web ingress for deep dependency failures.");
+  assert(caddyfile.includes("health_uri /health\n"), "Caddy game transport health must use shallow liveness.");
+  assert(!caddyfile.includes("health_uri /health/ready"), "Caddy must not sever live game sockets for persistence-only failures.");
+  assert((caddyfile.match(/request>uri regexp/g) ?? []).length >= 3, "Caddy access and runtime error logs must strip query strings from request URIs.");
 }
 
 function checkLaunchTestingContracts() {
@@ -790,6 +798,11 @@ function checkLaunchTestingContracts() {
   assert(packageJson.scripts["verify:heavy"]?.includes("pnpm test:migrations"), "pnpm verify:heavy must include migration tests.");
   assert(packageJson.scripts["verify:heavy"]?.includes("pnpm loadtest"), "pnpm verify:heavy must include load tests.");
   assert(!authRoute.includes("OAUTH_MOCK") && !authConfig.includes("OAUTH_MOCK"), "OAuth mock code must not ship in auth production routes.");
+  const frontendE2e = readText("scripts/frontend-e2e.mjs");
+  assert(!frontendE2e.includes("context.route("), "Frontend multiplayer E2E must not mock Better Auth or game-token routes.");
+  assert(frontendE2e.includes("ROOM_CODE_ALPHABET"), "Frontend multiplayer E2E must use the shared room-code alphabet.");
+  assert(frontendE2e.includes("ALLOW_DEV_AUTH: \"false\""), "Frontend multiplayer E2E must run production services without dev auth.");
+  assert(frontendE2e.includes("sign-in/email"), "Frontend multiplayer E2E must obtain real Better Auth session cookies.");
   assert(baselinePngs.length >= 30, `Expected at least 30 visual baseline PNGs, got ${baselinePngs.length}. Run pnpm visual:update.`);
 
   for (const file of uiFiles) {
@@ -815,6 +828,20 @@ function checkProductionEnvChecker() {
   const missing = runEnvChecker(missingAppUrl);
   assert(missing.status !== 0, "Missing NEXT_PUBLIC_APP_URL should fail production env check.");
   assert(missing.stderr.includes("NEXT_PUBLIC_APP_URL"), "Missing app URL failure should mention NEXT_PUBLIC_APP_URL.");
+
+  const serverOnlySentry = validProductionEnv();
+  delete serverOnlySentry.NEXT_PUBLIC_SENTRY_DSN;
+  const withoutClientSentry = runEnvChecker(serverOnlySentry);
+  assert(withoutClientSentry.status === 0, `NEXT_PUBLIC_SENTRY_DSN must be optional:\n${withoutClientSentry.stderr}`);
+
+  const missingRelease = validProductionEnv();
+  delete missingRelease.RELEASE_VERSION;
+  const noRelease = runEnvChecker(missingRelease);
+  assert(noRelease.status !== 0, "Missing RELEASE_VERSION should fail production env check.");
+  assert(noRelease.stderr.includes("RELEASE_VERSION"), "Missing release failure should mention RELEASE_VERSION.");
+
+  const placeholderRelease = runEnvChecker({ ...validProductionEnv(), RELEASE_VERSION: "unknown" });
+  assert(placeholderRelease.status !== 0, "Placeholder RELEASE_VERSION should fail production env check.");
 }
 
 function checkScriptWiring() {
@@ -823,12 +850,16 @@ function checkScriptWiring() {
   const playtest = readText("scripts/playtest.mjs");
   const codexEnvironment = readText(".codex/environments/environment.toml");
   const ciWorkflow = readText(".github/workflows/ci.yml");
+  const webDockerfile = readText("apps/web/Dockerfile");
+  const gameDockerfile = readText("apps/game-server/Dockerfile");
 
   assert(packageJson.scripts.regression === "node scripts/regression.mjs", "package.json must expose pnpm regression.");
   assert(packageJson.scripts["codex:run"] === "node scripts/codex-run.mjs", "package.json must expose pnpm codex:run.");
   assert(existsSync(path.join(root, "scripts/codex-run.mjs")), "Codex run action script must exist.");
   assert(codexEnvironment.includes('command = "pnpm codex:run"'), "Codex Run action must point at pnpm codex:run.");
   assert(packageJson.scripts["frontend:e2e"] === "node scripts/frontend-e2e.mjs", "package.json must expose pnpm frontend:e2e.");
+  assert(packageJson.scripts["verify:assets"] === "node scripts/verify-optimized-assets.mjs", "package.json must expose the optimized asset drift guard.");
+  assert(packageJson.scripts.verify.startsWith("pnpm verify:assets"), "pnpm verify must fail early on generated asset drift.");
   assert(packageJson.scripts.verify.includes("pnpm regression"), "pnpm verify must run regression checks.");
   assert(packageJson.scripts.verify.includes("pnpm frontend:e2e"), "pnpm verify must run frontend Playwright QA.");
   assert(smoke.includes("optimized phase transition game art"), "Smoke must check optimized game-art delivery.");
@@ -836,10 +867,18 @@ function checkScriptWiring() {
   assert(smoke.includes("live-safe play page"), "Smoke must check live-safe play page copy.");
   assert(smoke.includes("image-set"), "Smoke must check optimized CSS image-set references.");
   assert(playtest.includes("night-resolver.test.ts"), "Playtest must include night resolver regression tests.");
-  assert(ciWorkflow.includes("actions/checkout@v6"), "CI checkout action must use a Node 24-runtime release.");
-  assert(ciWorkflow.includes("pnpm/action-setup@v6"), "CI pnpm action must use a Node 24-runtime release.");
-  assert(ciWorkflow.includes("actions/setup-node@v6"), "CI setup-node action must use a Node 24-runtime release.");
-  assert(ciWorkflow.includes("node-version: 24"), "CI must verify against Node 24.");
+  assert(ciWorkflow.includes("actions/checkout@v6"), "CI checkout action must use the current action runtime.");
+  assert(ciWorkflow.includes("pnpm/action-setup@v6"), "CI pnpm action must use the current action runtime.");
+  assert(ciWorkflow.includes("actions/setup-node@v6"), "CI setup-node action must use the current action runtime.");
+
+  const ciNodeMajor = ciWorkflow.match(/node-version:\s*["']?(\d+)/)?.[1];
+  const webNodeMajor = webDockerfile.match(/^FROM node:(\d+)/m)?.[1];
+  const gameNodeMajor = gameDockerfile.match(/^FROM node:(\d+)/m)?.[1];
+  assert(Boolean(ciNodeMajor && webNodeMajor && gameNodeMajor), "CI and Dockerfiles must declare explicit Node major versions.");
+  assert(webNodeMajor === gameNodeMajor, "Web and game production images must use the same Node major.");
+  assert(ciNodeMajor === webNodeMajor, `CI Node ${ciNodeMajor} must match production Node ${webNodeMajor}.`);
+  assert(ciWorkflow.includes("scripts/container-ingress-smoke.mjs"), "CI must verify Caddy HTTP and WebSocket ingress.");
+  assert(readText("apps/game-server/Dockerfile.dockerignore").split(/\r?\n/).includes("apps/web"), "Game image context must exclude the web app and its large art assets.");
 }
 
 function checkDatabaseMigrationWorkflow() {
@@ -876,9 +915,15 @@ function validProductionEnv() {
     PUBLIC_WEB_DOMAIN: "werewolf.example.com",
     PUBLIC_WS_DOMAIN: "ws.werewolf.example.com",
     CORS_ORIGIN: "https://werewolf.example.com",
+    DB_PASSWORD: "prod-password",
     ALLOW_DEV_AUTH: "false",
     GOOGLE_CLIENT_ID: "prod-google-client-id",
     GOOGLE_CLIENT_SECRET: "prod-google-client-secret",
+    RESEND_API_KEY: "re_prod_example_key",
+    RESEND_FROM: "Върколак и Мафия <noreply@werewolf.example.com>",
+    SENTRY_DSN: "https://public@sentry.example.com/1",
+    RELEASE_VERSION: "release-2026-07-20.1",
+    RCLONE_REMOTE: "encrypted-remote:werewolf/backups",
   };
 }
 

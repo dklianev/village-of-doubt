@@ -12,12 +12,30 @@ const DERIVATIVE_DIRS = new Set(["thumbs"]);
 
 async function main() {
   const sharp = await loadSharp();
+  sharp.cache(false);
+  if (process.platform === "win32") {
+    sharp.concurrency(1);
+  }
   const files = await listPngs(gameArtDir);
 
   if (reportOnly) {
     await printReport(files);
     return;
   }
+
+  const fileConcurrency = readPositiveInteger(
+    process.env.ASSET_FILE_CONCURRENCY,
+    process.platform === "win32" ? 2 : 4,
+  );
+  let completed = 0;
+  const results = await mapWithConcurrency(files, fileConcurrency, async (file) => {
+    const result = await optimizeAsset(sharp, file);
+    completed += 1;
+    if (completed % 25 === 0 || completed === files.length) {
+      console.log(`Processed ${completed}/${files.length} source assets.`);
+    }
+    return result;
+  });
 
   let originalBytes = 0;
   let optimizedBytes = 0;
@@ -31,48 +49,18 @@ async function main() {
   let mobileBytes = 0;
   let mobileWritten = 0;
 
-  for (const file of files) {
-    const input = path.join(gameArtDir, file);
-    const before = (await stat(input)).size;
-    originalBytes += before;
-
-    const sourceBudget = sourcePngBudgetKbFor(file);
-    if (sourceBudget > 0 && before > sourceBudget * 1024) {
-      const trimmed = await trimSourcePng(sharp, input, file, before, sourceBudget);
-      trimmedPngBytes += before - trimmed;
-    }
-
-    const sourceAfter = (await stat(input)).size;
-    pngBytesAfter += sourceAfter;
-
-    const output = path.join(gameArtDir, file.replace(/\.png$/, ".webp"));
-    await writeWebp(sharp, input, output, file, maxWidthFor(file), webpBudgetKbFor(file));
-    optimizedBytes += (await stat(output)).size;
-    written += 1;
-
-    if (shouldCreateAvif(file)) {
-      const avifOutput = path.join(gameArtDir, file.replace(/\.png$/, ".avif"));
-      await writeAvif(sharp, input, avifOutput, file, maxWidthFor(file), avifBudgetKbFor(file));
-      avifBytes += (await stat(avifOutput)).size;
-      avifsWritten += 1;
-    }
-
-    if (shouldCreateRoleThumbnail(file)) {
-      const thumbOutput = path.join(gameArtDir, "thumbs", file.replace(/\.png$/, ".webp"));
-      await mkdir(path.dirname(thumbOutput), { recursive: true });
-      await writeWebp(sharp, input, thumbOutput, file, 520, 90, 74);
-      thumbnailBytes += (await stat(thumbOutput)).size;
-      thumbnailsWritten += 1;
-    }
-
-    const mobileWidth = mobileWidthFor(file);
-    if (mobileWidth) {
-      const mobileOutput = path.join(gameArtDir, "mobile", file.replace(/\.png$/, ".webp"));
-      await mkdir(path.dirname(mobileOutput), { recursive: true });
-      await writeWebp(sharp, input, mobileOutput, file, mobileWidth, mobileBudgetKbFor(file), 70);
-      mobileBytes += (await stat(mobileOutput)).size;
-      mobileWritten += 1;
-    }
+  for (const result of results) {
+    originalBytes += result.originalBytes;
+    optimizedBytes += result.optimizedBytes;
+    written += result.written;
+    trimmedPngBytes += result.trimmedPngBytes;
+    pngBytesAfter += result.pngBytesAfter;
+    avifBytes += result.avifBytes;
+    avifsWritten += result.avifsWritten;
+    thumbnailBytes += result.thumbnailBytes;
+    thumbnailsWritten += result.thumbnailsWritten;
+    mobileBytes += result.mobileBytes;
+    mobileWritten += result.mobileWritten;
   }
 
   const saved = originalBytes - pngBytesAfter + (originalBytes - optimizedBytes);
@@ -89,6 +77,87 @@ async function main() {
   console.log(
     `Generated ${thumbnailsWritten} role thumbnails (${formatBytes(thumbnailBytes)}) and ${mobileWritten} mobile assets (${formatBytes(mobileBytes)}).`,
   );
+}
+
+async function optimizeAsset(sharp, file) {
+  const input = path.join(gameArtDir, file);
+  const before = (await stat(input)).size;
+  const sourceBudget = sourcePngBudgetKbFor(file);
+  let trimmedPngBytes = 0;
+
+  if (sourceBudget > 0 && before > sourceBudget * 1024) {
+    const trimmed = await trimSourcePng(sharp, input, file, before, sourceBudget);
+    trimmedPngBytes = before - trimmed;
+  }
+
+  const pngBytesAfter = (await stat(input)).size;
+  const output = path.join(gameArtDir, file.replace(/\.png$/, ".webp"));
+  await writeWebp(sharp, input, output, file, maxWidthFor(file), webpBudgetKbFor(file));
+  const optimizedBytes = (await stat(output)).size;
+  let avifBytes = 0;
+  let avifsWritten = 0;
+  let thumbnailBytes = 0;
+  let thumbnailsWritten = 0;
+  let mobileBytes = 0;
+  let mobileWritten = 0;
+
+  if (shouldCreateAvif(file)) {
+    const avifOutput = path.join(gameArtDir, file.replace(/\.png$/, ".avif"));
+    await writeAvif(sharp, input, avifOutput, file, maxWidthFor(file), avifBudgetKbFor(file));
+    avifBytes = (await stat(avifOutput)).size;
+    avifsWritten = 1;
+  }
+
+  if (shouldCreateRoleThumbnail(file)) {
+    const thumbOutput = path.join(gameArtDir, "thumbs", file.replace(/\.png$/, ".webp"));
+    await mkdir(path.dirname(thumbOutput), { recursive: true });
+    await writeWebp(sharp, input, thumbOutput, file, 520, 90, 74);
+    thumbnailBytes = (await stat(thumbOutput)).size;
+    thumbnailsWritten = 1;
+  }
+
+  const mobileWidth = mobileWidthFor(file);
+  if (mobileWidth) {
+    const mobileOutput = path.join(gameArtDir, "mobile", file.replace(/\.png$/, ".webp"));
+    await mkdir(path.dirname(mobileOutput), { recursive: true });
+    await writeWebp(sharp, input, mobileOutput, file, mobileWidth, mobileBudgetKbFor(file), 70);
+    mobileBytes = (await stat(mobileOutput)).size;
+    mobileWritten = 1;
+  }
+
+  return {
+    originalBytes: before,
+    optimizedBytes,
+    written: 1,
+    trimmedPngBytes,
+    pngBytesAfter,
+    avifBytes,
+    avifsWritten,
+    thumbnailBytes,
+    thumbnailsWritten,
+    mobileBytes,
+    mobileWritten,
+  };
+}
+
+async function mapWithConcurrency(values, concurrency, worker) {
+  const results = new Array(values.length);
+  let nextIndex = 0;
+
+  await Promise.all(Array.from({ length: Math.min(concurrency, values.length) }, async () => {
+    while (nextIndex < values.length) {
+      const index = nextIndex;
+      nextIndex += 1;
+      results[index] = await worker(values[index], index);
+    }
+  }));
+
+  return results;
+}
+
+function readPositiveInteger(value, fallback) {
+  const parsed = Number.parseInt(value ?? "", 10);
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
 async function printReport(files) {
@@ -273,6 +342,9 @@ function uniqueNumbers(values) {
 function maxWidthFor(file) {
   const basename = path.basename(file);
 
+  if (basename.startsWith("portrait-")) {
+    return 560;
+  }
   if (basename.startsWith("icon-") || basename.includes("-sheet")) {
     return 960;
   }
@@ -287,6 +359,9 @@ function maxWidthFor(file) {
 
 function sourcePngWidthFor(file) {
   const basename = path.basename(file);
+  if (basename.startsWith("portrait-")) {
+    return 560;
+  }
   if (basename.startsWith("icon-")) {
     return 720;
   }
@@ -303,11 +378,17 @@ function sourcePngWidthFor(file) {
 }
 
 function sourcePngBudgetKbFor(file) {
+  if (path.basename(file).startsWith("portrait-")) {
+    return 240;
+  }
   return 500;
 }
 
 function webpBudgetKbFor(file) {
   const basename = path.basename(file);
+  if (basename.startsWith("portrait-")) {
+    return 110;
+  }
   if (basename.startsWith("icon-")) {
     return 150;
   }

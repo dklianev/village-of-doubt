@@ -14,11 +14,19 @@ export function ServiceWorkerRegistration() {
       return;
     }
 
-    window.addEventListener("load", () => {
-      void navigator.serviceWorker.register("/sw.js").catch(() => {
+    const register = () => {
+      void navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" }).catch(() => {
         // Offline support is progressive enhancement; the app stays usable.
       });
-    });
+    };
+
+    if (document.readyState === "complete") {
+      register();
+      return;
+    }
+
+    window.addEventListener("load", register, { once: true });
+    return () => window.removeEventListener("load", register);
   }, []);
 
   return null;

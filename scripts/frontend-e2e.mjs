@@ -1,6 +1,9 @@
 import { spawn } from "node:child_process";
+import { randomBytes, randomUUID } from "node:crypto";
 import { cpSync, existsSync, mkdirSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { createRequire } from "node:module";
+import { dirname, join, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { chromium } from "playwright";
 
 const isWindows = process.platform === "win32";
@@ -13,6 +16,8 @@ const baseUrl = `http://127.0.0.1:${webPort}`;
 const gameUrl = `http://127.0.0.1:${gamePort}`;
 const wsUrl = `ws://127.0.0.1:${gamePort}`;
 const testSecret = "frontend-e2e-secret-that-is-long-enough";
+const databaseUrl = process.env.FRONTEND_E2E_DATABASE_URL ?? process.env.DATABASE_URL;
+const fixturePassword = "Frontend-e2e-password-2026!";
 
 const viewports = {
   desktop: { width: 1440, height: 1000 },
@@ -21,18 +26,22 @@ const viewports = {
 
 let failureCount = 0;
 let activeBrowser = null;
+let authFixture = null;
 
 async function main() {
+  assertLocalTestDatabase(databaseUrl);
   mkdirSync(artifactDir, { recursive: true });
   await buildForE2e();
+  authFixture = await seedAuthFixture(databaseUrl);
 
   const game = start("game-server", process.execPath, ["apps/game-server/dist/index.js"], {
     GAME_SERVER_PORT: gamePort,
     PORT: gamePort,
-    ALLOW_DEV_AUTH: "true",
+    ALLOW_DEV_AUTH: "false",
     GAME_TOKEN_SECRET: testSecret,
     BETTER_AUTH_URL: baseUrl,
     CORS_ORIGIN: baseUrl,
+    DATABASE_URL: databaseUrl,
   });
 
   await waitForJson(`${gameUrl}/health`, "game-server");
@@ -45,7 +54,8 @@ async function main() {
     NEXT_PUBLIC_GAME_SERVER_URL: wsUrl,
     BETTER_AUTH_SECRET: testSecret,
     GAME_TOKEN_SECRET: testSecret,
-    ALLOW_DEV_AUTH: "true",
+    ALLOW_DEV_AUTH: "false",
+    DATABASE_URL: databaseUrl,
   });
 
   await waitForJson(`${baseUrl}/api/health`, "web");
@@ -65,12 +75,13 @@ async function main() {
   await runCheck("history screen basics", testHistoryScreen);
   await runCheck("achievements, leaderboard and friends screens", testUtilityPages);
   await runCheck("single-player play auth gate", testSinglePlayScreen);
-  await runCheck("multi-client play auth gates", testSixClientGameStart);
+  await runCheck("six browser players join one WebSocket game and start it", testSixClientGameStart);
 
   await activeBrowser.close();
   activeBrowser = null;
   await stop(web);
   await stop(game);
+  await cleanupAuthFixture();
 
   if (failureCount > 0) {
     throw new Error(`Frontend Playwright QA failed with ${failureCount} failing check(s).`);
@@ -271,25 +282,35 @@ async function testSinglePlayScreen() {
 }
 
 async function testSixClientGameStart() {
-  const code = `PW${String(Date.now()).slice(-4)}`;
+  const code = createRoomCode(authFixture.roomCodeAlphabet, authFixture.roomCodeLength);
   const path = `/play/${code}?mode=werewolves_classic&players=6&communication=built_in_chat&narrator=automatic&tempo=fast_online`;
   const contexts = [];
   const watchers = [];
 
   try {
-    for (let index = 0; index < 3; index += 1) {
+    for (let index = 0; index < 6; index += 1) {
       const context = await activeBrowser.newContext({ viewport: viewports.desktop });
       await context.addInitScript(() => {
         window.localStorage.setItem("cookie-consent", "1");
+        window.localStorage.setItem("welcome-modal-shown", "1");
       });
+      const identity = authFixture.users[index];
+      await signInBrowserContext(context, identity);
       contexts.push(context);
       const page = await context.newPage();
       watchers.push(watchPage(page, `six-client-${index + 1}`));
       await goto(page, path, `six-client ${index + 1}`);
-      await page.waitForURL("**/sign-in?redirect=**");
-      await expectText(page, "Върни се");
+      await waitForVisibleText(page.getByTestId("ready-toggle"), "Готов");
       await assertNoHorizontalOverflow(page, `play auth client ${index + 1}`);
     }
+
+    const pages = contexts.map((context) => context.pages()[0]);
+    await Promise.all(pages.map((page) => page.getByTestId("ready-toggle").click()));
+    await waitForVisibleText(pages[0].getByRole("button", { name: "Започни игра" }), "Започни игра");
+    await pages[0].getByRole("button", { name: "Започни игра" }).click();
+    await Promise.all(pages.map((page) => page
+      .locator("main.play-shell[data-phase='role_reveal'], main.play-shell[data-phase='first_night']")
+      .waitFor({ state: "visible", timeout: 15_000 })));
     for (const watcher of watchers) {
       watcher.assertClean();
     }
@@ -310,8 +331,121 @@ async function buildForE2e() {
     BETTER_AUTH_URL: baseUrl,
     BETTER_AUTH_SECRET: testSecret,
     GAME_TOKEN_SECRET: testSecret,
-    ALLOW_DEV_AUTH: "true",
+    ALLOW_DEV_AUTH: "false",
+    DATABASE_URL: databaseUrl,
   });
+}
+
+async function seedAuthFixture(url) {
+  const webRequire = createRequire(resolve("apps/web/package.json"));
+  const databaseRequire = createRequire(resolve("packages/database/package.json"));
+  const databaseModule = await import(pathToFileURL(webRequire.resolve("@werewolf/database")).href);
+  const drizzleModule = await import(pathToFileURL(databaseRequire.resolve("drizzle-orm")).href);
+  const cryptoModule = await import(pathToFileURL(webRequire.resolve("better-auth/crypto")).href);
+  const sharedModule = await import(pathToFileURL(webRequire.resolve("@werewolf/shared")).href);
+  const db = databaseModule.createDatabase(url);
+  const runId = `${Date.now().toString(36)}-${randomBytes(4).toString("hex")}`;
+  const passwordHash = await cryptoModule.hashPassword(fixturePassword);
+  const users = Array.from({ length: 6 }, (_, index) => ({
+    id: `frontend-e2e-${runId}-${index + 1}`,
+    name: `Играч ${index + 1}`,
+    email: `frontend-e2e-${runId}-${index + 1}@example.test`,
+  }));
+
+  try {
+    await db.transaction(async (transaction) => {
+      await transaction.insert(databaseModule.user).values(users.map((identity) => ({
+        ...identity,
+        emailVerified: true,
+        avatarId: "portrait-f01",
+      })));
+      await transaction.insert(databaseModule.account).values(users.map((identity) => ({
+        id: randomUUID(),
+        accountId: identity.id,
+        providerId: "credential",
+        userId: identity.id,
+        password: passwordHash,
+      })));
+    });
+  } catch (error) {
+    await databaseModule.closeDatabase(url).catch(() => {});
+    throw new Error(`Failed to seed Better Auth frontend E2E users in the local test database: ${error instanceof Error ? error.message : String(error)}`);
+  }
+
+  return {
+    users,
+    roomCodeAlphabet: sharedModule.ROOM_CODE_ALPHABET,
+    roomCodeLength: sharedModule.ROOM_CODE_LENGTH,
+    async cleanup() {
+      try {
+        const userIds = users.map((identity) => identity.id);
+        await db.transaction(async (transaction) => {
+          await transaction
+            .delete(databaseModule.games)
+            .where(drizzleModule.inArray(databaseModule.games.hostId, userIds));
+          await transaction
+            .delete(databaseModule.user)
+            .where(drizzleModule.inArray(databaseModule.user.id, userIds));
+        });
+      } finally {
+        await databaseModule.closeDatabase(url);
+      }
+    },
+  };
+}
+
+async function cleanupAuthFixture() {
+  const fixture = authFixture;
+  authFixture = null;
+  await fixture?.cleanup();
+}
+
+async function signInBrowserContext(context, identity) {
+  const response = await context.request.post(`${baseUrl}/api/auth/sign-in/email`, {
+    data: {
+      email: identity.email,
+      password: fixturePassword,
+      rememberMe: false,
+    },
+  });
+  if (!response.ok()) {
+    throw new Error(`Better Auth sign-in failed for ${identity.email}: HTTP ${response.status()} ${await response.text()}`);
+  }
+
+  const cookies = await context.cookies(baseUrl);
+  if (!cookies.some((cookie) => cookie.name.endsWith("session_token") && cookie.value)) {
+    throw new Error(`Better Auth did not issue a session cookie for ${identity.email}.`);
+  }
+
+  const sessionResponse = await context.request.get(`${baseUrl}/api/auth/get-session`);
+  const session = await sessionResponse.json().catch(() => undefined);
+  if (!sessionResponse.ok() || session?.user?.id !== identity.id) {
+    throw new Error(`Better Auth session validation failed for ${identity.email}.`);
+  }
+}
+
+function createRoomCode(alphabet, length) {
+  const bytes = randomBytes(length);
+  return Array.from(bytes, (value) => alphabet[value % alphabet.length]).join("");
+}
+
+function assertLocalTestDatabase(value) {
+  if (!value) {
+    throw new Error("FRONTEND_E2E_DATABASE_URL or DATABASE_URL must point to a local test database.");
+  }
+
+  let parsed;
+  try {
+    parsed = new URL(value);
+  } catch {
+    throw new Error("Frontend E2E database URL is invalid.");
+  }
+
+  const localHosts = new Set(["localhost", "127.0.0.1", "::1"]);
+  const databaseName = decodeURIComponent(parsed.pathname.replace(/^\//, ""));
+  if (!localHosts.has(parsed.hostname) || !/(?:test|e2e)/i.test(databaseName)) {
+    throw new Error("Frontend E2E refuses non-local or non-test databases.");
+  }
 }
 
 async function newPage(label, viewport, identity) {
@@ -354,7 +488,8 @@ function watchPage(page, label) {
     if (ignoreConsolePatterns.some((pattern) => pattern.test(text))) {
       return;
     }
-    issues.push(`console error: ${text}`);
+    const location = message.location();
+    issues.push(`console error: ${text}${location.url ? ` (${location.url})` : ""}`);
   });
 
   page.on("pageerror", (error) => {
@@ -859,5 +994,6 @@ main().catch(async (error) => {
     await activeBrowser.close().catch(() => {});
   }
   await Promise.all(processes.map(stop));
+  await cleanupAuthFixture().catch((cleanupError) => console.error("Frontend E2E fixture cleanup failed:", cleanupError));
   process.exitCode = 1;
 });

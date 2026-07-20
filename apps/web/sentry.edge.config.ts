@@ -1,10 +1,8 @@
 import * as Sentry from "@sentry/nextjs";
+import { createServerSentryOptions } from "./lib/observability-config";
 
-const dsn = process.env.SENTRY_DSN ?? process.env.NEXT_PUBLIC_SENTRY_DSN;
+const options = createServerSentryOptions();
 
-if (dsn) {
-  Sentry.init({
-    dsn,
-    tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1,
-  });
+if (options) {
+  Sentry.init(options);
 }

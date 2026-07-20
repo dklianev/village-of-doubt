@@ -4,7 +4,11 @@ import { cpSync, existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 const webPort = process.env.E2E_AUTH_WEB_PORT ?? "3412";
+// Keep the default aligned with frontend:e2e, which builds NEXT_PUBLIC_GAME_SERVER_URL.
+const gamePort = process.env.E2E_AUTH_GAME_PORT ?? process.env.FRONTEND_E2E_GAME_PORT ?? "3568";
 let baseUrl = process.env.E2E_AUTH_BASE_URL ?? localAppUrl(process.env.NEXT_PUBLIC_APP_URL) ?? `http://127.0.0.1:${webPort}`;
+const gameUrl = `http://127.0.0.1:${gamePort}`;
+const gameWsUrl = `ws://127.0.0.1:${gamePort}`;
 const hasDatabase = Boolean(process.env.DATABASE_URL);
 const isLocalOnly = process.env.E2E_LOCAL_ONLY === "true";
 const testSecret = "auth-e2e-secret-that-is-long-enough";
@@ -20,13 +24,25 @@ if (!hasDatabase && !isLocalOnly) {
 }
 
 if (!process.env.E2E_AUTH_BASE_URL && !(await isHealthy(`${baseUrl}/api/health`))) {
+  const game = start("auth-game", process.execPath, ["apps/game-server/dist/index.js"], {
+    GAME_SERVER_PORT: gamePort,
+    PORT: gamePort,
+    BETTER_AUTH_URL: baseUrl,
+    CORS_ORIGIN: baseUrl,
+    GAME_TOKEN_SECRET: testSecret,
+    ALLOW_DEV_AUTH: "true",
+  });
+  processes.push(game);
+  await waitForHealth(`${gameUrl}/health`, "auth game-server");
+
   ensureStandaloneAssets();
   prepareEmailOutbox();
   const web = start("auth-web", process.execPath, [standaloneServer], {
     PORT: webPort,
     BETTER_AUTH_URL: baseUrl,
     NEXT_PUBLIC_APP_URL: baseUrl,
-    NEXT_PUBLIC_GAME_SERVER_URL: "ws://127.0.0.1:2567",
+    NEXT_PUBLIC_GAME_SERVER_URL: gameWsUrl,
+    GAME_SERVER_HTTP_URL: gameUrl,
     BETTER_AUTH_SECRET: testSecret,
     GAME_TOKEN_SECRET: testSecret,
     ALLOW_DEV_AUTH: "true",
@@ -94,11 +110,11 @@ async function signInSurface(page) {
 async function emailRegistration(page) {
   const email = `launch-${Date.now()}@local.invalid`;
   await page.goto(`${baseUrl}/sign-in`, { waitUntil: "domcontentloaded" });
-  await page.getByRole("tab", { name: "Нов профил" }).click();
+  await page.getByRole("tab", { name: "Ново досие" }).click();
   await page.getByLabel("Име на масата").fill("Тест Играч");
   await page.getByRole("textbox", { name: "Имейл" }).fill(email);
   await page.getByLabel("Парола", { exact: true }).fill("Test1234!");
-  await page.getByRole("button", { name: "Създай профил" }).click();
+  await page.getByRole("button", { name: "Създай досие" }).click();
   await verifyEmailFromOutbox(page, email);
   await page.waitForURL(`${baseUrl}/`, { timeout: 10_000 });
   await page.locator(".auth-chip-avatar").waitFor({ timeout: 10_000 });
@@ -108,29 +124,30 @@ async function authenticatedCreateReturn(page) {
   const email = `return-${Date.now()}@local.invalid`;
   await page.goto(`${baseUrl}/werewolf/create`, { waitUntil: "domcontentloaded" });
   await page.waitForURL(/\/sign-in\?redirect=/);
-  await page.getByRole("tab", { name: "Нов профил" }).click();
+  await page.getByRole("tab", { name: "Ново досие" }).click();
   await page.getByLabel("Име на масата").fill("Връщане");
   await page.getByRole("textbox", { name: "Имейл" }).fill(email);
   await page.getByLabel("Парола", { exact: true }).fill("Test1234!");
-  await page.getByRole("button", { name: "Създай профил" }).click();
+  await page.getByRole("button", { name: "Създай досие" }).click();
   await verifyEmailFromOutbox(page, email);
   await page.goto(`${baseUrl}/werewolf/create`, { waitUntil: "domcontentloaded" });
-  await page.getByText("Създай частна стая").waitFor();
+  await page.getByRole("heading", { name: "Създай игра без чудене" }).waitFor();
 }
 
 async function accountDeletion(page) {
   const email = `delete-${Date.now()}@local.invalid`;
   await page.goto(`${baseUrl}/sign-in`, { waitUntil: "domcontentloaded" });
-  await page.getByRole("tab", { name: "Нов профил" }).click();
+  await page.getByRole("tab", { name: "Ново досие" }).click();
   await page.getByLabel("Име на масата").fill("За Изтриване");
   await page.getByRole("textbox", { name: "Имейл" }).fill(email);
   await page.getByLabel("Парола", { exact: true }).fill("Test1234!");
-  await page.getByRole("button", { name: "Създай профил" }).click();
+  await page.getByRole("button", { name: "Създай досие" }).click();
   await verifyEmailFromOutbox(page, email);
   await page.waitForURL(`${baseUrl}/`, { timeout: 10_000 });
   await page.goto(`${baseUrl}/account`, { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: "Изтрий моя профил" }).click();
-  await page.getByRole("button", { name: "Да, изтрий" }).click();
+  await page.getByRole("button", { name: "Изтрий моето досие" }).click();
+  await page.getByRole("textbox", { name: "Напиши ИЗТРИЙ за потвърждение" }).fill("ИЗТРИЙ");
+  await page.getByRole("button", { name: "Изтрий завинаги" }).click();
   await page.waitForURL(`${baseUrl}/`, { timeout: 10_000 });
 }
 

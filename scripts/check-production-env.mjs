@@ -7,6 +7,12 @@ const required = [
   "NEXT_PUBLIC_GAME_SERVER_URL",
   "PUBLIC_WEB_DOMAIN",
   "PUBLIC_WS_DOMAIN",
+  "CORS_ORIGIN",
+  "RESEND_API_KEY",
+  "RESEND_FROM",
+  "SENTRY_DSN",
+  "RELEASE_VERSION",
+  "RCLONE_REMOTE",
 ];
 
 const warnings = [];
@@ -44,6 +50,9 @@ const corsOrigins = (process.env.CORS_ORIGIN ?? process.env.BETTER_AUTH_URL ?? "
 if (corsOrigins.length === 0) {
   errors.push("CORS_ORIGIN или BETTER_AUTH_URL трябва да е настроен за game-server CORS.");
 }
+if (corsOrigins.length > 1) {
+  errors.push("CORS_ORIGIN трябва да съдържа точно един HTTPS origin, съвместим с Caddy.");
+}
 if (corsOrigins.some((origin) => origin === "*" || !origin.startsWith("https://"))) {
   errors.push("CORS_ORIGIN трябва да съдържа само конкретни HTTPS origins, не wildcard.");
 }
@@ -60,17 +69,10 @@ if (!hasDiscord) {
   warnings.push("Discord OAuth не е конфигуриран; интерфейсът ще покаже само Google и имейл.");
 }
 
-if (!process.env.RESEND_API_KEY) {
-  warnings.push("RESEND_API_KEY липсва. Потвържденията по имейл и новите пароли ще отказват в production.");
-}
-
-if (!process.env.RCLONE_REMOTE) {
-  warnings.push("RCLONE_REMOTE не е настроен. Backup-ите ще останат само локално на Droplet-а.");
-}
-
-if (!process.env.DB_PASSWORD && process.env.DATABASE_URL?.includes("@postgres:5432")) {
-  warnings.push("DB_PASSWORD липсва, но Docker Compose DATABASE_URL изглежда разчита на него.");
-}
+checkUrlAlignment();
+checkDatabaseCredentials();
+checkSentryDsn("SENTRY_DSN");
+checkReleaseVersion();
 
 for (const warning of warnings) {
   console.warn(`warning: ${warning}`);
@@ -95,5 +97,59 @@ function checkSecret(key) {
   }
   if (/dev-only|replace|change-me|placeholder/i.test(value)) {
     errors.push(`${key} изглежда като placeholder.`);
+  }
+}
+
+function checkUrlAlignment() {
+  try {
+    const authUrl = new URL(process.env.BETTER_AUTH_URL ?? "");
+    const appUrl = new URL(process.env.NEXT_PUBLIC_APP_URL ?? "");
+    const gameUrl = new URL(process.env.NEXT_PUBLIC_GAME_SERVER_URL ?? "");
+    if (authUrl.host !== process.env.PUBLIC_WEB_DOMAIN || appUrl.host !== process.env.PUBLIC_WEB_DOMAIN) {
+      errors.push("PUBLIC_WEB_DOMAIN трябва да съвпада с BETTER_AUTH_URL и NEXT_PUBLIC_APP_URL.");
+    }
+    if (gameUrl.host !== process.env.PUBLIC_WS_DOMAIN) {
+      errors.push("PUBLIC_WS_DOMAIN трябва да съвпада с NEXT_PUBLIC_GAME_SERVER_URL.");
+    }
+    if (corsOrigins[0] && corsOrigins[0] !== authUrl.origin) {
+      errors.push("CORS_ORIGIN трябва да съвпада с origin-а на BETTER_AUTH_URL.");
+    }
+  } catch {
+    errors.push("Production URL стойностите трябва да са валидни абсолютни URL адреси.");
+  }
+}
+
+function checkDatabaseCredentials() {
+  if (!process.env.DATABASE_URL) {
+    return;
+  }
+  try {
+    const databaseUrl = new URL(process.env.DATABASE_URL);
+    if (databaseUrl.hostname === "postgres") {
+      if (!process.env.DB_PASSWORD) {
+        errors.push("DB_PASSWORD липсва за Docker production DATABASE_URL.");
+      } else if (decodeURIComponent(databaseUrl.password) !== process.env.DB_PASSWORD) {
+        errors.push("DB_PASSWORD не съвпада с паролата в DATABASE_URL.");
+      }
+    }
+  } catch {
+    errors.push("DATABASE_URL не е валиден URL.");
+  }
+}
+
+function checkSentryDsn(key) {
+  const value = process.env[key];
+  if (value && !value.startsWith("https://")) {
+    errors.push(`${key} трябва да е HTTPS DSN.`);
+  }
+}
+
+function checkReleaseVersion() {
+  const value = process.env.RELEASE_VERSION?.trim();
+  if (!value) {
+    return;
+  }
+  if (value.length < 7 || /^(?:unknown|latest|dev|development|local|main)$/i.test(value) || /replace|change-me|placeholder/i.test(value)) {
+    errors.push("RELEASE_VERSION трябва да е immutable non-placeholder release identifier.");
   }
 }

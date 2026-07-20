@@ -10,6 +10,7 @@ export default defineConfig({
   timeout: 45_000,
   use: {
     baseURL: `http://127.0.0.1:${port}`,
+    channel: process.env.PLAYWRIGHT_CHANNEL || undefined,
   },
   webServer: {
     command: `pnpm --filter @werewolf/ui exec storybook dev --host 127.0.0.1 --port ${port}`,

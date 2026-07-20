@@ -1,74 +1,176 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   caddy:
-    image: caddy:2-alpine
+    image: caddy:2-alpine@sha256:5f5c8640aae01df9654968d946d8f1a56c497f1dd5c5cda4cf95ab7c14d58648
     restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
     environment:
-      PUBLIC_WEB_DOMAIN: ${PUBLIC_WEB_DOMAIN}
-      PUBLIC_WS_DOMAIN: ${PUBLIC_WS_DOMAIN}
+      PUBLIC_WEB_DOMAIN: ${PUBLIC_WEB_DOMAIN:?Set PUBLIC_WEB_DOMAIN}
+      PUBLIC_WS_DOMAIN: ${PUBLIC_WS_DOMAIN:?Set PUBLIC_WS_DOMAIN}
+      CORS_ORIGIN: ${CORS_ORIGIN:?Set CORS_ORIGIN}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
+    networks:
+      - ingress
+    logging: *default-logging
+    pids_limit: 128
     depends_on:
-      - web
-      - game
+      web:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:2019/config/ >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+
+  migrate:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: migrator
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL with an encoded database password}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - backend
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    logging: *default-logging
+    pids_limit: 128
 
   web:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:?Set NEXT_PUBLIC_APP_URL}
+        NEXT_PUBLIC_GAME_SERVER_URL: wss://${PUBLIC_WS_DOMAIN:?Set PUBLIC_WS_DOMAIN}
+      secrets:
+        - better_auth_secret
+        - game_token_secret
     restart: unless-stopped
+    init: true
     environment:
-      DATABASE_URL: postgres://werewolf:${DB_PASSWORD}@postgres:5432/werewolf
-      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
-      GAME_TOKEN_SECRET: ${GAME_TOKEN_SECRET}
-      BETTER_AUTH_URL: ${BETTER_AUTH_URL}
-      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
-      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
-      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
-      DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET}
-      NEXT_PUBLIC_GAME_SERVER_URL: wss://${PUBLIC_WS_DOMAIN}
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL with an encoded database password}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET}
+      GAME_TOKEN_SECRET: ${GAME_TOKEN_SECRET:?Set GAME_TOKEN_SECRET}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:?Set BETTER_AUTH_URL}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:?Set NEXT_PUBLIC_APP_URL}
+      GAME_SERVER_HTTP_URL: http://game:2567
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID:-}
+      DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_FROM: ${RESEND_FROM:-}
+      REPORTS_NOTIFY_EMAIL: ${REPORTS_NOTIFY_EMAIL:-}
+      SENTRY_DSN: ${SENTRY_DSN:?Set SENTRY_DSN}
+      NEXT_PUBLIC_GAME_SERVER_URL: wss://${PUBLIC_WS_DOMAIN:?Set PUBLIC_WS_DOMAIN}
+      RELEASE_VERSION: ${RELEASE_VERSION:?Set RELEASE_VERSION to an immutable release identifier}
     depends_on:
-      postgres:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    networks:
+      - ingress
+      - backend
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    logging: *default-logging
+    pids_limit: 256
+    stop_grace_period: 30s
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/health >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
 
   game:
     build:
       context: .
       dockerfile: apps/game-server/Dockerfile
     restart: unless-stopped
+    init: true
     environment:
-      DATABASE_URL: postgres://werewolf:${DB_PASSWORD}@postgres:5432/werewolf
-      GAME_TOKEN_SECRET: ${GAME_TOKEN_SECRET}
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL with an encoded database password}
+      GAME_TOKEN_SECRET: ${GAME_TOKEN_SECRET:?Set GAME_TOKEN_SECRET}
       GAME_SERVER_PORT: 2567
       ALLOW_DEV_AUTH: "false"
-      BETTER_AUTH_URL: ${BETTER_AUTH_URL}
-      CORS_ORIGIN: ${CORS_ORIGIN}
-      PUBLIC_WEB_DOMAIN: ${PUBLIC_WEB_DOMAIN}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:?Set BETTER_AUTH_URL}
+      CORS_ORIGIN: ${CORS_ORIGIN:?Set CORS_ORIGIN}
+      PUBLIC_WEB_DOMAIN: ${PUBLIC_WEB_DOMAIN:?Set PUBLIC_WEB_DOMAIN}
+      SENTRY_DSN: ${SENTRY_DSN:?Set SENTRY_DSN}
+      RELEASE_VERSION: ${RELEASE_VERSION:?Set RELEASE_VERSION to an immutable release identifier}
+      GAME_DRAIN_TIMEOUT_MS: ${GAME_DRAIN_TIMEOUT_MS:-120000}
     depends_on:
-      postgres:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    networks:
+      - ingress
+      - backend
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    logging: *default-logging
+    pids_limit: 256
+    stop_grace_period: 130s
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:2567/health/ready >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
 
   postgres:
-    image: postgres:17-alpine
+    image: postgres:17-alpine@sha256:742f40ea20b9ff2ff31db5458d127452988a2164df9e17441e191f3b72252193
     restart: unless-stopped
     environment:
       POSTGRES_USER: werewolf
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD}
       POSTGRES_DB: werewolf
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - backend
+    logging: *default-logging
+    pids_limit: 256
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U werewolf"]
+      test: ["CMD-SHELL", "pg_isready -U werewolf -d werewolf"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 12
+      start_period: 10s
 
 volumes:
   caddy_data:
   caddy_config:
   postgres_data:
+
+networks:
+  ingress:
+  backend:
+    internal: true
+
+secrets:
+  better_auth_secret:
+    environment: BETTER_AUTH_SECRET
+  game_token_secret:
+    environment: GAME_TOKEN_SECRET

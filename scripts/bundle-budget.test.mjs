@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, truncateSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
@@ -62,6 +62,26 @@ test("fails when /play CSS resolves to zero source bytes", (context) => {
 
   assert.equal(result.status, 1);
   assert.match(result.stderr, /Route \/play\/\[code\] CSS source bytes are zero\./);
+});
+
+test("fails when the complete art corpus exceeds its release budget", (context) => {
+  const fixture = createFixture({
+    routeCss: ["static/chunks/play.css"],
+    routeJs: ["static/chunks/play.js"],
+  });
+  context.after(() => rmSync(fixture, { recursive: true, force: true }));
+
+  writeFixtureFile(fixture, "apps/web/.next/static/chunks/play.css", ".play { color: #fff; }");
+  writeFixtureFile(fixture, "apps/web/.next/static/chunks/play.js", "console.log('play');");
+  const oversizedArt = path.join(fixture, "apps/web/public/game-art/oversized.png");
+  mkdirSync(path.dirname(oversizedArt), { recursive: true });
+  writeFileSync(oversizedArt, "");
+  truncateSync(oversizedArt, 120_001 * 1024);
+
+  const result = runBudget(fixture);
+
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /Art corpus .+ KB > budget 120000 KB/);
 });
 
 function createFixture({ routeCss, routeJs }) {

@@ -1,7 +1,4 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
-import { auth } from "@/lib/auth";
-import type { AuthSessionView } from "@/lib/use-auth-session";
 import { NonCriticalWidgets } from "@/components/non-critical-widgets";
 import { ResourceHints } from "@/components/resource-hints";
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
@@ -54,19 +51,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  const chromeSession: AuthSessionView | null = session?.user?.id
-    ? {
-        user: {
-          id: session.user.id,
-          name: session.user.name,
-          email: session.user.email,
-          image: session.user.image ?? null,
-        },
-      }
-    : null;
-
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="bg" suppressHydrationWarning>
       <head>
@@ -74,11 +59,11 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       </head>
       <body>
         <ResourceHints preconnect={["https://cdn.discordapp.com", "https://lh3.googleusercontent.com"]} />
-        <SiteChrome initialSession={chromeSession} />
+        <SiteChrome initialSession={null} />
         {children}
         <SiteFooter />
         <ToastHost />
-        <NonCriticalWidgets initialSession={chromeSession} />
+        <NonCriticalWidgets initialSession={null} />
         <ServiceWorkerRegistration />
       </body>
     </html>

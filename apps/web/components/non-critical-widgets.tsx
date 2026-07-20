@@ -3,7 +3,8 @@
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import type { AuthSessionView } from "@/lib/use-auth-session";
+import { useAuthSession, type AuthSessionView } from "@/lib/use-auth-session";
+import { safeLocalStorage } from "@/lib/safe-storage";
 import { shouldMountFeedback } from "@/components/feedback/route-policy";
 
 const CookieBanner = dynamic(() => import("@/components/CookieBanner").then((mod) => mod.CookieBanner), {
@@ -39,27 +40,28 @@ const EMPTY_WIDGETS: WidgetMountState = {
 
 export function NonCriticalWidgets({ initialSession }: { initialSession: AuthSessionView | null }) {
   const pathname = usePathname();
+  const { data: session } = useAuthSession(initialSession);
   const [mount, setMount] = useState<WidgetMountState>(EMPTY_WIDGETS);
 
   useEffect(() => {
     const id = window.setTimeout(() => {
       setMount({
-        cookie: !window.localStorage.getItem(COOKIE_STORAGE_KEY),
+        cookie: !safeLocalStorage.getItem(COOKIE_STORAGE_KEY),
         feedback: shouldMountFeedback(pathname),
         welcome:
-          Boolean(initialSession?.user?.id) &&
-          !window.localStorage.getItem(WELCOME_STORAGE_KEY) &&
-          !window.localStorage.getItem(TUTORIAL_STORAGE_KEY),
+          Boolean(session?.user?.id) &&
+          !safeLocalStorage.getItem(WELCOME_STORAGE_KEY) &&
+          !safeLocalStorage.getItem(TUTORIAL_STORAGE_KEY),
       });
     }, 0);
 
     return () => window.clearTimeout(id);
-  }, [initialSession?.user?.id, pathname]);
+  }, [pathname, session?.user?.id]);
 
   return (
     <>
       {mount.cookie ? <CookieBanner /> : null}
-      {mount.welcome ? <WelcomeModal /> : null}
+      {mount.welcome ? <WelcomeModal displayName={session?.user?.name ?? "приятел"} /> : null}
       {mount.feedback ? <FeedbackWidget /> : null}
     </>
   );

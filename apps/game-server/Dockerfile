@@ -1,4 +1,4 @@
-FROM node:22-alpine AS base
+FROM node:22-alpine@sha256:16e22a550f3863206a3f701448c45f7912c6896a62de43add43bb9c86130c3e2 AS base
 WORKDIR /app
 RUN corepack enable
 
@@ -14,15 +14,11 @@ COPY . .
 RUN pnpm --filter @werewolf/shared build
 RUN pnpm --filter @werewolf/database build
 RUN pnpm --filter @werewolf/game-server build
+RUN pnpm --filter @werewolf/game-server --prod deploy /prod/game-server
 
 FROM base AS runner
 ENV NODE_ENV=production
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=builder /app/apps/game-server/dist ./apps/game-server/dist
-COPY --from=builder /app/apps/game-server/package.json ./apps/game-server/package.json
-COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
-COPY --from=builder /app/packages/shared/package.json ./packages/shared/package.json
-COPY --from=builder /app/packages/database/dist ./packages/database/dist
-COPY --from=builder /app/packages/database/package.json ./packages/database/package.json
+COPY --from=builder --chown=node:node /prod/game-server ./
+USER node
 EXPOSE 2567
-CMD ["node", "apps/game-server/dist/index.js"]
+CMD ["node", "dist/index.js"]

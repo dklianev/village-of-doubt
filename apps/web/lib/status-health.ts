@@ -1,13 +1,7 @@
-export type ServiceStatusKind = "ok" | "degraded" | "down" | "unknown";
+import { checkDatabaseReadiness, createDatabase } from "@werewolf/database";
+import type { ServiceHealth, ServiceStatusKind } from "./status-health-shared";
 
-export interface ServiceHealth {
-  id: string;
-  name: string;
-  description: string;
-  status: ServiceStatusKind;
-  detail?: string;
-  icon: "web" | "game" | "database" | "auth" | "email";
-}
+export type { ServiceHealth, ServiceStatusKind } from "./status-health-shared";
 
 async function checkService(url: string, timeoutMs = 3000): Promise<{ ok: boolean; ms: number }> {
   const controller = new AbortController();
@@ -30,7 +24,19 @@ function gameServerHealthUrl(): string | null {
     return null;
   }
 
-  return configuredUrl.replace(/^ws:/, "http:").replace(/^wss:/, "https:").replace(/\/$/, "") + "/health";
+  return configuredUrl.replace(/^ws:/, "http:").replace(/^wss:/, "https:").replace(/\/$/, "") + "/health/ready";
+}
+
+async function checkDatabaseService(databaseUrl: string | undefined): Promise<ServiceStatusKind> {
+  if (!databaseUrl) {
+    return "unknown";
+  }
+
+  try {
+    return (await checkDatabaseReadiness(createDatabase(databaseUrl))) ? "ok" : "down";
+  } catch {
+    return "down";
+  }
 }
 
 export async function loadStatusServices(): Promise<ServiceHealth[]> {
@@ -67,12 +73,13 @@ export async function loadStatusServices(): Promise<ServiceHealth[]> {
     });
   }
 
+  const databaseStatus = await checkDatabaseService(process.env.DATABASE_URL);
   services.push({
     id: "database",
     name: "База данни",
     description: "Досиета, история, легенди.",
-    status: process.env.DATABASE_URL ? "ok" : "unknown",
-    detail: process.env.DATABASE_URL ? "Конфигурирана" : "Не е достъпна",
+    status: databaseStatus,
+    detail: databaseStatus === "ok" ? "Отговаря" : databaseStatus === "down" ? "Не отговаря" : "Не е достъпна",
     icon: "database",
   });
 
@@ -104,19 +111,4 @@ export async function loadStatusServices(): Promise<ServiceHealth[]> {
   });
 
   return services;
-}
-
-export function computeOverallStatus(services: ServiceHealth[]): ServiceStatusKind {
-  if (services.some((service) => service.status === "down")) {
-    return "down";
-  }
-
-  const critical = services.filter(
-    (service) => service.id === "web" || service.id === "game-server" || service.id === "database",
-  );
-  if (critical.length > 0 && critical.every((service) => service.status === "ok")) {
-    return "ok";
-  }
-
-  return "degraded";
 }
