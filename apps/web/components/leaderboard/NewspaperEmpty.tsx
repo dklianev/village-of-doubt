@@ -12,6 +12,12 @@ export function NewspaperEmpty() {
         <p className="headline-kicker">главна новина</p>
         <h2 className="headline-main-title">Изданието още не е тиражирано</h2>
         <p className="empty-lede">Утрешният брой ще носи първото име. Завърши една игра и редакцията се събужда.</p>
+        <div className="empty-press-proof" aria-hidden>
+          <span className="empty-press-number">01</span>
+          <span />
+          <span />
+          <span />
+        </div>
         <div className="empty-cta">
           <Link href="/werewolf/create" className="btn btn-primary">
             Започни първото издание

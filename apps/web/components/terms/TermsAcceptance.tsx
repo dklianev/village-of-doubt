@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { safeLocalStorage } from "@/lib/safe-storage";
 
 const STORAGE_KEY = "terms-accepted-version";
 const CURRENT_VERSION = "2026-05-19";
@@ -14,27 +15,19 @@ export function TermsAcceptance({ userName }: TermsAcceptanceProps) {
   const [justAccepted, setJustAccepted] = useState(false);
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
-    if (!stored) {
+    const parsed = safeLocalStorage.getJson<{ version?: string; acceptedAt?: string }>(STORAGE_KEY);
+    if (!parsed) {
       return;
     }
 
-    try {
-      const parsed = JSON.parse(stored) as { version?: string; acceptedAt?: string };
-      if (parsed.version === CURRENT_VERSION && parsed.acceptedAt) {
-        setAcceptedAt(parsed.acceptedAt);
-      }
-    } catch {
-      // Local acceptance is decorative UX, so malformed data is ignored.
+    if (parsed.version === CURRENT_VERSION && parsed.acceptedAt) {
+      setAcceptedAt(parsed.acceptedAt);
     }
   }, []);
 
   function accept() {
     const now = new Date().toISOString();
-    window.localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ version: CURRENT_VERSION, acceptedAt: now }),
-    );
+    safeLocalStorage.setJson(STORAGE_KEY, { version: CURRENT_VERSION, acceptedAt: now });
     setAcceptedAt(now);
     setJustAccepted(true);
     window.setTimeout(() => setJustAccepted(false), 3500);

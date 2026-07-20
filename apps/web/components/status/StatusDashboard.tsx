@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { computeOverallStatus, type ServiceHealth } from "@/lib/status-health";
+import { computeOverallStatus, type ServiceHealth } from "@/lib/status-health-shared";
 import { StatusHero } from "./StatusHero";
 import { StatusLastIncident } from "./StatusLastIncident";
 import { StatusLegend } from "./StatusLegend";

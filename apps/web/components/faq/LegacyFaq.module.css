@@ -239,6 +239,7 @@
 
 :global(.faq-hearth-item) {
   overflow: hidden;
+  overflow-anchor: none;
   background: rgba(13, 10, 8, 0.42);
   border: 1px solid rgba(245, 232, 200, 0.1);
   border-radius: 12px;
@@ -647,6 +648,167 @@
   color: #fff5e0;
 }
 
+:global(.faq-hearth-filter:focus-visible),
+:global(.faq-hearth-item-handle:focus-visible),
+:global(.faq-hearth-item-copy:focus-visible),
+:global(.faq-hearth-item-thumb:focus-visible) {
+  outline: 3px solid rgba(217, 154, 66, 0.68);
+  outline-offset: 2px;
+}
+
+/* Light theme keeps the hearth identity while moving long-form copy onto
+   high-contrast parchment surfaces. The hero remains an on-image dark scene. */
+:global(html[data-theme="light"] .faq-hearth) {
+  color: #2a1b10;
+}
+
+:global(html[data-theme="light"] .faq-hearth-toolbar) {
+  background: linear-gradient(180deg, rgba(255, 250, 238, 0.74), rgba(246, 232, 202, 0.5));
+  border-bottom-color: rgba(83, 52, 31, 0.12);
+}
+
+:global(html[data-theme="light"] .faq-hearth-search) {
+  border-color: rgba(83, 52, 31, 0.24);
+  background: rgba(255, 252, 244, 0.9);
+  box-shadow: 0 10px 26px rgba(67, 39, 24, 0.08), inset 0 1px rgba(255, 255, 255, 0.7);
+}
+
+:global(html[data-theme="light"] .faq-hearth-search:focus-within) {
+  border-color: rgba(141, 47, 41, 0.58);
+  background: #fffaf0;
+  box-shadow: 0 0 0 3px rgba(141, 47, 41, 0.14), 0 12px 30px rgba(67, 39, 24, 0.1);
+}
+
+:global(html[data-theme="light"] .faq-hearth-search-icon),
+:global(html[data-theme="light"] .faq-hearth-search-hotkey) {
+  color: rgba(54, 34, 21, 0.68);
+}
+
+:global(html[data-theme="light"] .faq-hearth-search-hotkey) {
+  border-color: rgba(83, 52, 31, 0.2);
+  background: rgba(83, 52, 31, 0.07);
+}
+
+:global(html[data-theme="light"] .faq-hearth-search-input) {
+  color: #2a1b10;
+  caret-color: #842f2b;
+}
+
+:global(html[data-theme="light"] .faq-hearth-search-input::placeholder) {
+  color: rgba(54, 34, 21, 0.58);
+}
+
+:global(html[data-theme="light"] .faq-hearth-filter) {
+  color: #4b3020;
+  border-color: rgba(83, 52, 31, 0.2);
+  background: rgba(255, 250, 238, 0.82);
+}
+
+:global(html[data-theme="light"] .faq-hearth-filter:hover),
+:global(html[data-theme="light"] .faq-hearth-filter[data-active="true"]) {
+  color: #6f211e;
+  border-color: rgba(141, 47, 41, 0.46);
+  background: rgba(141, 47, 41, 0.1);
+}
+
+:global(html[data-theme="light"] .faq-hearth-section-head) {
+  border-bottom-color: rgba(83, 52, 31, 0.16);
+}
+
+:global(html[data-theme="light"] .faq-hearth-section-icon),
+:global(html[data-theme="light"] .faq-hearth-section-head h2) {
+  color: #842f2b;
+}
+
+:global(html[data-theme="light"] .faq-hearth-item) {
+  border-color: rgba(83, 52, 31, 0.16);
+  background: rgba(255, 250, 238, 0.76);
+  box-shadow: 0 10px 28px rgba(67, 39, 24, 0.06), inset 0 1px rgba(255, 255, 255, 0.58);
+}
+
+:global(html[data-theme="light"] .faq-hearth-item[data-open="true"]) {
+  border-color: rgba(141, 47, 41, 0.34);
+  background: rgba(255, 252, 244, 0.96);
+  box-shadow: 0 18px 38px rgba(67, 39, 24, 0.12), inset 3px 0 #842f2b;
+}
+
+:global(html[data-theme="light"] .faq-hearth-item-question) {
+  color: #2a1b10;
+}
+
+:global(html[data-theme="light"] .faq-hearth-item-chevron),
+:global(html[data-theme="light"] .faq-hearth .faq-block-tldr-label),
+:global(html[data-theme="light"] .faq-hearth .faq-answer a),
+:global(html[data-theme="light"] .faq-hearth .faq-link-list-title),
+:global(html[data-theme="light"] .faq-hearth .faq-link),
+:global(html[data-theme="light"] .faq-hearth-item-link a) {
+  color: #842f2b;
+}
+
+:global(html[data-theme="light"] .faq-hearth-item-answer),
+:global(html[data-theme="light"] .faq-hearth .faq-block-tldr-text),
+:global(html[data-theme="light"] .faq-hearth .faq-block-paragraph),
+:global(html[data-theme="light"] .faq-hearth .faq-step-text),
+:global(html[data-theme="light"] .faq-hearth .faq-block-bullets li),
+:global(html[data-theme="light"] .faq-hearth .faq-block-callout span:last-child) {
+  color: #4b3020;
+}
+
+:global(html[data-theme="light"] .faq-hearth .faq-block-tldr) {
+  border-left-color: #9a672b;
+  background: linear-gradient(155deg, rgba(209, 154, 66, 0.2), rgba(209, 154, 66, 0.06));
+}
+
+:global(html[data-theme="light"] .faq-hearth .faq-step-marker) {
+  color: #fffaf0;
+  background: #842f2b;
+}
+
+:global(html[data-theme="light"] .faq-hearth .faq-bullet-marker) {
+  background: #842f2b;
+}
+
+:global(html[data-theme="light"] .faq-hearth .faq-block-callout-info) {
+  background: rgba(45, 63, 102, 0.1);
+  border-color: #405787;
+}
+
+:global(html[data-theme="light"] .faq-hearth .faq-block-callout-warning),
+:global(html[data-theme="light"] .faq-hearth .faq-block-link-list),
+:global(html[data-theme="light"] .faq-hearth-item-link) {
+  background: rgba(209, 154, 66, 0.12);
+}
+
+:global(html[data-theme="light"] .faq-hearth-item-footer),
+:global(html[data-theme="light"] .faq-hearth-foot) {
+  border-color: rgba(83, 52, 31, 0.14);
+}
+
+:global(html[data-theme="light"] .faq-hearth-item-copy),
+:global(html[data-theme="light"] .faq-hearth-item-helpful-label),
+:global(html[data-theme="light"] .faq-hearth-item-thumb),
+:global(html[data-theme="light"] .faq-hearth-foot p),
+:global(html[data-theme="light"] .faq-hearth .faq-block-image figcaption),
+:global(html[data-theme="light"] .faq-hearth-empty) {
+  color: #5a3b29;
+}
+
+:global(html[data-theme="light"] .faq-hearth-item-copy),
+:global(html[data-theme="light"] .faq-hearth-item-thumb),
+:global(html[data-theme="light"] .faq-hearth-empty) {
+  border-color: rgba(83, 52, 31, 0.22);
+}
+
+:global(html[data-theme="light"] .faq-hearth-highlight) {
+  background: rgba(209, 154, 66, 0.38);
+}
+
+:global(html[data-theme="light"] .faq-hearth-foot-actions .btn-secondary) {
+  border-color: rgba(141, 47, 41, 0.34);
+  background: rgba(255, 250, 238, 0.86);
+  color: #5f201d;
+}
+
 @media (max-width: 768px) {
   :global(.faq-hearth-toolbar) {
     position: sticky;
@@ -656,6 +818,11 @@
     background: rgba(13, 10, 8, 0.78);
     border-bottom: 1px solid rgba(245, 232, 200, 0.08);
     backdrop-filter: blur(10px);
+  }
+
+  :global(html[data-theme="light"] .faq-hearth-toolbar) {
+    background: rgba(250, 240, 219, 0.94);
+    border-bottom-color: rgba(83, 52, 31, 0.16);
   }
 }
 
@@ -1006,82 +1173,6 @@
 
 :global(.status-hero-kicker) {
   color: var(--legal-status-hero-kicker-color) !important;
-}
-
-:global(.privacy-data-row) {
-  background: var(--legal-privacy-data-row-background);
-}
-
-:global(.privacy-data-row code) {
-  background: var(--legal-privacy-data-row-code-background);
-}
-
-:global(.privacy-data-disclaimer) {
-  background: var(--legal-privacy-data-disclaimer-background);
-}
-
-:global(.privacy-promise-detail) {
-  background: var(--legal-privacy-promise-detail-background);
-}
-
-:global(.privacy-right-card) {
-  background: var(--legal-privacy-right-card-background);
-}
-
-:global(.privacy-history-toggle) {
-  background: var(--legal-privacy-history-toggle-background);
-}
-
-:global(.privacy-history-list li article) {
-  background: var(--legal-privacy-history-list-li-article-background);
-}
-
-:global(.terms-acceptance-state) {
-  background: var(--legal-terms-acceptance-state-background);
-}
-
-:global(.terms-conflict-steps li) {
-  background: var(--legal-terms-conflict-steps-li-background);
-}
-
-:global(.report-field input) {
-  background: var(--legal-report-field-input-background);
-}
-
-:global(.report-field textarea) {
-  background: var(--legal-report-field-textarea-background);
-}
-
-:global(.report-review) {
-  background: var(--legal-report-review-background);
-}
-
-:global(.report-review-body) {
-  background: var(--legal-report-review-body-background);
-}
-
-:global(.report-success-reference) {
-  background: var(--legal-report-success-reference-background);
-}
-
-:global(.status-legend-grid > div) {
-  background: var(--legal-status-legend-grid-div-background);
-}
-
-:global(.status-incident-empty) {
-  background: var(--legal-status-incident-empty-background);
-}
-
-:global(.terms-section-conflict) {
-  background: var(--legal-terms-section-conflict-background);
-}
-
-:global(.report-success) {
-  background: var(--legal-report-success-background);
-}
-
-:global(.status-section-legend) {
-  background: var(--legal-status-section-legend-background);
 }
 
 /* ============================== */

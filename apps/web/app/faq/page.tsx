@@ -31,7 +31,7 @@ const faqJsonLd = {
 
 export default function FaqPage() {
   return (
-    <main className="shell faq-shell">
+    <main className="shell legal-page-shell faq-shell">
       <ResourceHints images={["/game-art/legal/faq-hearth-banner.webp"]} />
       <JsonLd data={faqJsonLd} />
       <FaqHearth items={FAQ_DATA} />

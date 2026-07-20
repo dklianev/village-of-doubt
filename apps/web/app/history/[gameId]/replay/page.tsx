@@ -12,6 +12,7 @@ import {
   type RoleCode,
 } from "@werewolf/shared";
 import { requireSession } from "@/lib/require-session";
+import { publicGameReference } from "@/lib/game-reference";
 import "@/components/achievements/Achievements.module.css";
 import "@/components/history/History.module.css";
 import "@/components/history/LegacyReplay.module.css";
@@ -63,7 +64,7 @@ export default async function ReplayPage({
           <div className="replay-hero-scrim" aria-hidden />
           <div className="replay-hero-copy">
             <p className="replay-kicker">преглед след игра</p>
-            <h1>Запис на стая {replay.game.code}.</h1>
+            <h1>Запис на дело {publicGameReference(replay.game.id)}.</h1>
             <p>
               Хронология от записаните събития. Тайните роли се показват само ако вече са част от
               записа.
@@ -178,7 +179,7 @@ async function loadReplay(gameId: string, viewerUserId: string) {
   try {
     const db = createDatabase(process.env.DATABASE_URL);
     const game = await getGameHistoryById(db, gameId);
-    if (!game) {
+    if (!game || game.status !== "ended" || !game.endedAt) {
       return null;
     }
     const rolesByGameId = await getPlayerRolesInGames(db, viewerUserId, [game.id]);

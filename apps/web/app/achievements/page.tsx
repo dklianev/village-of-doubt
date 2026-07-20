@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { createDatabase, getAchievementsForUser } from "@werewolf/database";
 import { ACHIEVEMENTS } from "@werewolf/shared";
 import Link from "next/link";
 import { AchievementsClient, type OwnedAchievement } from "@/components/achievements-client";
@@ -33,14 +34,16 @@ export default async function AchievementsPage({ searchParams }: AchievementsPag
   const resolvedSearchParams = await searchParams;
   const visualAuth = firstSearchValue(resolvedSearchParams?.visualAuth);
   const visualAchievements = firstSearchValue(resolvedSearchParams?.visualAchievements);
+  let userId: string | null = null;
   if (process.env.NODE_ENV === "production" || visualAuth !== "1") {
-    await requireSession("/achievements");
+    userId = (await requireSession("/achievements")).user.id;
   }
 
-  const initialOwned =
-    process.env.NODE_ENV !== "production" && visualAuth === "1" && visualAchievements === "fixture"
-      ? visualAchievementFixture()
-      : undefined;
+  const fixtureEnabled =
+    process.env.NODE_ENV !== "production" && visualAuth === "1" && visualAchievements === "fixture";
+  const { owned, status } = fixtureEnabled
+    ? { owned: visualAchievementFixture(), status: "ready" as const }
+    : await loadOwnedAchievements(userId);
 
   return (
     <main className="shell utility-shell achievement-shell">
@@ -54,13 +57,37 @@ export default async function AchievementsPage({ searchParams }: AchievementsPag
         </p>
       </section>
 
-      <AchievementsClient initialOwned={initialOwned} />
+      <AchievementsClient owned={owned} status={status} />
 
       <Link className="btn btn-secondary mt-6" href="/history">
         Виж записаните игри
       </Link>
     </main>
   );
+}
+
+async function loadOwnedAchievements(
+  userId: string | null,
+): Promise<{ owned: OwnedAchievement[]; status: "ready" | "unavailable" }> {
+  if (!userId || !process.env.DATABASE_URL) {
+    return { owned: [], status: "unavailable" };
+  }
+
+  try {
+    const db = createDatabase(process.env.DATABASE_URL);
+    const achievements = await getAchievementsForUser(db, userId);
+    return {
+      owned: achievements.map((achievement) => ({
+        achievementId: achievement.achievementId,
+        gameId: achievement.gameId,
+        unlockedAt: achievement.unlockedAt.toISOString(),
+      })),
+      status: "ready",
+    };
+  } catch (error) {
+    console.error("[achievements-page]", error);
+    return { owned: [], status: "unavailable" };
+  }
 }
 
 function firstSearchValue(value: string | string[] | undefined) {

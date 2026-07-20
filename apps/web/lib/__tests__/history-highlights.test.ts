@@ -7,10 +7,6 @@ function event(overrides: Partial<HistoryTimelineEventView>): HistoryTimelineEve
     round: 1,
     phase: "resolution",
     type: "system",
-    actorId: null,
-    targetId: null,
-    visibility: "public",
-    payload: {},
     createdAt: "2026-05-15T20:30:00.000Z",
     ...overrides,
   };

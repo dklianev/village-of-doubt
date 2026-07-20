@@ -1,4 +1,4 @@
-import type { ServiceHealth, ServiceStatusKind } from "@/lib/status-health";
+import type { ServiceHealth, ServiceStatusKind } from "@/lib/status-health-shared";
 
 const STATUS_LABEL: Record<ServiceStatusKind, string> = {
   ok: "Работи",

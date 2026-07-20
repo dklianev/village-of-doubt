@@ -1,9 +1,4 @@
 /* Legacy visual island. Fidelity target: 69bbcca8. Do not migrate to primitives without design approval. */
-:global(.terms-page),
-:global(.report-page) {
-  width: 100%;
-}
-
 :global(.terms-hero),
 :global(.report-hero) {
   position: relative;
@@ -53,7 +48,7 @@
 :global(.terms-hero-kicker),
 :global(.report-hero-kicker) {
   margin: 0 0 10px;
-  color: var(--legal-accent);
+  color: var(--legal-terms-hero-kicker-color, var(--legal-accent));
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.32em;
@@ -64,13 +59,13 @@
 :global(.report-hero-title) {
   max-width: 18ch;
   margin: 0 0 14px;
-  color: var(--legal-text);
+  color: var(--legal-terms-hero-title-color, #f5e8c8);
   font-family: "Noto Serif Display", "Noto Serif", serif;
   font-size: clamp(2.4rem, 6vw, 4rem);
   font-weight: 900;
   letter-spacing: 0;
   line-height: 1.05;
-  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.55);
+  text-shadow: var(--legal-terms-hero-title-text-shadow, 0 2px 14px rgba(0, 0, 0, 0.55));
   text-wrap: balance;
 }
 
@@ -78,36 +73,18 @@
 :global(.report-hero-subtitle) {
   max-width: 60ch;
   margin: 0 0 14px;
-  color: var(--legal-text-muted);
+  color: var(--legal-terms-hero-subtitle-color, rgba(245, 232, 200, 0.82));
   font-size: 1.05rem;
   line-height: 1.6;
+  text-shadow: var(--legal-terms-hero-subtitle-text-shadow, 0 2px 14px rgba(0, 0, 0, 0.55));
 }
 
 :global(.terms-hero-meta) {
   margin: 0;
-  color: var(--legal-text-soft);
+  color: var(--legal-terms-hero-meta-color, rgba(245, 232, 200, 0.74));
   font-size: 0.85rem;
   letter-spacing: 0.04em;
-}
-
-:global(.terms-content),
-:global(.report-content) {
-  display: grid;
-  gap: 28px;
-  max-width: 980px;
-  margin: 0 auto;
-  padding: 32px 24px 0;
-}
-
-:global(.terms-section) {
-  padding: 28px;
-  border: 1px solid var(--legal-border);
-  border-radius: 18px;
-  background: var(--legal-surface);
-}
-
-:global(.terms-section-head) {
-  margin-bottom: 22px;
+  text-shadow: var(--legal-terms-hero-meta-text-shadow, 0 2px 14px rgba(0, 0, 0, 0.55));
 }
 
 :global(.terms-section-kicker) {
@@ -117,24 +94,6 @@
   font-weight: 700;
   letter-spacing: 0.24em;
   text-transform: uppercase;
-}
-
-:global(.terms-section-head h2) {
-  margin: 0 0 8px;
-  color: var(--legal-text);
-  font-family: "Noto Serif Display", "Noto Serif", serif;
-  font-size: clamp(1.5rem, 3.2vw, 2rem);
-  font-weight: 900;
-  letter-spacing: 0;
-  line-height: 1.1;
-}
-
-:global(.terms-section-lede) {
-  max-width: 60ch;
-  margin: 0;
-  color: var(--legal-text-muted);
-  font-size: 0.98rem;
-  line-height: 1.55;
 }
 
 :global(.terms-section-acceptance) {
@@ -1089,7 +1048,6 @@
 }
 
 @media (max-width: 640px) {
-  :global(.terms-section),
   :global(.report-wizard) {
     padding: 22px 18px;
   }
@@ -1655,62 +1613,17 @@
   }
 }
 
-:global(.site-footer) {
-  position: relative;
-  z-index: 1;
-  padding: 24px 16px;
-  margin-top: 24px;
-  border-top: 1px solid rgba(255, 240, 200, 0.16);
-  background: linear-gradient(180deg, rgba(5, 7, 8, 0.12), rgba(5, 7, 8, 0.56));
-  color: rgba(245, 232, 200, 0.68);
-  font-size: 0.84rem;
-  text-align: center;
+/* Theme-token consumers stay with the terms route. */
+:global(.terms-acceptance-state) {
+  background: var(--legal-terms-acceptance-state-background);
 }
 
-:global(.site-footer-links) {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 8px;
+:global(.terms-conflict-steps li) {
+  background: var(--legal-terms-conflict-steps-li-background);
 }
 
-:global(.site-footer-links a) {
-  display: inline-flex;
-  align-items: center;
-  min-height: 32px;
-  padding: 0 4px;
-  color: rgba(245, 232, 200, 0.92);
-  font-weight: 700;
-  text-decoration: none;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.44);
-}
-
-:global(.site-footer-links a:hover) {
-  color: #d19a42;
-  text-decoration: underline;
-}
-
-:global(.site-footer-tagline) {
-  margin: 8px 0 0;
-  color: rgba(245, 232, 200, 0.48);
-  font-size: 0.78rem;
-  font-weight: 650;
-  letter-spacing: 0.04em;
-}
-
-:global(html[data-theme="light"] .site-footer) {
-  border-top-color: rgba(83, 52, 31, 0.18);
-  background: linear-gradient(180deg, rgba(255, 246, 226, 0.24), rgba(132, 47, 43, 0.08));
-  color: rgba(42, 27, 16, 0.58);
-}
-
-:global(html[data-theme="light"] .site-footer-links a) {
-  color: rgba(83, 52, 31, 0.9);
-  text-shadow: none;
-}
-
-:global(html[data-theme="light"] .site-footer-tagline) {
-  color: rgba(42, 27, 16, 0.52);
+:global(.terms-section-conflict) {
+  background: var(--legal-terms-section-conflict-background);
 }
 
 /* ============================== */

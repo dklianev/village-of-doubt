@@ -6,7 +6,7 @@ export function RanksColumn({ entries, startRank }: { entries: LeaderboardEntry[
       <h3 className="ranks-column-title">Класирани</h3>
       <ol className="ranks-column-list" start={startRank}>
         {entries.map((entry, index) => (
-          <li key={entry.displayName} className="ranks-column-item">
+          <li key={entry.id ?? `${entry.displayName}-${startRank + index}`} className="ranks-column-item">
             <span className="ranks-column-num">№ {startRank + index}</span>
             <span className="ranks-column-name">{entry.displayName}</span>
             <span className="ranks-column-meta">

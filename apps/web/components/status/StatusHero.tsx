@@ -1,5 +1,5 @@
 import Image from "next/image";
-import type { ServiceStatusKind } from "@/lib/status-health";
+import type { ServiceStatusKind } from "@/lib/status-health-shared";
 
 interface StatusHeroProps {
   overall: ServiceStatusKind;

@@ -4,6 +4,7 @@ import { createDatabase, getLeaderboardRows } from "@werewolf/database";
 import { JsonLd } from "@/components/JsonLd";
 import { NewspaperEmpty } from "@/components/leaderboard/NewspaperEmpty";
 import { NewspaperPage } from "@/components/leaderboard/NewspaperPage";
+import { NewspaperUnavailable } from "@/components/leaderboard/NewspaperUnavailable";
 import { LeaderboardSkeleton } from "@/components/skeleton";
 import type { LeaderboardEntry } from "@/lib/leaderboard-headlines";
 import { absoluteUrl, routeMetadata } from "@/lib/seo";
@@ -29,19 +30,29 @@ const leaderboardJsonLd = {
   inLanguage: "bg-BG",
 };
 
-export default function LeaderboardPage() {
+export default async function LeaderboardPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ visualLeaderboard?: string | string[] }>;
+}) {
+  const visualLeaderboard = firstSearchValue((await searchParams)?.visualLeaderboard);
+
   return (
     <main className="shell newspaper-shell">
       <JsonLd data={leaderboardJsonLd} />
       <Suspense fallback={<LeaderboardSkeleton />}>
-        <LeaderboardContent />
+        <LeaderboardContent visualLeaderboard={visualLeaderboard} />
       </Suspense>
     </main>
   );
 }
 
-async function LeaderboardContent() {
-  const { entries, issueCount } = await loadLeaderboard();
+async function LeaderboardContent({ visualLeaderboard }: { visualLeaderboard: string | undefined }) {
+  const { entries, issueCount } = await loadLeaderboard(visualLeaderboard);
+
+  if (entries === null) {
+    return <NewspaperUnavailable />;
+  }
 
   if (entries.length === 0) {
     return <NewspaperEmpty />;
@@ -51,12 +62,18 @@ async function LeaderboardContent() {
 }
 
 interface LeaderboardData {
-  entries: LeaderboardEntry[];
+  entries: LeaderboardEntry[] | null;
   issueCount: number;
 }
 
-async function loadLeaderboard(): Promise<LeaderboardData> {
+async function loadLeaderboard(visualLeaderboard?: string): Promise<LeaderboardData> {
   if (process.env.NODE_ENV !== "production") {
+    if (visualLeaderboard === "empty") {
+      return { entries: [], issueCount: 1 };
+    }
+    if (visualLeaderboard === "fixture") {
+      return { entries: fixtureLeaderboard(), issueCount: 18 };
+    }
     if (process.env.LEADERBOARD_NEWSPAPER_FIXTURE === "empty") {
       return { entries: [], issueCount: 1 };
     }
@@ -66,13 +83,14 @@ async function loadLeaderboard(): Promise<LeaderboardData> {
   }
 
   if (!process.env.DATABASE_URL) {
-    return { entries: [], issueCount: 1 };
+    return { entries: null, issueCount: 1 };
   }
 
   try {
     const db = createDatabase(process.env.DATABASE_URL);
     const rows = await getLeaderboardRows(db);
     const entries = rows.map((row) => ({
+      id: row.userId,
       displayName: row.displayName,
       games: row.gamesPlayed,
       wins: row.wins,
@@ -82,8 +100,12 @@ async function loadLeaderboard(): Promise<LeaderboardData> {
     return { entries, issueCount: Math.max(1, issueCount) };
   } catch (error) {
     console.error("[leaderboard]", error);
-    return { entries: [], issueCount: 1 };
+    return { entries: null, issueCount: 1 };
   }
+}
+
+function firstSearchValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
 }
 
 function fixtureLeaderboard(): LeaderboardEntry[] {
@@ -133,6 +155,7 @@ function fixtureLeaderboard(): LeaderboardEntry[] {
   return names.map((displayName, index) => {
     const [games, wins] = scores[index] ?? [1, 0];
     return {
+      id: `fixture-${index + 1}`,
       displayName,
       games,
       wins,

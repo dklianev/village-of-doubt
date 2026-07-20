@@ -53,7 +53,7 @@
 :global(.terms-hero-kicker),
 :global(.report-hero-kicker) {
   margin: 0 0 10px;
-  color: var(--legal-accent);
+  color: var(--legal-report-hero-kicker-color, var(--legal-accent));
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.32em;
@@ -64,13 +64,13 @@
 :global(.report-hero-title) {
   max-width: 18ch;
   margin: 0 0 14px;
-  color: var(--legal-text);
+  color: var(--legal-report-hero-title-color, #f5e8c8);
   font-family: "Noto Serif Display", "Noto Serif", serif;
   font-size: clamp(2.4rem, 6vw, 4rem);
   font-weight: 900;
   letter-spacing: 0;
   line-height: 1.05;
-  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.55);
+  text-shadow: var(--legal-report-hero-title-text-shadow, 0 2px 14px rgba(0, 0, 0, 0.55));
   text-wrap: balance;
 }
 
@@ -78,9 +78,10 @@
 :global(.report-hero-subtitle) {
   max-width: 60ch;
   margin: 0 0 14px;
-  color: var(--legal-text-muted);
+  color: var(--legal-report-hero-subtitle-color, rgba(245, 232, 200, 0.82));
   font-size: 1.05rem;
   line-height: 1.6;
+  text-shadow: var(--legal-report-hero-subtitle-text-shadow, 0 2px 14px rgba(0, 0, 0, 0.55));
 }
 
 :global(.terms-hero-meta) {
@@ -571,8 +572,9 @@
   border: 1px solid var(--legal-border-strong);
   border-radius: 999px;
   background: rgba(13, 10, 8, 0.55);
-  color: var(--legal-text-muted);
+  color: var(--legal-report-hero-stat-color, rgba(245, 232, 200, 0.82));
   font-size: 0.92rem;
+  text-shadow: var(--legal-report-hero-stat-text-shadow, 0 2px 14px rgba(0, 0, 0, 0.55));
 }
 
 :global(.report-hero-stat-icon) {
@@ -719,7 +721,7 @@
 
 :global(.report-type-hint),
 :global(.report-identity-hint) {
-  color: var(--legal-text-soft);
+  color: var(--legal-text-muted);
   font-size: 0.82rem;
   line-height: 1.4;
 }
@@ -898,8 +900,8 @@
 :global(.report-wizard-next),
 :global(.report-wizard-submit) {
   margin-left: auto;
-  border: 1px solid var(--legal-accent);
-  background: var(--legal-accent);
+  border: 1px solid #842f2b;
+  background: #842f2b;
   color: #fff5e0;
 }
 
@@ -1655,62 +1657,29 @@
   }
 }
 
-:global(.site-footer) {
-  position: relative;
-  z-index: 1;
-  padding: 24px 16px;
-  margin-top: 24px;
-  border-top: 1px solid rgba(255, 240, 200, 0.16);
-  background: linear-gradient(180deg, rgba(5, 7, 8, 0.12), rgba(5, 7, 8, 0.56));
-  color: rgba(245, 232, 200, 0.68);
-  font-size: 0.84rem;
-  text-align: center;
+/* Theme-token consumers stay with the report route. */
+:global(.report-field input) {
+  background: var(--legal-report-field-input-background);
 }
 
-:global(.site-footer-links) {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 8px;
+:global(.report-field textarea) {
+  background: var(--legal-report-field-textarea-background);
 }
 
-:global(.site-footer-links a) {
-  display: inline-flex;
-  align-items: center;
-  min-height: 32px;
-  padding: 0 4px;
-  color: rgba(245, 232, 200, 0.92);
-  font-weight: 700;
-  text-decoration: none;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.44);
+:global(.report-review) {
+  background: var(--legal-report-review-background);
 }
 
-:global(.site-footer-links a:hover) {
-  color: #d19a42;
-  text-decoration: underline;
+:global(.report-review-body) {
+  background: var(--legal-report-review-body-background);
 }
 
-:global(.site-footer-tagline) {
-  margin: 8px 0 0;
-  color: rgba(245, 232, 200, 0.48);
-  font-size: 0.78rem;
-  font-weight: 650;
-  letter-spacing: 0.04em;
+:global(.report-success-reference) {
+  background: var(--legal-report-success-reference-background);
 }
 
-:global(html[data-theme="light"] .site-footer) {
-  border-top-color: rgba(83, 52, 31, 0.18);
-  background: linear-gradient(180deg, rgba(255, 246, 226, 0.24), rgba(132, 47, 43, 0.08));
-  color: rgba(42, 27, 16, 0.58);
-}
-
-:global(html[data-theme="light"] .site-footer-links a) {
-  color: rgba(83, 52, 31, 0.9);
-  text-shadow: none;
-}
-
-:global(html[data-theme="light"] .site-footer-tagline) {
-  color: rgba(42, 27, 16, 0.52);
+:global(.report-success) {
+  background: var(--legal-report-success-background);
 }
 
 /* ============================== */

@@ -6,7 +6,6 @@ import { createDatabase, getAchievementsForUser, getGameHistoryForUser } from "@
 import { ACHIEVEMENTS } from "@werewolf/shared";
 import { JsonLd } from "@/components/JsonLd";
 import { PrivacyDashboard, type PrivacyUserSnapshot } from "@/components/privacy/PrivacyDashboard";
-import { ResourceHints } from "@/components/resource-hints";
 import { auth } from "@/lib/auth";
 import { absoluteUrl, routeMetadata } from "@/lib/seo";
 
@@ -84,10 +83,7 @@ export default async function PrivacyPage({ searchParams }: PrivacyPageProps) {
   };
 
   return (
-    <main className="shell privacy-shell">
-      <ResourceHints
-        images={["/game-art/legal/privacy-banner.webp", "/game-art/legal/trust-flow-diagram.webp"]}
-      />
+    <main className="shell legal-page-shell privacy-shell">
       <JsonLd data={jsonLd} />
       <PrivacyDashboard lastUpdated={LAST_UPDATED} userSnapshot={snapshot} />
     </main>

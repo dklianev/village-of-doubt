@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { createDatabase, getGameTimelinesBatch, getRecentGameHistory } from "@werewolf/database";
+import { createDatabase, getPublicGameTimelinesBatch, getRecentGameHistory } from "@werewolf/database";
 import type { GameMode } from "@werewolf/shared";
 import { JsonLd } from "@/components/JsonLd";
 import { EvidenceWall } from "@/components/history/EvidenceWall";
 import { EvidenceWallSkeleton } from "@/components/skeleton";
 import type { HistoryGameView, HistoryTimelineEventView } from "@/lib/history-highlights";
+import { publicGameReference } from "@/lib/game-reference";
 import { absoluteUrl, routeMetadata } from "@/lib/seo";
 import "@/components/history/LegacyHistory.module.css";
 
@@ -78,7 +79,7 @@ async function loadHistory(visualHistory?: string): Promise<HistoryGameView[]> {
     const db = createDatabase(process.env.DATABASE_URL);
     const games = await getRecentGameHistory(db, HISTORY_SCAN_LIMIT);
     const endedGames = games.filter((game) => game.status === "ended").slice(0, HISTORY_CASE_LIMIT);
-    const timelinesMap = await getGameTimelinesBatch(
+    const timelinesMap = await getPublicGameTimelinesBatch(
       db,
       endedGames.map((game) => game.id),
       6,
@@ -86,7 +87,7 @@ async function loadHistory(visualHistory?: string): Promise<HistoryGameView[]> {
 
     return endedGames.map((game) => ({
       id: game.id,
-      code: game.code,
+      code: publicGameReference(game.id),
       config: game.config,
       status: game.status,
       winnerTeam: game.winnerTeam,
@@ -111,10 +112,6 @@ function serializeTimelineEvent(event: {
   round: number;
   phase: string;
   type: string;
-  actorId: string | null;
-  targetId: string | null;
-  visibility: string;
-  payload: unknown;
   createdAt: Date;
 }): HistoryTimelineEventView {
   return {
@@ -122,10 +119,6 @@ function serializeTimelineEvent(event: {
     round: event.round,
     phase: event.phase,
     type: event.type,
-    actorId: event.actorId,
-    targetId: event.targetId,
-    visibility: event.visibility,
-    payload: event.payload,
     createdAt: event.createdAt.toISOString(),
   };
 }
@@ -185,10 +178,6 @@ function fixtureEvent(index: number, offset: number, round: number, type: string
     round,
     phase: type === "game_over" ? "game_over" : "resolution",
     type,
-    actorId: null,
-    targetId: null,
-    visibility: "public",
-    payload: {},
     createdAt: createdAt.toISOString(),
   };
 }

@@ -17,16 +17,6 @@
   transform: translateX(-50%);
 }
 
-:global(.landing-shell),
-:global(.game-home-shell),
-:global(.lobby-shell),
-:global(.history-shell),
-:global(.roles-shell),
-:global(.rules-shell),
-:global(.auth-shell),
-:global(.sign-in-shell),
-:global(.tutorial-shell),
-
 :global(.evidence-wall-header) {
   max-width: 900px;
   padding: clamp(28px, 5vw, 56px) 0 0;
@@ -105,7 +95,11 @@
 
 :global(.case-file) {
   position: relative;
+  display: flex;
+  min-width: 0;
   min-height: 230px;
+  overflow: hidden;
+  flex-direction: column;
   border: 1px solid rgba(83, 52, 31, 0.28);
   border-left: 3px solid rgba(83, 52, 31, 0.3);
   border-radius: 6px;
@@ -203,9 +197,12 @@
 
 :global(.case-file-verdict) {
   margin-top: 22px;
-  font-size: clamp(1.65rem, 2.6vw, 2.35rem);
+  max-width: 100%;
+  font-size: clamp(1.55rem, 2.1vw, 2.05rem);
   font-weight: 950;
-  line-height: 0.98;
+  line-height: 1.02;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
 }
 
 :global(.case-file-mode) {
@@ -249,7 +246,7 @@
 }
 
 :global(.case-file-foot) {
-  margin-top: 22px;
+  margin-top: auto;
   padding-top: 16px;
   border-top: 1px solid rgba(83, 52, 31, 0.18);
 }
@@ -369,16 +366,24 @@
 :global(html[data-theme="light"] .history-shell.evidence-shell::before) {
   display: block;
   background:
-    linear-gradient(115deg, rgba(248, 236, 210, 0.72), rgba(229, 205, 166, 0.52)),
+    linear-gradient(115deg, rgba(248, 236, 210, 0.38), rgba(229, 205, 166, 0.22)),
     var(--page-art, var(--art-history)) center / cover no-repeat;
-  filter: saturate(0.72) contrast(0.95);
-  opacity: 0.38;
+  filter: saturate(0.9) contrast(1.02);
+  opacity: 0.86;
 }
 
 :global(html[data-theme="light"] .evidence-shell::after) {
   background:
     radial-gradient(ellipse at 18% 22%, rgba(169, 111, 34, 0.14), transparent 32rem),
-    linear-gradient(180deg, rgba(255, 247, 229, 0.72), rgba(255, 247, 229, 0.94));
+    linear-gradient(180deg, rgba(255, 247, 229, 0.38), rgba(255, 247, 229, 0.68));
+}
+
+:global(.history-shell.evidence-shell::before) {
+  position: fixed;
+  inset: 64px 0 0;
+  width: auto;
+  min-height: 0;
+  transform: none;
 }
 
 :global(html[data-theme="light"] .evidence-wall-header h1),
@@ -427,6 +432,13 @@
 }
 
 @media (min-width: 1440px) {
+  :global(.evidence-wall) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 56px 36px;
+  }
+}
+
+@media (min-width: 1720px) {
   :global(.evidence-wall) {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
@@ -864,39 +876,6 @@
 
 :global(.btn:hover:not(:disabled)::before) {
   transform: translateX(280%) rotate(18deg);
-}
-
-:global(.role-card) {
-  --role-art: image-set(url("/game-art/card-back-secret.webp") type("image/webp"), url("/game-art/card-back-secret.png") type("image/png"));
-  min-height: 360px;
-  padding-right: clamp(1.5rem, 6vw, 9rem);
-  background:
-    linear-gradient(105deg, rgba(255, 247, 229, 0.98) 0%, rgba(236, 207, 151, 0.96) 48%, rgba(62, 30, 24, 0.3) 100%),
-    var(--texture-paper) center / 540px 540px;
-}
-
-:global(.role-card::before) {
-  z-index: 2;
-  border-color: rgba(132, 47, 43, 0.18);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.24);
-}
-
-:global(.role-card::after) {
-  position: absolute;
-  inset: 0 0 0 auto;
-  z-index: 1;
-  width: min(34%, 280px);
-  background:
-    linear-gradient(90deg, rgba(255, 247, 229, 0.95), rgba(255, 247, 229, 0.12) 38%, transparent 64%),
-    var(--role-art) center / cover no-repeat;
-  content: "";
-  filter: saturate(0.92) contrast(1.06);
-  pointer-events: none;
-}
-
-:global(.role-card > *) {
-  position: relative;
-  z-index: 3;
 }
 
 :global(.role-sigil) {

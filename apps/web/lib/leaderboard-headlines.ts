@@ -1,4 +1,5 @@
 export interface LeaderboardEntry {
+  id?: string;
   displayName: string;
   games: number;
   wins: number;

@@ -6,6 +6,7 @@ import { ChevronDown, Copy, Flame, Search, ThumbsDown, ThumbsUp } from "lucide-r
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FaqCategory, FaqItem } from "@/lib/faq-data";
 import { copyTextToClipboard } from "@/lib/clipboard";
+import { safeLocalStorage } from "@/lib/safe-storage";
 import { CategoryIcon } from "./FaqCategoryIcon";
 import { FaqAnswerRenderer } from "./FaqAnswerRenderer";
 import "./LegacyFaq.module.css";
@@ -34,14 +35,7 @@ export function FaqHearth({ items }: { items: readonly FaqItem[] }) {
   const initialQueryState = useRef<"pending" | "opening" | "ready">("pending");
 
   useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(STORAGE_FEEDBACK_KEY);
-      if (raw) {
-        setFeedback(JSON.parse(raw) as FeedbackState);
-      }
-    } catch {
-      // Ignore corrupt local storage.
-    }
+    setFeedback(safeLocalStorage.getJson<FeedbackState>(STORAGE_FEEDBACK_KEY) ?? {});
   }, []);
 
   useEffect(() => {
@@ -126,11 +120,7 @@ export function FaqHearth({ items }: { items: readonly FaqItem[] }) {
   const setFeedbackFor = useCallback((slug: string, value: "up" | "down") => {
     setFeedback((current) => {
       const next = current[slug] === value ? { ...current, [slug]: undefined } : { ...current, [slug]: value };
-      try {
-        window.localStorage.setItem(STORAGE_FEEDBACK_KEY, JSON.stringify(next));
-      } catch {
-        // Local storage can be blocked in private browsing contexts.
-      }
+      safeLocalStorage.setJson(STORAGE_FEEDBACK_KEY, next);
       return next;
     });
   }, []);

@@ -5,10 +5,6 @@ export interface HistoryTimelineEventView {
   round: number;
   phase: string;
   type: string;
-  actorId: string | null;
-  targetId: string | null;
-  visibility: string;
-  payload: unknown;
   createdAt: string;
 }
 

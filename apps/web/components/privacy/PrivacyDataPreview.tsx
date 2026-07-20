@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
+import { downloadCompleteAccountExport } from "@/components/account/AccountDataExport";
 import type { PrivacyUserSnapshot } from "./PrivacyDashboard";
 
 interface PrivacyDataPreviewProps {
@@ -8,9 +10,23 @@ interface PrivacyDataPreviewProps {
 }
 
 export function PrivacyDataPreview({ snapshot }: PrivacyDataPreviewProps) {
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState("");
   const memberSinceLabel = snapshot.memberSince
     ? new Intl.DateTimeFormat("bg-BG", { day: "numeric", month: "long", year: "numeric" }).format(snapshot.memberSince)
     : "—";
+
+  async function exportData() {
+    setExporting(true);
+    setExportError("");
+    try {
+      await downloadCompleteAccountExport();
+    } catch {
+      setExportError("Не успяхме да подготвим данните. Опитай отново.");
+    } finally {
+      setExporting(false);
+    }
+  }
 
   return (
     <section className="privacy-section privacy-section-preview">
@@ -108,11 +124,18 @@ export function PrivacyDataPreview({ snapshot }: PrivacyDataPreviewProps) {
       </dl>
 
       <div className="privacy-data-actions">
-        <a href="/api/account/export" className="privacy-data-action privacy-data-action-primary">
-          <span>Изтегли всичките данни</span>
+        <button
+          type="button"
+          className="privacy-data-action privacy-data-action-primary"
+          onClick={exportData}
+          disabled={exporting}
+          aria-busy={exporting}
+        >
+          <span>{exporting ? "Подготвяме данните..." : "Изтегли всичките данни"}</span>
           <span className="privacy-data-action-hint">JSON файл със всичко, което знаем</span>
-        </a>
+        </button>
       </div>
+      {exportError ? <p className="privacy-export-error" role="alert">{exportError}</p> : null}
 
       <p className="privacy-data-disclaimer">
         Не виждаме твоя IP адрес след сесия, не пазим клавишни последователности, не четем чат

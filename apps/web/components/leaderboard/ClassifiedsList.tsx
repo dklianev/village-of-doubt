@@ -8,7 +8,7 @@ export function ClassifiedsList({ entries, startRank }: { entries: LeaderboardEn
       </h3>
       <ul className="classifieds-list">
         {entries.map((entry, index) => (
-          <li key={entry.displayName} className="classifieds-item">
+          <li key={entry.id ?? `${entry.displayName}-${startRank + index}`} className="classifieds-item">
             <strong>
               № {startRank + index} · {entry.displayName}
             </strong>
