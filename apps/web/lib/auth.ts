@@ -3,15 +3,44 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError, createAuthMiddleware } from "better-auth/api";
 import { DEFAULT_AVATAR_ID, isAvatarId } from "@werewolf/shared";
+import { normalizeExternalDisplayName, validateDisplayName } from "./display-name";
 import { sendEmail } from "./email";
 import { renderResetPasswordEmail, renderVerifyEmail } from "./email-templates";
 
 const databaseUrl = process.env.DATABASE_URL;
 const db = databaseUrl ? createDatabase(databaseUrl) : undefined;
+const DEVELOPMENT_AUTH_SECRET = "dev-only-secret-replace-before-production-32-chars";
+const PLACEHOLDER_SECRET_PATTERN = /dev-only|replace|change-me|placeholder/i;
+export const ACCOUNT_DELETE_FRESH_AGE_SECONDS = 10 * 60;
+export const AUTH_RATE_LIMIT_RULES = {
+  "/sign-in/email": { window: 60, max: 10 },
+  "/sign-up/email": { window: 60 * 60, max: 5 },
+  "/sign-in/social": { window: 60, max: 20 },
+  "/callback/*": { window: 60, max: 30 },
+  "/request-password-reset": { window: 60 * 60, max: 5 },
+  "/send-verification-email": { window: 60 * 60, max: 5 },
+  "/reset-password": { window: 5 * 60, max: 10 },
+} as const;
+
+type AuthSecretEnvironment = {
+  NODE_ENV?: string;
+  BETTER_AUTH_SECRET?: string;
+};
+
+export function resolveBetterAuthSecret(environment: AuthSecretEnvironment = process.env): string {
+  const secret = environment.BETTER_AUTH_SECRET?.trim();
+
+  if (environment.NODE_ENV === "production") {
+    if (!secret || secret.length < 32 || PLACEHOLDER_SECRET_PATTERN.test(secret)) {
+      throw new Error("BETTER_AUTH_SECRET must be a non-placeholder secret with at least 32 characters in production.");
+    }
+  }
+
+  return secret || DEVELOPMENT_AUTH_SECRET;
+}
 
 export const auth = betterAuth({
-  // Docker/production must provide real values; these fallbacks keep local builds deterministic.
-  secret: process.env.BETTER_AUTH_SECRET ?? "dev-only-secret-replace-before-production-32-chars",
+  secret: resolveBetterAuthSecret(),
   baseURL: process.env.BETTER_AUTH_URL ?? "http://localhost:3000",
   trustedOrigins: buildTrustedOrigins(),
   database: db
@@ -19,6 +48,13 @@ export const auth = betterAuth({
         provider: "pg",
       })
     : undefined,
+  rateLimit: {
+    enabled: process.env.NODE_ENV === "production",
+    window: 60,
+    max: 100,
+    storage: "memory",
+    customRules: AUTH_RATE_LIMIT_RULES,
+  },
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
@@ -49,6 +85,21 @@ export const auth = betterAuth({
       await sendEmail({ to: user.email, ...template });
     },
   },
+  session: {
+    freshAge: ACCOUNT_DELETE_FRESH_AGE_SECONDS,
+  },
+  databaseHooks: {
+    user: {
+      create: {
+        before: async (newUser) => ({
+          data: {
+            ...newUser,
+            name: normalizeExternalDisplayName(newUser.name),
+          },
+        }),
+      },
+    },
+  },
   user: {
     additionalFields: {
       avatarId: {
@@ -59,16 +110,27 @@ export const auth = betterAuth({
       },
     },
     deleteUser: {
-      enabled: true,
+      // The app route performs auth cleanup and history anonymization in one DB transaction.
+      enabled: false,
     },
   },
   hooks: {
     before: createAuthMiddleware(async (ctx) => {
-      if (ctx.path !== "/update-user" || !ctx.body) {
+      if (!["/sign-up/email", "/update-user"].includes(ctx.path) || !ctx.body) {
         return;
       }
 
       const body = ctx.body as Record<string, unknown>;
+      const nextBody = { ...body };
+
+      if (Object.hasOwn(body, "name")) {
+        const result = validateDisplayName(body.name);
+        if (!result.ok) {
+          throw new APIError("BAD_REQUEST", { message: result.error });
+        }
+        nextBody.name = result.displayName;
+      }
+
       if (Object.hasOwn(body, "avatarId") && !isAvatarId(body.avatarId)) {
         throw new APIError("BAD_REQUEST", { message: "Избраният портрет не е наличен." });
       }
@@ -76,7 +138,9 @@ export const auth = betterAuth({
       return {
         context: {
           ...ctx,
-          body: { ...body },
+          body: {
+            ...nextBody,
+          },
         },
       };
     }),

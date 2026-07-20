@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { ResourceHints } from "@/components/resource-hints";
 import { SignInStage } from "@/components/sign-in/SignInStage";
 import { routeMetadata } from "@/lib/seo";
+import { safeInternalRedirect } from "@/lib/safe-internal-redirect";
 
 export const metadata: Metadata = routeMetadata({
   title: "Вход — седни на масата",
@@ -25,15 +26,8 @@ export default async function SignInPage({
     <main className="shell sign-in-shell">
       <ResourceHints images={["/game-art/sign-in-table.webp"]} />
       <Suspense fallback={<div className="sign-in-loading">Подреждаме масата...</div>}>
-        <SignInStage redirectTo={safeRedirect(redirect)} />
+        <SignInStage redirectTo={safeInternalRedirect(redirect)} />
       </Suspense>
     </main>
   );
-}
-
-function safeRedirect(value: string | undefined) {
-  if (!value || !value.startsWith("/") || value.startsWith("//")) {
-    return "/";
-  }
-  return value;
 }

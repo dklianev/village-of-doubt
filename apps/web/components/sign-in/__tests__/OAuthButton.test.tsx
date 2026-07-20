@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { OAuthButton } from "../OAuthButton";
 
 vi.mock("@/lib/auth-client", () => ({
@@ -12,6 +12,10 @@ vi.mock("@/lib/auth-client", () => ({
 }));
 
 describe("OAuthButton", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("shows the Google label", () => {
     render(<OAuthButton provider="google" redirectTo="/" />);
 
@@ -33,7 +37,19 @@ describe("OAuthButton", () => {
 
     expect(authClient.signIn.social).toHaveBeenCalledWith({
       provider: "google",
-      callbackURL: "/play/ABC123",
+      callbackURL: "/tutorial?welcome=1&redirect=%2Fplay%2FABC123",
     });
+  });
+
+  it("shows a Bulgarian error when the provider cannot open", async () => {
+    const { authClient } = await import("@/lib/auth-client");
+    vi.mocked(authClient.signIn.social).mockRejectedValueOnce(new Error("network"));
+    const user = userEvent.setup();
+    render(<OAuthButton provider="discord" redirectTo="/" />);
+
+    await user.click(screen.getByRole("button", { name: "Продължи с Discord" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Не успяхме да отворим Discord. Опитай отново.");
+    expect(screen.getByRole("button", { name: "Продължи с Discord" })).toBeEnabled();
   });
 });

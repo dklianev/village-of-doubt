@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { resolveWelcomeRedirect } from "./welcome-redirect";
 
@@ -12,17 +12,23 @@ interface Props {
 const CONFIG = {
   google: {
     label: "Продължи с Google",
+    pendingLabel: "Отваряме Google...",
+    error: "Не успяхме да отворим Google. Опитай отново.",
     accent: "warm",
   },
   discord: {
     label: "Продължи с Discord",
+    pendingLabel: "Отваряме Discord...",
+    error: "Не успяхме да отворим Discord. Опитай отново.",
     accent: "cool",
   },
 } as const;
 
 export function OAuthButton({ provider, redirectTo }: Props) {
   const [isPending, setPending] = useState(false);
+  const [status, setStatus] = useState("");
   const config = CONFIG[provider];
+  const statusId = useId();
 
   useEffect(() => {
     if (!isPending) {
@@ -47,34 +53,48 @@ export function OAuthButton({ provider, redirectTo }: Props) {
 
   async function start() {
     setPending(true);
+    setStatus("");
     try {
-      await authClient.signIn.social({
+      const result = await authClient.signIn.social({
         provider,
         callbackURL: resolveWelcomeRedirect(redirectTo),
       });
+      if (result.error) {
+        setStatus(config.error);
+        setPending(false);
+      }
     } catch (error) {
       console.error(`[oauth:${provider}]`, error);
+      setStatus(config.error);
       setPending(false);
     }
   }
 
   return (
-    <button
-      type="button"
-      className="oauth-button"
-      data-provider={provider}
-      data-accent={config.accent}
-      onClick={start}
-      disabled={isPending}
-      aria-busy={isPending}
-      aria-label={config.label}
-    >
-      <span className="oauth-button-logo" data-provider={provider} aria-hidden>
-        {provider === "google" ? <GoogleG /> : <DiscordMark />}
-      </span>
-      <span className="oauth-button-label">{config.label}</span>
-      {isPending ? <span className="oauth-button-spinner" aria-hidden /> : null}
-    </button>
+    <div className="oauth-option">
+      <button
+        type="button"
+        className="oauth-button"
+        data-provider={provider}
+        data-accent={config.accent}
+        onClick={start}
+        disabled={isPending}
+        aria-busy={isPending}
+        aria-label={isPending ? config.pendingLabel : config.label}
+        aria-describedby={status ? statusId : undefined}
+      >
+        <span className="oauth-button-logo" data-provider={provider} aria-hidden>
+          {provider === "google" ? <GoogleG /> : <DiscordMark />}
+        </span>
+        <span className="oauth-button-label">{isPending ? config.pendingLabel : config.label}</span>
+        {isPending ? <span className="oauth-button-spinner" aria-hidden /> : null}
+      </button>
+      {status ? (
+        <p id={statusId} className="oauth-button-status" role="alert">
+          {status}
+        </p>
+      ) : null}
+    </div>
   );
 }
 

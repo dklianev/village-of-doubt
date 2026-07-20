@@ -16,7 +16,7 @@ type RoomPreview = {
   }>;
 };
 
-export const revalidate = 5;
+export const dynamic = "force-dynamic";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ code: string }> }) {
   const { code: rawCode } = await params;
@@ -28,26 +28,42 @@ export async function GET(_request: Request, { params }: { params: Promise<{ cod
 
   try {
     const response = await fetch(`${gameServerHttpUrl()}/rooms/${code}/preview`, {
-      next: { revalidate: 5 },
+      cache: "no-store",
       signal: AbortSignal.timeout(2000),
     });
 
-    if (!response.ok) {
+    if (response.status === 404) {
       return missingRoomPreview();
+    }
+    if (!response.ok) {
+      return unavailableRoomPreview();
     }
 
     const data = toRoomPreview(await response.json());
     if (!data) {
-      return missingRoomPreview();
+      return unavailableRoomPreview();
     }
 
     return NextResponse.json(data, {
       status: 200,
-      headers: { "Cache-Control": "private, max-age=5, stale-while-revalidate=10" },
+      headers: { "Cache-Control": "private, no-store" },
     });
   } catch {
-    return missingRoomPreview();
+    return unavailableRoomPreview();
   }
+}
+
+function unavailableRoomPreview() {
+  return NextResponse.json(
+    { status: "unavailable" },
+    {
+      status: 503,
+      headers: {
+        "Cache-Control": "private, no-store",
+        "Retry-After": "3",
+      },
+    },
+  );
 }
 
 function missingRoomPreview() {
@@ -55,7 +71,7 @@ function missingRoomPreview() {
     { status: "missing" } satisfies Partial<RoomPreview>,
     {
       status: 200,
-      headers: { "Cache-Control": "private, max-age=5, stale-while-revalidate=10" },
+      headers: { "Cache-Control": "private, no-store" },
     },
   );
 }

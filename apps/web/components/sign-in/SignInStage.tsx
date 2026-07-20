@@ -1,3 +1,4 @@
+import { SceneCard } from "@werewolf/ui/server";
 import { EmailPasswordForm } from "@/components/sign-in/EmailPasswordForm";
 import { OAuthButton } from "@/components/sign-in/OAuthButton";
 import "@/components/sign-in/LegacySignIn.module.css";
@@ -20,39 +21,60 @@ export function SignInStage({ redirectTo }: { redirectTo: string }) {
 
   return (
     <section className="sign-in-stage">
-      <div className="sign-in-table" aria-hidden />
+      <SceneCard
+        density="lg"
+        background={{
+          image: "var(--art-sign-in)",
+          overlay: "veil",
+          focalX: 42,
+          focalY: 50,
+          minHeight: "100%",
+        }}
+      >
+        <div className="sign-in-stage-frame">
+          <header className="sign-in-scene-copy">
+            <p className="sign-in-kicker">{copy.kicker}</p>
+            <h1 aria-label={title}>
+              <span>{copy.title[0]}</span>{" "}
+              <span>{copy.title[1]}</span>
+            </h1>
+            <p className="sign-in-subtitle">{copy.subtitle}</p>
+          </header>
 
-      <article className="sign-in-plaque">
-        <header className="sign-in-plaque-head">
-          <p className="sign-in-kicker">{copy.kicker}</p>
-          <h1 aria-label={title}>
-            <span>{copy.title[0]}</span>{" "}
-            <span>{copy.title[1]}</span>
-          </h1>
-          <p className="sign-in-subtitle">{copy.subtitle}</p>
-        </header>
+          <section className="sign-in-ledger" aria-labelledby="sign-in-ledger-title">
+            <span className="sign-in-ledger-seal" aria-hidden>
+              В
+            </span>
+            <span className="sign-in-ledger-stitch" aria-hidden />
+            <header className="sign-in-form-head">
+              <p className="sign-in-ledger-eyebrow">ВХОД</p>
+              <h2 id="sign-in-ledger-title">Отвори досието си</h2>
+              <p>Избери бърз вход или използвай имейл и парола.</p>
+            </header>
 
-        <div className="sign-in-oauth">
-          <OAuthButton provider="google" redirectTo={redirectTo} />
-          <OAuthButton provider="discord" redirectTo={redirectTo} />
+            <div className="sign-in-oauth">
+              <OAuthButton provider="google" redirectTo={redirectTo} />
+              <OAuthButton provider="discord" redirectTo={redirectTo} />
+            </div>
+
+            <div className="sign-in-divider" role="separator" aria-label="или с имейл">
+              <span>или с имейл</span>
+            </div>
+
+            <EmailPasswordForm redirectTo={redirectTo} />
+
+            <footer className="sign-in-foot">
+              <a href="/privacy" className="sign-in-foot-link">
+                Поверителност
+              </a>
+              <span aria-hidden>·</span>
+              <a href="/terms" className="sign-in-foot-link">
+                Условия
+              </a>
+            </footer>
+          </section>
         </div>
-
-        <div className="sign-in-divider" role="separator" aria-label="или с имейл">
-          <span>или с имейл</span>
-        </div>
-
-        <EmailPasswordForm redirectTo={redirectTo} />
-
-        <footer className="sign-in-foot">
-          <a href="/privacy" className="sign-in-foot-link">
-            Поверителност
-          </a>
-          <span aria-hidden>·</span>
-          <a href="/terms" className="sign-in-foot-link">
-            Условия
-          </a>
-        </footer>
-      </article>
+      </SceneCard>
     </section>
   );
 }

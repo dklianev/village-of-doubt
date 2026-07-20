@@ -6,7 +6,7 @@ import {
   createDatabase,
   getAchievementsForUser,
   getGameHistoryForUser,
-  getPlayerRolesInGames,
+  getPlayerOutcomesInGames,
 } from "@werewolf/database";
 import { ACHIEVEMENTS, normalizeAvatarId, type GameMode, type WinnerTeam } from "@werewolf/shared";
 import { AccountDashboard } from "@/components/account/AccountDashboard";
@@ -23,6 +23,7 @@ export const metadata: Metadata = {
 
 type AccountHistoryGame = Awaited<ReturnType<typeof getGameHistoryForUser>>[number] & {
   playerRole: string | null;
+  playerWon: boolean;
 };
 
 type AccountDashboardProps = ComponentProps<typeof AccountDashboard>;
@@ -61,10 +62,11 @@ export default async function AccountPage({
       achievements = achievementRows;
 
       const gameIds = historyRows.map((game) => game.id);
-      const rolesByGameId = await getPlayerRolesInGames(db, session.user.id, gameIds);
+      const outcomesByGameId = await getPlayerOutcomesInGames(db, session.user.id, gameIds);
       games = historyRows.map((game) => ({
         ...game,
-        playerRole: rolesByGameId.get(game.id) ?? null,
+        playerRole: outcomesByGameId.get(game.id)?.role ?? null,
+        playerWon: outcomesByGameId.get(game.id)?.won ?? false,
       }));
       activityState = historyRows.some((game) => game.status === "ended") ? "ready" : "empty";
     } catch (error) {
@@ -80,7 +82,7 @@ export default async function AccountPage({
 
   const endedGames = games.filter((game) => game.status === "ended");
   const stats = computePlayerStats(
-    endedGames.map((game) => ({ game, role: game.playerRole })),
+    endedGames.map((game) => ({ game, role: game.playerRole, won: game.playerWon })),
     memberSince,
   );
 

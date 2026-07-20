@@ -1,10 +1,26 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { BoundedMemoryRateLimitStore } from "./lib/rate-limit";
 
-const UNAUTHENTICATED_LIMIT = 10;
-const AUTHENTICATED_LIMIT = 60;
+// This outer guard is deliberately above the authenticated route limits. A
+// supported 30-player party may share one NAT address and legitimately burst
+// during room entry; the route still applies stricter per-source/per-user caps.
+const UNAUTHENTICATED_LIMIT = 120;
 const WINDOW_MS = 60_000;
+const MAX_BUCKETS = 10_000;
 
-const buckets = new Map<string, { count: number; resetAt: number }>();
+const proxyRateLimitGuard = createProxyRateLimitGuard();
+
+export function createProxyRateLimitGuard(options: { maxEntries?: number; windowMs?: number } = {}) {
+  const store = new BoundedMemoryRateLimitStore(options.maxEntries ?? MAX_BUCKETS);
+  const windowMs = options.windowMs ?? WINDOW_MS;
+
+  return {
+    check(key: string, limit: number, now = Date.now()) {
+      return store.consume({ key, limit, windowMs, now });
+    },
+    entryCount: () => store.entryCount(),
+  };
+}
 
 export function proxy(request: NextRequest) {
   if (process.env.NODE_ENV !== "production") {
@@ -13,25 +29,18 @@ export function proxy(request: NextRequest) {
 
   const now = Date.now();
   const identity = requestIdentity(request);
-  const authenticated = hasAuthCookie(request);
-  const limit = authenticated ? AUTHENTICATED_LIMIT : UNAUTHENTICATED_LIMIT;
-  const key = `${authenticated ? "auth" : "guest"}:${identity}`;
-  const current = buckets.get(key);
-  const bucket = current && current.resetAt > now ? current : { count: 0, resetAt: now + WINDOW_MS };
-  bucket.count += 1;
-  buckets.set(key, bucket);
+  const rateLimit = proxyRateLimitGuard.check(identity, UNAUTHENTICATED_LIMIT, now);
 
-  if (bucket.count <= limit) {
+  if (rateLimit.allowed) {
     return NextResponse.next();
   }
 
-  const retryAfterSeconds = Math.max(1, Math.ceil((bucket.resetAt - now) / 1000));
   return NextResponse.json(
     { error: "Твърде много заявки. Опитай отново след малко." },
     {
       status: 429,
       headers: {
-        "Retry-After": String(retryAfterSeconds),
+        "Retry-After": String(rateLimit.retryAfterSeconds),
       },
     },
   );
@@ -44,8 +53,4 @@ export const config = {
 function requestIdentity(request: NextRequest) {
   const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
   return forwardedFor || request.headers.get("x-real-ip") || request.headers.get("cf-connecting-ip") || "unknown";
-}
-
-function hasAuthCookie(request: NextRequest) {
-  return Boolean(request.cookies.get("better-auth.session_token") || request.cookies.get("__Secure-better-auth.session_token"));
 }

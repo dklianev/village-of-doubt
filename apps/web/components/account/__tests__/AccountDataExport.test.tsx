@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   AccountDataExport,
   buildCompleteAccountExport,
+  fetchCompleteAccountExport,
   readAccountExportSettings,
 } from "../AccountDataExport";
 
@@ -59,7 +60,69 @@ describe("AccountDataExport", () => {
       "Не успяхме да подготвим данните. Опитай отново.",
     );
   });
+
+  it("изтегля всички страници и слива събитията без дублиране", async () => {
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(exportResponse([exportGame("game-1", ["event-1"])], true, true, 1, 1))
+      .mockResolvedValueOnce(exportResponse([exportGame("game-1", ["event-2", "event-1"])], true, false, 1, 2))
+      .mockResolvedValueOnce(exportResponse([exportGame("game-2", ["event-3"])], false, false, 2, 1));
+
+    const result = await fetchCompleteAccountExport(fetcher);
+
+    expect(fetcher).toHaveBeenCalledTimes(3);
+    expect(fetcher.mock.calls.map(([url]) => String(url))).toEqual([
+      expect.stringContaining("page=1&pageSize=100&eventPage=1&eventPageSize=1000"),
+      expect.stringContaining("page=1&pageSize=100&eventPage=2&eventPageSize=1000"),
+      expect.stringContaining("page=2&pageSize=100&eventPage=1&eventPageSize=1000"),
+    ]);
+    expect(result.data.games).toEqual([
+      expect.objectContaining({
+        id: "game-1",
+        eventCount: 2,
+        events: [{ id: "event-1" }, { id: "event-2" }],
+      }),
+      expect.objectContaining({ id: "game-2", events: [{ id: "event-3" }] }),
+    ]);
+    expect(result.data.pagination).toEqual(
+      expect.objectContaining({ complete: true, requests: 3, gamePages: 2 }),
+    );
+  });
 });
+
+function exportGame(id: string, eventIds: string[]) {
+  return { id, events: eventIds.map((eventId) => ({ id: eventId })), eventCount: eventIds.length };
+}
+
+function exportResponse(
+  games: ReturnType<typeof exportGame>[],
+  hasMore: boolean,
+  eventsHasMore: boolean,
+  page: number,
+  eventPage: number,
+) {
+  return new Response(
+    JSON.stringify({
+      profile: { id: "user-1" },
+      achievements: [],
+      games,
+      pagination: {
+        page,
+        pageSize: 100,
+        hasMore,
+        eventPage,
+        eventPageSize: 1_000,
+        eventsHasMore,
+      },
+    }),
+    {
+      headers: {
+        "Content-Type": "application/json",
+        "Content-Disposition": 'attachment; filename="account.json"',
+      },
+    },
+  );
+}
 
 function memoryStorage(entries: Record<string, string>): Pick<Storage, "getItem"> {
   return {

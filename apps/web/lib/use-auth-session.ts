@@ -13,6 +13,7 @@ export interface AuthSessionView {
 }
 
 let inFlightSessionRequest: Promise<AuthSessionView | null> | null = null;
+let inFlightFreshSessionRequest: Promise<AuthSessionView | null> | null = null;
 
 function fetchSession() {
   return fetch("/api/auth/get-session", {
@@ -32,7 +33,19 @@ function fetchSession() {
 
 function requestSession(options?: { fresh?: boolean }) {
   if (options?.fresh) {
-    return fetchSession();
+    if (!inFlightFreshSessionRequest) {
+      const request = fetchSession().finally(() => {
+        if (inFlightFreshSessionRequest === request) {
+          inFlightFreshSessionRequest = null;
+        }
+      });
+      inFlightFreshSessionRequest = request;
+    }
+    return inFlightFreshSessionRequest;
+  }
+
+  if (inFlightFreshSessionRequest) {
+    return inFlightFreshSessionRequest;
   }
 
   if (!inFlightSessionRequest) {

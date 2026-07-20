@@ -17,6 +17,10 @@ const FEEDBACK_HIDDEN_ROUTES = new Set([
   "/verify-email",
 ]);
 
+const FEEDBACK_HIDDEN_PREFIXES = ["/play/"];
+
 export function shouldMountFeedback(pathname: string) {
-  return !FEEDBACK_HIDDEN_ROUTES.has(pathname) && !pathname.startsWith("/api/");
+  return !FEEDBACK_HIDDEN_ROUTES.has(pathname)
+    && !FEEDBACK_HIDDEN_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+    && !pathname.startsWith("/api/");
 }

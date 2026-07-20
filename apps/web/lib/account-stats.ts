@@ -1,5 +1,5 @@
-import { getRoleTeam, ROLE_DEFINITIONS, type RoleCode } from "@werewolf/shared";
 import type { GameHistorySummary } from "@werewolf/database";
+import { getRoleTeam, ROLE_DEFINITIONS, type RoleCode } from "@werewolf/shared";
 
 export interface PlayerStats {
   totalGames: number;
@@ -11,12 +11,17 @@ export interface PlayerStats {
   memberSince: Date | null;
 }
 
-interface GameWithPlayerRole {
+interface GameWithPlayerOutcome {
   game: GameHistorySummary;
   role: string | null;
+  won: boolean;
 }
 
-export function computePlayerStats(rows: GameWithPlayerRole[], memberSince: Date | null): PlayerStats {
+function isKnownRole(role: string | null): role is RoleCode {
+  return Boolean(role && role in ROLE_DEFINITIONS);
+}
+
+export function computePlayerStats(rows: GameWithPlayerOutcome[], memberSince: Date | null): PlayerStats {
   const totalGames = rows.length;
   let totalWins = 0;
   let villageWins = 0;
@@ -32,17 +37,20 @@ export function computePlayerStats(rows: GameWithPlayerRole[], memberSince: Date
 
   for (const row of sorted) {
     const winner = row.game.winnerTeam;
-    const role = row.role;
-    const won = didPlayerWin(role, winner);
+    const won = row.won;
 
     if (won) {
       totalWins += 1;
       currentStreak += 1;
       longestStreak = Math.max(longestStreak, currentStreak);
-      if (winner === "village") {
+      const playerTeam = isKnownRole(row.role) ? getRoleTeam(row.role) : null;
+      if (winner === "village" && playerTeam === "village") {
         villageWins += 1;
       }
-      if (winner === "werewolves" || winner === "vampires" || winner === "mafia") {
+      if (
+        (winner === "werewolves" || winner === "vampires" || winner === "mafia")
+        && playerTeam === winner
+      ) {
         threatWins += 1;
       }
     } else {
@@ -53,25 +61,4 @@ export function computePlayerStats(rows: GameWithPlayerRole[], memberSince: Date
   const winRate = totalGames > 0 ? Math.round((totalWins / totalGames) * 100) : 0;
 
   return { totalGames, totalWins, winRate, villageWins, threatWins, longestStreak, memberSince };
-}
-
-function didPlayerWin(role: string | null, winner: string | null): boolean {
-  if (!role || !winner || winner === "draw") {
-    return false;
-  }
-  if (!isKnownRole(role)) {
-    return false;
-  }
-  if (winner === "maniac") {
-    return role === "maniac";
-  }
-  if (winner === "lovers") {
-    return false;
-  }
-
-  return getRoleTeam(role) === winner;
-}
-
-function isKnownRole(role: string): role is RoleCode {
-  return role in ROLE_DEFINITIONS;
 }
