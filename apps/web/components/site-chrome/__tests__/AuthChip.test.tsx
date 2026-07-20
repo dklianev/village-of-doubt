@@ -1,42 +1,58 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { AuthSessionView } from "@/lib/use-auth-session";
 import { AuthChip } from "../AuthChip";
 
-const refresh = vi.fn(() => Promise.resolve());
 const push = vi.fn();
+const authMocks = vi.hoisted(() => ({
+  signOut: vi.fn(() => Promise.resolve()),
+  session: { data: null as AuthSessionView | null, isPending: false, refresh: vi.fn() },
+}));
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push, refresh: vi.fn() }),
 }));
 
 vi.mock("@/lib/auth-client", () => ({
-  authClient: {
-    signOut: vi.fn(() => Promise.resolve()),
-  },
+  authClient: authMocks,
 }));
 
 vi.mock("@/lib/use-auth-session", () => ({
-  useAuthSession: vi.fn(),
+  useAuthSession: () => authMocks.session,
 }));
 
 describe("AuthChip", () => {
-  it("shows a sign-in link for guests", async () => {
-    const { useAuthSession } = await import("@/lib/use-auth-session");
-    vi.mocked(useAuthSession).mockReturnValue({ data: null, isPending: false, refresh });
+  beforeEach(() => {
+    authMocks.signOut.mockClear();
+    authMocks.session.data = null;
+    authMocks.session.isPending = false;
+  });
 
+  it("keeps a stable pending slot until the static shell resolves the client session", () => {
+    authMocks.session.isPending = true;
+
+    const { container, rerender } = render(<AuthChip initialSession={null} />);
+    const pendingSlot = container.querySelector(".auth-chip-slot");
+
+    expect(pendingSlot).toHaveAttribute("data-auth-state", "pending");
+    expect(screen.queryByRole("link", { name: /Влез/ })).not.toBeInTheDocument();
+
+    authMocks.session.isPending = false;
+    rerender(<AuthChip initialSession={null} />);
+
+    expect(container.querySelector(".auth-chip-slot")).toHaveAttribute("data-auth-state", "guest");
+    expect(screen.getByRole("link", { name: /Влез/ })).toBeInTheDocument();
+  });
+
+  it("shows a sign-in link for a resolved guest", () => {
     render(<AuthChip initialSession={null} />);
 
     expect(screen.getByRole("link", { name: /Влез/ })).toHaveAttribute("href", "/sign-in");
   });
 
   it("shows the user menu for an authenticated player", async () => {
-    const { useAuthSession } = await import("@/lib/use-auth-session");
-    vi.mocked(useAuthSession).mockReturnValue({
-      data: { user: { id: "user-1", name: "Анна", image: "" } },
-      isPending: false,
-      refresh,
-    });
+    authMocks.session.data = { user: { id: "user-1", name: "Анна", image: "" } };
     const user = userEvent.setup();
 
     render(<AuthChip initialSession={null} />);

@@ -1,12 +1,13 @@
 import { Suspense } from "react";
 import Image from "next/image";
-import { Display, Pill } from "@werewolf/ui/server";
+import { Display } from "@werewolf/ui/server";
 import type { GameFamily } from "@werewolf/shared";
 import { ResourceHints } from "@/components/resource-hints";
 import { ModeChoiceCards, type ModeChoiceGame } from "@/components/landing/ModeChoiceCards";
 import { UniversalHowToPlay } from "@/components/landing/UniversalHowToPlay";
 import { LiveTickerCard, type LiveStats } from "@/components/landing/LiveTickerCard";
 import { RecentEndingsCard, type Ending } from "@/components/landing/RecentEndingsCard";
+import { NextLinkPill } from "@/components/next-link-pill";
 import "@/components/landing/LandingSurface.module.css";
 
 export type LandingSession = { user: { id: string; name?: string | null } } | null;
@@ -39,11 +40,21 @@ export function LandingExperience({ initialSession }: { initialSession: LandingS
     <main className="shell landing-shell">
       <ResourceHints
         images={[
-          { href: "/game-art/bg-landing-hero-composited.webp?v=2", media: "(min-width: 721px)" },
+          {
+            href: "/game-art/bg-landing-hero-composited.avif?v=2",
+            media: "(min-width: 721px)",
+            type: "image/avif",
+            fetchPriority: "high",
+          },
           { href: "/game-art/bg-landing-ambient-composited.webp", media: "(min-width: 721px)" },
-          { href: "/game-art/mobile/bg-landing-hero-composited.webp?v=2", media: "(max-width: 720px)" },
+          { href: "/game-art/bg-lobby-tavern.webp", media: "(min-width: 721px)" },
+          {
+            href: "/game-art/mobile/bg-landing-hero-composited.webp?v=2",
+            media: "(max-width: 720px)",
+            fetchPriority: "high",
+          },
           { href: "/game-art/mobile/bg-landing-ambient-composited.webp", media: "(max-width: 720px)" },
-          { href: "/game-art/logo-landing-mark.webp" },
+          { href: "/game-art/mobile/bg-lobby-tavern.webp", media: "(max-width: 720px)" },
         ]}
       />
       <section className="card landing-hero-card rounded-[2rem] p-7">
@@ -98,12 +109,12 @@ function FinalLandingCta() {
           <p>Избери коя игра започва вечерта ти.</p>
         </div>
         <div className="landing-final-actions">
-          <Pill as="a" href="/werewolf" intent="faction" size="lg" shimmer tracked data-faction="werewolves">
+          <NextLinkPill href="/werewolf" intent="faction" size="lg" shimmer tracked data-faction="werewolves">
             Към върколаците
-          </Pill>
-          <Pill as="a" href="/mafia" intent="faction" size="lg" shimmer tracked data-faction="mafia">
+          </NextLinkPill>
+          <NextLinkPill href="/mafia" intent="faction" size="lg" shimmer tracked data-faction="mafia">
             Към мафията
-          </Pill>
+          </NextLinkPill>
         </div>
       </div>
     </section>

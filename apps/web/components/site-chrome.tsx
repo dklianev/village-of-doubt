@@ -2,7 +2,6 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -16,6 +15,7 @@ import {
 } from "lucide-react";
 import { AuthChip } from "@/components/site-chrome/AuthChip";
 import { getSoundEnabled, playCue, setSoundEnabled } from "@/lib/sound";
+import { safeLocalStorage } from "@/lib/safe-storage";
 import type { AuthSessionView } from "@/lib/use-auth-session";
 import "@/components/site-chrome/SiteChrome.module.css";
 
@@ -43,10 +43,9 @@ export default function SiteChrome({ initialSession }: { initialSession: AuthSes
   const [family, setFamily] = useState<ChromeFamily>("werewolves");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [drawerClosing, setDrawerClosing] = useState(false);
   const [mounted, setMounted] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const drawerCloseTimer = useRef<number | undefined>(undefined);
+  const drawerTriggerRef = useRef<HTMLButtonElement>(null);
 
   const routeFamily = familyFromPath(pathname);
   const activeFamily = routeFamily ?? family;
@@ -65,13 +64,12 @@ export default function SiteChrome({ initialSession }: { initialSession: AuthSes
   useEffect(() => {
     setDropdownOpen(false);
     setDrawerOpen(false);
-    setDrawerClosing(false);
     const nextFamily = familyFromPath(pathname);
     if (!nextFamily) {
       return;
     }
     setFamily(nextFamily);
-    window.localStorage.setItem(LAST_FAMILY_STORAGE_KEY, nextFamily);
+    safeLocalStorage.setItem(LAST_FAMILY_STORAGE_KEY, nextFamily);
   }, [pathname]);
 
   useEffect(() => {
@@ -100,49 +98,8 @@ export default function SiteChrome({ initialSession }: { initialSession: AuthSes
     };
   }, [dropdownOpen]);
 
-  useEffect(() => {
-    if (!drawerOpen) {
-      return;
-    }
-
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        closeDrawer();
-      }
-    }
-
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [drawerOpen]);
-
-  useEffect(() => {
-    return () => {
-      if (drawerCloseTimer.current) {
-        window.clearTimeout(drawerCloseTimer.current);
-      }
-    };
-  }, []);
-
   function openDrawer() {
-    if (drawerCloseTimer.current) {
-      window.clearTimeout(drawerCloseTimer.current);
-    }
-    setDrawerClosing(false);
     setDrawerOpen(true);
-  }
-
-  function closeDrawer() {
-    if (!drawerOpen) {
-      return;
-    }
-    setDrawerClosing(true);
-    if (drawerCloseTimer.current) {
-      window.clearTimeout(drawerCloseTimer.current);
-    }
-    drawerCloseTimer.current = window.setTimeout(() => {
-      setDrawerOpen(false);
-      setDrawerClosing(false);
-    }, 180);
   }
 
   function toggleSound() {
@@ -157,7 +114,7 @@ export default function SiteChrome({ initialSession }: { initialSession: AuthSes
   function cycleThemePreference() {
     const currentIndex = THEME_OPTIONS.indexOf(themePreference);
     const nextPreference = THEME_OPTIONS[(currentIndex + 1) % THEME_OPTIONS.length] ?? "dark";
-    window.localStorage.setItem(THEME_STORAGE_KEY, nextPreference);
+    safeLocalStorage.setItem(THEME_STORAGE_KEY, nextPreference);
     setThemePreference(nextPreference);
     if ("startViewTransition" in document) {
       document.startViewTransition(() => applyThemePreference(nextPreference));
@@ -168,7 +125,7 @@ export default function SiteChrome({ initialSession }: { initialSession: AuthSes
 
   return (
     <header className="site-chrome" data-version="v2" data-family={activeFamily}>
-      <button className="site-mobile-menu" type="button" aria-label="Отвори менюто" onClick={openDrawer}>
+      <button ref={drawerTriggerRef} className="site-mobile-menu" type="button" aria-label="Отвори менюто" onClick={openDrawer}>
         <Menu className="site-icon" aria-hidden strokeWidth={1.9} />
       </button>
 
@@ -195,29 +152,27 @@ export default function SiteChrome({ initialSession }: { initialSession: AuthSes
         <span>Играй</span>
       </Link>
 
-      {mounted && drawerOpen
-        ? createPortal(
-            <MobileDrawer
-              pathname={pathname}
-              soundEnabled={soundEnabled}
-              themePreference={themePreference}
-              initialSession={initialSession}
-              playHref={playHref}
-              closing={drawerClosing}
-              onClose={closeDrawer}
-              onToggleSound={toggleSound}
-              onCycleTheme={cycleThemePreference}
-            />,
-            document.body,
-          )
-        : null}
+      {mounted ? (
+        <MobileDrawer
+          open={drawerOpen}
+          pathname={pathname}
+          soundEnabled={soundEnabled}
+          themePreference={themePreference}
+          initialSession={initialSession}
+          playHref={playHref}
+          triggerRef={drawerTriggerRef}
+          onOpenChange={setDrawerOpen}
+          onToggleSound={toggleSound}
+          onCycleTheme={cycleThemePreference}
+        />
+      ) : null}
     </header>
   );
 }
 
 function BrandMark({ compact }: { compact: boolean }) {
   return (
-    <Link className="site-brand" href="/" aria-label="Към началото" prefetch={false}>
+    <Link className="site-brand" href="/" prefetch={false}>
       <span className="site-brand-mark" aria-hidden="true" />
       <span className="site-brand-text">
         <span className={compact ? "site-brand-wordmark is-compact" : "site-brand-wordmark"}>
@@ -326,13 +281,13 @@ function readThemePreference(): ThemePreference {
     return "dark";
   }
 
-  const saved = window.localStorage.getItem(THEME_STORAGE_KEY);
+  const saved = safeLocalStorage.getItem(THEME_STORAGE_KEY);
   if (saved === "dark" || saved === "light") {
     return saved;
   }
 
   const resolvedTheme = document.documentElement.dataset.theme === "light" ? "light" : "dark";
-  window.localStorage.setItem(THEME_STORAGE_KEY, resolvedTheme);
+  safeLocalStorage.setItem(THEME_STORAGE_KEY, resolvedTheme);
   return resolvedTheme;
 }
 
@@ -341,7 +296,7 @@ function readFamilyPreference(): ChromeFamily {
     return "werewolves";
   }
 
-  const saved = window.localStorage.getItem(LAST_FAMILY_STORAGE_KEY);
+  const saved = safeLocalStorage.getItem(LAST_FAMILY_STORAGE_KEY);
   return saved === "mafia" ? "mafia" : "werewolves";
 }
 

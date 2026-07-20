@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { safeLocalStorage } from "@/lib/safe-storage";
 import styles from "./CookieBanner.module.css";
 
 const STORAGE_KEY = "cookie-consent";
@@ -10,11 +11,11 @@ export function CookieBanner() {
   const [state, setState] = useState<"unknown" | "visible" | "hidden">("unknown");
 
   useEffect(() => {
-    setState(window.localStorage.getItem(STORAGE_KEY) ? "hidden" : "visible");
+    setState(safeLocalStorage.getItem(STORAGE_KEY) ? "hidden" : "visible");
   }, []);
 
   function accept() {
-    window.localStorage.setItem(STORAGE_KEY, "1");
+    safeLocalStorage.setItem(STORAGE_KEY, "1");
     setState("hidden");
   }
 

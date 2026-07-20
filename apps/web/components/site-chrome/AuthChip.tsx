@@ -7,11 +7,13 @@ import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { ProfilePortrait } from "@/components/ProfilePortrait";
 import { avatarIdForUser } from "@/lib/avatar-catalog";
-import { type AuthSessionView, useAuthSession } from "@/lib/use-auth-session";
+import { useAuthSession, type AuthSessionView } from "@/lib/use-auth-session";
 
 export function AuthChip({ initialSession }: { initialSession: AuthSessionView | null }) {
   const router = useRouter();
-  const { data: session, isPending, refresh } = useAuthSession(initialSession);
+  const sessionQuery = useAuthSession(initialSession);
+  const session = sessionQuery.data;
+  const isPending = sessionQuery.isPending && !initialSession;
   const [open, setOpen] = useState(false);
   const [confirmSignOut, setConfirmSignOut] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
@@ -44,18 +46,24 @@ export function AuthChip({ initialSession }: { initialSession: AuthSessionView |
   }, [open]);
 
   if (isPending) {
-    return <span className="auth-chip auth-chip-loading" aria-hidden />;
+    return (
+      <div className="auth-chip-slot" data-auth-state="pending" aria-hidden="true">
+        <span className="auth-chip auth-chip-loading" />
+      </div>
+    );
   }
 
   if (!session) {
     return (
-      <Link href="/sign-in" className="auth-chip auth-chip-signin" prefetch={false}>
-        <span className="auth-chip-mark" aria-hidden>
-          <KeyholeIcon />
-        </span>
-        <span className="auth-chip-text">Влез</span>
-        <ArrowRight className="auth-chip-arrow" aria-hidden strokeWidth={2.2} />
-      </Link>
+      <div className="auth-chip-slot" data-auth-state="guest">
+        <Link href="/sign-in" className="auth-chip auth-chip-signin" prefetch={false}>
+          <span className="auth-chip-mark" aria-hidden>
+            <KeyholeIcon />
+          </span>
+          <span className="auth-chip-text">Влез</span>
+          <ArrowRight className="auth-chip-arrow" aria-hidden strokeWidth={2.2} />
+        </Link>
+      </div>
     );
   }
 
@@ -66,66 +74,67 @@ export function AuthChip({ initialSession }: { initialSession: AuthSessionView |
     setSigningOut(true);
     await authClient.signOut();
     window.dispatchEvent(new Event("auth-session-change"));
-    await refresh();
     setConfirmSignOut(false);
     setSigningOut(false);
     router.push("/");
   }
 
   return (
-    <div className="auth-chip auth-chip-avatar" ref={ref}>
-      <button
-        type="button"
-        className="auth-chip-trigger"
-        onClick={() => setOpen((value) => !value)}
-        aria-expanded={open}
-        aria-label={`Меню на ${displayName}`}
-      >
-        <span className="auth-chip-photo" aria-hidden>
-          <ProfilePortrait avatarId={avatarId} decorative />
-        </span>
-        <span className="auth-chip-name">{displayName}</span>
-        <ChevronDown className="auth-chip-chevron" aria-hidden strokeWidth={2.2} />
-      </button>
+    <div className="auth-chip-slot" data-auth-state="authenticated">
+      <div className="auth-chip auth-chip-avatar" ref={ref}>
+        <button
+          type="button"
+          className="auth-chip-trigger"
+          onClick={() => setOpen((value) => !value)}
+          aria-expanded={open}
+          aria-label={`Меню на ${displayName}`}
+        >
+          <span className="auth-chip-photo" aria-hidden>
+            <ProfilePortrait avatarId={avatarId} decorative />
+          </span>
+          <span className="auth-chip-name">{displayName}</span>
+          <ChevronDown className="auth-chip-chevron" aria-hidden strokeWidth={2.2} />
+        </button>
 
-      {open ? (
-        <div className="nav-dropdown nav-dropdown-user" role="menu">
-          <Link href="/account" role="menuitem" prefetch={false} onClick={() => setOpen(false)} className="nav-dropdown-item">
-            <User className="nav-dropdown-item-icon" aria-hidden strokeWidth={1.8} />
-            <span>Моето досие</span>
-          </Link>
-          <Link href="/history" role="menuitem" prefetch={false} onClick={() => setOpen(false)} className="nav-dropdown-item">
-            <History className="nav-dropdown-item-icon" aria-hidden strokeWidth={1.8} />
-            <span>История</span>
-          </Link>
-          <Link href="/achievements" role="menuitem" prefetch={false} onClick={() => setOpen(false)} className="nav-dropdown-item">
-            <Trophy className="nav-dropdown-item-icon" aria-hidden strokeWidth={1.8} />
-            <span>Легенди</span>
-          </Link>
-          <div className="nav-dropdown-divider" role="separator" />
-          <button
-            type="button"
-            role="menuitem"
-            className="nav-dropdown-item nav-dropdown-item-danger"
-            onClick={() => {
-              setOpen(false);
-              setConfirmSignOut(true);
-            }}
-          >
-            <LogOut className="nav-dropdown-item-icon" aria-hidden strokeWidth={1.8} />
-            <span>Изход</span>
-          </button>
-        </div>
-      ) : null}
+        {open ? (
+          <div className="nav-dropdown nav-dropdown-user" role="menu">
+            <Link href="/account" role="menuitem" prefetch={false} onClick={() => setOpen(false)} className="nav-dropdown-item">
+              <User className="nav-dropdown-item-icon" aria-hidden strokeWidth={1.8} />
+              <span>Моето досие</span>
+            </Link>
+            <Link href="/history" role="menuitem" prefetch={false} onClick={() => setOpen(false)} className="nav-dropdown-item">
+              <History className="nav-dropdown-item-icon" aria-hidden strokeWidth={1.8} />
+              <span>История</span>
+            </Link>
+            <Link href="/achievements" role="menuitem" prefetch={false} onClick={() => setOpen(false)} className="nav-dropdown-item">
+              <Trophy className="nav-dropdown-item-icon" aria-hidden strokeWidth={1.8} />
+              <span>Легенди</span>
+            </Link>
+            <div className="nav-dropdown-divider" role="separator" />
+            <button
+              type="button"
+              role="menuitem"
+              className="nav-dropdown-item nav-dropdown-item-danger"
+              onClick={() => {
+                setOpen(false);
+                setConfirmSignOut(true);
+              }}
+            >
+              <LogOut className="nav-dropdown-item-icon" aria-hidden strokeWidth={1.8} />
+              <span>Изход</span>
+            </button>
+          </div>
+        ) : null}
 
-      {confirmSignOut ? (
-        <SignOutConfirmDialog
-          userName={displayName}
-          pending={signingOut}
-          onCancel={() => setConfirmSignOut(false)}
-          onConfirm={confirmLogout}
-        />
-      ) : null}
+        {confirmSignOut ? (
+          <SignOutConfirmDialog
+            userName={displayName}
+            pending={signingOut}
+            onCancel={() => setConfirmSignOut(false)}
+            onConfirm={confirmLogout}
+          />
+        ) : null}
+      </div>
     </div>
   );
 }

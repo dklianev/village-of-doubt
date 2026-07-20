@@ -5,7 +5,7 @@
   margin-top: 24px;
   border-top: 1px solid rgba(255, 240, 200, 0.16);
   background: linear-gradient(180deg, rgba(5, 7, 8, 0.12), rgba(5, 7, 8, 0.56));
-  color: rgba(245, 232, 200, 0.68);
+  color: rgba(245, 232, 200, 0.78);
   font-size: 0.84rem;
   text-align: center;
 }
@@ -35,7 +35,7 @@
 
 .tagline {
   margin: 8px 0 0;
-  color: rgba(245, 232, 200, 0.48);
+  color: rgba(245, 232, 200, 0.7);
   font-size: 0.78rem;
   font-weight: 650;
   letter-spacing: 0.04em;
@@ -44,7 +44,7 @@
 :global(html[data-theme="light"]) .footer {
   border-top-color: rgba(83, 52, 31, 0.18);
   background: linear-gradient(180deg, rgba(255, 246, 226, 0.24), rgba(132, 47, 43, 0.08));
-  color: rgba(42, 27, 16, 0.58);
+  color: rgba(42, 27, 16, 0.74);
 }
 
 :global(html[data-theme="light"]) .links a {
@@ -53,5 +53,5 @@
 }
 
 :global(html[data-theme="light"]) .tagline {
-  color: rgba(42, 27, 16, 0.52);
+  color: rgba(42, 27, 16, 0.68);
 }
