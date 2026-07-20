@@ -276,7 +276,7 @@ function filterTargetsByCapabilities(
     availableKinds.some((kind) => !disallowedNightTargetReason(capabilities, kind, player.userId)));
 }
 
-function canUseNightKindForTarget(
+export function canUseNightKindForTarget(
   kind: NightActionKind,
   targetUserId: string,
   capabilities: NightActionCapabilities | null | undefined,
@@ -289,17 +289,26 @@ export function targetKindsForRole(role: RoleCode | undefined, phase: GamePhase)
   if (!role) {
     return [];
   }
+  if (role === "don") {
+    return ["faction_kill", "check_commissioner"];
+  }
+  if (role === "informant") {
+    return ["faction_kill", "check_role"];
+  }
+  if (role === "lawyer") {
+    return ["faction_kill", "lawyer_cover"];
+  }
+  if (role === "roleblocker") {
+    return ["faction_kill", "roleblock"];
+  }
   if (canFactionKill(role)) {
     return ["faction_kill"];
   }
   if (role === "commissioner" || role === "detective") {
     return ["check_alignment"];
   }
-  if (role === "seer" || role === "oracle" || role === "informant") {
+  if (role === "seer" || role === "oracle") {
     return ["check_role"];
-  }
-  if (role === "don") {
-    return ["check_commissioner"];
   }
   if (role === "investigator") {
     return ["investigator_check"];
@@ -324,12 +333,6 @@ export function targetKindsForRole(role: RoleCode | undefined, phase: GamePhase)
   }
   if ((role === "cupid" || role === "lovers") && phase === "first_night") {
     return ["cupid_link"];
-  }
-  if (role === "roleblocker") {
-    return ["roleblock"];
-  }
-  if (role === "lawyer") {
-    return ["lawyer_cover"];
   }
   if (role === "medium") {
     return ["medium_contact"];

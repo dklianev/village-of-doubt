@@ -24,7 +24,7 @@ export function NarratorDesk({
 }) {
   const pendingConsent = snapshot.players.filter((player) => !player.acceptedFullNarrator).length;
   const activePlayers = snapshot.players.filter((player) => player.playing);
-  const actedCount = activePlayers.filter((player) => player.actedThisPhase).length;
+  const aliveCount = activePlayers.filter((player) => player.alive).length;
   const votedCount = activePlayers.filter((player) => player.hasVoted).length;
 
   return (
@@ -45,7 +45,7 @@ export function NarratorDesk({
 
       <div className="mt-5 grid gap-3 md:grid-cols-4">
         <SummaryPill label="Активни" value={`${activePlayers.length}/${snapshot.playerCount}`} />
-        <SummaryPill label="Действали" value={`${actedCount}/${activePlayers.length}`} />
+        <SummaryPill label="Живи" value={`${aliveCount}/${activePlayers.length}`} />
         <SummaryPill label="Гласували" value={`${votedCount}/${activePlayers.length}`} />
         <SummaryPill label="Режим" value={narratorBg(snapshot.narratorMode)} />
       </div>

@@ -9,9 +9,9 @@ import {
   type CSSProperties,
 } from "react";
 import type { GameFamily, GameMode, GamePhase } from "@werewolf/shared";
+import { avatarIdForUser } from "@/lib/avatar-catalog";
 import { communicationBg, modeBg } from "@/lib/play/copy";
 import { phaseBg, phaseSigil } from "@/lib/play/phase-display";
-import { portraitSlot } from "@/lib/play/portrait-slot";
 import { computeSeatLayout, type SeatLayoutItem } from "@/lib/play/seat-layout";
 import type { PublicPlayer } from "@/lib/play/types";
 import { PlaySeat, type StageSeatPlayer } from "@/components/play/PlaySeat";
@@ -37,12 +37,15 @@ interface PlayStageProps {
   selectedTargetId: string;
   secondTargetId: string;
   voteCounts: Map<string, number>;
+  currentSpeakerUserId: string;
+  currentDefenseUserId: string;
+  nomineeIds: Set<string>;
   onSelectSeat: (targetUserId: string) => void;
   onMakeNarrator: (targetUserId: string) => void;
   onMakeMayor: (targetUserId: string) => void;
 }
 
-type LayoutMode = "full-table" | "compact-table" | "mobile-table-grid";
+type LayoutMode = "full-table" | "compact-table" | "dense-table-grid" | "mobile-table-grid";
 
 interface StageMeasurements {
   mode: LayoutMode;
@@ -77,6 +80,9 @@ export function PlayStage({
   selectedTargetId,
   secondTargetId,
   voteCounts,
+  currentSpeakerUserId,
+  currentDefenseUserId,
+  nomineeIds,
   onSelectSeat,
   onMakeNarrator,
   onMakeMayor,
@@ -96,6 +102,8 @@ export function PlayStage({
   const eliminatedCount = publicPlayers.filter((player) => player.playing && !player.alive).length;
   const seatDensity = seatCount >= 14 ? "crowded" : seatCount >= 10 ? "full" : "open";
   const isNight = phase === "first_night" || phase === "night";
+  const currentSpeaker = publicPlayers.find((player) => player.userId === currentSpeakerUserId);
+  const currentDefender = publicPlayers.find((player) => player.userId === currentDefenseUserId);
   const titleId = "play-stage-title";
 
   useLayoutEffect(() => {
@@ -139,23 +147,25 @@ export function PlayStage({
     observer.observe(scene);
     measure();
     return () => observer.disconnect();
-  }, [isPending, isStatusInformative, seatCount, status]);
+  }, []);
 
   const seatLayout = useMemo(() => {
-    if (measurements.mode === "mobile-table-grid" || seatCount < 3) {
+    if (measurements.mode === "mobile-table-grid" || seatCount < 3 || seatCount > 18) {
       return [];
     }
     try {
+      const coreSize = measurements.mode === "compact-table" ? 136 : 160;
+      const coreCenterYRatio = measurements.mode === "compact-table" || seatCount >= 10 ? 0.5 : 0.57;
       return computeSeatLayout({
         contentWidth: measurements.sceneWidth,
         contentHeight: measurements.sceneHeight,
         count: seatCount,
         reservedHud: { x: 0, y: 0, width: 0, height: 0 },
         reservedCenter: {
-          x: measurements.sceneWidth / 2 - 68,
-          y: measurements.sceneHeight * 0.57 - 68,
-          width: 136,
-          height: 136,
+          x: measurements.sceneWidth / 2 - coreSize / 2,
+          y: measurements.sceneHeight * coreCenterYRatio - coreSize / 2,
+          width: coreSize,
+          height: coreSize,
         },
         minHitSize: 44,
       });
@@ -165,7 +175,10 @@ export function PlayStage({
   }, [measurements, seatCount]);
   const effectiveMode: LayoutMode = seatLayout.length === seatCount && seatCount >= 3
     ? measurements.mode
-    : "mobile-table-grid";
+    : measurements.mode === "mobile-table-grid"
+      ? "mobile-table-grid"
+      : "dense-table-grid";
+  const mobileGridColumns = seatCount <= 6 ? 2 : seatCount <= 9 ? 3 : 4;
 
   const closeMenu = useCallback((restoreFocus: boolean) => {
     setOpenMenuUserId((current) => {
@@ -220,12 +233,14 @@ export function PlayStage({
       data-layout-mode={effectiveMode}
       data-layout-ready={hasMeasured ? "true" : undefined}
       aria-labelledby={titleId}
+      aria-hidden={phase === "game_over" ? true : undefined}
+      inert={phase === "game_over" ? true : undefined}
       style={stageStyle}
     >
       <div className={styles.atmosphereBack} aria-hidden="true" />
       <div className={styles.atmosphereFront} aria-hidden="true" />
 
-      <div ref={hudRef} className={styles.hud}>
+      <div ref={hudRef} className={styles.hud} data-stage-hud>
         <div className={styles.copy}>
           <p className={styles.kicker}>стая {code} · рунд {round}</p>
           <div className={styles.phasePill}>
@@ -233,6 +248,11 @@ export function PlayStage({
             <span>Фаза: {phaseBg(phase, mode)}</span>
           </div>
           <h1 id={titleId} className={styles.title}>{phaseBg(phase, mode)}</h1>
+          {currentSpeaker || currentDefender ? (
+            <p className={styles.dayFocus} aria-live="polite">
+              {currentSpeaker ? `Говори: ${currentSpeaker.displayName}` : `Защита: ${currentDefender?.displayName}`}
+            </p>
+          ) : null}
           {isStatusInformative || isPending ? (
             <p className={styles.status} aria-live="polite" aria-atomic="true">
               {isStatusInformative ? status : ""}
@@ -248,8 +268,10 @@ export function PlayStage({
           <span className={styles.sigil} aria-hidden="true">{phaseSigil(phase)}</span>
           <Timer endsAt={phaseEndsAt} />
           <span className={styles.counts}>
-            {aliveCount} живи
-            {eliminatedCount > 0 ? ` · ${eliminatedCount} елиминирани` : ""}
+            {aliveCount} {aliveCount === 1 ? "жив" : "живи"}
+            {eliminatedCount > 0
+              ? ` · ${eliminatedCount} ${eliminatedCount === 1 ? "елиминиран" : "елиминирани"}`
+              : ""}
           </span>
         </div>
 
@@ -265,6 +287,9 @@ export function PlayStage({
           ) : null}
           {seatedPlayers.map((player, index) => {
             const geometry = seatLayout[index];
+            const isMobileGrid = effectiveMode === "mobile-table-grid";
+            const isMobileStartEdge = isMobileGrid && index % mobileGridColumns === 0;
+            const isMobileLastRow = isMobileGrid && index >= seatCount - mobileGridColumns;
             const targetable = targetableIds.has(player.userId);
             const selected = selectedTargetId === player.userId;
             const secondSelected = secondTargetId === player.userId;
@@ -283,19 +308,24 @@ export function PlayStage({
                 data-ready={player.ready ? "true" : "false"}
                 data-connected={player.connected ? "true" : "false"}
                 data-menu-open={menuOpen ? "true" : undefined}
-                data-menu-x={geometry?.menuPlacement.x}
-                data-menu-y={geometry?.menuPlacement.y}
+                data-speaking={player.userId === currentSpeakerUserId ? "true" : undefined}
+                data-defending={player.userId === currentDefenseUserId ? "true" : undefined}
+                data-nominee={nomineeIds.has(player.userId) ? "true" : undefined}
+                data-menu-x={geometry?.menuPlacement.x ?? (isMobileStartEdge ? "mobile-start" : undefined)}
+                data-menu-y={geometry?.menuPlacement.y ?? (isMobileLastRow ? "up" : undefined)}
                 style={seatStyle(geometry)}
               >
                 <PlaySeat
                   player={player}
                   phase={phase}
                   narratorMode={narratorMode}
-                  portraitSlot={portraitSlot(player.userId)}
                   targetable={targetable}
                   selected={selected}
                   secondSelected={secondSelected}
                   voteCount={voteCounts.get(player.userId) ?? 0}
+                  speaking={player.userId === currentSpeakerUserId}
+                  defending={player.userId === currentDefenseUserId}
+                  nominee={nomineeIds.has(player.userId)}
                   canManageNarrator={Boolean(ownPlayer?.host && narratorMode !== "automatic" && phase === "lobby")}
                   canManageMayor={Boolean(
                     (ownPlayer?.host || ownPlayer?.narrator)
@@ -314,6 +344,7 @@ export function PlayStage({
                     }
                   }}
                   onMenuToggle={(open) => setOpenMenuUserId(open ? player.userId : "")}
+                  onMenuActionComplete={() => closeMenu(true)}
                   onSelect={() => onSelectSeat(player.userId)}
                   onMakeNarrator={() => onMakeNarrator(player.userId)}
                   onMakeMayor={() => onMakeMayor(player.userId)}
@@ -324,7 +355,7 @@ export function PlayStage({
         </div>
       </div>
 
-      <div className={styles.ledger} aria-hidden="true">
+      <div className={styles.ledger} data-stage-ledger aria-hidden="true">
         <span>{modeBg(mode)}</span>
         <span>{communicationBg(communicationMode)}</span>
       </div>
@@ -336,6 +367,7 @@ function toStageSeatPlayer(player: PublicPlayer): StageSeatPlayer {
   return {
     userId: player.userId,
     displayName: player.displayName,
+    avatarId: avatarIdForUser(player.userId, player.avatarId),
     connected: player.connected,
     ready: player.ready,
     playing: player.playing,
@@ -368,7 +400,7 @@ function renderSkeleton(index: number, geometry: SeatLayoutItem | undefined, lay
       key={index}
       className={`${styles.seatSlot} ${styles.skeletonSlot} play-seat-skeleton`}
       aria-hidden="true"
-      style={layoutMode === "mobile-table-grid" ? undefined : seatStyle(geometry)}
+      style={layoutMode.endsWith("table-grid") ? undefined : seatStyle(geometry)}
     >
       <span className={styles.skeletonPortrait} />
       <span className={styles.skeletonName} />

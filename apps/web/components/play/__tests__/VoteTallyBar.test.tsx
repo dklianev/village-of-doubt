@@ -9,7 +9,7 @@ describe("VoteTallyBar", () => {
     expect(screen.getByText("Още няма подадени гласове. Първият глас често задава посоката на целия ден.")).toBeInTheDocument();
   });
 
-  it("renders current vote counts and mayor tie-break note", () => {
+  it("renders current vote counts in a non-focusable live region", () => {
     render(
       <VoteTallyBar
         maxVotes={4}
@@ -20,7 +20,9 @@ describe("VoteTallyBar", () => {
       />,
     );
 
-    expect(screen.getByRole("region", { name: "Текущо броене на гласовете" })).toHaveAttribute("tabindex", "0");
+    const tally = screen.getByRole("region", { name: "Текущо броене на гласовете" });
+    expect(tally).not.toHaveAttribute("tabindex");
+    expect(tally).toHaveAttribute("aria-live", "polite");
     expect(screen.getByText("Борис")).toBeInTheDocument();
     expect(screen.getByText("Вяра")).toBeInTheDocument();
     expect(screen.getByText("кметски глас при равенство")).toBeInTheDocument();

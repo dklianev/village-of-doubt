@@ -21,9 +21,7 @@
   opacity: 0.62;
   transition:
     transform 180ms ease,
-    opacity 180ms ease,
-    border-color 180ms ease,
-    box-shadow 180ms ease;
+    opacity 180ms ease;
 }
 
 :global(.phase-rail-step::after) {

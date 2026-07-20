@@ -93,6 +93,8 @@ function makeState() {
     phase: "lobby",
     round: 0,
     phaseEndsAt: 0,
+    currentSpeakerUserId: "",
+    currentDefenseUserId: "",
     winnerTeam: "",
     winnerReasonBg: "",
     players: new Map([
@@ -113,6 +115,7 @@ function makeState() {
     ]),
     roleCounts: [],
     voteTally: [],
+    nominations: [],
     publicEvents: [],
     publicChat: [],
   };
@@ -172,8 +175,8 @@ describe("useGameRoom", () => {
       "test",
     );
 
-    expect(fixture?.snapshot.players).toHaveLength(18);
-    expect(fixture?.snapshot.players.filter((player) => player.playing && !player.alive)).toHaveLength(17);
+    expect(fixture?.snapshot.players).toHaveLength(30);
+    expect(fixture?.snapshot.players.filter((player) => player.playing && !player.alive)).toHaveLength(29);
     expect(fixture?.snapshot.players[0]?.alive).toBe(false);
   });
 
@@ -208,6 +211,92 @@ describe("useGameRoom", () => {
     expect(result.current.currentUserId).toBe("u1");
     expect(result.current.snapshot?.players[0]?.displayName).toBe("Играч");
     expect(result.current.snapshot?.doctorCanSelfProtect).toBe(true);
+  });
+
+  it("announces success only after the authoritative night-action acknowledgement", async () => {
+    mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
+    const { client, joinRoom } = createClient();
+    mocks.createGameClient.mockReturnValue(client);
+    const toast = vi.fn();
+
+    renderHook(() => useGameRoom({ code: "ABCD", createOptions: undefined, toast }));
+    await waitFor(() => expect(client.joinOrCreate).toHaveBeenCalled());
+    expect(toast).not.toHaveBeenCalledWith({ message: "Нощното действие е прието.", kind: "success" });
+
+    act(() => joinRoom.emitMessage("night_action_ack", { phase: "night", round: 1 }));
+
+    expect(toast).toHaveBeenCalledWith({ message: "Нощното действие е прието.", kind: "success" });
+  });
+
+  it("projects speaker and nomination replacements without requiring a phase change", async () => {
+    mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
+    const { client, joinRoom } = createClient();
+    mocks.createGameClient.mockReturnValue(client);
+    const toast = vi.fn();
+    const { result } = renderHook(() => useGameRoom({ code: "ABCD", createOptions: undefined, toast }));
+    await waitFor(() => expect(result.current.connectionStatus).toBe("connected"));
+
+    const state = {
+      ...makeState(),
+      mode: "mafia_sport",
+      phase: "day_discussion",
+      round: 2,
+      phaseEndsAt: 60_000,
+      currentSpeakerUserId: "u1",
+      nominations: [{ nominatorUserId: "u1", targetUserId: "u2" }],
+    };
+    act(() => joinRoom.emitState(state));
+    await waitFor(() => expect(result.current.snapshot?.nominations?.[0]?.targetUserId).toBe("u2"));
+
+    act(() => joinRoom.emitState({
+      ...state,
+      nominations: [{ nominatorUserId: "u1", targetUserId: "u3" }],
+    }));
+    await waitFor(() => expect(result.current.snapshot?.nominations?.[0]?.targetUserId).toBe("u3"));
+    expect(result.current.snapshot?.currentSpeakerUserId).toBe("u1");
+  });
+
+  it("announces authoritative nomination acknowledgements in Bulgarian", async () => {
+    mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
+    const { client, joinRoom } = createClient();
+    mocks.createGameClient.mockReturnValue(client);
+    const toast = vi.fn();
+
+    renderHook(() => useGameRoom({ code: "ABCD", createOptions: undefined, toast }));
+    await waitFor(() => expect(client.joinOrCreate).toHaveBeenCalled());
+    act(() => joinRoom.emitMessage("nomination_ack", { replaced: true }));
+
+    expect(toast).toHaveBeenCalledWith({ message: "Номинацията е сменена.", kind: "success" });
+  });
+
+  it("consumes viewer-owned faction rosters and retained investigation results", async () => {
+    mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
+    const { client, joinRoom } = createClient();
+    mocks.createGameClient.mockReturnValue(client);
+    const toast = vi.fn();
+    const { result } = renderHook(() => useGameRoom({ code: "ABCD", createOptions: undefined, toast }));
+    await waitFor(() => expect(result.current.connectionStatus).toBe("connected"));
+
+    act(() => {
+      joinRoom.emitMessage("private_role", { role: "mafioso", roleNameBg: "Мафиот" });
+      joinRoom.emitMessage("private_faction_roster", {
+        faction: "mafia",
+        members: [{ userId: "u2", displayName: "Борис" }],
+      });
+      joinRoom.emitMessage("private_check_result", {
+        targetUserId: "u3",
+        isCommissioner: true,
+      });
+    });
+
+    expect(result.current.privateFactionRoster).toEqual({
+      faction: "mafia",
+      members: [{ userId: "u2", displayName: "Борис" }],
+    });
+    expect(result.current.privateResult).toEqual({ targetUserId: "u3", isCommissioner: true });
+
+    act(() => joinRoom.emitMessage("private_role", { role: "civilian", roleNameBg: "Гражданин" }));
+    expect(result.current.privateFactionRoster).toBeNull();
   });
 
   it("reconnects with the persisted room token after an abnormal leave", async () => {

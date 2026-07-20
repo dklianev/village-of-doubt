@@ -17,23 +17,26 @@ export function RulesSummary({ snapshot }: { snapshot: GameSnapshot }) {
         <SummaryPill label="Разказвач" value={narratorBg(snapshot.narratorMode)} />
         <SummaryPill label="Комуникация" value={communicationBg(snapshot.communicationMode)} />
         <SummaryPill label="Темпо" value={tempoBg(snapshot.tempoProfile)} />
-        <SummaryPill label="Ден/гласуване" value={`${snapshot.dayDiscussionSeconds}s / ${snapshot.voteSeconds}s`} />
+        <SummaryPill label="Ден/гласуване" value={`${snapshot.dayDiscussionSeconds} сек. / ${snapshot.voteSeconds} сек.`} />
         <SummaryPill label="Глас" value={NARRATOR_VOICE_LABELS_BG[snapshot.narratorVoice]} />
         <SummaryPill label="Гласуване" value={`${snapshot.allowSkipVote ? "може пропуск" : "без пропуск"} · ${majorityModeBg(snapshot.majorityMode)}`} />
       </div>
 
-      <h3 className="rules-summary-roles-heading">Роли в стаята</h3>
-      <div className="rules-summary-roles-grid mt-3 grid gap-3 md:grid-cols-2">
+      <h3 id="rules-summary-roles-heading" className="rules-summary-roles-heading">Роли в стаята</h3>
+      <ul
+        className="rules-summary-roles-grid mt-3 grid gap-3 md:grid-cols-2"
+        aria-labelledby="rules-summary-roles-heading"
+      >
         {snapshot.roleCounts.map((item) => (
-          <div key={item.role} className={`role-count-chip role-${item.role} is-dark`}>
-            <dt>
+          <li key={item.role} className={`role-count-chip role-${item.role} is-dark`}>
+            <span className="role-count-label">
               <span className="role-count-art" aria-hidden="true" style={roleThumbStyle(getGameFamily(snapshot.mode), item.role)} />
-              <span>{ROLE_DEFINITIONS[item.role]?.nameBg ?? item.role}</span>
-            </dt>
-            <dd>{item.count}</dd>
-          </div>
+              <span className="role-count-name">{ROLE_DEFINITIONS[item.role]?.nameBg ?? item.role}</span>
+            </span>
+            <strong className="role-count-value">{item.count}</strong>
+          </li>
         ))}
-      </div>
+      </ul>
 
       {snapshot.narratorMode === "full_human" ? (
         <p className="mt-4 rounded-2xl bg-[#842f2b]/25 p-4 font-bold text-[#fff6e5]">

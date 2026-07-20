@@ -22,6 +22,7 @@ import { authClient } from "@/lib/auth-client";
 import { createGameClient, GAME_ROOM_NAME } from "@/lib/colyseus-client";
 import type { pushToast } from "@/lib/toast";
 import { arePhaseSlicesEqual, arePlayerListsEqual } from "@/lib/play/equality";
+import { playCue } from "@/lib/sound";
 import { useVisualGameRoomFixture } from "@/hooks/play/visual-game-fixture";
 import type {
   ConnectionStatus,
@@ -30,12 +31,15 @@ import type {
   NarratorRoleSnapshot,
   PhaseSlice,
   PrivateChatMessage,
+  PrivateFactionRoster,
   PrivateLover,
   PrivateResult,
   PublicChatMessage,
   PublicEvent,
+  PublicNomination,
   PublicPlayer,
   PublicRoleCount,
+  SportDaySlice,
   TypingNotice,
   VoteTallyItem,
 } from "@/lib/play/types";
@@ -57,6 +61,7 @@ export interface UseGameRoomResult {
   currentUserId: string;
   privateRole: { role: RoleCode; roleNameBg: string } | null;
   privateResult: PrivateResult | null;
+  privateFactionRoster: PrivateFactionRoster | null;
   privateLover: PrivateLover | null;
   nightActionCapabilities: NightActionCapabilities | null;
   narratorSnapshot: NarratorRoleSnapshot | null;
@@ -99,12 +104,14 @@ export function useGameRoom({
   const [baseSnapshot, setBaseSnapshot] = useState<GameSnapshot | null>(null);
   const [playersSlice, setPlayersSlice] = useState<PublicPlayer[]>([]);
   const [phaseSlice, setPhaseSlice] = useState<PhaseSlice | null>(null);
+  const [sportDaySlice, setSportDaySlice] = useState<SportDaySlice | null>(null);
   const [voteTallySlice, setVoteTallySlice] = useState<VoteTallyItem[]>([]);
   const [publicEventsSlice, setPublicEventsSlice] = useState<PublicEvent[]>([]);
   const [publicChatSlice, setPublicChatSlice] = useState<PublicChatMessage[]>([]);
   const [currentUserId, setCurrentUserId] = useState("");
   const [privateRole, setPrivateRole] = useState<{ role: RoleCode; roleNameBg: string } | null>(null);
   const [privateResult, setPrivateResult] = useState<PrivateResult | null>(null);
+  const [privateFactionRoster, setPrivateFactionRoster] = useState<PrivateFactionRoster | null>(null);
   const [privateLover, setPrivateLover] = useState<PrivateLover | null>(null);
   const [nightActionCapabilities, setNightActionCapabilities] = useState<NightActionCapabilities | null>(null);
   const [narratorSnapshot, setNarratorSnapshot] = useState<NarratorRoleSnapshot | null>(null);
@@ -128,12 +135,13 @@ export function useGameRoom({
     return {
       ...baseSnapshot,
       ...(phaseSlice ?? {}),
+      ...(sportDaySlice ?? {}),
       players: playersSlice,
       voteTally: voteTallySlice,
       publicEvents: publicEventsSlice,
       publicChat: publicChatSlice,
     };
-  }, [baseSnapshot, phaseSlice, playersSlice, publicChatSlice, publicEventsSlice, voteTallySlice]);
+  }, [baseSnapshot, phaseSlice, playersSlice, publicChatSlice, publicEventsSlice, sportDaySlice, voteTallySlice]);
 
   const reconnectNow = useCallback(() => {
     reconnectNowRef.current?.();
@@ -201,6 +209,7 @@ export function useGameRoom({
         const previousSnapshot = snapshotRef.current;
         const nextPlayers = playersForState(stateView);
         const nextPhaseSlice = phaseSliceForState(stateView);
+        const nextSportDaySlice = sportDaySliceForState(stateView);
         const nextVoteTally = voteTallyForState(stateView);
         const nextPublicEvents = publicEventsForState(stateView);
         const nextPublicChat = publicChatForState(stateView);
@@ -209,12 +218,13 @@ export function useGameRoom({
 
         const playersChanged = !previousSnapshot || !arePlayerListsEqual(previousSnapshot.players, nextPlayers);
         const phaseChanged = !previousSnapshot || !arePhaseSlicesEqual(phaseSliceFor(previousSnapshot), nextPhaseSlice);
+        const sportDayChanged = !previousSnapshot || !areSportDaySlicesEqual(sportDaySliceFor(previousSnapshot), nextSportDaySlice);
         const votesChanged = !previousSnapshot || !areVoteTallyEqual(previousSnapshot.voteTally, nextVoteTally);
         const eventsChanged = !previousSnapshot || !arePublicEventsEqual(previousSnapshot.publicEvents, nextPublicEvents);
         const chatChanged = !previousSnapshot || !arePublicChatEqual(previousSnapshot.publicChat, nextPublicChat);
         const shellChanged = !previousSnapshot || !areSnapshotShellEqual(previousSnapshot, nextBaseSnapshot);
 
-        if (!playersChanged && !phaseChanged && !votesChanged && !eventsChanged && !chatChanged && !shellChanged) {
+        if (!playersChanged && !phaseChanged && !sportDayChanged && !votesChanged && !eventsChanged && !chatChanged && !shellChanged) {
           return;
         }
 
@@ -222,6 +232,7 @@ export function useGameRoom({
         const nextSnapshot: GameSnapshot = {
           ...nextBaseSnapshot,
           ...nextPhaseSlice,
+          ...nextSportDaySlice,
           players: playersChanged ? nextPlayers : stableSnapshot.players,
           voteTally: votesChanged ? nextVoteTally : stableSnapshot.voteTally,
           publicEvents: eventsChanged ? nextPublicEvents : stableSnapshot.publicEvents,
@@ -235,6 +246,9 @@ export function useGameRoom({
           }
           if (phaseChanged) {
             setPhaseSlice(nextPhaseSlice);
+          }
+          if (sportDayChanged) {
+            setSportDaySlice(nextSportDaySlice);
           }
           if (votesChanged) {
             setVoteTallySlice(nextVoteTally);
@@ -253,6 +267,7 @@ export function useGameRoom({
 
       nextRoom.onMessage("private_role", (message: { role: RoleCode; roleNameBg: string }) => {
         setPrivateRole(message);
+        setPrivateFactionRoster(null);
       });
 
       nextRoom.onMessage("private_check_result", (message: PrivateResult) => {
@@ -265,8 +280,35 @@ export function useGameRoom({
         toast({ message: "Купидон те свърза с Влюбен.", kind: "success" });
       });
 
+      nextRoom.onMessage("private_faction_roster", (message: PrivateFactionRoster) => {
+        setPrivateFactionRoster(message);
+      });
+
       nextRoom.onMessage("night_action_capabilities", (message: { capabilities: NightActionCapabilities }) => {
         setNightActionCapabilities(message.capabilities);
+      });
+
+      nextRoom.onMessage("night_action_ack", () => {
+        toast({ message: "Нощното действие е прието.", kind: "success" });
+        if (snapshotRef.current?.tempoProfile !== "live" && "vibrate" in navigator) {
+          navigator.vibrate([24]);
+        }
+      });
+
+      nextRoom.onMessage("vote_ack", () => {
+        toast({ message: "Гласът е приет.", kind: "success" });
+        playCue("vote", { forceSilent: snapshotRef.current?.tempoProfile === "live" });
+      });
+
+      nextRoom.onMessage("nomination_ack", (message: { replaced: boolean }) => {
+        toast({
+          message: message.replaced ? "Номинацията е сменена." : "Номинацията е приета.",
+          kind: "success",
+        });
+      });
+
+      nextRoom.onMessage("hunter_revenge_ack", () => {
+        toast({ message: "Последният изстрел е приет.", kind: "success" });
       });
 
       nextRoom.onMessage("private_blessing", () => {
@@ -474,7 +516,7 @@ export function useGameRoom({
   }, []);
 
   if (visualFixture) {
-    return visualFixture;
+    return { ...visualFixture, privateFactionRoster: null };
   }
 
   return {
@@ -483,6 +525,7 @@ export function useGameRoom({
     currentUserId,
     privateRole,
     privateResult,
+    privateFactionRoster,
     privateLover,
     nightActionCapabilities,
     narratorSnapshot,
@@ -515,6 +558,7 @@ interface ColyseusGameState {
   communicationMode: string;
   tempoProfile: string;
   dayDiscussionSeconds: number;
+  playerSpeechSeconds?: number;
   voteSeconds: number;
   revealRolesOnDeath: boolean;
   loversEnabled: boolean;
@@ -525,11 +569,15 @@ interface ColyseusGameState {
   phase: GamePhase;
   round: number;
   phaseEndsAt: number;
+  currentSpeakerUserId?: string;
+  currentDefenseUserId?: string;
   winnerTeam: string;
   winnerReasonBg: string;
   players: { values(): IterableIterator<ColyseusGameStatePlayer> };
   roleCounts: Iterable<PublicRoleCount>;
   voteTally: Iterable<VoteTallyItem>;
+  nominations?: Iterable<PublicNomination>;
+  revoteEligibleUserIds?: Iterable<string>;
   publicEvents: Iterable<PublicEvent>;
   publicChat: Iterable<PublicChatMessage>;
 }
@@ -547,6 +595,7 @@ function snapshotShellForState(
     communicationMode: state.communicationMode,
     tempoProfile: state.tempoProfile,
     dayDiscussionSeconds: state.dayDiscussionSeconds,
+    ...(state.playerSpeechSeconds === undefined ? {} : { playerSpeechSeconds: state.playerSpeechSeconds }),
     voteSeconds: state.voteSeconds,
     revealRolesOnDeath: state.revealRolesOnDeath,
     loversEnabled: state.loversEnabled,
@@ -559,6 +608,7 @@ function snapshotShellForState(
     phaseEndsAt: state.phaseEndsAt,
     winnerTeam: state.winnerTeam,
     winnerReasonBg: state.winnerReasonBg,
+    revoteEligibleUserIds: Array.from(state.revoteEligibleUserIds ?? []),
     players: previousSnapshot?.players ?? [],
     roleCounts,
     voteTally: previousSnapshot?.voteTally ?? [],
@@ -606,6 +656,48 @@ function phaseSliceFor(snapshot: GameSnapshot): PhaseSlice {
   };
 }
 
+function sportDaySliceForState(state: ColyseusGameState): SportDaySlice {
+  return {
+    currentSpeakerUserId: state.currentSpeakerUserId ?? "",
+    currentDefenseUserId: state.currentDefenseUserId ?? "",
+    nominations: Array.from(state.nominations ?? [], (nomination) => ({
+      nominatorUserId: nomination.nominatorUserId,
+      targetUserId: nomination.targetUserId,
+    })),
+  };
+}
+
+function sportDaySliceFor(snapshot: GameSnapshot): SportDaySlice {
+  return {
+    currentSpeakerUserId: snapshot.currentSpeakerUserId ?? "",
+    currentDefenseUserId: snapshot.currentDefenseUserId ?? "",
+    nominations: snapshot.nominations ?? [],
+  };
+}
+
+function areSportDaySlicesEqual(a: SportDaySlice, b: SportDaySlice) {
+  if (
+    a.currentSpeakerUserId !== b.currentSpeakerUserId
+    || a.currentDefenseUserId !== b.currentDefenseUserId
+    || a.nominations.length !== b.nominations.length
+  ) {
+    return false;
+  }
+  for (let index = 0; index < a.nominations.length; index += 1) {
+    const left = a.nominations[index];
+    const right = b.nominations[index];
+    if (
+      !left
+      || !right
+      || left.nominatorUserId !== right.nominatorUserId
+      || left.targetUserId !== right.targetUserId
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
 function areSnapshotShellEqual(a: GameSnapshot, b: GameSnapshot) {
   return a.code === b.code
     && a.mode === b.mode
@@ -614,6 +706,7 @@ function areSnapshotShellEqual(a: GameSnapshot, b: GameSnapshot) {
     && a.communicationMode === b.communicationMode
     && a.tempoProfile === b.tempoProfile
     && a.dayDiscussionSeconds === b.dayDiscussionSeconds
+    && a.playerSpeechSeconds === b.playerSpeechSeconds
     && a.voteSeconds === b.voteSeconds
     && a.revealRolesOnDeath === b.revealRolesOnDeath
     && a.loversEnabled === b.loversEnabled
@@ -623,7 +716,12 @@ function areSnapshotShellEqual(a: GameSnapshot, b: GameSnapshot) {
     && a.narratorVoice === b.narratorVoice
     && a.winnerTeam === b.winnerTeam
     && a.winnerReasonBg === b.winnerReasonBg
+    && areStringListsEqual(a.revoteEligibleUserIds ?? [], b.revoteEligibleUserIds ?? [])
     && areRoleCountsEqual(a.roleCounts, b.roleCounts);
+}
+
+function areStringListsEqual(a: string[], b: string[]) {
+  return a.length === b.length && a.every((value, index) => value === b[index]);
 }
 
 function areRoleCountsEqual(a: PublicRoleCount[], b: PublicRoleCount[]) {

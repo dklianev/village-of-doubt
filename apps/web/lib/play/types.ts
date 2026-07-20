@@ -5,12 +5,15 @@ import type {
   GamePhase,
   NarratorVoice,
   NightActionCapabilities,
+  PrivateCheckResult,
+  PrivateFactionRoster,
   RoleCode,
 } from "@werewolf/shared";
 
 export interface PublicPlayer {
   userId: string;
   displayName: string;
+  avatarId?: string;
   connected: boolean;
   ready: boolean;
   playing: boolean;
@@ -64,6 +67,11 @@ export interface VoteTallyItem {
   hasMayorVote: boolean;
 }
 
+export interface PublicNomination {
+  nominatorUserId: string;
+  targetUserId: string;
+}
+
 export interface GameSnapshot {
   code: string;
   mode: GameMode;
@@ -72,6 +80,7 @@ export interface GameSnapshot {
   communicationMode: string;
   tempoProfile: string;
   dayDiscussionSeconds: number;
+  playerSpeechSeconds?: number;
   voteSeconds: number;
   revealRolesOnDeath: boolean;
   loversEnabled: boolean;
@@ -82,6 +91,10 @@ export interface GameSnapshot {
   phase: GamePhase;
   round: number;
   phaseEndsAt: number;
+  currentSpeakerUserId?: string;
+  currentDefenseUserId?: string;
+  nominations?: PublicNomination[];
+  revoteEligibleUserIds?: string[];
   winnerTeam: string;
   winnerReasonBg: string;
   players: PublicPlayer[];
@@ -97,14 +110,13 @@ export type PhaseSlice = {
   phaseEndsAt: number;
 };
 
-export interface PrivateResult {
-  targetUserId: string;
-  targetUserIds?: string[];
-  role?: RoleCode;
-  isEvil?: boolean;
-  isCommissioner?: boolean;
-  messageBg?: string;
-}
+export type SportDaySlice = {
+  currentSpeakerUserId: string;
+  currentDefenseUserId: string;
+  nominations: PublicNomination[];
+};
+
+export type PrivateResult = PrivateCheckResult;
 
 export interface PrivateLover {
   loverUserId: string;
@@ -115,7 +127,7 @@ export interface NarratorRoleSnapshot {
   roles: Array<{ userId: string; displayName: string; role: RoleCode; roleNameBg: string }>;
 }
 
-export type { NightActionCapabilities };
+export type { NightActionCapabilities, PrivateFactionRoster };
 
 export type ConnectionStatus = "connecting" | "connected" | "reconnecting" | "disconnected" | "lost" | "error";
 export type CueMode = "silent" | "visual" | "audio_vibration";
@@ -131,6 +143,7 @@ export type ShortcutState = {
   actionTargets: PublicPlayer[];
   currentUserId: string;
   ownPlayer: PublicPlayer | undefined;
+  canNominate: boolean;
   showShortcuts: boolean;
   liveMode: boolean;
 };

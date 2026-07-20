@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import {
   EyeOff,
   MessageSquare,
@@ -19,7 +20,6 @@ import {
   type RoleCode,
 } from "@werewolf/shared";
 import "@/components/play/PlayRoom.module.css";
-import { playCue } from "@/lib/sound";
 import { useToast } from "@/lib/toast";
 import { KeyboardShortcutsModal } from "@/components/keyboard-shortcuts-modal";
 import { LiveCuePanel } from "@/components/play/LiveCuePanel";
@@ -31,6 +31,7 @@ import { LoverCard } from "@/components/play/LoverCard";
 import { NarratorSnapshotPanel } from "@/components/play/NarratorSnapshotPanel";
 import { PhaseGuide } from "@/components/play/PhaseGuide";
 import { PrivateChatPanel } from "@/components/play/PrivateChatPanel";
+import { PublicChatComposer } from "@/components/play/PublicChatComposer";
 import { RoleCard } from "@/components/play/RoleCard";
 import { TypingIndicator } from "@/components/play/TypingIndicator";
 import { AchievementUnlockModal } from "@/components/play/AchievementUnlockModal";
@@ -38,11 +39,13 @@ import { ConnectionBanner } from "@/components/play/ConnectionBanner";
 import { DeathRevealCinematic } from "@/components/play/DeathRevealCinematic";
 import { PhaseRail } from "@/components/play/PhaseRail";
 import { PhaseTransitionOverlay } from "@/components/play/PhaseTransitionOverlay";
+import { PlayActionDock } from "@/components/play/PlayActionDock";
 import { PlayStage } from "@/components/play/PlayStage";
 import { PostGameStory } from "@/components/play/PostGameStory";
 import { PreGameCountdown } from "@/components/play/PreGameCountdown";
 import { ReconnectModal } from "@/components/play/ReconnectModal";
 import { NightActionPanel } from "@/components/play/NightActionPanel";
+import { NominationPanel } from "@/components/play/NominationPanel";
 import {
   buildPrimaryNightAction,
   needsSecondNightTarget,
@@ -56,7 +59,8 @@ import { isNightPhase } from "@/lib/play/role-rules";
 import { useCueMode } from "@/hooks/play/use-cue-mode";
 import { useGameRoom } from "@/hooks/play/use-game-room";
 import { usePhaseTransitions } from "@/hooks/play/use-phase-transitions";
-import { winnerBg } from "@/lib/play/copy";
+import { nightTargetHeadingBg, winnerBg } from "@/lib/play/copy";
+import { nextPhaseTransitionArtHref } from "@/lib/play/phase-art";
 import type { PhaseSlice, PublicPlayer, ShortcutState } from "@/lib/play/types";
 
 export type { PhaseSlice, PublicPlayer } from "@/lib/play/types";
@@ -71,12 +75,12 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
   const createOptions = createOptionsRaw;
   const [selectedTargetId, setSelectedTargetId] = useState("");
   const [secondTargetId, setSecondTargetId] = useState("");
-  const [chatMessage, setChatMessage] = useState("");
-  const [privateChatMessage, setPrivateChatMessage] = useState("");
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [actionDockExpanded, setActionDockExpanded] = useState(false);
   const [isCompactViewport, setIsCompactViewport] = useState(false);
+  const [viewportModeReady, setViewportModeReady] = useState(false);
   const [mobileRailTab, setMobileRailTab] = useState<"events" | "chat">("events");
+  const actionDockToggleRef = useRef<HTMLButtonElement>(null);
   const suppressNextPhasePulseRef = useRef(false);
   const lastTypingSentRef = useRef<Map<ChatChannel, number>>(new Map());
   const shortcutStateRef = useRef<ShortcutState | null>(null);
@@ -87,6 +91,7 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
     currentUserId,
     privateRole,
     privateResult,
+    privateFactionRoster,
     privateLover,
     nightActionCapabilities,
     narratorSnapshot,
@@ -137,6 +142,21 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
   const phase = snapshot?.phase ?? "lobby";
   const doctorCanSelfProtect =
     snapshot?.doctorCanSelfProtect ?? createOptions?.doctorCanSelfProtect ?? false;
+  const nominations = snapshot?.nominations ?? [];
+  const nomineeIds = useMemo(
+    () => new Set(nominations.map((nomination) => nomination.targetUserId)),
+    [nominations],
+  );
+  const revoteEligibleIds = useMemo(
+    () => new Set(snapshot?.revoteEligibleUserIds ?? []),
+    [snapshot?.revoteEligibleUserIds],
+  );
+  const isSportDayFlow = mode === "mafia_sport"
+    && (phase === "day_discussion" || phase === "nomination" || phase === "defense" || phase === "voting");
+  const canNominate = mode === "mafia_sport"
+    && phase === "day_discussion"
+    && snapshot?.currentSpeakerUserId === currentUserId
+    && Boolean(ownPlayer?.playing && ownPlayer.alive);
   const canVote = phase === "voting" && Boolean(ownPlayer?.playing && ownPlayer.alive);
   const canUseHunterRevenge =
     phase === "hunter_revenge"
@@ -147,17 +167,32 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
       privateRole
         && ownPlayer?.playing
         && ownPlayer.alive
-        && roleHasNightAction(privateRole.role, phase),
+      && roleHasNightAction(privateRole.role, phase),
     );
+  const eligibleVotingPlayers = useMemo(
+    () => livingPlayers.filter((player) => {
+      if (player.userId === privateLover?.loverUserId) {
+        return false;
+      }
+      if (revoteEligibleIds.size > 0 && !revoteEligibleIds.has(player.userId)) {
+        return false;
+      }
+      return mode !== "mafia_sport" || nomineeIds.has(player.userId);
+    }),
+    [livingPlayers, mode, nomineeIds, privateLover?.loverUserId, revoteEligibleIds],
+  );
   const actionTargets = useMemo(() => {
-    if (!canVote && !canUseHunterRevenge && !canUseNightAction) {
+    if (!canVote && !canNominate && !canUseHunterRevenge && !canUseNightAction) {
       return [];
     }
-    return shortcutTargets(phase, privateRole?.role, players, livingPlayers, currentUserId, {
+    if (canNominate) {
+      return livingPlayers.filter((player) => player.userId !== currentUserId);
+    }
+    return shortcutTargets(phase, privateRole?.role, players, canVote ? eligibleVotingPlayers : livingPlayers, currentUserId, {
       doctorCanSelfProtect,
       nightActionCapabilities,
     });
-  }, [canUseHunterRevenge, canUseNightAction, canVote, currentUserId, doctorCanSelfProtect, livingPlayers, nightActionCapabilities, phase, players, privateRole?.role]);
+  }, [canNominate, canUseHunterRevenge, canUseNightAction, canVote, currentUserId, doctorCanSelfProtect, eligibleVotingPlayers, livingPlayers, nightActionCapabilities, phase, players, privateRole?.role]);
   const secondaryActionTargets = useMemo(() => {
     if (!canUseNightAction || !needsSecondNightTarget(privateRole?.role, phase) || !selectedTargetId) {
       return [];
@@ -199,9 +234,25 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
       return;
     }
 
-    const image = new window.Image();
-    image.decoding = "async";
-    image.src = preloadHref;
+    const connection = (navigator as Navigator & {
+      connection?: { saveData?: boolean; effectiveType?: string };
+    }).connection;
+    if (connection?.saveData || connection?.effectiveType === "slow-2g" || connection?.effectiveType === "2g") {
+      return;
+    }
+
+    const preload = () => {
+      const image = new window.Image();
+      image.decoding = "async";
+      image.src = preloadHref;
+    };
+    if (typeof window.requestIdleCallback === "function") {
+      const idleId = window.requestIdleCallback(preload, { timeout: 2_500 });
+      return () => window.cancelIdleCallback(idleId);
+    }
+
+    const timeoutId = window.setTimeout(preload, 1_500);
+    return () => window.clearTimeout(timeoutId);
   }, [family, phase]);
 
   useEffect(() => {
@@ -210,7 +261,10 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
     }
 
     const query = window.matchMedia("(max-width: 1023px)");
-    const updateCompactViewport = () => setIsCompactViewport(query.matches);
+    const updateCompactViewport = () => {
+      setIsCompactViewport(query.matches);
+      setViewportModeReady(true);
+    };
 
     updateCompactViewport();
     query.addEventListener("change", updateCompactViewport);
@@ -245,6 +299,7 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
       actionTargets: keyboardActionTargets,
       currentUserId,
       ownPlayer,
+      canNominate,
       showShortcuts,
       liveMode,
     };
@@ -256,16 +311,14 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
 
   function sendNightAction(action: NightActionCommand) {
     room?.send("submitNightAction", { action });
-    toast({ message: "Нощното действие е изпратено.", kind: "success" });
-    if (!liveMode && "vibrate" in navigator) {
-      navigator.vibrate([24]);
-    }
   }
 
   function sendVote(targetUserId: string) {
     room?.send("submitVote", { targetUserId });
-    toast({ message: "Гласът е изпратен.", kind: "success" });
-    playCue("vote", { forceSilent: liveMode });
+  }
+
+  function sendNomination(targetUserId: string) {
+    room?.send("submitNomination", { targetUserId });
   }
 
   // Keep the seat-selection logic in a ref so the callback identity is stable.
@@ -319,6 +372,7 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
     setSecondTargetId("");
     if (isCompactViewport) {
       setActionDockExpanded(false);
+      window.requestAnimationFrame(() => actionDockToggleRef.current?.focus());
     }
   }, [isCompactViewport]);
 
@@ -334,11 +388,16 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
   }, []);
 
   useEffect(() => {
+    if (!viewportModeReady) {
+      return;
+    }
     const phaseHasPrimaryDockAction =
       phase === "lobby"
       || canVote
+      || canNominate
       || canUseHunterRevenge
-      || canUseNightAction;
+      || canUseNightAction
+      || isSportDayFlow;
     const isAwaitingSecondTarget =
       isCompactViewport
       && needsSecondNightTarget(privateRole?.role, phase)
@@ -357,7 +416,7 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
     } else if (isCompactViewport && phaseHasPrimaryDockAction) {
       setActionDockExpanded(false);
     }
-  }, [canUseHunterRevenge, canUseNightAction, canVote, isCompactViewport, phase, privateRole?.role, secondTargetId, selectedTargetId]);
+  }, [canNominate, canUseHunterRevenge, canUseNightAction, canVote, isCompactViewport, isSportDayFlow, phase, privateRole?.role, secondTargetId, selectedTargetId, viewportModeReady]);
 
   useEffect(() => {
     if (selectedTargetId && !targetableIds.has(selectedTargetId)) {
@@ -376,14 +435,16 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
 
     if (current.phase === "voting" && current.selectedTargetId) {
       current.room.send("submitVote", { targetUserId: current.selectedTargetId });
-      toast({ message: "Гласът е изпратен.", kind: "success" });
-      playCue("vote", { forceSilent: current.liveMode });
+      return;
+    }
+
+    if (current.canNominate && current.selectedTargetId) {
+      current.room.send("submitNomination", { targetUserId: current.selectedTargetId });
       return;
     }
 
     if (current.phase === "hunter_revenge" && current.privateRole?.role === "hunter" && current.selectedTargetId) {
       current.room.send("submitHunterRevenge", { targetUserId: current.selectedTargetId });
-      toast({ message: "Последният изстрел е изпратен.", kind: "success" });
       return;
     }
 
@@ -397,49 +458,15 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
       );
       if (action) {
         current.room.send("submitNightAction", { action });
-        toast({ message: "Нощното действие е изпратено.", kind: "success" });
-        if (!current.liveMode && "vibrate" in navigator) {
-          navigator.vibrate([24]);
-        }
       } else if (current.selectedTargetId && requiresExplicitNightActionChoice(current.privateRole.role, current.phase)) {
         toast({ message: "Избери конкретния бутон за това нощно действие.", kind: "info" });
       }
     }
   }, [nightActionCapabilities, toast]);
 
-  function sendChat(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const message = chatMessage.trim();
-    if (!message) {
-      return;
-    }
-    room?.send("sendChat", { channel: "public", message });
-    sendTypingSignal("public", false);
-    setChatMessage("");
-  }
-
-  function sendPrivateChat(channel: ChatChannel) {
-    const message = privateChatMessage.trim();
-    if (!message) {
-      return;
-    }
+  function sendChatMessage(channel: ChatChannel, message: string) {
     room?.send("sendChat", { channel, message });
     sendTypingSignal(channel, false);
-    setPrivateChatMessage("");
-  }
-
-  function updatePublicChatMessage(value: string) {
-    const nextValue = value.slice(0, 500);
-    setChatMessage(nextValue);
-    sendTypingSignal("public", nextValue.trim().length > 0);
-  }
-
-  function updatePrivateChatMessage(channel: ChatChannel | null, value: string) {
-    const nextValue = value.slice(0, 500);
-    setPrivateChatMessage(nextValue);
-    if (channel) {
-      sendTypingSignal(channel, nextValue.trim().length > 0);
-    }
   }
 
   function sendTypingSignal(channel: ChatChannel, active: boolean) {
@@ -495,18 +522,54 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
         || isBlessed
         || phase === "lobby"
         || canVote
+        || canNominate
         || canUseHunterRevenge
         || canUseNightAction
         || privateChatChannel
+        || isSportDayFlow
       ),
   );
-  const hasDockRitualPanel = Boolean(canVote || canUseHunterRevenge || canUseNightAction || privateChatChannel);
+  const hasDockRitualPanel = Boolean(
+    canVote || canNominate || canUseHunterRevenge || canUseNightAction || privateChatChannel || isSportDayFlow,
+  );
+  const hasPrimaryDockContent = Boolean(
+    phase === "lobby" || canVote || canNominate || canUseHunterRevenge || canUseNightAction || isSportDayFlow,
+  );
   const actionDockKind =
-    canVote || canUseHunterRevenge || canUseNightAction
+    canVote || canNominate || canUseHunterRevenge || canUseNightAction
       ? "action"
       : phase === "lobby"
         ? "lobby"
         : "quiet";
+  const selectedActionTargetName = players.find((player) => player.userId === selectedTargetId)?.displayName;
+  const currentDefenseName = players.find((player) => player.userId === snapshot?.currentDefenseUserId)?.displayName;
+  const actionDockHeading = canNominate
+    ? `Твоята ${snapshot?.playerSpeechSeconds ?? 60}-секундна реч`
+    : canVote
+      ? selectedActionTargetName
+        ? `Глас за ${selectedActionTargetName}`
+        : "Гласуване · избери играч"
+      : canUseHunterRevenge
+      ? selectedActionTargetName
+        ? `Последен изстрел срещу ${selectedActionTargetName}`
+        : "Последен изстрел · избери цел"
+      : canUseNightAction
+        ? selectedActionTargetName && privateRole
+          ? nightTargetHeadingBg(privateRole.role, selectedActionTargetName)
+          : "Нощен ход · избери цел"
+        : phase === "lobby"
+          ? ownPlayer?.ready
+            ? "Готов си за началото"
+            : "Потвърди готовност"
+          : phase === "nomination"
+            ? "Номинациите са отворени"
+            : phase === "defense"
+              ? currentDefenseName
+                ? `${currentDefenseName} защитава мястото си`
+                : "Защита на номинираните"
+          : privateChatChannel
+            ? "Тайният чат е отворен"
+            : "Твоят таен ъгъл";
   // Connection state already lives in the ConnectionBanner; the stage-status
   // line is only useful for transient action feedback. Hide the boilerplate
   // "Свързан" / "Свързване..." strings so the player doesn't see them linger.
@@ -566,7 +629,7 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
         return;
       }
 
-      if ((current.phase === "voting" || current.phase === "hunter_revenge" || isNightPhase(current.phase)) && /^[1-9]$/.test(event.key)) {
+      if ((current.canNominate || current.phase === "voting" || current.phase === "hunter_revenge" || isNightPhase(current.phase)) && /^[1-9]$/.test(event.key)) {
         const index = Number(event.key) - 1;
         const targetPlayer = current.actionTargets[index];
         if (targetPlayer) {
@@ -589,7 +652,20 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
     const chatTabId = "play-rail-tab-chat";
     const eventsPanelId = "play-rail-panel-events";
     const chatPanelId = "play-rail-panel-chat";
+    const chatInputId = "play-public-chat-input";
     const showRailDeathReveal = phase === "day_announcement" || phase === "resolution" || phase === "hunter_revenge";
+    const handleRailTabKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
+      if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) {
+        return;
+      }
+
+      event.preventDefault();
+      const nextTab = event.key === "ArrowLeft" || event.key === "Home" ? "events" : "chat";
+      setMobileRailTab(nextTab);
+      window.requestAnimationFrame(() => {
+        document.getElementById(nextTab === "events" ? eventsTabId : chatTabId)?.focus();
+      });
+    };
 
     return (
       <section className="play-section play-players-panel play-side-rail" aria-labelledby={railHeadingId}>
@@ -615,7 +691,10 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
 
         {snapshot ? (
           <details className="play-rail-disclosure mt-8">
-            <summary id={guideHeadingId}>Правила и подсказки</summary>
+            <summary id={guideHeadingId}>
+              <span>Правила и подсказки</span>
+              <small>Режим, роли и текуща фаза</small>
+            </summary>
             <div className="play-rail-guide-body" role="region" aria-labelledby={guideHeadingId}>
               <RulesSummary snapshot={snapshot} />
               <PhaseGuide phase={phase} mode={mode} privateRole={privateRole?.role} ownPlayer={ownPlayer} />
@@ -631,7 +710,9 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
             role="tab"
             aria-selected={mobileRailTab === "events"}
             aria-controls={eventsPanelId}
+            tabIndex={mobileRailTab === "events" ? 0 : -1}
             onClick={() => setMobileRailTab("events")}
+            onKeyDown={handleRailTabKeyDown}
           >
             Събития
           </button>
@@ -642,7 +723,9 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
             role="tab"
             aria-selected={mobileRailTab === "chat"}
             aria-controls={chatPanelId}
+            tabIndex={mobileRailTab === "chat" ? 0 : -1}
             onClick={() => setMobileRailTab("chat")}
+            onKeyDown={handleRailTabKeyDown}
           >
             Чат
           </button>
@@ -653,6 +736,7 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
           className="play-rail-panel mt-8"
           role="tabpanel"
           aria-labelledby={eventsTabId}
+          hidden={mobileRailTab !== "events"}
           data-mobile-panel="events"
           data-active={mobileRailTab === "events" ? "true" : undefined}
         >
@@ -685,38 +769,18 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
           className="play-rail-panel mt-8"
           role="tabpanel"
           aria-labelledby={chatTabId}
+          hidden={mobileRailTab !== "chat"}
           data-mobile-panel="chat"
           data-active={mobileRailTab === "chat" ? "true" : undefined}
         >
           {phase === "day_discussion" && snapshot?.communicationMode === "built_in_chat" ? (
             ownPlayer?.playing && ownPlayer?.alive ? (
-              <form className="grid gap-3" onSubmit={sendChat}>
-                <h3 className="play-panel-subhead">
-                  <MessageSquare className="play-section-icon" aria-hidden strokeWidth={1.8} />
-                  <span>Дневен чат</span>
-                </h3>
-                <div className="grid gap-1">
-                  <input
-                    className="input"
-                    value={chatMessage}
-                    onChange={(event) => updatePublicChatMessage(event.target.value)}
-                    placeholder="Напиши обвинение, защита или блъф..."
-                    maxLength={500}
-                    aria-describedby="chat-counter"
-                  />
-                  <span
-                    id="chat-counter"
-                    className={`text-right text-xs ${chatMessage.length >= 480 ? "text-[#c18a38]" : "text-[#ead9ba]/60"}`}
-                  >
-                    {chatMessage.length}/500
-                  </span>
-                </div>
-                <TypingIndicator notices={publicTypers} />
-                <button className="btn btn-primary" type="submit" disabled={chatMessage.trim().length === 0}>
-                  <MessageSquare className="play-button-icon" aria-hidden strokeWidth={1.8} />
-                  <span>Изпрати</span>
-                </button>
-              </form>
+              <PublicChatComposer
+                inputId={chatInputId}
+                typingNotices={publicTypers}
+                onSend={(message) => sendChatMessage("public", message)}
+                onTyping={(active) => sendTypingSignal("public", active)}
+              />
             ) : (
               <div className="play-muted-note">
                 <EyeOff className="play-section-icon" aria-hidden strokeWidth={1.8} />
@@ -811,6 +875,14 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
           <p className="play-winner-kicker">край на играта</p>
           <h2 className="play-winner-title">{winnerBg(snapshot.winnerTeam)}</h2>
           {snapshot.winnerReasonBg ? <p className="play-winner-reason">{snapshot.winnerReasonBg}</p> : null}
+          <div className="play-winner-actions">
+            <Link className="btn btn-primary" href={`/create?mode=${encodeURIComponent(mode)}`}>
+              Нова игра
+            </Link>
+            <Link className="btn btn-secondary" href="/history">
+              Към архива
+            </Link>
+          </div>
         </article>
         <PostGameStory snapshot={snapshot} />
       </div>
@@ -823,96 +895,99 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
     }
 
     return (
-      <section
-        className="play-action-dock play-section"
-        data-dock-kind={actionDockKind}
-        data-expanded={actionDockExpanded ? "true" : "false"}
-        aria-labelledby="play-action-dock-heading"
-      >
-        <div className="play-action-dock-head">
-          <div>
-            <p className="section-kicker play-section-kicker">
-              <EyeOff className="play-section-icon" aria-hidden strokeWidth={1.8} />
-              <span>личен ход</span>
-            </p>
-            <h2 id="play-action-dock-heading">Твоят таен ъгъл</h2>
-          </div>
-          <button
-            className="play-action-dock-toggle"
-            type="button"
-            aria-expanded={actionDockExpanded}
-            aria-controls="play-action-dock-grid"
-            onClick={() => setActionDockExpanded((value) => !value)}
-          >
-            {actionDockExpanded ? "Скрий" : "Покажи"}
-          </button>
-        </div>
+      <PlayActionDock
+        eyebrow={isSportDayFlow ? "дневен ред" : "личен ход"}
+        heading={actionDockHeading}
+        kind={actionDockKind}
+        compact={isCompactViewport}
+        expanded={actionDockExpanded}
+        onExpandedChange={setActionDockExpanded}
+        toggleRef={actionDockToggleRef}
+        dossierTitle={privateRole?.roleNameBg ?? "Твоето досие"}
+        primaryContent={hasPrimaryDockContent ? (
+          <>
+            {renderLobbyControls()}
 
-        <div id="play-action-dock-grid" className="play-action-dock-grid">
-          {renderLobbyControls()}
+            {isSportDayFlow ? (
+              <NominationPanel
+                phase={phase}
+                players={players}
+                currentUserId={currentUserId}
+                currentSpeakerUserId={snapshot?.currentSpeakerUserId ?? ""}
+                currentDefenseUserId={snapshot?.currentDefenseUserId ?? ""}
+                nominations={nominations}
+                canNominate={canNominate}
+                selectedTargetId={selectedTargetId}
+                onNominate={sendNomination}
+              />
+            ) : null}
 
-          {privateLover ? <LoverCard lover={privateLover} /> : null}
+            {canUseNightAction && privateRole ? (
+              <NightActionPanel
+                players={players}
+                livingPlayers={livingPlayers}
+                currentUserId={currentUserId}
+                doctorCanSelfProtect={doctorCanSelfProtect}
+                phase={phase}
+                privateRole={privateRole.role}
+                privateFactionRoster={privateFactionRoster}
+                nightActionCapabilities={nightActionCapabilities}
+                selectedTargetId={selectedTargetId}
+                secondTargetId={secondTargetId}
+                onResetPrimaryTarget={resetPrimaryNightTarget}
+                sendNightAction={sendNightAction}
+              />
+            ) : null}
 
-          {isBlessed ? (
-            <article className="play-blessed-card paper-card mt-8 rounded-[2rem] border-2 border-[#c18a38]/45 p-5">
-              <p className="section-kicker text-[#842f2b]">тайна закрила</p>
-              <h2 className="mt-2 text-2xl font-black">Свещеникът те благослови</h2>
-              <p className="mt-2 text-sm text-[#4f3829]">
-                Благословията остава върху теб до края на играта и спира нощни убийства срещу теб.
-              </p>
-            </article>
-          ) : null}
+            {canVote ? (
+              <VotingPanel
+                currentUserId={currentUserId}
+                livingPlayers={eligibleVotingPlayers}
+                selectedTargetId={selectedTargetId}
+                voteTally={snapshot?.voteTally ?? []}
+                allowSkipVote={Boolean(snapshot?.allowSkipVote) && revoteEligibleIds.size === 0}
+                sendVote={sendVote}
+              />
+            ) : null}
 
-          <RoleCard role={privateRole} result={privateResult} players={players} />
+            {canUseHunterRevenge ? (
+              <HunterRevengePanel
+                currentUserId={currentUserId}
+                livingPlayers={livingPlayers}
+                selectedTargetId={selectedTargetId}
+                sendHunterRevenge={(targetUserId) => room?.send("submitHunterRevenge", { targetUserId })}
+              />
+            ) : null}
+          </>
+        ) : null}
+        privateContent={privateRole || privateResult || privateLover || isBlessed || privateChatChannel ? (
+          <>
+            {privateLover ? <LoverCard lover={privateLover} /> : null}
 
-          {canUseNightAction && privateRole ? (
-            <NightActionPanel
-              players={players}
-              livingPlayers={livingPlayers}
-              currentUserId={currentUserId}
-              doctorCanSelfProtect={doctorCanSelfProtect}
-              phase={phase}
-              privateRole={privateRole.role}
-              nightActionCapabilities={nightActionCapabilities}
-              selectedTargetId={selectedTargetId}
-              secondTargetId={secondTargetId}
-              onResetPrimaryTarget={resetPrimaryNightTarget}
-              sendNightAction={sendNightAction}
-            />
-          ) : null}
+            {isBlessed ? (
+              <article className="play-blessed-card paper-card mt-8 rounded-[2rem] border-2 border-[#c18a38]/45 p-5">
+                <p className="section-kicker text-[#842f2b]">тайна закрила</p>
+                <h2 className="mt-2 text-2xl font-black">Свещеникът те благослови</h2>
+                <p className="mt-2 text-sm text-[#4f3829]">
+                  Благословията остава върху теб до края на играта и спира нощни убийства срещу теб.
+                </p>
+              </article>
+            ) : null}
 
-          {canVote ? (
-            <VotingPanel
-              currentUserId={currentUserId}
-              livingPlayers={livingPlayers}
-              selectedTargetId={selectedTargetId}
-              voteTally={snapshot?.voteTally ?? []}
-              allowSkipVote={Boolean(snapshot?.allowSkipVote)}
-              sendVote={sendVote}
-            />
-          ) : null}
+            <RoleCard role={privateRole} result={privateResult} players={players} family={family} />
 
-          {canUseHunterRevenge ? (
-            <HunterRevengePanel
-              currentUserId={currentUserId}
-              livingPlayers={livingPlayers}
-              selectedTargetId={selectedTargetId}
-              sendHunterRevenge={(targetUserId) => room?.send("submitHunterRevenge", { targetUserId })}
-            />
-          ) : null}
-
-          {privateChatChannel ? (
-            <PrivateChatPanel
-              channel={privateChatChannel}
-              messages={privateChannelMessages}
-              value={privateChatMessage}
-              setValue={(value) => updatePrivateChatMessage(privateChatChannel, value)}
-              sendPrivateChat={sendPrivateChat}
-              typingNotices={privateTypers}
-            />
-          ) : null}
-        </div>
-      </section>
+            {privateChatChannel ? (
+              <PrivateChatPanel
+                channel={privateChatChannel}
+                messages={privateChannelMessages}
+                onSend={sendChatMessage}
+                onTyping={sendTypingSignal}
+                typingNotices={privateTypers}
+              />
+            ) : null}
+          </>
+        ) : null}
+      />
     );
   };
 
@@ -981,34 +1056,39 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
           data-dock-has-ritual={hasDockRitualPanel ? "true" : undefined}
           data-stage-takeover={hasStageTakeover ? "true" : undefined}
         >
-          <PlayStage
-            code={code}
-            phase={phase}
-            mode={mode}
-            family={family}
-            round={snapshot?.round ?? 0}
-            phaseEndsAt={snapshot?.phaseEndsAt ?? 0}
-            status={status}
-            isStatusInformative={isStatusInformative}
-            isPending={isPending}
-            players={players}
-            hasSnapshot={Boolean(snapshot)}
-            narratorMode={snapshot?.narratorMode ?? "automatic"}
-            communicationMode={snapshot?.communicationMode ?? "built_in_chat"}
-            ownPlayer={ownPlayer}
-            targetableIds={targetableIds}
-            selectedTargetId={selectedTargetId}
-            secondTargetId={secondTargetId}
-            voteCounts={voteCounts}
-            onSelectSeat={selectSeatTarget}
-            onMakeNarrator={handleMakeNarrator}
-            onMakeMayor={handleMakeMayor}
-          />
-          {renderStageTakeover()}
-          {renderActionDock()}
+          <div className="play-primary-column">
+            <PlayStage
+              code={code}
+              phase={phase}
+              mode={mode}
+              family={family}
+              round={snapshot?.round ?? 0}
+              phaseEndsAt={snapshot?.phaseEndsAt ?? 0}
+              status={status}
+              isStatusInformative={isStatusInformative}
+              isPending={isPending}
+              players={players}
+              hasSnapshot={Boolean(snapshot)}
+              narratorMode={snapshot?.narratorMode ?? "automatic"}
+              communicationMode={snapshot?.communicationMode ?? "built_in_chat"}
+              ownPlayer={ownPlayer}
+              targetableIds={targetableIds}
+              selectedTargetId={selectedTargetId}
+              secondTargetId={secondTargetId}
+              voteCounts={voteCounts}
+              currentSpeakerUserId={snapshot?.currentSpeakerUserId ?? ""}
+              currentDefenseUserId={snapshot?.currentDefenseUserId ?? ""}
+              nomineeIds={nomineeIds}
+              onSelectSeat={selectSeatTarget}
+              onMakeNarrator={handleMakeNarrator}
+              onMakeMayor={handleMakeMayor}
+            />
+            {renderStageTakeover()}
+            {renderActionDock()}
+            {renderNarratorDeck()}
+          </div>
           {hasStageTakeover ? null : renderPlayersPanel()}
-          {renderNarratorDeck()}
-      </section>
+        </section>
       </div>
     </main>
   );
@@ -1066,62 +1146,6 @@ function getAvailablePrivateChatChannel(
 }
 
 function nextPhaseArtPreloadHref(phase: GamePhase, family: GameFamily) {
-  const nextPhase = nextVisualPhase(phase);
-  const artFile = phaseArtFile(nextPhase);
   const isMobile = typeof window.matchMedia === "function" && window.matchMedia("(max-width: 720px)").matches;
-  const mobileSegment = isMobile ? "mobile/" : "";
-  const familySegment = family === "mafia" ? "mafia/" : "";
-  return `/game-art/${mobileSegment}${familySegment}${artFile}.webp`;
-}
-
-function nextVisualPhase(phase: GamePhase): GamePhase {
-  switch (phase) {
-    case "lobby":
-      return "role_reveal";
-    case "role_reveal":
-      return "first_night";
-    case "first_night":
-    case "night":
-      return "day_announcement";
-    case "day_announcement":
-    case "day_discussion":
-    case "nomination":
-    case "defense":
-      return "voting";
-    case "voting":
-      return "resolution";
-    case "resolution":
-    case "hunter_revenge":
-    case "mayor_successor":
-      return "night";
-    case "game_over":
-      return "resolution";
-    case "paused":
-      return "lobby";
-  }
-}
-
-function phaseArtFile(phase: GamePhase) {
-  switch (phase) {
-    case "lobby":
-    case "paused":
-      return "bg-lobby-tavern";
-    case "role_reveal":
-      return "bg-role-reveal";
-    case "first_night":
-    case "night":
-      return "bg-night-phase";
-    case "day_announcement":
-    case "day_discussion":
-    case "nomination":
-    case "defense":
-      return "bg-day-discussion";
-    case "voting":
-      return "bg-voting";
-    case "resolution":
-    case "hunter_revenge":
-    case "mayor_successor":
-    case "game_over":
-      return "bg-resolution";
-  }
+  return nextPhaseTransitionArtHref(phase, family, isMobile);
 }

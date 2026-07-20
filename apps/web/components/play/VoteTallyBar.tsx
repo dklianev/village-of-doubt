@@ -11,7 +11,7 @@ export function VoteTallyBar({ items, maxVotes }: { items: VoteTallyItem[]; maxV
   }
 
   return (
-    <div className="vote-tally-card mt-5" role="region" tabIndex={0} aria-label="Текущо броене на гласовете">
+    <div className="vote-tally-card mt-5" role="region" aria-label="Текущо броене на гласовете" aria-live="polite">
       {items.map((item) => (
         <div key={item.targetUserId} className="vote-tally-row">
           <span>{item.targetName}</span>

@@ -44,7 +44,7 @@ export function playerStatusBadge(player: PublicPlayer, phase: string): string {
     return player.hasVoted ? "гласувал" : "обмисля";
   }
   if (phase === "first_night" || phase === "night") {
-    return player.actedThisPhase ? "действал" : "буден";
+    return "в играта";
   }
   if (phase === "day_discussion") {
     return "говори";
@@ -82,6 +82,7 @@ export function playerInitials(name: string) {
 export function arePlayersEqual(a: PublicPlayer, b: PublicPlayer) {
   return a.userId === b.userId
     && a.displayName === b.displayName
+    && a.avatarId === b.avatarId
     && a.connected === b.connected
     && a.ready === b.ready
     && a.playing === b.playing

@@ -57,11 +57,11 @@
   --art-landing: image-set(url("/game-art/bg-landing-hero.webp") type("image/webp"), url("/game-art/bg-landing-hero.png") type("image/png"));
   --art-landing-ambient: image-set(url("/game-art/bg-landing-ambient.webp") type("image/webp"), url("/game-art/bg-landing-ambient.png") type("image/png"));
   --art-landing-dual: image-set(url("/game-art/bg-landing-dual-world-v2.webp") type("image/webp"), url("/game-art/bg-landing-dual-world-v2.png") type("image/png"));
-  --art-landing-hero-composited: image-set(url("/game-art/bg-landing-hero-composited.webp?v=2") type("image/webp"), url("/game-art/bg-landing-hero-composited.png?v=2") type("image/png"));
-  --art-landing-hero-light: image-set(url("/game-art/bg-landing-hero-light-v1.webp") type("image/webp"), url("/game-art/bg-landing-hero-light-v1.png") type("image/png"));
+  --art-landing-hero-composited: image-set(url("/game-art/bg-landing-hero-composited.avif?v=2") type("image/avif"), url("/game-art/bg-landing-hero-composited.webp?v=2") type("image/webp"), url("/game-art/bg-landing-hero-composited.png?v=2") type("image/png"));
+  --art-landing-hero-light: image-set(url("/game-art/bg-landing-hero-light-v1.avif") type("image/avif"), url("/game-art/bg-landing-hero-light-v1.webp") type("image/webp"), url("/game-art/bg-landing-hero-light-v1.png") type("image/png"));
   --art-landing-ambient-composited: image-set(url("/game-art/bg-landing-ambient-composited.webp") type("image/webp"), url("/game-art/bg-landing-ambient-composited.png") type("image/png"));
-  --art-werewolf: image-set(url("/game-art/werewolf/bg-hero-v2.webp") type("image/webp"), url("/game-art/werewolf/bg-hero-v2.png") type("image/png"));
-  --art-mafia: image-set(url("/game-art/mafia/bg-hero-v2.webp") type("image/webp"), url("/game-art/mafia/bg-hero-v2.png") type("image/png"));
+  --art-werewolf: image-set(url("/game-art/werewolf/bg-hero-v2.avif") type("image/avif"), url("/game-art/werewolf/bg-hero-v2.webp") type("image/webp"), url("/game-art/werewolf/bg-hero-v2.png") type("image/png"));
+  --art-mafia: image-set(url("/game-art/mafia/bg-hero-v2.avif") type("image/avif"), url("/game-art/mafia/bg-hero-v2.webp") type("image/webp"), url("/game-art/mafia/bg-hero-v2.png") type("image/png"));
   --hero-card-border: rgba(200, 154, 85, 0.28);
   --hero-card-scrim: linear-gradient(180deg, rgba(4, 7, 8, 0) 0%, rgba(4, 7, 8, 0.16) 100%);
   --hero-card-shadow: 0 32px 92px rgba(0, 0, 0, 0.46), inset 0 1px rgba(255, 247, 229, 0.1);
@@ -96,11 +96,11 @@
     url("/game-art/account/bg-account-archive-room-light-v1.png") type("image/png")
   );
   --art-account-ambient: var(--art-account-ambient-dark);
-  --art-privacy: image-set(url("/game-art/legal/privacy-banner.webp") type("image/webp"), url("/game-art/legal/privacy-banner.png") type("image/png"));
-  --art-terms: image-set(url("/game-art/legal/terms-banner.webp") type("image/webp"), url("/game-art/legal/terms-banner.png") type("image/png"));
-  --art-report: image-set(url("/game-art/legal/report-banner.webp") type("image/webp"), url("/game-art/legal/report-banner.png") type("image/png"));
-  --art-faq: image-set(url("/game-art/legal/faq-hearth-banner.webp") type("image/webp"), url("/game-art/legal/faq-hearth-banner.png") type("image/png"));
-  --art-status: image-set(url("/game-art/legal/status-banner.webp") type("image/webp"), url("/game-art/legal/status-banner.png") type("image/png"));
+  --art-privacy: image-set(url("/game-art/legal/privacy-banner.avif") type("image/avif"), url("/game-art/legal/privacy-banner.webp") type("image/webp"), url("/game-art/legal/privacy-banner.png") type("image/png"));
+  --art-terms: image-set(url("/game-art/legal/terms-banner.avif") type("image/avif"), url("/game-art/legal/terms-banner.webp") type("image/webp"), url("/game-art/legal/terms-banner.png") type("image/png"));
+  --art-report: image-set(url("/game-art/legal/report-banner.avif") type("image/avif"), url("/game-art/legal/report-banner.webp") type("image/webp"), url("/game-art/legal/report-banner.png") type("image/png"));
+  --art-faq: image-set(url("/game-art/legal/faq-hearth-banner.avif") type("image/avif"), url("/game-art/legal/faq-hearth-banner.webp") type("image/webp"), url("/game-art/legal/faq-hearth-banner.png") type("image/png"));
+  --art-status: image-set(url("/game-art/legal/status-banner.avif") type("image/avif"), url("/game-art/legal/status-banner.webp") type("image/webp"), url("/game-art/legal/status-banner.png") type("image/png"));
   --art-replay: image-set(url("/game-art/legal/replay-banner.webp") type("image/webp"), url("/game-art/legal/replay-banner.png") type("image/png"));
   --art-friends-dark: image-set(
     url("/game-art/friends/bg-friends-invitation-dark-v1.avif") type("image/avif"),
@@ -131,6 +131,16 @@
   --art-achievements: image-set(
     url("/game-art/achievements/bg-legends-hall-v1.webp") type("image/webp"),
     url("/game-art/achievements/bg-legends-hall-v1.png") type("image/png")
+  );
+  --art-play-dark-werewolves: image-set(
+    url("/game-art/play/bg-play-dark-werewolves-v1.avif") type("image/avif"),
+    url("/game-art/play/bg-play-dark-werewolves-v1.webp") type("image/webp"),
+    url("/game-art/play/bg-play-dark-werewolves-v1.png") type("image/png")
+  );
+  --art-play-dark-mafia: image-set(
+    url("/game-art/play/bg-play-dark-mafia-v1.avif") type("image/avif"),
+    url("/game-art/play/bg-play-dark-mafia-v1.webp") type("image/webp"),
+    url("/game-art/play/bg-play-dark-mafia-v1.png") type("image/png")
   );
   --transition-night: image-set(url("/game-art/transition-night-falls.webp") type("image/webp"), url("/game-art/transition-night-falls.png") type("image/png"));
   --transition-day: image-set(url("/game-art/transition-village-wakes.webp") type("image/webp"), url("/game-art/transition-village-wakes.png") type("image/png"));
@@ -431,11 +441,13 @@
     --art-account-light: image-set(url("/game-art/mobile/account/bg-account-dossier-light-v2.webp") type("image/webp"));
     --art-account-ambient-dark: image-set(url("/game-art/mobile/account/bg-account-archive-room-dark-v1.webp") type("image/webp"));
     --art-account-ambient-light: image-set(url("/game-art/mobile/account/bg-account-archive-room-light-v1.webp") type("image/webp"));
-    --art-tutorial-dark: image-set(url("/game-art/mobile/tutorial/bg-tutorial-hall-dark-v1.webp") type("image/webp"));
-    --art-tutorial-light: image-set(url("/game-art/mobile/tutorial/bg-tutorial-hall-light-v1.webp") type("image/webp"));
     --art-friends-dark: image-set(url("/game-art/mobile/friends/bg-friends-invitation-dark-v1.webp") type("image/webp"));
     --art-friends-light: image-set(url("/game-art/mobile/friends/bg-friends-invitation-light-v1.webp") type("image/webp"));
+    --art-tutorial-dark: image-set(url("/game-art/mobile/tutorial/bg-tutorial-hall-dark-v1.webp") type("image/webp"));
+    --art-tutorial-light: image-set(url("/game-art/mobile/tutorial/bg-tutorial-hall-light-v1.webp") type("image/webp"));
     --art-achievements: image-set(url("/game-art/mobile/achievements/bg-legends-hall-v1.webp") type("image/webp"));
+    --art-play-dark-werewolves: image-set(url("/game-art/mobile/play/bg-play-dark-werewolves-v1.webp") type("image/webp"));
+    --art-play-dark-mafia: image-set(url("/game-art/mobile/play/bg-play-dark-mafia-v1.webp") type("image/webp"));
     --transition-night: image-set(url("/game-art/mobile/transition-night-falls.webp") type("image/webp"));
     --transition-day: image-set(url("/game-art/mobile/transition-village-wakes.webp") type("image/webp"));
     --transition-vote: image-set(url("/game-art/mobile/transition-voting-starts.webp") type("image/webp"));
@@ -444,6 +456,7 @@
     --texture-paper: image-set(url("/game-art/mobile/texture-parchment.webp") type("image/webp"));
     --texture-wood: image-set(url("/game-art/mobile/texture-walnut.webp") type("image/webp"));
     --texture-fog: image-set(url("/game-art/mobile/texture-fog.webp") type("image/webp"));
+    --texture-wax: image-set(url("/game-art/mobile/texture-wax.webp") type("image/webp"));
     --screen-loading: image-set(url("/game-art/mobile/screen-loading.webp") type("image/webp"));
     --screen-reconnect: image-set(url("/game-art/mobile/screen-reconnect.webp") type("image/webp"));
     --screen-error: image-set(url("/game-art/mobile/screen-error.webp") type("image/webp"));
@@ -502,8 +515,8 @@ html[data-theme="light"] {
   --art-history: var(--art-history-light);
   --art-account: var(--art-account-light);
   --art-account-ambient: var(--art-account-ambient-light);
-  --art-tutorial: var(--art-tutorial-light);
   --art-friends: var(--art-friends-light);
+  --art-tutorial: var(--art-tutorial-light);
 
   /* Legal-shell light theme overrides. */
   --legal-shell-bg: rgba(252, 246, 236, 0.94);
@@ -659,7 +672,7 @@ html[data-theme="light"] {
   --legal-privacy-shell-privacy-surface-strong: rgba(255, 250, 238, 0.85);
   --legal-privacy-shell-privacy-text: #2a1b10;
   --legal-privacy-shell-privacy-text-muted: rgba(42, 27, 16, 0.74);
-  --legal-privacy-shell-privacy-text-soft: rgba(42, 27, 16, 0.5);
+  --legal-privacy-shell-privacy-text-soft: #68594d;
   --legal-report-shell-legal-accent: #a02a22;
   --legal-report-shell-legal-accent-warm: #842f2b;
   --legal-report-shell-legal-accent-warm-soft: rgba(132, 47, 43, 0.12);
@@ -668,13 +681,13 @@ html[data-theme="light"] {
   --legal-report-shell-legal-border-strong: rgba(83, 52, 31, 0.32);
   --legal-report-shell-legal-not-ok: #a02a22;
   --legal-report-shell-legal-not-ok-soft: rgba(160, 42, 34, 0.14);
-  --legal-report-shell-legal-ok: #3a7a3a;
+  --legal-report-shell-legal-ok: #2f6732;
   --legal-report-shell-legal-ok-soft: rgba(58, 122, 58, 0.14);
   --legal-report-shell-legal-surface: rgba(255, 250, 238, 0.55);
   --legal-report-shell-legal-surface-strong: rgba(255, 250, 238, 0.85);
   --legal-report-shell-legal-text: #2a1b10;
   --legal-report-shell-legal-text-muted: rgba(42, 27, 16, 0.74);
-  --legal-report-shell-legal-text-soft: rgba(42, 27, 16, 0.5);
+  --legal-report-shell-legal-text-soft: #68594d;
   --legal-status-shell-status-accent: #842f2b;
   --legal-status-shell-status-accent-soft: rgba(132, 47, 43, 0.14);
   --legal-status-shell-status-bg: transparent;
@@ -682,13 +695,13 @@ html[data-theme="light"] {
   --legal-status-shell-status-border-strong: rgba(83, 52, 31, 0.32);
   --legal-status-shell-status-degraded: #c47a20;
   --legal-status-shell-status-down: #a02a22;
-  --legal-status-shell-status-ok: #3a7a3a;
+  --legal-status-shell-status-ok: #2f6732;
   --legal-status-shell-status-surface: rgba(255, 250, 238, 0.55);
   --legal-status-shell-status-surface-strong: rgba(255, 250, 238, 0.85);
   --legal-status-shell-status-text: #2a1b10;
   --legal-status-shell-status-text-muted: rgba(42, 27, 16, 0.74);
-  --legal-status-shell-status-text-soft: rgba(42, 27, 16, 0.5);
-  --legal-status-shell-status-unknown: #7a6a55;
+  --legal-status-shell-status-text-soft: #68594d;
+  --legal-status-shell-status-unknown: #68594d;
   --legal-terms-shell-legal-accent: #6a4a30;
   --legal-terms-shell-legal-accent-warm: #842f2b;
   --legal-terms-shell-legal-accent-warm-soft: rgba(132, 47, 43, 0.12);
@@ -697,13 +710,13 @@ html[data-theme="light"] {
   --legal-terms-shell-legal-border-strong: rgba(83, 52, 31, 0.32);
   --legal-terms-shell-legal-not-ok: #a02a22;
   --legal-terms-shell-legal-not-ok-soft: rgba(160, 42, 34, 0.14);
-  --legal-terms-shell-legal-ok: #3a7a3a;
+  --legal-terms-shell-legal-ok: #2f6732;
   --legal-terms-shell-legal-ok-soft: rgba(58, 122, 58, 0.14);
   --legal-terms-shell-legal-surface: rgba(255, 250, 238, 0.55);
   --legal-terms-shell-legal-surface-strong: rgba(255, 250, 238, 0.85);
   --legal-terms-shell-legal-text: #2a1b10;
   --legal-terms-shell-legal-text-muted: rgba(42, 27, 16, 0.74);
-  --legal-terms-shell-legal-text-soft: rgba(42, 27, 16, 0.5);
+  --legal-terms-shell-legal-text-soft: #68594d;
 }
 
 body {
@@ -843,92 +856,47 @@ body:has(.achievement-shell) {
   z-index: 0;
 }
 
-body:has(.account-shell) {
-  position: relative;
-  z-index: 0;
-  background: rgba(8, 9, 9, 0.96);
-}
-
-html[data-theme="dark"] body:has(.tutorial-shell) {
-  position: relative;
-  z-index: 0;
-  background: rgba(7, 8, 9, 0.97);
-}
-
-html[data-theme="light"] body:has(.tutorial-shell) {
-  position: relative;
-  z-index: 0;
-  background: rgba(247, 239, 222, 0.98);
-}
-
-body:has(.tutorial-shell)::before {
-  inset: -4vh -4vw;
-  display: block;
-  z-index: -2;
-  background: var(--art-tutorial) center / cover no-repeat;
-  animation: ambient-drift 64s ease-in-out infinite alternate;
-  mask-image: none;
-  transform: translate3d(-0.8%, 0, 0) scale(1.035);
-  will-change: transform;
-}
-
-html[data-theme="light"] body:has(.tutorial-shell)::before {
-  animation: ambient-drift-light 76s ease-in-out infinite alternate;
-  filter: saturate(0.94) contrast(1.02) brightness(1.02);
-  transform: translate3d(-0.5%, 0, 0) scale(1.02);
-}
-
-body:has(.tutorial-shell)::after {
-  display: block;
-  z-index: -1;
-  opacity: 1;
-  background: radial-gradient(
-    ellipse 72vw 68vh at 50% 34%,
-    rgba(6, 8, 10, 0.02) 0%,
-    rgba(6, 8, 10, 0.24) 58%,
-    rgba(4, 5, 6, 0.68) 100%
-  );
-  background-size: auto;
-}
-
-html[data-theme="light"] body:has(.tutorial-shell)::after {
-  background: radial-gradient(
-    ellipse 72vw 68vh at 50% 34%,
-    rgba(255, 252, 244, 0.02) 0%,
-    rgba(244, 237, 224, 0.12) 58%,
-    rgba(227, 216, 196, 0.5) 100%
-  );
-}
-
+html[data-theme="dark"] body:has(.tutorial-shell),
 html[data-theme="dark"] body:has(.friends-shell) {
   position: relative;
   z-index: 0;
   background: rgba(7, 8, 9, 0.97);
 }
 
+html[data-theme="light"] body:has(.tutorial-shell),
 html[data-theme="light"] body:has(.friends-shell) {
-  position: relative;
-  z-index: 0;
   background: rgba(247, 239, 222, 0.98);
 }
 
+body:has(.tutorial-shell)::before,
 body:has(.friends-shell)::before {
   inset: -4vh -4vw;
   display: block;
   z-index: -2;
-  background: var(--art-friends) center / cover no-repeat;
   animation: ambient-drift 64s ease-in-out infinite alternate;
   mask-image: none;
   transform: translate3d(-0.8%, 0, 0) scale(1.035);
   will-change: transform;
 }
 
+html[data-theme="dark"] body:has(.tutorial-shell)::before,
+html[data-theme="light"] body:has(.tutorial-shell)::before {
+  background: var(--art-tutorial) center / cover no-repeat;
+}
+
+html[data-theme="dark"] body:has(.friends-shell)::before,
+html[data-theme="light"] body:has(.friends-shell)::before {
+  background: var(--art-friends) center / cover no-repeat;
+}
+
+html[data-theme="light"] body:has(.tutorial-shell)::before,
 html[data-theme="light"] body:has(.friends-shell)::before {
   animation: ambient-drift-light 76s ease-in-out infinite alternate;
   filter: saturate(0.94) contrast(1.02) brightness(1.02);
   transform: translate3d(-0.5%, 0, 0) scale(1.02);
 }
 
+body:has(.tutorial-shell)::after,
 body:has(.friends-shell)::after {
   display: block;
   z-index: -1;
@@ -936,19 +904,26 @@ body:has(.friends-shell)::after {
   background: radial-gradient(
     ellipse 72vw 68vh at 50% 34%,
     rgba(6, 8, 10, 0.02) 0%,
-    rgba(6, 8, 10, 0.24) 58%,
-    rgba(4, 5, 6, 0.68) 100%
+    rgba(6, 8, 10, 0.22) 58%,
+    rgba(4, 5, 6, 0.7) 100%
   );
   background-size: auto;
 }
 
+html[data-theme="light"] body:has(.tutorial-shell)::after,
 html[data-theme="light"] body:has(.friends-shell)::after {
   background: radial-gradient(
     ellipse 72vw 68vh at 50% 34%,
     rgba(255, 252, 244, 0.02) 0%,
     rgba(244, 237, 224, 0.12) 58%,
-    rgba(227, 216, 196, 0.5) 100%
+    rgba(227, 216, 196, 0.46) 100%
   );
+}
+
+body:has(.account-shell) {
+  position: relative;
+  z-index: 0;
+  background: rgba(8, 9, 9, 0.96);
 }
 
 html[data-theme="light"] body:has(.account-shell) {
@@ -993,6 +968,7 @@ html[data-theme="light"] body:has(.account-shell)::after {
     rgba(227, 216, 196, 0.5) 100%
   );
 }
+
 html[data-theme="dark"] body:has(.achievement-shell) {
   background: rgba(8, 9, 9, 0.95);
 }
@@ -1014,7 +990,7 @@ body:has(.achievement-shell)::before {
 
 html[data-theme="light"] body:has(.achievement-shell)::before {
   animation: ambient-drift-light 72s ease-in-out infinite alternate;
-  filter: saturate(0.92) brightness(1.06);
+  filter: saturate(0.96) brightness(0.96) contrast(1.04);
   transform: translate3d(-0.6%, 0, 0) scale(1.02);
 }
 
@@ -1079,8 +1055,8 @@ html[data-theme="light"] body:has(.achievement-shell)::after {
     radial-gradient(
       ellipse 72vw 60vh at 50% 38%,
       transparent 0%,
-      rgba(252, 244, 230, 0.22) 55%,
-      rgba(252, 244, 230, 0.62) 100%
+      rgba(252, 244, 230, 0.12) 55%,
+      rgba(252, 244, 230, 0.38) 100%
     );
 }
 
@@ -1195,10 +1171,7 @@ select {
     linear-gradient(145deg, rgba(39, 24, 18, 0.88), rgba(21, 15, 13, 0.76)),
     radial-gradient(circle at 20% 0%, rgba(209, 154, 66, 0.18), transparent 28rem);
   box-shadow: var(--shadow-deep), inset 0 1px rgba(255, 255, 255, 0.08);
-  transition:
-    transform 160ms ease,
-    box-shadow 160ms ease,
-    border-color 160ms ease;
+  transition: transform 160ms ease;
 }
 
 .card:hover {
@@ -1238,10 +1211,7 @@ select {
     repeating-linear-gradient(90deg, rgba(34, 22, 17, 0.045) 0 1px, transparent 1px 14px);
   border: 1px solid rgba(83, 52, 31, 0.16);
   box-shadow: 0 22px 70px rgba(0, 0, 0, 0.22), inset 0 0 0 1px rgba(255, 255, 255, 0.28);
-  transition:
-    transform 160ms ease,
-    box-shadow 160ms ease,
-    border-color 160ms ease;
+  transition: transform 160ms ease;
 }
 
 .paper-card:hover {
@@ -1376,11 +1346,7 @@ select {
   padding: 0 20px;
   cursor: pointer;
   font-weight: 800;
-  transition:
-    transform 180ms ease,
-    box-shadow 180ms ease,
-    border-color 180ms ease,
-    background 180ms ease;
+  transition: transform 180ms ease;
 }
 
 .btn:hover:not(:disabled) {
@@ -1507,21 +1473,6 @@ html[data-theme="light"] .btn-secondary:hover:not(:disabled) {
   border: 1px solid rgba(209, 154, 66, 0.18);
   border-radius: 999px;
   content: "";
-}
-
-.role-card {
-  position: relative;
-  overflow: hidden;
-  min-height: 280px;
-}
-
-.role-card::before {
-  position: absolute;
-  inset: 16px;
-  border: 1px solid rgba(83, 52, 31, 0.18);
-  border-radius: 1.5rem;
-  content: "";
-  pointer-events: none;
 }
 
 .role-sigil {
@@ -1761,7 +1712,8 @@ html[data-theme="light"] .utility-shell::before {
   min-width: 0;
 }
 
-.role-count-chip dd {
+.role-count-chip dd,
+.role-count-chip .role-count-value {
   position: relative;
   z-index: 1;
   display: grid;
@@ -1781,7 +1733,8 @@ html[data-theme="light"] .utility-shell::before {
     rgba(12, 8, 7, 0.36);
 }
 
-.role-count-chip.is-dark dd {
+.role-count-chip.is-dark dd,
+.role-count-chip.is-dark .role-count-value {
   background: rgba(248, 236, 210, 0.12);
   color: #fff6e5;
 }
@@ -1823,39 +1776,6 @@ html[data-theme="light"] .utility-shell::before {
 
 .btn:hover:not(:disabled)::before {
   transform: translateX(280%) rotate(18deg);
-}
-
-.role-card {
-  --role-art: image-set(url("/game-art/card-back-secret.webp") type("image/webp"), url("/game-art/card-back-secret.png") type("image/png"));
-  min-height: 360px;
-  padding-right: clamp(1.5rem, 6vw, 9rem);
-  background:
-    linear-gradient(105deg, rgba(255, 247, 229, 0.98) 0%, rgba(236, 207, 151, 0.96) 48%, rgba(62, 30, 24, 0.3) 100%),
-    var(--texture-paper) center / 540px 540px;
-}
-
-.role-card::before {
-  z-index: 2;
-  border-color: rgba(132, 47, 43, 0.18);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.24);
-}
-
-.role-card::after {
-  position: absolute;
-  inset: 0 0 0 auto;
-  z-index: 1;
-  width: min(34%, 280px);
-  background:
-    linear-gradient(90deg, rgba(255, 247, 229, 0.95), rgba(255, 247, 229, 0.12) 38%, transparent 64%),
-    var(--role-art) center / cover no-repeat;
-  content: "";
-  filter: saturate(0.92) contrast(1.06);
-  pointer-events: none;
-}
-
-.role-card > * {
-  position: relative;
-  z-index: 3;
 }
 
 .role-sigil {
@@ -3852,23 +3772,23 @@ html[data-vt="theme"]::view-transition-new(root) {
 
 @keyframes play-fog-drift {
   from {
-    opacity: 0.26;
-    transform: translate3d(-3%, 0, 0) scale(1.02);
+    opacity: 0.3;
+    transform: translate3d(-4%, 0, 0) scale(1.03);
   }
   to {
-    opacity: 0.42;
-    transform: translate3d(3%, -1%, 0) scale(1.04);
+    opacity: 0.5;
+    transform: translate3d(4%, -1.5%, 0) scale(1.06);
   }
 }
 
-@keyframes play-blinds-drift {
+@keyframes play-mafia-smoke-drift {
   from {
-    opacity: 0.8;
-    transform: translate3d(0, 0, 0);
+    opacity: 0.16;
+    transform: translate3d(-3.5%, 0, 0) scale(1.03);
   }
   to {
-    opacity: 0.8;
-    transform: translate3d(42px, 0, 0);
+    opacity: 0.3;
+    transform: translate3d(3.5%, -1%, 0) scale(1.055);
   }
 }
 
@@ -3886,7 +3806,7 @@ html[data-vt="theme"]::view-transition-new(root) {
 :root {
   --play-moon-breathe-animation: play-moon-breathe 11s ease-in-out infinite alternate;
   --play-fog-drift-animation: play-fog-drift 38s ease-in-out infinite alternate;
-  --play-blinds-drift-animation: play-blinds-drift 26s linear infinite;
+  --play-mafia-smoke-drift-animation: play-mafia-smoke-drift 34s ease-in-out infinite alternate;
   --play-lamp-flicker-animation: play-lamp-flicker 7.5s ease-in-out infinite alternate;
 }
 

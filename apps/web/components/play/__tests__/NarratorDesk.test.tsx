@@ -80,8 +80,9 @@ describe("NarratorDesk", () => {
     expect(screen.getByRole("heading", { name: "Водиш играта" })).toBeInTheDocument();
     expect(screen.getByText("Активни")).toBeInTheDocument();
     expect(screen.getByText("2/3")).toBeInTheDocument();
-    expect(screen.getByText("Действали")).toBeInTheDocument();
-    expect(screen.getAllByText("1/2")).toHaveLength(2);
+    expect(screen.getByText("Живи")).toBeInTheDocument();
+    expect(screen.getByText("2/2")).toBeInTheDocument();
+    expect(screen.getByText("1/2")).toBeInTheDocument();
     expect(screen.getByText("Изчакват се 1 играчи да приемат, че Пълният Разказвач вижда всички роли.")).toBeInTheDocument();
   });
 

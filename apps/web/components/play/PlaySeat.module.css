@@ -1,6 +1,7 @@
 .token {
   position: relative;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   width: 100%;
   min-width: 44px;
   min-height: 44px;
@@ -8,7 +9,7 @@
   gap: 5px;
   border: 0;
   border-radius: 8px;
-  padding: 3px;
+  padding: 0 3px 3px;
   background: transparent;
   color: #fff7df;
   text-align: center;
@@ -42,9 +43,7 @@ button.token:focus-visible {
   overflow: hidden;
   border: 2px solid rgba(245, 232, 200, 0.34);
   border-radius: 50%;
-  background:
-    linear-gradient(180deg, rgba(255, 247, 229, 0.04), rgba(9, 6, 5, 0.24)),
-    var(--player-avatar-sheet) var(--portrait-x, 0%) var(--portrait-y, 0%) / 300% 300% no-repeat;
+  background-color: #100c09;
   box-shadow:
     0 0 0 3px rgba(8, 6, 5, 0.72),
     0 0 0 4px rgba(209, 154, 66, 0.34),
@@ -54,8 +53,8 @@ button.token:focus-visible {
 
 .initialBadge {
   position: absolute;
-  left: -2px;
   bottom: -2px;
+  left: 50%;
   display: grid;
   min-width: 22px;
   height: 22px;
@@ -64,9 +63,10 @@ button.token:focus-visible {
   border-radius: 50%;
   background: rgba(132, 47, 43, 0.96);
   color: #fff7df;
-  font-size: 0.62rem;
+  font-size: 0.68rem;
   font-weight: 950;
   line-height: 1;
+  transform: translateX(-50%);
 }
 
 .nameplate {
@@ -79,7 +79,7 @@ button.token:focus-visible {
   background: linear-gradient(180deg, rgba(36, 22, 14, 0.94), rgba(12, 8, 6, 0.9));
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.36), inset 0 1px rgba(255, 255, 255, 0.08);
   color: #fff7df;
-  font-size: clamp(0.62rem, 1.05vw, 0.78rem);
+  font-size: clamp(0.68rem, 1.05vw, 0.78rem);
   font-weight: 900;
   line-height: 1.15;
   text-overflow: ellipsis;
@@ -89,8 +89,9 @@ button.token:focus-visible {
 .state {
   max-width: 14ch;
   overflow: hidden;
-  color: rgba(245, 232, 200, 0.74);
-  font-size: 0.56rem;
+  background: rgba(8, 6, 5, 0.86);
+  color: #fff7df;
+  font-size: 0.68rem;
   font-weight: 800;
   line-height: 1.15;
   text-overflow: ellipsis;
@@ -116,6 +117,21 @@ button.token:focus-visible {
     0 18px 34px rgba(0, 0, 0, 0.6);
 }
 
+.token[data-speaking="true"] .avatar,
+.token[data-defending="true"] .avatar {
+  border-color: #fff7df;
+  box-shadow:
+    0 0 0 3px rgba(8, 6, 5, 0.82),
+    0 0 0 6px rgba(215, 165, 82, 0.9),
+    0 0 34px rgba(215, 165, 82, 0.52),
+    0 18px 34px rgba(0, 0, 0, 0.6);
+}
+
+.token[data-nominee="true"] .nameplate {
+  border-color: rgba(188, 72, 64, 0.78);
+  color: #ffd6c9;
+}
+
 .token[data-voted="true"] .nameplate {
   border-color: rgba(209, 154, 66, 0.72);
   color: #f4cf87;
@@ -131,7 +147,6 @@ button.token:focus-visible {
 
 .token[data-alive="false"] {
   opacity: 0.68;
-  transform: rotate(-2deg);
 }
 
 .token[data-alive="false"] .avatar {
@@ -168,6 +183,32 @@ button.token:focus-visible {
   right: -4px;
   bottom: -4px;
   background: #b27625;
+}
+
+.dayBadge {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  z-index: 5;
+  max-width: calc(var(--seat-visual-size, 66px) + 34px);
+  overflow: hidden;
+  border: 1px solid rgba(255, 247, 223, 0.5);
+  border-radius: 6px;
+  padding: 3px 6px;
+  background: rgba(132, 47, 43, 0.96);
+  color: #fff7df;
+  font-size: 0.68rem;
+  font-weight: 950;
+  line-height: 1;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.token[data-speaking="true"] .dayBadge,
+.token[data-defending="true"] .dayBadge {
+  background: rgba(143, 87, 24, 0.98);
 }
 
 .menu {

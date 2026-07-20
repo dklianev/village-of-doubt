@@ -1,0 +1,54 @@
+.chronometer {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  text-align: center;
+}
+
+.label,
+.value {
+  position: relative;
+}
+
+.value {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.chronometer[data-state="unlimited"] .value {
+  color: rgba(255, 247, 223, 0.9);
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+.chronometer[data-state="urgent"] .value {
+  animation: urgent-countdown 900ms ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+.chronometer[data-state="finished"] .value {
+  opacity: 0.72;
+}
+
+:global([data-family="werewolves"]) .chronometer[data-state="urgent"] {
+  border-color: color-mix(in oklch, var(--blood), white 24%);
+}
+
+:global([data-family="mafia"]) .chronometer[data-state="urgent"] {
+  border-color: color-mix(in oklch, var(--gold), white 20%);
+}
+
+@keyframes urgent-countdown {
+  0%,
+  100% {
+    opacity: 1;
+    transform: translateZ(0) scale(1);
+  }
+
+  50% {
+    opacity: 0.74;
+    transform: translateZ(0) scale(1.035);
+  }
+}

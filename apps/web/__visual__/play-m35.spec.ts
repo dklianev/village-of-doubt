@@ -21,7 +21,7 @@ const PHASES = [
 
 const FAMILIES = ["werewolves", "mafia"] as const;
 const THEMES = ["dark", "light"] as const;
-const BOUNDARY_COUNTS = [3, 6, 7, 9, 10, 13, 14, 18] as const;
+const BOUNDARY_COUNTS = [3, 6, 7, 9, 10, 13, 14, 18, 19, 24, 30] as const;
 const MATRIX_VIEWPORTS = [
   { width: 375, height: 812 },
   { width: 390, height: 844 },
@@ -42,6 +42,7 @@ const GATE_SCENARIOS = [
   { phase: "night", family: "mafia", players: 7, role: "commissioner" },
   { phase: "voting", family: "mafia", players: 10, voteTally: "full" },
   { phase: "game_over", family: "mafia", players: 14, winner: "mafia" },
+  { phase: "voting", family: "werewolves", players: 30, voteTally: "full" },
 ] as const;
 
 for (const [index, scenario] of GATE_SCENARIOS.entries()) {
@@ -51,6 +52,22 @@ for (const [index, scenario] of GATE_SCENARIOS.entries()) {
     await expectGeometry(page);
   });
 }
+
+for (const [name, viewport] of [
+  ["desktop", MATRIX_VIEWPORTS[7]],
+  ["mobile", MATRIX_VIEWPORTS[1]],
+] as const) {
+  test(`@play-gate timer tally stays fully visible ${name}`, async ({ page }) => {
+    await openFixture(page, { phase: "night", family: "werewolves", players: 12, dead: 1 }, "dark", viewport);
+    await expect(page.getByText("11 живи · 1 елиминиран", { exact: true })).toBeVisible();
+    await expectGeometry(page);
+  });
+}
+
+test("@play-gate mobile stage ledger labels remain complete", async ({ page }) => {
+  await openFixture(page, { phase: "resolution", family: "mafia", players: 10, dead: 2 }, "dark", MATRIX_VIEWPORTS[1]);
+  await expectGeometry(page);
+});
 
 for (const [themeIndex, theme] of THEMES.entries()) {
   for (const family of FAMILIES) {
@@ -69,6 +86,35 @@ for (const [themeIndex, theme] of THEMES.entries()) {
       expect(accessibility.incomplete.filter((result) => result.id !== "color-contrast")).toEqual([]);
     });
   }
+}
+
+for (const theme of THEMES) {
+  test(`@play-gate axe mobile day rail ${theme}`, async ({ page }) => {
+    await openFixture(
+      page,
+      { phase: "day_discussion", family: "werewolves", players: 8 },
+      theme,
+      MATRIX_VIEWPORTS[1],
+    );
+    await page.getByText("Правила и подсказки", { exact: true }).click();
+    await page.getByRole("tab", { name: "Чат" }).click();
+
+    const accessibility = await new AxeBuilder({ page })
+      .include(".play-side-rail")
+      .withTags(["wcag2a", "wcag2aa"])
+      .analyze();
+    expect(accessibility.violations).toEqual([]);
+    expect(accessibility.incomplete.filter((result) => result.id !== "color-contrast")).toEqual([]);
+
+    const tabColors = await page.locator(".play-rail-tabs").evaluate((tabs) => ({
+      background: getComputedStyle(tabs).backgroundColor,
+      labels: [...tabs.querySelectorAll<HTMLElement>(".play-rail-tab")].map((tab) => getComputedStyle(tab).color),
+    }));
+    if (theme === "light") {
+      expect(tabColors.background).toBe("rgb(243, 229, 201)");
+      expect(tabColors.labels).toEqual(["rgb(74, 47, 28)", "rgb(255, 250, 240)"]);
+    }
+  });
 }
 
 for (const [countIndex, players] of BOUNDARY_COUNTS.entries()) {
@@ -114,6 +160,28 @@ test("@play-interaction host menu remains operable", async ({ page }) => {
   await expect(triggers.nth(1)).toBeFocused();
 });
 
+test("@play-interaction mobile host menus stay inside the stage and restore focus", async ({ page }) => {
+  await openFixture(page, { phase: "lobby", family: "werewolves", players: 18, viewer: "host" }, "light", MATRIX_VIEWPORTS[1]);
+  const stage = page.locator(".play-stage");
+  const triggers = page.locator("[data-seat-menu-trigger]");
+  const triggerIndexes = [0, Math.max(0, await triggers.count() - 1)];
+
+  for (const index of triggerIndexes) {
+    const trigger = triggers.nth(index);
+    await trigger.click();
+    const menu = page.locator("[data-seat-menu-root][data-open=\"true\"] [role=\"group\"]");
+    await expect(menu).toBeVisible();
+    const [stageBox, menuBox] = await Promise.all([stage.boundingBox(), menu.boundingBox()]);
+    expect(stageBox).not.toBeNull();
+    expect(menuBox).not.toBeNull();
+    expect(menuBox!.x).toBeGreaterThanOrEqual(stageBox!.x - 1);
+    expect(menuBox!.x + menuBox!.width).toBeLessThanOrEqual(stageBox!.x + stageBox!.width + 1);
+    const action = menu.getByRole("button").first();
+    await action.click();
+    await expect(trigger).toBeFocused();
+  }
+});
+
 test("@play-interaction mobile blacksmith completes both target steps", async ({ page }) => {
   await openFixture(page, { phase: "night", family: "werewolves", players: 8, role: "blacksmith" }, "dark", MATRIX_VIEWPORTS[0]);
   const targets = page.locator(".play-seat-slot[data-targetable=\"true\"] button[data-seat-token]");
@@ -126,8 +194,41 @@ test("@play-interaction mobile blacksmith completes both target steps", async ({
   await secondTargets.nth(1).click();
   await expandMobileDock(page);
   await expect(page.getByText("Стъпка 2 от 2", { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Промени първата цел" })).toBeVisible();
+  const resetTarget = page.getByRole("button", { name: "Промени първата цел" });
+  await expect(resetTarget).toBeVisible();
   await expect(page.getByRole("button", { name: "Изкови меч" })).toBeEnabled();
+  await resetTarget.click();
+  await expect(page.getByRole("button", { name: "Покажи личния ход" })).toBeFocused();
+});
+
+test("@play-interaction short mobile dock keeps its controls reachable", async ({ page }) => {
+  for (const viewport of [{ width: 390, height: 600 }, { width: 844, height: 390 }]) {
+    await openFixture(page, { phase: "night", family: "mafia", players: 8, role: "doctor" }, "dark", viewport);
+    await expandMobileDock(page);
+
+    const dock = page.locator(".play-action-dock");
+    const dossier = page.getByRole("button", { name: "Отвори тайното досие" });
+    const collapse = page.getByRole("button", { name: "Скрий личния ход" });
+    const [dockBox, dossierBox, collapseBox] = await Promise.all([
+      dock.boundingBox(),
+      dossier.boundingBox(),
+      collapse.boundingBox(),
+    ]);
+    expect(dockBox).not.toBeNull();
+    expect(dossierBox).not.toBeNull();
+    expect(collapseBox).not.toBeNull();
+    expect(dockBox!.y).toBeGreaterThanOrEqual(0);
+    expect(dossierBox!.y).toBeGreaterThanOrEqual(dockBox!.y);
+    expect(collapseBox!.y).toBeGreaterThanOrEqual(dockBox!.y);
+    expect(dossierBox!.y + dossierBox!.height).toBeLessThanOrEqual(viewport.height);
+    expect(collapseBox!.y + collapseBox!.height).toBeLessThanOrEqual(viewport.height);
+
+    await dock.evaluate((element) => {
+      element.scrollTop = element.scrollHeight;
+    });
+    await expect(dossier).toBeInViewport();
+    await expect(collapse).toBeInViewport();
+  }
 });
 
 test("@play-interaction hunter revenge uses the table and keeps the dock reachable", async ({ page }) => {
@@ -153,6 +254,44 @@ test("@play-interaction mobile two-target candidates stay reachable", async ({ p
   expect(await visibleTargetCount(page)).toBeGreaterThan(0);
 });
 
+test("@play-interaction chronicle tabs expose a writable day chat", async ({ page }) => {
+  await openFixture(page, { phase: "day_discussion", family: "werewolves", players: 8 }, "dark", MATRIX_VIEWPORTS[6]);
+  const chatTab = page.getByRole("tab", { name: "Чат" });
+  await chatTab.click();
+  await expect(chatTab).toHaveAttribute("aria-selected", "true");
+  const composer = page.getByPlaceholder("Напиши обвинение, защита или блъф...");
+  await composer.fill("Подозирам играча срещу мен.");
+  await expect(composer).toHaveValue("Подозирам играча срещу мен.");
+  await expect(page.getByRole("button", { name: "Изпрати" })).toBeEnabled();
+});
+
+test("@play-gate initial stage layout stays stable", async ({ page }) => {
+  await openFixture(page, { phase: "night", family: "werewolves", players: 8 }, "dark", MATRIX_VIEWPORTS[1]);
+  await page.addInitScript(() => {
+    (window as Window & { __playCls?: number }).__playCls = 0;
+    new PerformanceObserver((list) => {
+      for (const entry of list.getEntries() as Array<PerformanceEntry & {
+        hadRecentInput?: boolean;
+        value?: number;
+        sources?: Array<{ node?: Node | null }>;
+      }>) {
+        const touchesPlayShell = entry.sources?.some(({ node }) => (
+          node instanceof Element && Boolean(node.closest(".play-shell"))
+        ));
+        if (!entry.hadRecentInput && touchesPlayShell) {
+          const target = window as Window & { __playCls?: number };
+          target.__playCls = (target.__playCls ?? 0) + (entry.value ?? 0);
+        }
+      }
+    }).observe({ type: "layout-shift" });
+  });
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await waitForStableStage(page);
+  await page.waitForTimeout(400);
+  const cls = await page.evaluate(() => (window as Window & { __playCls?: number }).__playCls ?? 0);
+  expect(cls).toBeLessThan(0.02);
+});
+
 async function openFixture(
   page: Page,
   scenario: Record<string, string | number>,
@@ -174,10 +313,12 @@ async function openFixture(
 }
 
 async function waitForStableStage(page: Page) {
-  let previousSignature = "";
-  let stableSamples = 0;
-  for (let attempt = 0; attempt < 24; attempt += 1) {
-    const signature = await page.evaluate(() => {
+  await expect(page.locator(".play-stage")).toHaveAttribute("data-layout-ready", "true", {
+    timeout: 10_000,
+  });
+
+  await page.waitForFunction(async () => {
+    const readSignature = () => {
       const stage = document.querySelector<HTMLElement>(".play-stage");
       const scene = document.querySelector<HTMLElement>("[data-table-scene]");
       const seats = [...document.querySelectorAll<HTMLElement>(".play-seat-slot")];
@@ -200,15 +341,18 @@ async function waitForStableStage(page: Page) {
         Math.round(firstSeatRect.y),
         seats.length,
       ].join(":");
-    });
-    stableSamples = signature && signature === previousSignature ? stableSamples + 1 : 0;
-    if (stableSamples >= 2) {
-      return;
+    };
+
+    const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const first = readSignature();
+    if (!first) {
+      return false;
     }
-    previousSignature = signature;
-    await page.waitForTimeout(90);
-  }
-  throw new Error("PlayStage не достигна стабилна геометрия.");
+    await nextFrame();
+    const second = readSignature();
+    await nextFrame();
+    return first === second && second === readSignature();
+  }, undefined, { timeout: 10_000, polling: "raf" });
 }
 
 async function expectGeometry(page: Page) {
@@ -224,6 +368,61 @@ async function expectGeometry(page: Page) {
     const diagnostics: string[] = [];
     const stageRect = stage.getBoundingClientRect();
     const coreRect = core.getBoundingClientRect();
+    const timer = core.querySelector<HTMLElement>("[role=\"timer\"]");
+    const counts = core.querySelector<HTMLElement>(":scope > span:last-child");
+    const countsRect = counts?.getBoundingClientRect();
+    if (counts) {
+      if (counts.scrollWidth > counts.clientWidth + 1 || counts.scrollHeight > counts.clientHeight + 1) {
+        violations.push("table-counts-clipped");
+        diagnostics.push(`table counts clipped: ${JSON.stringify({
+          clientWidth: counts.clientWidth,
+          scrollWidth: counts.scrollWidth,
+          clientHeight: counts.clientHeight,
+          scrollHeight: counts.scrollHeight,
+        })}`);
+      }
+      if (timer && overlapArea(timer.getBoundingClientRect(), counts.getBoundingClientRect()) > 4) {
+        violations.push("timer-overlaps-counts");
+      }
+      if (
+        countsRect &&
+        (countsRect.left < stageRect.left - 1 || countsRect.right > stageRect.right + 1 || countsRect.top < stageRect.top - 1 || countsRect.bottom > stageRect.bottom + 1)
+      ) {
+        violations.push("table-counts-outside-stage");
+      }
+    }
+    for (const label of core.closest<HTMLElement>(".play-stage")?.querySelectorAll<HTMLElement>("[data-stage-ledger] span") ?? []) {
+      if (label.scrollWidth > label.clientWidth + 1 || label.scrollHeight > label.clientHeight + 1) {
+        violations.push("stage-ledger-label-clipped");
+        diagnostics.push(`stage ledger label clipped: ${JSON.stringify({
+          text: label.textContent?.trim(),
+          clientWidth: label.clientWidth,
+          scrollWidth: label.scrollWidth,
+          clientHeight: label.clientHeight,
+          scrollHeight: label.scrollHeight,
+        })}`);
+      }
+    }
+    const dock = document.querySelector<HTMLElement>(".play-action-dock");
+    const dockRect = dock?.getBoundingClientRect();
+    if (window.innerWidth >= 1024 && dockRect && overlapArea(stageRect, dockRect) > 4) {
+      violations.push("stage-overlaps-dock");
+      diagnostics.push(`stage overlaps dock: ${JSON.stringify({
+        stage: stageRect.toJSON(),
+        dock: dockRect.toJSON(),
+      })}`);
+    }
+    for (const panel of document.querySelectorAll<HTMLElement>(".ritual-panel, .night-action-sheet")) {
+      const targets = panel.querySelector<HTMLElement>(".play-selected-targets, :scope > .play-selected-target");
+      const actions = panel.querySelector<HTMLElement>(".play-action-buttons");
+      if (targets && actions && overlapArea(targets.getBoundingClientRect(), actions.getBoundingClientRect()) > 4) {
+        violations.push("action-target-overlap");
+        diagnostics.push(`action target overlaps controls: ${JSON.stringify({
+          targets: targets.getBoundingClientRect().toJSON(),
+          actions: actions.getBoundingClientRect().toJSON(),
+        })}`);
+      }
+    }
     const seatRects = seats.map((seat) => ({ seat, rect: seat.getBoundingClientRect() }));
     for (const [index, { rect }] of seatRects.entries()) {
       if (rect.left < stageRect.left - 1 || rect.right > stageRect.right + 1 || rect.top < stageRect.top - 1 || rect.bottom > stageRect.bottom + 1) {
@@ -233,6 +432,10 @@ async function expectGeometry(page: Page) {
       if (overlapArea(rect, coreRect) > 4) {
         violations.push("seat-overlaps-core");
         diagnostics.push(`seat ${index} overlaps core: ${JSON.stringify(rect.toJSON())}`);
+      }
+      if (countsRect && overlapArea(rect, countsRect) > 4) {
+        violations.push("seat-overlaps-counts");
+        diagnostics.push(`seat ${index} overlaps table counts: ${JSON.stringify(rect.toJSON())}`);
       }
     }
     for (let first = 0; first < seatRects.length; first += 1) {
@@ -261,6 +464,31 @@ async function expectGeometry(page: Page) {
     }
     if (document.documentElement.scrollWidth > window.innerWidth + 1) {
       violations.push("horizontal-overflow");
+    }
+    if (window.innerWidth >= 1024) {
+      for (const selector of [".play-action-dock", ".play-side-rail", ".play-rail-guide-body"]) {
+        const element = document.querySelector<HTMLElement>(selector);
+        if (!element) {
+          continue;
+        }
+        const style = getComputedStyle(element);
+        if ((style.overflowY === "auto" || style.overflowY === "scroll") && element.scrollHeight > element.clientHeight + 1) {
+          violations.push(`nested-scroll:${selector}`);
+        }
+      }
+    }
+    for (const selector of [
+      ".night-action-help",
+      ".night-action-server-note",
+      ".role-card-body > p",
+      ".play-stage-takeover .post-game-story ol",
+    ]) {
+      for (const element of document.querySelectorAll<HTMLElement>(selector)) {
+        const style = getComputedStyle(element);
+        if (style.display !== "none" && style.overflowY !== "visible" && element.scrollHeight > element.clientHeight + 1) {
+          violations.push(`text-clipped:${selector}`);
+        }
+      }
     }
     return {
       fatal: "",

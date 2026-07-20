@@ -30,9 +30,8 @@ describe("PrivateChatPanel", () => {
       <PrivateChatPanel
         channel="mafia"
         messages={[1, 2, 3, 4, 5, 6, 7].map(message)}
-        value=""
-        setValue={vi.fn()}
-        sendPrivateChat={vi.fn()}
+        onSend={vi.fn()}
+        onTyping={vi.fn()}
         typingNotices={typingNotices}
       />,
     );
@@ -45,24 +44,24 @@ describe("PrivateChatPanel", () => {
 
   it("updates input value and submits the selected private channel", async () => {
     const user = userEvent.setup();
-    const setValue = vi.fn();
-    const sendPrivateChat = vi.fn();
+    const onTyping = vi.fn();
+    const onSend = vi.fn();
 
     render(
       <PrivateChatPanel
         channel="mafia"
         messages={[]}
-        value=""
-        setValue={setValue}
-        sendPrivateChat={sendPrivateChat}
+        onSend={onSend}
+        onTyping={onTyping}
         typingNotices={[]}
       />,
     );
 
-    await user.type(screen.getByPlaceholderText("Съобщение само за този канал..."), "тук сме");
+    await user.type(screen.getByRole("textbox", { name: "Съобщение за таен канал" }), "тук сме");
     await user.click(screen.getByRole("button", { name: "Изпрати" }));
 
-    expect(setValue).toHaveBeenCalled();
-    expect(sendPrivateChat).toHaveBeenCalledWith("mafia");
+    expect(onTyping).toHaveBeenCalledWith("mafia", true);
+    expect(onTyping).toHaveBeenLastCalledWith("mafia", false);
+    expect(onSend).toHaveBeenCalledWith("mafia", "тук сме");
   });
 });

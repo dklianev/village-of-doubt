@@ -3,6 +3,7 @@
 import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import type { Room } from "@colyseus/sdk";
 import {
+  avatarIdForSeed,
   ROLE_DEFINITIONS,
   getGameFamily,
   type ChatChannel,
@@ -21,6 +22,7 @@ import type {
   PrivateResult,
   PublicChatMessage,
   PublicEvent,
+  PublicNomination,
   PublicPlayer,
   PublicRoleCount,
   TypingNotice,
@@ -184,6 +186,7 @@ interface ParsedVisualQuery {
   voteTally: VisualVoteTally;
   connection: ConnectionStatus;
   doctorCanSelfProtect: boolean;
+  timerSeconds: number | null;
 }
 
 export function useVisualGameRoomFixture({
@@ -244,6 +247,7 @@ export function parseVisualGameFixture(
   const players = buildPlayers(parsed, currentUserId, assignedRoles);
   const roleCounts = buildRoleCounts(players, assignedRoles);
   const winner = parsed.phase === "game_over" ? parsed.winner || defaultWinner(parsed.family) : "";
+  const nominations = buildNominations(parsed, players);
   const snapshot: GameSnapshot = {
     code,
     mode: parsed.family === "mafia" ? "mafia_sport" : "werewolves_classic",
@@ -252,16 +256,30 @@ export function parseVisualGameFixture(
     communicationMode: "built_in_chat",
     tempoProfile: "normal_online",
     dayDiscussionSeconds: 180,
+    playerSpeechSeconds: 60,
     voteSeconds: 60,
     revealRolesOnDeath: true,
     loversEnabled: parsed.family === "werewolves",
     doctorCanSelfProtect: parsed.doctorCanSelfProtect,
-    allowSkipVote: parsed.phase === "voting",
+    allowSkipVote: parsed.phase === "voting" && parsed.family !== "mafia",
     majorityMode: "simple",
     narratorVoice: parsed.family === "mafia" ? "inspector" : "classic",
     phase: parsed.phase,
     round: parsed.phase === "lobby" ? 0 : 2,
-    phaseEndsAt: 0,
+    phaseEndsAt: parsed.timerSeconds === null ? 0 : Date.now() + parsed.timerSeconds * 1_000,
+    currentSpeakerUserId:
+      parsed.family === "mafia" && parsed.phase === "day_discussion"
+        ? players.find((player) => player.playing && player.alive)?.userId ?? ""
+        : "",
+    currentDefenseUserId:
+      parsed.family === "mafia" && parsed.phase === "defense"
+        ? nominations[0]?.targetUserId ?? ""
+        : "",
+    nominations,
+    revoteEligibleUserIds:
+      parsed.phase === "voting" && parsed.voteTally === "tie"
+        ? players.filter((player) => player.playing && player.alive).slice(0, 2).map((player) => player.userId)
+        : [],
     winnerTeam: winner,
     winnerReasonBg: winner ? winnerReasonBg(winner, parsed.family) : "",
     players,
@@ -299,7 +317,7 @@ function parseVisualQuery(params: URLSearchParams, createOptions: CreateRoomOpti
   const phase = parsePhase(params.get("phase") ?? preset.phase ?? (winnerParam ? "game_over" : "night"));
   const viewer = parseViewer(params.get("viewer") ?? preset.viewer);
   const basePlayers = family === "mafia" ? 10 : 12;
-  const playerCount = clampInteger(params.get("players") ?? preset.players, 3, 18, basePlayers);
+  const playerCount = clampInteger(params.get("players") ?? preset.players, 3, 30, basePlayers);
   const deadMinimum = viewer === "dead" ? 1 : 0;
   const dead = Math.max(deadMinimum, clampInteger(params.get("dead") ?? preset.dead, 0, playerCount - 1, phase === "lobby" ? 0 : 1));
   const roleFallback = family === "mafia" ? "commissioner" : "seer";
@@ -315,6 +333,7 @@ function parseVisualQuery(params: URLSearchParams, createOptions: CreateRoomOpti
     voteTally: parseVoteTally(params.get("voteTally") ?? preset.voteTally),
     connection: parseConnection(params.get("connection") ?? preset.connection),
     doctorCanSelfProtect: parseBooleanParam(params.get("doctorSelf"), createOptions?.doctorCanSelfProtect ?? false),
+    timerSeconds: parseVisualTimer(params.get("timer")),
   };
 }
 
@@ -328,8 +347,10 @@ function buildPlayers(parsed: ParsedVisualQuery, currentUserId: string, assigned
     const playing = !isNarratorViewer && !isSpectatorViewer;
     const alive = !playing || !deadIndexes.has(index);
     const revealedRole = playing && !alive ? assignedRoles[index] ?? "" : "";
+    const userId = isCurrent ? currentUserId : `visual-player-${index + 1}`;
     return {
-      userId: isCurrent ? currentUserId : `visual-player-${index + 1}`,
+      userId,
+      avatarId: avatarIdForSeed(userId),
       displayName: names[index] ?? `Играч ${index + 1}`,
       connected: index % 7 !== 5,
       ready: parsed.phase !== "lobby" || index % 5 !== 4,
@@ -390,6 +411,32 @@ function buildVoteTally(players: PublicPlayer[], mode: VisualVoteTally): VoteTal
     count: mode === "tie" ? 2 : Math.max(1, candidates.length - index),
     hasMayorVote: index === 0,
   }));
+}
+
+function buildNominations(parsed: ParsedVisualQuery, players: PublicPlayer[]): PublicNomination[] {
+  if (
+    parsed.family !== "mafia"
+    || (parsed.phase !== "day_discussion"
+      && parsed.phase !== "nomination"
+      && parsed.phase !== "defense"
+      && parsed.phase !== "voting")
+  ) {
+    return [];
+  }
+
+  const living = players.filter((player) => player.playing && player.alive);
+  const firstNominator = living[0];
+  const secondNominator = living[1];
+  const firstTarget = living[2];
+  const secondTarget = living[3];
+  return [
+    ...(firstNominator && firstTarget
+      ? [{ nominatorUserId: firstNominator.userId, targetUserId: firstTarget.userId }]
+      : []),
+    ...(secondNominator && secondTarget
+      ? [{ nominatorUserId: secondNominator.userId, targetUserId: secondTarget.userId }]
+      : []),
+  ];
 }
 
 function buildPublicEvents(parsed: ParsedVisualQuery): PublicEvent[] {
@@ -579,6 +626,25 @@ function parseVoteTally(value: string | undefined): VisualVoteTally {
 
 function parseConnection(value: string | undefined): ConnectionStatus {
   return value === "reconnecting" || value === "lost" || value === "error" ? value : "connected";
+}
+
+function parseVisualTimer(value: string | null): number | null {
+  if (value === "none") {
+    return null;
+  }
+  if (value === "90") {
+    return 90;
+  }
+  if (value === "20") {
+    return 20;
+  }
+  if (value === "8") {
+    return 8;
+  }
+  if (value === "0") {
+    return 0;
+  }
+  return null;
 }
 
 function parseBooleanParam(value: string | null, fallback: boolean) {

@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import type { ChatChannel } from "@werewolf/shared";
 import { TypingIndicator } from "@/components/play/TypingIndicator";
 import { privateChannelBg } from "@/lib/play/copy";
@@ -6,18 +9,28 @@ import type { PrivateChatMessage, TypingNotice } from "@/lib/play/types";
 export function PrivateChatPanel({
   channel,
   messages,
-  value,
-  setValue,
-  sendPrivateChat,
+  onSend,
+  onTyping,
   typingNotices,
 }: {
   channel: ChatChannel;
   messages: PrivateChatMessage[];
-  value: string;
-  setValue: (value: string) => void;
-  sendPrivateChat: (channel: ChatChannel) => void;
+  onSend: (channel: ChatChannel, message: string) => void;
+  onTyping: (channel: ChatChannel, active: boolean) => void;
   typingNotices: TypingNotice[];
 }) {
+  const [value, setValue] = useState("");
+
+  const submit = () => {
+    const message = value.trim();
+    if (!message) {
+      return;
+    }
+    onSend(channel, message);
+    onTyping(channel, false);
+    setValue("");
+  };
+
   return (
     <section className="ritual-panel mt-8 rounded-[2rem] p-6">
       <p className="section-kicker">{privateChannelBg(channel)}</p>
@@ -34,10 +47,16 @@ export function PrivateChatPanel({
         <input
           className="input w-full"
           value={value}
-          onChange={(event) => setValue(event.target.value)}
+          onChange={(event) => {
+            const nextValue = event.target.value.slice(0, 500);
+            setValue(nextValue);
+            onTyping(channel, nextValue.trim().length > 0);
+          }}
+          aria-label="Съобщение за таен канал"
           placeholder="Съобщение само за този канал..."
+          maxLength={500}
         />
-        <button className="btn btn-primary" type="button" onClick={() => sendPrivateChat(channel)}>
+        <button className="btn btn-primary" type="button" onClick={submit} disabled={value.trim().length === 0}>
           Изпрати
         </button>
       </div>

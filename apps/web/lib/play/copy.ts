@@ -376,6 +376,51 @@ export function nightInstructionBg(role: RoleCode) {
   return labels[role] ?? "Тази роля няма задължително нощно действие";
 }
 
+export function nightTargetHeadingBg(role: RoleCode, targetName: string) {
+  if (role === "healer" || role === "doctor" || role === "bodyguard") {
+    return `Защита за ${targetName}`;
+  }
+  if (role === "priest") {
+    return `Благословия за ${targetName}`;
+  }
+  if (role === "lawyer") {
+    return `Алиби за ${targetName}`;
+  }
+  if (role === "medium") {
+    return `Връзка с ${targetName}`;
+  }
+  if (
+    role === "commissioner" ||
+    role === "detective" ||
+    role === "informant" ||
+    role === "don" ||
+    role === "seer" ||
+    role === "oracle" ||
+    role === "investigator"
+  ) {
+    return `Проверка на ${targetName}`;
+  }
+  if (role === "roleblocker") {
+    return `Блокиране на ${targetName}`;
+  }
+  if (role === "witch") {
+    return `Решение за ${targetName}`;
+  }
+  if (role === "stray_cat") {
+    return `Избран дом: ${targetName}`;
+  }
+  if (role === "thief") {
+    return `Кражба от ${targetName}`;
+  }
+  if (role === "cupid" || role === "lovers") {
+    return `Първа връзка: ${targetName}`;
+  }
+  if (role === "blacksmith") {
+    return `Първа цел: ${targetName}`;
+  }
+  return `Нощна цел: ${targetName}`;
+}
+
 export function formatPrivateResult(result: PrivateResult, players: PublicPlayer[]) {
   if (result.messageBg) {
     return result.messageBg;

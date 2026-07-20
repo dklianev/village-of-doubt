@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildPrimaryNightAction,
+  canUseNightKindForTarget,
   isNightActionKindAvailable,
   nightActionUnavailableReasons,
   requiresExplicitNightActionChoice,
@@ -104,6 +105,50 @@ describe("night action target helpers", () => {
     ).map((item) => item.userId)).toEqual(["receiver"]);
     expect(buildPrimaryNightAction("healer", "target", "", "night", { nightActionCapabilities: capabilities }))
       .toBeNull();
+  });
+
+  it("removes allied faction-kill targets using the private capability reason", () => {
+    const capabilities: NightActionCapabilities = {
+      availableKinds: ["faction_kill"],
+      usedFlags: {},
+      disallowedTargetsByKind: {
+        faction_kill: [{ id: "target", reasonBg: "Не можеш да избереш свой съотборник." }],
+      },
+    };
+
+    expect(shortcutTargets(
+      "night",
+      "mafioso",
+      livingPlayers,
+      livingPlayers,
+      "actor",
+      { nightActionCapabilities: capabilities },
+    ).map((item) => item.userId)).toEqual(["receiver"]);
+    expect(canUseNightKindForTarget("faction_kill", "target", capabilities)).toBe(false);
+  });
+
+  it.each([
+    ["don", "check_commissioner"],
+    ["informant", "check_role"],
+    ["lawyer", "lawyer_cover"],
+  ] as const)("keeps %s targets available through %s when faction kill is disabled", (role, specialKind) => {
+    const capabilities: NightActionCapabilities = {
+      availableKinds: [specialKind],
+      usedFlags: {
+        faction_kill: { reasonBg: "Убийствата са изключени през тази нощ." },
+      },
+      disallowedTargetsByKind: {},
+    };
+
+    expect(shortcutTargets(
+      "first_night",
+      role,
+      livingPlayers,
+      livingPlayers,
+      "actor",
+      { nightActionCapabilities: capabilities },
+    ).map((item) => item.userId)).toEqual(["target", "receiver"]);
+    expect(isNightActionKindAvailable(capabilities, specialKind)).toBe(true);
   });
 
   it("removes spent Witch potion choices independently", () => {

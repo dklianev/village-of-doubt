@@ -64,8 +64,9 @@ describe("RulesSummary", () => {
     expect(screen.getByText("2/4")).toBeInTheDocument();
     expect(screen.getByText("Пълен човек")).toBeInTheDocument();
     expect(screen.getByText("Тайни канали")).toBeInTheDocument();
-    expect(screen.getByText("180s / 60s")).toBeInTheDocument();
+    expect(screen.getByText("180 сек. / 60 сек.")).toBeInTheDocument();
     expect(screen.getByText("Класически Разказвач")).toBeInTheDocument();
+    expect(screen.getByRole("list", { name: "Роли в стаята" })).toBeInTheDocument();
     expect(screen.getByText("Гадателка")).toBeInTheDocument();
     expect(screen.getAllByText("Върколак").length).toBeGreaterThan(0);
     expect(screen.getByText("В тази стая Пълният Разказвач вижда всички роли и действия.")).toBeInTheDocument();

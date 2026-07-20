@@ -1,7 +1,8 @@
-import type { GamePhase, NightActionCapabilities, NightActionCommand, NightActionKind, RoleCode } from "@werewolf/shared";
+import type { GamePhase, NightActionCapabilities, NightActionCommand, NightActionKind, PrivateFactionRoster, RoleCode } from "@werewolf/shared";
 import { nightActionHelpBg, nightInstructionBg } from "@/lib/play/copy";
 import { canFactionKill } from "@/lib/play/role-rules";
 import {
+  canUseNightKindForTarget,
   isNightActionKindAvailable,
   needsSecondNightTarget,
   nightActionUnavailableReasons,
@@ -10,6 +11,7 @@ import {
   targetKindsForRole,
 } from "@/lib/play/night-actions";
 import type { PublicPlayer } from "@/lib/play/types";
+import styles from "./NightActionPanel.module.css";
 
 export function NightActionPanel({
   players,
@@ -18,6 +20,7 @@ export function NightActionPanel({
   doctorCanSelfProtect,
   phase,
   privateRole,
+  privateFactionRoster,
   nightActionCapabilities,
   selectedTargetId,
   secondTargetId,
@@ -30,6 +33,7 @@ export function NightActionPanel({
   doctorCanSelfProtect: boolean;
   phase: GamePhase;
   privateRole: RoleCode;
+  privateFactionRoster?: PrivateFactionRoster | null;
   nightActionCapabilities?: NightActionCapabilities | null;
   selectedTargetId: string;
   secondTargetId: string;
@@ -58,24 +62,43 @@ export function NightActionPanel({
     nightActionCapabilities,
     targetKindsForRole(privateRole, phase),
   );
-  const canUseKind = (kind: NightActionKind) => isNightActionKindAvailable(nightActionCapabilities, kind);
+  const canUseKind = (kind: NightActionKind) =>
+    isNightActionKindAvailable(nightActionCapabilities, kind)
+    && canUseNightKindForTarget(kind, targetId, nightActionCapabilities);
 
   return (
-    <section className="night-action-sheet ritual-panel mt-8 rounded-[2rem] p-6">
-      <p className="section-kicker">нощно действие</p>
-      <h2 className="mt-2 text-3xl font-black">{nightInstructionBg(privateRole)}</h2>
+    <section
+      className={`night-action-sheet ritual-panel ${styles.sheet}`}
+      aria-label="Нощен команден ритуал"
+      data-command-state={canSubmitTarget ? "ready" : "awaiting-target"}
+    >
+      <div className={styles.commandHeader}>
+        <p className={`section-kicker ${styles.kicker}`}>нощно действие</p>
+        <h2>{nightInstructionBg(privateRole)}</h2>
+      </div>
+      {privateFactionRoster && privateFactionRoster.members.length > 0 ? (
+        <p className={`night-action-allies ${styles.allies}`}>
+          <strong>Твои съотборници:</strong>{" "}
+          {privateFactionRoster.members.map((member) => member.displayName).join(", ")}
+        </p>
+      ) : null}
       {needsSecondTarget ? (
-        <p className="night-action-step mt-3" aria-live="polite">
+        <p className={`night-action-step ${styles.step}`} aria-live="polite">
           Стъпка {selectionStep} от 2
         </p>
       ) : null}
-      <div className="play-selected-targets mt-5">
-        <div className="play-selected-target" data-filled={selectedTarget ? "true" : undefined}>
+      <div
+        className={`play-selected-targets ${styles.selectedTargets}`}
+        role="group"
+        aria-label="Избрана цел"
+        data-selection-state={selectedTarget && (!needsSecondTarget || secondTarget) ? "ready" : "empty"}
+      >
+        <div className={`play-selected-target ${styles.selectedTarget}`} data-filled={selectedTarget ? "true" : undefined}>
           <span>{needsSecondTarget ? "първа цел" : "цел от масата"}</span>
           <strong>{selectedTarget?.displayName ?? "избери място"}</strong>
         </div>
         {needsSecondTarget ? (
-          <div className="play-selected-target" data-filled={secondTarget ? "true" : undefined}>
+          <div className={`play-selected-target ${styles.selectedTarget}`} data-filled={secondTarget ? "true" : undefined}>
             <span>{secondTargetLabel}</span>
             <strong>{secondTarget?.displayName ?? "избери второ място"}</strong>
           </div>
@@ -83,15 +106,16 @@ export function NightActionPanel({
       </div>
 
       {needsSecondTarget && selectedTarget ? (
-        <button className="btn btn-secondary mt-3" type="button" onClick={onResetPrimaryTarget}>
+        <button className={`btn btn-secondary ${styles.resetButton}`} type="button" onClick={onResetPrimaryTarget}>
           Промени първата цел
         </button>
       ) : null}
 
-      <div className="play-action-buttons mt-5 flex flex-wrap gap-3">
+      <div className={`play-action-buttons ${styles.actions}`} role="group" aria-label="Действия за тази нощ">
         {canFactionKill(privateRole) ? (
           <button
             className={`btn btn-primary action-btn ${privateRole === "vampire" ? "ability-vampire" : "ability-kill"}`}
+            data-command-priority="primary"
             type="button"
             disabled={!targetId || !canUseKind("faction_kill")}
             onClick={() => targetId && sendNightAction({ kind: "faction_kill", targetUserId: targetId })}
@@ -100,73 +124,74 @@ export function NightActionPanel({
           </button>
         ) : null}
         {privateRole === "commissioner" ? (
-          <button className="btn btn-primary action-btn ability-investigate" type="button" disabled={!targetId || !canUseKind("check_alignment")} onClick={() => targetId && sendNightAction({ kind: "check_alignment", targetUserId: targetId })}>
+          <button className="btn btn-primary action-btn ability-investigate" data-command-priority="primary" type="button" disabled={!targetId || !canUseKind("check_alignment")} onClick={() => targetId && sendNightAction({ kind: "check_alignment", targetUserId: targetId })}>
             Провери дали е от Мафията
           </button>
         ) : null}
         {privateRole === "detective" ? (
-          <button className="btn btn-primary action-btn ability-investigate" type="button" disabled={!targetId || !canUseKind("check_alignment")} onClick={() => targetId && sendNightAction({ kind: "check_alignment", targetUserId: targetId })}>
+          <button className="btn btn-primary action-btn ability-investigate" data-command-priority="primary" type="button" disabled={!targetId || !canUseKind("check_alignment")} onClick={() => targetId && sendNightAction({ kind: "check_alignment", targetUserId: targetId })}>
             Разследвай целта
           </button>
         ) : null}
         {privateRole === "informant" ? (
-          <button className="btn btn-primary action-btn ability-investigate" type="button" disabled={!targetId || !canUseKind("check_role")} onClick={() => targetId && sendNightAction({ kind: "check_role", targetUserId: targetId })}>
+          <button className="btn btn-primary action-btn ability-investigate" data-command-priority="primary" type="button" disabled={!targetId || !canUseKind("check_role")} onClick={() => targetId && sendNightAction({ kind: "check_role", targetUserId: targetId })}>
             Отвори досие
           </button>
         ) : null}
         {privateRole === "roleblocker" ? (
-          <button className="btn btn-primary action-btn ability-kill-alt" type="button" disabled={!targetId || !canUseKind("roleblock")} onClick={() => targetId && sendNightAction({ kind: "roleblock", targetUserId: targetId })}>
+          <button className="btn btn-primary action-btn ability-kill-alt" data-command-priority="primary" type="button" disabled={!targetId || !canUseKind("roleblock")} onClick={() => targetId && sendNightAction({ kind: "roleblock", targetUserId: targetId })}>
             Блокирай действие
           </button>
         ) : null}
         {privateRole === "lawyer" ? (
-          <button className="btn btn-secondary action-btn ability-bless" type="button" disabled={!targetId || !canUseKind("lawyer_cover")} onClick={() => targetId && sendNightAction({ kind: "lawyer_cover", targetUserId: targetId })}>
+          <button className="btn btn-secondary action-btn ability-bless" data-command-priority="primary" type="button" disabled={!targetId || !canUseKind("lawyer_cover")} onClick={() => targetId && sendNightAction({ kind: "lawyer_cover", targetUserId: targetId })}>
             Подготви алиби
           </button>
         ) : null}
         {privateRole === "medium" ? (
-          <button className="btn btn-primary action-btn ability-investigate" type="button" disabled={!targetId || !canUseKind("medium_contact")} onClick={() => targetId && sendNightAction({ kind: "medium_contact", targetUserId: targetId })}>
+          <button className="btn btn-primary action-btn ability-investigate" data-command-priority="primary" type="button" disabled={!targetId || !canUseKind("medium_contact")} onClick={() => targetId && sendNightAction({ kind: "medium_contact", targetUserId: targetId })}>
             Свържи се с елиминиран
           </button>
         ) : null}
         {privateRole === "don" ? (
-          <button className="btn btn-secondary action-btn ability-investigate" type="button" disabled={!targetId || !canUseKind("check_commissioner")} onClick={() => targetId && sendNightAction({ kind: "check_commissioner", targetUserId: targetId })}>
+          <button className="btn btn-secondary action-btn ability-investigate" data-command-priority="primary" type="button" disabled={!targetId || !canUseKind("check_commissioner")} onClick={() => targetId && sendNightAction({ kind: "check_commissioner", targetUserId: targetId })}>
             Търси Комисаря
           </button>
         ) : null}
         {privateRole === "seer" || privateRole === "oracle" ? (
-          <button className="btn btn-primary action-btn ability-investigate" type="button" disabled={!targetId || !canUseKind("check_role")} onClick={() => targetId && sendNightAction({ kind: "check_role", targetUserId: targetId })}>
+          <button className="btn btn-primary action-btn ability-investigate" data-command-priority="primary" type="button" disabled={!targetId || !canUseKind("check_role")} onClick={() => targetId && sendNightAction({ kind: "check_role", targetUserId: targetId })}>
             Провери заплахата
           </button>
         ) : null}
         {privateRole === "investigator" ? (
-          <button className="btn btn-primary action-btn ability-investigate" type="button" disabled={!targetId || !canUseKind("investigator_check")} onClick={() => targetId && sendNightAction({ kind: "investigator_check", targetUserId: targetId })}>
+          <button className="btn btn-primary action-btn ability-investigate" data-command-priority="primary" type="button" disabled={!targetId || !canUseKind("investigator_check")} onClick={() => targetId && sendNightAction({ kind: "investigator_check", targetUserId: targetId })}>
             Провери тройка
           </button>
         ) : null}
         {privateRole === "witch" ? (
           <>
-            <button className="btn btn-secondary action-btn ability-heal" type="button" disabled={!targetId || !canUseKind("witch_heal")} onClick={() => targetId && sendNightAction({ kind: "witch_heal", targetUserId: targetId })}>
+            <button className="btn btn-secondary action-btn ability-heal" data-command-priority="primary" type="button" disabled={!targetId || !canUseKind("witch_heal")} onClick={() => targetId && sendNightAction({ kind: "witch_heal", targetUserId: targetId })}>
               Лекувай
             </button>
-            <button className="btn btn-primary action-btn ability-kill" type="button" disabled={!targetId || !canUseKind("witch_poison")} onClick={() => targetId && sendNightAction({ kind: "witch_poison", targetUserId: targetId })}>
+            <button className="btn btn-primary action-btn ability-kill" data-command-priority="primary" type="button" disabled={!targetId || !canUseKind("witch_poison")} onClick={() => targetId && sendNightAction({ kind: "witch_poison", targetUserId: targetId })}>
               Отрови
             </button>
           </>
         ) : null}
         {privateRole === "healer" || privateRole === "doctor" || privateRole === "bodyguard" ? (
-          <button className="btn btn-primary action-btn ability-heal" type="button" disabled={!targetId || !canUseKind("healer_protect")} onClick={() => targetId && sendNightAction({ kind: "healer_protect", targetUserId: targetId })}>
+          <button className="btn btn-primary action-btn ability-heal" data-command-priority="primary" type="button" disabled={!targetId || !canUseKind("healer_protect")} onClick={() => targetId && sendNightAction({ kind: "healer_protect", targetUserId: targetId })}>
             Пази тази нощ
           </button>
         ) : null}
         {privateRole === "priest" ? (
-          <button className="btn btn-primary action-btn ability-bless" type="button" disabled={!targetId || !canUseKind("priest_bless")} onClick={() => targetId && sendNightAction({ kind: "priest_bless", targetUserId: targetId })}>
+          <button className="btn btn-primary action-btn ability-bless" data-command-priority="primary" type="button" disabled={!targetId || !canUseKind("priest_bless")} onClick={() => targetId && sendNightAction({ kind: "priest_bless", targetUserId: targetId })}>
             Дай благословия
           </button>
         ) : null}
         {privateRole === "blacksmith" ? (
           <button
             className="btn btn-primary action-btn ability-kill"
+            data-command-priority="primary"
             type="button"
             disabled={!canSubmitTarget || !canUseKind("blacksmith_sword")}
             onClick={() => targetId && secondId && sendNightAction({ kind: "blacksmith_sword", receiverUserId: secondId, targetUserId: targetId })}
@@ -175,18 +200,19 @@ export function NightActionPanel({
           </button>
         ) : null}
         {privateRole === "stray_cat" ? (
-          <button className="btn btn-primary action-btn ability-investigate" type="button" disabled={!targetId || !canUseKind("stray_cat_choose")} onClick={() => targetId && sendNightAction({ kind: "stray_cat_choose", targetUserId: targetId })}>
+          <button className="btn btn-primary action-btn ability-investigate" data-command-priority="primary" type="button" disabled={!targetId || !canUseKind("stray_cat_choose")} onClick={() => targetId && sendNightAction({ kind: "stray_cat_choose", targetUserId: targetId })}>
             Избери дом
           </button>
         ) : null}
         {privateRole === "thief" && phase === "first_night" ? (
-          <button className="btn btn-primary action-btn ability-steal" type="button" disabled={!targetId || !canUseKind("thief_steal")} onClick={() => targetId && sendNightAction({ kind: "thief_steal", targetUserId: targetId })}>
+          <button className="btn btn-primary action-btn ability-steal" data-command-priority="primary" type="button" disabled={!targetId || !canUseKind("thief_steal")} onClick={() => targetId && sendNightAction({ kind: "thief_steal", targetUserId: targetId })}>
             Открадни карта
           </button>
         ) : null}
         {(privateRole === "cupid" || privateRole === "lovers") && phase === "first_night" ? (
           <button
             className="btn btn-primary action-btn ability-lovers"
+            data-command-priority="primary"
             type="button"
             disabled={!canSubmitTarget || !canUseKind("cupid_link")}
             onClick={() => targetId && secondId && sendNightAction({ kind: "cupid_link", firstUserId: targetId, secondUserId: secondId })}
@@ -194,23 +220,23 @@ export function NightActionPanel({
             Свържи Влюбените
           </button>
         ) : null}
-        <button className="btn btn-secondary" type="button" onClick={() => sendNightAction({ kind: "skip" })}>
+        <button className={`btn btn-secondary ${styles.skipButton}`} data-command-priority="quiet" type="button" onClick={() => sendNightAction({ kind: "skip" })}>
           Пропусни
         </button>
       </div>
-      <p className="night-action-help mt-3 text-[#ead9ba]">{nightActionHelpBg(privateRole)}</p>
+      <p className={`night-action-help ${styles.help}`}>{nightActionHelpBg(privateRole)}</p>
       {unavailableReasons.length > 0 ? (
-        <div className="night-action-reasons mt-3 rounded-2xl border border-[#c18a38]/35 bg-[#c18a38]/10 p-3 text-sm font-bold text-[#ead9ba]">
+        <div className={`night-action-reasons ${styles.reasons}`}>
           {unavailableReasons.map((reason) => (
             <p key={reason}>{reason}</p>
           ))}
         </div>
       ) : null}
-      <p className="night-action-server-note mt-2 text-sm font-bold text-[#c18a38]">
+      <p className={`night-action-server-note ${styles.serverNote}`}>
         Можеш да промениш избора си до края на таймера. Сървърът пази последното изпратено действие.
       </p>
       {privateRole === "medium" && selectableTargets.length === 0 ? (
-        <p className="night-action-empty-note mt-3 rounded-2xl border border-[#c18a38]/35 bg-[#c18a38]/10 p-3 text-sm font-bold text-[#ead9ba]">
+        <p className={`night-action-empty-note ${styles.emptyNote}`}>
           Медиумът няма елиминиран играч, с когото да се свърже тази нощ.
         </p>
       ) : null}

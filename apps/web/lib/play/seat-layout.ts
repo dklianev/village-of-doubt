@@ -39,6 +39,8 @@ const HUD_CLEARANCE_PX = 8;
 const ANGLE_SCAN_STEP_DEGREES = 0.25;
 const MIN_BOTTOM_GAP_HALF_DEGREES = 20;
 const VERTICAL_PERIMETER_BLEED_PX = 20;
+const COMPACT_SCENE_HEIGHT_PX = 320;
+const COMPACT_FULL_VISUAL_SIZE_PX = 56;
 
 /**
  * Computes pixel geometry for seats around a wide desktop stage.
@@ -48,7 +50,11 @@ const VERTICAL_PERIMETER_BLEED_PX = 20;
 export function computeSeatLayout(input: SeatLayoutInput): SeatLayoutItem[] {
   validateInput(input);
 
-  const visualSize = visualSizeForCount(input.count);
+  const visualSize = input.count >= 10
+    && input.count <= 13
+    && input.contentHeight < COMPACT_SCENE_HEIGHT_PX
+    ? COMPACT_FULL_VISUAL_SIZE_PX
+    : visualSizeForCount(input.count);
   const labelWidth = input.count >= 14 ? 8 : 12;
   const labelHeight = input.count >= 14 ? 24 : input.count >= 10 ? 30 : 33;
   const maxFootprintWidth = Math.max(input.minHitSize, visualSize * MAX_SCALE + labelWidth);

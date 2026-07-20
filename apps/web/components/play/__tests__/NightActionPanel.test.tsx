@@ -54,7 +54,21 @@ describe("NightActionPanel", () => {
     const user = userEvent.setup();
     const props = renderPanel({ selectedTargetId: "u2" });
 
-    await user.click(screen.getByRole("button", { name: "Потвърди жертва" }));
+    const selectedTarget = screen.getByRole("group", { name: "Избрана цел" });
+    const actions = screen.getByRole("group", { name: "Действия за тази нощ" });
+    const commandConsole = screen.getByRole("region", { name: "Нощен команден ритуал" });
+    const confirmButton = screen.getByRole("button", { name: "Потвърди жертва" });
+    const skipButton = screen.getByRole("button", { name: "Пропусни" });
+
+    expect(selectedTarget).toHaveAttribute("data-selection-state", "ready");
+    expect(commandConsole).toHaveAttribute("data-command-state", "ready");
+    expect(selectedTarget).toContainElement(screen.getByText("Борис"));
+    expect(actions).toContainElement(confirmButton);
+    expect(actions).toContainElement(skipButton);
+    expect(confirmButton).toHaveAttribute("data-command-priority", "primary");
+    expect(skipButton).toHaveAttribute("data-command-priority", "quiet");
+
+    await user.click(confirmButton);
 
     expect(props.sendNightAction).toHaveBeenCalledWith({
       kind: "faction_kill",
@@ -91,6 +105,8 @@ describe("NightActionPanel", () => {
   it("does not offer doctor self-protect when the room option is not in the client snapshot", () => {
     renderPanel({ privateRole: "doctor", selectedTargetId: "u1" });
 
+    expect(screen.getByRole("region", { name: "Нощен команден ритуал" })).toHaveAttribute("data-command-state", "awaiting-target");
+    expect(screen.getByRole("group", { name: "Избрана цел" })).toHaveAttribute("data-selection-state", "empty");
     expect(screen.getByText("избери място")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Пази тази нощ" })).toBeDisabled();
   });
@@ -147,6 +163,53 @@ describe("NightActionPanel", () => {
     expect(screen.getByText("избери място")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Пази тази нощ" })).toBeDisabled();
     expect(screen.getByText("Не можеш да лекуваш същия играч две нощи поред.")).toBeInTheDocument();
+  });
+
+  it("disables an allied faction target and shows the private Bulgarian reason", () => {
+    renderPanel({
+      privateRole: "mafioso",
+      selectedTargetId: "u2",
+      privateFactionRoster: {
+        faction: "mafia",
+        members: [{ userId: "u2", displayName: "Борис" }],
+      },
+      nightActionCapabilities: {
+        availableKinds: ["faction_kill"],
+        usedFlags: {},
+        disallowedTargetsByKind: {
+          faction_kill: [{ id: "u2", reasonBg: "Не можеш да избереш свой съотборник." }],
+        },
+      },
+    });
+
+    expect(screen.getByText(/Твои съотборници:/)).toBeInTheDocument();
+    expect(screen.getByText("Борис")).toBeInTheDocument();
+    expect(screen.getByText("избери място")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Потвърди жертва" })).toBeDisabled();
+    expect(screen.getByText("Не можеш да избереш свой съотборник.")).toBeInTheDocument();
+  });
+
+  it.each([
+    ["don", "check_commissioner", "Търси Комисаря"],
+    ["informant", "check_role", "Отвори досие"],
+    ["lawyer", "lawyer_cover", "Подготви алиби"],
+  ] as const)("keeps the %s special action enabled when faction kill is disabled", (role, specialKind, buttonName) => {
+    renderPanel({
+      privateRole: role,
+      phase: "first_night",
+      selectedTargetId: "u2",
+      nightActionCapabilities: {
+        availableKinds: [specialKind],
+        usedFlags: {
+          faction_kill: { reasonBg: "Убийствата са изключени през тази нощ." },
+        },
+        disallowedTargetsByKind: {},
+      },
+    });
+
+    expect(screen.getByRole("button", { name: "Потвърди жертва" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: buttonName })).toBeEnabled();
+    expect(screen.getByText("Убийствата са изключени през тази нощ.")).toBeInTheDocument();
   });
 
   it("does not treat the Blacksmith actor as a valid sword receiver", () => {
