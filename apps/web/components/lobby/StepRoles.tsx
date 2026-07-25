@@ -10,7 +10,6 @@ import { useMemo, type Dispatch } from "react";
 import {
   MANUAL_PRESET_STORAGE_KEY,
   boundedPlayerCount,
-  loversAvailableFor,
   currentConfig,
   roleBalance,
   roleWarnings,
@@ -20,15 +19,16 @@ import {
 import { PresetChips } from "@/components/lobby/PresetChips";
 import { RoleCarousel } from "@/components/lobby/RoleCarousel";
 import { RoleDetailModal } from "@/components/lobby/RoleDetailModal";
-import { roleThumbStyle } from "@/lib/role-art";
 import { playCue } from "@/lib/sound";
 
 export function StepRoles({
   state,
   dispatch,
+  embedded = false,
 }: {
   state: LobbyFormState;
   dispatch: Dispatch<LobbyFormAction>;
+  embedded?: boolean;
 }) {
   const config = currentConfig(state);
   const warnings = roleWarnings(state);
@@ -38,7 +38,7 @@ export function StepRoles({
     return getRolesForFamily(state.family).filter((role) => {
       const definition = ROLE_DEFINITIONS[role];
       const haystack = `${definition.nameBg} ${definition.shortDescriptionBg} ${definition.tags.join(" ")} ${role}`.toLowerCase();
-      return (query.length === 0 || haystack.includes(query)) && getRoleRuntimeStatus(role) === state.runtimeFilter;
+      return role !== "lovers" && (query.length === 0 || haystack.includes(query)) && getRoleRuntimeStatus(role) === state.runtimeFilter;
     });
   }, [state.family, state.roleSearch, state.runtimeFilter]);
 
@@ -54,15 +54,13 @@ export function StepRoles({
     <section className="lobby-step lobby-step-roles" aria-labelledby="step-roles-title">
       <div className="roles-step-sticky">
         <div className="lobby-step-heading">
-          <p className="section-kicker">стъпка 2</p>
+          <p className="section-kicker">{embedded ? "състав на вечерта" : "стъпка 2"}</p>
           <h1 id="step-roles-title" tabIndex={-1}>Избери ролите</h1>
           <p>{total}/{state.playerCount} роли · баланс {roleBalance(state) > 0 ? `+${roleBalance(state)}` : roleBalance(state)}</p>
         </div>
         <PresetChips state={state} dispatch={dispatch} />
         {warnings.length > 0 ? <div className="roles-warning-banner">{warnings[0]}</div> : null}
       </div>
-
-      {state.family === "werewolves" ? <LoversFeatureCard state={state} dispatch={dispatch} /> : null}
 
       <div className="manual-builder-toolbar">
         <input
@@ -94,7 +92,11 @@ export function StepRoles({
 
       <RoleCarousel
         family={state.family}
-        roles={state.manualRolesEnabled ? visibleRoles : (Object.keys(config.roles) as RoleCode[])}
+        roles={
+          state.manualRolesEnabled
+            ? visibleRoles
+            : (Object.keys(config.roles) as RoleCode[]).filter((role) => role !== "lovers")
+        }
         distribution={state.manualRolesEnabled ? state.manualRoles : config.roles}
         readonly={!state.manualRolesEnabled}
         onIncrement={(role) => changeRole(role, 1)}
@@ -140,70 +142,42 @@ export function StepRoles({
       </div>
 
       {state.roleDetail ? (
-        <RoleDetailModal
-          family={state.family}
-          role={state.roleDetail.role}
-          onClose={() => dispatch({ type: "SET_ROLE_DETAIL", roleDetail: null })}
-        />
+        embedded ? (
+          <InlineRoleDetail
+            role={state.roleDetail.role}
+            onClose={() => dispatch({ type: "SET_ROLE_DETAIL", roleDetail: null })}
+          />
+        ) : (
+          <RoleDetailModal
+            family={state.family}
+            role={state.roleDetail.role}
+            onClose={() => dispatch({ type: "SET_ROLE_DETAIL", roleDetail: null })}
+          />
+        )
       ) : null}
     </section>
   );
 }
 
-function LoversFeatureCard({
-  state,
-  dispatch,
-}: {
-  state: LobbyFormState;
-  dispatch: Dispatch<LobbyFormAction>;
-}) {
-  const players = boundedPlayerCount(state);
-  const available = loversAvailableFor(state.mode, players, state.rolePreset) && !state.manualRolesEnabled;
-  const enabled = available && state.advanced.loversEnabled;
-  const detail = loversDetail(state, players, available);
-
+function InlineRoleDetail({ role, onClose }: { role: RoleCode; onClose: () => void }) {
+  const definition = ROLE_DEFINITIONS[role];
   return (
-    <article className="lovers-feature-card" data-enabled={enabled ? "true" : "false"} data-disabled={available ? "false" : "true"}>
-      <span className="lovers-feature-art" aria-hidden="true" style={roleThumbStyle("werewolves", "cupid")} />
-      <div className="lovers-feature-copy">
-        <p className="section-kicker">Купидон и Влюбени</p>
-        <strong>Любовна нишка от първата нощ</strong>
-        <span>{detail}</span>
-        <small>Купидон заменя един Селянин и не променя броя играчи.</small>
+    <article className="create-inline-role-detail" aria-labelledby="create-inline-role-title">
+      <div>
+        <p className="section-kicker">как действа</p>
+        <h2 id="create-inline-role-title">{definition.nameBg}</h2>
       </div>
-      <button
-        type="button"
-        className="lovers-toggle-button"
-        data-active={enabled ? "true" : "false"}
-        disabled={!available}
-        aria-pressed={enabled}
-        onClick={() => {
-          dispatch({ type: "SET_ADVANCED", key: "loversEnabled", value: !state.advanced.loversEnabled });
-          playCue("vote");
-        }}
-      >
-        {enabled ? "Включено" : "Включи"}
+      <p>{definition.fullDescriptionBg}</p>
+      <div className="role-detail-tags">
+        {definition.tags.map((tag) => (
+          <span key={tag}>{tag}</span>
+        ))}
+      </div>
+      <button type="button" className="btn btn-secondary" onClick={onClose}>
+        Затвори ролята
       </button>
     </article>
   );
-}
-
-function loversDetail(state: LobbyFormState, players: number, available: boolean) {
-  if (available) {
-    return state.advanced.loversEnabled
-      ? "Купидон е в разпределението. Двама играчи ще бъдат тайно свързани."
-      : "Подходящо за класическа игра с повече напрежение и лични залози.";
-  }
-  if (state.manualRolesEnabled) {
-    return "При ръчни роли добави Купидон директно от картите, за да контролираш точния състав.";
-  }
-  if (players < 9) {
-    return "Включва се при 9+ играчи, за да има достатъчно място за тайна двойка.";
-  }
-  if (state.rolePreset === "beginner") {
-    return "Начинаещият шаблон остава по-чист. Избери Класика или Хаос, ако искаш Влюбени.";
-  }
-  return "Тази настройка е налична само за класически Върколак.";
 }
 
 function triggerHaptic(pattern: number | number[]) {

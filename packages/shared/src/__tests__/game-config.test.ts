@@ -16,6 +16,7 @@ import {
   getWerewolvesMvpPreset,
   phaseLabelBg,
   ROLE_DEFINITIONS,
+  TEMPO_PRESETS,
   validateRoleDistribution,
   validateRoleDistributionForMode,
 } from "../index.js";
@@ -189,6 +190,69 @@ describe("role presets", () => {
     expect(config.liveMode).toBe(true);
     expect(config.roles.cupid).toBe(1);
     expect(config.timers.autoAdvanceWhenReady).toBe(false);
+  });
+
+  it("derives lovers from Cupid in a manual role composition", () => {
+    const config = createGameConfigFromOptions({
+      mode: "werewolves_classic",
+      playerCount: 9,
+      loversEnabled: false,
+      roles: {
+        ordinary_villager: 4,
+        werewolf: 2,
+        seer: 1,
+        hunter: 1,
+        cupid: 1,
+      },
+    });
+
+    expect(config.roles.cupid).toBe(1);
+    expect(config.loversEnabled).toBe(true);
+  });
+
+  it("keeps the legacy lovers flag by adding Cupid to an eligible preset", () => {
+    const config = createGameConfigFromOptions({
+      mode: "werewolves_classic",
+      playerCount: 9,
+      loversEnabled: true,
+      rolePreset: "classic",
+    });
+
+    expect(config.roles.cupid).toBe(1);
+    expect(config.loversEnabled).toBe(true);
+    expect(countRoles(config.roles)).toBe(9);
+  });
+
+  it("normalizes lovers to false when the resolved roles do not contain Cupid", () => {
+    const config = createGameConfigFromOptions({
+      mode: "werewolves_classic",
+      playerCount: 8,
+      loversEnabled: true,
+      roles: {
+        ordinary_villager: 4,
+        werewolf: 2,
+        seer: 1,
+        hunter: 1,
+      },
+    });
+
+    expect(config.roles.cupid).toBeUndefined();
+    expect(config.loversEnabled).toBe(false);
+  });
+
+  it("keeps the authoritative sport Mafia tempo fixed", () => {
+    const config = createGameConfigFromOptions({
+      mode: "mafia_sport",
+      playerCount: 10,
+      maxPlayers: 30,
+      tempoProfile: "live",
+      allowSkipVote: true,
+    });
+
+    expect(config.tempoProfile).toBe("sport_mafia");
+    expect(config.timers).toEqual(TEMPO_PRESETS.sport_mafia);
+    expect(config.maxPlayers).toBe(10);
+    expect(config.allowSkipVote).toBe(false);
   });
 
   it("preserves rule overrides and never sets capacity below playerCount", () => {

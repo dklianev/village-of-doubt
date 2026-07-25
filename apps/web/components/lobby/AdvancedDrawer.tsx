@@ -32,7 +32,11 @@ export function AdvancedDrawer({
         <section className="advanced-panel">
           <h3>Правила</h3>
           <Toggle checked={state.advanced.revealRolesOnDeath} label="Разкриване на ролята при смърт" onChange={(value) => setAdvanced("revealRolesOnDeath", value)} />
-          <Toggle checked={state.advanced.allowSkipVote} label="Позволи пропускане на глас" onChange={(value) => setAdvanced("allowSkipVote", value)} />
+          {state.mode === "mafia_sport" ? (
+            <p className="advanced-panel-note">Спортният формат изисква избор и не допуска пропускане на глас.</p>
+          ) : (
+            <Toggle checked={state.advanced.allowSkipVote} label="Позволи пропускане на глас" onChange={(value) => setAdvanced("allowSkipVote", value)} />
+          )}
           <Toggle checked={state.advanced.autoStart} label="Автоматичен старт, когато всички са готови" onChange={(value) => setAdvanced("autoStart", value)} />
           <label className="lobby-field compact">
             <span>Изискване за гласуване</span>
@@ -52,23 +56,27 @@ export function AdvancedDrawer({
 
         <section className="advanced-panel">
           <h3>Капацитет</h3>
-          <label className="lobby-field compact">
-            <span>Максимум играчи</span>
-            <input
-              className="input"
-              type="number"
-              min={players}
-              value={state.advanced.maxPlayers}
-              onChange={(event) => setAdvanced("maxPlayers", Number(event.target.value))}
-            />
-          </label>
+          {state.mode === "mafia_sport" ? (
+            <p className="advanced-panel-note">Спортната маса е фиксирана за точно 10 играчи.</p>
+          ) : (
+            <label className="lobby-field compact">
+              <span>Максимум играчи</span>
+              <input
+                className="input"
+                type="number"
+                min={players}
+                value={state.advanced.maxPlayers}
+                onChange={(event) => setAdvanced("maxPlayers", Number(event.target.value))}
+              />
+            </label>
+          )}
         </section>
 
         {state.family === "werewolves" ? (
           <section className="advanced-panel">
             <h3>Върколак</h3>
             <p className="advanced-panel-note">
-              Купидон и Влюбените вече са основна карта в стъпка „Роли“, за да се вижда ясно кога са включени.
+              Добави Купидон от картите с роли. През първата нощ той свързва двама Влюбени.
             </p>
           </section>
         ) : (

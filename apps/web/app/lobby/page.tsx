@@ -14,7 +14,7 @@ export default async function LobbyPage({ searchParams }: { searchParams?: Promi
 
   return (
     <main className="shell lobby-shell" data-faction={family} data-family={family}>
-      <LobbyCreateClient initialMode={initialMode} />
+      <LobbyCreateClient initialMode={initialMode} family={family} />
     </main>
   );
 }

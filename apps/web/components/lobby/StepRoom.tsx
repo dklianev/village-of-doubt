@@ -157,36 +157,52 @@ export function StepRoom({
         </div>
       </section>
 
-      <section className="lobby-panel">
-        <div className="lobby-panel-title">
-          <h2>Темпо</h2>
-          <span className="player-count-badge">{tempoSummary(timersForState(state))}</span>
-        </div>
-        <div className="tempo-card-grid">
-          {(state.mode === "mafia_sport" ? [{ value: "sport_mafia" as const, label: "Спортна", detail: "Фиксирано темпо за 10 играчи." }] : TEMPO_CARDS).map(
-            (tempo) => {
-              const timers = tempo.value === "manual" ? state.customTimers : TEMPO_PRESETS[tempo.value];
-              return (
-                <button
-                  key={tempo.value}
-                  type="button"
-                  className="tempo-tile"
-                  data-active={state.tempoProfile === tempo.value}
-                  aria-pressed={state.tempoProfile === tempo.value}
-                  onClick={() => dispatch({ type: "SET_TEMPO_PROFILE", tempoProfile: tempo.value })}
-                >
-                  <strong>{tempo.label}</strong>
-                  <span>{tempo.detail}</span>
-                  <small>
-                    Ден {timers.dayDiscussionSeconds} · Нощ {timers.factionNightActionSeconds} · Гласуване {timers.voteSeconds} сек.
-                  </small>
-                </button>
-              );
-            },
-          )}
-        </div>
-        {state.tempoProfile === "manual" && state.mode !== "mafia_sport" ? <ManualTempoPanel state={state} dispatch={dispatch} /> : null}
-      </section>
+      <TempoSettings state={state} dispatch={dispatch} />
+    </section>
+  );
+}
+
+export function TempoSettings({
+  state,
+  dispatch,
+}: {
+  state: LobbyFormState;
+  dispatch: Dispatch<LobbyFormAction>;
+}) {
+  return (
+    <section className="lobby-panel">
+      <div className="lobby-panel-title">
+        <h2>Темпо</h2>
+        <span className="player-count-badge">{tempoSummary(timersForState(state))}</span>
+      </div>
+      <div className="tempo-card-grid">
+        {(state.mode === "mafia_sport"
+          ? [{ value: "sport_mafia" as const, label: "Спортна", detail: "Фиксирано темпо за 10 играчи." }]
+          : TEMPO_CARDS
+        ).map((tempo) => {
+          const timers = tempo.value === "manual" ? state.customTimers : TEMPO_PRESETS[tempo.value];
+          return (
+            <button
+              key={tempo.value}
+              type="button"
+              className="tempo-tile"
+              data-active={state.tempoProfile === tempo.value}
+              aria-pressed={state.tempoProfile === tempo.value}
+              onClick={() => dispatch({ type: "SET_TEMPO_PROFILE", tempoProfile: tempo.value })}
+            >
+              <strong>{tempo.label}</strong>
+              <span>{tempo.detail}</span>
+              <small>
+                Ден {timers.dayDiscussionSeconds} · Нощ {timers.factionNightActionSeconds} · Гласуване{" "}
+                {timers.voteSeconds} сек.
+              </small>
+            </button>
+          );
+        })}
+      </div>
+      {state.tempoProfile === "manual" && state.mode !== "mafia_sport" ? (
+        <ManualTempoPanel state={state} dispatch={dispatch} />
+      ) : null}
     </section>
   );
 }

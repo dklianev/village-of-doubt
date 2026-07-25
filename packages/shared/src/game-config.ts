@@ -674,9 +674,9 @@ export function createGameConfigFromOptions(options: GameConfigOptions = {}): Ga
   }
   const config = createDefaultGameConfig(mode, playerCount);
 
-  const tempoProfile = options.tempoProfile ?? config.tempoProfile;
+  const tempoProfile = mode === "mafia_sport" ? "sport_mafia" : options.tempoProfile ?? config.tempoProfile;
   const timers = resolvePhaseTimers(tempoProfile, options.customTimers);
-  const loversEnabled = options.loversEnabled ?? config.loversEnabled;
+  const requestedLoversEnabled = options.loversEnabled ?? config.loversEnabled;
   const requestedMaxPlayers = Number.isFinite(options.maxPlayers)
     ? Math.floor(options.maxPlayers as number)
     : config.maxPlayers;
@@ -684,7 +684,7 @@ export function createGameConfigFromOptions(options: GameConfigOptions = {}): Ga
   const roles = options.roles
     ? normalizeRoleDistributionForMode(mode, options.roles)
     : mode === "werewolves_classic"
-      ? withOptionalCupid(getWerewolfPresetByRolePreset(playerCount, rolePreset), loversEnabled, playerCount)
+      ? withOptionalCupid(getWerewolfPresetByRolePreset(playerCount, rolePreset), requestedLoversEnabled, playerCount)
       : mode === "mafia_free"
         ? withOptionalMafiaVariants(config.roles, {
             playerCount,
@@ -692,12 +692,16 @@ export function createGameConfigFromOptions(options: GameConfigOptions = {}): Ga
             jesterEnabled: options.jesterEnabled ?? config.jesterEnabled,
           })
         : config.roles;
+  const loversEnabled = (roles.cupid ?? 0) > 0;
 
   const createdConfig: GameConfig = {
     ...config,
     roomName: options.roomName ?? config.roomName,
     rolePreset,
-    maxPlayers: Math.max(playerCount, Math.min(30, requestedMaxPlayers)),
+    maxPlayers:
+      mode === "mafia_sport"
+        ? playerCount
+        : Math.max(playerCount, Math.min(30, requestedMaxPlayers)),
     roomVisibility: options.roomVisibility ?? config.roomVisibility,
     roles,
     narratorMode: options.narratorMode ?? config.narratorMode,

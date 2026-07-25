@@ -1,6 +1,7 @@
 import type {
   CommunicationMode,
   CommissionerResultMode,
+  CreateRoomOptions,
   GameFamily,
   GameMode,
   MajorityMode,
@@ -32,6 +33,18 @@ export type AdvancedFlags = {
 
 export type RuntimeFilter = "playable" | "manual_only";
 export type RoleDetailState = { role: RoleCode; source: "tile" | "builder" } | null;
+export type PreservedCreateOptions = Partial<
+  Pick<
+    CreateRoomOptions,
+    | "roomVisibility"
+    | "beginnerMode"
+    | "advancedMode"
+    | "werewolfVariant"
+    | "mayorMode"
+    | "promoRolesEnabled"
+    | "spectator"
+  >
+>;
 export type CustomTimerKey =
   | "dayDiscussionSeconds"
   | "factionNightActionSeconds"
@@ -54,6 +67,7 @@ export type LobbyFormState = {
   manualRoles: RoleDistribution;
   manualRoleHistory: RoleDistribution[];
   manualRoleFuture: RoleDistribution[];
+  preservedOptions: PreservedCreateOptions;
   communicationMode: CommunicationMode;
   narratorMode: NarratorMode;
   tempoProfile: TempoProfile;

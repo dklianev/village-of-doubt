@@ -119,6 +119,7 @@ function applyMode(state: LobbyFormState, nextMode: GameMode): LobbyFormState {
     manualRoles: presetRoles(mode, playerCount, rolePreset, advanced),
     manualRoleHistory: [],
     manualRoleFuture: [],
+    preservedOptions: {},
     roleDetail: null,
   };
 }
@@ -252,20 +253,37 @@ function applyTemplate(state: LobbyFormState, template: LobbyTemplate): LobbyFor
     manualRoles: presetRoles(mode, playerCount, rolePreset, advanced),
     manualRoleHistory: [],
     manualRoleFuture: [],
+    preservedOptions: {},
     step: template.step ?? state.step,
     visitedStep: template.step && template.step > state.visitedStep ? template.step : state.visitedStep,
   };
 }
 
 function commitManualRoles(state: LobbyFormState, roles: RoleDistribution): LobbyFormState {
+  const normalizedRoles = normalizeManualRolesForFamily(state, roles);
   return {
     ...state,
-    manualRoles: cleanRoles(roles),
+    manualRoles: normalizedRoles,
     manualRolesEnabled: true,
     rolePreset: "manual",
     manualRoleHistory: [...state.manualRoleHistory.slice(-11), state.manualRoles],
     manualRoleFuture: [],
   };
+}
+
+function normalizeManualRolesForFamily(
+  state: Pick<LobbyFormState, "family">,
+  roles: RoleDistribution,
+): RoleDistribution {
+  const cleaned = cleanRoles(roles);
+  const loversCount = cleaned.lovers ?? 0;
+  if (state.family !== "mafia" || loversCount <= 0) {
+    return cleaned;
+  }
+
+  delete cleaned.lovers;
+  cleaned.civilian = (cleaned.civilian ?? 0) + loversCount;
+  return cleaned;
 }
 
 function undoManualRoles(state: LobbyFormState): LobbyFormState {

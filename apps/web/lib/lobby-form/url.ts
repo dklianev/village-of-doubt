@@ -2,17 +2,21 @@ import {
   createGameConfigFromOptions,
   getGameFamily,
   resolvePhaseTimers,
+  type CreateRoomOptions,
   type GameFamily,
+  type GameConfig,
   type GameMode,
+  type RoleDistribution,
 } from "@werewolf/shared";
 import { parseRoomCreateOptions, roomOptionsToQuery, type RoomSearchParams } from "@/lib/room-options";
-import type { AdvancedFlags, LobbyFormState, LobbyStep } from "./types";
+import type { AdvancedFlags, LobbyFormState, LobbyStep, PreservedCreateOptions } from "./types";
 import {
   cleanRoomCode,
   createRoomCode,
   defaultLoversEnabled,
   defaultModeForFamily,
   defaultPlayerCount,
+  defaultRolePreset,
   isGameMode,
   manualTimersFrom,
   normalizeAdvancedForPreset,
@@ -36,8 +40,12 @@ export function initialState({
   const requestedMode = isGameMode(parsed.mode) ? parsed.mode : initialMode;
   const mode = family && getGameFamily(requestedMode) !== family ? defaultModeForFamily(family) : requestedMode;
   const playerCount = clampPlayerCount(mode, parsed.playerCount ?? defaultPlayerCount(mode));
-  const hydratedConfig = createGameConfigFromOptions({ ...parsed, mode, playerCount });
-  const manualRolesEnabled = Boolean(parsed.roles) || hydratedConfig.rolePreset === "manual";
+  const hydration = hydrateConfig(parsed, mode, playerCount);
+  const hydratedConfig = hydration.config;
+  const manualRolesEnabled = hydration.acceptedManualRoles || hydratedConfig.rolePreset === "manual";
+  const normalizedManualRoles = normalizeRetiredMafiaLovers(mode, hydratedConfig.roles);
+  const retiredMafiaLovers =
+    getGameFamily(mode) === "mafia" && manualRolesEnabled && (hydratedConfig.roles.lovers ?? 0) > 0;
   const advanced: AdvancedFlags = {
     revealRolesOnDeath: hydratedConfig.revealRolesOnDeath,
     allowSkipVote: hydratedConfig.allowSkipVote,
@@ -63,7 +71,11 @@ export function initialState({
     visitedStep: DEFAULT_STEP,
     lockedFamily: family,
     family: family ?? getGameFamily(mode),
-    formError: "",
+    formError:
+      hydration.error ||
+      (retiredMafiaLovers
+        ? "Заменихме стария избор „Влюбени“ с Гражданин. Влюбените вече се създават само от Купидон."
+        : ""),
     manualPresetMessage: "",
     code: createRoomCode(),
     roomName: hydratedConfig.roomName,
@@ -71,9 +83,12 @@ export function initialState({
     playerCount,
     rolePreset,
     manualRolesEnabled,
-    manualRoles: manualRolesEnabled ? hydratedConfig.roles : presetRoles(mode, playerCount, rolePreset, normalizedAdvanced),
+    manualRoles: manualRolesEnabled
+      ? normalizedManualRoles
+      : presetRoles(mode, playerCount, rolePreset, normalizedAdvanced),
     manualRoleHistory: [],
     manualRoleFuture: [],
+    preservedOptions: pickPreservedOptions(parsed),
     communicationMode: hydratedConfig.communicationMode,
     narratorMode: hydratedConfig.narratorMode,
     tempoProfile: hydratedConfig.tempoProfile,
@@ -89,6 +104,55 @@ export function initialState({
     mobileSummaryOpen: false,
     inviteSheetOpen: false,
     confettiBurst: 0,
+  };
+}
+
+function hydrateConfig(parsed: CreateRoomOptions, mode: GameMode, playerCount: number) {
+  try {
+    return {
+      config: createGameConfigFromOptions({ ...parsed, mode, playerCount }),
+      acceptedManualRoles: Boolean(parsed.roles),
+      error: "",
+    };
+  } catch {
+    const { roles: _roles, rolePreset: _rolePreset, ...safeOptions } = parsed;
+    const config: GameConfig = createGameConfigFromOptions({
+      ...safeOptions,
+      mode,
+      playerCount,
+      rolePreset: defaultRolePreset(mode),
+    });
+    return {
+      config,
+      acceptedManualRoles: false,
+      error: "Връзката съдържаше невалидни роли. Върнахме сигурния препоръчан състав.",
+    };
+  }
+}
+
+function normalizeRetiredMafiaLovers(mode: GameMode, roles: RoleDistribution): RoleDistribution {
+  const loversCount = roles.lovers ?? 0;
+  if (getGameFamily(mode) !== "mafia" || loversCount <= 0) {
+    return roles;
+  }
+
+  const normalized = { ...roles };
+  delete normalized.lovers;
+  normalized.civilian = (normalized.civilian ?? 0) + loversCount;
+  return normalized;
+}
+
+function pickPreservedOptions(options: CreateRoomOptions): PreservedCreateOptions {
+  return {
+    ...(options.roomVisibility ? { roomVisibility: options.roomVisibility } : {}),
+    ...(typeof options.beginnerMode === "boolean" ? { beginnerMode: options.beginnerMode } : {}),
+    ...(typeof options.advancedMode === "boolean" ? { advancedMode: options.advancedMode } : {}),
+    ...(options.werewolfVariant ? { werewolfVariant: options.werewolfVariant } : {}),
+    ...(options.mayorMode ? { mayorMode: options.mayorMode } : {}),
+    ...(typeof options.promoRolesEnabled === "boolean"
+      ? { promoRolesEnabled: options.promoRolesEnabled }
+      : {}),
+    ...(typeof options.spectator === "boolean" ? { spectator: options.spectator } : {}),
   };
 }
 

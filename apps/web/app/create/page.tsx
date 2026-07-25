@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default async function CreatePage({ searchParams }: { searchParams?: Promise<{ mode?: string; visualAuth?: string | string[] }> }) {
   const params = await searchParams;
   const initialMode = parseMode(params?.mode);
-  const family = getGameFamily(initialMode);
+  const family = params?.mode && params.mode in GAME_MODE_DEFINITIONS ? getGameFamily(initialMode) : undefined;
   const redirectTo = params?.mode ? `/create?mode=${encodeURIComponent(params.mode)}` : "/create";
   const visualAuth = firstSearchValue(params?.visualAuth);
   if (process.env.NODE_ENV === "production" || visualAuth !== "1") {
@@ -19,7 +19,7 @@ export default async function CreatePage({ searchParams }: { searchParams?: Prom
   }
 
   return (
-    <main className="shell lobby-shell" data-faction={family} data-family={family}>
+    <main className="shell lobby-shell create-choice-shell" data-faction={family} data-family={family}>
       <LobbyCreateClient initialMode={initialMode} />
     </main>
   );

@@ -32,8 +32,9 @@ export function currentConfig(state: LobbyFormState): GameConfig {
 
 export function optionsFromState(state: LobbyFormState): CreateRoomOptions {
   const base: CreateRoomOptions = {
+    ...state.preservedOptions,
     mode: state.mode,
-    roomName: state.roomName,
+    ...(state.roomName.trim() ? { roomName: state.roomName.trim() } : {}),
     playerCount: boundedPlayerCount(state),
     maxPlayers: Math.max(state.advanced.maxPlayers, boundedPlayerCount(state)),
     communicationMode: state.communicationMode,
@@ -45,7 +46,9 @@ export function optionsFromState(state: LobbyFormState): CreateRoomOptions {
     allowSkipVote: state.advanced.allowSkipVote,
     majorityMode: state.advanced.majorityMode,
     autoStart: state.advanced.autoStart,
-    loversEnabled: state.advanced.loversEnabled,
+    loversEnabled: state.manualRolesEnabled
+      ? (state.manualRoles.cupid ?? 0) > 0
+      : state.advanced.loversEnabled,
     mafiaNightKill: state.advanced.mafiaNightKill,
     doctorCanSelfProtect: state.advanced.doctorCanSelfProtect,
     commissionerResultMode: state.advanced.commissionerResultMode,
@@ -158,9 +161,13 @@ export function cleanRoomCode(code: string) {
 export function estimatedDurationSeconds(state: LobbyFormState) {
   const timers = timersForState(state);
   const rounds = Math.max(2, Math.ceil(boundedPlayerCount(state) / 2));
+  const discussionSeconds =
+    state.mode === "mafia_sport"
+      ? timers.playerSpeechSeconds * boundedPlayerCount(state)
+      : timers.dayDiscussionSeconds;
   return (
     timers.roleRevealSeconds +
-    rounds * (timers.dayDiscussionSeconds + timers.voteSeconds + timers.factionNightActionSeconds + timers.resolutionSeconds)
+    rounds * (discussionSeconds + timers.voteSeconds + timers.factionNightActionSeconds + timers.resolutionSeconds)
   );
 }
 

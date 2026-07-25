@@ -38,6 +38,22 @@ export function StepStyle({
         <p>Избери колко автоматична да бъде играта и как да общуват играчите.</p>
       </div>
 
+      <NarratorSettings state={state} dispatch={dispatch} />
+      <CommunicationSettings state={state} dispatch={dispatch} />
+      <AdvancedDrawer state={state} dispatch={dispatch} />
+    </section>
+  );
+}
+
+export function NarratorSettings({
+  state,
+  dispatch,
+}: {
+  state: LobbyFormState;
+  dispatch: Dispatch<LobbyFormAction>;
+}) {
+  return (
+    <>
       <section className="lobby-panel">
         <div className="lobby-panel-title">
           <h2>Разказвач</h2>
@@ -90,29 +106,37 @@ export function StepStyle({
           </div>
         </section>
       ) : null}
+    </>
+  );
+}
 
-      <section className="lobby-panel">
-        <div className="lobby-panel-title">
-          <h2>Комуникация</h2>
-        </div>
-        <div className="wizard-choice-grid">
-          {COMMUNICATION_CARDS.map((card) => (
-            <button
-              key={card.value}
-              type="button"
-              className="communication-tile"
-              data-active={state.communicationMode === card.value}
-              aria-pressed={state.communicationMode === card.value}
-              onClick={() => dispatch({ type: "SET_COMMUNICATION_MODE", communicationMode: card.value })}
-            >
-              <strong>{card.label}</strong>
-              <span>{card.detail}</span>
-            </button>
-          ))}
-        </div>
-      </section>
-
-      <AdvancedDrawer state={state} dispatch={dispatch} />
+export function CommunicationSettings({
+  state,
+  dispatch,
+}: {
+  state: LobbyFormState;
+  dispatch: Dispatch<LobbyFormAction>;
+}) {
+  return (
+    <section className="lobby-panel">
+      <div className="lobby-panel-title">
+        <h2>Комуникация</h2>
+      </div>
+      <div className="wizard-choice-grid">
+        {COMMUNICATION_CARDS.map((card) => (
+          <button
+            key={card.value}
+            type="button"
+            className="communication-tile"
+            data-active={state.communicationMode === card.value}
+            aria-pressed={state.communicationMode === card.value}
+            onClick={() => dispatch({ type: "SET_COMMUNICATION_MODE", communicationMode: card.value })}
+          >
+            <strong>{card.label}</strong>
+            <span>{card.detail}</span>
+          </button>
+        ))}
+      </div>
     </section>
   );
 }

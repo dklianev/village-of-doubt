@@ -17,7 +17,7 @@ export function LobbyCreateClient({
   return (
     <Suspense
       fallback={
-        <div className="lobby-step-pane">
+        <div className="create-loading">
           <p className="lobby-kicker">Създай частна стая</p>
           <h1>Зареждане на стаята...</h1>
         </div>
