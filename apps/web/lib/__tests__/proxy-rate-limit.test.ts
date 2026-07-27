@@ -27,12 +27,12 @@ describe("proxy rate-limit guard", () => {
     expect(guard.entryCount()).toBe(1);
   });
 
-  it("пази 30-играчова група зад общ NAT, но спира прекомерния burst", () => {
+  it("пази 30-играчова група зад общ NAT, но спира прекомерния burst", async () => {
     vi.stubEnv("NODE_ENV", "production");
     let response: Response | undefined;
 
     for (let attempt = 0; attempt < 120; attempt += 1) {
-      response = proxyModule.proxy(new NextRequest("https://example.test/api/game-token", {
+      response = await proxyModule.proxy(new NextRequest("https://example.test/api/game-token", {
         headers: {
           cookie: "better-auth.session_token=forged",
           "x-forwarded-for": "203.0.113.77",
@@ -41,7 +41,7 @@ describe("proxy rate-limit guard", () => {
     }
 
     expect(response?.status).toBe(200);
-    response = proxyModule.proxy(new NextRequest("https://example.test/api/game-token", {
+    response = await proxyModule.proxy(new NextRequest("https://example.test/api/game-token", {
       headers: {
         cookie: "better-auth.session_token=forged",
         "x-forwarded-for": "203.0.113.77",

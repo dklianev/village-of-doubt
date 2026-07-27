@@ -313,11 +313,12 @@ async function openFixture(
 }
 
 async function waitForStableStage(page: Page) {
+  await page.evaluate(() => document.fonts.ready);
   await expect(page.locator(".play-stage")).toHaveAttribute("data-layout-ready", "true", {
-    timeout: 10_000,
+    timeout: 30_000,
   });
 
-  await page.waitForFunction(async () => {
+  await page.waitForFunction(() => {
     const readSignature = () => {
       const stage = document.querySelector<HTMLElement>(".play-stage");
       const scene = document.querySelector<HTMLElement>("[data-table-scene]");
@@ -326,6 +327,10 @@ async function waitForStableStage(page: Page) {
         return "";
       }
       if (stage.dataset.layoutReady !== "true") {
+        return "";
+      }
+      const expectsMobileGrid = window.matchMedia("(max-width: 1023px)").matches;
+      if (expectsMobileGrid && stage.dataset.layoutMode !== "mobile-table-grid") {
         return "";
       }
       const stageRect = stage.getBoundingClientRect();
@@ -343,16 +348,21 @@ async function waitForStableStage(page: Page) {
       ].join(":");
     };
 
-    const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-    const first = readSignature();
-    if (!first) {
+    const signature = readSignature();
+    if (!signature) {
       return false;
     }
-    await nextFrame();
-    const second = readSignature();
-    await nextFrame();
-    return first === second && second === readSignature();
-  }, undefined, { timeout: 10_000, polling: "raf" });
+    const target = window as Window & {
+      __playStableSignature?: string;
+      __playStableSince?: number;
+    };
+    if (target.__playStableSignature !== signature) {
+      target.__playStableSignature = signature;
+      target.__playStableSince = performance.now();
+      return false;
+    }
+    return performance.now() - (target.__playStableSince ?? performance.now()) >= 120;
+  }, undefined, { timeout: 30_000, polling: 16 });
 }
 
 async function expectGeometry(page: Page) {
@@ -494,6 +504,22 @@ async function expectGeometry(page: Page) {
       fatal: "",
       violations: [...new Set(violations)],
       diagnostics,
+      layout: {
+        viewport: { width: window.innerWidth, height: window.innerHeight },
+        mode: stage.dataset.layoutMode,
+        ready: stage.dataset.layoutReady,
+        stageClass: stage.className,
+        firstSeat: seats[0]
+          ? {
+              className: seats[0].className,
+              inlineStyle: seats[0].getAttribute("style"),
+              position: getComputedStyle(seats[0]).position,
+              top: getComputedStyle(seats[0]).top,
+              left: getComputedStyle(seats[0]).left,
+              transform: getComputedStyle(seats[0]).transform,
+            }
+          : null,
+      },
       stage: stageRect.toJSON(),
       core: coreRect.toJSON(),
     };

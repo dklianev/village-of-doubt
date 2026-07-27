@@ -59,6 +59,23 @@ describe("Better Auth security configuration", () => {
     expect(resolveBetterAuthSecret({ NODE_ENV: "test" })).toContain("dev-only");
   });
 
+  it("не допуска localhost сред trusted origins в production", async () => {
+    const { buildTrustedOrigins } = await import("../auth");
+
+    expect(buildTrustedOrigins({
+      NODE_ENV: "production",
+      BETTER_AUTH_URL: "https://werewolf.example.com",
+      NEXT_PUBLIC_APP_URL: "https://werewolf.example.com",
+    })).toEqual(["https://werewolf.example.com"]);
+    expect(buildTrustedOrigins({
+      NODE_ENV: "development",
+      BETTER_AUTH_URL: "http://localhost:3000",
+    })).toEqual([
+      "http://localhost:3000",
+      "http://127.0.0.1:3000",
+    ]);
+  });
+
   it("изключва неатомичния Better Auth delete endpoint и изисква freshness до 10 минути", async () => {
     const previousDatabaseUrl = process.env.DATABASE_URL;
     process.env.DATABASE_URL = "postgres://postgres:postgres@localhost:5432/werewolf";

@@ -967,6 +967,9 @@ export class GameRoom extends Room<{ state: GameState }> {
       players,
       allowFactionKill: this.isFactionKillAllowed(privatePlayer),
       alliedTargetUserIds,
+      ...(privatePlayer.role === "witch"
+        ? { allowedWitchHealTargetUserIds: [...this.currentWitchVictimByTeam.values()] }
+        : {}),
     });
     if (!hasNightActionCapabilities(capabilities)) {
       return;

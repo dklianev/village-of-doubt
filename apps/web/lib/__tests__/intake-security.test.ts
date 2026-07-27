@@ -14,6 +14,17 @@ describe("requestRateLimitKey", () => {
 
     expect(requestRateLimitKey(first)).toBe(requestRateLimitKey(second));
   });
+
+  it("събира заявки без proxy-owned адрес в един unknown bucket", () => {
+    const first = new Request("https://example.invalid/api/report", {
+      headers: { cookie: "session=first", "user-agent": "first-agent" },
+    });
+    const second = new Request("https://example.invalid/api/report", {
+      headers: { cookie: "session=second", "user-agent": "second-agent" },
+    });
+
+    expect(requestRateLimitKey(first)).toBe(requestRateLimitKey(second));
+  });
 });
 
 describe("createIntakeRateLimiter", () => {
@@ -54,6 +65,31 @@ describe("createIntakeRateLimiter", () => {
       limit: 5,
       windowMs: 1_000,
       now: 42,
+    });
+  });
+
+  it("изгражда runtime limiter върху подадения shared backend", async () => {
+    const factory = (intakeSecurity as Record<string, unknown>).createRuntimeIntakeRateLimiter;
+    expect(factory).toBeTypeOf("function");
+    if (typeof factory !== "function") {
+      return;
+    }
+
+    const backend = {
+      consume: vi.fn(async () => ({ allowed: true as const })),
+    };
+    const limiter = factory(
+      { limit: 3, windowMs: 2_000 },
+      "feedback",
+      backend,
+    ) as { check: (key: string, now?: number) => Promise<unknown> };
+
+    await expect(limiter.check("source", 50)).resolves.toEqual({ allowed: true });
+    expect(backend.consume).toHaveBeenCalledWith({
+      key: "source",
+      limit: 3,
+      windowMs: 2_000,
+      now: 50,
     });
   });
 

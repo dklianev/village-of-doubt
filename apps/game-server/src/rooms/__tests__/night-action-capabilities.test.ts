@@ -39,11 +39,13 @@ describe("night action capabilities", () => {
       phase: "night",
       players,
       actor: actor({ role: "witch" }),
+      allowedWitchHealTargetUserIds: ["target", "target"],
     });
     const spentHeal = buildNightActionCapabilities({
       phase: "night",
       players,
       actor: actor({ role: "witch", witchHealUsed: true }),
+      allowedWitchHealTargetUserIds: ["target"],
     });
     const spentBoth = buildNightActionCapabilities({
       phase: "night",
@@ -52,11 +54,29 @@ describe("night action capabilities", () => {
     });
 
     expect(fresh.availableKinds).toEqual(expect.arrayContaining(["witch_heal", "witch_poison"]));
+    expect(fresh.allowedTargetIdsByKind?.witch_heal).toEqual(["target"]);
+    expect(fresh.disallowedTargetsByKind.witch_heal).toEqual([
+      { id: "actor", reasonBg: "Лечебната отвара може да спаси само нарочената тази нощ жертва." },
+      { id: "receiver", reasonBg: "Лечебната отвара може да спаси само нарочената тази нощ жертва." },
+    ]);
     expect(spentHeal.availableKinds).not.toContain("witch_heal");
+    expect(spentHeal.allowedTargetIdsByKind?.witch_heal).toBeUndefined();
     expect(spentHeal.availableKinds).toContain("witch_poison");
     expect(spentHeal.usedFlags.witch_heal).toEqual({ reasonBg: "Лечебната отвара вече е използвана." });
     expect(spentBoth.availableKinds).not.toContain("witch_poison");
     expect(spentBoth.usedFlags.witch_poison).toEqual({ reasonBg: "Отровата вече е използвана." });
+  });
+
+  it("keeps Witch healing available but targetless before a faction chooses a victim", () => {
+    const capabilities = buildNightActionCapabilities({
+      phase: "night",
+      players,
+      actor: actor({ role: "witch" }),
+      allowedWitchHealTargetUserIds: [],
+    });
+
+    expect(capabilities.availableKinds).toContain("witch_heal");
+    expect(capabilities.allowedTargetIdsByKind?.witch_heal).toEqual([]);
   });
 
   it("removes Priest blessing after it has already been given", () => {

@@ -8,7 +8,17 @@ import { persistenceReadiness } from "./operations/persistence-readiness.js";
 import { GameRoom, getGameRuntimeStats } from "./rooms/GameRoom.js";
 import { ROOM_CODE_REGEX, normalizeRoomCodeInput } from "@werewolf/shared";
 
+const redisScaling = process.env.NODE_ENV === "production" && process.env.REDIS_URL
+  ? await createRedisScaling(process.env.REDIS_URL)
+  : {};
+const publicAddress = process.env.COLYSEUS_PUBLIC_ADDRESS?.trim();
+
 export default defineConfig({
+  options: {
+    ...redisScaling,
+    ...(publicAddress ? { publicAddress } : {}),
+  },
+
   initializeGameServer(gameServer) {
     gameServer.define("game", OperationalGameRoom).filterBy(["code"]);
     deployDrain.configure({
@@ -59,6 +69,18 @@ export default defineConfig({
     }
   },
 });
+
+async function createRedisScaling(redisUrl: string) {
+  const [{ RedisDriver }, { RedisPresence }] = await Promise.all([
+    import("@colyseus/redis-driver"),
+    import("@colyseus/redis-presence"),
+  ]);
+
+  return {
+    driver: new RedisDriver(redisUrl),
+    presence: new RedisPresence(redisUrl),
+  };
+}
 
 export class OperationalGameRoom extends GameRoom {
   override onCreate(options: Parameters<GameRoom["onCreate"]>[0]) {

@@ -3,7 +3,7 @@ import { renderFeedbackEmail } from "@/lib/email-templates";
 import { sendEmail } from "@/lib/email";
 import { auth } from "@/lib/auth";
 import {
-  createIntakeRateLimiter,
+  createRuntimeIntakeRateLimiter,
   IntakeBodyError,
   readBoundedJson,
   requestRateLimitKey,
@@ -14,7 +14,10 @@ const MAX_REQUEST_BYTES = 4_096;
 const MAX_FEEDBACK_BODY_LENGTH = 2_000;
 const MAX_EMAIL_LENGTH = 254;
 const MAX_PAGE_LENGTH = 512;
-const feedbackRateLimiter = createIntakeRateLimiter({ limit: 10, windowMs: 10 * 60 * 1000 });
+const feedbackRateLimiter = createRuntimeIntakeRateLimiter(
+  { limit: 10, windowMs: 10 * 60 * 1000 },
+  "feedback",
+);
 
 const CATEGORY_LABEL_BG: Record<string, string> = {
   bug: "Бъг",
@@ -24,7 +27,7 @@ const CATEGORY_LABEL_BG: Record<string, string> = {
 };
 
 export async function POST(request: Request) {
-  const rateLimit = feedbackRateLimiter.check(requestRateLimitKey(request));
+  const rateLimit = await feedbackRateLimiter.check(requestRateLimitKey(request));
   if (!rateLimit.allowed) {
     return NextResponse.json(
       { error: "Изпрати твърде много бележки. Опитай отново след малко." },

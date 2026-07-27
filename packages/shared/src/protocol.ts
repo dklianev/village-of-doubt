@@ -233,6 +233,11 @@ export interface NightActionCapabilities {
   availableKinds: NightActionKind[];
   usedFlags: Partial<Record<NightActionKind, NightActionCapabilityReason>>;
   disallowedTargetsByKind: Partial<Record<NightActionKind, NightActionDisallowedTarget[]>>;
+  /**
+   * Missing kind means unrestricted. An empty list means the action is
+   * available, but no valid target exists yet.
+   */
+  allowedTargetIdsByKind?: Partial<Record<NightActionKind, string[]>>;
 }
 
 export interface PrivateFactionMember {

@@ -92,6 +92,7 @@ export function PlayStage({
   const sceneRef = useRef<HTMLDivElement>(null);
   const menuTriggerRefs = useRef(new Map<string, HTMLButtonElement>());
   const [measurements, setMeasurements] = useState(INITIAL_MEASUREMENTS);
+  const [hasObservedLayout, setHasObservedLayout] = useState(false);
   const [hasMeasured, setHasMeasured] = useState(false);
   const [openMenuUserId, setOpenMenuUserId] = useState("");
   const publicPlayers = useMemo(() => players.map(toStageSeatPlayer), [players]);
@@ -138,16 +139,36 @@ export function PlayStage({
           ? current
           : next;
       });
-      setHasMeasured(true);
+      setHasObservedLayout(true);
     };
 
     const observer = new ResizeObserver(measure);
     observer.observe(stage);
     observer.observe(hud);
     observer.observe(scene);
-    measure();
-    return () => observer.disconnect();
+    const initialFrame = window.requestAnimationFrame(measure);
+    return () => {
+      observer.disconnect();
+      window.cancelAnimationFrame(initialFrame);
+    };
   }, []);
+
+  useLayoutEffect(() => {
+    if (!hasObservedLayout) {
+      return;
+    }
+
+    let secondFrame = 0;
+    const firstFrame = window.requestAnimationFrame(() => {
+      secondFrame = window.requestAnimationFrame(() => {
+        setHasMeasured(true);
+      });
+    });
+    return () => {
+      window.cancelAnimationFrame(firstFrame);
+      window.cancelAnimationFrame(secondFrame);
+    };
+  }, [hasObservedLayout, measurements]);
 
   const seatLayout = useMemo(() => {
     if (measurements.mode === "mobile-table-grid" || seatCount < 3 || seatCount > 18) {

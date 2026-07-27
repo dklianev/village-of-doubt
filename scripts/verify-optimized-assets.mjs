@@ -74,6 +74,9 @@ async function inventory(root) {
       if (!child.isFile()) {
         continue;
       }
+      if (/\.tmp-\d+(?:[-.]|$)/.test(child.name)) {
+        continue;
+      }
       const digest = createHash("sha256").update(await readFile(filePath)).digest("hex");
       entries.set(path.relative(root, filePath).split(path.sep).join("/"), digest);
     }

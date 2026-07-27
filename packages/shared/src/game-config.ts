@@ -177,7 +177,7 @@ export const GAME_MODE_DEFINITIONS: Record<
   mafia_free: {
     family: "mafia",
     nameBg: "Мафия",
-    shortBg: "Градска мистерия с гъвкав брой играчи и configurable роли.",
+    shortBg: "Градска мистерия с гъвкав брой играчи и роли по избор.",
     recommendedPlayersBg: "4-24 играчи.",
     themeKey: "mafia",
     phaseLabelsBg: {

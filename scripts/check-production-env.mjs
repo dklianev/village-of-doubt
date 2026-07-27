@@ -1,5 +1,6 @@
 const required = [
   "DATABASE_URL",
+  "REDIS_URL",
   "BETTER_AUTH_SECRET",
   "GAME_TOKEN_SECRET",
   "BETTER_AUTH_URL",
@@ -37,6 +38,17 @@ if (process.env.NEXT_PUBLIC_GAME_SERVER_URL && !process.env.NEXT_PUBLIC_GAME_SER
 
 if (process.env.NEXT_PUBLIC_APP_URL && !process.env.NEXT_PUBLIC_APP_URL.startsWith("https://")) {
   errors.push("NEXT_PUBLIC_APP_URL трябва да е HTTPS в production.");
+}
+
+if (process.env.REDIS_URL) {
+  try {
+    const redisUrl = new URL(process.env.REDIS_URL);
+    if (redisUrl.protocol !== "redis:" && redisUrl.protocol !== "rediss:") {
+      errors.push("REDIS_URL трябва да използва redis:// или rediss://.");
+    }
+  } catch {
+    errors.push("REDIS_URL не е валиден URL.");
+  }
 }
 
 if (process.env.ALLOW_DEV_AUTH === "true") {

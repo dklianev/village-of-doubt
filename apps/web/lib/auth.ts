@@ -6,6 +6,8 @@ import { DEFAULT_AVATAR_ID, isAvatarId } from "@werewolf/shared";
 import { normalizeExternalDisplayName, validateDisplayName } from "./display-name";
 import { sendEmail } from "./email";
 import { renderResetPasswordEmail, renderVerifyEmail } from "./email-templates";
+import { createBetterAuthRateLimitStorage } from "./redis-rate-limit";
+import { getRuntimeRateLimitBackend } from "./runtime-rate-limit";
 
 const databaseUrl = process.env.DATABASE_URL;
 const db = databaseUrl ? createDatabase(databaseUrl) : undefined;
@@ -53,6 +55,9 @@ export const auth = betterAuth({
     window: 60,
     max: 100,
     storage: "memory",
+    ...(process.env.REDIS_URL
+      ? { customStorage: createBetterAuthRateLimitStorage(getRuntimeRateLimitBackend("auth")) }
+      : {}),
     customRules: AUTH_RATE_LIMIT_RULES,
   },
   emailAndPassword: {
@@ -168,11 +173,16 @@ function buildSocialProviders() {
   return Object.keys(providers).length > 0 ? providers : undefined;
 }
 
-function buildTrustedOrigins() {
-  return [
-    process.env.BETTER_AUTH_URL,
-    process.env.NEXT_PUBLIC_APP_URL,
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
+export function buildTrustedOrigins(
+  environment: Partial<Pick<NodeJS.ProcessEnv, "NODE_ENV" | "BETTER_AUTH_URL" | "NEXT_PUBLIC_APP_URL">> = process.env,
+) {
+  const origins = [
+    environment.BETTER_AUTH_URL,
+    environment.NEXT_PUBLIC_APP_URL,
+    ...(environment.NODE_ENV === "production"
+      ? []
+      : ["http://localhost:3000", "http://127.0.0.1:3000"]),
   ].filter((origin): origin is string => Boolean(origin));
+
+  return [...new Set(origins)];
 }

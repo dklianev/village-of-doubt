@@ -4,6 +4,7 @@ import {
   createSharedRateLimiter,
   type SharedRateLimitBackend,
 } from "./rate-limit";
+import { getRuntimeRateLimitBackend } from "./runtime-rate-limit";
 
 export class IntakeBodyError extends Error {
   constructor(readonly kind: "invalid_json" | "too_large") {
@@ -67,13 +68,17 @@ export function createSharedIntakeRateLimiter(
   return createSharedRateLimiter(options, backend);
 }
 
+export function createRuntimeIntakeRateLimiter(
+  options: { limit: number; windowMs: number },
+  namespace: string,
+  backend: SharedRateLimitBackend = getRuntimeRateLimitBackend(namespace),
+) {
+  return createSharedRateLimiter(options, backend);
+}
+
 export function requestRateLimitKey(request: Request): string {
   const forwardedFor = request.headers.get("x-forwarded-for")?.split(",", 1)[0]?.trim();
-  const source =
-    forwardedFor ||
-    request.headers.get("cookie") ||
-    request.headers.get("user-agent") ||
-    "unknown";
+  const source = forwardedFor || "unknown";
 
   return createHash("sha256").update(source.slice(0, 2_048)).digest("hex");
 }

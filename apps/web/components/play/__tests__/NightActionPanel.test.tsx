@@ -144,6 +144,24 @@ describe("NightActionPanel", () => {
     expect(screen.getByText("Отровата вече е използвана.")).toBeInTheDocument();
   });
 
+  it("allows Witch healing only for the private faction victim", () => {
+    renderPanel({
+      privateRole: "witch",
+      selectedTargetId: "u2",
+      nightActionCapabilities: {
+        availableKinds: ["witch_heal", "witch_poison"],
+        usedFlags: {},
+        disallowedTargetsByKind: {},
+        allowedTargetIdsByKind: {
+          witch_heal: ["u1"],
+        },
+      },
+    });
+
+    expect(screen.getByRole("button", { name: "Лекувай" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Отрови" })).toBeEnabled();
+  });
+
   it("removes a disallowed Healer repeat target and shows the private reason", () => {
     renderPanel({
       privateRole: "healer",

@@ -273,7 +273,7 @@ function filterTargetsByCapabilities(
   }
 
   return targets.filter((player) =>
-    availableKinds.some((kind) => !disallowedNightTargetReason(capabilities, kind, player.userId)));
+    availableKinds.some((kind) => canUseNightKindForTarget(kind, player.userId, capabilities)));
 }
 
 export function canUseNightKindForTarget(
@@ -281,7 +281,9 @@ export function canUseNightKindForTarget(
   targetUserId: string,
   capabilities: NightActionCapabilities | null | undefined,
 ) {
+  const allowedTargetIds = capabilities?.allowedTargetIdsByKind?.[kind];
   return isNightActionKindAvailable(capabilities, kind)
+    && (allowedTargetIds === undefined || allowedTargetIds.includes(targetUserId))
     && !disallowedNightTargetReason(capabilities, kind, targetUserId);
 }
 

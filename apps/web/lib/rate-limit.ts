@@ -79,6 +79,15 @@ export interface SharedRateLimitBackend {
   consume(input: RateLimitConsumeInput): Promise<RateLimitResult>;
 }
 
+export function createMemoryRateLimitBackend(maxEntries = 10_000): SharedRateLimitBackend {
+  const store = new BoundedMemoryRateLimitStore(maxEntries);
+  return {
+    async consume(input) {
+      return store.consume(input);
+    },
+  };
+}
+
 export function createSharedRateLimiter(
   options: { limit: number; windowMs: number },
   backend: SharedRateLimitBackend,

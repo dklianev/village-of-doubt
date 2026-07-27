@@ -216,6 +216,61 @@ describe("GameRoom reconnect resilience", () => {
     }
   });
 
+  it("replays the Witch's current private heal target after reconnect", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "WTCAP3",
+      mode: "werewolves_classic",
+      playerCount: 6,
+      tempoProfile: "manual",
+      firstNightKill: true,
+      roles: {
+        witch: 1,
+        ordinary_villager: 4,
+        werewolf: 1,
+      },
+    });
+    const clients = await connectPlayers(colyseus, serverRoom, 6, "witch-cap-reconnect");
+    const roleClients = await startGameAndCollectRoles(clients);
+    const witch = roleClients.find((client) => client.role === "witch");
+    const werewolf = roleClients.find((client) => client.role === "werewolf");
+    const victim = roleClients.find((client) => client.role === "ordinary_villager");
+    expect(witch && werewolf && victim).toBeTruthy();
+
+    await advanceToFirstNight(clients[0]?.client, serverRoom);
+    const refreshedCapabilities = witch?.client.waitForMessage("night_action_capabilities") as Promise<{
+      capabilities: NightActionCapabilities;
+    }>;
+    const actionAck = werewolf?.client.waitForMessage("night_action_ack") as Promise<unknown>;
+    werewolf?.client.send("submitNightAction", {
+      action: { kind: "faction_kill", targetUserId: victim?.userId },
+    });
+    await actionAck;
+    await expect(refreshedCapabilities).resolves.toMatchObject({
+      capabilities: expect.objectContaining({
+        allowedTargetIdsByKind: {
+          witch_heal: [victim?.userId],
+        },
+      }),
+    });
+
+    witch?.client.leave();
+    await delay(40);
+    const reconnected = await connectWithRetry(colyseus, serverRoom, {
+      code: serverRoom.state.code,
+      userId: witch?.userId ?? "",
+      displayName: witch?.displayName ?? "",
+    });
+    const replayedCapabilities = await reconnected.waitForMessage("night_action_capabilities") as {
+      capabilities: NightActionCapabilities;
+    };
+
+    expect(replayedCapabilities.capabilities.allowedTargetIdsByKind?.witch_heal).toEqual([victim?.userId]);
+    expect("nightActionCapabilities" in (reconnected.state as unknown as Record<string, unknown>)).toBe(false);
+    for (const player of (reconnected.state as GameState).players.values()) {
+      expect("nightActionCapabilities" in (player as unknown as Record<string, unknown>)).toBe(false);
+    }
+  });
+
   it("replays the viewer's latest private investigation result after reconnect", async () => {
     const serverRoom = await colyseus.createRoom<GameRoom>("game", {
       code: "RCHCK3",

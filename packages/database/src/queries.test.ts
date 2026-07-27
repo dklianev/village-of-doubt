@@ -15,12 +15,43 @@ import {
   deleteUserAccountAtomically,
   getDeletedUserIdentityMap,
   getGameHistoryById,
+  getRecentEndedGameHistory,
   getLeaderboardRows,
   getPlayerOutcomesInGames,
   getPublicGameTimelinesBatch,
   scrubDeletedIdentityFromEventPayload,
   upsertUsersUnlessDeleted,
 } from "./queries.js";
+
+describe("getRecentEndedGameHistory", () => {
+  it("filters and orders completed games at the SQL boundary", async () => {
+    let whereSql = "";
+    let whereParams: unknown[] = [];
+    let orderSql = "";
+    const limit = vi.fn(async () => []);
+    const orderBy = vi.fn((...clauses) => {
+      orderSql = clauses
+        .map((clause) => new PgDialect().sqlToQuery(clause).sql)
+        .join(" ");
+      return { limit };
+    });
+    const where = vi.fn((condition) => {
+      const query = new PgDialect().sqlToQuery(condition);
+      whereSql = query.sql;
+      whereParams = query.params;
+      return { orderBy };
+    });
+    const from = vi.fn(() => ({ where }));
+    const select = vi.fn(() => ({ from }));
+
+    await getRecentEndedGameHistory({ select } as unknown as Database, 20);
+
+    expect(whereSql).toContain('"games"."status"');
+    expect(whereParams).toContain("ended");
+    expect(orderSql).toContain('"games"."ended_at" desc');
+    expect(limit).toHaveBeenCalledWith(20);
+  });
+});
 
 describe("getGameHistoryById", () => {
   it("queries only completed games so live private events cannot be replayed", async () => {

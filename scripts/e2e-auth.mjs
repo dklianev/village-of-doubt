@@ -131,7 +131,7 @@ async function authenticatedCreateReturn(page) {
   await page.getByRole("button", { name: "Създай досие" }).click();
   await verifyEmailFromOutbox(page, email);
   await page.goto(`${baseUrl}/werewolf/create`, { waitUntil: "domcontentloaded" });
-  await page.getByRole("heading", { name: "Създай игра без чудене" }).waitFor();
+  await page.locator("#create-quick-title").waitFor();
 }
 
 async function accountDeletion(page) {

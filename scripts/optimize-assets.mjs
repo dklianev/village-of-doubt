@@ -11,6 +11,10 @@ const reportOnly = args.has("--report-only");
 const DERIVATIVE_DIRS = new Set(["thumbs"]);
 
 async function main() {
+  if (!reportOnly) {
+    await cleanupTemporaryArtifacts(gameArtDir);
+  }
+
   const sharp = await loadSharp();
   sharp.cache(false);
   if (process.platform === "win32") {
@@ -79,6 +83,23 @@ async function main() {
   );
 }
 
+async function cleanupTemporaryArtifacts(directory) {
+  const entries = await readdir(directory, { withFileTypes: true });
+
+  await Promise.all(
+    entries.map(async (entry) => {
+      const absolute = path.join(directory, entry.name);
+      if (entry.isDirectory()) {
+        await cleanupTemporaryArtifacts(absolute);
+        return;
+      }
+      if (entry.isFile() && /\.tmp-\d+(?:[-.]|$)/.test(entry.name)) {
+        await rm(absolute, { force: true });
+      }
+    }),
+  );
+}
+
 async function optimizeAsset(sharp, file) {
   const input = path.join(gameArtDir, file);
   const before = (await stat(input)).size;
@@ -92,8 +113,13 @@ async function optimizeAsset(sharp, file) {
 
   const pngBytesAfter = (await stat(input)).size;
   const output = path.join(gameArtDir, file.replace(/\.png$/, ".webp"));
-  await writeWebp(sharp, input, output, file, maxWidthFor(file), webpBudgetKbFor(file));
-  const optimizedBytes = (await stat(output)).size;
+  const createWebp = shouldCreateWebp(file);
+  if (createWebp) {
+    await writeWebp(sharp, input, output, file, maxWidthFor(file), webpBudgetKbFor(file));
+  } else {
+    await rm(output, { force: true });
+  }
+  const optimizedBytes = createWebp ? (await stat(output)).size : 0;
   let avifBytes = 0;
   let avifsWritten = 0;
   let thumbnailBytes = 0;
@@ -106,6 +132,8 @@ async function optimizeAsset(sharp, file) {
     await writeAvif(sharp, input, avifOutput, file, maxWidthFor(file), avifBudgetKbFor(file));
     avifBytes = (await stat(avifOutput)).size;
     avifsWritten = 1;
+  } else if (isOpenGraphSource(file)) {
+    await rm(path.join(gameArtDir, file.replace(/\.png$/, ".avif")), { force: true });
   }
 
   if (shouldCreateRoleThumbnail(file)) {
@@ -128,7 +156,7 @@ async function optimizeAsset(sharp, file) {
   return {
     originalBytes: before,
     optimizedBytes,
-    written: 1,
+    written: createWebp ? 1 : 0,
     trimmedPngBytes,
     pngBytesAfter,
     avifBytes,
@@ -176,10 +204,12 @@ async function printReport(files) {
 
   for (const file of files) {
     const pngKb = await fileKb(path.join(gameArtDir, file));
-    const webpKb = await fileKb(path.join(gameArtDir, file.replace(/\.png$/, ".webp")));
+    const webpKb = shouldCreateWebp(file)
+      ? await fileKb(path.join(gameArtDir, file.replace(/\.png$/, ".webp")))
+      : 0;
     const avifKb = await fileKb(path.join(gameArtDir, file.replace(/\.png$/, ".avif")));
     const pngBudget = sourcePngBudgetKbFor(file);
-    const webpBudget = webpBudgetKbFor(file);
+    const webpBudget = shouldCreateWebp(file) ? webpBudgetKbFor(file) : 0;
     const avifBudget = shouldCreateAvif(file) ? avifBudgetKbFor(file) : 0;
     const overBudget = [
       pngBudget > 0 && pngKb > pngBudget,
@@ -415,7 +445,15 @@ function shouldCreateRoleThumbnail(file) {
 }
 
 function shouldCreateAvif(file) {
-  return isHeroLike(file);
+  return !isOpenGraphSource(file) && isHeroLike(file);
+}
+
+function shouldCreateWebp(file) {
+  return !isOpenGraphSource(file);
+}
+
+function isOpenGraphSource(file) {
+  return file.split(path.sep).join("/").startsWith("og/");
 }
 
 function isHeroLike(file) {

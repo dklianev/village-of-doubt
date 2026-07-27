@@ -168,6 +168,7 @@ for (const viewport of VIEWPORTS) {
       await page.goto(route.path, { waitUntil: "domcontentloaded" });
       await page.waitForLoadState("networkidle").catch(() => {});
       if (route.name.startsWith("play-")) {
+        await waitForStablePlayStage(page);
         await hideNextDevIndicator(page);
       }
       await page.waitForTimeout(600);
@@ -285,6 +286,49 @@ for (const viewport of VIEWPORTS) {
 
 function visualMasks(page: Page) {
   return [page.locator(".harbor-foot-time"), page.locator(".status-hero-time")];
+}
+
+async function waitForStablePlayStage(page: Page) {
+  await expect(page.locator(".play-stage")).toHaveAttribute("data-layout-ready", "true", {
+    timeout: 10_000,
+  });
+
+  await page.waitForFunction(async () => {
+    await document.fonts.ready;
+
+    const readSignature = () => {
+      const stage = document.querySelector<HTMLElement>(".play-stage");
+      const scene = document.querySelector<HTMLElement>("[data-table-scene]");
+      const seats = [...document.querySelectorAll<HTMLElement>(".play-seat-slot")];
+      if (!stage || !scene || seats.length === 0 || stage.dataset.layoutReady !== "true") {
+        return "";
+      }
+
+      const stageRect = stage.getBoundingClientRect();
+      const sceneRect = scene.getBoundingClientRect();
+      const firstSeatRect = seats[0]!.getBoundingClientRect();
+      return [
+        stage.dataset.layoutMode,
+        Math.round(stageRect.width),
+        Math.round(stageRect.height),
+        Math.round(sceneRect.width),
+        Math.round(sceneRect.height),
+        Math.round(firstSeatRect.x),
+        Math.round(firstSeatRect.y),
+        seats.length,
+      ].join(":");
+    };
+
+    const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const first = readSignature();
+    if (!first) {
+      return false;
+    }
+    await nextFrame();
+    const second = readSignature();
+    await nextFrame();
+    return first === second && second === readSignature();
+  }, undefined, { timeout: 10_000, polling: "raf" });
 }
 
 async function acceptCookies(page: Page) {

@@ -50,13 +50,22 @@ function checkGameArtPairing() {
   const files = listFilesRecursive(gameArtDir);
   const pngs = files.filter((file) => file.endsWith(".png")).sort();
   const webps = new Set(files.filter((file) => file.endsWith(".webp")));
+  const openGraphPngs = pngs.filter((file) => /^og[\\/]/.test(file));
+  const openGraphDerivatives = files.filter(
+    (file) => /^og[\\/].+\.(?:avif|webp)$/.test(file),
+  );
   const roleThumbs = files.filter((file) => /^thumbs[\\/](mafia[\\/])?role-[^\\/]+\.webp$/.test(file));
   const mobileAssets = files.filter((file) => /^mobile[\\/].+\.webp$/.test(file));
   assert(pngs.length >= 70, `Expected at least 70 PNG game-art files, got ${pngs.length}.`);
+  assert(openGraphPngs.length >= 9, `Expected Open Graph PNG sources, got ${openGraphPngs.length}.`);
+  assert(
+    openGraphDerivatives.length === 0,
+    `Open Graph metadata should not retain unused AVIF/WebP derivatives: ${openGraphDerivatives.join(", ")}`,
+  );
   assert(roleThumbs.length >= 38, `Expected at least 38 role thumbnail WebPs, got ${roleThumbs.length}.`);
   assert(mobileAssets.length >= 40, `Expected at least 40 mobile WebP assets, got ${mobileAssets.length}.`);
 
-  for (const png of pngs) {
+  for (const png of pngs.filter((file) => !/^og[\\/]/.test(file))) {
     const webp = png.replace(/\.png$/, ".webp");
     assert(webps.has(webp), `Missing optimized WebP for ${png}. Run pnpm optimize:assets.`);
     assert(statSync(path.join(gameArtDir, webp)).size > 10_000, `${webp} looks too small/corrupt.`);
@@ -753,7 +762,10 @@ function checkProductionGuardContracts() {
   assert(gameRoom.includes("isProductionSecret"), "GameRoom missing production secret validation helper.");
   assert(gameTokenRoute.includes("process.env.NODE_ENV === \"production\""), "Web game-token route must enforce production token secrets.");
   assert(gameTokenRoute.includes("isProductionSecret"), "Web game-token route missing production secret validation helper.");
-  assert(proxy.includes("export function proxy"), "Next 16 rate limiter must use proxy.ts with export function proxy.");
+  assert(
+    proxy.includes("export function proxy") || proxy.includes("export async function proxy"),
+    "Next 16 rate limiter must use proxy.ts with an exported proxy function.",
+  );
   assert(proxy.includes("matcher: \"/api/game-token\""), "Game-token proxy must only match the token endpoint.");
   assert(proxy.includes("process.env.NODE_ENV !== \"production\""), "Game-token proxy must stay production-only.");
   assert(proxy.includes("Retry-After"), "Game-token rate limit must return Retry-After.");
@@ -829,6 +841,12 @@ function checkProductionEnvChecker() {
   assert(missing.status !== 0, "Missing NEXT_PUBLIC_APP_URL should fail production env check.");
   assert(missing.stderr.includes("NEXT_PUBLIC_APP_URL"), "Missing app URL failure should mention NEXT_PUBLIC_APP_URL.");
 
+  const missingRedisUrl = validProductionEnv();
+  delete missingRedisUrl.REDIS_URL;
+  const withoutRedis = runEnvChecker(missingRedisUrl);
+  assert(withoutRedis.status !== 0, "Missing REDIS_URL should fail production env check.");
+  assert(withoutRedis.stderr.includes("REDIS_URL"), "Missing Redis URL failure should mention REDIS_URL.");
+
   const serverOnlySentry = validProductionEnv();
   delete serverOnlySentry.NEXT_PUBLIC_SENTRY_DSN;
   const withoutClientSentry = runEnvChecker(serverOnlySentry);
@@ -852,6 +870,8 @@ function checkScriptWiring() {
   const ciWorkflow = readText(".github/workflows/ci.yml");
   const webDockerfile = readText("apps/web/Dockerfile");
   const gameDockerfile = readText("apps/game-server/Dockerfile");
+  const gameConfig = readText("apps/game-server/src/app.config.ts");
+  const compose = readText("docker-compose.yml");
 
   assert(packageJson.scripts.regression === "node scripts/regression.mjs", "package.json must expose pnpm regression.");
   assert(packageJson.scripts["codex:run"] === "node scripts/codex-run.mjs", "package.json must expose pnpm codex:run.");
@@ -878,6 +898,22 @@ function checkScriptWiring() {
   assert(webNodeMajor === gameNodeMajor, "Web and game production images must use the same Node major.");
   assert(ciNodeMajor === webNodeMajor, `CI Node ${ciNodeMajor} must match production Node ${webNodeMajor}.`);
   assert(ciWorkflow.includes("scripts/container-ingress-smoke.mjs"), "CI must verify Caddy HTTP and WebSocket ingress.");
+  assert(gameConfig.includes("RedisPresence"), "Production game-server scaling must configure RedisPresence.");
+  assert(gameConfig.includes("RedisDriver"), "Production game-server scaling must configure RedisDriver.");
+  assert(gameConfig.includes("process.env.REDIS_URL"), "Game-server Redis scaling must be driven by REDIS_URL.");
+  assert(
+    gameConfig.includes("options:") && gameConfig.includes("publicAddress"),
+    "Colyseus scaling primitives and per-replica public addressing must use server options.",
+  );
+  assert(compose.includes("redis:"), "Production compose must define Redis.");
+  assert(compose.includes("REDIS_URL"), "Production compose must wire REDIS_URL to scalable services.");
+  assert(
+    compose.includes("COLYSEUS_PUBLIC_ADDRESS"),
+    "Production compose must expose the optional per-replica Colyseus public address.",
+  );
+  assert(compose.includes("redis_data:/data"), "Production Redis must persist its append-only log.");
+  assert(compose.includes("--appendonly"), "Production Redis must enable AOF persistence.");
+  assert(!/redis:[\s\S]*?ports:/m.test(compose), "Production Redis must not publish a host port.");
   assert(readText("apps/game-server/Dockerfile.dockerignore").split(/\r?\n/).includes("apps/web"), "Game image context must exclude the web app and its large art assets.");
 }
 
@@ -907,6 +943,7 @@ function checkDatabaseMigrationWorkflow() {
 function validProductionEnv() {
   return {
     DATABASE_URL: "postgres://werewolf:prod-password@postgres:5432/werewolf",
+    REDIS_URL: "redis://redis:6379",
     BETTER_AUTH_SECRET: "prod-better-auth-secret-000000000000000000",
     GAME_TOKEN_SECRET: "prod-game-token-secret-0000000000000000000",
     BETTER_AUTH_URL: "https://werewolf.example.com",

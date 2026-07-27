@@ -19,10 +19,12 @@ interface BuildNightActionCapabilitiesOptions {
   players: Iterable<CapabilityPlayer>;
   allowFactionKill?: boolean;
   alliedTargetUserIds?: Iterable<string>;
+  allowedWitchHealTargetUserIds?: Iterable<string>;
 }
 
 const WITCH_HEAL_USED_REASON = "Лечебната отвара вече е използвана.";
 const WITCH_POISON_USED_REASON = "Отровата вече е използвана.";
+const WITCH_HEAL_TARGET_REASON = "Лечебната отвара може да спаси само нарочената тази нощ жертва.";
 const PRIEST_BLESS_USED_REASON = "Благословията вече е дадена.";
 const PRIEST_TARGET_BLESSED_REASON = "Този играч вече е благословен.";
 const FACTION_KILL_DISABLED_REASON = "Убийствата са изключени през тази нощ.";
@@ -38,6 +40,7 @@ export function buildNightActionCapabilities({
   players,
   allowFactionKill = true,
   alliedTargetUserIds,
+  allowedWitchHealTargetUserIds,
 }: BuildNightActionCapabilitiesOptions): NightActionCapabilities {
   const capabilities: NightActionCapabilities = {
     availableKinds: [],
@@ -123,6 +126,21 @@ export function buildNightActionCapabilities({
       markUsed("witch_heal", WITCH_HEAL_USED_REASON);
     } else {
       addAvailable("witch_heal");
+      if (allowedWitchHealTargetUserIds !== undefined) {
+        const requestedTargets = new Set(allowedWitchHealTargetUserIds);
+        const allowedTargets = playerList
+          .filter((player) => player.playing && player.alive && requestedTargets.has(player.userId))
+          .map((player) => player.userId);
+        const allowedTargetSet = new Set(allowedTargets);
+        capabilities.allowedTargetIdsByKind ??= {};
+        capabilities.allowedTargetIdsByKind.witch_heal = allowedTargets;
+        const disallowedTargets = playerList
+          .filter((player) => player.playing && player.alive && !allowedTargetSet.has(player.userId))
+          .map((player) => ({ id: player.userId, reasonBg: WITCH_HEAL_TARGET_REASON }));
+        if (disallowedTargets.length > 0) {
+          capabilities.disallowedTargetsByKind.witch_heal = disallowedTargets;
+        }
+      }
     }
     if (actor.witchPoisonUsed) {
       markUsed("witch_poison", WITCH_POISON_USED_REASON);

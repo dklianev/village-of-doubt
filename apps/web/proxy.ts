@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { createRuntimeIntakeRateLimiter } from "./lib/intake-security";
 import { BoundedMemoryRateLimitStore } from "./lib/rate-limit";
 
 // This outer guard is deliberately above the authenticated route limits. A
@@ -8,7 +9,10 @@ const UNAUTHENTICATED_LIMIT = 120;
 const WINDOW_MS = 60_000;
 const MAX_BUCKETS = 10_000;
 
-const proxyRateLimitGuard = createProxyRateLimitGuard();
+const proxyRateLimitGuard = createRuntimeIntakeRateLimiter(
+  { limit: UNAUTHENTICATED_LIMIT, windowMs: WINDOW_MS },
+  "proxy",
+);
 
 export function createProxyRateLimitGuard(options: { maxEntries?: number; windowMs?: number } = {}) {
   const store = new BoundedMemoryRateLimitStore(options.maxEntries ?? MAX_BUCKETS);
@@ -22,14 +26,14 @@ export function createProxyRateLimitGuard(options: { maxEntries?: number; window
   };
 }
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   if (process.env.NODE_ENV !== "production") {
     return NextResponse.next();
   }
 
   const now = Date.now();
   const identity = requestIdentity(request);
-  const rateLimit = proxyRateLimitGuard.check(identity, UNAUTHENTICATED_LIMIT, now);
+  const rateLimit = await proxyRateLimitGuard.check(identity, now);
 
   if (rateLimit.allowed) {
     return NextResponse.next();

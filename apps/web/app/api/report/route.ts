@@ -3,7 +3,7 @@ import { renderFeedbackEmail } from "@/lib/email-templates";
 import { sendEmail } from "@/lib/email";
 import { auth } from "@/lib/auth";
 import {
-  createIntakeRateLimiter,
+  createRuntimeIntakeRateLimiter,
   IntakeBodyError,
   readBoundedJson,
   requestRateLimitKey,
@@ -21,7 +21,10 @@ const MAX_REQUEST_BYTES = 8_192;
 const MAX_REPORT_BODY_LENGTH = 4_000;
 const MAX_EVIDENCE_LENGTH = 500;
 const MAX_EMAIL_LENGTH = 254;
-const reportRateLimiter = createIntakeRateLimiter({ limit: 5, windowMs: 10 * 60 * 1000 });
+const reportRateLimiter = createRuntimeIntakeRateLimiter(
+  { limit: 5, windowMs: 10 * 60 * 1000 },
+  "report",
+);
 
 const TYPE_LABEL_BG: Record<string, string> = {
   abuse: "Тормоз",
@@ -32,7 +35,7 @@ const TYPE_LABEL_BG: Record<string, string> = {
 };
 
 export async function POST(request: Request) {
-  const rateLimit = reportRateLimiter.check(requestRateLimitKey(request));
+  const rateLimit = await reportRateLimiter.check(requestRateLimitKey(request));
   if (!rateLimit.allowed) {
     return NextResponse.json(
       { error: "Изпрати твърде много сигнали. Опитай отново след малко." },

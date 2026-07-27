@@ -4,7 +4,7 @@ import { createGameToken } from "@werewolf/shared/server";
 import { auth } from "@/lib/auth";
 import { normalizeGameTokenDisplayName } from "@/lib/display-name";
 import {
-  createIntakeRateLimiter,
+  createRuntimeIntakeRateLimiter,
   IntakeBodyError,
   readBoundedJson,
   requestRateLimitKey,
@@ -19,11 +19,17 @@ interface TokenRequestBody {
 const MAX_TOKEN_REQUEST_BYTES = 2_048;
 // Leave headroom for a full 30-player room plus normal retries behind one NAT.
 // The per-user limiter below remains the tighter abuse boundary.
-const sourceRateLimiter = createIntakeRateLimiter({ limit: 90, windowMs: 60_000 });
-const userRateLimiter = createIntakeRateLimiter({ limit: 12, windowMs: 60_000 });
+const sourceRateLimiter = createRuntimeIntakeRateLimiter(
+  { limit: 90, windowMs: 60_000 },
+  "game-token-source",
+);
+const userRateLimiter = createRuntimeIntakeRateLimiter(
+  { limit: 12, windowMs: 60_000 },
+  "game-token-user",
+);
 
 export async function POST(request: Request) {
-  const sourceLimit = sourceRateLimiter.check(requestRateLimitKey(request));
+  const sourceLimit = await sourceRateLimiter.check(requestRateLimitKey(request));
   if (!sourceLimit.allowed) {
     return rateLimitResponse(sourceLimit.retryAfterSeconds);
   }
@@ -64,7 +70,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Трябва да си влязъл, за да получиш игрови ключ." }, { status: 401 });
   }
 
-  const userLimit = userRateLimiter.check(`user:${userId}`);
+  const userLimit = await userRateLimiter.check(`user:${userId}`);
   if (!userLimit.allowed) {
     return rateLimitResponse(userLimit.retryAfterSeconds);
   }

@@ -669,6 +669,9 @@ describe("GameRoom authoritative gameplay boundaries", () => {
     await expect(refreshedCapabilities).resolves.toMatchObject({
       capabilities: expect.objectContaining({
         availableKinds: expect.arrayContaining(["witch_heal"]),
+        allowedTargetIdsByKind: {
+          witch_heal: [secondVictim?.userId],
+        },
         usedFlags: expect.not.objectContaining({ witch_heal: expect.anything() }),
       }),
     });

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import { unstable_cache } from "next/cache";
 import { Suspense } from "react";
-import { createDatabase, getPublicGameTimelinesBatch, getRecentGameHistory } from "@werewolf/database";
+import { createDatabase, getPublicGameTimelinesBatch, getRecentEndedGameHistory } from "@werewolf/database";
 import type { GameMode } from "@werewolf/shared";
 import { JsonLd } from "@/components/JsonLd";
 import { EvidenceWall } from "@/components/history/EvidenceWall";
@@ -13,7 +14,6 @@ import "@/components/history/LegacyHistory.module.css";
 export const dynamic = "force-dynamic";
 
 const HISTORY_CASE_LIMIT = 20;
-const HISTORY_SCAN_LIMIT = 100;
 
 export const metadata: Metadata = routeMetadata({
   title: "История — архивът на масата",
@@ -76,9 +76,22 @@ async function loadHistory(visualHistory?: string): Promise<HistoryGameView[]> {
   }
 
   try {
-    const db = createDatabase(process.env.DATABASE_URL);
-    const games = await getRecentGameHistory(db, HISTORY_SCAN_LIMIT);
-    const endedGames = games.filter((game) => game.status === "ended").slice(0, HISTORY_CASE_LIMIT);
+    return await loadCachedPublicHistory();
+  } catch (error) {
+    console.error("[history]", error);
+    return [];
+  }
+}
+
+const loadCachedPublicHistory = unstable_cache(
+  async (): Promise<HistoryGameView[]> => {
+    const databaseUrl = process.env.DATABASE_URL;
+    if (!databaseUrl) {
+      return [];
+    }
+
+    const db = createDatabase(databaseUrl);
+    const endedGames = await getRecentEndedGameHistory(db, HISTORY_CASE_LIMIT);
     const timelinesMap = await getPublicGameTimelinesBatch(
       db,
       endedGames.map((game) => game.id),
@@ -97,11 +110,10 @@ async function loadHistory(visualHistory?: string): Promise<HistoryGameView[]> {
       mode: modeFromConfig(game.config),
       timeline: (timelinesMap.get(game.id) ?? []).map(serializeTimelineEvent),
     }));
-  } catch (error) {
-    console.error("[history]", error);
-    return [];
-  }
-}
+  },
+  ["public-game-history-v2"],
+  { revalidate: 60, tags: ["public-game-history"] },
+);
 
 function firstSearchValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;

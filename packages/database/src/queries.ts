@@ -582,6 +582,41 @@ export async function getRecentGameHistory(db: Database, limit = 20): Promise<Ga
   }));
 }
 
+export async function getRecentEndedGameHistory(db: Database, limit = 20): Promise<GameHistorySummary[]> {
+  const safeLimit = Math.min(Math.max(Math.trunc(limit), 1), 100);
+  const rows = await db
+    .select({
+      id: games.id,
+      code: games.code,
+      hostId: games.hostId,
+      config: games.config,
+      status: games.status,
+      winnerTeam: games.winnerTeam,
+      startedAt: games.startedAt,
+      endedAt: games.endedAt,
+    })
+    .from(games)
+    .where(eq(games.status, "ended"))
+    .orderBy(desc(games.endedAt), desc(games.id))
+    .limit(safeLimit);
+
+  if (rows.length === 0) {
+    return [];
+  }
+
+  const eventCounts = await db
+    .select({ gameId: gameEvents.gameId, value: count() })
+    .from(gameEvents)
+    .where(inArray(gameEvents.gameId, rows.map((game) => game.id)))
+    .groupBy(gameEvents.gameId);
+  const countsByGameId = new Map(eventCounts.map((item) => [item.gameId, item.value]));
+
+  return rows.map((game) => ({
+    ...game,
+    eventCount: countsByGameId.get(game.id) ?? 0,
+  }));
+}
+
 export async function getGameHistoryById(db: Database, gameId: string): Promise<GameHistorySummary | null> {
   const rows = await db
     .select({

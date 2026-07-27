@@ -158,6 +158,35 @@ describe("night action target helpers", () => {
         witch_poison: { reasonBg: "Отровата вече е използвана." },
       },
       disallowedTargetsByKind: {},
+      allowedTargetIdsByKind: {
+        witch_heal: ["target"],
+      },
+    };
+
+    expect(shortcutTargets(
+      "night",
+      "witch",
+      livingPlayers,
+      livingPlayers,
+      "actor",
+      { nightActionCapabilities: capabilities },
+    ).map((item) => item.userId)).toEqual(["target"]);
+    expect(isNightActionKindAvailable(capabilities, "witch_heal")).toBe(true);
+    expect(isNightActionKindAvailable(capabilities, "witch_poison")).toBe(false);
+    expect(canUseNightKindForTarget("witch_heal", "actor", capabilities)).toBe(false);
+    expect(canUseNightKindForTarget("witch_heal", "target", capabilities)).toBe(true);
+    expect(nightActionUnavailableReasons(capabilities, ["witch_heal", "witch_poison"]))
+      .toEqual(["Отровата вече е използвана."]);
+  });
+
+  it("keeps Witch poison unrestricted while healing only the faction victim", () => {
+    const capabilities: NightActionCapabilities = {
+      availableKinds: ["witch_heal", "witch_poison"],
+      usedFlags: {},
+      disallowedTargetsByKind: {},
+      allowedTargetIdsByKind: {
+        witch_heal: ["target"],
+      },
     };
 
     expect(shortcutTargets(
@@ -168,10 +197,8 @@ describe("night action target helpers", () => {
       "actor",
       { nightActionCapabilities: capabilities },
     ).map((item) => item.userId)).toEqual(["actor", "target", "receiver"]);
-    expect(isNightActionKindAvailable(capabilities, "witch_heal")).toBe(true);
-    expect(isNightActionKindAvailable(capabilities, "witch_poison")).toBe(false);
-    expect(nightActionUnavailableReasons(capabilities, ["witch_heal", "witch_poison"]))
-      .toEqual(["Отровата вече е използвана."]);
+    expect(canUseNightKindForTarget("witch_heal", "actor", capabilities)).toBe(false);
+    expect(canUseNightKindForTarget("witch_poison", "actor", capabilities)).toBe(true);
   });
 
   it("removes spent Priest, Blacksmith, Investigator and Vampire Hunter actions", () => {
