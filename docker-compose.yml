@@ -68,6 +68,7 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL with an encoded database password}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      REDIS_PASSWORD_FILE: /run/secrets/redis_password
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET}
       GAME_TOKEN_SECRET: ${GAME_TOKEN_SECRET:?Set GAME_TOKEN_SECRET}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:?Set BETTER_AUTH_URL}
@@ -83,6 +84,8 @@ services:
       SENTRY_DSN: ${SENTRY_DSN:?Set SENTRY_DSN}
       NEXT_PUBLIC_GAME_SERVER_URL: wss://${PUBLIC_WS_DOMAIN:?Set PUBLIC_WS_DOMAIN}
       RELEASE_VERSION: ${RELEASE_VERSION:?Set RELEASE_VERSION to an immutable release identifier}
+    secrets:
+      - redis_password
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -114,6 +117,7 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL with an encoded database password}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      REDIS_PASSWORD_FILE: /run/secrets/redis_password
       COLYSEUS_PUBLIC_ADDRESS: ${COLYSEUS_PUBLIC_ADDRESS:-}
       GAME_TOKEN_SECRET: ${GAME_TOKEN_SECRET:?Set GAME_TOKEN_SECRET}
       GAME_SERVER_PORT: 2567
@@ -124,6 +128,8 @@ services:
       SENTRY_DSN: ${SENTRY_DSN:?Set SENTRY_DSN}
       RELEASE_VERSION: ${RELEASE_VERSION:?Set RELEASE_VERSION to an immutable release identifier}
       GAME_DRAIN_TIMEOUT_MS: ${GAME_DRAIN_TIMEOUT_MS:-120000}
+    secrets:
+      - redis_password
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -169,16 +175,26 @@ services:
   redis:
     image: redis:8.2-alpine@sha256:a7859ed111db3c1f5404a973a4747505d559fb5ca32d37e447afc0ef845a2103
     restart: unless-stopped
+    entrypoint:
+      - /bin/sh
+      - /opt/werewolf/redis-entrypoint.sh
     command:
       - redis-server
       - --appendonly
       - "yes"
       - --appendfsync
       - everysec
+      - --maxmemory
+      - ${REDIS_MAXMEMORY:-192mb}
       - --maxmemory-policy
       - noeviction
+    environment:
+      REDIS_PASSWORD_FILE: /run/secrets/redis_password
+    secrets:
+      - redis_password
     volumes:
       - redis_data:/data
+      - ./scripts/redis-entrypoint.sh:/opt/werewolf/redis-entrypoint.sh:ro
     networks:
       - backend
     security_opt:
@@ -190,9 +206,10 @@ services:
       - SETGID
       - SETUID
     logging: *default-logging
+    mem_limit: ${REDIS_CONTAINER_MEMORY:-256m}
     pids_limit: 128
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD-SHELL", "REDISCLI_AUTH=\"$$(cat /run/secrets/redis_password)\" redis-cli ping | grep -q PONG"]
       interval: 5s
       timeout: 3s
       retries: 12
@@ -214,3 +231,5 @@ secrets:
     environment: BETTER_AUTH_SECRET
   game_token_secret:
     environment: GAME_TOKEN_SECRET
+  redis_password:
+    environment: REDIS_PASSWORD

@@ -27,6 +27,7 @@ for (const key of required) {
 
 checkSecret("BETTER_AUTH_SECRET");
 checkSecret("GAME_TOKEN_SECRET");
+checkSecret("REDIS_PASSWORD");
 
 if (process.env.BETTER_AUTH_URL && !process.env.BETTER_AUTH_URL.startsWith("https://")) {
   errors.push("BETTER_AUTH_URL трябва да е HTTPS в production.");
@@ -45,6 +46,9 @@ if (process.env.REDIS_URL) {
     const redisUrl = new URL(process.env.REDIS_URL);
     if (redisUrl.protocol !== "redis:" && redisUrl.protocol !== "rediss:") {
       errors.push("REDIS_URL трябва да използва redis:// или rediss://.");
+    }
+    if (!redisUrl.password && !process.env.REDIS_PASSWORD && !process.env.REDIS_PASSWORD_FILE) {
+      errors.push("REDIS_PASSWORD или REDIS_PASSWORD_FILE е задължителен за production Redis.");
     }
   } catch {
     errors.push("REDIS_URL не е валиден URL.");

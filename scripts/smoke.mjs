@@ -7,6 +7,10 @@ const processes = [];
 const webStandaloneServer = "apps/web/.next/standalone/apps/web/server.js";
 
 async function main() {
+  if (!process.env.REDIS_URL) {
+    throw new Error("Smoke test requires REDIS_URL because production rate limits fail closed.");
+  }
+
   const game = start("game-server", process.execPath, ["apps/game-server/dist/index.js"], {
     GAME_SERVER_PORT: "3567",
     PORT: "3567",
@@ -147,21 +151,31 @@ async function waitForAsset(url, label) {
 }
 
 async function waitForGameToken(url) {
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      code: "SMPKE3",
-      devUserId: "smoke-user-0001",
-      devDisplayName: "Смоук Играч",
-    }),
-  });
-  const body = await response.json().catch(() => ({}));
-  if (!response.ok || body.roomCode !== "SMPKE3" || typeof body.token !== "string") {
-    throw new Error(`game-token smoke failed: HTTP ${response.status}`);
+  const startedAt = Date.now();
+  let lastStatus = 0;
+  while (Date.now() - startedAt < 10_000) {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        code: "SMPKE3",
+        devUserId: "smoke-user-0001",
+        devDisplayName: "Смоук Играч",
+      }),
+    });
+    const body = await response.json().catch(() => ({}));
+    if (response.ok && body.roomCode === "SMPKE3" && typeof body.token === "string") {
+      return;
+    }
+    lastStatus = response.status;
+    if (response.status !== 429 && response.status !== 503) {
+      break;
+    }
+    await delay(200);
   }
+  throw new Error(`game-token smoke failed: HTTP ${lastStatus}`);
 }
 
 async function waitFor(url, label) {

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PlayerPresenceManager } from "../player-presence-manager.js";
+import type { PlayerSecurityStore } from "../player-security-store.js";
 
 describe("PlayerPresenceManager", () => {
   beforeEach(() => {
@@ -10,36 +11,51 @@ describe("PlayerPresenceManager", () => {
     vi.useRealTimers();
   });
 
-  it("accepts a fresh token nonce once", () => {
-    expect(PlayerPresenceManager.consumeTokenNonce("nonce-1", Date.now() + 60_000)).toBe(true);
-    expect(PlayerPresenceManager.consumeTokenNonce("nonce-1", Date.now() + 60_000)).toBe(false);
+  it("accepts a fresh token nonce once", async () => {
+    await expect(PlayerPresenceManager.consumeTokenNonce("nonce-1", Date.now() + 60_000)).resolves.toBe(true);
+    await expect(PlayerPresenceManager.consumeTokenNonce("nonce-1", Date.now() + 60_000)).resolves.toBe(false);
   });
 
-  it("bounds nonce replay memory and fails closed at capacity", () => {
+  it("bounds nonce replay memory and fails closed at capacity", async () => {
     const expiresAt = Date.now() + 60_000;
     for (let index = 0; index < PlayerPresenceManager.MAX_USED_NONCES; index += 1) {
-      expect(PlayerPresenceManager.consumeTokenNonce(`nonce-${index}`, expiresAt)).toBe(true);
+      await expect(PlayerPresenceManager.consumeTokenNonce(`nonce-${index}`, expiresAt)).resolves.toBe(true);
     }
 
     expect(PlayerPresenceManager.getUsedNonceCountForTests()).toBe(PlayerPresenceManager.MAX_USED_NONCES);
-    expect(PlayerPresenceManager.consumeTokenNonce("nonce-over-capacity", expiresAt)).toBe(false);
+    await expect(PlayerPresenceManager.consumeTokenNonce("nonce-over-capacity", expiresAt)).resolves.toBe(false);
     expect(PlayerPresenceManager.getUsedNonceCountForTests()).toBe(PlayerPresenceManager.MAX_USED_NONCES);
   });
 
-  it("prunes expired nonce entries before admitting a fresh token", () => {
+  it("prunes expired nonce entries before admitting a fresh token", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-01-01T00:00:00Z"));
-    expect(PlayerPresenceManager.consumeTokenNonce("expires-soon", Date.now() + 1_000)).toBe(true);
+    await expect(PlayerPresenceManager.consumeTokenNonce("expires-soon", Date.now() + 1_000)).resolves.toBe(true);
 
     vi.setSystemTime(new Date("2026-01-01T00:01:01Z"));
-    expect(PlayerPresenceManager.consumeTokenNonce("fresh-after-prune", Date.now() + 60_000)).toBe(true);
+    await expect(PlayerPresenceManager.consumeTokenNonce("fresh-after-prune", Date.now() + 60_000)).resolves.toBe(true);
     expect(PlayerPresenceManager.getUsedNonceCountForTests()).toBe(1);
   });
 
-  it("rate-limits repeated joins inside the rolling window", () => {
-    const attempts = Array.from({ length: 5 }, () => PlayerPresenceManager.checkJoinRateLimit("user-1"));
+  it("rate-limits repeated joins inside the rolling window", async () => {
+    const attempts = await Promise.all(
+      Array.from({ length: 5 }, () => PlayerPresenceManager.checkJoinRateLimit("user-1")),
+    );
     expect(attempts).toEqual([true, true, true, true, true]);
-    expect(PlayerPresenceManager.checkJoinRateLimit("user-1")).toBe(false);
+    await expect(PlayerPresenceManager.checkJoinRateLimit("user-1")).resolves.toBe(false);
+  });
+
+  it("delegates nonce and join guards to the configured shared store", async () => {
+    const store: PlayerSecurityStore = {
+      consumeTokenNonce: vi.fn(async () => false),
+      checkJoinRateLimit: vi.fn(async () => false),
+    };
+    PlayerPresenceManager.configureSecurityStore(store);
+
+    await expect(PlayerPresenceManager.consumeTokenNonce("nonce-1", Date.now() + 60_000)).resolves.toBe(false);
+    await expect(PlayerPresenceManager.checkJoinRateLimit("user-1")).resolves.toBe(false);
+    expect(store.consumeTokenNonce).toHaveBeenCalledOnce();
+    expect(store.checkJoinRateLimit).toHaveBeenCalledOnce();
   });
 
   it("tracks and detaches the active client for a user", () => {

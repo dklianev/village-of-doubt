@@ -847,6 +847,18 @@ function checkProductionEnvChecker() {
   assert(withoutRedis.status !== 0, "Missing REDIS_URL should fail production env check.");
   assert(withoutRedis.stderr.includes("REDIS_URL"), "Missing Redis URL failure should mention REDIS_URL.");
 
+  const unauthenticatedRedis = validProductionEnv();
+  delete unauthenticatedRedis.REDIS_PASSWORD;
+  const withoutRedisAuth = runEnvChecker(unauthenticatedRedis);
+  assert(withoutRedisAuth.status !== 0, "Unauthenticated production Redis should fail production env check.");
+  assert(withoutRedisAuth.stderr.includes("REDIS_PASSWORD"), "Redis auth failure should mention REDIS_PASSWORD.");
+
+  const redisSecretFile = validProductionEnv();
+  delete redisSecretFile.REDIS_PASSWORD;
+  redisSecretFile.REDIS_PASSWORD_FILE = "/run/secrets/redis_password";
+  const withRedisSecretFile = runEnvChecker(redisSecretFile);
+  assert(withRedisSecretFile.status === 0, "A production Redis password file should satisfy the auth guard.");
+
   const serverOnlySentry = validProductionEnv();
   delete serverOnlySentry.NEXT_PUBLIC_SENTRY_DSN;
   const withoutClientSentry = runEnvChecker(serverOnlySentry);
@@ -871,6 +883,7 @@ function checkScriptWiring() {
   const webDockerfile = readText("apps/web/Dockerfile");
   const gameDockerfile = readText("apps/game-server/Dockerfile");
   const gameConfig = readText("apps/game-server/src/app.config.ts");
+  const playerPresenceManager = readText("apps/game-server/src/rooms/player-presence-manager.ts");
   const compose = readText("docker-compose.yml");
 
   assert(packageJson.scripts.regression === "node scripts/regression.mjs", "package.json must expose pnpm regression.");
@@ -898,9 +911,22 @@ function checkScriptWiring() {
   assert(webNodeMajor === gameNodeMajor, "Web and game production images must use the same Node major.");
   assert(ciNodeMajor === webNodeMajor, `CI Node ${ciNodeMajor} must match production Node ${webNodeMajor}.`);
   assert(ciWorkflow.includes("scripts/container-ingress-smoke.mjs"), "CI must verify Caddy HTTP and WebSocket ingress.");
+  assert(ciWorkflow.includes("redis:8.2-alpine"), "CI production smoke must provide Redis.");
+  assert(
+    ciWorkflow.includes("REDIS_URL: redis://default:ci-redis-password-that-is-long-enough@localhost:6379"),
+    "CI verify must connect smoke tests to authenticated Redis.",
+  );
+  assert(ciWorkflow.includes("REDIS_PASSWORD:"), "CI container verification must provide the Redis Docker secret.");
   assert(gameConfig.includes("RedisPresence"), "Production game-server scaling must configure RedisPresence.");
   assert(gameConfig.includes("RedisDriver"), "Production game-server scaling must configure RedisDriver.");
-  assert(gameConfig.includes("process.env.REDIS_URL"), "Game-server Redis scaling must be driven by REDIS_URL.");
+  assert(
+    gameConfig.includes("resolveGameServerRedisUrl(process.env)")
+      && gameConfig.includes("environment.REDIS_URL"),
+    "Game-server Redis scaling must be driven by the validated REDIS_URL environment.",
+  );
+  assert(gameConfig.includes("createRedisPlayerSecurityStore"), "Game-server nonce and join guards must use the shared Redis store.");
+  assert(!playerPresenceManager.includes("usedNonces = new Map"), "Game-server nonce replay state must not be process-local.");
+  assert(!playerPresenceManager.includes("joinAttempts = new Map"), "Game-server join throttling must not be process-local.");
   assert(
     gameConfig.includes("options:") && gameConfig.includes("publicAddress"),
     "Colyseus scaling primitives and per-replica public addressing must use server options.",
@@ -913,6 +939,10 @@ function checkScriptWiring() {
   );
   assert(compose.includes("redis_data:/data"), "Production Redis must persist its append-only log.");
   assert(compose.includes("--appendonly"), "Production Redis must enable AOF persistence.");
+  assert(/^\s+- --maxmemory\s*$/m.test(compose), "Production Redis must enforce an application memory ceiling.");
+  assert(compose.includes("mem_limit:"), "Production Redis must have a container memory ceiling above maxmemory.");
+  assert(compose.includes("redis_password"), "Production Redis credentials must use a Docker secret.");
+  assert(compose.includes("REDIS_PASSWORD_FILE"), "Redis clients must receive the credential through a secret file.");
   assert(!/redis:[\s\S]*?ports:/m.test(compose), "Production Redis must not publish a host port.");
   assert(readText("apps/game-server/Dockerfile.dockerignore").split(/\r?\n/).includes("apps/web"), "Game image context must exclude the web app and its large art assets.");
 }
@@ -944,6 +974,7 @@ function validProductionEnv() {
   return {
     DATABASE_URL: "postgres://werewolf:prod-password@postgres:5432/werewolf",
     REDIS_URL: "redis://redis:6379",
+    REDIS_PASSWORD: "prod-redis-password-00000000000000000000",
     BETTER_AUTH_SECRET: "prod-better-auth-secret-000000000000000000",
     GAME_TOKEN_SECRET: "prod-game-token-secret-0000000000000000000",
     BETTER_AUTH_URL: "https://werewolf.example.com",

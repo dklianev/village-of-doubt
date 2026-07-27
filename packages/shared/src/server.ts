@@ -1,4 +1,5 @@
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
+import { readFileSync } from "node:fs";
 import {
   DEFAULT_AVATAR_ID,
   isAvatarId,
@@ -7,6 +8,22 @@ import {
 import { ROOM_CODE_REGEX, normalizeRoomCode } from "./room-code.js";
 
 export { normalizeRoomCode } from "./room-code.js";
+
+export function resolveRedisUrl(redisUrl: string, passwordFile?: string): string {
+  if (!passwordFile) {
+    return redisUrl;
+  }
+
+  const password = readFileSync(passwordFile, "utf8").trim();
+  if (!password) {
+    throw new Error("Redis тайната е празна.");
+  }
+
+  const resolved = new URL(redisUrl);
+  resolved.username ||= "default";
+  resolved.password = password;
+  return resolved.toString();
+}
 
 export interface GameTokenPayload {
   userId: string;

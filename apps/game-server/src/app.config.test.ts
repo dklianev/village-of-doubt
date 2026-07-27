@@ -1,6 +1,10 @@
 import type { Request, Response } from "express";
 import { describe, expect, it, vi } from "vitest";
-import { createLocalStatsHandler, createReadinessHandler } from "./app.config.js";
+import {
+  createLocalStatsHandler,
+  createReadinessHandler,
+  resolveGameServerRedisUrl,
+} from "./app.config.js";
 
 function makeResponse() {
   const response = {
@@ -10,6 +14,40 @@ function makeResponse() {
   response.status.mockReturnValue(response);
   return response;
 }
+
+describe("game-server Redis startup guard", () => {
+  it("refuses to start production without the shared Redis store", () => {
+    expect(() => resolveGameServerRedisUrl({
+      NODE_ENV: "production",
+      REDIS_URL: undefined,
+      REDIS_PASSWORD_FILE: undefined,
+    })).toThrow("REDIS_URL");
+  });
+
+  it("refuses unauthenticated production Redis", () => {
+    expect(() => resolveGameServerRedisUrl({
+      NODE_ENV: "production",
+      REDIS_URL: "redis://redis:6379",
+      REDIS_PASSWORD_FILE: undefined,
+    })).toThrow("автентикация");
+  });
+
+  it("accepts credentials embedded by a managed Redis provider", () => {
+    expect(resolveGameServerRedisUrl({
+      NODE_ENV: "production",
+      REDIS_URL: "rediss://default:secret@redis.example.com:6380",
+      REDIS_PASSWORD_FILE: undefined,
+    })).toBe("rediss://default:secret@redis.example.com:6380");
+  });
+
+  it("keeps Redis optional outside production", () => {
+    expect(resolveGameServerRedisUrl({
+      NODE_ENV: "test",
+      REDIS_URL: undefined,
+      REDIS_PASSWORD_FILE: undefined,
+    })).toBeUndefined();
+  });
+});
 
 describe("game-server readiness handler", () => {
   it("returns 200 when persistence is ready", async () => {

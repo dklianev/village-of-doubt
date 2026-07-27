@@ -215,7 +215,7 @@ describe("GameRoom security boundaries", () => {
     const client = fakeClient("avatar-session");
     const options = { code: "AVTR23", token };
     const auth = await serverRoom.onAuth(client, options);
-    serverRoom.onJoin(client, options, auth);
+    await serverRoom.onJoin(client, options, auth);
     const player = [...serverRoom.state.players.values()].find(
       (candidate) => candidate.userId === "avatar-user-1",
     );
@@ -234,11 +234,11 @@ describe("GameRoom security boundaries", () => {
     const options = { code: "RATE23" };
 
     for (let attempt = 0; attempt < 5; attempt += 1) {
-      serverRoom.onJoin(fakeClient(`rate-session-${attempt}`), options, auth);
+      await serverRoom.onJoin(fakeClient(`rate-session-${attempt}`), options, auth);
     }
 
     const blockedClient = fakeClient("rate-session-blocked");
-    serverRoom.onJoin(blockedClient, options, auth);
+    await serverRoom.onJoin(blockedClient, options, auth);
 
     expect(blockedClient.send).toHaveBeenCalledWith(
       "safe_error",

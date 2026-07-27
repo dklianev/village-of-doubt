@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import { RedisUnavailableError } from "../redis-rate-limit";
-import { createRuntimeRedisEvalClient } from "../runtime-rate-limit";
+import {
+  createRuntimeRedisEvalClient,
+  getRuntimeRateLimitBackend,
+  resolveRuntimeRedisUrl,
+} from "../runtime-rate-limit";
 
 describe("createRuntimeRedisEvalClient", () => {
   it("отказва веднага, без да чака Redis connect promise", async () => {
@@ -46,5 +50,43 @@ describe("createRuntimeRedisEvalClient", () => {
       keys: [],
       arguments: [],
     })).rejects.toThrow("NOAUTH");
+  });
+});
+
+describe("getRuntimeRateLimitBackend", () => {
+  it("fails closed in production when Redis is not configured", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("REDIS_URL", "");
+    const backend = getRuntimeRateLimitBackend("missing-production-redis");
+
+    await expect(backend.consume({
+      key: "user-1",
+      limit: 5,
+      windowMs: 60_000,
+      now: 1_000,
+    })).resolves.toEqual({
+      allowed: false,
+      retryAfterSeconds: 5,
+    });
+
+    vi.unstubAllEnvs();
+  });
+});
+
+describe("resolveRuntimeRedisUrl", () => {
+  it("rejects unauthenticated production Redis", () => {
+    expect(() => resolveRuntimeRedisUrl(
+      "redis://redis:6379",
+      undefined,
+      "production",
+    )).toThrow("автентикация");
+  });
+
+  it("accepts managed Redis credentials embedded in the URL", () => {
+    expect(resolveRuntimeRedisUrl(
+      "rediss://default:secret@redis.example.com:6380",
+      undefined,
+      "production",
+    )).toBe("rediss://default:secret@redis.example.com:6380");
   });
 });

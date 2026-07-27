@@ -63,6 +63,29 @@ describe("createRedisRateLimitBackend", () => {
     expect(onError).toHaveBeenCalledOnce();
   });
 
+  it("отказва заявката при Redis outage, когато namespace-ът е fail-closed", async () => {
+    const backend = createRedisRateLimitBackend({
+      client: {
+        eval: vi.fn(async () => {
+          throw new RedisUnavailableError("redis unavailable");
+        }),
+      },
+      namespace: "auth",
+      outageMode: "deny",
+      onError: vi.fn(),
+    });
+
+    await expect(backend.consume({
+      key: "user-1",
+      limit: 5,
+      windowMs: 60_000,
+      now: 1_000,
+    })).resolves.toEqual({
+      allowed: false,
+      retryAfterSeconds: 5,
+    });
+  });
+
   it("не прикрива Redis конфигурационна грешка като outage", async () => {
     const backend = createRedisRateLimitBackend({
       client: { eval: vi.fn(async () => { throw new Error("NOAUTH"); }) },

@@ -252,7 +252,7 @@ export class GameRoom extends Room<{ state: GameState }> {
 
     if (options.token) {
       const payload = verifyGameToken(options.token, getGameTokenSecret(), { roomCode: this.state.code });
-      if (!PlayerPresenceManager.consumeTokenNonce(payload.nonce, payload.expiresAt * 1000)) {
+      if (!await PlayerPresenceManager.consumeTokenNonce(payload.nonce, payload.expiresAt * 1000)) {
         throw new Error("Този токен вече е използван.");
       }
       return { userId: payload.userId, displayName: payload.displayName, avatarId: payload.avatarId };
@@ -261,8 +261,8 @@ export class GameRoom extends Room<{ state: GameState }> {
     throw new Error("Невалидна сесия.");
   }
 
-  onJoin(client: Client, options: JoinRoomOptions, auth: ClientAuth) {
-    if (!PlayerPresenceManager.checkJoinRateLimit(auth.userId)) {
+  async onJoin(client: Client, options: JoinRoomOptions, auth: ClientAuth) {
+    if (!await PlayerPresenceManager.checkJoinRateLimit(auth.userId)) {
       client.send("safe_error", {
         type: "safe_error",
         messageBg: "Твърде много опити за вход. Изчакай малко.",

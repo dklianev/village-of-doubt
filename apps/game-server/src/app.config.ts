@@ -1,17 +1,46 @@
 import { monitor } from "@colyseus/monitor";
 import defineConfig from "@colyseus/tools";
+import { resolveRedisUrl } from "@werewolf/shared/server";
 import cors from "cors";
 import type { Request, Response } from "express";
 import { performance } from "node:perf_hooks";
+import { createClient, type RedisClientType } from "redis";
 import { deployDrain } from "./operations/deploy-drain.js";
 import { persistenceReadiness } from "./operations/persistence-readiness.js";
 import { GameRoom, getGameRuntimeStats } from "./rooms/GameRoom.js";
+import { PlayerPresenceManager } from "./rooms/player-presence-manager.js";
+import { createRedisPlayerSecurityStore } from "./rooms/player-security-store.js";
 import { ROOM_CODE_REGEX, normalizeRoomCodeInput } from "@werewolf/shared";
 
-const redisScaling = process.env.NODE_ENV === "production" && process.env.REDIS_URL
-  ? await createRedisScaling(process.env.REDIS_URL)
+const redisUrl = resolveGameServerRedisUrl(process.env);
+const redisRuntime = redisUrl ? await createRedisScaling(redisUrl) : undefined;
+const redisScaling = redisRuntime
+  ? {
+      driver: redisRuntime.driver,
+      presence: redisRuntime.presence,
+    }
   : {};
 const publicAddress = process.env.COLYSEUS_PUBLIC_ADDRESS?.trim();
+
+interface GameServerRedisEnvironment {
+  NODE_ENV?: string;
+  REDIS_URL?: string;
+  REDIS_PASSWORD_FILE?: string;
+}
+
+export function resolveGameServerRedisUrl(environment: GameServerRedisEnvironment) {
+  if (environment.NODE_ENV !== "production") {
+    return undefined;
+  }
+  if (!environment.REDIS_URL) {
+    throw new Error("REDIS_URL е задължителен за production game-server.");
+  }
+  const parsedUrl = new URL(environment.REDIS_URL);
+  if (!parsedUrl.password && !environment.REDIS_PASSWORD_FILE) {
+    throw new Error("Production Redis изисква автентикация.");
+  }
+  return resolveRedisUrl(environment.REDIS_URL, environment.REDIS_PASSWORD_FILE);
+}
 
 export default defineConfig({
   options: {
@@ -21,6 +50,13 @@ export default defineConfig({
 
   initializeGameServer(gameServer) {
     gameServer.define("game", OperationalGameRoom).filterBy(["code"]);
+    if (redisRuntime) {
+      gameServer.onShutdown(async () => {
+        if (redisRuntime.securityClient.isOpen) {
+          await redisRuntime.securityClient.quit();
+        }
+      });
+    }
     deployDrain.configure({
       getActiveRooms: () => getGameRuntimeStats().activeRooms,
       stopMatchmaking: () => {},
@@ -75,11 +111,45 @@ async function createRedisScaling(redisUrl: string) {
     import("@colyseus/redis-driver"),
     import("@colyseus/redis-presence"),
   ]);
+  const securityClient = await connectSecurityRedisClient(redisUrl);
+  PlayerPresenceManager.configureSecurityStore(createRedisPlayerSecurityStore({
+    set: (key, value, options) => securityClient.set(key, value, options),
+    eval: (script, options) => securityClient.eval(script, options),
+  }));
 
   return {
     driver: new RedisDriver(redisUrl),
     presence: new RedisPresence(redisUrl),
+    securityClient,
   };
+}
+
+async function connectSecurityRedisClient(redisUrl: string): Promise<RedisClientType> {
+  let hasConnected = false;
+  let lastErrorReportAt = Number.NEGATIVE_INFINITY;
+  const client = createClient({
+    url: redisUrl,
+    disableOfflineQueue: true,
+    socket: {
+      connectTimeout: 1_500,
+      reconnectStrategy(retries) {
+        if (!hasConnected && retries >= 3) {
+          return new Error("Redis не е достъпен при стартиране.");
+        }
+        return Math.min(100 * 2 ** Math.min(retries, 5), 3_000);
+      },
+    },
+  });
+  client.on("error", (error) => {
+    const now = Date.now();
+    if (now - lastErrorReportAt >= 60_000) {
+      lastErrorReportAt = now;
+      console.error("[game-server] Redis security store е недостъпен.", error);
+    }
+  });
+  await client.connect();
+  hasConnected = true;
+  return client;
 }
 
 export class OperationalGameRoom extends GameRoom {
@@ -144,7 +214,10 @@ function isLoopbackAddress(address: string | undefined) {
 type ReadinessProbe = () => Promise<boolean>;
 
 export function createReadinessHandler(
-  probe: ReadinessProbe = () => persistenceReadiness.refresh(),
+  probe: ReadinessProbe = async () => {
+    const persistenceReady = await persistenceReadiness.refresh();
+    return persistenceReady && (!redisRuntime || redisRuntime.securityClient.isReady);
+  },
 ) {
   return async (_req: Request, res: Response) => {
     let ready = false;

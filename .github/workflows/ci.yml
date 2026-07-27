@@ -33,6 +33,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Start authenticated Redis
+        run: >-
+          docker run --detach --rm
+          --name werewolf-ci-redis
+          --publish 6379:6379
+          redis:8.2-alpine
+          redis-server
+          --save ""
+          --appendonly no
+          --requirepass ci-redis-password-that-is-long-enough
+          --maxmemory 64mb
+          --maxmemory-policy noeviction
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
 
@@ -60,6 +73,7 @@ jobs:
         run: pnpm verify
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/werewolf_test
+          REDIS_URL: redis://default:ci-redis-password-that-is-long-enough@localhost:6379
           BETTER_AUTH_SECRET: ci-only-secret-that-is-long-enough-32-chars-min
           GAME_TOKEN_SECRET: ci-only-secret-that-is-long-enough-32-chars-min
           BETTER_AUTH_URL: https://werewolf.example.com
@@ -85,8 +99,10 @@ jobs:
       COMPOSE_PROJECT_NAME: werewolf_ci
       DB_PASSWORD: ci-postgres-password
       DATABASE_URL: postgres://werewolf:ci-postgres-password@postgres:5432/werewolf
+      REDIS_URL: redis://redis:6379
       BETTER_AUTH_SECRET: ci-better-auth-secret-that-is-long-enough
       GAME_TOKEN_SECRET: ci-game-token-secret-that-is-long-enough
+      REDIS_PASSWORD: ci-redis-password-that-is-long-enough-32-chars
       BETTER_AUTH_URL: https://werewolf.example.com
       NEXT_PUBLIC_APP_URL: https://werewolf.example.com
       PUBLIC_WEB_DOMAIN: werewolf.example.com

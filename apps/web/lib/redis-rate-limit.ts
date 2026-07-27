@@ -16,8 +16,11 @@ interface RedisRateLimitBackendOptions {
   client: RedisEvalClient;
   namespace: string;
   maxFallbackEntries?: number;
+  outageMode?: RedisOutageMode;
   onError?: (error: unknown) => void;
 }
+
+export type RedisOutageMode = "deny" | "memory";
 
 const FIXED_WINDOW_SCRIPT = `
 local count = redis.call("INCR", KEYS[1])
@@ -44,7 +47,8 @@ export function createRedisRateLimitBackend({
   client,
   namespace,
   maxFallbackEntries = 10_000,
-  onError = defaultRedisErrorReporter(),
+  outageMode = "memory",
+  onError = defaultRedisErrorReporter(outageMode),
 }: RedisRateLimitBackendOptions): SharedRateLimitBackend {
   const fallback = new BoundedMemoryRateLimitStore(maxFallbackEntries);
   let lastErrorReportAt = Number.NEGATIVE_INFINITY;
@@ -64,6 +68,12 @@ export function createRedisRateLimitBackend({
         if (input.now - lastErrorReportAt >= 60_000) {
           lastErrorReportAt = input.now;
           onError(error);
+        }
+        if (outageMode === "deny") {
+          return {
+            allowed: false,
+            retryAfterSeconds: 5,
+          };
         }
         return fallback.consume(input);
       }
@@ -124,8 +134,11 @@ function parseFixedWindowReply(reply: unknown): [count: number, ttlMs: number] {
   return [count, ttlMs];
 }
 
-function defaultRedisErrorReporter() {
+function defaultRedisErrorReporter(outageMode: RedisOutageMode) {
   return (error: unknown) => {
-    console.error("[redis-rate-limit] Използва се локален fallback.", error);
+    const action = outageMode === "deny"
+      ? "Заявката е отказана."
+      : "Използва се локален fallback.";
+    console.error(`[redis-rate-limit] Redis е недостъпен. ${action}`, error);
   };
 }

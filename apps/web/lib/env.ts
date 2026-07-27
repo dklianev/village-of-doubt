@@ -5,6 +5,7 @@ export const env = createEnv({
   server: {
     DATABASE_URL: z.string().url().optional(),
     REDIS_URL: z.string().url().optional(),
+    REDIS_PASSWORD_FILE: z.string().min(1).optional(),
     BETTER_AUTH_SECRET: z.string().min(32).optional(),
     BETTER_AUTH_URL: z.string().url().optional(),
     DISCORD_CLIENT_ID: z.string().optional(),
@@ -23,6 +24,7 @@ export const env = createEnv({
   runtimeEnv: {
     DATABASE_URL: process.env.DATABASE_URL,
     REDIS_URL: process.env.REDIS_URL,
+    REDIS_PASSWORD_FILE: process.env.REDIS_PASSWORD_FILE,
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
     BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,
     DISCORD_CLIENT_ID: process.env.DISCORD_CLIENT_ID,
