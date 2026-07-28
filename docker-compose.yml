@@ -22,6 +22,8 @@ services:
     networks:
       - ingress
     logging: *default-logging
+    mem_limit: ${CADDY_CONTAINER_MEMORY:-128m}
+    cpus: ${CADDY_CONTAINER_CPUS:-0.25}
     pids_limit: 128
     depends_on:
       web:
@@ -52,6 +54,8 @@ services:
     cap_drop:
       - ALL
     logging: *default-logging
+    mem_limit: ${MIGRATOR_CONTAINER_MEMORY:-512m}
+    cpus: ${MIGRATOR_CONTAINER_CPUS:-1.0}
     pids_limit: 128
 
   web:
@@ -69,6 +73,7 @@ services:
     init: true
     environment:
       DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL with an encoded database password}
+      DATABASE_POOL_MAX: ${DATABASE_POOL_MAX:-8}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       REDIS_PASSWORD_FILE: /run/secrets/redis_password
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET}
@@ -101,6 +106,8 @@ services:
     cap_drop:
       - ALL
     logging: *default-logging
+    mem_limit: ${WEB_CONTAINER_MEMORY:-768m}
+    cpus: ${WEB_CONTAINER_CPUS:-0.75}
     pids_limit: 256
     stop_grace_period: 30s
     healthcheck:
@@ -119,6 +126,7 @@ services:
     init: true
     environment:
       DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL with an encoded database password}
+      DATABASE_POOL_MAX: ${DATABASE_POOL_MAX:-8}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       REDIS_PASSWORD_FILE: /run/secrets/redis_password
       COLYSEUS_PUBLIC_ADDRESS: ${COLYSEUS_PUBLIC_ADDRESS:-}
@@ -146,6 +154,8 @@ services:
     cap_drop:
       - ALL
     logging: *default-logging
+    mem_limit: ${GAME_CONTAINER_MEMORY:-1024m}
+    cpus: ${GAME_CONTAINER_CPUS:-1.25}
     pids_limit: 256
     stop_grace_period: 130s
     healthcheck:
@@ -167,6 +177,9 @@ services:
     networks:
       - backend
     logging: *default-logging
+    mem_limit: ${POSTGRES_CONTAINER_MEMORY:-1024m}
+    cpus: ${POSTGRES_CONTAINER_CPUS:-0.75}
+    shm_size: ${POSTGRES_SHARED_MEMORY:-128m}
     pids_limit: 256
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U werewolf -d werewolf"]
@@ -210,6 +223,7 @@ services:
       - SETUID
     logging: *default-logging
     mem_limit: ${REDIS_CONTAINER_MEMORY:-256m}
+    cpus: ${REDIS_CONTAINER_CPUS:-0.25}
     pids_limit: 128
     healthcheck:
       test: ["CMD-SHELL", "REDISCLI_AUTH=\"$$(cat /run/secrets/redis_password)\" redis-cli ping | grep -q PONG"]

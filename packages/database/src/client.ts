@@ -28,7 +28,7 @@ export function createDatabase(databaseUrl = process.env.DATABASE_URL) {
   }
 
   const client = postgres(databaseUrl, {
-    max: readPositiveInteger("DATABASE_POOL_MAX", 20),
+    max: readPositiveInteger("DATABASE_POOL_MAX", 8),
     idle_timeout: readPositiveInteger("DATABASE_IDLE_TIMEOUT_SECONDS", 30),
     connect_timeout: readPositiveInteger("DATABASE_CONNECT_TIMEOUT_SECONDS", 5),
     max_lifetime: readPositiveInteger("DATABASE_MAX_LIFETIME_SECONDS", 30 * 60),

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   drizzle: vi.fn(),
@@ -21,6 +21,32 @@ describe("database pool lifecycle", () => {
     vi.clearAllMocks();
     mocks.postgres.mockImplementation(() => ({ end: vi.fn(async () => {}) }));
     mocks.drizzle.mockImplementation((client) => ({ client }));
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("limits the default process pool to eight connections", () => {
+    vi.stubEnv("DATABASE_POOL_MAX", "");
+
+    createDatabase("postgres://localhost/werewolf");
+
+    expect(mocks.postgres).toHaveBeenCalledWith(
+      "postgres://localhost/werewolf",
+      expect.objectContaining({ max: 8 }),
+    );
+  });
+
+  it("accepts an explicit positive pool limit", () => {
+    vi.stubEnv("DATABASE_POOL_MAX", "12");
+
+    createDatabase("postgres://localhost/werewolf");
+
+    expect(mocks.postgres).toHaveBeenCalledWith(
+      "postgres://localhost/werewolf",
+      expect.objectContaining({ max: 12 }),
+    );
   });
 
   it("reuses one process-wide pool for the same connection string", () => {
