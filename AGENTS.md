@@ -115,16 +115,16 @@ Radii са умишлено стегнати: `--ds-radius-card: 8px`, `--ds-rad
 
 11 components:
 - Surface, Eyebrow, Display, PaperCard, SceneCard, Pill, Medallion — CSS-only
-- Toast, Dialog, Sheet — Motion via `motion/react`
+- Toast, Dialog, Sheet — Radix lifecycle + CSS `transform`/`opacity` animations
 - EmptyState — CSS-only
 
 Server Components should import CSS-only primitives from `@werewolf/ui/server`.
-The root `@werewolf/ui` export includes Motion/Radix primitives for client surfaces.
+The root `@werewolf/ui` export includes Radix-backed client primitives.
 
-Motion е ограничен до 3 primitives. Проверка:
-`rg "from \"motion/react\"" packages/ui/src/primitives` → Dialog, Sheet, Toast.
+Runtime animation dependencies are intentionally absent. Проверка:
+`rg "motion/react" packages/ui/src/primitives` → няма резултати.
 
-`Dialog` и `Sheet` използват Radix `asChild` + `motion.div`. Не обвивай Radix primitives с deprecated `motion(Component)`.
+`Dialog` и `Sheet` разчитат на Radix `data-state` за CSS enter/exit lifecycle.
 `Sheet` винаги има видимо `title` и включва собствените си layout styles, за да не зависи от consumer CSS import.
 
 ### Hero banners

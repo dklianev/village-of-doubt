@@ -4,12 +4,15 @@ import { Dialog } from "./Dialog";
 
 describe("Dialog", () => {
   it("renders an accessible dialog when open", () => {
-    const { getByRole } = render(
+    const { container, getByRole } = render(
       <Dialog open onOpenChange={() => {}} title="Потвърди">
         Съдържание
       </Dialog>,
     );
-    expect(getByRole("dialog", { name: "Потвърди" })).toBeDefined();
+    expect(getByRole("dialog", { name: "Потвърди" }).classList.contains("ds-dialog")).toBe(true);
+    expect(container.ownerDocument.head.textContent + container.ownerDocument.body.textContent).toContain(
+      "@keyframes ds-dialog-open",
+    );
   });
 
   it("renders description when provided", () => {

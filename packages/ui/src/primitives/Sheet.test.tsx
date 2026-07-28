@@ -4,12 +4,15 @@ import { Sheet } from "./Sheet";
 
 describe("Sheet", () => {
   it("renders an accessible dialog when open and titled", () => {
-    const { getByRole } = render(
+    const { container, getByRole } = render(
       <Sheet open onOpenChange={() => {}} title="Писма">
         Съдържание
       </Sheet>,
     );
-    expect(getByRole("dialog", { name: "Писма" })).toBeDefined();
+    expect(getByRole("dialog", { name: "Писма" }).classList.contains("ds-sheet")).toBe(true);
+    expect(container.ownerDocument.head.textContent + container.ownerDocument.body.textContent).toContain(
+      "@keyframes ds-sheet-open",
+    );
   });
 
   it("renders children", () => {
@@ -22,12 +25,15 @@ describe("Sheet", () => {
   });
 
   it("does not render content when closed", () => {
-    const { queryByText } = render(
+    const { container, queryByText } = render(
       <Sheet open={false} onOpenChange={() => {}} title="Писма">
         Съдържание
       </Sheet>,
     );
     expect(queryByText("Съдържание")).toBeNull();
+    expect(container.ownerDocument.getElementById("werewolf-ui-sheet-styles")?.textContent).toContain(
+      "@keyframes ds-sheet-close",
+    );
   });
 
   it("forwards close requests through onOpenChange", () => {

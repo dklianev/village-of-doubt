@@ -1,8 +1,12 @@
-import { fireEvent, render } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { act, fireEvent, render } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { Toast } from "./Toast";
 
 describe("Toast", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("renders message when open", () => {
     const { getByText } = render(<Toast open message="Писмото е изпратено." />);
     expect(getByText("Писмото е изпратено.")).toBeDefined();
@@ -20,7 +24,9 @@ describe("Toast", () => {
 
   it("marks stack index for stagger timing", () => {
     const { getByRole } = render(<Toast open index={2} message="Писмо" />);
-    expect(getByRole("status").dataset.dsToastIndex).toBe("2");
+    const toast = getByRole("status");
+    expect(toast.dataset.dsToastIndex).toBe("2");
+    expect(toast.style.getPropertyValue("--ds-toast-delay")).toBe("0.12s");
   });
 
   it("normalizes invalid stack index values", () => {
@@ -33,5 +39,19 @@ describe("Toast", () => {
     const { getByRole } = render(<Toast open message="Писмо" onDismiss={onDismiss} />);
     fireEvent.click(getByRole("button", { name: "Затвори" }));
     expect(onDismiss).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps a closing toast mounted until its exit safety timeout", () => {
+    vi.useFakeTimers();
+    const { getByRole, queryByRole, rerender } = render(<Toast open message="Писмо" />);
+
+    rerender(<Toast open={false} message="Писмо" />);
+    const closingToast = getByRole("status");
+    expect(closingToast.dataset.state).toBe("closed");
+
+    act(() => {
+      vi.advanceTimersByTime(191);
+    });
+    expect(queryByRole("status")).toBeNull();
   });
 });

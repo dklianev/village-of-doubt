@@ -14,8 +14,6 @@ export default defineConfig({
   external: [
     "react",
     "react-dom",
-    "motion",
-    "motion/react",
     "@radix-ui/react-dialog",
   ],
   treeshake: true,
