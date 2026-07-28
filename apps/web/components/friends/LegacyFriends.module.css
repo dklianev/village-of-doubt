@@ -1238,8 +1238,7 @@
     radial-gradient(ellipse 70% 64% at 48% 48%, rgba(0, 0, 0, 0) 24%, rgba(0, 0, 0, 0.48) 78%, rgba(0, 0, 0, 0.74) 100%),
     linear-gradient(90deg, rgba(0, 0, 0, 0.5), transparent 30% 70%, rgba(3, 8, 10, 0.62)),
     image-set(
-      url("/game-art/sign-in-table.webp") type("image/webp"),
-      url("/game-art/sign-in-table.png") type("image/png")
+      url("/game-art/sign-in-table.webp") type("image/webp")
     );
   background-size: cover;
   background-position: center;
@@ -1287,8 +1286,7 @@
   background-image:
     linear-gradient(155deg, rgba(255, 250, 238, 0.85), rgba(238, 222, 196, 0.7)),
     image-set(
-      url("/game-art/textures/brass-plate.webp") type("image/webp"),
-      url("/game-art/textures/brass-plate.png") type("image/png")
+      url("/game-art/textures/brass-plate.webp") type("image/webp")
     );
   background-size: cover;
   background-blend-mode: normal, multiply;
@@ -1373,8 +1371,7 @@
   background-image:
     linear-gradient(155deg, rgba(255, 250, 238, 0.45), rgba(238, 222, 196, 0.3)),
     image-set(
-      url("/game-art/oauth-google-plate.webp") type("image/webp"),
-      url("/game-art/oauth-google-plate.png") type("image/png")
+      url("/game-art/oauth-google-plate.webp") type("image/webp")
     );
 }
 
@@ -1384,8 +1381,7 @@
   background-image:
     linear-gradient(155deg, rgba(220, 230, 255, 0.35), rgba(60, 80, 150, 0.2)),
     image-set(
-      url("/game-art/oauth-discord-plate.webp") type("image/webp"),
-      url("/game-art/oauth-discord-plate.png") type("image/png")
+      url("/game-art/oauth-discord-plate.webp") type("image/webp")
     );
   text-shadow: 0 1px 0 rgba(20, 30, 80, 0.6);
 }
@@ -1596,8 +1592,7 @@
   background-image:
     radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, 0.6) 100%),
     image-set(
-      url("/game-art/auth/forgot-password-locksmith.webp") type("image/webp"),
-      url("/game-art/auth/forgot-password-locksmith.png") type("image/png")
+      url("/game-art/auth/forgot-password-locksmith.webp") type("image/webp")
     );
   background-position: center;
   background-size: cover;
@@ -1609,8 +1604,7 @@
     background-image:
       radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, 0.6) 100%),
       image-set(
-        url("/game-art/mobile/auth/forgot-password-locksmith.webp") type("image/webp"),
-        url("/game-art/auth/forgot-password-locksmith.png") type("image/png")
+        url("/game-art/mobile/auth/forgot-password-locksmith.webp") type("image/webp")
       );
   }
 }
@@ -1626,8 +1620,7 @@
   background-image:
     linear-gradient(155deg, rgba(255, 250, 238, 0.55), rgba(238, 222, 196, 0.35)),
     image-set(
-      url("/game-art/textures/brass-plate.webp") type("image/webp"),
-      url("/game-art/textures/brass-plate.png") type("image/png")
+      url("/game-art/textures/brass-plate.webp") type("image/webp")
     );
   background-size: cover;
   background-blend-mode: multiply;
@@ -1768,8 +1761,7 @@
   background-image:
     radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 30%, rgba(20, 5, 0, 0.7) 100%),
     image-set(
-      url("/game-art/auth/reset-password-forge.webp") type("image/webp"),
-      url("/game-art/auth/reset-password-forge.png") type("image/png")
+      url("/game-art/auth/reset-password-forge.webp") type("image/webp")
     );
   background-position: center;
   background-size: cover;
@@ -1781,8 +1773,7 @@
     background-image:
       radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 30%, rgba(20, 5, 0, 0.7) 100%),
       image-set(
-        url("/game-art/mobile/auth/reset-password-forge.webp") type("image/webp"),
-        url("/game-art/auth/reset-password-forge.png") type("image/png")
+        url("/game-art/mobile/auth/reset-password-forge.webp") type("image/webp")
       );
   }
 }
@@ -1913,8 +1904,7 @@
   background-image:
     radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 40%, rgba(40, 10, 10, 0.55) 100%),
     image-set(
-      url("/game-art/auth/verify-email-seal.webp") type("image/webp"),
-      url("/game-art/auth/verify-email-seal.png") type("image/png")
+      url("/game-art/auth/verify-email-seal.webp") type("image/webp")
     );
   background-position: center;
   background-size: cover;
@@ -1926,8 +1916,7 @@
     background-image:
       radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 40%, rgba(40, 10, 10, 0.55) 100%),
       image-set(
-        url("/game-art/mobile/auth/verify-email-seal.webp") type("image/webp"),
-        url("/game-art/auth/verify-email-seal.png") type("image/png")
+        url("/game-art/mobile/auth/verify-email-seal.webp") type("image/webp")
       );
   }
 }

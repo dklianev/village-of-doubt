@@ -41,7 +41,7 @@ describe("roles catalogue image loading", () => {
     expect(initialSrc).toMatch(/\.webp$/);
     fireEvent.error(firstImage!);
 
-    expect(firstImage?.getAttribute("src")).toMatch(/\.png$/);
+    expect(firstImage?.getAttribute("src")).toMatch(/\.webp$/);
     expect(firstImage?.getAttribute("src")).not.toBe(initialSrc);
     expect(firstImage?.getAttribute("srcset")).not.toBe(initialSrcSet);
   });

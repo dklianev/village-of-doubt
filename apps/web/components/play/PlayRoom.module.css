@@ -15,7 +15,7 @@
 
 :global(.play-shell.game-shell) {
   --phase-art: var(--art-lobby);
-  --phase-icon: image-set(url("/game-art/icon-phase-lobby.webp") type("image/webp"), url("/game-art/icon-phase-lobby.png") type("image/png"));
+  --phase-icon: image-set(url("/game-art/icon-phase-lobby.webp") type("image/webp"));
   --play-body-glow: radial-gradient(circle at 78% 12%, rgba(240, 180, 93, 0.18), transparent 20rem);
   --play-body-scrim: linear-gradient(110deg, rgba(7, 9, 9, 0.82) 0%, rgba(12, 16, 17, 0.5) 45%, rgba(7, 9, 9, 0.78) 100%);
   --play-body-filter: saturate(0.98) contrast(1.06) brightness(0.98);
@@ -35,7 +35,7 @@
 
 :global(.play-shell.game-shell[data-phase="role_reveal"]) {
   --phase-art: var(--art-reveal);
-  --phase-icon: image-set(url("/game-art/icon-phase-role-reveal.webp") type("image/webp"), url("/game-art/icon-phase-role-reveal.png") type("image/png"));
+  --phase-icon: image-set(url("/game-art/icon-phase-role-reveal.webp") type("image/webp"));
   --play-body-glow: radial-gradient(circle at 70% 14%, rgba(209, 154, 66, 0.24), transparent 22rem);
   --play-stage-glow: radial-gradient(circle at 50% 44%, rgba(209, 154, 66, 0.24), transparent 24rem);
   --play-stage-scrim: linear-gradient(180deg, rgba(8, 7, 6, 0.24), rgba(8, 7, 6, 0.7));
@@ -44,7 +44,7 @@
 :global(.play-shell.game-shell[data-phase="first_night"]),
 :global(.play-shell.game-shell[data-phase="night"]) {
   --phase-art: var(--art-night);
-  --phase-icon: image-set(url("/game-art/icon-phase-night.webp") type("image/webp"), url("/game-art/icon-phase-night.png") type("image/png"));
+  --phase-icon: image-set(url("/game-art/icon-phase-night.webp") type("image/webp"));
   --play-body-glow: radial-gradient(circle at 76% 10%, rgba(196, 224, 226, 0.2), transparent 20rem);
   --play-body-scrim: linear-gradient(110deg, rgba(4, 7, 9, 0.78) 0%, rgba(8, 17, 18, 0.44) 45%, rgba(4, 7, 9, 0.74) 100%);
   --play-body-filter: saturate(1) contrast(1.08) brightness(0.98);
@@ -61,7 +61,7 @@
 :global(.play-shell.game-shell[data-phase="nomination"]),
 :global(.play-shell.game-shell[data-phase="defense"]) {
   --phase-art: var(--art-day);
-  --phase-icon: image-set(url("/game-art/icon-phase-day.webp") type("image/webp"), url("/game-art/icon-phase-day.png") type("image/png"));
+  --phase-icon: image-set(url("/game-art/icon-phase-day.webp") type("image/webp"));
   --play-body-glow: radial-gradient(circle at 24% 14%, rgba(245, 210, 146, 0.22), transparent 22rem);
   --play-body-scrim: linear-gradient(110deg, rgba(22, 13, 8, 0.9) 0%, rgba(24, 18, 12, 0.62) 48%, rgba(13, 8, 6, 0.84) 100%);
   --play-body-filter: saturate(0.98) contrast(1.04) brightness(1.03);
@@ -73,7 +73,7 @@
 
 :global(.play-shell.game-shell[data-phase="voting"]) {
   --phase-art: var(--art-vote);
-  --phase-icon: image-set(url("/game-art/icon-phase-voting.webp") type("image/webp"), url("/game-art/icon-phase-voting.png") type("image/png"));
+  --phase-icon: image-set(url("/game-art/icon-phase-voting.webp") type("image/webp"));
   --play-body-glow: radial-gradient(circle at 50% 8%, rgba(209, 154, 66, 0.26), transparent 20rem);
   --play-body-scrim: linear-gradient(110deg, rgba(12, 5, 5, 0.97) 0%, rgba(26, 12, 10, 0.76) 48%, rgba(9, 5, 5, 0.94) 100%);
   --play-body-filter: saturate(1.02) contrast(1.12) brightness(0.92);
@@ -87,7 +87,7 @@
 :global(.play-shell.game-shell[data-phase="mayor_successor"]),
 :global(.play-shell.game-shell[data-phase="game_over"]) {
   --phase-art: var(--art-resolution);
-  --phase-icon: image-set(url("/game-art/icon-phase-resolution.webp") type("image/webp"), url("/game-art/icon-phase-resolution.png") type("image/png"));
+  --phase-icon: image-set(url("/game-art/icon-phase-resolution.webp") type("image/webp"));
   --play-body-glow: radial-gradient(circle at 50% 10%, rgba(248, 236, 210, 0.22), transparent 22rem);
   --play-body-scrim: linear-gradient(110deg, rgba(9, 7, 6, 0.95) 0%, rgba(24, 18, 13, 0.72) 46%, rgba(9, 7, 6, 0.9) 100%);
   --play-body-filter: saturate(0.94) contrast(1.08) brightness(0.95);
@@ -97,34 +97,34 @@
 }
 
 :global(.play-shell.game-shell[data-family="mafia"]) {
-  --phase-icon: image-set(url("/game-art/mafia/icon-phase-lobby.webp") type("image/webp"), url("/game-art/mafia/icon-phase-lobby.png") type("image/png"));
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-lobby.webp") type("image/webp"));
 }
 
 :global(.play-shell.game-shell[data-family="mafia"][data-phase="role_reveal"]) {
-  --phase-icon: image-set(url("/game-art/mafia/icon-phase-role-reveal.webp") type("image/webp"), url("/game-art/mafia/icon-phase-role-reveal.png") type("image/png"));
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-role-reveal.webp") type("image/webp"));
 }
 
 :global(.play-shell.game-shell[data-family="mafia"][data-phase="first_night"]),
 :global(.play-shell.game-shell[data-family="mafia"][data-phase="night"]) {
-  --phase-icon: image-set(url("/game-art/mafia/icon-phase-night.webp") type("image/webp"), url("/game-art/mafia/icon-phase-night.png") type("image/png"));
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-night.webp") type("image/webp"));
 }
 
 :global(.play-shell.game-shell[data-family="mafia"][data-phase="day_announcement"]),
 :global(.play-shell.game-shell[data-family="mafia"][data-phase="day_discussion"]),
 :global(.play-shell.game-shell[data-family="mafia"][data-phase="nomination"]),
 :global(.play-shell.game-shell[data-family="mafia"][data-phase="defense"]) {
-  --phase-icon: image-set(url("/game-art/mafia/icon-phase-day.webp") type("image/webp"), url("/game-art/mafia/icon-phase-day.png") type("image/png"));
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-day.webp") type("image/webp"));
 }
 
 :global(.play-shell.game-shell[data-family="mafia"][data-phase="voting"]) {
-  --phase-icon: image-set(url("/game-art/mafia/icon-phase-voting.webp") type("image/webp"), url("/game-art/mafia/icon-phase-voting.png") type("image/png"));
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-voting.webp") type("image/webp"));
 }
 
 :global(.play-shell.game-shell[data-family="mafia"][data-phase="resolution"]),
 :global(.play-shell.game-shell[data-family="mafia"][data-phase="hunter_revenge"]),
 :global(.play-shell.game-shell[data-family="mafia"][data-phase="mayor_successor"]),
 :global(.play-shell.game-shell[data-family="mafia"][data-phase="game_over"]) {
-  --phase-icon: image-set(url("/game-art/mafia/icon-phase-resolution.webp") type("image/webp"), url("/game-art/mafia/icon-phase-resolution.png") type("image/png"));
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-resolution.webp") type("image/webp"));
 }
 
 /* Keep phase art more specific than faction-level --phase-art defaults. */

@@ -263,7 +263,7 @@ function RoleArt({ role, family, eager = false }: { role: RoleCode; family: Game
   const hasAsset =
     family === "mafia" ? KNOWN_MAFIA_ROLE_ASSETS.has(assetKey) : KNOWN_WEREWOLF_ROLE_ASSETS.has(assetKey);
   const src = hasAsset ? roleThumbPath(family, role) : "/game-art/thumbs/card-back-secret.webp";
-  const fallbackSrc = hasAsset ? roleArtPath(family, role, "png") : "/game-art/card-back-secret.png";
+  const fallbackSrc = hasAsset ? roleArtPath(family, role, "webp") : "/game-art/card-back-secret.webp";
   const [didFail, setDidFail] = useState(false);
   const imageSrc = didFail ? fallbackSrc : src;
 

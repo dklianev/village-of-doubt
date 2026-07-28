@@ -247,7 +247,7 @@
 }
 
 :global(.role-codex-card) {
-  --role-art: image-set(url("/game-art/card-back-secret.webp") type("image/webp"), url("/game-art/card-back-secret.png") type("image/png"));
+  --role-art: image-set(url("/game-art/card-back-secret.webp") type("image/webp"));
   position: relative;
   overflow: hidden;
   border: 1px solid rgba(248, 236, 210, 0.14);

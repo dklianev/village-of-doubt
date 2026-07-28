@@ -57,6 +57,6 @@ export function avatarPortraitStyle(value: unknown): AvatarPortraitStyle {
   const source = `/game-art/avatars/${option.id}`;
 
   return {
-    "--avatar-image": `image-set(url('${source}.webp') type('image/webp'), url('${source}.png') type('image/png'))`,
+    "--avatar-image": `url('${source}.webp')`,
   };
 }

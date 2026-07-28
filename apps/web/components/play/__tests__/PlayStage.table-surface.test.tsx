@@ -7,16 +7,12 @@ const PLAY_STAGE_CSS = readFileSync(resolve(process.cwd(), "components/play/Play
 const TABLE_ASSETS = [
   "public/game-art/play/table-inlay-werewolves-v1.avif",
   "public/game-art/play/table-inlay-werewolves-v1.webp",
-  "public/game-art/play/table-inlay-werewolves-v1.png",
   "public/game-art/play/table-inlay-mafia-v1.avif",
   "public/game-art/play/table-inlay-mafia-v1.webp",
-  "public/game-art/play/table-inlay-mafia-v1.png",
   "public/game-art/mobile/play/table-inlay-werewolves-v1.avif",
   "public/game-art/mobile/play/table-inlay-werewolves-v1.webp",
-  "public/game-art/mobile/play/table-inlay-werewolves-v1.png",
   "public/game-art/mobile/play/table-inlay-mafia-v1.avif",
   "public/game-art/mobile/play/table-inlay-mafia-v1.webp",
-  "public/game-art/mobile/play/table-inlay-mafia-v1.png",
 ] as const;
 
 describe("PlayStage table surface", () => {

@@ -25,8 +25,7 @@
     linear-gradient(90deg, rgba(6, 6, 6, 0.99) 0%, rgba(8, 7, 6, 0.96) 39%, rgba(8, 7, 6, 0.68) 53%, transparent 73%),
     image-set(
       url("/game-art/onboarding/bg-welcome-table-v1.avif") type("image/avif"),
-      url("/game-art/onboarding/bg-welcome-table-v1.webp") type("image/webp"),
-      url("/game-art/onboarding/bg-welcome-table-v1.png") type("image/png")
+      url("/game-art/onboarding/bg-welcome-table-v1.webp") type("image/webp")
     ) center / cover no-repeat;
   color: #f7e9ca;
   box-shadow:

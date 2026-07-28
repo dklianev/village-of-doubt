@@ -301,27 +301,27 @@
 }
 
 :global(.phase-node-icon.phase-lobby) {
-  --phase-node-icon: image-set(url("/game-art/icon-phase-lobby.webp") type("image/webp"), url("/game-art/icon-phase-lobby.png") type("image/png"));
+  --phase-node-icon: image-set(url("/game-art/icon-phase-lobby.webp") type("image/webp"));
 }
 
 :global(.phase-node-icon.phase-role_reveal) {
-  --phase-node-icon: image-set(url("/game-art/icon-phase-role-reveal.webp") type("image/webp"), url("/game-art/icon-phase-role-reveal.png") type("image/png"));
+  --phase-node-icon: image-set(url("/game-art/icon-phase-role-reveal.webp") type("image/webp"));
 }
 
 :global(.phase-node-icon.phase-night) {
-  --phase-node-icon: image-set(url("/game-art/icon-phase-night.webp") type("image/webp"), url("/game-art/icon-phase-night.png") type("image/png"));
+  --phase-node-icon: image-set(url("/game-art/icon-phase-night.webp") type("image/webp"));
 }
 
 :global(.phase-node-icon.phase-day_discussion) {
-  --phase-node-icon: image-set(url("/game-art/icon-phase-day.webp") type("image/webp"), url("/game-art/icon-phase-day.png") type("image/png"));
+  --phase-node-icon: image-set(url("/game-art/icon-phase-day.webp") type("image/webp"));
 }
 
 :global(.phase-node-icon.phase-voting) {
-  --phase-node-icon: image-set(url("/game-art/icon-phase-voting.webp") type("image/webp"), url("/game-art/icon-phase-voting.png") type("image/png"));
+  --phase-node-icon: image-set(url("/game-art/icon-phase-voting.webp") type("image/webp"));
 }
 
 :global(.phase-node-icon.phase-resolution) {
-  --phase-node-icon: image-set(url("/game-art/icon-phase-resolution.webp") type("image/webp"), url("/game-art/icon-phase-resolution.png") type("image/png"));
+  --phase-node-icon: image-set(url("/game-art/icon-phase-resolution.webp") type("image/webp"));
 }
 
 :global([data-family="mafia"] .phase-node-icon.phase-lobby) {

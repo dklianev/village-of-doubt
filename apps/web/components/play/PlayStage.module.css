@@ -2,8 +2,7 @@
   --play-stage-copy-shadow: 0 2px 10px rgba(0, 0, 0, 0.96), 0 0 2px #000;
   --play-table-inlay: image-set(
     url("/game-art/play/table-inlay-werewolves-v1.avif") type("image/avif"),
-    url("/game-art/play/table-inlay-werewolves-v1.webp") type("image/webp"),
-    url("/game-art/play/table-inlay-werewolves-v1.png") type("image/png")
+    url("/game-art/play/table-inlay-werewolves-v1.webp") type("image/webp")
   );
   --play-table-inlay-opacity: 0.72;
   --play-table-mobile-inlay-opacity: 0.64;
@@ -62,8 +61,7 @@
 .stage[data-family="mafia"] {
   --play-table-inlay: image-set(
     url("/game-art/play/table-inlay-mafia-v1.avif") type("image/avif"),
-    url("/game-art/play/table-inlay-mafia-v1.webp") type("image/webp"),
-    url("/game-art/play/table-inlay-mafia-v1.png") type("image/png")
+    url("/game-art/play/table-inlay-mafia-v1.webp") type("image/webp")
   );
   --play-table-inlay-opacity: 0.76;
   --play-table-mobile-inlay-opacity: 0.68;
@@ -899,8 +897,7 @@
   .stage {
     --play-table-inlay: image-set(
       url("/game-art/mobile/play/table-inlay-werewolves-v1.avif") type("image/avif"),
-      url("/game-art/mobile/play/table-inlay-werewolves-v1.webp") type("image/webp"),
-      url("/game-art/mobile/play/table-inlay-werewolves-v1.png") type("image/png")
+      url("/game-art/mobile/play/table-inlay-werewolves-v1.webp") type("image/webp")
     );
     border-radius: 24px;
     padding: 16px;
@@ -909,8 +906,7 @@
   .stage[data-family="mafia"] {
     --play-table-inlay: image-set(
       url("/game-art/mobile/play/table-inlay-mafia-v1.avif") type("image/avif"),
-      url("/game-art/mobile/play/table-inlay-mafia-v1.webp") type("image/webp"),
-      url("/game-art/mobile/play/table-inlay-mafia-v1.png") type("image/png")
+      url("/game-art/mobile/play/table-inlay-mafia-v1.webp") type("image/webp")
     );
   }
 

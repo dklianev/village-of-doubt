@@ -2291,8 +2291,7 @@
     linear-gradient(90deg, rgba(7, 11, 9, 0.82), rgba(10, 10, 10, 0.6)),
     image-set(
       url("/game-art/bg-lobby-tavern.avif") type("image/avif"),
-      url("/game-art/bg-lobby-tavern.webp") type("image/webp"),
-      url("/game-art/bg-lobby-tavern.png") type("image/png")
+      url("/game-art/bg-lobby-tavern.webp") type("image/webp")
     ) center / cover no-repeat;
 }
 
@@ -2329,8 +2328,7 @@
     linear-gradient(0deg, rgba(5, 8, 7, 0.96), rgba(8, 11, 9, 0.1) 72%),
     image-set(
       url("/game-art/bg-lobby-tavern.avif") type("image/avif"),
-      url("/game-art/bg-lobby-tavern.webp") type("image/webp"),
-      url("/game-art/bg-lobby-tavern.png") type("image/png")
+      url("/game-art/bg-lobby-tavern.webp") type("image/webp")
     ) center / cover no-repeat;
 }
 
@@ -2339,8 +2337,7 @@
     linear-gradient(0deg, rgba(8, 5, 5, 0.97), rgba(17, 9, 8, 0.12) 72%),
     image-set(
       url("/game-art/mafia/bg-lobby-tavern.avif") type("image/avif"),
-      url("/game-art/mafia/bg-lobby-tavern.webp") type("image/webp"),
-      url("/game-art/mafia/bg-lobby-tavern.png") type("image/png")
+      url("/game-art/mafia/bg-lobby-tavern.webp") type("image/webp")
     ) center / cover no-repeat;
 }
 

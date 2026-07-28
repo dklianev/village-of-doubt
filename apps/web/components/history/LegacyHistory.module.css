@@ -108,8 +108,7 @@
   background-image:
     linear-gradient(155deg, rgba(255, 250, 238, 0.55), rgba(238, 222, 196, 0.35)),
     image-set(
-      url("/game-art/textures/case-file-paper-v2.webp") type("image/webp"),
-      url("/game-art/textures/case-file-paper-v2.png") type("image/png")
+      url("/game-art/textures/case-file-paper-v2.webp") type("image/webp")
     );
   background-position: center, center;
   background-size: cover, cover;
@@ -488,18 +487,18 @@
 
 :global(.game-shell) {
   --phase-art: var(--art-lobby);
-  --phase-icon: image-set(url("/game-art/icon-phase-lobby.webp") type("image/webp"), url("/game-art/icon-phase-lobby.png") type("image/png"));
+  --phase-icon: image-set(url("/game-art/icon-phase-lobby.webp") type("image/webp"));
 }
 
 :global(.game-shell[data-phase="role_reveal"]) {
   --phase-art: var(--art-reveal);
-  --phase-icon: image-set(url("/game-art/icon-phase-role-reveal.webp") type("image/webp"), url("/game-art/icon-phase-role-reveal.png") type("image/png"));
+  --phase-icon: image-set(url("/game-art/icon-phase-role-reveal.webp") type("image/webp"));
 }
 
 :global(.game-shell[data-phase="first_night"]),
 :global(.game-shell[data-phase="night"]) {
   --phase-art: var(--transition-night);
-  --phase-icon: image-set(url("/game-art/icon-phase-night.webp") type("image/webp"), url("/game-art/icon-phase-night.png") type("image/png"));
+  --phase-icon: image-set(url("/game-art/icon-phase-night.webp") type("image/webp"));
 }
 
 :global(.game-shell[data-phase="day_announcement"]),
@@ -507,12 +506,12 @@
 :global(.game-shell[data-phase="nomination"]),
 :global(.game-shell[data-phase="defense"]) {
   --phase-art: var(--transition-day);
-  --phase-icon: image-set(url("/game-art/icon-phase-day.webp") type("image/webp"), url("/game-art/icon-phase-day.png") type("image/png"));
+  --phase-icon: image-set(url("/game-art/icon-phase-day.webp") type("image/webp"));
 }
 
 :global(.game-shell[data-phase="voting"]) {
   --phase-art: var(--transition-vote);
-  --phase-icon: image-set(url("/game-art/icon-phase-voting.webp") type("image/webp"), url("/game-art/icon-phase-voting.png") type("image/png"));
+  --phase-icon: image-set(url("/game-art/icon-phase-voting.webp") type("image/webp"));
 }
 
 :global(.game-shell[data-phase="resolution"]),
@@ -520,38 +519,38 @@
 :global(.game-shell[data-phase="mayor_successor"]),
 :global(.game-shell[data-phase="game_over"]) {
   --phase-art: var(--transition-resolution);
-  --phase-icon: image-set(url("/game-art/icon-phase-resolution.webp") type("image/webp"), url("/game-art/icon-phase-resolution.png") type("image/png"));
+  --phase-icon: image-set(url("/game-art/icon-phase-resolution.webp") type("image/webp"));
 }
 
 [data-theme="mafia"].game-shell {
-  --phase-icon: image-set(url("/game-art/mafia/icon-phase-lobby.webp") type("image/webp"), url("/game-art/mafia/icon-phase-lobby.png") type("image/png"));
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-lobby.webp") type("image/webp"));
 }
 
 :global(.game-shell[data-family="mafia"][data-phase="role_reveal"]) {
-  --phase-icon: image-set(url("/game-art/mafia/icon-phase-role-reveal.webp") type("image/webp"), url("/game-art/mafia/icon-phase-role-reveal.png") type("image/png"));
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-role-reveal.webp") type("image/webp"));
 }
 
 :global(.game-shell[data-family="mafia"][data-phase="first_night"]),
 :global(.game-shell[data-family="mafia"][data-phase="night"]) {
-  --phase-icon: image-set(url("/game-art/mafia/icon-phase-night.webp") type("image/webp"), url("/game-art/mafia/icon-phase-night.png") type("image/png"));
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-night.webp") type("image/webp"));
 }
 
 :global(.game-shell[data-family="mafia"][data-phase="day_announcement"]),
 :global(.game-shell[data-family="mafia"][data-phase="day_discussion"]),
 :global(.game-shell[data-family="mafia"][data-phase="nomination"]),
 :global(.game-shell[data-family="mafia"][data-phase="defense"]) {
-  --phase-icon: image-set(url("/game-art/mafia/icon-phase-day.webp") type("image/webp"), url("/game-art/mafia/icon-phase-day.png") type("image/png"));
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-day.webp") type("image/webp"));
 }
 
 :global(.game-shell[data-family="mafia"][data-phase="voting"]) {
-  --phase-icon: image-set(url("/game-art/mafia/icon-phase-voting.webp") type("image/webp"), url("/game-art/mafia/icon-phase-voting.png") type("image/png"));
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-voting.webp") type("image/webp"));
 }
 
 :global(.game-shell[data-family="mafia"][data-phase="resolution"]),
 :global(.game-shell[data-family="mafia"][data-phase="hunter_revenge"]),
 :global(.game-shell[data-family="mafia"][data-phase="mayor_successor"]),
 :global(.game-shell[data-family="mafia"][data-phase="game_over"]) {
-  --phase-icon: image-set(url("/game-art/mafia/icon-phase-resolution.webp") type("image/webp"), url("/game-art/mafia/icon-phase-resolution.png") type("image/png"));
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-resolution.webp") type("image/webp"));
 }
 
 :global(.game-shell::before),
@@ -659,58 +658,58 @@
 }
 
 :global(.phase-rail-icon.phase-lobby) {
-  --phase-icon: image-set(url("/game-art/icon-phase-lobby.webp") type("image/webp"), url("/game-art/icon-phase-lobby.png") type("image/png"));
+  --phase-icon: image-set(url("/game-art/icon-phase-lobby.webp") type("image/webp"));
 }
 
 :global(.phase-rail-icon.phase-role_reveal) {
-  --phase-icon: image-set(url("/game-art/icon-phase-role-reveal.webp") type("image/webp"), url("/game-art/icon-phase-role-reveal.png") type("image/png"));
+  --phase-icon: image-set(url("/game-art/icon-phase-role-reveal.webp") type("image/webp"));
 }
 
 :global(.phase-rail-icon.phase-night) {
-  --phase-icon: image-set(url("/game-art/icon-phase-night.webp") type("image/webp"), url("/game-art/icon-phase-night.png") type("image/png"));
+  --phase-icon: image-set(url("/game-art/icon-phase-night.webp") type("image/webp"));
 }
 
 :global(.phase-rail-icon.phase-day_discussion) {
-  --phase-icon: image-set(url("/game-art/icon-phase-day.webp") type("image/webp"), url("/game-art/icon-phase-day.png") type("image/png"));
+  --phase-icon: image-set(url("/game-art/icon-phase-day.webp") type("image/webp"));
 }
 
 :global(.phase-rail-icon.phase-voting) {
-  --phase-icon: image-set(url("/game-art/icon-phase-voting.webp") type("image/webp"), url("/game-art/icon-phase-voting.png") type("image/png"));
+  --phase-icon: image-set(url("/game-art/icon-phase-voting.webp") type("image/webp"));
 }
 
 :global(.phase-rail-icon.phase-resolution) {
-  --phase-icon: image-set(url("/game-art/icon-phase-resolution.webp") type("image/webp"), url("/game-art/icon-phase-resolution.png") type("image/png"));
+  --phase-icon: image-set(url("/game-art/icon-phase-resolution.webp") type("image/webp"));
 }
 
 [data-theme="mafia"] .phase-rail-icon.phase-lobby {
-  --phase-icon: image-set(url("/game-art/mafia/icon-phase-lobby.webp") type("image/webp"), url("/game-art/mafia/icon-phase-lobby.png") type("image/png"));
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-lobby.webp") type("image/webp"));
 }
 
 [data-theme="mafia"] .phase-rail-icon.phase-role_reveal {
-  --phase-icon: image-set(url("/game-art/mafia/icon-phase-role-reveal.webp") type("image/webp"), url("/game-art/mafia/icon-phase-role-reveal.png") type("image/png"));
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-role-reveal.webp") type("image/webp"));
 }
 
 [data-theme="mafia"] .phase-rail-icon.phase-night,
 [data-theme="mafia"] .phase-rail-icon.phase-first_night {
-  --phase-icon: image-set(url("/game-art/mafia/icon-phase-night.webp") type("image/webp"), url("/game-art/mafia/icon-phase-night.png") type("image/png"));
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-night.webp") type("image/webp"));
 }
 
 [data-theme="mafia"] .phase-rail-icon.phase-day_discussion,
 [data-theme="mafia"] .phase-rail-icon.phase-day_announcement,
 [data-theme="mafia"] .phase-rail-icon.phase-nomination,
 [data-theme="mafia"] .phase-rail-icon.phase-defense {
-  --phase-icon: image-set(url("/game-art/mafia/icon-phase-day.webp") type("image/webp"), url("/game-art/mafia/icon-phase-day.png") type("image/png"));
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-day.webp") type("image/webp"));
 }
 
 [data-theme="mafia"] .phase-rail-icon.phase-voting {
-  --phase-icon: image-set(url("/game-art/mafia/icon-phase-voting.webp") type("image/webp"), url("/game-art/mafia/icon-phase-voting.png") type("image/png"));
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-voting.webp") type("image/webp"));
 }
 
 [data-theme="mafia"] .phase-rail-icon.phase-resolution,
 [data-theme="mafia"] .phase-rail-icon.phase-hunter_revenge,
 [data-theme="mafia"] .phase-rail-icon.phase-mayor_successor,
 [data-theme="mafia"] .phase-rail-icon.phase-game_over {
-  --phase-icon: image-set(url("/game-art/mafia/icon-phase-resolution.webp") type("image/webp"), url("/game-art/mafia/icon-phase-resolution.png") type("image/png"));
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-resolution.webp") type("image/webp"));
 }
 
 :global(.phase-rail-label) {
@@ -733,7 +732,7 @@
 }
 
 :global(.action-btn) {
-  --ability-icon: image-set(url("/game-art/icon-ability-investigate.webp") type("image/webp"), url("/game-art/icon-ability-investigate.png") type("image/png"));
+  --ability-icon: image-set(url("/game-art/icon-ability-investigate.webp") type("image/webp"));
   min-height: 58px;
   padding-left: 66px;
 }
@@ -753,43 +752,43 @@
 }
 
 :global(.ability-investigate) {
-  --ability-icon: image-set(url("/game-art/icon-ability-investigate.webp") type("image/webp"), url("/game-art/icon-ability-investigate.png") type("image/png"));
+  --ability-icon: image-set(url("/game-art/icon-ability-investigate.webp") type("image/webp"));
 }
 
 :global(.ability-heal) {
-  --ability-icon: image-set(url("/game-art/icon-ability-heal.webp") type("image/webp"), url("/game-art/icon-ability-heal.png") type("image/png"));
+  --ability-icon: image-set(url("/game-art/icon-ability-heal.webp") type("image/webp"));
 }
 
 :global(.ability-kill) {
-  --ability-icon: image-set(url("/game-art/icon-ability-kill.webp") type("image/webp"), url("/game-art/icon-ability-kill.png") type("image/png"));
+  --ability-icon: image-set(url("/game-art/icon-ability-kill.webp") type("image/webp"));
 }
 
 :global(.ability-bless) {
-  --ability-icon: image-set(url("/game-art/icon-ability-bless.webp") type("image/webp"), url("/game-art/icon-ability-bless.png") type("image/png"));
+  --ability-icon: image-set(url("/game-art/icon-ability-bless.webp") type("image/webp"));
 }
 
 :global(.ability-steal) {
-  --ability-icon: image-set(url("/game-art/icon-ability-steal.webp") type("image/webp"), url("/game-art/icon-ability-steal.png") type("image/png"));
+  --ability-icon: image-set(url("/game-art/icon-ability-steal.webp") type("image/webp"));
 }
 
 :global(.ability-vampire) {
-  --ability-icon: image-set(url("/game-art/icon-ability-vampire.webp") type("image/webp"), url("/game-art/icon-ability-vampire.png") type("image/png"));
+  --ability-icon: image-set(url("/game-art/icon-ability-vampire.webp") type("image/webp"));
 }
 
 :global(.ability-jester) {
-  --ability-icon: image-set(url("/game-art/icon-ability-jester.webp") type("image/webp"), url("/game-art/icon-ability-jester.png") type("image/png"));
+  --ability-icon: image-set(url("/game-art/icon-ability-jester.webp") type("image/webp"));
 }
 
 :global(.ability-hunter) {
-  --ability-icon: image-set(url("/game-art/icon-ability-hunter.webp") type("image/webp"), url("/game-art/icon-ability-hunter.png") type("image/png"));
+  --ability-icon: image-set(url("/game-art/icon-ability-hunter.webp") type("image/webp"));
 }
 
 :global(.ability-lovers) {
-  --ability-icon: image-set(url("/game-art/icon-ability-lovers.webp") type("image/webp"), url("/game-art/icon-ability-lovers.png") type("image/png"));
+  --ability-icon: image-set(url("/game-art/icon-ability-lovers.webp") type("image/webp"));
 }
 
 :global(.role-count-chip) {
-  --role-art: image-set(url("/game-art/card-back-secret.webp") type("image/webp"), url("/game-art/card-back-secret.png") type("image/png"));
+  --role-art: image-set(url("/game-art/card-back-secret.webp") type("image/webp"));
   position: relative;
   display: flex;
   align-items: center;
@@ -887,191 +886,191 @@
 }
 
 :global(.role-ordinary_villager) {
-  --role-art: image-set(url("/game-art/role-ordinary-villager.webp") type("image/webp"), url("/game-art/role-ordinary-villager.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-ordinary-villager.webp") type("image/webp"));
 }
 
 :global(.role-werewolf) {
-  --role-art: image-set(url("/game-art/role-werewolf.webp") type("image/webp"), url("/game-art/role-werewolf.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-werewolf.webp") type("image/webp"));
 }
 
 :global(.role-seer) {
-  --role-art: image-set(url("/game-art/role-seer.webp") type("image/webp"), url("/game-art/role-seer.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-seer.webp") type("image/webp"));
 }
 
 :global(.role-witch) {
-  --role-art: image-set(url("/game-art/role-witch.webp") type("image/webp"), url("/game-art/role-witch.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-witch.webp") type("image/webp"));
 }
 
 :global(.role-healer) {
-  --role-art: image-set(url("/game-art/role-healer.webp") type("image/webp"), url("/game-art/role-healer.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-healer.webp") type("image/webp"));
 }
 
 :global(.role-priest) {
-  --role-art: image-set(url("/game-art/role-priest.webp") type("image/webp"), url("/game-art/role-priest.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-priest.webp") type("image/webp"));
 }
 
 :global(.role-hunter) {
-  --role-art: image-set(url("/game-art/role-hunter.webp") type("image/webp"), url("/game-art/role-hunter.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-hunter.webp") type("image/webp"));
 }
 
 :global(.role-cupid) {
-  --role-art: image-set(url("/game-art/role-cupid.webp") type("image/webp"), url("/game-art/role-cupid.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-cupid.webp") type("image/webp"));
 }
 
 :global(.role-vampire) {
-  --role-art: image-set(url("/game-art/role-vampire.webp") type("image/webp"), url("/game-art/role-vampire.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-vampire.webp") type("image/webp"));
 }
 
 :global(.role-red_riding_hood) {
-  --role-art: image-set(url("/game-art/role-red-riding-hood.webp") type("image/webp"), url("/game-art/role-red-riding-hood.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-red-riding-hood.webp") type("image/webp"));
 }
 
 :global(.role-oracle) {
-  --role-art: image-set(url("/game-art/role-oracle.webp") type("image/webp"), url("/game-art/role-oracle.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-oracle.webp") type("image/webp"));
 }
 
 :global(.role-cook) {
-  --role-art: image-set(url("/game-art/role-cook.webp") type("image/webp"), url("/game-art/role-cook.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-cook.webp") type("image/webp"));
 }
 
 :global(.role-blacksmith) {
-  --role-art: image-set(url("/game-art/role-blacksmith.webp") type("image/webp"), url("/game-art/role-blacksmith.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-blacksmith.webp") type("image/webp"));
 }
 
 :global(.role-insomniac) {
-  --role-art: image-set(url("/game-art/role-insomniac.webp") type("image/webp"), url("/game-art/role-insomniac.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-insomniac.webp") type("image/webp"));
 }
 
 :global(.role-vampire_hunter) {
-  --role-art: image-set(url("/game-art/role-vampire-hunter.webp") type("image/webp"), url("/game-art/role-vampire-hunter.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-vampire-hunter.webp") type("image/webp"));
 }
 
 :global(.role-investigator) {
-  --role-art: image-set(url("/game-art/role-investigator.webp") type("image/webp"), url("/game-art/role-investigator.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-investigator.webp") type("image/webp"));
 }
 
 :global(.role-drunk) {
-  --role-art: image-set(url("/game-art/role-drunk.webp") type("image/webp"), url("/game-art/role-drunk.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-drunk.webp") type("image/webp"));
 }
 
 :global(.role-stray_cat) {
-  --role-art: image-set(url("/game-art/role-stray-cat.webp") type("image/webp"), url("/game-art/role-stray-cat.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-stray-cat.webp") type("image/webp"));
 }
 
 :global(.role-guard_dog) {
-  --role-art: image-set(url("/game-art/role-guard-dog.webp") type("image/webp"), url("/game-art/role-guard-dog.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-guard-dog.webp") type("image/webp"));
 }
 
 :global(.role-jester) {
-  --role-art: image-set(url("/game-art/role-jester.webp") type("image/webp"), url("/game-art/role-jester.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-jester.webp") type("image/webp"));
 }
 
 :global(.role-little_girl) {
-  --role-art: image-set(url("/game-art/role-little-girl.webp") type("image/webp"), url("/game-art/role-little-girl.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-little-girl.webp") type("image/webp"));
 }
 
 :global(.role-thief) {
-  --role-art: image-set(url("/game-art/role-thief.webp") type("image/webp"), url("/game-art/role-thief.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-thief.webp") type("image/webp"));
 }
 
 :global(.role-mayor) {
-  --role-art: image-set(url("/game-art/role-mayor.webp") type("image/webp"), url("/game-art/role-mayor.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-mayor.webp") type("image/webp"));
 }
 
 :global(.role-civilian) {
-  --role-art: image-set(url("/game-art/role-civilian.webp") type("image/webp"), url("/game-art/role-civilian.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-civilian.webp") type("image/webp"));
 }
 
 :global(.role-commissioner) {
-  --role-art: image-set(url("/game-art/role-commissioner.webp") type("image/webp"), url("/game-art/role-commissioner.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-commissioner.webp") type("image/webp"));
 }
 
 :global(.role-mafioso) {
-  --role-art: image-set(url("/game-art/role-mafioso.webp") type("image/webp"), url("/game-art/role-mafioso.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-mafioso.webp") type("image/webp"));
 }
 
 :global(.role-don) {
-  --role-art: image-set(url("/game-art/role-don.webp") type("image/webp"), url("/game-art/role-don.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-don.webp") type("image/webp"));
 }
 
 [data-theme="mafia"] .role-civilian,
 :global(.role-civilian[data-theme="mafia"]) {
-  --role-art: image-set(url("/game-art/mafia/role-civilian.webp") type("image/webp"), url("/game-art/mafia/role-civilian.png") type("image/png"));
+  --role-art: image-set(url("/game-art/mafia/role-civilian.webp") type("image/webp"));
 }
 
 [data-theme="mafia"] .role-commissioner,
 :global(.role-commissioner[data-theme="mafia"]) {
-  --role-art: image-set(url("/game-art/mafia/role-commissioner.webp") type("image/webp"), url("/game-art/mafia/role-commissioner.png") type("image/png"));
+  --role-art: image-set(url("/game-art/mafia/role-commissioner.webp") type("image/webp"));
 }
 
 [data-theme="mafia"] .role-mafioso,
 :global(.role-mafioso[data-theme="mafia"]) {
-  --role-art: image-set(url("/game-art/mafia/role-mafioso.webp") type("image/webp"), url("/game-art/mafia/role-mafioso.png") type("image/png"));
+  --role-art: image-set(url("/game-art/mafia/role-mafioso.webp") type("image/webp"));
 }
 
 [data-theme="mafia"] .role-don,
 :global(.role-don[data-theme="mafia"]) {
-  --role-art: image-set(url("/game-art/mafia/role-don.webp") type("image/webp"), url("/game-art/mafia/role-don.png") type("image/png"));
+  --role-art: image-set(url("/game-art/mafia/role-don.webp") type("image/webp"));
 }
 
 [data-theme="mafia"] .role-doctor,
 :global(.role-doctor[data-theme="mafia"]) {
-  --role-art: image-set(url("/game-art/mafia/role-doctor.webp") type("image/webp"), url("/game-art/mafia/role-doctor.png") type("image/png"));
+  --role-art: image-set(url("/game-art/mafia/role-doctor.webp") type("image/webp"));
 }
 
 [data-theme="mafia"] .role-detective,
 :global(.role-detective[data-theme="mafia"]) {
-  --role-art: image-set(url("/game-art/mafia/role-detective.webp") type("image/webp"), url("/game-art/mafia/role-detective.png") type("image/png"));
+  --role-art: image-set(url("/game-art/mafia/role-detective.webp") type("image/webp"));
 }
 
 [data-theme="mafia"] .role-bodyguard,
 :global(.role-bodyguard[data-theme="mafia"]) {
-  --role-art: image-set(url("/game-art/mafia/role-bodyguard.webp") type("image/webp"), url("/game-art/mafia/role-bodyguard.png") type("image/png"));
+  --role-art: image-set(url("/game-art/mafia/role-bodyguard.webp") type("image/webp"));
 }
 
 [data-theme="mafia"] .role-vigilante,
 :global(.role-vigilante[data-theme="mafia"]) {
-  --role-art: image-set(url("/game-art/mafia/role-vigilante.webp") type("image/webp"), url("/game-art/mafia/role-vigilante.png") type("image/png"));
+  --role-art: image-set(url("/game-art/mafia/role-vigilante.webp") type("image/webp"));
 }
 
 [data-theme="mafia"] .role-medium,
 :global(.role-medium[data-theme="mafia"]) {
-  --role-art: image-set(url("/game-art/mafia/role-medium.webp") type("image/webp"), url("/game-art/mafia/role-medium.png") type("image/png"));
+  --role-art: image-set(url("/game-art/mafia/role-medium.webp") type("image/webp"));
 }
 
 [data-theme="mafia"] .role-roleblocker,
 :global(.role-roleblocker[data-theme="mafia"]) {
-  --role-art: image-set(url("/game-art/mafia/role-roleblocker.webp") type("image/webp"), url("/game-art/mafia/role-roleblocker.png") type("image/png"));
+  --role-art: image-set(url("/game-art/mafia/role-roleblocker.webp") type("image/webp"));
 }
 
 [data-theme="mafia"] .role-lawyer,
 :global(.role-lawyer[data-theme="mafia"]) {
-  --role-art: image-set(url("/game-art/mafia/role-lawyer.webp") type("image/webp"), url("/game-art/mafia/role-lawyer.png") type("image/png"));
+  --role-art: image-set(url("/game-art/mafia/role-lawyer.webp") type("image/webp"));
 }
 
 [data-theme="mafia"] .role-informant,
 :global(.role-informant[data-theme="mafia"]) {
-  --role-art: image-set(url("/game-art/mafia/role-informant.webp") type("image/webp"), url("/game-art/mafia/role-informant.png") type("image/png"));
+  --role-art: image-set(url("/game-art/mafia/role-informant.webp") type("image/webp"));
 }
 
 [data-theme="mafia"] .role-maniac,
 :global(.role-maniac[data-theme="mafia"]) {
-  --role-art: image-set(url("/game-art/mafia/role-maniac.webp") type("image/webp"), url("/game-art/mafia/role-maniac.png") type("image/png"));
+  --role-art: image-set(url("/game-art/mafia/role-maniac.webp") type("image/webp"));
 }
 
 [data-theme="mafia"] .role-jester,
 :global(.role-jester[data-theme="mafia"]) {
-  --role-art: image-set(url("/game-art/mafia/role-jester.webp") type("image/webp"), url("/game-art/mafia/role-jester.png") type("image/png"));
+  --role-art: image-set(url("/game-art/mafia/role-jester.webp") type("image/webp"));
 }
 
 [data-theme="mafia"] .role-mafia_mayor,
 :global(.role-mafia_mayor[data-theme="mafia"]) {
-  --role-art: image-set(url("/game-art/mafia/role-mayor.webp") type("image/webp"), url("/game-art/mafia/role-mayor.png") type("image/png"));
+  --role-art: image-set(url("/game-art/mafia/role-mayor.webp") type("image/webp"));
 }
 
 [data-theme="mafia"] .role-lovers,
 :global(.role-lovers[data-theme="mafia"]) {
-  --role-art: image-set(url("/game-art/mafia/role-lovers.webp") type("image/webp"), url("/game-art/mafia/role-lovers.png") type("image/png"));
+  --role-art: image-set(url("/game-art/mafia/role-lovers.webp") type("image/webp"));
 }
 
 :global(.connection-banner) {

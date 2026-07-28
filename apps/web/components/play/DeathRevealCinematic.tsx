@@ -22,7 +22,7 @@ export function DeathRevealCinematic({ family, players }: { family: GameFamily; 
       <div className="death-reveal-scene" aria-hidden="true" />
       <picture className="death-reveal-role-art" aria-hidden="true">
         <source srcSet={`${prefix}/${slug}.webp`} type="image/webp" />
-        <img src={`${prefix}/${slug}.png`} alt="" loading="lazy" width={280} height={392} />
+        <img src={`${prefix}/${slug}.webp`} alt="" loading="lazy" width={280} height={392} />
       </picture>
       <div>
         <p className="section-kicker">разкрита карта</p>

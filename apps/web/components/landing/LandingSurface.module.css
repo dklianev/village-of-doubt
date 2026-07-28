@@ -137,7 +137,7 @@
 }
 
 :global(.game-choice-mafia) {
-  --choice-art: image-set(url("/game-art/mafia/bg-lobby-tavern.webp") type("image/webp"), url("/game-art/mafia/bg-lobby-tavern.png") type("image/png"));
+  --choice-art: image-set(url("/game-art/mafia/bg-lobby-tavern.webp") type("image/webp"));
 }
 
 :global(.game-choice-card) {

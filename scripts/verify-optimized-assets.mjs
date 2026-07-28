@@ -3,8 +3,8 @@ import { createHash } from "node:crypto";
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 
-const artPath = "apps/web/public/game-art";
-const before = await inventory(artPath);
+const artPaths = ["assets/game-art-source", "apps/web/public/game-art"];
+const before = await inventoryRoots(artPaths);
 
 const optimize = spawnSync(process.execPath, ["scripts/optimize-assets.mjs"], {
   cwd: process.cwd(),
@@ -18,7 +18,7 @@ if (optimize.status !== 0) {
   process.exit(optimize.status ?? 1);
 }
 
-const after = await inventory(artPath);
+const after = await inventoryRoots(artPaths);
 const changedByOptimizer = changedPaths(before, after);
 if (changedByOptimizer.length > 0) {
   console.error("Asset optimization is not reproducible; this run changed:");
@@ -28,7 +28,7 @@ if (changedByOptimizer.length > 0) {
 
 const status = spawnSync(
   "git",
-  ["status", "--porcelain=v1", "--untracked-files=all", "--", artPath],
+  ["status", "--porcelain=v1", "--untracked-files=all", "--", ...artPaths],
   {
     cwd: process.cwd(),
     encoding: "utf8",
@@ -81,6 +81,17 @@ async function inventory(root) {
       entries.set(path.relative(root, filePath).split(path.sep).join("/"), digest);
     }
   }
+}
+
+async function inventoryRoots(roots) {
+  const entries = new Map();
+  for (const root of roots) {
+    const rootEntries = await inventory(root);
+    for (const [filePath, digest] of rootEntries) {
+      entries.set(`${root}/${filePath}`, digest);
+    }
+  }
+  return entries;
 }
 
 function changedPaths(beforeEntries, afterEntries) {

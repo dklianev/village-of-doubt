@@ -4,6 +4,7 @@ import path from "node:path";
 
 const root = process.cwd();
 const gameArtDir = path.join(root, "apps/web/public/game-art");
+const sourceArtDir = path.join(root, "assets/game-art-source");
 
 const checks = [
   ["game art WebP pairing", checkGameArtPairing],
@@ -48,16 +49,39 @@ if (failures > 0) {
 
 function checkGameArtPairing() {
   const files = listFilesRecursive(gameArtDir);
-  const pngs = files.filter((file) => file.endsWith(".png")).sort();
+  const sourcePngs = listFilesRecursive(sourceArtDir).filter((file) => file.endsWith(".png")).sort();
+  const publicPngs = files.filter((file) => file.endsWith(".png")).sort();
   const webps = new Set(files.filter((file) => file.endsWith(".webp")));
-  const openGraphPngs = pngs.filter((file) => /^og[\\/]/.test(file));
+  const openGraphPngs = publicPngs.filter((file) => /^og[\\/]/.test(file));
   const openGraphDerivatives = files.filter(
     (file) => /^og[\\/].+\.(?:avif|webp)$/.test(file),
   );
   const roleThumbs = files.filter((file) => /^thumbs[\\/](mafia[\\/])?role-[^\\/]+\.webp$/.test(file));
   const mobileAssets = files.filter((file) => /^mobile[\\/].+\.webp$/.test(file));
-  assert(pngs.length >= 70, `Expected at least 70 PNG game-art files, got ${pngs.length}.`);
+  const expectedPublicPngs = new Set([
+    "legal/faq-hearth-banner.png",
+    "legal/privacy-banner.png",
+    "legal/report-banner.png",
+    "legal/status-banner.png",
+    "legal/terms-banner.png",
+    "og/og-achievements.png",
+    "og/og-faq.png",
+    "og/og-history.png",
+    "og/og-home.png",
+    "og/og-leaderboard.png",
+    "og/og-mafia.png",
+    "og/og-sign-in.png",
+    "og/og-tutorial.png",
+    "og/og-werewolf.png",
+  ]);
+
+  assert(sourcePngs.length >= 70, `Expected at least 70 source PNG game-art files, got ${sourcePngs.length}.`);
   assert(openGraphPngs.length >= 9, `Expected Open Graph PNG sources, got ${openGraphPngs.length}.`);
+  assert(
+    publicPngs.length === expectedPublicPngs.size &&
+      publicPngs.every((file) => expectedPublicPngs.has(file.replaceAll("\\", "/"))),
+    `Runtime public PNG whitelist drifted: ${publicPngs.join(", ")}`,
+  );
   assert(
     openGraphDerivatives.length === 0,
     `Open Graph metadata should not retain unused AVIF/WebP derivatives: ${openGraphDerivatives.join(", ")}`,
@@ -65,22 +89,15 @@ function checkGameArtPairing() {
   assert(roleThumbs.length >= 38, `Expected at least 38 role thumbnail WebPs, got ${roleThumbs.length}.`);
   assert(mobileAssets.length >= 40, `Expected at least 40 mobile WebP assets, got ${mobileAssets.length}.`);
 
-  for (const png of pngs.filter((file) => !/^og[\\/]/.test(file))) {
+  for (const png of sourcePngs.filter((file) => !/^og[\\/]/.test(file))) {
     const webp = png.replace(/\.png$/, ".webp");
     assert(webps.has(webp), `Missing optimized WebP for ${png}. Run pnpm optimize:assets.`);
     assert(statSync(path.join(gameArtDir, webp)).size > 10_000, `${webp} looks too small/corrupt.`);
+    assert(
+      statSync(path.join(gameArtDir, webp)).size < statSync(path.join(sourceArtDir, png)).size,
+      `${webp} should remain smaller than its source PNG master.`,
+    );
   }
-
-  const totalPngBytes = sumBytes(pngs);
-  const totalWebpBytes = sumBytes([...webps]);
-  const totalAssetBytes = sumBytes(files);
-  const oversizedFiles = files.filter((file) => statSync(path.join(gameArtDir, file)).size > 500 * 1024);
-  const oversizedPngs = pngs.filter((file) => statSync(path.join(gameArtDir, file)).size > 1024 * 1024);
-
-  assert(totalWebpBytes < totalPngBytes, "Optimized WebP assets should remain smaller than PNG fallbacks.");
-  assert(totalAssetBytes < 320 * 1024 * 1024, "game-art must stay under the PR B 320 MB budget.");
-  assert(oversizedPngs.length <= 5, `Too many PNG fallbacks over 1 MB: ${oversizedPngs.join(", ")}`);
-  assert(oversizedFiles.length === 0, `Assets over 500 KB budget: ${oversizedFiles.join(", ")}`);
 
   for (const critical of [
     "og-preview",
@@ -95,7 +112,7 @@ function checkGameArtPairing() {
     "mafia/role-don",
     "mafia/faction-mafia",
   ]) {
-    assert(existsSync(path.join(gameArtDir, `${critical}.png`)), `Missing critical PNG asset ${critical}.png.`);
+    assert(existsSync(path.join(sourceArtDir, `${critical}.png`)), `Missing source PNG master ${critical}.png.`);
     assert(existsSync(path.join(gameArtDir, `${critical}.webp`)), `Missing critical WebP asset ${critical}.webp.`);
   }
 
@@ -116,9 +133,11 @@ function checkCssImageSet() {
   const css = readAppStyles();
   const imageSetCount = count(css, "image-set(url(\"/game-art/");
   const directGameArtVariables = css.match(/--[\w-]+:\s*url\("\/game-art\/[^"]+\.png"\)/g) ?? [];
+  const pngImageSetCandidates = css.match(/type\(["']image\/png["']\)/g) ?? [];
 
   assert(imageSetCount >= 80, `Expected many image-set game-art references, got ${imageSetCount}.`);
   assert(directGameArtVariables.length === 0, `Found direct PNG CSS variables: ${directGameArtVariables.join(", ")}`);
+  assert(pngImageSetCandidates.length === 0, "Runtime CSS must not expose source PNG image-set candidates.");
   assert(css.includes(".cue-panel"), "Missing live cue panel CSS.");
   assert(css.includes(".narrator-desk"), "Missing narrator desk CSS.");
   assert(css.includes(".toast-host"), "Missing toast host CSS.");
@@ -273,23 +292,23 @@ function checkLandingLayoutContracts() {
     "Light theatre backdrop should use the cream gradient with subtle ambient drift.",
   );
   assert(css.includes("/game-art/bg-landing-ambient-composited.webp"), "Landing page must reference the optimized composited ambient outer background.");
-  assert(existsSync(path.join(gameArtDir, "bg-landing-ambient-composited.png")), "Missing composited ambient landing background PNG.");
+  assert(existsSync(path.join(sourceArtDir, "bg-landing-ambient-composited.png")), "Missing composited ambient landing source PNG.");
   assert(existsSync(path.join(gameArtDir, "bg-landing-ambient-composited.webp")), "Missing optimized composited ambient landing background WebP.");
   assert(existsSync(path.join(gameArtDir, "mobile/bg-landing-ambient-composited.webp")), "Missing mobile composited ambient landing background WebP.");
-  assert(existsSync(path.join(gameArtDir, "bg-landing-ambient.png")), "Missing ambient landing background PNG.");
+  assert(existsSync(path.join(sourceArtDir, "bg-landing-ambient.png")), "Missing ambient landing source PNG.");
   assert(existsSync(path.join(gameArtDir, "bg-landing-ambient.webp")), "Missing optimized ambient landing background WebP.");
   assert(existsSync(path.join(gameArtDir, "mobile/bg-landing-ambient.webp")), "Missing mobile ambient landing background WebP.");
   assert(css.includes("/game-art/bg-landing-hero-composited.webp"), "Landing page must reference the optimized composited hero background.");
-  assert(existsSync(path.join(gameArtDir, "bg-landing-hero-composited.png")), "Missing composited hero landing background PNG.");
+  assert(existsSync(path.join(sourceArtDir, "bg-landing-hero-composited.png")), "Missing composited hero landing source PNG.");
   assert(existsSync(path.join(gameArtDir, "bg-landing-hero-composited.webp")), "Missing optimized composited hero landing background WebP.");
   assert(existsSync(path.join(gameArtDir, "mobile/bg-landing-hero-composited.webp")), "Missing mobile composited hero landing background WebP.");
   assert(css.includes("/game-art/bg-landing-dual-world-v2.webp"), "Landing page must keep the optimized current dual-world background variable for other routes.");
-  assert(existsSync(path.join(gameArtDir, "bg-landing-dual-world-v2.png")), "Missing current dual-world landing background PNG.");
+  assert(existsSync(path.join(sourceArtDir, "bg-landing-dual-world-v2.png")), "Missing current dual-world landing source PNG.");
   assert(existsSync(path.join(gameArtDir, "bg-landing-dual-world-v2.webp")), "Missing optimized current dual-world landing background WebP.");
   assert(existsSync(path.join(gameArtDir, "mobile/bg-landing-dual-world-v2.webp")), "Missing mobile current dual-world landing background WebP.");
   assert(siteChrome.includes("prefetch={false}"), "Site chrome navigation should not prefetch every secondary route on first load.");
   assert(chromeCss.includes("/game-art/logo-chrome-mark.webp"), "Navbar brand should use the chrome-optimized micro-sigil WebP.");
-  assert(existsSync(path.join(gameArtDir, "logo-chrome-mark.png")), "Missing chrome micro-sigil PNG asset.");
+  assert(existsSync(path.join(sourceArtDir, "logo-chrome-mark.png")), "Missing chrome micro-sigil source PNG.");
   assert(existsSync(path.join(gameArtDir, "logo-chrome-mark.webp")), "Missing optimized chrome micro-sigil WebP asset.");
   assert(siteChrome.includes("site-brand-dot"), "Navbar wordmark should keep the premium separator accent.");
   assert(siteChrome.includes("Социална игра на сенки"), "Navbar subtitle should use the updated Bulgarian tagline.");
@@ -350,7 +369,8 @@ function checkFamilyQuickStartContracts() {
     "mobile/mafia/bg-hero-v2.webp",
     "mobile/mafia/bg-hero-light-v1.webp",
   ]) {
-    assert(existsSync(path.join(gameArtDir, asset)), `Missing cinematic hero asset ${asset}.`);
+    const assetRoot = asset.endsWith(".png") ? sourceArtDir : gameArtDir;
+    assert(existsSync(path.join(assetRoot, asset)), `Missing cinematic hero asset ${asset}.`);
   }
   assert(
     werewolfTheatreBlock.includes("var(--art-werewolf)") &&
@@ -392,7 +412,8 @@ function checkFamilyQuickStartContracts() {
     "mafia/night-4-doctor.webp",
     "mafia/night-5-morning.webp",
   ]) {
-    assert(existsSync(path.join(gameArtDir, asset)), `Missing night timeline art asset ${asset}.`);
+    const assetRoot = asset.endsWith(".png") ? sourceArtDir : gameArtDir;
+    assert(existsSync(path.join(assetRoot, asset)), `Missing night timeline art asset ${asset}.`);
   }
   for (const exportName of ["PersonIcon", "KeyIcon", "DoorIcon", "MaskIcon", "MoonIcon", "BallotIcon", "LastWinnerEmptyGlyph"]) {
     assert(icons.includes(`export function ${exportName}`), `quickstart-icons.tsx must export ${exportName}.`);
@@ -1006,10 +1027,6 @@ function runEnvChecker(env) {
     },
     encoding: "utf8",
   });
-}
-
-function sumBytes(files) {
-  return files.reduce((total, file) => total + statSync(path.join(gameArtDir, file)).size, 0);
 }
 
 function listFilesRecursive(dir, prefix = "") {

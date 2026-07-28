@@ -10,7 +10,7 @@ describe("avatar catalog", () => {
       const style = avatarPortraitStyle(option.id);
 
       expect(style["--avatar-image"]).toContain(`/game-art/avatars/${option.id}.webp`);
-      expect(style["--avatar-image"]).toContain(`/game-art/avatars/${option.id}.png`);
+      expect(style["--avatar-image"]).toBe(`url('/game-art/avatars/${option.id}.webp')`);
       expect(style["--avatar-image"]).not.toContain("sheet");
       expect(style).not.toHaveProperty("--avatar-x");
       expect(style).not.toHaveProperty("--avatar-y");

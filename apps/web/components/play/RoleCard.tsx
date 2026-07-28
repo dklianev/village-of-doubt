@@ -30,7 +30,7 @@ export function RoleCard({
     win: "winConditionBg" in definition ? definition.winConditionBg : "Следвай целта на своя отбор",
   };
   const roleArtStyle = {
-    "--role-art": `image-set(url("${roleArtPath(roleFamily, role.role, "webp")}") type("image/webp"), url("${roleArtPath(roleFamily, role.role, "png")}") type("image/png"))`,
+    "--role-art": `url("${roleArtPath(roleFamily, role.role, "webp")}")`,
   } as CSSProperties;
 
   return (

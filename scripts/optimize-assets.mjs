@@ -1,17 +1,30 @@
 import { pathToFileURL } from "node:url";
 import { existsSync } from "node:fs";
-import { mkdir, readdir, rename, rm, stat } from "node:fs/promises";
+import { copyFile, mkdir, readdir, rename, rm, stat } from "node:fs/promises";
 import path from "node:path";
 
+const sourceArtDir = path.resolve("assets/game-art-source");
 const gameArtDir = path.resolve("apps/web/public/game-art");
 const quality = Number(process.env.WEBP_QUALITY ?? 82);
 const args = new Set(process.argv.slice(2));
 const reportOnly = args.has("--report-only");
 
 const DERIVATIVE_DIRS = new Set(["thumbs"]);
+const PUBLIC_METADATA_PNGS = new Set([
+  "legal/faq-hearth-banner.png",
+  "legal/privacy-banner.png",
+  "legal/report-banner.png",
+  "legal/status-banner.png",
+  "legal/terms-banner.png",
+]);
 
 async function main() {
+  if (!existsSync(sourceArtDir)) {
+    throw new Error("Липсва assets/game-art-source. PNG master-ите не трябва да живеят в public.");
+  }
+
   if (!reportOnly) {
+    await cleanupTemporaryArtifacts(sourceArtDir);
     await cleanupTemporaryArtifacts(gameArtDir);
   }
 
@@ -20,7 +33,7 @@ async function main() {
   if (process.platform === "win32") {
     sharp.concurrency(1);
   }
-  const files = await listPngs(gameArtDir);
+  const files = await listPngs(sourceArtDir);
 
   if (reportOnly) {
     await printReport(files);
@@ -48,6 +61,8 @@ async function main() {
   let pngBytesAfter = 0;
   let avifBytes = 0;
   let avifsWritten = 0;
+  let publishedPngBytes = 0;
+  let publishedPngs = 0;
   let thumbnailBytes = 0;
   let thumbnailsWritten = 0;
   let mobileBytes = 0;
@@ -61,22 +76,22 @@ async function main() {
     pngBytesAfter += result.pngBytesAfter;
     avifBytes += result.avifBytes;
     avifsWritten += result.avifsWritten;
+    publishedPngBytes += result.publishedPngBytes;
+    publishedPngs += result.publishedPngs;
     thumbnailBytes += result.thumbnailBytes;
     thumbnailsWritten += result.thumbnailsWritten;
     mobileBytes += result.mobileBytes;
     mobileWritten += result.mobileWritten;
   }
 
-  const saved = originalBytes - pngBytesAfter + (originalBytes - optimizedBytes);
   console.log(
-    `Optimized ${written} assets. PNG: ${formatBytes(originalBytes)} -> ${formatBytes(
+    `Optimized ${written} assets. Source PNG: ${formatBytes(originalBytes)} -> ${formatBytes(
       pngBytesAfter,
-    )}; WebP: ${formatBytes(optimizedBytes)}; effective saved: ${formatBytes(saved)}.`,
+    )}; runtime WebP: ${formatBytes(optimizedBytes)}.`,
   );
   console.log(
-    `Trimmed PNG fallbacks by ${formatBytes(trimmedPngBytes)}. Generated ${avifsWritten} AVIF assets (${formatBytes(
-      avifBytes,
-    )}).`,
+    `Trimmed source masters by ${formatBytes(trimmedPngBytes)}. Published ${publishedPngs} metadata PNGs ` +
+      `(${formatBytes(publishedPngBytes)}) and ${avifsWritten} AVIF assets (${formatBytes(avifBytes)}).`,
   );
   console.log(
     `Generated ${thumbnailsWritten} role thumbnails (${formatBytes(thumbnailBytes)}) and ${mobileWritten} mobile assets (${formatBytes(mobileBytes)}).`,
@@ -101,7 +116,7 @@ async function cleanupTemporaryArtifacts(directory) {
 }
 
 async function optimizeAsset(sharp, file) {
-  const input = path.join(gameArtDir, file);
+  const input = path.join(sourceArtDir, file);
   const before = (await stat(input)).size;
   const sourceBudget = sourcePngBudgetKbFor(file);
   let trimmedPngBytes = 0;
@@ -112,6 +127,18 @@ async function optimizeAsset(sharp, file) {
   }
 
   const pngBytesAfter = (await stat(input)).size;
+  const publicPng = path.join(gameArtDir, file);
+  let publishedPngBytes = 0;
+  let publishedPngs = 0;
+  if (shouldPublishPng(file)) {
+    await mkdir(path.dirname(publicPng), { recursive: true });
+    await copyFile(input, publicPng);
+    publishedPngBytes = (await stat(publicPng)).size;
+    publishedPngs = 1;
+  } else {
+    await rm(publicPng, { force: true });
+  }
+
   const output = path.join(gameArtDir, file.replace(/\.png$/, ".webp"));
   const createWebp = shouldCreateWebp(file);
   if (createWebp) {
@@ -161,6 +188,8 @@ async function optimizeAsset(sharp, file) {
     pngBytesAfter,
     avifBytes,
     avifsWritten,
+    publishedPngBytes,
+    publishedPngs,
     thumbnailBytes,
     thumbnailsWritten,
     mobileBytes,
@@ -203,7 +232,7 @@ async function printReport(files) {
   );
 
   for (const file of files) {
-    const pngKb = await fileKb(path.join(gameArtDir, file));
+    const pngKb = await fileKb(path.join(sourceArtDir, file));
     const webpKb = shouldCreateWebp(file)
       ? await fileKb(path.join(gameArtDir, file.replace(/\.png$/, ".webp")))
       : 0;
@@ -450,6 +479,11 @@ function shouldCreateAvif(file) {
 
 function shouldCreateWebp(file) {
   return !isOpenGraphSource(file);
+}
+
+function shouldPublishPng(file) {
+  const normalized = file.split(path.sep).join("/");
+  return isOpenGraphSource(file) || PUBLIC_METADATA_PNGS.has(normalized);
 }
 
 function isOpenGraphSource(file) {

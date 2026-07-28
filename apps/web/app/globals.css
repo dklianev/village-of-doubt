@@ -54,129 +54,118 @@
   --chrome-hairline: rgba(248, 236, 210, 0.08);
   --chrome-pill-bg: rgba(248, 236, 210, 0.92);
   --chrome-z: 40;
-  --art-landing: image-set(url("/game-art/bg-landing-hero.webp") type("image/webp"), url("/game-art/bg-landing-hero.png") type("image/png"));
-  --art-landing-ambient: image-set(url("/game-art/bg-landing-ambient.webp") type("image/webp"), url("/game-art/bg-landing-ambient.png") type("image/png"));
-  --art-landing-dual: image-set(url("/game-art/bg-landing-dual-world-v2.webp") type("image/webp"), url("/game-art/bg-landing-dual-world-v2.png") type("image/png"));
-  --art-landing-hero-composited: image-set(url("/game-art/bg-landing-hero-composited.avif?v=2") type("image/avif"), url("/game-art/bg-landing-hero-composited.webp?v=2") type("image/webp"), url("/game-art/bg-landing-hero-composited.png?v=2") type("image/png"));
-  --art-landing-hero-light: image-set(url("/game-art/bg-landing-hero-light-v1.avif") type("image/avif"), url("/game-art/bg-landing-hero-light-v1.webp") type("image/webp"), url("/game-art/bg-landing-hero-light-v1.png") type("image/png"));
-  --art-landing-ambient-composited: image-set(url("/game-art/bg-landing-ambient-composited.webp") type("image/webp"), url("/game-art/bg-landing-ambient-composited.png") type("image/png"));
-  --art-werewolf: image-set(url("/game-art/werewolf/bg-hero-v2.avif") type("image/avif"), url("/game-art/werewolf/bg-hero-v2.webp") type("image/webp"), url("/game-art/werewolf/bg-hero-v2.png") type("image/png"));
-  --art-mafia: image-set(url("/game-art/mafia/bg-hero-v2.avif") type("image/avif"), url("/game-art/mafia/bg-hero-v2.webp") type("image/webp"), url("/game-art/mafia/bg-hero-v2.png") type("image/png"));
+  --art-landing: image-set(url("/game-art/bg-landing-hero.webp") type("image/webp"));
+  --art-landing-ambient: image-set(url("/game-art/bg-landing-ambient.webp") type("image/webp"));
+  --art-landing-dual: image-set(url("/game-art/bg-landing-dual-world-v2.webp") type("image/webp"));
+  --art-landing-hero-composited: image-set(url("/game-art/bg-landing-hero-composited.avif?v=2") type("image/avif"), url("/game-art/bg-landing-hero-composited.webp?v=2") type("image/webp"));
+  --art-landing-hero-light: image-set(url("/game-art/bg-landing-hero-light-v1.avif") type("image/avif"), url("/game-art/bg-landing-hero-light-v1.webp") type("image/webp"));
+  --art-landing-ambient-composited: image-set(url("/game-art/bg-landing-ambient-composited.webp") type("image/webp"));
+  --art-werewolf: image-set(url("/game-art/werewolf/bg-hero-v2.avif") type("image/avif"), url("/game-art/werewolf/bg-hero-v2.webp") type("image/webp"));
+  --art-mafia: image-set(url("/game-art/mafia/bg-hero-v2.avif") type("image/avif"), url("/game-art/mafia/bg-hero-v2.webp") type("image/webp"));
   --hero-card-border: rgba(200, 154, 85, 0.28);
   --hero-card-scrim: linear-gradient(180deg, rgba(4, 7, 8, 0) 0%, rgba(4, 7, 8, 0.16) 100%);
   --hero-card-shadow: 0 32px 92px rgba(0, 0, 0, 0.46), inset 0 1px rgba(255, 247, 229, 0.1);
-  --art-lobby: image-set(url("/game-art/bg-lobby-tavern.webp") type("image/webp"), url("/game-art/bg-lobby-tavern.png") type("image/png"));
-  --art-reveal: image-set(url("/game-art/bg-role-reveal.webp") type("image/webp"), url("/game-art/bg-role-reveal.png") type("image/png"));
-  --art-night: image-set(url("/game-art/bg-night-phase.webp") type("image/webp"), url("/game-art/bg-night-phase.png") type("image/png"));
-  --art-day: image-set(url("/game-art/bg-day-discussion.webp") type("image/webp"), url("/game-art/bg-day-discussion.png") type("image/png"));
-  --art-vote: image-set(url("/game-art/bg-voting.webp") type("image/webp"), url("/game-art/bg-voting.png") type("image/png"));
-  --art-resolution: image-set(url("/game-art/bg-resolution.webp") type("image/webp"), url("/game-art/bg-resolution.png") type("image/png"));
-  --art-narrator: image-set(url("/game-art/bg-narrator-panel.webp") type("image/webp"), url("/game-art/bg-narrator-panel.png") type("image/png"));
-  --art-history: image-set(url("/game-art/history/bg-history-archive-desk-v1.webp") type("image/webp"), url("/game-art/history/bg-history-archive-desk-v1.png") type("image/png"));
-  --art-history-light: image-set(url("/game-art/history/bg-history-archive-desk-light-v1.webp") type("image/webp"), url("/game-art/history/bg-history-archive-desk-light-v1.png") type("image/png"));
+  --art-lobby: image-set(url("/game-art/bg-lobby-tavern.webp") type("image/webp"));
+  --art-reveal: image-set(url("/game-art/bg-role-reveal.webp") type("image/webp"));
+  --art-night: image-set(url("/game-art/bg-night-phase.webp") type("image/webp"));
+  --art-day: image-set(url("/game-art/bg-day-discussion.webp") type("image/webp"));
+  --art-vote: image-set(url("/game-art/bg-voting.webp") type("image/webp"));
+  --art-resolution: image-set(url("/game-art/bg-resolution.webp") type("image/webp"));
+  --art-narrator: image-set(url("/game-art/bg-narrator-panel.webp") type("image/webp"));
+  --art-history: image-set(url("/game-art/history/bg-history-archive-desk-v1.webp") type("image/webp"));
+  --art-history-light: image-set(url("/game-art/history/bg-history-archive-desk-light-v1.webp") type("image/webp"));
   --art-account-dark: image-set(
     url("/game-art/account/bg-account-dossier-dark-v2.avif") type("image/avif"),
-    url("/game-art/account/bg-account-dossier-dark-v2.webp") type("image/webp"),
-    url("/game-art/account/bg-account-dossier-dark-v2.png") type("image/png")
+    url("/game-art/account/bg-account-dossier-dark-v2.webp") type("image/webp")
   );
   --art-account-light: image-set(
     url("/game-art/account/bg-account-dossier-light-v2.avif") type("image/avif"),
-    url("/game-art/account/bg-account-dossier-light-v2.webp") type("image/webp"),
-    url("/game-art/account/bg-account-dossier-light-v2.png") type("image/png")
+    url("/game-art/account/bg-account-dossier-light-v2.webp") type("image/webp")
   );
   --art-account: var(--art-account-dark);
   --art-account-ambient-dark: image-set(
     url("/game-art/account/bg-account-archive-room-dark-v1.avif") type("image/avif"),
-    url("/game-art/account/bg-account-archive-room-dark-v1.webp") type("image/webp"),
-    url("/game-art/account/bg-account-archive-room-dark-v1.png") type("image/png")
+    url("/game-art/account/bg-account-archive-room-dark-v1.webp") type("image/webp")
   );
   --art-account-ambient-light: image-set(
     url("/game-art/account/bg-account-archive-room-light-v1.avif") type("image/avif"),
-    url("/game-art/account/bg-account-archive-room-light-v1.webp") type("image/webp"),
-    url("/game-art/account/bg-account-archive-room-light-v1.png") type("image/png")
+    url("/game-art/account/bg-account-archive-room-light-v1.webp") type("image/webp")
   );
   --art-account-ambient: var(--art-account-ambient-dark);
-  --art-privacy: image-set(url("/game-art/legal/privacy-banner.avif") type("image/avif"), url("/game-art/legal/privacy-banner.webp") type("image/webp"), url("/game-art/legal/privacy-banner.png") type("image/png"));
-  --art-terms: image-set(url("/game-art/legal/terms-banner.avif") type("image/avif"), url("/game-art/legal/terms-banner.webp") type("image/webp"), url("/game-art/legal/terms-banner.png") type("image/png"));
-  --art-report: image-set(url("/game-art/legal/report-banner.avif") type("image/avif"), url("/game-art/legal/report-banner.webp") type("image/webp"), url("/game-art/legal/report-banner.png") type("image/png"));
-  --art-faq: image-set(url("/game-art/legal/faq-hearth-banner.avif") type("image/avif"), url("/game-art/legal/faq-hearth-banner.webp") type("image/webp"), url("/game-art/legal/faq-hearth-banner.png") type("image/png"));
-  --art-status: image-set(url("/game-art/legal/status-banner.avif") type("image/avif"), url("/game-art/legal/status-banner.webp") type("image/webp"), url("/game-art/legal/status-banner.png") type("image/png"));
-  --art-replay: image-set(url("/game-art/legal/replay-banner.webp") type("image/webp"), url("/game-art/legal/replay-banner.png") type("image/png"));
+  --art-privacy: image-set(url("/game-art/legal/privacy-banner.avif") type("image/avif"), url("/game-art/legal/privacy-banner.webp") type("image/webp"));
+  --art-terms: image-set(url("/game-art/legal/terms-banner.avif") type("image/avif"), url("/game-art/legal/terms-banner.webp") type("image/webp"));
+  --art-report: image-set(url("/game-art/legal/report-banner.avif") type("image/avif"), url("/game-art/legal/report-banner.webp") type("image/webp"));
+  --art-faq: image-set(url("/game-art/legal/faq-hearth-banner.avif") type("image/avif"), url("/game-art/legal/faq-hearth-banner.webp") type("image/webp"));
+  --art-status: image-set(url("/game-art/legal/status-banner.avif") type("image/avif"), url("/game-art/legal/status-banner.webp") type("image/webp"));
+  --art-replay: image-set(url("/game-art/legal/replay-banner.webp") type("image/webp"));
   --art-friends-dark: image-set(
     url("/game-art/friends/bg-friends-invitation-dark-v1.avif") type("image/avif"),
-    url("/game-art/friends/bg-friends-invitation-dark-v1.webp") type("image/webp"),
-    url("/game-art/friends/bg-friends-invitation-dark-v1.png") type("image/png")
+    url("/game-art/friends/bg-friends-invitation-dark-v1.webp") type("image/webp")
   );
   --art-friends-light: image-set(
     url("/game-art/friends/bg-friends-invitation-light-v1.avif") type("image/avif"),
-    url("/game-art/friends/bg-friends-invitation-light-v1.webp") type("image/webp"),
-    url("/game-art/friends/bg-friends-invitation-light-v1.png") type("image/png")
+    url("/game-art/friends/bg-friends-invitation-light-v1.webp") type("image/webp")
   );
   --art-friends: var(--art-friends-dark);
-  --art-leaderboard: image-set(url("/game-art/leaderboard-headline-portrait.webp") type("image/webp"), url("/game-art/leaderboard-headline-portrait.png") type("image/png"));
-  --art-sign-in: image-set(url("/game-art/sign-in-table.webp") type("image/webp"), url("/game-art/sign-in-table.png") type("image/png"));
-  --art-tutorial-day: image-set(url("/game-art/tutorial-day-scene.webp") type("image/webp"), url("/game-art/tutorial-day-scene.png") type("image/png"));
-  --art-tutorial-night: image-set(url("/game-art/tutorial-night-scene.webp") type("image/webp"), url("/game-art/tutorial-night-scene.png") type("image/png"));
+  --art-leaderboard: image-set(url("/game-art/leaderboard-headline-portrait.webp") type("image/webp"));
+  --art-sign-in: image-set(url("/game-art/sign-in-table.webp") type("image/webp"));
+  --art-tutorial-day: image-set(url("/game-art/tutorial-day-scene.webp") type("image/webp"));
+  --art-tutorial-night: image-set(url("/game-art/tutorial-night-scene.webp") type("image/webp"));
   --art-tutorial-dark: image-set(
     url("/game-art/tutorial/bg-tutorial-hall-dark-v1.avif") type("image/avif"),
-    url("/game-art/tutorial/bg-tutorial-hall-dark-v1.webp") type("image/webp"),
-    url("/game-art/tutorial/bg-tutorial-hall-dark-v1.png") type("image/png")
+    url("/game-art/tutorial/bg-tutorial-hall-dark-v1.webp") type("image/webp")
   );
   --art-tutorial-light: image-set(
     url("/game-art/tutorial/bg-tutorial-hall-light-v1.avif") type("image/avif"),
-    url("/game-art/tutorial/bg-tutorial-hall-light-v1.webp") type("image/webp"),
-    url("/game-art/tutorial/bg-tutorial-hall-light-v1.png") type("image/png")
+    url("/game-art/tutorial/bg-tutorial-hall-light-v1.webp") type("image/webp")
   );
   --art-tutorial: var(--art-tutorial-dark);
   --art-achievements: image-set(
-    url("/game-art/achievements/bg-legends-hall-v1.webp") type("image/webp"),
-    url("/game-art/achievements/bg-legends-hall-v1.png") type("image/png")
+    url("/game-art/achievements/bg-legends-hall-v1.webp") type("image/webp")
   );
   --art-play-dark-werewolves: image-set(
     url("/game-art/play/bg-play-dark-werewolves-v1.avif") type("image/avif"),
-    url("/game-art/play/bg-play-dark-werewolves-v1.webp") type("image/webp"),
-    url("/game-art/play/bg-play-dark-werewolves-v1.png") type("image/png")
+    url("/game-art/play/bg-play-dark-werewolves-v1.webp") type("image/webp")
   );
   --art-play-dark-mafia: image-set(
     url("/game-art/play/bg-play-dark-mafia-v1.avif") type("image/avif"),
-    url("/game-art/play/bg-play-dark-mafia-v1.webp") type("image/webp"),
-    url("/game-art/play/bg-play-dark-mafia-v1.png") type("image/png")
+    url("/game-art/play/bg-play-dark-mafia-v1.webp") type("image/webp")
   );
-  --transition-night: image-set(url("/game-art/transition-night-falls.webp") type("image/webp"), url("/game-art/transition-night-falls.png") type("image/png"));
-  --transition-day: image-set(url("/game-art/transition-village-wakes.webp") type("image/webp"), url("/game-art/transition-village-wakes.png") type("image/png"));
-  --transition-vote: image-set(url("/game-art/transition-voting-starts.webp") type("image/webp"), url("/game-art/transition-voting-starts.png") type("image/png"));
-  --transition-resolution: image-set(url("/game-art/transition-resolution.webp") type("image/webp"), url("/game-art/transition-resolution.png") type("image/png"));
-  --faction-village: image-set(url("/game-art/faction-village.webp") type("image/webp"), url("/game-art/faction-village.png") type("image/png"));
-  --faction-werewolves: image-set(url("/game-art/faction-werewolves.webp") type("image/webp"), url("/game-art/faction-werewolves.png") type("image/png"));
-  --faction-vampires: image-set(url("/game-art/faction-vampires.webp") type("image/webp"), url("/game-art/faction-vampires.png") type("image/png"));
-  --faction-mafia: image-set(url("/game-art/faction-mafia.webp") type("image/webp"), url("/game-art/faction-mafia.png") type("image/png"));
-  --faction-lovers: image-set(url("/game-art/faction-lovers.webp") type("image/webp"), url("/game-art/faction-lovers.png") type("image/png"));
-  --faction-neutral: image-set(url("/game-art/faction-neutral.webp") type("image/webp"), url("/game-art/faction-neutral.png") type("image/png"));
-  --event-death: image-set(url("/game-art/event-death.webp") type("image/webp"), url("/game-art/event-death.png") type("image/png"));
-  --event-reveal: image-set(url("/game-art/event-reveal.webp") type("image/webp"), url("/game-art/event-reveal.png") type("image/png"));
-  --event-hunter-shot: image-set(url("/game-art/event-hunter-shot.webp") type("image/webp"), url("/game-art/event-hunter-shot.png") type("image/png"));
-  --screen-loading: image-set(url("/game-art/screen-loading.webp") type("image/webp"), url("/game-art/screen-loading.png") type("image/png"));
-  --screen-reconnect: image-set(url("/game-art/screen-reconnect.webp") type("image/webp"), url("/game-art/screen-reconnect.png") type("image/png"));
-  --screen-error: image-set(url("/game-art/screen-error.webp") type("image/webp"), url("/game-art/screen-error.png") type("image/png"));
-  --empty-history: image-set(url("/game-art/empty-history.webp") type("image/webp"), url("/game-art/empty-history.png") type("image/png"));
-  --empty-lobby: image-set(url("/game-art/empty-lobby.webp") type("image/webp"), url("/game-art/empty-lobby.png") type("image/png"));
-  --empty-players: image-set(url("/game-art/empty-players.webp") type("image/webp"), url("/game-art/empty-players.png") type("image/png"));
-  --village-map: image-set(url("/game-art/village-map.webp") type("image/webp"), url("/game-art/village-map.png") type("image/png"));
+  --transition-night: image-set(url("/game-art/transition-night-falls.webp") type("image/webp"));
+  --transition-day: image-set(url("/game-art/transition-village-wakes.webp") type("image/webp"));
+  --transition-vote: image-set(url("/game-art/transition-voting-starts.webp") type("image/webp"));
+  --transition-resolution: image-set(url("/game-art/transition-resolution.webp") type("image/webp"));
+  --faction-village: image-set(url("/game-art/faction-village.webp") type("image/webp"));
+  --faction-werewolves: image-set(url("/game-art/faction-werewolves.webp") type("image/webp"));
+  --faction-vampires: image-set(url("/game-art/faction-vampires.webp") type("image/webp"));
+  --faction-mafia: image-set(url("/game-art/faction-mafia.webp") type("image/webp"));
+  --faction-lovers: image-set(url("/game-art/faction-lovers.webp") type("image/webp"));
+  --faction-neutral: image-set(url("/game-art/faction-neutral.webp") type("image/webp"));
+  --event-death: image-set(url("/game-art/event-death.webp") type("image/webp"));
+  --event-reveal: image-set(url("/game-art/event-reveal.webp") type("image/webp"));
+  --event-hunter-shot: image-set(url("/game-art/event-hunter-shot.webp") type("image/webp"));
+  --screen-loading: image-set(url("/game-art/screen-loading.webp") type("image/webp"));
+  --screen-reconnect: image-set(url("/game-art/screen-reconnect.webp") type("image/webp"));
+  --screen-error: image-set(url("/game-art/screen-error.webp") type("image/webp"));
+  --empty-history: image-set(url("/game-art/empty-history.webp") type("image/webp"));
+  --empty-lobby: image-set(url("/game-art/empty-lobby.webp") type("image/webp"));
+  --empty-players: image-set(url("/game-art/empty-players.webp") type("image/webp"));
+  --village-map: image-set(url("/game-art/village-map.webp") type("image/webp"));
   --invite-art: var(--village-map);
-  --narrator-kit: image-set(url("/game-art/narrator-kit.webp") type("image/webp"), url("/game-art/narrator-kit.png") type("image/png"));
-  --preset-cards-sheet: image-set(url("/game-art/preset-cards-sheet.webp") type("image/webp"), url("/game-art/preset-cards-sheet.png") type("image/png"));
-  --achievement-badges-sheet: image-set(url("/game-art/achievement-badges-sheet.webp") type("image/webp"), url("/game-art/achievement-badges-sheet.png") type("image/png"));
-  --player-avatar-sheet: image-set(url("/game-art/player-avatar-sheet.webp") type("image/webp"), url("/game-art/player-avatar-sheet.png") type("image/png"));
-  --role-state-sheet: image-set(url("/game-art/role-state-sheet.webp") type("image/webp"), url("/game-art/role-state-sheet.png") type("image/png"));
-  --texture-ornament: image-set(url("/game-art/texture-ornament-sheet.webp") type("image/webp"), url("/game-art/texture-ornament-sheet.png") type("image/png"));
-  --texture-paper: image-set(url("/game-art/texture-parchment.webp") type("image/webp"), url("/game-art/texture-parchment.png") type("image/png"));
-  --texture-wood: image-set(url("/game-art/texture-walnut.webp") type("image/webp"), url("/game-art/texture-walnut.png") type("image/png"));
-  --texture-fog: image-set(url("/game-art/texture-fog.webp") type("image/webp"), url("/game-art/texture-fog.png") type("image/png"));
-  --texture-wax: image-set(url("/game-art/texture-wax.webp") type("image/webp"), url("/game-art/texture-wax.png") type("image/png"));
-  --role-art: image-set(url("/game-art/card-back-secret.webp") type("image/webp"), url("/game-art/card-back-secret.png") type("image/png"));
+  --narrator-kit: image-set(url("/game-art/narrator-kit.webp") type("image/webp"));
+  --preset-cards-sheet: image-set(url("/game-art/preset-cards-sheet.webp") type("image/webp"));
+  --achievement-badges-sheet: image-set(url("/game-art/achievement-badges-sheet.webp") type("image/webp"));
+  --player-avatar-sheet: image-set(url("/game-art/player-avatar-sheet.webp") type("image/webp"));
+  --role-state-sheet: image-set(url("/game-art/role-state-sheet.webp") type("image/webp"));
+  --texture-ornament: image-set(url("/game-art/texture-ornament-sheet.webp") type("image/webp"));
+  --texture-paper: image-set(url("/game-art/texture-parchment.webp") type("image/webp"));
+  --texture-wood: image-set(url("/game-art/texture-walnut.webp") type("image/webp"));
+  --texture-fog: image-set(url("/game-art/texture-fog.webp") type("image/webp"));
+  --texture-wax: image-set(url("/game-art/texture-wax.webp") type("image/webp"));
+  --role-art: image-set(url("/game-art/card-back-secret.webp") type("image/webp"));
   --phase-art: var(--art-night);
-  --phase-icon: image-set(url("/game-art/icon-phase-night.webp") type("image/webp"), url("/game-art/icon-phase-night.png") type("image/png"));
-  --ability-icon: image-set(url("/game-art/icon-ability-investigate.webp") type("image/webp"), url("/game-art/icon-ability-investigate.png") type("image/png"));
+  --phase-icon: image-set(url("/game-art/icon-phase-night.webp") type("image/webp"));
+  --ability-icon: image-set(url("/game-art/icon-ability-investigate.webp") type("image/webp"));
   --faction-art: var(--faction-neutral);
   --event-art: var(--event-reveal);
   --connection-art: var(--screen-loading);
@@ -359,8 +348,8 @@
   --hero-card-border: rgba(169, 111, 34, 0.58);
   --hero-card-scrim: linear-gradient(180deg, rgba(252, 246, 236, 0.18) 0%, rgba(252, 246, 236, 0.32) 100%);
   --hero-card-shadow: 0 34px 92px rgba(67, 39, 24, 0.24), 0 0 0 1px rgba(169, 111, 34, 0.18), inset 0 1px rgba(255, 247, 229, 0.18);
-  --art-werewolf: image-set(url("/game-art/werewolf/bg-hero-light-v1.avif") type("image/avif"), url("/game-art/werewolf/bg-hero-light-v1.webp") type("image/webp"), url("/game-art/werewolf/bg-hero-light-v1.png") type("image/png"));
-  --art-mafia: image-set(url("/game-art/mafia/bg-hero-light-v1.avif") type("image/avif"), url("/game-art/mafia/bg-hero-light-v1.webp") type("image/webp"), url("/game-art/mafia/bg-hero-light-v1.png") type("image/png"));
+  --art-werewolf: image-set(url("/game-art/werewolf/bg-hero-light-v1.avif") type("image/avif"), url("/game-art/werewolf/bg-hero-light-v1.webp") type("image/webp"));
+  --art-mafia: image-set(url("/game-art/mafia/bg-hero-light-v1.avif") type("image/avif"), url("/game-art/mafia/bg-hero-light-v1.webp") type("image/webp"));
 }
 
 :where([data-family="mafia"], [data-faction="mafia"], [data-theme="mafia"]) {
@@ -380,26 +369,26 @@
   --glass: rgba(10, 14, 14, 0.78);
   --hairline: rgba(239, 224, 189, 0.2);
   --shadow-gold: 0 0 42px rgba(200, 154, 85, 0.18);
-  --art-landing: image-set(url("/game-art/mafia/bg-landing-hero.webp") type("image/webp"), url("/game-art/mafia/bg-landing-hero.png") type("image/png"));
-  --art-lobby: image-set(url("/game-art/mafia/bg-lobby-tavern.webp") type("image/webp"), url("/game-art/mafia/bg-lobby-tavern.png") type("image/png"));
-  --art-reveal: image-set(url("/game-art/mafia/bg-role-reveal.webp") type("image/webp"), url("/game-art/mafia/bg-role-reveal.png") type("image/png"));
-  --art-night: image-set(url("/game-art/mafia/bg-night-phase.webp") type("image/webp"), url("/game-art/mafia/bg-night-phase.png") type("image/png"));
-  --art-day: image-set(url("/game-art/mafia/bg-day-discussion.webp") type("image/webp"), url("/game-art/mafia/bg-day-discussion.png") type("image/png"));
-  --art-vote: image-set(url("/game-art/mafia/bg-voting.webp") type("image/webp"), url("/game-art/mafia/bg-voting.png") type("image/png"));
-  --art-resolution: image-set(url("/game-art/mafia/bg-resolution.webp") type("image/webp"), url("/game-art/mafia/bg-resolution.png") type("image/png"));
+  --art-landing: image-set(url("/game-art/mafia/bg-landing-hero.webp") type("image/webp"));
+  --art-lobby: image-set(url("/game-art/mafia/bg-lobby-tavern.webp") type("image/webp"));
+  --art-reveal: image-set(url("/game-art/mafia/bg-role-reveal.webp") type("image/webp"));
+  --art-night: image-set(url("/game-art/mafia/bg-night-phase.webp") type("image/webp"));
+  --art-day: image-set(url("/game-art/mafia/bg-day-discussion.webp") type("image/webp"));
+  --art-vote: image-set(url("/game-art/mafia/bg-voting.webp") type("image/webp"));
+  --art-resolution: image-set(url("/game-art/mafia/bg-resolution.webp") type("image/webp"));
   --transition-night: var(--art-night);
   --transition-day: var(--art-day);
   --transition-vote: var(--art-vote);
   --transition-resolution: var(--art-resolution);
   --family-hero: var(--art-mafia);
-  --faction-village: image-set(url("/game-art/mafia/faction-village.webp") type("image/webp"), url("/game-art/mafia/faction-village.png") type("image/png"));
-  --faction-mafia: image-set(url("/game-art/mafia/faction-mafia.webp") type("image/webp"), url("/game-art/mafia/faction-mafia.png") type("image/png"));
-  --empty-lobby: image-set(url("/game-art/mafia/empty-lobby.webp") type("image/webp"), url("/game-art/mafia/empty-lobby.png") type("image/png"));
-  --empty-players: image-set(url("/game-art/mafia/empty-players.webp") type("image/webp"), url("/game-art/mafia/empty-players.png") type("image/png"));
+  --faction-village: image-set(url("/game-art/mafia/faction-village.webp") type("image/webp"));
+  --faction-mafia: image-set(url("/game-art/mafia/faction-mafia.webp") type("image/webp"));
+  --empty-lobby: image-set(url("/game-art/mafia/empty-lobby.webp") type("image/webp"));
+  --empty-players: image-set(url("/game-art/mafia/empty-players.webp") type("image/webp"));
   --invite-art: var(--art-lobby);
-  --role-art: image-set(url("/game-art/mafia/card-back-secret.webp") type("image/webp"), url("/game-art/mafia/card-back-secret.png") type("image/png"));
+  --role-art: image-set(url("/game-art/mafia/card-back-secret.webp") type("image/webp"));
   --phase-art: var(--art-lobby);
-  --phase-icon: image-set(url("/game-art/mafia/icon-phase-lobby.webp") type("image/webp"), url("/game-art/mafia/icon-phase-lobby.png") type("image/png"));
+  --phase-icon: image-set(url("/game-art/mafia/icon-phase-lobby.webp") type("image/webp"));
   --faction-art: var(--faction-mafia);
 }
 
@@ -491,8 +480,8 @@
   }
 
   html[data-theme="light"] {
-    --art-werewolf: image-set(url("/game-art/mobile/werewolf/bg-hero-light-v1.avif") type("image/avif"), url("/game-art/mobile/werewolf/bg-hero-light-v1.webp") type("image/webp"), url("/game-art/mobile/werewolf/bg-hero-light-v1.png") type("image/png"));
-    --art-mafia: image-set(url("/game-art/mobile/mafia/bg-hero-light-v1.avif") type("image/avif"), url("/game-art/mobile/mafia/bg-hero-light-v1.webp") type("image/webp"), url("/game-art/mobile/mafia/bg-hero-light-v1.png") type("image/png"));
+    --art-werewolf: image-set(url("/game-art/mobile/werewolf/bg-hero-light-v1.avif") type("image/avif"), url("/game-art/mobile/werewolf/bg-hero-light-v1.webp") type("image/webp"));
+    --art-mafia: image-set(url("/game-art/mobile/mafia/bg-hero-light-v1.avif") type("image/avif"), url("/game-art/mobile/mafia/bg-hero-light-v1.webp") type("image/webp"));
   }
 }
 
@@ -1631,7 +1620,7 @@ html[data-theme="light"] .utility-shell::before {
 }
 
 .action-btn {
-  --ability-icon: image-set(url("/game-art/icon-ability-investigate.webp") type("image/webp"), url("/game-art/icon-ability-investigate.png") type("image/png"));
+  --ability-icon: image-set(url("/game-art/icon-ability-investigate.webp") type("image/webp"));
   min-height: 58px;
   padding-left: 66px;
 }
@@ -1651,43 +1640,43 @@ html[data-theme="light"] .utility-shell::before {
 }
 
 .ability-investigate {
-  --ability-icon: image-set(url("/game-art/icon-ability-investigate.webp") type("image/webp"), url("/game-art/icon-ability-investigate.png") type("image/png"));
+  --ability-icon: image-set(url("/game-art/icon-ability-investigate.webp") type("image/webp"));
 }
 
 .ability-heal {
-  --ability-icon: image-set(url("/game-art/icon-ability-heal.webp") type("image/webp"), url("/game-art/icon-ability-heal.png") type("image/png"));
+  --ability-icon: image-set(url("/game-art/icon-ability-heal.webp") type("image/webp"));
 }
 
 .ability-kill {
-  --ability-icon: image-set(url("/game-art/icon-ability-kill.webp") type("image/webp"), url("/game-art/icon-ability-kill.png") type("image/png"));
+  --ability-icon: image-set(url("/game-art/icon-ability-kill.webp") type("image/webp"));
 }
 
 .ability-bless {
-  --ability-icon: image-set(url("/game-art/icon-ability-bless.webp") type("image/webp"), url("/game-art/icon-ability-bless.png") type("image/png"));
+  --ability-icon: image-set(url("/game-art/icon-ability-bless.webp") type("image/webp"));
 }
 
 .ability-steal {
-  --ability-icon: image-set(url("/game-art/icon-ability-steal.webp") type("image/webp"), url("/game-art/icon-ability-steal.png") type("image/png"));
+  --ability-icon: image-set(url("/game-art/icon-ability-steal.webp") type("image/webp"));
 }
 
 .ability-vampire {
-  --ability-icon: image-set(url("/game-art/icon-ability-vampire.webp") type("image/webp"), url("/game-art/icon-ability-vampire.png") type("image/png"));
+  --ability-icon: image-set(url("/game-art/icon-ability-vampire.webp") type("image/webp"));
 }
 
 .ability-jester {
-  --ability-icon: image-set(url("/game-art/icon-ability-jester.webp") type("image/webp"), url("/game-art/icon-ability-jester.png") type("image/png"));
+  --ability-icon: image-set(url("/game-art/icon-ability-jester.webp") type("image/webp"));
 }
 
 .ability-hunter {
-  --ability-icon: image-set(url("/game-art/icon-ability-hunter.webp") type("image/webp"), url("/game-art/icon-ability-hunter.png") type("image/png"));
+  --ability-icon: image-set(url("/game-art/icon-ability-hunter.webp") type("image/webp"));
 }
 
 .ability-lovers {
-  --ability-icon: image-set(url("/game-art/icon-ability-lovers.webp") type("image/webp"), url("/game-art/icon-ability-lovers.png") type("image/png"));
+  --ability-icon: image-set(url("/game-art/icon-ability-lovers.webp") type("image/webp"));
 }
 
 .role-count-chip {
-  --role-art: image-set(url("/game-art/card-back-secret.webp") type("image/webp"), url("/game-art/card-back-secret.png") type("image/png"));
+  --role-art: image-set(url("/game-art/card-back-secret.webp") type("image/webp"));
   position: relative;
   display: flex;
   align-items: center;
@@ -1787,191 +1776,191 @@ html[data-theme="light"] .utility-shell::before {
 }
 
 .role-ordinary_villager {
-  --role-art: image-set(url("/game-art/role-ordinary-villager.webp") type("image/webp"), url("/game-art/role-ordinary-villager.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-ordinary-villager.webp") type("image/webp"));
 }
 
 .role-werewolf {
-  --role-art: image-set(url("/game-art/role-werewolf.webp") type("image/webp"), url("/game-art/role-werewolf.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-werewolf.webp") type("image/webp"));
 }
 
 .role-seer {
-  --role-art: image-set(url("/game-art/role-seer.webp") type("image/webp"), url("/game-art/role-seer.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-seer.webp") type("image/webp"));
 }
 
 .role-witch {
-  --role-art: image-set(url("/game-art/role-witch.webp") type("image/webp"), url("/game-art/role-witch.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-witch.webp") type("image/webp"));
 }
 
 .role-healer {
-  --role-art: image-set(url("/game-art/role-healer.webp") type("image/webp"), url("/game-art/role-healer.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-healer.webp") type("image/webp"));
 }
 
 .role-priest {
-  --role-art: image-set(url("/game-art/role-priest.webp") type("image/webp"), url("/game-art/role-priest.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-priest.webp") type("image/webp"));
 }
 
 .role-hunter {
-  --role-art: image-set(url("/game-art/role-hunter.webp") type("image/webp"), url("/game-art/role-hunter.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-hunter.webp") type("image/webp"));
 }
 
 .role-cupid {
-  --role-art: image-set(url("/game-art/role-cupid.webp") type("image/webp"), url("/game-art/role-cupid.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-cupid.webp") type("image/webp"));
 }
 
 .role-vampire {
-  --role-art: image-set(url("/game-art/role-vampire.webp") type("image/webp"), url("/game-art/role-vampire.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-vampire.webp") type("image/webp"));
 }
 
 .role-red_riding_hood {
-  --role-art: image-set(url("/game-art/role-red-riding-hood.webp") type("image/webp"), url("/game-art/role-red-riding-hood.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-red-riding-hood.webp") type("image/webp"));
 }
 
 .role-oracle {
-  --role-art: image-set(url("/game-art/role-oracle.webp") type("image/webp"), url("/game-art/role-oracle.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-oracle.webp") type("image/webp"));
 }
 
 .role-cook {
-  --role-art: image-set(url("/game-art/role-cook.webp") type("image/webp"), url("/game-art/role-cook.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-cook.webp") type("image/webp"));
 }
 
 .role-blacksmith {
-  --role-art: image-set(url("/game-art/role-blacksmith.webp") type("image/webp"), url("/game-art/role-blacksmith.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-blacksmith.webp") type("image/webp"));
 }
 
 .role-insomniac {
-  --role-art: image-set(url("/game-art/role-insomniac.webp") type("image/webp"), url("/game-art/role-insomniac.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-insomniac.webp") type("image/webp"));
 }
 
 .role-vampire_hunter {
-  --role-art: image-set(url("/game-art/role-vampire-hunter.webp") type("image/webp"), url("/game-art/role-vampire-hunter.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-vampire-hunter.webp") type("image/webp"));
 }
 
 .role-investigator {
-  --role-art: image-set(url("/game-art/role-investigator.webp") type("image/webp"), url("/game-art/role-investigator.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-investigator.webp") type("image/webp"));
 }
 
 .role-drunk {
-  --role-art: image-set(url("/game-art/role-drunk.webp") type("image/webp"), url("/game-art/role-drunk.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-drunk.webp") type("image/webp"));
 }
 
 .role-stray_cat {
-  --role-art: image-set(url("/game-art/role-stray-cat.webp") type("image/webp"), url("/game-art/role-stray-cat.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-stray-cat.webp") type("image/webp"));
 }
 
 .role-guard_dog {
-  --role-art: image-set(url("/game-art/role-guard-dog.webp") type("image/webp"), url("/game-art/role-guard-dog.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-guard-dog.webp") type("image/webp"));
 }
 
 .role-jester {
-  --role-art: image-set(url("/game-art/role-jester.webp") type("image/webp"), url("/game-art/role-jester.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-jester.webp") type("image/webp"));
 }
 
 .role-little_girl {
-  --role-art: image-set(url("/game-art/role-little-girl.webp") type("image/webp"), url("/game-art/role-little-girl.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-little-girl.webp") type("image/webp"));
 }
 
 .role-thief {
-  --role-art: image-set(url("/game-art/role-thief.webp") type("image/webp"), url("/game-art/role-thief.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-thief.webp") type("image/webp"));
 }
 
 .role-mayor {
-  --role-art: image-set(url("/game-art/role-mayor.webp") type("image/webp"), url("/game-art/role-mayor.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-mayor.webp") type("image/webp"));
 }
 
 .role-civilian {
-  --role-art: image-set(url("/game-art/role-civilian.webp") type("image/webp"), url("/game-art/role-civilian.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-civilian.webp") type("image/webp"));
 }
 
 .role-commissioner {
-  --role-art: image-set(url("/game-art/role-commissioner.webp") type("image/webp"), url("/game-art/role-commissioner.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-commissioner.webp") type("image/webp"));
 }
 
 .role-mafioso {
-  --role-art: image-set(url("/game-art/role-mafioso.webp") type("image/webp"), url("/game-art/role-mafioso.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-mafioso.webp") type("image/webp"));
 }
 
 .role-don {
-  --role-art: image-set(url("/game-art/role-don.webp") type("image/webp"), url("/game-art/role-don.png") type("image/png"));
+  --role-art: image-set(url("/game-art/role-don.webp") type("image/webp"));
 }
 
 :where([data-family="mafia"], [data-faction="mafia"], [data-theme="mafia"]) .role-civilian,
 .role-civilian[data-theme="mafia"] {
-  --role-art: image-set(url("/game-art/mafia/role-civilian.webp") type("image/webp"), url("/game-art/mafia/role-civilian.png") type("image/png"));
+  --role-art: image-set(url("/game-art/mafia/role-civilian.webp") type("image/webp"));
 }
 
 :where([data-family="mafia"], [data-faction="mafia"], [data-theme="mafia"]) .role-commissioner,
 .role-commissioner[data-theme="mafia"] {
-  --role-art: image-set(url("/game-art/mafia/role-commissioner.webp") type("image/webp"), url("/game-art/mafia/role-commissioner.png") type("image/png"));
+  --role-art: image-set(url("/game-art/mafia/role-commissioner.webp") type("image/webp"));
 }
 
 :where([data-family="mafia"], [data-faction="mafia"], [data-theme="mafia"]) .role-mafioso,
 .role-mafioso[data-theme="mafia"] {
-  --role-art: image-set(url("/game-art/mafia/role-mafioso.webp") type("image/webp"), url("/game-art/mafia/role-mafioso.png") type("image/png"));
+  --role-art: image-set(url("/game-art/mafia/role-mafioso.webp") type("image/webp"));
 }
 
 :where([data-family="mafia"], [data-faction="mafia"], [data-theme="mafia"]) .role-don,
 .role-don[data-theme="mafia"] {
-  --role-art: image-set(url("/game-art/mafia/role-don.webp") type("image/webp"), url("/game-art/mafia/role-don.png") type("image/png"));
+  --role-art: image-set(url("/game-art/mafia/role-don.webp") type("image/webp"));
 }
 
 :where([data-family="mafia"], [data-faction="mafia"], [data-theme="mafia"]) .role-doctor,
 .role-doctor[data-theme="mafia"] {
-  --role-art: image-set(url("/game-art/mafia/role-doctor.webp") type("image/webp"), url("/game-art/mafia/role-doctor.png") type("image/png"));
+  --role-art: image-set(url("/game-art/mafia/role-doctor.webp") type("image/webp"));
 }
 
 :where([data-family="mafia"], [data-faction="mafia"], [data-theme="mafia"]) .role-detective,
 .role-detective[data-theme="mafia"] {
-  --role-art: image-set(url("/game-art/mafia/role-detective.webp") type("image/webp"), url("/game-art/mafia/role-detective.png") type("image/png"));
+  --role-art: image-set(url("/game-art/mafia/role-detective.webp") type("image/webp"));
 }
 
 :where([data-family="mafia"], [data-faction="mafia"], [data-theme="mafia"]) .role-bodyguard,
 .role-bodyguard[data-theme="mafia"] {
-  --role-art: image-set(url("/game-art/mafia/role-bodyguard.webp") type("image/webp"), url("/game-art/mafia/role-bodyguard.png") type("image/png"));
+  --role-art: image-set(url("/game-art/mafia/role-bodyguard.webp") type("image/webp"));
 }
 
 :where([data-family="mafia"], [data-faction="mafia"], [data-theme="mafia"]) .role-vigilante,
 .role-vigilante[data-theme="mafia"] {
-  --role-art: image-set(url("/game-art/mafia/role-vigilante.webp") type("image/webp"), url("/game-art/mafia/role-vigilante.png") type("image/png"));
+  --role-art: image-set(url("/game-art/mafia/role-vigilante.webp") type("image/webp"));
 }
 
 :where([data-family="mafia"], [data-faction="mafia"], [data-theme="mafia"]) .role-medium,
 .role-medium[data-theme="mafia"] {
-  --role-art: image-set(url("/game-art/mafia/role-medium.webp") type("image/webp"), url("/game-art/mafia/role-medium.png") type("image/png"));
+  --role-art: image-set(url("/game-art/mafia/role-medium.webp") type("image/webp"));
 }
 
 :where([data-family="mafia"], [data-faction="mafia"], [data-theme="mafia"]) .role-roleblocker,
 .role-roleblocker[data-theme="mafia"] {
-  --role-art: image-set(url("/game-art/mafia/role-roleblocker.webp") type("image/webp"), url("/game-art/mafia/role-roleblocker.png") type("image/png"));
+  --role-art: image-set(url("/game-art/mafia/role-roleblocker.webp") type("image/webp"));
 }
 
 :where([data-family="mafia"], [data-faction="mafia"], [data-theme="mafia"]) .role-lawyer,
 .role-lawyer[data-theme="mafia"] {
-  --role-art: image-set(url("/game-art/mafia/role-lawyer.webp") type("image/webp"), url("/game-art/mafia/role-lawyer.png") type("image/png"));
+  --role-art: image-set(url("/game-art/mafia/role-lawyer.webp") type("image/webp"));
 }
 
 :where([data-family="mafia"], [data-faction="mafia"], [data-theme="mafia"]) .role-informant,
 .role-informant[data-theme="mafia"] {
-  --role-art: image-set(url("/game-art/mafia/role-informant.webp") type("image/webp"), url("/game-art/mafia/role-informant.png") type("image/png"));
+  --role-art: image-set(url("/game-art/mafia/role-informant.webp") type("image/webp"));
 }
 
 :where([data-family="mafia"], [data-faction="mafia"], [data-theme="mafia"]) .role-maniac,
 .role-maniac[data-theme="mafia"] {
-  --role-art: image-set(url("/game-art/mafia/role-maniac.webp") type("image/webp"), url("/game-art/mafia/role-maniac.png") type("image/png"));
+  --role-art: image-set(url("/game-art/mafia/role-maniac.webp") type("image/webp"));
 }
 
 :where([data-family="mafia"], [data-faction="mafia"], [data-theme="mafia"]) .role-jester,
 .role-jester[data-theme="mafia"] {
-  --role-art: image-set(url("/game-art/mafia/role-jester.webp") type("image/webp"), url("/game-art/mafia/role-jester.png") type("image/png"));
+  --role-art: image-set(url("/game-art/mafia/role-jester.webp") type("image/webp"));
 }
 
 :where([data-family="mafia"], [data-faction="mafia"], [data-theme="mafia"]) .role-mafia_mayor,
 .role-mafia_mayor[data-theme="mafia"] {
-  --role-art: image-set(url("/game-art/mafia/role-mayor.webp") type("image/webp"), url("/game-art/mafia/role-mayor.png") type("image/png"));
+  --role-art: image-set(url("/game-art/mafia/role-mayor.webp") type("image/webp"));
 }
 
 :where([data-family="mafia"], [data-faction="mafia"], [data-theme="mafia"]) .role-lovers,
 .role-lovers[data-theme="mafia"] {
-  --role-art: image-set(url("/game-art/mafia/role-lovers.webp") type("image/webp"), url("/game-art/mafia/role-lovers.png") type("image/png"));
+  --role-art: image-set(url("/game-art/mafia/role-lovers.webp") type("image/webp"));
 }
 
 .connection-banner {
@@ -4020,8 +4009,7 @@ html[data-vt="theme"]::view-transition-new(root) {
   background-image:
     radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, 0.6) 100%),
     image-set(
-      url("/game-art/auth/forgot-password-locksmith.webp") type("image/webp"),
-      url("/game-art/auth/forgot-password-locksmith.png") type("image/png")
+      url("/game-art/auth/forgot-password-locksmith.webp") type("image/webp")
     );
   background-position: center;
   background-size: cover;
@@ -4033,8 +4021,7 @@ html[data-vt="theme"]::view-transition-new(root) {
     background-image:
       radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, 0.6) 100%),
       image-set(
-        url("/game-art/mobile/auth/forgot-password-locksmith.webp") type("image/webp"),
-        url("/game-art/auth/forgot-password-locksmith.png") type("image/png")
+        url("/game-art/mobile/auth/forgot-password-locksmith.webp") type("image/webp")
       );
   }
 }
@@ -4050,8 +4037,7 @@ html[data-vt="theme"]::view-transition-new(root) {
   background-image:
     linear-gradient(155deg, rgba(255, 250, 238, 0.55), rgba(238, 222, 196, 0.35)),
     image-set(
-      url("/game-art/textures/brass-plate.webp") type("image/webp"),
-      url("/game-art/textures/brass-plate.png") type("image/png")
+      url("/game-art/textures/brass-plate.webp") type("image/webp")
     );
   background-size: cover;
   background-blend-mode: multiply;
@@ -4192,8 +4178,7 @@ html[data-vt="theme"]::view-transition-new(root) {
   background-image:
     radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 30%, rgba(20, 5, 0, 0.7) 100%),
     image-set(
-      url("/game-art/auth/reset-password-forge.webp") type("image/webp"),
-      url("/game-art/auth/reset-password-forge.png") type("image/png")
+      url("/game-art/auth/reset-password-forge.webp") type("image/webp")
     );
   background-position: center;
   background-size: cover;
@@ -4205,8 +4190,7 @@ html[data-vt="theme"]::view-transition-new(root) {
     background-image:
       radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 30%, rgba(20, 5, 0, 0.7) 100%),
       image-set(
-        url("/game-art/mobile/auth/reset-password-forge.webp") type("image/webp"),
-        url("/game-art/auth/reset-password-forge.png") type("image/png")
+        url("/game-art/mobile/auth/reset-password-forge.webp") type("image/webp")
       );
   }
 }
@@ -4337,8 +4321,7 @@ html[data-vt="theme"]::view-transition-new(root) {
   background-image:
     radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 40%, rgba(40, 10, 10, 0.55) 100%),
     image-set(
-      url("/game-art/auth/verify-email-seal.webp") type("image/webp"),
-      url("/game-art/auth/verify-email-seal.png") type("image/png")
+      url("/game-art/auth/verify-email-seal.webp") type("image/webp")
     );
   background-position: center;
   background-size: cover;
@@ -4350,8 +4333,7 @@ html[data-vt="theme"]::view-transition-new(root) {
     background-image:
       radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 40%, rgba(40, 10, 10, 0.55) 100%),
       image-set(
-        url("/game-art/mobile/auth/verify-email-seal.webp") type("image/webp"),
-        url("/game-art/auth/verify-email-seal.png") type("image/png")
+        url("/game-art/mobile/auth/verify-email-seal.webp") type("image/webp")
       );
   }
 }

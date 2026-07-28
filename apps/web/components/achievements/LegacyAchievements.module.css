@@ -230,8 +230,7 @@
   background-image:
     var(--plaque-overlay),
     image-set(
-      url("/game-art/textures/brass-plate.webp") type("image/webp"),
-      url("/game-art/textures/brass-plate.png") type("image/png")
+      url("/game-art/textures/brass-plate.webp") type("image/webp")
     );
   background-position: center;
   background-size: cover;

@@ -28,6 +28,7 @@ tmp
 plugins
 tools
 docs
+assets/game-art-source
 *.log
 .tmp-*
 **/.env

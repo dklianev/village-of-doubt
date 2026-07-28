@@ -58,12 +58,10 @@ async function main() {
   await waitForText("http://127.0.0.1:3300/werewolf/roles", "Роли във Върколак", "werewolf roles page");
   await waitForText("http://127.0.0.1:3300/mafia/roles", "Роли в Мафия", "mafia roles page");
   await waitForText("http://127.0.0.1:3300/history", "Архив на масата", "history page");
-  await waitForAsset("http://127.0.0.1:3300/game-art/og-preview.png", "OpenGraph game art");
   await waitForAsset("http://127.0.0.1:3300/game-art/og-preview.webp", "optimized OpenGraph game art");
-  await waitForAsset("http://127.0.0.1:3300/game-art/transition-night-falls.png", "phase transition game art");
   await waitForAsset("http://127.0.0.1:3300/game-art/transition-night-falls.webp", "optimized phase transition game art");
-  await waitForAsset("http://127.0.0.1:3300/game-art/faction-village.png", "faction game art");
-  await waitForAsset("http://127.0.0.1:3300/game-art/player-avatar-sheet.png", "avatar sprite sheet");
+  await waitForAsset("http://127.0.0.1:3300/game-art/faction-village.webp", "faction game art");
+  await waitForAsset("http://127.0.0.1:3300/game-art/player-avatar-sheet.webp", "avatar sprite sheet");
   await waitForGameToken("http://127.0.0.1:3300/api/game-token");
 
   console.log("Smoke test passed.");
