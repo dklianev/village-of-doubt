@@ -3,36 +3,41 @@ import path from "node:path";
 import { gzipSync } from "node:zlib";
 
 const root = process.cwd();
-const TARGET_ROUTE = "/play/[code]";
+const BASELINE_PATH = path.join(root, "scripts/perf-baseline.json");
 const BUDGETS = {
-  totalJsKb: 550,
-  routeJsKb: 140,
-  routeCssKb: 70,
-  totalArtCorpusKb: 120_000,
-  largestArtAssetKb: 800,
+  totalJs: { warningKb: 515, hardKb: 525, maxDeltaKb: 5 },
+  routes: {
+    "/": {
+      js: { warningKb: 48, hardKb: 55, maxDeltaKb: 3 },
+      css: { warningKb: 56, hardKb: 62, maxDeltaKb: 3 },
+    },
+    "/create": {
+      js: { warningKb: 85, hardKb: 95, maxDeltaKb: 3 },
+      css: { warningKb: 58, hardKb: 65, maxDeltaKb: 3 },
+    },
+    "/play/[code]": {
+      js: { warningKb: 135, hardKb: 140, maxDeltaKb: 3 },
+      css: { warningKb: 62, hardKb: 70, maxDeltaKb: 3 },
+    },
+  },
+  artCorpus: { warningKb: 50_000, hardKb: 60_000 },
+  largestArtAsset: { warningKb: 350, hardKb: 400 },
 };
 
 const failures = [];
+const warnings = [];
 const nextDir = path.join(root, "apps/web/.next");
+const baseline = readBaseline();
 
 if (!existsSync(nextDir)) {
   failures.push("Missing apps/web/.next build output. Run `pnpm build` before `pnpm perf:budget`.");
 } else {
   reportStaticCorpus();
-  reportRouteBudget();
+  reportRouteBudgets();
 }
 
 reportArtCorpus();
-
-if (failures.length > 0) {
-  console.error("\nBudget violations:");
-  for (const failure of failures) {
-    console.error(`  x ${failure}`);
-  }
-  process.exit(1);
-}
-
-console.log("\nAll budgets within thresholds");
+printResults();
 
 function reportStaticCorpus() {
   const chunksDir = path.join(nextDir, "static/chunks");
@@ -54,13 +59,10 @@ function reportStaticCorpus() {
   } else {
     const jsCorpus = measureAssets(nextDir, jsFiles, "JavaScript corpus");
     console.log(
-      `JavaScript corpus gzip: ${roundKb(jsCorpus.gzipBytes)} KB (${formatFileCount(jsCorpus.files.length)}; budget: ${BUDGETS.totalJsKb} KB)`,
+      `JavaScript corpus gzip: ${roundKb(jsCorpus.gzipBytes)} KB ` +
+        `(${formatFileCount(jsCorpus.files.length)}; ${formatThresholds(BUDGETS.totalJs)})`,
     );
-    if (jsCorpus.gzipBytes > kbToBytes(BUDGETS.totalJsKb)) {
-      failures.push(
-        `JavaScript corpus gzip ${roundKb(jsCorpus.gzipBytes)} KB > budget ${BUDGETS.totalJsKb} KB`,
-      );
-    }
+    enforceBudget("JavaScript corpus gzip", jsCorpus.gzipBytes, BUDGETS.totalJs, baseline?.totalJsKb);
   }
 
   if (cssFiles.length === 0) {
@@ -71,44 +73,37 @@ function reportStaticCorpus() {
   }
 }
 
-function reportRouteBudget() {
-  let routeAssets;
-  try {
-    routeAssets = readRouteAssets(nextDir, TARGET_ROUTE);
-  } catch (error) {
-    failures.push(error instanceof Error ? error.message : String(error));
+function reportRouteBudgets() {
+  for (const [route, routeBudget] of Object.entries(BUDGETS.routes)) {
+    let routeAssets;
+    try {
+      routeAssets = readRouteAssets(nextDir, route);
+    } catch (error) {
+      failures.push(error instanceof Error ? error.message : String(error));
+      continue;
+    }
+
+    reportRouteAsset(route, "JS", routeAssets.js, routeBudget.js, baseline?.routes?.[route]?.jsKb);
+    reportRouteAsset(route, "CSS", routeAssets.css, routeBudget.css, baseline?.routes?.[route]?.cssKb);
+  }
+}
+
+function reportRouteAsset(route, assetType, files, budget, baselineKb) {
+  const label = `${route} ${assetType === "JS" ? "JavaScript" : "CSS"}`;
+  const measured = measureAssets(nextDir, files, label);
+  console.log(
+    `Route ${route} ${assetType} gzip: ${roundKb(measured.gzipBytes)} KB ` +
+      `(${formatFileCount(measured.files.length)}; ${formatThresholds(budget)})`,
+  );
+  if (files.length === 0) {
+    failures.push(`No ${assetType === "JS" ? "JavaScript" : "CSS"} assets declared for route ${route}.`);
     return;
   }
-
-  const routeJs = measureAssets(nextDir, routeAssets.js, `${TARGET_ROUTE} JavaScript`);
-  console.log(
-    `Route ${TARGET_ROUTE} JS gzip: ${roundKb(routeJs.gzipBytes)} KB (${formatFileCount(routeJs.files.length)}; budget: ${BUDGETS.routeJsKb} KB)`,
-  );
-  if (routeAssets.js.length === 0) {
-    failures.push(`No JavaScript assets declared for route ${TARGET_ROUTE}.`);
-  } else if (routeJs.sourceBytes === 0) {
-    failures.push(`Route ${TARGET_ROUTE} JavaScript source bytes are zero.`);
+  if (measured.sourceBytes === 0) {
+    failures.push(`Route ${route} ${assetType === "JS" ? "JavaScript" : "CSS"} source bytes are zero.`);
+    return;
   }
-  if (routeJs.gzipBytes > kbToBytes(BUDGETS.routeJsKb)) {
-    failures.push(
-      `Route ${TARGET_ROUTE} JS gzip ${roundKb(routeJs.gzipBytes)} KB > budget ${BUDGETS.routeJsKb} KB`,
-    );
-  }
-
-  const routeCss = measureAssets(nextDir, routeAssets.css, `${TARGET_ROUTE} CSS`);
-  console.log(
-    `Route ${TARGET_ROUTE} CSS gzip: ${roundKb(routeCss.gzipBytes)} KB (${formatFileCount(routeCss.files.length)}; budget: ${BUDGETS.routeCssKb} KB)`,
-  );
-  if (routeAssets.css.length === 0) {
-    failures.push(`No CSS assets declared for route ${TARGET_ROUTE}.`);
-  } else if (routeCss.sourceBytes === 0) {
-    failures.push(`Route ${TARGET_ROUTE} CSS source bytes are zero.`);
-  }
-  if (routeCss.gzipBytes > kbToBytes(BUDGETS.routeCssKb)) {
-    failures.push(
-      `Route ${TARGET_ROUTE} CSS gzip ${roundKb(routeCss.gzipBytes)} KB > budget ${BUDGETS.routeCssKb} KB`,
-    );
-  }
+  enforceBudget(`Route ${route} ${assetType} gzip`, measured.gzipBytes, budget, baselineKb);
 }
 
 function reportArtCorpus() {
@@ -136,23 +131,89 @@ function reportArtCorpus() {
 
   console.log(
     `Art corpus: ${formatFileCount(assets.length)}, ${roundKb(totalBytes)} KB ` +
-      `(budget: ${BUDGETS.totalArtCorpusKb} KB; ${formatSummary})`,
+      `(${formatThresholds(BUDGETS.artCorpus)}; ${formatSummary})`,
   );
-  if (totalBytes > kbToBytes(BUDGETS.totalArtCorpusKb)) {
-    failures.push(
-      `Art corpus ${roundKb(totalBytes)} KB > budget ${BUDGETS.totalArtCorpusKb} KB`,
-    );
-  }
+  enforceBudget("Art corpus", totalBytes, BUDGETS.artCorpus);
 
   const largest = assets
     .filter((asset) => asset.extension === ".avif" || asset.extension === ".webp")
     .sort((left, right) => right.sizeBytes - left.sizeBytes)[0];
-  console.log(`Largest optimized art: ${largest?.file ?? "none"} (${roundKb(largest?.sizeBytes ?? 0)} KB)`);
-  if (largest && largest.sizeBytes > kbToBytes(BUDGETS.largestArtAssetKb)) {
+  const largestBytes = largest?.sizeBytes ?? 0;
+  console.log(
+    `Largest optimized art: ${largest?.file ?? "none"} (${roundKb(largestBytes)} KB; ` +
+      `${formatThresholds(BUDGETS.largestArtAsset)})`,
+  );
+  if (largest) {
+    enforceBudget(`Largest optimized art ${largest.file}`, largestBytes, BUDGETS.largestArtAsset);
+  }
+}
+
+function enforceBudget(label, bytes, budget, baselineKb) {
+  const measuredKb = bytes / 1024;
+
+  if (measuredKb > budget.hardKb) {
+    failures.push(`${label} ${roundKb(bytes)} KB > hard budget ${budget.hardKb} KB`);
+  } else if (measuredKb > budget.warningKb) {
+    warnings.push(`${label} ${roundKb(bytes)} KB > warning ${budget.warningKb} KB`);
+  }
+
+  if (
+    typeof baselineKb === "number" &&
+    typeof budget.maxDeltaKb === "number" &&
+    measuredKb > baselineKb + budget.maxDeltaKb
+  ) {
     failures.push(
-      `Largest optimized art ${largest.file} ${roundKb(largest.sizeBytes)} KB > budget ${BUDGETS.largestArtAssetKb} KB`,
+      `${label.replace(/ gzip$/, "")} grew ${roundNumber(measuredKb - baselineKb)} KB above baseline ` +
+        `${baselineKb} KB; allowed delta: ${budget.maxDeltaKb} KB`,
     );
   }
+}
+
+function readBaseline() {
+  if (!existsSync(BASELINE_PATH)) {
+    failures.push("Missing scripts/perf-baseline.json. Regenerate it from a reviewed production build.");
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(readFileSync(BASELINE_PATH, "utf8"));
+    if (parsed?.schemaVersion !== 1 || typeof parsed.totalJsKb !== "number" || typeof parsed.routes !== "object") {
+      throw new Error("expected schemaVersion 1, totalJsKb, and routes");
+    }
+    for (const route of Object.keys(BUDGETS.routes)) {
+      if (
+        typeof parsed.routes?.[route]?.jsKb !== "number" ||
+        typeof parsed.routes?.[route]?.cssKb !== "number"
+      ) {
+        throw new Error(`missing numeric route baseline for ${route}`);
+      }
+    }
+    return parsed;
+  } catch (error) {
+    failures.push(
+      `Invalid scripts/perf-baseline.json: ${error instanceof Error ? error.message : String(error)}`,
+    );
+    return null;
+  }
+}
+
+function printResults() {
+  if (warnings.length > 0) {
+    console.warn("\nBudget warnings:");
+    for (const warning of warnings) {
+      console.warn(`  ! ${warning}`);
+    }
+  }
+
+  if (failures.length > 0) {
+    console.error("\nBudget violations:");
+    for (const failure of failures) {
+      console.error(`  x ${failure}`);
+    }
+    process.exit(1);
+  }
+
+  console.log("\nAll budgets within thresholds");
 }
 
 function readRouteAssets(buildDir, targetRoute) {
@@ -176,7 +237,10 @@ function readRouteAssets(buildDir, targetRoute) {
     `${entryName}_client-reference-manifest.js`,
   );
   if (!existsSync(clientManifestPath)) {
-    throw new Error(`Missing client reference manifest for route ${targetRoute}: ${toPosix(path.relative(root, clientManifestPath))}`);
+    throw new Error(
+      `Missing client reference manifest for route ${targetRoute}: ` +
+        `${toPosix(path.relative(root, clientManifestPath))}`,
+    );
   }
 
   const clientManifest = parseClientReferenceManifest(clientManifestPath, appPath);
@@ -204,7 +268,8 @@ function parseClientReferenceManifest(manifestPath, appPath) {
     return JSON.parse(serialized);
   } catch (error) {
     throw new Error(
-      `Could not parse the ${appPath} client reference manifest: ${error instanceof Error ? error.message : String(error)}`,
+      `Could not parse the ${appPath} client reference manifest: ` +
+        `${error instanceof Error ? error.message : String(error)}`,
     );
   }
 }
@@ -217,9 +282,7 @@ function readEntryAssets(entries, appPath, assetType) {
   const entrySuffix = `/app${appPath}`;
   const matchingEntries = Object.entries(entries).filter(([entry]) => toPosix(entry).endsWith(entrySuffix));
   if (matchingEntries.length !== 1) {
-    throw new Error(
-      `Expected one ${assetType} entry for ${appPath}, found ${matchingEntries.length}.`,
-    );
+    throw new Error(`Expected one ${assetType} entry for ${appPath}, found ${matchingEntries.length}.`);
   }
 
   const [, values] = matchingEntries[0];
@@ -273,12 +336,16 @@ function measureAssets(baseDir, files, label) {
   return { sourceBytes, gzipBytes, files: measuredFiles };
 }
 
-function kbToBytes(kb) {
-  return kb * 1024;
+function roundKb(bytes) {
+  return roundNumber(bytes / 1024);
 }
 
-function roundKb(bytes) {
-  return Math.round((bytes / 1024) * 10) / 10;
+function roundNumber(value) {
+  return Math.round(value * 10) / 10;
+}
+
+function formatThresholds(budget) {
+  return `warning: ${budget.warningKb} KB; hard: ${budget.hardKb} KB`;
 }
 
 function formatFileCount(count) {
