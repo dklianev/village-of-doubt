@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { captureClientException } from "@/lib/sentry-client";
 import "@/components/system/SystemPages.module.css";
 
 export function RouteErrorState({
@@ -13,6 +14,7 @@ export function RouteErrorState({
   title: string;
 }) {
   useEffect(() => {
+    captureClientException(error);
     console.error(error);
   }, [error]);
 

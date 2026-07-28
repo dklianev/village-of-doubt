@@ -24,16 +24,27 @@ RUN pnpm install --frozen-lockfile
 FROM deps AS builder
 ARG NEXT_PUBLIC_APP_URL=https://localhost
 ARG NEXT_PUBLIC_GAME_SERVER_URL=wss://localhost
+ARG NEXT_PUBLIC_SENTRY_DSN=
+ARG RELEASE_VERSION=local
+ARG SENTRY_ORG=
+ARG SENTRY_PROJECT=
 ENV NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
 ENV NEXT_PUBLIC_GAME_SERVER_URL=${NEXT_PUBLIC_GAME_SERVER_URL}
+ENV NEXT_PUBLIC_SENTRY_DSN=${NEXT_PUBLIC_SENTRY_DSN}
+ENV NEXT_PUBLIC_RELEASE_VERSION=${RELEASE_VERSION}
+ENV RELEASE_VERSION=${RELEASE_VERSION}
+ENV SENTRY_ORG=${SENTRY_ORG}
+ENV SENTRY_PROJECT=${SENTRY_PROJECT}
 COPY . .
 RUN pnpm --filter @werewolf/shared build
 RUN pnpm --filter @werewolf/database build
 RUN pnpm --filter @werewolf/ui build
 RUN --mount=type=secret,id=better_auth_secret \
     --mount=type=secret,id=game_token_secret \
+    --mount=type=secret,id=sentry_auth_token,required=false \
     BETTER_AUTH_SECRET="$(cat /run/secrets/better_auth_secret)" \
     GAME_TOKEN_SECRET="$(cat /run/secrets/game_token_secret)" \
+    SENTRY_AUTH_TOKEN="$(if [ -f /run/secrets/sentry_auth_token ]; then cat /run/secrets/sentry_auth_token; fi)" \
     pnpm --filter @werewolf/web build
 
 FROM base AS runner

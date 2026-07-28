@@ -5,7 +5,8 @@ import { gzipSync } from "node:zlib";
 const root = process.cwd();
 const BASELINE_PATH = path.join(root, "scripts/perf-baseline.json");
 const BUDGETS = {
-  totalJs: { warningKb: 515, hardKb: 525, maxDeltaKb: 5 },
+  // Includes the deferred 22 KB browser error-monitoring client.
+  totalJs: { warningKb: 535, hardKb: 545, maxDeltaKb: 5 },
   routes: {
     "/": {
       js: { warningKb: 48, hardKb: 55, maxDeltaKb: 3 },

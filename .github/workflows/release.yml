@@ -21,16 +21,28 @@ jobs:
     environment: production
     steps:
       - name: Checkout
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Validate release observability
+        env:
+          NEXT_PUBLIC_SENTRY_DSN: ${{ vars.NEXT_PUBLIC_SENTRY_DSN }}
+          SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        run: |
+          test -n "$NEXT_PUBLIC_SENTRY_DSN"
+          test -n "$SENTRY_ORG"
+          test -n "$SENTRY_PROJECT"
+          test -n "$SENTRY_AUTH_TOKEN"
 
       - name: Validate migration rollback compatibility
         run: node scripts/check-migration-safety.mjs
 
       - name: Setup Buildx
-        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
       - name: Login to GHCR
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -38,7 +50,7 @@ jobs:
 
       - name: Build web
         id: web
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
           file: apps/web/Dockerfile
@@ -50,33 +62,42 @@ jobs:
             NEXT_PUBLIC_GAME_SERVER_URL=${{ vars.PRODUCTION_GAME_SERVER_URL }}
             NEXT_PUBLIC_SENTRY_DSN=${{ vars.NEXT_PUBLIC_SENTRY_DSN }}
             RELEASE_VERSION=${{ github.sha }}
+            SENTRY_ORG=${{ vars.SENTRY_ORG }}
+            SENTRY_PROJECT=${{ vars.SENTRY_PROJECT }}
           secrets: |
             better_auth_secret=release-build-only-better-auth-secret-000000
             game_token_secret=release-build-only-game-token-secret-000000
+            sentry_auth_token=${{ secrets.SENTRY_AUTH_TOKEN }}
+          provenance: mode=max
+          sbom: true
           cache-from: type=gha,scope=web
           cache-to: type=gha,mode=max,scope=web
 
       - name: Build migrator
         id: migrator
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
           file: apps/web/Dockerfile
           target: migrator
           push: true
           tags: ghcr.io/${{ github.repository }}/migrator:${{ github.sha }}
+          provenance: mode=max
+          sbom: true
           cache-from: type=gha,scope=migrator
           cache-to: type=gha,mode=max,scope=migrator
 
       - name: Build game server
         id: game
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
           file: apps/game-server/Dockerfile
           target: runner
           push: true
           tags: ghcr.io/${{ github.repository }}/game:${{ github.sha }}
+          provenance: mode=max
+          sbom: true
           cache-from: type=gha,scope=game
           cache-to: type=gha,mode=max,scope=game
 
@@ -108,7 +129,7 @@ jobs:
           node scripts/release-manifest.mjs release.json
 
       - name: Upload release manifest
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: release-${{ github.sha }}
           path: release.json

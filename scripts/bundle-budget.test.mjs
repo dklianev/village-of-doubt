@@ -33,7 +33,7 @@ test("measures the landing, create, and play routes from Next.js manifests", (co
   const result = runBudget(fixture);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /JavaScript corpus gzip: .+warning: 515 KB; hard: 525 KB/);
+  assert.match(result.stdout, /JavaScript corpus gzip: .+warning: 535 KB; hard: 545 KB/);
   assert.match(result.stdout, /Route \/ JS gzip: .+warning: 48 KB; hard: 55 KB/);
   assert.match(result.stdout, /Route \/create JS gzip: .+warning: 85 KB; hard: 95 KB/);
   assert.match(result.stdout, /Route \/play\/\[code\] JS gzip: .+warning: 135 KB; hard: 140 KB/);
@@ -46,14 +46,14 @@ test("emits a warning without failing below the hard JavaScript cap", (context) 
   const fixture = createFixture();
   context.after(() => rmSync(fixture, { recursive: true, force: true }));
 
-  writeFixtureFile(fixture, "apps/web/.next/static/chunks/warning.js", randomBytes(518 * 1024));
-  setBaseline(fixture, { totalJsKb: 518 });
+  writeFixtureFile(fixture, "apps/web/.next/static/chunks/warning.js", randomBytes(538 * 1024));
+  setBaseline(fixture, { totalJsKb: 538 });
 
   const result = runBudget(fixture);
 
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stderr, /Budget warnings:/);
-  assert.match(result.stderr, /JavaScript corpus gzip .+ > warning 515 KB/);
+  assert.match(result.stderr, /JavaScript corpus gzip .+ > warning 535 KB/);
 });
 
 test("fails when the JavaScript delta exceeds the checked-in baseline allowance", (context) => {

@@ -17,7 +17,7 @@ jobs:
     timeout-minutes: 55
     services:
       postgres:
-        image: postgres:17
+        image: postgres:17-alpine@sha256:742f40ea20b9ff2ff31db5458d127452988a2164df9e17441e191f3b72252193
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -31,14 +31,14 @@ jobs:
           --health-retries 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
       - name: Start authenticated Redis
         run: >-
           docker run --detach --rm
           --name werewolf-ci-redis
           --publish 6379:6379
-          redis:8.2-alpine
+          redis:8.2-alpine@sha256:a7859ed111db3c1f5404a973a4747505d559fb5ca32d37e447afc0ef845a2103
           redis-server
           --save ""
           --appendonly no
@@ -47,10 +47,10 @@ jobs:
           --maxmemory-policy noeviction
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v6
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
 
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 22
           cache: pnpm
@@ -78,11 +78,13 @@ jobs:
           GAME_TOKEN_SECRET: ci-only-secret-that-is-long-enough-32-chars-min
           BETTER_AUTH_URL: https://werewolf.example.com
           NEXT_PUBLIC_APP_URL: https://werewolf.example.com
+          NEXT_PUBLIC_SENTRY_DSN: https://public@example.invalid/2
+          RELEASE_VERSION: ci-${{ github.sha }}
           OAUTH_MOCK: "true"
 
       - name: Upload visual diffs
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: visual-regression-results
           path: |
@@ -117,11 +119,12 @@ jobs:
       RESEND_FROM: Werewolf CI <noreply@werewolf.example.com>
       REPORTS_NOTIFY_EMAIL: reports@werewolf.example.com
       SENTRY_DSN: https://public@example.invalid/1
+      NEXT_PUBLIC_SENTRY_DSN: https://public@example.invalid/2
       RELEASE_VERSION: ci-${{ github.sha }}
       RCLONE_REMOTE: encrypted-offsite:werewolf-ci
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
       - name: Validate production environment
         run: node scripts/check-production-env.mjs
@@ -213,7 +216,7 @@ jobs:
     timeout-minutes: 20
     services:
       postgres:
-        image: postgres:17
+        image: postgres:17-alpine@sha256:742f40ea20b9ff2ff31db5458d127452988a2164df9e17441e191f3b72252193
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -227,13 +230,13 @@ jobs:
           --health-retries 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v6
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
 
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 22
           cache: pnpm

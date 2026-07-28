@@ -883,7 +883,8 @@ function checkProductionEnvChecker() {
   const serverOnlySentry = validProductionEnv();
   delete serverOnlySentry.NEXT_PUBLIC_SENTRY_DSN;
   const withoutClientSentry = runEnvChecker(serverOnlySentry);
-  assert(withoutClientSentry.status === 0, `NEXT_PUBLIC_SENTRY_DSN must be optional:\n${withoutClientSentry.stderr}`);
+  assert(withoutClientSentry.status !== 0, "Production must require browser Sentry.");
+  assert(withoutClientSentry.stderr.includes("NEXT_PUBLIC_SENTRY_DSN"), "Missing browser Sentry failure should name the variable.");
 
   const missingRelease = validProductionEnv();
   delete missingRelease.RELEASE_VERSION;
@@ -902,6 +903,9 @@ function checkScriptWiring() {
   const codexEnvironment = readText(".codex/environments/environment.toml");
   const ciWorkflow = readText(".github/workflows/ci.yml");
   const webDockerfile = readText("apps/web/Dockerfile");
+  const clientInstrumentation = readText("apps/web/instrumentation-client.ts");
+  const browserSentryBridge = readText("apps/web/lib/sentry-client.ts");
+  const browserSentryRuntime = readText("apps/web/lib/sentry-client-runtime.ts");
   const gameDockerfile = readText("apps/game-server/Dockerfile");
   const gameConfig = readText("apps/game-server/src/app.config.ts");
   const playerPresenceManager = readText("apps/game-server/src/rooms/player-presence-manager.ts");
@@ -921,9 +925,35 @@ function checkScriptWiring() {
   assert(smoke.includes("live-safe play page"), "Smoke must check live-safe play page copy.");
   assert(smoke.includes("image-set"), "Smoke must check optimized CSS image-set references.");
   assert(playtest.includes("night-resolver.test.ts"), "Playtest must include night resolver regression tests.");
-  assert(ciWorkflow.includes("actions/checkout@v6"), "CI checkout action must use the current action runtime.");
-  assert(ciWorkflow.includes("pnpm/action-setup@v6"), "CI pnpm action must use the current action runtime.");
-  assert(ciWorkflow.includes("actions/setup-node@v6"), "CI setup-node action must use the current action runtime.");
+  assert(
+    ciWorkflow.includes("actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803"),
+    "CI checkout action must be pinned by commit.",
+  );
+  assert(
+    ciWorkflow.includes("pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271"),
+    "CI pnpm action must be pinned by commit.",
+  );
+  assert(
+    ciWorkflow.includes("actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38"),
+    "CI Node action must be pinned by commit.",
+  );
+  assert(
+    ciWorkflow.includes("actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"),
+    "CI artifact action must be pinned by commit.",
+  );
+  assert(
+    clientInstrumentation.includes("startClientMonitoring()")
+      && browserSentryBridge.includes('import("./sentry-client-runtime")')
+      && browserSentryBridge.includes("requestIdleCallback")
+      && browserSentryRuntime.includes("new BrowserClient({")
+      && browserSentryRuntime.includes("globalHandlersIntegration()"),
+    "Next client instrumentation must defer a minimal browser Sentry client.",
+  );
+  assert(
+    webDockerfile.includes("NEXT_PUBLIC_SENTRY_DSN")
+      && webDockerfile.includes("sentry_auth_token"),
+    "Web release builds must receive the public DSN and an ephemeral source-map token.",
+  );
 
   const ciNodeMajor = ciWorkflow.match(/node-version:\s*["']?(\d+)/)?.[1];
   const webNodeMajor = webDockerfile.match(/^FROM node:(\d+)/m)?.[1];
@@ -932,7 +962,10 @@ function checkScriptWiring() {
   assert(webNodeMajor === gameNodeMajor, "Web and game production images must use the same Node major.");
   assert(ciNodeMajor === webNodeMajor, `CI Node ${ciNodeMajor} must match production Node ${webNodeMajor}.`);
   assert(ciWorkflow.includes("scripts/container-ingress-smoke.mjs"), "CI must verify Caddy HTTP and WebSocket ingress.");
-  assert(ciWorkflow.includes("redis:8.2-alpine"), "CI production smoke must provide Redis.");
+  assert(
+    ciWorkflow.includes("redis:8.2-alpine@sha256:a7859ed111db3c1f5404a973a4747505d559fb5ca32d37e447afc0ef845a2103"),
+    "CI production smoke must pin Redis by digest.",
+  );
   assert(
     ciWorkflow.includes("REDIS_URL: redis://default:ci-redis-password-that-is-long-enough@localhost:6379"),
     "CI verify must connect smoke tests to authenticated Redis.",
@@ -1025,6 +1058,7 @@ function validProductionEnv() {
     RESEND_API_KEY: "re_prod_example_key",
     RESEND_FROM: "Върколак и Мафия <noreply@werewolf.example.com>",
     SENTRY_DSN: "https://public@sentry.example.com/1",
+    NEXT_PUBLIC_SENTRY_DSN: "https://public@sentry.example.com/2",
     RELEASE_VERSION: "release-2026-07-20.1",
     RCLONE_REMOTE: "encrypted-remote:werewolf/backups",
   };

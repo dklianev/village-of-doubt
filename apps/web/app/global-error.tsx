@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { captureClientException } from "@/lib/sentry-client";
 import "@/components/system/SystemPages.module.css";
 
 export default function GlobalError({
@@ -11,6 +12,7 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
+    captureClientException(error);
     console.error(error);
   }, [error]);
 

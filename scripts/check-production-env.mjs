@@ -12,6 +12,7 @@ const required = [
   "RESEND_API_KEY",
   "RESEND_FROM",
   "SENTRY_DSN",
+  "NEXT_PUBLIC_SENTRY_DSN",
   "RELEASE_VERSION",
   "RCLONE_REMOTE",
 ];
@@ -88,6 +89,7 @@ if (!hasDiscord) {
 checkUrlAlignment();
 checkDatabaseCredentials();
 checkSentryDsn("SENTRY_DSN");
+checkSentryDsn("NEXT_PUBLIC_SENTRY_DSN");
 checkReleaseVersion();
 
 for (const warning of warnings) {
