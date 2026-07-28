@@ -1,0 +1,43 @@
+#!/usr/bin/env sh
+set -eu
+
+manifest_path="${1:-${RELEASE_STATE_DIR:-.release-state}/previous.json}"
+if [ ! -f "$manifest_path" ]; then
+  echo "Rollback manifest not found: $manifest_path" >&2
+  exit 2
+fi
+
+release_dir="${RELEASE_STATE_DIR:-.release-state}"
+rollback_env="$release_dir/rollback.env"
+mkdir -p "$release_dir"
+node scripts/release-manifest.mjs "$manifest_path" --env-output "$rollback_env"
+chmod 600 "$rollback_env"
+
+set -a
+# shellcheck disable=SC1090
+. "$rollback_env"
+set +a
+
+pnpm deploy:drain
+docker compose --env-file .env --env-file "$rollback_env" pull web game
+docker compose --env-file .env --env-file "$rollback_env" up -d --no-build web game caddy
+
+attempt=1
+while [ "$attempt" -le 45 ]; do
+  web_health="$(docker compose --env-file .env --env-file "$rollback_env" ps --format json web 2>/dev/null | grep -o '"Health":"[^"]*"' | head -1 || true)"
+  game_health="$(docker compose --env-file .env --env-file "$rollback_env" ps --format json game 2>/dev/null | grep -o '"Health":"[^"]*"' | head -1 || true)"
+  if [ "$web_health" = '"Health":"healthy"' ] && [ "$game_health" = '"Health":"healthy"' ]; then
+    cp "$manifest_path" "$release_dir/current.json"
+    chmod 600 "$release_dir/current.json"
+    rm -f "$rollback_env"
+    echo "Rollback to $RELEASE_VERSION is healthy. No database downgrade was attempted."
+    exit 0
+  fi
+  sleep 2
+  attempt=$((attempt + 1))
+done
+
+docker compose --env-file .env --env-file "$rollback_env" ps
+docker compose --env-file .env --env-file "$rollback_env" logs --tail 150 web game
+echo "Rollback images did not become healthy. Escalate to the database restore runbook." >&2
+exit 1

@@ -34,6 +34,7 @@ services:
       start_period: 10s
 
   migrate:
+    image: ${MIGRATOR_IMAGE:-werewolf-migrator:${RELEASE_VERSION:-local}}
     build:
       context: .
       dockerfile: apps/web/Dockerfile
@@ -54,6 +55,7 @@ services:
     pids_limit: 128
 
   web:
+    image: ${WEB_IMAGE:-werewolf-web:${RELEASE_VERSION:-local}}
     build:
       context: .
       dockerfile: apps/web/Dockerfile
@@ -109,6 +111,7 @@ services:
       start_period: 30s
 
   game:
+    image: ${GAME_IMAGE:-werewolf-game:${RELEASE_VERSION:-local}}
     build:
       context: .
       dockerfile: apps/game-server/Dockerfile
