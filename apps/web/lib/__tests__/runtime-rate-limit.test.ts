@@ -7,7 +7,7 @@ import {
 } from "../runtime-rate-limit";
 
 describe("createRuntimeRedisEvalClient", () => {
-  it("отказва веднага, без да чака Redis connect promise", async () => {
+  it("отказва веднага, когато няма активна Redis връзка", async () => {
     const evalCommand = vi.fn();
     const client = createRuntimeRedisEvalClient(() => ({
       isReady: false,
@@ -19,6 +19,27 @@ describe("createRuntimeRedisEvalClient", () => {
       arguments: [],
     })).rejects.toBeInstanceOf(RedisUnavailableError);
     expect(evalCommand).not.toHaveBeenCalled();
+  });
+
+  it("изчаква текущото свързване преди първата Redis команда", async () => {
+    let ready = false;
+    const evalCommand = vi.fn(async () => 1);
+    const client = createRuntimeRedisEvalClient(
+      () => ({
+        isReady: ready,
+        eval: evalCommand,
+      }),
+      250,
+      async () => {
+        ready = true;
+      },
+    );
+
+    await expect(client.eval("return 1", {
+      keys: [],
+      arguments: [],
+    })).resolves.toBe(1);
+    expect(evalCommand).toHaveBeenCalledOnce();
   });
 
   it("прекъсва бавна команда в ограничения срок", async () => {

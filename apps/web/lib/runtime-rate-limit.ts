@@ -13,6 +13,7 @@ import {
 
 const backends = new Map<string, SharedRateLimitBackend>();
 let redisClient: RedisClientType | null = null;
+let redisConnectPromise: Promise<void> | null = null;
 const REDIS_COMMAND_TIMEOUT_MS = 500;
 
 interface RuntimeRedisClient {
@@ -26,26 +27,30 @@ interface RuntimeRedisClient {
 export function createRuntimeRedisEvalClient(
   getClient: () => RuntimeRedisClient | null,
   timeoutMs = REDIS_COMMAND_TIMEOUT_MS,
+  waitUntilReady?: () => Promise<void> | null,
 ): RedisEvalClient {
   return {
     async eval(script, options) {
-      const client = getClient();
+      let client = getClient();
       if (!client?.isReady) {
-        throw new RedisUnavailableError("Redis още не е готов.");
+        const connection = waitUntilReady?.();
+        if (!connection) {
+          throw new RedisUnavailableError("Redis още не е готов.");
+        }
+
+        await withRedisTimeout(connection, timeoutMs, "Redis връзката изтече.");
+        client = getClient();
+        if (!client?.isReady) {
+          throw new RedisUnavailableError("Redis още не е готов.");
+        }
       }
 
-      let timeout: ReturnType<typeof setTimeout> | undefined;
       try {
-        const timeoutPromise = new Promise<never>((_resolve, reject) => {
-          timeout = setTimeout(() => {
-            reject(new RedisUnavailableError("Redis командата изтече."));
-          }, timeoutMs);
-          timeout.unref?.();
-        });
-        return await Promise.race([
+        return await withRedisTimeout(
           client.eval(script, options),
-          timeoutPromise,
-        ]);
+          timeoutMs,
+          "Redis командата изтече.",
+        );
       } catch (error) {
         if (error instanceof RedisUnavailableError) {
           throw error;
@@ -54,10 +59,6 @@ export function createRuntimeRedisEvalClient(
           throw new RedisUnavailableError("Redis връзката прекъсна.", { cause: error });
         }
         throw error;
-      } finally {
-        if (timeout) {
-          clearTimeout(timeout);
-        }
       }
     },
   };
@@ -76,9 +77,13 @@ export function getRuntimeRateLimitBackend(
   }
 
   const backend = process.env.REDIS_URL
-    ? createRedisRateLimitBackend({
+      ? createRedisRateLimitBackend({
         namespace,
-        client: createRuntimeRedisEvalClient(() => getOrCreateRedisClient(process.env.REDIS_URL)),
+        client: createRuntimeRedisEvalClient(
+          () => getOrCreateRedisClient(process.env.REDIS_URL),
+          REDIS_COMMAND_TIMEOUT_MS,
+          () => redisConnectPromise,
+        ),
         outageMode,
       })
     : outageMode === "deny"
@@ -134,15 +139,41 @@ function getOrCreateRedisClient(url: string | undefined) {
     // Operational errors are reported by the consuming backend at a bounded rate.
   });
   redisClient = client;
-  void client.connect()
+  const connection = client.connect().then(() => undefined);
+  redisConnectPromise = connection;
+  void connection
     .catch((error) => {
       client.destroy();
       if (redisClient === client) {
         redisClient = null;
       }
+      if (redisConnectPromise === connection) {
+        redisConnectPromise = null;
+      }
       console.error("[redis] Връзката не можа да бъде установена.", error);
     });
   return client;
+}
+
+async function withRedisTimeout<T>(
+  operation: Promise<T>,
+  timeoutMs: number,
+  message: string,
+) {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const timeoutPromise = new Promise<never>((_resolve, reject) => {
+      timeout = setTimeout(() => {
+        reject(new RedisUnavailableError(message));
+      }, timeoutMs);
+      timeout.unref?.();
+    });
+    return await Promise.race([operation, timeoutPromise]);
+  } finally {
+    if (timeout) {
+      clearTimeout(timeout);
+    }
+  }
 }
 
 function isRedisConnectivityError(error: unknown) {
