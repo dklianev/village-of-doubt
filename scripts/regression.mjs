@@ -970,9 +970,23 @@ function checkScriptWiring() {
 
 function checkDatabaseMigrationWorkflow() {
   const databaseReadme = readText("packages/database/README.md");
+  const packageJson = JSON.parse(readText("package.json"));
   assert(databaseReadme.includes("db:generate"), "Database README must document migration generation.");
   assert(databaseReadme.includes("db:migrate"), "Database README must document migration application.");
   assert(databaseReadme.includes("drizzle-kit check"), "Database README must document the migration drift guard.");
+  assert(
+    packageJson.scripts["check:migrations"]?.includes("check-migration-safety"),
+    "package.json must expose the migration safety policy guard.",
+  );
+
+  const safetyResult = spawnSync(process.execPath, ["scripts/check-migration-safety.mjs"], {
+    cwd: root,
+    encoding: "utf8",
+  });
+  assert(
+    safetyResult.status === 0,
+    `Migration safety policy failed:\n${safetyResult.stdout ?? ""}\n${safetyResult.stderr ?? ""}`,
+  );
 
   const result =
     process.platform === "win32"
