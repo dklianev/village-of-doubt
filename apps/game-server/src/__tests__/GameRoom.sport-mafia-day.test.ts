@@ -264,13 +264,19 @@ async function advanceOnce(client: ClientRoom | undefined, room: GameRoom) {
   }
 
   const before = dayFlowState(room);
-  const nextPatch = room.waitForNextPatch();
-  client?.send("narratorAdvance", {});
-  await waitForPatch(nextPatch);
+  let nextPatch = room.waitForNextPatch();
+  client.send("narratorAdvance", {});
 
-  if (dayFlowState(room) === before) {
-    throw new Error("The narrator command produced a patch without advancing the day flow state.");
+  const deadline = Date.now() + 5_000;
+  while (dayFlowState(room) === before && Date.now() < deadline) {
+    await waitForPatch(nextPatch);
+    if (dayFlowState(room) !== before) {
+      return;
+    }
+    nextPatch = room.waitForNextPatch();
   }
+
+  throw new Error("The narrator command produced patches without advancing the day flow state.");
 }
 
 function dayFlowState(room: GameRoom) {

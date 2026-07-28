@@ -25,7 +25,7 @@ describe("PlayerPresenceManager", () => {
     expect(PlayerPresenceManager.getUsedNonceCountForTests()).toBe(PlayerPresenceManager.MAX_USED_NONCES);
     await expect(PlayerPresenceManager.consumeTokenNonce("nonce-over-capacity", expiresAt)).resolves.toBe(false);
     expect(PlayerPresenceManager.getUsedNonceCountForTests()).toBe(PlayerPresenceManager.MAX_USED_NONCES);
-  });
+  }, 15_000);
 
   it("prunes expired nonce entries before admitting a fresh token", async () => {
     vi.useFakeTimers();

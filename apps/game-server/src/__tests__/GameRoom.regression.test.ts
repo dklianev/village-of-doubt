@@ -170,7 +170,10 @@ describe("GameRoom gameplay regressions", () => {
     await expect(replacementAck).resolves.toBeTruthy();
 
     clients[0]?.client.send("narratorAdvance", {});
-    await serverRoom.waitForNextPatch(20);
+    await waitForCondition(
+      () => findPublicPlayer(serverRoom, targets[1]?.userId)?.alive === false,
+      "Witch replacement poison did not resolve against the latest target.",
+    );
 
     expect(findPublicPlayer(serverRoom, targets[0]?.userId)?.alive).toBe(true);
     expect(findPublicPlayer(serverRoom, targets[1]?.userId)?.alive).toBe(false);
@@ -1410,6 +1413,21 @@ async function drainNightActionCapabilities(client: ClientRoom<GameRoom, GameSta
       return;
     }
   }
+}
+
+async function waitForCondition(
+  condition: () => boolean,
+  message: string,
+  timeoutMs = 3_000,
+) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (condition()) {
+      return;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+  throw new Error(message);
 }
 
 async function waitForNightActionCapabilitiesMatching(

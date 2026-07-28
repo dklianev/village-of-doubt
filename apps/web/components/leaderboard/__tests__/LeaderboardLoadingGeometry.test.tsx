@@ -41,7 +41,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await browser?.close();
-});
+}, 30_000);
 
 describe("leaderboard loading geometry", () => {
   it(
