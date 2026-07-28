@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { checkDatabaseReadiness, createDatabase } = vi.hoisted(() => ({
   checkDatabaseReadiness: vi.fn(),
@@ -10,9 +10,21 @@ vi.mock("@werewolf/database", () => ({
   createDatabase,
 }));
 
+const { checkRuntimeRedisReadiness } = vi.hoisted(() => ({
+  checkRuntimeRedisReadiness: vi.fn(),
+}));
+
+vi.mock("@/lib/runtime-rate-limit", () => ({
+  checkRuntimeRedisReadiness,
+}));
+
 import { GET } from "../route";
 
 describe("GET /api/health/ready", () => {
+  beforeEach(() => {
+    checkRuntimeRedisReadiness.mockResolvedValue(true);
+  });
+
   afterEach(() => {
     vi.clearAllMocks();
     vi.unstubAllEnvs();
@@ -69,6 +81,17 @@ describe("GET /api/health/ready", () => {
     const response = await GET();
 
     expect(response.status).toBe(503);
+  });
+
+  it("връща 503, когато Redis не е готов за web rate limits", async () => {
+    vi.stubEnv("DATABASE_URL", "postgres://localhost/werewolf");
+    checkDatabaseReadiness.mockResolvedValueOnce(true);
+    checkRuntimeRedisReadiness.mockResolvedValueOnce(false);
+
+    const response = await GET();
+
+    expect(response.status).toBe(503);
+    expect(checkRuntimeRedisReadiness).toHaveBeenCalledOnce();
   });
 
   it("изисква вътрешен game-server URL в production", async () => {

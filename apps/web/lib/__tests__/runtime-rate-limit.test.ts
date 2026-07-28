@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { RedisUnavailableError } from "../redis-rate-limit";
 import {
+  createRuntimeRedisReadinessProbe,
   createRuntimeRedisEvalClient,
   getRuntimeRateLimitBackend,
   resolveRuntimeRedisUrl,
@@ -71,6 +72,39 @@ describe("createRuntimeRedisEvalClient", () => {
       keys: [],
       arguments: [],
     })).rejects.toThrow("NOAUTH");
+  });
+});
+
+describe("createRuntimeRedisReadinessProbe", () => {
+  it("изчаква свързването и изисква PONG", async () => {
+    let ready = false;
+    const ping = vi.fn(async () => "PONG");
+    const probe = createRuntimeRedisReadinessProbe(
+      () => ({ isReady: ready, ping }),
+      250,
+      async () => {
+        ready = true;
+      },
+    );
+
+    await expect(probe()).resolves.toBe(true);
+    expect(ping).toHaveBeenCalledOnce();
+  });
+
+  it("връща false при timeout без да издава Redis грешката", async () => {
+    vi.useFakeTimers();
+    const probe = createRuntimeRedisReadinessProbe(
+      () => ({
+        isReady: true,
+        ping: vi.fn(() => new Promise<string>(() => {})),
+      }),
+      250,
+    );
+    const result = probe();
+
+    await vi.advanceTimersByTimeAsync(250);
+    await expect(result).resolves.toBe(false);
+    vi.useRealTimers();
   });
 });
 

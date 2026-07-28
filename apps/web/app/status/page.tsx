@@ -5,7 +5,7 @@ import { JsonLd } from "@/components/JsonLd";
 import { ResourceHints } from "@/components/resource-hints";
 import { StatusDashboard } from "@/components/status/StatusDashboard";
 import { absoluteUrl, routeMetadata } from "@/lib/seo";
-import { loadStatusServices } from "@/lib/status-health";
+import { loadStatusSnapshot } from "@/lib/status-health";
 
 export const dynamic = "force-dynamic";
 
@@ -19,8 +19,7 @@ export const metadata: Metadata = routeMetadata({
 });
 
 export default async function StatusPage() {
-  const services = await loadStatusServices();
-  const lastCheckedAt = new Date().toISOString();
+  const { services, lastCheckedAt } = await loadStatusSnapshot();
 
   const jsonLd = {
     "@context": "https://schema.org",

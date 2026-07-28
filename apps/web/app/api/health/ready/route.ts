@@ -1,4 +1,5 @@
 import { checkDatabaseReadiness, createDatabase } from "@werewolf/database";
+import { checkRuntimeRedisReadiness } from "@/lib/runtime-rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,8 @@ export async function GET() {
   }
 
   const gameServerReady = await checkGameServerReadiness(process.env.GAME_SERVER_HTTP_URL);
-  const ready = databaseReady && gameServerReady;
+  const redisReady = await checkRuntimeRedisReadiness();
+  const ready = databaseReady && gameServerReady && redisReady;
 
   return Response.json(
     {

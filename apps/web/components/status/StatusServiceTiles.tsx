@@ -71,6 +71,15 @@ function ServiceIcon({ name }: { name: ServiceHealth["icon"] }) {
           <path d="M6 16c2.5 2 17.5 2 20 0" />
         </svg>
       );
+    case "cache":
+      return (
+        <svg {...common}>
+          <path d="M7 10c0-2 4-4 9-4s9 2 9 4-4 4-9 4-9-2-9-4Z" />
+          <path d="M7 10v6c0 2 4 4 9 4s9-2 9-4v-6" />
+          <path d="M7 16v6c0 2 4 4 9 4s9-2 9-4v-6" />
+          <path d="M12 10h8" />
+        </svg>
+      );
     case "auth":
       return (
         <svg {...common}>

@@ -24,6 +24,11 @@ interface RuntimeRedisClient {
   ): Promise<unknown>;
 }
 
+interface RuntimeRedisReadinessClient {
+  readonly isReady: boolean;
+  ping(): Promise<string>;
+}
+
 export function createRuntimeRedisEvalClient(
   getClient: () => RuntimeRedisClient | null,
   timeoutMs = REDIS_COMMAND_TIMEOUT_MS,
@@ -91,6 +96,56 @@ export function getRuntimeRateLimitBackend(
       : createMemoryRateLimitBackend();
   backends.set(cacheKey, backend);
   return backend;
+}
+
+export function createRuntimeRedisReadinessProbe(
+  getClient: () => RuntimeRedisReadinessClient | null,
+  timeoutMs = REDIS_COMMAND_TIMEOUT_MS,
+  waitUntilReady?: () => Promise<void> | null,
+) {
+  return async () => {
+    try {
+      let client = getClient();
+      if (!client?.isReady) {
+        const connection = waitUntilReady?.();
+        if (!connection) {
+          return false;
+        }
+        await withRedisTimeout(connection, timeoutMs, "Redis връзката изтече.");
+        client = getClient();
+      }
+
+      if (!client?.isReady) {
+        return false;
+      }
+
+      return await withRedisTimeout(
+        client.ping().then((response) => response === "PONG"),
+        timeoutMs,
+        "Redis readiness проверката изтече.",
+      );
+    } catch {
+      return false;
+    }
+  };
+}
+
+export async function checkRuntimeRedisReadiness(
+  timeoutMs = REDIS_COMMAND_TIMEOUT_MS,
+) {
+  if (!process.env.REDIS_URL) {
+    return process.env.NODE_ENV !== "production";
+  }
+
+  try {
+    return await createRuntimeRedisReadinessProbe(
+      () => getOrCreateRedisClient(process.env.REDIS_URL),
+      timeoutMs,
+      () => redisConnectPromise,
+    )();
+  } catch {
+    return false;
+  }
 }
 
 function createUnavailableRateLimitBackend(): SharedRateLimitBackend {

@@ -6,7 +6,7 @@ export interface ServiceHealth {
   description: string;
   status: ServiceStatusKind;
   detail?: string;
-  icon: "web" | "game" | "database" | "auth" | "email";
+  icon: "web" | "game" | "database" | "cache" | "auth" | "email";
 }
 
 export function computeOverallStatus(services: ServiceHealth[]): ServiceStatusKind {
@@ -15,7 +15,11 @@ export function computeOverallStatus(services: ServiceHealth[]): ServiceStatusKi
   }
 
   const critical = services.filter(
-    (service) => service.id === "web" || service.id === "game-server" || service.id === "database",
+    (service) =>
+      service.id === "web" ||
+      service.id === "game-server" ||
+      service.id === "database" ||
+      service.id === "redis",
   );
   if (critical.length > 0 && critical.every((service) => service.status === "ok")) {
     return "ok";

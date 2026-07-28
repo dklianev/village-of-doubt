@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
-import { loadStatusServices } from "@/lib/status-health";
+import { loadStatusSnapshot } from "@/lib/status-health";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const services = await loadStatusServices();
+  const snapshot = await loadStatusSnapshot();
 
   return NextResponse.json({
-    services,
-    lastCheckedAt: new Date().toISOString(),
+    services: snapshot.services,
+    lastCheckedAt: snapshot.lastCheckedAt,
   });
 }
