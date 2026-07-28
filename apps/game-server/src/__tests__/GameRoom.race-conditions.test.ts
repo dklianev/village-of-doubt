@@ -59,13 +59,28 @@ describe("GameRoom race-condition contracts", () => {
     await Promise.all([firstAck, secondAck]);
     await waitForPendingNightActions(serverRoom, wolves.length);
     clients[0]?.client.send("narratorAdvance", {});
-    await serverRoom.waitForNextPatch(25).catch(() => undefined);
+    await waitForPlayerAliveState(serverRoom, target?.userId, false);
 
     const deadPlayers = [...serverRoom.state.players.values()].filter((player) => player.playing && !player.alive);
     expect(deadPlayers.map((player) => player.userId)).toEqual([target?.userId]);
     expect(findPublicPlayer(serverRoom, target?.userId)?.alive).toBe(false);
   });
 });
+
+async function waitForPlayerAliveState(
+  room: GameRoom,
+  userId: string | undefined,
+  expectedAlive: boolean,
+) {
+  for (let index = 0; index < 100; index += 1) {
+    if (findPublicPlayer(room, userId)?.alive === expectedAlive) {
+      return;
+    }
+    await delay(10);
+  }
+
+  throw new Error(`Играчът ${userId ?? "без идентификатор"} не достигна очакваното състояние.`);
+}
 
 async function waitForPendingNightActions(room: GameRoom, expectedCount: number) {
   for (let index = 0; index < 20; index += 1) {
