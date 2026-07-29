@@ -24,7 +24,20 @@ export default async function SignInPage({
 
   return (
     <main className="shell sign-in-shell">
-      <ResourceHints images={["/game-art/sign-in-table.webp"]} />
+      <ResourceHints
+        images={[
+          {
+            href: "/game-art/sign-in-table.webp",
+            media: "(min-width: 721px)",
+            fetchPriority: "high",
+          },
+          {
+            href: "/game-art/mobile/sign-in-table.webp",
+            media: "(max-width: 720px)",
+            fetchPriority: "high",
+          },
+        ]}
+      />
       <Suspense fallback={<div className="sign-in-loading">Подреждаме масата...</div>}>
         <SignInStage redirectTo={safeInternalRedirect(redirect)} />
       </Suspense>

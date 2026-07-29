@@ -2,6 +2,7 @@
 
 :global(.rules-playbook-hero) {
   position: relative;
+  isolation: isolate;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: end;
@@ -12,7 +13,7 @@
   padding: clamp(24px, 4vw, 48px);
   background:
     linear-gradient(100deg, rgba(13, 8, 7, 0.98) 0%, rgba(13, 8, 7, 0.72) 44%, rgba(7, 13, 14, 0.22) 100%),
-    var(--page-art, var(--art-landing)) center / cover no-repeat;
+    #0a0d0d;
   box-shadow: 0 28px 90px rgba(0, 0, 0, 0.32), inset 0 1px rgba(255, 255, 255, 0.12);
 }
 
@@ -25,38 +26,65 @@
 }
 
 :global(.rules-shell::before) {
+  display: none;
+}
+
+:global(body:has(.rules-shell)::before) {
   position: fixed;
   inset: 64px 0 0;
+  display: block;
+  z-index: -2;
   width: auto;
   min-height: 0;
   background:
     linear-gradient(115deg, rgba(8, 9, 9, 0.9), rgba(21, 12, 9, 0.62) 48%, rgba(8, 9, 9, 0.92)),
-    var(--page-art) center / cover no-repeat;
+    var(--art-werewolf) center / cover no-repeat;
   transform: none;
 }
 
-:global(html[data-theme="light"] .rules-shell::before) {
+:global(body:has(.rules-shell[data-family="mafia"])::before) {
+  background:
+    linear-gradient(115deg, rgba(8, 9, 9, 0.9), rgba(21, 12, 9, 0.62) 48%, rgba(8, 9, 9, 0.92)),
+    var(--art-mafia) center / cover no-repeat;
+}
+
+:global(html[data-theme="light"] body:has(.rules-shell)::before) {
   background:
     linear-gradient(115deg, rgba(250, 240, 218, 0.58), rgba(235, 215, 180, 0.34) 48%, rgba(250, 240, 218, 0.62)),
-    var(--page-art) center / cover no-repeat;
+    var(--art-werewolf) center / cover no-repeat;
   filter: saturate(0.86) contrast(0.98);
   opacity: 1;
+}
+
+:global(html[data-theme="light"] body:has(.rules-shell[data-family="mafia"])::before) {
+  background:
+    linear-gradient(115deg, rgba(250, 240, 218, 0.58), rgba(235, 215, 180, 0.34) 48%, rgba(250, 240, 218, 0.62)),
+    var(--art-mafia) center / cover no-repeat;
 }
 
 :global(.rules-playbook-hero::after) {
   position: absolute;
   inset: 0;
+  z-index: 1;
   background:
+    linear-gradient(100deg, rgba(13, 8, 7, 0.98) 0%, rgba(13, 8, 7, 0.78) 46%, rgba(7, 13, 14, 0.38) 100%),
     linear-gradient(135deg, rgba(248, 236, 210, 0.08) 0 1px, transparent 1px 22px),
     radial-gradient(circle at 78% 18%, rgba(209, 154, 66, 0.16), transparent 23rem);
   content: "";
-  opacity: 0.62;
   pointer-events: none;
 }
 
-:global(.rules-playbook-hero > *) {
+:global(.rules-hero-art) {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  background: var(--page-art) center / cover no-repeat;
+}
+
+:global(.rules-playbook-hero > :not(.rules-hero-art)) {
   position: relative;
-  z-index: 1;
+  z-index: 2;
 }
 
 :global(.rules-playbook-hero h1) {
@@ -301,51 +329,51 @@
 }
 
 :global(.phase-node-icon.phase-lobby) {
-  --phase-node-icon: image-set(url("/game-art/icon-phase-lobby.webp") type("image/webp"));
+  --phase-node-icon: image-set(url("/game-art/phase-board/v1/werewolves/icon-phase-lobby-560.webp") type("image/webp"));
 }
 
 :global(.phase-node-icon.phase-role_reveal) {
-  --phase-node-icon: image-set(url("/game-art/icon-phase-role-reveal.webp") type("image/webp"));
+  --phase-node-icon: image-set(url("/game-art/phase-board/v1/werewolves/icon-phase-role-reveal-560.webp") type("image/webp"));
 }
 
 :global(.phase-node-icon.phase-night) {
-  --phase-node-icon: image-set(url("/game-art/icon-phase-night.webp") type("image/webp"));
+  --phase-node-icon: image-set(url("/game-art/phase-board/v1/werewolves/icon-phase-night-560.webp") type("image/webp"));
 }
 
 :global(.phase-node-icon.phase-day_discussion) {
-  --phase-node-icon: image-set(url("/game-art/icon-phase-day.webp") type("image/webp"));
+  --phase-node-icon: image-set(url("/game-art/phase-board/v1/werewolves/icon-phase-day-560.webp") type("image/webp"));
 }
 
 :global(.phase-node-icon.phase-voting) {
-  --phase-node-icon: image-set(url("/game-art/icon-phase-voting.webp") type("image/webp"));
+  --phase-node-icon: image-set(url("/game-art/phase-board/v1/werewolves/icon-phase-voting-560.webp") type("image/webp"));
 }
 
 :global(.phase-node-icon.phase-resolution) {
-  --phase-node-icon: image-set(url("/game-art/icon-phase-resolution.webp") type("image/webp"));
+  --phase-node-icon: image-set(url("/game-art/phase-board/v1/werewolves/icon-phase-resolution-560.webp") type("image/webp"));
 }
 
 :global([data-family="mafia"] .phase-node-icon.phase-lobby) {
-  --phase-node-icon: var(--art-lobby);
+  --phase-node-icon: image-set(url("/game-art/phase-board/v1/mafia/icon-phase-lobby-560.webp") type("image/webp"));
 }
 
 :global([data-family="mafia"] .phase-node-icon.phase-role_reveal) {
-  --phase-node-icon: var(--art-reveal);
+  --phase-node-icon: image-set(url("/game-art/phase-board/v1/mafia/icon-phase-role-reveal-560.webp") type("image/webp"));
 }
 
 :global([data-family="mafia"] .phase-node-icon.phase-night) {
-  --phase-node-icon: var(--art-night);
+  --phase-node-icon: image-set(url("/game-art/phase-board/v1/mafia/icon-phase-night-560.webp") type("image/webp"));
 }
 
 :global([data-family="mafia"] .phase-node-icon.phase-day_discussion) {
-  --phase-node-icon: var(--art-day);
+  --phase-node-icon: image-set(url("/game-art/phase-board/v1/mafia/icon-phase-day-560.webp") type("image/webp"));
 }
 
 :global([data-family="mafia"] .phase-node-icon.phase-voting) {
-  --phase-node-icon: var(--art-vote);
+  --phase-node-icon: image-set(url("/game-art/phase-board/v1/mafia/icon-phase-voting-560.webp") type("image/webp"));
 }
 
 :global([data-family="mafia"] .phase-node-icon.phase-resolution) {
-  --phase-node-icon: var(--art-resolution);
+  --phase-node-icon: image-set(url("/game-art/phase-board/v1/mafia/icon-phase-resolution-560.webp") type("image/webp"));
 }
 
 :global(.phase-node-label),

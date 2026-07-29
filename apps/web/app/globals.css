@@ -413,12 +413,15 @@
     --art-landing: image-set(url("/game-art/mobile/bg-landing-hero.webp") type("image/webp"));
     --art-landing-ambient: image-set(url("/game-art/mobile/bg-landing-ambient.webp") type("image/webp"));
     --art-landing-dual: image-set(url("/game-art/mobile/bg-landing-dual-world-v2.webp") type("image/webp"));
-    --art-landing-hero-composited: image-set(url("/game-art/mobile/bg-landing-hero-composited.webp?v=2") type("image/webp"));
+    --art-landing-hero-composited: image-set(url("/game-art/mobile/bg-landing-hero-composited.avif?v=2") type("image/avif"), url("/game-art/mobile/bg-landing-hero-composited.webp?v=2") type("image/webp"));
     --art-landing-hero-light: image-set(url("/game-art/mobile/bg-landing-hero-light-v1.webp") type("image/webp"));
     --art-landing-ambient-composited: image-set(url("/game-art/mobile/bg-landing-ambient-composited.webp") type("image/webp"));
-    --art-werewolf: image-set(url("/game-art/mobile/werewolf/bg-hero-v2.webp") type("image/webp"));
-    --art-mafia: image-set(url("/game-art/mobile/mafia/bg-hero-v2.webp") type("image/webp"));
+    --art-werewolf: image-set(url("/game-art/mobile/werewolf/bg-hero-v2.avif") type("image/avif"), url("/game-art/mobile/werewolf/bg-hero-v2.webp") type("image/webp"));
+    --art-mafia: image-set(url("/game-art/mobile/mafia/bg-hero-v2.avif") type("image/avif"), url("/game-art/mobile/mafia/bg-hero-v2.webp") type("image/webp"));
     --art-lobby: image-set(url("/game-art/mobile/bg-lobby-tavern.webp") type("image/webp"));
+    --art-sign-in: image-set(url("/game-art/mobile/sign-in-table.webp") type("image/webp"));
+    --art-tutorial-day: image-set(url("/game-art/mobile/tutorial-day-scene.webp") type("image/webp"));
+    --art-tutorial-night: image-set(url("/game-art/mobile/tutorial-night-scene.webp") type("image/webp"));
     --art-reveal: image-set(url("/game-art/mobile/bg-role-reveal.webp") type("image/webp"));
     --art-night: image-set(url("/game-art/mobile/bg-night-phase.webp") type("image/webp"));
     --art-day: image-set(url("/game-art/mobile/bg-day-discussion.webp") type("image/webp"));

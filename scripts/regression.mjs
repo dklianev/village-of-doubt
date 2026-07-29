@@ -223,12 +223,13 @@ function checkLandingLayoutContracts() {
   assert(modeChoiceCards.includes("Избери игра"), "Signed-in landing CTA must send users to game selection.");
   assert(landingPage.includes("href: \"/werewolf\""), "Landing page must define a Werewolf game entry.");
   assert(landingPage.includes("href: \"/mafia\""), "Landing page must define a Mafia game entry.");
-  assert(landingPage.includes("/game-art/mobile/bg-landing-ambient-composited.webp"), "Landing page should preload the mobile composited ambient background.");
-  assert(landingPage.includes("/game-art/mobile/bg-landing-hero-composited.webp"), "Landing page should preload the mobile composited hero background.");
-  assert(landingPage.includes("/game-art/bg-landing-ambient-composited.webp"), "Landing page should preload the desktop composited ambient background.");
   assert(landingPage.includes("/game-art/bg-landing-hero-composited.avif"), "Landing page should preload the desktop AVIF composited hero background selected by CSS.");
-  assert(landingPage.includes("/game-art/bg-lobby-tavern.webp"), "Landing page should preload the first desktop game-card backdrop used as LCP content.");
-  assert(landingPage.includes("/game-art/mobile/bg-lobby-tavern.webp"), "Landing page should preload the first mobile game-card backdrop used as LCP content.");
+  assert(landingPage.includes("/game-art/mobile/bg-landing-hero-composited.avif"), "Landing page should preload the mobile AVIF composited hero background selected by the picture source.");
+  assert(landingPage.includes("/game-art/mobile/bg-landing-hero-composited.webp"), "Landing hero picture should keep a mobile WebP fallback.");
+  assert(!landingPage.includes("href: \"/game-art/bg-landing-ambient-composited.webp\""), "Landing should not preload ambient art ahead of its LCP hero.");
+  assert(!landingPage.includes("href: \"/game-art/mobile/bg-landing-ambient-composited.webp\""), "Landing should not preload mobile ambient art ahead of its LCP hero.");
+  assert(!landingPage.includes("href: \"/game-art/bg-lobby-tavern.webp\""), "Landing should not preload below-fold game-card art.");
+  assert(!landingPage.includes("href: \"/game-art/mobile/bg-lobby-tavern.webp\""), "Landing should not preload below-fold mobile game-card art.");
   assert(css.includes("/game-art/mobile/mafia/bg-lobby-tavern.webp"), "Landing cards must use the optimized Mafia backdrop on mobile.");
   assert(!landingPage.includes("Село под съмнение"), "Landing page must not use the old Werewolf branding.");
   assert(!landingPage.includes("Българска Мафия"), "Landing page must not use the old Mafia branding.");
@@ -446,16 +447,29 @@ function checkRolesPageContracts() {
 
 function checkRulesPlaybookContracts() {
   const rulesPage = readText("apps/web/components/games/game-rules-page.tsx");
+  const rulesPhaseTimeline = readText("apps/web/components/games/GameRulesPhaseTimeline.tsx");
   const werewolfRulesRoute = readText("apps/web/app/werewolf/rules/page.tsx");
   const mafiaRulesRoute = readText("apps/web/app/mafia/rules/page.tsx");
   const css = readRulesStyles();
 
   assert(rulesPage.includes("getRulesForFamily"), "Rules page must keep shared rules data as its source.");
   assert(rulesPage.includes("rules-playbook-hero"), "Rules page must render the premium playbook hero.");
-  assert(rulesPage.includes("rules-phase-timeline"), "Rules page must render the interactive phase timeline.");
-  assert(rulesPage.includes("function PhaseTimeline"), "Rules page must render the phase map through PhaseTimeline.");
-  assert(rulesPage.includes("function PhaseDetailPanel"), "Rules page must render phase details through PhaseDetailPanel.");
-  assert(rulesPage.includes("phaseLabelBg"), "Rules phase timeline must use family-aware phase labels.");
+  assert(
+    rulesPage.includes("<GameRulesPhaseTimeline"),
+    "Rules page must render the interactive phase timeline client island.",
+  );
+  assert(
+    rulesPhaseTimeline.includes("rules-phase-timeline"),
+    "Rules phase timeline must keep its page-local contract class.",
+  );
+  assert(
+    rulesPhaseTimeline.includes("function PhaseDetailPanel"),
+    "Rules phase timeline must render phase details through PhaseDetailPanel.",
+  );
+  assert(
+    rulesPhaseTimeline.includes("phaseLabelBg"),
+    "Rules phase timeline must use family-aware phase labels.",
+  );
   assert(rulesPage.includes("rules-scenario-grid"), "Rules page must render family scenario cards.");
   assert(rulesPage.includes("rules-chapter-grid"), "Rules sections must render as compact chapter cards.");
   assert(rulesPage.includes("rules-table-protocol"), "Rules page must render the table protocol block.");

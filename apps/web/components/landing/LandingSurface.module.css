@@ -13,23 +13,94 @@
   isolation: isolate;
   min-height: 520px;
   border-color: var(--hero-card-border);
-  background:
-    linear-gradient(
-      180deg,
-      rgba(7, 9, 10, 0.02) 0%,
-      rgba(7, 9, 10, 0.08) 38%,
-      rgba(9, 10, 10, 0.48) 52%,
-      rgba(12, 10, 9, 0.94) 64%,
-      #0d0b09 72%
-    ),
-    var(--hero-card-scrim),
-    var(--art-landing-hero-composited) center top / 100% auto no-repeat,
-    linear-gradient(145deg, rgba(8, 11, 12, 0.96), rgba(17, 12, 10, 0.92));
+  background: linear-gradient(145deg, rgba(8, 11, 12, 0.99), rgba(17, 12, 10, 0.98));
   box-shadow:
     var(--hero-card-shadow),
     0 80px 120px -40px rgba(0, 0, 0, 0.7),
     inset 0 1px 0 rgba(255, 247, 229, 0.18),
     inset 0 -1px 0 rgba(0, 0, 0, 0.32);
+}
+
+:global(.landing-hero-art) {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 0;
+  height: clamp(420px, 58vw, 620px);
+  overflow: hidden;
+  background: #0d0b09;
+  pointer-events: none;
+}
+
+:global(.landing-hero-art picture),
+:global(.landing-hero-art img) {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+:global(.landing-hero-art img) {
+  object-fit: cover;
+  object-position: center top;
+}
+
+:global(.landing-hero-art::after) {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(7, 9, 10, 0.02) 0%,
+      rgba(7, 9, 10, 0.08) 45%,
+      rgba(9, 10, 10, 0.54) 70%,
+      #0d0b09 100%
+    ),
+    var(--hero-card-scrim);
+  content: "";
+}
+
+:global(.landing-hero-card > :not(.landing-hero-art)) {
+  position: relative;
+  z-index: 2;
+}
+
+:global(html[data-theme="light"] .landing-hero-art) {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(246, 232, 202, 0.02) 0%,
+      rgba(246, 232, 202, 0.08) 45%,
+      rgba(246, 232, 202, 0.54) 70%,
+      #efe0c3 100%
+    ),
+    linear-gradient(
+      90deg,
+      rgba(255, 247, 229, 0.92) 0%,
+      rgba(255, 247, 229, 0.72) 34%,
+      rgba(255, 247, 229, 0.3) 58%,
+      rgba(255, 247, 229, 0.08) 100%
+    ),
+    var(--art-landing-hero-light) center top / 100% auto no-repeat;
+}
+
+:global(html[data-theme="light"] .landing-hero-art picture),
+:global(html[data-theme="light"] .landing-hero-art::after) {
+  display: none;
+}
+
+:global(html[data-theme="light"] .landing-shell .landing-hero-art::after) {
+  display: block;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(246, 232, 202, 0.02) 0%,
+      rgba(246, 232, 202, 0.18) 38%,
+      rgba(246, 232, 202, 0.74) 58%,
+      rgba(239, 224, 195, 0.96) 78%,
+      #efe0c3 100%
+    ),
+    linear-gradient(90deg, rgba(255, 247, 229, 0.34), transparent 72%);
 }
 
 :global(.landing-hero-card > .section-kicker) {
@@ -292,18 +363,7 @@
   isolation: isolate;
   min-height: 520px;
   border-color: var(--hero-card-border);
-  background:
-    linear-gradient(
-      180deg,
-      rgba(7, 9, 10, 0.02) 0%,
-      rgba(7, 9, 10, 0.08) 38%,
-      rgba(9, 10, 10, 0.48) 52%,
-      rgba(12, 10, 9, 0.94) 64%,
-      #0d0b09 72%
-    ),
-    var(--hero-card-scrim),
-    var(--art-landing-hero-composited) center top / 100% auto no-repeat,
-    linear-gradient(145deg, rgba(8, 11, 12, 0.96), rgba(17, 12, 10, 0.92));
+  background: linear-gradient(145deg, rgba(8, 11, 12, 0.99), rgba(17, 12, 10, 0.98));
   box-shadow:
     var(--hero-card-shadow),
     0 80px 120px -40px rgba(0, 0, 0, 0.7),
@@ -314,24 +374,7 @@
 }
 
 :global(html[data-theme="light"] .landing-hero-card) {
-  background:
-    linear-gradient(
-      180deg,
-      rgba(246, 232, 202, 0.02) 0%,
-      rgba(246, 232, 202, 0.08) 38%,
-      rgba(246, 232, 202, 0.46) 52%,
-      rgba(241, 222, 185, 0.94) 64%,
-      #efe0c3 72%
-    ),
-    linear-gradient(
-      90deg,
-      rgba(255, 247, 229, 0.92) 0%,
-      rgba(255, 247, 229, 0.72) 34%,
-      rgba(255, 247, 229, 0.3) 58%,
-      rgba(255, 247, 229, 0.08) 100%
-    ),
-    var(--art-landing-hero-light) center top / 100% auto no-repeat,
-    linear-gradient(145deg, rgba(255, 247, 229, 0.96), rgba(231, 208, 164, 0.88));
+  background: linear-gradient(145deg, rgba(255, 247, 229, 0.98), rgba(231, 208, 164, 0.96));
 }
 
 :global(html[data-theme="light"] .landing-hero-card > .section-kicker) {

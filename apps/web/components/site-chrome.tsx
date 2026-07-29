@@ -315,6 +315,10 @@ function applyThemePreference(preference: ThemePreference) {
     return;
   }
 
+  if (document.documentElement.dataset.theme === preference) {
+    return;
+  }
+
   document.documentElement.dataset.vt = "theme";
   document.documentElement.dataset.theme = preference;
   window.setTimeout(() => {

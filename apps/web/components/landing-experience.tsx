@@ -46,18 +46,48 @@ export function LandingExperience({ initialSession }: { initialSession: LandingS
             type: "image/avif",
             fetchPriority: "high",
           },
-          { href: "/game-art/bg-landing-ambient-composited.webp", media: "(min-width: 721px)" },
-          { href: "/game-art/bg-lobby-tavern.webp", media: "(min-width: 721px)" },
           {
-            href: "/game-art/mobile/bg-landing-hero-composited.webp?v=2",
+            href: "/game-art/mobile/bg-landing-hero-composited.avif?v=2",
             media: "(max-width: 720px)",
+            type: "image/avif",
             fetchPriority: "high",
           },
-          { href: "/game-art/mobile/bg-landing-ambient-composited.webp", media: "(max-width: 720px)" },
-          { href: "/game-art/mobile/bg-lobby-tavern.webp", media: "(max-width: 720px)" },
         ]}
       />
       <section className="card landing-hero-card rounded-[2rem] p-7">
+        <div className="landing-hero-art" aria-hidden="true">
+          <picture>
+            <source
+              media="(min-width: 721px)"
+              srcSet="/game-art/bg-landing-hero-composited.avif?v=2"
+              type="image/avif"
+              width="1280"
+              height="720"
+            />
+            <source
+              media="(max-width: 720px)"
+              srcSet="/game-art/mobile/bg-landing-hero-composited.avif?v=2"
+              type="image/avif"
+              width="640"
+              height="690"
+            />
+            <source
+              media="(max-width: 720px)"
+              srcSet="/game-art/mobile/bg-landing-hero-composited.webp?v=2"
+              type="image/webp"
+              width="640"
+              height="690"
+            />
+            <img
+              src="/game-art/bg-landing-hero-composited.webp?v=2"
+              alt=""
+              width="1280"
+              height="720"
+              decoding="sync"
+              fetchPriority="high"
+            />
+          </picture>
+        </div>
         <LandingLogoMark />
         <p className="section-kicker">избери игра</p>
         <h1 className="mt-5 text-5xl font-black leading-none text-[#f4e8d1] md:text-7xl">

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { JsonLd } from "@/components/JsonLd";
+import { ResourceHints } from "@/components/resource-hints";
 import { TutorialFlipbook } from "@/components/tutorial/TutorialFlipbook";
 import "@/components/tutorial/Tutorial.module.css";
 import { routeMetadata } from "@/lib/seo";
@@ -34,6 +35,20 @@ const tutorialJsonLd = {
 export default function TutorialPage() {
   return (
     <main className="shell tutorial-shell">
+      <ResourceHints
+        images={[
+          {
+            href: "/game-art/tutorial-day-scene.webp",
+            media: "(min-width: 721px)",
+            fetchPriority: "high",
+          },
+          {
+            href: "/game-art/mobile/tutorial-day-scene.webp",
+            media: "(max-width: 720px)",
+            fetchPriority: "high",
+          },
+        ]}
+      />
       <JsonLd data={tutorialJsonLd} />
       <Suspense fallback={null}>
         <TutorialFlipbook />

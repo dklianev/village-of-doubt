@@ -520,6 +520,13 @@ function mobileWidthFor(file) {
     return 960;
   }
   if (
+    basename === "sign-in-table.png" ||
+    basename === "tutorial-day-scene.png" ||
+    basename === "tutorial-night-scene.png"
+  ) {
+    return 720;
+  }
+  if (
     basename.startsWith("bg-") ||
     basename.startsWith("transition-") ||
     basename.startsWith("screen-") ||
