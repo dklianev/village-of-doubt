@@ -1,0 +1,114 @@
+name: Browser quality
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 3 * * 1"
+  pull_request:
+    paths:
+      - "apps/web/**"
+      - "apps/game-server/**"
+      - "packages/database/**"
+      - "packages/shared/**"
+      - "packages/ui/**"
+      - "scripts/frontend-e2e.mjs"
+      - "scripts/frontend-e2e-matrix.mjs"
+      - "scripts/lighthouse*.mjs"
+      - "lighthouserc.cjs"
+      - "patches/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".github/workflows/browser-quality.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: browser-quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  browsers:
+    name: Cross-browser and Lighthouse
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    services:
+      postgres:
+        image: postgres:17-alpine@sha256:742f40ea20b9ff2ff31db5458d127452988a2164df9e17441e191f3b72252193
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: werewolf_browser_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d werewolf_browser_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/werewolf_browser_test
+      FRONTEND_E2E_DATABASE_URL: postgres://postgres:postgres@localhost:5432/werewolf_browser_test
+      REDIS_URL: redis://default:browser-quality-redis-password@localhost:6379
+      BETTER_AUTH_SECRET: browser-quality-better-auth-secret-32-characters
+      GAME_TOKEN_SECRET: browser-quality-game-token-secret-32-characters
+      BETTER_AUTH_URL: http://127.0.0.1:3401
+      NEXT_PUBLIC_APP_URL: http://127.0.0.1:3401
+      NEXT_PUBLIC_GAME_SERVER_URL: ws://127.0.0.1:3568
+      NEXT_PUBLIC_SENTRY_DSN: https://public@example.invalid/2
+      RELEASE_VERSION: browser-quality-${{ github.sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Start authenticated Redis
+        run: >-
+          docker run --detach --rm
+          --name werewolf-browser-quality-redis
+          --publish 6379:6379
+          redis:8.2-alpine@sha256:a7859ed111db3c1f5404a973a4747505d559fb5ca32d37e447afc0ef845a2103
+          redis-server
+          --save ""
+          --appendonly no
+          --requirepass browser-quality-redis-password
+          --maxmemory 64mb
+          --maxmemory-policy noeviction
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
+
+      - name: Setup Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install browser engines
+        run: pnpm exec playwright install --with-deps chromium firefox webkit
+
+      - name: Install visual fonts
+        run: sudo apt-get update && sudo apt-get install -y fonts-noto-core fonts-noto-extra
+
+      - name: Migrate browser test database
+        run: pnpm db:migrate
+
+      - name: Run production-build browser matrix
+        run: pnpm frontend:e2e:cross-browser
+
+      - name: Run Lighthouse profiles
+        run: pnpm lighthouse
+
+      - name: Upload browser diagnostics
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: browser-quality-${{ github.sha }}
+          path: |
+            output/playwright
+            output/lighthouse
+          if-no-files-found: ignore
+          retention-days: 14

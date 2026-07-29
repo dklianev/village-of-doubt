@@ -5,15 +5,15 @@ export function SiteFooter() {
   return (
     <footer className={`${styles.footer} site-footer`}>
       <div className={styles.links}>
-        <Link href="/privacy">Поверителност</Link>
+        <Link href="/privacy" prefetch={false}>Поверителност</Link>
         <span aria-hidden>·</span>
-        <Link href="/terms">Условия</Link>
+        <Link href="/terms" prefetch={false}>Условия</Link>
         <span aria-hidden>·</span>
-        <Link href="/report">Сигнал</Link>
+        <Link href="/report" prefetch={false}>Сигнал</Link>
         <span aria-hidden>·</span>
-        <Link href="/status">Състояние</Link>
+        <Link href="/status" prefetch={false}>Състояние</Link>
         <span aria-hidden>·</span>
-        <Link href="/faq">Помощ</Link>
+        <Link href="/faq" prefetch={false}>Помощ</Link>
       </div>
       <p className={styles.tagline}>© {new Date().getFullYear()} Върколак и Мафия · Бета</p>
     </footer>

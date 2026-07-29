@@ -66,9 +66,9 @@ describe("GameRoom full-night launch smoke", () => {
       client.client.send("submitVote", { targetUserId: werewolf?.userId });
     }
     clients[0]?.client.send("narratorAdvance", {});
-    await serverRoom.waitForNextPatch(25).catch(() => undefined);
+    await waitForPhase(serverRoom, "resolution");
     clients[0]?.client.send("narratorAdvance", {});
-    await serverRoom.waitForNextPatch(25).catch(() => undefined);
+    await waitForPhase(serverRoom, "game_over");
 
     expect(serverRoom.state.phase).toBe("game_over");
     expect(serverRoom.state.winnerTeam).toBe("village");

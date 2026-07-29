@@ -26,6 +26,7 @@ const checks = [
   ["launch testing contracts", checkLaunchTestingContracts],
   ["production env checker behavior", checkProductionEnvChecker],
   ["smoke/playtest/verify wiring", checkScriptWiring],
+  ["production operations contracts", checkProductionOperationsContracts],
   ["database migration workflow", checkDatabaseMigrationWorkflow],
 ];
 
@@ -930,10 +931,24 @@ function checkScriptWiring() {
   assert(existsSync(path.join(root, "scripts/codex-run.mjs")), "Codex run action script must exist.");
   assert(codexEnvironment.includes('command = "pnpm codex:run"'), "Codex Run action must point at pnpm codex:run.");
   assert(packageJson.scripts["frontend:e2e"] === "node scripts/frontend-e2e.mjs", "package.json must expose pnpm frontend:e2e.");
+  assert(
+    packageJson.scripts["frontend:e2e:cross-browser"] === "node scripts/frontend-e2e-matrix.mjs",
+    "package.json must expose cross-browser frontend QA.",
+  );
+  assert(packageJson.scripts.lighthouse === "node scripts/lighthouse.mjs", "package.json must expose Lighthouse QA.");
+  assert(packageJson.scripts["loadtest:launch"] === "node scripts/loadtest-launch.mjs", "package.json must expose the launch load profile.");
+  assert(packageJson.scripts["loadtest:heavy"] === "node scripts/loadtest-heavy.mjs", "package.json must expose the stress load profile.");
   assert(packageJson.scripts["verify:assets"] === "node scripts/verify-optimized-assets.mjs", "package.json must expose the optimized asset drift guard.");
   assert(packageJson.scripts.verify.startsWith("pnpm verify:assets"), "pnpm verify must fail early on generated asset drift.");
   assert(packageJson.scripts.verify.includes("pnpm regression"), "pnpm verify must run regression checks.");
   assert(packageJson.scripts.verify.includes("pnpm frontend:e2e"), "pnpm verify must run frontend Playwright QA.");
+  assert(packageJson.scripts.verify.includes("pnpm operations:test"), "pnpm verify must validate production operations wiring.");
+  assert(
+    packageJson.scripts["verify:heavy"].includes("pnpm frontend:e2e:cross-browser")
+      && packageJson.scripts["verify:heavy"].includes("pnpm lighthouse")
+      && packageJson.scripts["verify:heavy"].includes("pnpm loadtest:heavy"),
+    "pnpm verify:heavy must run cross-browser, Lighthouse, and stress-load gates.",
+  );
   assert(smoke.includes("optimized phase transition game art"), "Smoke must check optimized game-art delivery.");
   assert(smoke.includes("play page"), "Smoke must check the play page route.");
   assert(smoke.includes("live-safe play page"), "Smoke must check live-safe play page copy.");
@@ -1013,6 +1028,39 @@ function checkScriptWiring() {
   assert(compose.includes("REDIS_PASSWORD_FILE"), "Redis clients must receive the credential through a secret file.");
   assert(!/redis:[\s\S]*?ports:/m.test(compose), "Production Redis must not publish a host port.");
   assert(readText("apps/game-server/Dockerfile.dockerignore").split(/\r?\n/).includes("apps/web"), "Game image context must exclude the web app and its large art assets.");
+}
+
+function checkProductionOperationsContracts() {
+  const service = readText("ops/systemd/werewolf-backup.service");
+  const timer = readText("ops/systemd/werewolf-backup.timer");
+  const backup = readText("scripts/backup-postgres.sh");
+  const freshness = readText("scripts/check-backup-freshness.sh");
+  const runbook = readText("docs/operations/production-runbook.md");
+  const browserMatrix = readText("scripts/frontend-e2e-matrix.mjs");
+  const lighthouse = readText("lighthouserc.cjs");
+  const launchLoad = readText("scripts/loadtest-launch.mjs");
+  const heavyLoad = readText("scripts/loadtest-heavy.mjs");
+
+  assert((timer.match(/^OnCalendar=/gm) ?? []).length === 4, "PostgreSQL backups must run every six hours.");
+  assert(timer.includes("Persistent=true"), "Missed backups must run after the host returns.");
+  assert(service.includes("ExecStartPost=/bin/sh /srv/werewolf/scripts/check-backup-freshness.sh"), "Scheduled backups must verify freshness and integrity.");
+  assert(backup.includes("RCLONE_REMOTE"), "Backups must support an off-site copy.");
+  assert(freshness.includes("sha256sum -c") && freshness.includes("gzip -t"), "Backup freshness must verify checksum and compression.");
+  assert(runbook.includes("RPO 6 hours and RTO 60 minutes"), "The runbook must document recovery objectives.");
+  assert(runbook.includes("expand/contract"), "The runbook must document rollback-safe migrations.");
+  for (const browser of ["chromium", "firefox", "webkit"]) {
+    assert(browserMatrix.includes(`"${browser}"`), `Cross-browser QA must include ${browser}.`);
+  }
+  assert(
+    browserMatrix.includes("Cross-browser E2E refuses non-local Redis instances.")
+      && browserMatrix.includes("await client.flushDb()"),
+    "Cross-browser QA must isolate local Redis rate-limit state without touching remote instances.",
+  );
+  assert(lighthouse.includes("categories:accessibility"), "Lighthouse must enforce accessibility.");
+  assert(lighthouse.includes("cumulative-layout-shift"), "Lighthouse must enforce layout stability.");
+  assert(launchLoad.includes('"200"'), "The launch load profile must exercise 200 clients.");
+  assert(launchLoad.includes('"0.8"'), "The launch load profile must enforce the 80% event-loop trigger.");
+  assert(heavyLoad.includes('"500"'), "The stress load profile must exercise 500 clients.");
 }
 
 function checkDatabaseMigrationWorkflow() {

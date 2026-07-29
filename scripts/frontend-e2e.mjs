@@ -4,12 +4,15 @@ import { cpSync, existsSync, mkdirSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import { chromium } from "playwright";
+import { chromium, firefox, webkit } from "playwright";
 
 const isWindows = process.platform === "win32";
 const processes = [];
 const webStandaloneServer = "apps/web/.next/standalone/apps/web/server.js";
-const artifactDir = "output/playwright";
+const browserName = process.env.FRONTEND_E2E_BROWSER ?? "chromium";
+const browserTypes = { chromium, firefox, webkit };
+const browserType = browserTypes[browserName];
+const artifactDir = join("output", "playwright", browserName);
 const webPort = process.env.FRONTEND_E2E_WEB_PORT ?? "3401";
 const gamePort = process.env.FRONTEND_E2E_GAME_PORT ?? "3568";
 const baseUrl = `http://127.0.0.1:${webPort}`;
@@ -29,6 +32,12 @@ let activeBrowser = null;
 let authFixture = null;
 
 async function main() {
+  if (!browserType) {
+    throw new Error(
+      `FRONTEND_E2E_BROWSER must be one of ${Object.keys(browserTypes).join(", ")}; received ${browserName}.`,
+    );
+  }
+
   assertLocalTestDatabase(databaseUrl);
   mkdirSync(artifactDir, { recursive: true });
   await buildForE2e();
@@ -60,9 +69,11 @@ async function main() {
 
   await waitForJson(`${baseUrl}/api/health`, "web");
 
-  activeBrowser = await chromium.launch({
+  activeBrowser = await browserType.launch({
     headless: true,
-    channel: process.env.PLAYWRIGHT_CHANNEL || undefined,
+    ...(browserName === "chromium" && process.env.PLAYWRIGHT_CHANNEL
+      ? { channel: process.env.PLAYWRIGHT_CHANNEL }
+      : {}),
   });
 
   await runCheck("landing desktop layout and theme picker", testLandingDesktop);
@@ -87,7 +98,7 @@ async function main() {
     throw new Error(`Frontend Playwright QA failed with ${failureCount} failing check(s).`);
   }
 
-  console.log("Frontend Playwright QA passed.");
+  console.log(`Frontend Playwright QA passed in ${browserName}.`);
 }
 
 async function testLandingDesktop() {
@@ -104,7 +115,7 @@ async function testLandingDesktop() {
     await page.locator(".game-choice-mafia").getByRole("link", { name: "Влез и играй" }).click();
     await page.waitForURL("**/sign-in?redirect=%2Fmafia%2Fcreate");
     await expectText(page, "Стани");
-    watcher.assertClean();
+    await watcher.assertClean();
   } finally {
     await close();
   }
@@ -119,7 +130,7 @@ async function testLandingMobile() {
     await expectText(page, "градска мистерия");
     await assertNoHorizontalOverflow(page, "landing mobile");
     await assertNoOverlap(page, ".game-choice-werewolf", ".game-choice-mafia", "mobile game picker cards");
-    watcher.assertClean();
+    await watcher.assertClean();
   } finally {
     await close();
   }
@@ -136,7 +147,7 @@ async function testTutorialAndOfflineShell() {
     await goto(page, "/offline", "offline screen");
     await expectText(page, "Лампата свети, чакаме теб.");
     await assertNoHorizontalOverflow(page, "offline screen");
-    watcher.assertClean();
+    await watcher.assertClean();
   } finally {
     await close();
   }
@@ -153,7 +164,7 @@ async function testLobbyModeFiltering() {
     await page.waitForURL("**/sign-in?redirect=%2Fmafia%2Fcreate");
     await expectText(page, "Стани");
     await assertNoHorizontalOverflow(page, "mafia auth gate");
-    watcher.assertClean();
+    await watcher.assertClean();
   } finally {
     await close();
   }
@@ -178,7 +189,7 @@ async function testInviteLobbyCopy() {
     await page.waitForURL("**/sign-in?redirect=**");
     await expectText(page, "Покажи се на масата");
     await assertCssBackgroundImagesLoaded(page, "invite auth gates");
-    watcher.assertClean();
+    await watcher.assertClean();
   } finally {
     await close();
   }
@@ -210,7 +221,7 @@ async function testRolesCodex() {
     await page.reload({ waitUntil: "domcontentloaded" });
     await waitForSettled(page);
     await assertNoHorizontalOverflow(page, "roles codex mobile");
-    watcher.assertClean();
+    await watcher.assertClean();
   } finally {
     await close();
   }
@@ -224,7 +235,7 @@ async function testAnonymousEntry() {
     await expectText(page, "Влез с кода");
     await expectNoText(page, "без регистрация");
     await assertNoHorizontalOverflow(page, "authenticated join");
-    watcher.assertClean();
+    await watcher.assertClean();
   } finally {
     await close();
   }
@@ -237,30 +248,42 @@ async function testHistoryScreen() {
     await expectText(page, "Архив на масата");
     await assertNoHorizontalOverflow(page, "history screen");
     await assertCssBackgroundImagesLoaded(page, "history screen");
-    watcher.assertClean();
+    await watcher.assertClean();
   } finally {
     await close();
   }
 }
 
 async function testUtilityPages() {
-  const { page, watcher, close } = await newPage("utility-pages", viewports.desktop);
+  const achievements = await newPage("achievements-screen", viewports.desktop);
   try {
-    await goto(page, "/achievements", "achievements screen");
-    await page.waitForURL("**/sign-in?redirect=%2Fachievements");
-    await expectText(page, "Запази");
-
-    await goto(page, "/leaderboard", "leaderboard screen");
-    await expectText(page, "Вечерен Брой на Масата");
-    await assertNoHorizontalOverflow(page, "leaderboard screen");
-
-    await goto(page, "/friends", "friends screen");
-    await page.waitForURL("**/sign-in?redirect=%2Ffriends");
-    await expectText(page, "Събери");
-    await assertNoHorizontalOverflow(page, "utility auth gates");
-    watcher.assertClean();
+    await goto(achievements.page, "/achievements", "achievements screen");
+    await achievements.page.waitForURL("**/sign-in?redirect=%2Fachievements");
+    await expectText(achievements.page, "Запази");
+    await achievements.watcher.assertClean();
   } finally {
-    await close();
+    await achievements.close();
+  }
+
+  const leaderboard = await newPage("leaderboard-screen", viewports.desktop);
+  try {
+    await goto(leaderboard.page, "/leaderboard", "leaderboard screen");
+    await expectText(leaderboard.page, "Вечерен Брой на Масата");
+    await assertNoHorizontalOverflow(leaderboard.page, "leaderboard screen");
+    await leaderboard.watcher.assertClean();
+  } finally {
+    await leaderboard.close();
+  }
+
+  const friends = await newPage("friends-screen", viewports.desktop);
+  try {
+    await goto(friends.page, "/friends", "friends screen");
+    await friends.page.waitForURL("**/sign-in?redirect=%2Ffriends");
+    await expectText(friends.page, "Събери");
+    await assertNoHorizontalOverflow(friends.page, "utility auth gates");
+    await friends.watcher.assertClean();
+  } finally {
+    await friends.close();
   }
 }
 
@@ -275,7 +298,7 @@ async function testSinglePlayScreen() {
     await page.waitForURL("**/sign-in?redirect=**");
     await expectText(page, "Върни се");
     await assertNoHorizontalOverflow(page, "single play auth gate");
-    watcher.assertClean();
+    await watcher.assertClean();
   } finally {
     await close();
   }
@@ -301,6 +324,29 @@ async function testSixClientGameStart() {
       watchers.push(watchPage(page, `six-client-${index + 1}`));
       await goto(page, path, `six-client ${index + 1}`);
       await waitForVisibleText(page.getByTestId("ready-toggle"), "Готов");
+      try {
+        await page.waitForFunction(
+          () => {
+            const button = document.querySelector('[data-testid="ready-toggle"]');
+            return button instanceof HTMLButtonElement && !button.disabled;
+          },
+          undefined,
+          { timeout: 30_000 },
+        );
+      } catch (error) {
+        await screenshot(page, `six-client-${index + 1}-connection-failure.png`).catch(() => {});
+        const state = await page.evaluate(() => ({
+          url: window.location.href,
+          readyButton: document.querySelector('[data-testid="ready-toggle"]')?.outerHTML ?? null,
+          connection: document.querySelector("[data-connection-status]")?.textContent?.trim() ?? null,
+          pageText: document.body.innerText.replace(/\s+/g, " ").slice(0, 600),
+        }));
+        await watchers[index].assertClean();
+        throw new Error(
+          `six-client ${index + 1} did not establish a room connection:\n${JSON.stringify(state, null, 2)}`,
+          { cause: error },
+        );
+      }
       await assertNoHorizontalOverflow(page, `play auth client ${index + 1}`);
     }
 
@@ -312,7 +358,7 @@ async function testSixClientGameStart() {
       .locator("main.play-shell[data-phase='role_reveal'], main.play-shell[data-phase='first_night']")
       .waitFor({ state: "visible", timeout: 15_000 })));
     for (const watcher of watchers) {
-      watcher.assertClean();
+      await watcher.assertClean();
     }
   } finally {
     await Promise.allSettled(contexts.map((context) => context.close()));
@@ -452,6 +498,23 @@ async function newPage(label, viewport, identity) {
   const context = await activeBrowser.newContext({ viewport });
   await context.addInitScript(() => {
     window.localStorage.setItem("cookie-consent", "1");
+    const reportConsoleError = console.error.bind(console);
+    console.error = (...values) => {
+      reportConsoleError(...values.map((value) => {
+        if (value instanceof Error) {
+          return JSON.stringify({
+            name: value.name,
+            message: value.message,
+            stack: value.stack,
+            digest: value.digest,
+            cause: value.cause instanceof Error
+              ? `${value.cause.name}: ${value.cause.message}\n${value.cause.stack ?? ""}`
+              : value.cause,
+          });
+        }
+        return value;
+      }));
+    };
   });
   if (identity) {
     await context.addInitScript(
@@ -478,6 +541,7 @@ async function newPage(label, viewport, identity) {
 
 function watchPage(page, label) {
   const issues = [];
+  const pendingDetails = [];
   const ignoreConsolePatterns = [/Download the React DevTools/i];
 
   page.on("console", (message) => {
@@ -489,11 +553,38 @@ function watchPage(page, label) {
       return;
     }
     const location = message.location();
-    issues.push(`console error: ${text}${location.url ? ` (${location.url})` : ""}`);
+    const issueIndex = issues.push(
+      `console error: ${text}${location.url ? ` (${location.url})` : ""}`,
+    ) - 1;
+    pendingDetails.push(
+      Promise.all(message.args().map(describeConsoleArgument))
+        .then((details) => {
+          const detail = details.filter(Boolean).join("\n");
+          if (detail && detail !== text) {
+            issues[issueIndex] += `\n${detail}`;
+          }
+        })
+        .catch(() => {}),
+    );
   });
 
   page.on("pageerror", (error) => {
     issues.push(`page error: ${error.message}`);
+  });
+
+  page.on("requestfailed", (request) => {
+    const errorText = request.failure()?.errorText ?? "unknown";
+    if (/ABORTED|request cancelled/i.test(errorText)) {
+      return;
+    }
+    if (
+      request.url().startsWith(baseUrl)
+      && ["document", "script", "stylesheet", "image"].includes(request.resourceType())
+    ) {
+      issues.push(
+        `${request.resourceType()} request failed: ${request.url()} (${errorText})`,
+      );
+    }
   });
 
   page.on("response", (response) => {
@@ -514,12 +605,38 @@ function watchPage(page, label) {
     get failed() {
       return issues.length > 0;
     },
-    assertClean() {
+    async assertClean() {
+      await Promise.allSettled(pendingDetails);
       if (issues.length > 0) {
         throw new Error(`${label} produced browser issues:\n${issues.join("\n")}`);
       }
     },
   };
+}
+
+async function describeConsoleArgument(argument) {
+  return argument.evaluate((value) => {
+    if (value instanceof Error) {
+      const cause = value.cause instanceof Error
+        ? `${value.cause.name}: ${value.cause.message}\n${value.cause.stack ?? ""}`
+        : value.cause;
+      return JSON.stringify({
+        name: value.name,
+        message: value.message,
+        stack: value.stack,
+        digest: value.digest,
+        cause,
+      });
+    }
+    if (typeof value === "string") {
+      return value;
+    }
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return String(value);
+    }
+  });
 }
 
 async function runCheck(name, fn) {
@@ -760,6 +877,12 @@ async function assertNoInteractiveOverlap(page, label) {
 }
 
 async function assertHtmlImagesLoaded(page, label) {
+  await page.waitForFunction(
+    () => Array.from(document.images).every((image) => image.complete && image.naturalWidth > 0),
+    undefined,
+    { timeout: 15_000 },
+  ).catch(() => {});
+
   const brokenImages = await page.evaluate(() =>
     Array.from(document.images)
       .filter((image) => !image.complete || image.naturalWidth === 0)
@@ -952,11 +1075,12 @@ async function waitFor(url, label) {
 }
 
 async function stop(child) {
-  if (!child.pid || child.killed) {
+  if (!child.pid || child.exitCode !== null) {
     return;
   }
 
   child.isStopping = true;
+  const exited = new Promise((resolve) => child.once("exit", resolve));
 
   if (isWindows) {
     await new Promise((resolve) => {
@@ -966,10 +1090,15 @@ async function stop(child) {
       killer.on("exit", resolve);
       killer.on("error", resolve);
     });
-    return;
+  } else {
+    child.kill("SIGTERM");
   }
 
-  child.kill("SIGTERM");
+  await Promise.race([exited, delay(10_000)]);
+  if (child.exitCode === null) {
+    child.kill("SIGKILL");
+    await Promise.race([exited, delay(2_000)]);
+  }
 }
 
 function delay(ms) {

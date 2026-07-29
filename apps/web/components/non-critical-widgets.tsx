@@ -47,7 +47,7 @@ export function NonCriticalWidgets({ initialSession }: { initialSession: AuthSes
     const id = window.setTimeout(() => {
       setMount({
         cookie: !safeLocalStorage.getItem(COOKIE_STORAGE_KEY),
-        feedback: shouldMountFeedback(pathname),
+        feedback: shouldMountFeedback(pathname, Boolean(session?.user?.id)),
         welcome:
           Boolean(session?.user?.id) &&
           !safeLocalStorage.getItem(WELCOME_STORAGE_KEY) &&

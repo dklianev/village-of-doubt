@@ -6,16 +6,22 @@ import path from "node:path";
 const artPaths = ["assets/game-art-source", "apps/web/public/game-art"];
 const before = await inventoryRoots(artPaths);
 
-const optimize = spawnSync(process.execPath, ["scripts/optimize-assets.mjs"], {
-  cwd: process.cwd(),
-  stdio: "inherit",
-});
+for (const script of [
+  "scripts/optimize-assets.mjs",
+  "scripts/generate-critical-mobile-assets.mjs",
+  "scripts/generate-phase-rail-assets.mjs",
+]) {
+  const optimize = spawnSync(process.execPath, [script], {
+    cwd: process.cwd(),
+    stdio: "inherit",
+  });
 
-if (optimize.error) {
-  throw optimize.error;
-}
-if (optimize.status !== 0) {
-  process.exit(optimize.status ?? 1);
+  if (optimize.error) {
+    throw optimize.error;
+  }
+  if (optimize.status !== 0) {
+    process.exit(optimize.status ?? 1);
+  }
 }
 
 const after = await inventoryRoots(artPaths);

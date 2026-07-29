@@ -253,12 +253,7 @@ jobs:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/werewolf_load_test
 
       - name: Load shared game rooms
-        run: pnpm loadtest
+        run: pnpm loadtest:launch
         env:
-          LOAD_CLIENTS: 30
           LOAD_ROOM_SIZE: 10
-          LOAD_HOLD_MS: 10000
-          LOAD_JOIN_P95_MS: 3000
-          LOAD_MAX_EVENT_LOOP_UTILIZATION: 0.95
-          LOAD_MAX_RSS_MB: 512
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/werewolf_load_test

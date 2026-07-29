@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { JsonLd } from "@/components/JsonLd";
-import { ResourceHints } from "@/components/resource-hints";
 import { GameRulesPage } from "@/components/games/game-rules-page";
 import { absoluteUrl, routeMetadata } from "@/lib/seo";
 
@@ -33,34 +32,6 @@ const mafiaRulesJsonLd = {
 export default function MafiaRulesPage() {
   return (
     <>
-      <ResourceHints
-        images={[
-          {
-            href: "/game-art/mafia/bg-hero-v2.avif",
-            media: "(min-width: 721px) and (prefers-color-scheme: dark)",
-            type: "image/avif",
-            fetchPriority: "high",
-          },
-          {
-            href: "/game-art/mobile/mafia/bg-hero-v2.avif",
-            media: "(max-width: 720px) and (prefers-color-scheme: dark)",
-            type: "image/avif",
-            fetchPriority: "high",
-          },
-          {
-            href: "/game-art/mafia/bg-hero-light-v1.avif",
-            media: "(min-width: 721px) and (prefers-color-scheme: light)",
-            type: "image/avif",
-            fetchPriority: "high",
-          },
-          {
-            href: "/game-art/mobile/mafia/bg-hero-light-v1.avif",
-            media: "(max-width: 720px) and (prefers-color-scheme: light)",
-            type: "image/avif",
-            fetchPriority: "high",
-          },
-        ]}
-      />
       <JsonLd data={mafiaRulesJsonLd} />
       <GameRulesPage family="mafia" />
     </>

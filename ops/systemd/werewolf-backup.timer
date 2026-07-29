@@ -1,0 +1,14 @@
+[Unit]
+Description=Run the Werewolf and Mafia database backup every six hours
+
+[Timer]
+OnCalendar=*-*-* 00:15:00
+OnCalendar=*-*-* 06:15:00
+OnCalendar=*-*-* 12:15:00
+OnCalendar=*-*-* 18:15:00
+RandomizedDelaySec=5min
+Persistent=true
+Unit=werewolf-backup.service
+
+[Install]
+WantedBy=timers.target

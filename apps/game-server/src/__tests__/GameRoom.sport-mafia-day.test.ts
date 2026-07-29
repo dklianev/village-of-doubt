@@ -100,8 +100,11 @@ describe("GameRoom authoritative Sport Mafia day flow", () => {
       userId: reconnecting?.userId ?? "",
       displayName: reconnecting?.displayName ?? "",
     });
-    await delay(40);
-    const reconnectedState = reconnected.state as GameState;
+    const reconnectedState = await waitForClientDayState(
+      reconnected,
+      firstSpeaker?.userId ?? "",
+      replacementTarget?.userId ?? "",
+    );
     expect(reconnectedState.currentSpeakerUserId).toBe(firstSpeaker?.userId);
     expect([...reconnectedState.nominations]).toEqual([
       expect.objectContaining({
@@ -277,6 +280,25 @@ async function advanceOnce(client: ClientRoom | undefined, room: GameRoom) {
   }
 
   throw new Error("The narrator command produced patches without advancing the day flow state.");
+}
+
+async function waitForClientDayState(
+  room: ClientRoom,
+  speakerUserId: string,
+  nominationTargetUserId: string,
+) {
+  for (let index = 0; index < 50; index += 1) {
+    const state = room.state as GameState | undefined;
+    const nomination = state?.nominations?.[0];
+    if (
+      state?.currentSpeakerUserId === speakerUserId
+      && nomination?.targetUserId === nominationTargetUserId
+    ) {
+      return state;
+    }
+    await delay(10);
+  }
+  return room.state as GameState;
 }
 
 function dayFlowState(room: GameRoom) {
