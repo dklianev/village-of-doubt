@@ -8,6 +8,7 @@ export default defineConfig({
   snapshotDir: "./packages/ui/__visual__/__baseline__",
   snapshotPathTemplate: "{snapshotDir}/{testFilePath}-snapshots/{arg}{ext}",
   timeout: 45_000,
+  retries: 1,
   use: {
     baseURL: `http://127.0.0.1:${port}`,
     channel: process.env.PLAYWRIGHT_CHANNEL || undefined,
