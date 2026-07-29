@@ -11,24 +11,25 @@
   - `NEXT_PUBLIC_APP_URL=https://tisi.lol`
   - `CORS_ORIGIN=https://tisi.lol`
 - Изпълни `pnpm check:prod-env` с production env променливите.
-- Задай `RELEASE_VERSION` на immutable release identifier (например git SHA или release tag). Placeholder стойности като `unknown`, `latest` и `main` спират env проверката. Release-ът се показва в `/api/health` и се изпраща към server/edge Sentry без лични данни; client Sentry DSN не се използва.
+- Изтегли `release.json` от trusted GitHub Actions release artifact. Manifest-ът съдържа пълния source commit и digest-pinned web, game и migrator images; не build-вай application images на production хоста.
+- Release-ът се показва в `/api/health` и се изпраща към server/edge/browser Sentry без лични данни.
 - Увери се, че `ALLOW_DEV_AUTH=false` или липсва в production.
-- Стартирай `docker compose up -d --build`.
+- Изпълни `scripts/deploy-release.sh /var/lib/werewolf/releases/candidate.json` от root-owned checkout-а с `RELEASE_STATE_DIR=/var/lib/werewolf/release-state`, както е описано в `docs/operations/production-runbook.md`.
 - Провери `https://tisi.lol` и `wss://ws.tisi.lol`.
 
 ## Планиран Deploy И Drain
 
-- Изпълни `pnpm deploy:drain`. Скриптът активира loopback-only operator endpoint чрез `docker compose exec`; новите room creations се отказват, а join/reconnect към съществуващи стаи остават разрешени. След това скриптът следи `https://ws.tisi.lol/stats` до `activeRooms=0`.
+- Изпълни canonical immutable-checkout командата от `docs/operations/production-runbook.md` с `/var/lib/werewolf/releases/candidate.json`. Тя първо активира loopback-only drain, изчаква активните стаи, стартира hardened backup unit-а, после pull-ва digest-pinned images и пуска миграцията.
 - По време на drain публичният `/stats` връща само `draining`, `drainStartedAt`, `activeRooms` и `connectedPlayers`. Runtime memory/event-loop данните са само на loopback `/operations/stats`. Нови стаи не се създават, а текущите връзки продължават да работят.
 - Скриптът има bounded timeout (`DEPLOY_DRAIN_TIMEOUT_MS`, по подразбиране 20 минути). При timeout излиза с грешка и оставя стария container да работи; не продължавай deploy-а насила.
-- Едва след успешен drain изпълни `docker compose up -d --build`. Използвай `pnpm deploy:drain && docker compose up -d --build`, за да не може втората команда да тръгне след неуспешен drain.
+- При неуспешен backup, pull, migration или readiness check release-ът спира; не заобикаляй стъпката със `SKIP_DEPLOY_BACKUP=1`, освен при документиран incident.
 - Непланиран `SIGTERM` също спира matchmaking-а и чака до `GAME_DRAIN_TIMEOUT_MS` (по подразбиране 120 секунди) преди bounded shutdown. Compose дава 130 секунди stop grace period.
 - След deploy провери `/api/health` за web liveness, `/api/health/ready` за web плюс DB/game зависимости и `https://ws.tisi.lol/health/ready` за game persistence. Web liveness остава 200, когато само game service е недостъпен; това пази публичните страници и показва повредата в `/status`.
-- При спешен rollback първо върни web и Caddy, после game image-а. Не пипай Postgres volume и не пускай миграции назад без rehearsed restore.
+- При спешен rollback използвай предишния immutable release manifest само ако schema-та остава backward-compatible. Не пипай Postgres volume и не пускай миграции назад без rehearsed restore.
 
 ## Backup И Restore
 
-- Сложи cron за `scripts/backup-postgres.sh` поне веднъж дневно.
+- Инсталирай root-owned systemd backup timer-а от `docs/operations/production-runbook.md`; не давай Docker group на `werewolf` акаунта.
 - Настрой `RCLONE_REMOTE`, ако искаш копие извън Droplet-а.
 - Поне веднъж преди сериозна игра направи restore rehearsal със `scripts/restore-postgres.sh` върху тестова база.
 - Запази последните 14 дни локално или промени `BACKUP_RETENTION_DAYS`.

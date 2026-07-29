@@ -23,7 +23,9 @@ node scripts/release-manifest.mjs release.json
 1. Check out the same Git commit as `releaseVersion`. This supplies the matching
    Compose and operator scripts, not application binaries.
 2. Load the normal production `.env` and Docker registry credentials.
-3. Run `scripts/deploy-release.sh release.json`.
+3. Run `scripts/deploy-release.sh` with the absolute path to the trusted
+   manifest and `RELEASE_STATE_DIR=/var/lib/werewolf/release-state`, as shown in
+   the production runbook.
 
 The script validates immutable image references, drains active rooms, creates a
 database backup, pulls images, runs the forward migration once, starts the
@@ -38,7 +40,12 @@ environments. Do not use them for a live deployment.
 Run:
 
 ```bash
-scripts/rollback-release.sh .release-state/previous.json
+deploy_user=werewolf-deploy
+release_source="/srv/werewolf-releases/<full-source-commit>"
+sudo -u "$deploy_user" -H env \
+  RELEASE_STATE_DIR=/var/lib/werewolf/release-state \
+  sh -c 'cd "$1" && exec scripts/rollback-release.sh "$2"' \
+  sh "$release_source" /var/lib/werewolf/release-state/previous.json
 ```
 
 This rolls web and game back to their previous digests. It never runs an old

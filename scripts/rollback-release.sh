@@ -1,13 +1,13 @@
 #!/usr/bin/env sh
 set -eu
 
-manifest_path="${1:-${RELEASE_STATE_DIR:-.release-state}/previous.json}"
+release_dir="${RELEASE_STATE_DIR:-/var/lib/werewolf/release-state}"
+manifest_path="${1:-$release_dir/previous.json}"
 if [ ! -f "$manifest_path" ]; then
   echo "Rollback manifest not found: $manifest_path" >&2
   exit 2
 fi
 
-release_dir="${RELEASE_STATE_DIR:-.release-state}"
 rollback_env="$release_dir/rollback.env"
 mkdir -p "$release_dir"
 node scripts/release-manifest.mjs "$manifest_path" --env-output "$rollback_env"

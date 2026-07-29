@@ -7,10 +7,18 @@ if [ -z "$manifest_path" ]; then
   exit 2
 fi
 
-release_dir="${RELEASE_STATE_DIR:-.release-state}"
+release_dir="${RELEASE_STATE_DIR:-/var/lib/werewolf/release-state}"
 generated_env="$release_dir/candidate.env"
 current_manifest="$release_dir/current.json"
 previous_manifest="$release_dir/previous.json"
+backup_service="${BACKUP_SYSTEMD_SERVICE:-werewolf-backup.service}"
+
+case "$backup_service" in
+  ""|*[!A-Za-z0-9@_.-]*)
+    echo "BACKUP_SYSTEMD_SERVICE contains unsafe characters." >&2
+    exit 2
+    ;;
+esac
 
 mkdir -p "$release_dir"
 chmod 700 "$release_dir"
@@ -27,7 +35,11 @@ if [ "${SKIP_DEPLOY_DRAIN:-0}" != "1" ] && docker compose ps -q game | grep -q .
 fi
 
 if [ "${SKIP_DEPLOY_BACKUP:-0}" != "1" ]; then
-  scripts/backup-postgres.sh
+  if [ "$(id -u)" -eq 0 ]; then
+    systemctl start "$backup_service"
+  else
+    sudo -n systemctl start "$backup_service"
+  fi
 fi
 
 docker compose --env-file .env --env-file "$generated_env" pull migrate web game

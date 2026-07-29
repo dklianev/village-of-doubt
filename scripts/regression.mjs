@@ -1035,6 +1035,8 @@ function checkProductionOperationsContracts() {
   const timer = readText("ops/systemd/werewolf-backup.timer");
   const backup = readText("scripts/backup-postgres.sh");
   const freshness = readText("scripts/check-backup-freshness.sh");
+  const deploy = readText("scripts/deploy-release.sh");
+  const rollback = readText("scripts/rollback-release.sh");
   const runbook = readText("docs/operations/production-runbook.md");
   const browserMatrix = readText("scripts/frontend-e2e-matrix.mjs");
   const lighthouse = readText("lighthouserc.cjs");
@@ -1043,9 +1045,60 @@ function checkProductionOperationsContracts() {
 
   assert((timer.match(/^OnCalendar=/gm) ?? []).length === 4, "PostgreSQL backups must run every six hours.");
   assert(timer.includes("Persistent=true"), "Missed backups must run after the host returns.");
-  assert(service.includes("ExecStartPost=/bin/sh /srv/werewolf/scripts/check-backup-freshness.sh"), "Scheduled backups must verify freshness and integrity.");
+  assert(!service.includes("User=werewolf"), "The application account must not execute Docker-backed backups.");
+  assert(!service.includes("SupplementaryGroups=docker"), "The application account must not inherit Docker daemon authority.");
+  assert(service.includes("User=root") && service.includes("Group=root"), "Docker-backed backups must use an explicit root service identity.");
+  assert(service.includes("EnvironmentFile=/etc/werewolf/backup.env"), "Scheduled backups must use a dedicated root-only environment.");
+  assert(service.includes("Environment=BACKUP_REQUIRE_FIXED_CONTAINER=1"), "Scheduled backups must reject mutable Compose fallback.");
+  assert(
+    service.includes("ExecStart=/usr/local/libexec/werewolf/backup-postgres.sh"),
+    "Scheduled backups must execute a root-owned installed helper.",
+  );
+  assert(
+    service.includes("ExecStartPost=/usr/local/libexec/werewolf/check-backup-freshness.sh"),
+    "Scheduled backups must verify freshness with a root-owned installed helper.",
+  );
+  assert(
+    backup.includes("BACKUP_COMPOSE_PROJECT")
+      && backup.includes('"$docker_command" ps')
+      && backup.includes('"$docker_command" exec'),
+    "Scheduled backups must resolve PostgreSQL without reading mutable Compose files.",
+  );
   assert(backup.includes("RCLONE_REMOTE"), "Backups must support an off-site copy.");
-  assert(freshness.includes("sha256sum -c") && freshness.includes("gzip -t"), "Backup freshness must verify checksum and compression.");
+  assert(
+    freshness.includes("sha256sum -c")
+      && freshness.includes("gzip -t")
+      && freshness.includes("BACKUP_CLOCK_SKEW_SECONDS"),
+    "Backup freshness must verify checksum, compression, and future timestamps.",
+  );
+  assert(!deploy.includes("\n  scripts/backup-postgres.sh\n"), "Deploys must not execute a mutable backup helper directly.");
+  assert(deploy.includes('systemctl start "$backup_service"'), "Deploys must wait for the hardened backup service.");
+  assert(
+    deploy.includes("RELEASE_STATE_DIR:-/var/lib/werewolf/release-state"),
+    "Production release state must live outside the immutable checkout.",
+  );
+  assert(
+    rollback.includes("RELEASE_STATE_DIR:-/var/lib/werewolf/release-state"),
+    "Production rollback state must live outside the immutable checkout.",
+  );
+  assert(/must not belong to the\s+Docker group/i.test(runbook), "The runbook must deny Docker group access to the app account.");
+  assert(runbook.includes("root:root and mode `0600`"), "The runbook must protect backup credentials.");
+  assert(
+    runbook.includes("loginctl terminate-user werewolf") && runbook.includes("sudo reboot"),
+    "The runbook must invalidate stale Docker supplementary groups.",
+  );
+  assert(
+    runbook.includes("/srv/werewolf-releases/$expected_source")
+      && runbook.includes("GIT_CONFIG_NOSYSTEM=1")
+      && runbook.includes("GIT_CONFIG_GLOBAL=/dev/null")
+      && runbook.includes('if sudo test -e "$release_source"; then')
+      && runbook.includes('if [ "$actual_source" != "$expected_source" ]; then'),
+    "Root helper installation must use a fresh root-created release checkout.",
+  );
+  assert(
+    runbook.includes("if ! sudo test -e /etc/werewolf/backup.env"),
+    "Helper upgrades must preserve the live off-site backup configuration.",
+  );
   assert(runbook.includes("RPO 6 hours and RTO 60 minutes"), "The runbook must document recovery objectives.");
   assert(runbook.includes("expand/contract"), "The runbook must document rollback-safe migrations.");
   for (const browser of ["chromium", "firefox", "webkit"]) {
