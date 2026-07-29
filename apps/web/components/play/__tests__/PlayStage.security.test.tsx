@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { PlayStage } from "@/components/play/PlayStage";
 import type { PublicPlayer } from "@/lib/play/types";
@@ -79,6 +79,56 @@ describe("PlayStage private-data boundary", () => {
     expect(stage.querySelector("[data-private-dossier]")).toBeNull();
     expect(stage.querySelector("[data-acted-this-phase]")).toBeNull();
     expect(container.innerHTML).not.toContain(PRIVATE_CANARY);
+  });
+
+  it("marks the stage ready after its first valid layout measurement", () => {
+    let resizeCallback: ResizeObserverCallback | undefined;
+    class TestResizeObserver {
+      constructor(callback: ResizeObserverCallback) {
+        resizeCallback = callback;
+      }
+
+      observe() {}
+      disconnect() {}
+      unobserve() {}
+    }
+    vi.stubGlobal("ResizeObserver", TestResizeObserver);
+    vi.stubGlobal("requestAnimationFrame", vi.fn(() => 1));
+    vi.stubGlobal("cancelAnimationFrame", vi.fn());
+
+    render(
+      <PlayStage
+        code="VISUAL"
+        phase="night"
+        mode="werewolves_classic"
+        family="werewolves"
+        round={2}
+        phaseEndsAt={0}
+        status=""
+        isStatusInformative={false}
+        isPending={false}
+        players={[publicPlayer()]}
+        hasSnapshot
+        narratorMode="automatic"
+        communicationMode="integrated_chat"
+        ownPlayer={publicPlayer()}
+        targetableIds={new Set()}
+        selectedTargetId=""
+        secondTargetId=""
+        voteCounts={new Map()}
+        currentSpeakerUserId=""
+        currentDefenseUserId=""
+        nomineeIds={new Set()}
+        onSelectSeat={vi.fn()}
+        onMakeNarrator={vi.fn()}
+        onMakeMayor={vi.fn()}
+      />,
+    );
+
+    act(() => resizeCallback?.([], {} as ResizeObserver));
+
+    expect(screen.getByRole("region", { name: "Нощ" })).toHaveAttribute("data-layout-ready", "true");
+    vi.unstubAllGlobals();
   });
 });
 
