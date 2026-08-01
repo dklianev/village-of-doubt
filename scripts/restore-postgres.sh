@@ -12,6 +12,8 @@ POSTGRES_DB="${POSTGRES_DB:-werewolf}"
 restore_confirmation="${RESTORE_CONFIRM_DATABASE:-}"
 docker_command="${RESTORE_DOCKER_COMMAND:-docker}"
 restore_run_id="${RESTORE_RUN_ID:-$$}"
+restore_health_timeout="${RESTORE_HEALTH_TIMEOUT_SECONDS:-180}"
+restore_only="${RESTORE_ONLY:-0}"
 
 if [ ! -f "$backup_file" ]; then
   printf 'Backup file not found: %s\n' "$backup_file" >&2
@@ -30,19 +32,34 @@ case "$restore_run_id" in
     ;;
 esac
 
-if [ -z "${DATABASE_URL:-}" ]; then
-  printf 'DATABASE_URL is required to migrate the staging database.\n' >&2
+case "$restore_health_timeout" in
+  ""|*[!0-9]*|0)
+    printf 'RESTORE_HEALTH_TIMEOUT_SECONDS must be a positive integer.\n' >&2
+    exit 1
+    ;;
+esac
+
+case "$restore_only" in
+  0|1) ;;
+  *)
+    printf 'RESTORE_ONLY must be 0 or 1.\n' >&2
+    exit 1
+    ;;
+esac
+
+if [ -z "${MIGRATION_DATABASE_URL:-}" ]; then
+  printf 'MIGRATION_DATABASE_URL is required to migrate the staging database.\n' >&2
   exit 1
 fi
 
-database_url_without_query="${DATABASE_URL%%\?*}"
+database_url_without_query="${MIGRATION_DATABASE_URL%%\?*}"
 database_url_query=""
-case "$DATABASE_URL" in
-  *\?*) database_url_query="?${DATABASE_URL#*\?}" ;;
+case "$MIGRATION_DATABASE_URL" in
+  *\?*) database_url_query="?${MIGRATION_DATABASE_URL#*\?}" ;;
 esac
 configured_database="${database_url_without_query##*/}"
 if [ "$configured_database" != "$POSTGRES_DB" ]; then
-  printf 'DATABASE_URL must target POSTGRES_DB=%s before restore.\n' "$POSTGRES_DB" >&2
+  printf 'MIGRATION_DATABASE_URL must target POSTGRES_DB=%s before restore.\n' "$POSTGRES_DB" >&2
   exit 1
 fi
 
@@ -71,6 +88,16 @@ rename_database() {
 
 drop_database() {
   compose exec -T postgres dropdb --if-exists --force -U "$POSTGRES_USER" "$1"
+}
+
+terminate_database_sessions() {
+  compose exec -T postgres psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d postgres \
+    -v database_name="$1" -c "
+      SELECT pg_terminate_backend(pid)
+      FROM pg_stat_activity
+      WHERE datname = :'database_name'
+        AND pid <> pg_backend_pid();
+    "
 }
 
 validate_staging_database() {
@@ -103,22 +130,37 @@ cleanup() {
   trap - EXIT HUP INT TERM
   rm -f "$temporary_sql"
 
-  if [ "$exit_code" -ne 0 ] && [ "$rollback_available" -eq 1 ] && [ "$target_available" -eq 0 ]; then
-    if rename_database "$rollback_db" "$POSTGRES_DB" >/dev/null 2>&1; then
-      rollback_available=0
-      target_available=1
-      staging_cleanup_safe=1
-      printf 'Restore failed; original database was restored from %s.\n' "$rollback_db" >&2
-    else
-      staging_cleanup_safe=0
-      printf 'CRITICAL: automatic rollback failed; valid copies are preserved as %s and %s. Writers remain stopped.\n' "$staging_db" "$rollback_db" >&2
+  if [ "$exit_code" -ne 0 ] && [ "$rollback_available" -eq 1 ]; then
+    compose stop web game >/dev/null 2>&1 || true
+    writers_stopped=1
+
+    if [ "$target_available" -eq 1 ]; then
+      terminate_database_sessions "$POSTGRES_DB" >/dev/null 2>&1 || true
+      if rename_database "$POSTGRES_DB" "$staging_db" >/dev/null 2>&1; then
+        target_available=0
+        staging_cleanup_safe=0
+      else
+        staging_cleanup_safe=0
+        printf 'CRITICAL: failed restored database remains at %s; rollback copy is preserved as %s. Writers remain stopped.\n' "$POSTGRES_DB" "$rollback_db" >&2
+      fi
+    fi
+
+    if [ "$target_available" -eq 0 ]; then
+      if rename_database "$rollback_db" "$POSTGRES_DB" >/dev/null 2>&1; then
+        rollback_available=0
+        target_available=1
+        printf 'Restore failed; original database was restored from %s.\n' "$rollback_db" >&2
+      else
+        staging_cleanup_safe=0
+        printf 'CRITICAL: automatic rollback failed; valid copies are preserved as %s and %s. Writers remain stopped.\n' "$staging_db" "$rollback_db" >&2
+      fi
     fi
   fi
 
   if [ "$staging_cleanup_safe" -eq 1 ]; then
     drop_database "$staging_db" >/dev/null 2>&1 || true
   elif [ "$switch_started" -eq 1 ]; then
-    printf 'Staging database %s was preserved because target availability is uncertain.\n' "$staging_db" >&2
+    printf 'Staging database %s was preserved for diagnosis after cutover began.\n' "$staging_db" >&2
   fi
 
   if [ "$exit_code" -ne 0 ] && [ "$writers_stopped" -eq 1 ]; then
@@ -145,11 +187,27 @@ test -s "$temporary_sql"
 
 compose exec -T postgres createdb -U "$POSTGRES_USER" -O "$POSTGRES_USER" "$staging_db"
 compose exec -T postgres psql -v ON_ERROR_STOP=1 --single-transaction -U "$POSTGRES_USER" "$staging_db" < "$temporary_sql"
-DATABASE_URL="$staging_database_url" compose run --rm --no-deps -T migrate
+POSTGRES_ROLE_DATABASE="$staging_db" compose run --rm --no-deps -T postgres-roles
+MIGRATION_DATABASE_URL="$staging_database_url" compose run --rm --no-deps -T migrate
+POSTGRES_ROLE_DATABASE="$staging_db" compose run --rm --no-deps -T postgres-roles
 validate_staging_database
 
 printf 'Switching validated restore %s into database %s...\n' "$backup_file" "$POSTGRES_DB"
 writers_to_restart="$(compose ps --status running --services web game)"
+web_was_running=0
+game_was_running=0
+for writer in $writers_to_restart; do
+  case "$writer" in
+    web) web_was_running=1 ;;
+    game) game_was_running=1 ;;
+  esac
+done
+
+if [ "$restore_only" -ne 1 ] && { [ "$web_was_running" -ne 1 ] || [ "$game_was_running" -ne 1 ]; }; then
+  printf 'Both web and game must be running so restore readiness can be verified. Set RESTORE_ONLY=1 for an offline restore that preserves the rollback database.\n' >&2
+  exit 1
+fi
+
 writers_stopped=1
 compose stop web game >/dev/null
 
@@ -163,12 +221,14 @@ rename_database "$staging_db" "$POSTGRES_DB"
 target_available=1
 staging_cleanup_safe=1
 
-if [ -n "$writers_to_restart" ]; then
+if [ "$restore_only" -ne 1 ]; then
   restart_attempted=1
-  compose start $writers_to_restart >/dev/null
-fi
-writers_stopped=0
+  compose up -d --no-recreate --wait --wait-timeout "$restore_health_timeout" web game >/dev/null
+  writers_stopped=0
 
-drop_database "$rollback_db"
-rollback_available=0
-printf 'Restore completed.\n'
+  drop_database "$rollback_db"
+  rollback_available=0
+  printf 'Restore completed.\n'
+else
+  printf 'Offline restore completed; rollback database %s is preserved until web and game readiness are verified manually.\n' "$rollback_db"
+fi

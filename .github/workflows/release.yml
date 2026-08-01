@@ -65,7 +65,7 @@ jobs:
             SENTRY_ORG=${{ vars.SENTRY_ORG }}
             SENTRY_PROJECT=${{ vars.SENTRY_PROJECT }}
           secrets: |
-            better_auth_secret=release-build-only-better-auth-secret-000000
+            better_auth_secrets=1:release-build-only-better-auth-secret-000000
             game_token_secret=release-build-only-game-token-secret-000000
             sentry_auth_token=${{ secrets.SENTRY_AUTH_TOKEN }}
           provenance: mode=max

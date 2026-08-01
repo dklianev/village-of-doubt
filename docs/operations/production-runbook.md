@@ -201,7 +201,12 @@ durable. Treat a restart as a user-visible incident.
 2. Preserve the database volume and logs.
 3. Restore the latest verified backup into a new database.
 4. Run migrations and smoke tests against the new database.
-5. Switch `DATABASE_URL`, redeploy the same immutable release, and verify readiness.
+5. Update `MIGRATION_DATABASE_URL`, `WEB_DATABASE_URL`, and `GAME_DATABASE_URL`
+   to the restored database while preserving their separate identities.
+6. Redeploy the same immutable release and verify both readiness endpoints.
+
+Detailed role, pool, maintenance, and query-observability procedures live in
+`docs/operations/database-operations.md`.
 
 ## Capacity triggers
 

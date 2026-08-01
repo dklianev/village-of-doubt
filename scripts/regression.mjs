@@ -863,6 +863,74 @@ function checkProductionEnvChecker() {
   const valid = runEnvChecker(validProductionEnv());
   assert(valid.status === 0, `Valid production env failed:\n${valid.stderr}\n${valid.stdout}`);
 
+  const validRotatingSecrets = runEnvChecker({
+    ...validProductionEnv(),
+    BETTER_AUTH_SECRETS:
+      "2:prod-current-auth-secret-000000000000000000,1:prod-previous-auth-secret-0000000000000000",
+  });
+  assert(validRotatingSecrets.status === 0, "A newest-first Better Auth rotation key ring should be accepted.");
+
+  const staleCurrentSecret = runEnvChecker({
+    ...validProductionEnv(),
+    BETTER_AUTH_SECRETS:
+      "1:prod-previous-auth-secret-0000000000000000,2:prod-current-auth-secret-000000000000000000",
+  });
+  assert(staleCurrentSecret.status !== 0, "Better Auth rotation must not encrypt with an older key version.");
+  assert(
+    staleCurrentSecret.stderr.includes("BETTER_AUTH_SECRETS"),
+    "Invalid Better Auth rotation should name BETTER_AUTH_SECRETS.",
+  );
+
+  const retiredLegacySecret = validProductionEnv();
+  delete retiredLegacySecret.BETTER_AUTH_SECRET;
+  retiredLegacySecret.BETTER_AUTH_LEGACY_TOKENS_RETIRED = "true";
+  const withoutLegacySecret = runEnvChecker(retiredLegacySecret);
+  assert(
+    withoutLegacySecret.status === 0,
+    `A fully migrated Better Auth key ring should allow legacy key retirement:\n${withoutLegacySecret.stderr}`,
+  );
+
+  const unconfirmedLegacyRetirement = validProductionEnv();
+  delete unconfirmedLegacyRetirement.BETTER_AUTH_SECRET;
+  const withoutRetirementSignOff = runEnvChecker(unconfirmedLegacyRetirement);
+  assert(
+    withoutRetirementSignOff.status !== 0,
+    "Removing BETTER_AUTH_SECRET without an explicit migration sign-off must fail.",
+  );
+  assert(
+    withoutRetirementSignOff.stderr.includes("BETTER_AUTH_LEGACY_TOKENS_RETIRED"),
+    "Unsafe Better Auth key retirement should name the required sign-off.",
+  );
+
+  const sharedRuntimeRole = runEnvChecker({
+    ...validProductionEnv(),
+    GAME_DATABASE_URL: validProductionEnv().WEB_DATABASE_URL,
+  });
+  assert(sharedRuntimeRole.status !== 0, "Web and game must not share a production database identity.");
+  assert(
+    sharedRuntimeRole.stderr.includes("GAME_DATABASE_URL"),
+    "Shared runtime database identity failure should mention GAME_DATABASE_URL.",
+  );
+
+  const missingDatabaseIdentity = validProductionEnv();
+  delete missingDatabaseIdentity.MIGRATION_DATABASE_URL;
+  const withoutMigrationIdentity = runEnvChecker(missingDatabaseIdentity);
+  assert(withoutMigrationIdentity.status !== 0, "Missing migration database identity should fail production env check.");
+  assert(
+    withoutMigrationIdentity.stderr.includes("MIGRATION_DATABASE_URL"),
+    "Missing migration identity failure should mention MIGRATION_DATABASE_URL.",
+  );
+
+  const unlabeledRuntime = runEnvChecker({
+    ...validProductionEnv(),
+    WEB_DATABASE_URL: "postgres://werewolf_web:prod-web-password-000000000000000000@postgres:5432/werewolf",
+  });
+  assert(unlabeledRuntime.status !== 0, "Production database clients must set application_name.");
+  assert(
+    unlabeledRuntime.stderr.includes("application_name"),
+    "Unlabeled database client failure should mention application_name.",
+  );
+
   const wildcardCors = runEnvChecker({ ...validProductionEnv(), CORS_ORIGIN: "*" });
   assert(wildcardCors.status !== 0, "Wildcard CORS origin should fail production env check.");
   assert(wildcardCors.stderr.includes("CORS_ORIGIN"), "Wildcard CORS failure should mention CORS_ORIGIN.");
@@ -983,6 +1051,17 @@ function checkScriptWiring() {
       && webDockerfile.includes("sentry_auth_token"),
     "Web release builds must receive the public DSN and an ephemeral source-map token.",
   );
+  assert(
+    webDockerfile.includes("id=better_auth_secrets")
+      && webDockerfile.includes('BETTER_AUTH_SECRETS="$(cat /run/secrets/better_auth_secrets)"')
+      && compose.includes("BETTER_AUTH_SECRETS: ${BETTER_AUTH_SECRETS:?"),
+    "Web release builds and runtime must receive the versioned Better Auth key ring as a secret.",
+  );
+  assert(
+    (webDockerfile.match(/^COPY patches patches$/gm) ?? []).length === 2
+      && gameDockerfile.includes("COPY patches patches"),
+    "Every Docker dependency stage must copy pnpm patchedDependencies before frozen install.",
+  );
 
   const ciNodeMajor = ciWorkflow.match(/node-version:\s*["']?(\d+)/)?.[1];
   const webNodeMajor = webDockerfile.match(/^FROM node:(\d+)/m)?.[1];
@@ -1042,6 +1121,11 @@ function checkProductionOperationsContracts() {
   const lighthouse = readText("lighthouserc.cjs");
   const launchLoad = readText("scripts/loadtest-launch.mjs");
   const heavyLoad = readText("scripts/loadtest-heavy.mjs");
+  const compose = readText("docker-compose.yml");
+  const envExample = readText(".env.example");
+  const roleReconciler = readText("scripts/postgres-init/apply-roles.sh");
+  const restore = readText("scripts/restore-postgres.sh");
+  const instrumentation = readText("apps/web/instrumentation.ts");
 
   assert((timer.match(/^OnCalendar=/gm) ?? []).length === 4, "PostgreSQL backups must run every six hours.");
   assert(timer.includes("Persistent=true"), "Missed backups must run after the host returns.");
@@ -1114,6 +1198,68 @@ function checkProductionOperationsContracts() {
   assert(launchLoad.includes('"200"'), "The launch load profile must exercise 200 clients.");
   assert(launchLoad.includes('"0.8"'), "The launch load profile must enforce the 80% event-loop trigger.");
   assert(heavyLoad.includes('"500"'), "The stress load profile must exercise 500 clients.");
+  assert(
+    compose.includes("MIGRATION_DATABASE_URL")
+      && compose.includes("WEB_DATABASE_URL")
+      && compose.includes("GAME_DATABASE_URL"),
+    "Production services must use separate migration, web, and game database URLs.",
+  );
+  assert(
+    compose.includes("postgres-roles:")
+      && compose.includes("postgres-grants:")
+      && compose.includes("condition: service_completed_successfully"),
+    "Production startup must reconcile database roles before and after migrations.",
+  );
+  assert(
+    roleReconciler.includes("FROM pg_roles")
+      && roleReconciler.includes("ALTER DEFAULT PRIVILEGES FOR ROLE werewolf_migrator")
+      && roleReconciler.includes("TO werewolf_web")
+      && roleReconciler.includes("TO werewolf_game"),
+    "Database role reconciliation must be idempotent and apply explicit runtime grants.",
+  );
+  assert(
+    !/GRANT ALL[^;]*TO werewolf_(?:web|game)/.test(roleReconciler),
+    "Runtime database roles must never receive blanket privileges.",
+  );
+  assert(
+    roleReconciler.includes("SET log_min_duration_statement = -1")
+      && roleReconciler.includes("SET log_min_error_statement = PANIC")
+      && roleReconciler.includes("\\getenv migrator_password MIGRATOR_DB_PASSWORD")
+      && !/-v (?:migrator|web|game)_password=/.test(roleReconciler),
+    "Database credential statements must stay out of query logs and process arguments.",
+  );
+  assert(
+    roleReconciler.includes("\nBEGIN;\n") && roleReconciler.includes("\nCOMMIT;\n"),
+    "Database role reconciliation must apply atomically.",
+  );
+  assert(
+    compose.includes("shared_preload_libraries=pg_stat_statements")
+      && compose.includes("log_min_duration_statement=${POSTGRES_SLOW_QUERY_MS:-500}")
+      && compose.includes("log_line_prefix="),
+    "PostgreSQL must expose statement statistics and labeled slow-query logs.",
+  );
+  assert(
+    roleReconciler.includes(
+      "CREATE EXTENSION IF NOT EXISTS pg_stat_statements WITH SCHEMA werewolf_observability",
+    )
+      && roleReconciler.includes(
+        "REVOKE ALL PRIVILEGES ON SCHEMA werewolf_observability FROM PUBLIC, werewolf_web, werewolf_game",
+      )
+      && envExample.includes("application_name=werewolf-migrator")
+      && envExample.includes("application_name=werewolf-web")
+      && envExample.includes("application_name=werewolf-game"),
+    "PostgreSQL observability must install pg_stat_statements and label every production client.",
+  );
+  assert(
+    restore.includes("MIGRATION_DATABASE_URL")
+      && restore.includes("compose run --rm --no-deps -T postgres-roles"),
+    "Restore drills must reconcile staging ownership before running migrations.",
+  );
+  assert(
+    !/^import\s+.*database-maintenance/m.test(instrumentation)
+      && instrumentation.includes('await import("@/lib/database-maintenance")'),
+    "Database maintenance must stay behind the Node-only instrumentation boundary.",
+  );
 }
 
 function checkDatabaseMigrationWorkflow() {
@@ -1155,10 +1301,17 @@ function checkDatabaseMigrationWorkflow() {
 
 function validProductionEnv() {
   return {
-    DATABASE_URL: "postgres://werewolf:prod-password@postgres:5432/werewolf",
+    MIGRATION_DATABASE_URL:
+      "postgres://werewolf_migrator:prod-migrator-password-000000000000000@postgres:5432/werewolf?application_name=werewolf-migrator",
+    WEB_DATABASE_URL:
+      "postgres://werewolf_web:prod-web-password-000000000000000000@postgres:5432/werewolf?application_name=werewolf-web",
+    GAME_DATABASE_URL:
+      "postgres://werewolf_game:prod-game-password-00000000000000000@postgres:5432/werewolf?application_name=werewolf-game",
     REDIS_URL: "redis://redis:6379",
     REDIS_PASSWORD: "prod-redis-password-00000000000000000000",
     BETTER_AUTH_SECRET: "prod-better-auth-secret-000000000000000000",
+    BETTER_AUTH_SECRETS:
+      "2:prod-current-auth-secret-000000000000000000,1:prod-previous-auth-secret-0000000000000000",
     GAME_TOKEN_SECRET: "prod-game-token-secret-0000000000000000000",
     BETTER_AUTH_URL: "https://werewolf.example.com",
     NEXT_PUBLIC_APP_URL: "https://werewolf.example.com",
@@ -1166,7 +1319,10 @@ function validProductionEnv() {
     PUBLIC_WEB_DOMAIN: "werewolf.example.com",
     PUBLIC_WS_DOMAIN: "ws.werewolf.example.com",
     CORS_ORIGIN: "https://werewolf.example.com",
-    DB_PASSWORD: "prod-password",
+    DB_PASSWORD: "prod-admin-password-000000000000000000",
+    MIGRATOR_DB_PASSWORD: "prod-migrator-password-000000000000000",
+    WEB_DB_PASSWORD: "prod-web-password-000000000000000000",
+    GAME_DB_PASSWORD: "prod-game-password-00000000000000000",
     ALLOW_DEV_AUTH: "false",
     GOOGLE_CLIENT_ID: "prod-google-client-id",
     GOOGLE_CLIENT_SECRET: "prod-google-client-secret",

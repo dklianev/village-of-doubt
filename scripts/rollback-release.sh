@@ -18,9 +18,11 @@ set -a
 . "$rollback_env"
 set +a
 
-pnpm deploy:drain
+docker compose --env-file .env --env-file "$rollback_env" config --quiet
 docker compose --env-file .env --env-file "$rollback_env" pull web game
-docker compose --env-file .env --env-file "$rollback_env" up -d --no-build web game caddy
+pnpm deploy:drain
+docker compose --env-file .env --env-file "$rollback_env" up -d --wait postgres redis
+docker compose --env-file .env --env-file "$rollback_env" up -d --no-build --no-deps web game caddy
 
 attempt=1
 while [ "$attempt" -le 45 ]; do

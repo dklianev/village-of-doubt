@@ -99,10 +99,16 @@ jobs:
     timeout-minutes: 25
     env:
       COMPOSE_PROJECT_NAME: werewolf_ci
-      DB_PASSWORD: ci-postgres-password
-      DATABASE_URL: postgres://werewolf:ci-postgres-password@postgres:5432/werewolf
+      DB_PASSWORD: ci-postgres-owner-password-00000001
+      MIGRATOR_DB_PASSWORD: ci-postgres-migrator-password-0001
+      WEB_DB_PASSWORD: ci-postgres-web-password-0000000001
+      GAME_DB_PASSWORD: ci-postgres-game-password-00000001
+      MIGRATION_DATABASE_URL: postgres://werewolf_migrator:ci-postgres-migrator-password-0001@postgres:5432/werewolf?application_name=werewolf-migrator
+      WEB_DATABASE_URL: postgres://werewolf_web:ci-postgres-web-password-0000000001@postgres:5432/werewolf?application_name=werewolf-web
+      GAME_DATABASE_URL: postgres://werewolf_game:ci-postgres-game-password-00000001@postgres:5432/werewolf?application_name=werewolf-game
       REDIS_URL: redis://redis:6379
-      BETTER_AUTH_SECRET: ci-better-auth-secret-that-is-long-enough
+      BETTER_AUTH_SECRET: ci-legacy-better-auth-secret-000000000001
+      BETTER_AUTH_SECRETS: 2:ci-current-better-auth-key-00000000001,1:ci-previous-better-auth-key-000000001
       GAME_TOKEN_SECRET: ci-game-token-secret-that-is-long-enough
       REDIS_PASSWORD: ci-redis-password-that-is-long-enough-32-chars
       BETTER_AUTH_URL: https://werewolf.example.com
@@ -150,14 +156,18 @@ jobs:
         run: |
           for attempt in {1..45}; do
             postgres_id="$(docker compose ps -q postgres)"
+            postgres_roles_id="$(docker compose ps -aq postgres-roles)"
             migrate_id="$(docker compose ps -aq migrate)"
+            postgres_grants_id="$(docker compose ps -aq postgres-grants)"
             web_id="$(docker compose ps -q web)"
             game_id="$(docker compose ps -q game)"
             postgres_health="$(docker inspect --format '{{.State.Health.Status}}' "$postgres_id" 2>/dev/null || true)"
+            postgres_roles_exit="$(docker inspect --format '{{.State.ExitCode}}' "$postgres_roles_id" 2>/dev/null || true)"
             migrate_exit="$(docker inspect --format '{{.State.ExitCode}}' "$migrate_id" 2>/dev/null || true)"
+            postgres_grants_exit="$(docker inspect --format '{{.State.ExitCode}}' "$postgres_grants_id" 2>/dev/null || true)"
             web_health="$(docker inspect --format '{{.State.Health.Status}}' "$web_id" 2>/dev/null || true)"
             game_health="$(docker inspect --format '{{.State.Health.Status}}' "$game_id" 2>/dev/null || true)"
-            if [[ "$postgres_health" == "healthy" && "$migrate_exit" == "0" && "$web_health" == "healthy" && "$game_health" == "healthy" ]]; then
+            if [[ "$postgres_health" == "healthy" && "$postgres_roles_exit" == "0" && "$migrate_exit" == "0" && "$postgres_grants_exit" == "0" && "$web_health" == "healthy" && "$game_health" == "healthy" ]]; then
               echo "Production services became ready after $attempt checks."
               docker compose ps
               exit 0
@@ -165,7 +175,7 @@ jobs:
             sleep 2
           done
           docker compose ps
-          docker compose logs web game migrate
+          docker compose logs web game postgres-roles migrate postgres-grants
           exit 1
 
       - name: Start Caddy ingress
@@ -200,7 +210,7 @@ jobs:
         if: failure()
         run: |
           docker compose ps --all
-          docker compose logs --no-color postgres migrate web game
+          docker compose logs --no-color postgres postgres-roles migrate postgres-grants web game
           docker logs werewolf-ci-caddy 2>&1 || true
 
       - name: Stop production services

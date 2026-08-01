@@ -30,6 +30,9 @@ set -a
 . "$generated_env"
 set +a
 
+docker compose --env-file .env --env-file "$generated_env" config --quiet
+docker compose --env-file .env --env-file "$generated_env" pull migrate web game
+
 if [ "${SKIP_DEPLOY_DRAIN:-0}" != "1" ] && docker compose ps -q game | grep -q .; then
   pnpm deploy:drain
 fi
@@ -42,10 +45,11 @@ if [ "${SKIP_DEPLOY_BACKUP:-0}" != "1" ]; then
   fi
 fi
 
-docker compose --env-file .env --env-file "$generated_env" pull migrate web game
-docker compose --env-file .env --env-file "$generated_env" up -d postgres redis
-docker compose --env-file .env --env-file "$generated_env" run --rm migrate
-docker compose --env-file .env --env-file "$generated_env" up -d --no-build web game caddy
+docker compose --env-file .env --env-file "$generated_env" up -d --wait postgres redis
+docker compose --env-file .env --env-file "$generated_env" run --rm --no-deps postgres-roles
+docker compose --env-file .env --env-file "$generated_env" run --rm --no-deps migrate
+docker compose --env-file .env --env-file "$generated_env" run --rm --no-deps postgres-grants
+docker compose --env-file .env --env-file "$generated_env" up -d --no-build --no-deps web game caddy
 
 attempt=1
 while [ "$attempt" -le 45 ]; do
@@ -66,7 +70,7 @@ while [ "$attempt" -le 45 ]; do
 done
 
 docker compose --env-file .env --env-file "$generated_env" ps
-docker compose --env-file .env --env-file "$generated_env" logs --tail 150 web game migrate
+docker compose --env-file .env --env-file "$generated_env" logs --tail 150 web game
 echo "Release failed readiness checks. The previous manifest remains unchanged." >&2
 echo "Run scripts/rollback-release.sh $previous_manifest after diagnosing migration compatibility." >&2
 exit 1

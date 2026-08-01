@@ -21,7 +21,7 @@ function shellInvocation() {
   return process.platform === "win32" ? null : { command: "sh", prefix: [] };
 }
 
-function runRestore(failure = "") {
+function runRestore(failure = "", options = {}) {
   const shell = shellInvocation();
   assert.ok(shell, "Set POSIX_SHELL to run restore-postgres behavioral tests on Windows");
 
@@ -40,7 +40,8 @@ function runRestore(failure = "") {
     encoding: "utf8",
     env: {
       ...process.env,
-      DATABASE_URL: "postgres://werewolf:secret@postgres:5432/werewolf",
+      MIGRATION_DATABASE_URL:
+        "postgres://werewolf_migrator:secret@postgres:5432/werewolf?application_name=werewolf-migrator",
       POSTGRES_USER: "werewolf",
       POSTGRES_DB: "werewolf",
       RESTORE_CONFIRM_DATABASE: "werewolf",
@@ -48,6 +49,7 @@ function runRestore(failure = "") {
       RESTORE_RUN_ID: runId,
       RESTORE_TEST_FAILURE: failure,
       RESTORE_TEST_LOG: toShellPath(logFile),
+      RESTORE_ONLY: options.restoreOnly ? "1" : "",
       TMPDIR: toShellPath(scratchDir),
     },
   });
@@ -66,10 +68,14 @@ function fakeDockerSource() {
 printf '%s\\n' "$*" >> "$RESTORE_TEST_LOG"
 case "$*" in
   "compose ps --status running --services web game")
-    printf 'web\\ngame\\n'
+    if [ "$RESTORE_TEST_FAILURE" = "partial-writers" ]; then
+      printf 'web\\n'
+    else
+      printf 'web\\ngame\\n'
+    fi
     ;;
   *"run --rm --no-deps"*"migrate")
-    printf 'migrator-database-url=%s\\n' "$DATABASE_URL" >> "$RESTORE_TEST_LOG"
+    printf 'migrator-database-url=%s\\n' "$MIGRATION_DATABASE_URL" >> "$RESTORE_TEST_LOG"
     [ "$RESTORE_TEST_FAILURE" = "migrate" ] && exit 41
     ;;
   *"ALTER DATABASE \\"werewolf_restore_stage_review\\" RENAME TO \\"werewolf\\""*)
@@ -78,7 +84,7 @@ case "$*" in
   *"ALTER DATABASE \\"werewolf_restore_rollback_review\\" RENAME TO \\"werewolf\\""*)
     [ "$RESTORE_TEST_FAILURE" = "promote-recovery" ] && exit 43
     ;;
-  "compose start web game")
+  "compose up -d --no-recreate --wait --wait-timeout 180 web game")
     [ "$RESTORE_TEST_FAILURE" = "restart" ] && exit 44
     ;;
   *"psql -v ON_ERROR_STOP=1"*"-Atqc"*)
@@ -100,7 +106,7 @@ function indexOf(commands, fragment) {
   return commands.findIndex((command) => command.includes(fragment));
 }
 
-test("restores the rollback database when staging promotion fails", () => {
+test("restores the rollback database and preserves the candidate when promotion fails", () => {
   const result = runRestore("promote");
   const renameTarget = indexOf(result.commands, `ALTER DATABASE "werewolf" RENAME TO "${rollbackDb}"`);
   const promote = indexOf(result.commands, `ALTER DATABASE "${stagingDb}" RENAME TO "werewolf"`);
@@ -111,8 +117,9 @@ test("restores the rollback database when staging promotion fails", () => {
   assert.ok(renameTarget >= 0);
   assert.ok(promote > renameTarget);
   assert.ok(recover > promote);
-  assert.ok(dropStaging > recover);
+  assert.equal(dropStaging, -1);
   assert.equal(indexOf(result.commands, `dropdb --if-exists --force -U werewolf ${rollbackDb}`), -1);
+  assert.match(result.stderr, /preserved for diagnosis/i);
 });
 
 test("preserves staging and rollback copies when rollback recovery also fails", () => {
@@ -126,25 +133,62 @@ test("preserves staging and rollback copies when rollback recovery also fails", 
 
 test("preserves rollback and reports stopped writers when restart fails", () => {
   const result = runRestore("restart");
+  const failedRestart = indexOf(
+    result.commands,
+    "compose up -d --no-recreate --wait --wait-timeout 180 web game",
+  );
+  const cleanupStop = result.commands.findIndex(
+    (command, index) => index > failedRestart && command.includes("compose stop web game"),
+  );
+  const terminateTargetSessions = result.commands.findIndex(
+    (command, index) =>
+      index > cleanupStop
+      && command.includes("pg_terminate_backend"),
+  );
+  const demoteCandidate = indexOf(
+    result.commands,
+    `ALTER DATABASE "werewolf" RENAME TO "${stagingDb}"`,
+  );
 
   assert.notEqual(result.status, 0);
   assert.ok(indexOf(result.commands, `ALTER DATABASE "${stagingDb}" RENAME TO "werewolf"`) >= 0);
-  assert.ok(indexOf(result.commands, "compose start web game") >= 0);
+  assert.ok(failedRestart >= 0);
+  assert.ok(cleanupStop > failedRestart);
+  assert.ok(terminateTargetSessions > cleanupStop);
+  assert.ok(demoteCandidate > terminateTargetSessions);
+  assert.ok(indexOf(result.commands, `ALTER DATABASE "${rollbackDb}" RENAME TO "werewolf"`) >= 0);
   assert.equal(indexOf(result.commands, `dropdb --if-exists --force -U werewolf ${rollbackDb}`), -1);
+  assert.equal(indexOf(result.commands, `dropdb --if-exists --force -U werewolf ${stagingDb}`), -1);
   assert.match(result.stderr, /restart did not complete/i);
   assert.match(result.stderr, /treated as stopped|remain stopped/i);
 });
 
-test("runs the real migrator before stopping writers and removes rollback only after restart", () => {
+test("runs the real migrator before stopping writers and removes rollback only after health verification", () => {
   const result = runRestore();
-  const migrate = indexOf(result.commands, "compose run --rm --no-deps");
+  const migrate = indexOf(result.commands, "compose run --rm --no-deps -T migrate");
   const stop = indexOf(result.commands, "compose stop web game");
-  const restart = indexOf(result.commands, "compose start web game");
+  const restart = indexOf(
+    result.commands,
+    "compose up -d --no-recreate --wait --wait-timeout 180 web game",
+  );
   const dropRollback = indexOf(result.commands, `dropdb --if-exists --force -U werewolf ${rollbackDb}`);
 
   assert.equal(result.status, 0, result.stderr);
   assert.ok(migrate >= 0);
-  assert.ok(result.commands.includes(`migrator-database-url=postgres://werewolf:secret@postgres:5432/${stagingDb}`));
+  assert.ok(
+    result.commands.includes(
+      `migrator-database-url=postgres://werewolf_migrator:secret@postgres:5432/${stagingDb}?application_name=werewolf-migrator`,
+    ),
+  );
+  assert.ok(
+    indexOf(result.commands, "compose run --rm --no-deps -T postgres-roles") < migrate,
+  );
+  assert.equal(
+    result.commands.filter((command) =>
+      command.includes("compose run --rm --no-deps -T postgres-roles"),
+    ).length,
+    2,
+  );
   assert.ok(stop > migrate);
   assert.ok(restart > stop);
   assert.ok(dropRollback > restart);
@@ -157,4 +201,26 @@ test("leaves writers and target untouched when staging migration fails", () => {
   assert.ok(indexOf(result.commands, "compose run --rm --no-deps") >= 0);
   assert.equal(indexOf(result.commands, "compose stop web game"), -1);
   assert.equal(indexOf(result.commands, "ALTER DATABASE"), -1);
+});
+
+test("refuses cutover unless both application writers can be health-checked", () => {
+  const result = runRestore("partial-writers");
+
+  assert.notEqual(result.status, 0);
+  assert.equal(indexOf(result.commands, "compose stop web game"), -1);
+  assert.equal(indexOf(result.commands, "ALTER DATABASE"), -1);
+  assert.match(result.stderr, /web and game|RESTORE_ONLY/i);
+});
+
+test("offline restore preserves rollback instead of claiming application readiness", () => {
+  const result = runRestore("partial-writers", { restoreOnly: true });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.ok(indexOf(result.commands, `ALTER DATABASE "${stagingDb}" RENAME TO "werewolf"`) >= 0);
+  assert.equal(
+    indexOf(result.commands, "compose up -d --no-recreate --wait --wait-timeout 180 web game"),
+    -1,
+  );
+  assert.equal(indexOf(result.commands, `dropdb --if-exists --force -U werewolf ${rollbackDb}`), -1);
+  assert.match(result.stdout, /rollback.*preserved|preserved.*rollback/i);
 });

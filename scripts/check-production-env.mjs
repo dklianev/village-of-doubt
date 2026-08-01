@@ -1,7 +1,13 @@
 const required = [
-  "DATABASE_URL",
+  "MIGRATION_DATABASE_URL",
+  "WEB_DATABASE_URL",
+  "GAME_DATABASE_URL",
+  "DB_PASSWORD",
+  "MIGRATOR_DB_PASSWORD",
+  "WEB_DB_PASSWORD",
+  "GAME_DB_PASSWORD",
   "REDIS_URL",
-  "BETTER_AUTH_SECRET",
+  "BETTER_AUTH_SECRETS",
   "GAME_TOKEN_SECRET",
   "BETTER_AUTH_URL",
   "NEXT_PUBLIC_APP_URL",
@@ -26,9 +32,23 @@ for (const key of required) {
   }
 }
 
-checkSecret("BETTER_AUTH_SECRET");
+if (process.env.BETTER_AUTH_SECRET) {
+  checkSecret("BETTER_AUTH_SECRET");
+  if (process.env.BETTER_AUTH_LEGACY_TOKENS_RETIRED === "true") {
+    warnings.push("BETTER_AUTH_SECRET още е зададен въпреки потвърденото оттегляне на legacy токените.");
+  }
+} else if (process.env.BETTER_AUTH_LEGACY_TOKENS_RETIRED !== "true") {
+  errors.push(
+    "BETTER_AUTH_LEGACY_TOKENS_RETIRED=true е задължително преди BETTER_AUTH_SECRET да бъде премахнат.",
+  );
+}
+checkBetterAuthSecrets();
 checkSecret("GAME_TOKEN_SECRET");
 checkSecret("REDIS_PASSWORD");
+checkSecret("DB_PASSWORD");
+checkSecret("MIGRATOR_DB_PASSWORD");
+checkSecret("WEB_DB_PASSWORD");
+checkSecret("GAME_DB_PASSWORD");
 
 if (process.env.BETTER_AUTH_URL && !process.env.BETTER_AUTH_URL.startsWith("https://")) {
   errors.push("BETTER_AUTH_URL трябва да е HTTPS в production.");
@@ -87,7 +107,7 @@ if (!hasDiscord) {
 }
 
 checkUrlAlignment();
-checkDatabaseCredentials();
+checkDatabaseRoles();
 checkSentryDsn("SENTRY_DSN");
 checkSentryDsn("NEXT_PUBLIC_SENTRY_DSN");
 checkReleaseVersion();
@@ -118,6 +138,48 @@ function checkSecret(key) {
   }
 }
 
+function checkBetterAuthSecrets() {
+  const value = process.env.BETTER_AUTH_SECRETS?.trim();
+  if (!value) {
+    return;
+  }
+
+  const versions = [];
+  const seen = new Set();
+  for (const rawEntry of value.split(",")) {
+    const entry = rawEntry.trim();
+    const colonIndex = entry.indexOf(":");
+    if (colonIndex === -1) {
+      errors.push('BETTER_AUTH_SECRETS трябва да използва формат "<version>:<secret>".');
+      continue;
+    }
+
+    const rawVersion = entry.slice(0, colonIndex).trim();
+    const secret = entry.slice(colonIndex + 1).trim();
+    if (!/^(?:0|[1-9]\d*)$/.test(rawVersion)) {
+      errors.push(`BETTER_AUTH_SECRETS съдържа невалидна версия "${rawVersion}".`);
+      continue;
+    }
+
+    const version = Number.parseInt(rawVersion, 10);
+    if (seen.has(version)) {
+      errors.push(`BETTER_AUTH_SECRETS съдържа повторена версия ${version}.`);
+    }
+    seen.add(version);
+    versions.push(version);
+    if (secret.length < 32 || /dev-only|replace|change-me|placeholder/i.test(secret)) {
+      errors.push(`BETTER_AUTH_SECRETS версия ${version} трябва да е силна тайна с поне 32 символа.`);
+    }
+  }
+
+  if (
+    versions.length > 0
+    && versions.some((version, index) => index > 0 && version >= versions[index - 1])
+  ) {
+    errors.push("BETTER_AUTH_SECRETS трябва да е подреден строго от най-новата към най-старата версия.");
+  }
+}
+
 function checkUrlAlignment() {
   try {
     const authUrl = new URL(process.env.BETTER_AUTH_URL ?? "");
@@ -137,21 +199,77 @@ function checkUrlAlignment() {
   }
 }
 
-function checkDatabaseCredentials() {
-  if (!process.env.DATABASE_URL) {
-    return;
-  }
-  try {
-    const databaseUrl = new URL(process.env.DATABASE_URL);
-    if (databaseUrl.hostname === "postgres") {
-      if (!process.env.DB_PASSWORD) {
-        errors.push("DB_PASSWORD липсва за Docker production DATABASE_URL.");
-      } else if (decodeURIComponent(databaseUrl.password) !== process.env.DB_PASSWORD) {
-        errors.push("DB_PASSWORD не съвпада с паролата в DATABASE_URL.");
-      }
+function checkDatabaseRoles() {
+  const configurations = [
+    {
+      urlKey: "MIGRATION_DATABASE_URL",
+      passwordKey: "MIGRATOR_DB_PASSWORD",
+      username: "werewolf_migrator",
+      applicationName: "werewolf-migrator",
+    },
+    {
+      urlKey: "WEB_DATABASE_URL",
+      passwordKey: "WEB_DB_PASSWORD",
+      username: "werewolf_web",
+      applicationName: "werewolf-web",
+    },
+    {
+      urlKey: "GAME_DATABASE_URL",
+      passwordKey: "GAME_DB_PASSWORD",
+      username: "werewolf_game",
+      applicationName: "werewolf-game",
+    },
+  ];
+  const parsedUrls = [];
+
+  for (const configuration of configurations) {
+    const value = process.env[configuration.urlKey];
+    if (!value) {
+      continue;
     }
-  } catch {
-    errors.push("DATABASE_URL не е валиден URL.");
+
+    try {
+      const databaseUrl = new URL(value);
+      const username = decodeURIComponent(databaseUrl.username);
+      const password = decodeURIComponent(databaseUrl.password);
+      const expectedPassword = process.env[configuration.passwordKey];
+
+      if (databaseUrl.protocol !== "postgres:" && databaseUrl.protocol !== "postgresql:") {
+        errors.push(`${configuration.urlKey} трябва да използва postgres:// или postgresql://.`);
+      }
+      if (databaseUrl.hostname !== "postgres" || databaseUrl.pathname !== "/werewolf") {
+        errors.push(`${configuration.urlKey} трябва да сочи към postgres/werewolf в production Compose.`);
+      }
+      if (username !== configuration.username) {
+        errors.push(`${configuration.urlKey} трябва да използва ролята ${configuration.username}.`);
+      }
+      if (!password || (expectedPassword && password !== expectedPassword)) {
+        errors.push(`${configuration.passwordKey} не съвпада с паролата в ${configuration.urlKey}.`);
+      }
+      if (databaseUrl.searchParams.get("application_name") !== configuration.applicationName) {
+        errors.push(
+          `${configuration.urlKey} трябва да задава application_name=${configuration.applicationName}.`,
+        );
+      }
+
+      parsedUrls.push({ key: configuration.urlKey, username, password });
+    } catch {
+      errors.push(`${configuration.urlKey} не е валиден URL.`);
+    }
+  }
+
+  if (new Set(parsedUrls.map((item) => item.username)).size !== parsedUrls.length) {
+    errors.push("MIGRATION_DATABASE_URL, WEB_DATABASE_URL и GAME_DATABASE_URL трябва да използват различни роли.");
+  }
+
+  const configuredPasswords = [
+    process.env.DB_PASSWORD,
+    process.env.MIGRATOR_DB_PASSWORD,
+    process.env.WEB_DB_PASSWORD,
+    process.env.GAME_DB_PASSWORD,
+  ].filter(Boolean);
+  if (new Set(configuredPasswords).size !== configuredPasswords.length) {
+    errors.push("Production database ролите трябва да използват различни пароли.");
   }
 }
 

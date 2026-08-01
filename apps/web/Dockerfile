@@ -4,6 +4,7 @@ RUN corepack enable
 
 FROM base AS migrator-deps
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json tsconfig.base.json ./
+COPY patches patches
 COPY packages/database/package.json packages/database/package.json
 RUN pnpm install --frozen-lockfile --filter @werewolf/database...
 
@@ -15,6 +16,7 @@ CMD ["./node_modules/.bin/drizzle-kit", "migrate", "--config", "drizzle.config.t
 
 FROM base AS deps
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json tsconfig.base.json ./
+COPY patches patches
 COPY apps/web/package.json apps/web/package.json
 COPY packages/shared/package.json packages/shared/package.json
 COPY packages/database/package.json packages/database/package.json
@@ -39,10 +41,11 @@ COPY . .
 RUN pnpm --filter @werewolf/shared build
 RUN pnpm --filter @werewolf/database build
 RUN pnpm --filter @werewolf/ui build
-RUN --mount=type=secret,id=better_auth_secret \
+RUN --mount=type=secret,id=better_auth_secrets \
     --mount=type=secret,id=game_token_secret \
     --mount=type=secret,id=sentry_auth_token,required=false \
-    BETTER_AUTH_SECRET="$(cat /run/secrets/better_auth_secret)" \
+    BETTER_AUTH_SECRETS="$(cat /run/secrets/better_auth_secrets)" \
+    BETTER_AUTH_LEGACY_TOKENS_RETIRED=true \
     GAME_TOKEN_SECRET="$(cat /run/secrets/game_token_secret)" \
     SENTRY_AUTH_TOKEN="$(if [ -f /run/secrets/sentry_auth_token ]; then cat /run/secrets/sentry_auth_token; fi)" \
     pnpm --filter @werewolf/web build

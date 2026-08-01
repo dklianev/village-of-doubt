@@ -1,8 +1,148 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 
 const read = (path) => readFileSync(path, "utf8");
+const readOptional = (path) => existsSync(path) ? read(path) : "";
+
+test("production database roles are separated and reconciled on every deployment", () => {
+  const compose = read("docker-compose.yml");
+  const envExample = read(".env.example");
+  const roleReconciler = readOptional("scripts/postgres-init/apply-roles.sh");
+  const productionEnvCheck = read("scripts/check-production-env.mjs");
+  const restore = read("scripts/restore-postgres.sh");
+
+  assert.match(compose, /^\s{2}postgres-roles:$/m);
+  assert.match(compose, /^\s{2}postgres-grants:$/m);
+  assert.match(compose, /postgres-roles:[\s\S]*condition: service_healthy/);
+  assert.match(compose, /migrate:[\s\S]*DATABASE_URL: \$\{MIGRATION_DATABASE_URL:/);
+  assert.match(compose, /migrate:[\s\S]*postgres-roles:[\s\S]*condition: service_completed_successfully/);
+  assert.match(compose, /postgres-grants:[\s\S]*migrate:[\s\S]*condition: service_completed_successfully/);
+  assert.match(compose, /web:[\s\S]*DATABASE_URL: \$\{WEB_DATABASE_URL:/);
+  assert.match(compose, /web:[\s\S]*postgres-grants:[\s\S]*condition: service_completed_successfully/);
+  assert.match(compose, /game:[\s\S]*DATABASE_URL: \$\{GAME_DATABASE_URL:/);
+  assert.match(compose, /game:[\s\S]*postgres-grants:[\s\S]*condition: service_completed_successfully/);
+
+  for (const key of [
+    "MIGRATION_DATABASE_URL",
+    "WEB_DATABASE_URL",
+    "GAME_DATABASE_URL",
+    "MIGRATOR_DB_PASSWORD",
+    "WEB_DB_PASSWORD",
+    "GAME_DB_PASSWORD",
+  ]) {
+    assert.match(envExample, new RegExp(`^${key}=`, "m"));
+    assert.match(productionEnvCheck, new RegExp(`"${key}"`));
+  }
+
+  assert.match(roleReconciler, /FROM pg_roles/);
+  assert.match(roleReconciler, /CREATE ROLE werewolf_migrator/);
+  assert.match(roleReconciler, /CREATE ROLE werewolf_web/);
+  assert.match(roleReconciler, /CREATE ROLE werewolf_game/);
+  assert.match(
+    roleReconciler,
+    /ALTER ROLE werewolf_(?:web|game)[\s\S]*NOSUPERUSER[\s\S]*NOCREATEDB[\s\S]*NOCREATEROLE[\s\S]*NOREPLICATION[\s\S]*NOBYPASSRLS/,
+  );
+  assert.match(roleReconciler, /TO werewolf_web/);
+  assert.match(roleReconciler, /TO werewolf_game/);
+  assert.match(roleReconciler, /WHEN 'account'|relation\.relname IN \('user', 'session', 'account', 'verification'\)/);
+  assert.doesNotMatch(
+    roleReconciler,
+    /GRANT [^;]* ON (?:ALL TABLES IN SCHEMA public|TABLE public\.(?:account|session|verification)) TO werewolf_game/,
+  );
+  assert.match(roleReconciler, /GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public/);
+  assert.match(roleReconciler, /ALTER DEFAULT PRIVILEGES FOR ROLE werewolf_migrator IN SCHEMA public/);
+  assert.doesNotMatch(roleReconciler, /GRANT ALL[^;]*TO werewolf_(?:web|game)/);
+  assert.match(roleReconciler, /SET log_min_duration_statement = -1/);
+  assert.match(roleReconciler, /SET log_min_error_statement = PANIC/);
+  assert.match(roleReconciler, /\\getenv migrator_password MIGRATOR_DB_PASSWORD/);
+  assert.match(roleReconciler, /\\getenv web_password WEB_DB_PASSWORD/);
+  assert.match(roleReconciler, /\\getenv game_password GAME_DB_PASSWORD/);
+  assert.doesNotMatch(roleReconciler, /-v (?:migrator|web|game)_password=/);
+  assert.match(roleReconciler, /\nBEGIN;\n/);
+  assert.match(roleReconciler, /\nCOMMIT;\n/);
+  assert.match(restore, /MIGRATION_DATABASE_URL/);
+  assert.equal(
+    (restore.match(/compose run --rm --no-deps -T postgres-roles/g) ?? []).length,
+    2,
+  );
+});
+
+test("CI and immutable releases use the production database identities and Better Auth key ring", () => {
+  const ci = read(".github/workflows/ci.yml");
+  const release = read(".github/workflows/release.yml");
+
+  for (const key of [
+    "MIGRATION_DATABASE_URL",
+    "WEB_DATABASE_URL",
+    "GAME_DATABASE_URL",
+    "MIGRATOR_DB_PASSWORD",
+    "WEB_DB_PASSWORD",
+    "GAME_DB_PASSWORD",
+    "BETTER_AUTH_SECRETS",
+  ]) {
+    assert.match(ci, new RegExp(`^\\s{6}${key}:`, "m"));
+  }
+
+  assert.match(ci, /postgres_roles_id=.*postgres-roles/);
+  assert.match(ci, /postgres_roles_exit=.*postgres_roles_id/);
+  assert.match(ci, /postgres_grants_id=.*postgres-grants/);
+  assert.match(ci, /postgres_grants_exit=.*postgres_grants_id/);
+  assert.match(release, /better_auth_secrets=1:release-build-only-better-auth-secret-/);
+  assert.doesNotMatch(release, /better_auth_secret=/);
+});
+
+test("deploy validates Compose before disruption and applies database privileges in order", () => {
+  const deploy = read("scripts/deploy-release.sh");
+  const preflight = 'docker compose --env-file .env --env-file "$generated_env" config --quiet';
+  const drain = 'pnpm deploy:drain';
+  const roles = 'run --rm --no-deps postgres-roles';
+  const migrate = 'run --rm --no-deps migrate';
+  const grants = 'run --rm --no-deps postgres-grants';
+
+  assert.match(deploy, new RegExp(preflight.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  assert.ok(deploy.indexOf(preflight) < deploy.indexOf(drain));
+  assert.ok(deploy.indexOf(roles) < deploy.indexOf(migrate));
+  assert.ok(deploy.indexOf(migrate) < deploy.indexOf(grants));
+  assert.ok(deploy.indexOf(grants) < deploy.indexOf("up -d --no-build --no-deps web game caddy"));
+});
+
+test("rollback validates and pulls before drain without replaying old migrations", () => {
+  const rollback = read("scripts/rollback-release.sh");
+  const preflight = 'docker compose --env-file .env --env-file "$rollback_env" config --quiet';
+  const pull = 'docker compose --env-file .env --env-file "$rollback_env" pull web game';
+  const drain = "pnpm deploy:drain";
+
+  assert.ok(rollback.indexOf(preflight) >= 0);
+  assert.ok(rollback.indexOf(preflight) < rollback.indexOf(pull));
+  assert.ok(rollback.indexOf(pull) < rollback.indexOf(drain));
+  assert.match(rollback, /up -d --no-build --no-deps web game caddy/);
+  assert.doesNotMatch(rollback, /\bpull migrate\b|\brun .*\bmigrate\b/);
+});
+
+test("PostgreSQL query observability is enabled without weakening readiness", () => {
+  const compose = read("docker-compose.yml");
+  const envExample = read(".env.example");
+  const roleReconciler = readOptional("scripts/postgres-init/apply-roles.sh");
+
+  assert.match(compose, /shared_preload_libraries=pg_stat_statements/);
+  assert.match(compose, /log_min_duration_statement=\$\{POSTGRES_SLOW_QUERY_MS:-500\}/);
+  assert.match(compose, /log_line_prefix=.*%a/);
+  assert.match(compose, /healthcheck:[\s\S]*pg_isready -U werewolf -d werewolf/);
+  assert.match(roleReconciler, /CREATE SCHEMA IF NOT EXISTS werewolf_observability/);
+  assert.match(
+    roleReconciler,
+    /CREATE EXTENSION IF NOT EXISTS pg_stat_statements WITH SCHEMA werewolf_observability/,
+  );
+  assert.match(
+    roleReconciler,
+    /REVOKE ALL PRIVILEGES ON SCHEMA werewolf_observability FROM PUBLIC, werewolf_web, werewolf_game/,
+  );
+  assert.match(envExample, /^POSTGRES_SLOW_QUERY_MS=500$/m);
+  assert.match(envExample, /^MIGRATION_DATABASE_URL=.*application_name=werewolf-migrator$/m);
+  assert.match(envExample, /^WEB_DATABASE_URL=.*application_name=werewolf-web$/m);
+  assert.match(envExample, /^GAME_DATABASE_URL=.*application_name=werewolf-game$/m);
+});
 
 test("database backups are scheduled, verified, retained, and copied off-site", () => {
   const service = read("ops/systemd/werewolf-backup.service");
