@@ -104,6 +104,9 @@ test("CI isolates visual baselines from the serial core verification path", () =
     "The serial verify job must not consume its timeout on visual baselines.",
   );
   assert.match(ci.slice(visualStart), /suite:\s*\[app, ui\]/);
+  assert.match(ci.slice(visualStart), /pnpm --filter @werewolf\/database build/);
+  assert.match(ci.slice(visualStart), /pnpm --filter @werewolf\/shared build/);
+  assert.match(ci.slice(visualStart), /pnpm --filter @werewolf\/ui build/);
   assert.match(ci.slice(visualStart), /pnpm visual:ui/);
   assert.match(ci.slice(visualStart), /pnpm visual(?:\s|$)/m);
 });

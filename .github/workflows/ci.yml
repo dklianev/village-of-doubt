@@ -144,6 +144,13 @@ jobs:
       - name: Install visual fonts
         run: sudo apt-get update && sudo apt-get install -y fonts-noto-core fonts-noto-extra
 
+      - name: Build app visual workspace dependencies
+        if: matrix.suite == 'app'
+        run: >-
+          pnpm --filter @werewolf/database build &&
+          pnpm --filter @werewolf/shared build &&
+          pnpm --filter @werewolf/ui build
+
       - name: Verify visual baselines
         shell: bash
         run: |
