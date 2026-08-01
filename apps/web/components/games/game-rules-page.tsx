@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { preload } from "react-dom";
 import "@/components/games/GameRulesPage.module.css";
 import { getRulesForFamily, type GameFamily, type GameMode } from "@werewolf/shared";
 import {
@@ -187,6 +188,7 @@ const MAFIA_SCENARIOS: ScenarioCard[] = [
 ];
 
 export function GameRulesPage({ family }: { family: GameFamily }) {
+  preloadRulesHero(family);
   const rules = getRulesForFamily(family);
   const phases = family === "mafia" ? MAFIA_PHASES : WEREWOLF_PHASES;
   const scenarios = family === "mafia" ? MAFIA_SCENARIOS : WEREWOLF_SCENARIOS;
@@ -278,4 +280,25 @@ export function GameRulesPage({ family }: { family: GameFamily }) {
       </section>
     </main>
   );
+}
+
+function preloadRulesHero(family: GameFamily) {
+  const familyPath = family === "mafia" ? "mafia" : "werewolf";
+  const desktopRoot = `/game-art/${familyPath}`;
+  const mobileRoot = `/game-art/mobile/${familyPath}`;
+  const variants = [
+    { href: `${desktopRoot}/bg-hero-v2.avif`, media: "(min-width: 721px) and (prefers-color-scheme: dark)" },
+    { href: `${desktopRoot}/bg-hero-light-v1.avif`, media: "(min-width: 721px) and (prefers-color-scheme: light)" },
+    { href: `${mobileRoot}/bg-hero-v2.avif`, media: "(max-width: 720px) and (prefers-color-scheme: dark)" },
+    { href: `${mobileRoot}/bg-hero-light-v1.avif`, media: "(max-width: 720px) and (prefers-color-scheme: light)" },
+  ];
+
+  for (const variant of variants) {
+    preload(variant.href, {
+      as: "image",
+      type: "image/avif",
+      fetchPriority: "high",
+      media: variant.media,
+    });
+  }
 }
