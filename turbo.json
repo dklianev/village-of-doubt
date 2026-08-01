@@ -3,7 +3,17 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": [".next/**", "dist/**"]
+      "outputs": [".next/**", "!.next/cache/**", "!.next/dev/**", "dist/**"],
+      "env": ["RELEASE_VERSION"],
+      "passThroughEnv": [
+        "BETTER_AUTH_SECRET",
+        "BETTER_AUTH_SECRETS",
+        "BETTER_AUTH_LEGACY_TOKENS_RETIRED",
+        "GAME_TOKEN_SECRET",
+        "SENTRY_AUTH_TOKEN",
+        "SENTRY_ORG",
+        "SENTRY_PROJECT"
+      ]
     },
     "dev": {
       "cache": false,

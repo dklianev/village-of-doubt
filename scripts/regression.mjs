@@ -981,6 +981,7 @@ function checkProductionEnvChecker() {
 
 function checkScriptWiring() {
   const packageJson = JSON.parse(readText("package.json"));
+  const turboConfig = JSON.parse(readText("turbo.json"));
   const smoke = readText("scripts/smoke.mjs");
   const playtest = readText("scripts/playtest.mjs");
   const codexEnvironment = readText(".codex/environments/environment.toml");
@@ -1009,7 +1010,30 @@ function checkScriptWiring() {
   assert(packageJson.scripts["verify:assets"].includes("node scripts/verify-optimized-assets.mjs"), "package.json must expose the optimized asset drift guard.");
   assert(packageJson.scripts.verify.startsWith("pnpm verify:assets"), "pnpm verify must fail early on generated asset drift.");
   assert(packageJson.devDependencies?.sharp, "The root asset pipeline must declare sharp directly.");
-  assert(packageJson.devDependencies?.sharp, "The root asset pipeline must declare sharp directly.");
+  const buildPassThroughEnv = new Set(turboConfig.tasks?.build?.passThroughEnv ?? []);
+  for (const variable of [
+    "BETTER_AUTH_SECRET",
+    "BETTER_AUTH_SECRETS",
+    "BETTER_AUTH_LEGACY_TOKENS_RETIRED",
+    "GAME_TOKEN_SECRET",
+    "SENTRY_AUTH_TOKEN",
+    "SENTRY_ORG",
+    "SENTRY_PROJECT",
+  ]) {
+    assert(
+      buildPassThroughEnv.has(variable),
+      `Turbo build tasks must receive ${variable} in strict environment mode.`,
+    );
+  }
+  assert(
+    turboConfig.tasks.build.outputs.includes("!.next/cache/**")
+      && turboConfig.tasks.build.outputs.includes("!.next/dev/**"),
+    "Turbo must not archive transient Next.js cache or dev output as production build artifacts.",
+  );
+  assert(
+    turboConfig.tasks.build.env?.includes("RELEASE_VERSION"),
+    "Turbo build cache keys must include the Sentry release version.",
+  );
   assert(packageJson.scripts.verify.includes("pnpm regression"), "pnpm verify must run regression checks.");
   assert(packageJson.scripts.verify.includes("pnpm frontend:e2e"), "pnpm verify must run frontend Playwright QA.");
   assert(packageJson.scripts.verify.includes("pnpm operations:test"), "pnpm verify must validate production operations wiring.");
