@@ -1,7 +1,7 @@
-import { pathToFileURL } from "node:url";
 import { existsSync } from "node:fs";
 import { copyFile, mkdir, readdir, rename, rm, stat } from "node:fs/promises";
 import path from "node:path";
+import sharp from "sharp";
 
 const sourceArtDir = path.resolve("assets/game-art-source");
 const gameArtDir = path.resolve("apps/web/public/game-art");
@@ -28,7 +28,6 @@ async function main() {
     await cleanupTemporaryArtifacts(gameArtDir);
   }
 
-  const sharp = await loadSharp();
   sharp.cache(false);
   if (process.platform === "win32") {
     sharp.concurrency(1);
@@ -258,28 +257,6 @@ async function printReport(files) {
         overBudget ? "over-budget" : "ok",
       ].join(","),
     );
-  }
-}
-
-async function loadSharp() {
-  try {
-    const mod = await import("sharp");
-    return mod.default;
-  } catch {
-    const pnpmDir = path.resolve("node_modules/.pnpm");
-    if (!existsSync(pnpmDir)) {
-      throw new Error("sharp не е наличен. Стартирай pnpm install или добави sharp като dev dependency.");
-    }
-
-    const entries = await readdir(pnpmDir, { withFileTypes: true });
-    const sharpEntry = entries.find((entry) => entry.isDirectory() && entry.name.startsWith("sharp@"));
-    if (!sharpEntry) {
-      throw new Error("sharp не е намерен в node_modules/.pnpm.");
-    }
-
-    const sharpPath = path.join(pnpmDir, sharpEntry.name, "node_modules/sharp/lib/index.js");
-    const mod = await import(pathToFileURL(sharpPath).href);
-    return mod.default;
   }
 }
 

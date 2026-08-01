@@ -1,7 +1,6 @@
-import { existsSync } from "node:fs";
-import { mkdir, readdir, stat, writeFile } from "node:fs/promises";
+import { mkdir, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
+import sharp from "sharp";
 
 const variants = [
   {
@@ -23,7 +22,6 @@ const variants = [
   },
 ];
 
-const sharp = await loadSharp();
 let totalBytes = 0;
 
 for (const variant of variants) {
@@ -46,23 +44,3 @@ for (const variant of variants) {
 }
 
 console.log(`Generated ${variants.length} critical mobile AVIF assets (${Math.ceil(totalBytes / 1024)} KB total).`);
-
-async function loadSharp() {
-  try {
-    const mod = await import("sharp");
-    return mod.default;
-  } catch {
-    const pnpmDir = path.resolve("node_modules/.pnpm");
-    if (!existsSync(pnpmDir)) {
-      throw new Error("sharp не е наличен. Стартирай pnpm install.");
-    }
-    const entries = await readdir(pnpmDir, { withFileTypes: true });
-    const sharpEntry = entries.find((entry) => entry.isDirectory() && entry.name.startsWith("sharp@"));
-    if (!sharpEntry) {
-      throw new Error("sharp не е намерен в node_modules/.pnpm.");
-    }
-    const sharpPath = path.join(pnpmDir, sharpEntry.name, "node_modules/sharp/lib/index.js");
-    const mod = await import(pathToFileURL(sharpPath).href);
-    return mod.default;
-  }
-}

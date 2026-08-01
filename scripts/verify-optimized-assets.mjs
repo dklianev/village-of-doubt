@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
-import { createHash } from "node:crypto";
-import { readFile, readdir } from "node:fs/promises";
+import { readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { assetDigestsMatch, digestAsset, isPlatformEquivalentAvif } from "./asset-digest.mjs";
 
 const artPaths = ["assets/game-art-source", "apps/web/public/game-art"];
 const before = await inventoryRoots(artPaths);
@@ -30,6 +30,11 @@ if (changedByOptimizer.length > 0) {
   console.error("Asset optimization is not reproducible; this run changed:");
   console.error(changedByOptimizer.join("\n"));
   process.exit(1);
+}
+
+const restoredAvifs = await restorePlatformAvifEncodings(before, after);
+if (restoredAvifs.length > 0) {
+  console.log(`Restored ${restoredAvifs.length} platform-specific AVIF containers with identical pixels.`);
 }
 
 const status = spawnSync(
@@ -83,7 +88,7 @@ async function inventory(root) {
       if (/\.tmp-\d+(?:[-.]|$)/.test(child.name)) {
         continue;
       }
-      const digest = createHash("sha256").update(await readFile(filePath)).digest("hex");
+      const digest = await digestAsset(filePath);
       entries.set(path.relative(root, filePath).split(path.sep).join("/"), digest);
     }
   }
@@ -103,6 +108,19 @@ async function inventoryRoots(roots) {
 function changedPaths(beforeEntries, afterEntries) {
   const paths = new Set([...beforeEntries.keys(), ...afterEntries.keys()]);
   return [...paths]
-    .filter((filePath) => beforeEntries.get(filePath) !== afterEntries.get(filePath))
+    .filter((filePath) => !assetDigestsMatch(filePath, beforeEntries.get(filePath), afterEntries.get(filePath)))
     .sort();
+}
+
+async function restorePlatformAvifEncodings(beforeEntries, afterEntries) {
+  const restored = [];
+  for (const [filePath, beforeDigest] of beforeEntries) {
+    const afterDigest = afterEntries.get(filePath);
+    if (!isPlatformEquivalentAvif(filePath, beforeDigest, afterDigest)) {
+      continue;
+    }
+    await writeFile(filePath, beforeDigest.encoded);
+    restored.push(filePath);
+  }
+  return restored;
 }

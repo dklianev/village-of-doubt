@@ -69,24 +69,20 @@ jobs:
         env:
           TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/werewolf_test
 
-      - name: Verify assets and contracts
-        run: >-
-          pnpm verify:assets &&
-          pnpm regression &&
-          pnpm release:manifest:test &&
-          pnpm operations:test &&
-          pnpm check:migrations &&
-          pnpm typecheck
-        env:
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432/werewolf_test
-          REDIS_URL: redis://default:ci-redis-password-that-is-long-enough@localhost:6379
-          BETTER_AUTH_SECRET: ci-only-secret-that-is-long-enough-32-chars-min
-          GAME_TOKEN_SECRET: ci-only-secret-that-is-long-enough-32-chars-min
-          BETTER_AUTH_URL: https://werewolf.example.com
-          NEXT_PUBLIC_APP_URL: https://werewolf.example.com
-          NEXT_PUBLIC_SENTRY_DSN: https://public@example.invalid/2
-          RELEASE_VERSION: ci-${{ github.sha }}
-          OAUTH_MOCK: "true"
+      - name: Verify optimized assets
+        run: pnpm verify:assets
+
+      - name: Verify regression contracts
+        run: pnpm regression
+
+      - name: Verify release and operations contracts
+        run: pnpm release:manifest:test && pnpm operations:test
+
+      - name: Verify migration safety
+        run: pnpm check:migrations
+
+      - name: Typecheck
+        run: pnpm typecheck
 
       - name: Build production bundles
         run: pnpm build

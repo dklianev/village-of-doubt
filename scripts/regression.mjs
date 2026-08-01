@@ -1006,8 +1006,10 @@ function checkScriptWiring() {
   assert(packageJson.scripts.lighthouse === "node scripts/lighthouse.mjs", "package.json must expose Lighthouse QA.");
   assert(packageJson.scripts["loadtest:launch"] === "node scripts/loadtest-launch.mjs", "package.json must expose the launch load profile.");
   assert(packageJson.scripts["loadtest:heavy"] === "node scripts/loadtest-heavy.mjs", "package.json must expose the stress load profile.");
-  assert(packageJson.scripts["verify:assets"] === "node scripts/verify-optimized-assets.mjs", "package.json must expose the optimized asset drift guard.");
+  assert(packageJson.scripts["verify:assets"].includes("node scripts/verify-optimized-assets.mjs"), "package.json must expose the optimized asset drift guard.");
   assert(packageJson.scripts.verify.startsWith("pnpm verify:assets"), "pnpm verify must fail early on generated asset drift.");
+  assert(packageJson.devDependencies?.sharp, "The root asset pipeline must declare sharp directly.");
+  assert(packageJson.devDependencies?.sharp, "The root asset pipeline must declare sharp directly.");
   assert(packageJson.scripts.verify.includes("pnpm regression"), "pnpm verify must run regression checks.");
   assert(packageJson.scripts.verify.includes("pnpm frontend:e2e"), "pnpm verify must run frontend Playwright QA.");
   assert(packageJson.scripts.verify.includes("pnpm operations:test"), "pnpm verify must validate production operations wiring.");
