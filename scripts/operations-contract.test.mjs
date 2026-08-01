@@ -92,6 +92,22 @@ test("CI and immutable releases use the production database identities and Bette
   assert.doesNotMatch(release, /better_auth_secret=/);
 });
 
+test("CI isolates visual baselines from the serial core verification path", () => {
+  const ci = read(".github/workflows/ci.yml");
+  const verifyStart = ci.indexOf("  verify:");
+  const visualStart = ci.indexOf("  visual:");
+
+  assert.ok(verifyStart >= 0 && visualStart > verifyStart, "CI must define a dedicated visual job after verify.");
+  assert.doesNotMatch(
+    ci.slice(verifyStart, visualStart),
+    /pnpm visual(?::ui)?/,
+    "The serial verify job must not consume its timeout on visual baselines.",
+  );
+  assert.match(ci.slice(visualStart), /suite:\s*\[app, ui\]/);
+  assert.match(ci.slice(visualStart), /pnpm visual:ui/);
+  assert.match(ci.slice(visualStart), /pnpm visual(?:\s|$)/m);
+});
+
 test("deploy validates Compose before disruption and applies database privileges in order", () => {
   const deploy = read("scripts/deploy-release.sh");
   const preflight = 'docker compose --env-file .env --env-file "$generated_env" config --quiet';
