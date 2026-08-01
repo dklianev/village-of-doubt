@@ -49,6 +49,43 @@ describe("database pool lifecycle", () => {
     );
   });
 
+  it("labels connections and bounds lock and idle transaction waits", () => {
+    vi.stubEnv("DATABASE_APPLICATION_NAME", "werewolf-web");
+    vi.stubEnv("DATABASE_LOCK_TIMEOUT_MS", "3000");
+    vi.stubEnv("DATABASE_IDLE_TRANSACTION_TIMEOUT_MS", "10000");
+
+    createDatabase("postgres://localhost/werewolf");
+
+    expect(mocks.postgres).toHaveBeenCalledWith(
+      "postgres://localhost/werewolf",
+      expect.objectContaining({
+        connection: {
+          application_name: "werewolf-web",
+          statement_timeout: 15_000,
+          lock_timeout: 3_000,
+          idle_in_transaction_session_timeout: 10_000,
+        },
+      }),
+    );
+  });
+
+  it("preserves the per-service application name from the connection URL", () => {
+    vi.stubEnv("DATABASE_APPLICATION_NAME", "");
+
+    createDatabase(
+      "postgres://localhost/werewolf?application_name=werewolf-game",
+    );
+
+    expect(mocks.postgres).toHaveBeenCalledWith(
+      "postgres://localhost/werewolf?application_name=werewolf-game",
+      expect.objectContaining({
+        connection: expect.objectContaining({
+          application_name: "werewolf-game",
+        }),
+      }),
+    );
+  });
+
   it("reuses one process-wide pool for the same connection string", () => {
     const first = createDatabase("postgres://localhost/werewolf");
     const second = createDatabase("postgres://localhost/werewolf");

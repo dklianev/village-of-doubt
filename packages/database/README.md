@@ -8,7 +8,7 @@ Use migrations for every production schema change.
 
 - Edit `src/schema.ts`.
 - Run `pnpm --filter @werewolf/database db:generate`.
-- Review the generated SQL in `packages/database/migrations/`.
+- Review the generated SQL in `packages/database/drizzle/`.
 - Commit the schema change and the migration together.
 - Deploy with `pnpm --filter @werewolf/database db:migrate`.
 

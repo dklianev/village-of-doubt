@@ -1,6 +1,7 @@
 import { relations, sql } from "drizzle-orm";
 import {
   boolean,
+  check,
   index,
   integer,
   jsonb,
@@ -42,7 +43,10 @@ export const session = pgTable(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
   },
-  (table) => [index("session_user_id_idx").on(table.userId)],
+  (table) => [
+    index("session_user_id_idx").on(table.userId),
+    index("session_expires_at_idx").on(table.expiresAt),
+  ],
 );
 
 export const account = pgTable(
@@ -93,7 +97,7 @@ export const games = pgTable(
       .references(() => user.id),
     config: jsonb("config").notNull(),
     rulesetVersion: text("ruleset_version").notNull(),
-    status: text("status", { enum: ["lobby", "active", "ended"] }).notNull().default("lobby"),
+    status: text("status", { enum: ["lobby", "active", "ended", "abandoned"] }).notNull().default("lobby"),
     winnerTeam: text("winner_team", {
       enum: ["village", "werewolves", "vampires", "mafia", "maniac", "lovers", "draw"],
     }),
@@ -107,6 +111,12 @@ export const games = pgTable(
     index("games_host_id_idx").on(table.hostId),
     index("games_status_idx").on(table.status),
     index("games_status_ended_at_idx").on(table.status, table.endedAt.desc()),
+    index("games_status_updated_at_idx").on(table.status, table.updatedAt),
+    check("games_status_check", sql`${table.status} IN ('lobby', 'active', 'ended', 'abandoned')`),
+    check(
+      "games_winner_team_check",
+      sql`${table.winnerTeam} IS NULL OR ${table.winnerTeam} IN ('village', 'werewolves', 'vampires', 'mafia', 'maniac', 'lovers', 'draw')`,
+    ),
   ],
 );
 
@@ -134,6 +144,13 @@ export const gamePlayers = pgTable(
     uniqueIndex("game_players_game_user_idx").on(table.gameId, table.userId),
     index("game_players_game_id_idx").on(table.gameId),
     index("game_players_user_id_idx").on(table.userId),
+    index("game_players_lover_user_id_idx")
+      .on(table.loverUserId)
+      .where(sql`${table.loverUserId} IS NOT NULL`),
+    check(
+      "game_players_death_round_check",
+      sql`${table.deathRound} IS NULL OR ${table.deathRound} >= 0`,
+    ),
   ],
 );
 
@@ -159,6 +176,17 @@ export const gameEvents = pgTable(
     index("game_events_game_id_idx").on(table.gameId),
     index("game_events_created_at_idx").on(table.createdAt),
     index("game_events_game_id_created_at_idx").on(table.gameId, table.createdAt.desc()),
+    index("game_events_actor_id_idx")
+      .on(table.actorId)
+      .where(sql`${table.actorId} IS NOT NULL`),
+    index("game_events_target_id_idx")
+      .on(table.targetId)
+      .where(sql`${table.targetId} IS NOT NULL`),
+    check(
+      "game_events_visibility_check",
+      sql`${table.visibility} IN ('public', 'private', 'faction', 'moderator')`,
+    ),
+    check("game_events_round_check", sql`${table.round} >= 0`),
   ],
 );
 

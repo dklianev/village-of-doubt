@@ -34,7 +34,13 @@ export function createDatabase(databaseUrl = process.env.DATABASE_URL) {
     max_lifetime: readPositiveInteger("DATABASE_MAX_LIFETIME_SECONDS", 30 * 60),
     prepare: false,
     connection: {
+      application_name: readApplicationName(databaseUrl),
       statement_timeout: 15_000,
+      lock_timeout: readPositiveInteger("DATABASE_LOCK_TIMEOUT_MS", 3_000),
+      idle_in_transaction_session_timeout: readPositiveInteger(
+        "DATABASE_IDLE_TRANSACTION_TIMEOUT_MS",
+        10_000,
+      ),
     },
     onnotice: (notice) => {
       const severity = notice.severity ?? notice.severity_local;
@@ -107,6 +113,19 @@ function createDrizzleDatabase(client: SqlClient) {
 function readPositiveInteger(name: string, fallback: number) {
   const parsed = Number.parseInt(process.env[name] ?? "", 10);
   return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function readApplicationName(databaseUrl: string) {
+  const configured = process.env.DATABASE_APPLICATION_NAME?.trim();
+  if (configured) {
+    return configured;
+  }
+
+  try {
+    return new URL(databaseUrl).searchParams.get("application_name")?.trim() || "werewolf-app";
+  } catch {
+    return "werewolf-app";
+  }
 }
 
 export type Database = ReturnType<typeof createDrizzleDatabase>;

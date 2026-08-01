@@ -60,6 +60,90 @@ async function verifySchema(databaseUrl) {
     if (missing.length > 0) {
       throw new Error(`Липсващи таблици: ${missing.join(", ")}`);
     }
+
+    const constraints = await sql`
+      SELECT table_constraint.constraint_name AS "name", pg_constraint.convalidated AS "validated"
+      FROM information_schema.table_constraints AS table_constraint
+      INNER JOIN pg_constraint
+        ON pg_constraint.conname = table_constraint.constraint_name
+      INNER JOIN pg_namespace
+        ON pg_namespace.oid = pg_constraint.connamespace
+      WHERE table_constraint.table_schema = 'public'
+        AND pg_namespace.nspname = 'public'
+        AND table_constraint.constraint_name IN (
+          'games_status_check',
+          'games_winner_team_check',
+          'game_players_death_round_check',
+          'game_events_visibility_check',
+          'game_events_round_check'
+        )
+    `;
+    const expectedConstraints = [
+      "games_status_check",
+      "games_winner_team_check",
+      "game_players_death_round_check",
+      "game_events_visibility_check",
+      "game_events_round_check",
+    ];
+    const constraintState = new Map(
+      constraints.map((constraint) => [constraint.name, constraint.validated]),
+    );
+    const missingConstraints = expectedConstraints.filter(
+      (name) => constraintState.get(name) !== true,
+    );
+    if (missingConstraints.length > 0) {
+      throw new Error(`Липсващи или невалидирани CHECK constraints: ${missingConstraints.join(", ")}`);
+    }
+
+    const indexes = await sql`
+      SELECT indexname AS "name", indexdef AS "definition"
+      FROM pg_indexes
+      WHERE schemaname = 'public'
+        AND indexname IN (
+          'game_events_actor_id_idx',
+          'game_events_target_id_idx',
+          'game_players_lover_user_id_idx',
+          'games_status_updated_at_idx',
+          'session_expires_at_idx'
+        )
+    `;
+    const expectedIndexes = [
+      "game_events_actor_id_idx",
+      "game_events_target_id_idx",
+      "game_players_lover_user_id_idx",
+      "games_status_updated_at_idx",
+      "session_expires_at_idx",
+    ];
+    const indexState = new Map(indexes.map((index) => [index.name, index.definition]));
+    const invalidIndexes = expectedIndexes.filter((name) => {
+      const definition = indexState.get(name);
+      const requiresPredicate = name.startsWith("game_events_") ||
+        name === "game_players_lover_user_id_idx";
+      return typeof definition !== "string" ||
+        (requiresPredicate && !definition.includes(" WHERE "));
+    });
+    if (invalidIndexes.length > 0) {
+      throw new Error(`Липсващи или непълни partial indexes: ${invalidIndexes.join(", ")}`);
+    }
+
+    await sql`
+      INSERT INTO "user" ("id", "name", "email")
+      VALUES ('migration-schema-check-user', 'Проверка', 'migration-schema-check@invalid')
+    `;
+    await sql`
+      INSERT INTO "games" (
+        "id", "code", "host_id", "config", "ruleset_version", "status", "ended_at"
+      )
+      VALUES (
+        '81111111-1111-1111-1111-111111111111',
+        'ABANDONED',
+        'migration-schema-check-user',
+        '{}'::jsonb,
+        'migration-test',
+        'abandoned',
+        now()
+      )
+    `;
   } finally {
     await sql.end();
   }
@@ -294,7 +378,10 @@ try {
     await main();
   }
 } catch (error) {
-  console.error("✗ Migration tests failed:", error instanceof Error ? error.message : String(error));
+  const diagnostic = error instanceof Error
+    ? error.stack ?? error.message
+    : String(error);
+  console.error("✗ Migration tests failed:", diagnostic);
   process.exit(1);
 }
 
