@@ -27,22 +27,38 @@ export const AUTH_RATE_LIMIT_RULES = {
 type AuthSecretEnvironment = {
   NODE_ENV?: string;
   BETTER_AUTH_SECRET?: string;
+  BETTER_AUTH_SECRETS?: string;
+  BETTER_AUTH_LEGACY_TOKENS_RETIRED?: string;
 };
 
-export function resolveBetterAuthSecret(environment: AuthSecretEnvironment = process.env): string {
+export function resolveBetterAuthSecret(
+  environment: AuthSecretEnvironment = process.env,
+): string | undefined {
   const secret = environment.BETTER_AUTH_SECRET?.trim();
 
   if (environment.NODE_ENV === "production") {
-    if (!secret || secret.length < 32 || PLACEHOLDER_SECRET_PATTERN.test(secret)) {
+    if (secret && (secret.length < 32 || PLACEHOLDER_SECRET_PATTERN.test(secret))) {
       throw new Error("BETTER_AUTH_SECRET must be a non-placeholder secret with at least 32 characters in production.");
+    }
+    if (!secret) {
+      if (!environment.BETTER_AUTH_SECRETS?.trim()) {
+        throw new Error("BETTER_AUTH_SECRETS is required when BETTER_AUTH_SECRET is retired.");
+      }
+      if (environment.BETTER_AUTH_LEGACY_TOKENS_RETIRED !== "true") {
+        throw new Error(
+          "BETTER_AUTH_LEGACY_TOKENS_RETIRED=true is required before BETTER_AUTH_SECRET can be retired.",
+        );
+      }
+      return undefined;
     }
   }
 
   return secret || DEVELOPMENT_AUTH_SECRET;
 }
 
+const authSecret = resolveBetterAuthSecret();
 export const auth = betterAuth({
-  secret: resolveBetterAuthSecret(),
+  ...(authSecret ? { secret: authSecret } : {}),
   baseURL: process.env.BETTER_AUTH_URL ?? "http://localhost:3000",
   trustedOrigins: buildTrustedOrigins(),
   database: db
@@ -92,6 +108,9 @@ export const auth = betterAuth({
   },
   session: {
     freshAge: ACCOUNT_DELETE_FRESH_AGE_SECONDS,
+  },
+  account: {
+    encryptOAuthTokens: true,
   },
   databaseHooks: {
     user: {

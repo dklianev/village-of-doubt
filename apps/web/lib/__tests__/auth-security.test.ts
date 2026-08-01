@@ -59,6 +59,22 @@ describe("Better Auth security configuration", () => {
     expect(resolveBetterAuthSecret({ NODE_ENV: "test" })).toContain("dev-only");
   });
 
+  it("позволява legacy тайната да се оттегли само след versioned migration sign-off", async () => {
+    const { resolveBetterAuthSecret } = await import("../auth");
+    const versionedEnvironment = {
+      NODE_ENV: "production",
+      BETTER_AUTH_SECRETS: "2:a-current-versioned-secret-with-enough-entropy",
+    };
+
+    expect(() => resolveBetterAuthSecret(versionedEnvironment)).toThrow(
+      "BETTER_AUTH_LEGACY_TOKENS_RETIRED",
+    );
+    expect(resolveBetterAuthSecret({
+      ...versionedEnvironment,
+      BETTER_AUTH_LEGACY_TOKENS_RETIRED: "true",
+    })).toBeUndefined();
+  });
+
   it("не допуска localhost сред trusted origins в production", async () => {
     const { buildTrustedOrigins } = await import("../auth");
 
@@ -126,6 +142,16 @@ describe("Better Auth security configuration", () => {
       "/send-verification-email": { window: 3_600, max: 5 },
       "/reset-password": { window: 300, max: 10 },
     });
+  });
+
+  it("криптира OAuth токените преди запис в базата", async () => {
+    vi.resetModules();
+    await import("../auth");
+    const options = betterAuth.mock.calls.at(-1)?.[0] as {
+      account?: { encryptOAuthTokens?: boolean };
+    };
+
+    expect(options.account?.encryptOAuthTokens).toBe(true);
   });
 
   it.each(["/sign-up/email", "/update-user"])(
