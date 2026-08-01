@@ -2,26 +2,22 @@ import { spawnSync } from "node:child_process";
 import { readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { assetDigestsMatch, digestAsset, isPlatformEquivalentAvif } from "./asset-digest.mjs";
+import { runAssetGenerators } from "./run-asset-generators.mjs";
 
 const artPaths = ["assets/game-art-source", "apps/web/public/game-art"];
 const before = await inventoryRoots(artPaths);
 
-for (const script of [
-  "scripts/optimize-assets.mjs",
-  "scripts/generate-critical-mobile-assets.mjs",
-  "scripts/generate-phase-rail-assets.mjs",
-]) {
-  const optimize = spawnSync(process.execPath, [script], {
-    cwd: process.cwd(),
-    stdio: "inherit",
+try {
+  runAssetGenerators({
+    generators: [
+      "scripts/optimize-assets.mjs",
+      "scripts/generate-critical-mobile-assets.mjs",
+      "scripts/generate-phase-rail-assets.mjs",
+    ],
   });
-
-  if (optimize.error) {
-    throw optimize.error;
-  }
-  if (optimize.status !== 0) {
-    process.exit(optimize.status ?? 1);
-  }
+} catch (error) {
+  console.error(error instanceof Error ? error.message : error);
+  process.exit(error?.exitCode ?? 1);
 }
 
 const after = await inventoryRoots(artPaths);
