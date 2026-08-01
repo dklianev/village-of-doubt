@@ -5,6 +5,7 @@ import type { NightActionCapabilities, PrivateFactionRoster, RoleCode } from "@w
 import { createGameToken } from "@werewolf/shared/server";
 import appConfig from "../app.config.js";
 import type { GameRoom } from "../rooms/GameRoom.js";
+import { PlayerPresenceManager } from "../rooms/player-presence-manager.js";
 import type { GameState } from "../rooms/schemas/GameState.js";
 
 const GAME_TOKEN_SECRET = "test-secret-that-is-long-enough-32-chars";
@@ -22,12 +23,14 @@ describe("GameRoom security boundaries", () => {
     process.env.GAME_TOKEN_SECRET = GAME_TOKEN_SECRET;
     process.env.ALLOW_DEV_AUTH = "true";
     process.env.NODE_ENV = "test";
+    PlayerPresenceManager.resetForTests();
     colyseus = await boot(appConfig, 2678);
   });
 
   afterEach(async () => {
     await colyseus?.cleanup();
     await colyseus?.shutdown();
+    PlayerPresenceManager.resetForTests();
     restoreEnvValue("ALLOW_DEV_AUTH", previousAllowDevAuth);
     restoreEnvValue("GAME_TOKEN_SECRET", previousGameTokenSecret);
     restoreEnvValue("NODE_ENV", previousNodeEnv);
@@ -170,7 +173,7 @@ describe("GameRoom security boundaries", () => {
     });
 
     await expect(
-      colyseus.connectTo(serverRoom, {
+      serverRoom.onAuth(fakeClient("wrong-room-token"), {
         code: "GPPD23",
         token: wrongRoomToken,
       }),
@@ -192,8 +195,14 @@ describe("GameRoom security boundaries", () => {
       secret: GAME_TOKEN_SECRET,
     });
 
-    await colyseus.connectTo(serverRoom, { code: "TPK223", token });
-    await expect(colyseus.connectTo(serverRoom, { code: "TPK223", token })).rejects.toThrow();
+    const options = { code: "TPK223", token };
+    await expect(serverRoom.onAuth(fakeClient("first-token-use"), options)).resolves.toMatchObject({
+      userId: "token-user-1",
+      displayName: "Играч с токен",
+    });
+    await expect(serverRoom.onAuth(fakeClient("replayed-token"), options)).rejects.toThrow(
+      "Този токен вече е използван.",
+    );
   });
 
   it("publishes only the curated portrait identity carried by the signed token", async () => {
