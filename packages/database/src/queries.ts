@@ -73,6 +73,7 @@ export interface PlaceholderUserUpsert {
 }
 
 export const DELETED_DISPLAY_NAME = "Изтрит играч";
+const ACCOUNT_EVENT_UPDATE_BATCH_SIZE = 250;
 export const ACCOUNT_EXPORT_DEFAULT_PAGE_SIZE = 50;
 export const ACCOUNT_EXPORT_MAX_PAGE_SIZE = 100;
 export const ACCOUNT_EXPORT_MAX_PAGE = 1_000;
@@ -247,6 +248,7 @@ async function anonymizeUserGameHistoryInTransaction(
     .from(gameEvents)
     .where(or(...eventScope));
 
+  const payloadUpdates: Array<{ id: string; payload: unknown }> = [];
   for (const event of candidateEvents) {
     const payload = scrubDeletedIdentityFromEventPayload(event.payload, {
       userId,
@@ -259,9 +261,10 @@ async function anonymizeUserGameHistoryInTransaction(
       ],
     });
     if (JSON.stringify(payload) !== JSON.stringify(event.payload)) {
-      await tx.update(gameEvents).set({ payload }).where(eq(gameEvents.id, event.id));
+      payloadUpdates.push({ id: event.id, payload });
     }
   }
+  await updateScrubbedEventPayloads(tx, payloadUpdates);
 
   await tx
     .insert(user)
@@ -287,6 +290,26 @@ async function anonymizeUserGameHistoryInTransaction(
   await tx
     .delete(verification)
     .where(or(eq(verification.identifier, userId), eq(verification.value, userId)));
+}
+
+async function updateScrubbedEventPayloads(
+  tx: DatabaseTransaction,
+  updates: Array<{ id: string; payload: unknown }>,
+): Promise<void> {
+  for (let offset = 0; offset < updates.length; offset += ACCOUNT_EVENT_UPDATE_BATCH_SIZE) {
+    const batch = updates.slice(offset, offset + ACCOUNT_EVENT_UPDATE_BATCH_SIZE);
+    const values = sql.join(
+      batch.map((item) => sql`(${item.id}::uuid, ${JSON.stringify(item.payload)}::jsonb)`),
+      sql`, `,
+    );
+
+    await tx.execute(sql`
+      UPDATE game_events AS event
+      SET payload = batch.payload
+      FROM (VALUES ${values}) AS batch(id, payload)
+      WHERE event.id = batch.id
+    `);
+  }
 }
 
 type DeletedPayloadIdentity = {
@@ -651,23 +674,7 @@ export async function getGameHistoryById(db: Database, gameId: string): Promise<
 }
 
 export async function getGameHistoryForUser(db: Database, userId: string, limit = 500): Promise<GameHistorySummary[]> {
-  const playerGames = await db.query.gamePlayers.findMany({
-    columns: { gameId: true },
-    where: eq(gamePlayers.userId, userId),
-    with: {
-      game: {
-        columns: { createdAt: true },
-      },
-    },
-    limit,
-  });
-  const playerGameIds = [
-    ...new Set(
-      [...playerGames].sort((a, b) => b.game.createdAt.getTime() - a.game.createdAt.getTime()).map((game) => game.gameId),
-    ),
-  ];
-  const whereClause =
-    playerGameIds.length > 0 ? or(eq(games.hostId, userId), inArray(games.id, playerGameIds)) : eq(games.hostId, userId);
+  const safeLimit = Math.min(Math.max(Math.trunc(limit), 1), 500);
 
   const rows = await db
     .select({
@@ -681,9 +688,13 @@ export async function getGameHistoryForUser(db: Database, userId: string, limit 
       endedAt: games.endedAt,
     })
     .from(games)
-    .where(whereClause)
-    .orderBy(desc(games.createdAt))
-    .limit(limit);
+    .leftJoin(
+      gamePlayers,
+      and(eq(gamePlayers.gameId, games.id), eq(gamePlayers.userId, userId)),
+    )
+    .where(or(eq(games.hostId, userId), eq(gamePlayers.userId, userId)))
+    .orderBy(desc(games.createdAt), desc(games.id))
+    .limit(safeLimit);
 
   if (rows.length === 0) {
     return [];
@@ -848,22 +859,23 @@ export async function getPublicGameTimelinesBatch(
 }
 
 export async function getLeaderboardRows(db: Database, limit = 30): Promise<LeaderboardEntryRow[]> {
-  const gamesPlayed = sql<number>`COUNT(DISTINCT ${gamePlayers.gameId})::int`;
+  const gamesPlayed = sql<number>`COUNT(*)::int`;
   const wins = sql<number>`COALESCE(SUM(CASE WHEN ${gamePlayers.won} THEN 1 ELSE 0 END), 0)::int`;
   const lastPlayedAt = sql<Date | null>`MAX(${games.endedAt})`;
 
   return db
     .select({
       userId: gamePlayers.userId,
-      displayName: sql<string>`MAX(${gamePlayers.displayName})`,
+      displayName: user.name,
       gamesPlayed,
       wins,
       lastPlayedAt,
     })
     .from(gamePlayers)
     .innerJoin(games, eq(gamePlayers.gameId, games.id))
+    .innerJoin(user, eq(gamePlayers.userId, user.id))
     .where(eq(games.status, "ended"))
-    .groupBy(gamePlayers.userId)
+    .groupBy(gamePlayers.userId, user.name)
     .orderBy(desc(wins), desc(gamesPlayed), desc(lastPlayedAt))
     .limit(limit);
 }

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { unstable_cache } from "next/cache";
 import { Suspense } from "react";
 import { createDatabase, getLeaderboardRows } from "@werewolf/database";
 import { JsonLd } from "@/components/JsonLd";
@@ -87,14 +88,13 @@ async function loadLeaderboard(visualLeaderboard?: string): Promise<LeaderboardD
   }
 
   try {
-    const db = createDatabase(process.env.DATABASE_URL);
-    const rows = await getLeaderboardRows(db);
+    const rows = await loadCachedLeaderboard();
     const entries = rows.map((row) => ({
       id: row.userId,
       displayName: row.displayName,
       games: row.gamesPlayed,
       wins: row.wins,
-      lastPlayed: row.lastPlayedAt,
+      lastPlayed: row.lastPlayedAt ? new Date(row.lastPlayedAt) : null,
     }));
     const issueCount = Math.max(1, rows.reduce((sum, row) => sum + row.gamesPlayed, 0));
     return { entries, issueCount: Math.max(1, issueCount) };
@@ -103,6 +103,24 @@ async function loadLeaderboard(visualLeaderboard?: string): Promise<LeaderboardD
     return { entries: null, issueCount: 1 };
   }
 }
+
+const loadCachedLeaderboard = unstable_cache(
+  async () => {
+    const databaseUrl = process.env.DATABASE_URL;
+    if (!databaseUrl) {
+      return [];
+    }
+
+    const db = createDatabase(databaseUrl);
+    const rows = await getLeaderboardRows(db);
+    return rows.map((row) => ({
+      ...row,
+      lastPlayedAt: row.lastPlayedAt?.toISOString() ?? null,
+    }));
+  },
+  ["public-leaderboard-v1"],
+  { revalidate: 60, tags: ["public-leaderboard"] },
+);
 
 function firstSearchValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;

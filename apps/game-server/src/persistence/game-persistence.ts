@@ -1,4 +1,4 @@
-import { and, eq, ne } from "drizzle-orm";
+import { and, eq, ne, sql } from "drizzle-orm";
 import {
   checkDatabaseReadiness,
   createDatabase,
@@ -184,35 +184,33 @@ export class DrizzleGamePersistence implements GamePersistence {
         loverUserId: player.loverUserId ? (identityMap.get(player.loverUserId) ?? player.loverUserId) : null,
       };
     });
-    for (const player of persistedPlayers) {
-      await this.db
-        .insert(gamePlayers)
-        .values({
-          gameId,
-          userId: player.userId,
-          displayName: player.displayName,
-          role: player.role,
-          isAlive: player.isAlive,
-          isLover: player.isLover ?? false,
-          loverUserId: player.loverUserId ?? null,
-          won: player.won ?? false,
-          deathRound: player.deathRound ?? null,
-          deathCause: player.deathCause ?? null,
-        })
-        .onConflictDoUpdate({
-          target: [gamePlayers.gameId, gamePlayers.userId],
-          set: {
-            displayName: player.displayName,
-            role: player.role,
-            isAlive: player.isAlive,
-            isLover: player.isLover ?? false,
-            loverUserId: player.loverUserId ?? null,
-            won: player.won ?? false,
-            deathRound: player.deathRound ?? null,
-            deathCause: player.deathCause ?? null,
-          },
-        });
-    }
+    await this.db
+      .insert(gamePlayers)
+      .values(persistedPlayers.map((player) => ({
+        gameId,
+        userId: player.userId,
+        displayName: player.displayName,
+        role: player.role,
+        isAlive: player.isAlive,
+        isLover: player.isLover ?? false,
+        loverUserId: player.loverUserId ?? null,
+        won: player.won ?? false,
+        deathRound: player.deathRound ?? null,
+        deathCause: player.deathCause ?? null,
+      })))
+      .onConflictDoUpdate({
+        target: [gamePlayers.gameId, gamePlayers.userId],
+        set: {
+          displayName: sql.raw(`excluded.${gamePlayers.displayName.name}`),
+          role: sql.raw(`excluded.${gamePlayers.role.name}`),
+          isAlive: sql.raw(`excluded.${gamePlayers.isAlive.name}`),
+          isLover: sql.raw(`excluded.${gamePlayers.isLover.name}`),
+          loverUserId: sql.raw(`excluded.${gamePlayers.loverUserId.name}`),
+          won: sql.raw(`excluded.${gamePlayers.won.name}`),
+          deathRound: sql.raw(`excluded.${gamePlayers.deathRound.name}`),
+          deathCause: sql.raw(`excluded.${gamePlayers.deathCause.name}`),
+        },
+      });
   }
 
   async recordEvent(gameId: string, event: PersistEventInput): Promise<void> {

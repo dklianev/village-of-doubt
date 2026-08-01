@@ -14,6 +14,7 @@ import {
 import {
   deleteUserAccountAtomically,
   getDeletedUserIdentityMap,
+  getGameHistoryForUser,
   getGameHistoryById,
   getRecentEndedGameHistory,
   getLeaderboardRows,
@@ -74,6 +75,35 @@ describe("getGameHistoryById", () => {
     expect(whereSql.toLowerCase()).toContain("and");
     expect(whereParams).toContain("ended");
     expect(limit).toHaveBeenCalledWith(1);
+  });
+});
+
+describe("getGameHistoryForUser", () => {
+  it("orders the complete user history before applying the result limit", async () => {
+    let whereSql = "";
+    let orderSql = "";
+    const limit = vi.fn(async () => []);
+    const orderBy = vi.fn((...clauses) => {
+      orderSql = clauses
+        .map((clause) => new PgDialect().sqlToQuery(clause).sql)
+        .join(" ");
+      return { limit };
+    });
+    const where = vi.fn((condition) => {
+      whereSql = new PgDialect().sqlToQuery(condition).sql;
+      return { orderBy };
+    });
+    const leftJoin = vi.fn(() => ({ where }));
+    const from = vi.fn(() => ({ leftJoin }));
+    const select = vi.fn(() => ({ from }));
+
+    await getGameHistoryForUser({ select } as unknown as Database, "user-1", 25);
+
+    expect(whereSql).toContain('"games"."host_id"');
+    expect(whereSql).toContain('"game_players"."user_id"');
+    expect(orderSql).toContain('"games"."created_at" desc');
+    expect(orderSql).toContain('"games"."id" desc');
+    expect(limit).toHaveBeenCalledWith(25);
   });
 });
 
@@ -307,12 +337,9 @@ describe("persisted player outcomes", () => {
 
   it("counts leaderboard wins from game_players.won instead of role/team inference", async () => {
     let selectedFields: Record<string, unknown> | undefined;
-    const limit = vi.fn(async () => []);
-    const orderBy = vi.fn(() => ({ limit }));
-    const groupBy = vi.fn(() => ({ orderBy }));
-    const where = vi.fn(() => ({ groupBy }));
-    const innerJoin = vi.fn(() => ({ where }));
-    const from = vi.fn(() => ({ innerJoin }));
+    const innerJoinUser = vi.fn(() => ({ where: vi.fn(() => ({ groupBy: vi.fn(() => ({ orderBy: vi.fn(() => ({ limit: vi.fn(async () => []) })) })) })) }));
+    const innerJoinGames = vi.fn(() => ({ innerJoin: innerJoinUser }));
+    const from = vi.fn(() => ({ innerJoin: innerJoinGames }));
     const select = vi.fn((fields: Record<string, unknown>) => {
       selectedFields = fields;
       return { from };
@@ -320,10 +347,36 @@ describe("persisted player outcomes", () => {
 
     await getLeaderboardRows({ select } as unknown as Database);
 
+    const gamesPlayedSql = new PgDialect().sqlToQuery(selectedFields?.gamesPlayed as never).sql;
     const winsSql = new PgDialect().sqlToQuery(selectedFields?.wins as never).sql;
+    expect(selectedFields?.displayName).toBe(user.name);
+    expect(innerJoinGames).toHaveBeenCalledWith(games, expect.anything());
+    expect(innerJoinUser).toHaveBeenCalledWith(user, expect.anything());
+    expect(gamesPlayedSql).toContain("COUNT(*)");
+    expect(gamesPlayedSql.toLowerCase()).not.toContain("distinct");
     expect(winsSql).toContain('"game_players"."won"');
     expect(winsSql).not.toContain('"game_players"."role"');
     expect(winsSql).not.toContain('"games"."winner_team"');
+  });
+
+  it("uses the current profile name instead of a lexicographic historical maximum", async () => {
+    let selectedFields: Record<string, unknown> | undefined;
+    const limit = vi.fn(async () => []);
+    const orderBy = vi.fn(() => ({ limit }));
+    const groupBy = vi.fn(() => ({ orderBy }));
+    const where = vi.fn(() => ({ groupBy }));
+    const innerJoinUser = vi.fn(() => ({ where }));
+    const innerJoinGames = vi.fn(() => ({ innerJoin: innerJoinUser }));
+    const from = vi.fn(() => ({ innerJoin: innerJoinGames }));
+    const select = vi.fn((fields: Record<string, unknown>) => {
+      selectedFields = fields;
+      return { from };
+    });
+
+    await getLeaderboardRows({ select } as unknown as Database);
+
+    expect(selectedFields?.displayName).toBe(user.name);
+    expect(groupBy).toHaveBeenCalledWith(gamePlayers.userId, user.name);
   });
 });
 
@@ -457,14 +510,8 @@ describe("deleteUserAccountAtomically", () => {
         }),
       })),
     }));
-    const payloadUpdates: unknown[] = [];
     const update = vi.fn((table: unknown) => ({
-      set: vi.fn((values: Record<string, unknown>) => {
-        if (table === gameEvents && Object.hasOwn(values, "payload")) {
-          payloadUpdates.push(values.payload);
-        }
-        return { where: vi.fn(async () => undefined) };
-      }),
+      set: vi.fn(() => ({ where: vi.fn(async () => undefined) })),
     }));
     const insert = vi.fn(() => ({
       values: vi.fn(() => ({ onConflictDoNothing: vi.fn(async () => undefined) })),
@@ -474,8 +521,15 @@ describe("deleteUserAccountAtomically", () => {
         ? { returning: vi.fn(async () => [{ id: "user-1" }]) }
         : Promise.resolve()),
     }));
+    const executedQueries: Array<{ sql: string; params: unknown[] }> = [];
     const tx = {
-      execute: vi.fn(async () => undefined),
+      execute: vi.fn(async (statement: unknown) => {
+        executedQueries.push(
+          new PgDialect().sqlToQuery(
+            statement as Parameters<PgDialect["sqlToQuery"]>[0],
+          ),
+        );
+      }),
       select,
       insert,
       update,
@@ -487,8 +541,13 @@ describe("deleteUserAccountAtomically", () => {
       deleteUserAccountAtomically({ transaction } as unknown as Database, "user-1"),
     ).resolves.toBe(true);
 
-    expect(payloadUpdates).toHaveLength(1);
-    expect(payloadUpdates[0]).toMatchObject({
+    const payloadBatch = executedQueries.find((query) =>
+      query.sql.includes("UPDATE game_events AS event"),
+    );
+    const scrubbedPayload = JSON.parse(
+      String(payloadBatch?.params.find((value) => typeof value === "string" && value.startsWith("{"))),
+    ) as Record<string, unknown>;
+    expect(scrubbedPayload).toMatchObject({
       assignments: [
         { userId: "deleted_anon", displayName: "Изтрит играч" },
         { userId: "user-2", displayName: "Борис", role: "werewolf" },
@@ -497,13 +556,74 @@ describe("deleteUserAccountAtomically", () => {
       note: "Анна изпрати user-1",
       profileName: "Текуща Анна",
     });
-    expect(payloadUpdates[0]).not.toHaveProperty("role");
-    expect((payloadUpdates[0] as { assignments: Array<Record<string, unknown>> }).assignments[0]).not.toHaveProperty("role");
+    expect(scrubbedPayload).not.toHaveProperty("role");
+    expect((scrubbedPayload as { assignments: Array<Record<string, unknown>> }).assignments[0]).not.toHaveProperty("role");
     expect(eventPredicates).toHaveLength(1);
     expect(eventPredicates[0]?.sql.toLowerCase()).not.toContain("like");
     expect(eventPredicates[0]?.sql).toContain('"game_events"."game_id" in');
     expect(eventPredicates[0]?.params).toEqual(expect.arrayContaining(["user-1", "game-1", "hosted-game"]));
+    expect(payloadBatch).toBeDefined();
     expect(transaction).toHaveBeenCalledOnce();
+  });
+
+  it("батчва голяма event history без N+1 UPDATE заявки", async () => {
+    const events = Array.from({ length: 251 }, (_, index) => ({
+      id: `event-${index}`,
+      actorId: "user-1",
+      targetId: null,
+      payload: { userId: "user-1", displayName: "Анна" },
+    }));
+    const rowsByTable = new Map<unknown, unknown[]>([
+      [user, [{ id: "user-1", displayName: "Анна" }]],
+      [deletedUserIdentities, [{ anonymousUserId: "deleted_anon" }]],
+      [gamePlayers, [{ gameId: "game-1", displayName: "Анна" }]],
+      [games, []],
+      [gameEvents, events],
+    ]);
+    const select = vi.fn(() => ({
+      from: vi.fn((table: unknown) => ({
+        where: vi.fn(() => queryResult(rowsByTable.get(table) ?? [])),
+      })),
+    }));
+    const update = vi.fn(() => ({
+      set: vi.fn(() => ({ where: vi.fn(async () => undefined) })),
+    }));
+    const insert = vi.fn(() => ({
+      values: vi.fn(() => ({ onConflictDoNothing: vi.fn(async () => undefined) })),
+    }));
+    const deleteFrom = vi.fn((table: unknown) => ({
+      where: vi.fn(() => table === user
+        ? { returning: vi.fn(async () => [{ id: "user-1" }]) }
+        : Promise.resolve()),
+    }));
+    const executedQueries: string[] = [];
+    const tx = {
+      execute: vi.fn(async (statement: unknown) => {
+        executedQueries.push(
+          new PgDialect().sqlToQuery(
+            statement as Parameters<PgDialect["sqlToQuery"]>[0],
+          ).sql,
+        );
+      }),
+      select,
+      insert,
+      update,
+      delete: deleteFrom,
+    };
+
+    await expect(
+      deleteUserAccountAtomically(
+        {
+          transaction: vi.fn(async (operation: (transaction: typeof tx) => Promise<boolean>) =>
+            operation(tx)),
+        } as unknown as Database,
+        "user-1",
+      ),
+    ).resolves.toBe(true);
+
+    expect(
+      executedQueries.filter((query) => query.includes("UPDATE game_events AS event")),
+    ).toHaveLength(2);
   });
 
   it("не допуска delayed upsert да възкреси user, когато изтриването спечели race-а", async () => {

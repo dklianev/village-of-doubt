@@ -297,7 +297,7 @@ describe("DrizzleGamePersistence", () => {
   });
 
   it("persists the final won flag when player rows are upserted", async () => {
-    let playerValues: Record<string, unknown> | undefined;
+    let playerValues: Array<Record<string, unknown>> | undefined;
     const onConflictDoUpdate = vi.fn(async () => undefined);
     const insert = vi.fn((table: unknown) => ({
       values: vi.fn((values: unknown) => {
@@ -305,7 +305,7 @@ describe("DrizzleGamePersistence", () => {
           return { onConflictDoNothing: vi.fn(async () => undefined) };
         }
         if (table === gamePlayers) {
-          playerValues = values as Record<string, unknown>;
+          playerValues = values as Array<Record<string, unknown>>;
           return { onConflictDoUpdate };
         }
         throw new Error("Unexpected table in final outcome test");
@@ -329,22 +329,158 @@ describe("DrizzleGamePersistence", () => {
       deathCause: "Падна при разискването.",
     }]);
 
-    expect(playerValues).toMatchObject({
+    expect(playerValues).toEqual([expect.objectContaining({
       won: true,
       role: "jester",
       isAlive: false,
       deathRound: 4,
       deathCause: "Падна при разискването.",
-    });
+    })]);
     expect(onConflictDoUpdate).toHaveBeenCalledWith(expect.objectContaining({
       set: expect.objectContaining({
-        won: true,
-        role: "jester",
-        isAlive: false,
-        deathRound: 4,
-        deathCause: "Падна при разискването.",
+        won: expect.anything(),
+        role: expect.anything(),
+        isAlive: expect.anything(),
+        deathRound: expect.anything(),
+        deathCause: expect.anything(),
       }),
     }));
+  });
+
+  it("upserts multiple player rows in one database write", async () => {
+    const playerValueBatches: unknown[] = [];
+    const onConflictDoUpdate = vi.fn(async () => undefined);
+    const insert = vi.fn((table: unknown) => ({
+      values: vi.fn((values: unknown) => {
+        if (table === user) {
+          return { onConflictDoNothing: vi.fn(async () => undefined) };
+        }
+        if (table === gamePlayers) {
+          playerValueBatches.push(values);
+          return { onConflictDoUpdate };
+        }
+        throw new Error("Unexpected table in batched player upsert test");
+      }),
+    }));
+    const transaction = vi.fn(async (operation: (tx: unknown) => Promise<unknown>) =>
+      operation({
+        execute: vi.fn(async () => undefined),
+        insert,
+        select: vi.fn(() => ({ from: vi.fn(() => ({ where: vi.fn(async () => []) })) })),
+      }));
+    const persistence = new DrizzleGamePersistence({ insert, transaction } as unknown as Database);
+
+    await persistence.upsertPlayers("game-1", [
+      {
+        userId: "player-1",
+        displayName: "Първи",
+        role: "werewolf",
+        isAlive: true,
+        isLover: true,
+        loverUserId: "player-2",
+      },
+      {
+        userId: "player-2",
+        displayName: "Втори",
+        role: "seer",
+        isAlive: false,
+        won: true,
+        deathRound: 3,
+        deathCause: "Отстранен при гласуване.",
+      },
+    ]);
+
+    expect(playerValueBatches).toEqual([[
+      {
+        gameId: "game-1",
+        userId: "player-1",
+        displayName: "Първи",
+        role: "werewolf",
+        isAlive: true,
+        isLover: true,
+        loverUserId: "player-2",
+        won: false,
+        deathRound: null,
+        deathCause: null,
+      },
+      {
+        gameId: "game-1",
+        userId: "player-2",
+        displayName: "Втори",
+        role: "seer",
+        isAlive: false,
+        isLover: false,
+        loverUserId: null,
+        won: true,
+        deathRound: 3,
+        deathCause: "Отстранен при гласуване.",
+      },
+    ]]);
+    expect(onConflictDoUpdate).toHaveBeenCalledOnce();
+  });
+
+  it("preserves deleted identity remapping inside the player batch", async () => {
+    let playerValues: Array<Record<string, unknown>> | undefined;
+    const onConflictDoUpdate = vi.fn(async () => undefined);
+    const insert = vi.fn((table: unknown) => ({
+      values: vi.fn((values: unknown) => {
+        if (table === user) {
+          return { onConflictDoNothing: vi.fn(async () => undefined) };
+        }
+        if (table === gamePlayers) {
+          playerValues = values as Array<Record<string, unknown>>;
+          return { onConflictDoUpdate };
+        }
+        throw new Error("Unexpected table in deleted player batch test");
+      }),
+    }));
+    const transaction = vi.fn(async (operation: (tx: unknown) => Promise<unknown>) =>
+      operation({
+        execute: vi.fn(async () => undefined),
+        insert,
+        select: vi.fn(() => ({
+          from: vi.fn(() => ({
+            where: vi.fn(async () => [{
+              originalUserId: "deleted-player",
+              anonymousUserId: "deleted_anon",
+            }]),
+          })),
+        })),
+      }));
+    const persistence = new DrizzleGamePersistence({ insert, transaction } as unknown as Database);
+
+    await persistence.upsertPlayers("game-1", [
+      {
+        userId: "deleted-player",
+        displayName: "Старо име",
+        role: "seer",
+        isAlive: false,
+        isLover: true,
+        loverUserId: "active-player",
+      },
+      {
+        userId: "active-player",
+        displayName: "Активен",
+        role: "werewolf",
+        isAlive: true,
+        isLover: true,
+        loverUserId: "deleted-player",
+      },
+    ]);
+
+    expect(playerValues).toEqual([
+      expect.objectContaining({
+        userId: "deleted_anon",
+        displayName: "Изтрит играч",
+        loverUserId: "active-player",
+      }),
+      expect.objectContaining({
+        userId: "active-player",
+        displayName: "Активен",
+        loverUserId: "deleted_anon",
+      }),
+    ]);
+    expect(onConflictDoUpdate).toHaveBeenCalledOnce();
   });
 });
 

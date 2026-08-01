@@ -11,8 +11,9 @@ import {
   type GamePhase,
   type RoleCode,
 } from "@werewolf/shared";
-import { requireSession } from "@/lib/require-session";
 import { publicGameReference } from "@/lib/game-reference";
+import { loadReplayTimelineForViewer } from "@/lib/replay-visibility";
+import { requireSession } from "@/lib/require-session";
 import "@/components/achievements/Achievements.module.css";
 import "@/components/history/History.module.css";
 import "@/components/history/LegacyReplay.module.css";
@@ -182,10 +183,18 @@ async function loadReplay(gameId: string, viewerUserId: string) {
     if (!game || game.status !== "ended" || !game.endedAt) {
       return null;
     }
-    const rolesByGameId = await getPlayerRolesInGames(db, viewerUserId, [game.id]);
-    const canSeeFullTimeline = game.hostId === viewerUserId || rolesByGameId.has(game.id);
-    const timeline = await getGameTimeline(db, game.id, 300, {
-      visibilityFilter: canSeeFullTimeline ? "all" : "public",
+    const timeline = await loadReplayTimelineForViewer({
+      game: {
+        gameId: game.id,
+        status: game.status,
+        endedAt: game.endedAt,
+        hostId: game.hostId,
+      },
+      viewerUserId,
+      loadParticipantGameIds: (userId, participantGameId) =>
+        getPlayerRolesInGames(db, userId, [participantGameId]),
+      loadTimeline: (visibilityFilter) =>
+        getGameTimeline(db, game.id, 300, { visibilityFilter }),
     });
     const orderedTimeline = [...timeline].reverse();
     return { game, timeline: orderedTimeline, achievements: deriveAchievementsFromEvents(orderedTimeline) };
