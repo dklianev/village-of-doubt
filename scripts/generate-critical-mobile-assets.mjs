@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { mkdir, readdir, stat } from "node:fs/promises";
+import { mkdir, readdir, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -28,14 +28,15 @@ let totalBytes = 0;
 
 for (const variant of variants) {
   await mkdir(path.dirname(variant.output), { recursive: true });
-  await sharp(variant.source)
+  const optimized = await sharp(variant.source)
     .resize({
       width: variant.width,
       ...(variant.height ? { height: variant.height, fit: "cover", position: variant.position ?? "centre" } : {}),
       withoutEnlargement: true,
     })
     .avif({ quality: 42, effort: 7, chromaSubsampling: "4:2:0" })
-    .toFile(variant.output);
+    .toBuffer();
+  await writeFile(variant.output, optimized);
 
   const bytes = (await stat(variant.output)).size;
   if (bytes > 32 * 1024) {
