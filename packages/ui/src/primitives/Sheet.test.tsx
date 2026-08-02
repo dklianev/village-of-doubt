@@ -24,6 +24,17 @@ describe("Sheet", () => {
     expect(getByText("Съдържание")).toBeDefined();
   });
 
+  it("exposes the workspace size as an additive primitive variant", () => {
+    const { getByRole } = render(
+      <Sheet open onOpenChange={() => {}} title="Писма" size="workspace" closeLabel="Затвори писмата">
+        Съдържание
+      </Sheet>,
+    );
+
+    expect(getByRole("dialog", { name: "Писма" }).getAttribute("data-size")).toBe("workspace");
+    expect(getByRole("button", { name: "Затвори писмата" })).toBeDefined();
+  });
+
   it("does not render content when closed", () => {
     const { container, queryByText } = render(
       <Sheet open={false} onOpenChange={() => {}} title="Писма">

@@ -143,6 +143,21 @@ describe("LobbyWizard", () => {
     expect(within(reopened).getByRole("textbox", { name: "Име на стаята" })).toHaveValue("Нощ край огъня");
   });
 
+  it("uses the workspace sheet and exposes explicit role gallery controls", async () => {
+    search = new URLSearchParams();
+    const user = userEvent.setup();
+    render(<LobbyWizard family="werewolves" />);
+
+    await user.click(screen.getByRole("button", { name: "Настрой детайлите" }));
+    const dialog = screen.getByRole("dialog", { name: "Настрой детайлите" });
+    const gallery = within(dialog).getByRole("region", { name: "Избор на роли" });
+
+    expect(dialog).toHaveAttribute("data-size", "workspace");
+    expect(gallery).toHaveAttribute("data-layout", "workspace");
+    expect(within(dialog).getByRole("button", { name: "Предишни роли" })).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Следващи роли" })).toBeInTheDocument();
+  });
+
   it("presents Cupid as a role and never as an independent Lovers switch", async () => {
     search = new URLSearchParams();
     const user = userEvent.setup();

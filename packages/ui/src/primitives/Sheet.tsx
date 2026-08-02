@@ -6,6 +6,8 @@ export interface SheetProps {
   onOpenChange: (open: boolean) => void;
   title: string;
   description?: string;
+  size?: "default" | "workspace";
+  closeLabel?: string;
   children: ReactNode;
 }
 
@@ -77,6 +79,51 @@ const SHEET_RUNTIME_CSS = `
   gap: 16px;
 }
 
+.ds-sheet[data-size="workspace"] {
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 0;
+  height: min(92dvh, 900px);
+  max-height: 92dvh;
+  overflow: hidden;
+  padding: 0;
+}
+
+.ds-sheet[data-size="workspace"] > .ds-sheet-title {
+  position: relative;
+  z-index: 2;
+  padding: 22px clamp(76px, 7vw, 92px) 22px clamp(20px, 3vw, 32px);
+  border-bottom: 1px solid var(--ds-border-subtle, oklch(0.42 0.04 65 / 0.2));
+  background: var(--ds-surface-paper);
+}
+
+.ds-sheet-close {
+  position: absolute;
+  top: 18px;
+  right: clamp(18px, 2vw, 28px);
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--ds-border-subtle, oklch(0.42 0.04 65 / 0.22));
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--ds-surface-paper) 88%, var(--ds-ink-primary) 12%);
+  color: var(--ds-ink-primary);
+  cursor: pointer;
+  font: inherit;
+}
+
+.ds-sheet-close:hover {
+  border-color: currentColor;
+  transform: translateY(-1px);
+}
+
+.ds-sheet-close > span {
+  font-size: 1.55rem;
+  font-weight: 400;
+  line-height: 1;
+}
+
 .ds-sheet[data-state="open"] {
   animation: ds-sheet-open 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -106,6 +153,12 @@ const SHEET_RUNTIME_CSS = `
     box-shadow: var(--ds-shadow-scene);
     transform: translate(-50%, -50%);
   }
+
+  .ds-sheet[data-size="workspace"] {
+    width: min(96vw, 1280px);
+    height: min(90dvh, 900px);
+    max-height: 90dvh;
+  }
 }
 `;
 
@@ -122,15 +175,24 @@ function useSheetStyles() {
   }, []);
 }
 
-export function Sheet({ open, onOpenChange, title, description = "Допълнителен панел.", children }: SheetProps) {
+export function Sheet({
+  open,
+  onOpenChange,
+  title,
+  description = "Допълнителен панел.",
+  size = "default",
+  closeLabel,
+  children,
+}: SheetProps) {
   useSheetStyles();
 
   return (
     <RDialog.Root open={open} onOpenChange={onOpenChange}>
       <RDialog.Portal>
         <RDialog.Overlay className="ds-sheet-overlay" />
-        <RDialog.Content className="ds-sheet" data-ds-sheet>
+        <RDialog.Content className="ds-sheet" data-ds-sheet data-size={size}>
           <RDialog.Title
+            className="ds-sheet-title"
             style={{
               fontFamily: '"Noto Serif Display", "Noto Serif", "Iowan Old Style", serif',
               fontSize: "var(--ds-type-h3)",
@@ -140,6 +202,11 @@ export function Sheet({ open, onOpenChange, title, description = "Допълни
           >
             {title}
           </RDialog.Title>
+          {closeLabel ? (
+            <RDialog.Close className="ds-sheet-close" aria-label={closeLabel}>
+              <span aria-hidden="true">×</span>
+            </RDialog.Close>
+          ) : null}
           <RDialog.Description style={VISUALLY_HIDDEN_STYLE}>
             {description}
           </RDialog.Description>
