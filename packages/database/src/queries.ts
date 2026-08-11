@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, count, desc, eq, inArray, ne, or, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, ne, or, sql } from "drizzle-orm";
 import {
   deletedUserIdentities,
   gameEvents,
@@ -64,6 +64,12 @@ export interface PlayerRoleInGameRow {
 
 export interface PlayerOutcomeInGameRow extends PlayerRoleInGameRow {
   won: boolean;
+}
+
+export interface GameReplayParticipantRow {
+  userId: string;
+  displayName: string;
+  role: string | null;
 }
 
 export interface PlaceholderUserUpsert {
@@ -757,11 +763,11 @@ export async function getPlayerOutcomesInGames(
 export async function getGameTimeline(
   db: Database,
   gameId: string,
-  limit = 100,
+  limit: number | null = 100,
   options: { visibilityFilter?: "all" | "public" } = {},
 ): Promise<GameTimelineEvent[]> {
   const visibilityFilter = options.visibilityFilter ?? "all";
-  return db
+  const query = db
     .select({
       id: gameEvents.id,
       round: gameEvents.round,
@@ -779,8 +785,35 @@ export async function getGameTimeline(
         ? and(eq(gameEvents.gameId, gameId), eq(gameEvents.visibility, "public"))
         : eq(gameEvents.gameId, gameId),
     )
-    .orderBy(desc(gameEvents.createdAt))
-    .limit(limit);
+    .orderBy(limit === null ? asc(gameEvents.createdAt) : desc(gameEvents.createdAt));
+
+  return limit === null ? query : query.limit(limit);
+}
+
+export async function getGameReplayParticipants(
+  db: Database,
+  gameId: string,
+  options: { includeRoles: boolean },
+): Promise<GameReplayParticipantRow[]> {
+  if (options.includeRoles) {
+    return db
+      .select({
+        userId: gamePlayers.userId,
+        displayName: gamePlayers.displayName,
+        role: gamePlayers.role,
+      })
+      .from(gamePlayers)
+      .where(eq(gamePlayers.gameId, gameId));
+  }
+
+  const rows = await db
+    .select({
+      userId: gamePlayers.userId,
+      displayName: gamePlayers.displayName,
+    })
+    .from(gamePlayers)
+    .where(eq(gamePlayers.gameId, gameId));
+  return rows.map((row) => ({ ...row, role: null }));
 }
 
 type PublicGameTimelineEventBatchRow = Record<string, unknown> & {
@@ -858,7 +891,11 @@ export async function getPublicGameTimelinesBatch(
   return grouped;
 }
 
-export async function getLeaderboardRows(db: Database, limit = 30): Promise<LeaderboardEntryRow[]> {
+export async function getLeaderboardRows(
+  db: Database,
+  limit = 30,
+  options: { since?: Date } = {},
+): Promise<LeaderboardEntryRow[]> {
   const gamesPlayed = sql<number>`COUNT(*)::int`;
   const wins = sql<number>`COALESCE(SUM(CASE WHEN ${gamePlayers.won} THEN 1 ELSE 0 END), 0)::int`;
   const lastPlayedAt = sql<Date | null>`MAX(${games.endedAt})`;
@@ -874,7 +911,11 @@ export async function getLeaderboardRows(db: Database, limit = 30): Promise<Lead
     .from(gamePlayers)
     .innerJoin(games, eq(gamePlayers.gameId, games.id))
     .innerJoin(user, eq(gamePlayers.userId, user.id))
-    .where(eq(games.status, "ended"))
+    .where(
+      options.since
+        ? and(eq(games.status, "ended"), gte(games.endedAt, options.since))
+        : eq(games.status, "ended"),
+    )
     .groupBy(gamePlayers.userId, user.name)
     .orderBy(desc(wins), desc(gamesPlayed), desc(lastPlayedAt))
     .limit(limit);

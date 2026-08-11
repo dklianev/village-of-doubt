@@ -315,12 +315,11 @@ describe("GameRoom gameplay regressions", () => {
     expect([...serverRoom.state.publicEvents.values()].some((event) => event.messageBg.includes("Благословия спря"))).toBe(true);
   });
 
-  it("lets the Thief steal a role once and turns the target into an ordinary villager", async () => {
+  it("lets the automatic narrator run the Thief role swap", async () => {
     const serverRoom = await colyseus.createRoom<GameRoom>("game", {
       code: "THJEF3",
       mode: "werewolves_classic",
       playerCount: 6,
-      narratorMode: "full_human",
       firstNightKill: true,
       roles: {
         thief: 1,
@@ -329,8 +328,8 @@ describe("GameRoom gameplay regressions", () => {
         seer: 1,
       },
     });
-    const clients = await connectPlayers(colyseus, serverRoom, 7, "thief");
-    const roleClients = await startFullHumanGameAndCollectRoles(clients);
+    const clients = await connectPlayers(colyseus, serverRoom, 6, "thief");
+    const roleClients = await startGameAndCollectRoles(clients);
     clients[0]?.client.send("narratorAdvance", {});
     await serverRoom.waitForNextPatch();
 

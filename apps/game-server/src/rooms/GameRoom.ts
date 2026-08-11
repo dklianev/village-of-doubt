@@ -174,6 +174,7 @@ export class GameRoom extends Room<{ state: GameState }> {
   private privateEvents!: PrivateEventDispatcher;
   private hostUserId: string | undefined;
   private gameFinishedPersisted = false;
+  private recordedGameId: string | undefined;
   private pendingHunterRevengeUserId: string | undefined;
   private pendingMayorSuccessor = false;
   private pendingVampireBites = new Map<string, { round: number; causeBg: string }>();
@@ -302,6 +303,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       this.privateEvents.sendPrivateRole(client, auth.userId);
       this.privateEvents.sendNarratorRoleSnapshot(client, auth.userId);
       this.sendNightActionCapabilities(auth.userId, client);
+      this.sendRecordedGameId(client);
       return;
     }
 
@@ -345,6 +347,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       actorId: auth.userId,
       payload: { displayName: auth.displayName, spectator: Boolean(options.spectator) },
     });
+    this.sendRecordedGameId(client);
   }
 
   private activateClient(auth: ClientAuth, client: Client, previousClient?: Client) {
@@ -390,6 +393,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       this.privateEvents.sendPrivateRole(client, auth.userId);
       this.privateEvents.sendNarratorRoleSnapshot(client, auth.userId);
       this.sendNightActionCapabilities(auth.userId, client);
+      this.sendRecordedGameId(client);
       this.addPublicEvent(`${player.displayName} възстанови връзката.`);
     }
   }
@@ -978,6 +982,16 @@ export class GameRoom extends Room<{ state: GameState }> {
     client.send("night_action_capabilities", {
       type: "night_action_capabilities",
       capabilities,
+    } satisfies ServerEvent);
+  }
+
+  private sendRecordedGameId(client: Pick<Client, "send">) {
+    if (!this.recordedGameId) {
+      return;
+    }
+    client.send("game_recorded", {
+      type: "game_recorded",
+      gameId: this.recordedGameId,
     } satisfies ServerEvent);
   }
 
@@ -1729,6 +1743,11 @@ export class GameRoom extends Room<{ state: GameState }> {
           await persistence.finishGame(gameId, {
             winnerTeam: this.state.winnerTeam as never,
           });
+          this.recordedGameId = gameId;
+          this.broadcast("game_recorded", {
+            type: "game_recorded",
+            gameId,
+          } satisfies ServerEvent);
           for (const unlock of achievementUnlocks) {
             await persistence.recordAchievement(unlock.userId, unlock.achievementId, gameId);
           }

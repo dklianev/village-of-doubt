@@ -121,7 +121,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: [app, ui]
+        include:
+          - suite: app
+          - suite: play-0
+            shardIndex: 0
+          - suite: play-1
+            shardIndex: 1
+          - suite: play-2
+            shardIndex: 2
+          - suite: play-3
+            shardIndex: 3
+          - suite: ui
     steps:
       - name: Checkout
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
@@ -142,7 +152,7 @@ jobs:
         run: pnpm exec playwright install chromium
 
       - name: Build app visual workspace dependencies
-        if: matrix.suite == 'app'
+        if: matrix.suite != 'ui'
         run: >-
           pnpm --filter @werewolf/database build &&
           pnpm --filter @werewolf/shared build &&
@@ -151,6 +161,13 @@ jobs:
       - name: Verify app visual baselines
         if: matrix.suite == 'app'
         run: pnpm visual
+
+      - name: Verify exhaustive play matrix shard
+        if: startsWith(matrix.suite, 'play-')
+        run: pnpm visual:matrix
+        env:
+          M35_SHARD_INDEX: ${{ matrix.shardIndex }}
+          M35_SHARD_TOTAL: 4
 
       - name: Verify UI visual baselines
         if: matrix.suite == 'ui'

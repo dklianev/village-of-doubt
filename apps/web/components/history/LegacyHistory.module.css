@@ -462,7 +462,7 @@
 
   :global(.evidence-wall) {
     gap: 28px;
-    padding-top: 22px;
+    padding: 22px 6px 64px;
   }
 
   :global(.case-file) {
@@ -962,7 +962,7 @@
 }
 
 :global(.role-jester) {
-  --role-art: image-set(url("/game-art/role-jester.webp") type("image/webp"));
+  --role-art: image-set(url("/game-art/role-jester-werewolf.webp") type("image/webp"));
 }
 
 :global(.role-little_girl) {

@@ -6,7 +6,8 @@ import { dirname, join } from "node:path";
 const webPort = process.env.E2E_AUTH_WEB_PORT ?? "3412";
 // Keep the default aligned with frontend:e2e, which builds NEXT_PUBLIC_GAME_SERVER_URL.
 const gamePort = process.env.E2E_AUTH_GAME_PORT ?? process.env.FRONTEND_E2E_GAME_PORT ?? "3568";
-let baseUrl = process.env.E2E_AUTH_BASE_URL ?? localAppUrl(process.env.NEXT_PUBLIC_APP_URL) ?? `http://127.0.0.1:${webPort}`;
+const standaloneBaseUrl = `http://127.0.0.1:${webPort}`;
+let baseUrl = process.env.E2E_AUTH_BASE_URL ?? localAppUrl(process.env.NEXT_PUBLIC_APP_URL) ?? standaloneBaseUrl;
 const gameUrl = `http://127.0.0.1:${gamePort}`;
 const gameWsUrl = `ws://127.0.0.1:${gamePort}`;
 const hasDatabase = Boolean(process.env.DATABASE_URL);
@@ -15,6 +16,7 @@ const testSecret = "auth-e2e-secret-that-is-long-enough";
 const processes = [];
 const standaloneServer = "apps/web/.next/standalone/apps/web/server.js";
 const emailOutbox = join(process.cwd(), "output", "e2e-auth-emails.jsonl");
+const PROCESS_STOP_TIMEOUT_MS = 10_000;
 
 if (!hasDatabase && !isLocalOnly) {
   console.error(
@@ -24,6 +26,7 @@ if (!hasDatabase && !isLocalOnly) {
 }
 
 if (!process.env.E2E_AUTH_BASE_URL && !(await isHealthy(`${baseUrl}/api/health`))) {
+  baseUrl = standaloneBaseUrl;
   const game = start("auth-game", process.execPath, ["apps/game-server/dist/index.js"], {
     GAME_SERVER_PORT: gamePort,
     PORT: gamePort,
@@ -251,23 +254,58 @@ function start(name, command, args, env) {
 }
 
 async function stop(child) {
-  if (!child.pid || child.killed) {
+  if (!child.pid || child.exitCode !== null || child.signalCode !== null) {
+    closeChildHandles(child);
     return;
   }
+  child.isStopping = true;
   if (process.platform === "win32") {
-    await new Promise((resolve) => {
+    await withTimeout(new Promise((resolve) => {
       const killer = spawn("taskkill", ["/pid", String(child.pid), "/t", "/f"], { stdio: "ignore" });
-      killer.on("exit", resolve);
-      killer.on("error", resolve);
-    });
+      killer.once("close", resolve);
+      killer.once("error", resolve);
+    }), PROCESS_STOP_TIMEOUT_MS);
+    await waitForChildExit(child);
+    closeChildHandles(child);
     return;
   }
   child.kill("SIGTERM");
+  await waitForChildExit(child);
+  closeChildHandles(child);
+}
+
+async function waitForChildExit(child) {
+  if (child.exitCode !== null || child.signalCode !== null) {
+    return;
+  }
+  await withTimeout(new Promise((resolve) => {
+    child.once("close", resolve);
+    child.once("error", resolve);
+  }), PROCESS_STOP_TIMEOUT_MS);
+}
+
+async function withTimeout(promise, timeoutMs) {
+  let timeout;
+  await Promise.race([
+    promise,
+    new Promise((resolve) => {
+      timeout = setTimeout(resolve, timeoutMs);
+      timeout.unref?.();
+    }),
+  ]);
+  clearTimeout(timeout);
+}
+
+function closeChildHandles(child) {
+  child.stdout?.destroy();
+  child.stderr?.destroy();
+  child.stdin?.destroy();
+  child.unref?.();
 }
 
 process.on("exit", () => {
   for (const child of processes) {
-    if (child.pid && !child.killed) {
+    if (child.pid && child.exitCode === null && child.signalCode === null) {
       child.kill();
     }
   }

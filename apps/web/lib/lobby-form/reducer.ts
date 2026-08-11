@@ -1,10 +1,12 @@
 import {
+  countRoles,
   getGameFamily,
   normalizePhaseTimers,
   resolvePhaseTimers,
   TEMPO_PRESETS,
   type GameMode,
   type PhaseTimers,
+  type RoleCode,
   type RoleDistribution,
 } from "@werewolf/shared";
 import type { AdvancedFlags, CustomTimerKey, LobbyFormAction, LobbyFormState, LobbyStep, LobbyTemplate } from "./types";
@@ -134,8 +136,76 @@ function applyPlayerCount(state: LobbyFormState, value: number): LobbyFormState 
     ...state,
     playerCount,
     advanced,
-    manualRoles: state.manualRolesEnabled ? state.manualRoles : presetRoles(state.mode, playerCount, state.rolePreset, advanced),
+    manualRoles: state.manualRolesEnabled
+      ? resizeManualRolesForPlayerCount(state, playerCount)
+      : presetRoles(state.mode, playerCount, state.rolePreset, advanced),
   };
+}
+
+function resizeManualRolesForPlayerCount(state: LobbyFormState, playerCount: number): RoleDistribution {
+  const reserveRole = state.family === "werewolves" ? "ordinary_villager" : "civilian";
+  const currentTotal = countRoles(state.manualRoles);
+  const seatDelta = playerCount - currentTotal;
+
+  if (seatDelta === 0) {
+    return state.manualRoles;
+  }
+
+  if (seatDelta > 0) {
+    return cleanRoles({
+      ...state.manualRoles,
+      [reserveRole]: (state.manualRoles[reserveRole] ?? 0) + seatDelta,
+    });
+  }
+
+  const reserveCount = state.manualRoles[reserveRole] ?? 0;
+  const removableReserveSeats = Math.min(reserveCount, Math.abs(seatDelta));
+  const resized = cleanRoles({
+    ...state.manualRoles,
+    [reserveRole]: reserveCount - removableReserveSeats,
+  });
+  let seatsToRemove = Math.abs(seatDelta) - removableReserveSeats;
+  if (seatsToRemove === 0) {
+    return resized;
+  }
+
+  const protectedRoles = new Set<RoleCode>(
+    state.family === "werewolves"
+      ? ["werewolf", "vampire", "seer", "oracle"]
+      : ["mafioso", "don", "commissioner"],
+  );
+  const availableRoles = (Object.keys(resized) as RoleCode[]).filter((role) => role !== reserveRole);
+  const removalOrder = [
+    ...availableRoles.filter((role) => !protectedRoles.has(role)).reverse(),
+    ...availableRoles.filter((role) => protectedRoles.has(role)).reverse(),
+  ];
+
+  for (const role of removalOrder) {
+    if (seatsToRemove === 0) {
+      break;
+    }
+    const currentCount = resized[role] ?? 0;
+    const minimum = protectedRoles.has(role) ? 1 : 0;
+    const removable = Math.min(seatsToRemove, Math.max(0, currentCount - minimum));
+    if (removable > 0) {
+      resized[role] = currentCount - removable;
+      seatsToRemove -= removable;
+    }
+  }
+
+  for (const role of removalOrder) {
+    if (seatsToRemove === 0) {
+      break;
+    }
+    const currentCount = resized[role] ?? 0;
+    const removable = Math.min(seatsToRemove, currentCount);
+    if (removable > 0) {
+      resized[role] = currentCount - removable;
+      seatsToRemove -= removable;
+    }
+  }
+
+  return cleanRoles(resized);
 }
 
 function applyTempoProfile(state: LobbyFormState, tempoProfile: LobbyFormState["tempoProfile"]): LobbyFormState {

@@ -172,7 +172,7 @@ export function QuickCreateSurface({
         </div>
         <span className="create-ready-mark" data-ready={canCreate ? "true" : "false"}>
           <Check aria-hidden="true" />
-          {canCreate ? "готово за покана" : "провери състава"}
+          {canCreate ? "настройките са готови" : "провери състава"}
         </span>
       </header>
 
@@ -253,9 +253,9 @@ export function QuickCreateSurface({
               )}
             </section>
 
-            <fieldset className="create-context-panel">
-              <legend>Къде играете?</legend>
-              <div className="create-segmented-control">
+            <section className="create-context-panel" aria-labelledby="create-context-title">
+              <h2 id="create-context-title">Къде играете?</h2>
+              <div className="create-segmented-control" role="group" aria-labelledby="create-context-title">
                 <button
                   type="button"
                   aria-pressed={context === "online"}
@@ -275,13 +275,13 @@ export function QuickCreateSurface({
                   На живо
                 </button>
               </div>
-            </fieldset>
+            </section>
           </div>
 
           <section className="create-recommendation" aria-labelledby="create-roster-title">
             <div className="create-recommendation-heading">
               <div>
-                <span>препоръчан състав</span>
+                <span>{state.manualRolesEnabled ? "твоят състав" : "препоръчан състав"}</span>
                 <h2 id="create-roster-title">{recommendationTitle(state)}</h2>
               </div>
               <Sparkles aria-hidden="true" />
@@ -404,6 +404,9 @@ function rolePriority(role: RoleCode) {
 }
 
 function recommendationTitle(state: LobbyFormState) {
+  if (state.manualRolesEnabled) {
+    return "Твоят състав";
+  }
   if (state.mode === "mafia_sport") {
     return "Официалната десетка";
   }
@@ -420,6 +423,9 @@ function recommendationTitle(state: LobbyFormState) {
 }
 
 function recommendationReason(state: LobbyFormState) {
+  if (state.manualRolesEnabled) {
+    return "Ръчният състав остава точен при промяна на броя играчи.";
+  }
   if (state.mode === "mafia_sport") {
     return "Съставът и темпото следват спортния формат, затова не се нуждаят от ръчно балансиране.";
   }

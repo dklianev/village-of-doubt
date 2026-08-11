@@ -412,7 +412,10 @@ export function getWerewolvesClassicPreset(playerCount: number): RoleDistributio
     return { ...fixed };
   }
 
-  const werewolves = playerCount <= 22 ? 5 : playerCount <= 28 ? 6 : 7;
+  const werewolves = Math.min(
+    ROLE_DEFINITIONS.werewolf.maxCopies,
+    playerCount <= 22 ? 5 : playerCount <= 28 ? 6 : 7,
+  );
   return {
     ordinary_villager: playerCount - werewolves - 4,
     werewolf: werewolves,
@@ -684,7 +687,11 @@ export function createGameConfigFromOptions(options: GameConfigOptions = {}): Ga
   const roles = options.roles
     ? normalizeRoleDistributionForMode(mode, options.roles)
     : mode === "werewolves_classic"
-      ? withOptionalCupid(getWerewolfPresetByRolePreset(playerCount, rolePreset), requestedLoversEnabled, playerCount)
+      ? withOptionalWerewolfVariants(getWerewolfPresetByRolePreset(playerCount, rolePreset), {
+          playerCount,
+          loversEnabled: requestedLoversEnabled,
+          jesterEnabled: options.jesterEnabled ?? config.jesterEnabled,
+        })
       : mode === "mafia_free"
         ? withOptionalMafiaVariants(config.roles, {
             playerCount,
@@ -797,30 +804,45 @@ function withOptionalCupid(distribution: RoleDistribution, loversEnabled: boolea
   return preset;
 }
 
+function withOptionalWerewolfVariants(
+  distribution: RoleDistribution,
+  options: { playerCount: number; loversEnabled: boolean; jesterEnabled: boolean },
+): RoleDistribution {
+  let preset = withOptionalCupid(distribution, options.loversEnabled, options.playerCount);
+  if (options.jesterEnabled && options.playerCount >= 8 && (preset.jester ?? 0) === 0) {
+    preset = replaceOneRole(preset, "ordinary_villager", "jester");
+  }
+  return normalizeRoleDistribution(preset);
+}
+
 function withOptionalMafiaVariants(
   distribution: RoleDistribution,
   options: { playerCount: number; maniacEnabled: boolean; jesterEnabled: boolean },
 ): RoleDistribution {
   let preset = { ...distribution };
   if (options.maniacEnabled && options.playerCount >= 10 && (preset.maniac ?? 0) === 0) {
-    preset = replaceOneCivilian(preset, "maniac");
+    preset = replaceOneRole(preset, "civilian", "maniac");
   }
   if (options.jesterEnabled && options.playerCount >= 8 && (preset.jester ?? 0) === 0) {
-    preset = replaceOneCivilian(preset, "jester");
+    preset = replaceOneRole(preset, "civilian", "jester");
   }
   return normalizeRoleDistribution(preset);
 }
 
-function replaceOneCivilian(distribution: RoleDistribution, role: RoleCode): RoleDistribution {
-  const civilians = distribution.civilian ?? 0;
-  if (civilians <= 0) {
+function replaceOneRole(
+  distribution: RoleDistribution,
+  baselineRole: RoleCode,
+  replacementRole: RoleCode,
+): RoleDistribution {
+  const baselineCount = distribution[baselineRole] ?? 0;
+  if (baselineCount <= 0) {
     return distribution;
   }
 
   return {
     ...distribution,
-    civilian: civilians - 1,
-    [role]: (distribution[role] ?? 0) + 1,
+    [baselineRole]: baselineCount - 1,
+    [replacementRole]: (distribution[replacementRole] ?? 0) + 1,
   };
 }
 

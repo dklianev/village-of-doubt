@@ -10,6 +10,7 @@ import {
   type CreateRoomOptions,
   type GameMode,
   type GamePhase,
+  type NightActionKind,
   type RoleCode,
 } from "@werewolf/shared";
 import type {
@@ -28,10 +29,12 @@ import type {
   TypingNotice,
   VoteTallyItem,
 } from "@/lib/play/types";
+import { targetKindsForRole } from "@/lib/play/night-actions";
 
 type VisualFamily = "werewolves" | "mafia";
 type VisualViewer = "alive" | "dead" | "host" | "narrator" | "spectator";
 type VisualVoteTally = "empty" | "full" | "tie";
+type VisualCapabilities = "normal" | "spent";
 
 interface VisualGameRoomFixtureOptions {
   code: string;
@@ -56,6 +59,7 @@ export interface VisualGameRoomFixtureResult {
   connectionStatus: ConnectionStatus;
   unlockedAchievementIds: string[];
   setUnlockedAchievementIds: Dispatch<SetStateAction<string[]>>;
+  recordedGameId: string | null;
   reconnectNow: () => void;
   isPending: boolean;
 }
@@ -72,6 +76,7 @@ export interface VisualGameFixtureConfig {
   typingNotices: TypingNotice[];
   isBlessed: boolean;
   connectionStatus: ConnectionStatus;
+  recordedGameId: string | null;
 }
 
 const PHASE_COPY: Record<GamePhase, string> = {
@@ -187,6 +192,7 @@ interface ParsedVisualQuery {
   connection: ConnectionStatus;
   doctorCanSelfProtect: boolean;
   timerSeconds: number | null;
+  capabilities: VisualCapabilities;
 }
 
 export function useVisualGameRoomFixture({
@@ -224,6 +230,7 @@ export function useVisualGameRoomFixture({
       connectionStatus: config.connectionStatus,
       unlockedAchievementIds,
       setUnlockedAchievementIds,
+      recordedGameId: config.recordedGameId,
       reconnectNow: () => setStatus("Визуалната връзка е възстановена."),
       isPending: false,
     };
@@ -297,12 +304,13 @@ export function parseVisualGameFixture(
     privateRole: viewerRole ? { role: viewerRole, roleNameBg: ROLE_DEFINITIONS[viewerRole].nameBg } : null,
     privateResult: viewerRole ? privateResultForRole(viewerRole, players, parsed.family) : null,
     privateLover: viewerRole === "cupid" ? privateLoverForPlayers(players) : null,
-    nightActionCapabilities: null,
+    nightActionCapabilities: buildVisualNightActionCapabilities(parsed),
     narratorSnapshot: parsed.viewer === "narrator" ? narratorSnapshotFor(players, assignedRoles) : null,
     privateChats: buildPrivateChats(viewerRole, parsed.family),
     typingNotices: buildTypingNotices(parsed),
     isBlessed: viewerRole === "ordinary_villager" && parsed.phase === "night",
     connectionStatus: parsed.connection,
+    recordedGameId: parsed.phase === "game_over" ? cleanFixtureGameId(params.get("gameId")) : null,
   };
 }
 
@@ -334,7 +342,41 @@ function parseVisualQuery(params: URLSearchParams, createOptions: CreateRoomOpti
     connection: parseConnection(params.get("connection") ?? preset.connection),
     doctorCanSelfProtect: parseBooleanParam(params.get("doctorSelf"), createOptions?.doctorCanSelfProtect ?? false),
     timerSeconds: parseVisualTimer(params.get("timer")),
+    capabilities: params.get("capabilities") === "spent" ? "spent" : "normal",
   };
+}
+
+function buildVisualNightActionCapabilities(parsed: ParsedVisualQuery): NightActionCapabilities | null {
+  if (parsed.capabilities !== "spent") {
+    return null;
+  }
+
+  const kinds = targetKindsForRole(parsed.role, parsed.phase);
+  const usedFlags: NightActionCapabilities["usedFlags"] = {};
+  for (const kind of kinds) {
+    usedFlags[kind] = { reasonBg: spentCapabilityReasonBg(kind) };
+  }
+  return {
+    availableKinds: [],
+    usedFlags,
+    disallowedTargetsByKind: {},
+  };
+}
+
+function spentCapabilityReasonBg(kind: NightActionKind) {
+  const reasons: Partial<Record<NightActionKind, string>> = {
+    witch_heal: "Лечебната отвара вече е използвана.",
+    witch_poison: "Отровата вече е използвана.",
+    priest_bless: "Благословията вече е дадена.",
+    blacksmith_sword: "Мечът вече е изкован.",
+    investigator_check: "Проверката вече е използвана.",
+    faction_kill: "Това действие вече не е достъпно.",
+  };
+  return reasons[kind] ?? "Това действие вече е използвано.";
+}
+
+function cleanFixtureGameId(value: string | null) {
+  return value && /^[a-zA-Z0-9-]{1,80}$/.test(value) ? value : null;
 }
 
 function buildPlayers(parsed: ParsedVisualQuery, currentUserId: string, assignedRoles: RoleCode[]): PublicPlayer[] {

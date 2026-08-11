@@ -180,6 +180,27 @@ describe("useGameRoom", () => {
     expect(fixture?.snapshot.players[0]?.alive).toBe(false);
   });
 
+  it("renders exhausted private night abilities without exposing new public state", () => {
+    const fixture = parseVisualGameFixture(
+      "?visualGame=1&phase=night&family=werewolves&role=witch&capabilities=spent",
+      "VISUAL",
+      undefined,
+      "test",
+    );
+
+    expect(fixture?.nightActionCapabilities).toMatchObject({
+      availableKinds: [],
+      usedFlags: {
+        witch_heal: { reasonBg: "Лечебната отвара вече е използвана." },
+        witch_poison: { reasonBg: "Отровата вече е използвана." },
+      },
+    });
+    expect("nightActionCapabilities" in (fixture?.snapshot as unknown as Record<string, unknown>)).toBe(false);
+    expect(fixture?.snapshot.players.every((player) => (
+      !("nightActionCapabilities" in (player as unknown as Record<string, unknown>))
+    ))).toBe(true);
+  });
+
   it("blocks unauthenticated users before creating a room client", async () => {
     mocks.useSession.mockReturnValue({ data: null, isPending: false });
     const toast = vi.fn();
@@ -267,6 +288,20 @@ describe("useGameRoom", () => {
     act(() => joinRoom.emitMessage("nomination_ack", { replaced: true }));
 
     expect(toast).toHaveBeenCalledWith({ message: "Номинацията е сменена.", kind: "success" });
+  });
+
+  it("publishes the persisted game id only after the server confirms the record", async () => {
+    mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
+    const { client, joinRoom } = createClient();
+    mocks.createGameClient.mockReturnValue(client);
+    const toast = vi.fn();
+    const { result } = renderHook(() => useGameRoom({ code: "ABCD", createOptions: undefined, toast }));
+    await waitFor(() => expect(result.current.connectionStatus).toBe("connected"));
+
+    expect(result.current.recordedGameId).toBeNull();
+    act(() => joinRoom.emitMessage("game_recorded", { gameId: "game-1" }));
+
+    expect(result.current.recordedGameId).toBe("game-1");
   });
 
   it("consumes viewer-owned faction rosters and retained investigation results", async () => {

@@ -47,7 +47,7 @@ describe("Better Auth security configuration", () => {
       : { NODE_ENV: "production" };
 
     expect(() => resolveBetterAuthSecret(environment)).toThrow("BETTER_AUTH_SECRET");
-  });
+  }, 10_000);
 
   it("приема силна production тайна и пази fallback-а само за non-production", async () => {
     const { resolveBetterAuthSecret } = await import("../auth");

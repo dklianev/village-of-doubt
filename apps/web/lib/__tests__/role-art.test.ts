@@ -11,4 +11,11 @@ describe("role art helpers", () => {
     expect(roleThumbPath("werewolves", "healer")).toBe("/game-art/thumbs/role-healer.webp");
     expect(roleThumbPath("mafia", "doctor")).toBe("/game-art/thumbs/mafia/role-doctor.webp");
   });
+
+  it("uses distinct Jester artwork for Werewolf and Mafia", () => {
+    expect(roleThumbPath("werewolves", "jester")).toBe("/game-art/thumbs/role-jester-werewolf.webp");
+    expect(roleArtPath("werewolves", "jester")).toBe("/game-art/role-jester-werewolf.webp");
+    expect(roleThumbPath("mafia", "jester")).toBe("/game-art/thumbs/mafia/role-jester.webp");
+    expect(roleArtPath("mafia", "jester")).toBe("/game-art/mafia/role-jester.webp");
+  });
 });

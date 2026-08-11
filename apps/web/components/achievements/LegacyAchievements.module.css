@@ -196,6 +196,12 @@
   padding: 24px 0 32px;
 }
 
+:global(.achievement-return) {
+  display: flex;
+  width: max-content;
+  margin: 24px auto 0;
+}
+
 :global(.achievement-plaque) {
   --plaque-bg-color: #c8a366;
   --plaque-fg-color: #2a1b10;
@@ -473,12 +479,23 @@
 :global(.plaque-wall) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  :global(.plaque-wall > .achievement-plaque:last-child:nth-child(odd)) {
+    grid-column: 1 / -1;
+    justify-self: center;
+    width: calc((100% - 24px) / 2);
+  }
 }
 
 @media (min-width: 1024px) {
 :global(.plaque-wall) {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 32px;
+  }
+
+  :global(.plaque-wall > .achievement-plaque:last-child:nth-child(3n + 1)) {
+    grid-column: 2;
+    width: 100%;
   }
 }
 

@@ -45,6 +45,7 @@ describe("LobbyWizard", () => {
     expect(screen.getByRole("button", { name: /Класическо село/ })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: /Село с тайни/ })).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "Създай селото" })[0]).toBeEnabled();
+    expect(screen.getByText("настройките са готови")).toBeInTheDocument();
     expect(screen.queryByText("Стъпка 1 / 4 · Стая")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Код")).not.toBeInTheDocument();
     expect(container.querySelector(".mobile-summary-chip")).not.toBeInTheDocument();
@@ -72,6 +73,15 @@ describe("LobbyWizard", () => {
     expect(screen.getByRole("button", { name: "На живо" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByText("Без чат")).toBeInTheDocument();
     expect(screen.queryByText("Ръчно темпо")).not.toBeInTheDocument();
+  });
+
+  it("keeps the play context label inside its visual control group", () => {
+    search = new URLSearchParams();
+    const { container } = render(<LobbyWizard family="werewolves" />);
+
+    const contextGroup = screen.getByRole("group", { name: "Къде играете?" });
+    expect(contextGroup.closest("section.create-context-panel")).not.toBeNull();
+    expect(container.querySelector("fieldset.create-context-panel")).not.toBeInTheDocument();
   });
 
   it("creates a playable URL from the quick surface", async () => {
@@ -154,8 +164,49 @@ describe("LobbyWizard", () => {
 
     expect(dialog).toHaveAttribute("data-size", "workspace");
     expect(gallery).toHaveAttribute("data-layout", "workspace");
+    expect(within(dialog).getByRole("region", { name: "Състав на масата" })).toHaveAttribute("tabindex", "0");
     expect(within(dialog).getByRole("button", { name: "Предишни роли" })).toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: "Следващи роли" })).toBeInTheDocument();
+
+    await user.click(within(dialog).getByRole("button", { name: "Настрой ръчно" }));
+    expect(within(dialog).getByRole("button", { name: "Автоматични" })).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Ръчно водени" })).toBeInTheDocument();
+  });
+
+  it("keeps a full roster valid by swapping a reserve villager for a special role", async () => {
+    search = new URLSearchParams();
+    const user = userEvent.setup();
+    render(<LobbyWizard family="werewolves" />);
+
+    await user.click(screen.getByRole("button", { name: "Настрой детайлите" }));
+    const dialog = screen.getByRole("dialog", { name: "Настрой детайлите" });
+    await user.click(within(dialog).getByRole("button", { name: "Настрой ръчно" }));
+    await user.click(within(dialog).getByRole("button", { name: "Добави Лечител" }));
+
+    expect(within(dialog).getByRole("status")).toHaveTextContent("Лечител замени Селянин / Селянка");
+    expect(within(dialog).getByText("12/12 роли", { exact: false })).toBeInTheDocument();
+    expect(within(dialog).queryByText(/Броят роли \(13\)/)).not.toBeInTheDocument();
+
+    await user.click(within(dialog).getByRole("button", { name: "Премахни Лечител" }));
+    expect(within(dialog).getByRole("status")).toHaveTextContent(
+      "Лечител е премахнат. Селянин / Селянка запълни мястото.",
+    );
+    expect(within(dialog).getByText("12/12 роли", { exact: false })).toBeInTheDocument();
+  });
+
+  it("labels a customized roster as the host's own composition on the quick surface", async () => {
+    search = new URLSearchParams();
+    const user = userEvent.setup();
+    render(<LobbyWizard family="werewolves" />);
+
+    await user.click(screen.getByRole("button", { name: "Настрой детайлите" }));
+    const dialog = screen.getByRole("dialog", { name: "Настрой детайлите" });
+    await user.click(within(dialog).getByRole("button", { name: "Настрой ръчно" }));
+    await user.click(within(dialog).getByRole("button", { name: "Добави Лечител" }));
+    await user.click(within(dialog).getByRole("button", { name: "Готово" }));
+
+    expect(screen.getByRole("heading", { name: "Твоят състав" })).toBeInTheDocument();
+    expect(screen.getByText("Ръчният състав остава точен при промяна на броя играчи.")).toBeInTheDocument();
   });
 
   it("presents Cupid as a role and never as an independent Lovers switch", async () => {
@@ -168,5 +219,26 @@ describe("LobbyWizard", () => {
     expect(screen.getAllByText("Купидон").length).toBeGreaterThan(0);
     expect(screen.queryByText("Купидон и Влюбени")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Включено" })).not.toBeInTheDocument();
+  });
+
+  it("adds the Jester option to a werewolf evening", async () => {
+    search = new URLSearchParams();
+    const user = userEvent.setup();
+    render(<LobbyWizard family="werewolves" />);
+
+    await user.click(screen.getByRole("button", { name: "Настрой детайлите" }));
+    const dialog = screen.getByRole("dialog", { name: "Настрой детайлите" });
+    await user.click(within(dialog).getByRole("tab", { name: "Правила и комуникация" }));
+    await user.click(within(dialog).getByText("Покажи още настройки"));
+    await user.click(within(dialog).getByRole("checkbox", { name: "Добави Шут с лична победа" }));
+    await user.click(within(dialog).getByRole("button", { name: "Готово" }));
+
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog", { name: "Настрой детайлите" })).not.toBeInTheDocument(),
+    );
+    await user.click(screen.getAllByRole("button", { name: "Създай селото" })[0]!);
+
+    await waitFor(() => expect(push).toHaveBeenCalledTimes(1));
+    expect(push).toHaveBeenCalledWith(expect.stringMatching(/[?&]jester=1(?:&|$)/));
   });
 });

@@ -12,6 +12,7 @@ export function RoleCarousel({
   onDecrement,
   onOpen,
   layout = "carousel",
+  reserveRole,
 }: {
   family: GameFamily;
   roles: RoleCode[];
@@ -21,6 +22,7 @@ export function RoleCarousel({
   onDecrement?: (role: RoleCode) => void;
   onOpen: (role: RoleCode) => void;
   layout?: "carousel" | "workspace";
+  reserveRole?: RoleCode;
 }) {
   const galleryId = useId();
   const galleryRef = useRef<HTMLDivElement>(null);
@@ -83,7 +85,7 @@ export function RoleCarousel({
   }
 
   return (
-    <div className="role-gallery-frame" data-layout={layout}>
+    <div className="role-gallery-frame" data-layout={layout} data-readonly={readonly ? "true" : "false"}>
       <div className="role-gallery-controls">
         <span>{roles.length} роли</span>
         <div>
@@ -115,6 +117,7 @@ export function RoleCarousel({
         aria-label="Избор на роли"
         tabIndex={0}
         data-layout={layout}
+        data-readonly={readonly ? "true" : "false"}
         onScroll={updateNavigation}
       >
         {roles.map((role) => (
@@ -124,6 +127,7 @@ export function RoleCarousel({
             role={role}
             count={distribution[role] ?? 0}
             readonly={readonly}
+            reserve={role === reserveRole}
             onIncrement={() => onIncrement?.(role)}
             onDecrement={() => onDecrement?.(role)}
             onOpen={() => onOpen(role)}

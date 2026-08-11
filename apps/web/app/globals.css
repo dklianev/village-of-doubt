@@ -1548,7 +1548,7 @@ html[data-theme="light"] .utility-shell::before {
 .lobby-shell {
   --page-art: var(--art-lobby);
   width: min(1360px, calc(100vw - 32px));
-  overflow-x: hidden;
+  overflow: clip;
 }
 
 
@@ -1855,7 +1855,7 @@ html[data-theme="light"] .utility-shell::before {
 }
 
 .role-jester {
-  --role-art: image-set(url("/game-art/role-jester.webp") type("image/webp"));
+  --role-art: image-set(url("/game-art/role-jester-werewolf.webp") type("image/webp"));
 }
 
 .role-little_girl {

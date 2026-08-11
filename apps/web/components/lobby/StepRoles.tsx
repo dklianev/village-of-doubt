@@ -7,11 +7,13 @@ import {
   type RoleDistribution,
 } from "@werewolf/shared";
 import { FolderOpen, Redo2, Save, Undo2, X } from "lucide-react";
-import { useMemo, type Dispatch } from "react";
+import { useEffect, useMemo, useState, type Dispatch } from "react";
 import {
   MANUAL_PRESET_STORAGE_KEY,
+  adjustManualRoleRoster,
   boundedPlayerCount,
   currentConfig,
+  replaceManualRoleInRoster,
   roleBalance,
   roleWarnings,
   type LobbyFormAction,
@@ -36,6 +38,9 @@ export function StepRoles({
   const warnings = roleWarnings(state);
   const total = countRoles(config.roles);
   const balance = roleBalance(state);
+  const reserveRole: RoleCode = state.family === "werewolves" ? "ordinary_villager" : "civilian";
+  const [pendingReplacement, setPendingReplacement] = useState<RoleCode | null>(null);
+  const [roleChangeMessage, setRoleChangeMessage] = useState("");
   const activeDistribution = state.manualRolesEnabled ? state.manualRoles : config.roles;
   const selectedRoles = getRolesForFamily(state.family).filter(
     (role) => role !== "lovers" && (activeDistribution[role] ?? 0) > 0,
@@ -49,12 +54,63 @@ export function StepRoles({
     });
   }, [state.family, state.roleSearch, state.runtimeFilter]);
 
+  useEffect(() => {
+    if (!state.manualRolesEnabled) {
+      setPendingReplacement(null);
+      setRoleChangeMessage("");
+    }
+  }, [state.manualRolesEnabled]);
+
   function changeRole(role: RoleCode, delta: number) {
     const source = state.manualRolesEnabled ? state.manualRoles : config.roles;
-    const next: RoleDistribution = { ...source, [role]: Math.max(0, (source[role] ?? 0) + delta) };
-    dispatch({ type: "SET_MANUAL_ROLES", roles: next });
+    const result = adjustManualRoleRoster({
+      family: state.family,
+      roles: source,
+      playerCount: state.playerCount,
+      role,
+      delta: delta > 0 ? 1 : -1,
+    });
+
+    if (result.status === "replacement-required") {
+      setPendingReplacement(role);
+      setRoleChangeMessage(`Избери коя роля да замени ${ROLE_DEFINITIONS[role].nameBg}.`);
+      return;
+    }
+
+    if (result.status === "unchanged") {
+      setRoleChangeMessage(
+        role === reserveRole
+          ? `${ROLE_DEFINITIONS[reserveRole].nameBg} запълва свободните места автоматично.`
+          : `Достигнат е максималният брой за ${ROLE_DEFINITIONS[role].nameBg}.`,
+      );
+      return;
+    }
+
+    dispatch({ type: "SET_MANUAL_ROLES", roles: result.roles });
+    setPendingReplacement(null);
+    setRoleChangeMessage(
+      roleChangeCopy(result.addedRole, result.removedRole, delta < 0 && result.addedRole === reserveRole),
+    );
     playCue("vote");
     triggerHaptic(8);
+  }
+
+  function replaceRole(removeRole: RoleCode) {
+    if (!pendingReplacement) {
+      return;
+    }
+    dispatch({
+      type: "SET_MANUAL_ROLES",
+      roles: replaceManualRoleInRoster({
+        roles: activeDistribution,
+        addRole: pendingReplacement,
+        removeRole,
+      }),
+    });
+    setRoleChangeMessage(`${ROLE_DEFINITIONS[pendingReplacement].nameBg} замени ${ROLE_DEFINITIONS[removeRole].nameBg}.`);
+    setPendingReplacement(null);
+    playCue("vote");
+    triggerHaptic([8, 24, 8]);
   }
 
   return (
@@ -66,7 +122,7 @@ export function StepRoles({
           <p>{total}/{state.playerCount} роли · баланс {balance > 0 ? `+${balance}` : balance}</p>
         </div>
         <PresetChips state={state} dispatch={dispatch} />
-        {warnings.length > 0 ? <div className="roles-warning-banner">{warnings[0]}</div> : null}
+        {!embedded && warnings.length > 0 ? <div className="roles-warning-banner">{warnings[0]}</div> : null}
       </div>
 
       <div className="create-role-workspace">
@@ -87,7 +143,7 @@ export function StepRoles({
                   aria-pressed={state.runtimeFilter === "playable"}
                   onClick={() => dispatch({ type: "SET_RUNTIME_FILTER", runtimeFilter: "playable" })}
                 >
-                  Работещи
+                  Автоматични
                 </button>
                 <button
                   type="button"
@@ -95,7 +151,7 @@ export function StepRoles({
                   aria-pressed={state.runtimeFilter === "manual_only"}
                   onClick={() => dispatch({ type: "SET_RUNTIME_FILTER", runtimeFilter: "manual_only" })}
                 >
-                  Разширени
+                  Ръчно водени
                 </button>
               </div>
             </div>
@@ -107,13 +163,14 @@ export function StepRoles({
             distribution={activeDistribution}
             readonly={!state.manualRolesEnabled}
             layout={embedded ? "workspace" : "carousel"}
+            {...(state.manualRolesEnabled ? { reserveRole } : {})}
             onIncrement={(role) => changeRole(role, 1)}
             onDecrement={(role) => changeRole(role, -1)}
             onOpen={(role) => dispatch({ type: "SET_ROLE_DETAIL", roleDetail: { role, source: "tile" } })}
           />
         </div>
 
-        <aside className="create-role-inspector" aria-label="Състав на масата">
+        <section className="create-role-inspector" aria-label="Състав на масата" tabIndex={0}>
           {state.roleDetail && embedded ? (
             <InlineRoleDetail
               family={state.family}
@@ -127,36 +184,81 @@ export function StepRoles({
                 <h2>Състав на масата</h2>
                 <span>{total} от {state.playerCount} места</span>
               </div>
-              <div className="create-role-balance" data-balanced={balance === 0 ? "true" : "false"}>
-                <span>Баланс</span>
+              <div className="create-role-balance" data-balanced={Math.abs(balance) <= 3 ? "true" : "false"}>
+                <span>
+                  <b>Баланс</b>
+                  <small>{roleBalanceCopy(state.family, balance)}</small>
+                </span>
                 <strong>{balance > 0 ? `+${balance}` : balance}</strong>
               </div>
-              <ul className="create-selected-role-list">
+              {state.manualRolesEnabled && !roleChangeMessage ? (
+                <p className="create-role-roster-rule">
+                  Специалните роли заменят {ROLE_DEFINITIONS[reserveRole].nameBg}. Броят места остава точен.
+                </p>
+              ) : null}
+              {pendingReplacement ? (
+                <div className="create-role-swap-panel">
+                  <strong>Коя роля отстъпва място?</strong>
+                  <span>{ROLE_DEFINITIONS[pendingReplacement].nameBg} ще заеме избраното място.</span>
+                  <button type="button" onClick={() => setPendingReplacement(null)}>Откажи</button>
+                </div>
+              ) : null}
+              <ul className="create-selected-role-list" data-replacing={pendingReplacement ? "true" : "false"}>
                 {selectedRoles.map((role) => (
                   <li key={role}>
-                    <span>{activeDistribution[role] ?? 0}</span>
-                    <strong>{ROLE_DEFINITIONS[role].nameBg}</strong>
+                    {pendingReplacement && role !== pendingReplacement ? (
+                      <button
+                        type="button"
+                        title={ROLE_DEFINITIONS[role].nameBg}
+                        aria-label={`Замени ${ROLE_DEFINITIONS[role].nameBg} с ${ROLE_DEFINITIONS[pendingReplacement].nameBg}`}
+                        onClick={() => replaceRole(role)}
+                      >
+                        <span>{activeDistribution[role] ?? 0}</span>
+                        <strong>{ROLE_DEFINITIONS[role].nameBg}</strong>
+                      </button>
+                    ) : (
+                      <div title={ROLE_DEFINITIONS[role].nameBg}>
+                        <span>{activeDistribution[role] ?? 0}</span>
+                        <strong>{ROLE_DEFINITIONS[role].nameBg}</strong>
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
+              {roleChangeMessage ? <p className="create-role-change-message" role="status" aria-live="polite">{roleChangeMessage}</p> : null}
               {warnings[0] ? <p className="create-role-summary-warning">{warnings[0]}</p> : null}
             </>
           )}
-        </aside>
+        </section>
       </div>
 
       <div className="manual-builder-actions">
         {!state.manualRolesEnabled ? (
-          <button type="button" className="btn btn-secondary" onClick={() => dispatch({ type: "SET_MANUAL_ROLES_ENABLED", enabled: true })}>
-            Настрой ръчно
-          </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => {
+                setRoleChangeMessage("");
+                dispatch({ type: "SET_MANUAL_ROLES_ENABLED", enabled: true });
+              }}
+            >
+              Настрой ръчно
+            </button>
         ) : (
           <>
             <button type="button" className="btn btn-secondary min-h-0 px-4 py-2" onClick={() => saveManualPreset(state, dispatch)}>
               <Save aria-hidden="true" />
               Запази шаблон
             </button>
-            <button type="button" className="btn btn-secondary min-h-0 px-4 py-2" onClick={() => loadManualPreset(state, dispatch)}>
+            <button
+              type="button"
+              className="btn btn-secondary min-h-0 px-4 py-2"
+              onClick={() => {
+                setPendingReplacement(null);
+                setRoleChangeMessage("");
+                loadManualPreset(state, dispatch);
+              }}
+            >
               <FolderOpen aria-hidden="true" />
               Зареди шаблон
             </button>
@@ -166,7 +268,11 @@ export function StepRoles({
               aria-label="Отмени последната промяна"
               title="Отмени последната промяна"
               disabled={state.manualRoleHistory.length === 0}
-              onClick={() => dispatch({ type: "UNDO_MANUAL_ROLES" })}
+              onClick={() => {
+                setPendingReplacement(null);
+                setRoleChangeMessage("");
+                dispatch({ type: "UNDO_MANUAL_ROLES" });
+              }}
             >
               <Undo2 aria-hidden="true" />
             </button>
@@ -176,7 +282,11 @@ export function StepRoles({
               aria-label="Повтори последната промяна"
               title="Повтори последната промяна"
               disabled={state.manualRoleFuture.length === 0}
-              onClick={() => dispatch({ type: "REDO_MANUAL_ROLES" })}
+              onClick={() => {
+                setPendingReplacement(null);
+                setRoleChangeMessage("");
+                dispatch({ type: "REDO_MANUAL_ROLES" });
+              }}
             >
               <Redo2 aria-hidden="true" />
             </button>
@@ -194,6 +304,36 @@ export function StepRoles({
       ) : null}
     </section>
   );
+}
+
+function roleChangeCopy(
+  addedRole: RoleCode | undefined,
+  removedRole: RoleCode | undefined,
+  restoredReserve = false,
+) {
+  if (addedRole && removedRole && restoredReserve) {
+    return `${ROLE_DEFINITIONS[removedRole].nameBg} е премахнат. ${ROLE_DEFINITIONS[addedRole].nameBg} запълни мястото.`;
+  }
+  if (addedRole && removedRole) {
+    return `${ROLE_DEFINITIONS[addedRole].nameBg} замени ${ROLE_DEFINITIONS[removedRole].nameBg}.`;
+  }
+  if (addedRole) {
+    return `${ROLE_DEFINITIONS[addedRole].nameBg} е добавен към състава.`;
+  }
+  if (removedRole) {
+    return `${ROLE_DEFINITIONS[removedRole].nameBg} е премахнат от състава.`;
+  }
+  return "Съставът е обновен.";
+}
+
+function roleBalanceCopy(family: LobbyFormState["family"], balance: number) {
+  if (family === "mafia") {
+    return "готов състав";
+  }
+  if (Math.abs(balance) <= 3) {
+    return "равновесие";
+  }
+  return balance > 0 ? "преднина за селото" : "преднина за заплахата";
 }
 
 function InlineRoleDetail({
@@ -237,26 +377,29 @@ function triggerHaptic(pattern: number | number[]) {
 }
 
 function saveManualPreset(state: LobbyFormState, dispatch: Dispatch<LobbyFormAction>) {
-  window.localStorage.setItem(
-    `${MANUAL_PRESET_STORAGE_KEY}:${state.family}`,
-    JSON.stringify({
-      mode: state.mode,
-      playerCount: boundedPlayerCount(state),
-      roles: state.manualRoles,
-      savedAt: Date.now(),
-    }),
-  );
-  dispatch({ type: "SET_MANUAL_PRESET_MESSAGE", message: "Шаблонът е запазен на това устройство." });
+  try {
+    window.localStorage?.setItem(
+      `${MANUAL_PRESET_STORAGE_KEY}:${state.family}`,
+      JSON.stringify({
+        mode: state.mode,
+        playerCount: boundedPlayerCount(state),
+        roles: state.manualRoles,
+        savedAt: Date.now(),
+      }),
+    );
+    dispatch({ type: "SET_MANUAL_PRESET_MESSAGE", message: "Шаблонът е запазен на това устройство." });
+  } catch {
+    dispatch({ type: "SET_MANUAL_PRESET_MESSAGE", message: "Шаблонът не може да бъде запазен в този браузър." });
+  }
 }
 
 function loadManualPreset(state: LobbyFormState, dispatch: Dispatch<LobbyFormAction>) {
-  const raw = window.localStorage.getItem(`${MANUAL_PRESET_STORAGE_KEY}:${state.family}`);
-  if (!raw) {
-    dispatch({ type: "SET_MANUAL_PRESET_MESSAGE", message: "Няма запазен шаблон за тази игра." });
-    return;
-  }
-
   try {
+    const raw = window.localStorage?.getItem(`${MANUAL_PRESET_STORAGE_KEY}:${state.family}`);
+    if (!raw) {
+      dispatch({ type: "SET_MANUAL_PRESET_MESSAGE", message: "Няма запазен шаблон за тази игра." });
+      return;
+    }
     const parsed = JSON.parse(raw) as { roles?: RoleDistribution };
     dispatch({ type: "SET_MANUAL_ROLES", roles: parsed.roles ?? state.manualRoles });
     dispatch({ type: "SET_MANUAL_PRESET_MESSAGE", message: "Шаблонът е зареден." });

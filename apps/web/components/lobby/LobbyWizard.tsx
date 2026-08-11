@@ -72,15 +72,19 @@ function ConfiguredLobbyWizard({
     if (!state.manualRolesEnabled) {
       return;
     }
-    window.localStorage.setItem(
-      `${MANUAL_PRESET_STORAGE_KEY}:${state.family}`,
-      JSON.stringify({
-        mode: state.mode,
-        playerCount: state.playerCount,
-        roles: state.manualRoles,
-        savedAt: Date.now(),
-      }),
-    );
+    try {
+      window.localStorage?.setItem(
+        `${MANUAL_PRESET_STORAGE_KEY}:${state.family}`,
+        JSON.stringify({
+          mode: state.mode,
+          playerCount: state.playerCount,
+          roles: state.manualRoles,
+          savedAt: Date.now(),
+        }),
+      );
+    } catch {
+      // Some privacy modes expose localStorage but reject access to it.
+    }
   }, [state.family, state.manualRoles, state.manualRolesEnabled, state.mode, state.playerCount]);
 
   useEffect(() => {

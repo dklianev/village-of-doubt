@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export function NewspaperEmpty() {
   return (
-    <article className="newspaper-page newspaper-page-empty" aria-label="Бъдещ брой">
+    <article className="newspaper-page newspaper-page-empty" data-state="empty" aria-label="Бъдещ брой">
       <header className="masthead">
         <h1 className="masthead-title">Вечерен Брой на Масата</h1>
         <p className="masthead-meta">Брой № 001 · очаква името си</p>

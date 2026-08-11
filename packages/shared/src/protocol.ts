@@ -287,6 +287,7 @@ export type ServerEvent =
       createdAt: number;
     }
   | { type: "achievements_unlocked"; achievementIds: string[] }
+  | { type: "game_recorded"; gameId: string }
   | { type: "night_action_ack"; phase: GamePhase; round: number }
   | { type: "nomination_ack"; phase: GamePhase; round: number; targetUserId: string; replaced: boolean }
   | { type: "vote_ack"; phase: GamePhase; round: number; targetUserId: string }

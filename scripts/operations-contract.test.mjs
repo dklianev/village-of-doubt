@@ -5,6 +5,20 @@ import test from "node:test";
 const read = (path) => readFileSync(path, "utf8");
 const readOptional = (path) => existsSync(path) ? read(path) : "";
 
+test("developer and CI runtimes pin Node 22 and shard the exhaustive play matrix", () => {
+  const packageJson = JSON.parse(read("package.json"));
+  const workflow = read(".github/workflows/ci.yml");
+
+  assert.equal(readOptional(".nvmrc").trim(), "22");
+  assert.equal(readOptional(".node-version").trim(), "22");
+  assert.equal(packageJson.engines?.node, ">=22 <23");
+  assert.match(packageJson.scripts.visual, /grep-invert @play-matrix/);
+  assert.match(packageJson.scripts["visual:matrix"], /grep @play-matrix/);
+  assert.match(workflow, /M35_SHARD_INDEX/);
+  assert.match(workflow, /M35_SHARD_TOTAL/);
+  assert.match(workflow, /pnpm visual:matrix/);
+});
+
 test("production database roles are separated and reconciled on every deployment", () => {
   const compose = read("docker-compose.yml");
   const envExample = read(".env.example");
@@ -105,13 +119,26 @@ test("CI isolates visual baselines from the serial core verification path", () =
   );
   const visualBlock = ci.slice(visualStart, ci.indexOf("  containers:", visualStart));
   assert.match(visualBlock, /runs-on: windows-2025/);
-  assert.match(visualBlock, /suite:\s*\[app, ui\]/);
+  assert.match(visualBlock, /- suite: app/);
+  assert.match(visualBlock, /- suite: play-0/);
+  assert.match(visualBlock, /- suite: play-3/);
+  assert.match(visualBlock, /- suite: ui/);
   assert.match(visualBlock, /pnpm --filter @werewolf\/database build/);
   assert.match(visualBlock, /pnpm --filter @werewolf\/shared build/);
   assert.match(visualBlock, /pnpm --filter @werewolf\/ui build/);
   assert.match(visualBlock, /pnpm visual:ui/);
   assert.match(visualBlock, /pnpm visual(?:\s|$)/m);
   assert.doesNotMatch(visualBlock, /apt-get|Install visual fonts/);
+});
+
+test("auth E2E falls back to its standalone port when the configured local app is offline", () => {
+  const authE2e = read("scripts/e2e-auth.mjs");
+
+  assert.match(authE2e, /const standaloneBaseUrl = `http:\/\/127\.0\.0\.1:\$\{webPort\}`/);
+  assert.match(
+    authE2e,
+    /if \(!process\.env\.E2E_AUTH_BASE_URL && !\(await isHealthy\(`\$\{baseUrl\}\/api\/health`\)\)\) \{\s*baseUrl = standaloneBaseUrl;/,
+  );
 });
 
 test("deploy validates Compose before disruption and applies database privileges in order", () => {

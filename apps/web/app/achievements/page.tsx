@@ -59,7 +59,7 @@ export default async function AchievementsPage({ searchParams }: AchievementsPag
 
       <AchievementsClient owned={owned} status={status} />
 
-      <Link className="btn btn-secondary mt-6" href="/history">
+      <Link className="btn btn-secondary achievement-return" href="/history">
         Виж записаните игри
       </Link>
     </main>

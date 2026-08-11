@@ -44,6 +44,8 @@ interface GameRoomPersistenceInternals {
     deathRound?: number;
     deathCause?: string;
   }>;
+  recordedGameId?: string;
+  sendRecordedGameId: (client: { send: (type: string, payload: unknown) => void }) => void;
 }
 
 function makePersistence(recordEvent: GamePersistence["recordEvent"]): GamePersistence {
@@ -246,6 +248,7 @@ describe("GameRoom persistence snapshots", () => {
     });
     room.state.winnerTeam = "village";
     room.state.winnerReasonBg = "Победа.";
+    const broadcast = vi.spyOn(room, "broadcast");
 
     internals.transitionTo("game_over");
 
@@ -269,6 +272,18 @@ describe("GameRoom persistence snapshots", () => {
     );
     expect(vi.mocked(persistence.upsertPlayers).mock.invocationCallOrder[0])
       .toBeLessThan(vi.mocked(persistence.finishGame).mock.invocationCallOrder[0] ?? Infinity);
+    expect(broadcast).toHaveBeenCalledWith("game_recorded", {
+      type: "game_recorded",
+      gameId: "game-1",
+    });
+    expect(internals.recordedGameId).toBe("game-1");
+
+    const send = vi.fn();
+    internals.sendRecordedGameId({ send });
+    expect(send).toHaveBeenCalledWith("game_recorded", {
+      type: "game_recorded",
+      gameId: "game-1",
+    });
   });
 
   it("reports a rejected terminal persistence task", async () => {

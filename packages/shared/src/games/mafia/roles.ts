@@ -289,7 +289,7 @@ export const MAFIA_ROLE_DEFINITIONS = {
     secret: true,
     nightAction: false,
     advanced: true,
-    availableInFamilies: ["mafia"],
+    availableInFamilies: ["mafia", "werewolves"],
     winConditionBg: "Печели лично, ако бъде елиминиран чрез дневно гласуване.",
   },
   mafia_mayor: {

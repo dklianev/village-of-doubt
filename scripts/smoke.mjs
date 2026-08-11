@@ -5,6 +5,7 @@ import { dirname } from "node:path";
 const isWindows = process.platform === "win32";
 const processes = [];
 const webStandaloneServer = "apps/web/.next/standalone/apps/web/server.js";
+const PROCESS_STOP_TIMEOUT_MS = 10_000;
 
 async function main() {
   if (!process.env.REDIS_URL) {
@@ -195,24 +196,59 @@ async function waitFor(url, label) {
 }
 
 async function stop(child) {
-  if (!child.pid || child.killed) {
+  if (!child.pid || child.exitCode !== null || child.signalCode !== null) {
+    closeChildHandles(child);
     return;
   }
 
   child.isStopping = true;
 
   if (isWindows) {
-    await new Promise((resolve) => {
+    await withTimeout(new Promise((resolve) => {
       const killer = spawn("taskkill", ["/pid", String(child.pid), "/t", "/f"], {
         stdio: "ignore",
       });
-      killer.on("exit", resolve);
-      killer.on("error", resolve);
-    });
+      killer.once("close", resolve);
+      killer.once("error", resolve);
+    }), PROCESS_STOP_TIMEOUT_MS);
+    await waitForChildExit(child);
+    closeChildHandles(child);
     return;
   }
 
   child.kill("SIGTERM");
+  await waitForChildExit(child);
+  closeChildHandles(child);
+}
+
+async function waitForChildExit(child) {
+  if (child.exitCode !== null || child.signalCode !== null) {
+    return;
+  }
+
+  await withTimeout(new Promise((resolve) => {
+    child.once("close", resolve);
+    child.once("error", resolve);
+  }), PROCESS_STOP_TIMEOUT_MS);
+}
+
+async function withTimeout(promise, timeoutMs) {
+  let timeout;
+  await Promise.race([
+    promise,
+    new Promise((resolve) => {
+      timeout = setTimeout(resolve, timeoutMs);
+      timeout.unref?.();
+    }),
+  ]);
+  clearTimeout(timeout);
+}
+
+function closeChildHandles(child) {
+  child.stdout?.destroy();
+  child.stderr?.destroy();
+  child.stdin?.destroy();
+  child.unref?.();
 }
 
 function delay(ms) {
@@ -221,7 +257,7 @@ function delay(ms) {
 
 process.on("exit", () => {
   for (const child of processes) {
-    if (child.pid && !child.killed) {
+    if (child.pid && child.exitCode === null && child.signalCode === null) {
       child.kill();
     }
   }

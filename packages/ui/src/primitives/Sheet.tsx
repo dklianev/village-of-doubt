@@ -155,9 +155,9 @@ const SHEET_RUNTIME_CSS = `
   }
 
   .ds-sheet[data-size="workspace"] {
-    width: min(96vw, 1280px);
-    height: min(90dvh, 900px);
-    max-height: 90dvh;
+    width: min(96vw, 1480px);
+    height: min(92dvh, 940px);
+    max-height: 92dvh;
   }
 }
 `;
@@ -194,7 +194,7 @@ export function Sheet({
           <RDialog.Title
             className="ds-sheet-title"
             style={{
-              fontFamily: '"Noto Serif Display", "Noto Serif", "Iowan Old Style", serif',
+              fontFamily: '"Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif',
               fontSize: "var(--ds-type-h3)",
               letterSpacing: 0,
               margin: 0,

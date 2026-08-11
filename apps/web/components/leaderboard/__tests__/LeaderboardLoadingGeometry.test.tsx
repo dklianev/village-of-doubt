@@ -66,6 +66,16 @@ describe("leaderboard loading geometry", () => {
   it("uses a shared responsive state envelope instead of a fixed tall skeleton", () => {
     expect(css).not.toMatch(/\.newspaper-skeleton\s*\{[^}]*min-height:\s*(?:1500|1180)px/s);
     expect(css).toContain("--newspaper-state-min-block-size");
+    expect(css).toMatch(/--newspaper-state-min-block-size:\s*clamp\(/);
+    expect(css).not.toContain("max(720px");
+  });
+
+  it("gives unavailable editions an explicit way back to the main table", () => {
+    const markup = renderToStaticMarkup(<NewspaperUnavailable />);
+
+    expect(markup).toContain('data-state="unavailable"');
+    expect(markup).toContain('href="/"');
+    expect(markup).toContain("Към началото");
   });
 });
 

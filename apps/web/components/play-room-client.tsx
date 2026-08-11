@@ -61,6 +61,7 @@ import { useGameRoom } from "@/hooks/play/use-game-room";
 import { usePhaseTransitions } from "@/hooks/play/use-phase-transitions";
 import { nightTargetHeadingBg, winnerBg } from "@/lib/play/copy";
 import { nextPhaseTransitionArtHref } from "@/lib/play/phase-art";
+import { historyHrefForGame, repeatGameHref } from "@/lib/play/post-game-links";
 import type { PhaseSlice, PublicPlayer, ShortcutState } from "@/lib/play/types";
 
 export type { PhaseSlice, PublicPlayer } from "@/lib/play/types";
@@ -103,6 +104,7 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
     connectionStatus,
     unlockedAchievementIds,
     setUnlockedAchievementIds,
+    recordedGameId,
     reconnectNow,
     isPending,
   } = useGameRoom({
@@ -876,11 +878,11 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
           <h2 className="play-winner-title">{winnerBg(snapshot.winnerTeam)}</h2>
           {snapshot.winnerReasonBg ? <p className="play-winner-reason">{snapshot.winnerReasonBg}</p> : null}
           <div className="play-winner-actions">
-            <Link className="btn btn-primary" href={`/create?mode=${encodeURIComponent(mode)}`}>
-              Нова игра
+            <Link className="btn btn-primary" href={repeatGameHref(snapshot)}>
+              Повтори настройките
             </Link>
-            <Link className="btn btn-secondary" href="/history">
-              Към архива
+            <Link className="btn btn-secondary" href={historyHrefForGame(recordedGameId)}>
+              {recordedGameId ? "Виж записа на играта" : "Към архива"}
             </Link>
           </div>
         </article>

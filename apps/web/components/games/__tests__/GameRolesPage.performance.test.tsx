@@ -45,6 +45,16 @@ describe("roles catalogue image loading", () => {
     expect(firstImage?.getAttribute("src")).not.toBe(initialSrc);
     expect(firstImage?.getAttribute("srcset")).not.toBe(initialSrcSet);
   });
+
+  it("uses the dedicated werewolf artwork for the jester card", () => {
+    render(<GameRolesPage family="werewolves" />);
+
+    const jesterCard = screen.getByRole("heading", { name: "Шут" }).closest("article");
+    expect(jesterCard?.querySelector("img")).toHaveAttribute(
+      "src",
+      "/game-art/thumbs/role-jester-werewolf.webp",
+    );
+  });
 });
 
 function expectLoadingContract(container: HTMLElement) {

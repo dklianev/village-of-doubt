@@ -1,4 +1,5 @@
 import { ROLE_DEFINITIONS, type GameFamily, type RoleCode } from "@werewolf/shared";
+import { Minus, Plus } from "lucide-react";
 import { roleArtPath, roleThumbPath } from "@/lib/role-art";
 
 export function RoleTileLarge({
@@ -6,6 +7,7 @@ export function RoleTileLarge({
   role,
   count,
   readonly = false,
+  reserve = false,
   onIncrement,
   onDecrement,
   onOpen,
@@ -14,13 +16,20 @@ export function RoleTileLarge({
   role: RoleCode;
   count: number;
   readonly?: boolean;
+  reserve?: boolean;
   onIncrement?: () => void;
   onDecrement?: () => void;
   onOpen: () => void;
 }) {
   const definition = ROLE_DEFINITIONS[role];
   return (
-    <article className="role-tile-large" data-selected={count > 0}>
+    <article
+      className="role-tile-large"
+      data-readonly={readonly ? "true" : "false"}
+      data-reserve={reserve ? "true" : "false"}
+      data-selected={count > 0}
+      data-team={definition.team}
+    >
       <button type="button" className="role-tile-large-body" onClick={onOpen} onContextMenu={(event) => {
         event.preventDefault();
         onDecrement?.();
@@ -30,13 +39,36 @@ export function RoleTileLarge({
           <img src={roleArtPath(family, role, "png")} alt="" loading="lazy" decoding="async" width={520} height={728} />
         </picture>
         <span className="role-tile-count">{count}</span>
-        <strong>{definition.nameBg}</strong>
+        <span className="role-tile-caption">
+          <strong>{definition.nameBg}</strong>
+          <small>{definition.shortDescriptionBg}</small>
+        </span>
       </button>
       {!readonly ? (
-        <div className="role-tile-controls">
-          <button type="button" onClick={onDecrement} aria-label={`Премахни ${definition.nameBg}`}>-</button>
-          <button type="button" onClick={onIncrement} aria-label={`Добави ${definition.nameBg}`}>+</button>
-        </div>
+        reserve ? (
+          <span className="role-tile-reserve-label">запълва местата</span>
+        ) : (
+          <div className="role-tile-controls">
+            <button
+              type="button"
+              onClick={onDecrement}
+              aria-label={`Премахни ${definition.nameBg}`}
+              title={`Премахни ${definition.nameBg}`}
+              disabled={count <= 0}
+            >
+              <Minus aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={onIncrement}
+              aria-label={`Добави ${definition.nameBg}`}
+              title={`Добави ${definition.nameBg}`}
+              disabled={count >= definition.maxCopies}
+            >
+              <Plus aria-hidden="true" />
+            </button>
+          </div>
+        )
       ) : null}
     </article>
   );

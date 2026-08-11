@@ -16,6 +16,8 @@ import {
   getDeletedUserIdentityMap,
   getGameHistoryForUser,
   getGameHistoryById,
+  getGameReplayParticipants,
+  getGameTimeline,
   getRecentEndedGameHistory,
   getLeaderboardRows,
   getPlayerOutcomesInGames,
@@ -377,6 +379,66 @@ describe("persisted player outcomes", () => {
 
     expect(selectedFields?.displayName).toBe(user.name);
     expect(groupBy).toHaveBeenCalledWith(gamePlayers.userId, user.name);
+  });
+
+  it("limits the public leaderboard to games ended inside the requested period", async () => {
+    let whereStatement: unknown;
+    const limit = vi.fn(async () => []);
+    const orderBy = vi.fn(() => ({ limit }));
+    const groupBy = vi.fn(() => ({ orderBy }));
+    const where = vi.fn((statement: unknown) => {
+      whereStatement = statement;
+      return { groupBy };
+    });
+    const innerJoinUser = vi.fn(() => ({ where }));
+    const innerJoinGames = vi.fn(() => ({ innerJoin: innerJoinUser }));
+    const from = vi.fn(() => ({ innerJoin: innerJoinGames }));
+    const select = vi.fn(() => ({ from }));
+    const since = new Date("2026-08-01T00:00:00.000Z");
+
+    await getLeaderboardRows({ select } as unknown as Database, 30, { since });
+
+    const query = new PgDialect().sqlToQuery(whereStatement as never);
+    expect(query.sql).toContain('"games"."ended_at" >=');
+    expect(query.params).toContain(since.toISOString());
+  });
+});
+
+describe("replay persistence", () => {
+  it("loads the complete timeline in chronological order when no limit is requested", async () => {
+    let orderStatement: unknown;
+    const orderBy = vi.fn(async (statement: unknown) => {
+      orderStatement = statement;
+      return [];
+    });
+    const where = vi.fn(() => ({ orderBy }));
+    const from = vi.fn(() => ({ where }));
+    const select = vi.fn(() => ({ from }));
+
+    await getGameTimeline({ select } as unknown as Database, "game-1", null, { visibilityFilter: "all" });
+
+    expect(orderBy).toHaveBeenCalledOnce();
+    expect(new PgDialect().sqlToQuery(orderStatement as never).sql.toLowerCase()).toContain("asc");
+  });
+
+  it("loads authoritative replay participants and hides roles for public viewers", async () => {
+    const where = vi.fn(async () => [
+      { userId: "user-1", displayName: "Анна" },
+      { userId: "user-2", displayName: "Борис" },
+    ]);
+    const from = vi.fn(() => ({ where }));
+    const select = vi.fn(() => ({ from }));
+
+    const rows = await getGameReplayParticipants(
+      { select } as unknown as Database,
+      "game-1",
+      { includeRoles: false },
+    );
+
+    expect(rows).toEqual([
+      { userId: "user-1", displayName: "Анна", role: null },
+      { userId: "user-2", displayName: "Борис", role: null },
+    ]);
   });
 });
 

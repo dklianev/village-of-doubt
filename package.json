@@ -3,6 +3,9 @@
   "private": true,
   "version": "0.1.0",
   "packageManager": "pnpm@10.19.0",
+  "engines": {
+    "node": ">=22 <23"
+  },
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
@@ -13,7 +16,8 @@
     "frontend:e2e:cross-browser": "node scripts/frontend-e2e-matrix.mjs",
     "e2e:auth": "node scripts/e2e-auth.mjs",
     "lighthouse": "node scripts/lighthouse.mjs",
-    "visual": "playwright test --config=playwright.config.ts",
+    "visual": "playwright test --config=playwright.config.ts --grep-invert @play-matrix",
+    "visual:matrix": "playwright test --config=playwright.config.ts apps/web/__visual__/play-m35.spec.ts --grep @play-matrix",
     "visual:update": "playwright test --config=playwright.config.ts --update-snapshots",
     "visual:legacy-reference": "node scripts/legacy-visual-reference.mjs",
     "ui:dev": "pnpm --filter @werewolf/ui storybook",
@@ -42,7 +46,7 @@
     "optimize:phase-rail": "node scripts/run-asset-generators.mjs --only-phase-rail",
     "regression": "node scripts/regression.mjs",
     "verify": "pnpm verify:assets && pnpm regression && pnpm release:manifest:test && pnpm operations:test && pnpm check:migrations && pnpm typecheck && pnpm build && pnpm smoke && pnpm frontend:e2e && pnpm e2e:auth && pnpm playtest && pnpm test && pnpm visual && pnpm visual:ui && pnpm perf:budget && pnpm audit:prod && pnpm check:dict",
-    "verify:heavy": "pnpm verify && pnpm test:migrations && pnpm frontend:e2e:cross-browser && pnpm lighthouse && pnpm loadtest:heavy",
+    "verify:heavy": "pnpm verify && pnpm visual:matrix && pnpm test:migrations && pnpm frontend:e2e:cross-browser && pnpm lighthouse && pnpm loadtest:heavy",
     "check:prod-env": "node scripts/check-production-env.mjs",
     "db:generate": "pnpm --filter @werewolf/database db:generate",
     "db:migrate": "pnpm --filter @werewolf/database db:migrate"

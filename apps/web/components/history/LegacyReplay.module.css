@@ -339,8 +339,19 @@
 
 :global(html[data-theme="light"] .replay-hero-scrim) {
   background:
-    linear-gradient(180deg, rgba(13, 10, 8, 0.08) 0%, rgba(13, 10, 8, 0.28) 55%, rgba(252, 246, 236, 0.96) 100%),
+    linear-gradient(180deg, rgba(13, 10, 8, 0.06) 0%, rgba(13, 10, 8, 0.18) 52%, rgba(252, 246, 236, 0.08) 68%, rgba(252, 246, 236, 0.96) 100%),
+    linear-gradient(90deg, rgba(13, 10, 8, 0.7) 0%, rgba(13, 10, 8, 0.5) 44%, transparent 76%),
     radial-gradient(ellipse at 58% 34%, rgba(132, 47, 43, 0.14), transparent 34rem);
+}
+
+:global(html[data-theme="light"] .replay-hero-copy > .replay-kicker) {
+  color: #f2c46f;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.72);
+}
+
+:global(html[data-theme="light"] .replay-hero-copy > p:not(.replay-kicker)) {
+  color: rgba(255, 247, 230, 0.92);
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.86);
 }
 
 @media (max-width: 760px) {
@@ -350,5 +361,11 @@
 
   :global(.replay-event-v2) {
     grid-template-columns: 1fr;
+  }
+
+  :global(.replay-section-head) {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
   }
 }

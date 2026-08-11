@@ -9,15 +9,19 @@ function visualFamilyForRole(family: GameFamily, role: RoleCode): GameFamily {
 export function roleArtPath(family: GameFamily, role: RoleCode, extension: "png" | "webp" = "webp") {
   const visualFamily = visualFamilyForRole(family, role);
   const prefix = visualFamily === "mafia" ? "/game-art/mafia" : "/game-art";
-  return `${prefix}/role-${getRoleAssetKey(role)}.${extension}`;
+  return `${prefix}/role-${visualAssetKey(visualFamily, role)}.${extension}`;
 }
 
 export function roleThumbPath(family: GameFamily, role: RoleCode) {
   const visualFamily = visualFamilyForRole(family, role);
   const prefix = visualFamily === "mafia" ? "/game-art/thumbs/mafia" : "/game-art/thumbs";
-  return `${prefix}/role-${getRoleAssetKey(role)}.webp`;
+  return `${prefix}/role-${visualAssetKey(visualFamily, role)}.webp`;
 }
 
 export function roleThumbStyle(family: GameFamily, role: RoleCode) {
   return { "--role-art": `url("${roleThumbPath(family, role)}")` } as CSSProperties;
+}
+
+function visualAssetKey(family: GameFamily, role: RoleCode) {
+  return family === "werewolves" && role === "jester" ? "jester-werewolf" : getRoleAssetKey(role);
 }

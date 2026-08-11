@@ -17,6 +17,7 @@ const ROUTES = [
   { name: "вход-върколак", path: "/werewolf/join?visualAuth=1" },
   { name: "вход-мафия", path: "/mafia/join?visualAuth=1" },
   { name: "история", path: "/history?visualHistory=fixture" },
+  { name: "запис", path: "/history/fixture-game-1/replay?visualReplay=fixture" },
   { name: "легенди", path: "/achievements?visualAuth=1&visualAchievements=fixture" },
   { name: "класация", path: "/leaderboard" },
   { name: "въпроси", path: "/faq" },

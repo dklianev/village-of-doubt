@@ -1739,7 +1739,7 @@
   color: var(--create-ink);
   font-family: "Noto Serif Display", "Noto Serif", "Iowan Old Style", serif;
   font-size: clamp(2.25rem, 5vw, 4.65rem);
-  line-height: 0.98;
+  line-height: 1.04;
   letter-spacing: 0;
   text-wrap: balance;
 }
@@ -1794,16 +1794,14 @@
   gap: clamp(20px, 3vw, 30px);
 }
 
-:global(.create-choice-group),
-:global(.create-context-panel) {
+:global(.create-choice-group) {
   min-width: 0;
   padding: 0;
   border: 0;
   margin: 0;
 }
 
-:global(.create-choice-group > legend),
-:global(.create-context-panel > legend) {
+:global(.create-choice-group > legend) {
   width: 100%;
   padding: 0 0 12px;
   color: var(--create-ink);
@@ -1944,6 +1942,8 @@
   color: var(--create-ink);
   font-family: "Noto Serif Display", "Noto Serif", serif;
   font-size: 1.14rem;
+  font-weight: 800;
+  line-height: 1.25;
   letter-spacing: 0;
 }
 
@@ -2004,9 +2004,14 @@
   color: var(--accent-faction-bright);
 }
 
-:global(.create-context-panel > legend) {
-  padding-bottom: 10px;
-  font-size: 0.92rem;
+:global(.create-context-panel > h2) {
+  margin: 0 0 10px;
+  color: var(--create-ink);
+  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-size: 1.14rem;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: 0;
 }
 
 :global(.create-segmented-control) {
@@ -2415,7 +2420,7 @@
 
   position: relative;
   display: grid;
-  grid-template-columns: 220px minmax(0, 1fr);
+  grid-template-columns: 252px minmax(0, 1fr);
   height: 100%;
   min-width: 0;
   min-height: 0;
@@ -2433,7 +2438,7 @@
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   min-height: 0;
-  padding: 26px 18px;
+  padding: 30px 22px;
   border-right: 1px solid var(--create-sheet-line);
   background:
     linear-gradient(180deg, rgba(255, 238, 200, 0.04), transparent 28%),
@@ -2445,8 +2450,8 @@
 :global(.create-customization-ledger) {
   display: grid;
   gap: 4px;
-  margin: 0 4px 24px;
-  padding: 0 0 20px;
+  margin: 0 6px 28px;
+  padding: 0 0 24px;
   border-bottom: 1px solid var(--create-sheet-line);
 }
 
@@ -2460,15 +2465,16 @@
 
 :global(.create-customization-ledger strong) {
   color: var(--create-sheet-ink);
-  font-family: "Noto Serif Display", "Noto Serif", serif;
-  font-size: 1.35rem;
+  font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  font-size: 1.52rem;
+  line-height: 1.12;
 }
 
 :global(.create-customization-tabs) {
   display: grid;
   align-content: start;
   min-width: 0;
-  gap: 8px;
+  gap: 10px;
 }
 
 :global(.create-customization-tabs::-webkit-scrollbar),
@@ -2478,17 +2484,18 @@
 
 :global(.create-customization-tabs button) {
   display: grid;
-  grid-template-columns: 38px minmax(0, 1fr);
+  grid-template-columns: 42px minmax(0, 1fr);
   align-items: center;
   gap: 11px;
   width: 100%;
-  min-height: 62px;
-  padding: 9px 12px;
+  min-height: 70px;
+  padding: 11px 13px;
   border: 1px solid transparent;
   border-radius: 8px;
   background: transparent;
   color: var(--create-sheet-muted);
-  font-size: 0.8rem;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.82rem;
   font-weight: 850;
   text-align: left;
   cursor: pointer;
@@ -2496,8 +2503,8 @@
 }
 
 :global(.create-customization-tabs button > svg) {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   justify-self: center;
 }
 
@@ -2509,14 +2516,14 @@
 
 :global(.create-customization-tabs button strong) {
   color: inherit;
-  font-family: "Noto Serif", serif;
-  font-size: 0.85rem;
-  line-height: 1.15;
+  font-family: inherit;
+  font-size: 0.88rem;
+  line-height: 1.2;
 }
 
 :global(.create-customization-tabs button small) {
   color: currentColor;
-  font-size: 0.67rem;
+  font-size: 0.7rem;
   font-weight: 700;
   line-height: 1.2;
   opacity: 0.7;
@@ -2528,7 +2535,7 @@
     radial-gradient(circle at 0% 50%, var(--accent-faction-tint), transparent 9rem),
     rgba(255, 244, 220, 0.08);
   color: #fff8e8;
-  transform: translateX(3px);
+  box-shadow: inset 3px 0 color-mix(in oklab, var(--accent-faction-bright) 80%, white);
 }
 
 :global(.create-customization-tabs button:hover:not([data-active="true"])) {
@@ -2547,7 +2554,7 @@
 :global(.create-customization-panel) {
   min-width: 0;
   min-height: 0;
-  padding: clamp(22px, 3vw, 36px);
+  padding: clamp(24px, 2.6vw, 40px);
   overflow: auto;
   scrollbar-color: color-mix(in oklab, var(--accent-faction) 65%, transparent) transparent;
   scrollbar-width: thin;
@@ -2605,7 +2612,9 @@
 
 :global(.create-customization .lobby-step-heading h1) {
   color: var(--create-sheet-ink);
-  font-size: clamp(1.6rem, 4vw, 2.25rem);
+  font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  font-size: clamp(1.75rem, 3vw, 2.45rem);
+  line-height: 1.04;
 }
 
 :global(.create-customization .lobby-step-heading p),
@@ -2658,8 +2667,8 @@
 
 :global(.create-role-workspace) {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 260px;
-  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) 290px;
+  gap: 22px;
   min-width: 0;
   min-height: 0;
   overflow: hidden;
@@ -2688,12 +2697,13 @@
 
 :global(.create-customization .role-carousel[data-layout="workspace"]) {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(158px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(184px, 1fr));
+  grid-auto-rows: max-content;
   align-content: start;
-  gap: 14px;
+  gap: 16px;
   height: 100%;
   min-height: 0;
-  padding: 4px 10px 18px 4px;
+  padding: 5px 12px 20px 5px;
   overflow-x: hidden;
   overflow-y: auto;
   scroll-snap-type: none;
@@ -2704,9 +2714,144 @@
 :global(.create-customization .role-carousel[data-layout="workspace"] .role-tile-large) {
   width: 100%;
   height: auto;
-  min-height: 236px;
-  aspect-ratio: 3 / 4.35;
+  min-height: 272px;
+  aspect-ratio: 3 / 4.15;
   border-radius: 8px;
+}
+
+:global(.create-customization .role-carousel[data-layout="workspace"][data-readonly="true"]) {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: stretch;
+  justify-content: center;
+}
+
+:global(.create-customization .role-carousel[data-layout="workspace"][data-readonly="true"] .role-tile-large) {
+  flex: 0 1 calc((100% - 32px) / 3);
+  width: calc((100% - 32px) / 3);
+  height: calc((100% - 16px) / 2);
+  min-height: 0;
+  aspect-ratio: auto;
+}
+
+:global(.create-customization .role-tile-large) {
+  border-color: color-mix(in oklab, var(--accent-faction) 44%, rgba(245, 211, 143, 0.34));
+  background: #090a09;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.24), inset 0 0 0 1px rgba(255, 239, 204, 0.06);
+}
+
+:global(.create-customization .role-tile-large::after) {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  z-index: 2;
+  border: 1px solid rgba(238, 196, 109, 0.24);
+  border-radius: 5px;
+  pointer-events: none;
+}
+
+:global(.create-customization .role-tile-large[data-selected="false"]) {
+  border-color: rgba(239, 218, 178, 0.12);
+  box-shadow: 0 9px 20px rgba(0, 0, 0, 0.16);
+  opacity: 0.74;
+}
+
+:global(.create-customization .role-tile-large-body) {
+  position: relative;
+  display: block;
+  overflow: hidden;
+}
+
+:global(.create-customization .role-tile-large picture) {
+  height: 100%;
+}
+
+:global(.create-customization .role-tile-large img) {
+  transition: transform 420ms cubic-bezier(0.16, 1, 0.3, 1), opacity 220ms ease;
+}
+
+:global(.create-customization .role-tile-large:hover img) {
+  transform: scale(1.035);
+}
+
+:global(.create-customization .role-tile-caption) {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 3;
+  display: grid;
+  gap: 5px;
+  min-height: 78px;
+  padding: 28px 14px 13px;
+  background: linear-gradient(180deg, transparent, rgba(5, 6, 6, 0.92) 42%, rgba(5, 6, 6, 0.98));
+}
+
+:global(.create-customization .role-tile-caption strong) {
+  padding: 0;
+  background: transparent;
+  color: #fff5df;
+  font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  font-size: 1.02rem;
+  line-height: 1.1;
+}
+
+:global(.create-customization .role-tile-caption small) {
+  display: -webkit-box;
+  overflow: hidden;
+  color: rgba(255, 242, 216, 0.7);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.68rem;
+  font-weight: 650;
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+:global(.create-customization .role-tile-count) {
+  z-index: 4;
+  width: 38px;
+  border: 1px solid rgba(255, 232, 178, 0.5);
+  box-shadow: 0 7px 16px rgba(0, 0, 0, 0.34), inset 0 1px rgba(255, 255, 255, 0.2);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+}
+
+:global(.create-customization .role-tile-controls) {
+  z-index: 5;
+  right: 12px;
+  bottom: 86px;
+}
+
+:global(.create-customization .role-tile-controls button) {
+  width: 38px;
+  min-height: 38px;
+  border: 1px solid rgba(255, 235, 194, 0.34);
+  box-shadow: 0 7px 16px rgba(0, 0, 0, 0.34);
+}
+
+:global(.create-customization .role-tile-controls button:disabled) {
+  cursor: not-allowed;
+  opacity: 0.34;
+}
+
+:global(.create-customization .role-tile-controls svg) {
+  width: 16px;
+  height: 16px;
+}
+
+:global(.role-tile-reserve-label) {
+  position: absolute;
+  right: 12px;
+  bottom: 88px;
+  z-index: 5;
+  padding: 7px 9px;
+  border: 1px solid rgba(238, 196, 109, 0.28);
+  border-radius: 999px;
+  background: rgba(8, 10, 10, 0.78);
+  color: rgba(255, 242, 216, 0.82);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.65rem;
+  font-weight: 800;
 }
 
 :global(.create-customization .role-carousel[data-layout="workspace"] .role-tile-large:hover) {
@@ -2721,24 +2866,29 @@
 
 :global(.create-role-inspector) {
   position: relative;
-  display: grid;
-  align-content: start;
-  gap: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   min-height: 0;
-  padding: 20px;
+  padding: 16px;
   border: 1px solid var(--create-sheet-line);
   border-radius: 8px;
   background:
     radial-gradient(circle at 100% 0%, var(--accent-faction-tint), transparent 15rem),
     rgba(255, 244, 220, 0.055);
   box-shadow: inset 0 1px rgba(255, 255, 255, 0.06);
-  overflow: auto;
+  overflow: hidden;
+}
+
+:global(.create-role-inspector:focus-visible) {
+  outline: 3px solid color-mix(in oklab, var(--accent-faction-bright) 72%, white);
+  outline-offset: -4px;
 }
 
 :global(.create-role-summary-heading) {
   display: grid;
-  gap: 5px;
-  padding-bottom: 14px;
+  gap: 3px;
+  padding-bottom: 10px;
   border-bottom: 1px solid var(--create-sheet-line);
 }
 
@@ -2748,8 +2898,9 @@
 }
 
 :global(.create-role-summary-heading h2) {
-  font-family: "Noto Serif Display", "Noto Serif", serif;
-  font-size: 1.42rem;
+  font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  font-size: 1.36rem;
+  line-height: 1.08;
 }
 
 :global(.create-role-summary-heading > span) {
@@ -2763,7 +2914,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 11px 13px;
+  padding: 9px 11px;
   border: 1px solid rgba(190, 74, 55, 0.34);
   border-radius: 7px;
   background: rgba(134, 45, 37, 0.14);
@@ -2775,55 +2926,136 @@
 }
 
 :global(.create-role-balance span) {
+  display: grid;
+  gap: 2px;
   color: var(--create-sheet-muted);
-  font-size: 0.72rem;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+}
+
+:global(.create-role-balance span b) {
+  font-size: 0.7rem;
   font-weight: 850;
   text-transform: uppercase;
 }
 
+:global(.create-role-balance span small) {
+  font-size: 0.66rem;
+  font-weight: 650;
+}
+
 :global(.create-role-balance strong) {
-  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
   font-size: 1.3rem;
 }
 
 :global(.create-selected-role-list) {
   display: grid;
-  gap: 7px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
   min-height: 0;
   padding: 0;
   margin: 0;
   list-style: none;
+  overflow: auto;
+  scrollbar-color: color-mix(in oklab, var(--accent-faction) 56%, transparent) transparent;
+  scrollbar-width: thin;
 }
 
-:global(.create-selected-role-list li) {
+:global(.create-selected-role-list li > div),
+:global(.create-selected-role-list li > button) {
   display: grid;
-  grid-template-columns: 30px minmax(0, 1fr);
+  grid-template-columns: 25px minmax(0, 1fr);
   align-items: center;
-  gap: 10px;
-  min-height: 36px;
-  padding: 5px 8px;
+  gap: 6px;
+  min-height: 31px;
+  padding: 3px 5px;
   border: 1px solid rgba(255, 244, 220, 0.075);
   border-radius: 6px;
   background: rgba(8, 10, 10, 0.22);
+  width: 100%;
+  color: inherit;
+  text-align: left;
 }
 
-:global(.create-selected-role-list li > span) {
+:global(.create-selected-role-list li > button) {
+  cursor: pointer;
+}
+
+:global(.create-selected-role-list[data-replacing="true"] li > button:hover) {
+  border-color: color-mix(in oklab, var(--accent-faction-bright) 70%, white);
+  background: var(--accent-faction-tint);
+}
+
+:global(.create-selected-role-list li > :is(div, button) > span) {
   display: grid;
   place-items: center;
-  width: 28px;
+  width: 24px;
   aspect-ratio: 1;
   border-radius: 999px;
   background: var(--accent-faction);
   color: var(--accent-faction-contrast);
-  font-weight: 950;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 900;
 }
 
-:global(.create-selected-role-list li > strong) {
+:global(.create-selected-role-list li > :is(div, button) > strong) {
   overflow: hidden;
   color: var(--create-sheet-ink);
-  font-size: 0.8rem;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.68rem;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+:global(.create-role-roster-rule),
+:global(.create-role-change-message) {
+  margin: 0;
+  color: var(--create-sheet-muted);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.69rem;
+  font-weight: 650;
+  line-height: 1.42;
+}
+
+:global(.create-role-change-message) {
+  padding: 7px 9px;
+  border-left: 2px solid var(--accent-faction-bright);
+  background: var(--accent-faction-tint);
+  color: var(--create-sheet-ink);
+}
+
+:global(.create-role-swap-panel) {
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+  border: 1px solid color-mix(in oklab, var(--accent-faction) 58%, transparent);
+  border-radius: 7px;
+  background: var(--accent-faction-tint);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+}
+
+:global(.create-role-swap-panel strong) {
+  color: var(--create-sheet-ink);
+  font-size: 0.82rem;
+}
+
+:global(.create-role-swap-panel span) {
+  color: var(--create-sheet-muted);
+  font-size: 0.7rem;
+  line-height: 1.35;
+}
+
+:global(.create-role-swap-panel button) {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent-faction-bright);
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 850;
+  cursor: pointer;
 }
 
 :global(.create-role-summary-warning) {
@@ -2833,7 +3065,8 @@
   border-radius: 7px;
   background: rgba(132, 47, 43, 0.16);
   color: var(--create-sheet-ink);
-  font-size: 0.78rem;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.74rem;
   font-weight: 780;
   line-height: 1.4;
 }
@@ -3126,7 +3359,7 @@
 :global(html[data-theme="light"] .create-control-heading h2),
 :global(html[data-theme="light"] .create-recommendation-heading h2),
 :global(html[data-theme="light"] .create-choice-group > legend),
-:global(html[data-theme="light"] .create-context-panel > legend) {
+:global(html[data-theme="light"] .create-context-panel > h2) {
   color: #2b1a12;
 }
 
@@ -3177,6 +3410,98 @@
 
   :global(.create-customization .role-carousel[data-layout="workspace"]) {
     grid-template-columns: repeat(auto-fill, minmax(142px, 1fr));
+  }
+}
+
+@media (min-width: 721px) and (max-width: 1100px) {
+  :global(.create-customization) {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  :global(.create-customization-sidebar) {
+    display: block;
+    padding: 10px 18px;
+    border-right: 0;
+    border-bottom: 1px solid var(--create-sheet-line);
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.1);
+  }
+
+  :global(.create-customization-ledger) {
+    display: none;
+  }
+
+  :global(.create-customization-tabs) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  :global(.create-customization-tabs button) {
+    grid-template-columns: 30px minmax(0, 1fr);
+    gap: 8px;
+    min-height: 62px;
+    padding: 8px 10px;
+  }
+
+  :global(.create-customization-tabs button > svg) {
+    width: 18px;
+    height: 18px;
+  }
+
+  :global(.create-customization-tabs button strong) {
+    font-size: 0.78rem;
+  }
+
+  :global(.create-customization-tabs button small) {
+    font-size: 0.64rem;
+  }
+
+  :global(.create-customization-stage) {
+    min-height: 0;
+  }
+
+  :global(.create-role-inspector) {
+    gap: 8px;
+    padding: 12px;
+  }
+
+  :global(.create-role-summary-heading) {
+    gap: 2px;
+    padding-bottom: 8px;
+  }
+
+  :global(.create-role-summary-heading h2) {
+    font-size: 1.2rem;
+  }
+
+  :global(.create-role-balance) {
+    padding: 7px 9px;
+  }
+}
+
+@media (min-width: 961px) and (max-width: 1100px) {
+  :global(.create-role-inspector:has(.create-role-summary-heading)) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 112px;
+    grid-template-rows: auto minmax(0, 1fr);
+    align-items: center;
+  }
+
+  :global(.create-role-summary-heading) {
+    padding: 0;
+    border-bottom: 0;
+  }
+
+  :global(.create-role-summary-heading .section-kicker) {
+    display: none;
+  }
+
+  :global(.create-role-inspector .create-selected-role-list),
+  :global(.create-role-inspector .create-role-roster-rule),
+  :global(.create-role-inspector .create-role-change-message),
+  :global(.create-role-inspector .create-role-swap-panel),
+  :global(.create-role-inspector .create-role-summary-warning) {
+    grid-column: 1 / -1;
   }
 }
 
@@ -3415,18 +3740,59 @@
     overflow: visible;
   }
 
+  :global(.create-role-inspector:has(.create-role-summary-heading)) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 112px;
+    align-items: center;
+    gap: 8px 10px;
+    padding: 12px;
+  }
+
   :global(.create-role-inspector .create-selected-role-list),
   :global(.create-role-inspector .create-role-summary-warning) {
     display: none;
   }
 
   :global(.create-role-summary-heading) {
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: end;
-    padding-bottom: 10px;
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: start;
+    gap: 1px;
+    padding: 0;
+    border-bottom: 0;
   }
 
   :global(.create-role-summary-heading .section-kicker) {
+    display: none;
+  }
+
+  :global(.create-role-summary-heading h2) {
+    font-size: 1.08rem;
+  }
+
+  :global(.create-role-summary-heading > span) {
+    font-size: 0.68rem;
+  }
+
+  :global(.create-role-inspector .create-role-balance) {
+    min-width: 0;
+    padding: 7px 8px;
+  }
+
+  :global(.create-role-inspector .create-role-balance span) {
+    gap: 0;
+  }
+
+  :global(.create-role-inspector .create-role-balance strong) {
+    font-size: 1.05rem;
+  }
+
+  :global(.create-role-inspector .create-role-roster-rule) {
+    display: none;
+  }
+
+  :global(.create-role-inspector .create-role-change-message),
+  :global(.create-role-inspector .create-role-swap-panel) {
     grid-column: 1 / -1;
   }
 

@@ -27,7 +27,7 @@
 }
 
 :global(.newspaper-page) {
-  --newspaper-state-min-block-size: max(720px, calc(100svh - 128px));
+  --newspaper-state-min-block-size: clamp(560px, calc(100svh - 190px), 680px);
   position: relative;
   width: 100%;
   max-width: 1100px;
@@ -359,6 +359,18 @@
   gap: 18px;
   padding: 42px 16px 24px;
   text-align: center;
+}
+
+:global(.newspaper-page-empty[data-state="unavailable"] .empty-headline) {
+  align-content: center;
+  min-height: 330px;
+  padding-block: 24px;
+}
+
+:global(.newspaper-page-empty[data-state="unavailable"] .headline-main-title) {
+  max-width: 18ch;
+  margin-bottom: 8px;
+  font-size: clamp(2.35rem, 5vw, 3.35rem);
 }
 
 :global(.empty-lede) {

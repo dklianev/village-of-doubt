@@ -41,6 +41,7 @@ const KNOWN_WEREWOLF_ROLE_ASSETS = new Set([
   "guard-dog",
   "little-girl",
   "thief",
+  "jester",
   "mayor",
 ]);
 

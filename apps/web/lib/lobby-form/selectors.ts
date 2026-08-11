@@ -3,6 +3,7 @@ import {
   createGameConfigFromOptions,
   GAME_MODE_DEFINITIONS,
   getGameFamily,
+  ROLE_DEFINITIONS,
   getRoleBalanceScore,
   normalizePhaseTimers,
   normalizeRoomCodeInput,
@@ -99,6 +100,97 @@ export function roleTotal(state: LobbyFormState) {
 
 export function roleBalance(state: LobbyFormState) {
   return getRoleBalanceScore(currentConfig(state).roles);
+}
+
+type ManualRoleRosterAdjustment = {
+  status: "changed" | "replacement-required" | "unchanged";
+  roles: RoleDistribution;
+  addedRole?: RoleCode;
+  removedRole?: RoleCode;
+};
+
+export function adjustManualRoleRoster({
+  family,
+  roles,
+  playerCount,
+  role,
+  delta,
+}: {
+  family: GameFamily;
+  roles: RoleDistribution;
+  playerCount: number;
+  role: RoleCode;
+  delta: -1 | 1;
+}): ManualRoleRosterAdjustment {
+  const reserveRole: RoleCode = family === "werewolves" ? "ordinary_villager" : "civilian";
+  const currentCount = roles[role] ?? 0;
+  const total = countRoles(roles);
+  const maxCopies = ROLE_DEFINITIONS[role].maxCopies;
+
+  if (delta > 0 && currentCount >= maxCopies) {
+    return { status: "unchanged", roles };
+  }
+  if (delta < 0 && (currentCount <= 0 || role === reserveRole)) {
+    return { status: "unchanged", roles };
+  }
+
+  if (delta > 0 && total >= playerCount) {
+    const reserveCount = roles[reserveRole] ?? 0;
+    if (role === reserveRole || reserveCount <= 0) {
+      return { status: "replacement-required", roles };
+    }
+
+    return {
+      status: "changed",
+      roles: cleanRoles({
+        ...roles,
+        [reserveRole]: reserveCount - 1,
+        [role]: currentCount + 1,
+      }),
+      addedRole: role,
+      removedRole: reserveRole,
+    };
+  }
+
+  if (delta < 0) {
+    const shouldRestoreReserve = total === playerCount;
+    return {
+      status: "changed",
+      roles: cleanRoles({
+        ...roles,
+        [role]: currentCount - 1,
+        ...(shouldRestoreReserve ? { [reserveRole]: (roles[reserveRole] ?? 0) + 1 } : {}),
+      }),
+      ...(shouldRestoreReserve ? { addedRole: reserveRole } : {}),
+      removedRole: role,
+    };
+  }
+
+  return {
+    status: "changed",
+    roles: cleanRoles({ ...roles, [role]: currentCount + 1 }),
+    addedRole: role,
+  };
+}
+
+export function replaceManualRoleInRoster({
+  roles,
+  addRole,
+  removeRole,
+}: {
+  roles: RoleDistribution;
+  addRole: RoleCode;
+  removeRole: RoleCode;
+}): RoleDistribution {
+  if (addRole === removeRole || (roles[removeRole] ?? 0) <= 0) {
+    return roles;
+  }
+
+  return cleanRoles({
+    ...roles,
+    [addRole]: (roles[addRole] ?? 0) + 1,
+    [removeRole]: (roles[removeRole] ?? 0) - 1,
+  });
 }
 
 export function playerRange(mode: GameMode) {

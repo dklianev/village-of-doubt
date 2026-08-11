@@ -73,6 +73,7 @@ export interface UseGameRoomResult {
   connectionStatus: ConnectionStatus;
   unlockedAchievementIds: string[];
   setUnlockedAchievementIds: Dispatch<SetStateAction<string[]>>;
+  recordedGameId: string | null;
   reconnectNow: () => void;
   isPending: boolean;
 }
@@ -121,6 +122,7 @@ export function useGameRoom({
   const [status, setStatus] = useState("Свързване...");
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("connecting");
   const [unlockedAchievementIds, setUnlockedAchievementIds] = useState<string[]>([]);
+  const [recordedGameId, setRecordedGameId] = useState<string | null>(null);
   const snapshotRef = useRef<GameSnapshot | null>(null);
   const typingTimeoutsRef = useRef<Map<string, number>>(new Map());
   const achievementClearTimerRef = useRef<number | null>(null);
@@ -368,6 +370,10 @@ export function useGameRoom({
         }, 7000);
       });
 
+      nextRoom.onMessage("game_recorded", (message: { gameId: string }) => {
+        setRecordedGameId(message.gameId);
+      });
+
       nextRoom.onLeave((leaveCode) => {
         if (!active) {
           return;
@@ -537,6 +543,7 @@ export function useGameRoom({
     connectionStatus,
     unlockedAchievementIds,
     setUnlockedAchievementIds,
+    recordedGameId,
     reconnectNow,
     isPending,
   };

@@ -292,6 +292,108 @@ test("@play-gate initial stage layout stays stable", async ({ page }) => {
   expect(cls).toBeLessThan(0.02);
 });
 
+for (const connection of ["reconnecting", "lost", "error"] as const) {
+  test(`@play-gate connection recovery ${connection}`, async ({ page }) => {
+    await openFixture(
+      page,
+      { phase: "night", family: "werewolves", players: 8, connection },
+      "dark",
+      MATRIX_VIEWPORTS[1],
+    );
+    const banner = page.locator(`.connection-${connection}`);
+    await expect(banner).toBeVisible();
+    if (connection === "reconnecting" || connection === "lost") {
+      const dialogName = connection === "reconnecting"
+        ? "Връщаме те обратно"
+        : "Не успяхме да се върнем автоматично";
+      await expect(page.getByRole("dialog", { name: dialogName })).toBeVisible();
+    }
+    await expectGeometry(page);
+  });
+}
+
+for (const [viewer, role] of [
+  ["spectator", "seer"],
+  ["narrator", "seer"],
+  ["dead", "hunter"],
+] as const) {
+  test(`@play-gate private state stays outside the public stage for ${viewer}`, async ({ page }) => {
+    await openFixture(
+      page,
+      { phase: viewer === "dead" ? "hunter_revenge" : "night", family: "werewolves", players: 8, viewer, role },
+      "light",
+      MATRIX_VIEWPORTS[6],
+    );
+    const stageText = await page.locator(".play-stage").innerText();
+    expect(stageText).not.toContain("Гадателка");
+    expect(stageText).not.toContain("Ловец");
+    await expectGeometry(page);
+  });
+}
+
+for (const [timer, label] of [
+  ["none", "Свободен ход"],
+  ["8", "Остава"],
+  ["0", "Времето изтече"],
+] as const) {
+  test(`@play-gate timer state ${timer}`, async ({ page }) => {
+    await openFixture(
+      page,
+      { phase: "night", family: "mafia", players: 10, timer },
+      "dark",
+      MATRIX_VIEWPORTS[7],
+    );
+    const timerDial = page.getByRole("timer");
+    await expect(timerDial).toContainText(label);
+    await expectGeometry(page);
+  });
+}
+
+test("@play-interaction persisted game over links to the exact replay and preserves the setup", async ({ page }) => {
+  await openFixture(
+    page,
+    {
+      phase: "game_over",
+      family: "werewolves",
+      players: 8,
+      winner: "village",
+      gameId: "fixture-game-1",
+    },
+    "dark",
+    MATRIX_VIEWPORTS[7],
+  );
+  await expect(page.getByRole("link", { name: "Виж записа на играта" })).toHaveAttribute(
+    "href",
+    "/history/fixture-game-1/replay",
+  );
+  const repeatHref = await page.getByRole("link", { name: "Повтори настройките" }).getAttribute("href");
+  expect(repeatHref).toContain("/werewolf/create?");
+  expect(repeatHref).toContain("players=8");
+  expect(repeatHref).toContain("roles=");
+});
+
+test("@play-interaction exhausted night resources are explained and cannot target a seat", async ({ page }) => {
+  await openFixture(
+    page,
+    {
+      phase: "night",
+      family: "werewolves",
+      players: 8,
+      role: "witch",
+      capabilities: "spent",
+    },
+    "dark",
+    MATRIX_VIEWPORTS[7],
+  );
+
+  await expect(page.locator('.play-seat-slot[data-targetable="true"]')).toHaveCount(0);
+  await expect(page.getByText("Лечебната отвара вече е използвана.", { exact: true })).toBeVisible();
+  await expect(page.getByText("Отровата вече е използвана.", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Лекувай" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Отрови" })).toBeDisabled();
+  await expectGeometry(page);
+});
+
 async function openFixture(
   page: Page,
   scenario: Record<string, string | number>,

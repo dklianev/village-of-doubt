@@ -2,7 +2,13 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { createDatabase, getGameHistoryById, getGameTimeline, getPlayerRolesInGames } from "@werewolf/database";
+import {
+  createDatabase,
+  getGameHistoryById,
+  getGameReplayParticipants,
+  getGameTimeline,
+  getPlayerRolesInGames,
+} from "@werewolf/database";
 import {
   deriveAchievementsFromEvents,
   getRoleNameBg,
@@ -12,7 +18,8 @@ import {
   type RoleCode,
 } from "@werewolf/shared";
 import { publicGameReference } from "@/lib/game-reference";
-import { loadReplayTimelineForViewer } from "@/lib/replay-visibility";
+import { collectReplayParticipants } from "@/lib/play/replay-participants";
+import { filterReplayTimelineByVisibility, resolveReplayTimelineVisibility } from "@/lib/replay-visibility";
 import { requireSession } from "@/lib/require-session";
 import "@/components/achievements/Achievements.module.css";
 import "@/components/history/History.module.css";
@@ -44,7 +51,7 @@ export default async function ReplayPage({
 
   const mode = modeFromConfig(replay.game.config);
   const groupedTimeline = groupTimeline(replay.timeline, mode);
-  const participants = collectReplayParticipants(replay.timeline);
+  const participants = collectReplayParticipants(replay.participants, replay.timeline, replay.rolesVisible);
   const duration = formatDuration(replay.game.startedAt, replay.game.endedAt);
 
   return (
@@ -139,7 +146,7 @@ export default async function ReplayPage({
                     <span className="replay-index">{String(index + 1).padStart(2, "0")}</span>
                     <div>
                       <h3>{eventTypeBg(event.type)}</h3>
-                      <p>{formatPayload(event.payload)}</p>
+                      <p>{formatPayload(event.type, event.payload)}</p>
                       <small>
                         {visibilityBg(event.visibility)} · {formatDate(event.createdAt)}
                       </small>
@@ -183,21 +190,28 @@ async function loadReplay(gameId: string, viewerUserId: string) {
     if (!game || game.status !== "ended" || !game.endedAt) {
       return null;
     }
-    const timeline = await loadReplayTimelineForViewer({
-      game: {
-        gameId: game.id,
-        status: game.status,
-        endedAt: game.endedAt,
-        hostId: game.hostId,
-      },
+    const participantGameIds = await getPlayerRolesInGames(db, viewerUserId, [game.id]);
+    const visibility = resolveReplayTimelineVisibility({
+      gameId: game.id,
+      status: game.status,
+      endedAt: game.endedAt,
+      hostId: game.hostId,
       viewerUserId,
-      loadParticipantGameIds: (userId, participantGameId) =>
-        getPlayerRolesInGames(db, userId, [participantGameId]),
-      loadTimeline: (visibilityFilter) =>
-        getGameTimeline(db, game.id, 300, { visibilityFilter }),
+      participantGameIds,
     });
-    const orderedTimeline = [...timeline].reverse();
-    return { game, timeline: orderedTimeline, achievements: deriveAchievementsFromEvents(orderedTimeline) };
+    const timeline = filterReplayTimelineByVisibility(
+      await getGameTimeline(db, game.id, null, { visibilityFilter: visibility }),
+      visibility,
+    );
+    const rolesVisible = visibility === "all";
+    const participants = await getGameReplayParticipants(db, game.id, { includeRoles: rolesVisible });
+    return {
+      game,
+      timeline,
+      participants,
+      rolesVisible,
+      achievements: deriveAchievementsFromEvents(timeline),
+    };
   } catch (error) {
     console.error("[replay]", error);
     return null;
@@ -238,6 +252,12 @@ function fixtureReplay(gameId: string): NonNullable<Awaited<ReturnType<typeof lo
       hostId: "visual-host",
     } as NonNullable<Awaited<ReturnType<typeof getGameHistoryById>>>,
     timeline: timeline as Awaited<ReturnType<typeof getGameTimeline>>,
+    participants: [
+      { userId: "fixture-actor-1", displayName: "Разказвачът", role: "ordinary_villager" },
+      { userId: "fixture-actor-2", displayName: "Гадателката", role: "seer" },
+      { userId: "fixture-target-2", displayName: "Борис", role: "werewolf" },
+    ],
+    rolesVisible: true,
     achievements: [],
   };
 }
@@ -275,7 +295,6 @@ function Summary({ label, value }: { label: string; value: string }) {
 
 type ReplayData = NonNullable<Awaited<ReturnType<typeof loadReplay>>>;
 type TimelineEvent = ReplayData["timeline"][number];
-type ReplayParticipant = { id: string; label: string; role: string | undefined; initial: string };
 
 function groupTimeline(events: TimelineEvent[], mode: GameMode) {
   const groups = new Map<
@@ -306,48 +325,6 @@ function groupTimeline(events: TimelineEvent[], mode: GameMode) {
   return [...groups.values()];
 }
 
-function collectReplayParticipants(events: TimelineEvent[]) {
-  const participants = new Map<string, ReplayParticipant>();
-
-  for (const event of events) {
-    const payload = payloadRecord(event.payload);
-    const actorName = stringValue(payload.actorNameBg) ?? stringValue(payload.actorName) ?? stringValue(payload.displayName);
-    const targetName = stringValue(payload.targetNameBg) ?? stringValue(payload.targetName);
-    const role = stringValue(payload.roleNameBg) ?? roleNameFromCode(stringValue(payload.role));
-
-    if (event.actorId) {
-      upsertParticipant(participants, event.actorId, actorName, role);
-    }
-    if (event.targetId) {
-      upsertParticipant(participants, event.targetId, targetName, role);
-    }
-    if (!event.actorId && actorName) {
-      upsertParticipant(participants, actorName, actorName, role);
-    }
-    if (!event.targetId && targetName) {
-      upsertParticipant(participants, targetName, targetName, role);
-    }
-  }
-
-  return [...participants.values()].slice(0, 12);
-}
-
-function upsertParticipant(
-  participants: Map<string, ReplayParticipant>,
-  id: string,
-  label: string | undefined,
-  role: string | undefined,
-) {
-  const nextLabel = label ?? shortId(id);
-  const existing = participants.get(id);
-  participants.set(id, {
-    id,
-    label: existing?.label && existing.label !== shortId(id) ? existing.label : nextLabel,
-    role: existing?.role ?? role,
-    initial: initialFor(nextLabel),
-  });
-}
-
 function payloadRecord(payload: unknown): Record<string, unknown> {
   return payload && typeof payload === "object" && !Array.isArray(payload) ? (payload as Record<string, unknown>) : {};
 }
@@ -365,14 +342,6 @@ function roleNameFromCode(role: string | undefined) {
   } catch {
     return role;
   }
-}
-
-function shortId(id: string) {
-  return id.length > 8 ? `играч ${id.slice(0, 4)}` : id;
-}
-
-function initialFor(label: string) {
-  return label.trim().charAt(0).toLocaleUpperCase("bg-BG") || "И";
 }
 
 function eventTone(type: string) {
@@ -485,12 +454,30 @@ function visibilityBg(visibility: string) {
   return labels[visibility] ?? visibility;
 }
 
-function formatPayload(payload: unknown) {
+function formatPayload(type: string, payload: unknown) {
   if (!payload || typeof payload !== "object") {
     return "Събитието няма допълнителни данни.";
   }
 
-  const entries = Object.entries(payload)
+  const record = payloadRecord(payload);
+  const actor = stringValue(record.actorNameBg) ?? stringValue(record.actorName);
+  const target = stringValue(record.targetNameBg) ?? stringValue(record.targetName);
+  const role = stringValue(record.roleNameBg) ?? roleNameFromCode(stringValue(record.role));
+
+  if (type === "role_assignment" && actor && role) {
+    return `${actor} получи ролята ${role}.`;
+  }
+  if (type === "night_action_submitted" && actor && target) {
+    return `${actor} избра ${target} за нощното действие${role ? ` като ${role}` : ""}.`;
+  }
+  if ((type === "vote_submitted" || type === "vote_tally") && actor && target) {
+    return `${actor} насочи гласа към ${target}.`;
+  }
+  if (type === "game_over" && actor) {
+    return target ? `${actor} надделя над ${target}.` : `${actor} спечели играта.`;
+  }
+
+  const entries = Object.entries(record)
     .filter(([, value]) => value !== undefined && value !== null && value !== "")
     .slice(0, 5)
     .map(([key, value]) => `${payloadKeyBg(key)}: ${String(value)}`);
@@ -500,6 +487,11 @@ function formatPayload(payload: unknown) {
 
 function payloadKeyBg(key: string) {
   const labels: Record<string, string> = {
+    actorNameBg: "действащ",
+    actorName: "действащ",
+    targetNameBg: "цел",
+    targetName: "цел",
+    roleNameBg: "роля",
     messageBg: "съобщение",
     winnerTeam: "победител",
     reasonBg: "причина",

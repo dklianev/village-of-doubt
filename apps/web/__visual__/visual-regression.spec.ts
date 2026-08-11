@@ -31,9 +31,10 @@ const ROUTES = [
   { name: "tutorial-5", path: "/tutorial?step=5" },
   { name: "tutorial-6", path: "/tutorial?step=6" },
   { name: "sign-in", path: "/sign-in" },
-  { name: "account-dashboard", path: "/account" },
+  { name: "account-dashboard", path: "/account?visualAuth=1" },
   { name: "history-empty", path: "/history" },
   { name: "history", path: "/history?visualHistory=fixture" },
+  { name: "replay", path: "/history/fixture-game-1/replay?visualReplay=fixture" },
   { name: "leaderboard-empty", path: "/leaderboard" },
   { name: "achievements-gate", path: "/achievements" },
   { name: "achievements", path: "/achievements?visualAuth=1&visualAchievements=fixture" },
@@ -64,9 +65,10 @@ const LIGHT_UTILITY_ROUTES = [
   { name: "home", path: "/" },
   { name: "werewolf-home", path: "/werewolf" },
   { name: "mafia-home", path: "/mafia" },
-  { name: "account-dashboard", path: "/account" },
+  { name: "account-dashboard", path: "/account?visualAuth=1" },
   { name: "history-empty", path: "/history" },
   { name: "history", path: "/history?visualHistory=fixture" },
+  { name: "replay", path: "/history/fixture-game-1/replay?visualReplay=fixture" },
   { name: "leaderboard-empty", path: "/leaderboard" },
   { name: "achievements", path: "/achievements?visualAuth=1&visualAchievements=fixture" },
   { name: "friends", path: "/friends?visualAuth=1" },
@@ -88,6 +90,7 @@ const DARK_UTILITY_ROUTE_NAMES = new Set([
   "account-dashboard",
   "history-empty",
   "history",
+  "replay",
   "leaderboard-empty",
   "achievements",
   "friends",
@@ -107,14 +110,22 @@ const DARK_UTILITY_ROUTE_NAMES = new Set([
 
 const A11Y_ROUTES = [
   { name: "home", path: "/" },
+  { name: "werewolf-home", path: "/werewolf" },
+  { name: "mafia-home", path: "/mafia" },
+  { name: "werewolf-roles", path: "/werewolf/roles" },
+  { name: "mafia-roles", path: "/mafia/roles" },
+  { name: "werewolf-rules", path: "/werewolf/rules" },
+  { name: "mafia-rules", path: "/mafia/rules" },
+  { name: "roles", path: "/roles" },
   { name: "status", path: "/status" },
   { name: "privacy", path: "/privacy" },
   { name: "terms", path: "/terms" },
   { name: "report", path: "/report" },
   { name: "faq", path: "/faq" },
-  { name: "account-dashboard", path: "/account" },
+  { name: "account-dashboard", path: "/account?visualAuth=1" },
   { name: "history-empty", path: "/history" },
   { name: "history", path: "/history?visualHistory=fixture" },
+  { name: "replay", path: "/history/fixture-game-1/replay?visualReplay=fixture" },
   { name: "achievements-gate", path: "/achievements" },
   { name: "achievements", path: "/achievements?visualAuth=1&visualAchievements=fixture" },
   { name: "leaderboard-empty", path: "/leaderboard" },
@@ -125,7 +136,19 @@ const A11Y_ROUTES = [
   { name: "lobby", path: "/lobby" },
   { name: "werewolf-create", path: "/werewolf/create?visualAuth=1" },
   { name: "mafia-create", path: "/mafia/create?visualAuth=1" },
+  { name: "play-werewolves-night", path: "/play/VISUAL?visualGame=1&phase=night&family=werewolves&role=seer" },
+  { name: "play-mafia-voting", path: "/play/VISUAL?visualGame=1&phase=voting&family=mafia&voteTally=full" },
+  { name: "forgot-password", path: "/forgot-password" },
+  { name: "reset-password-invalid", path: "/reset-password" },
+  { name: "verify-email-invalid", path: "/verify-email?token=fake" },
+  { name: "offline", path: "/offline" },
+  { name: "not-found", path: "/route-that-does-not-exist" },
 ];
+
+const CREATE_DETAIL_ROUTES = [
+  { name: "werewolf", path: "/werewolf/create?visualAuth=1" },
+  { name: "mafia", path: "/mafia/create?visualAuth=1" },
+] as const;
 
 for (const route of A11Y_ROUTES) {
   test(`@a11y route ${route.name}`, async ({ page }) => {
@@ -135,8 +158,15 @@ for (const route of A11Y_ROUTES) {
     } else {
       await acceptCookies(page);
     }
+    if (route.name.startsWith("play-")) {
+      await installNextDevIndicatorGuard(page);
+    }
     await page.goto(route.path, { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle").catch(() => {});
+    if (route.name.startsWith("play-")) {
+      await waitForStablePlayStage(page);
+      await hideNextDevIndicator(page);
+    }
     await page.waitForTimeout(600);
 
     const accessibility = await new AxeBuilder({ page })
@@ -152,6 +182,321 @@ for (const route of A11Y_ROUTES) {
     expect(accessibility.violations.filter((violation) => violation.id !== "color-contrast")).toEqual([]);
   });
 }
+
+for (const viewport of VIEWPORTS) {
+  for (const theme of ["dark", "light"] as const) {
+    for (const route of CREATE_DETAIL_ROUTES) {
+      test(`@a11y create detail workspace ${viewport.name} ${theme} ${route.name}`, async ({ page }) => {
+        await page.setViewportSize({ width: viewport.width, height: viewport.height });
+        await setVisualTheme(page, theme);
+        await page.goto(route.path, { waitUntil: "domcontentloaded" });
+        await page.waitForLoadState("networkidle").catch(() => {});
+        await page.getByRole("button", { name: "Настрой детайлите" }).click();
+        await page.getByRole("button", { name: "Настрой ръчно", exact: true }).click();
+
+        const dialog = page.getByRole("dialog", { name: "Настрой детайлите" });
+        await expect(dialog).toBeVisible();
+
+        const accessibility = await new AxeBuilder({ page })
+          .include('[role="dialog"]')
+          .withTags(["wcag2a", "wcag2aa"])
+          .analyze();
+        expect(accessibility.violations).toEqual([]);
+
+        const geometry = await dialog.evaluate((element) => ({
+          clientWidth: element.clientWidth,
+          scrollWidth: element.scrollWidth,
+        }));
+        expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.clientWidth + 1);
+
+        if (viewport.name === "mobile") {
+          const gallery = dialog.locator(".role-carousel");
+          const initialPosition = await gallery.evaluate((element) => element.scrollLeft);
+          await dialog.getByRole("button", { name: "Следващи роли" }).click();
+          await expect.poll(() => gallery.evaluate((element) => element.scrollLeft)).toBeGreaterThan(initialPosition);
+        }
+      });
+    }
+  }
+}
+
+test("@geometry desktop role cards never overlap between workspace rows", async ({ page }) => {
+  await page.setViewportSize({ width: 1383, height: 828 });
+  await setVisualTheme(page, "light");
+  await page.goto("/werewolf/create?visualAuth=1", { waitUntil: "domcontentloaded" });
+  await page.waitForLoadState("networkidle").catch(() => {});
+  await page.getByRole("button", { name: "Настрой детайлите" }).click();
+  await page.getByRole("button", { name: "Настрой ръчно", exact: true }).click();
+
+  const cards = page.locator('.role-carousel[data-layout="workspace"] .role-tile-large');
+  await expect(cards.first()).toBeVisible();
+  const rectangles = await cards.evaluateAll((elements) => elements.map((element) => {
+    const rect = element.getBoundingClientRect();
+    return { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom };
+  }));
+
+  const overlaps: Array<[number, number]> = [];
+  for (let first = 0; first < rectangles.length; first += 1) {
+    for (let second = first + 1; second < rectangles.length; second += 1) {
+      const firstRectangle = rectangles[first]!;
+      const secondRectangle = rectangles[second]!;
+      const horizontal = Math.min(firstRectangle.right, secondRectangle.right)
+        - Math.max(firstRectangle.left, secondRectangle.left);
+      const vertical = Math.min(firstRectangle.bottom, secondRectangle.bottom)
+        - Math.max(firstRectangle.top, secondRectangle.top);
+      if (horizontal > 1 && vertical > 1) {
+        overlaps.push([first, second]);
+      }
+    }
+  }
+
+  expect(overlaps).toEqual([]);
+});
+
+for (const theme of ["dark", "light"] as const) {
+  test(`@geometry play action dock columns ${theme}`, async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await setVisualTheme(page, theme);
+    await installNextDevIndicatorGuard(page);
+    await page.goto("/play/VISUAL?visualGame=1&phase=voting&family=mafia&players=10&voteTally=full", {
+      waitUntil: "domcontentloaded",
+    });
+    await waitForStablePlayStage(page);
+    await hideNextDevIndicator(page);
+
+    const primary = page.getByRole("group", { name: "Текущо действие" });
+    const dossier = page.getByRole("group", { name: "Лично досие" });
+    await expect(primary).toBeVisible();
+    await expect(dossier).toBeVisible();
+
+    const primaryGeometry = await primary.evaluate((element) => ({
+      clientWidth: element.clientWidth,
+      scrollWidth: element.scrollWidth,
+    }));
+    expect(primaryGeometry.scrollWidth).toBeLessThanOrEqual(primaryGeometry.clientWidth + 1);
+
+    const [primaryBox, dossierBox] = await Promise.all([primary.boundingBox(), dossier.boundingBox()]);
+    expect(primaryBox).not.toBeNull();
+    expect(dossierBox).not.toBeNull();
+    expect(primaryBox!.x + primaryBox!.width).toBeLessThanOrEqual(dossierBox!.x + 1);
+  });
+}
+
+test("@geometry mobile history stays inside the viewport", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await setVisualTheme(page, "dark");
+  await page.goto("/history?visualHistory=fixture", { waitUntil: "domcontentloaded" });
+  await page.waitForLoadState("networkidle").catch(() => {});
+
+  const pageGeometry = await page.evaluate(() => ({
+    clientWidth: document.documentElement.clientWidth,
+    scrollWidth: document.documentElement.scrollWidth,
+  }));
+  expect(pageGeometry.scrollWidth).toBeLessThanOrEqual(pageGeometry.clientWidth + 1);
+
+  const caseFiles = await page.locator(".case-file").evaluateAll((elements) =>
+    elements.map((element) => {
+      const box = element.getBoundingClientRect();
+      return { left: box.left, right: box.right };
+    }),
+  );
+  for (const caseFile of caseFiles) {
+    expect(caseFile.left).toBeGreaterThanOrEqual(-1);
+    expect(caseFile.right).toBeLessThanOrEqual(391);
+  }
+});
+
+test("@geometry achievements centers an orphan plaque on the hall wall", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await setVisualTheme(page, "dark");
+  await page.goto("/achievements?visualAuth=1&visualAchievements=fixture", { waitUntil: "domcontentloaded" });
+  await page.waitForLoadState("networkidle").catch(() => {});
+
+  const wall = page.locator(".plaque-wall");
+  const plaques = wall.locator(".achievement-plaque");
+  const plaqueCount = await plaques.count();
+  expect(plaqueCount % 3).toBe(1);
+
+  const [wallBox, lastPlaqueBox] = await Promise.all([
+    wall.boundingBox(),
+    plaques.nth(plaqueCount - 1).boundingBox(),
+  ]);
+  expect(wallBox).not.toBeNull();
+  expect(lastPlaqueBox).not.toBeNull();
+
+  const wallCenter = wallBox!.x + wallBox!.width / 2;
+  const plaqueCenter = lastPlaqueBox!.x + lastPlaqueBox!.width / 2;
+  expect(Math.abs(wallCenter - plaqueCenter)).toBeLessThanOrEqual(2);
+
+  const archiveLink = page.getByRole("link", { name: "Виж записаните игри" });
+  const archiveBox = await archiveLink.boundingBox();
+  expect(archiveBox).not.toBeNull();
+  const archiveCenter = archiveBox!.x + archiveBox!.width / 2;
+  expect(Math.abs(wallCenter - archiveCenter)).toBeLessThanOrEqual(2);
+});
+
+test("@geometry mobile game over uses document scroll without nested story scrollbars", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await setVisualTheme(page, "dark");
+  await installNextDevIndicatorGuard(page);
+  await page.goto(
+    "/play/VISUAL?visualGame=1&phase=game_over&family=werewolves&winner=werewolves&dead=5",
+    { waitUntil: "domcontentloaded" },
+  );
+  await waitForStablePlayStage(page);
+  await hideNextDevIndicator(page);
+
+  const pageGeometry = await page.evaluate(() => ({
+    clientWidth: document.documentElement.clientWidth,
+    scrollWidth: document.documentElement.scrollWidth,
+  }));
+  expect(pageGeometry.scrollWidth).toBeLessThanOrEqual(pageGeometry.clientWidth + 1);
+
+  const story = page.locator(".play-stage-takeover .post-game-story");
+  const winner = page.locator(".play-stage-takeover .play-winner");
+  const timeline = story.locator("ol");
+  await expect(story).toBeVisible();
+  const stage = page.locator(".play-stage");
+  const takeover = page.locator(".play-stage-takeover");
+  const [storyGeometry, timelineGeometry, stageBox, takeoverBox, winnerBox, storyBox] = await Promise.all([
+    story.evaluate((element) => ({ clientHeight: element.clientHeight, scrollHeight: element.scrollHeight })),
+    timeline.evaluate((element) => ({ clientHeight: element.clientHeight, scrollHeight: element.scrollHeight })),
+    stage.boundingBox(),
+    takeover.boundingBox(),
+    winner.boundingBox(),
+    story.boundingBox(),
+  ]);
+  expect(storyGeometry.scrollHeight).toBeLessThanOrEqual(storyGeometry.clientHeight + 1);
+  expect(timelineGeometry.scrollHeight).toBeLessThanOrEqual(timelineGeometry.clientHeight + 1);
+  expect(stageBox).not.toBeNull();
+  expect(takeoverBox).not.toBeNull();
+  expect(winnerBox).not.toBeNull();
+  expect(storyBox).not.toBeNull();
+  expect(takeoverBox!.y - stageBox!.y).toBeLessThanOrEqual(48);
+  for (const panelBox of [winnerBox!, storyBox!]) {
+    expect(panelBox.x).toBeGreaterThanOrEqual(23);
+    expect(panelBox.x + panelBox.width).toBeLessThanOrEqual(367);
+  }
+
+  const winnerFrame = await winner.evaluate((element) => {
+    const style = getComputedStyle(element, "::before");
+    return {
+      maskImage: style.maskImage,
+      webkitMaskImage: style.webkitMaskImage,
+    };
+  });
+  expect(winnerFrame).toEqual({ maskImage: "none", webkitMaskImage: "none" });
+
+  const winnerSurface = await winner.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      backgroundSize: style.backgroundSize.split(", ")[2],
+      backgroundRepeat: style.backgroundRepeat.split(", ")[2],
+    };
+  });
+  expect(winnerSurface).toEqual({ backgroundSize: "100%", backgroundRepeat: "no-repeat" });
+
+  const outerChrome = await takeover.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      borderWidth: style.borderTopWidth,
+      padding: style.paddingTop,
+      backgroundImage: style.backgroundImage,
+      boxShadow: style.boxShadow,
+    };
+  });
+  expect(outerChrome).toEqual({
+    borderWidth: "0px",
+    padding: "0px",
+    backgroundImage: "none",
+    boxShadow: "none",
+  });
+
+  const stageChrome = await stage.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      borderWidth: style.borderTopWidth,
+      padding: style.paddingTop,
+      backgroundImage: style.backgroundImage,
+      boxShadow: style.boxShadow,
+    };
+  });
+  expect(stageChrome).toEqual({
+    borderWidth: "0px",
+    padding: "0px",
+    backgroundImage: "none",
+    boxShadow: "none",
+  });
+});
+
+test("@geometry desktop game over uses a feathered takeover without rectangular chrome", async ({ page }) => {
+  await page.setViewportSize({ width: 1150, height: 685 });
+  await setVisualTheme(page, "dark");
+  await installNextDevIndicatorGuard(page);
+  await page.goto(
+    "/play/VISUAL?visualGame=1&phase=game_over&family=werewolves&winner=werewolves&dead=5",
+    { waitUntil: "domcontentloaded" },
+  );
+  await waitForStablePlayStage(page);
+  await hideNextDevIndicator(page);
+
+  const takeover = page.locator(".play-stage-takeover");
+  const winnerScene = takeover.locator(".play-winner-scene");
+  await expect(takeover).toBeVisible();
+
+  const takeoverChrome = await takeover.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      borderWidth: style.borderTopWidth,
+      backgroundImage: style.backgroundImage,
+      boxShadow: style.boxShadow,
+      overflow: style.overflow,
+    };
+  });
+  expect(takeoverChrome).toEqual({
+    borderWidth: "0px",
+    backgroundImage: "none",
+    boxShadow: "none",
+    overflow: "visible",
+  });
+
+  const winnerSceneStyle = await winnerScene.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      maskImage: style.maskImage,
+      webkitMaskImage: style.webkitMaskImage,
+      opacity: Number(style.opacity),
+    };
+  });
+  expect(winnerSceneStyle.maskImage).toContain("radial-gradient");
+  expect(winnerSceneStyle.webkitMaskImage).toContain("radial-gradient");
+  expect(winnerSceneStyle.opacity).toBeLessThanOrEqual(0.4);
+});
+
+test("@geometry mobile hunter revenge keeps the action sheet inside the viewport", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await setVisualTheme(page, "dark");
+  await installNextDevIndicatorGuard(page);
+  await page.goto(
+    "/play/VISUAL?visualGame=1&phase=hunter_revenge&family=werewolves&role=hunter&viewer=dead&players=8&dead=1",
+    { waitUntil: "domcontentloaded" },
+  );
+  await waitForStablePlayStage(page);
+  await hideNextDevIndicator(page);
+
+  const pageGeometry = await page.evaluate(() => ({
+    clientWidth: document.documentElement.clientWidth,
+    scrollWidth: document.documentElement.scrollWidth,
+  }));
+  expect(pageGeometry.scrollWidth).toBeLessThanOrEqual(pageGeometry.clientWidth + 1);
+
+  const actionDock = page.locator(".play-action-dock");
+  await expect(actionDock).toBeVisible();
+  const dockBox = await actionDock.boundingBox();
+  expect(dockBox).not.toBeNull();
+  expect(dockBox!.x).toBeGreaterThanOrEqual(-1);
+  expect(dockBox!.x + dockBox!.width).toBeLessThanOrEqual(391);
+});
 
 for (const viewport of VIEWPORTS) {
   for (const route of ROUTES) {
@@ -175,6 +520,11 @@ for (const viewport of VIEWPORTS) {
       if (route.name.startsWith("play-")) {
         await hideNextDevIndicator(page);
       }
+      if (route.name === "replay") {
+        await expect(page.getByText("actorNameBg", { exact: false })).toHaveCount(0);
+        await expect(page.getByText("targetNameBg", { exact: false })).toHaveCount(0);
+        await expect(page.getByText("roleNameBg", { exact: false })).toHaveCount(0);
+      }
       await expect(page).toHaveScreenshot(`${viewport.name}-${route.name}.png`, {
         fullPage: true,
         maxDiffPixelRatio: 0.01,
@@ -191,6 +541,11 @@ for (const viewport of VIEWPORTS) {
       await page.goto(route.path, { waitUntil: "domcontentloaded" });
       await page.waitForLoadState("networkidle").catch(() => {});
       await page.waitForTimeout(600);
+      if (route.name === "replay") {
+        await expect(page.getByText("actorNameBg", { exact: false })).toHaveCount(0);
+        await expect(page.getByText("targetNameBg", { exact: false })).toHaveCount(0);
+        await expect(page.getByText("roleNameBg", { exact: false })).toHaveCount(0);
+      }
       await expect(page).toHaveScreenshot(`${viewport.name}-${route.name}-light.png`, {
         fullPage: true,
         maxDiffPixelRatio: 0.01,

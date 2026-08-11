@@ -20,6 +20,7 @@ const gameUrl = `http://127.0.0.1:${gamePort}`;
 const wsUrl = `ws://127.0.0.1:${gamePort}`;
 const testSecret = "frontend-e2e-secret-that-is-long-enough";
 const databaseUrl = process.env.FRONTEND_E2E_DATABASE_URL ?? process.env.DATABASE_URL;
+const redisUrl = process.env.FRONTEND_E2E_REDIS_URL ?? process.env.REDIS_URL;
 const fixturePassword = "Frontend-e2e-password-2026!";
 
 const viewports = {
@@ -39,6 +40,7 @@ async function main() {
   }
 
   assertLocalTestDatabase(databaseUrl);
+  assertLocalTestRedis(redisUrl);
   mkdirSync(artifactDir, { recursive: true });
   await buildForE2e();
   authFixture = await seedAuthFixture(databaseUrl);
@@ -51,6 +53,7 @@ async function main() {
     BETTER_AUTH_URL: baseUrl,
     CORS_ORIGIN: baseUrl,
     DATABASE_URL: databaseUrl,
+    REDIS_URL: redisUrl,
   });
 
   await waitForJson(`${gameUrl}/health`, "game-server");
@@ -65,6 +68,7 @@ async function main() {
     GAME_TOKEN_SECRET: testSecret,
     ALLOW_DEV_AUTH: "false",
     DATABASE_URL: databaseUrl,
+    REDIS_URL: redisUrl,
   });
 
   await waitForJson(`${baseUrl}/api/health`, "web");
@@ -491,6 +495,24 @@ function assertLocalTestDatabase(value) {
   const databaseName = decodeURIComponent(parsed.pathname.replace(/^\//, ""));
   if (!localHosts.has(parsed.hostname) || !/(?:test|e2e)/i.test(databaseName)) {
     throw new Error("Frontend E2E refuses non-local or non-test databases.");
+  }
+}
+
+function assertLocalTestRedis(value) {
+  if (!value) {
+    throw new Error("FRONTEND_E2E_REDIS_URL or REDIS_URL must point to a local test Redis instance.");
+  }
+
+  let parsed;
+  try {
+    parsed = new URL(value);
+  } catch {
+    throw new Error("Frontend E2E Redis URL is invalid.");
+  }
+
+  const localHosts = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
+  if (!["redis:", "rediss:"].includes(parsed.protocol) || !localHosts.has(parsed.hostname)) {
+    throw new Error("Frontend E2E refuses non-local Redis instances.");
   }
 }
 

@@ -1,9 +1,195 @@
 import { describe, expect, it } from "vitest";
 import { initialState, queryFromState } from "./url";
 import { lobbyFormReducer } from "./reducer";
-import { estimatedDurationSeconds, optionsFromState } from "./selectors";
+import {
+  adjustManualRoleRoster,
+  estimatedDurationSeconds,
+  optionsFromState,
+  replaceManualRoleInRoster,
+} from "./selectors";
 
 describe("lobby form configuration invariants", () => {
+  it("replaces a villager when a special role is added to a full werewolf table", () => {
+    const result = adjustManualRoleRoster({
+      family: "werewolves",
+      playerCount: 12,
+      role: "healer",
+      delta: 1,
+      roles: {
+        ordinary_villager: 6,
+        werewolf: 3,
+        seer: 1,
+        witch: 1,
+        hunter: 1,
+      },
+    });
+
+    expect(result.status).toBe("changed");
+    expect(result.roles).toEqual({
+      ordinary_villager: 5,
+      werewolf: 3,
+      seer: 1,
+      witch: 1,
+      hunter: 1,
+      healer: 1,
+    });
+    expect(result.removedRole).toBe("ordinary_villager");
+  });
+
+  it("returns a removed special role to the table as a villager", () => {
+    const result = adjustManualRoleRoster({
+      family: "werewolves",
+      playerCount: 12,
+      role: "healer",
+      delta: -1,
+      roles: {
+        ordinary_villager: 5,
+        werewolf: 3,
+        seer: 1,
+        witch: 1,
+        hunter: 1,
+        healer: 1,
+      },
+    });
+
+    expect(result.status).toBe("changed");
+    expect(result.roles.healer).toBeUndefined();
+    expect(result.roles.ordinary_villager).toBe(6);
+    expect(result.addedRole).toBe("ordinary_villager");
+  });
+
+  it("asks for an explicit replacement when a full table has no ordinary role", () => {
+    const result = adjustManualRoleRoster({
+      family: "werewolves",
+      playerCount: 12,
+      role: "priest",
+      delta: 1,
+      roles: {
+        werewolf: 3,
+        vampire: 3,
+        seer: 1,
+        witch: 1,
+        healer: 1,
+        hunter: 1,
+        oracle: 1,
+        cupid: 1,
+      },
+    });
+
+    expect(result.status).toBe("replacement-required");
+    expect(result.roles).not.toHaveProperty("priest");
+  });
+
+  it("uses a civilian as the reserve seat for a full mafia table", () => {
+    const result = adjustManualRoleRoster({
+      family: "mafia",
+      playerCount: 10,
+      role: "detective",
+      delta: 1,
+      roles: {
+        civilian: 5,
+        commissioner: 1,
+        doctor: 1,
+        mafioso: 2,
+        don: 1,
+      },
+    });
+
+    expect(result.status).toBe("changed");
+    expect(result.roles.civilian).toBe(4);
+    expect(result.roles.detective).toBe(1);
+    expect(result.removedRole).toBe("civilian");
+  });
+
+  it("replaces an explicitly selected role when no reserve seat remains", () => {
+    const result = replaceManualRoleInRoster({
+      addRole: "priest",
+      removeRole: "vampire",
+      roles: {
+        werewolf: 3,
+        vampire: 3,
+        seer: 1,
+        witch: 1,
+        healer: 1,
+        hunter: 1,
+        oracle: 1,
+        cupid: 1,
+      },
+    });
+
+    expect(result.priest).toBe(1);
+    expect(result.vampire).toBe(2);
+    expect(Object.values(result).reduce((sum, count) => sum + (count ?? 0), 0)).toBe(12);
+  });
+
+  it("fills new manual werewolf seats with villagers when the table grows", () => {
+    const configured = lobbyFormReducer(initialState({ family: "werewolves" }), {
+      type: "SET_MANUAL_ROLES",
+      roles: {
+        ordinary_villager: 6,
+        werewolf: 3,
+        seer: 1,
+        witch: 1,
+        hunter: 1,
+      },
+    });
+
+    const resized = lobbyFormReducer(configured, { type: "SET_PLAYER_COUNT", playerCount: 14 });
+
+    expect(resized.manualRoles).toEqual({
+      ordinary_villager: 8,
+      werewolf: 3,
+      seer: 1,
+      witch: 1,
+      hunter: 1,
+    });
+  });
+
+  it("removes reserve civilians before special roles when a manual Mafia table shrinks", () => {
+    const configured = lobbyFormReducer(initialState({ family: "mafia" }), {
+      type: "SET_MANUAL_ROLES",
+      roles: {
+        civilian: 5,
+        commissioner: 1,
+        doctor: 1,
+        mafioso: 2,
+        don: 1,
+      },
+    });
+
+    const resized = lobbyFormReducer(configured, { type: "SET_PLAYER_COUNT", playerCount: 8 });
+
+    expect(resized.manualRoles).toEqual({
+      civilian: 3,
+      commissioner: 1,
+      doctor: 1,
+      mafioso: 2,
+      don: 1,
+    });
+  });
+
+  it("keeps a manual table seat-complete when it shrinks without reserve roles", () => {
+    const configured = lobbyFormReducer(initialState({ family: "werewolves" }), {
+      type: "SET_MANUAL_ROLES",
+      roles: {
+        werewolf: 3,
+        vampire: 3,
+        seer: 1,
+        witch: 1,
+        healer: 1,
+        hunter: 1,
+        oracle: 1,
+        cupid: 1,
+      },
+    });
+
+    const resized = lobbyFormReducer(configured, { type: "SET_PLAYER_COUNT", playerCount: 8 });
+
+    expect(Object.values(resized.manualRoles).reduce((sum, count) => sum + (count ?? 0), 0)).toBe(8);
+    expect(resized.manualRoles.werewolf).toBeGreaterThan(0);
+    expect(resized.manualRoles.vampire).toBeGreaterThan(0);
+  });
+
   it("serializes lovers from a manual Cupid roster", () => {
     const initial = initialState({
       family: "werewolves",

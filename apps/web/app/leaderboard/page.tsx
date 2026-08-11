@@ -112,13 +112,15 @@ const loadCachedLeaderboard = unstable_cache(
     }
 
     const db = createDatabase(databaseUrl);
-    const rows = await getLeaderboardRows(db);
+    const rows = await getLeaderboardRows(db, 30, {
+      since: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+    });
     return rows.map((row) => ({
       ...row,
       lastPlayedAt: row.lastPlayedAt?.toISOString() ?? null,
     }));
   },
-  ["public-leaderboard-v1"],
+  ["public-leaderboard-v2-weekly"],
   { revalidate: 60, tags: ["public-leaderboard"] },
 );
 

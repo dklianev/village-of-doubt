@@ -43,7 +43,12 @@ describe("role presets", () => {
 
   it("keeps every 6-30 player werewolves preset exact", () => {
     for (let playerCount = 6; playerCount <= 30; playerCount += 1) {
-      expect(countRoles(getWerewolvesMvpPreset(playerCount))).toBe(playerCount);
+      const preset = getWerewolvesMvpPreset(playerCount);
+      expect(countRoles(preset)).toBe(playerCount);
+      for (const [role, count] of Object.entries(preset)) {
+        expect(count, `${role} exceeds maxCopies at ${playerCount} players`)
+          .toBeLessThanOrEqual(ROLE_DEFINITIONS[role as keyof typeof ROLE_DEFINITIONS].maxCopies);
+      }
     }
   });
 
@@ -63,6 +68,8 @@ describe("role presets", () => {
   it("does not assign manual-only roles from default presets", () => {
     expect(getRoleRuntimeStatus("stray_cat")).toBe("manual_only");
     expect(getRoleRuntimeStatus("guard_dog")).toBe("manual_only");
+    expect(getRoleRuntimeStatus("thief")).toBe("playable");
+    expect(getRoleRuntimeStatus("little_girl")).toBe("manual_only");
 
     for (let playerCount = 6; playerCount <= 30; playerCount += 1) {
       for (const role of Object.keys(getWerewolvesMvpPreset(playerCount))) {
@@ -89,6 +96,24 @@ describe("role presets", () => {
     expect(withLovers.cupid).toBe(1);
     expect(countRoles(withLovers)).toBe(10);
     expect((withLovers.ordinary_villager ?? 0) + 1).toBe(withoutLovers.ordinary_villager);
+  });
+
+  it("adds Jester to optional presets for both game families", () => {
+    const werewolfConfig = createGameConfigFromOptions({
+      mode: "werewolves_classic",
+      playerCount: 10,
+      jesterEnabled: true,
+    });
+    const mafiaConfig = createGameConfigFromOptions({
+      mode: "mafia_free",
+      playerCount: 10,
+      jesterEnabled: true,
+    });
+
+    expect(werewolfConfig.roles.jester).toBe(1);
+    expect(countRoles(werewolfConfig.roles)).toBe(10);
+    expect(mafiaConfig.roles.jester).toBe(1);
+    expect(countRoles(mafiaConfig.roles)).toBe(10);
   });
 
   it("warns on impossible manual role counts", () => {
@@ -365,6 +390,7 @@ describe("role presets", () => {
       expect.arrayContaining(["civilian", "commissioner", "doctor", "mafioso", "don", "jester"]),
     );
     expect(getRolesForFamily("werewolves")).toContain("werewolf");
+    expect(getRolesForFamily("werewolves")).toContain("jester");
     expect(getRolesForFamily("werewolves")).not.toContain("mafioso");
     expect(getRolesForFamily("werewolves")).toEqual(expect.arrayContaining(["oracle", "blacksmith", "stray_cat", "guard_dog"]));
     expect(ROLE_DEFINITIONS.werewolf.availableInFamilies).toEqual(["werewolves"]);

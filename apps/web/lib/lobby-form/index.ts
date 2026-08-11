@@ -11,6 +11,7 @@ export type {
 export { MANUAL_PRESET_STORAGE_KEY } from "./templates";
 export { lobbyFormReducer } from "./reducer";
 export {
+  adjustManualRoleRoster,
   availableModes,
   boundedPlayerCount,
   cleanRoomCode,
@@ -31,6 +32,7 @@ export {
   roleTotal,
   roleWarningIssues,
   roleWarnings,
+  replaceManualRoleInRoster,
   timersForState,
 } from "./selectors";
 export { hrefForState, initialState, queryFromState } from "./url";

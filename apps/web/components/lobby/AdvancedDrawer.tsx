@@ -78,6 +78,7 @@ export function AdvancedDrawer({
             <p className="advanced-panel-note">
               Добави Купидон от картите с роли. През първата нощ той свързва двама Влюбени.
             </p>
+            <Toggle checked={state.advanced.jesterEnabled} label="Добави Шут с лична победа" onChange={(value) => setAdvanced("jesterEnabled", value)} />
           </section>
         ) : (
           <section className="advanced-panel">

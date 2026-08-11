@@ -211,6 +211,7 @@ function mockHooks(phase: GamePhase = "lobby", overrides: Record<string, unknown
     status: "",
     setStatus: vi.fn(),
     connectionStatus: "connected",
+    recordedGameId: null,
     unlockedAchievementIds: [],
     setUnlockedAchievementIds: vi.fn(),
     reconnectNow: mocks.reconnectNow,
@@ -322,7 +323,10 @@ describe("PlayRoomClient orchestrator", () => {
 
     expect(screen.getByText("Селото печели")).toBeInTheDocument();
     expect(screen.getByTestId("post-game-story")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Нова игра" })).toHaveAttribute("href", "/create?mode=werewolves_classic");
+    expect(screen.getByRole("link", { name: "Повтори настройките" })).toHaveAttribute(
+      "href",
+      expect.stringContaining("/werewolf/create?"),
+    );
     expect(screen.getByRole("link", { name: "Към архива" })).toHaveAttribute("href", "/history");
     expect(screen.queryByTestId("role-card")).not.toBeInTheDocument();
     expect(screen.queryByTestId("narrator-desk")).not.toBeInTheDocument();
@@ -330,6 +334,17 @@ describe("PlayRoomClient orchestrator", () => {
     expect(screen.queryByText("Пулсът на стаята")).not.toBeInTheDocument();
     expect(document.querySelector(".play-layout")).toHaveAttribute("data-stage-takeover", "true");
     expect(document.querySelector(".play-layout")).not.toHaveAttribute("data-has-narrator-deck");
+  });
+
+  it("links a persisted game-over scene directly to its replay", () => {
+    mockHooks("game_over", { recordedGameId: "game-1" });
+
+    render(<PlayRoomClient code="ABCD" createOptions={{ mode: "werewolves_classic" }} />);
+
+    expect(screen.getByRole("link", { name: "Виж записа на играта" })).toHaveAttribute(
+      "href",
+      "/history/game-1/replay",
+    );
   });
 
   it("does not steal Enter from focused action dock controls", async () => {
