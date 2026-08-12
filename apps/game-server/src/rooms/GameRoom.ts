@@ -89,7 +89,10 @@ function persistencePriorityForEvent(type: string): NonNullable<PersistenceQueue
 
 export async function authenticateGameJoin(
   options: JoinRoomOptions,
-  { consumeNonce }: { consumeNonce: boolean },
+  {
+    consumeNonce,
+    enforceJoinRateLimit = false,
+  }: { consumeNonce: boolean; enforceJoinRateLimit?: boolean },
 ): Promise<ClientAuth> {
   const roomCode = normalizeRoomCode(options.code ?? "");
   if (!ROOM_CODE_REGEX.test(roomCode)) {
@@ -98,6 +101,9 @@ export async function authenticateGameJoin(
 
   const allowDevAuth = process.env.ALLOW_DEV_AUTH === "true" && process.env.NODE_ENV !== "production";
   if (allowDevAuth && options.userId && options.displayName) {
+    if (enforceJoinRateLimit && !await PlayerPresenceManager.checkJoinRateLimit(options.userId)) {
+      throw new Error("Твърде много опити за вход. Изчакай малко.");
+    }
     const claimed = await PlayerPresenceManager.claimActiveRoom(
       options.userId,
       roomCode,
@@ -110,6 +116,7 @@ export async function authenticateGameJoin(
       userId: options.userId,
       displayName: options.displayName,
       avatarId: options.avatarId ? normalizeAvatarId(options.avatarId) : avatarIdForSeed(options.userId),
+      matchmakingGuardsApplied: enforceJoinRateLimit,
     };
   }
 
@@ -119,8 +126,15 @@ export async function authenticateGameJoin(
 
   const payload = verifyGameToken(options.token, getGameTokenSecret(), { roomCode });
   const tokenExpiresAtMs = payload.expiresAt * 1_000;
+  const tokenIssuedAtMs = payload.issuedAtMs;
+  if (await PlayerPresenceManager.isGameSessionRevoked(payload.userId, tokenIssuedAtMs)) {
+    throw new Error("Тази сесия е прекратена. Влез отново.");
+  }
   if (consumeNonce && !await PlayerPresenceManager.consumeTokenNonce(payload.nonce, tokenExpiresAtMs)) {
     throw new Error("Този токен вече е използван.");
+  }
+  if (enforceJoinRateLimit && !await PlayerPresenceManager.checkJoinRateLimit(payload.userId)) {
+    throw new Error("Твърде много опити за вход. Изчакай малко.");
   }
   const claimed = await PlayerPresenceManager.claimActiveRoom(
     payload.userId,
@@ -136,7 +150,9 @@ export async function authenticateGameJoin(
     avatarId: payload.avatarId,
     tokenNonce: payload.nonce,
     tokenExpiresAtMs,
+    tokenIssuedAtMs,
     tokenNonceConsumed: consumeNonce,
+    matchmakingGuardsApplied: enforceJoinRateLimit,
   };
 }
 
@@ -187,6 +203,33 @@ export class GameRoom extends Room<{ state: GameState }> {
         ? { ...GameRoom.recentEndings[0], code: hashRoomCode(GameRoom.recentEndings[0].code) }
         : null,
     };
+  }
+
+  static revokeUserConnections(userId: string) {
+    let revoked = 0;
+    for (const room of GameRoom.liveRooms) {
+      revoked += room.revokeUserConnection(userId) ? 1 : 0;
+    }
+    return revoked;
+  }
+
+  static async reconcileRevokedConnections() {
+    let revoked = 0;
+    for (const room of GameRoom.liveRooms) {
+      const activeClients = [...room.clients];
+      for (const client of activeClients) {
+        const auth = getAuth(client);
+        if (
+          auth?.tokenIssuedAtMs !== undefined
+          && room.playerPresence.getClient(auth.userId) === client
+          && await PlayerPresenceManager.isGameSessionRevoked(auth.userId, auth.tokenIssuedAtMs)
+          && room.revokeUserConnection(auth.userId)
+        ) {
+          revoked += 1;
+        }
+      }
+    }
+    return revoked;
   }
 
   static getRoomPreview(code: string): GameRoomPreview | null {
@@ -316,7 +359,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       auth.tokenNonceConsumed = true;
     }
 
-    if (!await PlayerPresenceManager.checkJoinRateLimit(auth.userId)) {
+    if (!auth.matchmakingGuardsApplied && !await PlayerPresenceManager.checkJoinRateLimit(auth.userId)) {
       client.send("safe_error", {
         type: "safe_error",
         messageBg: "Твърде много опити за вход. Изчакай малко.",
@@ -324,7 +367,6 @@ export class GameRoom extends Room<{ state: GameState }> {
       client.leave(4029);
       return;
     }
-
     const previousClient = this.playerPresence.getClient(auth.userId);
     const existingEntry = this.findPlayerEntryByUserId(auth.userId);
     const existing = existingEntry?.[1];
@@ -407,8 +449,8 @@ export class GameRoom extends Room<{ state: GameState }> {
   }
 
   private activateClient(auth: ClientAuth, client: Client, previousClient?: Client) {
-    client.userData = auth;
-    this.playerPresence.attachClient(auth.userId, client);
+    const connectionGeneration = this.playerPresence.activateClient(auth.userId, client);
+    client.userData = { ...auth, connectionGeneration } satisfies ClientAuth;
     if (!previousClient || previousClient.sessionId === client.sessionId) {
       return;
     }
@@ -418,6 +460,20 @@ export class GameRoom extends Room<{ state: GameState }> {
       messageBg: "Влязохте от друго устройство.",
     } satisfies ServerEvent);
     previousClient.leave(1000);
+  }
+
+  private revokeUserConnection(userId: string) {
+    const client = this.playerPresence.getClient(userId);
+    if (!client) {
+      return false;
+    }
+    this.playerPresence.invalidateConnectionGeneration(userId);
+    client.send("safe_error", {
+      type: "safe_error",
+      messageBg: "Сесията ти беше прекратена. Влез отново, за да продължиш.",
+    } satisfies ServerEvent);
+    client.leave(4029);
+    return true;
   }
 
   async onDrop(client: Client) {
@@ -435,10 +491,32 @@ export class GameRoom extends Room<{ state: GameState }> {
     await this.allowReconnection(client, this.config.liveMode ? 300 : 90);
   }
 
-  onReconnect(client: Client) {
+  async onReconnect(client: Client) {
     const auth = getAuth(client);
     if (!auth) {
       return;
+    }
+
+    if (!this.playerPresence.isCurrentConnectionGeneration(auth.userId, auth.connectionGeneration)) {
+      this.sendSafeError(client, "Тази връзка е заменена от по-нова сесия.");
+      client.leave(4029);
+      return;
+    }
+
+    if (auth.tokenIssuedAtMs !== undefined) {
+      try {
+        if (await PlayerPresenceManager.isGameSessionRevoked(auth.userId, auth.tokenIssuedAtMs)) {
+          this.playerPresence.invalidateConnectionGeneration(auth.userId);
+          this.sendSafeError(client, "Сесията ти беше прекратена. Влез отново, за да продължиш.");
+          client.leave(4029);
+          return;
+        }
+      } catch {
+        this.playerPresence.invalidateConnectionGeneration(auth.userId);
+        this.sendSafeError(client, "Не успяхме да възстановим сигурно връзката. Опитай отново.");
+        client.leave(4029);
+        return;
+      }
     }
 
     this.playerPresence.attachClient(auth.userId, client);
@@ -2850,7 +2928,7 @@ export class GameRoom extends Room<{ state: GameState }> {
   }
 }
 
-function getGameTokenSecret() {
+export function getGameTokenSecret() {
   const secret =
     process.env.GAME_TOKEN_SECRET ??
     process.env.BETTER_AUTH_SECRET ??

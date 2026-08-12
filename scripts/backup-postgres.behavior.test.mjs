@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { generateKeyPairSync } from "node:crypto";
+import { createHash, generateKeyPairSync } from "node:crypto";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -7,7 +7,8 @@ import { spawnSync } from "node:child_process";
 import test from "node:test";
 import { signReleaseManifest } from "./release-manifest.mjs";
 
-const isPosix = process.platform !== "win32";
+const posixShell = process.env.POSIX_SHELL || "/bin/sh";
+const isPosix = process.platform !== "win32" || Boolean(process.env.POSIX_SHELL);
 
 function createFixture() {
   const directory = mkdtempSync(path.join(tmpdir(), "werewolf-backup-test-"));
@@ -15,6 +16,9 @@ function createFixture() {
   const backupScript = path.join(directory, "backup-postgres.sh");
   const freshnessScript = path.join(directory, "check-backup-freshness.sh");
   const restoreScript = path.join(directory, "restore-postgres.sh");
+  const manifestScript = path.join(directory, "backup-manifest.mjs");
+  const signingPrivateKey = path.join(directory, "backup-signing.key");
+  const signingPublicKey = path.join(directory, "backup-signing.pub");
   const dockerStub = path.join(directory, "fake-docker");
   const ageStub = path.join(directory, "fake-age");
   const dockerLog = path.join(directory, "docker.log");
@@ -22,6 +26,10 @@ function createFixture() {
   writeFileSync(backupScript, normalized("scripts/backup-postgres.sh"), { mode: 0o755 });
   writeFileSync(freshnessScript, normalized("scripts/check-backup-freshness.sh"), { mode: 0o755 });
   writeFileSync(restoreScript, normalized("scripts/restore-postgres.sh"), { mode: 0o755 });
+  writeFileSync(manifestScript, normalized("scripts/backup-manifest.mjs"), { mode: 0o755 });
+  const signingKeys = generateKeyPairSync("ed25519");
+  writeFileSync(signingPrivateKey, signingKeys.privateKey.export({ type: "pkcs8", format: "pem" }), { mode: 0o600 });
+  writeFileSync(signingPublicKey, signingKeys.publicKey.export({ type: "spki", format: "pem" }));
   writeFileSync(
     ageStub,
     `#!/bin/sh
@@ -68,7 +76,19 @@ esac
     { mode: 0o755 },
   );
 
-  return { ageStub, backupDir, backupScript, directory, dockerLog, dockerStub, freshnessScript, restoreScript };
+  return {
+    ageStub,
+    backupDir,
+    backupScript,
+    directory,
+    dockerLog,
+    dockerStub,
+    freshnessScript,
+    manifestScript,
+    restoreScript,
+    signingPrivateKey,
+    signingPublicKey,
+  };
 }
 
 function normalized(file) {
@@ -76,7 +96,7 @@ function normalized(file) {
 }
 
 function run(script, env, args = []) {
-  return spawnSync("/bin/sh", [script, ...args], {
+  return spawnSync(posixShell, [script, ...args], {
     encoding: "utf8",
     env: { ...process.env, ...env },
   });
@@ -89,6 +109,9 @@ function baseEnv(fixture) {
     BACKUP_AGE_COMMAND: fixture.ageStub,
     BACKUP_AGE_RECIPIENT: "age1testrecipient",
     BACKUP_REQUIRE_FIXED_CONTAINER: "1",
+    BACKUP_REQUIRE_SIGNATURE: "1",
+    BACKUP_MANIFEST_COMMAND: fixture.manifestScript,
+    BACKUP_SIGNING_PRIVATE_KEY_FILE: fixture.signingPrivateKey,
     FAKE_DOCKER_LOG: fixture.dockerLog,
   };
 }
@@ -169,7 +192,7 @@ test("scheduled backup accepts an explicit fixed container without discovery", {
   assert.match(calls, /^exec -i werewolf-postgres-1 pg_dump /m);
 });
 
-test("freshness rejects backups timestamped beyond clock-skew tolerance", { skip: !isPosix }, () => {
+test("freshness trusts the signed creation time instead of mutable file metadata", { skip: !isPosix }, () => {
   const fixture = createFixture();
   const backup = run(fixture.backupScript, {
     ...baseEnv(fixture),
@@ -186,9 +209,11 @@ test("freshness rejects backups timestamped beyond clock-skew tolerance", { skip
   const freshness = run(fixture.freshnessScript, {
     BACKUP_CLOCK_SKEW_SECONDS: "300",
     BACKUP_DIR: fixture.backupDir,
+    BACKUP_MANIFEST_COMMAND: fixture.manifestScript,
+    BACKUP_SIGNING_PUBLIC_KEY_FILE: fixture.signingPublicKey,
   });
-  assert.notEqual(freshness.status, 0);
-  assert.match(freshness.stderr, /timestamp is in the future/);
+  assert.equal(freshness.status, 0, freshness.stderr);
+  assert.match(freshness.stdout, /Backup verified/);
 });
 
 test("encrypted restore fails closed without the private identity", { skip: !isPosix }, () => {
@@ -196,12 +221,8 @@ test("encrypted restore fails closed without the private identity", { skip: !isP
   mkdirSync(fixture.backupDir);
   const backupPath = path.join(fixture.backupDir, "werewolf_2026-08-12_12-00-00.sql.gz.age");
   writeFileSync(backupPath, "encrypted");
-  const checksum = spawnSync("sha256sum", [path.basename(backupPath)], {
-    cwd: fixture.backupDir,
-    encoding: "utf8",
-  });
-  assert.equal(checksum.status, 0, checksum.stderr);
-  writeFileSync(`${backupPath}.sha256`, checksum.stdout);
+  const checksum = createHash("sha256").update(readFileSync(backupPath)).digest("hex");
+  writeFileSync(`${backupPath}.sha256`, `${checksum}  ${path.basename(backupPath)}\n`);
 
   const result = run(fixture.restoreScript, {
     BACKUP_AGE_COMMAND: fixture.ageStub,
@@ -289,7 +310,7 @@ exec "${process.execPath}" "$@"
     { mode: 0o755 },
   );
 
-  const result = spawnSync("/bin/sh", ["scripts/deploy-release.sh", releaseManifest], {
+  const result = spawnSync(posixShell, ["scripts/deploy-release.sh", releaseManifest], {
     cwd: process.cwd(),
     encoding: "utf8",
     env: {
@@ -353,7 +374,7 @@ esac
     { mode: 0o755 },
   );
 
-  const result = spawnSync("/bin/sh", ["scripts/rollback-release.sh", releaseManifest], {
+  const result = spawnSync(posixShell, ["scripts/rollback-release.sh", releaseManifest], {
     cwd: process.cwd(),
     encoding: "utf8",
     env: {

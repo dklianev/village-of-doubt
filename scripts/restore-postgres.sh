@@ -16,6 +16,11 @@ restore_health_timeout="${RESTORE_HEALTH_TIMEOUT_SECONDS:-180}"
 restore_only="${RESTORE_ONLY:-0}"
 age_command="${BACKUP_AGE_COMMAND:-age}"
 age_identity_file="${BACKUP_AGE_IDENTITY_FILE:-}"
+require_signature="${BACKUP_REQUIRE_SIGNATURE:-1}"
+signing_public_key="${BACKUP_SIGNING_PUBLIC_KEY_FILE:-}"
+manifest_command="${BACKUP_MANIFEST_COMMAND:-$(dirname "$0")/backup-manifest.mjs}"
+restore_max_age_hours="${BACKUP_MAX_RESTORE_AGE_HOURS:-876000}"
+backup_clock_skew_seconds="${BACKUP_CLOCK_SKEW_SECONDS:-300}"
 
 if [ ! -f "$backup_file" ]; then
   printf 'Backup file not found: %s\n' "$backup_file" >&2
@@ -45,6 +50,14 @@ case "$restore_only" in
   0|1) ;;
   *)
     printf 'RESTORE_ONLY must be 0 or 1.\n' >&2
+    exit 1
+    ;;
+esac
+
+case "$require_signature" in
+  0|1) ;;
+  *)
+    printf 'BACKUP_REQUIRE_SIGNATURE must be 0 or 1.\n' >&2
     exit 1
     ;;
 esac
@@ -181,6 +194,28 @@ trap 'exit 129' HUP
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
+case "$backup_file" in
+  *.age)
+    if [ -z "$age_identity_file" ] || [ ! -f "$age_identity_file" ]; then
+      printf 'BACKUP_AGE_IDENTITY_FILE must reference an existing identity file for encrypted restores.\n' >&2
+      exit 1
+    fi
+    ;;
+esac
+
+if [ "$require_signature" = "1" ]; then
+  if [ -z "$signing_public_key" ] || [ ! -f "$signing_public_key" ]; then
+    printf 'BACKUP_SIGNING_PUBLIC_KEY_FILE must reference an Ed25519 public key.\n' >&2
+    exit 1
+  fi
+  node "$manifest_command" verify \
+    "$backup_file" \
+    "$signing_public_key" \
+    "$POSTGRES_DB" \
+    "$restore_max_age_hours" \
+    "$backup_clock_skew_seconds" >/dev/null
+fi
+
 if [ -f "$backup_file.sha256" ]; then
   (cd "$(dirname "$backup_file")" && sha256sum -c "$(basename "$backup_file").sha256")
 fi
@@ -189,10 +224,6 @@ case "$backup_file" in
   *.age)
     if [ ! -f "$backup_file.sha256" ]; then
       printf 'Encrypted restore requires the matching SHA-256 sidecar.\n' >&2
-      exit 1
-    fi
-    if [ -z "$age_identity_file" ] || [ ! -f "$age_identity_file" ]; then
-      printf 'BACKUP_AGE_IDENTITY_FILE must reference an existing identity file for encrypted restores.\n' >&2
       exit 1
     fi
     if ! command -v "$age_command" >/dev/null 2>&1; then

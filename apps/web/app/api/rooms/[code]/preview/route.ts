@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { ROOM_CODE_REGEX, normalizeRoomCodeInput, type GameFamily } from "@werewolf/shared";
+import { createRoomPreviewCredential } from "@werewolf/shared/server";
 import { auth } from "@/lib/auth";
 import { createRuntimeIntakeRateLimiter, requestRateLimitKey } from "@/lib/intake-security";
 import type { RateLimitResult } from "@/lib/rate-limit";
@@ -68,6 +69,9 @@ export function createRoomPreviewHandler(dependencies: RoomPreviewDependencies) 
         dependencies.getSession(request.headers),
         dependencies.fetcher(`${gameServerHttpUrl()}/rooms/${code}/preview`, {
           cache: "no-store",
+          headers: {
+            "X-Werewolf-Room-Preview": createRoomPreviewCredential(code, gameTokenSecret()),
+          },
           signal: AbortSignal.timeout(2000),
         }),
       ]);
@@ -198,4 +202,12 @@ function gameServerHttpUrl() {
   }
 
   return "http://localhost:2567";
+}
+
+function gameTokenSecret() {
+  const secret = process.env.GAME_TOKEN_SECRET ?? "dev-only-secret-replace-before-production-32-chars";
+  if (process.env.NODE_ENV === "production" && !process.env.GAME_TOKEN_SECRET) {
+    throw new Error("GAME_TOKEN_SECRET липсва за вътрешната проверка на стая.");
+  }
+  return secret;
 }

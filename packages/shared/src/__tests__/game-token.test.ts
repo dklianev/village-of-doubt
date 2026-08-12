@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { createGameToken, normalizeRoomCode, verifyGameToken } from "../server.js";
+import {
+  createGameSessionRevocationMessage,
+  createGameToken,
+  createRoomPreviewCredential,
+  gameSessionRevocationKey,
+  normalizeRoomCode,
+  parseGameSessionRevocationMessage,
+  verifyGameToken,
+  verifyRoomPreviewCredential,
+} from "../server.js";
 
 const secret = "test-secret-with-enough-length-32";
 
@@ -20,6 +29,7 @@ describe("game tokens", () => {
     expect(payload.displayName).toBe("Мила");
     expect(payload.avatarId).toBe("portrait-f04");
     expect(payload.roomCode).toBe("RAVN42");
+    expect(payload.issuedAtMs).toBeGreaterThan(0);
   });
 
   it("rejects tampered tokens", () => {
@@ -85,6 +95,14 @@ describe("game tokens", () => {
     expect(normalizeRoomCode(" ravn-42 ")).toBe("RAVN42");
   });
 
+  it("binds internal room preview credentials to the canonical room code", () => {
+    const credential = createRoomPreviewCredential(" ravn-42 ", secret);
+
+    expect(verifyRoomPreviewCredential("RAVN42", credential, secret)).toBe(true);
+    expect(verifyRoomPreviewCredential("OTHER1", credential, secret)).toBe(false);
+    expect(verifyRoomPreviewCredential("RAVN42", `${credential}x`, secret)).toBe(false);
+  });
+
   it("rejects non-catalog avatar identifiers when issuing tokens", () => {
     expect(() =>
       createGameToken({
@@ -95,5 +113,17 @@ describe("game tokens", () => {
         secret,
       }),
     ).toThrow("Невалиден портрет");
+  });
+});
+
+describe("game session revocation messages", () => {
+  it("serializes only a bounded user identifier", () => {
+    const message = createGameSessionRevocationMessage("user-1", 1_000);
+
+    expect(parseGameSessionRevocationMessage(message)).toEqual({ userId: "user-1", revokedAtMs: 1_000 });
+    expect(gameSessionRevocationKey("user-1")).toMatch(/^wm:security:game-session-revoked:[a-f0-9]{64}$/);
+    expect(parseGameSessionRevocationMessage('{"version":1,"userId":""}')).toBeNull();
+    expect(parseGameSessionRevocationMessage('{"version":1,"userId":"user\\nsecret"}')).toBeNull();
+    expect(parseGameSessionRevocationMessage("not-json")).toBeNull();
   });
 });

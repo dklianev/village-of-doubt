@@ -10,6 +10,9 @@ Group=root
 EnvironmentFile=/etc/werewolf/backup.env
 Environment=BACKUP_REQUIRE_FIXED_CONTAINER=1
 Environment=BACKUP_REQUIRE_ENCRYPTION=1
+Environment=BACKUP_REQUIRE_SIGNATURE=1
+Environment=BACKUP_SIGNING_PRIVATE_KEY_FILE=/etc/werewolf/backup-signing.key
+Environment=BACKUP_SIGNING_PUBLIC_KEY_FILE=/etc/werewolf/backup-signing.pub
 Environment=BACKUP_DIR=/var/backups/werewolf
 Environment=BACKUP_RETENTION_DAYS=14
 Environment=BACKUP_MAX_AGE_HOURS=8
@@ -34,7 +37,7 @@ LockPersonality=true
 MemoryDenyWriteExecute=true
 CapabilityBoundingSet=
 SystemCallArchitectures=native
-ReadOnlyPaths=/usr/local/libexec/werewolf /etc/werewolf/backup.env
+ReadOnlyPaths=/usr/local/libexec/werewolf /etc/werewolf/backup.env /etc/werewolf/backup-signing.key /etc/werewolf/backup-signing.pub
 ReadWritePaths=/var/backups/werewolf
 TimeoutStartSec=30min
 

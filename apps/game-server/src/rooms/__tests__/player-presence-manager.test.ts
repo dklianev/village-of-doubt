@@ -49,13 +49,18 @@ describe("PlayerPresenceManager", () => {
     const store: PlayerSecurityStore = {
       consumeTokenNonce: vi.fn(async () => false),
       checkJoinRateLimit: vi.fn(async () => false),
+      claimActiveRoom: vi.fn(async () => false),
+      releaseActiveRoom: vi.fn(async () => undefined),
+      isGameSessionRevoked: vi.fn(async () => true),
     };
     PlayerPresenceManager.configureSecurityStore(store);
 
     await expect(PlayerPresenceManager.consumeTokenNonce("nonce-1", Date.now() + 60_000)).resolves.toBe(false);
     await expect(PlayerPresenceManager.checkJoinRateLimit("user-1")).resolves.toBe(false);
+    await expect(PlayerPresenceManager.isGameSessionRevoked("user-1", 1_000)).resolves.toBe(true);
     expect(store.consumeTokenNonce).toHaveBeenCalledOnce();
     expect(store.checkJoinRateLimit).toHaveBeenCalledOnce();
+    expect(store.isGameSessionRevoked).toHaveBeenCalledOnce();
   });
 
   it("tracks and detaches the active client for a user", () => {

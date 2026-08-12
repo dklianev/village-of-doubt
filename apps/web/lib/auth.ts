@@ -1,4 +1,5 @@
 import { createDatabase } from "@werewolf/database";
+import { createHash } from "node:crypto";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError, createAuthMiddleware } from "better-auth/api";
@@ -8,6 +9,8 @@ import { sendEmail } from "./email";
 import { renderResetPasswordEmail, renderVerifyEmail } from "./email-templates";
 import { createBetterAuthRateLimitStorage } from "./redis-rate-limit";
 import { getRuntimeRateLimitBackend } from "./runtime-rate-limit";
+import type { SharedRateLimitBackend } from "./rate-limit";
+import { revokeActiveGameSessions } from "./game-session-revocation";
 
 const databaseUrl = process.env.DATABASE_URL;
 const db = databaseUrl ? createDatabase(databaseUrl) : undefined;
@@ -15,14 +18,24 @@ const DEVELOPMENT_AUTH_SECRET = "dev-only-secret-replace-before-production-32-ch
 const PLACEHOLDER_SECRET_PATTERN = /dev-only|replace|change-me|placeholder/i;
 export const ACCOUNT_DELETE_FRESH_AGE_SECONDS = 10 * 60;
 export const AUTH_RATE_LIMIT_RULES = {
-  "/sign-in/email": { window: 60, max: 10 },
-  "/sign-up/email": { window: 60 * 60, max: 5 },
-  "/sign-in/social": { window: 60, max: 20 },
+  // These are shared-IP guards. Account-specific abuse is limited separately
+  // so a full table behind one home, school, or venue NAT can still sign in.
+  "/sign-in/email": { window: 60, max: 60 },
+  "/sign-up/email": { window: 60 * 60, max: 60 },
+  "/sign-in/social": { window: 60, max: 60 },
   "/callback/*": { window: 60, max: 30 },
-  "/request-password-reset": { window: 60 * 60, max: 5 },
-  "/send-verification-email": { window: 60 * 60, max: 5 },
-  "/reset-password": { window: 5 * 60, max: 10 },
+  "/request-password-reset": { window: 60 * 60, max: 60 },
+  "/send-verification-email": { window: 60 * 60, max: 60 },
+  "/reset-password": { window: 5 * 60, max: 30 },
 } as const;
+
+const AUTH_IDENTIFIER_RATE_LIMIT_RULES = {
+  "/sign-in/email": { windowMs: 60_000, limit: 10 },
+  "/sign-up/email": { windowMs: 3_600_000, limit: 5 },
+  "/request-password-reset": { windowMs: 3_600_000, limit: 5 },
+  "/send-verification-email": { windowMs: 3_600_000, limit: 5 },
+} as const;
+const authIdentifierRateLimitBackend = getRuntimeRateLimitBackend("auth-identity");
 
 type AuthSecretEnvironment = {
   NODE_ENV?: string;
@@ -30,6 +43,47 @@ type AuthSecretEnvironment = {
   BETTER_AUTH_SECRETS?: string;
   BETTER_AUTH_LEGACY_TOKENS_RETIRED?: string;
 };
+
+type AuthIdentifierRateLimitInput = {
+  path: string;
+  body: unknown;
+  backend?: SharedRateLimitBackend;
+  nodeEnv?: string;
+  now?: number;
+};
+
+export async function enforceAuthIdentifierRateLimit({
+  path,
+  body,
+  backend = authIdentifierRateLimitBackend,
+  nodeEnv = process.env.NODE_ENV,
+  now = Date.now(),
+}: AuthIdentifierRateLimitInput) {
+  if (nodeEnv !== "production" || !(path in AUTH_IDENTIFIER_RATE_LIMIT_RULES)) {
+    return;
+  }
+
+  const email = isRecord(body) && typeof body.email === "string"
+    ? body.email.trim().toLocaleLowerCase("en-US")
+    : "";
+  if (!email) {
+    return;
+  }
+
+  const rule = AUTH_IDENTIFIER_RATE_LIMIT_RULES[path as keyof typeof AUTH_IDENTIFIER_RATE_LIMIT_RULES];
+  const identifier = createHash("sha256").update(email).digest("hex");
+  const result = await backend.consume({
+    key: `${path}:${identifier}`,
+    limit: rule.limit,
+    windowMs: rule.windowMs,
+    now,
+  });
+  if (!result.allowed) {
+    throw new APIError("TOO_MANY_REQUESTS", {
+      message: "Твърде много опити. Опитай отново по-късно.",
+    });
+  }
+}
 
 export function resolveBetterAuthSecret(
   environment: AuthSecretEnvironment = process.env,
@@ -92,6 +146,15 @@ export const auth = betterAuth({
 
       await sendEmail({ to: user.email, ...template });
     },
+    onPasswordReset: async ({ user }) => {
+      try {
+        await revokeActiveGameSessions(user.id);
+      } catch (error) {
+        console.error("[auth] active game-session revocation failed", {
+          name: error instanceof Error ? error.name : "UnknownError",
+        });
+      }
+    },
   },
   emailVerification: {
     sendOnSignUp: true,
@@ -141,6 +204,11 @@ export const auth = betterAuth({
   },
   hooks: {
     before: createAuthMiddleware(async (ctx) => {
+      await enforceAuthIdentifierRateLimit({
+        path: ctx.path,
+        body: ctx.body,
+      });
+
       if (!["/sign-up/email", "/update-user"].includes(ctx.path) || !ctx.body) {
         return;
       }
@@ -172,6 +240,10 @@ export const auth = betterAuth({
   },
   socialProviders: buildSocialProviders(),
 });
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
 
 function buildSocialProviders() {
   const providers: Record<string, { clientId: string; clientSecret: string }> = {};

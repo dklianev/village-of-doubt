@@ -4,7 +4,7 @@ import type { Room as ClientRoom } from "@colyseus/sdk";
 import type { NightActionCapabilities, PrivateFactionRoster, RoleCode } from "@werewolf/shared";
 import { createGameToken } from "@werewolf/shared/server";
 import appConfig, { OperationalGameRoom } from "../app.config.js";
-import { authenticateGameJoin, type GameRoom } from "../rooms/GameRoom.js";
+import { authenticateGameJoin, GameRoom } from "../rooms/GameRoom.js";
 import { PlayerPresenceManager } from "../rooms/player-presence-manager.js";
 import type { GameState } from "../rooms/schemas/GameState.js";
 
@@ -190,6 +190,107 @@ describe("GameRoom security boundaries", () => {
     }, {} as never)).rejects.toThrow();
   });
 
+  it("terminates only the revoked user's active game connection", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "REVK23",
+      mode: "werewolves_classic",
+      playerCount: 6,
+    });
+    const clients = await connectPlayers(colyseus, serverRoom, 2, "revoked-user");
+    const revokedClient = clients[0];
+    const otherClient = clients[1];
+    expect(revokedClient).toBeTruthy();
+    expect(otherClient).toBeTruthy();
+
+    const safeError = revokedClient?.waitForMessage("safe_error") as Promise<{ messageBg: string }>;
+    const leaveCode = new Promise<number>((resolve) => revokedClient?.onLeave(resolve));
+
+    expect(GameRoom.revokeUserConnections("revoked-user-1")).toBe(1);
+    await expect(safeError).resolves.toEqual({
+      type: "safe_error",
+      messageBg: "Сесията ти беше прекратена. Влез отново, за да продължиш.",
+    });
+    await expect(leaveCode).resolves.toBe(4029);
+    expect(otherClient?.connection.isOpen).toBe(true);
+  });
+
+  it("does not revoke a newer active client because an older client is still listed", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "RACE23",
+      mode: "werewolves_classic",
+      playerCount: 6,
+    });
+    const oldClient = fakeClient("revocation-race-old");
+    const newClient = fakeClient("revocation-race-new");
+    const identity = {
+      userId: "revocation-race-user",
+      displayName: "Повторно влязъл играч",
+      avatarId: "portrait-m03" as const,
+    };
+
+    await serverRoom.onJoin(oldClient, { code: "RACE23" }, { ...identity, tokenIssuedAtMs: 1_000 });
+    await serverRoom.onJoin(newClient, { code: "RACE23" }, { ...identity, tokenIssuedAtMs: 2_000 });
+    serverRoom.clients.push(oldClient, newClient);
+    vi.mocked(oldClient.leave).mockClear();
+    vi.mocked(newClient.leave).mockClear();
+    vi.spyOn(PlayerPresenceManager, "isGameSessionRevoked")
+      .mockImplementation(async (_userId, tokenIssuedAtMs) => tokenIssuedAtMs <= 1_500);
+
+    try {
+      await expect(GameRoom.reconcileRevokedConnections()).resolves.toBe(0);
+      expect(oldClient.leave).not.toHaveBeenCalled();
+      expect(newClient.leave).not.toHaveBeenCalled();
+    } finally {
+      serverRoom.clients.splice(serverRoom.clients.indexOf(oldClient), 1);
+      serverRoom.clients.splice(serverRoom.clients.indexOf(newClient), 1);
+    }
+  });
+
+  it("consumes signed game tokens before matchmaking reserves a room seat", async () => {
+    process.env.ALLOW_DEV_AUTH = "false";
+    const token = createGameToken({
+      userId: "matchmaking-token-user",
+      displayName: "Играч с еднократен токен",
+      roomCode: "AUTH24",
+      secret: GAME_TOKEN_SECRET,
+    });
+    const options = { code: "AUTH24", token };
+
+    await expect(OperationalGameRoom.onAuth("", options, {} as never)).resolves.toMatchObject({
+      userId: "matchmaking-token-user",
+      tokenNonceConsumed: true,
+    });
+    await expect(OperationalGameRoom.onAuth("", options, {} as never)).rejects.toThrow(
+      "Този токен вече е използван.",
+    );
+  });
+
+  it("rate-limits authenticated matchmaking attempts before room reservation", async () => {
+    process.env.ALLOW_DEV_AUTH = "false";
+
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const token = createGameToken({
+        userId: "matchmaking-rate-user",
+        displayName: "Играч с много опити",
+        roomCode: "RATE24",
+        secret: GAME_TOKEN_SECRET,
+      });
+      await expect(
+        OperationalGameRoom.onAuth("", { code: "RATE24", token }, {} as never),
+      ).resolves.toMatchObject({ userId: "matchmaking-rate-user" });
+    }
+
+    const blockedToken = createGameToken({
+      userId: "matchmaking-rate-user",
+      displayName: "Играч с много опити",
+      roomCode: "RATE24",
+      secret: GAME_TOKEN_SECRET,
+    });
+    await expect(
+      OperationalGameRoom.onAuth("", { code: "RATE24", token: blockedToken }, {} as never),
+    ).rejects.toThrow("Твърде много опити за вход. Изчакай малко.");
+  });
+
   it("rejects replayed signed game tokens", async () => {
     process.env.ALLOW_DEV_AUTH = "false";
 
@@ -266,6 +367,95 @@ describe("GameRoom security boundaries", () => {
       }),
     );
     expect(blockedClient.leave).toHaveBeenCalledWith(4029);
+  });
+
+  it("does not let a stale reconnection replace a newer active connection", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "RECN23",
+      mode: "werewolves_classic",
+      playerCount: 8,
+    });
+    const options = { code: "RECN23" };
+    const firstClient = fakeClient("reconnect-old");
+    const secondClient = fakeClient("reconnect-new");
+
+    await serverRoom.onJoin(firstClient, options, {
+      userId: "reconnect-user",
+      displayName: "Играч с две връзки",
+      avatarId: "portrait-m03",
+    });
+    await serverRoom.onJoin(secondClient, options, {
+      userId: "reconnect-user",
+      displayName: "Играч с две връзки",
+      avatarId: "portrait-m03",
+    });
+    vi.mocked(firstClient.send).mockClear();
+    vi.mocked(firstClient.leave).mockClear();
+
+    serverRoom.onReconnect(firstClient);
+
+    expect(firstClient.send).toHaveBeenCalledWith(
+      "safe_error",
+      expect.objectContaining({ messageBg: "Тази връзка е заменена от по-нова сесия." }),
+    );
+    expect(firstClient.leave).toHaveBeenCalledWith(4029);
+    expect(firstClient.send).not.toHaveBeenCalledWith("private_role", expect.anything());
+  });
+
+  it("rejects a current reconnection after its game session was revoked", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "RVRK23",
+      mode: "werewolves_classic",
+      playerCount: 8,
+    });
+    const client = fakeClient("reconnect-revoked");
+
+    await serverRoom.onJoin(client, { code: "RVRK23" }, {
+      userId: "reconnect-revoked-user",
+      displayName: "Прекратен играч",
+      avatarId: "portrait-m03",
+      tokenIssuedAtMs: 1_000,
+    });
+    vi.mocked(client.send).mockClear();
+    vi.mocked(client.leave).mockClear();
+    vi.spyOn(PlayerPresenceManager, "isGameSessionRevoked").mockResolvedValueOnce(true);
+
+    await serverRoom.onReconnect(client);
+
+    expect(client.send).toHaveBeenCalledWith(
+      "safe_error",
+      expect.objectContaining({ messageBg: "Сесията ти беше прекратена. Влез отново, за да продължиш." }),
+    );
+    expect(client.leave).toHaveBeenCalledWith(4029);
+    expect(client.send).not.toHaveBeenCalledWith("private_role", expect.anything());
+  });
+
+  it("fails a reconnect closed when the revocation store is unavailable", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "RVFL23",
+      mode: "werewolves_classic",
+      playerCount: 8,
+    });
+    const client = fakeClient("reconnect-store-failure");
+
+    await serverRoom.onJoin(client, { code: "RVFL23" }, {
+      userId: "reconnect-store-failure-user",
+      displayName: "Играч без Redis",
+      avatarId: "portrait-m03",
+      tokenIssuedAtMs: 1_000,
+    });
+    vi.mocked(client.send).mockClear();
+    vi.mocked(client.leave).mockClear();
+    vi.spyOn(PlayerPresenceManager, "isGameSessionRevoked").mockRejectedValueOnce(new Error("redis unavailable"));
+
+    await serverRoom.onReconnect(client);
+
+    expect(client.send).toHaveBeenCalledWith(
+      "safe_error",
+      expect.objectContaining({ messageBg: "Не успяхме да възстановим сигурно връзката. Опитай отново." }),
+    );
+    expect(client.leave).toHaveBeenCalledWith(4029);
+    expect(client.send).not.toHaveBeenCalledWith("private_role", expect.anything());
   });
 
   it("replaces manual-only roles unless the room uses full human narrator", async () => {

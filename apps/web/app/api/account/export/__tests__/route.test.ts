@@ -34,6 +34,7 @@ describe("GET /api/account/export", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubEnv("DATABASE_URL", "postgres://example.test/werewolf");
+    vi.stubEnv("GAME_TOKEN_SECRET", "test-export-secret-with-at-least-32-characters");
     mocks.createDatabase.mockReturnValue({
       query: {
         gameEvents: { findMany: mocks.gameEventsFindMany },
@@ -122,6 +123,35 @@ describe("GET /api/account/export", () => {
     );
     expect(response.headers.get("cache-control")).toBe("private, no-store");
     expect(response.headers.get("content-disposition")).toContain("werewolf-mafia-export-user-1-");
+    expect(response.headers.get("x-account-export-continuation")).toBeTruthy();
+  });
+
+  it("продължава същия export без да го брои като нов тежък export", async () => {
+    mocks.getSession.mockResolvedValue({
+      ...signedInSession(),
+      user: { ...signedInSession().user, id: "continued-export-user" },
+    });
+
+    const first = await GET(exportRequest("198.51.100.44"));
+    const continuation = first.headers.get("x-account-export-continuation");
+    expect(first.status).toBe(200);
+    expect(continuation).toBeTruthy();
+
+    for (let index = 0; index < 6; index += 1) {
+      const response = await GET(exportRequest("198.51.100.44", continuation ?? undefined));
+      expect(response.status).toBe(200);
+      expect(response.headers.get("x-account-export-continuation")).toBe(continuation);
+    }
+  });
+
+  it("отказва подправена export сесия", async () => {
+    mocks.getSession.mockResolvedValue(signedInSession());
+
+    const response = await GET(exportRequest("198.51.100.45", "invalid.continuation"));
+
+    expect(response.status).toBe(400);
+    expect(mocks.createDatabase).not.toHaveBeenCalled();
+    await expect(response.json()).resolves.toEqual({ error: "Невалидна сесия за изтегляне." });
   });
 
   it("отказва небезопасни pagination параметри преди database query", async () => {
@@ -188,9 +218,13 @@ describe("GET /api/account/export", () => {
   });
 });
 
-function exportRequest(ip: string) {
+function exportRequest(ip: string, continuation?: string) {
+  const headers: Record<string, string> = { "x-forwarded-for": ip };
+  if (continuation) {
+    headers["x-account-export-continuation"] = continuation;
+  }
   return new Request("http://localhost/api/account/export", {
-    headers: { "x-forwarded-for": ip },
+    headers,
   });
 }
 

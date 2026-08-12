@@ -80,9 +80,14 @@ async function openCreateWorkspace(
   await page.goto(`/${family}/create?visualAuth=1&mode=${mode}&players=${count}`, {
     waitUntil: "domcontentloaded",
   });
-  await page.getByRole("button", { name: "Настрой детайлите" }).click();
+  const trigger = page.getByRole("button", { name: "Настрой детайлите" });
   const dialog = page.getByRole("dialog", { name: "Настрой детайлите" });
-  await expect(dialog).toBeVisible();
+  await expect(trigger).toBeVisible();
+  for (let attempt = 0; attempt < 3 && !(await dialog.isVisible()); attempt += 1) {
+    await trigger.click();
+    await dialog.waitFor({ state: "visible", timeout: 2_500 }).catch(() => undefined);
+  }
+  await expect(dialog).toBeVisible({ timeout: 5_000 });
   await dialog.getByRole("button", { name: "Настрой ръчно", exact: true }).click();
   await expect(dialog.locator('.role-carousel[data-layout="workspace"]')).toBeVisible();
   await page.evaluate(() => document.fonts.ready);

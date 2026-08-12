@@ -44,6 +44,7 @@ function runRestore(failure = "", options = {}) {
         "postgres://werewolf_migrator:secret@postgres:5432/werewolf?application_name=werewolf-migrator",
       POSTGRES_USER: "werewolf",
       POSTGRES_DB: "werewolf",
+      BACKUP_REQUIRE_SIGNATURE: "0",
       RESTORE_CONFIRM_DATABASE: "werewolf",
       RESTORE_DOCKER_COMMAND: toShellPath(fakeDocker),
       RESTORE_RUN_ID: runId,

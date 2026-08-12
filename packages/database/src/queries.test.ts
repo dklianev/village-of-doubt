@@ -553,6 +553,7 @@ describe("deleteUserAccountAtomically", () => {
       ],
       lovers: { firstUserId: "user-1", firstName: "Анна" },
       note: "Анна изпрати user-1",
+      message: "Това съобщение трябва да бъде изтрито.",
       profileName: "Текуща Анна",
       role: "seer",
     };
@@ -627,6 +628,7 @@ describe("deleteUserAccountAtomically", () => {
       note: "Анна изпрати user-1",
       profileName: "Текуща Анна",
     });
+    expect(scrubbedPayload).not.toHaveProperty("message");
     expect(scrubbedPayload).not.toHaveProperty("role");
     expect((scrubbedPayload as { assignments: Array<Record<string, unknown>> }).assignments[0]).not.toHaveProperty("role");
     expect(eventPredicates).toHaveLength(1);
@@ -789,6 +791,22 @@ describe("scrubDeletedIdentityFromEventPayload", () => {
       displayName: "Изтрит играч",
       targetName: "Ан",
     });
+  });
+
+  it("премахва свободния message текст само когато изтритият user е авторът", () => {
+    const payload = { message: "Личен текст", channel: "public" };
+
+    expect(scrubDeletedIdentityFromEventPayload(payload, {
+      userId: "user-1",
+      anonymousUserId: "deleted_anon",
+      displayNames: ["Ан"],
+      redactRootMessage: true,
+    })).toEqual({ channel: "public" });
+    expect(scrubDeletedIdentityFromEventPayload(payload, {
+      userId: "user-1",
+      anonymousUserId: "deleted_anon",
+      displayNames: ["Ан"],
+    })).toEqual(payload);
   });
 });
 

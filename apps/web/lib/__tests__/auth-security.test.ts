@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { APIError, betterAuth, createAuthMiddleware, createDatabase } = vi.hoisted(() => {
+const { APIError, betterAuth, createAuthMiddleware, createDatabase, revokeActiveGameSessions } = vi.hoisted(() => {
   class MockAPIError extends Error {
     constructor(
       public status: string,
@@ -15,6 +15,7 @@ const { APIError, betterAuth, createAuthMiddleware, createDatabase } = vi.hoiste
     betterAuth: vi.fn((options: unknown) => ({ api: {}, options })),
     createAuthMiddleware: vi.fn((handler: unknown) => handler),
     createDatabase: vi.fn(() => ({ mockedDatabase: true })),
+    revokeActiveGameSessions: vi.fn(async () => undefined),
   };
 });
 
@@ -30,6 +31,7 @@ vi.mock("../email-templates", () => ({
   renderResetPasswordEmail: vi.fn(),
   renderVerifyEmail: vi.fn(),
 }));
+vi.mock("../game-session-revocation", () => ({ revokeActiveGameSessions }));
 
 describe("Better Auth security configuration", () => {
   beforeEach(() => {
@@ -116,7 +118,7 @@ describe("Better Auth security configuration", () => {
     }
   });
 
-  it("задава тесни production лимити на чувствителните auth endpoints", async () => {
+  it("задава NAT-safe IP лимити на чувствителните auth endpoints", async () => {
     vi.resetModules();
     await import("../auth");
     const options = betterAuth.mock.calls.at(-1)?.[0] as {
@@ -136,12 +138,56 @@ describe("Better Auth security configuration", () => {
       storage: "memory",
     });
     expect(options.rateLimit.customRules).toMatchObject({
-      "/sign-in/email": { window: 60, max: 10 },
-      "/sign-up/email": { window: 3_600, max: 5 },
-      "/request-password-reset": { window: 3_600, max: 5 },
-      "/send-verification-email": { window: 3_600, max: 5 },
-      "/reset-password": { window: 300, max: 10 },
+      "/sign-in/email": { window: 60, max: 60 },
+      "/sign-up/email": { window: 3_600, max: 60 },
+      "/request-password-reset": { window: 3_600, max: 60 },
+      "/send-verification-email": { window: 3_600, max: 60 },
+      "/reset-password": { window: 300, max: 30 },
     });
+  });
+
+  it("ограничава един акаунт независимо от IP, без да блокира група с различни имейли", async () => {
+    const { enforceAuthIdentifierRateLimit } = await import("../auth");
+    const buckets = new Map<string, number>();
+    const backend = {
+      async consume(input: { key: string; limit: number }) {
+        const nextCount = (buckets.get(input.key) ?? 0) + 1;
+        buckets.set(input.key, nextCount);
+        return nextCount <= input.limit
+          ? { allowed: true as const }
+          : { allowed: false as const, retryAfterSeconds: 60 };
+      },
+    };
+
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+      await expect(enforceAuthIdentifierRateLimit({
+        path: "/sign-in/email",
+        body: { email: attempt % 2 === 0 ? "  HOST@example.com " : "host@example.com" },
+        backend,
+        nodeEnv: "production",
+        now: attempt,
+      })).resolves.toBeUndefined();
+    }
+    await expect(enforceAuthIdentifierRateLimit({
+      path: "/sign-in/email",
+      body: { email: "host@example.com" },
+      backend,
+      nodeEnv: "production",
+      now: 11,
+    })).rejects.toMatchObject({
+      status: "TOO_MANY_REQUESTS",
+      message: "Твърде много опити. Опитай отново по-късно.",
+    });
+
+    for (let player = 0; player < 30; player += 1) {
+      await expect(enforceAuthIdentifierRateLimit({
+        path: "/sign-in/email",
+        body: { email: `player-${player}@example.com` },
+        backend,
+        nodeEnv: "production",
+        now: 20 + player,
+      })).resolves.toBeUndefined();
+    }
   });
 
   it("криптира OAuth токените преди запис в базата", async () => {
@@ -158,10 +204,15 @@ describe("Better Auth security configuration", () => {
     vi.resetModules();
     await import("../auth");
     const options = betterAuth.mock.calls.at(-1)?.[0] as {
-      emailAndPassword?: { revokeSessionsOnPasswordReset?: boolean };
+      emailAndPassword?: {
+        revokeSessionsOnPasswordReset?: boolean;
+        onPasswordReset?: (input: { user: { id: string } }) => Promise<void>;
+      };
     };
 
     expect(options.emailAndPassword?.revokeSessionsOnPasswordReset).toBe(true);
+    await options.emailAndPassword?.onPasswordReset?.({ user: { id: "user-1" } });
+    expect(revokeActiveGameSessions).toHaveBeenCalledWith("user-1");
   });
 
   it.each(["/sign-up/email", "/update-user"])(

@@ -234,6 +234,25 @@ describe("useGameRoom", () => {
     expect(result.current.snapshot?.doctorCanSelfProtect).toBe(true);
   });
 
+  it("uses join-or-create when invite URLs also carry room creation options", async () => {
+    mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
+    const { client } = createClient();
+    mocks.createGameClient.mockReturnValue(client);
+
+    renderHook(() => useGameRoom({
+      code: "ABCD",
+      createOptions: { mode: "werewolves_classic", playerCount: 8 },
+      toast: vi.fn(),
+    }));
+
+    await waitFor(() => expect(client.joinOrCreate).toHaveBeenCalledWith(GAME_ROOM_NAME, {
+      code: "ABCD",
+      mode: "werewolves_classic",
+      playerCount: 8,
+      token: "game-token",
+    }));
+  });
+
   it("announces success only after the authoritative night-action acknowledgement", async () => {
     mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
     const { client, joinRoom } = createClient();

@@ -219,10 +219,20 @@ jobs:
       SENTRY_DSN: https://public@example.invalid/1
       NEXT_PUBLIC_SENTRY_DSN: https://public@example.invalid/2
       RELEASE_VERSION: ci-${{ github.sha }}
+      RELEASE_ALLOWED_IMAGE_PREFIX: ghcr.io/dklianev/village-of-doubt
+      RELEASE_MANIFEST_PUBLIC_KEY: /tmp/werewolf-ci-release-public.pem
+      BACKUP_AGE_RECIPIENT: age19wjvffy6g0yk4r33hpv5mkpsqnv4qgtrlhqqhhtr5gvwpwej94fsj53j22
       RCLONE_REMOTE: encrypted-offsite:werewolf-ci
+      DATABASE_EVENT_RETENTION_DAYS: "365"
     steps:
       - name: Checkout
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Prepare production trust fixture
+        shell: bash
+        run: |
+          openssl genpkey -algorithm Ed25519 -out /tmp/werewolf-ci-release-private.pem
+          openssl pkey -in /tmp/werewolf-ci-release-private.pem -pubout -out "$RELEASE_MANIFEST_PUBLIC_KEY"
 
       - name: Validate production environment
         run: node scripts/check-production-env.mjs

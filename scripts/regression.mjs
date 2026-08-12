@@ -813,9 +813,13 @@ function checkProductionGuardContracts() {
   assert(caddyfile.includes("X-Frame-Options \"DENY\""), "Caddyfile must block framing.");
   assert(caddyfile.includes("Content-Security-Policy"), "Caddyfile must include a baseline CSP.");
   assert(
-    caddyfile.includes("@private_room_preview path /rooms/*/preview") &&
+    caddyfile.includes("@private_room_preview path_regexp private_room_preview (?i)^/rooms/[^/]+/preview(?:/.*)?$") &&
       caddyfile.includes("respond @private_room_preview 404"),
     "Public game ingress must not expose room preview enumeration.",
+  );
+  assert(
+    caddyfile.includes("header_up -X-Werewolf-Room-Preview"),
+    "Public game ingress must strip internal room preview credentials.",
   );
   assert(caddyfile.includes("health_uri /api/health\n"), "Caddy web upstream health must use shallow liveness.");
   assert(!caddyfile.includes("health_uri /api/health/ready"), "Caddy must not remove web ingress for deep dependency failures.");
@@ -1147,6 +1151,7 @@ function checkProductionOperationsContracts() {
   const service = readText("ops/systemd/werewolf-backup.service");
   const timer = readText("ops/systemd/werewolf-backup.timer");
   const backup = readText("scripts/backup-postgres.sh");
+  const backupManifest = readText("scripts/backup-manifest.mjs");
   const freshness = readText("scripts/check-backup-freshness.sh");
   const deploy = readText("scripts/deploy-release.sh");
   const rollback = readText("scripts/rollback-release.sh");
@@ -1169,6 +1174,7 @@ function checkProductionOperationsContracts() {
   assert(service.includes("EnvironmentFile=/etc/werewolf/backup.env"), "Scheduled backups must use a dedicated root-only environment.");
   assert(service.includes("Environment=BACKUP_REQUIRE_FIXED_CONTAINER=1"), "Scheduled backups must reject mutable Compose fallback.");
   assert(service.includes("Environment=BACKUP_REQUIRE_ENCRYPTION=1"), "Scheduled backups must require encrypted artifacts.");
+  assert(service.includes("Environment=BACKUP_REQUIRE_SIGNATURE=1"), "Scheduled backups must require signed manifests.");
   assert(
     service.includes("ExecStart=/usr/local/libexec/werewolf/backup-postgres.sh"),
     "Scheduled backups must execute a root-owned installed helper.",
@@ -1185,6 +1191,17 @@ function checkProductionOperationsContracts() {
   );
   assert(backup.includes("RCLONE_REMOTE"), "Backups must support an off-site copy.");
   assert(backup.includes("BACKUP_AGE_RECIPIENT") && backup.includes(".sql.gz.age"), "Scheduled backups must be encrypted with age.");
+  assert(
+    backup.includes("BACKUP_SIGNING_PRIVATE_KEY_FILE")
+      && backup.includes(".manifest.json")
+      && backupManifest.includes("ed25519"),
+    "Scheduled backups must produce Ed25519-signed manifests.",
+  );
+  assert(
+    freshness.includes("BACKUP_SIGNING_PUBLIC_KEY_FILE")
+      && restore.includes("BACKUP_SIGNING_PUBLIC_KEY_FILE"),
+    "Freshness checks and restores must verify backup producer signatures.",
+  );
   assert(
     freshness.includes("sha256sum -c")
       && freshness.includes("gzip -t")

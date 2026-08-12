@@ -9,6 +9,7 @@ export class PlayerPresenceManager {
   private static securityStore: PlayerSecurityStore = PlayerPresenceManager.createMemorySecurityStore();
 
   private clientsByUserId = new Map<string, Client>();
+  private connectionGenerationByUserId = new Map<string, number>();
 
   static configureSecurityStore(store: PlayerSecurityStore) {
     PlayerPresenceManager.securityStore = store;
@@ -36,6 +37,10 @@ export class PlayerPresenceManager {
     return PlayerPresenceManager.securityStore.releaseActiveRoom(userId, roomCode);
   }
 
+  static isGameSessionRevoked(userId: string, tokenIssuedAtMs: number) {
+    return PlayerPresenceManager.securityStore.isGameSessionRevoked(userId, tokenIssuedAtMs);
+  }
+
   static resetForTests() {
     PlayerPresenceManager.securityStore = PlayerPresenceManager.createMemorySecurityStore();
   }
@@ -50,6 +55,22 @@ export class PlayerPresenceManager {
     this.clientsByUserId.set(userId, client);
   }
 
+  activateClient(userId: string, client: Client) {
+    const generation = (this.connectionGenerationByUserId.get(userId) ?? 0) + 1;
+    this.connectionGenerationByUserId.set(userId, generation);
+    this.attachClient(userId, client);
+    return generation;
+  }
+
+  isCurrentConnectionGeneration(userId: string, generation: number | undefined) {
+    return generation !== undefined && this.connectionGenerationByUserId.get(userId) === generation;
+  }
+
+  invalidateConnectionGeneration(userId: string) {
+    const generation = (this.connectionGenerationByUserId.get(userId) ?? 0) + 1;
+    this.connectionGenerationByUserId.set(userId, generation);
+  }
+
   detachClient(userId: string, client?: Client) {
     if (!client || this.clientsByUserId.get(userId) === client) {
       this.clientsByUserId.delete(userId);
@@ -62,5 +83,6 @@ export class PlayerPresenceManager {
 
   clear() {
     this.clientsByUserId.clear();
+    this.connectionGenerationByUserId.clear();
   }
 }

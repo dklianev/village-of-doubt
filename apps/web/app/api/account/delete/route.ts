@@ -3,6 +3,7 @@ import { revalidateTag } from "next/cache";
 import { createDatabase, deleteUserAccountAtomically } from "@werewolf/database";
 import { ACCOUNT_DELETE_FRESH_AGE_SECONDS, auth } from "@/lib/auth";
 import { IntakeBodyError, readBoundedJson } from "@/lib/intake-security";
+import { revokeActiveGameSessions } from "@/lib/game-session-revocation";
 
 const DELETE_INTENT = "delete-account";
 
@@ -42,6 +43,7 @@ export async function POST(request: Request) {
   }
 
   try {
+    await revokeActiveGameSessions(session.user.id);
     const deleted = await deleteUserAccountAtomically(createDatabase(databaseUrl), session.user.id);
     if (!deleted) {
       return NextResponse.json({ error: "Досието вече не съществува." }, { status: 401 });

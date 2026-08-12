@@ -11,6 +11,10 @@ import {
   getAchievementsForUser,
 } from "@werewolf/database";
 import { auth } from "@/lib/auth";
+import {
+  createAccountExportContinuation,
+  verifyAccountExportContinuation,
+} from "@/lib/account-export-session";
 import { createRuntimeIntakeRateLimiter, requestRateLimitKey } from "@/lib/intake-security";
 
 const MAX_EXPORT_BYTES = 5 * 1024 * 1024;
@@ -23,16 +27,13 @@ const exportUserRateLimiter = createRuntimeIntakeRateLimiter(
   { limit: 4, windowMs: 15 * 60_000 },
   "account-export-user",
 );
+const exportSessionRateLimiter = createRuntimeIntakeRateLimiter(
+  { limit: 2_000, windowMs: 20 * 60_000 },
+  "account-export-session",
+);
 
 export async function GET(request?: Request) {
   const requestHeaders = request?.headers ?? await headers();
-  const sourceLimit = await exportSourceRateLimiter.check(
-    requestRateLimitKey(request ?? new Request("http://localhost/api/account/export", { headers: requestHeaders })),
-  );
-  if (!sourceLimit.allowed) {
-    return exportRateLimitResponse(sourceLimit.retryAfterSeconds);
-  }
-
   const session = await auth.api.getSession({ headers: requestHeaders });
 
   if (!session?.user?.id) {
@@ -42,9 +43,34 @@ export async function GET(request?: Request) {
     );
   }
 
-  const userLimit = await exportUserRateLimiter.check(`user:${session.user.id}`);
-  if (!userLimit.allowed) {
-    return exportRateLimitResponse(userLimit.retryAfterSeconds);
+  const secret = accountExportSecret();
+  const suppliedContinuation = requestHeaders.get("x-account-export-continuation");
+  const verifiedContinuation = suppliedContinuation
+    ? verifyAccountExportContinuation(suppliedContinuation, session.user.id, secret)
+    : null;
+  if (suppliedContinuation && !verifiedContinuation) {
+    return NextResponse.json(
+      { error: "Невалидна сесия за изтегляне." },
+      { status: 400, headers: PRIVATE_NO_STORE_HEADERS },
+    );
+  }
+
+  if (verifiedContinuation) {
+    const sessionLimit = await exportSessionRateLimiter.check(`session:${verifiedContinuation.exportId}`);
+    if (!sessionLimit.allowed) {
+      return exportRateLimitResponse(sessionLimit.retryAfterSeconds);
+    }
+  } else {
+    const sourceLimit = await exportSourceRateLimiter.check(
+      requestRateLimitKey(request ?? new Request("http://localhost/api/account/export", { headers: requestHeaders })),
+    );
+    if (!sourceLimit.allowed) {
+      return exportRateLimitResponse(sourceLimit.retryAfterSeconds);
+    }
+    const userLimit = await exportUserRateLimiter.check(`user:${session.user.id}`);
+    if (!userLimit.allowed) {
+      return exportRateLimitResponse(userLimit.retryAfterSeconds);
+    }
   }
 
   if (!process.env.DATABASE_URL) {
@@ -121,6 +147,8 @@ export async function GET(request?: Request) {
         ...PRIVATE_NO_STORE_HEADERS,
         "Content-Type": "application/json; charset=utf-8",
         "Content-Disposition": `attachment; filename="werewolf-mafia-export-${userId}-${Date.now()}.json"`,
+        "X-Account-Export-Continuation": suppliedContinuation
+          ?? createAccountExportContinuation(userId, secret),
       },
     });
   } catch (error) {
@@ -130,6 +158,15 @@ export async function GET(request?: Request) {
       { status: 500, headers: PRIVATE_NO_STORE_HEADERS },
     );
   }
+}
+
+function accountExportSecret() {
+  const secret = process.env.GAME_TOKEN_SECRET
+    ?? (process.env.NODE_ENV === "production" ? "" : "dev-only-export-secret-with-32-characters");
+  if (secret.length < 32) {
+    throw new Error("GAME_TOKEN_SECRET е задължителен за export сесии.");
+  }
+  return secret;
 }
 
 function exportRateLimitResponse(retryAfterSeconds: number) {

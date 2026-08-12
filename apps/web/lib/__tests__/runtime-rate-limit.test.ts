@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { RedisUnavailableError } from "../redis-rate-limit";
 import {
   createRuntimeRedisReadinessProbe,
+  createRuntimeRedisPublisher,
   createRuntimeRedisEvalClient,
   getRuntimeRateLimitBackend,
   resolveRuntimeRedisUrl,
@@ -123,6 +124,21 @@ describe("createRuntimeRedisReadinessProbe", () => {
     }));
 
     await expect(probe()).resolves.toBe(false);
+  });
+});
+
+describe("createRuntimeRedisPublisher", () => {
+  it("публикува само след готова Redis връзка", async () => {
+    let ready = false;
+    const publish = vi.fn(async () => 2);
+    const publisher = createRuntimeRedisPublisher(
+      () => ({ isReady: ready, publish }),
+      250,
+      async () => { ready = true; },
+    );
+
+    await expect(publisher("security", "payload")).resolves.toBe(2);
+    expect(publish).toHaveBeenCalledWith("security", "payload");
   });
 });
 

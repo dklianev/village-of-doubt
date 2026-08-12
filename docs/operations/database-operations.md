@@ -166,12 +166,17 @@ a reconciliation job that can rebuild aggregates from history.
 
 ## Migration and restore rules
 
-- Scheduled backups are age-encrypted `.sql.gz.age` artifacts with a SHA-256
-  sidecar. Configure `BACKUP_AGE_RECIPIENT` with a public recipient and keep the
-  matching private identity off the application host. The scheduled path fails
-  closed when encryption is required but no recipient is configured.
-- Encrypted restores require `BACKUP_AGE_IDENTITY_FILE`. Legacy `.sql.gz`
-  archives remain restorable during the transition.
+- Scheduled backups are age-encrypted `.sql.gz.age` artifacts with a legacy
+  SHA-256 sidecar plus an Ed25519-signed manifest. Configure
+  `BACKUP_AGE_RECIPIENT` with a public recipient and keep the matching private
+  age identity off the application host. Keep the backup signing private key
+  root-only on the producer and distribute only its public key to recovery
+  hosts. The scheduled path fails closed when encryption or signing is required
+  but its key material is unavailable.
+- Encrypted restores require both `BACKUP_AGE_IDENTITY_FILE` and the trusted
+  `BACKUP_SIGNING_PUBLIC_KEY_FILE`. The signed manifest is verified before
+  decryption. Unsigned legacy archives require an explicit
+  `BACKUP_REQUIRE_SIGNATURE=0` during a controlled migration-only restore.
 - Generate and review SQL under `packages/database/drizzle/`.
 - Apply only expand/contract migrations during a normal release.
 - Keep schema and generated migration metadata in the same commit.

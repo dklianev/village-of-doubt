@@ -1,6 +1,11 @@
 import { monitor } from "@colyseus/monitor";
 import defineConfig from "@colyseus/tools";
-import { resolveRedisUrl } from "@werewolf/shared/server";
+import {
+  GAME_SESSION_REVOCATION_CHANNEL,
+  parseGameSessionRevocationMessage,
+  resolveRedisUrl,
+  verifyRoomPreviewCredential,
+} from "@werewolf/shared/server";
 import cors from "cors";
 import type { Request, Response } from "express";
 import { randomUUID } from "node:crypto";
@@ -8,7 +13,7 @@ import { performance } from "node:perf_hooks";
 import { createClient, type RedisClientType } from "redis";
 import { deployDrain } from "./operations/deploy-drain.js";
 import { persistenceReadiness } from "./operations/persistence-readiness.js";
-import { authenticateGameJoin, GameRoom, getGameRuntimeStats } from "./rooms/GameRoom.js";
+import { authenticateGameJoin, GameRoom, getGameRuntimeStats, getGameTokenSecret } from "./rooms/GameRoom.js";
 import { PlayerPresenceManager } from "./rooms/player-presence-manager.js";
 import {
   createRedisPlayerSecurityStore,
@@ -56,6 +61,10 @@ export default defineConfig({
     gameServer.define("game", OperationalGameRoom).filterBy(["code"]);
     if (redisRuntime) {
       gameServer.onShutdown(async () => {
+        clearInterval(redisRuntime.revocationReconcileTimer);
+        if (redisRuntime.revocationSubscriber.isOpen) {
+          await redisRuntime.revocationSubscriber.quit();
+        }
         if (redisRuntime.securityClient.isOpen) {
           await redisRuntime.securityClient.quit();
         }
@@ -88,21 +97,7 @@ export default defineConfig({
 
     app.get("/operations/stats", createLocalStatsHandler());
 
-    app.get("/rooms/:code/preview", (req, res) => {
-      const code = normalizeRoomCodeInput(String(req.params.code ?? ""));
-      if (!ROOM_CODE_REGEX.test(code)) {
-        res.status(404).json({ status: "missing" });
-        return;
-      }
-
-      const preview = GameRoom.getRoomPreview(code);
-      if (!preview) {
-        res.status(404).json({ status: "missing" });
-        return;
-      }
-
-      res.json(preview);
-    });
+    app.get("/rooms/:code/preview", createInternalRoomPreviewHandler());
 
     if (process.env.NODE_ENV !== "production") {
       app.use("/monitor", monitor());
@@ -110,12 +105,54 @@ export default defineConfig({
   },
 });
 
+export function createInternalRoomPreviewHandler(
+  getRoomPreview = (code: string) => GameRoom.getRoomPreview(code),
+) {
+  return (req: Request, res: Response) => {
+    const code = normalizeRoomCodeInput(String(req.params.code ?? ""));
+    const credential = String(req.header("x-werewolf-room-preview") ?? "");
+    if (
+      !ROOM_CODE_REGEX.test(code)
+      || !verifyRoomPreviewCredential(code, credential, getGameTokenSecret())
+    ) {
+      res.status(404).json({ status: "missing" });
+      return;
+    }
+
+    const preview = getRoomPreview(code);
+    if (!preview) {
+      res.status(404).json({ status: "missing" });
+      return;
+    }
+
+    res.json(preview);
+  };
+}
+
 async function createRedisScaling(redisUrl: string) {
   const [{ RedisDriver }, { RedisPresence }] = await Promise.all([
     import("@colyseus/redis-driver"),
     import("@colyseus/redis-presence"),
   ]);
   const securityClient = await connectSecurityRedisClient(redisUrl);
+  const revocationSubscriber = securityClient.duplicate();
+  await revocationSubscriber.connect();
+  await revocationSubscriber.subscribe(GAME_SESSION_REVOCATION_CHANNEL, (message) => {
+    handleGameSessionRevocationMessage(message);
+  });
+  let reconciliationRunning = false;
+  const revocationReconcileTimer = setInterval(() => {
+    if (reconciliationRunning) return;
+    reconciliationRunning = true;
+    void GameRoom.reconcileRevokedConnections()
+      .catch((error) => {
+        console.error("[game-server] Redis session revocation reconcile failed.", error);
+      })
+      .finally(() => {
+        reconciliationRunning = false;
+      });
+  }, 30_000);
+  revocationReconcileTimer.unref();
   PlayerPresenceManager.configureSecurityStore(
     createRedisPlayerSecurityStore(
       createDeadlineBoundSecurityRedisClient(securityClient as unknown as AbortableSecurityRedisClient),
@@ -126,7 +163,21 @@ async function createRedisScaling(redisUrl: string) {
     driver: new RedisDriver(redisUrl),
     presence: new RedisPresence(redisUrl),
     securityClient,
+    revocationSubscriber,
+    revocationReconcileTimer,
   };
+}
+
+export function handleGameSessionRevocationMessage(
+  message: string,
+  revoke: (userId: string) => number = (userId) => GameRoom.revokeUserConnections(userId),
+) {
+  const event = parseGameSessionRevocationMessage(message);
+  if (!event) {
+    return false;
+  }
+  revoke(event.userId);
+  return true;
 }
 
 async function connectSecurityRedisClient(redisUrl: string): Promise<RedisClientType> {
@@ -159,7 +210,10 @@ async function connectSecurityRedisClient(redisUrl: string): Promise<RedisClient
 
 export class OperationalGameRoom extends GameRoom {
   static override async onAuth(_token: string, options: JoinRoomOptions) {
-    return authenticateGameJoin(options, { consumeNonce: false });
+    return authenticateGameJoin(options, {
+      consumeNonce: true,
+      enforceJoinRateLimit: true,
+    });
   }
 
   override onCreate(options: Parameters<GameRoom["onCreate"]>[0]) {
@@ -267,6 +321,9 @@ export function createDeadlineBoundSecurityRedisClient(
     },
     eval(script, options) {
       return client.withAbortSignal(AbortSignal.timeout(timeoutMs)).eval(script, options);
+    },
+    get(key) {
+      return client.withAbortSignal(AbortSignal.timeout(timeoutMs)).get(key);
     },
   };
 }

@@ -115,10 +115,18 @@ Install the verified helpers and units:
 ```sh
 sudo install -d -o root -g root -m 0755 /usr/local/libexec/werewolf
 sudo install -o root -g root -m 0755 "$release_source/scripts/backup-postgres.sh" /usr/local/libexec/werewolf/backup-postgres.sh
+sudo install -o root -g root -m 0755 "$release_source/scripts/backup-manifest.mjs" /usr/local/libexec/werewolf/backup-manifest.mjs
 sudo install -o root -g root -m 0755 "$release_source/scripts/check-backup-freshness.sh" /usr/local/libexec/werewolf/check-backup-freshness.sh
 sudo install -d -o root -g root -m 0750 /etc/werewolf
 if ! sudo test -e /etc/werewolf/backup.env; then
   sudo install -o root -g root -m 0600 "$release_source/ops/systemd/werewolf-backup.env.example" /etc/werewolf/backup.env
+fi
+if ! sudo test -e /etc/werewolf/backup-signing.key; then
+  sudo openssl genpkey -algorithm ED25519 -out /etc/werewolf/backup-signing.key
+  sudo openssl pkey -in /etc/werewolf/backup-signing.key -pubout -out /etc/werewolf/backup-signing.pub
+  sudo chown root:root /etc/werewolf/backup-signing.key /etc/werewolf/backup-signing.pub
+  sudo chmod 0600 /etc/werewolf/backup-signing.key
+  sudo chmod 0644 /etc/werewolf/backup-signing.pub
 fi
 sudo install -o root -g root -m 0644 "$release_source/ops/systemd/werewolf-backup.service" /etc/systemd/system/
 sudo install -o root -g root -m 0644 "$release_source/ops/systemd/werewolf-backup.timer" /etc/systemd/system/
@@ -138,6 +146,13 @@ root:root and mode `0600`. If
 `RCLONE_REMOTE` is enabled, install its configuration at
 `/etc/werewolf/rclone.conf`, owned by root:root and mode `0600`, and keep
 `RCLONE_CONFIG=/etc/werewolf/rclone.conf` in the backup environment.
+
+The Ed25519 key under `/etc/werewolf/backup-signing.key` is the producer identity
+for backup manifests. It must remain root-only and must never be copied to the
+off-site backup store or recovery host. Copy only
+`/etc/werewolf/backup-signing.pub` to recovery hosts. A restore verifies the
+signed artifact name, SHA-256 digest, size, database, release metadata, and
+creation time before age decryption; a checksum alone is not trusted.
 
 After each release that changes either helper, reinstall the root-owned copies
 from that release's clean checkout before restarting the timer. The conditional
@@ -164,9 +179,9 @@ sudo -u "$deploy_user" -H env \
 
 Run a restore drill at least monthly:
 
-1. Download the latest off-site dump and checksum on a non-production host.
-2. Verify the checksum and gzip stream.
-3. Restore into an empty staging database with `scripts/restore-postgres.sh`.
+1. Download the latest off-site dump, checksum, signed manifest, and signature on a non-production host.
+2. Copy the trusted backup signing public key to that host and verify the signature before decryption.
+3. Restore into an empty staging database with `scripts/restore-postgres.sh`, setting `BACKUP_SIGNING_PUBLIC_KEY_FILE`.
 4. Run migrations, smoke tests, and a representative account/history query.
 5. Record the backup timestamp, restore duration, and result.
 

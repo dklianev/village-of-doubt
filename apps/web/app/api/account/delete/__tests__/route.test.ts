@@ -1,11 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { POST } from "../route";
 
-const { createDatabase, deleteUserAccountAtomically, getSession, revalidateTag } = vi.hoisted(() => ({
+const { createDatabase, deleteUserAccountAtomically, getSession, revalidateTag, revokeActiveGameSessions } = vi.hoisted(() => ({
   createDatabase: vi.fn(() => ({ mocked: true })),
   deleteUserAccountAtomically: vi.fn(() => Promise.resolve(true)),
   getSession: vi.fn(),
   revalidateTag: vi.fn(),
+  revokeActiveGameSessions: vi.fn(() => Promise.resolve()),
 }));
 
 vi.mock("next/cache", () => ({ revalidateTag }));
@@ -23,6 +24,8 @@ vi.mock("@werewolf/database", () => ({
   createDatabase,
   deleteUserAccountAtomically,
 }));
+
+vi.mock("@/lib/game-session-revocation", () => ({ revokeActiveGameSessions }));
 
 function deleteRequest(options: { intent?: string; origin?: string } = {}) {
   const headers = new Headers({ "content-type": "application/json" });
@@ -95,7 +98,20 @@ describe("POST /api/account/delete", () => {
     await expect(response.json()).resolves.toEqual({ ok: true });
     expect(createDatabase).toHaveBeenCalledWith("postgres://localhost/werewolf");
     expect(deleteUserAccountAtomically).toHaveBeenCalledWith({ mocked: true }, "user-1");
+    expect(revokeActiveGameSessions).toHaveBeenCalledWith("user-1");
     expect(revalidateTag).toHaveBeenCalledWith("public-leaderboard", "max");
+  });
+
+  it("не изтрива профила, ако активните игрови сесии не могат да бъдат прекратени", async () => {
+    getSession.mockResolvedValueOnce(freshSession("user-1"));
+    revokeActiveGameSessions.mockRejectedValueOnce(new Error("redis unavailable"));
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const response = await POST(deleteRequest({ origin: "http://localhost:3000" }));
+
+    expect(response.status).toBe(500);
+    expect(deleteUserAccountAtomically).not.toHaveBeenCalled();
+    consoleError.mockRestore();
   });
 
   it("изисква повторно влизане при сесия по-стара от 10 минути", async () => {

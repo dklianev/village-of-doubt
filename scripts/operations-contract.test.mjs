@@ -106,6 +106,29 @@ test("CI and immutable releases use the production database identities and Bette
   assert.doesNotMatch(release, /better_auth_secret=/);
 });
 
+test("production-container CI supplies every operational production guard", () => {
+  const ci = read(".github/workflows/ci.yml");
+  const containersStart = ci.indexOf("  containers:");
+  const containersEnd = ci.indexOf("\n  loadtest:", containersStart);
+  const containers = ci.slice(containersStart, containersEnd >= 0 ? containersEnd : undefined);
+
+  assert.ok(containersStart >= 0, "CI must define the production containers job.");
+  for (const key of [
+    "RELEASE_ALLOWED_IMAGE_PREFIX",
+    "RELEASE_MANIFEST_PUBLIC_KEY",
+    "BACKUP_AGE_RECIPIENT",
+    "DATABASE_EVENT_RETENTION_DAYS",
+  ]) {
+    assert.match(containers, new RegExp(`^\\s{6}${key}:`, "m"));
+  }
+  assert.match(containers, /openssl genpkey -algorithm Ed25519/);
+  assert.match(containers, /openssl pkey[\s\S]*-pubout/);
+  assert.ok(
+    containers.indexOf("Prepare production trust fixture") < containers.indexOf("Validate production environment"),
+    "The release trust key must exist before production env validation.",
+  );
+});
+
 test("CI isolates visual baselines from the serial core verification path", () => {
   const ci = read(".github/workflows/ci.yml");
   const verifyStart = ci.indexOf("  verify:");
@@ -201,6 +224,8 @@ test("database backups are scheduled, verified, retained, and copied off-site", 
   const timer = read("ops/systemd/werewolf-backup.timer");
   const backup = read("scripts/backup-postgres.sh");
   const freshness = read("scripts/check-backup-freshness.sh");
+  const backupManifest = read("scripts/backup-manifest.mjs");
+  const restore = read("scripts/restore-postgres.sh");
   const deploy = read("scripts/deploy-release.sh");
   const rollback = read("scripts/rollback-release.sh");
   const runbook = read("docs/operations/production-runbook.md");
@@ -216,6 +241,7 @@ test("database backups are scheduled, verified, retained, and copied off-site", 
   assert.match(service, /^EnvironmentFile=\/etc\/werewolf\/backup\.env$/m);
   assert.match(service, /^Environment=BACKUP_REQUIRE_FIXED_CONTAINER=1$/m);
   assert.match(service, /^Environment=BACKUP_REQUIRE_ENCRYPTION=1$/m);
+  assert.match(service, /^Environment=BACKUP_REQUIRE_SIGNATURE=1$/m);
   assert.match(service, /^ExecStart=\/usr\/local\/libexec\/werewolf\/backup-postgres\.sh$/m);
   assert.match(service, /^ExecStartPost=\/usr\/local\/libexec\/werewolf\/check-backup-freshness\.sh$/m);
   assert.match(service, /^ReadWritePaths=\/var\/backups\/werewolf$/m);
@@ -223,6 +249,11 @@ test("database backups are scheduled, verified, retained, and copied off-site", 
   assert.match(backup, /BACKUP_COMPOSE_PROJECT/);
   assert.match(backup, /BACKUP_REQUIRE_FIXED_CONTAINER/);
   assert.match(backup, /BACKUP_AGE_RECIPIENT/);
+  assert.match(backup, /BACKUP_SIGNING_PRIVATE_KEY_FILE/);
+  assert.match(backup, /backup_file\.manifest\.json/);
+  assert.match(freshness, /BACKUP_SIGNING_PUBLIC_KEY_FILE/);
+  assert.match(backupManifest, /ed25519/);
+  assert.match(restore, /BACKUP_SIGNING_PUBLIC_KEY_FILE/);
   assert.match(backup, /\.sql\.gz\.age/);
   assert.match(backup, /"\$docker_command" ps/);
   assert.match(backup, /"\$docker_command" exec/);

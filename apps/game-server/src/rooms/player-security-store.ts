@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { gameSessionRevocationKey } from "@werewolf/shared/server";
 
 const DEFAULT_JOIN_RATE_WINDOW_MS = 10_000;
 const DEFAULT_JOIN_RATE_LIMIT = 5;
@@ -50,6 +51,7 @@ export interface PlayerSecurityStore {
   checkJoinRateLimit(userId: string): Promise<boolean>;
   claimActiveRoom(userId: string, roomCode: string, expiresAtMs: number): Promise<boolean>;
   releaseActiveRoom(userId: string, roomCode: string): Promise<void>;
+  isGameSessionRevoked(userId: string, tokenIssuedAtMs: number): Promise<boolean>;
 }
 
 export interface RedisPlayerSecurityClient {
@@ -65,6 +67,7 @@ export interface RedisPlayerSecurityClient {
     script: string,
     options: { keys: string[]; arguments: string[] },
   ): Promise<unknown>;
+  get(key: string): Promise<unknown>;
 }
 
 interface RedisPlayerSecurityStoreOptions {
@@ -129,6 +132,18 @@ export function createRedisPlayerSecurityStore(
         keys: [securityKey("active", userId)],
         arguments: [securityDigest(roomCode)],
       });
+    },
+
+    async isGameSessionRevoked(userId, tokenIssuedAtMs) {
+      const value = await client.get(gameSessionRevocationKey(userId));
+      if (value === null) {
+        return false;
+      }
+      const revokedAtMs = Number(value);
+      if (!Number.isSafeInteger(revokedAtMs) || revokedAtMs < 0) {
+        throw new Error("Redis върна невалиден game-session marker.");
+      }
+      return tokenIssuedAtMs <= revokedAtMs;
     },
   };
 }
@@ -211,6 +226,10 @@ export class MemoryPlayerSecurityStore implements PlayerSecurityStore {
     if (rooms?.size === 0) {
       this.#activeRooms.delete(userId);
     }
+  }
+
+  async isGameSessionRevoked() {
+    return false;
   }
 
   getUsedNonceCountForTests() {

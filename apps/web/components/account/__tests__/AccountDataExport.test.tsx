@@ -76,6 +76,11 @@ describe("AccountDataExport", () => {
       expect.stringContaining("page=1&pageSize=100&eventPage=2&eventPageSize=1000"),
       expect.stringContaining("page=2&pageSize=100&eventPage=1&eventPageSize=1000"),
     ]);
+    expect(fetcher.mock.calls[0]?.[1]?.headers).toEqual({ Accept: "application/json" });
+    expect(fetcher.mock.calls[1]?.[1]?.headers).toEqual({
+      Accept: "application/json",
+      "X-Account-Export-Continuation": "continuation-1",
+    });
     expect(result.data.games).toEqual([
       expect.objectContaining({
         id: "game-1",
@@ -119,6 +124,7 @@ function exportResponse(
       headers: {
         "Content-Type": "application/json",
         "Content-Disposition": 'attachment; filename="account.json"',
+        "X-Account-Export-Continuation": "continuation-1",
       },
     },
   );

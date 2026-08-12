@@ -6,6 +6,7 @@ const context = { params: Promise.resolve({ code: "ABC234" }) };
 describe("GET /api/rooms/[code]/preview", () => {
   beforeEach(() => {
     vi.stubEnv("GAME_SERVER_HTTP_URL", "http://game.local");
+    vi.stubEnv("GAME_TOKEN_SECRET", "test-secret-that-is-long-enough-32-chars");
   });
 
   afterEach(() => {
@@ -68,7 +69,12 @@ describe("GET /api/rooms/[code]/preview", () => {
     });
     expect(fetch).toHaveBeenCalledWith(
       "http://game.local/rooms/ABC234/preview",
-      expect.objectContaining({ cache: "no-store" }),
+      expect.objectContaining({
+        cache: "no-store",
+        headers: expect.objectContaining({
+          "X-Werewolf-Room-Preview": expect.any(String),
+        }),
+      }),
     );
   });
 

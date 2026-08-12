@@ -25,6 +25,39 @@ describe("requestRateLimitKey", () => {
 
     expect(requestRateLimitKey(first)).toBe(requestRateLimitKey(second));
   });
+
+  it("събира IPv6 privacy адреси от една /64 мрежа в общ bucket", () => {
+    const first = new Request("https://example.invalid/api/report", {
+      headers: { "x-forwarded-for": "2001:db8:abcd:1234:1111:2222:3333:4444" },
+    });
+    const second = new Request("https://example.invalid/api/report", {
+      headers: { "x-forwarded-for": "2001:db8:abcd:1234:aaaa:bbbb:cccc:dddd" },
+    });
+
+    expect(requestRateLimitKey(first)).toBe(requestRateLimitKey(second));
+  });
+
+  it("разделя съседни IPv6 /64 мрежи", () => {
+    const first = new Request("https://example.invalid/api/report", {
+      headers: { "x-forwarded-for": "2001:db8:abcd:1234::1" },
+    });
+    const second = new Request("https://example.invalid/api/report", {
+      headers: { "x-forwarded-for": "2001:db8:abcd:1235::1" },
+    });
+
+    expect(requestRateLimitKey(first)).not.toBe(requestRateLimitKey(second));
+  });
+
+  it("не позволява malformed proxy стойности да създават нови buckets", () => {
+    const first = new Request("https://example.invalid/api/report", {
+      headers: { "x-forwarded-for": "attacker-controlled-one" },
+    });
+    const second = new Request("https://example.invalid/api/report", {
+      headers: { "x-forwarded-for": "attacker-controlled-two" },
+    });
+
+    expect(requestRateLimitKey(first)).toBe(requestRateLimitKey(second));
+  });
 });
 
 describe("createIntakeRateLimiter", () => {

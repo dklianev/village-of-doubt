@@ -97,6 +97,7 @@ export async function fetchCompleteAccountExport(
   let requestCount = 0;
   let gamePage = 1;
   let hasMoreGames = true;
+  let continuation: string | null = null;
 
   while (hasMoreGames) {
     let eventPage = 1;
@@ -114,8 +115,11 @@ export async function fetchCompleteAccountExport(
         eventPage: String(eventPage),
         eventPageSize: String(EXPORT_EVENT_PAGE_SIZE),
       });
-      const response = await fetcher(`/api/account/export?${params}`, {
-        headers: { Accept: "application/json" },
+      const response: Response = await fetcher(`/api/account/export?${params}`, {
+        headers: {
+          Accept: "application/json",
+          ...(continuation ? { "X-Account-Export-Continuation": continuation } : {}),
+        },
         cache: "no-store",
       });
       if (!response.ok) {
@@ -123,6 +127,7 @@ export async function fetchCompleteAccountExport(
       }
 
       const page = parseAccountExportPage(await response.json());
+      continuation ??= response.headers.get("x-account-export-continuation");
       firstPage ??= page;
       if (requestCount === 1) {
         filename = downloadFilename(response.headers.get("content-disposition"));
@@ -133,6 +138,9 @@ export async function fetchCompleteAccountExport(
       hasMoreEvents = page.pagination.eventsHasMore;
       eventPage += 1;
       hasMoreGames = page.pagination.hasMore;
+      if ((hasMoreEvents || hasMoreGames) && !continuation) {
+        throw new Error("missing_export_continuation");
+      }
     }
 
     gamePage += 1;

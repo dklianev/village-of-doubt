@@ -4,11 +4,13 @@ import {
   createRedisPlayerSecurityStore,
   type RedisPlayerSecurityClient,
 } from "../player-security-store.js";
+import { gameSessionRevocationKey } from "@werewolf/shared/server";
 
 class SharedFakeRedisClient implements RedisPlayerSecurityClient {
   readonly nonces = new Map<string, number>();
   readonly joinCounts = new Map<string, { count: number; expiresAt: number }>();
   readonly activeRooms = new Map<string, Map<string, number>>();
+  readonly values = new Map<string, string>();
 
   async set(
     key: string,
@@ -71,6 +73,10 @@ class SharedFakeRedisClient implements RedisPlayerSecurityClient {
     this.joinCounts.set(key, bucket);
     return [bucket.count, Math.max(0, bucket.expiresAt - now)];
   }
+
+  async get(key: string) {
+    return this.values.get(key) ?? null;
+  }
 }
 
 describe("createRedisPlayerSecurityStore", () => {
@@ -108,10 +114,21 @@ describe("createRedisPlayerSecurityStore", () => {
         throw new Error("Redis unavailable");
       }),
       eval: vi.fn(),
+      get: vi.fn(async () => null),
     };
     const store = createRedisPlayerSecurityStore(client);
 
     await expect(store.consumeTokenNonce("nonce-1", Date.now() + 60_000)).rejects.toThrow("Redis unavailable");
+  });
+
+  it("rejects tokens issued before the shared account revocation marker", async () => {
+    const client = new SharedFakeRedisClient();
+    client.values.set(gameSessionRevocationKey("user-1"), "2000");
+    const store = createRedisPlayerSecurityStore(client);
+
+    await expect(store.isGameSessionRevoked("user-1", 1_999)).resolves.toBe(true);
+    await expect(store.isGameSessionRevoked("user-1", 2_001)).resolves.toBe(false);
+    await expect(store.isGameSessionRevoked("user-2", 1_999)).resolves.toBe(false);
   });
 
   it("shares the active-room quota across replicas and releases a room", async () => {

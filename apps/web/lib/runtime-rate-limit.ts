@@ -33,6 +33,16 @@ interface RuntimeRedisReadinessClient {
   ): Promise<unknown>;
 }
 
+interface RuntimeRedisPublishClient {
+  readonly isReady: boolean;
+  publish(channel: string, message: string): Promise<number>;
+}
+
+interface RuntimeRedisValueClient {
+  readonly isReady: boolean;
+  set(key: string, value: string, options: { expiration: { type: "PX"; value: number } }): Promise<unknown>;
+}
+
 const REDIS_READINESS_SCRIPT = `
 local written = redis.call('SET', KEYS[1], ARGV[1], 'PX', ARGV[2], 'NX')
 if not written then
@@ -164,6 +174,80 @@ export async function checkRuntimeRedisReadiness(
   } catch {
     return false;
   }
+}
+
+export function createRuntimeRedisPublisher(
+  getClient: () => RuntimeRedisPublishClient | null,
+  timeoutMs = REDIS_COMMAND_TIMEOUT_MS,
+  waitUntilReady?: () => Promise<void> | null,
+) {
+  return async (channel: string, message: string) => {
+    let client = getClient();
+    if (!client?.isReady) {
+      const connection = waitUntilReady?.();
+      if (!connection) {
+        throw new RedisUnavailableError("Redis още не е готов.");
+      }
+      await withRedisTimeout(connection, timeoutMs, "Redis връзката изтече.");
+      client = getClient();
+    }
+    if (!client?.isReady) {
+      throw new RedisUnavailableError("Redis още не е готов.");
+    }
+    return withRedisTimeout(
+      client.publish(channel, message),
+      timeoutMs,
+      "Redis publish командата изтече.",
+    );
+  };
+}
+
+export function createRuntimeRedisValueWriter(
+  getClient: () => RuntimeRedisValueClient | null,
+  timeoutMs = REDIS_COMMAND_TIMEOUT_MS,
+  waitUntilReady?: () => Promise<void> | null,
+) {
+  return async (key: string, value: string, ttlMs: number) => {
+    let client = getClient();
+    if (!client?.isReady) {
+      const connection = waitUntilReady?.();
+      if (!connection) throw new RedisUnavailableError("Redis още не е готов.");
+      await withRedisTimeout(connection, timeoutMs, "Redis връзката изтече.");
+      client = getClient();
+    }
+    if (!client?.isReady) throw new RedisUnavailableError("Redis още не е готов.");
+    return withRedisTimeout(
+      client.set(key, value, { expiration: { type: "PX", value: ttlMs } }),
+      timeoutMs,
+      "Redis write командата изтече.",
+    );
+  };
+}
+
+export async function writeRuntimeRedisValue(key: string, value: string, ttlMs: number) {
+  if (!process.env.REDIS_URL) {
+    if (process.env.NODE_ENV === "production") throw new RedisUnavailableError("Production Redis не е конфигуриран.");
+    return null;
+  }
+  return createRuntimeRedisValueWriter(
+    () => getOrCreateRedisClient(process.env.REDIS_URL),
+    REDIS_COMMAND_TIMEOUT_MS,
+    () => redisConnectPromise,
+  )(key, value, ttlMs);
+}
+
+export async function publishRuntimeRedisMessage(channel: string, message: string) {
+  if (!process.env.REDIS_URL) {
+    if (process.env.NODE_ENV === "production") {
+      throw new RedisUnavailableError("Production Redis не е конфигуриран.");
+    }
+    return 0;
+  }
+  return createRuntimeRedisPublisher(
+    () => getOrCreateRedisClient(process.env.REDIS_URL),
+    REDIS_COMMAND_TIMEOUT_MS,
+    () => redisConnectPromise,
+  )(channel, message);
 }
 
 function createUnavailableRateLimitBackend(): SharedRateLimitBackend {

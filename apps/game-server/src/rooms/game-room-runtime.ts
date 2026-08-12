@@ -19,7 +19,10 @@ export interface ClientAuth {
   avatarId: AvatarId;
   tokenNonce?: string;
   tokenExpiresAtMs?: number;
+  tokenIssuedAtMs?: number;
   tokenNonceConsumed?: boolean;
+  matchmakingGuardsApplied?: boolean;
+  connectionGeneration?: number;
 }
 
 export interface PrivatePlayerState {

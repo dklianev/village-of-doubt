@@ -61,6 +61,9 @@ describe("game-server Redis startup guard", () => {
           eval: () => new Promise((_resolve, reject) => {
             signal.addEventListener("abort", () => reject(signal.reason), { once: true });
           }),
+          get: () => new Promise((_resolve, reject) => {
+            signal.addEventListener("abort", () => reject(signal.reason), { once: true });
+          }),
         };
       },
     };

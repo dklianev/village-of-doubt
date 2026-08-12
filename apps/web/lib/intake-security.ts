@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { isIP } from "node:net";
 import {
   BoundedMemoryRateLimitStore,
   createSharedRateLimiter,
@@ -78,7 +79,47 @@ export function createRuntimeIntakeRateLimiter(
 
 export function requestRateLimitKey(request: Request): string {
   const forwardedFor = request.headers.get("x-forwarded-for")?.split(",", 1)[0]?.trim();
-  const source = forwardedFor || "unknown";
+  const source = normalizeRateLimitSource(forwardedFor);
 
   return createHash("sha256").update(source.slice(0, 2_048)).digest("hex");
+}
+
+function normalizeRateLimitSource(source: string | undefined) {
+  if (!source) {
+    return "unknown";
+  }
+  if (isIP(source) === 4) {
+    return `ipv4:${source}`;
+  }
+  if (isIP(source) !== 6) {
+    return "unknown";
+  }
+
+  const hextets = expandIpv6(source);
+  return hextets ? `ipv6-64:${hextets.slice(0, 4).join(":")}` : "unknown";
+}
+
+function expandIpv6(value: string): string[] | null {
+  const address = value.toLowerCase().split("%", 1)[0] ?? "";
+  const separatorIndex = address.indexOf("::");
+  if (separatorIndex !== -1 && address.indexOf("::", separatorIndex + 2) !== -1) {
+    return null;
+  }
+
+  const [leftRaw, rightRaw = ""] = separatorIndex === -1
+    ? [address, ""]
+    : [address.slice(0, separatorIndex), address.slice(separatorIndex + 2)];
+  const left = leftRaw ? leftRaw.split(":") : [];
+  const right = rightRaw ? rightRaw.split(":") : [];
+  const missing = 8 - left.length - right.length;
+  if ((separatorIndex === -1 && missing !== 0) || missing < 0) {
+    return null;
+  }
+  const expanded = separatorIndex === -1
+    ? left
+    : [...left, ...Array.from({ length: missing }, () => "0"), ...right];
+  if (expanded.length !== 8 || expanded.some((part) => !/^[0-9a-f]{1,4}$/.test(part))) {
+    return null;
+  }
+  return expanded.map((part) => Number.parseInt(part, 16).toString(16));
 }

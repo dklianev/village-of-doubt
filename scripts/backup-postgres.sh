@@ -10,13 +10,26 @@ fixed_container="${BACKUP_POSTGRES_CONTAINER:-}"
 compose_project="${BACKUP_COMPOSE_PROJECT:-}"
 require_fixed_container="${BACKUP_REQUIRE_FIXED_CONTAINER:-0}"
 require_encryption="${BACKUP_REQUIRE_ENCRYPTION:-$require_fixed_container}"
+require_signature="${BACKUP_REQUIRE_SIGNATURE:-$require_encryption}"
 age_recipient="${BACKUP_AGE_RECIPIENT:-}"
 age_command="${BACKUP_AGE_COMMAND:-age}"
+signing_private_key="${BACKUP_SIGNING_PRIVATE_KEY_FILE:-}"
+manifest_command="${BACKUP_MANIFEST_COMMAND:-$(dirname "$0")/backup-manifest.mjs}"
+release_version="${BACKUP_RELEASE_VERSION:-unavailable}"
+migration_head="${BACKUP_MIGRATION_HEAD:-unavailable}"
 
 case "$require_encryption" in
   0|1) ;;
   *)
     printf 'BACKUP_REQUIRE_ENCRYPTION must be 0 or 1.\n' >&2
+    exit 1
+    ;;
+esac
+
+case "$require_signature" in
+  0|1) ;;
+  *)
+    printf 'BACKUP_REQUIRE_SIGNATURE must be 0 or 1.\n' >&2
     exit 1
     ;;
 esac
@@ -37,6 +50,17 @@ esac
 if [ -n "$age_recipient" ] && ! command -v "$age_command" >/dev/null 2>&1; then
   printf 'BACKUP_AGE_RECIPIENT is set, but the age command is unavailable.\n' >&2
   exit 1
+fi
+
+if [ "$require_signature" = "1" ]; then
+  if [ -z "$signing_private_key" ] || [ ! -f "$signing_private_key" ]; then
+    printf 'BACKUP_SIGNING_PRIVATE_KEY_FILE must reference an Ed25519 private key.\n' >&2
+    exit 1
+  fi
+  if [ ! -f "$manifest_command" ]; then
+    printf 'BACKUP_MANIFEST_COMMAND is unavailable: %s\n' "$manifest_command" >&2
+    exit 1
+  fi
 fi
 
 validate_docker_identifier() {
@@ -117,11 +141,21 @@ else
   mv "$temporary_gzip" "$backup_file"
 fi
 (cd "$(dirname "$backup_file")" && sha256sum "$(basename "$backup_file")" > "$(basename "$backup_file").sha256")
+if [ "$require_signature" = "1" ]; then
+  node "$manifest_command" create \
+    "$backup_file" \
+    "$signing_private_key" \
+    "$POSTGRES_DB" \
+    "$release_version" \
+    "$migration_head" >/dev/null
+fi
 find "$BACKUP_DIR" -type f \( \
   -name "werewolf_*.sql.gz" -o \
   -name "werewolf_*.sql.gz.sha256" -o \
   -name "werewolf_*.sql.gz.age" -o \
-  -name "werewolf_*.sql.gz.age.sha256" \
+  -name "werewolf_*.sql.gz.age.sha256" -o \
+  -name "werewolf_*.manifest.json" -o \
+  -name "werewolf_*.manifest.json.sig" \
 \) -mtime +"$BACKUP_RETENTION_DAYS" -delete
 
 if [ -n "${RCLONE_REMOTE:-}" ]; then
@@ -131,6 +165,10 @@ if [ -n "${RCLONE_REMOTE:-}" ]; then
   fi
   rclone copy "$backup_file" "$RCLONE_REMOTE"
   rclone copy "$backup_file.sha256" "$RCLONE_REMOTE"
+  if [ "$require_signature" = "1" ]; then
+    rclone copy "$backup_file.manifest.json" "$RCLONE_REMOTE"
+    rclone copy "$backup_file.manifest.json.sig" "$RCLONE_REMOTE"
+  fi
 fi
 
 printf 'Backup written: %s\n' "$backup_file"

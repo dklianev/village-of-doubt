@@ -262,6 +262,7 @@ async function anonymizeUserGameHistoryInTransaction(
       anonymousUserId,
       displayNames,
       stripRootSecretRoles: event.actorId === userId || event.targetId === userId,
+      redactRootMessage: event.actorId === userId,
       rootIdentityNameStems: [
         ...(event.actorId === userId ? ["", "actor"] : []),
         ...(event.targetId === userId ? ["target"] : []),
@@ -324,6 +325,7 @@ type DeletedPayloadIdentity = {
   anonymousUserId: string;
   displayNames: string[];
   stripRootSecretRoles?: boolean;
+  redactRootMessage?: boolean;
   rootIdentityNameStems?: string[];
 };
 
@@ -397,6 +399,9 @@ export function scrubDeletedIdentityFromEventPayload(
 
     for (const [key, item] of Object.entries(source)) {
       if (key === identity.userId) {
+        continue;
+      }
+      if (identity.redactRootMessage && value === payload && canonicalKey(key) === "message") {
         continue;
       }
       if (
