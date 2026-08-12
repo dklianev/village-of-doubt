@@ -28,6 +28,24 @@ test("developer, CI, production, and asset runtimes pin Node 24.19.0", () => {
   assert.match(workflow, /pnpm visual:matrix/);
 });
 
+test("game-server avoids the unused Colyseus auth and playground dependency surface", () => {
+  const packageJson = JSON.parse(read("apps/game-server/package.json"));
+  const workspaceConfig = read("pnpm-workspace.yaml");
+  const sourceFiles = [
+    "apps/game-server/src/rooms/GameRoom.ts",
+    "apps/game-server/src/rooms/game-room-runtime.ts",
+    "apps/game-server/src/rooms/player-presence-manager.ts",
+    "apps/game-server/src/rooms/private-event-dispatcher.ts",
+    "apps/game-server/src/rooms/room-chat-router.ts",
+  ];
+
+  assert.equal(packageJson.dependencies?.colyseus, undefined);
+  assert.doesNotMatch(workspaceConfig, /CVE-2025-14505/);
+  for (const sourceFile of sourceFiles) {
+    assert.doesNotMatch(read(sourceFile), /from ["']colyseus["']/);
+  }
+});
+
 test("production database roles are separated and reconciled on every deployment", () => {
   const compose = read("docker-compose.yml");
   const envExample = read(".env.example");

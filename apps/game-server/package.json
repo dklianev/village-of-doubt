@@ -21,7 +21,6 @@
     "@sentry/node": "^10.51.0",
     "@werewolf/database": "workspace:*",
     "@werewolf/shared": "workspace:*",
-    "colyseus": "^0.17.10",
     "cors": "^2.8.5",
     "drizzle-orm": "^0.45.2",
     "express": "^5.1.0",

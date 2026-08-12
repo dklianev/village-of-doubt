@@ -2,10 +2,6 @@ packages:
   - apps/*
   - packages/*
 
-auditConfig:
-  ignoreCves:
-    - CVE-2025-14505
-
 injectWorkspacePackages: true
 
 onlyBuiltDependencies:

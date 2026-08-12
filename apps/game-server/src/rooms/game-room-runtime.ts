@@ -1,5 +1,5 @@
 import { createHash, randomInt } from "node:crypto";
-import type { Client } from "colyseus";
+import type { Client } from "@colyseus/core";
 import {
   getRoleTeam,
   ROOM_CODE_ALPHABET,

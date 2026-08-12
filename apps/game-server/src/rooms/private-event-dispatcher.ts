@@ -1,4 +1,4 @@
-import type { Client } from "colyseus";
+import type { Client } from "@colyseus/core";
 import {
   getRoleTeam,
   getRoleNameBg,
