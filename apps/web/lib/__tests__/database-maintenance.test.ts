@@ -68,6 +68,10 @@ describe("database maintenance loop", () => {
     });
   });
 
+  it("defaults detailed game-event retention to 24 months", () => {
+    expect(readDatabaseMaintenanceConfig({}).eventRetentionDays).toBe(730);
+  });
+
   it("builds the same versioned key ring used by Better Auth token encryption", () => {
     const key = resolveBetterAuthEncryptionKey({
       BETTER_AUTH_SECRET: "legacy-secret-that-remains-during-rotation",

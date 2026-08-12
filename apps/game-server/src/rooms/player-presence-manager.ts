@@ -28,6 +28,14 @@ export class PlayerPresenceManager {
     return PlayerPresenceManager.securityStore.checkJoinRateLimit(userId);
   }
 
+  static claimActiveRoom(userId: string, roomCode: string, expiresAtMs: number) {
+    return PlayerPresenceManager.securityStore.claimActiveRoom(userId, roomCode, expiresAtMs);
+  }
+
+  static releaseActiveRoom(userId: string, roomCode: string) {
+    return PlayerPresenceManager.securityStore.releaseActiveRoom(userId, roomCode);
+  }
+
   static resetForTests() {
     PlayerPresenceManager.securityStore = PlayerPresenceManager.createMemorySecurityStore();
   }

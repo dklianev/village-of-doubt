@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { createDatabase, deleteUserAccountAtomically } from "@werewolf/database";
 import { ACCOUNT_DELETE_FRESH_AGE_SECONDS, auth } from "@/lib/auth";
 import { IntakeBodyError, readBoundedJson } from "@/lib/intake-security";
@@ -49,6 +50,8 @@ export async function POST(request: Request) {
     console.error("[account-delete] deletion failed", safeErrorMetadata(error));
     return NextResponse.json({ error: "Не успяхме да изтрием досието." }, { status: 500 });
   }
+
+  revalidateTag("public-leaderboard", "max");
 
   return NextResponse.json({ ok: true });
 }

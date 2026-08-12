@@ -97,6 +97,9 @@ export const games = pgTable(
       .references(() => user.id),
     config: jsonb("config").notNull(),
     rulesetVersion: text("ruleset_version").notNull(),
+    roomVisibility: text("room_visibility", { enum: ["private", "public"] })
+      .notNull()
+      .default("private"),
     status: text("status", { enum: ["lobby", "active", "ended", "abandoned"] }).notNull().default("lobby"),
     winnerTeam: text("winner_team", {
       enum: ["village", "werewolves", "vampires", "mafia", "maniac", "lovers", "draw"],
@@ -111,7 +114,13 @@ export const games = pgTable(
     index("games_host_id_idx").on(table.hostId),
     index("games_status_idx").on(table.status),
     index("games_status_ended_at_idx").on(table.status, table.endedAt.desc()),
+    index("games_visibility_status_ended_at_idx").on(
+      table.roomVisibility,
+      table.status,
+      table.endedAt.desc(),
+    ),
     index("games_status_updated_at_idx").on(table.status, table.updatedAt),
+    check("games_room_visibility_check", sql`${table.roomVisibility} IN ('private', 'public')`),
     check("games_status_check", sql`${table.status} IN ('lobby', 'active', 'ended', 'abandoned')`),
     check(
       "games_winner_team_check",

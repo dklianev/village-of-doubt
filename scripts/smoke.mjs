@@ -17,8 +17,9 @@ async function main() {
     PORT: "3567",
     ALLOW_DEV_AUTH: "true",
     GAME_TOKEN_SECRET: "smoke-test-secret-that-is-long-enough",
-    BETTER_AUTH_URL: "http://127.0.0.1:3300",
-    CORS_ORIGIN: "http://127.0.0.1:3300",
+    BETTER_AUTH_URL: "https://smoke.invalid",
+    CORS_ORIGIN: "https://smoke.invalid",
+    PUBLIC_WEB_DOMAIN: "smoke.invalid",
   });
 
   await waitForJson("http://127.0.0.1:3567/health", "game-server");

@@ -9,8 +9,11 @@ if [ ! -f "$manifest_path" ]; then
 fi
 
 rollback_env="$release_dir/rollback.env"
+manifest_signature="${RELEASE_MANIFEST_SIGNATURE:-${manifest_path}.sig}"
 mkdir -p "$release_dir"
-node scripts/release-manifest.mjs "$manifest_path" --env-output "$rollback_env"
+node --env-file-if-exists=.env scripts/release-manifest.mjs "$manifest_path" \
+  --signature "$manifest_signature" \
+  --env-output "$rollback_env"
 chmod 600 "$rollback_env"
 
 set -a
@@ -30,7 +33,9 @@ while [ "$attempt" -le 45 ]; do
   game_health="$(docker compose --env-file .env --env-file "$rollback_env" ps --format json game 2>/dev/null | grep -o '"Health":"[^"]*"' | head -1 || true)"
   if [ "$web_health" = '"Health":"healthy"' ] && [ "$game_health" = '"Health":"healthy"' ]; then
     cp "$manifest_path" "$release_dir/current.json"
+    cp "$manifest_signature" "$release_dir/current.json.sig"
     chmod 600 "$release_dir/current.json"
+    chmod 600 "$release_dir/current.json.sig"
     rm -f "$rollback_env"
     echo "Rollback to $RELEASE_VERSION is healthy. No database downgrade was attempted."
     exit 0

@@ -6,6 +6,7 @@ function game(id: string, winnerTeam: string, endedAt: string) {
     id,
     code: id,
     hostId: null,
+    roomVisibility: "private" as const,
     config: {},
     status: "ended",
     winnerTeam,

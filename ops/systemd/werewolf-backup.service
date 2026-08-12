@@ -9,6 +9,7 @@ User=root
 Group=root
 EnvironmentFile=/etc/werewolf/backup.env
 Environment=BACKUP_REQUIRE_FIXED_CONTAINER=1
+Environment=BACKUP_REQUIRE_ENCRYPTION=1
 Environment=BACKUP_DIR=/var/backups/werewolf
 Environment=BACKUP_RETENTION_DAYS=14
 Environment=BACKUP_MAX_AGE_HOURS=8

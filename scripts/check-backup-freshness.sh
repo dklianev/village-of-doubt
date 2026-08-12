@@ -20,7 +20,7 @@ case "$BACKUP_CLOCK_SKEW_SECONDS" in
 esac
 
 latest_backup="$(
-  find "$BACKUP_DIR" -maxdepth 1 -type f -name 'werewolf_*.sql.gz' |
+  find "$BACKUP_DIR" -maxdepth 1 -type f \( -name 'werewolf_*.sql.gz' -o -name 'werewolf_*.sql.gz.age' \) |
     sort -r |
     head -n 1
 )"
@@ -54,7 +54,11 @@ if [ "$age_seconds" -gt "$max_age_seconds" ]; then
   exit 1
 fi
 
-gzip -t "$latest_backup"
 (cd "$(dirname "$latest_backup")" && sha256sum -c "$(basename "$checksum_file")")
+
+case "$latest_backup" in
+  *.age) ;;
+  *) gzip -t "$latest_backup" ;;
+esac
 
 printf 'Backup verified: %s (%s seconds old)\n' "$latest_backup" "$age_seconds"

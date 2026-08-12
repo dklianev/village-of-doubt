@@ -10,6 +10,7 @@ const endedGame = {
   status: "ended",
   endedAt: new Date("2026-07-29T20:00:00.000Z"),
   hostId: "host-1",
+  roomVisibility: "public" as const,
 };
 
 describe("post-game replay visibility", () => {
@@ -41,9 +42,38 @@ describe("post-game replay visibility", () => {
   });
 
   it.each([
+    ["гост без сесия", undefined, new Set<string>()],
+    ["външен потребител", "outsider-1", new Set<string>()],
+    ["участник в друга игра", "player-1", new Set(["game-2"])],
+  ])("отказва частния запис на %s", (_label, viewerUserId, participantGameIds) => {
+    expect(
+      resolveReplayTimelineVisibility({
+        ...endedGame,
+        roomVisibility: "private",
+        viewerUserId,
+        participantGameIds,
+      }),
+    ).toBe("none");
+  });
+
+  it.each([
     ["домакин", "host-1", new Set<string>()],
     ["участник", "player-1", new Set(["game-1"])],
-  ])("не разкрива пълния запис на %s преди играта да е приключила", (_label, viewerUserId, participantGameIds) => {
+  ])("дава частния запис на %s", (_label, viewerUserId, participantGameIds) => {
+    expect(
+      resolveReplayTimelineVisibility({
+        ...endedGame,
+        roomVisibility: "private",
+        viewerUserId,
+        participantGameIds,
+      }),
+    ).toBe("all");
+  });
+
+  it.each([
+    ["домакин", "host-1", new Set<string>()],
+    ["участник", "player-1", new Set(["game-1"])],
+  ])("не дава запис на %s преди играта да е приключила", (_label, viewerUserId, participantGameIds) => {
     expect(
       resolveReplayTimelineVisibility({
         ...endedGame,
@@ -52,7 +82,7 @@ describe("post-game replay visibility", () => {
         viewerUserId,
         participantGameIds,
       }),
-    ).toBe("public");
+    ).toBe("none");
   });
 
   it.each([

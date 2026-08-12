@@ -16,6 +16,7 @@ export interface GameHistorySummary {
   code: string;
   hostId: string | null;
   config: unknown;
+  roomVisibility: "private" | "public";
   status: string;
   winnerTeam: string | null;
   startedAt: Date | null;
@@ -450,6 +451,7 @@ export async function getAccountExportPage(
       id: games.id,
       code: games.code,
       config: games.config,
+      roomVisibility: games.roomVisibility,
       status: games.status,
       winnerTeam: games.winnerTeam,
       startedAt: games.startedAt,
@@ -585,6 +587,7 @@ export async function getRecentGameHistory(db: Database, limit = 20): Promise<Ga
       code: games.code,
       hostId: games.hostId,
       config: games.config,
+      roomVisibility: games.roomVisibility,
       status: games.status,
       winnerTeam: games.winnerTeam,
       startedAt: games.startedAt,
@@ -619,13 +622,14 @@ export async function getRecentEndedGameHistory(db: Database, limit = 20): Promi
       code: games.code,
       hostId: games.hostId,
       config: games.config,
+      roomVisibility: games.roomVisibility,
       status: games.status,
       winnerTeam: games.winnerTeam,
       startedAt: games.startedAt,
       endedAt: games.endedAt,
     })
     .from(games)
-    .where(eq(games.status, "ended"))
+    .where(and(eq(games.status, "ended"), eq(games.roomVisibility, "public")))
     .orderBy(desc(games.endedAt), desc(games.id))
     .limit(safeLimit);
 
@@ -653,6 +657,7 @@ export async function getGameHistoryById(db: Database, gameId: string): Promise<
       code: games.code,
       hostId: games.hostId,
       config: games.config,
+      roomVisibility: games.roomVisibility,
       status: games.status,
       winnerTeam: games.winnerTeam,
       startedAt: games.startedAt,
@@ -688,6 +693,7 @@ export async function getGameHistoryForUser(db: Database, userId: string, limit 
       code: games.code,
       hostId: games.hostId,
       config: games.config,
+      roomVisibility: games.roomVisibility,
       status: games.status,
       winnerTeam: games.winnerTeam,
       startedAt: games.startedAt,
@@ -763,10 +769,11 @@ export async function getPlayerOutcomesInGames(
 export async function getGameTimeline(
   db: Database,
   gameId: string,
-  limit: number | null = 100,
-  options: { visibilityFilter?: "all" | "public" } = {},
+  limit = 100,
+  options: { visibilityFilter?: "all" | "public"; order?: "asc" | "desc" } = {},
 ): Promise<GameTimelineEvent[]> {
   const visibilityFilter = options.visibilityFilter ?? "all";
+  const safeLimit = Math.min(Math.max(Math.trunc(limit), 1), 1_000);
   const query = db
     .select({
       id: gameEvents.id,
@@ -785,9 +792,9 @@ export async function getGameTimeline(
         ? and(eq(gameEvents.gameId, gameId), eq(gameEvents.visibility, "public"))
         : eq(gameEvents.gameId, gameId),
     )
-    .orderBy(limit === null ? asc(gameEvents.createdAt) : desc(gameEvents.createdAt));
+    .orderBy(options.order === "asc" ? asc(gameEvents.createdAt) : desc(gameEvents.createdAt));
 
-  return limit === null ? query : query.limit(limit);
+  return query.limit(safeLimit);
 }
 
 export async function getGameReplayParticipants(
@@ -913,8 +920,12 @@ export async function getLeaderboardRows(
     .innerJoin(user, eq(gamePlayers.userId, user.id))
     .where(
       options.since
-        ? and(eq(games.status, "ended"), gte(games.endedAt, options.since))
-        : eq(games.status, "ended"),
+        ? and(
+            eq(games.status, "ended"),
+            eq(games.roomVisibility, "public"),
+            gte(games.endedAt, options.since),
+          )
+        : and(eq(games.status, "ended"), eq(games.roomVisibility, "public")),
     )
     .groupBy(gamePlayers.userId, user.name)
     .orderBy(desc(wins), desc(gamesPlayed), desc(lastPlayedAt))

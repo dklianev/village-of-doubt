@@ -46,6 +46,7 @@ async function main() {
   authFixture = await seedAuthFixture(databaseUrl);
 
   const game = start("game-server", process.execPath, ["apps/game-server/dist/index.js"], {
+    NODE_ENV: "test",
     GAME_SERVER_PORT: gamePort,
     PORT: gamePort,
     ALLOW_DEV_AUTH: "false",
@@ -1008,8 +1009,8 @@ function start(name, command, args, env) {
     cwd: process.cwd(),
     env: {
       ...process.env,
-      ...env,
       NODE_ENV: "production",
+      ...env,
     },
     stdio: ["ignore", "pipe", "pipe"],
   });

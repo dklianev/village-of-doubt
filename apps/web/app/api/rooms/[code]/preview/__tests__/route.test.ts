@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { GET } from "../route";
+import { createRoomPreviewHandler, GET } from "../route";
 
 const context = { params: Promise.resolve({ code: "ABC234" }) };
 
@@ -39,7 +39,7 @@ describe("GET /api/rooms/[code]/preview", () => {
     await expect(response.json()).resolves.toEqual({ status: "unavailable" });
   });
 
-  it("returns a bounded public preview for a healthy room", async () => {
+  it("redacts player identities when no active session is present", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue(
@@ -50,7 +50,7 @@ describe("GET /api/rooms/[code]/preview", () => {
           capacity: 8,
           family: "werewolves",
           hostName: "Борил",
-          players: [],
+          players: [{ displayName: "Борил", connected: true, ready: true, host: true }],
         }),
       ),
     );
@@ -59,10 +59,57 @@ describe("GET /api/rooms/[code]/preview", () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get("cache-control")).toBe("private, no-store");
-    await expect(response.json()).resolves.toMatchObject({ code: "ABC234", status: "lobby", playerCount: 2 });
+    await expect(response.json()).resolves.toMatchObject({
+      code: "ABC234",
+      status: "lobby",
+      playerCount: 2,
+      hostName: null,
+      players: [],
+    });
     expect(fetch).toHaveBeenCalledWith(
       "http://game.local/rooms/ABC234/preview",
       expect.objectContaining({ cache: "no-store" }),
     );
+  });
+
+  it("keeps the bounded player preview for an authenticated viewer", async () => {
+    const handler = createRoomPreviewHandler({
+      checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 }),
+      getSession: vi.fn().mockResolvedValue({ user: { id: "viewer-1" } }),
+      fetcher: vi.fn().mockResolvedValue(Response.json({
+        code: "ABC234",
+        status: "lobby",
+        playerCount: 2,
+        capacity: 8,
+        family: "werewolves",
+        hostName: "Борил",
+        players: [{ displayName: "Борил", connected: true, ready: true, host: true }],
+      })),
+    });
+
+    const response = await handler(new Request("http://web.local/api/rooms/ABC234/preview"), context);
+
+    await expect(response.json()).resolves.toMatchObject({
+      hostName: "Борил",
+      players: [{ displayName: "Борил", host: true }],
+    });
+  });
+
+  it("rate-limits room enumeration before hitting the game server", async () => {
+    const fetcher = vi.fn();
+    const handler = createRoomPreviewHandler({
+      checkRateLimit: vi.fn().mockResolvedValue({ allowed: false, retryAfterSeconds: 17 }),
+      getSession: vi.fn(),
+      fetcher,
+    });
+
+    const response = await handler(new Request("http://web.local/api/rooms/ABC234/preview"), context);
+
+    expect(response.status).toBe(429);
+    expect(response.headers.get("retry-after")).toBe("17");
+    expect(fetcher).not.toHaveBeenCalled();
+    await expect(response.json()).resolves.toEqual({
+      error: "Твърде много проверки на стаи. Опитай отново след малко.",
+    });
   });
 });

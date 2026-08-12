@@ -30,6 +30,7 @@ export default defineConfig({
       ACCOUNT_DASHBOARD_FIXTURE: "1",
       HISTORY_EVIDENCE_FIXTURE: "empty",
       LEADERBOARD_NEWSPAPER_FIXTURE: "empty",
+      STATUS_HEALTH_FIXTURE: "healthy",
     },
   },
   expect: {

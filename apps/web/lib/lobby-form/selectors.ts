@@ -239,10 +239,13 @@ export function defaultRoomName(mode: GameMode) {
   return randomRoomName(getGameFamily(mode));
 }
 
-export function createRoomCode() {
+export function createRoomCode(
+  fillRandomValues: (values: Uint32Array) => Uint32Array = (values) => globalThis.crypto.getRandomValues(values),
+) {
+  const values = fillRandomValues(new Uint32Array(ROOM_CODE_LENGTH));
   return Array.from(
-    { length: ROOM_CODE_LENGTH },
-    () => ROOM_CODE_ALPHABET[Math.floor(Math.random() * ROOM_CODE_ALPHABET.length)],
+    values,
+    (value) => ROOM_CODE_ALPHABET[value % ROOM_CODE_ALPHABET.length],
   ).join("");
 }
 

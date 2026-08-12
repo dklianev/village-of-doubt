@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { ROOM_CODE_REGEX, normalizeRoomCodeInput, type GameFamily } from "@werewolf/shared";
+import { auth } from "@/lib/auth";
+import { createRuntimeIntakeRateLimiter, requestRateLimitKey } from "@/lib/intake-security";
+import type { RateLimitResult } from "@/lib/rate-limit";
 
 type RoomPreview = {
   code: string;
@@ -18,39 +21,83 @@ type RoomPreview = {
 
 export const dynamic = "force-dynamic";
 
-export async function GET(_request: Request, { params }: { params: Promise<{ code: string }> }) {
-  const { code: rawCode } = await params;
-  const code = normalizeRoomCodeInput(rawCode);
+const roomPreviewRateLimiter = createRuntimeIntakeRateLimiter(
+  { limit: 30, windowMs: 60_000 },
+  "room-preview-source",
+);
 
-  if (!ROOM_CODE_REGEX.test(code)) {
-    return missingRoomPreview();
-  }
+type RoomPreviewContext = { params: Promise<{ code: string }> };
 
-  try {
-    const response = await fetch(`${gameServerHttpUrl()}/rooms/${code}/preview`, {
-      cache: "no-store",
-      signal: AbortSignal.timeout(2000),
-    });
+type RoomPreviewDependencies = {
+  checkRateLimit: (key: string) => Promise<RateLimitResult>;
+  getSession: (headers: Headers) => Promise<{ user?: { id?: string } } | null>;
+  fetcher: typeof fetch;
+};
 
-    if (response.status === 404) {
+const defaultDependencies: RoomPreviewDependencies = {
+  checkRateLimit: (key) => roomPreviewRateLimiter.check(key),
+  getSession: (headers) => auth.api.getSession({ headers }) as Promise<{ user?: { id?: string } } | null>,
+  fetcher: (...args) => fetch(...args),
+};
+
+export function createRoomPreviewHandler(dependencies: RoomPreviewDependencies) {
+  return async function handleRoomPreview(request: Request, { params }: RoomPreviewContext) {
+    const { code: rawCode } = await params;
+    const code = normalizeRoomCodeInput(rawCode);
+
+    if (!ROOM_CODE_REGEX.test(code)) {
       return missingRoomPreview();
     }
-    if (!response.ok) {
-      return unavailableRoomPreview();
+
+    const rateLimit = await dependencies.checkRateLimit(requestRateLimitKey(request));
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: "Твърде много проверки на стаи. Опитай отново след малко." },
+        {
+          status: 429,
+          headers: {
+            "Cache-Control": "private, no-store",
+            "Retry-After": String(rateLimit.retryAfterSeconds),
+          },
+        },
+      );
     }
 
-    const data = toRoomPreview(await response.json());
-    if (!data) {
+    try {
+      const [session, response] = await Promise.all([
+        dependencies.getSession(request.headers),
+        dependencies.fetcher(`${gameServerHttpUrl()}/rooms/${code}/preview`, {
+          cache: "no-store",
+          signal: AbortSignal.timeout(2000),
+        }),
+      ]);
+
+      if (response.status === 404) {
+        return missingRoomPreview();
+      }
+      if (!response.ok) {
+        return unavailableRoomPreview();
+      }
+
+      const data = toRoomPreview(await response.json());
+      if (!data) {
+        return unavailableRoomPreview();
+      }
+
+      const viewerCanSeeIdentities = Boolean(session?.user?.id);
+
+      return NextResponse.json(viewerCanSeeIdentities ? data : redactRoomPreviewIdentities(data), {
+        status: 200,
+        headers: { "Cache-Control": "private, no-store" },
+      });
+    } catch {
       return unavailableRoomPreview();
     }
+  };
+}
 
-    return NextResponse.json(data, {
-      status: 200,
-      headers: { "Cache-Control": "private, no-store" },
-    });
-  } catch {
-    return unavailableRoomPreview();
-  }
+export async function GET(request: Request, context: RoomPreviewContext) {
+  return createRoomPreviewHandler(defaultDependencies)(request, context);
 }
 
 function unavailableRoomPreview() {
@@ -109,6 +156,14 @@ function toRoomPreview(value: unknown): RoomPreview | null {
     family,
     hostName,
     players,
+  };
+}
+
+function redactRoomPreviewIdentities(preview: RoomPreview): RoomPreview {
+  return {
+    ...preview,
+    hostName: null,
+    players: [],
   };
 }
 

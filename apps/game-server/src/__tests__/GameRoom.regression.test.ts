@@ -60,6 +60,21 @@ describe("GameRoom gameplay regressions", () => {
     expect(serverRoom.state.phase).toBe("lobby");
   });
 
+  it("preserves public room visibility when the game starts", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "PUBVJS",
+      mode: "werewolves_classic",
+      playerCount: 6,
+      roomVisibility: "public",
+    });
+    const clients = await connectPlayers(colyseus, serverRoom, 6, "public-visibility");
+
+    await startGameAndCollectRoles(clients);
+
+    expect((serverRoom as unknown as { config: { roomVisibility: string } }).config.roomVisibility)
+      .toBe("public");
+  });
+
   it("delivers faction chat only to the matching faction", async () => {
     const serverRoom = await colyseus.createRoom<GameRoom>("game", {
       code: "MAFCHT",
@@ -1321,6 +1336,84 @@ describe("GameRoom gameplay regressions", () => {
     ]);
 
     expect(serverRoom.state.phase).not.toBe("lobby");
+  });
+
+  it("does not let a spectator block full-narrator consent", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "NRSP23",
+      mode: "mafia_free",
+      playerCount: 4,
+      narratorMode: "full_human",
+    });
+    const clients = await connectPlayers(colyseus, serverRoom, 5, "narrator-player");
+    const spectator = await colyseus.connectTo(serverRoom, {
+      code: "NRSP23",
+      userId: "narrator-spectator",
+      displayName: "Наблюдател",
+      spectator: true,
+    });
+
+    for (const client of clients) {
+      client.client.send("acceptFullNarrator", {});
+    }
+    await delay(50);
+
+    const roleMessages = clients.slice(1).map((client) => waitForPrivateRole(client.client));
+    clients[0]?.client.send("startGame", {});
+    await Promise.all(roleMessages);
+
+    expect(serverRoom.state.phase).toBe("role_reveal");
+    expect(findPublicPlayer(serverRoom, "narrator-spectator")?.playing).toBe(false);
+  });
+
+  it("rejects ready changes after the lobby", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "RDYP23",
+      mode: "werewolves_classic",
+      playerCount: 6,
+    });
+    const clients = await connectPlayers(colyseus, serverRoom, 6, "ready-player");
+    clients[1]?.client.send("ready", { ready: true });
+    await delay(25);
+    await startGameAndCollectRoles(clients);
+
+    const error = clients[1]?.client.waitForMessage("safe_error") as Promise<{ messageBg: string }>;
+    clients[1]?.client.send("ready", { ready: false });
+
+    await expect(error).resolves.toMatchObject({
+      messageBg: "Готовността се променя само преди старт.",
+    });
+    expect(findPublicPlayer(serverRoom, "ready-player-2")?.ready).toBe(true);
+  });
+
+  it("keeps full-narrator consent private to participants and idempotent", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "NRCN23",
+      mode: "mafia_free",
+      playerCount: 4,
+      narratorMode: "full_human",
+    });
+    const clients = await connectPlayers(colyseus, serverRoom, 5, "consent-player");
+    const spectator = await colyseus.connectTo(serverRoom, {
+      code: "NRCN23",
+      userId: "consent-spectator",
+      displayName: "Наблюдател",
+      spectator: true,
+    });
+
+    const spectatorError = spectator.waitForMessage("safe_error") as Promise<{ messageBg: string }>;
+    spectator.send("acceptFullNarrator", {});
+    await expect(spectatorError).resolves.toMatchObject({
+      messageBg: "Само участник може да приеме предупреждението за Пълен Разказвач.",
+    });
+
+    clients[1]?.client.send("acceptFullNarrator", {});
+    clients[1]?.client.send("acceptFullNarrator", {});
+    await delay(50);
+    const acceptanceEvents = [...serverRoom.state.publicEvents.values()].filter(
+      (event) => event.messageBg.includes("прие предупреждението за Пълен Разказвач"),
+    );
+    expect(acceptanceEvents).toHaveLength(1);
   });
 });
 

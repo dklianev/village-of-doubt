@@ -27,6 +27,23 @@ describe("game_players final outcome schema", () => {
 });
 
 describe("database integrity and anonymization indexes", () => {
+  it("materializes room visibility for archive authorization", () => {
+    const roomVisibility = getTableConfig(games).columns.find((column) => column.name === "room_visibility");
+    const gameChecks = getTableConfig(games).checks.map((item) => item.name);
+    const migration = readFileSync(
+      resolve(process.cwd(), "drizzle/0009_certain_iron_man.sql"),
+      "utf8",
+    );
+
+    expect(roomVisibility).toMatchObject({ notNull: true, hasDefault: true, default: "private" });
+    expect(gameChecks).toContain("games_room_visibility_check");
+    expect(migration).toContain(
+      'ALTER TABLE "games" ADD COLUMN "room_visibility" text DEFAULT \'private\' NOT NULL;',
+    );
+    expect(migration).toContain('CREATE INDEX "games_visibility_status_ended_at_idx"');
+    expect(migration).toContain('"room_visibility" IN (\'private\', \'public\')');
+  });
+
   it("indexes nullable identity references used by account deletion", () => {
     const eventIndexes = getTableConfig(gameEvents).indexes.map((item) => item.config.name);
     const playerIndexes = getTableConfig(gamePlayers).indexes.map((item) => item.config.name);

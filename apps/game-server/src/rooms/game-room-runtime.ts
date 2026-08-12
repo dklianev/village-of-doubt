@@ -17,6 +17,9 @@ export interface ClientAuth {
   userId: string;
   displayName: string;
   avatarId: AvatarId;
+  tokenNonce?: string;
+  tokenExpiresAtMs?: number;
+  tokenNonceConsumed?: boolean;
 }
 
 export interface PrivatePlayerState {
@@ -59,7 +62,14 @@ export class CommandRateLimiter {
       return true;
     }
 
-    const bucket = commandBucket(commandType);
+    return this.allowBucket(userId, commandBucket(commandType), now);
+  }
+
+  allowInvalid(userId: string, now = Date.now()) {
+    return this.allowBucket(userId, "control", now);
+  }
+
+  private allowBucket(userId: string, bucket: CommandRateBucket, now: number) {
     const policy = COMMAND_RATE_POLICIES[bucket];
     const userAttempts = this.attempts.get(userId) ?? new Map<CommandRateBucket, number[]>();
     const cutoff = now - policy.windowMs;

@@ -1,8 +1,11 @@
 import type { Request, Response } from "express";
 import { describe, expect, it, vi } from "vitest";
 import {
+  createDeadlineBoundSecurityRedisClient,
   createLocalStatsHandler,
   createReadinessHandler,
+  probeSecurityRedisReady,
+  resolveGameServerCorsOrigin,
   resolveGameServerRedisUrl,
 } from "./app.config.js";
 
@@ -46,6 +49,75 @@ describe("game-server Redis startup guard", () => {
       REDIS_URL: undefined,
       REDIS_PASSWORD_FILE: undefined,
     })).toBeUndefined();
+  });
+
+  it("aborts security-store commands that exceed their deadline", async () => {
+    const client = {
+      withAbortSignal(signal: AbortSignal) {
+        return {
+          set: () => new Promise((_resolve, reject) => {
+            signal.addEventListener("abort", () => reject(signal.reason), { once: true });
+          }),
+          eval: () => new Promise((_resolve, reject) => {
+            signal.addEventListener("abort", () => reject(signal.reason), { once: true });
+          }),
+        };
+      },
+    };
+    const bounded = createDeadlineBoundSecurityRedisClient(client, 10);
+
+    await expect(bounded.set("key", "1", {
+      expiration: { type: "PX", value: 1_000 },
+      condition: "NX",
+    })).rejects.toThrow();
+  });
+
+  it("requires a successful Redis write/read/delete round trip for readiness", async () => {
+    const healthy = {
+      isReady: true,
+      withAbortSignal: vi.fn(() => ({
+        set: vi.fn(async () => "OK"),
+        get: vi.fn(async () => "ready"),
+        del: vi.fn(async () => 1),
+      })),
+    };
+    const readOnly = {
+      isReady: true,
+      withAbortSignal: vi.fn(() => ({
+        set: vi.fn(async () => null),
+        get: vi.fn(async () => null),
+        del: vi.fn(async () => 0),
+      })),
+    };
+
+    await expect(probeSecurityRedisReady(healthy)).resolves.toBe(true);
+    await expect(probeSecurityRedisReady(readOnly)).resolves.toBe(false);
+  });
+});
+
+describe("game-server production CORS guard", () => {
+  it.each([
+    "*",
+    "http://senkite.com",
+    "https://user:secret@senkite.com",
+    "https://senkite.com/path",
+    "not-a-url",
+  ])("refuses unsafe production origin %s", (origin) => {
+    expect(() => resolveGameServerCorsOrigin({
+      NODE_ENV: "production",
+      CORS_ORIGIN: origin,
+      BETTER_AUTH_URL: "https://senkite.com",
+      PUBLIC_WEB_DOMAIN: "senkite.com",
+    })).toThrow();
+  });
+
+  it("accepts one exact HTTPS application origin", () => {
+    expect(resolveGameServerCorsOrigin({
+      NODE_ENV: "production",
+      CORS_ORIGIN: "https://senkite.com",
+      BETTER_AUTH_URL: "https://senkite.com",
+      PUBLIC_WEB_DOMAIN: "senkite.com",
+    })).toEqual(["https://senkite.com"]);
   });
 });
 

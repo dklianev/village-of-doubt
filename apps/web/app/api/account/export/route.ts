@@ -11,18 +11,40 @@ import {
   getAchievementsForUser,
 } from "@werewolf/database";
 import { auth } from "@/lib/auth";
+import { createRuntimeIntakeRateLimiter, requestRateLimitKey } from "@/lib/intake-security";
 
 const MAX_EXPORT_BYTES = 5 * 1024 * 1024;
 const PRIVATE_NO_STORE_HEADERS = { "Cache-Control": "private, no-store" };
+const exportSourceRateLimiter = createRuntimeIntakeRateLimiter(
+  { limit: 30, windowMs: 60_000 },
+  "account-export-source",
+);
+const exportUserRateLimiter = createRuntimeIntakeRateLimiter(
+  { limit: 4, windowMs: 15 * 60_000 },
+  "account-export-user",
+);
 
 export async function GET(request?: Request) {
-  const session = await auth.api.getSession({ headers: await headers() });
+  const requestHeaders = request?.headers ?? await headers();
+  const sourceLimit = await exportSourceRateLimiter.check(
+    requestRateLimitKey(request ?? new Request("http://localhost/api/account/export", { headers: requestHeaders })),
+  );
+  if (!sourceLimit.allowed) {
+    return exportRateLimitResponse(sourceLimit.retryAfterSeconds);
+  }
+
+  const session = await auth.api.getSession({ headers: requestHeaders });
 
   if (!session?.user?.id) {
     return NextResponse.json(
       { error: "Не си влязъл." },
       { status: 401, headers: PRIVATE_NO_STORE_HEADERS },
     );
+  }
+
+  const userLimit = await exportUserRateLimiter.check(`user:${session.user.id}`);
+  if (!userLimit.allowed) {
+    return exportRateLimitResponse(userLimit.retryAfterSeconds);
   }
 
   if (!process.env.DATABASE_URL) {
@@ -82,7 +104,7 @@ export async function GET(request?: Request) {
         eventPageSize: exportPage.eventPageSize,
         eventsHasMore: exportPage.eventsHasMore,
       },
-      note: "Това е експорт на твоите данни от Върколак и Мафия. Запази файла за твоите архиви.",
+      note: "Това е експорт на твоите данни от Върколак и Мафия. Събитията включват публичната история и твоите лични действия, но не и чужди лични действия или бележки за модератори. Запази файла за твоите архиви.",
     };
     const serialized = JSON.stringify(dump, null, 2);
 
@@ -108,6 +130,19 @@ export async function GET(request?: Request) {
       { status: 500, headers: PRIVATE_NO_STORE_HEADERS },
     );
   }
+}
+
+function exportRateLimitResponse(retryAfterSeconds: number) {
+  return NextResponse.json(
+    { error: "Твърде много заявки за експорт. Опитай отново след малко." },
+    {
+      status: 429,
+      headers: {
+        ...PRIVATE_NO_STORE_HEADERS,
+        "Retry-After": String(retryAfterSeconds),
+      },
+    },
+  );
 }
 
 function parsePagination(request?: Request): {

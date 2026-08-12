@@ -68,6 +68,8 @@ import {
 
 interface CreateOptions extends CreateRoomOptions {}
 
+const ACTIVE_ROOM_TTL_MS = 8 * 60 * 60 * 1_000;
+
 const CRITICAL_PERSISTED_EVENTS = new Set([
   "phase_change",
   "death",
@@ -83,6 +85,59 @@ function persistencePriorityForEvent(type: string): NonNullable<PersistenceQueue
     return "best-effort";
   }
   return CRITICAL_PERSISTED_EVENTS.has(type) ? "critical" : "normal";
+}
+
+export async function authenticateGameJoin(
+  options: JoinRoomOptions,
+  { consumeNonce }: { consumeNonce: boolean },
+): Promise<ClientAuth> {
+  const roomCode = normalizeRoomCode(options.code ?? "");
+  if (!ROOM_CODE_REGEX.test(roomCode)) {
+    throw new Error("Невалиден код на стая.");
+  }
+
+  const allowDevAuth = process.env.ALLOW_DEV_AUTH === "true" && process.env.NODE_ENV !== "production";
+  if (allowDevAuth && options.userId && options.displayName) {
+    const claimed = await PlayerPresenceManager.claimActiveRoom(
+      options.userId,
+      roomCode,
+      Date.now() + ACTIVE_ROOM_TTL_MS,
+    );
+    if (!claimed) {
+      throw new Error("Достигнат е лимитът за едновременно активни стаи.");
+    }
+    return {
+      userId: options.userId,
+      displayName: options.displayName,
+      avatarId: options.avatarId ? normalizeAvatarId(options.avatarId) : avatarIdForSeed(options.userId),
+    };
+  }
+
+  if (!options.token) {
+    throw new Error("Невалидна сесия.");
+  }
+
+  const payload = verifyGameToken(options.token, getGameTokenSecret(), { roomCode });
+  const tokenExpiresAtMs = payload.expiresAt * 1_000;
+  if (consumeNonce && !await PlayerPresenceManager.consumeTokenNonce(payload.nonce, tokenExpiresAtMs)) {
+    throw new Error("Този токен вече е използван.");
+  }
+  const claimed = await PlayerPresenceManager.claimActiveRoom(
+    payload.userId,
+    roomCode,
+    tokenExpiresAtMs,
+  );
+  if (!claimed) {
+    throw new Error("Достигнат е лимитът за едновременно активни стаи.");
+  }
+  return {
+    userId: payload.userId,
+    displayName: payload.displayName,
+    avatarId: payload.avatarId,
+    tokenNonce: payload.nonce,
+    tokenExpiresAtMs,
+    tokenNonceConsumed: consumeNonce,
+  };
 }
 
 export interface GameRoomPreview {
@@ -109,6 +164,7 @@ export class GameRoom extends Room<{ state: GameState }> {
     endedAt: string;
     family: GameFamily;
   }> = [];
+  private activeRoomUserIds = new Set<string>();
   private static readonly MAX_RECENT_ENDINGS = 12;
 
   static getRuntimeStats() {
@@ -173,7 +229,7 @@ export class GameRoom extends Room<{ state: GameState }> {
   private chatRouter!: RoomChatRouter;
   private privateEvents!: PrivateEventDispatcher;
   private hostUserId: string | undefined;
-  private gameFinishedPersisted = false;
+  private gameFinishPersistenceQueued = false;
   private recordedGameId: string | undefined;
   private pendingHunterRevengeUserId: string | undefined;
   private pendingMayorSuccessor = false;
@@ -231,6 +287,15 @@ export class GameRoom extends Room<{ state: GameState }> {
     this.onMessage("*", (client, type, payload) => {
       const command = parseClientCommand(type, payload);
       if (!command) {
+        const auth = getAuth(client);
+        if (
+          auth
+          && this.playerPresence.getClient(auth.userId) === client
+          && !this.commandRateLimiter.allowInvalid(auth.userId)
+        ) {
+          this.sendSafeError(client, "Изпращаш командите твърде бързо. Изчакай малко.");
+          return;
+        }
         this.sendSafeError(client, "Невалидна команда.");
         return;
       }
@@ -241,28 +306,16 @@ export class GameRoom extends Room<{ state: GameState }> {
     GameRoom.liveRooms.add(this);
   }
 
-  async onAuth(_client: Client, options: JoinRoomOptions): Promise<ClientAuth> {
-    const allowDevAuth = process.env.ALLOW_DEV_AUTH === "true" && process.env.NODE_ENV !== "production";
-    if (allowDevAuth && options.userId && options.displayName) {
-      return {
-        userId: options.userId,
-        displayName: options.displayName,
-        avatarId: options.avatarId ? normalizeAvatarId(options.avatarId) : avatarIdForSeed(options.userId),
-      };
-    }
-
-    if (options.token) {
-      const payload = verifyGameToken(options.token, getGameTokenSecret(), { roomCode: this.state.code });
-      if (!await PlayerPresenceManager.consumeTokenNonce(payload.nonce, payload.expiresAt * 1000)) {
-        throw new Error("Този токен вече е използван.");
-      }
-      return { userId: payload.userId, displayName: payload.displayName, avatarId: payload.avatarId };
-    }
-
-    throw new Error("Невалидна сесия.");
-  }
-
   async onJoin(client: Client, options: JoinRoomOptions, auth: ClientAuth) {
+    if (auth.tokenNonce && !auth.tokenNonceConsumed) {
+      if (!await PlayerPresenceManager.consumeTokenNonce(auth.tokenNonce, auth.tokenExpiresAtMs ?? 0)) {
+        this.sendSafeError(client, "Този токен вече е използван.");
+        client.leave(4029);
+        return;
+      }
+      auth.tokenNonceConsumed = true;
+    }
+
     if (!await PlayerPresenceManager.checkJoinRateLimit(auth.userId)) {
       client.send("safe_error", {
         type: "safe_error",
@@ -283,6 +336,7 @@ export class GameRoom extends Room<{ state: GameState }> {
           client.leave();
           return;
         }
+        await this.trackActiveRoom(auth.userId);
         this.activateClient(auth, client, previousClient);
         existing.host = existing.host || !this.hasHostPlayer();
         existing.narrator = existing.host && this.config.narratorMode !== "automatic";
@@ -295,6 +349,7 @@ export class GameRoom extends Room<{ state: GameState }> {
         }
         this.addPublicEvent(`${auth.displayName} вече участва в стаята.`);
       } else {
+        await this.trackActiveRoom(auth.userId);
         this.activateClient(auth, client, previousClient);
         this.addPublicEvent(`${auth.displayName} се върна в стаята.`);
       }
@@ -327,6 +382,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       return;
     }
 
+    await this.trackActiveRoom(auth.userId);
     this.activateClient(auth, client, previousClient);
     const player = new PlayerPublicState();
     player.userId = auth.userId;
@@ -398,7 +454,7 @@ export class GameRoom extends Room<{ state: GameState }> {
     }
   }
 
-  onLeave(client: Client) {
+  async onLeave(client: Client) {
     const auth = getAuth(client);
     if (!auth) {
       return;
@@ -424,6 +480,8 @@ export class GameRoom extends Room<{ state: GameState }> {
       });
       this.state.players.delete(playerEntry[0]);
       this.privatePlayers.delete(auth.userId);
+      await PlayerPresenceManager.releaseActiveRoom(auth.userId, this.state.code);
+      this.activeRoomUserIds.delete(auth.userId);
     }
     if (player?.host) {
       player.host = false;
@@ -433,7 +491,9 @@ export class GameRoom extends Room<{ state: GameState }> {
 
   async onDispose() {
     this.phaseStateMachine.dispose();
-    const persistenceDisposed = await this.persistenceCoordinator.dispose(25_000);
+    const persistenceDisposed = await this.persistenceCoordinator.dispose(
+      this.persistenceCoordinator.hasPendingTerminalWork ? 110_000 : 25_000,
+    );
     if (!persistenceDisposed && this.persistenceCoordinator.enabled) {
       console.error(
         "[game-persistence]",
@@ -441,6 +501,12 @@ export class GameRoom extends Room<{ state: GameState }> {
       );
     }
     GameRoom.liveRooms.delete(this);
+    await Promise.all(
+      [...this.activeRoomUserIds].map((userId) =>
+        PlayerPresenceManager.releaseActiveRoom(userId, this.state.code).catch(() => undefined),
+      ),
+    );
+    this.activeRoomUserIds.clear();
     this.playerPresence.clear();
     this.privatePlayers.clear();
     this.pendingNightActions.clear();
@@ -451,6 +517,18 @@ export class GameRoom extends Room<{ state: GameState }> {
     this.commandRateLimiter.clear();
     this.sportSpeechOrder = [];
     this.sportDefenseOrder = [];
+  }
+
+  private async trackActiveRoom(userId: string) {
+    const claimed = await PlayerPresenceManager.claimActiveRoom(
+      userId,
+      this.state.code,
+      Date.now() + ACTIVE_ROOM_TTL_MS,
+    );
+    if (!claimed) {
+      throw new Error("Достигнат е лимитът за едновременно активни стаи.");
+    }
+    this.activeRoomUserIds.add(userId);
   }
 
   private handleCommand(client: Client, command: ClientCommand) {
@@ -518,6 +596,12 @@ export class GameRoom extends Room<{ state: GameState }> {
 
   private setReady(client: Client, ready: boolean) {
     const player = this.getPublicPlayer(client);
+    if (this.state.phase !== "lobby") {
+      throw new Error("Готовността се променя само преди старт.");
+    }
+    if (!player.playing) {
+      throw new Error("Само активен играч може да променя готовността си.");
+    }
     player.ready = ready;
     this.tryAutoStart();
   }
@@ -598,6 +682,15 @@ export class GameRoom extends Room<{ state: GameState }> {
     if (this.config.narratorMode !== "full_human") {
       throw new Error("Тази стая не използва Пълен Разказвач.");
     }
+    if (this.state.phase !== "lobby") {
+      throw new Error("Предупреждението за Пълен Разказвач се приема само преди старт.");
+    }
+    if (!player.playing && !player.narrator) {
+      throw new Error("Само участник може да приеме предупреждението за Пълен Разказвач.");
+    }
+    if (player.acceptedFullNarrator) {
+      return;
+    }
 
     player.acceptedFullNarrator = true;
     this.addPublicEvent(`${player.displayName} прие предупреждението за Пълен Разказвач.`);
@@ -659,7 +752,9 @@ export class GameRoom extends Room<{ state: GameState }> {
       throw new Error("Изберете Разказвач преди старт.");
     }
     if (this.config.narratorMode === "full_human") {
-      const pendingAcceptance = allPlayers.filter((item) => !item.acceptedFullNarrator);
+      const pendingAcceptance = allPlayers.filter(
+        (item) => (item.playing || item.narrator) && !item.acceptedFullNarrator,
+      );
       if (pendingAcceptance.length > 0) {
         throw new Error("Всички играчи трябва да приемат предупреждението за Пълен Разказвач.");
       }
@@ -671,6 +766,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       mode,
       playerCount: players.length,
       maxPlayers: this.config.maxPlayers,
+      roomVisibility: this.config.roomVisibility,
       narratorMode: this.config.narratorMode,
       communicationMode: this.config.communicationMode,
       tempoProfile: this.config.tempoProfile,
@@ -1720,8 +1816,8 @@ export class GameRoom extends Room<{ state: GameState }> {
       this.sendNightActionCapabilitiesToActors();
     }
 
-    if (phase === "game_over" && this.state.winnerTeam && !this.gameFinishedPersisted) {
-      this.gameFinishedPersisted = true;
+    if (phase === "game_over" && this.state.winnerTeam && !this.gameFinishPersistenceQueued) {
+      this.gameFinishPersistenceQueued = true;
       GameRoom.recentEndings.unshift({
         code: this.state.code,
         winnerTeam: this.state.winnerTeam,

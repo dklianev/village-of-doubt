@@ -68,7 +68,11 @@ describe("DrizzleGamePersistence", () => {
     const input = {
       code: "IDEM01",
       hostId: "invalid host",
-      config: { mode: "werewolves_classic", rulesetVersion: "test" } as never,
+      config: {
+        mode: "werewolves_classic",
+        roomVisibility: "public",
+        rulesetVersion: "test",
+      } as never,
       idempotencyKey: "room-instance-1",
     };
 
@@ -77,8 +81,8 @@ describe("DrizzleGamePersistence", () => {
 
     expect(gameId).toBe([...committedGames.keys()][0]);
     expect(committedGames.size).toBe(1);
-    expect(attemptedGames[0]).toMatchObject({ id: gameId });
-    expect(attemptedGames[1]).toMatchObject({ id: gameId });
+    expect(attemptedGames[0]).toMatchObject({ id: gameId, roomVisibility: "public" });
+    expect(attemptedGames[1]).toMatchObject({ id: gameId, roomVisibility: "public" });
   });
 
   it("deduplicates an event retry when the first insert committed and then threw", async () => {

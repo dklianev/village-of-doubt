@@ -50,4 +50,17 @@ describe("ModeChoiceCards", () => {
       "/sign-in?redirect=%2Fwerewolf%2Fcreate",
     );
   });
+
+  it("прави първото игрово изображение discoverable и приоритетно за mobile LCP", () => {
+    useSession.mockReturnValue({ data: null, isPending: false });
+
+    const { container } = render(<ModeChoiceCards games={games} initialSession={null} />);
+    const image = container.querySelector(".game-choice-art img");
+    const mobileSource = container.querySelector('.game-choice-art source[media="(max-width: 767px)"]');
+
+    expect(image).toHaveAttribute("fetchpriority", "high");
+    expect(image).toHaveAttribute("loading", "eager");
+    expect(image).toHaveAttribute("decoding", "sync");
+    expect(mobileSource).toHaveAttribute("srcset", "/game-art/mobile/bg-lobby-tavern.webp");
+  });
 });

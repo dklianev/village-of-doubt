@@ -1,4 +1,4 @@
-export type ReplayTimelineVisibility = "all" | "public";
+export type ReplayTimelineVisibility = "all" | "public" | "none";
 
 type GameMembership = {
   has(gameId: string): boolean;
@@ -9,6 +9,7 @@ type ReplayVisibilityInput = {
   status: string;
   endedAt: Date | null;
   hostId: string | null;
+  roomVisibility: "private" | "public";
   viewerUserId: string | null | undefined;
   participantGameIds: GameMembership;
 };
@@ -18,6 +19,7 @@ export function resolveReplayTimelineVisibility({
   status,
   endedAt,
   hostId,
+  roomVisibility,
   viewerUserId,
   participantGameIds,
 }: ReplayVisibilityInput): ReplayTimelineVisibility {
@@ -25,7 +27,11 @@ export function resolveReplayTimelineVisibility({
   const isHost = Boolean(viewerUserId && hostId === viewerUserId);
   const isParticipant = Boolean(viewerUserId && participantGameIds.has(gameId));
 
-  return isEndedGame && (isHost || isParticipant) ? "all" : "public";
+  if (isEndedGame && (isHost || isParticipant)) {
+    return "all";
+  }
+
+  return isEndedGame && roomVisibility === "public" ? "public" : "none";
 }
 
 export function filterReplayTimelineByVisibility<T extends { visibility: string }>(
@@ -34,7 +40,9 @@ export function filterReplayTimelineByVisibility<T extends { visibility: string 
 ): T[] {
   return visibility === "all"
     ? [...timeline]
-    : timeline.filter((event) => event.visibility === "public");
+    : visibility === "public"
+      ? timeline.filter((event) => event.visibility === "public")
+      : [];
 }
 
 type ReplayTimelineLoaderInput<T extends { visibility: string }> = {
@@ -43,6 +51,7 @@ type ReplayTimelineLoaderInput<T extends { visibility: string }> = {
     status: string;
     endedAt: Date | null;
     hostId: string | null;
+    roomVisibility: "private" | "public";
   };
   viewerUserId: string | null | undefined;
   loadParticipantGameIds: (viewerUserId: string, gameId: string) => Promise<GameMembership>;
@@ -63,9 +72,13 @@ export async function loadReplayTimelineForViewer<T extends { visibility: string
     status: game.status,
     endedAt: game.endedAt,
     hostId: game.hostId,
+    roomVisibility: game.roomVisibility,
     viewerUserId,
     participantGameIds,
   });
+  if (visibility === "none") {
+    return [];
+  }
   const timeline = await loadTimeline(visibility);
 
   return filterReplayTimelineByVisibility(timeline, visibility);

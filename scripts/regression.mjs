@@ -792,7 +792,10 @@ function checkProductionGuardContracts() {
   const proxy = readText("apps/web/proxy.ts");
   const caddyfile = readText("Caddyfile");
 
-  assert(gameConfig.includes("cors({ credentials: true, origin: getCorsOrigin() })"), "Game server CORS must be origin-restricted.");
+  assert(
+    gameConfig.includes("cors({ credentials: true, origin: resolveGameServerCorsOrigin(process.env) })"),
+    "Game server CORS must be origin-restricted.",
+  );
   assert(gameConfig.includes("throw new Error(\"CORS_ORIGIN"), "Production CORS misconfiguration must fail fast.");
   assert(gameRoom.includes("process.env.NODE_ENV === \"production\""), "GameRoom must enforce production token secrets.");
   assert(gameRoom.includes("isProductionSecret"), "GameRoom missing production secret validation helper.");
@@ -809,6 +812,11 @@ function checkProductionGuardContracts() {
   assert(caddyfile.includes("Strict-Transport-Security"), "Caddyfile must enable HSTS.");
   assert(caddyfile.includes("X-Frame-Options \"DENY\""), "Caddyfile must block framing.");
   assert(caddyfile.includes("Content-Security-Policy"), "Caddyfile must include a baseline CSP.");
+  assert(
+    caddyfile.includes("@private_room_preview path /rooms/*/preview") &&
+      caddyfile.includes("respond @private_room_preview 404"),
+    "Public game ingress must not expose room preview enumeration.",
+  );
   assert(caddyfile.includes("health_uri /api/health\n"), "Caddy web upstream health must use shallow liveness.");
   assert(!caddyfile.includes("health_uri /api/health/ready"), "Caddy must not remove web ingress for deep dependency failures.");
   assert(caddyfile.includes("health_uri /health\n"), "Caddy game transport health must use shallow liveness.");
@@ -1160,6 +1168,7 @@ function checkProductionOperationsContracts() {
   assert(service.includes("User=root") && service.includes("Group=root"), "Docker-backed backups must use an explicit root service identity.");
   assert(service.includes("EnvironmentFile=/etc/werewolf/backup.env"), "Scheduled backups must use a dedicated root-only environment.");
   assert(service.includes("Environment=BACKUP_REQUIRE_FIXED_CONTAINER=1"), "Scheduled backups must reject mutable Compose fallback.");
+  assert(service.includes("Environment=BACKUP_REQUIRE_ENCRYPTION=1"), "Scheduled backups must require encrypted artifacts.");
   assert(
     service.includes("ExecStart=/usr/local/libexec/werewolf/backup-postgres.sh"),
     "Scheduled backups must execute a root-owned installed helper.",
@@ -1175,6 +1184,7 @@ function checkProductionOperationsContracts() {
     "Scheduled backups must resolve PostgreSQL without reading mutable Compose files.",
   );
   assert(backup.includes("RCLONE_REMOTE"), "Backups must support an off-site copy.");
+  assert(backup.includes("BACKUP_AGE_RECIPIENT") && backup.includes(".sql.gz.age"), "Scheduled backups must be encrypted with age.");
   assert(
     freshness.includes("sha256sum -c")
       && freshness.includes("gzip -t")
@@ -1357,7 +1367,11 @@ function validProductionEnv() {
     SENTRY_DSN: "https://public@sentry.example.com/1",
     NEXT_PUBLIC_SENTRY_DSN: "https://public@sentry.example.com/2",
     RELEASE_VERSION: "release-2026-07-20.1",
+    RELEASE_ALLOWED_IMAGE_PREFIX: "ghcr.io/example/project",
+    RELEASE_MANIFEST_PUBLIC_KEY: process.execPath,
+    BACKUP_AGE_RECIPIENT: "age1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
     RCLONE_REMOTE: "encrypted-remote:werewolf/backups",
+    DATABASE_EVENT_RETENTION_DAYS: "730",
   };
 }
 

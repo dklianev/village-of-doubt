@@ -71,7 +71,7 @@ Each pass is bounded and uses `FOR UPDATE SKIP LOCKED`:
 - old events are deleted only when `DATABASE_EVENT_RETENTION_DAYS` is greater
   than zero and their game is already ended or abandoned.
 
-Event retention is disabled by default. Enabling it is a product/data-retention
+Detailed event retention defaults to 730 days. Changing it is a product/data-retention
 decision because it removes old replay detail. Start with a documented window,
 take a verified backup, and monitor the first cleanup passes.
 
@@ -166,6 +166,12 @@ a reconciliation job that can rebuild aggregates from history.
 
 ## Migration and restore rules
 
+- Scheduled backups are age-encrypted `.sql.gz.age` artifacts with a SHA-256
+  sidecar. Configure `BACKUP_AGE_RECIPIENT` with a public recipient and keep the
+  matching private identity off the application host. The scheduled path fails
+  closed when encryption is required but no recipient is configured.
+- Encrypted restores require `BACKUP_AGE_IDENTITY_FILE`. Legacy `.sql.gz`
+  archives remain restorable during the transition.
 - Generate and review SQL under `packages/database/drizzle/`.
 - Apply only expand/contract migrations during a normal release.
 - Keep schema and generated migration metadata in the same commit.

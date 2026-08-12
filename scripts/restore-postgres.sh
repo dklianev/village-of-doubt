@@ -2,7 +2,7 @@
 set -eu
 
 if [ $# -ne 1 ]; then
-  printf 'Usage: %s /path/to/werewolf_YYYY-MM-DD_HH-MM-SS.sql.gz\n' "$0" >&2
+  printf 'Usage: %s /path/to/werewolf_YYYY-MM-DD_HH-MM-SS.sql.gz[.age]\n' "$0" >&2
   exit 1
 fi
 
@@ -14,6 +14,8 @@ docker_command="${RESTORE_DOCKER_COMMAND:-docker}"
 restore_run_id="${RESTORE_RUN_ID:-$$}"
 restore_health_timeout="${RESTORE_HEALTH_TIMEOUT_SECONDS:-180}"
 restore_only="${RESTORE_ONLY:-0}"
+age_command="${BACKUP_AGE_COMMAND:-age}"
+age_identity_file="${BACKUP_AGE_IDENTITY_FILE:-}"
 
 if [ ! -f "$backup_file" ]; then
   printf 'Backup file not found: %s\n' "$backup_file" >&2
@@ -117,6 +119,7 @@ validate_staging_database() {
 }
 
 temporary_sql="$(mktemp "${TMPDIR:-/tmp}/werewolf_restore.XXXXXX")"
+temporary_gzip="$(mktemp "${TMPDIR:-/tmp}/werewolf_restore.XXXXXX.gz")"
 writers_stopped=0
 restart_attempted=0
 switch_started=0
@@ -128,7 +131,7 @@ writers_to_restart=""
 cleanup() {
   exit_code=$?
   trap - EXIT HUP INT TERM
-  rm -f "$temporary_sql"
+  rm -f "$temporary_sql" "$temporary_gzip"
 
   if [ "$exit_code" -ne 0 ] && [ "$rollback_available" -eq 1 ]; then
     compose stop web game >/dev/null 2>&1 || true
@@ -178,11 +181,33 @@ trap 'exit 129' HUP
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
-gzip -t "$backup_file"
 if [ -f "$backup_file.sha256" ]; then
   (cd "$(dirname "$backup_file")" && sha256sum -c "$(basename "$backup_file").sha256")
 fi
-gzip -dc "$backup_file" > "$temporary_sql"
+
+case "$backup_file" in
+  *.age)
+    if [ ! -f "$backup_file.sha256" ]; then
+      printf 'Encrypted restore requires the matching SHA-256 sidecar.\n' >&2
+      exit 1
+    fi
+    if [ -z "$age_identity_file" ] || [ ! -f "$age_identity_file" ]; then
+      printf 'BACKUP_AGE_IDENTITY_FILE must reference an existing identity file for encrypted restores.\n' >&2
+      exit 1
+    fi
+    if ! command -v "$age_command" >/dev/null 2>&1; then
+      printf 'Encrypted restore requires the age command.\n' >&2
+      exit 1
+    fi
+    "$age_command" -d -i "$age_identity_file" -o "$temporary_gzip" "$backup_file"
+    ;;
+  *)
+    cp "$backup_file" "$temporary_gzip"
+    ;;
+esac
+
+gzip -t "$temporary_gzip"
+gzip -dc "$temporary_gzip" > "$temporary_sql"
 test -s "$temporary_sql"
 
 compose exec -T postgres createdb -U "$POSTGRES_USER" -O "$POSTGRES_USER" "$staging_db"

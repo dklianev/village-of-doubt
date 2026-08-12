@@ -143,6 +143,17 @@ describe("game-room-runtime helpers", () => {
     expect(limiter.allow("player-1", "submitNightAction", 6_100)).toBe(true);
   });
 
+  it("bounds malformed commands in the control bucket", () => {
+    const limiter = new CommandRateLimiter();
+    for (let attempt = 0; attempt < 30; attempt += 1) {
+      expect(limiter.allowInvalid("player-1", 1_000 + attempt)).toBe(true);
+    }
+
+    expect(limiter.allowInvalid("player-1", 1_100)).toBe(false);
+    expect(limiter.allowInvalid("player-2", 1_100)).toBe(true);
+    expect(limiter.allowInvalid("player-1", 6_100)).toBe(true);
+  });
+
   it("requires both the Don's faction vote and private investigation", () => {
     const don: PrivatePlayerState = { userId: "don", role: "don", alive: true };
     const pending = new Set<string>();

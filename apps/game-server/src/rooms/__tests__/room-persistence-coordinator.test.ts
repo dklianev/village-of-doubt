@@ -335,20 +335,48 @@ describe("RoomPersistenceCoordinator", () => {
     expect(order).toEqual(["game-start", "game-finish"]);
   });
 
-  it("returns an explicit failure when accepted terminal work exhausts retries", async () => {
+  it("keeps retrying accepted terminal work beyond the regular retry cap", async () => {
     const persistence = makePersistence();
-    const coordinator = new RoomPersistenceCoordinator(persistence, vi.fn(), vi.fn(async () => {}));
+    const retryDelay = vi.fn(async () => {});
+    const coordinator = new RoomPersistenceCoordinator(persistence, vi.fn(), retryDelay);
     vi.spyOn(console, "error").mockImplementation(() => {});
+    const terminal = vi.fn()
+      .mockRejectedValueOnce(new Error("temporary-1"))
+      .mockRejectedValueOnce(new Error("temporary-2"))
+      .mockRejectedValueOnce(new Error("temporary-3"))
+      .mockResolvedValue(undefined);
 
-    expect(coordinator.queue(context, async () => {
-      throw new Error("terminal write failed");
-    }, {
+    expect(coordinator.queue(context, terminal, {
       priority: "critical",
       terminal: true,
       maxAttempts: 2,
     })).toBe(true);
 
-    await expect(coordinator.flush(100)).resolves.toBe(false);
+    await expect(coordinator.flush(100)).resolves.toBe(true);
+    expect(terminal).toHaveBeenCalledTimes(4);
+    expect(retryDelay).toHaveBeenCalledTimes(3);
+  });
+
+  it("does not include the raw room code in timeout telemetry", async () => {
+    vi.stubEnv("SENTRY_DSN", "https://public@example.invalid/1");
+    const persistence = makePersistence();
+    const captureException = vi.fn();
+    const coordinator = new RoomPersistenceCoordinator(persistence, captureException);
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    let release!: () => void;
+    const blocked = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    coordinator.queue(context, async ({ ensureGame }) => {
+      await ensureGame();
+      await blocked;
+    });
+
+    await expect(coordinator.flush(1)).resolves.toBe(false);
+    const captured = captureException.mock.calls[0]?.[0] as Error;
+    expect(captured.message).not.toContain(context.code);
+    release();
+    await coordinator.flush(100);
   });
 
   it("reports when a flush deadline expires without discarding the write", async () => {

@@ -196,11 +196,15 @@ async function loadReplay(gameId: string, viewerUserId: string) {
       status: game.status,
       endedAt: game.endedAt,
       hostId: game.hostId,
+      roomVisibility: game.roomVisibility,
       viewerUserId,
       participantGameIds,
     });
+    if (visibility === "none") {
+      return null;
+    }
     const timeline = filterReplayTimelineByVisibility(
-      await getGameTimeline(db, game.id, null, { visibilityFilter: visibility }),
+      await getGameTimeline(db, game.id, 1_000, { visibilityFilter: visibility, order: "asc" }),
       visibility,
     );
     const rolesVisible = visibility === "all";

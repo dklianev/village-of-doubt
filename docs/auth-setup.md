@@ -9,12 +9,12 @@
 
 За production използвай домейна на играта:
 
-- Google: `https://tisi.lol/api/auth/callback/google`
-- Discord: `https://tisi.lol/api/auth/callback/discord`
+- Google: `https://senkite.com/api/auth/callback/google`
+- Discord: `https://senkite.com/api/auth/callback/discord`
 
 Authorized origin за production:
 
-- `https://tisi.lol`
+- `https://senkite.com`
 
 ## Env променливи
 

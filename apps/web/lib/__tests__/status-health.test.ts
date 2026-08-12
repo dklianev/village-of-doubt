@@ -85,4 +85,49 @@ describe("loadStatusServices", () => {
     expect(second.services[0]?.name).toBe("Уеб приложение");
     expect(checkDatabaseReadiness).toHaveBeenCalledOnce();
   });
+
+  it("описва външните доставчици като конфигурирани, без да твърди че са probe-нати", async () => {
+    vi.stubEnv("GOOGLE_CLIENT_ID", "google-client");
+    vi.stubEnv("DISCORD_CLIENT_ID", "discord-client");
+    vi.stubEnv("RESEND_API_KEY", "resend-key");
+
+    const services = await loadStatusServices();
+
+    expect(services.find((service) => service.id === "auth-google")?.detail).toBe("Конфигуриран");
+    expect(services.find((service) => service.id === "auth-discord")?.detail).toBe("Конфигуриран");
+    expect(services.find((service) => service.id === "email")?.detail).toBe("Конфигурирана");
+  });
+
+  it("ползва детерминистичен healthy fixture извън production без реални probes", async () => {
+    vi.stubEnv("NODE_ENV", "test");
+    vi.stubEnv("STATUS_HEALTH_FIXTURE", "healthy");
+    vi.stubEnv("DATABASE_URL", "postgres://localhost/werewolf");
+    vi.stubEnv("NEXT_PUBLIC_GAME_SERVER_URL", "ws://game.example.test");
+    vi.stubEnv("REDIS_URL", "redis://redis:6379");
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const snapshot = await loadStatusSnapshot();
+
+    expect(snapshot.lastCheckedAt).toBe("2026-01-01T00:00:00.000Z");
+    expect(snapshot.services.slice(0, 4).map((service) => service.status)).toEqual([
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+    ]);
+    expect(checkDatabaseReadiness).not.toHaveBeenCalled();
+    expect(checkRuntimeRedisReadiness).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("игнорира visual health fixture в production", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("STATUS_HEALTH_FIXTURE", "healthy");
+
+    const snapshot = await loadStatusSnapshot();
+
+    expect(snapshot.lastCheckedAt).not.toBe("2026-01-01T00:00:00.000Z");
+    expect(snapshot.services.find((service) => service.id === "database")?.status).toBe("unknown");
+  });
 });

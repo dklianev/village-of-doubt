@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, readFileSync, readdirSync, utimesSync, writeFileSync } from "node:fs";
+import { generateKeyPairSync } from "node:crypto";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import test from "node:test";
+import { signReleaseManifest } from "./release-manifest.mjs";
 
 const isPosix = process.platform !== "win32";
 
@@ -12,11 +14,32 @@ function createFixture() {
   const backupDir = path.join(directory, "backups");
   const backupScript = path.join(directory, "backup-postgres.sh");
   const freshnessScript = path.join(directory, "check-backup-freshness.sh");
+  const restoreScript = path.join(directory, "restore-postgres.sh");
   const dockerStub = path.join(directory, "fake-docker");
+  const ageStub = path.join(directory, "fake-age");
   const dockerLog = path.join(directory, "docker.log");
 
   writeFileSync(backupScript, normalized("scripts/backup-postgres.sh"), { mode: 0o755 });
   writeFileSync(freshnessScript, normalized("scripts/check-backup-freshness.sh"), { mode: 0o755 });
+  writeFileSync(restoreScript, normalized("scripts/restore-postgres.sh"), { mode: 0o755 });
+  writeFileSync(
+    ageStub,
+    `#!/bin/sh
+set -eu
+output=""
+input=""
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    -o) output="$2"; shift 2 ;;
+    -r|-i) shift 2 ;;
+    -d) shift ;;
+    *) input="$1"; shift ;;
+  esac
+done
+cp "$input" "$output"
+`,
+    { mode: 0o755 },
+  );
   writeFileSync(
     dockerStub,
     `#!/bin/sh
@@ -45,15 +68,15 @@ esac
     { mode: 0o755 },
   );
 
-  return { backupDir, backupScript, directory, dockerLog, dockerStub, freshnessScript };
+  return { ageStub, backupDir, backupScript, directory, dockerLog, dockerStub, freshnessScript, restoreScript };
 }
 
 function normalized(file) {
   return readFileSync(file, "utf8").replaceAll("\r\n", "\n");
 }
 
-function run(script, env) {
-  return spawnSync("/bin/sh", [script], {
+function run(script, env, args = []) {
+  return spawnSync("/bin/sh", [script, ...args], {
     encoding: "utf8",
     env: { ...process.env, ...env },
   });
@@ -63,6 +86,8 @@ function baseEnv(fixture) {
   return {
     BACKUP_DIR: fixture.backupDir,
     BACKUP_DOCKER_COMMAND: fixture.dockerStub,
+    BACKUP_AGE_COMMAND: fixture.ageStub,
+    BACKUP_AGE_RECIPIENT: "age1testrecipient",
     BACKUP_REQUIRE_FIXED_CONTAINER: "1",
     FAKE_DOCKER_LOG: fixture.dockerLog,
   };
@@ -79,7 +104,20 @@ test("scheduled backup resolves one labeled PostgreSQL container", { skip: !isPo
   assert.equal(result.status, 0, result.stderr);
   assert.match(readFileSync(fixture.dockerLog, "utf8"), /^ps .+compose\.project=werewolf/m);
   assert.match(readFileSync(fixture.dockerLog, "utf8"), /^exec -i postgres-one pg_dump /m);
-  assert.equal(readdirSync(fixture.backupDir).filter((file) => file.endsWith(".sql.gz")).length, 1);
+  assert.equal(readdirSync(fixture.backupDir).filter((file) => file.endsWith(".sql.gz.age")).length, 1);
+});
+
+test("scheduled backup fails closed without an encryption recipient", { skip: !isPosix }, () => {
+  const fixture = createFixture();
+  const result = run(fixture.backupScript, {
+    ...baseEnv(fixture),
+    BACKUP_AGE_RECIPIENT: "",
+    BACKUP_COMPOSE_PROJECT: "werewolf",
+  });
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /BACKUP_AGE_RECIPIENT is required/);
+  assert.equal(existsSync(fixture.backupDir), false);
 });
 
 for (const mode of ["none", "two"]) {
@@ -139,7 +177,7 @@ test("freshness rejects backups timestamped beyond clock-skew tolerance", { skip
   });
   assert.equal(backup.status, 0, backup.stderr);
 
-  const backupName = readdirSync(fixture.backupDir).find((file) => file.endsWith(".sql.gz"));
+  const backupName = readdirSync(fixture.backupDir).find((file) => file.endsWith(".sql.gz.age"));
   assert.ok(backupName);
   const backupPath = path.join(fixture.backupDir, backupName);
   const future = new Date(Date.now() + 60 * 60 * 1000);
@@ -151,6 +189,28 @@ test("freshness rejects backups timestamped beyond clock-skew tolerance", { skip
   });
   assert.notEqual(freshness.status, 0);
   assert.match(freshness.stderr, /timestamp is in the future/);
+});
+
+test("encrypted restore fails closed without the private identity", { skip: !isPosix }, () => {
+  const fixture = createFixture();
+  mkdirSync(fixture.backupDir);
+  const backupPath = path.join(fixture.backupDir, "werewolf_2026-08-12_12-00-00.sql.gz.age");
+  writeFileSync(backupPath, "encrypted");
+  const checksum = spawnSync("sha256sum", [path.basename(backupPath)], {
+    cwd: fixture.backupDir,
+    encoding: "utf8",
+  });
+  assert.equal(checksum.status, 0, checksum.stderr);
+  writeFileSync(`${backupPath}.sha256`, checksum.stdout);
+
+  const result = run(fixture.restoreScript, {
+    BACKUP_AGE_COMMAND: fixture.ageStub,
+    MIGRATION_DATABASE_URL: "postgres://werewolf:dev@localhost:5432/werewolf",
+    RESTORE_CONFIRM_DATABASE: "werewolf",
+  }, [backupPath]);
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /BACKUP_AGE_IDENTITY_FILE/);
 });
 
 test("release deployment waits for the hardened backup service", { skip: !isPosix }, () => {
@@ -177,6 +237,14 @@ test("release deployment waits for the hardened backup service", { skip: !isPosi
         migrator: `ghcr.io/example/project/migrator@sha256:${digest}`,
       },
     })}\n`,
+  );
+  const release = JSON.parse(readFileSync(releaseManifest, "utf8"));
+  const releaseKeys = generateKeyPairSync("ed25519");
+  const releasePublicKey = path.join(directory, "release-manifest.pub");
+  writeFileSync(releasePublicKey, releaseKeys.publicKey.export({ type: "spki", format: "pem" }));
+  writeFileSync(
+    `${releaseManifest}.sig`,
+    `${signReleaseManifest(release, releaseKeys.privateKey, { allowedImagePrefix: "ghcr.io/example/project" })}\n`,
   );
   writeFileSync(
     path.join(binDir, "id"),
@@ -210,6 +278,16 @@ esac
 `,
     { mode: 0o755 },
   );
+  writeFileSync(
+    path.join(binDir, "node"),
+    `#!/bin/sh
+case "$*" in
+  *"check-production-env.mjs"*) exit 0 ;;
+esac
+exec "${process.execPath}" "$@"
+`,
+    { mode: 0o755 },
+  );
 
   const result = spawnSync("/bin/sh", ["scripts/deploy-release.sh", releaseManifest], {
     cwd: process.cwd(),
@@ -219,6 +297,8 @@ esac
       FAKE_SYSTEMCTL_LOG: serviceLog,
       PATH: `${binDir}:${process.env.PATH}`,
       RELEASE_STATE_DIR: releaseDir,
+      RELEASE_ALLOWED_IMAGE_PREFIX: "ghcr.io/example/project",
+      RELEASE_MANIFEST_PUBLIC_KEY: releasePublicKey,
       SKIP_DEPLOY_DRAIN: "1",
     },
   });
@@ -251,6 +331,14 @@ test("rollback writes transient state outside the immutable checkout", { skip: !
       },
     })}\n`,
   );
+  const release = JSON.parse(readFileSync(releaseManifest, "utf8"));
+  const releaseKeys = generateKeyPairSync("ed25519");
+  const releasePublicKey = path.join(directory, "release-manifest.pub");
+  writeFileSync(releasePublicKey, releaseKeys.publicKey.export({ type: "spki", format: "pem" }));
+  writeFileSync(
+    `${releaseManifest}.sig`,
+    `${signReleaseManifest(release, releaseKeys.privateKey, { allowedImagePrefix: "ghcr.io/example/project" })}\n`,
+  );
   writeFileSync(path.join(binDir, "pnpm"), "#!/bin/sh\nexit 0\n", { mode: 0o755 });
   writeFileSync(
     path.join(binDir, "docker"),
@@ -272,6 +360,8 @@ esac
       ...process.env,
       PATH: `${binDir}:${process.env.PATH}`,
       RELEASE_STATE_DIR: releaseDir,
+      RELEASE_ALLOWED_IMAGE_PREFIX: "ghcr.io/example/project",
+      RELEASE_MANIFEST_PUBLIC_KEY: releasePublicKey,
     },
   });
 

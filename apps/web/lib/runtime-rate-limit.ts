@@ -1,4 +1,5 @@
 import { createClient, type RedisClientType } from "redis";
+import { randomUUID } from "node:crypto";
 import { resolveRedisUrl } from "@werewolf/shared/server";
 import {
   createMemoryRateLimitBackend,
@@ -26,8 +27,21 @@ interface RuntimeRedisClient {
 
 interface RuntimeRedisReadinessClient {
   readonly isReady: boolean;
-  ping(): Promise<string>;
+  eval(
+    script: string,
+    options: { keys: string[]; arguments: string[] },
+  ): Promise<unknown>;
 }
+
+const REDIS_READINESS_SCRIPT = `
+local written = redis.call('SET', KEYS[1], ARGV[1], 'PX', ARGV[2], 'NX')
+if not written then
+  return false
+end
+local value = redis.call('GET', KEYS[1])
+redis.call('DEL', KEYS[1])
+return value
+`;
 
 export function createRuntimeRedisEvalClient(
   getClient: () => RuntimeRedisClient | null,
@@ -119,8 +133,12 @@ export function createRuntimeRedisReadinessProbe(
         return false;
       }
 
+      const key = `wm:health:web:${randomUUID()}`;
       return await withRedisTimeout(
-        client.ping().then((response) => response === "PONG"),
+        client.eval(REDIS_READINESS_SCRIPT, {
+          keys: [key],
+          arguments: ["ready", "5000"],
+        }).then((response) => response === "ready"),
         timeoutMs,
         "Redis readiness проверката изтече.",
       );

@@ -18,7 +18,7 @@ vi.mock("@/lib/runtime-rate-limit", () => ({
   checkRuntimeRedisReadiness,
 }));
 
-import { GET } from "../route";
+import { createReadinessLoader, GET } from "../route";
 
 describe("GET /api/health/ready", () => {
   beforeEach(() => {
@@ -127,5 +127,18 @@ describe("GET /api/health/ready", () => {
 
     expect(response.status).toBe(503);
     expect(body).not.toContain("private DSN details");
+  });
+
+  it("дедуплицира публичните deep probes в кратък readiness прозорец", async () => {
+    let now = 1_000;
+    const probe = vi.fn(async () => true);
+    const load = createReadinessLoader(probe, 15_000, () => now);
+
+    await expect(Promise.all([load(), load(), load()])).resolves.toEqual([true, true, true]);
+    expect(probe).toHaveBeenCalledOnce();
+
+    now += 15_001;
+    await expect(load()).resolves.toBe(true);
+    expect(probe).toHaveBeenCalledTimes(2);
   });
 });

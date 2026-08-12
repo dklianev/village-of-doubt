@@ -6,7 +6,8 @@ Production runs immutable images referenced by digest in a reviewed `release.jso
 Never build application images on the production host.
 
 1. Run `pnpm verify:heavy` against the candidate commit.
-2. Tag the commit. The release workflow builds signed-provenance images and uploads `release.json`.
+2. Tag the commit. The release workflow builds signed-provenance images and uploads
+   the Ed25519-signed `release.json` plus `release.json.sig`.
 3. Copy the manifest to the host and use the absolute candidate path plus the
    immutable-checkout deploy command documented below.
 4. Confirm `/api/health/ready`, the game `/health/ready`, and one real create-to-play flow.
@@ -26,8 +27,9 @@ the connection string. Do not overwrite the live database in place.
 ## Backups
 
 The systemd timer runs every six hours. The backup script creates a compressed
-logical dump, verifies gzip integrity, writes a SHA-256 checksum, keeps 14 days
-locally, and copies both files to `RCLONE_REMOTE`.
+logical dump, encrypts it with the configured public age recipient, writes a
+SHA-256 checksum for the encrypted artifact, keeps 14 days locally, and copies
+both files to `RCLONE_REMOTE`. Keep the matching private age identity off-host.
 
 The scheduled backup is the only service in this path that talks to the Docker
 daemon. It runs a root-owned, fixed helper and reads a dedicated root-only
@@ -57,8 +59,11 @@ if sudo -u werewolf -H docker info >/dev/null 2>&1; then
 fi
 ```
 
-Download `release.json` directly from the trusted GitHub Actions release
-artifact. Never run root Git commands in a checkout that was writable by the
+Download `release.json` and `release.json.sig` directly from the trusted GitHub
+Actions release artifact. Install the Ed25519 public key as
+`/etc/werewolf/release-manifest.pub` (root-owned, mode `0644`) and set
+`RELEASE_ALLOWED_IMAGE_PREFIX=ghcr.io/dklianev/village-of-doubt` in the
+production environment. Never run root Git commands in a checkout that was writable by the
 application account. Create a new root-owned checkout for the exact manifest
 commit with system and global Git configuration disabled:
 
@@ -68,6 +73,7 @@ deploy_user=werewolf-deploy
 deploy_group="$(id -gn "$deploy_user")"
 sudo install -d -o root -g "$deploy_group" -m 0750 /var/lib/werewolf/releases
 sudo install -o root -g "$deploy_group" -m 0640 release.json /var/lib/werewolf/releases/candidate.json
+sudo install -o root -g "$deploy_group" -m 0640 release.json.sig /var/lib/werewolf/releases/candidate.json.sig
 expected_source="$(
   sudo node -e 'const fs=require("node:fs"); const value=JSON.parse(fs.readFileSync(process.argv[1],"utf8")).sourceCommit; if(!/^[a-f0-9]{40}$/i.test(value)) throw new Error("invalid sourceCommit"); process.stdout.write(value.toLowerCase())' \
     /var/lib/werewolf/releases/candidate.json
@@ -126,7 +132,9 @@ sudo systemctl list-timers werewolf-backup.timer
 ```
 
 `BACKUP_COMPOSE_PROJECT` in `/etc/werewolf/backup.env` must match the project shown
-by `docker compose ls`. The file stays owned by root:root and mode `0600`. If
+by `docker compose ls`. `BACKUP_AGE_RECIPIENT` must contain the public recipient
+for an identity kept on a separate recovery host. The file stays owned by
+root:root and mode `0600`. If
 `RCLONE_REMOTE` is enabled, install its configuration at
 `/etc/werewolf/rclone.conf`, owned by root:root and mode `0600`, and keep
 `RCLONE_CONFIG=/etc/werewolf/rclone.conf` in the backup environment.

@@ -3,14 +3,18 @@ import defineConfig from "@colyseus/tools";
 import { resolveRedisUrl } from "@werewolf/shared/server";
 import cors from "cors";
 import type { Request, Response } from "express";
+import { randomUUID } from "node:crypto";
 import { performance } from "node:perf_hooks";
 import { createClient, type RedisClientType } from "redis";
 import { deployDrain } from "./operations/deploy-drain.js";
 import { persistenceReadiness } from "./operations/persistence-readiness.js";
-import { GameRoom, getGameRuntimeStats } from "./rooms/GameRoom.js";
+import { authenticateGameJoin, GameRoom, getGameRuntimeStats } from "./rooms/GameRoom.js";
 import { PlayerPresenceManager } from "./rooms/player-presence-manager.js";
-import { createRedisPlayerSecurityStore } from "./rooms/player-security-store.js";
-import { ROOM_CODE_REGEX, normalizeRoomCodeInput } from "@werewolf/shared";
+import {
+  createRedisPlayerSecurityStore,
+  type RedisPlayerSecurityClient,
+} from "./rooms/player-security-store.js";
+import { ROOM_CODE_REGEX, normalizeRoomCodeInput, type JoinRoomOptions } from "@werewolf/shared";
 
 const redisUrl = resolveGameServerRedisUrl(process.env);
 const redisRuntime = redisUrl ? await createRedisScaling(redisUrl) : undefined;
@@ -64,7 +68,7 @@ export default defineConfig({
   },
 
   initializeExpress(app) {
-    app.use(cors({ credentials: true, origin: getCorsOrigin() }));
+    app.use(cors({ credentials: true, origin: resolveGameServerCorsOrigin(process.env) }));
 
     app.get("/health", (_req, res) => {
       res.json({
@@ -112,10 +116,11 @@ async function createRedisScaling(redisUrl: string) {
     import("@colyseus/redis-presence"),
   ]);
   const securityClient = await connectSecurityRedisClient(redisUrl);
-  PlayerPresenceManager.configureSecurityStore(createRedisPlayerSecurityStore({
-    set: (key, value, options) => securityClient.set(key, value, options),
-    eval: (script, options) => securityClient.eval(script, options),
-  }));
+  PlayerPresenceManager.configureSecurityStore(
+    createRedisPlayerSecurityStore(
+      createDeadlineBoundSecurityRedisClient(securityClient as unknown as AbortableSecurityRedisClient),
+    ),
+  );
 
   return {
     driver: new RedisDriver(redisUrl),
@@ -153,6 +158,10 @@ async function connectSecurityRedisClient(redisUrl: string): Promise<RedisClient
 }
 
 export class OperationalGameRoom extends GameRoom {
+  static override async onAuth(_token: string, options: JoinRoomOptions) {
+    return authenticateGameJoin(options, { consumeNonce: false });
+  }
+
   override onCreate(options: Parameters<GameRoom["onCreate"]>[0]) {
     if (deployDrain.isDraining()) {
       throw new Error("Сървърът се подготвя за обновяване. Нова стая не може да бъде създадена.");
@@ -216,7 +225,10 @@ type ReadinessProbe = () => Promise<boolean>;
 export function createReadinessHandler(
   probe: ReadinessProbe = async () => {
     const persistenceReady = await persistenceReadiness.refresh();
-    return persistenceReady && (!redisRuntime || redisRuntime.securityClient.isReady);
+    return persistenceReady && (
+      !redisRuntime
+      || await probeSecurityRedisReady(redisRuntime.securityClient as unknown as AbortableSecurityRedisClient)
+    );
   },
 ) {
   return async (_req: Request, res: Response) => {
@@ -235,24 +247,116 @@ export function createReadinessHandler(
   };
 }
 
-function getCorsOrigin() {
-  if (process.env.NODE_ENV !== "production") {
+interface AbortableSecurityRedisCommands extends RedisPlayerSecurityClient {
+  get(key: string): Promise<unknown>;
+  del(key: string): Promise<unknown>;
+}
+
+interface AbortableSecurityRedisClient {
+  isReady?: boolean;
+  withAbortSignal(signal: AbortSignal): AbortableSecurityRedisCommands;
+}
+
+export function createDeadlineBoundSecurityRedisClient(
+  client: AbortableSecurityRedisClient,
+  timeoutMs = 750,
+): RedisPlayerSecurityClient {
+  return {
+    set(key, value, options) {
+      return client.withAbortSignal(AbortSignal.timeout(timeoutMs)).set(key, value, options);
+    },
+    eval(script, options) {
+      return client.withAbortSignal(AbortSignal.timeout(timeoutMs)).eval(script, options);
+    },
+  };
+}
+
+export async function probeSecurityRedisReady(
+  client: AbortableSecurityRedisClient,
+  timeoutMs = 750,
+) {
+  if (client.isReady === false) {
+    return false;
+  }
+
+  const key = `wm:health:security:${randomUUID()}`;
+  const commands = client.withAbortSignal(AbortSignal.timeout(timeoutMs));
+  try {
+    const written = await commands.set(key, "ready", {
+      expiration: { type: "PX", value: 5_000 },
+      condition: "NX",
+    });
+    if (written !== "OK") {
+      return false;
+    }
+    return await commands.get(key) === "ready";
+  } catch {
+    return false;
+  } finally {
+    await commands.del(key).catch(() => undefined);
+  }
+}
+
+interface GameServerCorsEnvironment {
+  NODE_ENV?: string;
+  CORS_ORIGIN?: string;
+  BETTER_AUTH_URL?: string;
+  PUBLIC_WEB_DOMAIN?: string;
+}
+
+export function resolveGameServerCorsOrigin(environment: GameServerCorsEnvironment) {
+  if (environment.NODE_ENV !== "production") {
     return true;
   }
 
-  const origins = (process.env.CORS_ORIGIN ?? process.env.BETTER_AUTH_URL ?? "")
+  const origins = (environment.CORS_ORIGIN ?? environment.BETTER_AUTH_URL ?? "")
     .split(",")
     .map((origin) => origin.trim())
     .filter(Boolean);
 
-  if (process.env.PUBLIC_WEB_DOMAIN) {
-    origins.push(`https://${process.env.PUBLIC_WEB_DOMAIN}`);
+  if (environment.PUBLIC_WEB_DOMAIN) {
+    origins.push(`https://${environment.PUBLIC_WEB_DOMAIN}`);
   }
 
-  const uniqueOrigins = [...new Set(origins)];
-  if (uniqueOrigins.length === 0) {
+  if (origins.length === 0) {
     throw new Error("CORS_ORIGIN или BETTER_AUTH_URL трябва да е настроен в production.");
   }
 
+  const normalizedOrigins = origins.map((origin) => normalizeProductionOrigin(origin));
+  const uniqueOrigins = [...new Set(normalizedOrigins)];
+  if (uniqueOrigins.length !== 1) {
+    throw new Error("Production CORS приема точно един application origin.");
+  }
+
+  if (environment.PUBLIC_WEB_DOMAIN && uniqueOrigins[0] !== `https://${environment.PUBLIC_WEB_DOMAIN}`) {
+    throw new Error("Production CORS origin трябва да съвпада с PUBLIC_WEB_DOMAIN.");
+  }
+
   return uniqueOrigins;
+}
+
+function normalizeProductionOrigin(value: string) {
+  if (value === "*") {
+    throw new Error("Wildcard CORS origin не е разрешен в production.");
+  }
+
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error("Production CORS origin трябва да е валиден HTTPS URL.");
+  }
+
+  if (
+    url.protocol !== "https:" ||
+    url.username ||
+    url.password ||
+    url.pathname !== "/" ||
+    url.search ||
+    url.hash
+  ) {
+    throw new Error("Production CORS origin трябва да е точен HTTPS origin без път или credentials.");
+  }
+
+  return url.origin;
 }

@@ -3,12 +3,22 @@ import { initialState, queryFromState } from "./url";
 import { lobbyFormReducer } from "./reducer";
 import {
   adjustManualRoleRoster,
+  createRoomCode,
   estimatedDurationSeconds,
   optionsFromState,
   replaceManualRoleInRoster,
 } from "./selectors";
 
 describe("lobby form configuration invariants", () => {
+  it("generates room codes from cryptographically secure random values", () => {
+    const fillRandomValues = (values: Uint32Array) => {
+      values.set([0, 1, 2, 3, 4, 5]);
+      return values;
+    };
+
+    expect(createRoomCode(fillRandomValues)).toBe("ABCDEF");
+  });
+
   it("replaces a villager when a special role is added to a full werewolf table", () => {
     const result = adjustManualRoleRoster({
       family: "werewolves",

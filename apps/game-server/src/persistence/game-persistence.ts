@@ -127,6 +127,7 @@ export class DrizzleGamePersistence implements GamePersistence {
       code: input.code,
       hostId,
       config: input.config,
+      roomVisibility: input.config.roomVisibility,
       rulesetVersion: input.config.rulesetVersion,
       status: "lobby" as const,
     };
@@ -154,6 +155,7 @@ export class DrizzleGamePersistence implements GamePersistence {
       .update(games)
       .set({
         config,
+        roomVisibility: config.roomVisibility,
         rulesetVersion: config.rulesetVersion,
         status: "active",
         startedAt: new Date(),

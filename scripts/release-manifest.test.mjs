@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
+import { generateKeyPairSync } from "node:crypto";
 import test from "node:test";
-import { validateReleaseManifest } from "./release-manifest.mjs";
+import {
+  signReleaseManifest,
+  validateReleaseManifest,
+  verifyReleaseManifestSignature,
+} from "./release-manifest.mjs";
 
 const digest = "a".repeat(64);
 const commit = "b".repeat(40);
@@ -40,4 +45,35 @@ test("requires a full Git SHA for the release identity", () => {
   const manifest = validManifest();
   manifest.releaseVersion = "main";
   assert.throws(() => validateReleaseManifest(manifest), /full 40-character Git commit SHA/);
+});
+
+test("requires the release identity to match the source commit", () => {
+  const manifest = validManifest();
+  manifest.sourceCommit = "c".repeat(40);
+  assert.throws(() => validateReleaseManifest(manifest), /must match sourceCommit/);
+});
+
+test("restricts signed releases to the configured GHCR repository", () => {
+  assert.doesNotThrow(() => validateReleaseManifest(validManifest(), {
+    allowedImagePrefix: "ghcr.io/example/project",
+  }));
+  assert.throws(
+    () => validateReleaseManifest(validManifest(), { allowedImagePrefix: "ghcr.io/other/project" }),
+    /allowed image prefix/,
+  );
+});
+
+test("signs and verifies the canonical release manifest", () => {
+  const { privateKey, publicKey } = generateKeyPairSync("ed25519");
+  const options = { allowedImagePrefix: "ghcr.io/example/project" };
+  const signature = signReleaseManifest(validManifest(), privateKey, options);
+
+  assert.equal(verifyReleaseManifestSignature(validManifest(), signature, publicKey, options), true);
+
+  const tampered = validManifest();
+  tampered.images.web = `ghcr.io/example/project/web@sha256:${"c".repeat(64)}`;
+  assert.throws(
+    () => verifyReleaseManifestSignature(tampered, signature, publicKey, options),
+    /signature is invalid/,
+  );
 });

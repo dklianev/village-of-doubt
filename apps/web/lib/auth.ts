@@ -82,6 +82,7 @@ export const auth = betterAuth({
     minPasswordLength: 8,
     autoSignIn: true,
     resetPasswordTokenExpiresIn: 3600,
+    revokeSessionsOnPasswordReset: true,
     sendResetPassword: async ({ user, url }) => {
       const template = renderResetPasswordEmail({
         brandUrl: process.env.BETTER_AUTH_URL ?? "",

@@ -28,6 +28,7 @@ if (!hasDatabase && !isLocalOnly) {
 if (!process.env.E2E_AUTH_BASE_URL && !(await isHealthy(`${baseUrl}/api/health`))) {
   baseUrl = standaloneBaseUrl;
   const game = start("auth-game", process.execPath, ["apps/game-server/dist/index.js"], {
+    NODE_ENV: "test",
     GAME_SERVER_PORT: gamePort,
     PORT: gamePort,
     BETTER_AUTH_URL: baseUrl,
@@ -245,7 +246,7 @@ function ensureStandaloneAssets() {
 function start(name, command, args, env) {
   const child = spawn(command, args, {
     cwd: process.cwd(),
-    env: { ...process.env, ...env, NODE_ENV: "production" },
+    env: { ...process.env, NODE_ENV: "production", ...env },
     stdio: ["ignore", "pipe", "pipe"],
   });
   child.stdout.on("data", (chunk) => process.stdout.write(`[${name}] ${chunk}`));

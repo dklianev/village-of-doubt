@@ -3,8 +3,8 @@ import { boot, type ColyseusTestServer } from "@colyseus/testing";
 import type { Room as ClientRoom } from "@colyseus/sdk";
 import type { NightActionCapabilities, PrivateFactionRoster, RoleCode } from "@werewolf/shared";
 import { createGameToken } from "@werewolf/shared/server";
-import appConfig from "../app.config.js";
-import type { GameRoom } from "../rooms/GameRoom.js";
+import appConfig, { OperationalGameRoom } from "../app.config.js";
+import { authenticateGameJoin, type GameRoom } from "../rooms/GameRoom.js";
 import { PlayerPresenceManager } from "../rooms/player-presence-manager.js";
 import type { GameState } from "../rooms/schemas/GameState.js";
 
@@ -173,11 +173,21 @@ describe("GameRoom security boundaries", () => {
     });
 
     await expect(
-      serverRoom.onAuth(fakeClient("wrong-room-token"), {
+      authenticateGameJoin({
         code: "GPPD23",
         token: wrongRoomToken,
-      }),
+      }, { consumeNonce: true }),
     ).rejects.toThrow();
+  });
+
+  it("rejects invalid authentication before a room instance is created", async () => {
+    process.env.ALLOW_DEV_AUTH = "false";
+    await expect(OperationalGameRoom.onAuth("", {
+      code: "AUTH23",
+      mode: "werewolves_classic",
+      playerCount: 8,
+      token: "not-a-signed-token",
+    }, {} as never)).rejects.toThrow();
   });
 
   it("rejects replayed signed game tokens", async () => {
@@ -196,11 +206,11 @@ describe("GameRoom security boundaries", () => {
     });
 
     const options = { code: "TPK223", token };
-    await expect(serverRoom.onAuth(fakeClient("first-token-use"), options)).resolves.toMatchObject({
+    await expect(authenticateGameJoin(options, { consumeNonce: true })).resolves.toMatchObject({
       userId: "token-user-1",
       displayName: "Играч с токен",
     });
-    await expect(serverRoom.onAuth(fakeClient("replayed-token"), options)).rejects.toThrow(
+    await expect(authenticateGameJoin(options, { consumeNonce: true })).rejects.toThrow(
       "Този токен вече е използван.",
     );
   });
@@ -223,7 +233,7 @@ describe("GameRoom security boundaries", () => {
 
     const client = fakeClient("avatar-session");
     const options = { code: "AVTR23", token };
-    const auth = await serverRoom.onAuth(client, options);
+    const auth = await authenticateGameJoin(options, { consumeNonce: true });
     await serverRoom.onJoin(client, options, auth);
     const player = [...serverRoom.state.players.values()].find(
       (candidate) => candidate.userId === "avatar-user-1",

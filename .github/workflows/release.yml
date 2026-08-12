@@ -15,8 +15,14 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  verify:
+    name: Full release verification
+    uses: ./.github/workflows/ci.yml
+    secrets: inherit
+
   images:
     name: Build immutable images
+    needs: verify
     runs-on: ubuntu-latest
     environment: production
     steps:
@@ -106,6 +112,7 @@ jobs:
           WEB_DIGEST: ${{ steps.web.outputs.digest }}
           GAME_DIGEST: ${{ steps.game.outputs.digest }}
           MIGRATOR_DIGEST: ${{ steps.migrator.outputs.digest }}
+          RELEASE_MANIFEST_PRIVATE_KEY: ${{ secrets.RELEASE_MANIFEST_PRIVATE_KEY }}
         run: |
           node --input-type=module <<'NODE'
           import { readFileSync, writeFileSync } from "node:fs";
@@ -126,12 +133,21 @@ jobs:
           };
           writeFileSync("release.json", `${JSON.stringify(manifest, null, 2)}\n`);
           NODE
-          node scripts/release-manifest.mjs release.json
+          test -n "$RELEASE_MANIFEST_PRIVATE_KEY"
+          printf '%s\n' "$RELEASE_MANIFEST_PRIVATE_KEY" > release-manifest-private.pem
+          chmod 600 release-manifest-private.pem
+          node scripts/release-manifest.mjs release.json \
+            --allowed-image-prefix "ghcr.io/${GITHUB_REPOSITORY,,}" \
+            --sign-private-key release-manifest-private.pem \
+            --signature-output release.json.sig
+          rm -f release-manifest-private.pem
 
       - name: Upload release manifest
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: release-${{ github.sha }}
-          path: release.json
+          path: |
+            release.json
+            release.json.sig
           if-no-files-found: error
           retention-days: 90

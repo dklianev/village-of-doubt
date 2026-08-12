@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+
 const required = [
   "MIGRATION_DATABASE_URL",
   "WEB_DATABASE_URL",
@@ -20,7 +22,11 @@ const required = [
   "SENTRY_DSN",
   "NEXT_PUBLIC_SENTRY_DSN",
   "RELEASE_VERSION",
+  "RELEASE_ALLOWED_IMAGE_PREFIX",
+  "RELEASE_MANIFEST_PUBLIC_KEY",
+  "BACKUP_AGE_RECIPIENT",
   "RCLONE_REMOTE",
+  "DATABASE_EVENT_RETENTION_DAYS",
 ];
 
 const warnings = [];
@@ -111,6 +117,8 @@ checkDatabaseRoles();
 checkSentryDsn("SENTRY_DSN");
 checkSentryDsn("NEXT_PUBLIC_SENTRY_DSN");
 checkReleaseVersion();
+checkReleaseTrust();
+checkEventRetention();
 
 for (const warning of warnings) {
   console.warn(`warning: ${warning}`);
@@ -287,5 +295,33 @@ function checkReleaseVersion() {
   }
   if (value.length < 7 || /^(?:unknown|latest|dev|development|local|main)$/i.test(value) || /replace|change-me|placeholder/i.test(value)) {
     errors.push("RELEASE_VERSION трябва да е immutable non-placeholder release identifier.");
+  }
+}
+
+function checkReleaseTrust() {
+  const prefix = process.env.RELEASE_ALLOWED_IMAGE_PREFIX?.trim();
+  if (prefix && !/^ghcr\.io\/[a-z0-9][a-z0-9._/-]*$/i.test(prefix.replace(/\/$/, ""))) {
+    errors.push("RELEASE_ALLOWED_IMAGE_PREFIX трябва да е конкретен ghcr.io repository path.");
+  }
+
+  const publicKeyPath = process.env.RELEASE_MANIFEST_PUBLIC_KEY?.trim();
+  if (publicKeyPath && !existsSync(publicKeyPath)) {
+    errors.push("RELEASE_MANIFEST_PUBLIC_KEY трябва да сочи към съществуващ Ed25519 public key файл.");
+  }
+
+  const recipient = process.env.BACKUP_AGE_RECIPIENT?.trim();
+  if (recipient && !/^age1[0-9a-z]+$/i.test(recipient)) {
+    errors.push("BACKUP_AGE_RECIPIENT трябва да е валиден age recipient.");
+  }
+}
+
+function checkEventRetention() {
+  const value = process.env.DATABASE_EVENT_RETENTION_DAYS;
+  if (!value) {
+    return;
+  }
+  const days = Number(value);
+  if (!Number.isInteger(days) || days < 1 || days > 3_650) {
+    errors.push("DATABASE_EVENT_RETENTION_DAYS трябва да е цяло число между 1 и 3650.");
   }
 }

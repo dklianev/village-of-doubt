@@ -154,6 +154,16 @@ describe("Better Auth security configuration", () => {
     expect(options.account?.encryptOAuthTokens).toBe(true);
   });
 
+  it("прекратява старите сесии след успешна смяна на парола", async () => {
+    vi.resetModules();
+    await import("../auth");
+    const options = betterAuth.mock.calls.at(-1)?.[0] as {
+      emailAndPassword?: { revokeSessionsOnPasswordReset?: boolean };
+    };
+
+    expect(options.emailAndPassword?.revokeSessionsOnPasswordReset).toBe(true);
+  });
+
   it.each(["/sign-up/email", "/update-user"])(
     "отхвърля име над 32 символа за %s с безопасна българска грешка",
     async (path) => {

@@ -60,7 +60,6 @@ export class RoomPersistenceCoordinator {
   private roomIdempotencyKey: string | undefined;
   private nextTaskSequence = 0;
   private terminalAccepted = false;
-  private terminalFailed = false;
   private accepting = true;
   private abortDrain = false;
 
@@ -94,6 +93,11 @@ export class RoomPersistenceCoordinator {
     return this.persistence.enabled;
   }
 
+  get hasPendingTerminalWork() {
+    return Boolean(this.activeTask?.terminal)
+      || this.pending.critical.some((task) => task.terminal);
+  }
+
   async flush(timeoutMs: number): Promise<boolean> {
     return this.waitForDrain(timeoutMs, false);
   }
@@ -124,13 +128,12 @@ export class RoomPersistenceCoordinator {
       }
     }
 
-    return !this.terminalFailed;
+    return true;
   }
 
   private reportFlushTimeout(timeoutMs: number) {
-    const roomCode = this.boundContext?.code ?? "unknown";
     const error = new Error(
-      `[GameRoom ${roomCode}] persistence queue did not flush within ${Math.max(0, timeoutMs)}ms`,
+      `Game room persistence queue did not flush within ${Math.max(0, timeoutMs)}ms`,
     );
     if (process.env.SENTRY_DSN) {
       this.captureException(error);
@@ -257,7 +260,8 @@ export class RoomPersistenceCoordinator {
   }
 
   private async runTask(pendingTask: PendingPersistenceTask) {
-    for (let attempt = 1; attempt <= pendingTask.maxAttempts; attempt += 1) {
+    let attempt = 1;
+    while (!this.abortDrain) {
       if (this.abortDrain) {
         return;
       }
@@ -272,8 +276,16 @@ export class RoomPersistenceCoordinator {
         if (this.abortDrain) {
           return;
         }
-        if (attempt < pendingTask.maxAttempts) {
-          await this.retryDelay(attempt);
+        const shouldRetry = pendingTask.terminal || attempt < pendingTask.maxAttempts;
+        if (shouldRetry) {
+          if (pendingTask.terminal && attempt === pendingTask.maxAttempts) {
+            if (process.env.SENTRY_DSN) {
+              this.captureException(error);
+            }
+            console.error("[game-persistence]", error);
+          }
+          await this.retryDelay(Math.min(attempt, pendingTask.maxAttempts));
+          attempt += 1;
           if (this.abortDrain) {
             return;
           }
@@ -284,9 +296,7 @@ export class RoomPersistenceCoordinator {
           this.captureException(error);
         }
         console.error("[game-persistence]", error);
-        if (pendingTask.terminal) {
-          this.terminalFailed = true;
-        }
+        return;
       }
     }
   }
@@ -380,7 +390,9 @@ function normalizeMaxAttempts(value: number | undefined, priority: PersistencePr
 }
 
 function defaultRetryDelay(attempt: number) {
-  return new Promise<void>((resolve) => setTimeout(resolve, Math.min(1_000, 25 * 2 ** (attempt - 1))));
+  return new Promise<void>((resolve) =>
+    setTimeout(resolve, Math.min(1_000, 25 * 2 ** Math.min(attempt - 1, 8))),
+  );
 }
 
 function settlesWithin(promise: Promise<void>, timeoutMs: number) {

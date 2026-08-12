@@ -50,6 +50,11 @@ async function checkDatabaseService(databaseUrl: string | undefined): Promise<Se
 }
 
 export async function loadStatusSnapshot(): Promise<StatusSnapshot> {
+  const fixture = loadStatusFixture();
+  if (fixture) {
+    return cloneSnapshot(fixture);
+  }
+
   const now = Date.now();
   if (cachedSnapshot && cachedSnapshot.expiresAt > now) {
     return cloneSnapshot(cachedSnapshot.value);
@@ -75,6 +80,74 @@ export async function loadStatusSnapshot(): Promise<StatusSnapshot> {
       inFlightSnapshot = null;
     }
   }
+}
+
+function loadStatusFixture(): StatusSnapshot | null {
+  if (process.env.NODE_ENV === "production" || process.env.STATUS_HEALTH_FIXTURE !== "healthy") {
+    return null;
+  }
+
+  return {
+    lastCheckedAt: "2026-01-01T00:00:00.000Z",
+    services: [
+      {
+        id: "web",
+        name: "Уеб приложение",
+        description: "Този сайт и страниците.",
+        status: "ok",
+        detail: "Отговаря",
+        icon: "web",
+      },
+      {
+        id: "game-server",
+        name: "Игрови сървър",
+        description: "Стаите и връзките в реално време.",
+        status: "ok",
+        detail: "42 ms",
+        icon: "game",
+      },
+      {
+        id: "database",
+        name: "База данни",
+        description: "Досиета, история, легенди.",
+        status: "ok",
+        detail: "Отговаря",
+        icon: "database",
+      },
+      {
+        id: "redis",
+        name: "Защита на заявките",
+        description: "Ограничения и споделено състояние.",
+        status: "ok",
+        detail: "Отговаря",
+        icon: "cache",
+      },
+      {
+        id: "auth-google",
+        name: "Вход с Google",
+        description: "Външен OAuth провайдър.",
+        status: "unknown",
+        detail: "Не е конфигуриран",
+        icon: "auth",
+      },
+      {
+        id: "auth-discord",
+        name: "Вход с Discord",
+        description: "Външен OAuth провайдър.",
+        status: "unknown",
+        detail: "Не е конфигуриран",
+        icon: "auth",
+      },
+      {
+        id: "email",
+        name: "Имейл услуга",
+        description: "Потвърждения, нови пароли, сигнали.",
+        status: "unknown",
+        detail: "Не е конфигурирана",
+        icon: "email",
+      },
+    ],
+  };
 }
 
 export async function loadStatusServices(): Promise<ServiceHealth[]> {
@@ -148,7 +221,7 @@ async function loadUncachedStatusSnapshot(): Promise<StatusSnapshot> {
     name: "Вход с Google",
     description: "Външен OAuth провайдър.",
     status: process.env.GOOGLE_CLIENT_ID ? "ok" : "unknown",
-    detail: process.env.GOOGLE_CLIENT_ID ? "Активен" : "Не е конфигуриран",
+    detail: process.env.GOOGLE_CLIENT_ID ? "Конфигуриран" : "Не е конфигуриран",
     icon: "auth",
   });
 
@@ -157,7 +230,7 @@ async function loadUncachedStatusSnapshot(): Promise<StatusSnapshot> {
     name: "Вход с Discord",
     description: "Външен OAuth провайдър.",
     status: process.env.DISCORD_CLIENT_ID ? "ok" : "unknown",
-    detail: process.env.DISCORD_CLIENT_ID ? "Активен" : "Не е конфигуриран",
+    detail: process.env.DISCORD_CLIENT_ID ? "Конфигуриран" : "Не е конфигуриран",
     icon: "auth",
   });
 
@@ -166,7 +239,7 @@ async function loadUncachedStatusSnapshot(): Promise<StatusSnapshot> {
     name: "Имейл услуга",
     description: "Потвърждения, нови пароли, сигнали.",
     status: process.env.RESEND_API_KEY ? "ok" : "unknown",
-    detail: process.env.RESEND_API_KEY ? "Активна" : "Не е конфигурирана",
+    detail: process.env.RESEND_API_KEY ? "Конфигурирана" : "Не е конфигурирана",
     icon: "email",
   });
 

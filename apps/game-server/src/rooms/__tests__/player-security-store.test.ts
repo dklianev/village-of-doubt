@@ -8,6 +8,7 @@ import {
 class SharedFakeRedisClient implements RedisPlayerSecurityClient {
   readonly nonces = new Map<string, number>();
   readonly joinCounts = new Map<string, { count: number; expiresAt: number }>();
+  readonly activeRooms = new Map<string, Map<string, number>>();
 
   async set(
     key: string,
@@ -24,10 +25,42 @@ class SharedFakeRedisClient implements RedisPlayerSecurityClient {
   }
 
   async eval(
-    _script: string,
+    script: string,
     options: { keys: string[]; arguments: string[] },
   ) {
     const [key] = options.keys;
+    if (script.includes("ZREMRANGEBYSCORE")) {
+      const [nowRaw, expiresAtRaw, roomDigest, limitRaw] = options.arguments;
+      const now = Number(nowRaw);
+      const expiresAt = Number(expiresAtRaw);
+      const limit = Number(limitRaw);
+      const rooms = this.activeRooms.get(key) ?? new Map<string, number>();
+      for (const [room, expiry] of rooms) {
+        if (expiry <= now) {
+          rooms.delete(room);
+        }
+      }
+      if (rooms.has(roomDigest)) {
+        rooms.set(roomDigest, expiresAt);
+        this.activeRooms.set(key, rooms);
+        return 1;
+      }
+      if (rooms.size >= limit) {
+        return 0;
+      }
+      rooms.set(roomDigest, expiresAt);
+      this.activeRooms.set(key, rooms);
+      return 1;
+    }
+    if (script.includes("ZREM")) {
+      const [roomDigest] = options.arguments;
+      const rooms = this.activeRooms.get(key);
+      rooms?.delete(roomDigest);
+      if (rooms?.size === 0) {
+        this.activeRooms.delete(key);
+      }
+      return 1;
+    }
     const [windowMs] = options.arguments;
     const now = Date.now();
     const existing = this.joinCounts.get(key);
@@ -80,6 +113,20 @@ describe("createRedisPlayerSecurityStore", () => {
 
     await expect(store.consumeTokenNonce("nonce-1", Date.now() + 60_000)).rejects.toThrow("Redis unavailable");
   });
+
+  it("shares the active-room quota across replicas and releases a room", async () => {
+    const client = new SharedFakeRedisClient();
+    const firstReplica = createRedisPlayerSecurityStore(client, { maxActiveRooms: 2 });
+    const secondReplica = createRedisPlayerSecurityStore(client, { maxActiveRooms: 2 });
+    const expiresAt = Date.now() + 60_000;
+
+    await expect(firstReplica.claimActiveRoom("user-1", "ROOM01", expiresAt)).resolves.toBe(true);
+    await expect(secondReplica.claimActiveRoom("user-1", "ROOM02", expiresAt)).resolves.toBe(true);
+    await expect(firstReplica.claimActiveRoom("user-1", "ROOM03", expiresAt)).resolves.toBe(false);
+
+    await secondReplica.releaseActiveRoom("user-1", "ROOM01");
+    await expect(firstReplica.claimActiveRoom("user-1", "ROOM03", expiresAt)).resolves.toBe(true);
+  });
 });
 
 describe("MemoryPlayerSecurityStore", () => {
@@ -96,5 +143,18 @@ describe("MemoryPlayerSecurityStore", () => {
     await store.checkJoinRateLimit("user-3");
     expect(store.getJoinAttemptUserCountForTests()).toBe(1);
     vi.useRealTimers();
+  });
+
+  it("bounds active rooms per user while allowing an idempotent refresh", async () => {
+    const store = new MemoryPlayerSecurityStore({ maxActiveRooms: 2 });
+    const expiresAt = Date.now() + 60_000;
+
+    await expect(store.claimActiveRoom("user-1", "ROOM01", expiresAt)).resolves.toBe(true);
+    await expect(store.claimActiveRoom("user-1", "ROOM02", expiresAt)).resolves.toBe(true);
+    await expect(store.claimActiveRoom("user-1", "ROOM01", expiresAt + 1_000)).resolves.toBe(true);
+    await expect(store.claimActiveRoom("user-1", "ROOM03", expiresAt)).resolves.toBe(false);
+
+    await store.releaseActiveRoom("user-1", "ROOM02");
+    await expect(store.claimActiveRoom("user-1", "ROOM03", expiresAt)).resolves.toBe(true);
   });
 });

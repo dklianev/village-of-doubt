@@ -143,12 +143,15 @@ test("auth E2E falls back to its standalone port when the configured local app i
 
 test("deploy validates Compose before disruption and applies database privileges in order", () => {
   const deploy = read("scripts/deploy-release.sh");
+  const environmentPreflight = 'node --env-file=.env scripts/check-production-env.mjs';
   const preflight = 'docker compose --env-file .env --env-file "$generated_env" config --quiet';
   const drain = 'pnpm deploy:drain';
   const roles = 'run --rm --no-deps postgres-roles';
   const migrate = 'run --rm --no-deps migrate';
   const grants = 'run --rm --no-deps postgres-grants';
 
+  assert.match(deploy, new RegExp(environmentPreflight.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  assert.ok(deploy.indexOf(environmentPreflight) < deploy.indexOf(preflight));
   assert.match(deploy, new RegExp(preflight.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   assert.ok(deploy.indexOf(preflight) < deploy.indexOf(drain));
   assert.ok(deploy.indexOf(roles) < deploy.indexOf(migrate));
@@ -212,12 +215,15 @@ test("database backups are scheduled, verified, retained, and copied off-site", 
   assert.match(service, /^Group=root$/m);
   assert.match(service, /^EnvironmentFile=\/etc\/werewolf\/backup\.env$/m);
   assert.match(service, /^Environment=BACKUP_REQUIRE_FIXED_CONTAINER=1$/m);
+  assert.match(service, /^Environment=BACKUP_REQUIRE_ENCRYPTION=1$/m);
   assert.match(service, /^ExecStart=\/usr\/local\/libexec\/werewolf\/backup-postgres\.sh$/m);
   assert.match(service, /^ExecStartPost=\/usr\/local\/libexec\/werewolf\/check-backup-freshness\.sh$/m);
   assert.match(service, /^ReadWritePaths=\/var\/backups\/werewolf$/m);
   assert.match(service, /^UMask=0077$/m);
   assert.match(backup, /BACKUP_COMPOSE_PROJECT/);
   assert.match(backup, /BACKUP_REQUIRE_FIXED_CONTAINER/);
+  assert.match(backup, /BACKUP_AGE_RECIPIENT/);
+  assert.match(backup, /\.sql\.gz\.age/);
   assert.match(backup, /"\$docker_command" ps/);
   assert.match(backup, /"\$docker_command" exec/);
   assert.match(backup, /gzip -t/);
@@ -227,6 +233,10 @@ test("database backups are scheduled, verified, retained, and copied off-site", 
   assert.match(freshness, /BACKUP_CLOCK_SKEW_SECONDS/);
   assert.match(freshness, /gzip -t/);
   assert.match(freshness, /sha256sum -c/);
+  assert.match(deploy, /node --env-file-if-exists=\.env scripts\/release-manifest\.mjs/);
+  assert.match(deploy, /--signature "\$manifest_signature"/);
+  assert.match(rollback, /node --env-file-if-exists=\.env scripts\/release-manifest\.mjs/);
+  assert.match(rollback, /--signature "\$manifest_signature"/);
   assert.doesNotMatch(deploy, /^\s*scripts\/backup-postgres\.sh$/m);
   assert.match(deploy, /systemctl start "\$backup_service"/);
   assert.match(deploy, /RELEASE_STATE_DIR:-\/var\/lib\/werewolf\/release-state/);

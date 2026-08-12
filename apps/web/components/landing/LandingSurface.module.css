@@ -196,23 +196,27 @@
   border: 1px solid rgba(209, 154, 66, 0.34);
   border-radius: 22px;
   padding: 18px;
-  background: var(--choice-art, var(--art-lobby)) center / cover no-repeat;
+  background: #0b0c0b;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.12),
     0 24px 58px -28px rgba(0, 0, 0, 0.62);
   transition: border-color 240ms ease, box-shadow 240ms ease;
 }
 
-:global(.game-choice-werewolf) {
-  --choice-art: var(--art-lobby);
+:global(.game-choice-art),
+:global(.game-choice-art img) {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
 
-:global(.game-choice-mafia) {
-  --choice-art: image-set(url("/game-art/mafia/bg-lobby-tavern.webp") type("image/webp"));
+:global(.game-choice-art) {
+  z-index: 0;
 }
 
-:global(.game-choice-card) {
-  background: var(--choice-art, var(--art-lobby)) center / cover no-repeat;
+:global(.game-choice-art img) {
+  object-fit: cover;
 }
 
 :global(.game-choice-card::before) {
@@ -344,7 +348,7 @@
 :global(.landing-split-grid .game-choice-card h2) {
   margin-top: clamp(92px, 14vw, 190px);
   font-size: clamp(2.4rem, 5vw, 5.6rem);
-  letter-spacing: -0.07em;
+  letter-spacing: 0;
 }
 
 :global(.landing-split-grid .game-choice-card blockquote) {
@@ -1707,10 +1711,6 @@
 }
 
 @media (max-width: 767px) {
-  :global(.game-choice-mafia) {
-    --choice-art: image-set(url("/game-art/mobile/mafia/bg-lobby-tavern.webp") type("image/webp"));
-  }
-
   :global(.landing-quickstart) {
     margin-top: 24px;
   }

@@ -50,7 +50,9 @@ describe("getRecentEndedGameHistory", () => {
     await getRecentEndedGameHistory({ select } as unknown as Database, 20);
 
     expect(whereSql).toContain('"games"."status"');
+    expect(whereSql).toContain('"games"."room_visibility"');
     expect(whereParams).toContain("ended");
+    expect(whereParams).toContain("public");
     expect(orderSql).toContain('"games"."ended_at" desc');
     expect(limit).toHaveBeenCalledWith(20);
   });
@@ -401,24 +403,31 @@ describe("persisted player outcomes", () => {
     const query = new PgDialect().sqlToQuery(whereStatement as never);
     expect(query.sql).toContain('"games"."ended_at" >=');
     expect(query.params).toContain(since.toISOString());
+    expect(query.sql).toContain('"games"."room_visibility" =');
+    expect(query.params).toContain("public");
   });
 });
 
 describe("replay persistence", () => {
-  it("loads the complete timeline in chronological order when no limit is requested", async () => {
+  it("caps replay timelines and supports chronological order", async () => {
     let orderStatement: unknown;
-    const orderBy = vi.fn(async (statement: unknown) => {
+    const limit = vi.fn(async () => []);
+    const orderBy = vi.fn((statement: unknown) => {
       orderStatement = statement;
-      return [];
+      return { limit };
     });
     const where = vi.fn(() => ({ orderBy }));
     const from = vi.fn(() => ({ where }));
     const select = vi.fn(() => ({ from }));
 
-    await getGameTimeline({ select } as unknown as Database, "game-1", null, { visibilityFilter: "all" });
+    await getGameTimeline({ select } as unknown as Database, "game-1", 5_000, {
+      visibilityFilter: "all",
+      order: "asc",
+    });
 
     expect(orderBy).toHaveBeenCalledOnce();
     expect(new PgDialect().sqlToQuery(orderStatement as never).sql.toLowerCase()).toContain("asc");
+    expect(limit).toHaveBeenCalledWith(1_000);
   });
 
   it("loads authoritative replay participants and hides roles for public viewers", async () => {

@@ -73,6 +73,7 @@ async function verifySchema(databaseUrl) {
         AND table_constraint.constraint_name IN (
           'games_status_check',
           'games_winner_team_check',
+          'games_room_visibility_check',
           'game_players_death_round_check',
           'game_events_visibility_check',
           'game_events_round_check'
@@ -81,6 +82,7 @@ async function verifySchema(databaseUrl) {
     const expectedConstraints = [
       "games_status_check",
       "games_winner_team_check",
+      "games_room_visibility_check",
       "game_players_death_round_check",
       "game_events_visibility_check",
       "game_events_round_check",
@@ -103,6 +105,7 @@ async function verifySchema(databaseUrl) {
           'game_events_actor_id_idx',
           'game_events_target_id_idx',
           'game_players_lover_user_id_idx',
+          'games_visibility_status_ended_at_idx',
           'games_status_updated_at_idx',
           'session_expires_at_idx'
         )
@@ -111,6 +114,7 @@ async function verifySchema(databaseUrl) {
       "game_events_actor_id_idx",
       "game_events_target_id_idx",
       "game_players_lover_user_id_idx",
+      "games_visibility_status_ended_at_idx",
       "games_status_updated_at_idx",
       "session_expires_at_idx",
     ];

@@ -3,19 +3,19 @@
 ## Преди първи deploy
 
 - Създай Droplet във Frankfurt с Ubuntu LTS, Docker и Docker Compose plugin.
-- Насочи `A` records: `tisi.lol` към web и `ws.tisi.lol` към същия IP.
+- Насочи `A` records: `senkite.com` към web и `ws.senkite.com` към същия IP.
 - Попълни `.env` от `.env.example` с истински `DB_PASSWORD`, `BETTER_AUTH_SECRET`, `GAME_TOKEN_SECRET`, OAuth ключове и production URL-и:
-  - `PUBLIC_WEB_DOMAIN=tisi.lol`
-  - `PUBLIC_WS_DOMAIN=ws.tisi.lol`
-  - `BETTER_AUTH_URL=https://tisi.lol`
-  - `NEXT_PUBLIC_APP_URL=https://tisi.lol`
-  - `CORS_ORIGIN=https://tisi.lol`
+  - `PUBLIC_WEB_DOMAIN=senkite.com`
+  - `PUBLIC_WS_DOMAIN=ws.senkite.com`
+  - `BETTER_AUTH_URL=https://senkite.com`
+  - `NEXT_PUBLIC_APP_URL=https://senkite.com`
+  - `CORS_ORIGIN=https://senkite.com`
 - Изпълни `pnpm check:prod-env` с production env променливите.
-- Изтегли `release.json` от trusted GitHub Actions release artifact. Manifest-ът съдържа пълния source commit и digest-pinned web, game и migrator images; не build-вай application images на production хоста.
+- Изтегли `release.json` и `release.json.sig` от trusted GitHub Actions artifact. Провери, че production host-ът има root-owned Ed25519 public key и точен `RELEASE_ALLOWED_IMAGE_PREFIX`; не build-вай application images на production хоста.
 - Release-ът се показва в `/api/health` и се изпраща към server/edge/browser Sentry без лични данни.
 - Увери се, че `ALLOW_DEV_AUTH=false` или липсва в production.
 - Изпълни `scripts/deploy-release.sh /var/lib/werewolf/releases/candidate.json` от root-owned checkout-а с `RELEASE_STATE_DIR=/var/lib/werewolf/release-state`, както е описано в `docs/operations/production-runbook.md`.
-- Провери `https://tisi.lol` и `wss://ws.tisi.lol`.
+- Провери `https://senkite.com` и `wss://ws.senkite.com`.
 
 ## Планиран Deploy И Drain
 
@@ -24,13 +24,13 @@
 - Скриптът има bounded timeout (`DEPLOY_DRAIN_TIMEOUT_MS`, по подразбиране 20 минути). При timeout излиза с грешка и оставя стария container да работи; не продължавай deploy-а насила.
 - При неуспешен backup, pull, migration или readiness check release-ът спира; не заобикаляй стъпката със `SKIP_DEPLOY_BACKUP=1`, освен при документиран incident.
 - Непланиран `SIGTERM` също спира matchmaking-а и чака до `GAME_DRAIN_TIMEOUT_MS` (по подразбиране 120 секунди) преди bounded shutdown. Compose дава 130 секунди stop grace period.
-- След deploy провери `/api/health` за web liveness, `/api/health/ready` за web плюс DB/game зависимости и `https://ws.tisi.lol/health/ready` за game persistence. Web liveness остава 200, когато само game service е недостъпен; това пази публичните страници и показва повредата в `/status`.
+- След deploy провери `/api/health` за web liveness, `/api/health/ready` за web плюс DB/game зависимости и `https://ws.senkite.com/health/ready` за game persistence. Web liveness остава 200, когато само game service е недостъпен; това пази публичните страници и показва повредата в `/status`.
 - При спешен rollback използвай предишния immutable release manifest само ако schema-та остава backward-compatible. Не пипай Postgres volume и не пускай миграции назад без rehearsed restore.
 
 ## Backup И Restore
 
 - Инсталирай root-owned systemd backup timer-а от `docs/operations/production-runbook.md`; не давай Docker group на `werewolf` акаунта.
-- Настрой `RCLONE_REMOTE`, ако искаш копие извън Droplet-а.
+- Настрой `BACKUP_AGE_RECIPIENT` задължително и `RCLONE_REMOTE` за копие извън Droplet-а. Пази private age identity извън production host-а.
 - Поне веднъж преди сериозна игра направи restore rehearsal със `scripts/restore-postgres.sh` върху тестова база.
 - Запази последните 14 дни локално или промени `BACKUP_RETENTION_DAYS`.
 

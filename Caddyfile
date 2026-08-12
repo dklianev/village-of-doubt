@@ -49,6 +49,8 @@
 		X-Content-Type-Options "nosniff"
 		Referrer-Policy "strict-origin-when-cross-origin"
 	}
+	@private_room_preview path /rooms/*/preview
+	respond @private_room_preview 404
 	@disallowed_origin {
 		header Origin *
 		not header Origin {$CORS_ORIGIN}

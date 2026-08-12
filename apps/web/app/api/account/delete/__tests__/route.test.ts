@@ -1,11 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { POST } from "../route";
 
-const { createDatabase, deleteUserAccountAtomically, getSession } = vi.hoisted(() => ({
+const { createDatabase, deleteUserAccountAtomically, getSession, revalidateTag } = vi.hoisted(() => ({
   createDatabase: vi.fn(() => ({ mocked: true })),
   deleteUserAccountAtomically: vi.fn(() => Promise.resolve(true)),
   getSession: vi.fn(),
+  revalidateTag: vi.fn(),
 }));
+
+vi.mock("next/cache", () => ({ revalidateTag }));
 
 vi.mock("@/lib/auth", () => ({
   ACCOUNT_DELETE_FRESH_AGE_SECONDS: 10 * 60,
@@ -92,6 +95,7 @@ describe("POST /api/account/delete", () => {
     await expect(response.json()).resolves.toEqual({ ok: true });
     expect(createDatabase).toHaveBeenCalledWith("postgres://localhost/werewolf");
     expect(deleteUserAccountAtomically).toHaveBeenCalledWith({ mocked: true }, "user-1");
+    expect(revalidateTag).toHaveBeenCalledWith("public-leaderboard", "max");
   });
 
   it("изисква повторно влизане при сесия по-стара от 10 минути", async () => {

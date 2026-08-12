@@ -76,11 +76,11 @@ describe("createRuntimeRedisEvalClient", () => {
 });
 
 describe("createRuntimeRedisReadinessProbe", () => {
-  it("изчаква свързването и изисква PONG", async () => {
+  it("изчаква свързването и изисква успешен EVAL write/read/delete цикъл", async () => {
     let ready = false;
-    const ping = vi.fn(async () => "PONG");
+    const evalCommand = vi.fn(async () => "ready");
     const probe = createRuntimeRedisReadinessProbe(
-      () => ({ isReady: ready, ping }),
+      () => ({ isReady: ready, eval: evalCommand }),
       250,
       async () => {
         ready = true;
@@ -88,7 +88,14 @@ describe("createRuntimeRedisReadinessProbe", () => {
     );
 
     await expect(probe()).resolves.toBe(true);
-    expect(ping).toHaveBeenCalledOnce();
+    expect(evalCommand).toHaveBeenCalledOnce();
+    expect(evalCommand).toHaveBeenCalledWith(
+      expect.stringContaining("redis.call('SET'"),
+      expect.objectContaining({
+        keys: [expect.stringMatching(/^wm:health:web:/)],
+        arguments: ["ready", "5000"],
+      }),
+    );
   });
 
   it("връща false при timeout без да издава Redis грешката", async () => {
@@ -96,7 +103,7 @@ describe("createRuntimeRedisReadinessProbe", () => {
     const probe = createRuntimeRedisReadinessProbe(
       () => ({
         isReady: true,
-        ping: vi.fn(() => new Promise<string>(() => {})),
+        eval: vi.fn(() => new Promise<string>(() => {})),
       }),
       250,
     );
@@ -105,6 +112,17 @@ describe("createRuntimeRedisReadinessProbe", () => {
     await vi.advanceTimersByTimeAsync(250);
     await expect(result).resolves.toBe(false);
     vi.useRealTimers();
+  });
+
+  it("връща false, когато Redis ACL отказва EVAL", async () => {
+    const probe = createRuntimeRedisReadinessProbe(() => ({
+      isReady: true,
+      eval: vi.fn(async () => {
+        throw new Error("NOPERM this user has no permissions to run the 'eval' command");
+      }),
+    }));
+
+    await expect(probe()).resolves.toBe(false);
   });
 });
 

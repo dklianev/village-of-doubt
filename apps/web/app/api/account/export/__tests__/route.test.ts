@@ -113,6 +113,8 @@ describe("GET /api/account/export", () => {
       eventPageSize: 200,
       eventsHasMore: true,
     });
+    expect(body.note).toContain("твоите лични действия");
+    expect(body.note).toContain("чужди лични действия");
     expect(mocks.getAccountExportPage).toHaveBeenCalledWith(
       { query: expect.any(Object) },
       "user-1",
@@ -164,7 +166,33 @@ describe("GET /api/account/export", () => {
       error: "Експортът е твърде голям. Опитай с по-малък размер на страницата.",
     });
   });
+
+  it("ограничава многократните тежки експорти за един профил", async () => {
+    mocks.getSession.mockResolvedValue({
+      ...signedInSession(),
+      user: { ...signedInSession().user, id: "export-rate-user" },
+    });
+
+    for (let index = 0; index < 4; index += 1) {
+      const response = await GET(exportRequest(`198.51.100.${index + 1}`));
+      expect(response.status).toBe(200);
+    }
+
+    const blocked = await GET(exportRequest("198.51.100.99"));
+
+    expect(blocked.status).toBe(429);
+    expect(blocked.headers.get("retry-after")).toBeTruthy();
+    await expect(blocked.json()).resolves.toEqual({
+      error: "Твърде много заявки за експорт. Опитай отново след малко.",
+    });
+  });
 });
+
+function exportRequest(ip: string) {
+  return new Request("http://localhost/api/account/export", {
+    headers: { "x-forwarded-for": ip },
+  });
+}
 
 function signedInSession() {
   return {
