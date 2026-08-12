@@ -4,6 +4,7 @@ import {
   deletedUserIdentities,
   gameEvents,
   gamePlayers,
+  gameSessionRevocations,
   games,
   user,
   userAchievements,
@@ -86,6 +87,44 @@ export const ACCOUNT_EXPORT_MAX_PAGE_SIZE = 100;
 export const ACCOUNT_EXPORT_MAX_PAGE = 1_000;
 export const ACCOUNT_EXPORT_DEFAULT_EVENT_PAGE_SIZE = 500;
 export const ACCOUNT_EXPORT_MAX_EVENT_PAGE_SIZE = 1_000;
+
+export async function recordGameSessionRevocation(
+  db: Database,
+  userId: string,
+  revokedAtMs: number,
+): Promise<void> {
+  if (!userId || !Number.isSafeInteger(revokedAtMs) || revokedAtMs < 0) {
+    throw new Error("Невалиден маркер за прекратяване на игрова сесия.");
+  }
+
+  await db
+    .insert(gameSessionRevocations)
+    .values({ userId, revokedAt: new Date(revokedAtMs), updatedAt: new Date() })
+    .onConflictDoUpdate({
+      target: gameSessionRevocations.userId,
+      set: {
+        revokedAt: sql`GREATEST(${gameSessionRevocations.revokedAt}, excluded.revoked_at)`,
+        updatedAt: new Date(),
+      },
+    });
+}
+
+export async function isGameSessionRevokedDurably(
+  db: Database,
+  userId: string,
+  tokenIssuedAtMs: number,
+): Promise<boolean> {
+  if (!userId || !Number.isSafeInteger(tokenIssuedAtMs) || tokenIssuedAtMs < 0) {
+    return true;
+  }
+
+  const marker = await db
+    .select({ revokedAt: gameSessionRevocations.revokedAt })
+    .from(gameSessionRevocations)
+    .where(eq(gameSessionRevocations.userId, userId))
+    .limit(1);
+  return marker[0] ? tokenIssuedAtMs <= marker[0].revokedAt.getTime() : false;
+}
 
 type DatabaseTransaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 

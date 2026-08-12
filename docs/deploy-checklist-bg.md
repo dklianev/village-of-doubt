@@ -20,7 +20,7 @@
 ## Планиран Deploy И Drain
 
 - Изпълни canonical immutable-checkout командата от `docs/operations/production-runbook.md` с `/var/lib/werewolf/releases/candidate.json`. Тя първо активира loopback-only drain, изчаква активните стаи, стартира hardened backup unit-а, после pull-ва digest-pinned images и пуска миграцията.
-- По време на drain публичният `/stats` връща само `draining`, `drainStartedAt`, `activeRooms` и `connectedPlayers`. Runtime memory/event-loop данните са само на loopback `/operations/stats`. Нови стаи не се създават, а текущите връзки продължават да работят.
+- По време на drain статистиката се чете само през `docker compose exec` от loopback `/operations/stats`. Няма публичен operational stats endpoint. Нови стаи не се създават, а текущите връзки продължават да работят.
 - Скриптът има bounded timeout (`DEPLOY_DRAIN_TIMEOUT_MS`, по подразбиране 20 минути). При timeout излиза с грешка и оставя стария container да работи; не продължавай deploy-а насила.
 - При неуспешен backup, pull, migration или readiness check release-ът спира; не заобикаляй стъпката със `SKIP_DEPLOY_BACKUP=1`, освен при документиран incident.
 - Непланиран `SIGTERM` също спира matchmaking-а и чака до `GAME_DRAIN_TIMEOUT_MS` (по подразбиране 120 секунди) преди bounded shutdown. Compose дава 130 секунди stop grace period.

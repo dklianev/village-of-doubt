@@ -147,13 +147,7 @@ export const auth = betterAuth({
       await sendEmail({ to: user.email, ...template });
     },
     onPasswordReset: async ({ user }) => {
-      try {
-        await revokeActiveGameSessions(user.id);
-      } catch (error) {
-        console.error("[auth] active game-session revocation failed", {
-          name: error instanceof Error ? error.name : "UnknownError",
-        });
-      }
+      await revokeActiveGameSessions(user.id);
     },
   },
   emailVerification: {

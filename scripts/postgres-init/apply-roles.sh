@@ -171,6 +171,7 @@ SELECT format(
     WHEN 'game_players' THEN 'SELECT, UPDATE'
     WHEN 'game_events' THEN 'SELECT, UPDATE, DELETE'
     WHEN 'user_achievements' THEN 'SELECT, DELETE'
+    WHEN 'game_session_revocations' THEN 'SELECT, INSERT, UPDATE'
   END,
   relation.relname
 )
@@ -183,7 +184,8 @@ WHERE namespace.nspname = 'public'
     'games',
     'game_players',
     'game_events',
-    'user_achievements'
+    'user_achievements',
+    'game_session_revocations'
   )
 ORDER BY relation.relname
 \gexec
@@ -197,6 +199,7 @@ SELECT format(
     WHEN 'game_players' THEN 'SELECT, INSERT, UPDATE'
     WHEN 'game_events' THEN 'SELECT, INSERT'
     WHEN 'user_achievements' THEN 'SELECT, INSERT'
+    WHEN 'game_session_revocations' THEN 'SELECT'
   END,
   relation.relname
 )
@@ -210,7 +213,8 @@ WHERE namespace.nspname = 'public'
     'games',
     'game_players',
     'game_events',
-    'user_achievements'
+    'user_achievements',
+    'game_session_revocations'
   )
 ORDER BY relation.relname
 \gexec

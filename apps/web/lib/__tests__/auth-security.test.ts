@@ -215,6 +215,20 @@ describe("Better Auth security configuration", () => {
     expect(revokeActiveGameSessions).toHaveBeenCalledWith("user-1");
   });
 
+  it("не скрива провал на трайното прекратяване след смяна на парола", async () => {
+    vi.resetModules();
+    await import("../auth");
+    const options = betterAuth.mock.calls.at(-1)?.[0] as {
+      emailAndPassword?: {
+        onPasswordReset?: (input: { user: { id: string } }) => Promise<void>;
+      };
+    };
+    revokeActiveGameSessions.mockRejectedValueOnce(new Error("database unavailable"));
+
+    await expect(options.emailAndPassword?.onPasswordReset?.({ user: { id: "user-1" } }))
+      .rejects.toThrow("database unavailable");
+  });
+
   it.each(["/sign-up/email", "/update-user"])(
     "отхвърля име над 32 символа за %s с безопасна българска грешка",
     async (path) => {

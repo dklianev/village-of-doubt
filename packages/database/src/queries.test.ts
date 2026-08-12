@@ -6,6 +6,7 @@ import {
   deletedUserIdentities,
   gameEvents,
   gamePlayers,
+  gameSessionRevocations,
   games,
   user,
   userAchievements,
@@ -22,9 +23,57 @@ import {
   getLeaderboardRows,
   getPlayerOutcomesInGames,
   getPublicGameTimelinesBatch,
+  isGameSessionRevokedDurably,
+  recordGameSessionRevocation,
   scrubDeletedIdentityFromEventPayload,
   upsertUsersUnlessDeleted,
 } from "./queries.js";
+
+describe("durable game-session revocations", () => {
+  it("upserts the latest marker without allowing an older event to move it backwards", async () => {
+    type ConflictInput = {
+      target: unknown;
+      set: { revokedAt: Parameters<PgDialect["sqlToQuery"]>[0] };
+    };
+    const onConflictDoUpdate = vi.fn(async (_input: ConflictInput) => undefined);
+    const values = vi.fn(() => ({ onConflictDoUpdate }));
+    const insert = vi.fn((table: unknown) => {
+      expect(table).toBe(gameSessionRevocations);
+      return { values };
+    });
+
+    await recordGameSessionRevocation({ insert } as unknown as Database, "user-1", 2_000);
+
+    expect(values).toHaveBeenCalledWith(expect.objectContaining({
+      userId: "user-1",
+      revokedAt: new Date(2_000),
+    }));
+    const conflict = onConflictDoUpdate.mock.calls[0]?.[0];
+    expect(conflict?.target).toBe(gameSessionRevocations.userId);
+    expect(conflict).toBeDefined();
+    if (conflict) {
+      expect(new PgDialect().sqlToQuery(conflict.set.revokedAt).sql).toContain("GREATEST");
+    }
+  });
+
+  it("rejects tokens issued at or before the durable marker", async () => {
+    const limit = vi.fn(async () => [{ revokedAt: new Date(2_000) }]);
+    const where = vi.fn(() => ({ limit }));
+    const from = vi.fn(() => ({ where }));
+    const select = vi.fn(() => ({ from }));
+
+    await expect(isGameSessionRevokedDurably(
+      { select } as unknown as Database,
+      "user-1",
+      2_000,
+    )).resolves.toBe(true);
+    await expect(isGameSessionRevokedDurably(
+      { select } as unknown as Database,
+      "user-1",
+      2_001,
+    )).resolves.toBe(false);
+  });
+});
 
 describe("getRecentEndedGameHistory", () => {
   it("filters and orders completed games at the SQL boundary", async () => {

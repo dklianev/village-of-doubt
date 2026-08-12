@@ -29,6 +29,12 @@ export const deletedUserIdentities = pgTable("deleted_user_identities", {
   deletedAt: timestamp("deleted_at").defaultNow().notNull(),
 });
 
+export const gameSessionRevocations = pgTable("game_session_revocations", {
+  userId: text("user_id").primaryKey(),
+  revokedAt: timestamp("revoked_at", { withTimezone: true }).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
 export const session = pgTable(
   "session",
   {

@@ -63,6 +63,23 @@ describe("PlayerPresenceManager", () => {
     expect(store.isGameSessionRevoked).toHaveBeenCalledOnce();
   });
 
+  it("combines the Redis marker with the durable database marker", async () => {
+    const store: PlayerSecurityStore = {
+      consumeTokenNonce: vi.fn(async () => true),
+      checkJoinRateLimit: vi.fn(async () => true),
+      claimActiveRoom: vi.fn(async () => true),
+      releaseActiveRoom: vi.fn(async () => undefined),
+      isGameSessionRevoked: vi.fn(async () => false),
+    };
+    const durableCheck = vi.fn(async () => true);
+    PlayerPresenceManager.configureSecurityStore(store);
+    PlayerPresenceManager.configureDurableSessionRevocationCheck(durableCheck);
+
+    await expect(PlayerPresenceManager.isGameSessionRevoked("user-1", 1_000)).resolves.toBe(true);
+    expect(store.isGameSessionRevoked).toHaveBeenCalledWith("user-1", 1_000);
+    expect(durableCheck).toHaveBeenCalledWith("user-1", 1_000);
+  });
+
   it("tracks and detaches the active client for a user", () => {
     const manager = new PlayerPresenceManager();
     const firstClient = { sessionId: "first" };

@@ -1,4 +1,5 @@
 import { monitor } from "@colyseus/monitor";
+import { createDatabase, isGameSessionRevokedDurably } from "@werewolf/database";
 import defineConfig from "@colyseus/tools";
 import {
   GAME_SESSION_REVOCATION_CHANNEL,
@@ -58,6 +59,13 @@ export default defineConfig({
   },
 
   initializeGameServer(gameServer) {
+    const databaseUrl = process.env.DATABASE_URL;
+    if (databaseUrl) {
+      const database = createDatabase(databaseUrl);
+      PlayerPresenceManager.configureDurableSessionRevocationCheck(
+        (userId, tokenIssuedAtMs) => isGameSessionRevokedDurably(database, userId, tokenIssuedAtMs),
+      );
+    }
     gameServer.define("game", OperationalGameRoom).filterBy(["code"]);
     if (redisRuntime) {
       gameServer.onShutdown(async () => {
@@ -88,10 +96,6 @@ export default defineConfig({
     });
 
     app.get("/health/ready", createReadinessHandler());
-
-    app.get("/stats", (_req, res) => {
-      res.json(createPublicStats());
-    });
 
     app.post("/operations/drain", createLocalDrainHandler());
 
@@ -227,7 +231,7 @@ export class OperationalGameRoom extends GameRoom {
   }
 }
 
-export function createPublicStats() {
+function createOperatorStats() {
   const runtime = getGameRuntimeStats();
   const drain = deployDrain.status();
   return {
@@ -258,7 +262,7 @@ export function createLocalStatsHandler() {
 
     const memory = process.memoryUsage();
     res.json({
-      ...createPublicStats(),
+      ...createOperatorStats(),
       eventLoopUtilization: performance.eventLoopUtilization().utilization,
       rssBytes: memory.rss,
     });

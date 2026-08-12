@@ -191,6 +191,16 @@ test("deploy validates Compose before disruption and applies database privileges
   assert.ok(deploy.indexOf(grants) < deploy.indexOf("up -d --no-build --no-deps web game caddy"));
 });
 
+test("deploy drain reads operational stats only through the game container loopback", () => {
+  const drain = read("scripts/deploy-drain.mjs");
+  const appConfig = read("apps/game-server/src/app.config.ts");
+
+  assert.match(drain, /docker[\s\S]*compose[\s\S]*exec[\s\S]*game/);
+  assert.match(drain, /http:\/\/127\.0\.0\.1:2567\/operations\/stats/);
+  assert.doesNotMatch(drain, /DEPLOY_STATS_URL|https:\/\/\$\{domain\}\/stats/);
+  assert.doesNotMatch(appConfig, /app\.get\("\/stats"/);
+});
+
 test("rollback validates and pulls before drain without replaying old migrations", () => {
   const rollback = read("scripts/rollback-release.sh");
   const preflight = 'docker compose --env-file .env --env-file "$rollback_env" config --quiet';

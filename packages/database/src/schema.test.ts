@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { getTableConfig } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
-import { gameEvents, gamePlayers, games, session } from "./schema.js";
+import { gameEvents, gamePlayers, gameSessionRevocations, games, session } from "./schema.js";
 
 describe("game_players final outcome schema", () => {
   it("keeps won authoritative, non-null, and false by default", () => {
@@ -27,6 +27,18 @@ describe("game_players final outcome schema", () => {
 });
 
 describe("database integrity and anonymization indexes", () => {
+  it("stores one durable game-session revocation marker per user", () => {
+    const config = getTableConfig(gameSessionRevocations);
+
+    expect(config.columns.find((column) => column.name === "user_id")).toMatchObject({
+      primary: true,
+      notNull: true,
+    });
+    expect(config.columns.find((column) => column.name === "revoked_at")).toMatchObject({
+      notNull: true,
+    });
+  });
+
   it("materializes room visibility for archive authorization", () => {
     const roomVisibility = getTableConfig(games).columns.find((column) => column.name === "room_visibility");
     const gameChecks = getTableConfig(games).checks.map((item) => item.name);
