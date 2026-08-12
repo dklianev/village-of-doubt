@@ -5,13 +5,22 @@ import test from "node:test";
 const read = (path) => readFileSync(path, "utf8");
 const readOptional = (path) => existsSync(path) ? read(path) : "";
 
-test("developer and CI runtimes pin Node 22 and shard the exhaustive play matrix", () => {
+test("developer, CI, production, and asset runtimes pin Node 24.19.0", () => {
   const packageJson = JSON.parse(read("package.json"));
   const workflow = read(".github/workflows/ci.yml");
+  const browserWorkflow = read(".github/workflows/browser-quality.yml");
+  const webDockerfile = read("apps/web/Dockerfile");
+  const gameDockerfile = read("apps/game-server/Dockerfile");
+  const assetRunner = read("scripts/run-asset-generators.mjs");
 
-  assert.equal(readOptional(".nvmrc").trim(), "22");
-  assert.equal(readOptional(".node-version").trim(), "22");
-  assert.equal(packageJson.engines?.node, ">=22 <23");
+  assert.equal(readOptional(".nvmrc").trim(), "24.19.0");
+  assert.equal(readOptional(".node-version").trim(), "24.19.0");
+  assert.equal(packageJson.engines?.node, ">=24.19.0 <25");
+  assert.equal((workflow.match(/node-version: 24\.19\.0/g) ?? []).length, 3);
+  assert.equal((browserWorkflow.match(/node-version: 24\.19\.0/g) ?? []).length, 1);
+  assert.match(webDockerfile, /^FROM node:24\.19\.0-alpine@sha256:[a-f0-9]{64} AS base$/m);
+  assert.match(gameDockerfile, /^FROM node:24\.19\.0-alpine@sha256:[a-f0-9]{64} AS base$/m);
+  assert.match(assetRunner, /node:24\.19\.0-bookworm@sha256:[a-f0-9]{64}/);
   assert.match(packageJson.scripts.visual, /grep-invert @play-matrix/);
   assert.match(packageJson.scripts["visual:matrix"], /grep @play-matrix/);
   assert.match(workflow, /M35_SHARD_INDEX/);
