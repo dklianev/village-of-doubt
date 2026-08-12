@@ -66,6 +66,7 @@ const scenarios = [
   ["auth gate redirect", authGateRedirect],
   ["sign-in surface", signInSurface],
   ["email registration", hasDatabase ? emailRegistration : skipped("локален режим: DATABASE_URL липсва")],
+  ["password reset", hasDatabase ? passwordReset : skipped("локален режим: DATABASE_URL липсва")],
   ["authenticated create redirect return", hasDatabase ? authenticatedCreateReturn : skipped("локален режим: DATABASE_URL липсва")],
   ["account deletion", hasDatabase ? accountDeletion : skipped("локален режим: DATABASE_URL липсва")],
 ];
@@ -124,6 +125,45 @@ async function emailRegistration(page) {
   await page.locator(".auth-chip-avatar").waitFor({ timeout: 10_000 });
 }
 
+async function passwordReset(page) {
+  const email = `reset-${Date.now()}@local.invalid`;
+  const oldPassword = "Test1234!";
+  const newPassword = "NewTest1234!";
+
+  await registerAndVerify(page, {
+    email,
+    name: "Нов Ключ",
+    password: oldPassword,
+  });
+
+  await page.goto(`${baseUrl}/forgot-password`, { waitUntil: "domcontentloaded" });
+  await page.getByRole("textbox", { name: "Имейл" }).fill(email);
+  await page.getByRole("button", { name: "Изпрати линк" }).click();
+  await page.getByText("Готово. Провери имейла си.").waitFor();
+
+  const message = await waitForEmail(email, "Нова парола");
+  await page.goto(extractResetPasswordUrl(message.html), { waitUntil: "domcontentloaded" });
+  await page.getByLabel("Нова парола").fill(newPassword);
+  await page.getByLabel("Повтори").fill(newPassword);
+  await page.getByRole("button", { name: "Затвори ключа" }).click();
+  await page.getByText("Готово. Сега те водим към входа...").waitFor();
+  await page.waitForURL(`${baseUrl}/sign-in`, { timeout: 10_000 });
+
+  await signInWithPassword(page, email, oldPassword);
+  await page.getByRole("alert").waitFor();
+  if (page.url() !== `${baseUrl}/sign-in`) {
+    throw new Error("Старата парола остана валидна след успешна смяна.");
+  }
+
+  await signInWithPassword(page, email, newPassword);
+  await page.waitForURL((url) => url.pathname !== "/sign-in", { timeout: 10_000 });
+  const sessionResponse = await page.request.get(`${baseUrl}/api/auth/get-session`);
+  const session = await sessionResponse.json();
+  if (!sessionResponse.ok() || session?.user?.email !== email) {
+    throw new Error("Новата парола не създаде валидна сесия.");
+  }
+}
+
 async function authenticatedCreateReturn(page) {
   const email = `return-${Date.now()}@local.invalid`;
   await page.goto(`${baseUrl}/werewolf/create`, { waitUntil: "domcontentloaded" });
@@ -155,6 +195,24 @@ async function accountDeletion(page) {
   await page.waitForURL(`${baseUrl}/`, { timeout: 10_000 });
 }
 
+async function registerAndVerify(page, { email, name, password }) {
+  await page.goto(`${baseUrl}/sign-in`, { waitUntil: "domcontentloaded" });
+  await page.getByRole("tab", { name: "Ново досие" }).click();
+  await page.getByLabel("Име на масата").fill(name);
+  await page.getByRole("textbox", { name: "Имейл" }).fill(email);
+  await page.getByLabel("Парола", { exact: true }).fill(password);
+  await page.getByRole("button", { name: "Създай досие" }).click();
+  await verifyEmailFromOutbox(page, email);
+  await page.waitForURL(`${baseUrl}/`, { timeout: 10_000 });
+}
+
+async function signInWithPassword(page, email, password) {
+  await page.goto(`${baseUrl}/sign-in`, { waitUntil: "domcontentloaded" });
+  await page.getByRole("textbox", { name: "Имейл" }).fill(email);
+  await page.getByLabel("Парола", { exact: true }).fill(password);
+  await page.getByRole("button", { name: "Влез", exact: true }).click();
+}
+
 function skipped(reason) {
   return async () => {
     console.log(`  пропуснато: ${reason}`);
@@ -172,11 +230,11 @@ async function verifyEmailFromOutbox(page, email) {
   await page.goto(verifyUrl, { waitUntil: "domcontentloaded" });
 }
 
-async function waitForEmail(email) {
+async function waitForEmail(email, subjectIncludes) {
   const startedAt = Date.now();
   while (Date.now() - startedAt < 10_000) {
     for (const message of readEmailOutbox().reverse()) {
-      if (message.to === email) {
+      if (message.to === email && (!subjectIncludes || message.subject.includes(subjectIncludes))) {
         return message;
       }
     }
@@ -200,6 +258,15 @@ function extractVerificationUrl(html) {
   const match = html.match(/href="([^"]*\/api\/auth\/verify-email[^"]+)"/);
   if (!match?.[1]) {
     throw new Error("Verification email did not include a verify-email link.");
+  }
+
+  return match[1].replaceAll("&amp;", "&");
+}
+
+function extractResetPasswordUrl(html) {
+  const match = html.match(/href="([^"]*\/reset-password[^"]+)"/);
+  if (!match?.[1]) {
+    throw new Error("Reset email did not include a reset-password link.");
   }
 
   return match[1].replaceAll("&amp;", "&");

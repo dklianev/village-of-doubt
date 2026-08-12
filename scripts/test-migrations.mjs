@@ -51,6 +51,7 @@ async function verifySchema(databaseUrl) {
       "account",
       "verification",
       "deleted_user_identities",
+      "game_session_revocations",
       "games",
       "game_events",
       "game_players",
