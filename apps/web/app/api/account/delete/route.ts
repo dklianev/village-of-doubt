@@ -43,7 +43,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    await revokeActiveGameSessions(session.user.id);
+    await revokeActiveGameSessions(session.user.id, { requireRealtime: true });
     const deleted = await deleteUserAccountAtomically(createDatabase(databaseUrl), session.user.id);
     if (!deleted) {
       return NextResponse.json({ error: "Досието вече не съществува." }, { status: 401 });

@@ -98,7 +98,7 @@ describe("POST /api/account/delete", () => {
     await expect(response.json()).resolves.toEqual({ ok: true });
     expect(createDatabase).toHaveBeenCalledWith("postgres://localhost/werewolf");
     expect(deleteUserAccountAtomically).toHaveBeenCalledWith({ mocked: true }, "user-1");
-    expect(revokeActiveGameSessions).toHaveBeenCalledWith("user-1");
+    expect(revokeActiveGameSessions).toHaveBeenCalledWith("user-1", { requireRealtime: true });
     expect(revalidateTag).toHaveBeenCalledWith("public-leaderboard", "max");
   });
 

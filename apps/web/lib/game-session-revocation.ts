@@ -9,7 +9,10 @@ import { publishRuntimeRedisMessage, writeRuntimeRedisValue } from "./runtime-ra
 
 const REVOCATION_TTL_MS = 24 * 60 * 60 * 1_000;
 
-export async function revokeActiveGameSessions(userId: string) {
+export async function revokeActiveGameSessions(
+  userId: string,
+  { requireRealtime = false }: { requireRealtime?: boolean } = {},
+) {
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) {
     throw new Error("DATABASE_URL липсва при прекратяване на игрова сесия.");
@@ -35,6 +38,9 @@ export async function revokeActiveGameSessions(userId: string) {
     Sentry.captureException(error, {
       tags: { subsystem: "game-session-revocation", durableMarker: "written" },
     });
+    if (requireRealtime) {
+      throw error;
+    }
     return { revokedAtMs, realtimeDelivered: false } as const;
   }
 }

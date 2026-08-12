@@ -42,6 +42,14 @@ describe("revokeActiveGameSessions", () => {
     expect(mocks.publishRuntimeRedisMessage).not.toHaveBeenCalled();
   });
 
+  it("fails account deletion when immediate delivery is required", async () => {
+    mocks.writeRuntimeRedisValue.mockRejectedValueOnce(new Error("redis unavailable"));
+
+    await expect(revokeActiveGameSessions("user-1", { requireRealtime: true }))
+      .rejects.toThrow("redis unavailable");
+    expect(mocks.recordGameSessionRevocation).toHaveBeenCalledOnce();
+  });
+
   it("fails closed when the durable marker cannot be written", async () => {
     mocks.recordGameSessionRevocation.mockRejectedValueOnce(new Error("database unavailable"));
 
