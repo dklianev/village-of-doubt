@@ -116,6 +116,7 @@ Install the verified helpers and units:
 sudo install -d -o root -g root -m 0755 /usr/local/libexec/werewolf
 sudo install -o root -g root -m 0755 "$release_source/scripts/backup-postgres.sh" /usr/local/libexec/werewolf/backup-postgres.sh
 sudo install -o root -g root -m 0755 "$release_source/scripts/backup-manifest.mjs" /usr/local/libexec/werewolf/backup-manifest.mjs
+sudo install -o root -g root -m 0755 "$release_source/scripts/release-manifest.mjs" /usr/local/libexec/werewolf/release-manifest.mjs
 sudo install -o root -g root -m 0755 "$release_source/scripts/check-backup-freshness.sh" /usr/local/libexec/werewolf/check-backup-freshness.sh
 sudo install -d -o root -g root -m 0750 /etc/werewolf
 if ! sudo test -e /etc/werewolf/backup.env; then
@@ -133,16 +134,23 @@ sudo install -o root -g root -m 0644 "$release_source/ops/systemd/werewolf-backu
 sudo install -d -o root -g root -m 0700 /var/backups/werewolf
 sudoedit /etc/werewolf/backup.env
 sudo systemctl daemon-reload
-sudo systemctl enable --now werewolf-backup.timer
-sudo systemctl start werewolf-backup.service
-sudo systemctl status werewolf-backup.service
-sudo systemctl list-timers werewolf-backup.timer
+sudo systemctl enable werewolf-backup.timer
+if sudo test -s /var/lib/werewolf/release-state/current.json; then
+  sudo systemctl start werewolf-backup.service
+  sudo systemctl start werewolf-backup.timer
+  sudo systemctl status werewolf-backup.service
+  sudo systemctl list-timers werewolf-backup.timer
+fi
 ```
 
 `BACKUP_COMPOSE_PROJECT` in `/etc/werewolf/backup.env` must match the project shown
 by `docker compose ls`. `BACKUP_AGE_RECIPIENT` must contain the public recipient
 for an identity kept on a separate recovery host. The file stays owned by
-root:root and mode `0600`. If
+root:root and mode `0600`. `BACKUP_RELEASE_ALLOWED_IMAGE_PREFIX` must match the
+reviewed GHCR repository prefix. The timer verifies the signed active manifest
+under `/var/lib/werewolf/release-state/current.json` and derives both the release
+commit and migration head from it; never copy those values manually into
+`backup.env`. If
 `RCLONE_REMOTE` is enabled, install its configuration at
 `/etc/werewolf/rclone.conf`, owned by root:root and mode `0600`, and keep
 `RCLONE_CONFIG=/etc/werewolf/rclone.conf` in the backup environment.
@@ -166,6 +174,13 @@ narrow passwordless sudo rule only for
 identity this rule. The deployment identity also needs Docker daemon access,
 which is root-equivalent; keep it separate from `werewolf`, interactive users,
 and the web/game services.
+
+The first deployment may use `SKIP_DEPLOY_BACKUP=1` only when PostgreSQL is new
+and contains no user data. Every later deployment requires a healthy signed
+`current.json`; missing or invalid provenance makes the pre-deploy backup fail
+closed. Immediately after that first healthy deployment, run
+`sudo systemctl start werewolf-backup.service` and
+`sudo systemctl start werewolf-backup.timer`, then verify the signed backup.
 
 Run the deploy from the immutable release checkout with the group-readable
 manifest and external state directory:

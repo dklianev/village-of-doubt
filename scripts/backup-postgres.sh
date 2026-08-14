@@ -15,8 +15,14 @@ age_recipient="${BACKUP_AGE_RECIPIENT:-}"
 age_command="${BACKUP_AGE_COMMAND:-age}"
 signing_private_key="${BACKUP_SIGNING_PRIVATE_KEY_FILE:-}"
 manifest_command="${BACKUP_MANIFEST_COMMAND:-$(dirname "$0")/backup-manifest.mjs}"
-release_version="${BACKUP_RELEASE_VERSION:-unavailable}"
-migration_head="${BACKUP_MIGRATION_HEAD:-unavailable}"
+release_version="${BACKUP_RELEASE_VERSION:-}"
+migration_head="${BACKUP_MIGRATION_HEAD:-}"
+require_active_release="${BACKUP_REQUIRE_ACTIVE_RELEASE:-0}"
+release_manifest="${BACKUP_RELEASE_MANIFEST:-/var/lib/werewolf/release-state/current.json}"
+release_manifest_signature="${BACKUP_RELEASE_MANIFEST_SIGNATURE:-${release_manifest}.sig}"
+release_manifest_command="${BACKUP_RELEASE_MANIFEST_COMMAND:-$(dirname "$0")/release-manifest.mjs}"
+release_manifest_public_key="${BACKUP_RELEASE_MANIFEST_PUBLIC_KEY_FILE:-/etc/werewolf/release-manifest.pub}"
+release_allowed_image_prefix="${BACKUP_RELEASE_ALLOWED_IMAGE_PREFIX:-}"
 
 case "$require_encryption" in
   0|1) ;;
@@ -30,6 +36,14 @@ case "$require_signature" in
   0|1) ;;
   *)
     printf 'BACKUP_REQUIRE_SIGNATURE must be 0 or 1.\n' >&2
+    exit 1
+    ;;
+esac
+
+case "$require_active_release" in
+  0|1) ;;
+  *)
+    printf 'BACKUP_REQUIRE_ACTIVE_RELEASE must be 0 or 1.\n' >&2
     exit 1
     ;;
 esac
@@ -52,7 +66,48 @@ if [ -n "$age_recipient" ] && ! command -v "$age_command" >/dev/null 2>&1; then
   exit 1
 fi
 
+if [ "$require_active_release" = "1" ]; then
+  if [ ! -f "$release_manifest" ] || [ ! -f "$release_manifest_signature" ]; then
+    printf 'Active signed release manifest is unavailable: %s\n' "$release_manifest" >&2
+    exit 1
+  fi
+  if [ ! -f "$release_manifest_command" ] || [ ! -f "$release_manifest_public_key" ]; then
+    printf 'Active release verification tooling is unavailable.\n' >&2
+    exit 1
+  fi
+  if [ -z "$release_allowed_image_prefix" ]; then
+    printf 'BACKUP_RELEASE_ALLOWED_IMAGE_PREFIX is required for active release verification.\n' >&2
+    exit 1
+  fi
+  provenance_env="$(mktemp)"
+  trap 'rm -f "$provenance_env"' EXIT HUP INT TERM
+  node "$release_manifest_command" "$release_manifest" \
+    --signature "$release_manifest_signature" \
+    --public-key "$release_manifest_public_key" \
+    --allowed-image-prefix "$release_allowed_image_prefix" \
+    --env-output "$provenance_env"
+  # release-manifest.mjs writes shell-safe, validated tokens only.
+  # shellcheck disable=SC1090
+  . "$provenance_env"
+  release_version="$RELEASE_VERSION"
+  migration_head="$MIGRATION_HEAD"
+  rm -f "$provenance_env"
+  trap - EXIT HUP INT TERM
+fi
+
 if [ "$require_signature" = "1" ]; then
+  case "$release_version" in
+    ""|unknown|unavailable|latest|local|main)
+      printf 'BACKUP_RELEASE_VERSION must contain immutable release provenance.\n' >&2
+      exit 1
+      ;;
+  esac
+  case "$migration_head" in
+    ""|unknown|unavailable|latest)
+      printf 'BACKUP_MIGRATION_HEAD must contain exact schema provenance.\n' >&2
+      exit 1
+      ;;
+  esac
   if [ -z "$signing_private_key" ] || [ ! -f "$signing_private_key" ]; then
     printf 'BACKUP_SIGNING_PRIVATE_KEY_FILE must reference an Ed25519 private key.\n' >&2
     exit 1

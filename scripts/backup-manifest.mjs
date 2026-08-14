@@ -24,9 +24,19 @@ function equalText(left, right) {
   return leftBuffer.length === rightBuffer.length && timingSafeEqual(leftBuffer, rightBuffer);
 }
 
+function isValidProvenance(value) {
+  return typeof value === "string"
+    && value.length >= 4
+    && !/^(?:unknown|unavailable|latest|local|main)$/i.test(value)
+    && !/replace|change-me|placeholder/i.test(value);
+}
+
 async function createManifest([artifact, privateKeyFile, database, releaseVersion, migrationHead]) {
   if (!artifact || !privateKeyFile || !database || !releaseVersion || !migrationHead) {
     throw new Error("Usage: backup-manifest.mjs create <artifact> <private-key> <database> <release> <migration-head>");
+  }
+  if (!isValidProvenance(releaseVersion) || !isValidProvenance(migrationHead)) {
+    throw new Error("Backup provenance must contain an immutable release and exact migration head.");
   }
 
   const artifactStats = await stat(artifact);
@@ -101,10 +111,8 @@ async function verifyManifest([artifact, publicKeyFile, expectedDatabase, maxAge
     || !/^[a-f0-9]{64}$/.test(manifest.sha256)
     || !Number.isSafeInteger(manifest.sizeBytes)
     || manifest.sizeBytes <= 0
-    || typeof manifest.releaseVersion !== "string"
-    || manifest.releaseVersion.length === 0
-    || typeof manifest.migrationHead !== "string"
-    || manifest.migrationHead.length === 0
+    || !isValidProvenance(manifest.releaseVersion)
+    || !isValidProvenance(manifest.migrationHead)
   ) {
     throw new Error("Backup manifest fields are invalid.");
   }

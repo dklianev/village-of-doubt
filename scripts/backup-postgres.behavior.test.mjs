@@ -17,6 +17,7 @@ function createFixture() {
   const freshnessScript = path.join(directory, "check-backup-freshness.sh");
   const restoreScript = path.join(directory, "restore-postgres.sh");
   const manifestScript = path.join(directory, "backup-manifest.mjs");
+  const releaseManifestScript = path.join(directory, "release-manifest.mjs");
   const signingPrivateKey = path.join(directory, "backup-signing.key");
   const signingPublicKey = path.join(directory, "backup-signing.pub");
   const dockerStub = path.join(directory, "fake-docker");
@@ -27,6 +28,7 @@ function createFixture() {
   writeFileSync(freshnessScript, normalized("scripts/check-backup-freshness.sh"), { mode: 0o755 });
   writeFileSync(restoreScript, normalized("scripts/restore-postgres.sh"), { mode: 0o755 });
   writeFileSync(manifestScript, normalized("scripts/backup-manifest.mjs"), { mode: 0o755 });
+  writeFileSync(releaseManifestScript, normalized("scripts/release-manifest.mjs"), { mode: 0o755 });
   const signingKeys = generateKeyPairSync("ed25519");
   writeFileSync(signingPrivateKey, signingKeys.privateKey.export({ type: "pkcs8", format: "pem" }), { mode: 0o600 });
   writeFileSync(signingPublicKey, signingKeys.publicKey.export({ type: "spki", format: "pem" }));
@@ -85,10 +87,41 @@ esac
     dockerStub,
     freshnessScript,
     manifestScript,
+    releaseManifestScript,
     restoreScript,
     signingPrivateKey,
     signingPublicKey,
   };
+}
+
+function createSignedActiveRelease(fixture) {
+  const releaseManifest = path.join(fixture.directory, "current.json");
+  const releasePublicKey = path.join(fixture.directory, "release-manifest.pub");
+  const releaseKeys = generateKeyPairSync("ed25519");
+  const digest = "a".repeat(64);
+  const commit = "b".repeat(40);
+  const release = {
+    schemaVersion: 1,
+    releaseVersion: commit,
+    sourceCommit: commit,
+    migrationHead: "0011_account_deletion_boundary",
+    createdAt: "2026-08-14T00:00:00.000Z",
+    images: {
+      web: `ghcr.io/example/project/web@sha256:${digest}`,
+      game: `ghcr.io/example/project/game@sha256:${digest}`,
+      migrator: `ghcr.io/example/project/migrator@sha256:${digest}`,
+    },
+  };
+  writeFileSync(releaseManifest, `${JSON.stringify(release)}\n`);
+  writeFileSync(
+    `${releaseManifest}.sig`,
+    `${signReleaseManifest(release, releaseKeys.privateKey, { allowedImagePrefix: "ghcr.io/example/project" })}\n`,
+  );
+  writeFileSync(
+    releasePublicKey,
+    releaseKeys.publicKey.export({ type: "spki", format: "pem" }),
+  );
+  return { commit, release, releaseManifest, releasePublicKey };
 }
 
 function normalized(file) {
@@ -112,9 +145,71 @@ function baseEnv(fixture) {
     BACKUP_REQUIRE_SIGNATURE: "1",
     BACKUP_MANIFEST_COMMAND: fixture.manifestScript,
     BACKUP_SIGNING_PRIVATE_KEY_FILE: fixture.signingPrivateKey,
+    BACKUP_RELEASE_VERSION: "release-test-42",
+    BACKUP_MIGRATION_HEAD: "0010_complete_triton",
     FAKE_DOCKER_LOG: fixture.dockerLog,
   };
 }
+
+test("scheduled signed backup fails closed without release provenance", { skip: !isPosix }, () => {
+  const fixture = createFixture();
+  const result = run(fixture.backupScript, {
+    ...baseEnv(fixture),
+    BACKUP_RELEASE_VERSION: "",
+    BACKUP_COMPOSE_PROJECT: "werewolf",
+  });
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /BACKUP_RELEASE_VERSION/);
+  assert.equal(existsSync(fixture.backupDir), false);
+});
+
+test("scheduled backup derives provenance from the signed active release", { skip: !isPosix }, () => {
+  const fixture = createFixture();
+  const active = createSignedActiveRelease(fixture);
+  const result = run(fixture.backupScript, {
+    ...baseEnv(fixture),
+    BACKUP_RELEASE_VERSION: "",
+    BACKUP_MIGRATION_HEAD: "",
+    BACKUP_REQUIRE_ACTIVE_RELEASE: "1",
+    BACKUP_RELEASE_MANIFEST: active.releaseManifest,
+    BACKUP_RELEASE_MANIFEST_COMMAND: fixture.releaseManifestScript,
+    BACKUP_RELEASE_MANIFEST_PUBLIC_KEY_FILE: active.releasePublicKey,
+    BACKUP_RELEASE_ALLOWED_IMAGE_PREFIX: "ghcr.io/example/project",
+    BACKUP_COMPOSE_PROJECT: "werewolf",
+  });
+
+  assert.equal(result.status, 0, result.stderr);
+  const manifestName = readdirSync(fixture.backupDir).find((file) => file.endsWith(".manifest.json"));
+  assert.ok(manifestName);
+  const manifest = JSON.parse(readFileSync(path.join(fixture.backupDir, manifestName), "utf8"));
+  assert.equal(manifest.releaseVersion, active.commit);
+  assert.equal(manifest.migrationHead, active.release.migrationHead);
+});
+
+test("scheduled backup rejects tampered active release provenance", { skip: !isPosix }, () => {
+  const fixture = createFixture();
+  const active = createSignedActiveRelease(fixture);
+  writeFileSync(active.releaseManifest, `${JSON.stringify({
+    ...active.release,
+    migrationHead: "tampered_migration",
+  })}\n`);
+  const result = run(fixture.backupScript, {
+    ...baseEnv(fixture),
+    BACKUP_RELEASE_VERSION: "",
+    BACKUP_MIGRATION_HEAD: "",
+    BACKUP_REQUIRE_ACTIVE_RELEASE: "1",
+    BACKUP_RELEASE_MANIFEST: active.releaseManifest,
+    BACKUP_RELEASE_MANIFEST_COMMAND: fixture.releaseManifestScript,
+    BACKUP_RELEASE_MANIFEST_PUBLIC_KEY_FILE: active.releasePublicKey,
+    BACKUP_RELEASE_ALLOWED_IMAGE_PREFIX: "ghcr.io/example/project",
+    BACKUP_COMPOSE_PROJECT: "werewolf",
+  });
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /signature is invalid/i);
+  assert.equal(existsSync(fixture.backupDir), false);
+});
 
 test("scheduled backup resolves one labeled PostgreSQL container", { skip: !isPosix }, () => {
   const fixture = createFixture();

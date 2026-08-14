@@ -80,3 +80,23 @@ test("rejects a modified manifest without the producer private key", () => {
   assert.notEqual(verified.status, 0);
   assert.match(verified.stderr, /signature is invalid/i);
 });
+
+test("rejects placeholder release and migration provenance", () => {
+  const fixture = createFixture();
+
+  for (const [release, migration] of [
+    ["unavailable", "0008_steady_edwin_jarvis"],
+    ["release-42", "unknown"],
+  ]) {
+    const created = run([
+      "create",
+      fixture.artifact,
+      fixture.privateKey,
+      "werewolf",
+      release,
+      migration,
+    ]);
+    assert.notEqual(created.status, 0);
+    assert.match(created.stderr, /provenance/i);
+  }
+});

@@ -92,8 +92,31 @@ test("production database roles are separated and reconciled on every deployment
     /GRANT [^;]* ON (?:ALL TABLES IN SCHEMA public|TABLE public\.(?:account|session|verification)) TO werewolf_game/,
   );
   assert.match(roleReconciler, /GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public/);
+  assert.match(roleReconciler, /ALTER FUNCTION %I\.%I\(%s\) OWNER TO werewolf_migrator/);
+  assert.match(roleReconciler, /REVOKE EXECUTE ON ALL FUNCTIONS IN SCHEMA public FROM PUBLIC, werewolf_web, werewolf_game/);
   assert.match(roleReconciler, /ALTER DEFAULT PRIVILEGES FOR ROLE werewolf_migrator IN SCHEMA public/);
+  assert.match(roleReconciler, /REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC/);
   assert.doesNotMatch(roleReconciler, /GRANT ALL[^;]*TO werewolf_(?:web|game)/);
+  assert.match(roleReconciler, /'GRANT EXECUTE ON FUNCTION %s TO werewolf_web'/);
+  assert.match(roleReconciler, /public\.werewolf_prepare_account_deletion\(text, text\)/);
+  assert.equal(
+    (roleReconciler.match(/public\.werewolf_scrub_account_event_value\(jsonb, text, text, text\[\], boolean, boolean, text\[\], boolean\)/g) ?? []).length,
+    1,
+    "The recursive payload scrub helper must be revoked but never granted to the web role.",
+  );
+  assert.equal(
+    (roleReconciler.match(/public\.werewolf_scrub_account_events\(text\)/g) ?? []).length,
+    1,
+    "The account scrub implementation must be revoked but never granted to the web role.",
+  );
+  assert.doesNotMatch(roleReconciler, /werewolf_scrub_account_events\(text, jsonb\)/);
+  assert.equal(
+    (roleReconciler.match(/public\.werewolf_delete_account\(text, text\)/g) ?? []).length,
+    2,
+    "Only the atomic account deletion boundary should be revoked and then granted to the web role.",
+  );
+  assert.match(roleReconciler, /WHERE to_regprocedure\(function_name\) IS NOT NULL/);
+  assert.doesNotMatch(roleReconciler, /WHEN 'game_events' THEN 'SELECT, UPDATE, DELETE'/);
   assert.match(roleReconciler, /SET log_min_duration_statement = -1/);
   assert.match(roleReconciler, /SET log_min_error_statement = PANIC/);
   assert.match(roleReconciler, /\\getenv migrator_password MIGRATOR_DB_PASSWORD/);
@@ -107,6 +130,36 @@ test("production database roles are separated and reconciled on every deployment
     (restore.match(/compose run --rm --no-deps -T postgres-roles/g) ?? []).length,
     2,
   );
+});
+
+test("production Redis uses isolated least-privilege service identities", () => {
+  const compose = read("docker-compose.yml");
+  const entrypoint = read("scripts/redis-entrypoint.sh");
+  const envExample = read(".env.example");
+
+  for (const identity of ["werewolf_web", "werewolf_security", "werewolf_colyseus"]) {
+    assert.match(entrypoint, new RegExp(`user ${identity} on`));
+    assert.match(compose, new RegExp(`redis://${identity}@redis:6379`));
+  }
+  assert.match(entrypoint, /user default off/);
+  assert.match(entrypoint, /werewolf_web[\s\S]*~wm:rate:\*/);
+  assert.match(entrypoint, /werewolf_security[\s\S]*~wm:security:\*/);
+  assert.match(entrypoint, /werewolf_security[^\n]*~wm:health:security:\*/);
+  assert.doesNotMatch(entrypoint, /werewolf_web[^\n]*~\*/);
+  assert.doesNotMatch(entrypoint, /werewolf_security[^\n]*~\*/);
+  assert.doesNotMatch(entrypoint, /werewolf_colyseus[^\n]*~\*/);
+  assert.doesNotMatch(entrypoint, /werewolf_colyseus[^\n]*\+@all/);
+  assert.match(entrypoint, /werewolf_colyseus[^\n]*~roomcaches/);
+  assert.match(entrypoint, /werewolf_colyseus[^\n]*~ch:\*/);
+  assert.match(entrypoint, /werewolf_colyseus[^\n]*&ipc:\*/);
+  for (const secret of [
+    "WEB_REDIS_PASSWORD",
+    "GAME_REDIS_PASSWORD",
+    "COLYSEUS_REDIS_PASSWORD",
+  ]) {
+    assert.match(envExample, new RegExp(`^${secret}=`, "m"));
+    assert.match(compose, new RegExp(`${secret}`));
+  }
 });
 
 test("CI and immutable releases use the production database identities and Better Auth key ring", () => {
@@ -279,6 +332,9 @@ test("database backups are scheduled, verified, retained, and copied off-site", 
   assert.match(service, /^Environment=BACKUP_REQUIRE_FIXED_CONTAINER=1$/m);
   assert.match(service, /^Environment=BACKUP_REQUIRE_ENCRYPTION=1$/m);
   assert.match(service, /^Environment=BACKUP_REQUIRE_SIGNATURE=1$/m);
+  assert.match(service, /^Environment=BACKUP_REQUIRE_ACTIVE_RELEASE=1$/m);
+  assert.match(service, /^Environment=BACKUP_RELEASE_MANIFEST=\/var\/lib\/werewolf\/release-state\/current\.json$/m);
+  assert.match(service, /^Environment=BACKUP_RELEASE_MANIFEST_COMMAND=\/usr\/local\/libexec\/werewolf\/release-manifest\.mjs$/m);
   assert.match(service, /^ExecStart=\/usr\/local\/libexec\/werewolf\/backup-postgres\.sh$/m);
   assert.match(service, /^ExecStartPost=\/usr\/local\/libexec\/werewolf\/check-backup-freshness\.sh$/m);
   assert.match(service, /^ReadWritePaths=\/var\/backups\/werewolf$/m);
@@ -287,6 +343,10 @@ test("database backups are scheduled, verified, retained, and copied off-site", 
   assert.match(backup, /BACKUP_REQUIRE_FIXED_CONTAINER/);
   assert.match(backup, /BACKUP_AGE_RECIPIENT/);
   assert.match(backup, /BACKUP_SIGNING_PRIVATE_KEY_FILE/);
+  assert.match(backup, /BACKUP_RELEASE_MANIFEST_PUBLIC_KEY_FILE/);
+  assert.match(backup, /--signature "\$release_manifest_signature"/);
+  assert.match(backup, /release_version="\$RELEASE_VERSION"/);
+  assert.match(backup, /migration_head="\$MIGRATION_HEAD"/);
   assert.match(backup, /backup_file\.manifest\.json/);
   assert.match(freshness, /BACKUP_SIGNING_PUBLIC_KEY_FILE/);
   assert.match(backupManifest, /ed25519/);
@@ -311,6 +371,7 @@ test("database backups are scheduled, verified, retained, and copied off-site", 
   assert.match(rollback, /RELEASE_STATE_DIR:-\/var\/lib\/werewolf\/release-state/);
   assert.match(runbook, /must not belong to the\s+Docker group/i);
   assert.match(runbook, /\/usr\/local\/libexec\/werewolf\/backup-postgres\.sh/);
+  assert.match(runbook, /\/usr\/local\/libexec\/werewolf\/release-manifest\.mjs/);
   assert.match(runbook, /\/etc\/werewolf\/backup\.env/);
   assert.match(runbook, /root:root and mode `0600`/i);
   assert.match(runbook, /loginctl terminate-user werewolf/);
