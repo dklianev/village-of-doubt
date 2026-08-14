@@ -35,7 +35,7 @@
     "loadtest:heavy": "node scripts/loadtest-heavy.mjs",
     "deploy:drain": "node scripts/deploy-drain.mjs",
     "release:manifest:test": "node --test scripts/release-manifest.test.mjs",
-    "operations:test": "node --test scripts/operations-contract.test.mjs scripts/backup-postgres.behavior.test.mjs scripts/colyseus-sdk-patch.test.mjs",
+    "operations:test": "node --test scripts/operations-contract.test.mjs scripts/backup-postgres.behavior.test.mjs scripts/colyseus-sdk-patch.test.mjs scripts/loadtest-clients.test.mjs scripts/loadtest-metrics.test.mjs",
     "audit:prod": "pnpm audit --prod --audit-level high",
     "test:migrations": "node scripts/test-migrations.mjs",
     "check:migrations": "node --test scripts/check-migration-safety.test.mjs && node scripts/check-migration-safety.mjs",

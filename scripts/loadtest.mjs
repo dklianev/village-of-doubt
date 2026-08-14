@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { findHostClient } from "./loadtest-clients.mjs";
 import { assertLoadThresholds } from "./loadtest-metrics.mjs";
 
 const rootRequire = createRequire(import.meta.url);
@@ -62,7 +63,11 @@ try {
       client.room.send("ready", { ready: true });
     }
     await waitFor(() => group.clients.every(({ room }) => Array.from(room.state?.players?.values?.() ?? []).every((player) => player.ready)), `room ${group.code} to accept readiness`);
-    group.clients[0].room.send("startGame");
+    const hostClient = findHostClient(group.clients);
+    if (!hostClient) {
+      throw new Error(`Room ${group.code} has no synchronized host client.`);
+    }
+    hostClient.room.send("startGame");
   }
   await Promise.all(groups.map(waitForGameStart));
   await delay(HOLD_MS);
