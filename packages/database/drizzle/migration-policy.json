@@ -1,5 +1,12 @@
 {
   "schemaVersion": 1,
   "baselineTag": "0007_cuddly_felicia_hardy",
-  "approvedDestructiveMigrations": {}
+  "approvedDestructiveMigrations": {
+    "0011_account_deletion_boundary": {
+      "mode": "maintenance",
+      "backupRequired": true,
+      "reason": "The migration defines a tightly scoped account-deletion function whose DELETE statements run only when an authenticated user later requests deletion; applying the migration itself does not delete rows.",
+      "rollbackPlan": "Drop the three account-deletion boundary functions and restore the pre-release backup into a new database if the deployed application cannot safely return to the previous account-deletion path."
+    }
+  }
 }

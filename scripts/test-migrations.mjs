@@ -131,6 +131,33 @@ async function verifySchema(databaseUrl) {
       throw new Error(`Липсващи или непълни partial indexes: ${invalidIndexes.join(", ")}`);
     }
 
+    const [accountDeletionFunctions] = await sql`
+      SELECT
+        to_regprocedure('public.werewolf_scrub_account_events(text, jsonb)') IS NULL AS "legacyScrubRemoved",
+        NOT EXISTS (
+          SELECT 1
+          FROM pg_proc AS procedure
+          CROSS JOIN LATERAL aclexplode(
+            COALESCE(procedure.proacl, acldefault('f', procedure.proowner))
+          ) AS privilege
+          WHERE procedure.oid IN (
+            'public.werewolf_prepare_account_deletion(text, text)'::regprocedure,
+            'public.werewolf_scrub_account_events(text)'::regprocedure,
+            'public.werewolf_scrub_account_event_value(jsonb, text, text, text[], boolean, boolean, text[], boolean)'::regprocedure,
+            'public.werewolf_finalize_account_deletion(text, text)'::regprocedure,
+            'public.werewolf_delete_account(text, text)'::regprocedure
+          )
+            AND privilege.grantee = 0
+            AND privilege.privilege_type = 'EXECUTE'
+        ) AS "publicExecuteRevoked"
+    `;
+    if (
+      accountDeletionFunctions?.legacyScrubRemoved !== true
+      || accountDeletionFunctions?.publicExecuteRevoked !== true
+    ) {
+      throw new Error(`Account deletion functions expose an unsafe API: ${JSON.stringify(accountDeletionFunctions)}`);
+    }
+
     await sql`
       INSERT INTO "user" ("id", "name", "email")
       VALUES ('migration-schema-check-user', 'Проверка', 'migration-schema-check@invalid')
@@ -149,6 +176,76 @@ async function verifySchema(databaseUrl) {
         now()
       )
     `;
+
+    const deletedUserId = "account-deletion-schema-check";
+    const anonymousUserId = `deleted_${"a".repeat(32)}`;
+    const deletionGameId = "82222222-2222-2222-2222-222222222222";
+    const deletionEventId = "83333333-3333-3333-3333-333333333333";
+    const sameGameUnrelatedEventId = "87777777-7777-7777-7777-777777777777";
+    const unrelatedUserId = "account-deletion-unrelated";
+    const unrelatedGameId = "84444444-4444-4444-4444-444444444444";
+    const unrelatedEventId = "85555555-5555-5555-5555-555555555555";
+    await sql`
+      INSERT INTO "user" ("id", "name", "email")
+      VALUES
+        (${deletedUserId}, 'Изтриван играч', 'account-deletion-check@invalid'),
+        (${unrelatedUserId}, 'Несвързан играч', 'account-deletion-unrelated@invalid')
+    `;
+    await sql`
+      INSERT INTO "games" ("id", "code", "host_id", "config", "ruleset_version")
+      VALUES
+        (${deletionGameId}, 'DELETEBOUNDARY', ${deletedUserId}, '{}'::jsonb, 'migration-test'),
+        (${unrelatedGameId}, 'UNRELATED', ${unrelatedUserId}, '{}'::jsonb, 'migration-test')
+    `;
+    await sql`
+      INSERT INTO "game_players" ("id", "game_id", "user_id", "display_name", "role")
+      VALUES ('86666666-6666-6666-6666-666666666666', ${deletionGameId}, ${deletedUserId}, 'Изтриван играч', 'villager')
+    `;
+    await sql`
+      INSERT INTO "game_events" ("id", "game_id", "round", "phase", "type", "actor_id", "visibility", "payload")
+      VALUES
+        (${deletionEventId}, ${deletionGameId}, 1, 'night', 'night_action', ${deletedUserId}, 'private', ${JSON.stringify({ userId: deletedUserId, role: "seer" })}::text::jsonb),
+        (${sameGameUnrelatedEventId}, ${deletionGameId}, 1, 'night', 'night_action', ${unrelatedUserId}, 'private', ${JSON.stringify({ userId: unrelatedUserId, role: "werewolf" })}::text::jsonb),
+        (${unrelatedEventId}, ${unrelatedGameId}, 1, 'night', 'night_action', ${unrelatedUserId}, 'private', ${JSON.stringify({ userId: unrelatedUserId })}::text::jsonb)
+    `;
+
+    await sql.begin(async (tx) => {
+      const [deleted] = await tx`
+        SELECT public.werewolf_delete_account(
+          ${deletedUserId},
+          ${anonymousUserId}
+        ) AS "deleted"
+      `;
+      if (deleted?.deleted !== true) {
+        throw new Error(`Atomic account deletion failed: ${JSON.stringify(deleted)}`);
+      }
+    });
+
+    const [deletionState] = await sql`
+      SELECT
+        NOT EXISTS (SELECT 1 FROM "user" WHERE "id" = ${deletedUserId}) AS "originalRemoved",
+        EXISTS (SELECT 1 FROM "user" WHERE "id" = ${anonymousUserId}) AS "anonymousExists",
+        (SELECT "host_id" FROM "games" WHERE "id" = ${deletionGameId}) AS "hostId",
+        (SELECT "user_id" FROM "game_players" WHERE "game_id" = ${deletionGameId}) AS "playerId",
+        (SELECT "actor_id" FROM "game_events" WHERE "id" = ${deletionEventId}) AS "actorId",
+        (SELECT "payload" FROM "game_events" WHERE "id" = ${deletionEventId}) AS "deletionPayload",
+        (SELECT "payload" FROM "game_events" WHERE "id" = ${sameGameUnrelatedEventId}) AS "sameGameUnrelatedPayload",
+        (SELECT "payload"->>'userId' FROM "game_events" WHERE "id" = ${unrelatedEventId}) AS "unrelatedPayloadUserId"
+    `;
+    if (
+      deletionState?.originalRemoved !== true
+      || deletionState?.anonymousExists !== true
+      || deletionState?.hostId !== anonymousUserId
+      || deletionState?.playerId !== anonymousUserId
+      || deletionState?.actorId !== anonymousUserId
+      || deletionState?.deletionPayload?.userId !== anonymousUserId
+      || Object.hasOwn(deletionState?.deletionPayload ?? {}, "role")
+      || deletionState?.sameGameUnrelatedPayload?.userId !== unrelatedUserId
+      || deletionState?.sameGameUnrelatedPayload?.role !== "werewolf"
+      || deletionState?.unrelatedPayloadUserId !== unrelatedUserId
+    ) {
+      throw new Error(`Account deletion boundary produced invalid state: ${JSON.stringify(deletionState)}`);
+    }
   } finally {
     await sql.end();
   }

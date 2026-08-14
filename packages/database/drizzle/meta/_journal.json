@@ -78,6 +78,13 @@
       "when": 1786568017653,
       "tag": "0010_complete_triton",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1786665600000,
+      "tag": "0011_account_deletion_boundary",
+      "breakpoints": true
     }
   ]
 }

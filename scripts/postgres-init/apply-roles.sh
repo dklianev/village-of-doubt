@@ -118,6 +118,27 @@ WHERE namespace.nspname IN ('public', 'drizzle')
 ORDER BY namespace.nspname, type.typname
 \gexec
 
+SELECT format(
+  'ALTER FUNCTION %I.%I(%s) OWNER TO werewolf_migrator',
+  namespace.nspname,
+  procedure.proname,
+  pg_get_function_identity_arguments(procedure.oid)
+)
+FROM pg_proc AS procedure
+JOIN pg_namespace AS namespace ON namespace.oid = procedure.pronamespace
+WHERE namespace.nspname = 'public'
+  AND procedure.prokind IN ('f', 'w')
+  AND procedure.proowner <> (SELECT oid FROM pg_roles WHERE rolname = 'werewolf_migrator')
+  AND NOT EXISTS (
+    SELECT 1
+    FROM pg_depend AS dependency
+    WHERE dependency.classid = 'pg_proc'::regclass
+      AND dependency.objid = procedure.oid
+      AND dependency.deptype = 'e'
+  )
+ORDER BY procedure.proname, pg_get_function_identity_arguments(procedure.oid)
+\gexec
+
 CREATE SCHEMA IF NOT EXISTS werewolf_observability AUTHORIZATION werewolf;
 ALTER SCHEMA werewolf_observability OWNER TO werewolf;
 CREATE EXTENSION IF NOT EXISTS pg_stat_statements WITH SCHEMA werewolf_observability;
@@ -149,6 +170,7 @@ GRANT USAGE ON SCHEMA public TO werewolf_web, werewolf_game;
 
 REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM PUBLIC, werewolf_web, werewolf_game;
 REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public FROM PUBLIC, werewolf_web, werewolf_game;
+REVOKE EXECUTE ON ALL FUNCTIONS IN SCHEMA public FROM PUBLIC, werewolf_web, werewolf_game;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO werewolf_web, werewolf_game;
 
 SELECT format(
@@ -166,11 +188,11 @@ ORDER BY relation.relname
 SELECT format(
   'GRANT %s ON TABLE public.%I TO werewolf_web',
   CASE relation.relname
-    WHEN 'deleted_user_identities' THEN 'SELECT, INSERT'
-    WHEN 'games' THEN 'SELECT, UPDATE'
-    WHEN 'game_players' THEN 'SELECT, UPDATE'
-    WHEN 'game_events' THEN 'SELECT, UPDATE, DELETE'
-    WHEN 'user_achievements' THEN 'SELECT, DELETE'
+    WHEN 'deleted_user_identities' THEN 'SELECT'
+    WHEN 'games' THEN 'SELECT'
+    WHEN 'game_players' THEN 'SELECT'
+    WHEN 'game_events' THEN 'SELECT'
+    WHEN 'user_achievements' THEN 'SELECT'
     WHEN 'game_session_revocations' THEN 'SELECT, INSERT, UPDATE'
   END,
   relation.relname
@@ -188,6 +210,30 @@ WHERE namespace.nspname = 'public'
     'game_session_revocations'
   )
 ORDER BY relation.relname
+\gexec
+
+SELECT format(
+  'REVOKE ALL PRIVILEGES ON FUNCTION %s FROM PUBLIC, werewolf_web, werewolf_game',
+  function_name
+)
+FROM unnest(ARRAY[
+  'public.werewolf_prepare_account_deletion(text, text)',
+  'public.werewolf_scrub_account_event_value(jsonb, text, text, text[], boolean, boolean, text[], boolean)',
+  'public.werewolf_scrub_account_events(text)',
+  'public.werewolf_finalize_account_deletion(text, text)',
+  'public.werewolf_delete_account(text, text)'
+]) AS function_name
+WHERE to_regprocedure(function_name) IS NOT NULL
+\gexec
+
+SELECT format(
+  'GRANT EXECUTE ON FUNCTION %s TO werewolf_web',
+  function_name
+)
+FROM unnest(ARRAY[
+  'public.werewolf_delete_account(text, text)'
+]) AS function_name
+WHERE to_regprocedure(function_name) IS NOT NULL
 \gexec
 
 SELECT format(
@@ -223,6 +269,8 @@ ALTER DEFAULT PRIVILEGES FOR ROLE werewolf_migrator IN SCHEMA public
   REVOKE ALL PRIVILEGES ON TABLES FROM PUBLIC;
 ALTER DEFAULT PRIVILEGES FOR ROLE werewolf_migrator IN SCHEMA public
   REVOKE ALL PRIVILEGES ON SEQUENCES FROM PUBLIC;
+ALTER DEFAULT PRIVILEGES FOR ROLE werewolf_migrator IN SCHEMA public
+  REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;
 
 ALTER ROLE werewolf_migrator IN DATABASE :"database_name"
   SET application_name TO 'werewolf-migrator';

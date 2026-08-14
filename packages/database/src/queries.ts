@@ -155,24 +155,14 @@ export async function deleteUserAccountAtomically(db: Database, userId: string):
   }
 
   return db.transaction(async (tx) => {
-    await lockUserIdentityMutations(tx, [userId]);
-    const existingUser = await tx
-      .select({ id: user.id })
-      .from(user)
-      .where(eq(user.id, userId))
-      .limit(1)
-      .for("update");
-    if (!existingUser[0]) {
-      return false;
-    }
-
-    await anonymizeUserGameHistoryInTransaction(tx, userId);
-    const deleted = await tx.delete(user).where(eq(user.id, userId)).returning({ id: user.id });
-    if (!deleted[0]) {
-      throw new Error("Не успяхме да изтрием потребителското досие.");
-    }
-
-    return true;
+    const proposedAnonymousUserId = `deleted_${randomUUID().replaceAll("-", "")}`;
+    const result = await tx.execute<{ deleted: boolean }>(sql`
+      SELECT public.werewolf_delete_account(
+        ${userId},
+        ${proposedAnonymousUserId}
+      ) AS deleted
+    `);
+    return result[0]?.deleted === true;
   });
 }
 

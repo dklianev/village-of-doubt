@@ -179,24 +179,46 @@ function createIdentityRaceDatabase() {
 
   const transaction = vi.fn(async (operation: (tx: unknown) => Promise<unknown>) => {
     const releases: Array<() => void> = [];
-    const execute = vi.fn(async () => {
-      const previousLock = lockTail;
-      let releaseLock!: () => void;
-      const currentLock = new Promise<void>((resolve) => {
-        releaseLock = resolve;
-      });
-      lockTail = currentLock;
+    const execute = vi.fn(async (statement: unknown) => {
+      const query = new PgDialect().sqlToQuery(
+        statement as Parameters<PgDialect["sqlToQuery"]>[0],
+      );
+      const acquiresIdentityLock = query.sql.includes("werewolf_delete_account")
+        || query.sql.includes("pg_advisory_xact_lock");
+      if (acquiresIdentityLock) {
+        const previousLock = lockTail;
+        let releaseLock!: () => void;
+        const currentLock = new Promise<void>((resolve) => {
+          releaseLock = resolve;
+        });
+        lockTail = currentLock;
 
-      if (previousLock) {
-        secondLockWaiting.resolve();
-        await previousLock;
+        if (previousLock) {
+          secondLockWaiting.resolve();
+          await previousLock;
+        }
+        releases.push(releaseLock);
+        lockCount += 1;
+        if (lockCount === 1) {
+          firstLockAcquired.resolve();
+          await releaseFirstLock.promise;
+        }
       }
-      releases.push(releaseLock);
-      lockCount += 1;
-      if (lockCount === 1) {
-        firstLockAcquired.resolve();
-        await releaseFirstLock.promise;
+
+      if (query.sql.includes("werewolf_delete_account")) {
+        if (!users.has("user-1")) {
+          return [{ deleted: false }];
+        }
+        const proposedAnonymousUserId = String(query.params[1]);
+        if (!tombstones.has("user-1")) {
+          tombstones.set("user-1", proposedAnonymousUserId);
+        }
+        const anonymousUserId = tombstones.get("user-1")!;
+        users.add(anonymousUserId);
+        const deleted = users.delete("user-1");
+        return [{ deleted }];
       }
+      return [];
     });
     const select = vi.fn(() => ({
       from: vi.fn((table: unknown) => ({
@@ -214,10 +236,12 @@ function createIdentityRaceDatabase() {
             };
           }
 
-          const rows = [...tombstones].map(([originalUserId, anonymousUserId]) => ({
-            originalUserId,
-            anonymousUserId,
-          }));
+          const rows = table === deletedUserIdentities
+            ? [...tombstones].map(([originalUserId, anonymousUserId]) => ({
+                originalUserId,
+                anonymousUserId,
+              }))
+            : [];
           const result = Promise.resolve(rows) as Promise<typeof rows> & {
             limit: (limit: number) => Promise<typeof rows>;
           };
@@ -540,10 +564,14 @@ describe("deleteUserAccountAtomically", () => {
           : Promise.resolve();
       }),
     }));
+    const executedQueries: Array<{ sql: string; params: unknown[] }> = [];
     const execute = vi.fn(async (statement: unknown) => {
       const query = new PgDialect().sqlToQuery(statement as Parameters<PgDialect["sqlToQuery"]>[0]);
-      expect(query.sql).toContain("pg_advisory_xact_lock");
-      expect(query.params).toEqual(["user-1"]);
+      executedQueries.push(query);
+      if (query.sql.includes("werewolf_delete_account")) {
+        return [{ deleted: true }];
+      }
+      return [];
     });
     const tx = { execute, select, insert, update, delete: deleteFrom };
     const transaction = vi.fn(async (operation: (transaction: typeof tx) => Promise<boolean>) => operation(tx));
@@ -555,21 +583,13 @@ describe("deleteUserAccountAtomically", () => {
 
     expect(deleted).toBe(true);
     expect(transaction).toHaveBeenCalledOnce();
-    expect(execute).toHaveBeenCalledOnce();
-    expect(insertedTables).toContain(deletedUserIdentities);
-    expect(insertedTables).toContain(user);
-    expect(update).toHaveBeenCalledTimes(5);
-    expect(updates).toContainEqual({
-      table: gamePlayers,
-      values: { loverUserId: "deleted_anon" },
-    });
-    expect(deleteFrom).toHaveBeenCalledWith(userAchievements);
-    expect(deleteFrom).toHaveBeenCalledWith(verification);
-    expect(verificationPredicates).toHaveLength(1);
-    expect(verificationPredicates[0]).toContain('"identifier" = $1');
-    expect(verificationPredicates[0]).toContain('"value" = $2');
-    expect(verificationPredicates[0]?.toLowerCase()).not.toContain("like");
-    expect(deleteFrom).toHaveBeenCalledWith(user);
+    expect(executedQueries.filter((query) => query.sql.includes("werewolf_delete_account"))).toHaveLength(1);
+    expect(executedQueries.some((query) => query.sql.includes("werewolf_prepare_account_deletion"))).toBe(false);
+    expect(executedQueries.some((query) => query.sql.includes("werewolf_finalize_account_deletion"))).toBe(false);
+    expect(insertedTables).toEqual([]);
+    expect(update).not.toHaveBeenCalled();
+    expect(deleteFrom).not.toHaveBeenCalled();
+    expect(verificationPredicates).toEqual([]);
   });
 
   it("не създава анонимна самоличност за несъществуващ user", async () => {
@@ -578,7 +598,7 @@ describe("deleteUserAccountAtomically", () => {
     };
     result.for = vi.fn(async () => []);
     const tx = {
-      execute: vi.fn(async () => undefined),
+      execute: vi.fn(async () => [{ deleted: false }]),
       select: vi.fn(() => ({
         from: vi.fn(() => ({
           where: vi.fn(() => ({ limit: vi.fn(() => result) })),
@@ -594,7 +614,7 @@ describe("deleteUserAccountAtomically", () => {
     expect(tx.insert).not.toHaveBeenCalled();
   });
 
-  it("scrub-ва JSON payload identity и secret-role връзките в същата транзакция", async () => {
+  it("делегира JSON scrub-а на ограничената DB функция без клиентски payload", async () => {
     const eventPayload = {
       assignments: [
         { userId: "user-1", displayName: "Анна", role: "seer" },
@@ -645,11 +665,14 @@ describe("deleteUserAccountAtomically", () => {
     const executedQueries: Array<{ sql: string; params: unknown[] }> = [];
     const tx = {
       execute: vi.fn(async (statement: unknown) => {
-        executedQueries.push(
-          new PgDialect().sqlToQuery(
-            statement as Parameters<PgDialect["sqlToQuery"]>[0],
-          ),
+        const query = new PgDialect().sqlToQuery(
+          statement as Parameters<PgDialect["sqlToQuery"]>[0],
         );
+        executedQueries.push(query);
+        if (query.sql.includes("werewolf_delete_account")) {
+          return [{ deleted: true }];
+        }
+        return [];
       }),
       select,
       insert,
@@ -662,33 +685,19 @@ describe("deleteUserAccountAtomically", () => {
       deleteUserAccountAtomically({ transaction } as unknown as Database, "user-1"),
     ).resolves.toBe(true);
 
-    const payloadBatch = executedQueries.find((query) =>
-      query.sql.includes("UPDATE game_events AS event"),
+    const deleteQuery = executedQueries.find((query) =>
+      query.sql.includes("werewolf_delete_account"),
     );
-    const scrubbedPayload = JSON.parse(
-      String(payloadBatch?.params.find((value) => typeof value === "string" && value.startsWith("{"))),
-    ) as Record<string, unknown>;
-    expect(scrubbedPayload).toMatchObject({
-      assignments: [
-        { userId: "deleted_anon", displayName: "Изтрит играч" },
-        { userId: "user-2", displayName: "Борис", role: "werewolf" },
-      ],
-      lovers: { firstUserId: "deleted_anon", firstName: "Изтрит играч" },
-      note: "Анна изпрати user-1",
-      profileName: "Текуща Анна",
-    });
-    expect(scrubbedPayload).not.toHaveProperty("message");
-    expect(scrubbedPayload).not.toHaveProperty("role");
-    expect((scrubbedPayload as { assignments: Array<Record<string, unknown>> }).assignments[0]).not.toHaveProperty("role");
-    expect(eventPredicates).toHaveLength(1);
-    expect(eventPredicates[0]?.sql.toLowerCase()).not.toContain("like");
-    expect(eventPredicates[0]?.sql).toContain('"game_events"."game_id" in');
-    expect(eventPredicates[0]?.params).toEqual(expect.arrayContaining(["user-1", "game-1", "hosted-game"]));
-    expect(payloadBatch).toBeDefined();
+    expect(deleteQuery?.params[0]).toBe("user-1");
+    expect(deleteQuery?.params[1]).toMatch(/^deleted_[a-f0-9]{32}$/);
+    expect(deleteQuery?.params).toHaveLength(2);
+    expect(deleteQuery?.sql).not.toContain("jsonb");
+    expect(eventPredicates).toHaveLength(0);
+    expect(deleteQuery).toBeDefined();
     expect(transaction).toHaveBeenCalledOnce();
   });
 
-  it("батчва голяма event history без N+1 UPDATE заявки", async () => {
+  it("scrub-ва голяма event history с една DB-owned операция", async () => {
     const events = Array.from({ length: 251 }, (_, index) => ({
       id: `event-${index}`,
       actorId: "user-1",
@@ -721,11 +730,14 @@ describe("deleteUserAccountAtomically", () => {
     const executedQueries: string[] = [];
     const tx = {
       execute: vi.fn(async (statement: unknown) => {
-        executedQueries.push(
-          new PgDialect().sqlToQuery(
-            statement as Parameters<PgDialect["sqlToQuery"]>[0],
-          ).sql,
+        const query = new PgDialect().sqlToQuery(
+          statement as Parameters<PgDialect["sqlToQuery"]>[0],
         );
+        executedQueries.push(query.sql);
+        if (query.sql.includes("werewolf_delete_account")) {
+          return [{ deleted: true }];
+        }
+        return [];
       }),
       select,
       insert,
@@ -744,8 +756,8 @@ describe("deleteUserAccountAtomically", () => {
     ).resolves.toBe(true);
 
     expect(
-      executedQueries.filter((query) => query.includes("UPDATE game_events AS event")),
-    ).toHaveLength(2);
+      executedQueries.filter((query) => query.includes("werewolf_delete_account")),
+    ).toHaveLength(1);
   });
 
   it("не допуска delayed upsert да възкреси user, когато изтриването спечели race-а", async () => {
