@@ -1261,6 +1261,35 @@ describe("GameRoom gameplay regressions", () => {
     await expect(roleMessage).rejects.toThrow("timed out");
   });
 
+  it("removes a departed spectator from an active room without touching players", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "SPECOUT",
+      mode: "mafia_free",
+      playerCount: 4,
+      tempoProfile: "manual",
+      roles: {
+        commissioner: 1,
+        civilian: 2,
+        mafioso: 1,
+      },
+    });
+    const clients = await connectPlayers(colyseus, serverRoom, 4, "spectator-leave");
+    await startGameAndCollectRoles(clients);
+    const spectator = await colyseus.connectTo(serverRoom, {
+      code: serverRoom.state.code,
+      userId: "departed-spectator",
+      displayName: "Тръгнал наблюдател",
+      spectator: true,
+    });
+
+    expect(findPublicPlayer(serverRoom, "departed-spectator")?.playing).toBe(false);
+    spectator.leave();
+    await delay(50);
+
+    expect(findPublicPlayer(serverRoom, "departed-spectator")).toBeUndefined();
+    expect(clients.every(({ userId }) => findPublicPlayer(serverRoom, userId)?.playing)).toBe(true);
+  });
+
   it("keeps the room hostable when a spectator joins before players", async () => {
     const serverRoom = await colyseus.createRoom<GameRoom>("game", {
       code: "SPECFJ",

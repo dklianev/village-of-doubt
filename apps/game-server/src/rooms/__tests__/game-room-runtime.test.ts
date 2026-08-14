@@ -53,6 +53,11 @@ describe("game-room-runtime helpers", () => {
     expect(() => normalizeChatMessage(42)).toThrow("Невалидно съобщение.");
   });
 
+  it("removes invisible control characters before chat reaches other players", () => {
+    expect(normalizeChatMessage("добро\u202eлошо\u2066\u200b\u0000")).toBe("добролошо");
+    expect(normalizeChatMessage("\u202e".repeat(600) + "видимо")).toBe("видимо");
+  });
+
   it("identifies night phases and action target ids", () => {
     expect(isNightPhase("first_night")).toBe(true);
     expect(isNightPhase("day_discussion")).toBe(false);

@@ -34,6 +34,10 @@ export class RoomChatRouter {
 
   constructor(private readonly context: RoomChatRouterContext) {}
 
+  forgetUser(userId: string) {
+    this.messageWindows.delete(userId);
+  }
+
   sendChat(client: Client, channel: string, message: string) {
     const player = this.context.getPublicPlayer(client);
     this.enforceMessageRate(player.userId);

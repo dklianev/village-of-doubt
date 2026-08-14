@@ -545,17 +545,23 @@ export class GameRoom extends Room<{ state: GameState }> {
     }
 
     this.commandRateLimiter.delete(auth.userId);
+    this.chatRouter.forgetUser(auth.userId);
     const playerEntry = this.findPlayerEntryByUserId(auth.userId);
     const player = playerEntry?.[1];
     if (player) {
       player.connected = false;
     }
-    if (player && this.state.phase === "lobby") {
-      this.addPublicEvent(`${player.displayName} напусна стаята.`);
-      this.persistGameEvent("player_left", {
-        actorId: auth.userId,
-        payload: { displayName: player.displayName },
-      });
+    const removeFromRoster = player && (
+      this.state.phase === "lobby" || (!player.playing && !player.narrator)
+    );
+    if (player && removeFromRoster) {
+      if (this.state.phase === "lobby") {
+        this.addPublicEvent(`${player.displayName} напусна стаята.`);
+        this.persistGameEvent("player_left", {
+          actorId: auth.userId,
+          payload: { displayName: player.displayName },
+        });
+      }
       this.state.players.delete(playerEntry[0]);
       this.privatePlayers.delete(auth.userId);
       await PlayerPresenceManager.releaseActiveRoom(auth.userId, this.state.code);

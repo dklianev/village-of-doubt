@@ -67,6 +67,26 @@ function createRouter(mode: GameConfig["mode"] = "werewolves_classic") {
 }
 
 describe("RoomChatRouter", () => {
+  it("forgets departed users from the private rate window", () => {
+    const { router, clients } = createRouter();
+    let now = 0;
+    const nowSpy = vi.spyOn(Date, "now").mockImplementation(() => ++now);
+
+    try {
+      for (let index = 0; index < 8; index++) {
+        router.sendChat(clients.villager as never, "public", `съобщение ${index}`);
+      }
+      expect(() => router.sendChat(clients.villager as never, "public", "още")).toThrow(
+        "Пишеш твърде бързо. Изчакай за момент.",
+      );
+
+      router.forgetUser("villager");
+      expect(() => router.sendChat(clients.villager as never, "public", "след връщане")).not.toThrow();
+    } finally {
+      nowSpy.mockRestore();
+    }
+  });
+
   it("records public chat during day discussion and enforces the FIFO cap", () => {
     const { router, state, clients, persistGameEvent } = createRouter();
     let now = 0;

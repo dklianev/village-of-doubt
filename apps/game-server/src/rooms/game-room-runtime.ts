@@ -180,7 +180,7 @@ export function normalizeChatMessage(message: unknown): string {
   if (typeof message !== "string") {
     throw new Error("Невалидно съобщение.");
   }
-  return message.slice(0, 500);
+  return message.replace(/[\p{Cc}\p{Cf}]/gu, "").slice(0, 500);
 }
 
 export function ensureNightActionAllowed(role: RoleCode, action: NightActionCommand, phase: string): void {
