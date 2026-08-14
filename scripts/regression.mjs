@@ -219,7 +219,9 @@ function checkLandingLayoutContracts() {
 
   assert(landingPage.includes("<ModeChoiceCards"), "Landing page must render the separated game picker component.");
   assert(modeChoiceCards.includes("game-choice-grid"), "Landing mode choice component needs the game picker grid.");
-  assert(modeChoiceCards.includes("authClient.useSession"), "Landing page CTA must react to the auth session.");
+  assert(modeChoiceCards.includes("useAuthSession(initialSession)"), "Landing page CTA must share the lightweight auth session hook.");
+  assert(!modeChoiceCards.includes('@/lib/auth-client'), "Landing cards must not pull Better Auth into the critical route bundle.");
+  assert(modeChoiceCards.includes("prefetch={false}"), "Landing game links must not prefetch multiple route trees before LCP.");
   assert(modeChoiceCards.includes("Влез и играй"), "Signed-out landing CTA must point users to sign-in.");
   assert(modeChoiceCards.includes("Избери игра"), "Signed-in landing CTA must send users to game selection.");
   assert(landingPage.includes("href: \"/werewolf\""), "Landing page must define a Werewolf game entry.");
@@ -958,22 +960,16 @@ function checkProductionEnvChecker() {
   assert(missing.stderr.includes("NEXT_PUBLIC_APP_URL"), "Missing app URL failure should mention NEXT_PUBLIC_APP_URL.");
 
   const missingRedisUrl = validProductionEnv();
-  delete missingRedisUrl.REDIS_URL;
+  delete missingRedisUrl.WEB_REDIS_URL;
   const withoutRedis = runEnvChecker(missingRedisUrl);
-  assert(withoutRedis.status !== 0, "Missing REDIS_URL should fail production env check.");
-  assert(withoutRedis.stderr.includes("REDIS_URL"), "Missing Redis URL failure should mention REDIS_URL.");
+  assert(withoutRedis.status !== 0, "Missing WEB_REDIS_URL should fail production env check.");
+  assert(withoutRedis.stderr.includes("WEB_REDIS_URL"), "Missing Redis URL failure should name the service URL.");
 
   const unauthenticatedRedis = validProductionEnv();
-  delete unauthenticatedRedis.REDIS_PASSWORD;
+  delete unauthenticatedRedis.WEB_REDIS_PASSWORD;
   const withoutRedisAuth = runEnvChecker(unauthenticatedRedis);
   assert(withoutRedisAuth.status !== 0, "Unauthenticated production Redis should fail production env check.");
-  assert(withoutRedisAuth.stderr.includes("REDIS_PASSWORD"), "Redis auth failure should mention REDIS_PASSWORD.");
-
-  const redisSecretFile = validProductionEnv();
-  delete redisSecretFile.REDIS_PASSWORD;
-  redisSecretFile.REDIS_PASSWORD_FILE = "/run/secrets/redis_password";
-  const withRedisSecretFile = runEnvChecker(redisSecretFile);
-  assert(withRedisSecretFile.status === 0, "A production Redis password file should satisfy the auth guard.");
+  assert(withoutRedisAuth.stderr.includes("WEB_REDIS_PASSWORD"), "Redis auth failure should name the service secret.");
 
   const serverOnlySentry = validProductionEnv();
   delete serverOnlySentry.NEXT_PUBLIC_SENTRY_DSN;
@@ -1017,6 +1013,11 @@ function checkScriptWiring() {
     "package.json must expose cross-browser frontend QA.",
   );
   assert(packageJson.scripts.lighthouse === "node scripts/lighthouse.mjs", "package.json must expose Lighthouse QA.");
+  assert(smoke.includes("COLYSEUS_REDIS_URL"), "Smoke tests must supply the production Colyseus Redis dependency.");
+  assert(
+    readText("scripts/frontend-e2e.mjs").includes("authenticated local Redis"),
+    "Frontend E2E must exercise the production authenticated Redis boundary.",
+  );
   assert(packageJson.scripts["loadtest:launch"] === "node scripts/loadtest-launch.mjs", "package.json must expose the launch load profile.");
   assert(packageJson.scripts["loadtest:heavy"] === "node scripts/loadtest-heavy.mjs", "package.json must expose the stress load profile.");
   assert(packageJson.scripts["verify:assets"].includes("node scripts/verify-optimized-assets.mjs"), "package.json must expose the optimized asset drift guard.");
@@ -1116,7 +1117,16 @@ function checkScriptWiring() {
     ciWorkflow.includes("REDIS_URL: redis://default:ci-redis-password-that-is-long-enough@localhost:6379"),
     "CI verify must connect smoke tests to authenticated Redis.",
   );
-  assert(ciWorkflow.includes("REDIS_PASSWORD:"), "CI container verification must provide the Redis Docker secret.");
+  assert(
+    count(
+      ciWorkflow,
+      "COLYSEUS_REDIS_URL: redis://default:ci-redis-password-that-is-long-enough@localhost:6379",
+    ) >= 2,
+    "CI verify build and runtime gates must connect to authenticated Colyseus Redis.",
+  );
+  assert(ciWorkflow.includes("WEB_REDIS_PASSWORD:"), "CI container verification must provide the web Redis secret.");
+  assert(ciWorkflow.includes("GAME_REDIS_PASSWORD:"), "CI container verification must provide the game Redis secret.");
+  assert(ciWorkflow.includes("COLYSEUS_REDIS_PASSWORD:"), "CI container verification must provide the Colyseus Redis secret.");
   assert(gameConfig.includes("RedisPresence"), "Production game-server scaling must configure RedisPresence.");
   assert(gameConfig.includes("RedisDriver"), "Production game-server scaling must configure RedisDriver.");
   assert(
@@ -1141,7 +1151,7 @@ function checkScriptWiring() {
   assert(compose.includes("--appendonly"), "Production Redis must enable AOF persistence.");
   assert(/^\s+- --maxmemory\s*$/m.test(compose), "Production Redis must enforce an application memory ceiling.");
   assert(compose.includes("mem_limit:"), "Production Redis must have a container memory ceiling above maxmemory.");
-  assert(compose.includes("redis_password"), "Production Redis credentials must use a Docker secret.");
+  assert(compose.includes("web_redis_password"), "Production Redis credentials must use separate Docker secrets.");
   assert(compose.includes("REDIS_PASSWORD_FILE"), "Redis clients must receive the credential through a secret file.");
   assert(!/redis:[\s\S]*?ports:/m.test(compose), "Production Redis must not publish a host port.");
   assert(readText("apps/game-server/Dockerfile.dockerignore").split(/\r?\n/).includes("apps/web"), "Game image context must exclude the web app and its large art assets.");
@@ -1360,8 +1370,12 @@ function validProductionEnv() {
       "postgres://werewolf_web:prod-web-password-000000000000000000@postgres:5432/werewolf?application_name=werewolf-web",
     GAME_DATABASE_URL:
       "postgres://werewolf_game:prod-game-password-00000000000000000@postgres:5432/werewolf?application_name=werewolf-game",
-    REDIS_URL: "redis://redis:6379",
-    REDIS_PASSWORD: "prod-redis-password-00000000000000000000",
+    WEB_REDIS_URL: "redis://werewolf_web@redis:6379",
+    GAME_REDIS_URL: "redis://werewolf_security@redis:6379",
+    COLYSEUS_REDIS_URL: "redis://werewolf_colyseus@redis:6379",
+    WEB_REDIS_PASSWORD: "prod-web-redis-password-0000000000000000",
+    GAME_REDIS_PASSWORD: "prod-game-redis-password-000000000000000",
+    COLYSEUS_REDIS_PASSWORD: "prod-colyseus-redis-password-0000000000",
     BETTER_AUTH_SECRET: "prod-better-auth-secret-000000000000000000",
     BETTER_AUTH_SECRETS:
       "2:prod-current-auth-secret-000000000000000000,1:prod-previous-auth-secret-0000000000000000",

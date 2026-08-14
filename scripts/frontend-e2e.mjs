@@ -515,6 +515,9 @@ function assertLocalTestRedis(value) {
   if (!["redis:", "rediss:"].includes(parsed.protocol) || !localHosts.has(parsed.hostname)) {
     throw new Error("Frontend E2E refuses non-local Redis instances.");
   }
+  if (!parsed.password) {
+    throw new Error("Frontend E2E requires an authenticated local Redis instance.");
+  }
 }
 
 async function newPage(label, viewport, identity) {

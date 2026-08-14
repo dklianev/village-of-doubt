@@ -23,7 +23,10 @@ import {
 import { ROOM_CODE_REGEX, normalizeRoomCodeInput, type JoinRoomOptions } from "@werewolf/shared";
 
 const redisUrl = resolveGameServerRedisUrl(process.env);
-const redisRuntime = redisUrl ? await createRedisScaling(redisUrl) : undefined;
+const colyseusRedisUrl = resolveColyseusRedisUrl(process.env);
+const redisRuntime = redisUrl && colyseusRedisUrl
+  ? await createRedisScaling(redisUrl, colyseusRedisUrl)
+  : undefined;
 const redisScaling = redisRuntime
   ? {
       driver: redisRuntime.driver,
@@ -36,6 +39,8 @@ interface GameServerRedisEnvironment {
   NODE_ENV?: string;
   REDIS_URL?: string;
   REDIS_PASSWORD_FILE?: string;
+  COLYSEUS_REDIS_URL?: string;
+  COLYSEUS_REDIS_PASSWORD_FILE?: string;
 }
 
 export function resolveGameServerRedisUrl(environment: GameServerRedisEnvironment) {
@@ -50,6 +55,23 @@ export function resolveGameServerRedisUrl(environment: GameServerRedisEnvironmen
     throw new Error("Production Redis изисква автентикация.");
   }
   return resolveRedisUrl(environment.REDIS_URL, environment.REDIS_PASSWORD_FILE);
+}
+
+export function resolveColyseusRedisUrl(environment: GameServerRedisEnvironment) {
+  if (environment.NODE_ENV !== "production") {
+    return undefined;
+  }
+  if (!environment.COLYSEUS_REDIS_URL) {
+    throw new Error("COLYSEUS_REDIS_URL е задължителен за production game-server.");
+  }
+  const parsedUrl = new URL(environment.COLYSEUS_REDIS_URL);
+  if (!parsedUrl.password && !environment.COLYSEUS_REDIS_PASSWORD_FILE) {
+    throw new Error("Production Colyseus Redis изисква автентикация.");
+  }
+  return resolveRedisUrl(
+    environment.COLYSEUS_REDIS_URL,
+    environment.COLYSEUS_REDIS_PASSWORD_FILE,
+  );
 }
 
 export default defineConfig({
@@ -133,12 +155,12 @@ export function createInternalRoomPreviewHandler(
   };
 }
 
-async function createRedisScaling(redisUrl: string) {
+async function createRedisScaling(securityRedisUrl: string, colyseusRedisUrl: string) {
   const [{ RedisDriver }, { RedisPresence }] = await Promise.all([
     import("@colyseus/redis-driver"),
     import("@colyseus/redis-presence"),
   ]);
-  const securityClient = await connectSecurityRedisClient(redisUrl);
+  const securityClient = await connectSecurityRedisClient(securityRedisUrl);
   const revocationSubscriber = securityClient.duplicate();
   await revocationSubscriber.connect();
   await revocationSubscriber.subscribe(GAME_SESSION_REVOCATION_CHANNEL, (message) => {
@@ -164,8 +186,8 @@ async function createRedisScaling(redisUrl: string) {
   );
 
   return {
-    driver: new RedisDriver(redisUrl),
-    presence: new RedisPresence(redisUrl),
+    driver: new RedisDriver(colyseusRedisUrl),
+    presence: new RedisPresence(colyseusRedisUrl),
     securityClient,
     revocationSubscriber,
     revocationReconcileTimer,

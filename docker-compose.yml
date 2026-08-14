@@ -121,8 +121,8 @@ services:
       DATABASE_MAINTENANCE_BATCH_SIZE: ${DATABASE_MAINTENANCE_BATCH_SIZE:-1000}
       DATABASE_STALE_LOBBY_HOURS: ${DATABASE_STALE_LOBBY_HOURS:-48}
       DATABASE_EVENT_RETENTION_DAYS: ${DATABASE_EVENT_RETENTION_DAYS:-730}
-      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
-      REDIS_PASSWORD_FILE: /run/secrets/redis_password
+      REDIS_URL: ${WEB_REDIS_URL:-redis://werewolf_web@redis:6379}
+      REDIS_PASSWORD_FILE: /run/secrets/web_redis_password
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-}
       BETTER_AUTH_SECRETS: ${BETTER_AUTH_SECRETS:?Set BETTER_AUTH_SECRETS newest-first}
       BETTER_AUTH_LEGACY_TOKENS_RETIRED: ${BETTER_AUTH_LEGACY_TOKENS_RETIRED:-false}
@@ -143,7 +143,7 @@ services:
       RELEASE_VERSION: ${RELEASE_VERSION:?Set RELEASE_VERSION to an immutable release identifier}
       STATUS_CACHE_TTL_MS: ${STATUS_CACHE_TTL_MS:-20000}
     secrets:
-      - redis_password
+      - web_redis_password
     depends_on:
       postgres-grants:
         condition: service_completed_successfully
@@ -180,8 +180,10 @@ services:
       DATABASE_POOL_MAX: ${DATABASE_POOL_MAX:-8}
       DATABASE_LOCK_TIMEOUT_MS: ${DATABASE_LOCK_TIMEOUT_MS:-3000}
       DATABASE_IDLE_TRANSACTION_TIMEOUT_MS: ${DATABASE_IDLE_TRANSACTION_TIMEOUT_MS:-10000}
-      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
-      REDIS_PASSWORD_FILE: /run/secrets/redis_password
+      REDIS_URL: ${GAME_REDIS_URL:-redis://werewolf_security@redis:6379}
+      REDIS_PASSWORD_FILE: /run/secrets/game_redis_password
+      COLYSEUS_REDIS_URL: ${COLYSEUS_REDIS_URL:-redis://werewolf_colyseus@redis:6379}
+      COLYSEUS_REDIS_PASSWORD_FILE: /run/secrets/colyseus_redis_password
       COLYSEUS_PUBLIC_ADDRESS: ${COLYSEUS_PUBLIC_ADDRESS:-}
       GAME_TOKEN_SECRET: ${GAME_TOKEN_SECRET:?Set GAME_TOKEN_SECRET}
       GAME_SERVER_PORT: 2567
@@ -193,7 +195,8 @@ services:
       RELEASE_VERSION: ${RELEASE_VERSION:?Set RELEASE_VERSION to an immutable release identifier}
       GAME_DRAIN_TIMEOUT_MS: ${GAME_DRAIN_TIMEOUT_MS:-120000}
     secrets:
-      - redis_password
+      - game_redis_password
+      - colyseus_redis_password
     depends_on:
       postgres-grants:
         condition: service_completed_successfully
@@ -301,9 +304,13 @@ services:
       - --maxmemory-policy
       - noeviction
     environment:
-      REDIS_PASSWORD_FILE: /run/secrets/redis_password
+      WEB_REDIS_PASSWORD_FILE: /run/secrets/web_redis_password
+      GAME_REDIS_PASSWORD_FILE: /run/secrets/game_redis_password
+      COLYSEUS_REDIS_PASSWORD_FILE: /run/secrets/colyseus_redis_password
     secrets:
-      - redis_password
+      - web_redis_password
+      - game_redis_password
+      - colyseus_redis_password
     volumes:
       - redis_data:/data
       - ./scripts/redis-entrypoint.sh:/opt/werewolf/redis-entrypoint.sh:ro
@@ -322,7 +329,7 @@ services:
     cpus: ${REDIS_CONTAINER_CPUS:-0.25}
     pids_limit: 128
     healthcheck:
-      test: ["CMD-SHELL", "REDISCLI_AUTH=\"$$(cat /run/secrets/redis_password)\" redis-cli ping | grep -q PONG"]
+      test: ["CMD-SHELL", "redis-cli --user werewolf_security --pass \"$$(cat /run/secrets/game_redis_password)\" --no-auth-warning ping | grep -q PONG"]
       interval: 5s
       timeout: 3s
       retries: 12
@@ -344,5 +351,9 @@ secrets:
     environment: BETTER_AUTH_SECRETS
   game_token_secret:
     environment: GAME_TOKEN_SECRET
-  redis_password:
-    environment: REDIS_PASSWORD
+  web_redis_password:
+    environment: WEB_REDIS_PASSWORD
+  game_redis_password:
+    environment: GAME_REDIS_PASSWORD
+  colyseus_redis_password:
+    environment: COLYSEUS_REDIS_PASSWORD

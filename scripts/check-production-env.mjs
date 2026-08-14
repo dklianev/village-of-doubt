@@ -8,7 +8,9 @@ const required = [
   "MIGRATOR_DB_PASSWORD",
   "WEB_DB_PASSWORD",
   "GAME_DB_PASSWORD",
-  "REDIS_URL",
+  "WEB_REDIS_URL",
+  "GAME_REDIS_URL",
+  "COLYSEUS_REDIS_URL",
   "BETTER_AUTH_SECRETS",
   "GAME_TOKEN_SECRET",
   "BETTER_AUTH_URL",
@@ -50,7 +52,9 @@ if (process.env.BETTER_AUTH_SECRET) {
 }
 checkBetterAuthSecrets();
 checkSecret("GAME_TOKEN_SECRET");
-checkSecret("REDIS_PASSWORD");
+checkSecret("WEB_REDIS_PASSWORD");
+checkSecret("GAME_REDIS_PASSWORD");
+checkSecret("COLYSEUS_REDIS_PASSWORD");
 checkSecret("DB_PASSWORD");
 checkSecret("MIGRATOR_DB_PASSWORD");
 checkSecret("WEB_DB_PASSWORD");
@@ -68,18 +72,39 @@ if (process.env.NEXT_PUBLIC_APP_URL && !process.env.NEXT_PUBLIC_APP_URL.startsWi
   errors.push("NEXT_PUBLIC_APP_URL трябва да е HTTPS в production.");
 }
 
-if (process.env.REDIS_URL) {
+const redisConfigurations = [
+  ["WEB_REDIS_URL", "WEB_REDIS_PASSWORD", "werewolf_web"],
+  ["GAME_REDIS_URL", "GAME_REDIS_PASSWORD", "werewolf_security"],
+  ["COLYSEUS_REDIS_URL", "COLYSEUS_REDIS_PASSWORD", "werewolf_colyseus"],
+];
+for (const [urlKey, passwordKey, expectedUsername] of redisConfigurations) {
+  const value = process.env[urlKey];
+  if (!value) {
+    continue;
+  }
   try {
-    const redisUrl = new URL(process.env.REDIS_URL);
+    const redisUrl = new URL(value);
     if (redisUrl.protocol !== "redis:" && redisUrl.protocol !== "rediss:") {
-      errors.push("REDIS_URL трябва да използва redis:// или rediss://.");
+      errors.push(`${urlKey} трябва да използва redis:// или rediss://.`);
     }
-    if (!redisUrl.password && !process.env.REDIS_PASSWORD && !process.env.REDIS_PASSWORD_FILE) {
-      errors.push("REDIS_PASSWORD или REDIS_PASSWORD_FILE е задължителен за production Redis.");
+    if (decodeURIComponent(redisUrl.username) !== expectedUsername) {
+      errors.push(`${urlKey} трябва да използва Redis ACL user ${expectedUsername}.`);
+    }
+    if (!redisUrl.password && !process.env[passwordKey]) {
+      errors.push(`${passwordKey} е задължителен за production Redis.`);
     }
   } catch {
-    errors.push("REDIS_URL не е валиден URL.");
+    errors.push(`${urlKey} не е валиден URL.`);
   }
+}
+
+const redisPasswords = [
+  process.env.WEB_REDIS_PASSWORD,
+  process.env.GAME_REDIS_PASSWORD,
+  process.env.COLYSEUS_REDIS_PASSWORD,
+].filter(Boolean);
+if (new Set(redisPasswords).size !== redisPasswords.length) {
+  errors.push("Production Redis ролите трябва да използват различни пароли.");
 }
 
 if (process.env.ALLOW_DEV_AUTH === "true") {

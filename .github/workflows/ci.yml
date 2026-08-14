@@ -87,6 +87,7 @@ jobs:
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/werewolf_test
           REDIS_URL: redis://default:ci-redis-password-that-is-long-enough@localhost:6379
+          COLYSEUS_REDIS_URL: redis://default:ci-redis-password-that-is-long-enough@localhost:6379
           BETTER_AUTH_SECRETS: 2:ci-current-better-auth-key-00000000001,1:ci-previous-better-auth-key-000000001
           BETTER_AUTH_LEGACY_TOKENS_RETIRED: "true"
           GAME_TOKEN_SECRET: ci-only-secret-that-is-long-enough-32-chars-min
@@ -105,6 +106,7 @@ jobs:
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/werewolf_test
           REDIS_URL: redis://default:ci-redis-password-that-is-long-enough@localhost:6379
+          COLYSEUS_REDIS_URL: redis://default:ci-redis-password-that-is-long-enough@localhost:6379
           BETTER_AUTH_SECRET: ci-only-secret-that-is-long-enough-32-chars-min
           GAME_TOKEN_SECRET: ci-only-secret-that-is-long-enough-32-chars-min
           BETTER_AUTH_URL: https://werewolf.example.com
@@ -198,11 +200,15 @@ jobs:
       MIGRATION_DATABASE_URL: postgres://werewolf_migrator:ci-postgres-migrator-password-0001@postgres:5432/werewolf?application_name=werewolf-migrator
       WEB_DATABASE_URL: postgres://werewolf_web:ci-postgres-web-password-0000000001@postgres:5432/werewolf?application_name=werewolf-web
       GAME_DATABASE_URL: postgres://werewolf_game:ci-postgres-game-password-00000001@postgres:5432/werewolf?application_name=werewolf-game
-      REDIS_URL: redis://redis:6379
+      WEB_REDIS_URL: redis://werewolf_web@redis:6379
+      GAME_REDIS_URL: redis://werewolf_security@redis:6379
+      COLYSEUS_REDIS_URL: redis://werewolf_colyseus@redis:6379
       BETTER_AUTH_SECRET: ci-legacy-better-auth-secret-000000000001
       BETTER_AUTH_SECRETS: 2:ci-current-better-auth-key-00000000001,1:ci-previous-better-auth-key-000000001
       GAME_TOKEN_SECRET: ci-game-token-secret-that-is-long-enough
-      REDIS_PASSWORD: ci-redis-password-that-is-long-enough-32-chars
+      WEB_REDIS_PASSWORD: ci-web-redis-password-that-is-long-enough-32
+      GAME_REDIS_PASSWORD: ci-game-redis-password-that-is-long-enough-32
+      COLYSEUS_REDIS_PASSWORD: ci-colyseus-redis-password-that-is-long-enough
       BETTER_AUTH_URL: https://werewolf.example.com
       NEXT_PUBLIC_APP_URL: https://werewolf.example.com
       PUBLIC_WEB_DOMAIN: werewolf.example.com

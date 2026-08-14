@@ -11,6 +11,11 @@ async function main() {
   if (!process.env.REDIS_URL) {
     throw new Error("Smoke test requires REDIS_URL because production rate limits fail closed.");
   }
+  if (!process.env.COLYSEUS_REDIS_URL) {
+    throw new Error(
+      "Smoke test requires COLYSEUS_REDIS_URL because production room discovery is distributed.",
+    );
+  }
 
   const game = start("game-server", process.execPath, ["apps/game-server/dist/index.js"], {
     GAME_SERVER_PORT: "3567",

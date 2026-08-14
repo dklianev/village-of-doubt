@@ -5,6 +5,7 @@ import {
   createLocalStatsHandler,
   createReadinessHandler,
   probeSecurityRedisReady,
+  resolveColyseusRedisUrl,
   resolveGameServerCorsOrigin,
   resolveGameServerRedisUrl,
 } from "./app.config.js";
@@ -41,6 +42,14 @@ describe("game-server Redis startup guard", () => {
       REDIS_URL: "rediss://default:secret@redis.example.com:6380",
       REDIS_PASSWORD_FILE: undefined,
     })).toBe("rediss://default:secret@redis.example.com:6380");
+  });
+
+  it("keeps the Colyseus transport credential separate from the security store", () => {
+    expect(resolveColyseusRedisUrl({
+      NODE_ENV: "production",
+      COLYSEUS_REDIS_URL: "redis://werewolf_colyseus:secret@redis:6379",
+      COLYSEUS_REDIS_PASSWORD_FILE: undefined,
+    })).toContain("werewolf_colyseus");
   });
 
   it("keeps Redis optional outside production", () => {
