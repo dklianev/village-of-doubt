@@ -46,10 +46,18 @@ describe("NonCriticalWidgets", () => {
     vi.useRealTimers();
   });
 
-  it("показва welcome modal след client session refresh при статичен root layout", () => {
+  it("изчаква критичния render прозорец преди да монтира динамичните widgets", () => {
     render(<NonCriticalWidgets initialSession={null} />);
 
     act(() => {
+      vi.advanceTimersByTime(1_499);
+    });
+
+    expect(useAuthSession).not.toHaveBeenCalled();
+    expect(screen.queryByTestId("dynamic-widget")).not.toBeInTheDocument();
+
+    act(() => {
+      vi.advanceTimersByTime(1);
       vi.runOnlyPendingTimers();
     });
 

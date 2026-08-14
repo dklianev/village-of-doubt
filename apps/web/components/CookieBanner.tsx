@@ -27,7 +27,7 @@ export function CookieBanner() {
     <div className={styles.banner} role="dialog" aria-label="Бисквитки" data-cookie-banner>
       <p>
         Използваме само необходими бисквитки за вход и сесия. Прочети{" "}
-        <Link href="/privacy">политиката за поверителност</Link>.
+        <Link href="/privacy" prefetch={false}>политиката за поверителност</Link>.
       </p>
       <button type="button" className="btn btn-primary" onClick={accept}>
         Разбрах

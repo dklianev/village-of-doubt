@@ -4,7 +4,6 @@ import Link from "next/link";
 import { ArrowRight, ChevronDown, History, LogOut, Trophy, User, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { authClient } from "@/lib/auth-client";
 import { ProfilePortrait } from "@/components/ProfilePortrait";
 import { avatarIdForUser } from "@/lib/avatar-catalog";
 import { useAuthSession, type AuthSessionView } from "@/lib/use-auth-session";
@@ -72,6 +71,7 @@ export function AuthChip({ initialSession }: { initialSession: AuthSessionView |
 
   async function confirmLogout() {
     setSigningOut(true);
+    const { authClient } = await import("@/lib/auth-client");
     await authClient.signOut();
     window.dispatchEvent(new Event("auth-session-change"));
     setConfirmSignOut(false);

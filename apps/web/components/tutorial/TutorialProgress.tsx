@@ -40,7 +40,7 @@ export function TutorialProgress({ current, total, onJump }: TutorialProgressPro
         })}
       </div>
 
-      <Link href="/" className="tutorial-skip-link">
+      <Link href="/" prefetch={false} className="tutorial-skip-link">
         <span>Прескочи</span>
         <ChevronRight className="tutorial-skip-icon" aria-hidden strokeWidth={2} />
       </Link>

@@ -204,13 +204,13 @@ export function GameRulesPage({ family }: { family: GameFamily }) {
           <h1>{rules.titleBg}</h1>
           <p>{rules.introBg}</p>
           <div className="rules-hero-actions">
-            <Link className="btn btn-primary" href={isMafia ? "/mafia/create" : "/werewolf/create"}>
+            <Link className="btn btn-primary" href={isMafia ? "/mafia/create" : "/werewolf/create"} prefetch={false}>
               Създай игра
             </Link>
-            <Link className="rules-ghost-link" href={isMafia ? "/werewolf/rules" : "/mafia/rules"}>
+            <Link className="rules-ghost-link" href={isMafia ? "/werewolf/rules" : "/mafia/rules"} prefetch={false}>
               {isMafia ? "Правила за Върколак" : "Правила за Мафия"}
             </Link>
-            <Link className="rules-ghost-link" href={isMafia ? "/mafia/roles" : "/werewolf/roles"}>
+            <Link className="rules-ghost-link" href={isMafia ? "/mafia/roles" : "/werewolf/roles"} prefetch={false}>
               Виж ролите
             </Link>
           </div>

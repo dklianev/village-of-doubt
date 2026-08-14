@@ -170,7 +170,7 @@ export function TutorialFlipbook() {
           <strong>{SCENE_LABELS[current - 1]}</strong>
           <span>Сцена {current} от {TOTAL_SLIDES}</span>
         </span>
-        <Link href={continueHref} className="btn btn-secondary tutorial-play-link">
+        <Link href={continueHref} prefetch={false} className="btn btn-secondary tutorial-play-link">
           Продължи към игра
         </Link>
         <button

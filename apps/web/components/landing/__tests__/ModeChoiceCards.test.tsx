@@ -4,12 +4,18 @@ import { ModeChoiceCards, type ModeChoiceGame } from "@/components/landing/ModeC
 
 const { useSession } = vi.hoisted(() => ({ useSession: vi.fn() }));
 
-vi.mock("@/lib/auth-client", () => ({
-  authClient: { useSession },
+vi.mock("@/lib/use-auth-session", () => ({
+  useAuthSession: useSession,
 }));
 
 vi.mock("@/components/landing/LastFamilyPill", () => ({
   LastFamilyPill: () => null,
+}));
+
+vi.mock("next/link", () => ({
+  default: ({ prefetch, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { prefetch?: boolean }) => (
+    <a data-prefetch={String(prefetch)} {...props} />
+  ),
 }));
 
 const games = [
@@ -51,7 +57,7 @@ describe("ModeChoiceCards", () => {
     );
   });
 
-  it("прави първото игрово изображение discoverable и приоритетно за mobile LCP", () => {
+  it("прави първото игрово изображение discoverable, без да блокира main thread при decode", () => {
     useSession.mockReturnValue({ data: null, isPending: false });
 
     const { container } = render(<ModeChoiceCards games={games} initialSession={null} />);
@@ -60,7 +66,17 @@ describe("ModeChoiceCards", () => {
 
     expect(image).toHaveAttribute("fetchpriority", "high");
     expect(image).toHaveAttribute("loading", "eager");
-    expect(image).toHaveAttribute("decoding", "sync");
+    expect(image).toHaveAttribute("decoding", "async");
     expect(mobileSource).toHaveAttribute("srcset", "/game-art/mobile/bg-lobby-tavern.webp");
+  });
+
+  it("не prefetch-ва шест тежки route дървета от първия екран", () => {
+    useSession.mockReturnValue({ data: null, isPending: false });
+
+    render(<ModeChoiceCards games={games} initialSession={null} />);
+
+    for (const link of screen.getAllByRole("link")) {
+      expect(link).toHaveAttribute("data-prefetch", "false");
+    }
   });
 });

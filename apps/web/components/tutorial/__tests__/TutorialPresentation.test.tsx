@@ -5,6 +5,9 @@ import { describe, expect, it } from "vitest";
 const tutorialCss = readFileSync(resolve(process.cwd(), "components/tutorial/Tutorial.module.css"), "utf8");
 const globalsCss = readFileSync(resolve(process.cwd(), "app/globals.css"), "utf8");
 const clueChipsSource = readFileSync(resolve(process.cwd(), "components/tutorial/DayClueChips.tsx"), "utf8");
+const flipbookSource = readFileSync(resolve(process.cwd(), "components/tutorial/TutorialFlipbook.tsx"), "utf8");
+const progressSource = readFileSync(resolve(process.cwd(), "components/tutorial/TutorialProgress.tsx"), "utf8");
+const finalSlideSource = readFileSync(resolve(process.cwd(), "components/tutorial/SlideFinal.tsx"), "utf8");
 
 describe("tutorial presentation contract", () => {
   it("resolves the cinematic hero through theme-specific tutorial art tokens", () => {
@@ -35,6 +38,12 @@ describe("tutorial presentation contract", () => {
 
     expect(lightHintRule?.[1]).toBeDefined();
     expect(contrastRatio(lightHintRule?.[1] ?? "#ffffff", "#fcf6ec")).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("does not prefetch hidden destination trees before the reader chooses to leave", () => {
+    expect(flipbookSource).toContain('prefetch={false}');
+    expect(progressSource).toContain('prefetch={false}');
+    expect(finalSlideSource.match(/prefetch=\{false\}/g)).toHaveLength(5);
   });
 });
 

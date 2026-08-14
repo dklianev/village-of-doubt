@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { authClient } from "@/lib/auth-client";
 import { LastFamilyPill } from "@/components/landing/LastFamilyPill";
+import { useAuthSession } from "@/lib/use-auth-session";
 
 type LastFamily = "werewolves" | "mafia";
 type LandingSession = { user: { id: string; name?: string | null } } | null;
@@ -31,7 +31,7 @@ const GAME_CHOICE_ART = {
 } as const;
 
 export function ModeChoiceCards({ games, initialSession }: { games: readonly ModeChoiceGame[]; initialSession: LandingSession }) {
-  const sessionQuery = authClient.useSession();
+  const sessionQuery = useAuthSession(initialSession);
   const session = sessionQuery.data ?? initialSession;
   const sessionPending = sessionQuery.isPending && !initialSession;
 
@@ -64,7 +64,7 @@ export function ModeChoiceCards({ games, initialSession }: { games: readonly Mod
                 height="1000"
                 loading={prioritizeArt ? "eager" : "lazy"}
                 fetchPriority={prioritizeArt ? "high" : "low"}
-                decoding={prioritizeArt ? "sync" : "async"}
+                decoding="async"
               />
             </picture>
             <LastFamilyPill family={game.family} />
@@ -73,13 +73,13 @@ export function ModeChoiceCards({ games, initialSession }: { games: readonly Mod
             <blockquote>{game.line}</blockquote>
             <p>{game.description}</p>
             <div className="game-choice-actions">
-              <Link href={primaryHref} className="btn btn-primary" aria-busy={sessionPending || undefined}>
+              <Link href={primaryHref} prefetch={false} className="btn btn-primary" aria-busy={sessionPending || undefined}>
                 {sessionPending ? "Играй" : session ? "Избери игра" : "Влез и играй"}
               </Link>
-              <Link href={`${game.href}/roles`} className="btn btn-secondary">
+              <Link href={`${game.href}/roles`} prefetch={false} className="btn btn-secondary">
                 Роли
               </Link>
-              <Link href={`${game.href}/rules`} className="btn btn-secondary">
+              <Link href={`${game.href}/rules`} prefetch={false} className="btn btn-secondary">
                 Правила
               </Link>
             </div>

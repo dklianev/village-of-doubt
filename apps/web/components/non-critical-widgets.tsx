@@ -32,31 +32,56 @@ type WidgetMountState = {
   welcome: boolean;
 };
 
-const EMPTY_WIDGETS: WidgetMountState = {
-  cookie: false,
-  feedback: false,
-  welcome: false,
-};
-
 export function NonCriticalWidgets({ initialSession }: { initialSession: AuthSessionView | null }) {
   const pathname = usePathname();
-  const { data: session } = useAuthSession(initialSession);
-  const [mount, setMount] = useState<WidgetMountState>(EMPTY_WIDGETS);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const id = window.setTimeout(() => {
-      setMount({
-        cookie: !safeLocalStorage.getItem(COOKIE_STORAGE_KEY),
-        feedback: shouldMountFeedback(pathname, Boolean(session?.user?.id)),
-        welcome:
-          Boolean(session?.user?.id) &&
-          !safeLocalStorage.getItem(WELCOME_STORAGE_KEY) &&
-          !safeLocalStorage.getItem(TUTORIAL_STORAGE_KEY),
-      });
-    }, 0);
+    const reveal = () => setReady(true);
+    const schedule = () => {
+      if (typeof window.requestIdleCallback === "function") {
+        const idleId = window.requestIdleCallback(reveal, { timeout: 1_500 });
+        return () => window.cancelIdleCallback(idleId);
+      }
+      const timeoutId = window.setTimeout(reveal, 1_500);
+      return () => window.clearTimeout(timeoutId);
+    };
 
-    return () => window.clearTimeout(id);
-  }, [pathname, session?.user?.id]);
+    if (document.readyState === "complete") {
+      return schedule();
+    }
+
+    let cancelScheduled: (() => void) | undefined;
+    const onLoad = () => {
+      cancelScheduled = schedule();
+    };
+    window.addEventListener("load", onLoad, { once: true });
+
+    return () => {
+      window.removeEventListener("load", onLoad);
+      cancelScheduled?.();
+    };
+  }, []);
+
+  return ready ? <DeferredWidgets initialSession={initialSession} pathname={pathname} /> : null;
+}
+
+function DeferredWidgets({
+  initialSession,
+  pathname,
+}: {
+  initialSession: AuthSessionView | null;
+  pathname: string;
+}) {
+  const { data: session } = useAuthSession(initialSession);
+  const mount: WidgetMountState = {
+    cookie: !safeLocalStorage.getItem(COOKIE_STORAGE_KEY),
+    feedback: shouldMountFeedback(pathname, Boolean(session?.user?.id)),
+    welcome:
+      Boolean(session?.user?.id) &&
+      !safeLocalStorage.getItem(WELCOME_STORAGE_KEY) &&
+      !safeLocalStorage.getItem(TUTORIAL_STORAGE_KEY),
+  };
 
   return (
     <>
