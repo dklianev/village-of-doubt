@@ -149,9 +149,33 @@ export function useGameRoom({
     reconnectNowRef.current?.();
   }, []);
 
+  const clearViewerPrivateState = useCallback(() => {
+    setCurrentUserId("");
+    setPrivateRole(null);
+    setPrivateResult(null);
+    setPrivateFactionRoster(null);
+    setPrivateLover(null);
+    setNightActionCapabilities(null);
+    setNarratorSnapshot(null);
+    setPrivateChats([]);
+    setTypingNotices([]);
+    setIsBlessed(false);
+    for (const timeout of typingTimeoutsRef.current.values()) {
+      window.clearTimeout(timeout);
+    }
+    typingTimeoutsRef.current.clear();
+  }, []);
+
   useEffect(() => {
     onReconnectSuppressedRef.current = onReconnectSuppressed;
   }, [onReconnectSuppressed]);
+
+  useEffect(() => {
+    if (!sessionPending && !hasVisualFixture) {
+      clearViewerPrivateState();
+      setRoom(null);
+    }
+  }, [clearViewerPrivateState, code, hasVisualFixture, session?.user?.id, sessionPending]);
 
   useEffect(() => {
     let active = true;
@@ -380,6 +404,7 @@ export function useGameRoom({
         }
         if (leaveCode === 1000 || leaveCode === 1001) {
           clearReconnectionToken(code);
+          clearViewerPrivateState();
           setStatus("Напусна стаята.");
           setConnectionStatus("disconnected");
           return;
@@ -488,7 +513,7 @@ export function useGameRoom({
       clearReconnectTimer();
       joinedRoom?.leave();
     };
-  }, [code, hasVisualFixture, session?.user?.id, sessionPending, stableCreateOptions, toast, visualFixture]);
+  }, [clearViewerPrivateState, code, hasVisualFixture, session?.user?.id, sessionPending, stableCreateOptions, toast, visualFixture]);
 
   useEffect(() => {
     function handleOffline() {

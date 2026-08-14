@@ -5,6 +5,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError, createAuthMiddleware } from "better-auth/api";
 import { DEFAULT_AVATAR_ID, isAvatarId } from "@werewolf/shared";
 import { normalizeExternalDisplayName, validateDisplayName } from "./display-name";
+import { resolveBetterAuthEncryptionKey } from "./database-maintenance";
 import { sendEmail } from "./email";
 import { renderResetPasswordEmail, renderVerifyEmail } from "./email-templates";
 import { createBetterAuthRateLimitStorage } from "./redis-rate-limit";
@@ -98,6 +99,21 @@ export function resolveBetterAuthSecret(
       if (!environment.BETTER_AUTH_SECRETS?.trim()) {
         throw new Error("BETTER_AUTH_SECRETS is required when BETTER_AUTH_SECRET is retired.");
       }
+      const versionedKeyring = resolveBetterAuthEncryptionKey(environment);
+      if (
+        !versionedKeyring ||
+        typeof versionedKeyring === "string" ||
+        versionedKeyring.keys.size === 0
+      ) {
+        throw new Error("BETTER_AUTH_SECRETS must contain at least one valid versioned secret.");
+      }
+      for (const versionedSecret of versionedKeyring.keys.values()) {
+        if (versionedSecret.length < 32 || PLACEHOLDER_SECRET_PATTERN.test(versionedSecret)) {
+          throw new Error(
+            "BETTER_AUTH_SECRETS must contain only non-placeholder secrets with at least 32 characters.",
+          );
+        }
+      }
       if (environment.BETTER_AUTH_LEGACY_TOKENS_RETIRED !== "true") {
         throw new Error(
           "BETTER_AUTH_LEGACY_TOKENS_RETIRED=true is required before BETTER_AUTH_SECRET can be retired.",
@@ -147,7 +163,17 @@ export const auth = betterAuth({
       await sendEmail({ to: user.email, ...template });
     },
     onPasswordReset: async ({ user }) => {
-      await revokeActiveGameSessions(user.id);
+      try {
+        await revokeActiveGameSessions(user.id);
+      } catch (error) {
+        // Better Auth deletes every web session immediately after this callback.
+        // Keep that security-critical cleanup moving even when durable game
+        // revocation is temporarily unavailable; short-lived game tokens still
+        // expire independently and the failure remains observable.
+        console.error("[auth] game-session revocation failed during password reset", {
+          name: error instanceof Error ? error.name : "UnknownError",
+        });
+      }
     },
   },
   emailVerification: {

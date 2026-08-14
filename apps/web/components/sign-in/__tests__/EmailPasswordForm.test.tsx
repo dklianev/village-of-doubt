@@ -3,7 +3,10 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { EmailPasswordForm } from "../EmailPasswordForm";
 
-const signInEmail = vi.fn();
+const { signInEmail, signUpEmail } = vi.hoisted(() => ({
+  signInEmail: vi.fn(),
+  signUpEmail: vi.fn(),
+}));
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
@@ -12,13 +15,31 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/lib/auth-client", () => ({
   authClient: {
     signIn: { email: (...args: unknown[]) => signInEmail(...args) },
-    signUp: { email: vi.fn() },
+    signUp: { email: (...args: unknown[]) => signUpEmail(...args) },
   },
 }));
 
 describe("EmailPasswordForm", () => {
   beforeEach(() => {
     signInEmail.mockReset();
+    signUpEmail.mockReset();
+  });
+
+  it("never uses the email address as the public display name", async () => {
+    signUpEmail.mockResolvedValue({ data: { user: { id: "user-1" } }, error: null });
+    const user = userEvent.setup();
+    render(<EmailPasswordForm redirectTo="/" />);
+
+    await user.click(screen.getByRole("tab", { name: "Ново досие" }));
+    await user.type(screen.getByLabelText("Имейл"), "private@example.bg");
+    await user.type(screen.getByLabelText("Парола"), "12345678");
+    await user.click(screen.getByRole("button", { name: "Създай досие" }));
+
+    expect(signUpEmail).toHaveBeenCalledWith({
+      name: "Играч",
+      email: "private@example.bg",
+      password: "12345678",
+    });
   });
 
   it("focuses and marks an invalid email", async () => {

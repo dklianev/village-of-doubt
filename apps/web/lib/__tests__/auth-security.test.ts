@@ -77,6 +77,22 @@ describe("Better Auth security configuration", () => {
     })).toBeUndefined();
   });
 
+  it.each([
+    ["къса", "2:too-short"],
+    ["placeholder", "2:replace-this-versioned-secret-with-a-real-one"],
+    ["празна версия", "2:"],
+    ["повторена версия", "2:a-current-versioned-secret-with-enough-entropy,2:another-current-versioned-secret-with-entropy"],
+    ["неподредени версии", "1:an-older-versioned-secret-with-enough-entropy,2:a-current-versioned-secret-with-enough-entropy"],
+  ])("отхвърля %s BETTER_AUTH_SECRETS при runtime startup", async (_label, secrets) => {
+    const { resolveBetterAuthSecret } = await import("../auth");
+
+    expect(() => resolveBetterAuthSecret({
+      NODE_ENV: "production",
+      BETTER_AUTH_SECRETS: secrets,
+      BETTER_AUTH_LEGACY_TOKENS_RETIRED: "true",
+    })).toThrow("BETTER_AUTH_SECRETS");
+  });
+
   it("не допуска localhost сред trusted origins в production", async () => {
     const { buildTrustedOrigins } = await import("../auth");
 
@@ -215,7 +231,7 @@ describe("Better Auth security configuration", () => {
     expect(revokeActiveGameSessions).toHaveBeenCalledWith("user-1");
   });
 
-  it("не скрива провал на трайното прекратяване след смяна на парола", async () => {
+  it("не позволява провал на игровото прекратяване да блокира изтриването на web сесиите", async () => {
     vi.resetModules();
     await import("../auth");
     const options = betterAuth.mock.calls.at(-1)?.[0] as {
@@ -226,7 +242,7 @@ describe("Better Auth security configuration", () => {
     revokeActiveGameSessions.mockRejectedValueOnce(new Error("database unavailable"));
 
     await expect(options.emailAndPassword?.onPasswordReset?.({ user: { id: "user-1" } }))
-      .rejects.toThrow("database unavailable");
+      .resolves.toBeUndefined();
   });
 
   it.each(["/sign-up/email", "/update-user"])(

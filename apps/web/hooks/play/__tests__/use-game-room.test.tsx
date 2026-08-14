@@ -353,6 +353,72 @@ describe("useGameRoom", () => {
     expect(result.current.privateFactionRoster).toBeNull();
   });
 
+  it("clears every viewer-private value when the signed-in account changes", async () => {
+    let sessionUserId: string | undefined = "u1";
+    mocks.useSession.mockImplementation(() => ({
+      data: sessionUserId ? { user: { id: sessionUserId } } : null,
+      isPending: false,
+    }));
+    const { client, joinRoom } = createClient();
+    mocks.createGameClient.mockReturnValue(client);
+    const toast = vi.fn();
+    const { result, rerender } = renderHook(() =>
+      useGameRoom({ code: "ABCD", createOptions: undefined, toast }),
+    );
+    await waitFor(() => expect(result.current.connectionStatus).toBe("connected"));
+
+    act(() => {
+      joinRoom.emitMessage("private_role", { role: "seer", roleNameBg: "Гадателка" });
+      joinRoom.emitMessage("private_check_result", { targetUserId: "u3", role: "werewolf" });
+      joinRoom.emitMessage("private_faction_roster", {
+        faction: "werewolves",
+        members: [{ userId: "u2", displayName: "Борис" }],
+      });
+      joinRoom.emitMessage("private_lovers", { partnerUserId: "u2", partnerName: "Борис" });
+      joinRoom.emitMessage("night_action_capabilities", {
+        capabilities: { availableKinds: ["check_role"], usedFlags: {}, disallowedTargetsByKind: {} },
+      });
+      joinRoom.emitMessage("narrator_role_snapshot", { players: [] });
+      joinRoom.emitMessage("private_chat", {
+        type: "private_chat",
+        channel: "werewolves",
+        senderUserId: "u2",
+        senderName: "Борис",
+        message: "Тайна",
+        createdAt: 1,
+      });
+      joinRoom.emitMessage("typing", {
+        type: "typing",
+        channel: "werewolves",
+        senderUserId: "u2",
+        senderName: "Борис",
+        active: true,
+        createdAt: 1,
+      });
+      joinRoom.emitMessage("private_blessing", {});
+    });
+
+    expect(result.current.privateRole?.role).toBe("seer");
+    expect(result.current.privateChats).toHaveLength(1);
+    expect(result.current.isBlessed).toBe(true);
+
+    sessionUserId = undefined;
+    rerender();
+
+    await waitFor(() => {
+      expect(result.current.currentUserId).toBe("");
+      expect(result.current.privateRole).toBeNull();
+      expect(result.current.privateResult).toBeNull();
+      expect(result.current.privateFactionRoster).toBeNull();
+      expect(result.current.privateLover).toBeNull();
+      expect(result.current.nightActionCapabilities).toBeNull();
+      expect(result.current.narratorSnapshot).toBeNull();
+      expect(result.current.privateChats).toEqual([]);
+      expect(result.current.typingNotices).toEqual([]);
+      expect(result.current.isBlessed).toBe(false);
+    });
+  });
+
   it("reconnects with the persisted room token after an abnormal leave", async () => {
     mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
     const { client, joinRoom, reconnectRoom } = createClient();

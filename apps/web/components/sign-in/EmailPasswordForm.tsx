@@ -83,7 +83,7 @@ export function EmailPasswordForm({ redirectTo }: { redirectTo: string }) {
     setSubmitting(true);
     const result = await (mode === "sign-in"
       ? authClient.signIn.email({ email: nextEmail, password })
-      : authClient.signUp.email({ name: nextName || nextEmail, email: nextEmail, password })).catch(() => {
+      : authClient.signUp.email({ name: nextName || "Играч", email: nextEmail, password })).catch(() => {
       return { error: { message: "Неуспешна заявка." } };
     });
 
