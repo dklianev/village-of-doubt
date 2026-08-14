@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import { copyFile, mkdir, readdir, rename, rm, stat } from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 
 const sourceArtDir = path.resolve("assets/game-art-source");
@@ -33,6 +34,7 @@ async function main() {
     sharp.concurrency(1);
   }
   const files = await listPngs(sourceArtDir);
+  const sourceFiles = new Set(files.map(normalizeAssetPath));
 
   if (reportOnly) {
     await printReport(files);
@@ -45,7 +47,7 @@ async function main() {
   );
   let completed = 0;
   const results = await mapWithConcurrency(files, fileConcurrency, async (file) => {
-    const result = await optimizeAsset(sharp, file);
+    const result = await optimizeAsset(sharp, file, sourceFiles);
     completed += 1;
     if (completed % 25 === 0 || completed === files.length) {
       console.log(`Processed ${completed}/${files.length} source assets.`);
@@ -114,7 +116,7 @@ async function cleanupTemporaryArtifacts(directory) {
   );
 }
 
-async function optimizeAsset(sharp, file) {
+async function optimizeAsset(sharp, file, sourceFiles) {
   const input = path.join(sourceArtDir, file);
   const before = (await stat(input)).size;
   const sourceBudget = sourcePngBudgetKbFor(file);
@@ -170,9 +172,10 @@ async function optimizeAsset(sharp, file) {
     thumbnailsWritten = 1;
   }
 
-  const mobileWidth = mobileWidthFor(file);
-  if (mobileWidth) {
-    const mobileOutput = path.join(gameArtDir, "mobile", file.replace(/\.png$/, ".webp"));
+  const mobileDerivativePath = mobileDerivativePathFor(file, sourceFiles);
+  const mobileWidth = mobileDerivativePath ? mobileWidthFor(file) : 0;
+  if (mobileDerivativePath && mobileWidth) {
+    const mobileOutput = path.join(gameArtDir, mobileDerivativePath);
     await mkdir(path.dirname(mobileOutput), { recursive: true });
     await writeWebp(sharp, input, mobileOutput, file, mobileWidth, mobileBudgetKbFor(file), 70);
     mobileBytes = (await stat(mobileOutput)).size;
@@ -487,7 +490,7 @@ function isHeroLike(file) {
 }
 
 function mobileWidthFor(file) {
-  const normalized = file.split(path.sep).join("/");
+  const normalized = normalizeAssetPath(file);
   const basename = path.basename(file);
 
   if (normalized.startsWith("mobile/")) {
@@ -524,6 +527,58 @@ function mobileWidthFor(file) {
     return 720;
   }
   return 0;
+}
+
+export function mobileDerivativePathFor(file, sourceFiles) {
+  const normalized = normalizeAssetPath(file);
+  if (!mobileWidthFor(normalized)) {
+    return null;
+  }
+
+  const mobileSource = `mobile/${normalized}`;
+  if (sourceFiles.has(mobileSource)) {
+    return null;
+  }
+
+  return mobileSource.replace(/\.png$/, ".webp");
+}
+
+export async function inspectMobileDerivativeConflicts({ sourceRoot, outputRoot, imageMetadata }) {
+  const mobileSourceRoot = path.join(sourceRoot, "mobile");
+  if (!existsSync(mobileSourceRoot)) {
+    return [];
+  }
+
+  const mobileSources = await listPngs(mobileSourceRoot);
+  const conflicts = [];
+  for (const file of mobileSources) {
+    const source = path.join(mobileSourceRoot, file);
+    const derivative = path.join(outputRoot, "mobile", file.replace(/\.png$/, ".webp"));
+    if (!existsSync(derivative)) {
+      conflicts.push(`${normalizeAssetPath(file)}: missing WebP derivative`);
+      continue;
+    }
+
+    const [sourceMetadata, derivativeMetadata] = await Promise.all([
+      imageMetadata(source),
+      imageMetadata(derivative),
+    ]);
+    if (
+      sourceMetadata.width !== derivativeMetadata.width
+      || sourceMetadata.height !== derivativeMetadata.height
+    ) {
+      conflicts.push(
+        `${normalizeAssetPath(file)}: source ${sourceMetadata.width}x${sourceMetadata.height}, `
+          + `WebP ${derivativeMetadata.width}x${derivativeMetadata.height}`,
+      );
+    }
+  }
+
+  return conflicts;
+}
+
+function normalizeAssetPath(file) {
+  return file.split(path.sep).join("/");
 }
 
 async function listPngs(dir, prefix = "") {
@@ -564,7 +619,10 @@ function formatBytes(bytes) {
   return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+const isMain = process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
+if (isMain) {
+  main().catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  });
+}
