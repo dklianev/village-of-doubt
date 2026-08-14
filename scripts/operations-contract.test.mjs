@@ -116,6 +116,9 @@ test("production database roles are separated and reconciled on every deployment
     "Only the atomic account deletion boundary should be revoked and then granted to the web role.",
   );
   assert.match(roleReconciler, /WHERE to_regprocedure\(function_name\) IS NOT NULL/);
+  assert.match(roleReconciler, /WHEN 'games' THEN 'SELECT, UPDATE'/);
+  assert.match(roleReconciler, /WHEN 'game_events' THEN 'SELECT, DELETE'/);
+  assert.doesNotMatch(roleReconciler, /WHEN 'games' THEN 'SELECT, INSERT, UPDATE, DELETE'/);
   assert.doesNotMatch(roleReconciler, /WHEN 'game_events' THEN 'SELECT, UPDATE, DELETE'/);
   assert.match(roleReconciler, /SET log_min_duration_statement = -1/);
   assert.match(roleReconciler, /SET log_min_error_statement = PANIC/);

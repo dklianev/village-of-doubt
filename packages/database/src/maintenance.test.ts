@@ -39,7 +39,9 @@ describe("runDatabaseMaintenance", () => {
     expect(statements.some((query) => query.sql.includes('DELETE FROM "verification"'))).toBe(true);
     expect(statements.some((query) => query.sql.includes("'abandoned'"))).toBe(true);
     expect(statements.every((query) => !query.sql.includes('"status" = \'active\''))).toBe(true);
-    expect(statements.some((query) => query.sql.includes('DELETE FROM "game_events"'))).toBe(true);
+    const eventCleanup = statements.find((query) => query.sql.includes('DELETE FROM "game_events"'));
+    expect(eventCleanup).toBeDefined();
+    expect(eventCleanup?.sql).not.toContain("FOR UPDATE OF event");
     expect(statements.every((query) => !query.sql.includes("TRUNCATE"))).toBe(true);
     expect(statements.flatMap((query) => query.params).every((param) => !(param instanceof Date))).toBe(true);
   });

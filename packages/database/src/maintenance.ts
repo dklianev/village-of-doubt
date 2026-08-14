@@ -263,6 +263,8 @@ async function deleteExpiredEvents(
   cutoff: string,
   batchSize: number,
 ): Promise<number> {
+  // The transaction-level advisory lock already serializes maintenance passes.
+  // Avoid FOR UPDATE here so the web maintenance role needs no event UPDATE grant.
   return affectedCount(await tx.execute(sql`
     WITH candidates AS (
       SELECT event."id"
@@ -273,7 +275,6 @@ async function deleteExpiredEvents(
         AND game."status" IN ('ended', 'abandoned')
       ORDER BY event."created_at", event."id"
       LIMIT ${batchSize}
-      FOR UPDATE OF event SKIP LOCKED
     ),
     deleted AS (
       DELETE FROM "game_events"

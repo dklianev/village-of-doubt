@@ -189,9 +189,9 @@ SELECT format(
   'GRANT %s ON TABLE public.%I TO werewolf_web',
   CASE relation.relname
     WHEN 'deleted_user_identities' THEN 'SELECT'
-    WHEN 'games' THEN 'SELECT'
+    WHEN 'games' THEN 'SELECT, UPDATE'
     WHEN 'game_players' THEN 'SELECT'
-    WHEN 'game_events' THEN 'SELECT'
+    WHEN 'game_events' THEN 'SELECT, DELETE'
     WHEN 'user_achievements' THEN 'SELECT'
     WHEN 'game_session_revocations' THEN 'SELECT, INSERT, UPDATE'
   END,
