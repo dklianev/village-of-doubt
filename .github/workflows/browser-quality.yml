@@ -1,6 +1,7 @@
 name: Browser quality
 
 on:
+  workflow_call:
   workflow_dispatch:
   schedule:
     - cron: "17 3 * * 1"

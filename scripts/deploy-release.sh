@@ -59,7 +59,14 @@ attempt=1
 while [ "$attempt" -le 45 ]; do
   web_health="$(docker compose --env-file .env --env-file "$generated_env" ps --format json web 2>/dev/null | grep -o '"Health":"[^"]*"' | head -1 || true)"
   game_health="$(docker compose --env-file .env --env-file "$generated_env" ps --format json game 2>/dev/null | grep -o '"Health":"[^"]*"' | head -1 || true)"
-  if [ "$web_health" = '"Health":"healthy"' ] && [ "$game_health" = '"Health":"healthy"' ]; then
+  web_readiness="unready"
+  if docker compose --env-file .env --env-file "$generated_env" exec -T web \
+    wget -qO- http://127.0.0.1:3000/api/health/ready >/dev/null 2>&1; then
+    web_readiness="ready"
+  fi
+  if [ "$web_health" = '"Health":"healthy"' ] && \
+    [ "$game_health" = '"Health":"healthy"' ] && \
+    [ "$web_readiness" = "ready" ]; then
     if [ -f "$current_manifest" ]; then
       cp "$current_manifest" "$previous_manifest"
       if [ -f "$current_manifest.sig" ]; then

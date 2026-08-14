@@ -201,8 +201,9 @@ async function testInviteLobbyCopy() {
 }
 
 async function testRolesCodex() {
-  const { page, watcher, close } = await newPage("roles-codex", viewports.desktop);
+  const desktop = await newPage("roles-codex", viewports.desktop);
   try {
+    const { page, watcher } = desktop;
     await goto(page, "/werewolf/roles", "werewolf roles codex");
     await expectText(page, "Роли във Върколак");
     await expectText(page, "Кмет");
@@ -221,14 +222,25 @@ async function testRolesCodex() {
     await scrollThroughPage(page);
     await assertHtmlImagesLoaded(page, "mafia roles codex");
     await assertCssBackgroundImagesLoaded(page, "mafia roles codex");
-
-    await page.setViewportSize(viewports.mobile);
-    await page.reload({ waitUntil: "domcontentloaded" });
-    await waitForSettled(page);
-    await assertNoHorizontalOverflow(page, "roles codex mobile");
     await watcher.assertClean();
   } finally {
-    await close();
+    await desktop.close();
+  }
+
+  // WebKit can report an aborted old-document auth request as a page error when
+  // viewport changes are followed by reload. A fresh context also matches a
+  // real mobile navigation more closely and keeps genuine page errors visible.
+  const mobile = await newPage("roles-codex-mobile", viewports.mobile);
+  try {
+    await goto(mobile.page, "/mafia/roles", "mafia roles codex mobile");
+    await expectText(mobile.page, "Роли в Мафия");
+    await scrollThroughPage(mobile.page);
+    await assertHtmlImagesLoaded(mobile.page, "mafia roles codex mobile");
+    await assertCssBackgroundImagesLoaded(mobile.page, "mafia roles codex mobile");
+    await assertNoHorizontalOverflow(mobile.page, "roles codex mobile");
+    await mobile.watcher.assertClean();
+  } finally {
+    await mobile.close();
   }
 }
 

@@ -20,6 +20,7 @@ playtest-*.png
 audit-*.png
 review-*.png
 test-results/
+.lighthouseci/
 audit-v3/**/*.png
 audit-v3/**/*.jpg
 audit-v3/**/*.jpeg

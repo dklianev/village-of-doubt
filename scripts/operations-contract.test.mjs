@@ -237,6 +237,29 @@ test("CI isolates visual baselines from the serial core verification path", () =
   assert.doesNotMatch(visualBlock, /apt-get|Install visual fonts/);
 });
 
+test("release images wait for the cross-browser quality workflow", () => {
+  const browserQuality = read(".github/workflows/browser-quality.yml");
+  const release = read(".github/workflows/release.yml");
+
+  assert.match(browserQuality, /^  workflow_call:$/m);
+  assert.match(
+    release,
+    /^  browser-quality:\r?\n    name: Cross-browser release verification\r?\n    uses: \.\/\.github\/workflows\/browser-quality\.yml$/m,
+  );
+  assert.match(release, /^    needs: \[verify, browser-quality\]$/m);
+});
+
+test("roles browser QA opens a fresh mobile document instead of reloading WebKit", () => {
+  const frontendE2e = read("scripts/frontend-e2e.mjs");
+  const start = frontendE2e.indexOf("async function testRolesCodex()");
+  const end = frontendE2e.indexOf("\nasync function testAnonymousEntry()", start);
+  const rolesCheck = frontendE2e.slice(start, end);
+
+  assert.ok(start >= 0 && end > start, "The roles QA scenario must remain discoverable.");
+  assert.doesNotMatch(rolesCheck, /\.reload\(/);
+  assert.match(rolesCheck, /newPage\("roles-codex-mobile", viewports\.mobile\)/);
+});
+
 test("auth E2E falls back to its standalone port when the configured local app is offline", () => {
   const authE2e = read("scripts/e2e-auth.mjs");
 
@@ -263,6 +286,31 @@ test("deploy validates Compose before disruption and applies database privileges
   assert.ok(deploy.indexOf(roles) < deploy.indexOf(migrate));
   assert.ok(deploy.indexOf(migrate) < deploy.indexOf(grants));
   assert.ok(deploy.indexOf(grants) < deploy.indexOf("up -d --no-build --no-deps web game caddy"));
+});
+
+test("container liveness stays shallow while deploy and rollback require deep web readiness", () => {
+  const compose = read("docker-compose.yml");
+  const deploy = read("scripts/deploy-release.sh");
+  const rollback = read("scripts/rollback-release.sh");
+  const webStart = compose.indexOf("\n  web:");
+  const gameStart = compose.indexOf("\n  game:", webStart);
+  const webService = compose.slice(webStart, gameStart);
+
+  assert.ok(webStart >= 0 && gameStart > webStart, "Compose must define web before game.");
+  assert.match(webService, /http:\/\/127\.0\.0\.1:3000\/api\/health\s/);
+  assert.doesNotMatch(webService, /\/api\/health\/ready/);
+  assert.match(deploy, /http:\/\/127\.0\.0\.1:3000\/api\/health\/ready/);
+  assert.match(rollback, /http:\/\/127\.0\.0\.1:3000\/api\/health\/ready/);
+});
+
+test("production CSP blocks executable attributes and active object content", () => {
+  const caddyfile = read("Caddyfile");
+
+  assert.match(caddyfile, /script-src-attr 'none'/);
+  assert.match(caddyfile, /object-src 'none'/);
+  assert.match(caddyfile, /upgrade-insecure-requests/);
+  assert.doesNotMatch(caddyfile, /script-src[^;]*'unsafe-eval'/);
+  assert.doesNotMatch(caddyfile, /connect-src[^;]*(?:http:|ws:)/);
 });
 
 test("deploy drain reads operational stats only through the game container loopback", () => {
