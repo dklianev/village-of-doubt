@@ -169,6 +169,22 @@ describe("game-server readiness handler", () => {
 });
 
 describe("game-server operator handlers", () => {
+  it("exposes cumulative event-loop counters only on loopback", () => {
+    const response = makeResponse();
+
+    createLocalStatsHandler()(
+      { socket: { remoteAddress: "127.0.0.1" } } as unknown as Request,
+      response as unknown as Response,
+    );
+
+    expect(response.json).toHaveBeenCalledWith(expect.objectContaining({
+      eventLoopActiveMs: expect.any(Number),
+      eventLoopIdleMs: expect.any(Number),
+      eventLoopUtilization: expect.any(Number),
+      rssBytes: expect.any(Number),
+    }));
+  });
+
   it("does not expose runtime memory metrics off loopback", () => {
     const response = makeResponse();
 

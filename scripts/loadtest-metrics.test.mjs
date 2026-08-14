@@ -11,8 +11,18 @@ test("load thresholds accept healthy latency and server runtime samples", () => 
   assert.doesNotThrow(() => assertLoadThresholds({
     joinLatenciesMs: [20, 30, 40],
     statsSamples: [
-      { eventLoopUtilization: 0.2, rssBytes: 120 * 1024 * 1024 },
-      { eventLoopUtilization: 0.3, rssBytes: 130 * 1024 * 1024 },
+      {
+        eventLoopUtilization: 0.83,
+        eventLoopActiveMs: 830,
+        eventLoopIdleMs: 170,
+        rssBytes: 120 * 1024 * 1024,
+      },
+      {
+        eventLoopUtilization: 0.33,
+        eventLoopActiveMs: 980,
+        eventLoopIdleMs: 2_020,
+        rssBytes: 130 * 1024 * 1024,
+      },
     ],
   }, {
     joinP95Ms: 100,
@@ -24,7 +34,20 @@ test("load thresholds accept healthy latency and server runtime samples", () => 
 test("load thresholds report every exceeded budget", () => {
   assert.throws(() => assertLoadThresholds({
     joinLatenciesMs: [300, 500],
-    statsSamples: [{ eventLoopUtilization: 0.95, rssBytes: 600 * 1024 * 1024 }],
+    statsSamples: [
+      {
+        eventLoopUtilization: 0.5,
+        eventLoopActiveMs: 500,
+        eventLoopIdleMs: 500,
+        rssBytes: 590 * 1024 * 1024,
+      },
+      {
+        eventLoopUtilization: 0.7,
+        eventLoopActiveMs: 1_400,
+        eventLoopIdleMs: 600,
+        rssBytes: 600 * 1024 * 1024,
+      },
+    ],
   }, {
     joinP95Ms: 200,
     eventLoopUtilization: 0.8,

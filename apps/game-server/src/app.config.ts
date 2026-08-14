@@ -283,9 +283,12 @@ export function createLocalStatsHandler() {
     }
 
     const memory = process.memoryUsage();
+    const eventLoop = performance.eventLoopUtilization();
     res.json({
       ...createOperatorStats(),
-      eventLoopUtilization: performance.eventLoopUtilization().utilization,
+      eventLoopActiveMs: eventLoop.active,
+      eventLoopIdleMs: eventLoop.idle,
+      eventLoopUtilization: eventLoop.utilization,
       rssBytes: memory.rss,
     });
   };

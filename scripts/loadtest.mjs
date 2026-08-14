@@ -91,7 +91,7 @@ try {
   assertNoFailures();
   console.log(
     `Load test passed: ${NUM_CLIENTS} clients across ${groups.length} shared rooms; ` +
-    `0 failures, join p95 ${metrics.joinP95Ms.toFixed(1)}ms, max event loop ${(metrics.maxEventLoopUtilization * 100).toFixed(1)}%, ` +
+    `0 failures, join p95 ${metrics.joinP95Ms.toFixed(1)}ms, sustained event loop ${(metrics.sustainedEventLoopUtilization * 100).toFixed(1)}%, ` +
     `max RSS ${(metrics.maxRssBytes / 1024 / 1024).toFixed(1)}MiB${databaseUrl ? ", persistence verified" : ""}.`,
   );
 } finally {
@@ -266,10 +266,17 @@ function startStatsSampler(url, intervalMs) {
           throw new Error(`HTTP ${response.status}`);
         }
         const stats = await response.json();
-        if (!Number.isFinite(stats.eventLoopUtilization) || !Number.isFinite(stats.rssBytes)) {
-          throw new Error("missing eventLoopUtilization or rssBytes");
+        if (
+          !Number.isFinite(stats.eventLoopActiveMs)
+          || !Number.isFinite(stats.eventLoopIdleMs)
+          || !Number.isFinite(stats.eventLoopUtilization)
+          || !Number.isFinite(stats.rssBytes)
+        ) {
+          throw new Error("missing event-loop counters or rssBytes");
         }
         samples.push({
+          eventLoopActiveMs: stats.eventLoopActiveMs,
+          eventLoopIdleMs: stats.eventLoopIdleMs,
           eventLoopUtilization: stats.eventLoopUtilization,
           rssBytes: stats.rssBytes,
         });
