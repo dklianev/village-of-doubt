@@ -14,12 +14,10 @@ const config: StorybookConfig = {
   },
   typescript: {
     check: true,
-    reactDocgen: "react-docgen-typescript",
-    reactDocgenTypescriptOptions: {
-      shouldExtractLiteralValuesFromEnum: true,
-      propFilter: (prop) =>
-        prop.parent ? !/node_modules/.test(prop.parent.fileName) : true,
-    },
+    // TypeScript 7 intentionally removed the compiler API used by
+    // react-docgen-typescript. Storybook's Babel-based docgen keeps Controls
+    // and autodocs available while the workspace typecheck remains authoritative.
+    reactDocgen: "react-docgen",
   },
 };
 

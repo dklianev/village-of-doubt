@@ -36,8 +36,10 @@
     "src/styles"
   ],
   "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
+    "build": "pnpm build:js && pnpm build:types",
+    "build:js": "tsup",
+    "build:types": "tsc -p tsconfig.build.json",
+    "dev": "tsup --watch --onSuccess \"pnpm build:types\"",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
@@ -54,9 +56,9 @@
     "react-dom": ">=19"
   },
   "devDependencies": {
-    "@storybook/addon-a11y": "10.5.7",
-    "@storybook/addon-docs": "10.5.7",
-    "@storybook/react-vite": "10.5.7",
+    "@storybook/addon-a11y": "10.5.8",
+    "@storybook/addon-docs": "10.5.8",
+    "@storybook/react-vite": "10.5.8",
     "@testing-library/jest-dom": "7.0.1",
     "@testing-library/react": "16.3.2",
     "@types/react": "19.2.18",
@@ -65,9 +67,9 @@
     "jsdom": "30.0.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "storybook": "10.5.7",
+    "storybook": "10.5.8",
     "tsup": "8.5.1",
-    "typescript": "6.0.2",
+    "typescript": "7.0.2",
     "vite": "8.2.1",
     "vitest": "4.1.10"
   }

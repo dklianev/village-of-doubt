@@ -8,7 +8,9 @@ export default defineConfig({
     "src/states/empty-states.ts",
   ],
   format: ["esm", "cjs"],
-  dts: true,
+  // TypeScript 7 no longer exposes the compiler API consumed by tsup's DTS
+  // bundler. Native declaration emit runs separately via tsconfig.build.json.
+  dts: false,
   sourcemap: true,
   clean: true,
   external: [

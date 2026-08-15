@@ -5,6 +5,20 @@ packages:
 injectWorkspacePackages: true
 
 minimumReleaseAge: 2880
+# Storybook 10.5.8 is an intentional synchronized patch upgrade. Keep this
+# exception version-scoped so the quarantine remains active for future releases.
+minimumReleaseAgeExclude:
+  - storybook@10.5.8
+  - '@storybook/addon-a11y@10.5.8'
+  - '@storybook/addon-docs@10.5.8'
+  - '@storybook/builder-vite@10.5.8'
+  - '@storybook/cli@10.5.8'
+  - '@storybook/codemod@10.5.8'
+  - '@storybook/csf-plugin@10.5.8'
+  - '@storybook/react-dom-shim@10.5.8'
+  - '@storybook/react-vite@10.5.8'
+  - '@storybook/react@10.5.8'
+  - create-storybook@10.5.8
 
 allowBuilds:
   '@sentry/cli': true
