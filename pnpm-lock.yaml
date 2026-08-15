@@ -32,7 +32,7 @@ patchedDependencies:
     hash: b7caaabf4df2704fdf7df1683f03e57b0ebd515e4383d2c4d7bf43365a93d6a0
     path: patches/@colyseus__sdk@0.17.43.patch
   extract-zip@2.0.1:
-    hash: 82ab3f51cc847f4540bbcdccab0866f23fd17c3f544221e6e227b04b409fedb3
+    hash: fd7a844215132219df70c22950e2a885801427ab441bc03831314aeb9f6be9d0
     path: patches/extract-zip@2.0.1.patch
 
 importers:
@@ -6355,7 +6355,7 @@ snapshots:
   '@puppeteer/browsers@2.13.2':
     dependencies:
       debug: 4.4.3
-      extract-zip: 2.0.1(patch_hash=82ab3f51cc847f4540bbcdccab0866f23fd17c3f544221e6e227b04b409fedb3)
+      extract-zip: 2.0.1(patch_hash=fd7a844215132219df70c22950e2a885801427ab441bc03831314aeb9f6be9d0)
       progress: 2.0.3
       proxy-agent: 6.5.0
       semver: 7.8.5
@@ -8132,7 +8132,7 @@ snapshots:
       iconv-lite: 0.4.24
       tmp: 0.2.7
 
-  extract-zip@2.0.1(patch_hash=82ab3f51cc847f4540bbcdccab0866f23fd17c3f544221e6e227b04b409fedb3):
+  extract-zip@2.0.1(patch_hash=fd7a844215132219df70c22950e2a885801427ab441bc03831314aeb9f6be9d0):
     dependencies:
       debug: 4.4.3
       get-stream: 5.2.0

@@ -2,8 +2,7 @@ diff --git a/index.js b/index.js
 index 23384ea16bb848616886f356d8d69f94325535bf..34abc29391cf64d31939353b2dddcc2a48626c70 100644
 --- a/index.js
 +++ b/index.js
-@@ -126,8 +126,21 @@ class Extractor {
- 
+@@ -127,7 +127,20 @@ class Extractor {
      if (symlink) {
        const link = await getStream(readStream)
 -      debug('creating symlink', link, dest)
