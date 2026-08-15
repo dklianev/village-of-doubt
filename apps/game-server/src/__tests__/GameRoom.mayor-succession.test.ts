@@ -8,6 +8,7 @@ import {
   findPublicPlayer,
   restoreEnvValue,
   startGameAndCollectRoles,
+  waitForCondition,
 } from "./helpers.js";
 
 describe("GameRoom mayor succession", () => {
@@ -63,11 +64,17 @@ describe("GameRoom mayor succession", () => {
       action: { kind: "faction_kill", targetUserId: mayor?.userId },
     });
     clients[0]?.client.send("narratorAdvance", {});
-    await serverRoom.waitForNextPatch(25).catch(() => undefined);
+    await waitForCondition(
+      () => serverRoom.state.phase === "mayor_successor",
+      "Mayor succession phase did not start after the Mayor died.",
+    );
 
     expect(serverRoom.state.phase).toBe("mayor_successor");
     clients[0]?.client.send("setMayor", { targetUserId: successor?.userId });
-    await serverRoom.waitForNextPatch(25).catch(() => undefined);
+    await waitForCondition(
+      () => findPublicPlayer(serverRoom, successor?.userId)?.mayor === true,
+      "The selected successor did not become Mayor.",
+    );
     expect(findPublicPlayer(serverRoom, successor?.userId)?.mayor).toBe(true);
   });
 });
