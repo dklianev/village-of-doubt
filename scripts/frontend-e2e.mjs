@@ -915,11 +915,29 @@ async function assertNoInteractiveOverlap(page, label) {
 }
 
 async function assertHtmlImagesLoaded(page, label) {
-  await page.waitForFunction(
-    () => Array.from(document.images).every((image) => image.complete && image.naturalWidth > 0),
-    undefined,
-    { timeout: 15_000 },
-  ).catch(() => {});
+  const images = page.locator("img");
+  const imageCount = await images.count();
+
+  for (let index = 0; index < imageCount; index += 1) {
+    const image = images.nth(index);
+    await image.scrollIntoViewIfNeeded();
+    await image.evaluate((element) => {
+      if (element.complete) {
+        return;
+      }
+
+      return new Promise((resolve) => {
+        const timeout = window.setTimeout(resolve, 15_000);
+        const finish = () => {
+          window.clearTimeout(timeout);
+          resolve();
+        };
+
+        element.addEventListener("load", finish, { once: true });
+        element.addEventListener("error", finish, { once: true });
+      });
+    });
+  }
 
   const brokenImages = await page.evaluate(() =>
     Array.from(document.images)
