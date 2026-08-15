@@ -3,6 +3,7 @@ node_modules
 .next
 dist
 coverage
+storybook-static
 .env
 .release-state/
 .env.local
