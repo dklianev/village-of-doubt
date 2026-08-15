@@ -16,6 +16,7 @@ import {
   publicEvents,
   restoreEnvValue,
   startGameAndCollectRoles,
+  waitForCondition,
 } from "./helpers.js";
 
 describe("GameRoom authoritative gameplay boundaries", () => {
@@ -495,7 +496,10 @@ describe("GameRoom authoritative gameplay boundaries", () => {
     const clients = await connectPlayers(colyseus, room, 6, "host-pause");
     await startGameAndCollectRoles(clients);
     clients[0]?.client.send("narratorPause");
-    await room.waitForNextPatch(25).catch(() => undefined);
+    await waitForCondition(
+      () => room.state.phase === "paused",
+      "The room did not pause before host succession was tested.",
+    );
     expect(room.state.phase).toBe("paused");
 
     clients[0]?.client.leave();
@@ -520,7 +524,10 @@ describe("GameRoom authoritative gameplay boundaries", () => {
     const clients = await connectPlayers(colyseus, room, 6, "host-reconnect");
     await startGameAndCollectRoles(clients);
     clients[0]?.client.send("narratorPause");
-    await room.waitForNextPatch(25).catch(() => undefined);
+    await waitForCondition(
+      () => room.state.phase === "paused",
+      "The room did not pause before host restoration was tested.",
+    );
 
     for (const player of room.state.players.values()) {
       if (!player.host) {
@@ -567,12 +574,18 @@ describe("GameRoom authoritative gameplay boundaries", () => {
     expect(beforePause).toHaveLength(1);
 
     clients[0]?.client.send("narratorPause");
-    await room.waitForNextPatch(25).catch(() => undefined);
+    await waitForCondition(
+      () => room.state.phase === "paused",
+      "The room did not pause while preserving the vote tally.",
+    );
     expect(room.state.phase).toBe("paused");
     expect([...room.state.voteTally].map((item) => item.toJSON())).toEqual(beforePause);
 
     clients[0]?.client.send("narratorAdvance", {});
-    await room.waitForNextPatch(25).catch(() => undefined);
+    await waitForCondition(
+      () => room.state.phase === "voting",
+      "The room did not resume voting while preserving the vote tally.",
+    );
     expect(room.state.phase).toBe("voting");
     expect([...room.state.voteTally].map((item) => item.toJSON())).toEqual(beforePause);
   });

@@ -73,10 +73,41 @@ export function waitForPrivateRole(client: ClientRoom<GameRoom, GameState>) {
 }
 
 export async function advanceToPhase(client: ClientRoom<GameRoom, GameState> | undefined, room: GameRoom, phase: string) {
-  for (let index = 0; index < 20 && room.state.phase !== phase; index += 1) {
-    client?.send("narratorAdvance", {});
-    await room.waitForNextPatch(25).catch(() => undefined);
+  if (!client) {
+    throw new Error("A connected narrator client is required to advance the phase.");
   }
+
+  for (let index = 0; index < 20 && room.state.phase !== phase; index += 1) {
+    const before = phaseProgressState(room);
+    const nextPatch = room.waitForNextPatch(2_000);
+    client.send("narratorAdvance", {});
+
+    const deadline = Date.now() + 2_000;
+    while (phaseProgressState(room) === before && Date.now() < deadline) {
+      await delay(5);
+    }
+
+    if (phaseProgressState(room) === before) {
+      throw new Error(`The narrator command did not advance the room toward phase ${phase}.`);
+    }
+
+    await nextPatch;
+  }
+
+  if (room.state.phase !== phase) {
+    throw new Error(`Unable to reach phase ${phase} after 20 narrator commands.`);
+  }
+}
+
+function phaseProgressState(room: GameRoom) {
+  return JSON.stringify({
+    phase: room.state.phase,
+    round: room.state.round,
+    phaseEndsAt: room.state.phaseEndsAt,
+    currentSpeakerUserId: room.state.currentSpeakerUserId,
+    currentDefenseUserId: room.state.currentDefenseUserId,
+    publicEventCount: room.state.publicEvents.length,
+  });
 }
 
 export async function advanceToFirstNight(client: ClientRoom<GameRoom, GameState> | undefined, room: GameRoom) {
@@ -97,6 +128,22 @@ export function publicEvents(room: GameRoom) {
 
 export function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export async function waitForCondition(
+  condition: () => boolean,
+  message: string,
+  timeoutMs = 2_000,
+) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (condition()) {
+      return;
+    }
+    await delay(5);
+  }
+
+  throw new Error(message);
 }
 
 export function restoreEnvValue(key: string, value: string | undefined) {
