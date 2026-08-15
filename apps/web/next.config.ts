@@ -3,8 +3,12 @@ import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  cacheComponents: true,
   transpilePackages: ["@werewolf/shared", "@werewolf/database", "@werewolf/ui"],
   allowedDevOrigins: ["127.0.0.1"],
+  experimental: {
+    instrumentationClientRouterTransitionEvents: true,
+  },
   async headers() {
     return [
       {

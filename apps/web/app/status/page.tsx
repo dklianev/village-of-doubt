@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import "@/components/legal/LegalShell.module.css";
 import "@/components/status/LegacyStatus.module.css";
 import { JsonLd } from "@/components/JsonLd";
@@ -6,8 +7,6 @@ import { ResourceHints } from "@/components/resource-hints";
 import { StatusDashboard } from "@/components/status/StatusDashboard";
 import { absoluteUrl, routeMetadata } from "@/lib/seo";
 import { loadStatusSnapshot } from "@/lib/status-health";
-
-export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = routeMetadata({
   title: "Състояние",
@@ -19,6 +18,7 @@ export const metadata: Metadata = routeMetadata({
 });
 
 export default async function StatusPage() {
+  await connection();
   const { services, lastCheckedAt } = await loadStatusSnapshot();
 
   const jsonLd = {

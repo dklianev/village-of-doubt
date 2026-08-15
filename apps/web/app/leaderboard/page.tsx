@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { unstable_cache } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
 import { Suspense } from "react";
 import { createDatabase, getLeaderboardRows } from "@werewolf/database";
 import { JsonLd } from "@/components/JsonLd";
@@ -10,8 +10,6 @@ import { LeaderboardSkeleton } from "@/components/skeleton";
 import type { LeaderboardEntry } from "@/lib/leaderboard-headlines";
 import { absoluteUrl, routeMetadata } from "@/lib/seo";
 import "@/components/leaderboard/Leaderboard.module.css";
-
-export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = routeMetadata({
   title: "Вечерен брой — седмичният списък на масата",
@@ -31,21 +29,28 @@ const leaderboardJsonLd = {
   inLanguage: "bg-BG",
 };
 
-export default async function LeaderboardPage({
+export default function LeaderboardPage({
   searchParams,
 }: {
   searchParams?: Promise<{ visualLeaderboard?: string | string[] }>;
 }) {
-  const visualLeaderboard = firstSearchValue((await searchParams)?.visualLeaderboard);
-
   return (
     <main className="shell newspaper-shell">
       <JsonLd data={leaderboardJsonLd} />
       <Suspense fallback={<LeaderboardSkeleton />}>
-        <LeaderboardContent visualLeaderboard={visualLeaderboard} />
+        <LeaderboardRouteContent searchParams={searchParams} />
       </Suspense>
     </main>
   );
+}
+
+async function LeaderboardRouteContent({
+  searchParams,
+}: {
+  searchParams: Promise<{ visualLeaderboard?: string | string[] }> | undefined;
+}) {
+  const visualLeaderboard = firstSearchValue((await searchParams)?.visualLeaderboard);
+  return <LeaderboardContent visualLeaderboard={visualLeaderboard} />;
 }
 
 async function LeaderboardContent({ visualLeaderboard }: { visualLeaderboard: string | undefined }) {
@@ -104,25 +109,23 @@ async function loadLeaderboard(visualLeaderboard?: string): Promise<LeaderboardD
   }
 }
 
-const loadCachedLeaderboard = unstable_cache(
-  async () => {
-    const databaseUrl = process.env.DATABASE_URL;
-    if (!databaseUrl) {
-      return [];
-    }
+async function loadCachedLeaderboard() {
+  "use cache";
+  cacheLife({ stale: 30, revalidate: 60, expire: 3_600 });
+  cacheTag("public-leaderboard");
 
-    const db = createDatabase(databaseUrl);
-    const rows = await getLeaderboardRows(db, 30, {
-      since: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-    });
-    return rows.map((row) => ({
-      ...row,
-      lastPlayedAt: row.lastPlayedAt?.toISOString() ?? null,
-    }));
-  },
-  ["public-leaderboard-v2-weekly"],
-  { revalidate: 60, tags: ["public-leaderboard"] },
-);
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) return [];
+
+  const db = createDatabase(databaseUrl);
+  const rows = await getLeaderboardRows(db, 30, {
+    since: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+  });
+  return rows.map((row) => ({
+    ...row,
+    lastPlayedAt: row.lastPlayedAt?.toISOString() ?? null,
+  }));
+}
 
 function firstSearchValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;

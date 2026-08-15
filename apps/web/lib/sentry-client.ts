@@ -1,5 +1,7 @@
 "use client";
 
+import type { NavigationMetric } from "./navigation-telemetry";
+
 type SentryClientRuntime = typeof import("./sentry-client-runtime");
 
 let clientPromise: Promise<SentryClientRuntime | null> | null = null;
@@ -45,4 +47,8 @@ export function startClientMonitoring(): void {
 
 export function captureClientException(error: unknown): void {
   void loadSentryClient().then((client) => client?.captureBrowserException(error));
+}
+
+export function captureNavigationMetric(metric: NavigationMetric): void {
+  void loadSentryClient().then((client) => client?.captureBrowserNavigationMetric(metric));
 }

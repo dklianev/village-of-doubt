@@ -1,7 +1,11 @@
 import Link from "next/link";
+import { cacheLife } from "next/cache";
 import styles from "./SiteFooter.module.css";
 
-export function SiteFooter() {
+export async function SiteFooter() {
+  "use cache";
+  cacheLife("days");
+
   return (
     <footer className={`${styles.footer} site-footer`}>
       <div className={styles.links}>

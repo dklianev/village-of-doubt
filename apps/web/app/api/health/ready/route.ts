@@ -1,8 +1,6 @@
 import { checkDatabaseReadiness, createDatabase } from "@werewolf/database";
 import { checkRuntimeRedisReadiness } from "@/lib/runtime-rate-limit";
 
-export const dynamic = "force-dynamic";
-
 const GAME_SERVER_READINESS_TIMEOUT_MS = 1_500;
 const READINESS_CACHE_TTL_MS = 15_000;
 const loadCachedReadiness = createReadinessLoader(loadDeepReadiness, READINESS_CACHE_TTL_MS);

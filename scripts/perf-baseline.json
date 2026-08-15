@@ -1,18 +1,18 @@
 {
   "schemaVersion": 1,
-  "totalJsKb": 530.4,
+  "totalJsKb": 530.3,
   "routes": {
     "/": {
-      "jsKb": 42.9,
-      "cssKb": 51.3
+      "jsKb": 23.5,
+      "cssKb": 54.7
     },
     "/create": {
-      "jsKb": 82.6,
-      "cssKb": 55.4
+      "jsKb": 65,
+      "cssKb": 58.5
     },
     "/play/[code]": {
-      "jsKb": 130.8,
-      "cssKb": 55.2
+      "jsKb": 125.2,
+      "cssKb": 59.5
     }
   }
 }

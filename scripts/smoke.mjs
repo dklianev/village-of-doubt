@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 import { cpSync, existsSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
+import { extractNextStreamRedirect } from "./next-stream-redirect.mjs";
 
 const isWindows = process.platform === "win32";
 const processes = [];
@@ -122,10 +123,17 @@ async function waitForJson(url, label) {
 }
 
 async function waitForText(url, expected, label) {
-  const body = await waitFor(url, label);
-  if (!body.includes(expected)) {
-    throw new Error(`${label} did not contain expected text: ${expected}`);
+  let currentUrl = url;
+  for (let redirectCount = 0; redirectCount <= 3; redirectCount += 1) {
+    const body = await waitFor(currentUrl, label);
+    if (body.includes(expected)) return;
+
+    const streamedRedirect = extractNextStreamRedirect(body);
+    if (!streamedRedirect) break;
+    currentUrl = new URL(streamedRedirect, currentUrl).toString();
   }
+
+  throw new Error(`${label} did not contain expected text: ${expected}`);
 }
 
 async function waitForStaticAsset(pageUrl, label) {

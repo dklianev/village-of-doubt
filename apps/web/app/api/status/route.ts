@@ -1,9 +1,8 @@
-import { NextResponse } from "next/server";
+import { connection, NextResponse } from "next/server";
 import { loadStatusSnapshot } from "@/lib/status-health";
 
-export const dynamic = "force-dynamic";
-
 export async function GET() {
+  await connection();
   const snapshot = await loadStatusSnapshot();
 
   return NextResponse.json({

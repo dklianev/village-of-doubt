@@ -100,6 +100,7 @@ describe("POST /api/account/delete", () => {
     expect(deleteUserAccountAtomically).toHaveBeenCalledWith({ mocked: true }, "user-1");
     expect(revokeActiveGameSessions).toHaveBeenCalledWith("user-1", { requireRealtime: true });
     expect(revalidateTag).toHaveBeenCalledWith("public-leaderboard", "max");
+    expect(revalidateTag).toHaveBeenCalledWith("public-game-history", "max");
   });
 
   it("не изтрива профила, ако активните игрови сесии не могат да бъдат прекратени", async () => {

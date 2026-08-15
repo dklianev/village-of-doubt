@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { unstable_cache } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
 import { Suspense } from "react";
 import { createDatabase, getPublicGameTimelinesBatch, getRecentEndedGameHistory } from "@werewolf/database";
 import type { GameMode } from "@werewolf/shared";
@@ -10,8 +10,6 @@ import type { HistoryGameView, HistoryTimelineEventView } from "@/lib/history-hi
 import { publicGameReference } from "@/lib/game-reference";
 import { absoluteUrl, routeMetadata } from "@/lib/seo";
 import "@/components/history/LegacyHistory.module.css";
-
-export const dynamic = "force-dynamic";
 
 const HISTORY_CASE_LIMIT = 20;
 
@@ -37,17 +35,24 @@ type HistoryPageProps = {
   searchParams?: Promise<{ visualHistory?: string | string[] }>;
 };
 
-export default async function HistoryPage({ searchParams }: HistoryPageProps) {
-  const visualHistory = firstSearchValue((await searchParams)?.visualHistory);
-
+export default function HistoryPage({ searchParams }: HistoryPageProps) {
   return (
     <main className="shell history-shell evidence-shell">
       <JsonLd data={historyJsonLd} />
       <Suspense fallback={<EvidenceWallSkeleton />}>
-        <HistoryContent visualHistory={visualHistory} />
+        <HistoryRouteContent searchParams={searchParams} />
       </Suspense>
     </main>
   );
+}
+
+async function HistoryRouteContent({
+  searchParams,
+}: {
+  searchParams: HistoryPageProps["searchParams"];
+}) {
+  const visualHistory = firstSearchValue((await searchParams)?.visualHistory);
+  return <HistoryContent visualHistory={visualHistory} />;
 }
 
 async function HistoryContent({ visualHistory }: { visualHistory: string | undefined }) {
@@ -83,37 +88,35 @@ async function loadHistory(visualHistory?: string): Promise<HistoryGameView[]> {
   }
 }
 
-const loadCachedPublicHistory = unstable_cache(
-  async (): Promise<HistoryGameView[]> => {
-    const databaseUrl = process.env.DATABASE_URL;
-    if (!databaseUrl) {
-      return [];
-    }
+async function loadCachedPublicHistory(): Promise<HistoryGameView[]> {
+  "use cache";
+  cacheLife({ stale: 30, revalidate: 60, expire: 3_600 });
+  cacheTag("public-game-history");
 
-    const db = createDatabase(databaseUrl);
-    const endedGames = await getRecentEndedGameHistory(db, HISTORY_CASE_LIMIT);
-    const timelinesMap = await getPublicGameTimelinesBatch(
-      db,
-      endedGames.map((game) => game.id),
-      6,
-    );
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) return [];
 
-    return endedGames.map((game) => ({
-      id: game.id,
-      code: publicGameReference(game.id),
-      config: game.config,
-      status: game.status,
-      winnerTeam: game.winnerTeam,
-      startedAt: game.startedAt?.toISOString() ?? null,
-      endedAt: game.endedAt?.toISOString() ?? null,
-      eventCount: game.eventCount,
-      mode: modeFromConfig(game.config),
-      timeline: (timelinesMap.get(game.id) ?? []).map(serializeTimelineEvent),
-    }));
-  },
-  ["public-game-history-v2"],
-  { revalidate: 60, tags: ["public-game-history"] },
-);
+  const db = createDatabase(databaseUrl);
+  const endedGames = await getRecentEndedGameHistory(db, HISTORY_CASE_LIMIT);
+  const timelinesMap = await getPublicGameTimelinesBatch(
+    db,
+    endedGames.map((game) => game.id),
+    6,
+  );
+
+  return endedGames.map((game) => ({
+    id: game.id,
+    code: publicGameReference(game.id),
+    config: game.config,
+    status: game.status,
+    winnerTeam: game.winnerTeam,
+    startedAt: game.startedAt?.toISOString() ?? null,
+    endedAt: game.endedAt?.toISOString() ?? null,
+    eventCount: game.eventCount,
+    mode: modeFromConfig(game.config),
+    timeline: (timelinesMap.get(game.id) ?? []).map(serializeTimelineEvent),
+  }));
+}
 
 function firstSearchValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;

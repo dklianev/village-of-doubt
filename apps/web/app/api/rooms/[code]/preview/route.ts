@@ -20,8 +20,6 @@ type RoomPreview = {
   }>;
 };
 
-export const dynamic = "force-dynamic";
-
 const roomPreviewRateLimiter = createRuntimeIntakeRateLimiter(
   { limit: 30, windowMs: 60_000 },
   "room-preview-source",

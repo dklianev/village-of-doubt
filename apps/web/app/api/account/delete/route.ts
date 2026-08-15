@@ -54,6 +54,7 @@ export async function POST(request: Request) {
   }
 
   revalidateTag("public-leaderboard", "max");
+  revalidateTag("public-game-history", "max");
 
   return NextResponse.json({ ok: true });
 }

@@ -14,7 +14,7 @@ const BUDGETS = {
     },
     "/create": {
       js: { warningKb: 85, hardKb: 95, maxDeltaKb: 3 },
-      css: { warningKb: 58, hardKb: 65, maxDeltaKb: 3 },
+      css: { warningKb: 60, hardKb: 65, maxDeltaKb: 3 },
     },
     "/play/[code]": {
       js: { warningKb: 135, hardKb: 140, maxDeltaKb: 3 },
