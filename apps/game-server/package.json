@@ -11,27 +11,28 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@colyseus/core": "^0.17.42",
-    "@colyseus/monitor": "^0.17.0",
+    "@colyseus/core": "^0.17.50",
+    "@colyseus/monitor": "^0.17.8",
     "@colyseus/redis-driver": "^0.17.7",
-    "@colyseus/redis-presence": "^0.17.7",
-    "@colyseus/schema": "^4.0.20",
-    "@colyseus/tools": "^0.17.19",
+    "@colyseus/redis-presence": "^0.17.8",
+    "@colyseus/schema": "^4.0.30",
+    "@colyseus/tools": "^0.17.20",
     "@colyseus/ws-transport": "^0.17.13",
-    "@sentry/node": "^10.51.0",
+    "@sentry/node": "^10.70.0",
     "@werewolf/database": "workspace:*",
     "@werewolf/shared": "workspace:*",
-    "cors": "^2.8.5",
+    "cors": "^2.8.6",
     "drizzle-orm": "^0.45.2",
-    "express": "^5.1.0",
-    "redis": "^6.1.0"
+    "express": "^5.2.1",
+    "redis": "^6.2.1"
   },
   "devDependencies": {
     "@colyseus/testing": "^0.17.11",
     "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.5",
-    "tsx": "^4.20.6",
-    "typescript": "^5.9.3",
-    "vitest": "^4.0.2"
+    "@types/express": "^5.0.6",
+    "@types/node": "24.13.3",
+    "tsx": "^4.23.12",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.10"
   }
 }
