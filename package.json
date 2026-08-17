@@ -52,15 +52,15 @@
     "db:migrate": "pnpm --filter @werewolf/database db:migrate"
   },
   "devDependencies": {
-    "@axe-core/playwright": "4.11.3",
-    "@colyseus/loadtest": "^0.16.2",
+    "@axe-core/playwright": "4.13.0",
+    "@colyseus/loadtest": "^0.17.8",
     "@lhci/cli": "0.15.1",
     "@types/node": "^24.9.1",
-    "playwright": "^1.59.1",
+    "playwright": "^1.62.1",
     "sharp": "0.35.3",
-    "tsx": "4.22.3",
-    "turbo": "^2.9.14",
+    "tsx": "4.23.12",
+    "turbo": "^2.10.9",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.2"
+    "vitest": "^4.1.10"
   }
 }
