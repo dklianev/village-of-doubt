@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import Link from "next/link";
 import type { GameMode } from "@werewolf/shared";
+import { LinkPendingHint } from "@/components/navigation-telemetry";
 import { topMoments, type HistoryGameView } from "@/lib/history-highlights";
 import { tiltFor } from "@/lib/history-tilt";
 
@@ -45,7 +46,7 @@ export function CaseFileCard({ game }: { game: HistoryGameView }) {
       <footer className="case-file-foot">
         <span className="case-file-events">{eventsBg(game.eventCount)}</span>
         <Link href={`/history/${game.id}/replay`} className="case-file-cta">
-          Отвори дело <span aria-hidden="true">›</span>
+          Отвори дело <LinkPendingHint /> <span aria-hidden="true">›</span>
         </Link>
       </footer>
     </article>

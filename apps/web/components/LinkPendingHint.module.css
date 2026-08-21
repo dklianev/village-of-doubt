@@ -1,0 +1,23 @@
+.hint {
+  display: inline-block;
+  width: 0.8em;
+  height: 0.8em;
+  flex: 0 0 0.8em;
+  margin-inline: 0.15em;
+  border: 1.5px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  opacity: 0;
+  vertical-align: -0.06em;
+}
+
+.hint[data-visible="true"] {
+  opacity: 0.72;
+  animation: link-pending-spin 760ms linear infinite;
+}
+
+@keyframes link-pending-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}

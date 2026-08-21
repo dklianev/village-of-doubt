@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getGameModeNameBg, type GameMode, type WinnerTeam } from "@werewolf/shared";
+import { LinkPendingHint } from "@/components/navigation-telemetry";
 import styles from "./Account.module.css";
 
 export interface RecentGameSummary {
@@ -41,7 +42,7 @@ export function AccountRecentGames({ games }: { games: RecentGameSummary[] }) {
               </p>
               <p className={styles.gameMode}>{getGameModeNameBg(game.mode)}</p>
               <Link href={`/history/${game.id}/replay`} className={styles.gameLink}>
-                Отвори дело →
+                Отвори дело <LinkPendingHint /> <span aria-hidden="true">→</span>
               </Link>
             </article>
           </li>
