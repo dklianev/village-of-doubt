@@ -8,6 +8,8 @@ export const metadata: Metadata = {
   description: "Настрой частно село за Върколак с твоето досие.",
 };
 
+export const instant = true;
+
 type WerewolfCreatePageProps = {
   searchParams?: Promise<{ visualAuth?: string | string[] }>;
 };

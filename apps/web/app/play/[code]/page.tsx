@@ -15,6 +15,8 @@ type PlayRouteContentProps = {
   searchParams: PlayPageProps["searchParams"];
 };
 
+export const instant = true;
+
 export async function generateMetadata({
   params,
 }: {

@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   description: "Избери готова рецепта за Върколак или Мафия и създай частна стая за секунди.",
 };
 
+export const instant = true;
+
 type CreatePageProps = {
   searchParams?: Promise<{ mode?: string; visualAuth?: string | string[] }>;
 };

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { NavigationTelemetry } from "@/components/navigation-telemetry";
 import { NonCriticalWidgets } from "@/components/non-critical-widgets";
 import { ResourceHints } from "@/components/resource-hints";
@@ -8,10 +9,6 @@ import SiteChrome from "@/components/site-chrome";
 import { ToastHost } from "@/components/toast-host";
 import { absoluteUrl, SITE_NAME, SITE_URL } from "@/lib/seo";
 import "./globals.css";
-
-// Cache Components is adopted incrementally. Public history and leaderboard
-// already stream; request-bound account/game routes may still block for now.
-export const instant = false;
 
 const themeInitScript = `(() => {
   try {
@@ -68,8 +65,12 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         {children}
         <SiteFooter />
         <ToastHost />
-        <NonCriticalWidgets initialSession={null} />
-        <NavigationTelemetry />
+        <Suspense fallback={null}>
+          <NonCriticalWidgets initialSession={null} />
+        </Suspense>
+        <Suspense fallback={null}>
+          <NavigationTelemetry />
+        </Suspense>
         <ServiceWorkerRegistration />
       </body>
     </html>

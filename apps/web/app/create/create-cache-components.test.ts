@@ -8,6 +8,13 @@ const createRoutes = [
   "app/mafia/create/page.tsx",
 ];
 
+const instantRoutes = [
+  ...createRoutes,
+  "app/history/page.tsx",
+  "app/leaderboard/page.tsx",
+  "app/play/[code]/page.tsx",
+];
+
 const intentionallyBlockingRoutes = [
   "app/account/page.tsx",
   "app/achievements/page.tsx",
@@ -26,6 +33,12 @@ const intentionallyBlockingRoutes = [
 ];
 
 describe("Cache Components route boundaries", () => {
+  it.each(instantRoutes)("opts into instant navigation validation in %s", (route) => {
+    const source = readFileSync(resolve(process.cwd(), route), "utf8");
+
+    expect(source).toContain("export const instant = true;");
+  });
+
   it.each(createRoutes)("streams request-bound work behind Suspense in %s", (route) => {
     const source = readFileSync(resolve(process.cwd(), route), "utf8");
 

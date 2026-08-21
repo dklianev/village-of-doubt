@@ -8,6 +8,8 @@ export const metadata: Metadata = {
   description: "Настрой частна маса за Мафия с твоето досие.",
 };
 
+export const instant = true;
+
 type MafiaCreatePageProps = {
   searchParams?: Promise<{ visualAuth?: string | string[] }>;
 };

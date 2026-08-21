@@ -22,6 +22,8 @@ export const metadata: Metadata = routeMetadata({
   ogDescription: "Победи, смърти, гласове и развръзки от старите стаи.",
 });
 
+export const instant = true;
+
 const historyJsonLd = {
   "@context": "https://schema.org",
   "@type": "CollectionPage",

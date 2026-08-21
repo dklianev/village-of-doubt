@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -37,19 +37,23 @@ const NavDropdown = dynamic(() => import("@/components/site-chrome/NavDropdown")
 });
 
 export default function SiteChrome({ initialSession }: { initialSession: AuthSessionView | null }) {
-  const pathname = usePathname();
+  const [pathname, setPathname] = useState<string | null>(null);
   const [soundEnabled, setSoundEnabledState] = useState(false);
   const [themePreference, setThemePreference] = useState<ThemePreference>("dark");
-  const [family, setFamily] = useState<ChromeFamily>("werewolves");
+  const [family, setFamily] = useState<ChromeFamily | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const drawerTriggerRef = useRef<HTMLButtonElement>(null);
 
-  const routeFamily = familyFromPath(pathname);
+  const routeFamily = pathname ? familyFromPath(pathname) : undefined;
   const activeFamily = routeFamily ?? family;
-  const playHref = activeFamily === "mafia" ? "/mafia/create" : "/werewolf/create";
+  const playHref = activeFamily === "mafia"
+    ? "/mafia/create"
+    : activeFamily === "werewolves"
+      ? "/werewolf/create"
+      : "/create";
 
   useEffect(() => {
     setMounted(true);
@@ -57,13 +61,16 @@ export default function SiteChrome({ initialSession }: { initialSession: AuthSes
     const savedTheme = readThemePreference();
     const savedFamily = readFamilyPreference();
     setThemePreference(savedTheme);
-    setFamily(routeFamily ?? savedFamily);
+    setFamily(savedFamily);
     applyThemePreference(savedTheme);
-  }, [routeFamily]);
+  }, []);
 
   useEffect(() => {
     setDropdownOpen(false);
     setDrawerOpen(false);
+    if (!pathname) {
+      return;
+    }
     const nextFamily = familyFromPath(pathname);
     if (!nextFamily) {
       return;
@@ -124,7 +131,10 @@ export default function SiteChrome({ initialSession }: { initialSession: AuthSes
   }
 
   return (
-    <header className="site-chrome" data-version="v2" data-family={activeFamily}>
+    <header className="site-chrome" data-version="v2" data-family={activeFamily ?? undefined}>
+      <Suspense fallback={null}>
+        <RoutePathnameSync onPathnameChange={setPathname} />
+      </Suspense>
       <button ref={drawerTriggerRef} className="site-mobile-menu" type="button" aria-label="Отвори менюто" onClick={openDrawer}>
         <Menu className="site-icon" aria-hidden strokeWidth={1.9} />
       </button>
@@ -132,7 +142,7 @@ export default function SiteChrome({ initialSession }: { initialSession: AuthSes
       <BrandMark compact={false} />
 
       <PrimaryBand
-        pathname={pathname}
+        pathname={pathname ?? ""}
         playHref={playHref}
         dropdownOpen={dropdownOpen}
         dropdownRef={dropdownRef}
@@ -155,7 +165,7 @@ export default function SiteChrome({ initialSession }: { initialSession: AuthSes
       {mounted ? (
         <MobileDrawer
           open={drawerOpen}
-          pathname={pathname}
+          pathname={pathname ?? ""}
           soundEnabled={soundEnabled}
           themePreference={themePreference}
           initialSession={initialSession}
@@ -168,6 +178,20 @@ export default function SiteChrome({ initialSession }: { initialSession: AuthSes
       ) : null}
     </header>
   );
+}
+
+function RoutePathnameSync({
+  onPathnameChange,
+}: {
+  onPathnameChange: React.Dispatch<React.SetStateAction<string | null>>;
+}) {
+  const pathname = usePathname();
+
+  useEffect(() => {
+    onPathnameChange(pathname);
+  }, [onPathnameChange, pathname]);
+
+  return null;
 }
 
 function BrandMark({ compact }: { compact: boolean }) {

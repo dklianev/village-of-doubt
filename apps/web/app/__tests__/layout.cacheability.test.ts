@@ -10,4 +10,8 @@ describe("root layout cacheability", () => {
     expect(layoutSource).not.toContain("toAuthSessionView");
     expect(layoutSource).toContain('<SiteChrome initialSession={null} />');
   });
+
+  it("keeps static-shell validation enabled for the application", () => {
+    expect(layoutSource).not.toContain("export const instant = false;");
+  });
 });

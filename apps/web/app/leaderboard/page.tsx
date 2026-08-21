@@ -20,6 +20,8 @@ export const metadata: Metadata = routeMetadata({
   ogDescription: "Участия, победи и последна активност от завършените игри.",
 });
 
+export const instant = true;
+
 const leaderboardJsonLd = {
   "@context": "https://schema.org",
   "@type": "CollectionPage",
