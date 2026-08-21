@@ -3,6 +3,11 @@ import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // Next 16.3.1 drops the module-sync branch of @swc/helpers from pnpm
+  // standalone traces. Remove after vercel/next.js#97372 reaches stable.
+  outputFileTracingIncludes: {
+    "/*": ["../../node_modules/.pnpm/@swc+helpers@*/node_modules/@swc/helpers/esm/**/*"],
+  },
   cacheComponents: true,
   transpilePackages: ["@werewolf/shared", "@werewolf/database", "@werewolf/ui"],
   allowedDevOrigins: ["127.0.0.1"],
