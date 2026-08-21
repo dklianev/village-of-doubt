@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useEffectEvent, useRef } from "react";
 
 const FOCUSABLE_SELECTOR =
   'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
@@ -14,6 +14,7 @@ export function useModal<T extends HTMLElement = HTMLDivElement>({
 }) {
   const ref = useRef<T | null>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
+  const closeModal = useEffectEvent(onClose);
 
   useEffect(() => {
     if (!open) {
@@ -30,7 +31,7 @@ export function useModal<T extends HTMLElement = HTMLDivElement>({
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         event.preventDefault();
-        onClose();
+        closeModal();
         return;
       }
 
@@ -61,7 +62,7 @@ export function useModal<T extends HTMLElement = HTMLDivElement>({
       document.body.style.overflow = previousOverflow;
       previousActiveElement.current?.focus();
     };
-  }, [onClose, open]);
+  }, [open]);
 
   return { ref };
 }
