@@ -28,3 +28,23 @@ test(
     }
   },
 );
+
+test(
+  "removes stale Windows symlinks whose standalone package target no longer exists",
+  { skip: process.platform !== "win32" },
+  () => {
+    const fixture = mkdtempSync(join(tmpdir(), "werewolf-standalone-stale-links-"));
+    try {
+      const dependencyDirectory = join(fixture, "consumer", "node_modules");
+      const dependencyLink = join(dependencyDirectory, "has-flag");
+      mkdirSync(dependencyDirectory, { recursive: true });
+      symlinkSync("..\\..\\store\\has-flag", dependencyLink, "file");
+
+      assert.equal(repairWindowsStandaloneSymlinks(fixture), 1);
+      assert.throws(() => statSync(dependencyLink), { code: "ENOENT" });
+      assert.equal(repairWindowsStandaloneSymlinks(fixture), 0);
+    } finally {
+      rmSync(fixture, { recursive: true, force: true });
+    }
+  },
+);

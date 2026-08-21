@@ -25,7 +25,16 @@ export function repairWindowsStandaloneSymlinks(rootDirectory, platform = proces
       if (entry.isSymbolicLink()) {
         const target = readlinkSync(entryPath);
         const resolvedTarget = resolve(dirname(entryPath), target);
-        if (!statSync(resolvedTarget).isDirectory()) continue;
+        let targetStats;
+        try {
+          targetStats = statSync(resolvedTarget);
+        } catch (error) {
+          if (!isMissingSymlinkTarget(error)) throw error;
+          unlinkSync(entryPath);
+          repaired += 1;
+          continue;
+        }
+        if (!targetStats.isDirectory()) continue;
 
         try {
           statSync(entryPath);
@@ -47,6 +56,10 @@ export function repairWindowsStandaloneSymlinks(rootDirectory, platform = proces
 
 function isBrokenWindowsDirectoryLink(error) {
   return error instanceof Error && "code" in error && (error.code === "EPERM" || error.code === "ENOENT");
+}
+
+function isMissingSymlinkTarget(error) {
+  return error instanceof Error && "code" in error && error.code === "ENOENT";
 }
 
 const isDirectRun = process.argv[1]

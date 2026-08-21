@@ -15,7 +15,7 @@
     "@colyseus/monitor": "^0.17.8",
     "@colyseus/redis-driver": "^0.17.7",
     "@colyseus/redis-presence": "^0.17.8",
-    "@colyseus/schema": "^4.0.30",
+    "@colyseus/schema": "^4.0.31",
     "@colyseus/tools": "^0.17.20",
     "@colyseus/ws-transport": "^0.17.13",
     "@sentry/node": "^10.70.0",
@@ -33,6 +33,6 @@
     "@types/node": "24.13.3",
     "tsx": "^4.23.12",
     "typescript": "^7.0.2",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.11"
   }
 }
