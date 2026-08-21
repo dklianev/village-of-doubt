@@ -270,6 +270,15 @@ test("auth E2E falls back to its standalone port when the configured local app i
   );
 });
 
+test("frontend E2E seeds Better Auth 1.7 credential identities with an issuer", () => {
+  const frontendE2e = read("scripts/frontend-e2e.mjs");
+
+  assert.match(
+    frontendE2e,
+    /issuer:\s*"local:credential",\s*\r?\n\s*accountId:\s*identity\.id,\s*\r?\n\s*providerId:\s*"credential"/,
+  );
+});
+
 test("deploy validates Compose before disruption and applies database privileges in order", () => {
   const deploy = read("scripts/deploy-release.sh");
   const environmentPreflight = 'node --env-file=.env scripts/check-production-env.mjs';

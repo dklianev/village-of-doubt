@@ -424,6 +424,7 @@ async function seedAuthFixture(url) {
       })));
       await transaction.insert(databaseModule.account).values(users.map((identity) => ({
         id: randomUUID(),
+        issuer: "local:credential",
         accountId: identity.id,
         providerId: "credential",
         userId: identity.id,
