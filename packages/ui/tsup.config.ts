@@ -9,7 +9,8 @@ export default defineConfig({
   ],
   format: ["esm", "cjs"],
   // TypeScript 7 no longer exposes the compiler API consumed by tsup's DTS
-  // bundler. Native declaration emit runs separately via tsconfig.build.json.
+  // bundler. This private workspace package emits native, unbundled declarations
+  // separately via tsconfig.build.json.
   dts: false,
   sourcemap: true,
   clean: true,
