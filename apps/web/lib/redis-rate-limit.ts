@@ -93,13 +93,6 @@ export function createBetterAuthRateLimitStorage(
   backend: SharedRateLimitBackend,
 ): BetterAuthRateLimitStorage {
   return {
-    async get() {
-      return null;
-    },
-    async set() {
-      // Better Auth uses consume() when it is present. These methods satisfy
-      // the storage contract without maintaining a second counter model.
-    },
     async consume(key, rule) {
       const result = await backend.consume({
         key,

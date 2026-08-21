@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { getTableConfig } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
-import { gameEvents, gamePlayers, gameSessionRevocations, games, session } from "./schema.js";
+import { account, gameEvents, gamePlayers, gameSessionRevocations, games, session } from "./schema.js";
 
 describe("game_players final outcome schema", () => {
   it("keeps won authoritative, non-null, and false by default", () => {
@@ -27,6 +27,31 @@ describe("game_players final outcome schema", () => {
 });
 
 describe("database integrity and anonymization indexes", () => {
+  it("scopes Better Auth account identities by issuer", () => {
+    const config = getTableConfig(account);
+    const issuer = config.columns.find((column) => column.name === "issuer");
+    const identityIndex = config.indexes.find(
+      (item) => item.config.name === "account_issuer_account_id_uidx",
+    );
+
+    expect(issuer).toMatchObject({ notNull: true });
+    expect(identityIndex?.config.unique).toBe(true);
+  });
+
+  it("backfills Better Auth 1.7 account issuers before enforcing identity uniqueness", () => {
+    const migration = readFileSync(
+      resolve(process.cwd(), "drizzle/0012_soft_alex_power.sql"),
+      "utf8",
+    );
+
+    expect(migration).toContain('ALTER TABLE "account" ADD COLUMN "issuer" text;');
+    expect(migration).toContain("WHEN \"provider_id\" = 'credential' THEN 'local:credential'");
+    expect(migration).toContain("WHEN \"provider_id\" = 'google' THEN 'local:oauth:google'");
+    expect(migration).toContain("WHEN \"provider_id\" = 'discord' THEN 'local:oauth:discord'");
+    expect(migration).toContain('ALTER TABLE "account" ALTER COLUMN "issuer" SET NOT NULL;');
+    expect(migration).toContain('CREATE UNIQUE INDEX "account_issuer_account_id_uidx"');
+  });
+
   it("stores one durable game-session revocation marker per user", () => {
     const config = getTableConfig(gameSessionRevocations);
 

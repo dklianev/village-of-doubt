@@ -18,7 +18,7 @@
     "@werewolf/database": "workspace:*",
     "@werewolf/shared": "workspace:*",
     "@werewolf/ui": "workspace:*",
-    "better-auth": "^1.6.27",
+    "better-auth": "^1.7.1",
     "lucide-react": "^1.32.0",
     "next": "^16.3.1",
     "react": "^19.2.8",

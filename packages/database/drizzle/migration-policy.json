@@ -7,6 +7,12 @@
       "backupRequired": true,
       "reason": "The migration defines a tightly scoped account-deletion function whose DELETE statements run only when an authenticated user later requests deletion; applying the migration itself does not delete rows.",
       "rollbackPlan": "Drop the three account-deletion boundary functions and restore the pre-release backup into a new database if the deployed application cannot safely return to the previous account-deletion path."
+    },
+    "0012_soft_alex_power": {
+      "mode": "maintenance",
+      "backupRequired": true,
+      "reason": "Better Auth 1.7 requires every credential and OAuth account identity to be scoped by a non-null issuer before the new unique identity index can be enforced.",
+      "rollbackPlan": "Restore the pre-migration backup before redeploying Better Auth 1.6; the previous release cannot create account rows after the issuer column becomes non-null."
     }
   }
 }
