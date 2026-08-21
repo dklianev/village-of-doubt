@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   description: "Локален списък с хора за следващата стая и бърза покана за следваща игра.",
 };
 
+export const instant = false;
+
 type FriendsPageProps = {
   searchParams?: Promise<{ visualAuth?: string | string[] }>;
 };

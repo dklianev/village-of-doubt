@@ -15,15 +15,17 @@ export function LobbyCreateClient({
   family?: GameFamily;
 }) {
   return (
-    <Suspense
-      fallback={
-        <div className="create-loading">
-          <p className="lobby-kicker">Създай частна стая</p>
-          <h1>Зареждане на стаята...</h1>
-        </div>
-      }
-    >
+    <Suspense fallback={<LobbyCreateLoading />}>
       <LobbyWizard initialMode={initialMode} family={family} />
     </Suspense>
+  );
+}
+
+export function LobbyCreateLoading() {
+  return (
+    <div className="create-loading">
+      <p className="lobby-kicker">Създай частна стая</p>
+      <h1>Зареждане на стаята...</h1>
+    </div>
   );
 }

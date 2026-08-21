@@ -30,6 +30,8 @@ export const metadata: Metadata = {
   description: "Преглед на завършена игра: фази, гласове, смърти и победител.",
 };
 
+export const instant = false;
+
 export default async function ReplayPage({
   params,
   searchParams,

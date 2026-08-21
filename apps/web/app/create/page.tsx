@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { LobbyCreateClient } from "@/components/lobby-create-client";
+import { Suspense } from "react";
+import { LobbyCreateClient, LobbyCreateLoading } from "@/components/lobby-create-client";
 import { requireSession } from "@/lib/require-session";
 import { GAME_MODE_DEFINITIONS, getGameFamily, type GameMode } from "@werewolf/shared";
 
@@ -8,7 +9,29 @@ export const metadata: Metadata = {
   description: "Избери готова рецепта за Върколак или Мафия и създай частна стая за секунди.",
 };
 
-export default async function CreatePage({ searchParams }: { searchParams?: Promise<{ mode?: string; visualAuth?: string | string[] }> }) {
+type CreatePageProps = {
+  searchParams?: Promise<{ mode?: string; visualAuth?: string | string[] }>;
+};
+
+type CreateRouteContentProps = {
+  searchParams: CreatePageProps["searchParams"];
+};
+
+export default function CreatePage({ searchParams }: CreatePageProps) {
+  return (
+    <Suspense
+      fallback={
+        <main className="shell lobby-shell create-choice-shell">
+          <LobbyCreateLoading />
+        </main>
+      }
+    >
+      <CreateRouteContent searchParams={searchParams} />
+    </Suspense>
+  );
+}
+
+async function CreateRouteContent({ searchParams }: CreateRouteContentProps) {
   const params = await searchParams;
   const initialMode = parseMode(params?.mode);
   const family = params?.mode && params.mode in GAME_MODE_DEFINITIONS ? getGameFamily(initialMode) : undefined;

@@ -19,6 +19,8 @@ export const metadata: Metadata = routeMetadata({
   robots: { index: true, follow: true },
 });
 
+export const instant = false;
+
 interface TermsPageProps {
   searchParams?: Promise<{ visualAuth?: string | string[] }>;
 }

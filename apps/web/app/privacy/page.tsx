@@ -20,6 +20,8 @@ export const metadata: Metadata = routeMetadata({
   robots: { index: true, follow: true },
 });
 
+export const instant = false;
+
 interface PrivacyPageProps {
   searchParams?: Promise<{ visualAuth?: string | string[] }>;
 }

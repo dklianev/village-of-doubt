@@ -21,6 +21,8 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+export const instant = false;
+
 type AccountHistoryGame = Awaited<ReturnType<typeof getGameHistoryForUser>>[number] & {
   playerRole: string | null;
   playerWon: boolean;

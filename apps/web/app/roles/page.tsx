@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { routeMetadata } from "@/lib/seo";
 
+export const instant = false;
+
 export const metadata: Metadata = routeMetadata({
   title: "Роли — всички тайни карти",
   description: "Общ вход към справочниците за роли във Върколак и Мафия: тайни карти, отбори, нощни действия и условия за победа.",

@@ -17,6 +17,8 @@ export const metadata: Metadata = routeMetadata({
   robots: { index: false, follow: true },
 });
 
+export const instant = false;
+
 export default async function StatusPage() {
   await connection();
   const { services, lastCheckedAt } = await loadStatusSnapshot();

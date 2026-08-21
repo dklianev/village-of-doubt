@@ -17,6 +17,8 @@ export const metadata: Metadata = routeMetadata({
   ogDescription: "Плочи за спасения, предателства, точни изстрели и лични победи.",
 });
 
+export const instant = false;
+
 const achievementsJsonLd = {
   "@context": "https://schema.org",
   "@type": "CollectionPage",

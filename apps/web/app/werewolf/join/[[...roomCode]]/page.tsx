@@ -7,6 +7,8 @@ export const metadata: Metadata = {
   description: "Покажи знака на селото и премини през оградата във Върколак.",
 };
 
+export const instant = false;
+
 export default async function WerewolfJoinPage({ params }: { params: Promise<{ roomCode?: string[] }> }) {
   const { roomCode } = await params;
   const initialCode = roomCode?.[0] ?? "";

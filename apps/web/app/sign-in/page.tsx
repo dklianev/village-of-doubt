@@ -14,6 +14,8 @@ export const metadata: Metadata = routeMetadata({
   ogDescription: "Влез с Google, Discord или имейл и отвори частна маса.",
 });
 
+export const instant = false;
+
 export default async function SignInPage({
   searchParams,
 }: {

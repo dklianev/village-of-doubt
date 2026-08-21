@@ -7,6 +7,8 @@ export const metadata: Metadata = {
   description: "Покажи кода на бара и седни на масата с приятели в Мафия.",
 };
 
+export const instant = false;
+
 export default async function MafiaJoinPage({ params }: { params: Promise<{ roomCode?: string[] }> }) {
   const { roomCode } = await params;
   const initialCode = roomCode?.[0] ?? "";

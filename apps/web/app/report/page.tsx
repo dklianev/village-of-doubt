@@ -17,6 +17,8 @@ export const metadata: Metadata = routeMetadata({
   robots: { index: false, follow: false },
 });
 
+export const instant = false;
+
 interface ReportPageProps {
   searchParams?: Promise<{ visualAuth?: string | string[]; visualStep?: string | string[] }>;
 }

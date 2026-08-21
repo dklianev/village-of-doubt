@@ -1,7 +1,19 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { PlayRoomClient } from "@/components/play-room-client";
+import { RouteLoadingState } from "@/components/system/RouteLoadingState";
 import { requireSession } from "@/lib/require-session";
 import { parseRoomCreateOptions, type RoomSearchParams } from "@/lib/room-options";
+
+type PlayPageProps = {
+  params: Promise<{ code: string }>;
+  searchParams?: Promise<RoomSearchParams & { visualGame?: string | string[] }>;
+};
+
+type PlayRouteContentProps = {
+  params: PlayPageProps["params"];
+  searchParams: PlayPageProps["searchParams"];
+};
 
 export async function generateMetadata({
   params,
@@ -15,13 +27,15 @@ export async function generateMetadata({
   };
 }
 
-export default async function PlayPage({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ code: string }>;
-  searchParams?: Promise<RoomSearchParams & { visualGame?: string | string[] }>;
-}) {
+export default function PlayPage({ params, searchParams }: PlayPageProps) {
+  return (
+    <Suspense fallback={<RouteLoadingState title="Подреждаме игровата маса" />}>
+      <PlayRouteContent params={params} searchParams={searchParams} />
+    </Suspense>
+  );
+}
+
+async function PlayRouteContent({ params, searchParams }: PlayRouteContentProps) {
   const [{ code }, resolvedSearchParams] = await Promise.all([params, searchParams]);
   const query = stringifySearchParams(resolvedSearchParams);
   const visualGame = firstSearchValue(resolvedSearchParams?.visualGame);

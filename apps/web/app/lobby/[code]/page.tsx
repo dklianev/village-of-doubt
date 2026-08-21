@@ -4,6 +4,8 @@ import { LobbyInviteClient } from "@/components/lobby-invite-client";
 import { requireSession } from "@/lib/require-session";
 import { parseRoomCreateOptions, roomOptionsToQuery, type RoomSearchParams } from "@/lib/room-options";
 
+export const instant = false;
+
 export async function generateMetadata({
   params,
 }: {

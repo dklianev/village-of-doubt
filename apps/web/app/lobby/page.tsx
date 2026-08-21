@@ -7,6 +7,8 @@ export const metadata: Metadata = {
   description: "Създай частна стая, избери игра, роли, Разказвач и темпо.",
 };
 
+export const instant = false;
+
 export default async function LobbyPage({ searchParams }: { searchParams?: Promise<{ mode?: string }> }) {
   const params = await searchParams;
   const initialMode = parseMode(params?.mode);
