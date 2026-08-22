@@ -40,7 +40,94 @@ describe("database maintenance loop", () => {
     expect(unref).toHaveBeenCalledOnce();
   });
 
+  it("logs a structured summary for a completed maintenance pass", async () => {
+    const info = vi.fn();
+    const error = vi.fn();
+    const now = vi.fn()
+      .mockReturnValueOnce(1_000)
+      .mockReturnValueOnce(1_042);
+    const run = vi.fn(async () => ({
+      maintenance: {
+        acquired: true,
+        sessionsDeleted: 2,
+        verificationsDeleted: 3,
+        gamesAbandoned: 1,
+        eventsDeleted: 40,
+      },
+      oauthTokens: {
+        accountsUpdated: 4,
+        tokensEncrypted: 5,
+        unversionedTokensRemaining: 0,
+      },
+    }));
+    const setInterval = vi.fn(() => ({ unref: vi.fn() })) as never;
+
+    await startDatabaseMaintenanceLoop(
+      { NODE_ENV: "production", DATABASE_URL: "postgres://local/db" },
+      { run, setInterval, logger: { info, error }, now },
+    );
+
+    expect(info).toHaveBeenCalledWith("[database-maintenance]", {
+      event: "completed",
+      timestamp: "1970-01-01T00:00:01.042Z",
+      durationMs: 42,
+      maintenance: {
+        acquired: true,
+        sessionsDeleted: 2,
+        verificationsDeleted: 3,
+        gamesAbandoned: 1,
+        eventsDeleted: 40,
+      },
+      oauthTokens: {
+        accountsUpdated: 4,
+        tokensEncrypted: 5,
+        unversionedTokensRemaining: 0,
+      },
+    });
+    expect(error).not.toHaveBeenCalled();
+  });
+
+  it("records an advisory-lock skip without reporting a failure", async () => {
+    const info = vi.fn();
+    const error = vi.fn();
+    const now = vi.fn()
+      .mockReturnValueOnce(2_000)
+      .mockReturnValueOnce(2_005);
+    const run = vi.fn(async () => ({
+      maintenance: {
+        acquired: false,
+        sessionsDeleted: 0,
+        verificationsDeleted: 0,
+        gamesAbandoned: 0,
+        eventsDeleted: 0,
+      },
+      oauthTokens: {
+        accountsUpdated: 0,
+        tokensEncrypted: 0,
+        unversionedTokensRemaining: 0,
+      },
+    }));
+    const setInterval = vi.fn(() => ({ unref: vi.fn() })) as never;
+
+    await startDatabaseMaintenanceLoop(
+      { NODE_ENV: "production", DATABASE_URL: "postgres://local/db" },
+      { run, setInterval, logger: { info, error }, now },
+    );
+
+    expect(info).toHaveBeenCalledWith("[database-maintenance]", expect.objectContaining({
+      event: "skipped",
+      durationMs: 5,
+      maintenance: expect.objectContaining({ acquired: false }),
+    }));
+    expect(error).not.toHaveBeenCalled();
+  });
+
   it("fails startup and does not schedule recurring work when the initial pass fails", async () => {
+    const info = vi.fn();
+    const error = vi.fn();
+    const now = vi.fn()
+      .mockReturnValueOnce(3_000)
+      .mockReturnValueOnce(3_015);
     const run = vi.fn(async () => {
       throw new Error("unsafe OAuth key retirement");
     });
@@ -51,9 +138,17 @@ describe("database maintenance loop", () => {
         NODE_ENV: "production",
         DATABASE_URL: "postgres://local/db",
       },
-      { run, setInterval },
+      { run, setInterval, logger: { info, error }, now },
     )).rejects.toThrow("unsafe OAuth key retirement");
     expect(setInterval).not.toHaveBeenCalled();
+    expect(info).not.toHaveBeenCalled();
+    expect(error).toHaveBeenCalledWith("[database-maintenance]", {
+      event: "failed",
+      timestamp: "1970-01-01T00:00:03.015Z",
+      durationMs: 15,
+      errorName: "Error",
+      message: "unsafe OAuth key retirement",
+    });
   });
 
   it("parses bounded cleanup and retention settings", () => {

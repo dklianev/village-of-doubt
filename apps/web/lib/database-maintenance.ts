@@ -4,6 +4,7 @@ import {
   encryptLegacyOAuthTokens,
   runDatabaseMaintenance,
   type DatabaseMaintenanceOptions,
+  type DatabaseMaintenanceResult,
 } from "@werewolf/database";
 import {
   symmetricDecrypt,
@@ -19,8 +20,24 @@ const OAUTH_TOKEN_BATCH_SIZE = 100;
 const OAUTH_TOKEN_MAX_BATCHES_PER_PASS = 10;
 
 interface MaintenanceRuntime {
-  run: () => Promise<unknown>;
+  run: () => Promise<MaintenanceRunResult | undefined>;
   setInterval: typeof setInterval;
+  logger?: MaintenanceLogger;
+  now?: () => number;
+}
+
+interface MaintenanceRunResult {
+  maintenance: DatabaseMaintenanceResult;
+  oauthTokens: {
+    accountsUpdated: number;
+    tokensEncrypted: number;
+    unversionedTokensRemaining: number;
+  };
+}
+
+interface MaintenanceLogger {
+  info: (message: string, context: Record<string, unknown>) => void;
+  error: (message: string, context: Record<string, unknown>) => void;
 }
 
 export async function startDatabaseMaintenanceLoop(
@@ -38,11 +55,39 @@ export async function startDatabaseMaintenanceLoop(
     60_000,
     24 * 60 * 60 * 1_000,
   );
-  await maintenanceRuntime.run();
+  const logger = maintenanceRuntime.logger ?? console;
+  const now = maintenanceRuntime.now ?? Date.now;
+  const runPass = async () => {
+    const startedAt = now();
+    try {
+      const result = await maintenanceRuntime.run();
+      const finishedAt = now();
+      if (result) {
+        logger.info("[database-maintenance]", {
+          event: result.maintenance.acquired ? "completed" : "skipped",
+          timestamp: new Date(finishedAt).toISOString(),
+          durationMs: Math.max(0, finishedAt - startedAt),
+          maintenance: result.maintenance,
+          oauthTokens: result.oauthTokens,
+        });
+      }
+      return result;
+    } catch (error) {
+      const finishedAt = now();
+      logger.error("[database-maintenance]", {
+        event: "failed",
+        timestamp: new Date(finishedAt).toISOString(),
+        durationMs: Math.max(0, finishedAt - startedAt),
+        errorName: error instanceof Error ? error.name : "UnknownError",
+        message: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    }
+  };
+
+  await runPass();
   const run = () => {
-    void maintenanceRuntime.run().catch((error) => {
-      console.error("[database-maintenance]", error);
-    });
+    void runPass().catch(() => undefined);
   };
 
   const timer = maintenanceRuntime.setInterval(run, intervalMs);
