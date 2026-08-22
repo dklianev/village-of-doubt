@@ -29,6 +29,7 @@ interface PlaySeatProps {
   phase: GamePhase;
   narratorMode: string;
   targetable: boolean;
+  shortcutNumber?: number;
   selected: boolean;
   secondSelected: boolean;
   voteCount: number;
@@ -52,6 +53,7 @@ export const PlaySeat = memo(function PlaySeat({
   phase,
   narratorMode,
   targetable,
+  shortcutNumber,
   selected,
   secondSelected,
   voteCount,
@@ -80,6 +82,9 @@ export const PlaySeat = memo(function PlaySeat({
   if (voteCount > 0) {
     stateParts.push(`${voteCount} гласа`);
   }
+  if (shortcutNumber) {
+    stateParts.push(`клавиш ${shortcutNumber}`);
+  }
   if (secondSelected) {
     stateParts.push("втора цел");
   } else if (selected) {
@@ -99,6 +104,9 @@ export const PlaySeat = memo(function PlaySeat({
           />
         </span>
         <span className={styles.initialBadge}>{playerInitials(player.displayName)}</span>
+        {shortcutNumber ? (
+          <span className={styles.shortcutHint} data-seat-shortcut>{shortcutNumber}</span>
+        ) : null}
         {voteCount > 0 ? <span className={styles.voteCount}>{voteCount}</span> : null}
         {selected || secondSelected ? (
           <span className={styles.selectedMark}>{secondSelected ? "2" : "✓"}</span>
@@ -119,6 +127,7 @@ export const PlaySeat = memo(function PlaySeat({
       <button
         className={`${styles.token} ${styles.targetable}`}
         data-seat-token
+        data-seat-user-id={player.userId}
         type="button"
         data-alive={player.alive ? "true" : "false"}
         data-connected={player.connected ? "true" : "false"}
@@ -230,6 +239,7 @@ function arePlaySeatPropsEqual(previous: PlaySeatProps, next: PlaySeatProps) {
   return previous.phase === next.phase
     && previous.narratorMode === next.narratorMode
     && previous.targetable === next.targetable
+    && previous.shortcutNumber === next.shortcutNumber
     && previous.selected === next.selected
     && previous.secondSelected === next.secondSelected
     && previous.voteCount === next.voteCount

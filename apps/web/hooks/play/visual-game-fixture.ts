@@ -54,8 +54,7 @@ export interface VisualGameRoomFixtureResult {
   privateChats: PrivateChatMessage[];
   typingNotices: TypingNotice[];
   isBlessed: boolean;
-  status: string;
-  setStatus: Dispatch<SetStateAction<string>>;
+  connectionMessage: string;
   connectionStatus: ConnectionStatus;
   unlockedAchievementIds: string[];
   setUnlockedAchievementIds: Dispatch<SetStateAction<string[]>>;
@@ -205,7 +204,7 @@ export function useVisualGameRoomFixture({
     () => parseVisualGameFixture(search, code, createOptions),
     [code, createOptions, search],
   );
-  const [status, setStatus] = useState(() => statusForConnection(config?.connectionStatus ?? "connected"));
+  const [connectionMessage, setConnectionMessage] = useState(() => statusForConnection(config?.connectionStatus ?? "connected"));
   const [unlockedAchievementIds, setUnlockedAchievementIds] = useState<string[]>([]);
   const room = useMemo(() => createVisualRoom(), []);
 
@@ -225,16 +224,15 @@ export function useVisualGameRoomFixture({
       privateChats: config.privateChats,
       typingNotices: config.typingNotices,
       isBlessed: config.isBlessed,
-      status,
-      setStatus,
+      connectionMessage,
       connectionStatus: config.connectionStatus,
       unlockedAchievementIds,
       setUnlockedAchievementIds,
       recordedGameId: config.recordedGameId,
-      reconnectNow: () => setStatus("Визуалната връзка е възстановена."),
+      reconnectNow: () => setConnectionMessage("Визуалната връзка е възстановена."),
       isPending: false,
     };
-  }, [config, room, setStatus, status, unlockedAchievementIds]);
+  }, [config, connectionMessage, room, unlockedAchievementIds]);
 }
 
 export function parseVisualGameFixture(

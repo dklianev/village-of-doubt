@@ -93,11 +93,19 @@ describe("NightActionPanel", () => {
     expect(screen.getByRole("button", { name: "Свържи се с елиминиран" })).toBeDisabled();
   });
 
-  it("allows any role to skip its night action", async () => {
+  it("requires a second deliberate click before skipping a night action", async () => {
     const user = userEvent.setup();
     const props = renderPanel({ privateRole: "doctor" });
 
     await user.click(screen.getByRole("button", { name: "Пропусни" }));
+
+    expect(props.sendNightAction).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Потвърди пропуска" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+
+    await user.click(screen.getByRole("button", { name: "Потвърди пропуска" }));
 
     expect(props.sendNightAction).toHaveBeenCalledWith({ kind: "skip" });
   });

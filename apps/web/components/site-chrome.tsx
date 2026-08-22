@@ -36,7 +36,7 @@ const NavDropdown = dynamic(() => import("@/components/site-chrome/NavDropdown")
   ssr: false,
 });
 
-export default function SiteChrome({ initialSession }: { initialSession: AuthSessionView | null }) {
+export default function SiteChrome({ initialSession }: { initialSession?: AuthSessionView | null }) {
   const [pathname, setPathname] = useState<string | null>(null);
   const [soundEnabled, setSoundEnabledState] = useState(false);
   const [themePreference, setThemePreference] = useState<ThemePreference>("dark");
@@ -152,7 +152,7 @@ export default function SiteChrome({ initialSession }: { initialSession: AuthSes
       <UtilityCluster
         soundEnabled={soundEnabled}
         themePreference={themePreference}
-        initialSession={initialSession}
+        {...(initialSession === undefined ? {} : { initialSession })}
         onToggleSound={toggleSound}
         onCycleTheme={cycleThemePreference}
       />
@@ -168,7 +168,7 @@ export default function SiteChrome({ initialSession }: { initialSession: AuthSes
           pathname={pathname ?? ""}
           soundEnabled={soundEnabled}
           themePreference={themePreference}
-          initialSession={initialSession}
+          {...(initialSession === undefined ? {} : { initialSession })}
           playHref={playHref}
           triggerRef={drawerTriggerRef}
           onOpenChange={setDrawerOpen}
@@ -269,7 +269,7 @@ function UtilityCluster({
 }: {
   soundEnabled: boolean;
   themePreference: ThemePreference;
-  initialSession: AuthSessionView | null;
+  initialSession?: AuthSessionView | null;
   onToggleSound: () => void;
   onCycleTheme: () => void;
   showAuth?: boolean;
@@ -293,7 +293,7 @@ function UtilityCluster({
       {showAuth ? (
         <>
           <span className="site-utility-separator" aria-hidden />
-          <AuthChip initialSession={initialSession} />
+          <AuthChip {...(initialSession === undefined ? {} : { initialSession })} />
         </>
       ) : null}
     </div>

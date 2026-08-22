@@ -926,10 +926,6 @@
   --winner-scene-tone: rgba(184, 172, 150, 0.18);
 }
 
-:global(.play-rail-tabs) {
-  display: none;
-}
-
 :global(.play-action-dock .winner-card),
 :global(.play-action-dock .ritual-panel),
 :global(.play-action-dock .play-blessed-card) {
@@ -1973,39 +1969,6 @@
     line-height: 1.08;
   }
 
-  :global(.play-rail-tabs) {
-    position: sticky;
-    top: 0;
-    z-index: 2;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-    margin-top: 22px;
-    padding: 8px;
-    border: 1px solid rgba(245, 232, 200, 0.12);
-    border-radius: 999px;
-    background: rgba(8, 6, 5, 0.64);
-    backdrop-filter: none;
-  }
-
-  :global(.play-rail-tabs button) {
-    min-height: 38px;
-    border: 0;
-    border-radius: 999px;
-    background: transparent;
-    color: rgba(245, 232, 200, 0.66);
-    font-size: 0.75rem;
-    font-weight: 950;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-  }
-
-  :global(.play-rail-tabs button[aria-selected="true"]) {
-    background: rgba(209, 154, 66, 0.24);
-    color: #fff7df;
-    box-shadow: inset 0 0 0 1px rgba(209, 154, 66, 0.28);
-  }
-
   :global(.play-rail-panel[data-mobile-panel]) {
     display: none;
   }
@@ -2178,6 +2141,19 @@
   background: rgba(209, 154, 66, 0.22);
   color: #fff7df;
   box-shadow: inset 0 0 0 1px rgba(209, 154, 66, 0.34);
+}
+
+:global(.play-confirm-skip[data-confirm-state="armed"]) {
+  border-color: rgba(224, 118, 79, 0.72);
+  background: linear-gradient(180deg, rgba(146, 48, 38, 0.9), rgba(92, 28, 23, 0.94));
+  color: #fff7df;
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.12),
+    0 8px 22px rgba(77, 19, 15, 0.26);
+}
+
+:global(.play-confirm-skip[data-confirm-state="armed"]:focus-visible) {
+  outline-color: #fff7df;
 }
 
 :global(.play-rail-disclosure summary) {
@@ -2395,6 +2371,20 @@
   :global(.play-rail-tabs) {
     position: sticky;
     top: 8px;
+    z-index: 2;
+    padding: 8px;
+    border-color: rgba(245, 232, 200, 0.12);
+    background: rgba(8, 6, 5, 0.64);
+  }
+
+  :global(.play-rail-tab) {
+    color: rgba(245, 232, 200, 0.66);
+    letter-spacing: 0.14em;
+  }
+
+  :global(.play-rail-tab[aria-selected="true"]) {
+    background: rgba(209, 154, 66, 0.24);
+    box-shadow: inset 0 0 0 1px rgba(209, 154, 66, 0.28);
   }
 }
 

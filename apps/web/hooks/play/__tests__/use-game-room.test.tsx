@@ -208,7 +208,7 @@ describe("useGameRoom", () => {
     const { result } = renderHook(() => useGameRoom({ code: "ABCD", createOptions: undefined, toast }));
 
     await waitFor(() => expect(result.current.connectionStatus).toBe("disconnected"));
-    expect(result.current.status).toBe("Трябва да влезеш, за да се присъединиш към стаята.");
+    expect(result.current.connectionMessage).toBe("Трябва да влезеш, за да се присъединиш към стаята.");
     expect(createGameClient).not.toHaveBeenCalled();
   });
 
@@ -438,7 +438,7 @@ describe("useGameRoom", () => {
       await Promise.resolve();
     });
 
-    expect(result.current.status).toBe("Връзката е възстановена.");
+    expect(result.current.connectionMessage).toBe("Връзката е възстановена.");
     expect(client.reconnect).toHaveBeenCalledWith("reconnect-token");
     expect(reconnectRoom.onStateChange).toHaveBeenCalled();
     expect(toast).toHaveBeenCalledWith({ message: "Върнахме те в стаята.", kind: "success" });

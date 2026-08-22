@@ -27,7 +27,7 @@ export function MobileDrawer({
   soundEnabled: boolean;
   themePreference: ThemePreference;
   playHref: string;
-  initialSession: AuthSessionView | null;
+  initialSession?: AuthSessionView | null;
   triggerRef?: RefObject<HTMLButtonElement | null>;
   onOpenChange: (open: boolean) => void;
   onToggleSound: () => void;
@@ -71,7 +71,7 @@ export function MobileDrawer({
             onCycleTheme={onCycleTheme}
           />
           <div className="site-drawer-auth">
-            <AuthChip initialSession={initialSession} />
+            <AuthChip {...(initialSession === undefined ? {} : { initialSession })} />
           </div>
         </div>
       </div>

@@ -61,9 +61,9 @@ function requestSession(options?: { fresh?: boolean }) {
   return inFlightSessionRequest;
 }
 
-export function useAuthSession(initialSession: AuthSessionView | null = null) {
+export function useAuthSession(initialSession?: AuthSessionView | null) {
   const [data, setData] = useState<AuthSessionView | null>(initialSession ?? null);
-  const [isPending, setPending] = useState(false);
+  const [isPending, setPending] = useState(initialSession === undefined);
   const refreshGeneration = useRef(0);
 
   const refresh = useCallback(async (options?: { showPending?: boolean; fresh?: boolean }) => {
@@ -96,7 +96,9 @@ export function useAuthSession(initialSession: AuthSessionView | null = null) {
     window.addEventListener("focus", refreshOnFocus);
     window.addEventListener("auth-session-change", refreshOnAuthChange);
 
-    if (!initialSession?.user?.id) {
+    if (initialSession === undefined) {
+      void refresh();
+    } else if (!initialSession?.user?.id) {
       void refresh({ showPending: false });
     }
 
@@ -104,7 +106,7 @@ export function useAuthSession(initialSession: AuthSessionView | null = null) {
       window.removeEventListener("focus", refreshOnFocus);
       window.removeEventListener("auth-session-change", refreshOnAuthChange);
     };
-  }, [initialSession?.user?.id, refresh]);
+  }, [initialSession, refresh]);
 
   return { data, isPending, refresh };
 }

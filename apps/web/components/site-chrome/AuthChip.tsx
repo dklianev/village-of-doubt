@@ -8,11 +8,11 @@ import { ProfilePortrait } from "@/components/ProfilePortrait";
 import { avatarIdForUser } from "@/lib/avatar-catalog";
 import { useAuthSession, type AuthSessionView } from "@/lib/use-auth-session";
 
-export function AuthChip({ initialSession }: { initialSession: AuthSessionView | null }) {
+export function AuthChip({ initialSession }: { initialSession?: AuthSessionView | null }) {
   const router = useRouter();
   const sessionQuery = useAuthSession(initialSession);
   const session = sessionQuery.data;
-  const isPending = sessionQuery.isPending && !initialSession;
+  const isPending = sessionQuery.isPending;
   const [open, setOpen] = useState(false);
   const [confirmSignOut, setConfirmSignOut] = useState(false);
   const [signingOut, setSigningOut] = useState(false);

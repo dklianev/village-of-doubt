@@ -61,7 +61,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       </head>
       <body>
         <ResourceHints preconnect={["https://cdn.discordapp.com", "https://lh3.googleusercontent.com"]} />
-        <SiteChrome initialSession={null} />
+        <SiteChrome />
         {children}
         <SiteFooter />
         <ToastHost />

@@ -8,7 +8,7 @@ describe("root layout cacheability", () => {
   it("does not read request-bound auth state for the shared public shell", () => {
     expect(layoutSource).not.toContain("getRequestSession");
     expect(layoutSource).not.toContain("toAuthSessionView");
-    expect(layoutSource).toContain('<SiteChrome initialSession={null} />');
+    expect(layoutSource).toContain("<SiteChrome />");
   });
 
   it("keeps static-shell validation enabled for the application", () => {

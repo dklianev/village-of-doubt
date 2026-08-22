@@ -84,6 +84,13 @@ describe("PlaySeat", () => {
     expect(onSelect).toHaveBeenCalledTimes(1);
   });
 
+  it("shows the current keyboard target number on an actionable seat", () => {
+    renderSeat({ targetable: true, shortcutNumber: 3 });
+
+    expect(screen.getByText("3")).toHaveAttribute("data-seat-shortcut");
+    expect(screen.getByRole("button", { name: /клавиш 3/ })).toBeInTheDocument();
+  });
+
   it("renders revealed eliminated roles only when they are public", () => {
     renderSeat({
       player: player({ alive: false, revealedRole: "werewolf" }),

@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { VoteTallyBar } from "@/components/play/VoteTallyBar";
 import type { PublicPlayer, VoteTallyItem } from "@/lib/play/types";
 
@@ -16,8 +17,13 @@ export function VotingPanel({
   allowSkipVote: boolean;
   sendVote: (targetUserId: string) => void;
 }) {
+  const [skipArmed, setSkipArmed] = useState(false);
   const maxVotes = Math.max(1, ...voteTally.map((item) => item.count));
   const selectedTarget = livingPlayers.find((player) => player.userId === selectedTargetId && player.userId !== currentUserId);
+
+  useEffect(() => {
+    setSkipArmed(false);
+  }, [selectedTargetId]);
 
   return (
     <section className="ritual-panel mt-8 rounded-[2rem] p-6">
@@ -37,8 +43,22 @@ export function VotingPanel({
           {selectedTarget ? `Потвърди гласа за ${selectedTarget.displayName}` : "Потвърди гласа"}
         </button>
         {allowSkipVote ? (
-          <button className="btn btn-secondary" type="button" onClick={() => sendVote("skip")}>
-            Пропусни глас
+          <button
+            className="btn btn-secondary play-confirm-skip"
+            data-command-priority="quiet"
+            data-confirm-state={skipArmed ? "armed" : "idle"}
+            type="button"
+            aria-pressed={skipArmed}
+            onClick={() => {
+              if (skipArmed) {
+                setSkipArmed(false);
+                sendVote("skip");
+                return;
+              }
+              setSkipArmed(true);
+            }}
+          >
+            {skipArmed ? "Потвърди пропускането" : "Пропусни глас"}
           </button>
         ) : null}
       </div>

@@ -25,8 +25,6 @@ interface PlayStageProps {
   family: GameFamily;
   round: number;
   phaseEndsAt: number;
-  status: string;
-  isStatusInformative: boolean;
   isPending: boolean;
   players: PublicPlayer[];
   hasSnapshot: boolean;
@@ -34,6 +32,7 @@ interface PlayStageProps {
   communicationMode: string;
   ownPlayer: PublicPlayer | undefined;
   targetableIds: Set<string>;
+  shortcutNumbers: Map<string, number>;
   selectedTargetId: string;
   secondTargetId: string;
   voteCounts: Map<string, number>;
@@ -68,8 +67,6 @@ export function PlayStage({
   family,
   round,
   phaseEndsAt,
-  status,
-  isStatusInformative,
   isPending,
   players,
   hasSnapshot,
@@ -77,6 +74,7 @@ export function PlayStage({
   communicationMode,
   ownPlayer,
   targetableIds,
+  shortcutNumbers,
   selectedTargetId,
   secondTargetId,
   voteCounts,
@@ -256,10 +254,9 @@ export function PlayStage({
               {currentSpeaker ? `Говори: ${currentSpeaker.displayName}` : `Защита: ${currentDefender?.displayName}`}
             </p>
           ) : null}
-          {isStatusInformative || isPending ? (
+          {isPending ? (
             <p className={styles.status} aria-live="polite" aria-atomic="true">
-              {isStatusInformative ? status : ""}
-              {isPending ? " Обновяване..." : ""}
+              Обновяване...
             </p>
           ) : null}
         </div>
@@ -323,6 +320,9 @@ export function PlayStage({
                   phase={phase}
                   narratorMode={narratorMode}
                   targetable={targetable}
+                  {...(shortcutNumbers.has(player.userId)
+                    ? { shortcutNumber: shortcutNumbers.get(player.userId)! }
+                    : {})}
                   selected={selected}
                   secondSelected={secondSelected}
                   voteCount={voteCounts.get(player.userId) ?? 0}

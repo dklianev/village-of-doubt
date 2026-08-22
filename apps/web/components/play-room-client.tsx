@@ -99,8 +99,7 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
     privateChats,
     typingNotices,
     isBlessed,
-    status,
-    setStatus,
+    connectionMessage,
     connectionStatus,
     unlockedAchievementIds,
     setUnlockedAchievementIds,
@@ -122,17 +121,6 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
     phase: snapshot?.phase ?? "lobby",
     liveMode,
   });
-
-  // When the phase changes, drop stale action-feedback strings so the previous
-  // "Нощното действие е изпратено" or boilerplate "Свързан" don't linger past
-  // the moment they are relevant. Players still get fresh status when they act.
-  useEffect(() => {
-    const nextPhase = snapshot?.phase;
-    if (!nextPhase) {
-      return;
-    }
-    setStatus((current) => (current === "Свързан" || current === "Свързване..." ? "" : current));
-  }, [snapshot?.phase]);
 
   const players = useMemo(() => snapshot?.players ?? [], [snapshot?.players]);
   const livingPlayers = useMemo(() => players.filter((player) => player.playing && player.alive), [players]);
@@ -225,6 +213,10 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
 
     return actionTargets;
   }, [actionTargets, phase, privateRole?.role, secondaryActionTargets, selectedTargetId]);
+  const shortcutNumbers = useMemo(
+    () => new Map(keyboardActionTargets.slice(0, 9).map((player, index) => [player.userId, index + 1])),
+    [keyboardActionTargets],
+  );
   const voteCounts = useMemo(
     () => new Map((snapshot?.voteTally ?? []).map((item) => [item.targetUserId, item.count])),
     [snapshot?.voteTally],
@@ -572,13 +564,10 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
           : privateChatChannel
             ? "Тайният чат е отворен"
             : "Твоят таен ъгъл";
-  // Connection state already lives in the ConnectionBanner; the stage-status
-  // line is only useful for transient action feedback. Hide the boilerplate
-  // "Свързан" / "Свързване..." strings so the player doesn't see them linger.
-  const isStatusInformative = status.length > 0 && status !== "Свързан" && status !== "Свързване...";
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      const target = event.target as HTMLElement | null;
+      const target = event.target instanceof HTMLElement ? event.target : null;
+      const current = shortcutStateRef.current;
 
       if (event.defaultPrevented) {
         return;
@@ -588,7 +577,6 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
         if (isTextEntryShortcutTarget(target)) {
           return;
         }
-        const current = shortcutStateRef.current;
         event.preventDefault();
         if (current?.showShortcuts) {
           setShowShortcuts(false);
@@ -596,6 +584,20 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
           setSelectedTargetId("");
           setSecondTargetId("");
         }
+        return;
+      }
+
+      const focusedSeatId = target
+        ?.closest<HTMLElement>("[data-seat-user-id]")
+        ?.dataset.seatUserId;
+      if (
+        event.key === "Enter"
+        && focusedSeatId
+        && current
+        && (current.selectedTargetId === focusedSeatId || current.secondTargetId === focusedSeatId)
+      ) {
+        event.preventDefault();
+        submitCurrentShortcutAction();
         return;
       }
 
@@ -615,13 +617,13 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
         return;
       }
 
-      const current = shortcutStateRef.current;
       if (!current) {
         return;
       }
 
       if (
-        event.key === " " &&
+        event.code === "KeyP" &&
+        !event.repeat &&
         (current.ownPlayer?.host || current.ownPlayer?.narrator) &&
         current.phase !== "paused" &&
         current.phase !== "game_over"
@@ -671,7 +673,7 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
 
     return (
       <section className="play-section play-players-panel play-side-rail" aria-labelledby={railHeadingId}>
-        <ConnectionBanner status={connectionStatus} message={status} />
+        <ConnectionBanner status={connectionStatus} message={connectionMessage} />
 
         <div className="play-rail-intro">
           <p className="section-kicker play-section-kicker">
@@ -1043,7 +1045,7 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
       {connectionStatus === "reconnecting" || connectionStatus === "lost" ? (
         <ReconnectModal
           status={connectionStatus}
-          message={status}
+          message={connectionMessage}
           onRetry={reconnectNow}
         />
       ) : null}
@@ -1066,8 +1068,6 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
               family={family}
               round={snapshot?.round ?? 0}
               phaseEndsAt={snapshot?.phaseEndsAt ?? 0}
-              status={status}
-              isStatusInformative={isStatusInformative}
               isPending={isPending}
               players={players}
               hasSnapshot={Boolean(snapshot)}
@@ -1075,6 +1075,7 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
               communicationMode={snapshot?.communicationMode ?? "built_in_chat"}
               ownPlayer={ownPlayer}
               targetableIds={targetableIds}
+              shortcutNumbers={shortcutNumbers}
               selectedTargetId={selectedTargetId}
               secondTargetId={secondTargetId}
               voteCounts={voteCounts}

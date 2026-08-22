@@ -68,8 +68,7 @@ export interface UseGameRoomResult {
   privateChats: PrivateChatMessage[];
   typingNotices: TypingNotice[];
   isBlessed: boolean;
-  status: string;
-  setStatus: Dispatch<SetStateAction<string>>;
+  connectionMessage: string;
   connectionStatus: ConnectionStatus;
   unlockedAchievementIds: string[];
   setUnlockedAchievementIds: Dispatch<SetStateAction<string[]>>;
@@ -119,7 +118,7 @@ export function useGameRoom({
   const [privateChats, setPrivateChats] = useState<PrivateChatMessage[]>([]);
   const [typingNotices, setTypingNotices] = useState<TypingNotice[]>([]);
   const [isBlessed, setIsBlessed] = useState(false);
-  const [status, setStatus] = useState("Свързване...");
+  const [connectionMessage, setConnectionMessage] = useState("Свързване...");
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("connecting");
   const [unlockedAchievementIds, setUnlockedAchievementIds] = useState<string[]>([]);
   const [recordedGameId, setRecordedGameId] = useState<string | null>(null);
@@ -197,7 +196,7 @@ export function useGameRoom({
     }
 
     if (!session?.user?.id) {
-      setStatus("Трябва да влезеш, за да се присъединиш към стаята.");
+      setConnectionMessage("Трябва да влезеш, за да се присъединиш към стаята.");
       setConnectionStatus("disconnected");
       return () => {
         active = false;
@@ -227,7 +226,7 @@ export function useGameRoom({
       joinedRoom = nextRoom;
       persistReconnectionToken(code, nextRoom.reconnectionToken);
       setRoom(nextRoom);
-      setStatus("Свързан");
+      setConnectionMessage("Свързан");
       setConnectionStatus("connected");
 
       nextRoom.onStateChange((state) => {
@@ -405,11 +404,11 @@ export function useGameRoom({
         if (leaveCode === 1000 || leaveCode === 1001) {
           clearReconnectionToken(code);
           clearViewerPrivateState();
-          setStatus("Напусна стаята.");
+          setConnectionMessage("Напусна стаята.");
           setConnectionStatus("disconnected");
           return;
         }
-        setStatus("Връзката прекъсна. Опитваме да те върнем в стаята.");
+        setConnectionMessage("Връзката прекъсна. Опитваме да те върнем в стаята.");
         setConnectionStatus("reconnecting");
         onReconnectSuppressedRef.current?.();
         if (!reconnecting) {
@@ -421,7 +420,7 @@ export function useGameRoom({
     const attemptReconnect = async (attempt: number) => {
       const reconnectToken = joinedRoom?.reconnectionToken || readReconnectionToken(code);
       if (!reconnectToken) {
-        setStatus("Няма запазен ключ за връщане. Презареди страницата, ако стаята още е активна.");
+        setConnectionMessage("Няма запазен ключ за връщане. Презареди страницата, ако стаята още е активна.");
         setConnectionStatus("lost");
         return;
       }
@@ -429,7 +428,7 @@ export function useGameRoom({
       reconnecting = true;
       clearReconnectTimer();
       setConnectionStatus("reconnecting");
-      setStatus(attempt === 1 ? "Възстановяваме връзката със стаята." : `Възстановяване - опит ${attempt} от ${MAX_RECONNECT_ATTEMPTS}.`);
+      setConnectionMessage(attempt === 1 ? "Възстановяваме връзката със стаята." : `Възстановяване - опит ${attempt} от ${MAX_RECONNECT_ATTEMPTS}.`);
       await waitForReconnectDelay(Math.min(8000, 1000 * 2 ** (attempt - 1)));
       if (!active) {
         return;
@@ -443,7 +442,7 @@ export function useGameRoom({
         }
         reconnecting = false;
         bindRoom(reconnectedRoom);
-        setStatus("Връзката е възстановена.");
+        setConnectionMessage("Връзката е възстановена.");
         toast({ message: "Върнахме те в стаята.", kind: "success" });
       } catch {
         if (!active) {
@@ -455,7 +454,7 @@ export function useGameRoom({
         }
         reconnecting = false;
         setConnectionStatus("lost");
-        setStatus("Не успяхме да възстановим връзката автоматично.");
+        setConnectionMessage("Не успяхме да възстановим връзката автоматично.");
       }
     };
 
@@ -501,7 +500,7 @@ export function useGameRoom({
         if (!active) {
           return;
         }
-        setStatus(error instanceof Error ? error.message : "Неуспешно свързване.");
+        setConnectionMessage(error instanceof Error ? error.message : "Неуспешно свързване.");
         setConnectionStatus("error");
       });
 
@@ -518,11 +517,11 @@ export function useGameRoom({
   useEffect(() => {
     function handleOffline() {
       setConnectionStatus("reconnecting");
-      setStatus("Устройството изглежда офлайн. Опитваме да запазим мястото ти в играта.");
+      setConnectionMessage("Устройството изглежда офлайн. Опитваме да запазим мястото ти в играта.");
     }
 
     function handleOnline() {
-      setStatus("Интернет връзката се върна. Ако стаята не се обнови, презареди страницата.");
+      setConnectionMessage("Интернет връзката се върна. Ако стаята не се обнови, презареди страницата.");
     }
 
     window.addEventListener("offline", handleOffline);
@@ -563,8 +562,7 @@ export function useGameRoom({
     privateChats,
     typingNotices,
     isBlessed,
-    status,
-    setStatus,
+    connectionMessage,
     connectionStatus,
     unlockedAchievementIds,
     setUnlockedAchievementIds,

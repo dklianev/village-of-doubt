@@ -72,7 +72,7 @@ describe("VotingPanel", () => {
     expect(sendVote).toHaveBeenCalledWith("u2");
   });
 
-  it("sends a skip vote only when skipping is allowed", async () => {
+  it("requires a second deliberate click before sending an allowed skip vote", async () => {
     const user = userEvent.setup();
     const sendVote = vi.fn();
 
@@ -101,6 +101,14 @@ describe("VotingPanel", () => {
     );
 
     await user.click(screen.getByRole("button", { name: "Пропусни глас" }));
+
+    expect(sendVote).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Потвърди пропускането" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+
+    await user.click(screen.getByRole("button", { name: "Потвърди пропускането" }));
 
     expect(sendVote).toHaveBeenCalledWith("skip");
   });

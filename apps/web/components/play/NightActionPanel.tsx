@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import type { GamePhase, NightActionCapabilities, NightActionCommand, NightActionKind, PrivateFactionRoster, RoleCode } from "@werewolf/shared";
 import { nightActionHelpBg, nightInstructionBg } from "@/lib/play/copy";
 import { canFactionKill } from "@/lib/play/role-rules";
@@ -40,6 +41,7 @@ export function NightActionPanel({
   onResetPrimaryTarget: () => void;
   sendNightAction: (action: NightActionCommand) => void;
 }) {
+  const [skipArmed, setSkipArmed] = useState(false);
   const selectableTargets = shortcutTargets(phase, privateRole, players, livingPlayers, currentUserId, {
     doctorCanSelfProtect,
     nightActionCapabilities,
@@ -65,6 +67,10 @@ export function NightActionPanel({
   const canUseKind = (kind: NightActionKind) =>
     isNightActionKindAvailable(nightActionCapabilities, kind)
     && canUseNightKindForTarget(kind, targetId, nightActionCapabilities);
+
+  useEffect(() => {
+    setSkipArmed(false);
+  }, [phase, secondTargetId, selectedTargetId]);
 
   return (
     <section
@@ -220,8 +226,22 @@ export function NightActionPanel({
             Свържи Влюбените
           </button>
         ) : null}
-        <button className={`btn btn-secondary ${styles.skipButton}`} data-command-priority="quiet" type="button" onClick={() => sendNightAction({ kind: "skip" })}>
-          Пропусни
+        <button
+          className={`btn btn-secondary play-confirm-skip ${styles.skipButton}`}
+          data-command-priority="quiet"
+          data-confirm-state={skipArmed ? "armed" : "idle"}
+          type="button"
+          aria-pressed={skipArmed}
+          onClick={() => {
+            if (skipArmed) {
+              setSkipArmed(false);
+              sendNightAction({ kind: "skip" });
+              return;
+            }
+            setSkipArmed(true);
+          }}
+        >
+          {skipArmed ? "Потвърди пропуска" : "Пропусни"}
         </button>
       </div>
       <p className={`night-action-help ${styles.help}`}>{nightActionHelpBg(privateRole)}</p>

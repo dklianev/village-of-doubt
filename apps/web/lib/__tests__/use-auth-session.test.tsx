@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { useAuthSession, type AuthSessionView } from "../use-auth-session";
 
 function SessionProbe({ initialSession }: { initialSession?: AuthSessionView | null }) {
-  const { data, isPending } = useAuthSession(initialSession ?? null);
+  const { data, isPending } = useAuthSession(initialSession);
   return (
     <div>
       <span data-testid="session-state">{data?.user?.name ?? "guest"}</span>
@@ -13,7 +13,7 @@ function SessionProbe({ initialSession }: { initialSession?: AuthSessionView | n
 }
 
 describe("useAuthSession", () => {
-  it("keeps the first guest render settled while refreshing in the background", async () => {
+  it("keeps an unknown static-shell session pending until the client request settles", async () => {
     const fetchMock = vi.fn(() =>
       Promise.resolve({
         ok: true,
@@ -25,10 +25,25 @@ describe("useAuthSession", () => {
     render(<SessionProbe />);
 
     expect(screen.getByTestId("session-state")).toHaveTextContent("guest");
-    expect(screen.getByTestId("pending-state")).toHaveTextContent("settled");
+    expect(screen.getByTestId("pending-state")).toHaveTextContent("pending");
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/auth/get-session", expect.any(Object)));
+    await waitFor(() => expect(screen.getByTestId("pending-state")).toHaveTextContent("settled"));
+  });
+
+  it("keeps an explicitly resolved guest settled while refreshing in the background", async () => {
+    const fetchMock = vi.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve(null),
+      } as Response),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<SessionProbe initialSession={null} />);
+
     expect(screen.getByTestId("pending-state")).toHaveTextContent("settled");
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/auth/get-session", expect.any(Object)));
   });
 
   it("deduplicates simultaneous refreshes across hook instances", async () => {
