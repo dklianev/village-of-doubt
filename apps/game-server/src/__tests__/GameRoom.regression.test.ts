@@ -194,6 +194,49 @@ describe("GameRoom gameplay regressions", () => {
     expect(findPublicPlayer(serverRoom, targets[1]?.userId)?.alive).toBe(false);
   });
 
+  it("lets a faction actor replace a pending kill target without adding a second vote", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "FCTRP3",
+      mode: "werewolves_classic",
+      playerCount: 6,
+      tempoProfile: "manual",
+      firstNightKill: true,
+      roles: {
+        ordinary_villager: 5,
+        werewolf: 1,
+      },
+    });
+    const clients = await connectPlayers(colyseus, serverRoom, 6, "faction-replace");
+    const roleClients = await startGameAndCollectRoles(clients);
+    await advanceToFirstNight(clients[0]?.client, serverRoom);
+
+    const werewolf = roleClients.find((item) => item.role === "werewolf");
+    const targets = roleClients.filter((item) => item.role === "ordinary_villager");
+    expect(werewolf).toBeTruthy();
+    expect(targets.length).toBeGreaterThanOrEqual(2);
+
+    const firstAck = werewolf?.client.waitForMessage("night_action_ack") as Promise<unknown>;
+    werewolf?.client.send("submitNightAction", {
+      action: { kind: "faction_kill", targetUserId: targets[0]?.userId },
+    });
+    await expect(firstAck).resolves.toBeTruthy();
+
+    const replacementAck = werewolf?.client.waitForMessage("night_action_ack") as Promise<unknown>;
+    werewolf?.client.send("submitNightAction", {
+      action: { kind: "faction_kill", targetUserId: targets[1]?.userId },
+    });
+    await expect(replacementAck).resolves.toBeTruthy();
+
+    clients[0]?.client.send("narratorAdvance", {});
+    await waitForCondition(
+      () => findPublicPlayer(serverRoom, targets[1]?.userId)?.alive === false,
+      "Faction replacement kill did not resolve against the latest target.",
+    );
+
+    expect(findPublicPlayer(serverRoom, targets[0]?.userId)?.alive).toBe(true);
+    expect(findPublicPlayer(serverRoom, targets[1]?.userId)?.alive).toBe(false);
+  });
+
   it("lets the Witch use both potions in the same night", async () => {
     const serverRoom = await colyseus.createRoom<GameRoom>("game", {
       code: "WJTCH2",
@@ -847,13 +890,24 @@ describe("GameRoom gameplay regressions", () => {
     await advanceToFirstNight(investigatorClients[0]?.client, investigatorRoom);
     const investigator = investigatorRoles.find((item) => item.role === "investigator");
     const investigatedWerewolf = investigatorRoles.find((item) => item.role === "werewolf");
-    const checkMessage = investigator?.client.waitForMessage("private_check_result") as Promise<{ messageBg: string }>;
+    expect(investigator && investigatedWerewolf).toBeTruthy();
+    const investigatedIndex = investigatorRoles.findIndex((item) => item.userId === investigatedWerewolf?.userId);
+    const expectedTrio = [
+      investigatorRoles[(investigatedIndex - 1 + investigatorRoles.length) % investigatorRoles.length]?.userId,
+      investigatedWerewolf?.userId,
+      investigatorRoles[(investigatedIndex + 1) % investigatorRoles.length]?.userId,
+    ];
+    const checkMessage = investigator?.client.waitForMessage("private_check_result") as Promise<{
+      messageBg: string;
+      targetUserIds: string[];
+    }>;
     investigator?.client.send("submitNightAction", {
       action: { kind: "investigator_check", targetUserId: investigatedWerewolf?.userId },
     });
     investigatorClients[0]?.client.send("narratorAdvance", {});
     await expect(checkMessage).resolves.toMatchObject({
       messageBg: expect.stringContaining("гореща"),
+      targetUserIds: expectedTrio,
     });
 
     await colyseus.cleanup();

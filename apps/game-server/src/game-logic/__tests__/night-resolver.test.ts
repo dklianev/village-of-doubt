@@ -10,6 +10,7 @@ const players: PrivatePlayerForNight[] = [
   { userId: "seer", role: "seer", alive: true },
   { userId: "witch", role: "witch", alive: true },
   { userId: "healer", role: "healer", alive: true },
+  { userId: "doctor", role: "doctor", alive: true },
   { userId: "bodyguard", role: "bodyguard", alive: true },
   { userId: "roleblocker", role: "roleblocker", alive: true },
   { userId: "lawyer", role: "lawyer", alive: true },
@@ -46,6 +47,22 @@ describe("resolveNight", () => {
     ]);
 
     expect(result.deaths).toEqual([]);
+  });
+
+  it("does not let the Witch heal stop a Blacksmith sword kill", () => {
+    const result = resolveNight(players, [
+      action("blacksmith", {
+        kind: "blacksmith_sword",
+        receiverUserId: "vigilante",
+        targetUserId: "civilian",
+      }),
+      action("witch", { kind: "witch_heal", targetUserId: "civilian" }),
+    ]);
+
+    expect(result.deaths).toEqual([
+      { userId: "civilian", causeBg: "Повален от ковашкия меч." },
+    ]);
+    expect(result.preventedDeaths).toEqual([]);
   });
 
   it("requires a clear faction consensus for a night kill", () => {
@@ -214,6 +231,41 @@ describe("resolveNight", () => {
     expect(result.deaths).toEqual([]);
     expect(result.preventedDeaths).toEqual([
       { userId: "civilian", reasonBg: "Лечителят спря нощна атака." },
+    ]);
+  });
+
+  it("lets the Doctor protect against Witch poison", () => {
+    const result = resolveNight(players, [
+      action("doctor", { kind: "healer_protect", targetUserId: "civilian" }),
+      action("witch", { kind: "witch_poison", targetUserId: "civilian" }),
+    ]);
+
+    expect(result.deaths).toEqual([]);
+    expect(result.preventedDeaths).toEqual([
+      { userId: "civilian", reasonBg: "Докторът спря нощна смърт." },
+    ]);
+  });
+
+  it("uses the supplied seat order for the Investigator's adjacent trio", () => {
+    const orderedPlayers: PrivatePlayerForNight[] = [
+      { userId: "investigator", role: "investigator", alive: true },
+      { userId: "left-seat", role: "werewolf", alive: true },
+      { userId: "center-seat", role: "ordinary_villager", alive: true },
+      { userId: "right-seat", role: "healer", alive: true },
+      { userId: "far-seat", role: "ordinary_villager", alive: true },
+    ];
+
+    const result = resolveNight(orderedPlayers, [
+      action("investigator", { kind: "investigator_check", targetUserId: "center-seat" }),
+    ]);
+
+    expect(result.checks).toEqual([
+      expect.objectContaining({
+        actorUserId: "investigator",
+        targetUserId: "center-seat",
+        targetUserIds: ["left-seat", "center-seat", "right-seat"],
+        isEvil: true,
+      }),
     ]);
   });
 
