@@ -257,7 +257,9 @@ export function resolveNight(
   }
 
   for (const [team, votes] of factionKillVotes.entries()) {
-    const livingFactionCount = livingPlayers.filter((player) => player.alive && getRoleTeam(player.role) === team).length;
+    const livingFactionCount = livingPlayers.filter(
+      (player) => player.alive && getRoleTeam(player.role) === team && !blockedActorIds.has(player.userId),
+    ).length;
     const factionTarget = resolveConsensusTarget(votes, livingFactionCount);
     if (factionTarget) {
       if (team === "vampires") {

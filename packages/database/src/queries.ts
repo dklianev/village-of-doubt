@@ -525,6 +525,7 @@ export async function getAccountExportPage(
           actorId: gameEvents.actorId,
           targetId: gameEvents.targetId,
           visibility: gameEvents.visibility,
+          payload: gameEvents.payload,
           createdAt: gameEvents.createdAt,
         })
         .from(gameEvents)
@@ -556,6 +557,7 @@ export async function getAccountExportPage(
       visibility: event.visibility,
       actor: event.actorId === userId ? "self" : null,
       target: event.targetId === userId ? "self" : null,
+      ...(event.actorId === userId ? { payload: event.payload } : {}),
       createdAt: event.createdAt,
     });
     eventsByGameId.set(event.gameId, events);

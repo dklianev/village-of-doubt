@@ -5,6 +5,7 @@ import { Pill } from "@werewolf/ui/server";
 import { BookOpen, Check, Copy, Trash2, UserPlus, Users } from "lucide-react";
 import { ProfilePortrait } from "@/components/ProfilePortrait";
 import { avatarIdForUser } from "@/lib/avatar-catalog";
+import { createBrowserId } from "@/lib/browser-id";
 import { copyTextToClipboard } from "@/lib/clipboard";
 import { safeLocalStorage } from "@/lib/safe-storage";
 import "@/components/friends/LegacyFriends.module.css";
@@ -48,7 +49,7 @@ export function FriendsClient() {
       return;
     }
 
-    persist([{ id: crypto.randomUUID(), name: cleanName, note: note.trim() }, ...friends]);
+    persist([{ id: createBrowserId("guest"), name: cleanName, note: note.trim() }, ...friends]);
     setName("");
     setNote("");
     setMessage("Името е добавено в гостовата книга.");

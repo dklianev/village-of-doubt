@@ -6,6 +6,8 @@ import Link from "next/link";
 import { RefreshCw, WifiOff } from "lucide-react";
 import "@/components/offline/Offline.module.css";
 
+const RETRY_DELAYS_MS = [5_000, 5_000, 10_000, 10_000, 15_000, 20_000, 30_000, 30_000] as const;
+
 export function OfflineClient() {
   const [retryCount, setRetryCount] = useState(0);
   const [online, setOnline] = useState(false);
@@ -31,24 +33,41 @@ export function OfflineClient() {
       }
     }
 
+    let retryIndex = 0;
+    let timeoutId: number | undefined;
+
+    function scheduleRetry() {
+      if (document.hidden || timeoutId !== undefined || retryIndex >= RETRY_DELAYS_MS.length) {
+        return;
+      }
+      timeoutId = window.setTimeout(retry, RETRY_DELAYS_MS[retryIndex]);
+    }
+
     function retry() {
+      timeoutId = undefined;
       if (document.hidden) {
         return;
       }
+      retryIndex += 1;
       setRetryCount((count) => count + 1);
-      void checkConnection();
+      void checkConnection().finally(scheduleRetry);
     }
 
     const handleOnline = () => void checkConnection();
     const handleOffline = () => void checkConnection();
+    const handleVisibilityChange = () => scheduleRetry();
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
-    const interval = window.setInterval(retry, 5000);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    scheduleRetry();
 
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
-      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      if (timeoutId !== undefined) {
+        window.clearTimeout(timeoutId);
+      }
     };
   }, []);
 

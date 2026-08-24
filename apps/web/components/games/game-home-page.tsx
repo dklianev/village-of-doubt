@@ -27,7 +27,7 @@ export function GameHomePage({ family }: { family: GameFamily }) {
     : ["/game-art/werewolf/bg-hero-v2.webp", "/game-art/mobile/werewolf/bg-hero-v2.webp"];
 
   return (
-    <main className="shell game-home-shell" data-theme={family} data-faction={family} data-family={family}>
+    <main className="shell game-home-shell" data-faction={family} data-family={family}>
       <ResourceHints images={heroImages} />
       <GameHero family={family} root={root} eyebrow={eyebrow} title={title} subtitle={subtitle} />
 

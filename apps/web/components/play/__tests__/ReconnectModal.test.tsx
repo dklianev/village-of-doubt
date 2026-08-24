@@ -58,4 +58,20 @@ describe("ReconnectModal", () => {
 
     expect(screen.getByRole("button", { name: "Презареди" })).toBeInTheDocument();
   });
+
+  it("offers a fresh retry after a room error", async () => {
+    const user = userEvent.setup();
+    const onRetry = vi.fn();
+    render(
+      <ReconnectModal
+        status="error"
+        message="Стаята прекъсна връзката."
+        onRetry={onRetry}
+      />,
+    );
+
+    expect(screen.getByRole("dialog", { name: "Връзката със стаята прекъсна" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Свържи отново" }));
+    expect(onRetry).toHaveBeenCalledTimes(1);
+  });
 });

@@ -369,6 +369,192 @@ describe("GameRoom security boundaries", () => {
     expect(blockedClient.leave).toHaveBeenCalledWith(4029);
   });
 
+  it("releases the matchmaking room claim when a full-room join is rejected", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "FULL24",
+      mode: "werewolves_classic",
+      playerCount: 6,
+    });
+    await connectPlayers(colyseus, serverRoom, 6, "full-user");
+
+    const auth = await OperationalGameRoom.onAuth("", {
+      code: "FULL24",
+      userId: "full-rejected-user",
+      displayName: "Пълен отказ",
+      avatarId: "portrait-m03",
+      mode: "werewolves_classic",
+      playerCount: 6,
+    }, {} as never);
+    const rejectedClient = fakeClient("full-rejected-session");
+    const releaseSpy = vi.spyOn(PlayerPresenceManager, "releaseActiveRoom");
+
+    try {
+      await serverRoom.onJoin(rejectedClient, { code: "FULL24" }, auth);
+      expect(rejectedClient.send).toHaveBeenCalledWith(
+        "safe_error",
+        expect.objectContaining({ messageBg: "Стаята е пълна." }),
+      );
+      expect(rejectedClient.leave).toHaveBeenCalled();
+      expect(releaseSpy).toHaveBeenCalledWith("full-rejected-user", "FULL24");
+    } finally {
+      releaseSpy.mockRestore();
+    }
+  });
+
+  it("releases the matchmaking room claim when the join rate limit rejects onJoin", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "RATE24",
+      mode: "werewolves_classic",
+      playerCount: 6,
+    });
+    const userId = "rate-rejected-user";
+    const auth = {
+      userId,
+      displayName: "Ограничен вход",
+      avatarId: "portrait-m03" as const,
+      matchmakingGuardsApplied: false,
+    };
+    await expect(
+      PlayerPresenceManager.claimActiveRoom(userId, "RATE24", Date.now() + 60_000),
+    ).resolves.toBe(true);
+    const rateLimitSpy = vi.spyOn(PlayerPresenceManager, "checkJoinRateLimit").mockResolvedValue(false);
+    const releaseSpy = vi.spyOn(PlayerPresenceManager, "releaseActiveRoom");
+
+    try {
+      const rejectedClient = fakeClient("rate-rejected-session");
+      await serverRoom.onJoin(rejectedClient, { code: "RATE24" }, auth);
+
+      expect(rejectedClient.leave).toHaveBeenCalledWith(4029);
+      expect(releaseSpy).toHaveBeenCalledWith(userId, "RATE24");
+    } finally {
+      rateLimitSpy.mockRestore();
+      releaseSpy.mockRestore();
+    }
+  });
+
+  it("releases the matchmaking room claim when a replayed nonce rejects onJoin", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "NQNC24",
+      mode: "werewolves_classic",
+      playerCount: 6,
+    });
+    const userId = "nonce-rejected-user";
+    const auth = {
+      userId,
+      displayName: "Повторен токен",
+      avatarId: "portrait-m03" as const,
+      tokenNonce: "nonce-replayed",
+      tokenExpiresAtMs: Date.now() + 60_000,
+      tokenNonceConsumed: false,
+    };
+    await expect(
+      PlayerPresenceManager.claimActiveRoom(userId, "NQNC24", Date.now() + 60_000),
+    ).resolves.toBe(true);
+    const nonceSpy = vi.spyOn(PlayerPresenceManager, "consumeTokenNonce").mockResolvedValue(false);
+    const releaseSpy = vi.spyOn(PlayerPresenceManager, "releaseActiveRoom");
+
+    try {
+      const rejectedClient = fakeClient("nonce-rejected-session");
+      await serverRoom.onJoin(rejectedClient, { code: "NQNC24" }, auth);
+
+      expect(rejectedClient.leave).toHaveBeenCalledWith(4029);
+      expect(releaseSpy).toHaveBeenCalledWith(userId, "NQNC24");
+    } finally {
+      nonceSpy.mockRestore();
+      releaseSpy.mockRestore();
+    }
+  });
+
+  it("keeps concurrent first joins for one user as a single roster entry", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "DUPE23",
+      mode: "werewolves_classic",
+      playerCount: 8,
+    });
+    const firstClient = fakeClient("dupe-session-a");
+    const secondClient = fakeClient("dupe-session-b");
+    const identity = {
+      userId: "dupe-user",
+      displayName: "Един играч",
+      avatarId: "portrait-m03" as const,
+    };
+
+    await Promise.all([
+      serverRoom.onJoin(firstClient, { code: "DUPE23" }, identity),
+      serverRoom.onJoin(secondClient, { code: "DUPE23" }, identity),
+    ]);
+
+    const matchingRows = [...serverRoom.state.players.values()].filter(
+      (player) => player.userId === identity.userId,
+    );
+    expect(matchingRows).toHaveLength(1);
+    expect(matchingRows[0]?.connected).toBe(true);
+  });
+
+  it("promotes a raced lobby spectator when the concurrent join requests a player slot", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "DUPE24",
+      mode: "werewolves_classic",
+      playerCount: 8,
+    });
+    const spectatorClient = fakeClient("dupe-spectator");
+    const playerClient = fakeClient("dupe-player");
+    const identity = {
+      userId: "dupe-spectator-user",
+      displayName: "Наблюдател играч",
+      avatarId: "portrait-m03" as const,
+    };
+
+    await Promise.all([
+      serverRoom.onJoin(spectatorClient, { code: "DUPE24", spectator: true }, identity),
+      serverRoom.onJoin(playerClient, { code: "DUPE24" }, identity),
+    ]);
+
+    const matchingRows = [...serverRoom.state.players.values()].filter(
+      (player) => player.userId === identity.userId,
+    );
+    expect(matchingRows).toHaveLength(1);
+    expect(matchingRows[0]).toMatchObject({ playing: true, alive: true, connected: true });
+  });
+
+  it("rechecks display-name uniqueness after a concurrent join claim", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "NAME24",
+      mode: "werewolves_classic",
+      playerCount: 8,
+    });
+    const firstClient = fakeClient("name-session-a");
+    const secondClient = fakeClient("name-session-b");
+    const firstIdentity = {
+      userId: "name-user-a",
+      displayName: "Едно и също име",
+      avatarId: "portrait-m03" as const,
+    };
+    const secondIdentity = {
+      userId: "name-user-b",
+      displayName: "Едно и също име",
+      avatarId: "portrait-m04" as const,
+    };
+
+    await Promise.all([
+      serverRoom.onJoin(firstClient, { code: "NAME24" }, firstIdentity),
+      serverRoom.onJoin(secondClient, { code: "NAME24" }, secondIdentity),
+    ]);
+
+    const matchingRows = [...serverRoom.state.players.values()].filter(
+      (player) => player.displayName === firstIdentity.displayName,
+    );
+    expect(matchingRows).toHaveLength(1);
+    const rejectedClients = [firstClient, secondClient].filter((client) =>
+      vi.mocked(client.send).mock.calls.some(
+        ([type, payload]) => type === "safe_error"
+          && (payload as { messageBg?: string }).messageBg === "Това име вече се използва в стаята.",
+      ),
+    );
+    expect(rejectedClients).toHaveLength(1);
+    expect(rejectedClients[0]?.leave).toHaveBeenCalled();
+  });
+
   it("does not let a stale reconnection replace a newer active connection", async () => {
     const serverRoom = await colyseus.createRoom<GameRoom>("game", {
       code: "RECN23",

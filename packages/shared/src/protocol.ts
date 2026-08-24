@@ -32,6 +32,18 @@ export type GamePhase =
   | "paused"
   | "game_over";
 
+export type PublicEventKind =
+  | "system"
+  | "presence"
+  | "narrator"
+  | "mayor"
+  | "phase"
+  | "nomination"
+  | "vote"
+  | "death"
+  | "hunter_shot"
+  | "reveal";
+
 export interface CreateRoomOptions {
   code?: string;
   mode?: GameMode;
@@ -90,6 +102,7 @@ export type ClientCommand =
   | { type: "narratorExtendTimer"; seconds: number };
 
 export type ChatChannel = "public" | "mafia" | "werewolves" | "vampires" | "dead" | "system";
+export const MAX_CHAT_MESSAGE_LENGTH = 500;
 
 export type NightActionCommand =
   | { kind: "faction_kill"; targetUserId: string }
@@ -272,6 +285,7 @@ export type ServerEvent =
   | ({ type: "private_check_result" } & PrivateCheckResult)
   | {
       type: "private_chat";
+      id: string;
       channel: ChatChannel;
       senderUserId: string;
       senderName: string;

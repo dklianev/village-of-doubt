@@ -6,6 +6,7 @@ import type { PrivateChatMessage, TypingNotice } from "@/lib/play/types";
 
 function message(index: number): PrivateChatMessage {
   return {
+    id: `message-${index}`,
     channel: "mafia",
     senderUserId: `u${index}`,
     senderName: `Играч ${index}`,
@@ -63,5 +64,24 @@ describe("PrivateChatPanel", () => {
     expect(onTyping).toHaveBeenCalledWith("mafia", true);
     expect(onTyping).toHaveBeenLastCalledWith("mafia", false);
     expect(onSend).toHaveBeenCalledWith("mafia", "тук сме");
+  });
+
+  it("clears a live private typing signal when the panel unmounts", async () => {
+    const user = userEvent.setup();
+    const onTyping = vi.fn();
+    const { unmount } = render(
+      <PrivateChatPanel
+        channel="mafia"
+        messages={[]}
+        onSend={vi.fn()}
+        onTyping={onTyping}
+        typingNotices={[]}
+      />,
+    );
+
+    await user.type(screen.getByRole("textbox", { name: "Съобщение за таен канал" }), "Пиша");
+    unmount();
+
+    expect(onTyping).toHaveBeenLastCalledWith("mafia", false);
   });
 });

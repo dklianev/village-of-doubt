@@ -15,6 +15,7 @@
   --ds-surface-paper-edge: oklch(0.86 0.035 75);
   --ds-surface-scene: oklch(0.18 0.012 60);
   --ds-surface-scene-deep: oklch(0.13 0.014 50);
+  --ds-border-subtle: oklch(0.42 0.04 65 / 0.2);
 
   --ds-ink-primary: oklch(0.22 0.018 60);
   --ds-ink-soft: oklch(0.40 0.018 60);
@@ -122,6 +123,7 @@
   --ds-surface-paper: oklch(0.18 0.012 60);
   --ds-surface-paper-deep: oklch(0.13 0.014 50);
   --ds-surface-paper-edge: oklch(0.25 0.014 55);
+  --ds-border-subtle: oklch(0.74 0.02 78 / 0.2);
   --ds-ink-primary: oklch(0.92 0.022 80);
   --ds-ink-soft: oklch(0.74 0.020 78);
   --ds-ink-faint: oklch(0.55 0.015 60);

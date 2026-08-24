@@ -75,6 +75,17 @@ describe("GameRoom gameplay regressions", () => {
       .toBe("public");
   });
 
+  it("synchronizes the doctor self-protection option into public room state", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "DCS2LX",
+      mode: "mafia_free",
+      playerCount: 4,
+      doctorCanSelfProtect: true,
+    });
+
+    expect(serverRoom.state.doctorCanSelfProtect).toBe(true);
+  });
+
   it("delivers faction chat only to the matching faction", async () => {
     const serverRoom = await colyseus.createRoom<GameRoom>("game", {
       code: "MAFCHT",
@@ -95,19 +106,22 @@ describe("GameRoom gameplay regressions", () => {
     expect(mafia).toHaveLength(2);
     expect(village).toBeTruthy();
 
-    const senderMessage = mafia[0]?.client.waitForMessage("private_chat") as Promise<{ channel: string; message: string }>;
-    const recipientMessage = mafia[1]?.client.waitForMessage("private_chat") as Promise<{ channel: string; message: string }>;
+    const senderMessage = mafia[0]?.client.waitForMessage("private_chat") as Promise<{ id: string; channel: string; message: string }>;
+    const recipientMessage = mafia[1]?.client.waitForMessage("private_chat") as Promise<{ id: string; channel: string; message: string }>;
     const villageMessage = village?.client.waitForMessage("private_chat", 150) as Promise<unknown>;
     mafia[0]?.client.send("sendChat", { channel: "mafia", message: "Тайна нощна уговорка" });
 
-    await expect(senderMessage).resolves.toMatchObject({
+    const [senderPayload, recipientPayload] = await Promise.all([senderMessage, recipientMessage]);
+    expect(senderPayload).toMatchObject({
       channel: "mafia",
       message: "Тайна нощна уговорка",
     });
-    await expect(recipientMessage).resolves.toMatchObject({
+    expect(recipientPayload).toMatchObject({
       channel: "mafia",
       message: "Тайна нощна уговорка",
     });
+    expect(senderPayload.id).toMatch(/^[0-9a-f-]{36}$/i);
+    expect(recipientPayload.id).toBe(senderPayload.id);
     await expect(villageMessage).rejects.toThrow("timed out");
   });
 
@@ -668,7 +682,120 @@ describe("GameRoom gameplay regressions", () => {
     expect(successor).toBeTruthy();
     clients[0]?.client.send("setMayor", { targetUserId: successor?.userId });
     await serverRoom.waitForNextPatch(20);
-    expect(serverRoom.state.phase).toBe("resolution");
+    expect(serverRoom.state.phase).toBe("day_announcement");
+  });
+
+  it("continues to the day announcement after a night Hunter revenge resolves without a winner", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "HUNDAY",
+      mode: "werewolves_classic",
+      playerCount: 6,
+      tempoProfile: "manual",
+      firstNightKill: true,
+      roles: {
+        hunter: 1,
+        ordinary_villager: 4,
+        werewolf: 1,
+      },
+    });
+    const clients = await connectPlayers(colyseus, serverRoom, 6, "hunter-day");
+    const roleClients = await startGameAndCollectRoles(clients);
+    const hunter = roleClients.find((item) => item.role === "hunter");
+    const werewolf = roleClients.find((item) => item.role === "werewolf");
+    const revengeTarget = roleClients.find((item) => item.role === "ordinary_villager");
+    expect(hunter).toBeTruthy();
+    expect(werewolf).toBeTruthy();
+    expect(revengeTarget).toBeTruthy();
+
+    await advanceToFirstNight(clients[0]?.client, serverRoom);
+    werewolf?.client.send("submitNightAction", {
+      action: { kind: "faction_kill", targetUserId: hunter?.userId },
+    });
+    clients[0]?.client.send("narratorAdvance", {});
+    await waitForCondition(
+      () => serverRoom.state.phase === "hunter_revenge",
+      "Hunter revenge did not interrupt the night resolution.",
+    );
+
+    hunter?.client.send("submitHunterRevenge", { targetUserId: revengeTarget?.userId });
+    await waitForCondition(
+      () => serverRoom.state.phase === "day_announcement",
+      "Night Hunter revenge should continue to the day announcement.",
+    );
+    expect(serverRoom.state.phase).toBe("day_announcement");
+  });
+
+  it("continues to the day announcement after selecting a Mayor successor for a night death", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "MAYDAY",
+      mode: "werewolves_classic",
+      playerCount: 6,
+      tempoProfile: "manual",
+      firstNightKill: true,
+      roles: {
+        ordinary_villager: 5,
+        werewolf: 1,
+      },
+    });
+    const clients = await connectPlayers(colyseus, serverRoom, 6, "mayor-day");
+    const roleClients = await startGameAndCollectRoles(clients);
+    const mayor = roleClients.find((item) => item.role === "ordinary_villager");
+    const successor = roleClients.find((item) => item.role === "ordinary_villager" && item.userId !== mayor?.userId);
+    const werewolf = roleClients.find((item) => item.role === "werewolf");
+    expect(mayor).toBeTruthy();
+    expect(successor).toBeTruthy();
+    expect(werewolf).toBeTruthy();
+
+    for (const player of serverRoom.state.players.values()) {
+      player.mayor = player.userId === mayor?.userId;
+    }
+
+    await advanceToFirstNight(clients[0]?.client, serverRoom);
+    werewolf?.client.send("submitNightAction", {
+      action: { kind: "faction_kill", targetUserId: mayor?.userId },
+    });
+    clients[0]?.client.send("narratorAdvance", {});
+    await waitForCondition(
+      () => serverRoom.state.phase === "mayor_successor",
+      "Mayor successor phase did not interrupt the night resolution.",
+    );
+
+    clients[0]?.client.send("setMayor", { targetUserId: successor?.userId });
+    await waitForCondition(
+      () => serverRoom.state.phase === "day_announcement",
+      "Night Mayor successor selection should continue to the day announcement.",
+    );
+    expect(serverRoom.state.phase).toBe("day_announcement");
+  });
+
+  it("advances immediately when resuming a phase that was paused at its timer boundary", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "PAUSEX",
+      mode: "werewolves_classic",
+      playerCount: 6,
+      tempoProfile: "manual",
+      roles: {
+        ordinary_villager: 5,
+        werewolf: 1,
+      },
+    });
+    const clients = await connectPlayers(colyseus, serverRoom, 6, "pause-boundary");
+    await startGameAndCollectRoles(clients);
+    await advanceToPhase(clients[0]?.client, serverRoom, "day_discussion");
+
+    serverRoom.state.phaseEndsAt = Date.now() - 1;
+    clients[0]?.client.send("narratorPause", {});
+    await waitForCondition(
+      () => serverRoom.state.phase === "paused",
+      "The narrator pause command did not pause the room.",
+    );
+
+    clients[0]?.client.send("narratorAdvance", {});
+    await waitForCondition(
+      () => serverRoom.state.phase === "voting",
+      "Resuming an expired phase should advance it instead of leaving it without a timer.",
+    );
+    expect(serverRoom.state.phase).toBe("voting");
   });
 
   it("marks the secret Mayor role and uses the double vote only as a tie-breaker", async () => {

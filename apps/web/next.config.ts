@@ -3,6 +3,7 @@ import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  poweredByHeader: false,
   // Next 16.3.1 drops the module-sync branch of @swc/helpers from pnpm
   // standalone traces. Remove after vercel/next.js#97372 reaches stable.
   outputFileTracingIncludes: {

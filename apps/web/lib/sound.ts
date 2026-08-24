@@ -1,3 +1,5 @@
+import { safeLocalStorage } from "@/lib/safe-storage";
+
 export type CueName = "vote" | "kill" | "phase-change" | "win";
 
 export const SOUND_STORAGE_KEY = "werewolf-sound";
@@ -33,11 +35,19 @@ const CUE_PATTERNS: Record<CueName, Array<{ frequency: number; type: OscillatorT
 };
 
 export function getSoundEnabled(storage: StorageLike | undefined = getBrowserStorage()) {
-  return storage?.getItem(SOUND_STORAGE_KEY) === "on";
+  try {
+    return storage?.getItem(SOUND_STORAGE_KEY) === "on";
+  } catch {
+    return false;
+  }
 }
 
 export function setSoundEnabled(enabled: boolean, storage: StorageLike | undefined = getBrowserStorage()) {
-  storage?.setItem(SOUND_STORAGE_KEY, enabled ? "on" : "off");
+  try {
+    storage?.setItem(SOUND_STORAGE_KEY, enabled ? "on" : "off");
+  } catch {
+    // Sound remains usable for the current gesture even when preferences cannot persist.
+  }
 }
 
 export function shouldPlayCue({ forceSilent = false, storage }: PlayCueOptions = {}) {
@@ -111,5 +121,5 @@ function getBrowserStorage() {
   if (typeof window === "undefined") {
     return undefined;
   }
-  return window.localStorage;
+  return safeLocalStorage;
 }

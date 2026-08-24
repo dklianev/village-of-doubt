@@ -11,12 +11,17 @@ export function safeInternalRedirect(value: string | null | undefined, fallback 
     if (decoded.startsWith("//") || UNSAFE_REDIRECT_CHARACTERS.test(decoded)) {
       return fallback;
     }
+    const decodedPath = decoded.split(/[?#]/, 1)[0] ?? "";
+    if (decodedPath.split("/").some((segment) => segment === "..")) {
+      return fallback;
+    }
 
     const url = new URL(value, INTERNAL_ORIGIN);
     if (url.origin !== INTERNAL_ORIGIN) {
       return fallback;
     }
-    return `${url.pathname}${url.search}${url.hash}`;
+    const target = `${url.pathname}${url.search}${url.hash}`;
+    return target.startsWith("//") ? fallback : target;
   } catch {
     return fallback;
   }

@@ -134,6 +134,7 @@ export class RoomChatRouter {
   private sendPrivateChat(player: PlayerPublicState, channel: ChatChannel, message: string) {
     const privatePlayer = this.context.getPrivatePlayer(player.userId);
     const text = normalizeChatMessage(message);
+    const id = crypto.randomUUID();
     const createdAt = Date.now();
     const recipients = this.getPrivateChatRecipients(player, privatePlayer, channel);
     if (recipients.length === 0) {
@@ -143,6 +144,7 @@ export class RoomChatRouter {
     for (const recipient of recipients) {
       recipient.send("private_chat", {
         type: "private_chat",
+        id,
         channel,
         senderUserId: player.userId,
         senderName: player.displayName,

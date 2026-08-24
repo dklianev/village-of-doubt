@@ -15,6 +15,7 @@ export const metadata: Metadata = routeMetadata({
   image: "/game-art/og/og-achievements.png",
   imageAlt: "Стена с празни месингови плочи за легенди",
   ogDescription: "Плочи за спасения, предателства, точни изстрели и лични победи.",
+  robots: { index: false, follow: false },
 });
 
 export const instant = false;

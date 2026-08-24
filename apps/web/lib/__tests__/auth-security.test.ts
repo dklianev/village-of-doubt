@@ -175,7 +175,7 @@ describe("Better Auth security configuration", () => {
       },
     };
 
-    for (let attempt = 0; attempt < 10; attempt += 1) {
+    for (let attempt = 0; attempt < 5; attempt += 1) {
       await expect(enforceAuthIdentifierRateLimit({
         path: "/sign-in/email",
         body: { email: attempt % 2 === 0 ? "  HOST@example.com " : "host@example.com" },
@@ -229,6 +229,55 @@ describe("Better Auth security configuration", () => {
     expect(options.emailAndPassword?.revokeSessionsOnPasswordReset).toBe(true);
     await options.emailAndPassword?.onPasswordReset?.({ user: { id: "user-1" } });
     expect(revokeActiveGameSessions).toHaveBeenCalledWith("user-1");
+  });
+
+  it("изисква revokeOtherSessions при смяна на парола през authenticated endpoint", async () => {
+    const beforeHook = await loadBeforeHook();
+
+    await expect(beforeHook({
+      path: "/change-password",
+      body: {
+        currentPassword: "old-password",
+        newPassword: "new-password",
+        revokeOtherSessions: false,
+      },
+    })).resolves.toMatchObject({
+      context: {
+        body: {
+          currentPassword: "old-password",
+          newPassword: "new-password",
+          revokeOtherSessions: true,
+        },
+      },
+    });
+  });
+
+  it("прекратява game сесиите след успешна authenticated смяна на парола", async () => {
+    const afterHook = await loadAfterHook();
+
+    await afterHook({
+      path: "/change-password",
+      context: {
+        session: { user: { id: "user-1" } },
+        returned: { token: "new-session-token" },
+      },
+    });
+
+    expect(revokeActiveGameSessions).toHaveBeenCalledWith("user-1");
+  });
+
+  it("не прекратява game сесии при неуспешна смяна на парола", async () => {
+    const afterHook = await loadAfterHook();
+
+    await afterHook({
+      path: "/change-password",
+      context: {
+        session: { user: { id: "user-1" } },
+        returned: new APIError("BAD_REQUEST", { message: "Грешна парола." }),
+      },
+    });
+
+    expect(revokeActiveGameSessions).not.toHaveBeenCalled();
   });
 
   it("не позволява провал на игровото прекратяване да блокира изтриването на web сесиите", async () => {
@@ -341,6 +390,24 @@ async function loadBeforeHook() {
   };
 
   return options.hooks.before;
+}
+
+async function loadAfterHook() {
+  vi.resetModules();
+  await import("../auth");
+  const options = betterAuth.mock.calls.at(-1)?.[0] as {
+    hooks: {
+      after: (context: {
+        path: string;
+        context?: {
+          session?: { user?: { id?: string } };
+          returned?: unknown;
+        };
+      }) => Promise<unknown>;
+    };
+  };
+
+  return options.hooks.after;
 }
 
 async function loadUserCreateBeforeHook() {

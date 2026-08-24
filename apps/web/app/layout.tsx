@@ -29,7 +29,6 @@ export const metadata: Metadata = {
     template: `%s | ${SITE_NAME}`,
   },
   description: "Онлайн Върколак и Мафия с тайни роли, частни стаи и авторитетен игрови сървър.",
-  alternates: { canonical: SITE_URL },
   icons: {
     icon: [
       { url: "/favicon.svg", type: "image/svg+xml" },

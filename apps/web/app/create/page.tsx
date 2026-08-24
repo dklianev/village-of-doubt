@@ -7,6 +7,7 @@ import { GAME_MODE_DEFINITIONS, getGameFamily, type GameMode } from "@werewolf/s
 export const metadata: Metadata = {
   title: "Създай игра",
   description: "Избери готова рецепта за Върколак или Мафия и създай частна стая за секунди.",
+  robots: { index: false, follow: false },
 };
 
 export const instant = true;

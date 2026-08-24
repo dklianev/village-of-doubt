@@ -24,10 +24,12 @@ vi.mock("@/lib/colyseus-client", () => ({
 type StateHandler = (state: unknown) => void;
 type MessageHandler = (message: unknown) => void;
 type LeaveHandler = (code: number) => void;
+type ErrorHandler = (code: number, message?: string) => void;
 
 function createFakeRoom(token = "reconnect-token") {
   const stateHandlers: StateHandler[] = [];
   const leaveHandlers: LeaveHandler[] = [];
+  const errorHandlers: ErrorHandler[] = [];
   const messageHandlers = new Map<string, MessageHandler[]>();
 
   return {
@@ -45,6 +47,9 @@ function createFakeRoom(token = "reconnect-token") {
     onLeave: vi.fn((handler: LeaveHandler) => {
       leaveHandlers.push(handler);
     }),
+    onError: vi.fn((handler: ErrorHandler) => {
+      errorHandlers.push(handler);
+    }),
     emitState(state: unknown) {
       for (const handler of stateHandlers) {
         handler(state);
@@ -58,6 +63,11 @@ function createFakeRoom(token = "reconnect-token") {
     emitLeave(code: number) {
       for (const handler of leaveHandlers) {
         handler(code);
+      }
+    },
+    emitError(code: number, message?: string) {
+      for (const handler of errorHandlers) {
+        handler(code, message);
       }
     },
   };
@@ -139,25 +149,22 @@ describe("useGameRoom", () => {
     window.history.pushState({}, "", "/");
   });
 
-  it("uses the dev visual fixture without requesting a game token or opening a room", () => {
-    window.history.pushState(
-      {},
-      "",
-      "/play/VISUAL?visualGame=1&phase=voting&family=mafia&players=10&dead=2&role=commissioner&voteTally=full",
+  it("builds the dev visual fixture without requesting a game token or opening a room", () => {
+    const fixture = parseVisualGameFixture(
+      "?visualGame=1&phase=voting&family=mafia&players=10&dead=2&role=commissioner&voteTally=full",
+      "VISUAL",
+      undefined,
+      "test",
     );
-    mocks.useSession.mockReturnValue({ data: null, isPending: false });
-    const toast = vi.fn();
 
-    const { result } = renderHook(() => useGameRoom({ code: "VISUAL", createOptions: undefined, toast }));
-
-    expect(result.current.snapshot?.code).toBe("VISUAL");
-    expect(result.current.snapshot?.phase).toBe("voting");
-    expect(result.current.snapshot?.mode).toBe("mafia_sport");
-    expect(result.current.snapshot?.players).toHaveLength(10);
-    expect(result.current.snapshot?.players.filter((player) => player.playing && !player.alive)).toHaveLength(2);
-    expect(result.current.snapshot?.voteTally).toHaveLength(3);
-    expect(result.current.privateRole?.role).toBe("commissioner");
-    expect(result.current.currentUserId).toBe("visual-player-1");
+    expect(fixture?.snapshot.code).toBe("VISUAL");
+    expect(fixture?.snapshot.phase).toBe("voting");
+    expect(fixture?.snapshot.mode).toBe("mafia_sport");
+    expect(fixture?.snapshot.players).toHaveLength(10);
+    expect(fixture?.snapshot.players.filter((player) => player.playing && !player.alive)).toHaveLength(2);
+    expect(fixture?.snapshot.voteTally).toHaveLength(3);
+    expect(fixture?.privateRole?.role).toBe("commissioner");
+    expect(fixture?.currentUserId).toBe("visual-player-1");
     expect(globalThis.fetch).not.toHaveBeenCalled();
     expect(createGameClient).not.toHaveBeenCalled();
   });
@@ -381,6 +388,7 @@ describe("useGameRoom", () => {
       joinRoom.emitMessage("narrator_role_snapshot", { players: [] });
       joinRoom.emitMessage("private_chat", {
         type: "private_chat",
+        id: "private-chat-1",
         channel: "werewolves",
         senderUserId: "u2",
         senderName: "Борис",
@@ -443,5 +451,31 @@ describe("useGameRoom", () => {
     expect(reconnectRoom.onStateChange).toHaveBeenCalled();
     expect(toast).toHaveBeenCalledWith({ message: "Върнахме те в стаята.", kind: "success" });
     vi.useRealTimers();
+  });
+
+  it("uses a fresh signed token when retrying a room-level connection error", async () => {
+    mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
+    const firstRoom = createFakeRoom();
+    const freshRoom = createFakeRoom("fresh-token");
+    const client = {
+      joinOrCreate: vi.fn()
+        .mockResolvedValueOnce(firstRoom)
+        .mockResolvedValueOnce(freshRoom),
+      reconnect: vi.fn(),
+    };
+    mocks.createGameClient.mockReturnValue(client);
+    const toast = vi.fn();
+    const { result } = renderHook(() => useGameRoom({ code: "ABCD", createOptions: undefined, toast }));
+
+    await waitFor(() => expect(result.current.connectionStatus).toBe("connected"));
+    act(() => firstRoom.emitError(4210, "transport failed"));
+
+    expect(result.current.connectionStatus).toBe("error");
+    act(() => result.current.reconnectNow());
+
+    await waitFor(() => expect(client.joinOrCreate).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(result.current.connectionStatus).toBe("connected"));
+    expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+    expect(client.reconnect).not.toHaveBeenCalled();
   });
 });

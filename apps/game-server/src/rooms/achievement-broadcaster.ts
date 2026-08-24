@@ -23,6 +23,9 @@ export class AchievementBroadcaster {
   private readonly announcedUnlocks = new Set<string>();
 
   recordEvent(event: AchievementEventLike) {
+    if (event.type === "chat") {
+      return;
+    }
     this.events.push(event);
     if (this.events.length > MAX_ACHIEVEMENT_EVENTS) {
       this.events.shift();

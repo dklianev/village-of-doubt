@@ -196,7 +196,7 @@ export function GameRulesPage({ family }: { family: GameFamily }) {
   const mode: GameMode = isMafia ? "mafia_free" : "werewolves_classic";
 
   return (
-    <main className="shell rules-shell" data-theme={family} data-family={family}>
+    <main className="shell rules-shell" data-faction={family} data-family={family}>
       <section className="rules-playbook-hero">
         <div className="rules-hero-art" aria-hidden="true" />
         <div>

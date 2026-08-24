@@ -1,13 +1,14 @@
-export function eventLineClass(message: string) {
-  const normalized = message.toLowerCase();
-  if (normalized.includes("ловец") || normalized.includes("изстрел") || normalized.includes("застрел")) {
-    return "event-hunter-shot";
+import type { PublicEventKind } from "@werewolf/shared";
+
+export function eventLineClass(type: PublicEventKind) {
+  switch (type) {
+    case "hunter_shot":
+      return "event-hunter-shot";
+    case "death":
+      return "event-death";
+    case "reveal":
+      return "event-reveal";
+    default:
+      return "event-generic";
   }
-  if (normalized.includes("умря") || normalized.includes("смърт") || normalized.includes("елимини")) {
-    return "event-death";
-  }
-  if (normalized.includes("разкри") || normalized.includes("роля") || normalized.includes("провер")) {
-    return "event-reveal";
-  }
-  return "event-generic";
 }

@@ -1,8 +1,8 @@
-const CACHE_VERSION = "v3";
+const CACHE_VERSION = "v4";
 const SHELL_CACHE_NAME = `werewolf-mafia-shell-${CACHE_VERSION}`;
 const ART_CACHE_NAME = `werewolf-mafia-art-${CACHE_VERSION}`;
 const MAX_ART_ENTRIES = 64;
-const SHELL_URLS = ["/", "/offline", "/werewolf", "/mafia", "/werewolf/rules", "/mafia/rules", "/favicon.svg"];
+const SHELL_URLS = ["/offline"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

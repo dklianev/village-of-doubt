@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useSyncExternalStore } from "react";
+import { createBrowserId } from "@/lib/browser-id";
 
 export type ToastKind = "info" | "error" | "success" | "warning";
 
@@ -56,7 +57,7 @@ export function pushToast({ message, kind = "info", duration = TOAST_TTL_MS }: T
     return;
   }
 
-  const id = crypto.randomUUID();
+  const id = createBrowserId("toast");
   const item: ToastItem = { id, message: message.trim(), kind, duration };
   toasts = [item, ...toasts].slice(0, MAX_VISIBLE_TOASTS);
   emit();

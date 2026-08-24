@@ -19,8 +19,10 @@ const checks = [
   ["play UI hardening contracts", checkPlayUiContracts],
   ["frontend hygiene contracts", checkFrontendHygieneContracts],
   ["metadata title contracts", checkMetadataTitleContracts],
+  ["private route metadata contracts", checkPrivateRouteMetadataContracts],
   ["primitive override anti-pattern", checkPrimitiveOverrideAntiPattern],
   ["faction theme attribute contracts", checkFactionThemeAttributeContracts],
+  ["play room lifecycle contracts", checkPlayRoomLifecycleContracts],
   ["globals.css size budget", checkGlobalsCssBudget],
   ["production security guards", checkProductionGuardContracts],
   ["launch testing contracts", checkLaunchTestingContracts],
@@ -634,7 +636,7 @@ function checkPlayUiContracts() {
   }
 
   const liveDefaultIndex = playModuleText.indexOf("tempoProfile === \"live\"");
-  const cuePreferenceReadIndex = playModuleText.indexOf("const saved = window.localStorage.getItem(CUE_MODE_STORAGE_KEY)");
+  const cuePreferenceReadIndex = playModuleText.indexOf("const saved = safeLocalStorage.getItem(CUE_MODE_STORAGE_KEY)");
   assert(
     liveDefaultIndex >= 0 && cuePreferenceReadIndex >= 0 && liveDefaultIndex < cuePreferenceReadIndex,
     "Live rooms must force silent cues before reading saved cue preferences.",
@@ -648,6 +650,10 @@ function checkFrontendHygieneContracts() {
   const css = readAppStyles();
   const lobbyStyles = readLobbyStyles();
   const siteChrome = readText("apps/web/components/site-chrome.tsx");
+  const serviceWorker = readText("apps/web/public/sw.js");
+  const uiTokens = readText("packages/ui/src/tokens.css");
+  const uiPackage = JSON.parse(readText("packages/ui/package.json"));
+  const sharedPackage = JSON.parse(readText("packages/shared/package.json"));
   const stepRoom = readText("apps/web/components/lobby/StepRoom.tsx");
   const fieldComponent = readText("apps/web/components/lobby/Field.tsx");
   const clientComponentFiles = listFilesRecursive(path.join(root, "apps/web/components"))
@@ -668,6 +674,27 @@ function checkFrontendHygieneContracts() {
   assert(siteChrome.includes("export default function SiteChrome"), "site-chrome.tsx must export one default component named SiteChrome.");
   assert(!siteChrome.includes("ЗВУК: ВКЛ"), "Navbar sound control must be icon-only.");
   assert(!siteChrome.includes("ТЕМА: СИСТЕМНА"), "Navbar theme control must be icon-only.");
+  assert(
+    siteChrome.includes("useLayoutEffect(() =>") && siteChrome.includes("onPathnameChange(pathname)"),
+    "Navbar pathname state must synchronize before paint to avoid stale family chrome during instant navigation.",
+  );
+  assert(
+    serviceWorker.includes('const SHELL_URLS = ["/offline"]'),
+    "The service worker shell cache must contain only the navigation fallback that its fetch handler reads.",
+  );
+  assert(
+    uiPackage.scripts["build:js"].includes("preserve-client-boundary.mjs"),
+    "The UI build must preserve the client directive that tsup strips while bundling.",
+  );
+  for (const primitive of ["Dialog", "Sheet", "Toast"]) {
+    assert(
+      readText(`packages/ui/src/primitives/${primitive}.tsx`).startsWith('"use client"'),
+      `${primitive} must declare its Radix/React client boundary.`,
+    );
+  }
+  assert(uiTokens.includes("--ds-border-subtle:"), "UI tokens must define --ds-border-subtle for primitive borders.");
+  assert(!existsSync(path.join(root, "packages/ui/src/styles/sheet.css")), "The obsolete duplicate Sheet stylesheet must stay removed.");
+  assert(sharedPackage.sideEffects === false, "@werewolf/shared must remain side-effect free for client tree-shaking.");
   assert(lobbyStyles.includes(".field-input-wrap"), "Step 1 form must keep the in-input action wrapper.");
   assert(lobbyStyles.includes(".field-action"), "Step 1 form must keep icon action button styles.");
   assert(
@@ -754,7 +781,7 @@ function checkFactionThemeAttributeContracts() {
     .flatMap((dir) => listFilesRecursive(dir).map((file) => path.join(path.relative(root, dir), file)))
     .filter((file) => /\.(tsx|ts)$/.test(file));
   const violations = [];
-  const factionThemePattern = /data-theme\s*=\s*(?:"(?:mafia|werewolves)"|{["'](?:mafia|werewolves)["']})/g;
+  const factionThemePattern = /data-theme\s*=\s*(?:"(?:mafia|werewolves)"|{["'](?:mafia|werewolves)["']}|{[^}]*\bfamily\b[^}]*})/g;
 
   for (const file of files) {
     const source = readText(file);
@@ -766,6 +793,48 @@ function checkFactionThemeAttributeContracts() {
   assert(
     violations.length === 0,
     `Faction context must use data-faction/data-family, not data-theme. Found:\n${violations.join("\n")}`,
+  );
+}
+
+function checkPrivateRouteMetadataContracts() {
+  const rootLayout = readText("apps/web/app/layout.tsx");
+  const sitemap = readText("apps/web/app/sitemap.ts");
+  const robots = readText("apps/web/app/robots.ts");
+  const playPage = readText("apps/web/app/play/[code]/page.tsx");
+  const lobbyPage = readText("apps/web/app/lobby/[code]/page.tsx");
+  const replayPage = readText("apps/web/app/history/[gameId]/replay/page.tsx");
+  const friendsPage = readText("apps/web/app/friends/page.tsx");
+  const offlinePage = readText("apps/web/app/offline/page.tsx");
+
+  assert(!rootLayout.includes("alternates: { canonical: SITE_URL }"), "Root metadata must not force the home canonical onto every route.");
+  for (const privatePath of ["/roles", "/history", "/achievements"]) {
+    assert(!sitemap.includes(`absoluteUrl("${privatePath}")`), `${privatePath} must not be listed in the public sitemap.`);
+  }
+  for (const privatePath of ["/friends", "/history", "/achievements", "/create"]) {
+    assert(robots.includes(`"${privatePath}"`), `${privatePath} must be excluded from crawler access.`);
+  }
+  for (const source of [playPage, lobbyPage, friendsPage, offlinePage]) {
+    assert(source.includes("index: false"), "Private and utility routes must emit explicit noindex metadata.");
+  }
+  assert(playPage.includes("normalizeRoomCode"), "Play metadata must normalize untrusted room codes.");
+  assert(lobbyPage.includes("normalizeRoomCode"), "Lobby metadata must normalize untrusted room codes.");
+  assert(replayPage.includes("isUuid(gameId)"), "Replay routes must reject malformed database identifiers before querying Postgres.");
+}
+
+function checkPlayRoomLifecycleContracts() {
+  const playPage = readText("apps/web/app/play/[code]/page.tsx");
+  const roomHook = readText("apps/web/hooks/play/use-game-room.ts");
+  assert(
+    /<PlayRoomClient\s+[\s\S]*?key=\{code}/.test(playPage),
+    "The /play room client must be keyed by room code so route changes cannot retain public or private room state.",
+  );
+  assert(
+    !roomHook.includes("visual-game-fixture"),
+    "The production useGameRoom hook must not statically import the dev-only visual fixture.",
+  );
+  assert(
+    playPage.includes('await import("@/hooks/play/visual-game-fixture")'),
+    "The dev visual client must be loaded behind the server-side non-production gate.",
   );
 }
 

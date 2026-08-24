@@ -872,7 +872,7 @@ describe("scrubDeletedIdentityFromEventPayload", () => {
 });
 
 describe("getAccountExportPage", () => {
-  it("ограничава games/events на query boundary и не връща hostId или payload", async () => {
+  it("ограничава games/events и връща payload само за собствени събития", async () => {
     const getAccountExportPage = (databaseQueries as Record<string, unknown>).getAccountExportPage;
     expect(getAccountExportPage).toBeTypeOf("function");
     if (typeof getAccountExportPage !== "function") {
@@ -885,18 +885,32 @@ describe("getAccountExportPage", () => {
         exportGameRow({ id: "game-2", isHost: true }),
       ]),
     }));
-    const eventOffset = vi.fn(async () => [{
-      id: "event-1",
-      gameId: "game-1",
-      round: 1,
-      phase: "day",
-      type: "vote",
-      actorId: "other-user",
-      targetId: "user-1",
-      visibility: "public",
-      payload: { privateMarker: "must-not-escape" },
-      createdAt: new Date("2026-01-01T00:00:00.000Z"),
-    }]);
+    const eventOffset = vi.fn(async () => [
+      {
+        id: "event-1",
+        gameId: "game-1",
+        round: 1,
+        phase: "day",
+        type: "vote",
+        actorId: "other-user",
+        targetId: "user-1",
+        visibility: "public",
+        payload: { privateMarker: "must-not-escape" },
+        createdAt: new Date("2026-01-01T00:00:00.000Z"),
+      },
+      {
+        id: "event-2",
+        gameId: "game-1",
+        round: 1,
+        phase: "day",
+        type: "chat",
+        actorId: "user-1",
+        targetId: null,
+        visibility: "public",
+        payload: { message: "Моя публична реплика." },
+        createdAt: new Date("2026-01-01T00:01:00.000Z"),
+      },
+    ]);
     const eventLimit = vi.fn(() => ({ offset: eventOffset }));
     const select = vi.fn(() => ({
       from: vi.fn((table: unknown) => table === games
@@ -938,11 +952,18 @@ describe("getAccountExportPage", () => {
     });
     expect(JSON.stringify(result)).not.toContain("foreign-host");
     expect(JSON.stringify(result)).not.toContain("must-not-escape");
+    expect(JSON.stringify(result)).toContain("Моя публична реплика.");
     expect(result.games).toEqual([
       expect.objectContaining({
         id: "game-1",
         isHost: false,
-        events: [expect.objectContaining({ target: "self", actor: null })],
+        events: [
+          expect.objectContaining({ target: "self", actor: null }),
+          expect.objectContaining({
+            actor: "self",
+            payload: { message: "Моя публична реплика." },
+          }),
+        ],
       }),
     ]);
   });

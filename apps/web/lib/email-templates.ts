@@ -39,6 +39,10 @@ function escapeHtml(value: string) {
     .replaceAll("'", "&#39;");
 }
 
+function sanitizeSubjectPart(value: string) {
+  return value.replace(/[\u0000-\u001f\u007f]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 160) || "?";
+}
+
 function renderFooter(brandUrl: string) {
   const safeBrandUrl = escapeHtml(brandUrl);
   return `
@@ -149,5 +153,5 @@ ${params.body}`;
     ${renderFooter(params.brandUrl)}
   ${STYLE_OUTRO}`;
 
-  return { subject: `Бележка от ${params.page}`, html, text };
+  return { subject: `Бележка от ${sanitizeSubjectPart(params.page)}`, html, text };
 }

@@ -59,7 +59,7 @@ export function NightActionPanel({
   const secondId = secondTarget?.userId ?? "";
   const canSubmitTarget = Boolean(targetId) && (!needsSecondTarget || Boolean(secondId));
   const secondTargetLabel = privateRole === "blacksmith" ? "кой получава меча" : "втора цел";
-  const selectionStep = !targetId ? 1 : secondId ? 2 : 2;
+  const selectionStep = targetId ? 2 : 1;
   const unavailableReasons = nightActionUnavailableReasons(
     nightActionCapabilities,
     targetKindsForRole(privateRole, phase),

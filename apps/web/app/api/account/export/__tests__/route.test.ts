@@ -144,6 +144,29 @@ describe("GET /api/account/export", () => {
     }
   });
 
+  it("ограничава общия брой continuation заявки за един профил", async () => {
+    const userId = "export-continuation-rate-user";
+    mocks.getSession.mockResolvedValue({
+      ...signedInSession(),
+      user: { ...signedInSession().user, id: userId },
+    });
+
+    const first = await GET(exportRequest("198.51.100.46"));
+    const continuation = first.headers.get("x-account-export-continuation");
+    expect(first.status).toBe(200);
+    expect(continuation).toBeTruthy();
+
+    for (let index = 0; index < 239; index += 1) {
+      await expect(GET(exportRequest("198.51.100.46", continuation ?? undefined))).resolves.toMatchObject({
+        status: 200,
+      });
+    }
+
+    const blocked = await GET(exportRequest("198.51.100.46", continuation ?? undefined));
+    expect(blocked.status).toBe(429);
+    expect(blocked.headers.get("retry-after")).toBeTruthy();
+  });
+
   it("отказва подправена export сесия", async () => {
     mocks.getSession.mockResolvedValue(signedInSession());
 

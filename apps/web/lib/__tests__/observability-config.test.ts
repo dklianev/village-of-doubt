@@ -14,6 +14,7 @@ describe("createServerSentryOptions", () => {
       release: "release-2026-07-20.1",
       sendDefaultPii: false,
       tracesSampleRate: 0.1,
+      beforeSend: expect.any(Function),
     });
   });
 

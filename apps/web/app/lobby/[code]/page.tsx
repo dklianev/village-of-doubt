@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getGameFamily, getGameModeNameBg } from "@werewolf/shared";
+import { getGameFamily, getGameModeNameBg, normalizeRoomCode, ROOM_CODE_REGEX } from "@werewolf/shared";
 import { LobbyInviteClient } from "@/components/lobby-invite-client";
 import { requireSession } from "@/lib/require-session";
 import { parseRoomCreateOptions, roomOptionsToQuery, type RoomSearchParams } from "@/lib/room-options";
@@ -12,9 +12,12 @@ export async function generateMetadata({
   params: Promise<{ code: string }>;
 }): Promise<Metadata> {
   const { code } = await params;
+  const normalizedCode = normalizeRoomCode(code);
+  const roomLabel = ROOM_CODE_REGEX.test(normalizedCode) ? normalizedCode : "частна стая";
   return {
-    title: `Лоби ${code}`,
+    title: `Лоби ${roomLabel}`,
     description: "Покана за частна стая с отделни настройки за Върколак или Мафия.",
+    robots: { index: false, follow: false },
   };
 }
 

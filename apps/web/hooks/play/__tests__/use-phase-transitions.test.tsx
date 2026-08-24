@@ -98,4 +98,24 @@ describe("usePhaseTransitions", () => {
     expect(result.current.startCountdown).toBeNull();
     vi.useRealTimers();
   });
+
+  it("plays the kill cue only for typed death events", () => {
+    const { rerender } = renderHook(
+      ({ publicEvents }) => useTestPhaseTransitions({ publicEvents }),
+      { initialProps: { publicEvents: [] as Array<{ id: string; type: "death" | "system"; messageBg: string }> } },
+    );
+
+    rerender({
+      publicEvents: [{ id: "event-1", type: "system", messageBg: "Проверка без жертви." }],
+    });
+    expect(playCue).not.toHaveBeenCalledWith("kill", expect.anything());
+
+    rerender({
+      publicEvents: [
+        { id: "event-1", type: "system", messageBg: "Проверка без жертви." },
+        { id: "event-2", type: "death", messageBg: "Играчът напусна сцената." },
+      ],
+    });
+    expect(playCue).toHaveBeenCalledWith("kill", { forceSilent: false });
+  });
 });

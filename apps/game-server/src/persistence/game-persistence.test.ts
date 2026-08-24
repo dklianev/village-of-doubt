@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { gameEvents, gamePlayers, games, user, type Database } from "@werewolf/database";
+import { gameEvents, gamePlayers, games, user, userAchievements, type Database } from "@werewolf/database";
 import {
   checkGamePersistenceReadiness,
   collectStructuredPayloadUserIds,
@@ -485,6 +485,74 @@ describe("DrizzleGamePersistence", () => {
       }),
     ]);
     expect(onConflictDoUpdate).toHaveBeenCalledOnce();
+  });
+
+  it("records final players, winner, and achievements inside one database transaction", async () => {
+    const operations: string[] = [];
+    const insert = vi.fn((table: unknown) => ({
+      values: vi.fn((values: unknown) => {
+        if (table === user) {
+          return { onConflictDoNothing: vi.fn(async () => undefined) };
+        }
+        if (table === gamePlayers) {
+          operations.push("players");
+          expect(values).toEqual([expect.objectContaining({
+            gameId: "game-1",
+            userId: "winner-1",
+            won: true,
+          })]);
+          return { onConflictDoUpdate: vi.fn(async () => undefined) };
+        }
+        if (table === userAchievements) {
+          operations.push("achievement");
+          expect(values).toMatchObject({
+            userId: "winner-1",
+            achievementId: "first_win",
+            gameId: "game-1",
+          });
+          return { onConflictDoNothing: vi.fn(async () => undefined) };
+        }
+        throw new Error("Unexpected table in atomic completion test");
+      }),
+    }));
+    const where = vi.fn(async () => {
+      operations.push("game");
+    });
+    const update = vi.fn((table: unknown) => {
+      if (table !== games) {
+        throw new Error("Unexpected table in atomic completion update");
+      }
+      return {
+        set: vi.fn(() => ({ where })),
+      };
+    });
+    const tx = {
+      execute: vi.fn(async () => undefined),
+      insert,
+      update,
+      select: vi.fn(() => ({ from: vi.fn(() => ({ where: vi.fn(async () => []) })) })),
+      transaction: vi.fn(async (operation: (innerTx: unknown) => Promise<unknown>) => operation(tx)),
+    };
+    const transaction = vi.fn(async (operation: (innerTx: unknown) => Promise<unknown>) => operation(tx));
+    const persistence = new DrizzleGamePersistence({ transaction } as unknown as Database);
+
+    await persistence.recordGameCompletion("game-1", {
+      winnerTeam: "village",
+      players: [{
+        userId: "winner-1",
+        displayName: "Победител",
+        role: "seer",
+        isAlive: true,
+        won: true,
+      }],
+      achievements: [{
+        userId: "winner-1",
+        achievementId: "first_win",
+      }],
+    });
+
+    expect(transaction).toHaveBeenCalledOnce();
+    expect(operations).toEqual(["players", "game", "achievement"]);
   });
 });
 

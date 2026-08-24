@@ -7,6 +7,7 @@ import type {
   NightActionCapabilities,
   PrivateCheckResult,
   PrivateFactionRoster,
+  PublicEventKind,
   RoleCode,
 } from "@werewolf/shared";
 
@@ -29,6 +30,7 @@ export interface PublicPlayer {
 
 export interface PublicEvent {
   id: string;
+  type: PublicEventKind;
   messageBg: string;
 }
 
@@ -40,6 +42,7 @@ export interface PublicChatMessage {
 }
 
 export interface PrivateChatMessage {
+  id: string;
   channel: ChatChannel;
   senderUserId: string;
   senderName: string;

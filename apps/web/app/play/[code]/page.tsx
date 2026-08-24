@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { normalizeRoomCode, ROOM_CODE_REGEX } from "@werewolf/shared";
 import { PlayRoomClient } from "@/components/play-room-client";
 import { RouteLoadingState } from "@/components/system/RouteLoadingState";
 import { requireSession } from "@/lib/require-session";
@@ -23,9 +24,12 @@ export async function generateMetadata({
   params: Promise<{ code: string }>;
 }): Promise<Metadata> {
   const { code } = await params;
+  const normalizedCode = normalizeRoomCode(code);
+  const roomLabel = ROOM_CODE_REGEX.test(normalizedCode) ? normalizedCode : "частна стая";
   return {
-    title: `Игра ${code}`,
+    title: `Игра ${roomLabel}`,
     description: "Игрова стая с авторитетен сървър, тайни роли и български интерфейс.",
+    robots: { index: false, follow: false },
   };
 }
 
@@ -41,17 +45,26 @@ async function PlayRouteContent({ params, searchParams }: PlayRouteContentProps)
   const [{ code }, resolvedSearchParams] = await Promise.all([params, searchParams]);
   const query = stringifySearchParams(resolvedSearchParams);
   const visualGame = firstSearchValue(resolvedSearchParams?.visualGame);
-  if (process.env.NODE_ENV === "production" || visualGame !== "1") {
-    await requireSession(`/play/${code}${query ? `?${query}` : ""}`);
+  const createOptions = parseRoomCreateOptions(resolvedSearchParams);
+  if (process.env.NODE_ENV !== "production" && visualGame === "1") {
+    const { VisualPlayRoomClient } = await import("@/hooks/play/visual-game-fixture");
+    return (
+      <VisualPlayRoomClient
+        key={code}
+        code={code}
+        createOptions={createOptions}
+        search={query}
+      />
+    );
   }
-  const visualFixtureSearch =
-    process.env.NODE_ENV !== "production" && visualGame === "1" ? query : undefined;
+
+  await requireSession(`/play/${code}${query ? `?${query}` : ""}`);
 
   return (
     <PlayRoomClient
+      key={code}
       code={code}
-      createOptions={parseRoomCreateOptions(resolvedSearchParams)}
-      visualFixtureSearch={visualFixtureSearch}
+      createOptions={createOptions}
     />
   );
 }

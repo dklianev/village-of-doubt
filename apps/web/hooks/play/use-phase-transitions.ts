@@ -5,7 +5,6 @@ import type { Room } from "@colyseus/sdk";
 import type { GamePhase } from "@werewolf/shared";
 import { playCue } from "@/lib/sound";
 import { triggerDeviceCue } from "@/lib/play/device-cues";
-import { eventLineClass } from "@/lib/play/event-log";
 import type { CueMode, PublicEvent } from "@/lib/play/types";
 
 interface UsePhaseTransitionsOptions {
@@ -97,7 +96,7 @@ export function usePhaseTransitions({
     const newEvents = publicEvents.filter((event) => !previousIds.has(event.id));
     previousEventIdsRef.current = new Set(publicEvents.map((event) => event.id));
 
-    if (newEvents.some((event) => eventLineClass(event.messageBg) === "event-death")) {
+    if (newEvents.some((event) => event.type === "death" || event.type === "hunter_shot")) {
       playCue("kill", { forceSilent: liveMode });
     }
   }, [liveMode, publicEvents]);

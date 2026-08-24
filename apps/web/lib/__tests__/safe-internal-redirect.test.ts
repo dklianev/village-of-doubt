@@ -12,6 +12,9 @@ describe("safeInternalRedirect", () => {
     "/\\attacker.invalid",
     "/%5Cattacker.invalid",
     "/%2Fattacker.invalid",
+    "/..//attacker.invalid",
+    "/x/../../..//attacker.invalid",
+    "/%2e%2e//attacker.invalid",
     "/path%0Aheader",
   ])("rejects unsafe redirect %s", (value) => {
     expect(safeInternalRedirect(value, "/fallback")).toBe("/fallback");

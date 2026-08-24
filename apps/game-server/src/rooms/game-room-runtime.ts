@@ -2,6 +2,7 @@ import { createHash, randomInt } from "node:crypto";
 import type { Client } from "@colyseus/core";
 import {
   getRoleTeam,
+  MAX_CHAT_MESSAGE_LENGTH,
   ROOM_CODE_ALPHABET,
   ROOM_CODE_LENGTH,
   type ClientCommand,
@@ -180,7 +181,7 @@ export function normalizeChatMessage(message: unknown): string {
   if (typeof message !== "string") {
     throw new Error("Невалидно съобщение.");
   }
-  return message.replace(/[\p{Cc}\p{Cf}]/gu, "").slice(0, 500);
+  return message.replace(/[\p{Cc}\p{Cf}]/gu, "").slice(0, MAX_CHAT_MESSAGE_LENGTH);
 }
 
 export function ensureNightActionAllowed(role: RoleCode, action: NightActionCommand, phase: string): void {
@@ -320,7 +321,7 @@ export function getPhaseDurationMs(config: GameConfig, phase: GamePhase) {
           ? timers.dayDiscussionSeconds
           : phase === "voting"
             ? timers.voteSeconds
-            : phase === "resolution" || phase === "day_announcement"
+            : phase === "resolution" || phase === "day_announcement" || phase === "hunter_revenge" || phase === "mayor_successor"
               ? timers.resolutionSeconds
               : 0;
 

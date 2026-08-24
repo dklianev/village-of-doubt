@@ -8,5 +8,7 @@ export async function GET() {
   return NextResponse.json({
     services: snapshot.services,
     lastCheckedAt: snapshot.lastCheckedAt,
+  }, {
+    headers: { "Cache-Control": "private, no-store" },
   });
 }

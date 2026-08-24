@@ -92,7 +92,7 @@ function DrawerBrandMark() {
           <span>Мафия</span>
         </span>
         {process.env.NEXT_PUBLIC_SHOW_BETA_BADGE !== "false" ? (
-          <span className="site-beta-badge" aria-label="Бета версия">
+          <span className="site-beta-badge">
             БЕТА
           </span>
         ) : null}

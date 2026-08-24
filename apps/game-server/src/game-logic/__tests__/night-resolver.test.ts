@@ -91,6 +91,22 @@ describe("resolveNight", () => {
     expect(result.deaths).toEqual([]);
   });
 
+  it("does not require a roleblocked faction member for kill consensus", () => {
+    const result = resolveNight([
+      { userId: "civilian", role: "civilian", alive: true },
+      { userId: "don", role: "don", alive: true },
+      { userId: "mafioso", role: "mafioso", alive: true },
+      { userId: "roleblocker", role: "roleblocker", alive: true },
+    ], [
+      action("roleblocker", { kind: "roleblock", targetUserId: "don" }),
+      action("mafioso", { kind: "faction_kill", targetUserId: "civilian" }),
+    ]);
+
+    expect(result.deaths).toEqual([
+      { userId: "civilian", causeBg: "Убит от Мафията." },
+    ]);
+  });
+
   it("applies a unique faction kill and independent witch poison", () => {
     const result = resolveNight(players, [
       action("don", { kind: "faction_kill", targetUserId: "civilian" }),

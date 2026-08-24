@@ -8,11 +8,12 @@ export function ReconnectModal({
   message,
   onRetry,
 }: {
-  status: Extract<ConnectionStatus, "reconnecting" | "lost">;
+  status: Extract<ConnectionStatus, "reconnecting" | "lost" | "error">;
   message: string;
   onRetry: () => void;
 }) {
   const reconnecting = status === "reconnecting";
+  const roomError = status === "error";
   const keepOpen = useCallback(() => undefined, []);
   const { ref } = useModal<HTMLElement>({ open: true, onClose: keepOpen });
 
@@ -29,12 +30,16 @@ export function ReconnectModal({
         <div className="reconnect-modal-orb" aria-hidden />
         <p className="section-kicker">връзка със стаята</p>
         <h2 id="reconnect-modal-title">
-          {reconnecting ? "Връщаме те обратно" : "Не успяхме да се върнем автоматично"}
+          {reconnecting
+            ? "Връщаме те обратно"
+            : roomError
+              ? "Връзката със стаята прекъсна"
+              : "Не успяхме да се върнем автоматично"}
         </h2>
         <p id="reconnect-modal-body">{message}</p>
         <div className="reconnect-modal-actions">
           <button type="button" className="btn btn-primary" onClick={onRetry} disabled={reconnecting} aria-busy={reconnecting}>
-            {reconnecting ? "Опитваме..." : "Опитай пак"}
+            {reconnecting ? "Опитваме..." : roomError ? "Свържи отново" : "Опитай пак"}
           </button>
           <button type="button" className="btn btn-secondary" onClick={() => window.location.reload()}>
             Презареди

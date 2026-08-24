@@ -30,6 +30,8 @@ import type {
   VoteTallyItem,
 } from "@/lib/play/types";
 import { targetKindsForRole } from "@/lib/play/night-actions";
+import { PlayRoomClientCore } from "@/components/play-room-client";
+import type { UseGameRoomOptions, UseGameRoomResult } from "@/hooks/play/use-game-room";
 
 type VisualFamily = "werewolves" | "mafia";
 type VisualViewer = "alive" | "dead" | "host" | "narrator" | "spectator";
@@ -76,6 +78,32 @@ export interface VisualGameFixtureConfig {
   isBlessed: boolean;
   connectionStatus: ConnectionStatus;
   recordedGameId: string | null;
+}
+
+export function VisualPlayRoomClient({
+  code,
+  createOptions,
+  search,
+}: {
+  code: string;
+  createOptions?: CreateRoomOptions;
+  search: string;
+}) {
+  const useVisualRoom = (_options: UseGameRoomOptions): UseGameRoomResult => {
+    const fixture = useVisualGameRoomFixture({ code, createOptions, search });
+    if (!fixture) {
+      throw new Error("Визуалната игрова сцена е достъпна само в среда за разработка.");
+    }
+    return { ...fixture, privateFactionRoster: null };
+  };
+
+  return (
+    <PlayRoomClientCore
+      code={code}
+      {...(createOptions ? { createOptions } : {})}
+      useRoom={useVisualRoom}
+    />
+  );
 }
 
 const PHASE_COPY: Record<GamePhase, string> = {
@@ -481,9 +509,9 @@ function buildNominations(parsed: ParsedVisualQuery, players: PublicPlayer[]): P
 
 function buildPublicEvents(parsed: ParsedVisualQuery): PublicEvent[] {
   return [
-    { id: "visual-event-1", messageBg: "Разказвачът отвори визуална сцена за проверка." },
-    { id: "visual-event-2", messageBg: PHASE_COPY[parsed.phase] },
-    ...(parsed.dead > 0 ? [{ id: "visual-event-3", messageBg: "На площада вече липсва един глас." }] : []),
+    { id: "visual-event-1", type: "narrator", messageBg: "Разказвачът отвори визуална сцена за проверка." },
+    { id: "visual-event-2", type: "phase", messageBg: PHASE_COPY[parsed.phase] },
+    ...(parsed.dead > 0 ? [{ id: "visual-event-3", type: "death" as const, messageBg: "На площада вече липсва един глас." }] : []),
   ];
 }
 
@@ -501,6 +529,7 @@ function buildPrivateChats(role: RoleCode | null, family: VisualFamily): Private
   }
   return [
     {
+      id: "visual-private-chat-1",
       channel,
       senderUserId: "visual-player-2",
       senderName: family === "mafia" ? "Борис" : "Борил",

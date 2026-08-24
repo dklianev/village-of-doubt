@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { MessageSquare } from "lucide-react";
+import { MAX_CHAT_MESSAGE_LENGTH } from "@werewolf/shared";
 import { TypingIndicator } from "@/components/play/TypingIndicator";
 import type { TypingNotice } from "@/lib/play/types";
 
@@ -17,7 +18,17 @@ export function PublicChatComposer({
   onTyping: (active: boolean) => void;
 }) {
   const [value, setValue] = useState("");
+  const typingActiveRef = useRef(false);
+  const onTypingRef = useRef(onTyping);
+  onTypingRef.current = onTyping;
   const counterId = `${inputId}-counter`;
+
+  useEffect(() => () => {
+    if (typingActiveRef.current) {
+      onTypingRef.current(false);
+      typingActiveRef.current = false;
+    }
+  }, []);
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -26,6 +37,7 @@ export function PublicChatComposer({
       return;
     }
     onSend(message);
+    typingActiveRef.current = false;
     onTyping(false);
     setValue("");
   };
@@ -43,19 +55,21 @@ export function PublicChatComposer({
           className="input"
           value={value}
           onChange={(event) => {
-            const nextValue = event.target.value.slice(0, 500);
+            const nextValue = event.target.value.slice(0, MAX_CHAT_MESSAGE_LENGTH);
+            const active = nextValue.trim().length > 0;
             setValue(nextValue);
-            onTyping(nextValue.trim().length > 0);
+            typingActiveRef.current = active;
+            onTyping(active);
           }}
           placeholder="Напиши обвинение, защита или блъф..."
-          maxLength={500}
+          maxLength={MAX_CHAT_MESSAGE_LENGTH}
           aria-describedby={counterId}
         />
         <span
           id={counterId}
           className={`text-right text-xs ${value.length >= 480 ? "text-[#c18a38]" : "text-[#ead9ba]/60"}`}
         >
-          {value.length}/500
+          {value.length}/{MAX_CHAT_MESSAGE_LENGTH}
         </span>
       </div>
       <TypingIndicator notices={typingNotices} />

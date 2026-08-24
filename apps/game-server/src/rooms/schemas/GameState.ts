@@ -72,6 +72,7 @@ export class GameState extends Schema {
   @type("number") voteSeconds = 0;
   @type("boolean") revealRolesOnDeath = true;
   @type("boolean") loversEnabled = false;
+  @type("boolean") doctorCanSelfProtect = false;
   @type("boolean") allowSkipVote = true;
   @type("string") majorityMode = "simple";
   @type("string") narratorVoice = "classic";

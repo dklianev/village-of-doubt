@@ -2,10 +2,23 @@ import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { createDatabase, deleteUserAccountAtomically } from "@werewolf/database";
 import { ACCOUNT_DELETE_FRESH_AGE_SECONDS, auth } from "@/lib/auth";
-import { IntakeBodyError, readBoundedJson } from "@/lib/intake-security";
+import {
+  createRuntimeIntakeRateLimiter,
+  IntakeBodyError,
+  readBoundedJson,
+  requestRateLimitKey,
+} from "@/lib/intake-security";
 import { revokeActiveGameSessions } from "@/lib/game-session-revocation";
 
 const DELETE_INTENT = "delete-account";
+const deleteSourceRateLimiter = createRuntimeIntakeRateLimiter(
+  { limit: 60, windowMs: 15 * 60_000 },
+  "account-delete-source",
+);
+const deleteUserRateLimiter = createRuntimeIntakeRateLimiter(
+  { limit: 10, windowMs: 60 * 60_000 },
+  "account-delete-user",
+);
 
 export async function POST(request: Request) {
   if (!isAllowedOrigin(request)) {
@@ -37,6 +50,15 @@ export async function POST(request: Request) {
     );
   }
 
+  const sourceLimit = await deleteSourceRateLimiter.check(requestRateLimitKey(request));
+  if (!sourceLimit.allowed) {
+    return deleteRateLimitResponse(sourceLimit.retryAfterSeconds);
+  }
+  const userLimit = await deleteUserRateLimiter.check(`user:${session.user.id}`);
+  if (!userLimit.allowed) {
+    return deleteRateLimitResponse(userLimit.retryAfterSeconds);
+  }
+
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) {
     return NextResponse.json({ error: "Изтриването на досие временно не е налично." }, { status: 503 });
@@ -57,6 +79,13 @@ export async function POST(request: Request) {
   revalidateTag("public-game-history", "max");
 
   return NextResponse.json({ ok: true });
+}
+
+function deleteRateLimitResponse(retryAfterSeconds: number) {
+  return NextResponse.json(
+    { error: "Твърде много опити за изтриване. Опитай отново по-късно." },
+    { status: 429, headers: { "Retry-After": String(retryAfterSeconds) } },
+  );
 }
 
 function isFreshSession(createdAt: Date | string | undefined): boolean {

@@ -31,7 +31,7 @@ export const AUTH_RATE_LIMIT_RULES = {
 } as const;
 
 const AUTH_IDENTIFIER_RATE_LIMIT_RULES = {
-  "/sign-in/email": { windowMs: 60_000, limit: 10 },
+  "/sign-in/email": { windowMs: 15 * 60_000, limit: 5 },
   "/sign-up/email": { windowMs: 3_600_000, limit: 5 },
   "/request-password-reset": { windowMs: 3_600_000, limit: 5 },
   "/send-verification-email": { windowMs: 3_600_000, limit: 5 },
@@ -229,6 +229,18 @@ export const auth = betterAuth({
         body: ctx.body,
       });
 
+      if (ctx.path === "/change-password" && isRecord(ctx.body)) {
+        return {
+          context: {
+            ...ctx,
+            body: {
+              ...ctx.body,
+              revokeOtherSessions: true,
+            },
+          },
+        };
+      }
+
       if (!["/sign-up/email", "/update-user"].includes(ctx.path) || !ctx.body) {
         return;
       }
@@ -256,6 +268,24 @@ export const auth = betterAuth({
           },
         },
       };
+    }),
+    after: createAuthMiddleware(async (ctx) => {
+      if (ctx.path !== "/change-password" || ctx.context.returned instanceof APIError) {
+        return;
+      }
+
+      const userId = ctx.context.session?.user?.id;
+      if (!userId) {
+        return;
+      }
+
+      try {
+        await revokeActiveGameSessions(userId);
+      } catch (error) {
+        console.error("[auth] game-session revocation failed during password change", {
+          name: error instanceof Error ? error.name : "UnknownError",
+        });
+      }
     }),
   },
   socialProviders: buildSocialProviders(),

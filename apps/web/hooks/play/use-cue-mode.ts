@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { GamePhase } from "@werewolf/shared";
 import { playCue, setSoundEnabled } from "@/lib/sound";
+import { safeLocalStorage } from "@/lib/safe-storage";
 import { isCueMode, triggerDeviceCue } from "@/lib/play/device-cues";
 import type { CueMode } from "@/lib/play/types";
 
@@ -28,7 +29,7 @@ export function useCueMode({ tempoProfile, phase, liveMode }: UseCueModeOptions)
       return;
     }
 
-    const saved = window.localStorage.getItem(CUE_MODE_STORAGE_KEY);
+    const saved = safeLocalStorage.getItem(CUE_MODE_STORAGE_KEY);
     if (isCueMode(saved)) {
       setCueMode(saved);
       return;
@@ -39,7 +40,7 @@ export function useCueMode({ tempoProfile, phase, liveMode }: UseCueModeOptions)
 
   function changeCueMode(mode: CueMode) {
     setCueMode(mode);
-    window.localStorage.setItem(CUE_MODE_STORAGE_KEY, mode);
+    safeLocalStorage.setItem(CUE_MODE_STORAGE_KEY, mode);
     if (mode === "audio_vibration") {
       setSoundEnabled(true);
       triggerDeviceCue(phase, liveMode);

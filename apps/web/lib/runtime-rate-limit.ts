@@ -345,5 +345,5 @@ function isRedisConnectivityError(error: unknown) {
     "ENETUNREACH",
     "EHOSTUNREACH",
     "EPIPE",
-  ].includes(code) || /socket (?:closed|ended)|client is closed/i.test(error.message);
+  ].includes(code) || /socket (?:closed|ended)|client is closed|OOM command not allowed|noeviction/i.test(error.message);
 }

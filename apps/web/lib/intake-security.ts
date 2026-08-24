@@ -6,6 +6,7 @@ import {
   type SharedRateLimitBackend,
 } from "./rate-limit";
 import { getRuntimeRateLimitBackend } from "./runtime-rate-limit";
+import type { RedisOutageMode } from "./redis-rate-limit";
 
 export class IntakeBodyError extends Error {
   constructor(readonly kind: "invalid_json" | "too_large") {
@@ -72,9 +73,13 @@ export function createSharedIntakeRateLimiter(
 export function createRuntimeIntakeRateLimiter(
   options: { limit: number; windowMs: number },
   namespace: string,
-  backend: SharedRateLimitBackend = getRuntimeRateLimitBackend(namespace),
+  backend?: SharedRateLimitBackend,
+  runtimeOptions?: { outageMode?: RedisOutageMode },
 ) {
-  return createSharedRateLimiter(options, backend);
+  return createSharedRateLimiter(
+    options,
+    backend ?? getRuntimeRateLimitBackend(namespace, runtimeOptions),
+  );
 }
 
 export function requestRateLimitKey(request: Request): string {

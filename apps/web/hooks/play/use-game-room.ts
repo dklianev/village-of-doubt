@@ -23,7 +23,6 @@ import { createGameClient, GAME_ROOM_NAME } from "@/lib/colyseus-client";
 import type { pushToast } from "@/lib/toast";
 import { arePhaseSlicesEqual, arePlayerListsEqual } from "@/lib/play/equality";
 import { playCue } from "@/lib/sound";
-import { useVisualGameRoomFixture } from "@/hooks/play/visual-game-fixture";
 import type {
   ConnectionStatus,
   GameSnapshot,
@@ -47,10 +46,9 @@ import type {
 const ROOM_RECONNECT_STORAGE_PREFIX = "room-reconnect";
 const MAX_RECONNECT_ATTEMPTS = 5;
 
-interface UseGameRoomOptions {
+export interface UseGameRoomOptions {
   code: string;
   createOptions: CreateRoomOptions | undefined;
-  visualFixtureSearch?: string | undefined;
   toast: typeof pushToast;
   onReconnectSuppressed?: () => void;
 }
@@ -80,7 +78,6 @@ export interface UseGameRoomResult {
 export function useGameRoom({
   code,
   createOptions,
-  visualFixtureSearch,
   toast,
   onReconnectSuppressed,
 }: UseGameRoomOptions): UseGameRoomResult {
@@ -93,12 +90,6 @@ export function useGameRoom({
     createOptionsRef.current = { signature: createOptionsSignature, value: createOptions };
   }
   const stableCreateOptions = createOptionsRef.current.value;
-  const visualFixture = useVisualGameRoomFixture({
-    code,
-    createOptions: stableCreateOptions,
-    search: visualFixtureSearch,
-  });
-  const hasVisualFixture = visualFixture !== null;
   const { data: session, isPending: sessionPending } = authClient.useSession();
   const [room, setRoom] = useState<Room | null>(null);
   const [baseSnapshot, setBaseSnapshot] = useState<GameSnapshot | null>(null);
@@ -170,24 +161,19 @@ export function useGameRoom({
   }, [onReconnectSuppressed]);
 
   useEffect(() => {
-    if (!sessionPending && !hasVisualFixture) {
+    if (!sessionPending) {
       clearViewerPrivateState();
       setRoom(null);
     }
-  }, [clearViewerPrivateState, code, hasVisualFixture, session?.user?.id, sessionPending]);
+  }, [clearViewerPrivateState, code, session?.user?.id, sessionPending]);
 
   useEffect(() => {
     let active = true;
     let joinedRoom: Room | null = null;
     let reconnectTimer: number | null = null;
     let reconnecting = false;
-
-    if (hasVisualFixture) {
-      reconnectNowRef.current = visualFixture.reconnectNow;
-      return () => {
-        active = false;
-      };
-    }
+    let freshJoining = false;
+    let preferFreshJoin = false;
 
     if (sessionPending) {
       return () => {
@@ -224,6 +210,7 @@ export function useGameRoom({
 
     const bindRoom = (nextRoom: Room) => {
       joinedRoom = nextRoom;
+      preferFreshJoin = false;
       persistReconnectionToken(code, nextRoom.reconnectionToken);
       setRoom(nextRoom);
       setConnectionMessage("Свързан");
@@ -415,11 +402,28 @@ export function useGameRoom({
           void attemptReconnect(1);
         }
       });
+
+      nextRoom.onError((errorCode, errorMessage) => {
+        if (!active || joinedRoom !== nextRoom) {
+          return;
+        }
+        reconnecting = false;
+        preferFreshJoin = true;
+        clearReconnectTimer();
+        clearReconnectionToken(code);
+        setConnectionStatus("error");
+        setConnectionMessage(
+          errorMessage?.trim()
+            ? `Стаята прекъсна връзката: ${errorMessage}`
+            : `Стаята прекъсна връзката (код ${errorCode}).`,
+        );
+      });
     };
 
     const attemptReconnect = async (attempt: number) => {
       const reconnectToken = joinedRoom?.reconnectionToken || readReconnectionToken(code);
       if (!reconnectToken) {
+        preferFreshJoin = true;
         setConnectionMessage("Няма запазен ключ за връщане. Презареди страницата, ако стаята още е активна.");
         setConnectionStatus("lost");
         return;
@@ -453,56 +457,73 @@ export function useGameRoom({
           return;
         }
         reconnecting = false;
+        preferFreshJoin = true;
         setConnectionStatus("lost");
         setConnectionMessage("Не успяхме да възстановим връзката автоматично.");
       }
     };
 
+    const connectFresh = async () => {
+      if (freshJoining) {
+        return;
+      }
+      freshJoining = true;
+      clearReconnectTimer();
+      setConnectionStatus("connecting");
+      setConnectionMessage("Свързваме те отново със стаята.");
+      try {
+        const response = await fetch("/api/game-token", {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({ code }),
+        });
+        if (!response.ok) {
+          const body = (await response.json().catch(() => ({}))) as { error?: string };
+          throw new Error(body.error ?? "Неуспешно издаване на игрови ключ.");
+        }
+        const tokenResponse = await response.json() as {
+          token: string;
+          userId: string;
+          displayName: string;
+          roomCode: string;
+        };
+        setCurrentUserId(tokenResponse.userId);
+        const nextRoom = await client.joinOrCreate(GAME_ROOM_NAME, {
+          ...stableCreateOptions,
+          code: tokenResponse.roomCode,
+          token: tokenResponse.token,
+        });
+        if (!active) {
+          nextRoom.leave();
+          return;
+        }
+        bindRoom(nextRoom);
+      } catch (error: unknown) {
+        if (!active) {
+          return;
+        }
+        preferFreshJoin = true;
+        setConnectionMessage(error instanceof Error ? error.message : "Неуспешно свързване.");
+        setConnectionStatus("error");
+      } finally {
+        freshJoining = false;
+      }
+    };
+
     const retryReconnect = () => {
+      if (preferFreshJoin) {
+        void connectFresh();
+        return;
+      }
       if (!reconnecting) {
         void attemptReconnect(1);
       }
     };
     reconnectNowRef.current = retryReconnect;
 
-    fetch("/api/game-token", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        code,
-      }),
-    })
-      .then(async (response) => {
-        if (!response.ok) {
-          const body = (await response.json().catch(() => ({}))) as { error?: string };
-          throw new Error(body.error ?? "Неуспешно издаване на игрови ключ.");
-        }
-        return response.json() as Promise<{ token: string; userId: string; displayName: string; roomCode: string }>;
-      })
-      .then((tokenResponse) => {
-        setCurrentUserId(tokenResponse.userId);
-        return client.joinOrCreate(GAME_ROOM_NAME, {
-          ...stableCreateOptions,
-          code: tokenResponse.roomCode,
-          token: tokenResponse.token,
-        });
-      })
-      .then((nextRoom) => {
-        if (!active) {
-          nextRoom.leave();
-          return;
-        }
-        bindRoom(nextRoom);
-      })
-      .catch((error: unknown) => {
-        if (!active) {
-          return;
-        }
-        setConnectionMessage(error instanceof Error ? error.message : "Неуспешно свързване.");
-        setConnectionStatus("error");
-      });
+    void connectFresh();
 
     return () => {
       active = false;
@@ -512,7 +533,7 @@ export function useGameRoom({
       clearReconnectTimer();
       joinedRoom?.leave();
     };
-  }, [clearViewerPrivateState, code, hasVisualFixture, session?.user?.id, sessionPending, stableCreateOptions, toast, visualFixture]);
+  }, [clearViewerPrivateState, code, session?.user?.id, sessionPending, stableCreateOptions, toast]);
 
   useEffect(() => {
     function handleOffline() {
@@ -544,10 +565,6 @@ export function useGameRoom({
       }
     };
   }, []);
-
-  if (visualFixture) {
-    return { ...visualFixture, privateFactionRoster: null };
-  }
 
   return {
     room,
@@ -796,7 +813,7 @@ function arePublicEventsEqual(a: PublicEvent[], b: PublicEvent[]) {
   for (let index = 0; index < a.length; index += 1) {
     const left = a[index];
     const right = b[index];
-    if (!left || !right || left.id !== right.id || left.messageBg !== right.messageBg) {
+    if (!left || !right || left.id !== right.id || left.type !== right.type || left.messageBg !== right.messageBg) {
       return false;
     }
   }

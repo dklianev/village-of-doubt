@@ -111,12 +111,8 @@ describe("GameRoom full-night launch smoke", () => {
     expect(findPublicPlayer(serverRoom, hunter?.userId)?.alive).toBe(false);
 
     hunter?.client.send("submitHunterRevenge", { targetUserId: revengeTarget?.userId });
-    await waitForPhase(serverRoom, "resolution");
-    expect(findPublicPlayer(serverRoom, revengeTarget?.userId)?.alive).toBe(false);
-    expect(serverRoom.state.phase).toBe("resolution");
-
-    clients[0]?.client.send("narratorAdvance", {});
     await waitForPhase(serverRoom, "game_over");
+    expect(findPublicPlayer(serverRoom, revengeTarget?.userId)?.alive).toBe(false);
 
     expect(serverRoom.state.phase).toBe("game_over");
     expect(serverRoom.state.winnerTeam).toBe("werewolves");

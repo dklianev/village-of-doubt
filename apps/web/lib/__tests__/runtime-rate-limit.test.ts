@@ -74,6 +74,20 @@ describe("createRuntimeRedisEvalClient", () => {
       arguments: [],
     })).rejects.toThrow("NOAUTH");
   });
+
+  it("третира Redis OOM като временна недостъпност, не като 500 грешка", async () => {
+    const client = createRuntimeRedisEvalClient(() => ({
+      isReady: true,
+      eval: vi.fn(async () => {
+        throw new Error("OOM command not allowed when used memory > 'maxmemory'");
+      }),
+    }));
+
+    await expect(client.eval("return 1", {
+      keys: [],
+      arguments: [],
+    })).rejects.toBeInstanceOf(RedisUnavailableError);
+  });
 });
 
 describe("createRuntimeRedisReadinessProbe", () => {
@@ -157,6 +171,23 @@ describe("getRuntimeRateLimitBackend", () => {
       allowed: false,
       retryAfterSeconds: 5,
     });
+
+    vi.unstubAllEnvs();
+  });
+
+  it("can intentionally use memory fallback for low-risk production intake", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("REDIS_URL", "");
+    const backend = getRuntimeRateLimitBackend("missing-production-redis-memory", {
+      outageMode: "memory",
+    });
+
+    await expect(backend.consume({
+      key: "source-1",
+      limit: 5,
+      windowMs: 60_000,
+      now: 1_000,
+    })).resolves.toEqual({ allowed: true });
 
     vi.unstubAllEnvs();
   });

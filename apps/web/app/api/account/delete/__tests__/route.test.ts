@@ -103,6 +103,21 @@ describe("POST /api/account/delete", () => {
     expect(revalidateTag).toHaveBeenCalledWith("public-game-history", "max");
   });
 
+  it("ограничава многократни destructive delete опити за един user", async () => {
+    for (let index = 0; index < 10; index += 1) {
+      getSession.mockResolvedValueOnce(freshSession("delete-rate-user"));
+      const response = await POST(deleteRequest({ origin: "http://localhost:3000" }));
+
+      expect(response.status).toBe(200);
+    }
+
+    getSession.mockResolvedValueOnce(freshSession("delete-rate-user"));
+    const blocked = await POST(deleteRequest({ origin: "http://localhost:3000" }));
+
+    expect(blocked.status).toBe(429);
+    expect(blocked.headers.get("retry-after")).toBeTruthy();
+  });
+
   it("не изтрива профила, ако активните игрови сесии не могат да бъдат прекратени", async () => {
     getSession.mockResolvedValueOnce(freshSession("user-1"));
     revokeActiveGameSessions.mockRejectedValueOnce(new Error("redis unavailable"));

@@ -21,6 +21,7 @@ import {
   type GamePhase,
   type JoinRoomOptions,
   type NightActionCommand,
+  type PublicEventKind,
   type RoleCode,
   type ServerEvent,
   type CreateRoomOptions,
@@ -276,6 +277,7 @@ export class GameRoom extends Room<{ state: GameState }> {
   private recordedGameId: string | undefined;
   private pendingHunterRevengeUserId: string | undefined;
   private pendingMayorSuccessor = false;
+  private pendingDeathInterruptionResumePhase: "day_announcement" | "resolution" | undefined;
   private pendingVampireBites = new Map<string, { round: number; causeBg: string }>();
   private personalWinnerUserIds = new Set<string>();
   private achievementBroadcaster = new AchievementBroadcaster();
@@ -345,13 +347,14 @@ export class GameRoom extends Room<{ state: GameState }> {
       this.handleCommand(client, command);
     });
 
-    this.addPublicEvent("Стаята е създадена.");
+    this.addPublicEvent("system", "Стаята е създадена.");
     GameRoom.liveRooms.add(this);
   }
 
   async onJoin(client: Client, options: JoinRoomOptions, auth: ClientAuth) {
     if (auth.tokenNonce && !auth.tokenNonceConsumed) {
       if (!await PlayerPresenceManager.consumeTokenNonce(auth.tokenNonce, auth.tokenExpiresAtMs ?? 0)) {
+        await this.releaseTrackedActiveRoom(auth.userId);
         this.sendSafeError(client, "Този токен вече е използван.");
         client.leave(4029);
         return;
@@ -360,6 +363,7 @@ export class GameRoom extends Room<{ state: GameState }> {
     }
 
     if (!auth.matchmakingGuardsApplied && !await PlayerPresenceManager.checkJoinRateLimit(auth.userId)) {
+      await this.releaseTrackedActiveRoom(auth.userId);
       client.send("safe_error", {
         type: "safe_error",
         messageBg: "Твърде много опити за вход. Изчакай малко.",
@@ -371,40 +375,17 @@ export class GameRoom extends Room<{ state: GameState }> {
     const existingEntry = this.findPlayerEntryByUserId(auth.userId);
     const existing = existingEntry?.[1];
     if (existing) {
-      existing.avatarId = auth.avatarId;
-      if (!options.spectator && !this.state.locked && this.state.phase === "lobby" && !existing.playing) {
-        if (!this.hasAvailablePlayerSlot(auth.userId)) {
-          this.sendSafeError(client, "Стаята е пълна.");
-          client.leave();
-          return;
-        }
-        await this.trackActiveRoom(auth.userId);
-        this.activateClient(auth, client, previousClient);
-        existing.host = existing.host || !this.hasHostPlayer();
-        existing.narrator = existing.host && this.config.narratorMode !== "automatic";
-        existing.playing = !existing.narrator;
-        existing.alive = existing.playing;
-        existing.ready = false;
-        this.privatePlayers.set(auth.userId, { userId: auth.userId, alive: existing.playing });
-        if (existing.host) {
-          this.hostUserId = auth.userId;
-        }
-        this.addPublicEvent(`${auth.displayName} вече участва в стаята.`);
-      } else {
-        await this.trackActiveRoom(auth.userId);
-        this.activateClient(auth, client, previousClient);
-        this.addPublicEvent(`${auth.displayName} се върна в стаята.`);
+      await this.trackActiveRoom(auth.userId);
+      if (!await this.reattachExistingPlayer(client, options, auth)) {
+        await this.releaseTrackedActiveRoom(auth.userId);
+        this.sendSafeError(client, "Този играч вече не е в стаята.");
+        client.leave();
       }
-      existing.connected = true;
-      this.ensureHostAssigned();
-      this.privateEvents.sendPrivateRole(client, auth.userId);
-      this.privateEvents.sendNarratorRoleSnapshot(client, auth.userId);
-      this.sendNightActionCapabilities(auth.userId, client);
-      this.sendRecordedGameId(client);
       return;
     }
 
     if (this.isDisplayNameTaken(auth.displayName, auth.userId)) {
+      await this.releaseTrackedActiveRoom(auth.userId);
       client.send("safe_error", {
         type: "safe_error",
         messageBg: "Това име вече се използва в стаята.",
@@ -414,18 +395,50 @@ export class GameRoom extends Room<{ state: GameState }> {
     }
 
     if (this.state.locked && !options.spectator) {
+      await this.releaseTrackedActiveRoom(auth.userId);
       client.send("safe_error", { type: "safe_error", messageBg: "Играта вече е заключена." } satisfies ServerEvent);
       client.leave();
       return;
     }
     if (!options.spectator && !this.hasAvailablePlayerSlot(auth.userId)) {
+      await this.releaseTrackedActiveRoom(auth.userId);
       this.sendSafeError(client, "Стаята е пълна.");
       client.leave();
       return;
     }
 
     await this.trackActiveRoom(auth.userId);
-    this.activateClient(auth, client, previousClient);
+    if (this.findPlayerEntryByUserId(auth.userId)) {
+      if (!await this.reattachExistingPlayer(client, options, auth)) {
+        await this.releaseTrackedActiveRoom(auth.userId);
+        this.sendSafeError(client, "Този играч вече не е в стаята.");
+        client.leave();
+      }
+      return;
+    }
+    if (this.isDisplayNameTaken(auth.displayName, auth.userId)) {
+      await this.releaseTrackedActiveRoom(auth.userId);
+      client.send("safe_error", {
+        type: "safe_error",
+        messageBg: "Това име вече се използва в стаята.",
+      } satisfies ServerEvent);
+      client.leave();
+      return;
+    }
+    if (this.state.locked && !options.spectator) {
+      await this.releaseTrackedActiveRoom(auth.userId);
+      client.send("safe_error", { type: "safe_error", messageBg: "Играта вече е заключена." } satisfies ServerEvent);
+      client.leave();
+      return;
+    }
+    if (!options.spectator && !this.hasAvailablePlayerSlot(auth.userId)) {
+      await this.releaseTrackedActiveRoom(auth.userId);
+      this.sendSafeError(client, "Стаята е пълна.");
+      client.leave();
+      return;
+    }
+
+    this.activateClient(auth, client, this.playerPresence.getClient(auth.userId) ?? previousClient);
     const player = new PlayerPublicState();
     player.userId = auth.userId;
     player.displayName = auth.displayName;
@@ -440,7 +453,7 @@ export class GameRoom extends Room<{ state: GameState }> {
     if (player.host) {
       this.hostUserId = auth.userId;
     }
-    this.addPublicEvent(options.spectator ? `${auth.displayName} наблюдава играта.` : `${auth.displayName} влезе в стаята.`);
+    this.addPublicEvent("presence", options.spectator ? `${auth.displayName} наблюдава играта.` : `${auth.displayName} влезе в стаята.`);
     this.persistGameEvent("player_joined", {
       actorId: auth.userId,
       payload: { displayName: auth.displayName, spectator: Boolean(options.spectator) },
@@ -460,6 +473,54 @@ export class GameRoom extends Room<{ state: GameState }> {
       messageBg: "Влязохте от друго устройство.",
     } satisfies ServerEvent);
     previousClient.leave(1000);
+  }
+
+  private async reattachExistingPlayer(
+    client: Client,
+    options: JoinRoomOptions,
+    auth: ClientAuth,
+  ) {
+    const entry = this.findPlayerEntryByUserId(auth.userId);
+    const player = entry?.[1];
+    if (!player) {
+      return false;
+    }
+
+    player.avatarId = auth.avatarId;
+    const promotingLobbySpectator =
+      !options.spectator && !this.state.locked && this.state.phase === "lobby" && !player.playing;
+    if (promotingLobbySpectator) {
+      if (!this.hasAvailablePlayerSlot(auth.userId)) {
+        await this.releaseTrackedActiveRoom(auth.userId);
+        this.sendSafeError(client, "Стаята е пълна.");
+        client.leave();
+        return true;
+      }
+      player.host = player.host || !this.hasHostPlayer();
+      player.narrator = player.host && this.config.narratorMode !== "automatic";
+      player.playing = !player.narrator;
+      player.alive = player.playing;
+      player.ready = false;
+      this.privatePlayers.set(auth.userId, { userId: auth.userId, alive: player.playing });
+      if (player.host) {
+        this.hostUserId = auth.userId;
+      }
+    }
+
+    this.activateClient(auth, client, this.playerPresence.getClient(auth.userId));
+    player.connected = true;
+    this.ensureHostAssigned();
+    this.privateEvents.sendPrivateRole(client, auth.userId);
+    this.privateEvents.sendNarratorRoleSnapshot(client, auth.userId);
+    this.sendNightActionCapabilities(auth.userId, client);
+    this.sendRecordedGameId(client);
+    this.addPublicEvent(
+      "presence",
+      promotingLobbySpectator
+        ? `${auth.displayName} вече участва в стаята.`
+        : `${auth.displayName} се върна в стаята.`,
+    );
+    return true;
   }
 
   private revokeUserConnection(userId: string) {
@@ -485,7 +546,7 @@ export class GameRoom extends Room<{ state: GameState }> {
     const player = this.playerPresence.getClient(auth.userId) === client ? this.findPlayerByUserId(auth.userId) : undefined;
     if (player) {
       player.connected = false;
-      this.addPublicEvent(`${player.displayName} загуби връзка.`);
+      this.addPublicEvent("presence", `${player.displayName} загуби връзка.`);
     }
 
     await this.allowReconnection(client, this.config.liveMode ? 300 : 90);
@@ -528,7 +589,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       this.privateEvents.sendNarratorRoleSnapshot(client, auth.userId);
       this.sendNightActionCapabilities(auth.userId, client);
       this.sendRecordedGameId(client);
-      this.addPublicEvent(`${player.displayName} възстанови връзката.`);
+      this.addPublicEvent("presence", `${player.displayName} възстанови връзката.`);
     }
   }
 
@@ -556,7 +617,7 @@ export class GameRoom extends Room<{ state: GameState }> {
     );
     if (player && removeFromRoster) {
       if (this.state.phase === "lobby") {
-        this.addPublicEvent(`${player.displayName} напусна стаята.`);
+        this.addPublicEvent("presence", `${player.displayName} напусна стаята.`);
         this.persistGameEvent("player_left", {
           actorId: auth.userId,
           payload: { displayName: player.displayName },
@@ -594,6 +655,7 @@ export class GameRoom extends Room<{ state: GameState }> {
     this.playerPresence.clear();
     this.privatePlayers.clear();
     this.pendingNightActions.clear();
+    this.pendingDeathInterruptionResumePhase = undefined;
     this.pendingVampireBites.clear();
     this.personalWinnerUserIds.clear();
     this.achievementBroadcaster.reset();
@@ -613,6 +675,11 @@ export class GameRoom extends Room<{ state: GameState }> {
       throw new Error("Достигнат е лимитът за едновременно активни стаи.");
     }
     this.activeRoomUserIds.add(userId);
+  }
+
+  private async releaseTrackedActiveRoom(userId: string) {
+    await PlayerPresenceManager.releaseActiveRoom(userId, this.state.code).catch(() => undefined);
+    this.activeRoomUserIds.delete(userId);
   }
 
   private handleCommand(client: Client, command: ClientCommand) {
@@ -752,7 +819,7 @@ export class GameRoom extends Room<{ state: GameState }> {
     if (privateTarget && !privateTarget.role) {
       privateTarget.alive = !narrator;
     }
-    this.addPublicEvent(narrator ? `${target.displayName} е избран за Разказвач.` : "Разказвачът е премахнат.");
+    this.addPublicEvent("narrator", narrator ? `${target.displayName} е избран за Разказвач.` : "Разказвачът е премахнат.");
     this.persistGameEvent("narrator_assigned", {
       actorId: actor.userId,
       targetId: target.userId,
@@ -777,7 +844,7 @@ export class GameRoom extends Room<{ state: GameState }> {
     }
 
     player.acceptedFullNarrator = true;
-    this.addPublicEvent(`${player.displayName} прие предупреждението за Пълен Разказвач.`);
+    this.addPublicEvent("narrator", `${player.displayName} прие предупреждението за Пълен Разказвач.`);
     this.persistGameEvent("full_narrator_accepted", {
       actorId: player.userId,
       visibility: "moderator",
@@ -809,7 +876,7 @@ export class GameRoom extends Room<{ state: GameState }> {
     }
     target.mayor = true;
     this.getPrivatePlayer(target.userId).isMayor = true;
-    this.addPublicEvent(`${target.displayName} е Кмет. Гласът му решава при равенство.`);
+    this.addPublicEvent("mayor", `${target.displayName} е Кмет. Гласът му решава при равенство.`);
     this.persistGameEvent("mayor_assigned", {
       actorId: actor.userId,
       targetId: target.userId,
@@ -818,7 +885,7 @@ export class GameRoom extends Room<{ state: GameState }> {
 
     if (this.state.phase === "mayor_successor") {
       this.pendingMayorSuccessor = false;
-      this.transitionTo("resolution");
+      this.completeDeathInterruption();
     }
   }
 
@@ -945,7 +1012,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       if (publicMayor && this.config.mayorMode === "public_vote") {
         publicMayor.mayor = true;
         if (!lobbySelectedMayorUserId) {
-          this.addPublicEvent(`${publicMayor.displayName} е Кмет.`);
+          this.addPublicEvent("mayor", `${publicMayor.displayName} е Кмет.`);
         }
       }
     }
@@ -1306,6 +1373,7 @@ export class GameRoom extends Room<{ state: GameState }> {
     }
 
     this.addPublicEvent(
+      "nomination",
       replaced
         ? `${actor.displayName} смени номинацията си: ${target.displayName}.`
         : `${actor.displayName} номинира ${target.displayName}.`,
@@ -1421,13 +1489,13 @@ export class GameRoom extends Room<{ state: GameState }> {
       targetUserId,
     } satisfies ServerEvent);
     this.pendingHunterRevengeUserId = undefined;
-    const deaths = this.applyDeaths([{ userId: targetUserId, causeBg: "Застрелян от Ловеца." }]);
+    const deaths = this.applyDeaths([{ userId: targetUserId, causeBg: "Застрелян от Ловеца.", publicEventKind: "hunter_shot" }]);
     // queueMayorSuccessor consults this.pendingMayorSuccessor too, so a mayor
     // who died alongside a hunter still triggers a successor selection here.
     if (this.queueMayorSuccessor(deaths)) {
       return;
     }
-    this.transitionTo("resolution");
+    this.completeDeathInterruption();
   }
 
   private validateNightActionSubmission(
@@ -1736,7 +1804,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       phase: this.currentPhase(),
       remainingMs: Math.max(0, this.state.phaseEndsAt - Date.now()),
     });
-    this.addPublicEvent(`${player.displayName} паузира играта.`);
+    this.addPublicEvent("phase", `${player.displayName} паузира играта.`);
     this.auditNarratorAction(player, "narrator_pause", { fromPhase: this.state.phase });
     this.transitionTo("paused");
   }
@@ -1768,7 +1836,7 @@ export class GameRoom extends Room<{ state: GameState }> {
     this.phaseStateMachine.clearTimer();
     this.state.phaseEndsAt += safeSeconds * 1000;
     this.scheduleCurrentPhaseTimer(Math.max(0, this.state.phaseEndsAt - Date.now()));
-    this.addPublicEvent(`${player.displayName} удължи таймера с ${safeSeconds} секунди.`);
+    this.addPublicEvent("phase", `${player.displayName} удължи таймера с ${safeSeconds} секунди.`);
     this.auditNarratorAction(player, "narrator_extend_timer", {
       seconds: safeSeconds,
       phaseEndsAt: this.state.phaseEndsAt,
@@ -1810,13 +1878,13 @@ export class GameRoom extends Room<{ state: GameState }> {
       if (this.queueMayorSuccessor([])) {
         return;
       }
-      this.transitionTo("resolution");
+      this.completeDeathInterruption();
       return;
     }
 
     if (this.state.phase === "mayor_successor") {
       this.pendingMayorSuccessor = false;
-      this.transitionTo("resolution");
+      this.completeDeathInterruption();
       return;
     }
 
@@ -1885,7 +1953,7 @@ export class GameRoom extends Room<{ state: GameState }> {
 
     const duration = getPhaseDurationMs(this.config, phase);
     this.state.phaseEndsAt = duration > 0 ? Date.now() + duration : 0;
-    this.addPublicEvent(`Фаза: ${phaseLabelBg(phase, this.config.mode)}.`);
+    this.addPublicEvent("phase", `Фаза: ${phaseLabelBg(phase, this.config.mode)}.`);
     this.persistGameEvent("phase_change", {
       payload: {
         phase,
@@ -1919,18 +1987,19 @@ export class GameRoom extends Room<{ state: GameState }> {
       const terminalAccepted = this.queuePersistence(async ({ persistence, ensureGame }) => {
         const gameId = await ensureGame();
         if (gameId) {
-          await persistence.upsertPlayers(gameId, finalPlayers);
-          await persistence.finishGame(gameId, {
+          await persistence.recordGameCompletion(gameId, {
             winnerTeam: this.state.winnerTeam as never,
+            players: finalPlayers,
+            achievements: achievementUnlocks.map((unlock) => ({
+              userId: unlock.userId,
+              achievementId: unlock.achievementId,
+            })),
           });
           this.recordedGameId = gameId;
           this.broadcast("game_recorded", {
             type: "game_recorded",
             gameId,
           } satisfies ServerEvent);
-          for (const unlock of achievementUnlocks) {
-            await persistence.recordAchievement(unlock.userId, unlock.achievementId, gameId);
-          }
         }
       }, { priority: "critical", terminal: true, maxAttempts: 3 });
       if (!terminalAccepted && this.persistenceCoordinator.enabled) {
@@ -1992,7 +2061,7 @@ export class GameRoom extends Room<{ state: GameState }> {
     this.sportDefenseIndex = 0;
     const firstDefenseUserId = this.sportDefenseOrder[0];
     if (!firstDefenseUserId) {
-      this.addPublicEvent("Няма номинирани играчи. Денят приключва без гласуване.");
+      this.addPublicEvent("nomination", "Няма номинирани играчи. Денят приключва без гласуване.");
       this.transitionTo("resolution");
       return;
     }
@@ -2039,7 +2108,7 @@ export class GameRoom extends Room<{ state: GameState }> {
     if (!player) {
       return;
     }
-    this.addPublicEvent(`${player.displayName} ${copy}.`);
+    this.addPublicEvent("vote", `${player.displayName} ${copy}.`);
     this.persistGameEvent(type, {
       actorId: userId,
       visibility: "public",
@@ -2080,7 +2149,7 @@ export class GameRoom extends Room<{ state: GameState }> {
     }
     this.state.phase = snapshot.phase;
     this.state.phaseEndsAt = snapshot.remainingMs > 0 ? Date.now() + snapshot.remainingMs : 0;
-    this.addPublicEvent(`${player.displayName} продължи играта от фаза: ${phaseLabelBg(snapshot.phase, this.config.mode)}.`);
+    this.addPublicEvent("phase", `${player.displayName} продължи играта от фаза: ${phaseLabelBg(snapshot.phase, this.config.mode)}.`);
     this.persistGameEvent("phase_change", {
       payload: {
         phase: snapshot.phase,
@@ -2089,6 +2158,10 @@ export class GameRoom extends Room<{ state: GameState }> {
       },
     });
     this.auditNarratorAction(player, "narrator_resume", { resumedPhase: snapshot.phase });
+    if (snapshot.remainingMs <= 0) {
+      this.advancePhase();
+      return;
+    }
     this.scheduleCurrentPhaseTimer(snapshot.remainingMs);
     if (isNightPhase(snapshot.phase)) {
       this.sendNightActionCapabilitiesToActors();
@@ -2186,7 +2259,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       const peaceMessage = this.state.phase === "first_night"
         ? "Първата нощ премина мирно. Никой не пострада."
         : "Нощта премина без жертви. Площадът се събужда невредим.";
-      this.addPublicEvent(peaceMessage);
+      this.addPublicEvent("system", peaceMessage);
     }
     if (this.queueHunterRevenge(deaths)) {
       return;
@@ -2239,7 +2312,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       return [];
     }
 
-    this.addPublicEvent("Вампирско ухапване застигна жертвата в края на деня.");
+    this.addPublicEvent("death", "Вампирско ухапване застигна жертвата в края на деня.");
     return this.applyDeaths(deaths);
   }
 
@@ -2256,13 +2329,13 @@ export class GameRoom extends Room<{ state: GameState }> {
       });
     }
     for (const message of uniqueMessages) {
-      this.addPublicEvent(message);
+      this.addPublicEvent("reveal", message);
     }
   }
 
   private reportPersistentPriestProtection(userIds: string[]) {
     for (const userId of userIds) {
-      this.addPublicEvent("Благословия спря нощна смърт.");
+      this.addPublicEvent("reveal", "Благословия спря нощна смърт.");
       this.persistGameEvent("priest_blessing_protected", {
         visibility: "public",
       });
@@ -2352,7 +2425,7 @@ export class GameRoom extends Room<{ state: GameState }> {
 
     const livingCount = [...this.privatePlayers.values()].filter((p) => p.alive).length;
     if (targetUserId && tied.length === 1 && this.config.majorityMode === "absolute" && (topVotes ?? 0) <= livingCount / 2) {
-      this.addPublicEvent("Няма абсолютно мнозинство — никой не е елиминиран.");
+      this.addPublicEvent("vote", "Няма абсолютно мнозинство — никой не е елиминиран.");
       this.transitionTo("resolution");
       return;
     }
@@ -2362,7 +2435,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       const publicPlayer = this.findPlayerByUserId(targetUserId);
       if (privatePlayer && publicPlayer) {
         if (this.guardDogBlocksMayorElimination(targetUserId)) {
-          this.addPublicEvent("Кучето пазач спря елиминирането на Кмета.");
+          this.addPublicEvent("reveal", "Кучето пазач спря елиминирането на Кмета.");
           this.persistGameEvent("guard_dog_protected_mayor", {
             targetId: targetUserId,
             visibility: "public",
@@ -2379,7 +2452,7 @@ export class GameRoom extends Room<{ state: GameState }> {
         ]);
         if (privatePlayer.role === "jester") {
           this.personalWinnerUserIds.add(targetUserId);
-          this.addPublicEvent(`${publicPlayer.displayName} беше Шут и постигна лична победа.`);
+          this.addPublicEvent("reveal", `${publicPlayer.displayName} беше Шут и постигна лична победа.`);
           this.persistGameEvent("jester_personal_win", {
             targetId: targetUserId,
             visibility: "public",
@@ -2394,14 +2467,14 @@ export class GameRoom extends Room<{ state: GameState }> {
         }
       }
     } else if (totalVotes === 0) {
-      this.addPublicEvent("Никой не гласува — площадът замълча.");
+      this.addPublicEvent("vote", "Никой не гласува — площадът замълча.");
     } else if (tied.length > 1) {
       const tiedNames = tied
         .map(([userId]) => this.findPlayerByUserId(userId)?.displayName)
         .filter((name): name is string => Boolean(name))
         .join(", ");
       if (this.config.tieBreaker === "revote") {
-        this.addPublicEvent(`Равенство в гласовете (${tiedNames}). Следва прегласуване.`);
+        this.addPublicEvent("vote", `Равенство в гласовете (${tiedNames}). Следва прегласуване.`);
         for (const player of this.state.players.values()) {
           player.hasVoted = false;
         }
@@ -2413,15 +2486,15 @@ export class GameRoom extends Room<{ state: GameState }> {
         this.transitionTo("voting");
         return;
       }
-      this.addPublicEvent(`Равенство в гласовете (${tiedNames}). Никой не е елиминиран.`);
+      this.addPublicEvent("vote", `Равенство в гласовете (${tiedNames}). Никой не е елиминиран.`);
     } else {
-      this.addPublicEvent("Гласуването завърши без елиминация.");
+      this.addPublicEvent("vote", "Гласуването завърши без елиминация.");
     }
 
     this.transitionTo("resolution");
   }
 
-  private applyDeaths(deaths: Array<{ userId: string; causeBg: string }>) {
+  private applyDeaths(deaths: Array<{ userId: string; causeBg: string; publicEventKind?: Extract<PublicEventKind, "death" | "hunter_shot"> }>) {
     const applied: Array<{ userId: string; role?: RoleCode; causeBg: string; wasMayor?: boolean }> = [];
     const queue = [...deaths];
     const seen = new Set<string>();
@@ -2455,7 +2528,7 @@ export class GameRoom extends Room<{ state: GameState }> {
         ...(wasPublicMayor ? { wasMayor: true } : {}),
         ...(privatePlayer.role ? { role: privatePlayer.role } : {}),
       });
-      this.addPublicEvent(`${publicPlayer.displayName}: ${death.causeBg}`);
+      this.addPublicEvent(death.publicEventKind ?? "death", `${publicPlayer.displayName}: ${death.causeBg}`);
       this.persistGameEvent("death", {
         targetId: death.userId,
         payload: {
@@ -2487,6 +2560,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       return false;
     }
 
+    this.rememberDeathInterruptionResumePhase();
     this.pendingHunterRevengeUserId = hunterDeath.userId;
     this.transitionTo("hunter_revenge");
     return true;
@@ -2508,8 +2582,28 @@ export class GameRoom extends Room<{ state: GameState }> {
       return false;
     }
 
+    this.rememberDeathInterruptionResumePhase();
     this.transitionTo("mayor_successor");
     return true;
+  }
+
+  private rememberDeathInterruptionResumePhase() {
+    this.pendingDeathInterruptionResumePhase ??= isNightPhase(this.state.phase)
+      ? "day_announcement"
+      : "resolution";
+  }
+
+  private completeDeathInterruption() {
+    const resumePhase = this.pendingDeathInterruptionResumePhase ?? "resolution";
+    this.pendingDeathInterruptionResumePhase = undefined;
+    const win = this.evaluateWin();
+    if (win.winner && resumePhase !== "resolution") {
+      this.state.winnerTeam = win.winner;
+      this.state.winnerReasonBg = win.reasonBg ?? "";
+      this.transitionTo("game_over");
+      return;
+    }
+    this.transitionTo(resumePhase);
   }
 
   private markNightActionConsumables(
@@ -2620,12 +2714,12 @@ export class GameRoom extends Room<{ state: GameState }> {
     this.privateEvents.sendNarratorSnapshotsToNarrators();
   }
 
-  private addPublicEvent(messageBg: string) {
+  private addPublicEvent(type: PublicEventKind, messageBg: string) {
     const event = new PublicEventState();
     event.id = crypto.randomUUID();
     event.round = this.state.round;
     event.phase = this.state.phase;
-    event.type = "system";
+    event.type = type;
     event.messageBg = messageBg;
     event.createdAt = Date.now();
     this.state.publicEvents.push(event);
@@ -2742,6 +2836,7 @@ export class GameRoom extends Room<{ state: GameState }> {
     this.state.voteSeconds = this.config.timers.voteSeconds;
     this.state.revealRolesOnDeath = this.config.revealRolesOnDeath;
     this.state.loversEnabled = this.config.loversEnabled;
+    this.state.doctorCanSelfProtect = this.config.doctorCanSelfProtect;
     this.state.allowSkipVote = this.config.allowSkipVote;
     this.state.majorityMode = this.config.majorityMode;
     this.state.narratorVoice = this.config.narratorVoice;
@@ -2868,7 +2963,7 @@ export class GameRoom extends Room<{ state: GameState }> {
     }
 
     successor.host = true;
-    this.addPublicEvent(`${successor.displayName} пое ролята на домакин.`);
+    this.addPublicEvent("presence", `${successor.displayName} пое ролята на домакин.`);
     this.persistGameEvent("host_succeeded", {
       actorId: successor.userId,
       participantUserIds: [successor.userId, excludedUserId].filter(Boolean),

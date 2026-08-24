@@ -208,7 +208,7 @@ export function AuthGatedEntryClient({
 
   if (isPending || !session) {
     return (
-      <section className="auth-entry-card join-entry-card join-entry-card--skeleton" data-theme={family} data-family={family}>
+      <section className="auth-entry-card join-entry-card join-entry-card--skeleton" data-faction={family} data-family={family}>
         <span className="join-entry-mark" aria-hidden>
           <LoaderCircle strokeWidth={1.8} className="spin" />
         </span>
@@ -223,7 +223,7 @@ export function AuthGatedEntryClient({
   const canSubmit = !isJoining && roomAcceptsEntry;
 
   return (
-    <section className="auth-entry-card join-entry-card" data-theme={family} data-family={family}>
+    <section className="auth-entry-card join-entry-card" data-faction={family} data-family={family}>
       <form className="join-entry-form" onSubmit={onSubmit} noValidate>
         <header className="join-entry-hero">
           <span className="join-entry-mark" aria-hidden>

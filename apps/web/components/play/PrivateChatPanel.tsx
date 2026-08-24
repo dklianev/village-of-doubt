@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import type { ChatChannel } from "@werewolf/shared";
+import { useEffect, useRef, useState } from "react";
+import { MAX_CHAT_MESSAGE_LENGTH, type ChatChannel } from "@werewolf/shared";
 import { TypingIndicator } from "@/components/play/TypingIndicator";
 import { privateChannelBg } from "@/lib/play/copy";
 import type { PrivateChatMessage, TypingNotice } from "@/lib/play/types";
@@ -20,6 +20,19 @@ export function PrivateChatPanel({
   typingNotices: TypingNotice[];
 }) {
   const [value, setValue] = useState("");
+  const typingActiveRef = useRef(false);
+  const onTypingRef = useRef(onTyping);
+  onTypingRef.current = onTyping;
+
+  useEffect(() => {
+    const activeChannel = channel;
+    return () => {
+      if (typingActiveRef.current) {
+        onTypingRef.current(activeChannel, false);
+        typingActiveRef.current = false;
+      }
+    };
+  }, [channel]);
 
   const submit = () => {
     const message = value.trim();
@@ -27,6 +40,7 @@ export function PrivateChatPanel({
       return;
     }
     onSend(channel, message);
+    typingActiveRef.current = false;
     onTyping(channel, false);
     setValue("");
   };
@@ -37,7 +51,7 @@ export function PrivateChatPanel({
       <h2 className="mt-2 text-3xl font-black">Таен канал</h2>
       <div className="mt-4 grid gap-2 text-sm">
         {messages.slice(-6).map((message) => (
-          <p key={`${message.createdAt}-${message.senderUserId}`} className="rounded-xl bg-[#f4e8d1]/10 px-3 py-2">
+          <p key={message.id} className="rounded-xl bg-[#f4e8d1]/10 px-3 py-2">
             <strong>{message.senderName}:</strong> {message.message}
           </p>
         ))}
@@ -48,13 +62,15 @@ export function PrivateChatPanel({
           className="input w-full"
           value={value}
           onChange={(event) => {
-            const nextValue = event.target.value.slice(0, 500);
+            const nextValue = event.target.value.slice(0, MAX_CHAT_MESSAGE_LENGTH);
+            const active = nextValue.trim().length > 0;
             setValue(nextValue);
-            onTyping(channel, nextValue.trim().length > 0);
+            typingActiveRef.current = active;
+            onTyping(channel, active);
           }}
           aria-label="Съобщение за таен канал"
           placeholder="Съобщение само за този канал..."
-          maxLength={500}
+          maxLength={MAX_CHAT_MESSAGE_LENGTH}
         />
         <button className="btn btn-primary" type="button" onClick={submit} disabled={value.trim().length === 0}>
           Изпрати

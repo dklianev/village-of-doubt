@@ -18,6 +18,7 @@ import {
   type RoleCode,
 } from "@werewolf/shared";
 import { publicGameReference } from "@/lib/game-reference";
+import { isUuid } from "@/lib/identifiers";
 import { collectReplayParticipants } from "@/lib/play/replay-participants";
 import { filterReplayTimelineByVisibility, resolveReplayTimelineVisibility } from "@/lib/replay-visibility";
 import { requireSession } from "@/lib/require-session";
@@ -28,6 +29,7 @@ import "@/components/history/LegacyReplay.module.css";
 export const metadata: Metadata = {
   title: "Запис",
   description: "Преглед на завършена игра: фази, гласове, смърти и победител.",
+  robots: { index: false, follow: false },
 };
 
 export const instant = false;
@@ -41,8 +43,12 @@ export default async function ReplayPage({
 }) {
   const { gameId } = await params;
   const visualReplay = firstSearchValue((await searchParams)?.visualReplay);
+  const visualFixtureEnabled = process.env.NODE_ENV !== "production" && visualReplay === "fixture";
+  if (!visualFixtureEnabled && !isUuid(gameId)) {
+    notFound();
+  }
   const replay =
-    process.env.NODE_ENV !== "production" && visualReplay === "fixture"
+    visualFixtureEnabled
       ? fixtureReplay(gameId)
       : await loadReplayForSession(gameId);
   if (!replay) {

@@ -86,6 +86,9 @@ export class RoomPersistenceCoordinator {
       finishGame: (gameId, input) => this.runPersistenceMutation(
         () => persistence.finishGame(gameId, input),
       ),
+      recordGameCompletion: (gameId, input) => this.runPersistenceMutation(
+        () => persistence.recordGameCompletion(gameId, input),
+      ),
     };
   }
 
@@ -276,14 +279,8 @@ export class RoomPersistenceCoordinator {
         if (this.abortDrain) {
           return;
         }
-        const shouldRetry = pendingTask.terminal || attempt < pendingTask.maxAttempts;
+        const shouldRetry = attempt < pendingTask.maxAttempts;
         if (shouldRetry) {
-          if (pendingTask.terminal && attempt === pendingTask.maxAttempts) {
-            if (process.env.SENTRY_DSN) {
-              this.captureException(error);
-            }
-            console.error("[game-persistence]", error);
-          }
           await this.retryDelay(Math.min(attempt, pendingTask.maxAttempts));
           attempt += 1;
           if (this.abortDrain) {

@@ -13,7 +13,8 @@ describe("ServiceWorkerRegistration", () => {
   });
 
   it("versions, bounds, and refreshes the artwork cache from the network", () => {
-    expect(workerSource).toContain('const CACHE_VERSION = "v3"');
+    expect(workerSource).toContain('const CACHE_VERSION = "v4"');
+    expect(workerSource).toContain('const SHELL_URLS = ["/offline"]');
     expect(workerSource).toContain("const MAX_ART_ENTRIES = 64");
     expect(workerSource).toContain("const networkPromise = fetch(event.request)");
     expect(workerSource).toContain("event.waitUntil(");

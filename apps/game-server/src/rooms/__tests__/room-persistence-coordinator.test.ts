@@ -12,6 +12,7 @@ function makePersistence(enabled = true): GamePersistence {
     recordEvent: vi.fn(async () => {}),
     recordAchievement: vi.fn(async () => {}),
     finishGame: vi.fn(async () => {}),
+    recordGameCompletion: vi.fn(async () => {}),
   };
 }
 
@@ -335,11 +336,12 @@ describe("RoomPersistenceCoordinator", () => {
     expect(order).toEqual(["game-start", "game-finish"]);
   });
 
-  it("keeps retrying accepted terminal work beyond the regular retry cap", async () => {
+  it("stops retrying accepted terminal work at its max attempts", async () => {
     const persistence = makePersistence();
     const retryDelay = vi.fn(async () => {});
-    const coordinator = new RoomPersistenceCoordinator(persistence, vi.fn(), retryDelay);
-    vi.spyOn(console, "error").mockImplementation(() => {});
+    const captureException = vi.fn();
+    const coordinator = new RoomPersistenceCoordinator(persistence, captureException, retryDelay);
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
     const terminal = vi.fn()
       .mockRejectedValueOnce(new Error("temporary-1"))
       .mockRejectedValueOnce(new Error("temporary-2"))
@@ -353,8 +355,10 @@ describe("RoomPersistenceCoordinator", () => {
     })).toBe(true);
 
     await expect(coordinator.flush(100)).resolves.toBe(true);
-    expect(terminal).toHaveBeenCalledTimes(4);
-    expect(retryDelay).toHaveBeenCalledTimes(3);
+    expect(terminal).toHaveBeenCalledTimes(2);
+    expect(retryDelay).toHaveBeenCalledTimes(1);
+    expect(consoleError).toHaveBeenCalledWith("[game-persistence]", expect.any(Error));
+    consoleError.mockRestore();
   });
 
   it("does not include the raw room code in timeout telemetry", async () => {

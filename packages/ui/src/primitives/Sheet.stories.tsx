@@ -59,6 +59,23 @@ export const LongContent: Story = {
   },
 };
 
+export const Workspace: Story = {
+  args: {
+    open: true,
+    onOpenChange: () => {},
+    title: "Настрой детайлите",
+    size: "workspace",
+    children: (
+      <div style={{ minHeight: "55vh", display: "grid", alignContent: "start", gap: "16px" }}>
+        <h2 style={{ margin: 0 }}>Състав на масата</h2>
+        <p style={{ margin: 0, color: "var(--ds-ink-soft)", lineHeight: 1.6 }}>
+          Работно пространство за роли, ритъм и покана към играчите.
+        </p>
+      </div>
+    ),
+  },
+};
+
 export const Interactive: Story = {
   args: {
     open: true,

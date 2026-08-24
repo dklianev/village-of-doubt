@@ -74,6 +74,19 @@ export function resolveColyseusRedisUrl(environment: GameServerRedisEnvironment)
   );
 }
 
+export async function closeGameServerRedisRuntime() {
+  if (!redisRuntime) {
+    return;
+  }
+  clearInterval(redisRuntime.revocationReconcileTimer);
+  if (redisRuntime.revocationSubscriber.isOpen) {
+    await redisRuntime.revocationSubscriber.quit();
+  }
+  if (redisRuntime.securityClient.isOpen) {
+    await redisRuntime.securityClient.quit();
+  }
+}
+
 export default defineConfig({
   options: {
     ...redisScaling,
@@ -89,17 +102,6 @@ export default defineConfig({
       );
     }
     gameServer.define("game", OperationalGameRoom).filterBy(["code"]);
-    if (redisRuntime) {
-      gameServer.onShutdown(async () => {
-        clearInterval(redisRuntime.revocationReconcileTimer);
-        if (redisRuntime.revocationSubscriber.isOpen) {
-          await redisRuntime.revocationSubscriber.quit();
-        }
-        if (redisRuntime.securityClient.isOpen) {
-          await redisRuntime.securityClient.quit();
-        }
-      });
-    }
     deployDrain.configure({
       getActiveRooms: () => getGameRuntimeStats().activeRooms,
       stopMatchmaking: () => {},

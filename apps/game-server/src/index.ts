@@ -1,7 +1,7 @@
 import { listen } from "@colyseus/tools";
 import * as Sentry from "@sentry/node";
 import { closeAllDatabases } from "@werewolf/database";
-import appConfig from "./app.config.js";
+import appConfig, { closeGameServerRedisRuntime } from "./app.config.js";
 import { deployDrain } from "./operations/deploy-drain.js";
 import { persistenceReadiness } from "./operations/persistence-readiness.js";
 
@@ -51,6 +51,7 @@ server.onBeforeShutdown(async () => {
 
 server.onShutdown(async () => {
   clearInterval(persistenceProbeTimer);
+  await closeGameServerRedisRuntime();
   await closeAllDatabases();
   console.info("Game server shutdown completed.");
 });

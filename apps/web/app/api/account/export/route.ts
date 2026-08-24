@@ -22,14 +22,29 @@ const PRIVATE_NO_STORE_HEADERS = { "Cache-Control": "private, no-store" };
 const exportSourceRateLimiter = createRuntimeIntakeRateLimiter(
   { limit: 30, windowMs: 60_000 },
   "account-export-source",
+  undefined,
+  { outageMode: "memory" },
 );
 const exportUserRateLimiter = createRuntimeIntakeRateLimiter(
   { limit: 4, windowMs: 15 * 60_000 },
   "account-export-user",
+  undefined,
+  { outageMode: "memory" },
+);
+// Continuation pages are cheaper than starting a new export, but they still
+// execute database reads. Keep a generous per-user request budget so a signed
+// continuation cannot turn into an unbounded query stream.
+const exportUserRequestRateLimiter = createRuntimeIntakeRateLimiter(
+  { limit: 240, windowMs: 20 * 60_000 },
+  "account-export-user-request",
+  undefined,
+  { outageMode: "memory" },
 );
 const exportSessionRateLimiter = createRuntimeIntakeRateLimiter(
   { limit: 2_000, windowMs: 20 * 60_000 },
   "account-export-session",
+  undefined,
+  { outageMode: "memory" },
 );
 
 export async function GET(request?: Request) {
@@ -53,6 +68,11 @@ export async function GET(request?: Request) {
       { error: "Невалидна сесия за изтегляне." },
       { status: 400, headers: PRIVATE_NO_STORE_HEADERS },
     );
+  }
+
+  const userRequestLimit = await exportUserRequestRateLimiter.check(`user:${session.user.id}`);
+  if (!userRequestLimit.allowed) {
+    return exportRateLimitResponse(userRequestLimit.retryAfterSeconds);
   }
 
   if (verifiedContinuation) {

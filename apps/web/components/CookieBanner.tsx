@@ -24,7 +24,7 @@ export function CookieBanner() {
   }
 
   return (
-    <div className={styles.banner} role="dialog" aria-label="Бисквитки" data-cookie-banner>
+    <div className={styles.banner} role="region" aria-label="Бисквитки" data-cookie-banner>
       <p>
         Използваме само необходими бисквитки за вход и сесия. Прочети{" "}
         <Link href="/privacy" prefetch={false}>политиката за поверителност</Link>.

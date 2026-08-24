@@ -1,3 +1,5 @@
+"use client";
+
 import * as RDialog from "@radix-ui/react-dialog";
 import { useInsertionEffect, type CSSProperties, type ReactNode } from "react";
 

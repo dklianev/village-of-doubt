@@ -67,4 +67,17 @@ describe("useCueMode", () => {
     expect(window.localStorage.getItem("werewolf-cue-mode")).toBe("silent");
     expect(setSoundEnabled).toHaveBeenCalledWith(false);
   });
+
+  it("keeps working when browser storage is blocked", async () => {
+    Object.defineProperty(window, "localStorage", {
+      configurable: true,
+      get() {
+        throw new DOMException("blocked", "SecurityError");
+      },
+    });
+
+    const { result } = renderHook(() => useCueMode({ tempoProfile: "normal", phase: "night", liveMode: false }));
+    await waitFor(() => expect(result.current.cueMode).toBe("visual"));
+    expect(() => act(() => result.current.changeCueMode("silent"))).not.toThrow();
+  });
 });

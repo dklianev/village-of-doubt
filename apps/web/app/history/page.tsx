@@ -20,6 +20,7 @@ export const metadata: Metadata = routeMetadata({
   image: "/game-art/og/og-history.png",
   imageAlt: "Детективско табло с празни карти и червена нишка",
   ogDescription: "Победи, смърти, гласове и развръзки от старите стаи.",
+  robots: { index: false, follow: false },
 });
 
 export const instant = true;

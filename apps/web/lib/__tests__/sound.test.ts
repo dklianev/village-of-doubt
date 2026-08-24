@@ -35,4 +35,18 @@ describe("sound preferences", () => {
     expect(shouldPlayCue({ storage })).toBe(true);
     expect(shouldPlayCue({ storage, forceSilent: true })).toBe(false);
   });
+
+  it("treats blocked preference storage as disabled", () => {
+    const storage = {
+      getItem() {
+        throw new DOMException("blocked", "SecurityError");
+      },
+      setItem() {
+        throw new DOMException("blocked", "SecurityError");
+      },
+    };
+
+    expect(getSoundEnabled(storage)).toBe(false);
+    expect(() => setSoundEnabled(true, storage)).not.toThrow();
+  });
 });

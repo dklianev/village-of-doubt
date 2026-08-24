@@ -26,4 +26,22 @@ describe("PublicChatComposer", () => {
     expect(onSend).toHaveBeenCalledWith("Имам подозрение.");
     expect(input).toHaveValue("");
   });
+
+  it("clears a live typing signal when the composer unmounts", async () => {
+    const user = userEvent.setup();
+    const onTyping = vi.fn();
+    const { unmount } = render(
+      <PublicChatComposer
+        inputId="public-chat"
+        typingNotices={[]}
+        onSend={vi.fn()}
+        onTyping={onTyping}
+      />,
+    );
+
+    await user.type(screen.getByLabelText("Съобщение в дневния чат"), "Пиша");
+    unmount();
+
+    expect(onTyping).toHaveBeenLastCalledWith(false);
+  });
 });

@@ -57,6 +57,7 @@ function makePersistence(recordEvent: GamePersistence["recordEvent"]): GamePersi
     recordEvent,
     recordAchievement: vi.fn(async () => {}),
     finishGame: vi.fn(async () => {}),
+    recordGameCompletion: vi.fn(async () => {}),
   };
 }
 
@@ -263,15 +264,20 @@ describe("GameRoom persistence snapshots", () => {
     });
 
     expect(terminalOptions).toEqual({ priority: "critical", terminal: true, maxAttempts: 3 });
-    expect(persistence.upsertPlayers).toHaveBeenCalledWith(
+    expect(persistence.recordGameCompletion).toHaveBeenCalledWith(
       "game-1",
-      expect.arrayContaining([
-        expect.objectContaining({ userId: "winner", won: true }),
-        expect.objectContaining({ userId: "jester", won: true }),
-      ]),
+      {
+        winnerTeam: "village",
+        players: expect.arrayContaining([
+          expect.objectContaining({ userId: "winner", won: true }),
+          expect.objectContaining({ userId: "jester", won: true }),
+        ]),
+        achievements: expect.any(Array),
+      },
     );
-    expect(vi.mocked(persistence.upsertPlayers).mock.invocationCallOrder[0])
-      .toBeLessThan(vi.mocked(persistence.finishGame).mock.invocationCallOrder[0] ?? Infinity);
+    expect(persistence.upsertPlayers).not.toHaveBeenCalled();
+    expect(persistence.finishGame).not.toHaveBeenCalled();
+    expect(persistence.recordAchievement).not.toHaveBeenCalled();
     expect(broadcast).toHaveBeenCalledWith("game_recorded", {
       type: "game_recorded",
       gameId: "game-1",

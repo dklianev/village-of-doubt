@@ -51,6 +51,14 @@ export interface FinishGameInput {
   winnerTeam: WinnerTeam;
 }
 
+export interface CompleteGameInput extends FinishGameInput {
+  players: PersistPlayerInput[];
+  achievements?: Array<{
+    userId: string;
+    achievementId: string;
+  }>;
+}
+
 export interface GamePersistence {
   enabled: boolean;
   ensureGame(input: PersistGameInput): Promise<string | undefined>;
@@ -59,6 +67,7 @@ export interface GamePersistence {
   recordEvent(gameId: string, event: PersistEventInput): Promise<void>;
   recordAchievement(userId: string, achievementId: string, gameId: string): Promise<void>;
   finishGame(gameId: string, input: FinishGameInput): Promise<void>;
+  recordGameCompletion(gameId: string, input: CompleteGameInput): Promise<void>;
 }
 
 interface GamePersistenceReadinessOptions {
@@ -109,6 +118,8 @@ class NoopGamePersistence implements GamePersistence {
   async recordAchievement(): Promise<void> {}
 
   async finishGame(): Promise<void> {}
+
+  async recordGameCompletion(): Promise<void> {}
 }
 
 export class DrizzleGamePersistence implements GamePersistence {
@@ -286,6 +297,17 @@ export class DrizzleGamePersistence implements GamePersistence {
         updatedAt: new Date(),
       })
       .where(and(eq(games.id, gameId), ne(games.status, "ended")));
+  }
+
+  async recordGameCompletion(gameId: string, input: CompleteGameInput): Promise<void> {
+    await this.db.transaction(async (tx) => {
+      const persistence = new DrizzleGamePersistence(tx as unknown as Database);
+      await persistence.upsertPlayers(gameId, input.players);
+      await persistence.finishGame(gameId, { winnerTeam: input.winnerTeam });
+      for (const achievement of input.achievements ?? []) {
+        await persistence.recordAchievement(achievement.userId, achievement.achievementId, gameId);
+      }
+    });
   }
 
   private async ensureUsers(

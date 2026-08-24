@@ -13,6 +13,7 @@ import {
   metrics,
 } from "@sentry/browser";
 import type { NavigationMetric } from "./navigation-telemetry";
+import { sanitizeMonitoringBreadcrumb, sanitizeMonitoringEvent } from "./sentry-sanitization";
 
 type BrowserMonitoringOptions = {
   dsn: string;
@@ -30,6 +31,8 @@ export function initBrowserMonitoring(options: BrowserMonitoringOptions): void {
   const client = new BrowserClient({
     ...options,
     sendDefaultPii: false,
+    beforeSend: sanitizeMonitoringEvent,
+    beforeBreadcrumb: sanitizeMonitoringBreadcrumb,
     transport: makeFetchTransport,
     stackParser: defaultStackParser,
     integrations: [

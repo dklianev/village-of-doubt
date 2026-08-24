@@ -37,9 +37,9 @@
   ],
   "scripts": {
     "build": "pnpm build:js && pnpm build:types",
-    "build:js": "tsup",
+    "build:js": "tsup && node scripts/preserve-client-boundary.mjs",
     "build:types": "tsc -p tsconfig.build.json",
-    "dev": "tsup --watch --onSuccess \"pnpm build:types\"",
+    "dev": "tsup --watch --onSuccess \"node scripts/preserve-client-boundary.mjs && pnpm build:types\"",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",

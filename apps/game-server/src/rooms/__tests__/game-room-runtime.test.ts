@@ -90,6 +90,8 @@ describe("game-room-runtime helpers", () => {
     expect(getPhaseDurationMs(config, "day_discussion")).toBe(60_000);
     expect(getPhaseDurationMs(config, "voting")).toBe(20_000);
     expect(getPhaseDurationMs(config, "resolution")).toBe(5_000);
+    expect(getPhaseDurationMs(config, "hunter_revenge")).toBe(5_000);
+    expect(getPhaseDurationMs(config, "mayor_successor")).toBe(5_000);
     expect(getPhaseDurationMs(config, "paused")).toBe(0);
   });
 

@@ -7,6 +7,7 @@ import "@/components/friends/LegacyFriends.module.css";
 export const metadata: Metadata = {
   title: "Познати на масата",
   description: "Локален списък с хора за следващата стая и бърза покана за следваща игра.",
+  robots: { index: false, follow: false },
 };
 
 export const instant = false;

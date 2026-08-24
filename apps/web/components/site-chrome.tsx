@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -187,7 +187,7 @@ function RoutePathnameSync({
 }) {
   const pathname = usePathname();
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     onPathnameChange(pathname);
   }, [onPathnameChange, pathname]);
 
@@ -207,7 +207,7 @@ function BrandMark({ compact }: { compact: boolean }) {
           <span>Мафия</span>
         </span>
         {process.env.NEXT_PUBLIC_SHOW_BETA_BADGE !== "false" ? (
-          <span className="site-beta-badge" aria-label="Бета версия">
+          <span className="site-beta-badge">
             БЕТА
           </span>
         ) : null}

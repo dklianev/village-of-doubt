@@ -57,7 +57,7 @@ import {
 import { VotingPanel } from "@/components/play/VotingPanel";
 import { isNightPhase } from "@/lib/play/role-rules";
 import { useCueMode } from "@/hooks/play/use-cue-mode";
-import { useGameRoom } from "@/hooks/play/use-game-room";
+import { useGameRoom, type UseGameRoomOptions, type UseGameRoomResult } from "@/hooks/play/use-game-room";
 import { usePhaseTransitions } from "@/hooks/play/use-phase-transitions";
 import { nightTargetHeadingBg, winnerBg } from "@/lib/play/copy";
 import { nextPhaseTransitionArtHref } from "@/lib/play/phase-art";
@@ -69,10 +69,19 @@ export type { PhaseSlice, PublicPlayer } from "@/lib/play/types";
 interface PlayRoomClientProps {
   code: string;
   createOptions?: CreateRoomOptions;
-  visualFixtureSearch?: string | undefined;
 }
 
-export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFixtureSearch }: PlayRoomClientProps) {
+type PlayRoomHook = (options: UseGameRoomOptions) => UseGameRoomResult;
+
+export function PlayRoomClient(props: PlayRoomClientProps) {
+  return <PlayRoomClientCore {...props} useRoom={useGameRoom} />;
+}
+
+export function PlayRoomClientCore({
+  code,
+  createOptions: createOptionsRaw,
+  useRoom,
+}: PlayRoomClientProps & { useRoom: PlayRoomHook }) {
   const createOptions = createOptionsRaw;
   const [selectedTargetId, setSelectedTargetId] = useState("");
   const [secondTargetId, setSecondTargetId] = useState("");
@@ -106,10 +115,9 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
     recordedGameId,
     reconnectNow,
     isPending,
-  } = useGameRoom({
+  } = useRoom({
     code,
     createOptions,
-    visualFixtureSearch,
     toast,
     onReconnectSuppressed: () => {
       suppressNextPhasePulseRef.current = true;
@@ -761,7 +769,7 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
               </p>
             ) : null}
             {recentPublicEvents.map((event) => (
-              <p key={event.id} className={`event-line ${eventLineClass(event.messageBg)} rounded-xl px-3 py-2`}>
+              <p key={event.id} className={`event-line ${eventLineClass(event.type)} rounded-xl px-3 py-2`}>
                 {event.messageBg}
               </p>
             ))}
@@ -1042,7 +1050,7 @@ export function PlayRoomClient({ code, createOptions: createOptionsRaw, visualFi
         <PhaseTransitionOverlay phase={phase} mode={mode} narratorVoice={snapshot?.narratorVoice ?? "classic"} pulseKey={phasePulse} />
       ) : null}
       <PreGameCountdown value={startCountdown} />
-      {connectionStatus === "reconnecting" || connectionStatus === "lost" ? (
+      {connectionStatus === "reconnecting" || connectionStatus === "lost" || connectionStatus === "error" ? (
         <ReconnectModal
           status={connectionStatus}
           message={connectionMessage}
