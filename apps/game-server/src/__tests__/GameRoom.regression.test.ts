@@ -726,8 +726,7 @@ describe("GameRoom gameplay regressions", () => {
     });
     const clients = await connectPlayers(colyseus, serverRoom, 6, "mayor-hunter");
     const roleClients = await startGameAndCollectRoles(clients);
-    clients[0]?.client.send("narratorAdvance", {});
-    await serverRoom.waitForNextPatch();
+    await advanceToFirstNight(clients[0]?.client, serverRoom);
 
     const hunter = roleClients.find((item) => item.role === "hunter");
     const werewolf = roleClients.find((item) => item.role === "werewolf");
@@ -738,22 +737,30 @@ describe("GameRoom gameplay regressions", () => {
       player.mayor = player.userId === hunter?.userId;
     }
 
+    const killAck = werewolf?.client.waitForMessage("night_action_ack") as Promise<unknown>;
     werewolf?.client.send("submitNightAction", {
       action: { kind: "faction_kill", targetUserId: hunter?.userId },
     });
+    await expect(killAck).resolves.toBeDefined();
     clients[0]?.client.send("narratorAdvance", {});
-    await serverRoom.waitForNextPatch(20);
-    expect(serverRoom.state.phase).toBe("hunter_revenge");
+    await waitForCondition(
+      () => serverRoom.state.phase === "hunter_revenge",
+      "Hunter revenge did not interrupt the Mayor's night death.",
+    );
 
     clients[0]?.client.send("narratorAdvance", {});
-    await serverRoom.waitForNextPatch(20);
-    expect(serverRoom.state.phase).toBe("mayor_successor");
+    await waitForCondition(
+      () => serverRoom.state.phase === "mayor_successor",
+      "Mayor successor did not follow the expired Hunter revenge.",
+    );
 
     const successor = [...serverRoom.state.players.values()].find((player) => player.playing && player.alive);
     expect(successor).toBeTruthy();
     clients[0]?.client.send("setMayor", { targetUserId: successor?.userId });
-    await serverRoom.waitForNextPatch(20);
-    expect(serverRoom.state.phase).toBe("day_announcement");
+    await waitForCondition(
+      () => serverRoom.state.phase === "day_announcement",
+      "Mayor selection did not resume the day announcement.",
+    );
   });
 
   it("continues to the day announcement after a night Hunter revenge resolves without a winner", async () => {
