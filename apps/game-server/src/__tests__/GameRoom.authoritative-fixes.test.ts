@@ -125,25 +125,19 @@ describe("GameRoom authoritative gameplay boundaries", () => {
     expect(targetState).toMatchObject({ role: "ordinary_villager", isMayor: false });
   });
 
-  it("keeps spectators outside the player roster when the narrator changes", async () => {
+  it("keeps spectators outside the player roster in automatic beta rooms", async () => {
     const room = await colyseus.createRoom<GameRoom>("game", {
       code: "NARSPE",
       mode: "mafia_free",
       playerCount: 4,
-      narratorMode: "honest_human",
       tempoProfile: "manual",
     });
-    const participants = await connectPlayers(colyseus, room, 5, "narrator-swap");
+    await connectPlayers(colyseus, room, 4, "automatic-room");
     await connectWithRetry(colyseus, room, {
       code: room.state.code,
       userId: "narrator-spectator",
       displayName: "Наблюдател",
       spectator: true,
-    });
-
-    participants[0]?.client.send("setNarrator", {
-      targetUserId: participants[1]?.userId,
-      narrator: true,
     });
     await room.waitForNextPatch(25).catch(() => undefined);
 

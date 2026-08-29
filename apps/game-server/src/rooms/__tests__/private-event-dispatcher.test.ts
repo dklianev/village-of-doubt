@@ -28,6 +28,8 @@ function createDispatcher(opts?: { narratorMode?: GameConfig["narratorMode"] }) 
     ["villager", makePublicPlayer("villager", "Селянин")],
     ["mafioso", makePublicPlayer("mafioso", "Мафиот")],
     ["don", makePublicPlayer("don", "Дон")],
+    ["vampire", makePublicPlayer("vampire", "Вампир")],
+    ["vampire-ally", makePublicPlayer("vampire-ally", "Друг вампир")],
   ]);
   const privatePlayers = new Map<string, PrivatePlayerState>([
     ["seer", { userId: "seer", role: "seer", alive: true, loverId: "lover" }],
@@ -35,6 +37,8 @@ function createDispatcher(opts?: { narratorMode?: GameConfig["narratorMode"] }) 
     ["villager", { userId: "villager", role: "ordinary_villager", alive: true }],
     ["mafioso", { userId: "mafioso", role: "mafioso", alive: true }],
     ["don", { userId: "don", role: "don", alive: true }],
+    ["vampire", { userId: "vampire", role: "vampire", alive: true }],
+    ["vampire-ally", { userId: "vampire-ally", role: "vampire", alive: true }],
   ]);
   const clients = {
     seer: makeClient(),
@@ -43,6 +47,8 @@ function createDispatcher(opts?: { narratorMode?: GameConfig["narratorMode"] }) 
     villager: makeClient(),
     mafioso: makeClient(),
     don: makeClient(),
+    vampire: makeClient(),
+    vampireAlly: makeClient(),
   };
   playerPresence.attachClient("seer", clients.seer as never);
   playerPresence.attachClient("lover", clients.lover as never);
@@ -50,6 +56,8 @@ function createDispatcher(opts?: { narratorMode?: GameConfig["narratorMode"] }) 
   playerPresence.attachClient("villager", clients.villager as never);
   playerPresence.attachClient("mafioso", clients.mafioso as never);
   playerPresence.attachClient("don", clients.don as never);
+  playerPresence.attachClient("vampire", clients.vampire as never);
+  playerPresence.attachClient("vampire-ally", clients.vampireAlly as never);
 
   const dispatcher = new PrivateEventDispatcher({
     getConfig: () => ({ narratorMode: opts?.narratorMode ?? "full_human" }) as GameConfig,
@@ -129,6 +137,20 @@ describe("PrivateEventDispatcher", () => {
       members: [{ userId: "don", displayName: "Дон" }],
     });
     expect(clients.don.send).not.toHaveBeenCalled();
+    expect(clients.villager.send).not.toHaveBeenCalled();
+  });
+
+  it("discloses vampire teammates only to the requested vampire", () => {
+    const { dispatcher, clients } = createDispatcher();
+
+    dispatcher.sendPrivateRole(clients.vampire as never, "vampire");
+
+    expect(clients.vampire.send).toHaveBeenCalledWith("private_faction_roster", {
+      type: "private_faction_roster",
+      faction: "vampires",
+      members: [{ userId: "vampire-ally", displayName: "Друг вампир" }],
+    });
+    expect(clients.vampireAlly.send).not.toHaveBeenCalled();
     expect(clients.villager.send).not.toHaveBeenCalled();
   });
 

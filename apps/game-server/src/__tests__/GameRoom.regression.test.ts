@@ -60,6 +60,77 @@ describe("GameRoom gameplay regressions", () => {
     expect(serverRoom.state.phase).toBe("lobby");
   });
 
+  it("rejects a duplicate live room code before a second room can start", async () => {
+    await colyseus.createRoom<GameRoom>("game", {
+      code: "DUPLVE",
+      mode: "werewolves_classic",
+      playerCount: 6,
+    });
+
+    await expect(
+      colyseus.createRoom<GameRoom>("game", {
+        code: "DUPLVE",
+        mode: "mafia_free",
+        playerCount: 6,
+      }),
+    ).rejects.toThrow("Стая с този код вече е отворена.");
+  });
+
+  it.each([
+    {
+      code: "BADMDE",
+      hostileOptions: { mode: "mystery" },
+      messageBg: "Невалиден режим на игра.",
+    },
+    {
+      code: "BADNAR",
+      hostileOptions: { narratorMode: "full_human" },
+      messageBg: "Човешкият Разказвач не е достъпен в бета версията. Избери Автоматичен Разказвач.",
+    },
+    {
+      code: "BADVSE",
+      hostileOptions: { roomVisibility: "friends" },
+      messageBg: "Невалидна видимост на стаята.",
+    },
+    {
+      code: "BADRLE",
+      hostileOptions: { roles: { ordinary_villager: 4, werewolf: "2" } },
+      messageBg: "Невалидно разпределение на ролите.",
+    },
+    {
+      code: "BADMAX",
+      hostileOptions: { maxPlayers: 999 },
+      messageBg: "Максималният брой играчи трябва да е цяло число между 1 и 30.",
+    },
+    {
+      code: "BADBKL",
+      hostileOptions: { firstNightKill: "false" },
+      messageBg: "Невалидна стойност за настройка на стаята.",
+    },
+    {
+      code: "BADTMR",
+      hostileOptions: { tempoProfile: "manual", customTimers: { voteSeconds: "веднага" } },
+      messageBg: "Невалидни настройки на таймерите.",
+    },
+  ])("rejects hostile authoritative room options for $code", async ({ code, hostileOptions, messageBg }) => {
+    await expect(
+      colyseus.createRoom<GameRoom>("game", {
+        code,
+        mode: "werewolves_classic",
+        playerCount: 6,
+        ...hostileOptions,
+      } as never),
+    ).rejects.toThrow(messageBg);
+  });
+
+  it("rejects a non-string room code with a safe Bulgarian error", async () => {
+    await expect(colyseus.createRoom<GameRoom>("game", {
+      code: 123456,
+      mode: "werewolves_classic",
+      playerCount: 6,
+    } as never)).rejects.toThrow("Невалиден код на стая.");
+  });
+
   it("preserves public room visibility when the game starts", async () => {
     const serverRoom = await colyseus.createRoom<GameRoom>("game", {
       code: "PUBVJS",
@@ -975,7 +1046,7 @@ describe("GameRoom gameplay regressions", () => {
     expect(findPublicPlayer(serverRoom, target?.userId)?.alive).toBe(false);
   });
 
-  it("resolves Blacksmith, Investigator, Stray Cat and Vampire Hunter advanced actions", async () => {
+  it("resolves Blacksmith, Investigator and Vampire Hunter advanced actions", async () => {
     const blacksmithRoom = await colyseus.createRoom<GameRoom>("game", {
       code: "BLACK3",
       mode: "werewolves_classic",
@@ -1036,32 +1107,6 @@ describe("GameRoom gameplay regressions", () => {
       messageBg: expect.stringContaining("гореща"),
       targetUserIds: expectedTrio,
     });
-
-    await colyseus.cleanup();
-    const catRoom = await colyseus.createRoom<GameRoom>("game", {
-      code: "CAT223",
-      mode: "werewolves_classic",
-      playerCount: 6,
-      tempoProfile: "manual",
-      narratorMode: "full_human",
-      roles: {
-        stray_cat: 1,
-        ordinary_villager: 4,
-        werewolf: 1,
-      },
-    });
-    const catClients = await connectPlayers(colyseus, catRoom, 7, "stray-cat");
-    const catRoles = await startFullHumanGameAndCollectRoles(catClients);
-    await advanceToFirstNight(catClients[0]?.client, catRoom);
-    const cat = catRoles.find((item) => item.role === "stray_cat");
-    const catWerewolf = catRoles.find((item) => item.role === "werewolf");
-    cat?.client.send("submitNightAction", {
-      action: { kind: "stray_cat_choose", targetUserId: catWerewolf?.userId },
-    });
-    catClients[0]?.client.send("narratorAdvance", {});
-    await catRoom.waitForNextPatch(20);
-    expect(findPublicPlayer(catRoom, cat?.userId)?.alive).toBe(false);
-    expect(findPublicPlayer(catRoom, catWerewolf?.userId)?.alive).toBe(false);
 
     await colyseus.cleanup();
     const hunterRoom = await colyseus.createRoom<GameRoom>("game", {
@@ -1155,37 +1200,6 @@ describe("GameRoom gameplay regressions", () => {
     const roleUpdate = drunk?.client.waitForMessage("private_role") as Promise<{ role: RoleCode }>;
     await advanceToPhase(clients[0]?.client, serverRoom, "night");
     await expect(roleUpdate).resolves.toMatchObject({ role: "ordinary_villager" });
-  });
-
-  it("lets Guard Dog block a public Mayor elimination", async () => {
-    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
-      code: "GDPG23",
-      mode: "werewolves_classic",
-      playerCount: 6,
-      tempoProfile: "manual",
-      narratorMode: "full_human",
-      mayorMode: "public_vote",
-      roles: {
-        mayor: 1,
-        guard_dog: 1,
-        ordinary_villager: 3,
-        werewolf: 1,
-      },
-    });
-    const clients = await connectPlayers(colyseus, serverRoom, 7, "guard-dog");
-    const roleClients = await startFullHumanGameAndCollectRoles(clients);
-    const mayor = roleClients.find((item) => item.role === "mayor");
-    expect(mayor).toBeTruthy();
-    await advanceToVoting(clients[0]?.client, serverRoom);
-
-    for (const client of roleClients.filter((item) => item.userId !== mayor?.userId).slice(0, 3)) {
-      client.client.send("submitVote", { targetUserId: mayor?.userId });
-    }
-    clients[0]?.client.send("narratorAdvance", {});
-    await serverRoom.waitForNextPatch(20);
-
-    expect(findPublicPlayer(serverRoom, mayor?.userId)?.alive).toBe(true);
-    expect([...serverRoom.state.publicEvents.values()].some((event) => event.messageBg.includes("Кучето пазач"))).toBe(true);
   });
 
   it("blocks a Mafia night action with the Blocker", async () => {
@@ -1548,14 +1562,13 @@ describe("GameRoom gameplay regressions", () => {
     expect(serverRoom.state.phase).not.toBe("lobby");
   });
 
-  it("does not let a spectator block full-narrator consent", async () => {
+  it("rejects full-narrator consent commands in automatic beta rooms", async () => {
     const serverRoom = await colyseus.createRoom<GameRoom>("game", {
       code: "NRSP23",
       mode: "mafia_free",
       playerCount: 4,
-      narratorMode: "full_human",
     });
-    const clients = await connectPlayers(colyseus, serverRoom, 5, "narrator-player");
+    const clients = await connectPlayers(colyseus, serverRoom, 4, "narrator-player");
     const spectator = await colyseus.connectTo(serverRoom, {
       code: "NRSP23",
       userId: "narrator-spectator",
@@ -1563,17 +1576,17 @@ describe("GameRoom gameplay regressions", () => {
       spectator: true,
     });
 
-    for (const client of clients) {
-      client.client.send("acceptFullNarrator", {});
-    }
-    await delay(50);
+    const playerError = clients[0]?.client.waitForMessage("safe_error") as Promise<{ messageBg: string }>;
+    const spectatorError = spectator.waitForMessage("safe_error") as Promise<{ messageBg: string }>;
+    clients[0]?.client.send("acceptFullNarrator", {});
+    spectator.send("acceptFullNarrator", {});
 
-    const roleMessages = clients.slice(1).map((client) => waitForPrivateRole(client.client));
-    clients[0]?.client.send("startGame", {});
-    await Promise.all(roleMessages);
-
-    expect(serverRoom.state.phase).toBe("role_reveal");
-    expect(findPublicPlayer(serverRoom, "narrator-spectator")?.playing).toBe(false);
+    await expect(playerError).resolves.toMatchObject({
+      messageBg: "Тази стая не използва Пълен Разказвач.",
+    });
+    await expect(spectatorError).resolves.toMatchObject({
+      messageBg: "Тази стая не използва Пълен Разказвач.",
+    });
   });
 
   it("rejects ready changes after the lobby", async () => {
@@ -1596,35 +1609,6 @@ describe("GameRoom gameplay regressions", () => {
     expect(findPublicPlayer(serverRoom, "ready-player-2")?.ready).toBe(true);
   });
 
-  it("keeps full-narrator consent private to participants and idempotent", async () => {
-    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
-      code: "NRCN23",
-      mode: "mafia_free",
-      playerCount: 4,
-      narratorMode: "full_human",
-    });
-    const clients = await connectPlayers(colyseus, serverRoom, 5, "consent-player");
-    const spectator = await colyseus.connectTo(serverRoom, {
-      code: "NRCN23",
-      userId: "consent-spectator",
-      displayName: "Наблюдател",
-      spectator: true,
-    });
-
-    const spectatorError = spectator.waitForMessage("safe_error") as Promise<{ messageBg: string }>;
-    spectator.send("acceptFullNarrator", {});
-    await expect(spectatorError).resolves.toMatchObject({
-      messageBg: "Само участник може да приеме предупреждението за Пълен Разказвач.",
-    });
-
-    clients[1]?.client.send("acceptFullNarrator", {});
-    clients[1]?.client.send("acceptFullNarrator", {});
-    await delay(50);
-    const acceptanceEvents = [...serverRoom.state.publicEvents.values()].filter(
-      (event) => event.messageBg.includes("прие предупреждението за Пълен Разказвач"),
-    );
-    expect(acceptanceEvents).toHaveLength(1);
-  });
 });
 
 async function connectPlayers(
@@ -1652,21 +1636,6 @@ async function connectPlayers(
 
 async function startGameAndCollectRoles(clients: JoinedClient[]): Promise<RoleClient[]> {
   const rolePromises = clients.map(async (client) => ({
-    ...client,
-    ...((await waitForPrivateRole(client.client)) as { role: RoleCode; roleNameBg: string }),
-  }));
-  clients[0]?.client.send("startGame", {});
-  return Promise.all(rolePromises);
-}
-
-async function startFullHumanGameAndCollectRoles(clients: JoinedClient[]): Promise<RoleClient[]> {
-  for (const client of clients) {
-    client.client.send("acceptFullNarrator", {});
-  }
-  await delay(50);
-
-  const playingClients = clients.slice(1);
-  const rolePromises = playingClients.map(async (client) => ({
     ...client,
     ...((await waitForPrivateRole(client.client)) as { role: RoleCode; roleNameBg: string }),
   }));

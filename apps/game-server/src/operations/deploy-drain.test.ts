@@ -40,4 +40,50 @@ describe("DeployDrainController", () => {
 
     expect(result).toEqual({ drained: false, timedOut: true, activeRooms: 3, waitedMs: 250 });
   });
+
+  it("can cancel a failed deploy drain and start a later drain cleanly", () => {
+    const stopMatchmaking = vi.fn();
+    const controller = new DeployDrainController({
+      getActiveRooms: () => 2,
+      now: () => 1_750_000_000_000,
+      stopMatchmaking,
+    });
+
+    expect(controller.begin()).toMatchObject({
+      draining: true,
+      drainStartedAt: "2025-06-15T15:06:40.000Z",
+    });
+    expect(controller.cancel()).toEqual({
+      draining: false,
+      activeRooms: 2,
+      drainStartedAt: null,
+    });
+    expect(controller.begin()).toMatchObject({ draining: true });
+    expect(stopMatchmaking).toHaveBeenCalledTimes(2);
+  });
+
+  it("expires an orphaned drain so matchmaking cannot remain blocked forever", () => {
+    let now = 10_000;
+    const stopMatchmaking = vi.fn();
+    const controller = new DeployDrainController({
+      getActiveRooms: () => 0,
+      maxAgeMs: 60_000,
+      now: () => now,
+      stopMatchmaking,
+    });
+
+    controller.begin();
+    now += 59_999;
+    expect(controller.isDraining()).toBe(true);
+
+    now += 1;
+    expect(controller.status()).toEqual({
+      draining: false,
+      activeRooms: 0,
+      drainStartedAt: null,
+    });
+
+    controller.begin();
+    expect(stopMatchmaking).toHaveBeenCalledTimes(2);
+  });
 });

@@ -1,6 +1,9 @@
 import * as Sentry from "@sentry/node";
 import { randomUUID } from "node:crypto";
-import type { GameConfig } from "@werewolf/shared";
+import {
+  projectMonitoringError,
+  type GameConfig,
+} from "@werewolf/shared";
 import {
   createGamePersistence,
   type GamePersistence,
@@ -37,6 +40,7 @@ export interface RoomPersistenceTaskApi {
 
 interface PendingPersistenceTask {
   context: RoomPersistenceContext;
+  correlationId: string;
   task: (api: RoomPersistenceTaskApi) => Promise<void>;
   priority: PersistencePriority;
   maxAttempts: number;
@@ -135,13 +139,34 @@ export class RoomPersistenceCoordinator {
   }
 
   private reportFlushTimeout(timeoutMs: number) {
+    const pendingTask = this.activeTask
+      ?? this.pending.critical[0]
+      ?? this.pending.normal[0]
+      ?? this.pending["best-effort"][0];
     const error = new Error(
       `Game room persistence queue did not flush within ${Math.max(0, timeoutMs)}ms`,
     );
+    const roomIdentifier = pendingTask?.context.code ?? this.boundContext?.code;
+    this.reportPersistenceError(error, {
+      operation: "room-persistence-flush",
+      correlationId: pendingTask?.correlationId ?? randomUUID(),
+      ...(roomIdentifier === undefined ? {} : { roomIdentifier }),
+    });
+  }
+
+  private reportPersistenceError(
+    error: unknown,
+    context: {
+      operation: string;
+      correlationId: string;
+      roomIdentifier?: string;
+    },
+  ) {
+    const projectedError = projectMonitoringError(error, context);
     if (process.env.SENTRY_DSN) {
-      this.captureException(error);
+      this.captureException(projectedError);
     }
-    console.error("[game-persistence]", error);
+    console.error("[game-persistence]", projectedError);
   }
 
   queue(
@@ -156,18 +181,18 @@ export class RoomPersistenceCoordinator {
     const priority = options.priority ?? "normal";
     const terminal = options.terminal ?? false;
     if (terminal && priority !== "critical") {
-      console.warn(`[GameRoom ${context.code}] terminal persistence work must use critical priority`);
+      console.warn("[GameRoom] terminal persistence work must use critical priority");
       return false;
     }
     if (terminal && this.terminalAccepted) {
-      console.warn(`[GameRoom ${context.code}] terminal persistence work was already accepted`);
+      console.warn("[GameRoom] terminal persistence work was already accepted");
       return false;
     }
 
     if (!terminal && this.regularPendingTaskCount >= MAX_PENDING_PERSIST) {
       if (priority === "best-effort") {
         console.warn(
-          `[GameRoom ${context.code}] persistQueue backpressure (${this.regularPendingTaskCount}), dropping best-effort write`,
+          `[GameRoom] persistQueue backpressure (${this.regularPendingTaskCount}), dropping best-effort write`,
         );
         return false;
       }
@@ -175,21 +200,21 @@ export class RoomPersistenceCoordinator {
       const evictedBestEffort = this.pending["best-effort"].shift();
       if (evictedBestEffort) {
         console.warn(
-          `[GameRoom ${context.code}] persistQueue hard limit (${this.regularPendingTaskCount}), evicting best-effort write for ${priority} write`,
+          `[GameRoom] persistQueue hard limit (${this.regularPendingTaskCount}), evicting best-effort write for ${priority} write`,
         );
       } else if (priority === "normal") {
-        console.warn(`[GameRoom ${context.code}] persistQueue hard limit (${this.regularPendingTaskCount}), dropping normal write`);
+        console.warn(`[GameRoom] persistQueue hard limit (${this.regularPendingTaskCount}), dropping normal write`);
         return false;
       } else {
         const evictedNormal = this.pending.normal.shift();
         if (!evictedNormal) {
           console.warn(
-            `[GameRoom ${context.code}] persistQueue hard limit (${this.regularPendingTaskCount}), preserving accepted critical writes and rejecting the new critical write`,
+            `[GameRoom] persistQueue hard limit (${this.regularPendingTaskCount}), preserving accepted critical writes and rejecting the new critical write`,
           );
           return false;
         }
         console.warn(
-          `[GameRoom ${context.code}] persistQueue hard limit (${this.regularPendingTaskCount}), evicting normal write for critical write`,
+          `[GameRoom] persistQueue hard limit (${this.regularPendingTaskCount}), evicting normal write for critical write`,
         );
       }
     }
@@ -199,6 +224,7 @@ export class RoomPersistenceCoordinator {
     this.nextTaskSequence += 1;
     const pendingTask: PendingPersistenceTask = {
       context: cloneContext(context),
+      correlationId: randomUUID(),
       task,
       priority,
       maxAttempts: normalizeMaxAttempts(options.maxAttempts, priority),
@@ -289,10 +315,11 @@ export class RoomPersistenceCoordinator {
           continue;
         }
 
-        if (process.env.SENTRY_DSN) {
-          this.captureException(error);
-        }
-        console.error("[game-persistence]", error);
+        this.reportPersistenceError(error, {
+          operation: "room-persistence-task",
+          correlationId: pendingTask.correlationId,
+          roomIdentifier: pendingTask.context.code,
+        });
         return;
       }
     }

@@ -145,6 +145,35 @@ describe("GameRoom persistence snapshots", () => {
     });
   });
 
+  it("reports a rejected critical gameplay event", async () => {
+    const room = await colyseus.createRoom<GameRoom>("game", {
+      code: "REGE23",
+      mode: "werewolves_classic",
+      playerCount: 6,
+    });
+    const internals = room as unknown as GameRoomPersistenceInternals;
+    internals.persistenceCoordinator = {
+      enabled: true,
+      queue: () => false,
+      dispose: vi.fn(async () => true),
+    };
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    internals.persistGameEvent("death", { targetId: "target-1" });
+
+    expect(error).toHaveBeenCalledWith(
+      "[game-persistence]",
+      {
+        event: "queue-rejected",
+        operation: "event death",
+        priority: "critical",
+        terminal: false,
+      },
+    );
+    expect(JSON.stringify(error.mock.calls)).not.toContain("REGE23");
+    error.mockRestore();
+  });
+
   it("persists current roles and exact team plus personal winners", async () => {
     const room = await colyseus.createRoom<GameRoom>("game", {
       code: "DYNC23",
@@ -207,6 +236,30 @@ describe("GameRoom persistence snapshots", () => {
     releaseDrain();
     await disposePromise;
     expect(getGameRuntimeStats().activeRooms).toBe(activeBeforeDispose - 1);
+  });
+
+  it("reports incomplete persistence disposal without logging the private room code", async () => {
+    const room = await colyseus.createRoom<GameRoom>("game", {
+      code: "SAFE23",
+      mode: "werewolves_classic",
+      playerCount: 6,
+    });
+    const internals = room as unknown as GameRoomPersistenceInternals;
+    internals.persistenceCoordinator = {
+      enabled: true,
+      queue: () => true,
+      dispose: vi.fn(async () => false),
+    };
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await room.onDispose();
+
+    expect(error).toHaveBeenCalledWith(
+      "[game-persistence]",
+      { event: "coordinator-disposal-incomplete" },
+    );
+    expect(JSON.stringify(error.mock.calls)).not.toContain("SAFE23");
+    error.mockRestore();
   });
 
   it("queues final outcomes before finishGame as terminal critical work", async () => {
@@ -325,8 +378,14 @@ describe("GameRoom persistence snapshots", () => {
 
     expect(error).toHaveBeenCalledWith(
       "[game-persistence]",
-      expect.objectContaining({ message: expect.stringContaining("terminal") }),
+      {
+        event: "queue-rejected",
+        operation: "terminal game-over",
+        priority: "critical",
+        terminal: true,
+      },
     );
+    expect(JSON.stringify(error.mock.calls)).not.toContain("REJT23");
     error.mockRestore();
   });
 

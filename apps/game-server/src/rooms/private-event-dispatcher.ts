@@ -76,7 +76,7 @@ export class PrivateEventDispatcher {
   sendPrivateFactionRoster(client: Client, userId: string) {
     const privatePlayer = this.context.getPrivatePlayer(userId);
     const faction = privatePlayer?.role ? getRoleTeam(privatePlayer.role) : undefined;
-    if (faction !== "mafia" && faction !== "werewolves") {
+    if (faction !== "mafia" && faction !== "werewolves" && faction !== "vampires") {
       return;
     }
 

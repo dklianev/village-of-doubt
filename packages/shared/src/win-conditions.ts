@@ -26,7 +26,12 @@ export function evaluateWinCondition(players: WinPlayerState[]): WinResult {
     winnerPlayerIds: string[] = [],
   ): WinResult => ({ winner, reasonBg, winnerPlayerIds, personalWinnerPlayerIds });
   const winnersForTeam = (team: ReturnType<typeof getRoleTeam>) =>
-    players.filter((player) => getRoleTeam(player.role) === team).map((player) => player.playerId);
+    players
+      .filter((player) =>
+        getRoleTeam(player.role) === team
+        || (team === "village" && player.role === "drunk" && !player.alive),
+      )
+      .map((player) => player.playerId);
 
   if (alive.length === 0) {
     return result("draw", "Няма останали живи играчи.");

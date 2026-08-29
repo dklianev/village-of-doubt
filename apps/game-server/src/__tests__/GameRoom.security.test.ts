@@ -644,7 +644,7 @@ describe("GameRoom security boundaries", () => {
     expect(client.send).not.toHaveBeenCalledWith("private_role", expect.anything());
   });
 
-  it("replaces manual-only roles unless the room uses full human narrator", async () => {
+  it("replaces manual-only roles in automatic beta rooms", async () => {
     const serverRoom = await colyseus.createRoom<GameRoom>("game", {
       code: "MAN223",
       mode: "werewolves_classic",
@@ -665,42 +665,15 @@ describe("GameRoom security boundaries", () => {
     expect(roleCounts.get("ordinary_villager")).toBe(6);
   });
 
-  it("requires full narrator consent and sends all roles only to the full narrator", async () => {
-    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+  it("rejects full-human narrator rooms before all-role snapshots can be enabled", async () => {
+    await expect(colyseus.createRoom<GameRoom>("game", {
       code: "NARR23",
       mode: "mafia_free",
       playerCount: 4,
       narratorMode: "full_human",
-    });
-
-    const clients = await connectPlayers(colyseus, serverRoom, 5, "narr-user");
-
-    const blockedStart = clients[0]?.waitForMessage("safe_error") as Promise<{ messageBg: string }>;
-    clients[0]?.send("startGame", {});
-    await expect(blockedStart).resolves.toMatchObject({
-      messageBg: "Всички играчи трябва да приемат предупреждението за Пълен Разказвач.",
-    });
-
-    for (const client of clients) {
-      client.send("acceptFullNarrator", {});
-    }
-    await delay(50);
-
-    const narratorSnapshot = clients[0]?.waitForMessage("narrator_role_snapshot") as Promise<{
-      roles: Array<{ userId: string; role: string; roleNameBg: string }>;
-    }>;
-    const privateRoleMessages = clients.slice(1).map((client) => waitForPrivateRole(client));
-    clients[0]?.send("startGame", {});
-
-    await Promise.all(privateRoleMessages);
-    await expect(narratorSnapshot).resolves.toMatchObject({
-      roles: expect.arrayContaining([
-        expect.objectContaining({ userId: "narr-user-2" }),
-        expect.objectContaining({ userId: "narr-user-3" }),
-        expect.objectContaining({ userId: "narr-user-4" }),
-        expect.objectContaining({ userId: "narr-user-5" }),
-      ]),
-    });
+    })).rejects.toThrow(
+      "Човешкият Разказвач не е достъпен в бета версията. Избери Автоматичен Разказвач.",
+    );
   });
 });
 

@@ -335,6 +335,209 @@ function clampTimer(key: NumericTimerKey, value: number | undefined, fallback: n
   return Math.min(limits.max, Math.max(limits.min, Math.round(safeValue)));
 }
 
+const GAME_MODES = ["mafia_sport", "mafia_free", "werewolves_classic"] as const satisfies readonly GameMode[];
+const ROLE_PRESETS = [
+  "sport",
+  "free",
+  "beginner",
+  "classic",
+  "advanced",
+  "wolves_vampires",
+  "classic_clean",
+  "mvp",
+  "manual",
+] as const satisfies readonly RolePreset[];
+const NARRATOR_MODES = ["automatic", "honest_human", "full_human"] as const satisfies readonly NarratorMode[];
+const ROOM_VISIBILITIES = ["private", "public"] as const satisfies readonly RoomVisibility[];
+const COMMUNICATION_MODES = ["built_in_chat", "no_chat", "system_only", "secret_channels"] as const satisfies readonly CommunicationMode[];
+const TEMPO_PROFILES = ["fast_online", "normal_online", "live", "sport_mafia", "manual"] as const satisfies readonly TempoProfile[];
+const TIE_BREAKERS = ["no_elimination", "revote"] as const satisfies readonly TieBreaker[];
+const MAJORITY_MODES = ["simple", "absolute"] as const satisfies readonly MajorityMode[];
+const WEREWOLF_VARIANTS = ["werewolves_vs_village", "vampires_vs_village", "three_teams"] as const satisfies readonly WerewolfVariant[];
+const MAYOR_MODES = ["secret_role", "public_vote"] as const satisfies readonly MayorMode[];
+const COMMISSIONER_RESULT_MODES = ["team_only", "exact_role"] as const satisfies readonly CommissionerResultMode[];
+const NARRATOR_VOICES = ["classic", "old_villager", "inspector", "witch"] as const satisfies readonly NarratorVoice[];
+const BOOLEAN_GAME_CONFIG_KEYS = [
+  "loversEnabled",
+  "revealRolesOnDeath",
+  "firstNightKill",
+  "allowSkipVote",
+  "autoStart",
+  "beginnerMode",
+  "advancedMode",
+  "promoRolesEnabled",
+  "mafiaNightKill",
+  "doctorCanSelfProtect",
+  "maniacEnabled",
+  "jesterEnabled",
+  "enforceRoleCompatibility",
+] as const satisfies readonly (keyof GameConfigOptions)[];
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return false;
+  }
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+}
+
+function readAllowedString<T extends string>(
+  options: Record<string, unknown>,
+  key: string,
+  allowed: readonly T[],
+  messageBg: string,
+): T | undefined {
+  const value = options[key];
+  if (value === undefined) {
+    return undefined;
+  }
+  if (typeof value !== "string" || !allowed.includes(value as T)) {
+    throw new Error(messageBg);
+  }
+  return value as T;
+}
+
+function sanitizeRoleDistribution(value: unknown): RoleDistribution {
+  if (!isPlainRecord(value)) {
+    throw new Error("Невалидно разпределение на ролите.");
+  }
+
+  const roles: RoleDistribution = {};
+  for (const [role, count] of Object.entries(value)) {
+    if (
+      !Object.hasOwn(ROLE_DEFINITIONS, role)
+      || typeof count !== "number"
+      || !Number.isFinite(count)
+      || !Number.isInteger(count)
+      || count < 0
+    ) {
+      throw new Error("Невалидно разпределение на ролите.");
+    }
+    roles[role as RoleCode] = count;
+  }
+  return roles;
+}
+
+function sanitizeCustomTimers(value: unknown): Partial<PhaseTimers> {
+  if (!isPlainRecord(value)) {
+    throw new Error("Невалидни настройки на таймерите.");
+  }
+
+  const timers: Partial<PhaseTimers> = {};
+  for (const [key, timerValue] of Object.entries(value)) {
+    if (key === "autoAdvanceWhenReady") {
+      if (typeof timerValue !== "boolean") {
+        throw new Error("Невалидни настройки на таймерите.");
+      }
+      timers.autoAdvanceWhenReady = timerValue;
+      continue;
+    }
+    if (!Object.hasOwn(PHASE_TIMER_LIMITS, key) || typeof timerValue !== "number" || !Number.isFinite(timerValue)) {
+      throw new Error("Невалидни настройки на таймерите.");
+    }
+    timers[key as NumericTimerKey] = timerValue;
+  }
+  return timers;
+}
+
+function sanitizeGameConfigOptions(value: unknown): GameConfigOptions {
+  if (!isPlainRecord(value)) {
+    throw new Error("Невалидни настройки на стаята.");
+  }
+
+  // Room creation also carries transport/auth metadata, so only copy authoritative config fields.
+  const sanitized: GameConfigOptions = {};
+  const mode = readAllowedString(value, "mode", GAME_MODES, "Невалиден режим на игра.");
+  const roomVisibility = readAllowedString(value, "roomVisibility", ROOM_VISIBILITIES, "Невалидна видимост на стаята.");
+  const rolePreset = readAllowedString(value, "rolePreset", ROLE_PRESETS, "Невалидно готово разпределение на ролите.");
+  const narratorMode = readAllowedString(value, "narratorMode", NARRATOR_MODES, "Невалиден режим на Разказвач.");
+  const communicationMode = readAllowedString(value, "communicationMode", COMMUNICATION_MODES, "Невалиден режим на комуникация.");
+  const tempoProfile = readAllowedString(value, "tempoProfile", TEMPO_PROFILES, "Невалиден профил на темпото.");
+  const tieBreaker = readAllowedString(value, "tieBreaker", TIE_BREAKERS, "Невалидно правило при равенство.");
+  const majorityMode = readAllowedString(value, "majorityMode", MAJORITY_MODES, "Невалидно правило за мнозинство.");
+  const werewolfVariant = readAllowedString(value, "werewolfVariant", WEREWOLF_VARIANTS, "Невалиден вариант на играта.");
+  const mayorMode = readAllowedString(value, "mayorMode", MAYOR_MODES, "Невалиден режим за Кмет.");
+  const commissionerResultMode = readAllowedString(value, "commissionerResultMode", COMMISSIONER_RESULT_MODES, "Невалиден резултат за Комисаря.");
+  const narratorVoice = readAllowedString(value, "narratorVoice", NARRATOR_VOICES, "Невалиден глас на Разказвача.");
+
+  if (narratorMode === "honest_human" || narratorMode === "full_human") {
+    throw new Error("Човешкият Разказвач не е достъпен в бета версията. Избери Автоматичен Разказвач.");
+  }
+
+  Object.assign(sanitized, {
+    ...(mode === undefined ? {} : { mode }),
+    ...(roomVisibility === undefined ? {} : { roomVisibility }),
+    ...(rolePreset === undefined ? {} : { rolePreset }),
+    ...(narratorMode === undefined ? {} : { narratorMode }),
+    ...(communicationMode === undefined ? {} : { communicationMode }),
+    ...(tempoProfile === undefined ? {} : { tempoProfile }),
+    ...(tieBreaker === undefined ? {} : { tieBreaker }),
+    ...(majorityMode === undefined ? {} : { majorityMode }),
+    ...(werewolfVariant === undefined ? {} : { werewolfVariant }),
+    ...(mayorMode === undefined ? {} : { mayorMode }),
+    ...(commissionerResultMode === undefined ? {} : { commissionerResultMode }),
+    ...(narratorVoice === undefined ? {} : { narratorVoice }),
+  });
+
+  if (value.playerCount !== undefined) {
+    if (typeof value.playerCount !== "number" || !Number.isFinite(value.playerCount) || !Number.isInteger(value.playerCount)) {
+      throw new Error("Броят играчи трябва да е цяло число.");
+    }
+    if (value.playerCount > 30) {
+      throw new Error("Играта поддържа най-много 30 играчи.");
+    }
+    if (value.playerCount < 1) {
+      throw new Error("Броят играчи трябва да е между 1 и 30.");
+    }
+    sanitized.playerCount = value.playerCount;
+  }
+
+  if (value.maxPlayers !== undefined) {
+    if (
+      typeof value.maxPlayers !== "number"
+      || !Number.isFinite(value.maxPlayers)
+      || !Number.isInteger(value.maxPlayers)
+      || value.maxPlayers < 1
+      || value.maxPlayers > 30
+    ) {
+      throw new Error("Максималният брой играчи трябва да е цяло число между 1 и 30.");
+    }
+    sanitized.maxPlayers = value.maxPlayers;
+  }
+
+  if (value.roomName !== undefined) {
+    if (typeof value.roomName !== "string") {
+      throw new Error("Невалидно име на стаята.");
+    }
+    const roomName = value.roomName.trim();
+    if (roomName.length === 0 || roomName.length > 42) {
+      throw new Error("Името на стаята трябва да е между 1 и 42 знака.");
+    }
+    sanitized.roomName = roomName;
+  }
+
+  if (value.roles !== undefined) {
+    sanitized.roles = sanitizeRoleDistribution(value.roles);
+  }
+  if (value.customTimers !== undefined) {
+    sanitized.customTimers = sanitizeCustomTimers(value.customTimers);
+  }
+
+  const mutableSanitized = sanitized as unknown as Record<string, unknown>;
+  for (const key of BOOLEAN_GAME_CONFIG_KEYS) {
+    const optionValue = value[key];
+    if (optionValue === undefined) {
+      continue;
+    }
+    if (typeof optionValue !== "boolean") {
+      throw new Error("Невалидна стойност за настройка на стаята.");
+    }
+    mutableSanitized[key] = optionValue;
+  }
+
+  return sanitized;
+}
+
 const MAFIA_FREE_PRESETS: Record<number, RoleDistribution> = {
   4: { civilian: 2, commissioner: 1, mafioso: 1 },
   5: { civilian: 3, commissioner: 1, mafioso: 1 },
@@ -669,12 +872,10 @@ export function createDefaultGameConfig(mode: GameMode, playerCount: number): Ga
   };
 }
 
-export function createGameConfigFromOptions(options: GameConfigOptions = {}): GameConfig {
+export function createGameConfigFromOptions(rawOptions: GameConfigOptions = {}): GameConfig {
+  const options = sanitizeGameConfigOptions(rawOptions);
   const mode = options.mode ?? "werewolves_classic";
   const playerCount = options.playerCount ?? (mode === "mafia_sport" ? 10 : 8);
-  if (!Number.isInteger(playerCount) || playerCount > 30) {
-    throw new Error("Играта поддържа най-много 30 играчи.");
-  }
   const config = createDefaultGameConfig(mode, playerCount);
 
   const tempoProfile = mode === "mafia_sport" ? "sport_mafia" : options.tempoProfile ?? config.tempoProfile;

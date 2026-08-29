@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { GameConfig } from "@werewolf/shared";
+import { DrizzleQueryError } from "drizzle-orm/errors";
 import { RoomPersistenceCoordinator } from "../room-persistence-coordinator.js";
 import type { GamePersistence } from "../../persistence/game-persistence.js";
 
@@ -397,7 +398,13 @@ describe("RoomPersistenceCoordinator", () => {
     await expect(coordinator.flush(1)).resolves.toBe(false);
     expect(consoleError).toHaveBeenCalledWith(
       "[game-persistence]",
-      expect.objectContaining({ message: expect.stringContaining("did not flush") }),
+      expect.objectContaining({
+        name: "ProjectedMonitoringError",
+        operation: "room-persistence-flush",
+        code: "UNKNOWN",
+        correlationId: expect.any(String),
+        roomIdentifier: "[GameRoom [ПРЕМАХНАТО]]",
+      }),
     );
     release();
     await expect(coordinator.flush(100)).resolves.toBe(true);
@@ -464,19 +471,60 @@ describe("RoomPersistenceCoordinator", () => {
     expect(persistence.recordEvent).not.toHaveBeenCalled();
   });
 
-  it("captures persistence errors when Sentry is configured", async () => {
+  it("projects Drizzle errors before sending them to Sentry or console", async () => {
     vi.stubEnv("SENTRY_DSN", "https://public@example.invalid/1");
     const captureException = vi.fn();
-    const error = new Error("write failed");
+    const postgresCause = Object.assign(new Error("duplicate private event"), { code: "23505" });
+    const error = new DrizzleQueryError(
+      "insert into game_events (actor_id, payload) values ($1, $2)",
+      [
+        "player-17",
+        '{"role":"seer","message":"private words","token":"session-token","email":"night@example.com"}',
+      ],
+      postgresCause,
+    );
     const persistence = makePersistence();
     const coordinator = new RoomPersistenceCoordinator(persistence, captureException);
-    vi.spyOn(console, "error").mockImplementation(() => {});
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
 
     coordinator.queue(context, async () => {
       throw error;
     });
     await coordinator.flush(100);
 
-    expect(captureException).toHaveBeenCalledWith(error);
+    expect(captureException).toHaveBeenCalledOnce();
+    const captured = captureException.mock.calls[0]?.[0] as Error & Record<string, unknown>;
+    const logged = consoleError.mock.calls[0]?.[1] as Error & Record<string, unknown>;
+
+    expect(captured).not.toBe(error);
+    expect(logged).toBe(captured);
+    expect(captured).toMatchObject({
+      name: "ProjectedMonitoringError",
+      operation: "room-persistence-task",
+      code: "23505",
+      correlationId: expect.stringMatching(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+      ),
+      roomIdentifier: "[GameRoom [ПРЕМАХНАТО]]",
+    });
+
+    const serialized = JSON.stringify({
+      message: captured.message,
+      stack: captured.stack,
+      operation: captured.operation,
+      code: captured.code,
+      correlationId: captured.correlationId,
+      roomIdentifier: captured.roomIdentifier,
+    });
+    for (const sensitiveValue of [
+      "insert into game_events",
+      "player-17",
+      "seer",
+      "private words",
+      "session-token",
+      "night@example.com",
+    ]) {
+      expect(serialized).not.toContain(sensitiveValue);
+    }
   });
 });

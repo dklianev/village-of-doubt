@@ -203,14 +203,14 @@ describe("role presets", () => {
     const config = createGameConfigFromOptions({
       mode: "werewolves_classic",
       playerCount: 14,
-      narratorMode: "honest_human",
+      narratorMode: "automatic",
       communicationMode: "no_chat",
       tempoProfile: "live",
       loversEnabled: true,
     });
 
     expect(config.playerCount).toBe(14);
-    expect(config.narratorMode).toBe("honest_human");
+    expect(config.narratorMode).toBe("automatic");
     expect(config.communicationMode).toBe("no_chat");
     expect(config.liveMode).toBe(true);
     expect(config.roles.cupid).toBe(1);
@@ -294,14 +294,12 @@ describe("role presets", () => {
     expect(config.firstNightKill).toBe(false);
   });
 
-  it("caps room capacity at the supported 30-player limit", () => {
-    const config = createGameConfigFromOptions({
+  it("rejects room capacity above the supported 30-player limit", () => {
+    expect(() => createGameConfigFromOptions({
       mode: "werewolves_classic",
       playerCount: 8,
       maxPlayers: 999,
-    });
-
-    expect(config.maxPlayers).toBe(30);
+    })).toThrow("Максималният брой играчи трябва да е цяло число между 1 и 30.");
     expect(() => createGameConfigFromOptions({
       mode: "werewolves_classic",
       playerCount: 31,
@@ -414,6 +412,73 @@ describe("role presets", () => {
   });
 });
 
+describe("runtime game config intake", () => {
+  it.each([
+    ["режим на игра", { mode: "mystery" }, "Невалиден режим на игра."],
+    ["видимост", { roomVisibility: "friends" }, "Невалидна видимост на стаята."],
+    ["готово разпределение", { rolePreset: "surprise" }, "Невалидно готово разпределение на ролите."],
+    ["комуникация", { communicationMode: "open_mic" }, "Невалиден режим на комуникация."],
+    ["темпо", { tempoProfile: "instant" }, "Невалиден профил на темпото."],
+    ["равенство", { tieBreaker: "coin_flip" }, "Невалидно правило при равенство."],
+    ["мнозинство", { majorityMode: "plurality" }, "Невалидно правило за мнозинство."],
+    ["вариант", { werewolfVariant: "four_teams" }, "Невалиден вариант на играта."],
+    ["Кмет", { mayorMode: "appointed" }, "Невалиден режим за Кмет."],
+    ["резултат на Комисаря", { commissionerResultMode: "everything" }, "Невалиден резултат за Комисаря."],
+    ["глас на Разказвача", { narratorVoice: "robot" }, "Невалиден глас на Разказвача."],
+  ])("rejects a hostile enum for %s", (_name, hostileOptions, messageBg) => {
+    expect(() => createGameConfigFromOptions(hostileOptions as never)).toThrow(messageBg);
+  });
+
+  it.each(["honest_human", "full_human"])("rejects unsupported beta narrator mode %s", (narratorMode) => {
+    expect(() => createGameConfigFromOptions({
+      narratorMode: narratorMode as "honest_human" | "full_human",
+    })).toThrow("Човешкият Разказвач не е достъпен в бета версията. Избери Автоматичен Разказвач.");
+  });
+
+  it.each([
+    ["дробен брой играчи", { playerCount: 6.5 }, "Броят играчи трябва да е цяло число."],
+    ["текстова булева стойност", { firstNightKill: "false" }, "Невалидна стойност за настройка на стаята."],
+    ["неизвестна роля", { roles: { invented_role: 1 } }, "Невалидно разпределение на ролите."],
+    ["текстов брой роли", { roles: { ordinary_villager: 4, werewolf: "2" } }, "Невалидно разпределение на ролите."],
+    ["невалиден таймер", { tempoProfile: "manual", customTimers: { voteSeconds: "веднага" } }, "Невалидни настройки на таймерите."],
+  ])("rejects malformed config payload: %s", (_name, hostileOptions, messageBg) => {
+    expect(() => createGameConfigFromOptions(hostileOptions as never)).toThrow(messageBg);
+  });
+
+  it("accepts valid authoritative controls", () => {
+    const config = createGameConfigFromOptions({
+      mode: "werewolves_classic",
+      playerCount: 8,
+      maxPlayers: 12,
+      roomVisibility: "public",
+      rolePreset: "classic",
+      narratorMode: "automatic",
+      communicationMode: "secret_channels",
+      tempoProfile: "manual",
+      customTimers: { voteSeconds: 45, autoAdvanceWhenReady: true },
+      revealRolesOnDeath: false,
+      tieBreaker: "revote",
+      majorityMode: "absolute",
+      firstNightKill: false,
+    });
+
+    expect(config).toMatchObject({
+      mode: "werewolves_classic",
+      playerCount: 8,
+      maxPlayers: 12,
+      roomVisibility: "public",
+      narratorMode: "automatic",
+      communicationMode: "secret_channels",
+      tempoProfile: "manual",
+      revealRolesOnDeath: false,
+      tieBreaker: "revote",
+      majorityMode: "absolute",
+      firstNightKill: false,
+    });
+    expect(config.timers).toMatchObject({ voteSeconds: 45, autoAdvanceWhenReady: true });
+  });
+});
+
 describe("assignment and win conditions", () => {
   it("assigns exactly one role per player", () => {
     const config = createDefaultGameConfig("werewolves_classic", 8);
@@ -435,6 +500,32 @@ describe("assignment and win conditions", () => {
     ]);
 
     expect(result.winner).toBe("village");
+  });
+
+  it("credits the Roleblocker when the City wins", () => {
+    expect(ROLE_DEFINITIONS.roleblocker).toMatchObject({
+      team: "village",
+      fullDescriptionBg: expect.stringContaining("Печелиш заедно с Града."),
+    });
+    const result = evaluateWinCondition([
+      { playerId: "blocker", role: "roleblocker", alive: true },
+      { playerId: "citizen", role: "civilian", alive: true },
+      { playerId: "mafioso", role: "mafioso", alive: false },
+    ]);
+
+    expect(result.winner).toBe("village");
+    expect(result.winnerPlayerIds).toEqual(["blocker", "citizen"]);
+  });
+
+  it("credits a Drunk killed before the role reveal with a village win", () => {
+    const result = evaluateWinCondition([
+      { playerId: "drunk", role: "drunk", alive: false },
+      { playerId: "villager", role: "ordinary_villager", alive: true },
+      { playerId: "wolf", role: "werewolf", alive: false },
+    ]);
+
+    expect(result.winner).toBe("village");
+    expect(result.winnerPlayerIds).toEqual(["drunk", "villager"]);
   });
 
   it("declares lovers victory when mixed lovers are final two", () => {

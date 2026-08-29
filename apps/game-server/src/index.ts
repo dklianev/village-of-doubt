@@ -2,17 +2,13 @@ import { listen } from "@colyseus/tools";
 import * as Sentry from "@sentry/node";
 import { closeAllDatabases } from "@werewolf/database";
 import appConfig, { closeGameServerRedisRuntime } from "./app.config.js";
+import { createGameServerSentryOptions } from "./observability-config.js";
 import { deployDrain } from "./operations/deploy-drain.js";
 import { persistenceReadiness } from "./operations/persistence-readiness.js";
 
-if (process.env.SENTRY_DSN) {
-  Sentry.init({
-    dsn: process.env.SENTRY_DSN,
-    environment: process.env.NODE_ENV ?? "development",
-    release: process.env.RELEASE_VERSION?.trim() || undefined,
-    sendDefaultPii: false,
-    tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1,
-  });
+const sentryOptions = createGameServerSentryOptions();
+if (sentryOptions) {
+  Sentry.init(sentryOptions);
 }
 
 await persistenceReadiness.refresh();

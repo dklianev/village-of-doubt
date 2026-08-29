@@ -69,6 +69,14 @@ import {
 
 interface CreateOptions extends CreateRoomOptions {}
 
+function isPlainCreateOptions(value: unknown): value is Record<string, unknown> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return false;
+  }
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+}
+
 const ACTIVE_ROOM_TTL_MS = 8 * 60 * 60 * 1_000;
 
 const CRITICAL_PERSISTED_EVENTS = new Set([
@@ -290,9 +298,19 @@ export class GameRoom extends Room<{ state: GameState }> {
   private lastPersistedEventAtMs = 0;
 
   onCreate(options: CreateOptions) {
-    const roomCode = options.code === undefined ? generateRoomCode() : normalizeRoomCode(options.code);
+    const rawOptions: unknown = options;
+    if (!isPlainCreateOptions(rawOptions)) {
+      throw new Error("Невалидни настройки на стаята.");
+    }
+    if (rawOptions.code !== undefined && typeof rawOptions.code !== "string") {
+      throw new Error("Невалиден код на стая.");
+    }
+    const roomCode = rawOptions.code === undefined ? generateRoomCode() : normalizeRoomCode(rawOptions.code);
     if (!ROOM_CODE_REGEX.test(roomCode)) {
       throw new Error("Невалиден код на стая.");
+    }
+    if ([...GameRoom.liveRooms].some((room) => room !== this && room.state.code === roomCode)) {
+      throw new Error("Стая с този код вече е отворена.");
     }
 
     this.phaseStateMachine = new PhaseStateMachine({
@@ -317,9 +335,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       findPlayerByUserId: (userId) => this.findPlayerByUserId(userId),
       playerPresence: this.playerPresence,
     });
-    const mode = options.mode ?? "werewolves_classic";
-    const playerCount = options.playerCount ?? (mode === "mafia_sport" ? 10 : 8);
-    this.config = createGameConfigFromOptions({ ...options, mode, playerCount });
+    this.config = createGameConfigFromOptions(options);
     this.enforceRuntimeRoleAvailability();
     this.assertCurrentRoleCompatibility();
 
@@ -642,7 +658,7 @@ export class GameRoom extends Room<{ state: GameState }> {
     if (!persistenceDisposed && this.persistenceCoordinator.enabled) {
       console.error(
         "[game-persistence]",
-        new Error(`[GameRoom ${this.state.code}] persistence coordinator disposal was incomplete`),
+        { event: "coordinator-disposal-incomplete" },
       );
     }
     GameRoom.liveRooms.delete(this);
@@ -1055,7 +1071,7 @@ export class GameRoom extends Room<{ state: GameState }> {
         ...gameStartedEvent,
         ...(idempotencyKeys ? { idempotencyKey: idempotencyKeys.event("game-started") } : {}),
       });
-    }, { priority: "critical", maxAttempts: 3 });
+    }, { priority: "critical", maxAttempts: 3 }, "game-start");
 
     for (const item of players) {
       const targetClient = this.playerPresence.getClient(item.userId);
@@ -1984,7 +2000,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       this.sendAchievementUnlocks(achievementUnlocks);
       const finalWin = this.evaluateWin();
       const finalPlayers = this.buildFinalPlayerPersistenceRows(finalWin);
-      const terminalAccepted = this.queuePersistence(async ({ persistence, ensureGame }) => {
+      this.queuePersistence(async ({ persistence, ensureGame }) => {
         const gameId = await ensureGame();
         if (gameId) {
           await persistence.recordGameCompletion(gameId, {
@@ -2001,13 +2017,7 @@ export class GameRoom extends Room<{ state: GameState }> {
             gameId,
           } satisfies ServerEvent);
         }
-      }, { priority: "critical", terminal: true, maxAttempts: 3 });
-      if (!terminalAccepted && this.persistenceCoordinator.enabled) {
-        console.error(
-          "[game-persistence]",
-          new Error(`[GameRoom ${this.state.code}] terminal game-over persistence task was rejected`),
-        );
-      }
+      }, { priority: "critical", terminal: true, maxAttempts: 3 }, "terminal game-over");
     }
 
     this.scheduleCurrentPhaseTimer(duration);
@@ -2761,7 +2771,7 @@ export class GameRoom extends Room<{ state: GameState }> {
         ...eventSnapshot,
         ...(idempotencyKeys ? { idempotencyKey: idempotencyKeys.event(type) } : {}),
       });
-    }, { priority: persistencePriorityForEvent(type) });
+    }, { priority: persistencePriorityForEvent(type) }, `event ${type}`);
   }
 
   private nextPersistedEventTime() {
@@ -2810,15 +2820,28 @@ export class GameRoom extends Room<{ state: GameState }> {
   private queuePersistence(
     task: (api: RoomPersistenceTaskApi) => Promise<void>,
     options: PersistenceQueueOptions = {},
+    operation = "room",
   ): boolean {
     const context = this.hostUserId
       ? { code: this.state.code, hostUserId: this.hostUserId, config: this.config, roomIdempotencyKey: this.roomId }
       : { code: this.state.code, config: this.config, roomIdempotencyKey: this.roomId };
-    return this.persistenceCoordinator.queue(
+    const accepted = this.persistenceCoordinator.queue(
       context,
       task,
       options,
     );
+    if (!accepted && this.persistenceCoordinator.enabled) {
+      console.error(
+        "[game-persistence]",
+        {
+          event: "queue-rejected",
+          operation,
+          priority: options.priority ?? "normal",
+          terminal: options.terminal ?? false,
+        },
+      );
+    }
+    return accepted;
   }
 
   private sendSafeError(client: Client, messageBg: string) {

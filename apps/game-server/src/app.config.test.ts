@@ -2,6 +2,8 @@ import type { Request, Response } from "express";
 import { describe, expect, it, vi } from "vitest";
 import {
   createDeadlineBoundSecurityRedisClient,
+  closeRedisClientWithinDeadline,
+  createLocalDrainCancelHandler,
   createLocalStatsHandler,
   createReadinessHandler,
   probeSecurityRedisReady,
@@ -169,6 +171,37 @@ describe("game-server readiness handler", () => {
 });
 
 describe("game-server operator handlers", () => {
+  it("cancels deploy drain only through loopback", () => {
+    const cancel = vi.fn(() => ({
+      draining: false,
+      activeRooms: 2,
+      drainStartedAt: null,
+    }));
+    const localResponse = makeResponse();
+
+    createLocalDrainCancelHandler({ cancel })(
+      { socket: { remoteAddress: "::ffff:127.0.0.1" } } as unknown as Request,
+      localResponse as unknown as Response,
+    );
+
+    expect(cancel).toHaveBeenCalledOnce();
+    expect(localResponse.json).toHaveBeenCalledWith({
+      ok: true,
+      draining: false,
+      activeRooms: 2,
+      drainStartedAt: null,
+    });
+
+    const remoteResponse = makeResponse();
+    createLocalDrainCancelHandler({ cancel })(
+      { socket: { remoteAddress: "172.18.0.8" } } as unknown as Request,
+      remoteResponse as unknown as Response,
+    );
+
+    expect(cancel).toHaveBeenCalledOnce();
+    expect(remoteResponse.status).toHaveBeenCalledWith(404);
+  });
+
   it("exposes cumulative event-loop counters only on loopback", () => {
     const response = makeResponse();
 
@@ -196,5 +229,24 @@ describe("game-server operator handlers", () => {
     expect(response.status).toHaveBeenCalledWith(404);
     expect(response.json).toHaveBeenCalledWith({ ok: false });
     expect(JSON.stringify(response.json.mock.calls)).not.toContain("rssBytes");
+  });
+});
+
+describe("game-server Redis shutdown", () => {
+  it("destroys a Redis client when graceful quit exceeds its deadline", async () => {
+    vi.useFakeTimers();
+    const client = {
+      isOpen: true,
+      quit: vi.fn(() => new Promise<string>(() => {})),
+      destroy: vi.fn(),
+    };
+
+    const closing = closeRedisClientWithinDeadline(client, 5_000);
+    await vi.advanceTimersByTimeAsync(5_000);
+    await closing;
+
+    expect(client.quit).toHaveBeenCalledOnce();
+    expect(client.destroy).toHaveBeenCalledOnce();
+    vi.useRealTimers();
   });
 });

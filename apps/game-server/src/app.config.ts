@@ -12,7 +12,7 @@ import type { Request, Response } from "express";
 import { randomUUID } from "node:crypto";
 import { performance } from "node:perf_hooks";
 import { createClient, type RedisClientType } from "redis";
-import { deployDrain } from "./operations/deploy-drain.js";
+import { deployDrain, type DeployDrainController } from "./operations/deploy-drain.js";
 import { persistenceReadiness } from "./operations/persistence-readiness.js";
 import { authenticateGameJoin, GameRoom, getGameRuntimeStats, getGameTokenSecret } from "./rooms/GameRoom.js";
 import { PlayerPresenceManager } from "./rooms/player-presence-manager.js";
@@ -20,7 +20,12 @@ import {
   createRedisPlayerSecurityStore,
   type RedisPlayerSecurityClient,
 } from "./rooms/player-security-store.js";
-import { ROOM_CODE_REGEX, normalizeRoomCodeInput, type JoinRoomOptions } from "@werewolf/shared";
+import {
+  ROOM_CODE_REGEX,
+  normalizeRoomCodeInput,
+  safeMonitoringErrorMetadata,
+  type JoinRoomOptions,
+} from "@werewolf/shared";
 
 const redisUrl = resolveGameServerRedisUrl(process.env);
 const colyseusRedisUrl = resolveColyseusRedisUrl(process.env);
@@ -79,11 +84,50 @@ export async function closeGameServerRedisRuntime() {
     return;
   }
   clearInterval(redisRuntime.revocationReconcileTimer);
-  if (redisRuntime.revocationSubscriber.isOpen) {
-    await redisRuntime.revocationSubscriber.quit();
+  const timeoutMs = readPositiveInteger("GAME_REDIS_CLOSE_TIMEOUT_MS", 5_000);
+  const results = await Promise.allSettled([
+    closeRedisClientWithinDeadline(redisRuntime.revocationSubscriber, timeoutMs),
+    closeRedisClientWithinDeadline(redisRuntime.securityClient, timeoutMs),
+  ]);
+  for (const result of results) {
+    if (result.status === "rejected") {
+      console.error("[game-server] Redis client did not close cleanly.", {
+        error: safeMonitoringErrorMetadata(result.reason),
+      });
+    }
   }
-  if (redisRuntime.securityClient.isOpen) {
-    await redisRuntime.securityClient.quit();
+}
+
+interface RedisShutdownClient {
+  isOpen: boolean;
+  quit(): Promise<unknown>;
+  destroy(): void;
+}
+
+export async function closeRedisClientWithinDeadline(
+  client: RedisShutdownClient,
+  timeoutMs: number,
+) {
+  if (!client.isOpen) return;
+
+  const timedOut = Symbol("redis-close-timeout");
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const result = await Promise.race([
+      client.quit().then(() => undefined),
+      new Promise<typeof timedOut>((resolve) => {
+        timer = setTimeout(() => resolve(timedOut), timeoutMs);
+        timer.unref?.();
+      }),
+    ]);
+    if (result === timedOut && client.isOpen) {
+      client.destroy();
+    }
+  } catch (error) {
+    if (client.isOpen) client.destroy();
+    throw error;
+  } finally {
+    if (timer) clearTimeout(timer);
   }
 }
 
@@ -105,6 +149,7 @@ export default defineConfig({
     deployDrain.configure({
       getActiveRooms: () => getGameRuntimeStats().activeRooms,
       stopMatchmaking: () => {},
+      maxAgeMs: readPositiveInteger("GAME_DEPLOY_DRAIN_MAX_AGE_MS", 60 * 60_000),
     });
   },
 
@@ -122,6 +167,8 @@ export default defineConfig({
     app.get("/health/ready", createReadinessHandler());
 
     app.post("/operations/drain", createLocalDrainHandler());
+
+    app.delete("/operations/drain", createLocalDrainCancelHandler());
 
     app.get("/operations/stats", createLocalStatsHandler());
 
@@ -174,7 +221,9 @@ async function createRedisScaling(securityRedisUrl: string, colyseusRedisUrl: st
     reconciliationRunning = true;
     void GameRoom.reconcileRevokedConnections()
       .catch((error) => {
-        console.error("[game-server] Redis session revocation reconcile failed.", error);
+        console.error("[game-server] Redis session revocation reconcile failed.", {
+          error: safeMonitoringErrorMetadata(error),
+        });
       })
       .finally(() => {
         reconciliationRunning = false;
@@ -228,7 +277,9 @@ async function connectSecurityRedisClient(redisUrl: string): Promise<RedisClient
     const now = Date.now();
     if (now - lastErrorReportAt >= 60_000) {
       lastErrorReportAt = now;
-      console.error("[game-server] Redis security store е недостъпен.", error);
+      console.error("[game-server] Redis security store е недостъпен.", {
+        error: safeMonitoringErrorMetadata(error),
+      });
     }
   });
   await client.connect();
@@ -277,6 +328,22 @@ export function createLocalDrainHandler() {
   };
 }
 
+interface DrainCanceller {
+  cancel(): ReturnType<DeployDrainController["status"]>;
+}
+
+export function createLocalDrainCancelHandler(
+  controller: DrainCanceller = deployDrain,
+) {
+  return (req: Request, res: Response) => {
+    if (!isLoopbackAddress(req.socket.remoteAddress)) {
+      res.status(404).json({ ok: false });
+      return;
+    }
+    res.json({ ok: true, ...controller.cancel() });
+  };
+}
+
 export function createLocalStatsHandler() {
   return (req: Request, res: Response) => {
     if (!isLoopbackAddress(req.socket.remoteAddress)) {
@@ -298,6 +365,13 @@ export function createLocalStatsHandler() {
 
 function isLoopbackAddress(address: string | undefined) {
   return address === "127.0.0.1" || address === "::1" || address === "::ffff:127.0.0.1";
+}
+
+function readPositiveInteger(name: string, fallback: number) {
+  const raw = process.env[name] ?? "";
+  if (!/^[1-9]\d*$/.test(raw)) return fallback;
+  const value = Number(raw);
+  return Number.isSafeInteger(value) && value > 0 ? value : fallback;
 }
 
 /*

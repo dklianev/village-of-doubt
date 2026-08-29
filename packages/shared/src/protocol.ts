@@ -259,7 +259,7 @@ export interface PrivateFactionMember {
 }
 
 export interface PrivateFactionRoster {
-  faction: "mafia" | "werewolves";
+  faction: "mafia" | "werewolves" | "vampires";
   members: PrivateFactionMember[];
 }
 

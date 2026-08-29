@@ -1,6 +1,7 @@
 export interface DeployDrainDependencies {
   getActiveRooms: () => number;
   stopMatchmaking: () => void;
+  maxAgeMs?: number;
   now?: () => number;
   sleep?: (milliseconds: number) => Promise<void>;
 }
@@ -13,6 +14,7 @@ export interface DrainWaitOptions {
 export class DeployDrainController {
   private getActiveRooms: () => number;
   private stopMatchmaking: () => void;
+  private maxAgeMs: number;
   private readonly now: () => number;
   private readonly sleep: (milliseconds: number) => Promise<void>;
   private draining = false;
@@ -21,21 +23,29 @@ export class DeployDrainController {
   constructor({
     getActiveRooms,
     stopMatchmaking,
+    maxAgeMs = 60 * 60_000,
     now = Date.now,
     sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds)),
   }: DeployDrainDependencies) {
     this.getActiveRooms = getActiveRooms;
     this.stopMatchmaking = stopMatchmaking;
+    this.maxAgeMs = maxAgeMs;
     this.now = now;
     this.sleep = sleep;
   }
 
-  configure({ getActiveRooms, stopMatchmaking }: Pick<DeployDrainDependencies, "getActiveRooms" | "stopMatchmaking">) {
+  configure({
+    getActiveRooms,
+    stopMatchmaking,
+    maxAgeMs,
+  }: Pick<DeployDrainDependencies, "getActiveRooms" | "stopMatchmaking"> & { maxAgeMs?: number }) {
     this.getActiveRooms = getActiveRooms;
     this.stopMatchmaking = stopMatchmaking;
+    if (maxAgeMs !== undefined) this.maxAgeMs = maxAgeMs;
   }
 
   begin() {
+    this.expireIfNeeded();
     if (!this.draining) {
       this.stopMatchmaking();
       this.draining = true;
@@ -45,7 +55,14 @@ export class DeployDrainController {
     return this.status();
   }
 
+  cancel() {
+    this.draining = false;
+    this.startedAt = undefined;
+    return this.status();
+  }
+
   status() {
+    this.expireIfNeeded();
     return {
       draining: this.draining,
       activeRooms: this.getActiveRooms(),
@@ -54,7 +71,19 @@ export class DeployDrainController {
   }
 
   isDraining() {
+    this.expireIfNeeded();
     return this.draining;
+  }
+
+  private expireIfNeeded() {
+    if (
+      this.draining
+      && this.startedAt !== undefined
+      && this.now() - this.startedAt >= this.maxAgeMs
+    ) {
+      this.draining = false;
+      this.startedAt = undefined;
+    }
   }
 
   async waitForEmpty({ timeoutMs, pollIntervalMs }: DrainWaitOptions) {
