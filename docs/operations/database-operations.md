@@ -67,7 +67,8 @@ Each pass is bounded and uses `FOR UPDATE SKIP LOCKED`:
 - expired sessions are deleted;
 - expired verification records are deleted;
 - lobbies untouched for 48 hours become `abandoned`;
-- active games are never abandoned by age alone; `games.updated_at` is not a room heartbeat;
+- active games older than `DATABASE_STALE_ACTIVE_HOURS` become `abandoned`
+  as crash reconciliation; the default is 24 hours, far beyond a normal game;
 - old events are deleted only when `DATABASE_EVENT_RETENTION_DAYS` is greater
   than zero and their game is already ended or abandoned.
 
@@ -182,12 +183,24 @@ a reconciliation job that can rebuild aggregates from history.
 - Keep schema and generated migration metadata in the same commit.
 - Run `pnpm check:migrations` and `pnpm test:migrations` against PostgreSQL 17.
 - Never use `db:push` in production.
-- A restore must target a new database, run the real migrator, reconcile roles,
-  and pass account/history and create-to-play smoke checks before cutover.
-- The default restore path requires both `web` and `game` to be running so
-  Compose can verify both health checks after cutover. `RESTORE_ONLY=1` is for
-  an intentionally offline restore; it leaves writers stopped and preserves
-  the rollback database until the operator completes those checks manually.
+- A restore must target a new database, run the real migrator with lock,
+  statement, idle-transaction, and process timeouts, and reconcile roles before
+  cutover. The migrator and application images come from the verified signed
+  active release manifest, never a local tag. After cutover it verifies
+  migration state, account/history relationships, runtime-role privileges, and
+  captured deletion tombstones.
+- The default restore path requires both `web` and `game` to be running. It
+  checks deep container-local readiness and public HTTPS/WSS through Caddy.
+  `RESTORE_ONLY=1` is intentionally offline: database semantics still run, but
+  writers stay stopped and no application-readiness claim is made.
+- The original database is always retained as a rollback copy. Run the printed
+  `sh scripts/restore-accept.sh` command only after real account, history, and
+  create-to-play acceptance. That command repeats semantic and ingress checks,
+  validates signed applied-schema provenance, and only then deletes the exact
+  explicitly named rollback database.
+- A successful restore advances signed applied-schema provenance to the active
+  release and may clear a prior migration-pending marker. Failures preserve the
+  prior schema evidence and candidate database for investigation.
 
 Migration `0008_steady_edwin_jarvis` is a pre-launch schema hardening migration.
 Its five indexes are intentionally transactional and may take blocking locks.
@@ -195,3 +208,10 @@ Apply it before first production traffic or during a declared maintenance
 window. For a future index on a large live table, measure on staging and use a
 separate reviewed operational `CREATE INDEX CONCURRENTLY` procedure; do not put
 `CONCURRENTLY` inside Drizzle's transactional migration stream.
+
+Migration `0013_hesitant_blur` also belongs before first production traffic or
+inside a declared maintenance window. It first aborts if duplicate live room
+codes exist, then creates the partial unique index that protects lobby and
+active rooms. On an existing busy `games` table the transactional index build
+can wait for or hold conflicting locks. Check for duplicate live codes and
+measure the migration on staging before opening public traffic.

@@ -61,12 +61,36 @@ describe("database pool lifecycle", () => {
       expect.objectContaining({
         connection: {
           application_name: "werewolf-web",
+          TimeZone: "UTC",
           statement_timeout: 15_000,
           lock_timeout: 3_000,
           idle_in_transaction_session_timeout: 10_000,
         },
       }),
     );
+  });
+
+  it("logs database notices without server messages or parameter-like details", () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    createDatabase("postgres://localhost/werewolf");
+    const options = mocks.postgres.mock.calls[0]?.[1] as {
+      onnotice?: (notice: Record<string, unknown>) => void;
+    };
+
+    options.onnotice?.({
+      severity: "ERROR",
+      code: "23505",
+      routine: "_bt_check_unique",
+      message: "duplicate email night@example.com",
+      detail: "Key (email)=(night@example.com) already exists.",
+    });
+
+    expect(consoleError).toHaveBeenCalledWith("[db-pool]", {
+      severity: "ERROR",
+      code: "23505",
+      routine: "_bt_check_unique",
+    });
+    expect(JSON.stringify(consoleError.mock.calls)).not.toContain("night@example.com");
   });
 
   it("preserves the per-service application name from the connection URL", () => {

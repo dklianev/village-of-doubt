@@ -9,7 +9,9 @@ import {
   createDatabase,
   getAccountExportPage,
   getAchievementsForUser,
+  parseAccountExportCursor,
 } from "@werewolf/database";
+import { safeMonitoringErrorMetadata } from "@werewolf/shared";
 import { auth } from "@/lib/auth";
 import {
   createAccountExportContinuation,
@@ -146,9 +148,11 @@ export async function GET(request?: Request) {
         page: exportPage.page,
         pageSize: exportPage.pageSize,
         hasMore: exportPage.hasMore,
+        nextGameCursor: exportPage.nextGameCursor,
         eventPage: exportPage.eventPage,
         eventPageSize: exportPage.eventPageSize,
         eventsHasMore: exportPage.eventsHasMore,
+        nextEventCursor: exportPage.nextEventCursor,
       },
       note: "Това е експорт на твоите данни от Върколак и Мафия. Събитията включват публичната история и твоите лични действия, но не и чужди лични действия или бележки за модератори. Запази файла за твоите архиви.",
     };
@@ -172,7 +176,7 @@ export async function GET(request?: Request) {
       },
     });
   } catch (error) {
-    console.error("[account-export]", error);
+    console.error("[account-export]", safeMonitoringErrorMetadata(error));
     return NextResponse.json(
       { error: "Грешка при експорт на данни." },
       { status: 500, headers: PRIVATE_NO_STORE_HEADERS },
@@ -207,6 +211,8 @@ function parsePagination(request?: Request): {
   pageSize: number;
   eventPage: number;
   eventPageSize: number;
+  gameCursor: ReturnType<typeof parseAccountExportCursor>;
+  eventCursor: ReturnType<typeof parseAccountExportCursor>;
 } | null {
   const url = new URL(request?.url ?? "http://localhost/api/account/export");
   const page = parseBoundedPositiveInteger(url.searchParams.get("page"), 1, ACCOUNT_EXPORT_MAX_PAGE);
@@ -225,10 +231,19 @@ function parsePagination(request?: Request): {
     ACCOUNT_EXPORT_DEFAULT_EVENT_PAGE_SIZE,
     ACCOUNT_EXPORT_MAX_EVENT_PAGE_SIZE,
   );
+  const rawGameCursor = url.searchParams.get("gameCursor");
+  const rawEventCursor = url.searchParams.get("eventCursor");
+  const gameCursor = parseAccountExportCursor(rawGameCursor);
+  const eventCursor = parseAccountExportCursor(rawEventCursor);
 
-  return page === null || pageSize === null || eventPage === null || eventPageSize === null
+  return page === null
+    || pageSize === null
+    || eventPage === null
+    || eventPageSize === null
+    || (rawGameCursor !== null && !gameCursor)
+    || (rawEventCursor !== null && !eventCursor)
     ? null
-    : { page, pageSize, eventPage, eventPageSize };
+    : { page, pageSize, eventPage, eventPageSize, gameCursor, eventCursor };
 }
 
 function parseBoundedPositiveInteger(

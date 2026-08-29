@@ -121,6 +121,9 @@ export const games = pgTable(
   },
   (table) => [
     index("games_code_idx").on(table.code),
+    uniqueIndex("games_live_code_uidx")
+      .on(table.code)
+      .where(sql`${table.status} IN ('lobby', 'active')`),
     index("games_host_id_idx").on(table.hostId),
     index("games_status_idx").on(table.status),
     index("games_status_ended_at_idx").on(table.status, table.endedAt.desc()),

@@ -3,12 +3,14 @@ import type { Database } from "./client.js";
 
 const DEFAULT_BATCH_SIZE = 1_000;
 const DEFAULT_STALE_LOBBY_HOURS = 48;
+const DEFAULT_STALE_ACTIVE_HOURS = 24;
 const DEFAULT_OAUTH_TOKEN_BATCH_SIZE = 100;
 
 export interface DatabaseMaintenanceOptions {
   now?: Date;
   batchSize?: number;
   staleLobbyHours?: number;
+  staleActiveHours?: number;
   eventRetentionDays?: number;
 }
 
@@ -17,7 +19,24 @@ export interface DatabaseMaintenanceResult {
   sessionsDeleted: number;
   verificationsDeleted: number;
   gamesAbandoned: number;
+  activeGamesAbandoned: number;
   eventsDeleted: number;
+  backlog?: DatabaseMaintenanceBacklog;
+}
+
+export interface DatabaseMaintenanceBacklogMetric {
+  remainingAtLeast: number;
+  batchSaturated: boolean;
+  oldestEligibleAt: string | null;
+  oldestAgeMs: number | null;
+}
+
+export interface DatabaseMaintenanceBacklog {
+  expiredSessions: DatabaseMaintenanceBacklogMetric;
+  expiredVerifications: DatabaseMaintenanceBacklogMetric;
+  staleLobbies: DatabaseMaintenanceBacklogMetric;
+  staleActiveGames: DatabaseMaintenanceBacklogMetric;
+  expiredEvents: DatabaseMaintenanceBacklogMetric;
 }
 
 export interface OAuthTokenEncryptionOptions {
@@ -43,6 +62,18 @@ interface OAuthTokenRow extends Record<string, unknown> {
   idToken: string | null;
 }
 
+interface MaintenanceMutationRow extends Record<string, unknown> {
+  affected: number;
+  remainingAtLeast: number;
+  batchSaturated: boolean;
+  oldestEligibleAt: string | null;
+}
+
+interface MaintenanceMutationResult {
+  affected: number;
+  backlog: DatabaseMaintenanceBacklogMetric;
+}
+
 export async function runDatabaseMaintenance(
   db: Database,
   options: DatabaseMaintenanceOptions = {},
@@ -52,6 +83,10 @@ export async function runDatabaseMaintenance(
   const staleLobbyCutoff = hoursBefore(
     now,
     boundedPositiveInteger(options.staleLobbyHours, DEFAULT_STALE_LOBBY_HOURS, 24 * 30),
+  );
+  const staleActiveCutoff = hoursBefore(
+    now,
+    boundedPositiveInteger(options.staleActiveHours, DEFAULT_STALE_ACTIVE_HOURS, 24 * 30),
   );
   const eventRetentionDays = Math.max(0, Math.trunc(options.eventRetentionDays ?? 0));
   const nowIso = now.toISOString();
@@ -66,46 +101,97 @@ export async function runDatabaseMaintenance(
       return emptyResult(false);
     }
 
-    const sessionsDeleted = await deleteExpiredRows(tx, "session", nowIso, batchSize);
-    const verificationsDeleted = await deleteExpiredRows(tx, "verification", nowIso, batchSize);
-    const gamesAbandoned = affectedCount(await tx.execute(sql`
+    const expiredSessions = await deleteExpiredRows(tx, "session", nowIso, batchSize, now);
+    const expiredVerifications = await deleteExpiredRows(
+      tx,
+      "verification",
+      nowIso,
+      batchSize,
+      now,
+    );
+    const staleLobbies = maintenanceMutationResult(await tx.execute<MaintenanceMutationRow>(sql`
       WITH candidates AS (
-        SELECT "id"
+        SELECT "id", "updated_at" AS "eligibleAt"
         FROM "games"
         WHERE "status" = 'lobby' AND "updated_at" < ${staleLobbyCutoff.toISOString()}
         ORDER BY "updated_at", "id"
-        LIMIT ${batchSize}
+        LIMIT ${batchSize + 1}
         FOR UPDATE SKIP LOCKED
       ),
-      updated AS (
+      selected AS (
+        SELECT "id", "eligibleAt"
+        FROM candidates
+        ORDER BY "eligibleAt", "id"
+        LIMIT ${batchSize}
+      ),
+      changed AS (
         UPDATE "games"
         SET
           "status" = 'abandoned',
           "ended_at" = COALESCE("games"."ended_at", ${nowIso}),
           "updated_at" = ${nowIso}
-        FROM candidates
-        WHERE "games"."id" = candidates."id"
+        FROM selected
+        WHERE "games"."id" = selected."id"
         RETURNING 1
       )
-      SELECT COUNT(*)::int AS affected FROM updated
-    `));
+      ${boundedMaintenanceResultProjection(batchSize)}
+    `), now);
+    const staleActiveGames = maintenanceMutationResult(await tx.execute<MaintenanceMutationRow>(sql`
+      WITH candidates AS (
+        SELECT "id", "started_at" AS "eligibleAt"
+        FROM "games"
+        WHERE
+          "status" = 'active'
+          AND "started_at" IS NOT NULL
+          AND "started_at" < ${staleActiveCutoff.toISOString()}
+        ORDER BY "started_at", "id"
+        LIMIT ${batchSize + 1}
+        FOR UPDATE SKIP LOCKED
+      ),
+      selected AS (
+        SELECT "id", "eligibleAt"
+        FROM candidates
+        ORDER BY "eligibleAt", "id"
+        LIMIT ${batchSize}
+      ),
+      changed AS (
+        UPDATE "games"
+        SET
+          "status" = 'abandoned',
+          "ended_at" = COALESCE("games"."ended_at", ${nowIso}),
+          "updated_at" = ${nowIso}
+        FROM selected
+        WHERE "games"."id" = selected."id"
+        RETURNING 1
+      )
+      ${boundedMaintenanceResultProjection(batchSize)} /* active_game_reconciliation */
+    `), now);
 
-    const eventsDeleted = eventRetentionDays > 0
+    const expiredEvents = eventRetentionDays > 0
       ? await deleteExpiredEvents(
           tx,
           new Date(
             now.getTime() - eventRetentionDays * 24 * 60 * 60 * 1_000,
           ).toISOString(),
           batchSize,
+          now,
         )
-      : 0;
+      : emptyMaintenanceMutationResult();
 
     return {
       acquired: true,
-      sessionsDeleted,
-      verificationsDeleted,
-      gamesAbandoned,
-      eventsDeleted,
+      sessionsDeleted: expiredSessions.affected,
+      verificationsDeleted: expiredVerifications.affected,
+      gamesAbandoned: staleLobbies.affected,
+      activeGamesAbandoned: staleActiveGames.affected,
+      eventsDeleted: expiredEvents.affected,
+      backlog: {
+        expiredSessions: expiredSessions.backlog,
+        expiredVerifications: expiredVerifications.backlog,
+        staleLobbies: staleLobbies.backlog,
+        staleActiveGames: staleActiveGames.backlog,
+        expiredEvents: expiredEvents.backlog,
+      },
     };
   });
 }
@@ -237,53 +323,130 @@ async function deleteExpiredRows(
   table: "session" | "verification",
   cutoff: string,
   batchSize: number,
-): Promise<number> {
+  now: Date,
+): Promise<MaintenanceMutationResult> {
   const tableName = sql.identifier(table);
-  return affectedCount(await tx.execute(sql`
+  return maintenanceMutationResult(await tx.execute<MaintenanceMutationRow>(sql`
     WITH candidates AS (
-      SELECT "id"
+      SELECT "id", "expires_at" AS "eligibleAt"
       FROM ${tableName}
       WHERE "expires_at" < ${cutoff}
       ORDER BY "expires_at", "id"
-      LIMIT ${batchSize}
+      LIMIT ${batchSize + 1}
       FOR UPDATE SKIP LOCKED
     ),
-    deleted AS (
+    selected AS (
+      SELECT "id", "eligibleAt"
+      FROM candidates
+      ORDER BY "eligibleAt", "id"
+      LIMIT ${batchSize}
+    ),
+    changed AS (
       DELETE FROM ${tableName}
-      USING candidates
-      WHERE ${tableName}."id" = candidates."id"
+      USING selected
+      WHERE ${tableName}."id" = selected."id"
       RETURNING 1
     )
-    SELECT COUNT(*)::int AS affected FROM deleted
-  `));
+    ${boundedMaintenanceResultProjection(batchSize)}
+  `), now);
 }
 
 async function deleteExpiredEvents(
   tx: MaintenanceTransaction,
   cutoff: string,
   batchSize: number,
-): Promise<number> {
+  now: Date,
+): Promise<MaintenanceMutationResult> {
   // The transaction-level advisory lock already serializes maintenance passes.
   // Avoid FOR UPDATE here so the web maintenance role needs no event UPDATE grant.
-  return affectedCount(await tx.execute(sql`
+  return maintenanceMutationResult(await tx.execute<MaintenanceMutationRow>(sql`
     WITH candidates AS (
-      SELECT event."id"
+      SELECT event."id", event."created_at" AS "eligibleAt"
       FROM "game_events" AS event
       INNER JOIN "games" AS game ON game."id" = event."game_id"
       WHERE
         event."created_at" < ${cutoff}
         AND game."status" IN ('ended', 'abandoned')
       ORDER BY event."created_at", event."id"
+      LIMIT ${batchSize + 1}
+    ),
+    selected AS (
+      SELECT "id", "eligibleAt"
+      FROM candidates
+      ORDER BY "eligibleAt", "id"
       LIMIT ${batchSize}
     ),
-    deleted AS (
+    changed AS (
       DELETE FROM "game_events"
-      USING candidates
-      WHERE "game_events"."id" = candidates."id"
+      USING selected
+      WHERE "game_events"."id" = selected."id"
       RETURNING 1
     )
-    SELECT COUNT(*)::int AS affected FROM deleted
-  `));
+    ${boundedMaintenanceResultProjection(batchSize)}
+  `), now);
+}
+
+function boundedMaintenanceResultProjection(batchSize: number) {
+  return sql`
+    SELECT
+      (SELECT COUNT(*)::int FROM changed) AS affected,
+      GREATEST(
+        (SELECT COUNT(*)::int FROM candidates)
+          - (SELECT COUNT(*)::int FROM selected),
+        0
+      )::int AS "remainingAtLeast",
+      (SELECT COUNT(*) FROM candidates) > ${batchSize} AS "batchSaturated",
+      (
+        SELECT to_char(
+          candidate."eligibleAt",
+          'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'
+        )
+        FROM candidates AS candidate
+        WHERE NOT EXISTS (
+          SELECT 1
+          FROM selected
+          WHERE selected."id" = candidate."id"
+        )
+        ORDER BY candidate."eligibleAt", candidate."id"
+        LIMIT 1
+      ) AS "oldestEligibleAt"
+  `;
+}
+
+function maintenanceMutationResult(
+  rows: MaintenanceMutationRow[],
+  now: Date,
+): MaintenanceMutationResult {
+  const row = rows[0];
+  const oldestEligibleAt = normalizeMaintenanceTimestamp(row?.oldestEligibleAt);
+  return {
+    affected: finiteNonNegativeInteger(row?.affected),
+    backlog: {
+      remainingAtLeast: finiteNonNegativeInteger(row?.remainingAtLeast),
+      batchSaturated: row?.batchSaturated === true,
+      oldestEligibleAt,
+      oldestAgeMs: oldestEligibleAt === null
+        ? null
+        : Math.max(0, now.getTime() - Date.parse(oldestEligibleAt)),
+    },
+  };
+}
+
+function normalizeMaintenanceTimestamp(value: unknown): string | null {
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value.toISOString();
+  }
+  if (typeof value !== "string" || value.length === 0) {
+    return null;
+  }
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+}
+
+function finiteNonNegativeInteger(value: unknown): number {
+  return typeof value === "number" && Number.isFinite(value)
+    ? Math.max(0, Math.trunc(value))
+    : 0;
 }
 
 function affectedCount(rows: Array<Record<string, unknown>>): number {
@@ -326,7 +489,31 @@ function emptyResult(acquired: boolean): DatabaseMaintenanceResult {
     sessionsDeleted: 0,
     verificationsDeleted: 0,
     gamesAbandoned: 0,
+    activeGamesAbandoned: 0,
     eventsDeleted: 0,
+    backlog: {
+      expiredSessions: emptyBacklogMetric(),
+      expiredVerifications: emptyBacklogMetric(),
+      staleLobbies: emptyBacklogMetric(),
+      staleActiveGames: emptyBacklogMetric(),
+      expiredEvents: emptyBacklogMetric(),
+    },
+  };
+}
+
+function emptyMaintenanceMutationResult(): MaintenanceMutationResult {
+  return {
+    affected: 0,
+    backlog: emptyBacklogMetric(),
+  };
+}
+
+function emptyBacklogMetric(): DatabaseMaintenanceBacklogMetric {
+  return {
+    remainingAtLeast: 0,
+    batchSaturated: false,
+    oldestEligibleAt: null,
+    oldestAgeMs: null,
   };
 }
 

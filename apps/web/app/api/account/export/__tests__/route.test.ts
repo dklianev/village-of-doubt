@@ -24,6 +24,14 @@ vi.mock("@werewolf/database", () => ({
   createDatabase: mocks.createDatabase,
   getAccountExportPage: mocks.getAccountExportPage,
   getAchievementsForUser: mocks.getAchievementsForUser,
+  parseAccountExportCursor: (value: string | null | undefined) => {
+    if (!value) return null;
+    const separator = value.indexOf("|");
+    if (separator <= 0) return null;
+    const date = new Date(value.slice(0, separator));
+    const id = value.slice(separator + 1);
+    return Number.isNaN(date.getTime()) || !id ? null : { createdAt: date, id };
+  },
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -51,9 +59,11 @@ describe("GET /api/account/export", () => {
       page: 1,
       pageSize: 50,
       hasMore: false,
+      nextGameCursor: null,
       eventPage: 1,
       eventPageSize: 500,
       eventsHasMore: false,
+      nextEventCursor: null,
     });
   });
 
@@ -91,13 +101,15 @@ describe("GET /api/account/export", () => {
       page: 2,
       pageSize: 25,
       hasMore: true,
+      nextGameCursor: "2026-01-01T00:00:00.000Z|game-1",
       eventPage: 3,
       eventPageSize: 200,
       eventsHasMore: true,
+      nextEventCursor: "2026-01-01T00:30:00.000Z|public-1",
     });
 
     const response = await GET(new Request(
-      "http://localhost/api/account/export?page=2&pageSize=25&eventPage=3&eventPageSize=200",
+      "http://localhost/api/account/export?page=2&pageSize=25&eventPage=3&eventPageSize=200&gameCursor=2026-01-02T00%3A00%3A00.000Z%7Cgame-2&eventCursor=2026-01-02T00%3A00%3A00.000Z%7Cevent-2",
     ));
     const body = await response.json();
 
@@ -110,16 +122,25 @@ describe("GET /api/account/export", () => {
       page: 2,
       pageSize: 25,
       hasMore: true,
+      nextGameCursor: "2026-01-01T00:00:00.000Z|game-1",
       eventPage: 3,
       eventPageSize: 200,
       eventsHasMore: true,
+      nextEventCursor: "2026-01-01T00:30:00.000Z|public-1",
     });
     expect(body.note).toContain("твоите лични действия");
     expect(body.note).toContain("чужди лични действия");
     expect(mocks.getAccountExportPage).toHaveBeenCalledWith(
       { query: expect.any(Object) },
       "user-1",
-      { page: 2, pageSize: 25, eventPage: 3, eventPageSize: 200 },
+      {
+        page: 2,
+        pageSize: 25,
+        eventPage: 3,
+        eventPageSize: 200,
+        gameCursor: { createdAt: new Date("2026-01-02T00:00:00.000Z"), id: "game-2" },
+        eventCursor: { createdAt: new Date("2026-01-02T00:00:00.000Z"), id: "event-2" },
+      },
     );
     expect(response.headers.get("cache-control")).toBe("private, no-store");
     expect(response.headers.get("content-disposition")).toContain("werewolf-mafia-export-user-1-");
@@ -207,9 +228,11 @@ describe("GET /api/account/export", () => {
       page: 1,
       pageSize: 50,
       hasMore: false,
+      nextGameCursor: null,
       eventPage: 1,
       eventPageSize: 500,
       eventsHasMore: false,
+      nextEventCursor: null,
     });
 
     const response = await GET(new Request("http://localhost/api/account/export"));

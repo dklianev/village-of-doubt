@@ -99,8 +99,8 @@ describe("POST /api/account/delete", () => {
     expect(createDatabase).toHaveBeenCalledWith("postgres://localhost/werewolf");
     expect(deleteUserAccountAtomically).toHaveBeenCalledWith({ mocked: true }, "user-1");
     expect(revokeActiveGameSessions).toHaveBeenCalledWith("user-1", { requireRealtime: true });
-    expect(revalidateTag).toHaveBeenCalledWith("public-leaderboard", "max");
-    expect(revalidateTag).toHaveBeenCalledWith("public-game-history", "max");
+    expect(revalidateTag).toHaveBeenCalledWith("public-leaderboard", { expire: 0 });
+    expect(revalidateTag).toHaveBeenCalledWith("public-game-history", { expire: 0 });
   });
 
   it("ограничава многократни destructive delete опити за един user", async () => {

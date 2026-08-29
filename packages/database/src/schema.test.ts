@@ -98,6 +98,24 @@ describe("database integrity and anonymization indexes", () => {
     expect(gameIndexes).toContain("games_status_updated_at_idx");
   });
 
+  it("keeps live room codes unique while allowing archived code reuse", () => {
+    const gameIndexes = getTableConfig(games).indexes;
+    const liveCodeIndex = gameIndexes.find(
+      (item) => item.config.name === "games_live_code_uidx",
+    );
+    const migration = readFileSync(
+      resolve(process.cwd(), "drizzle/0013_hesitant_blur.sql"),
+      "utf8",
+    );
+
+    expect(liveCodeIndex?.config.unique).toBe(true);
+    expect(migration).toContain("Conflicting live game codes");
+    expect(migration).toContain("GROUP BY \"code\"");
+    expect(migration).toContain("HAVING count(*) > 1");
+    expect(migration).toContain('CREATE UNIQUE INDEX "games_live_code_uidx"');
+    expect(migration).toContain("WHERE \"games\".\"status\" IN ('lobby', 'active')");
+  });
+
   it("keeps stable game and event enums behind database checks", () => {
     const gameChecks = getTableConfig(games).checks.map((item) => item.name);
     const eventChecks = getTableConfig(gameEvents).checks.map((item) => item.name);

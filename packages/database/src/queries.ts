@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, asc, count, desc, eq, gte, inArray, ne, or, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, lt, ne, or, sql } from "drizzle-orm";
 import {
   deletedUserIdentities,
   gameEvents,
@@ -82,11 +82,26 @@ export interface PlaceholderUserUpsert {
 
 export const DELETED_DISPLAY_NAME = "Изтрит играч";
 const ACCOUNT_EVENT_UPDATE_BATCH_SIZE = 250;
+const ACCOUNT_DELETION_STATEMENT_TIMEOUT_MS = 120_000;
 export const ACCOUNT_EXPORT_DEFAULT_PAGE_SIZE = 50;
 export const ACCOUNT_EXPORT_MAX_PAGE_SIZE = 100;
 export const ACCOUNT_EXPORT_MAX_PAGE = 1_000;
 export const ACCOUNT_EXPORT_DEFAULT_EVENT_PAGE_SIZE = 500;
 export const ACCOUNT_EXPORT_MAX_EVENT_PAGE_SIZE = 1_000;
+
+export interface AccountExportCursor {
+  createdAt: Date;
+  id: string;
+}
+
+export interface AccountExportPageOptions {
+  page: number;
+  pageSize: number;
+  eventPage: number;
+  eventPageSize: number;
+  gameCursor?: AccountExportCursor | null;
+  eventCursor?: AccountExportCursor | null;
+}
 
 export async function recordGameSessionRevocation(
   db: Database,
@@ -155,6 +170,13 @@ export async function deleteUserAccountAtomically(db: Database, userId: string):
   }
 
   return db.transaction(async (tx) => {
+    await tx.execute(sql`
+      SELECT set_config(
+        'statement_timeout',
+        ${`${ACCOUNT_DELETION_STATEMENT_TIMEOUT_MS}ms`},
+        true
+      )
+    `);
     const proposedAnonymousUserId = `deleted_${randomUUID().replaceAll("-", "")}`;
     const result = await tx.execute<{ deleted: boolean }>(sql`
       SELECT public.werewolf_delete_account(
@@ -468,7 +490,7 @@ export function scrubDeletedIdentityFromEventPayload(
 export async function getAccountExportPage(
   db: Database,
   userId: string,
-  options: { page: number; pageSize: number; eventPage: number; eventPageSize: number },
+  options: AccountExportPageOptions,
 ) {
   const page = Math.min(Math.max(Math.trunc(options.page), 1), ACCOUNT_EXPORT_MAX_PAGE);
   const pageSize = Math.min(
@@ -480,6 +502,8 @@ export async function getAccountExportPage(
     Math.max(Math.trunc(options.eventPageSize), 1),
     ACCOUNT_EXPORT_MAX_EVENT_PAGE_SIZE,
   );
+  const gameMembershipFilter = or(eq(games.hostId, userId), eq(gamePlayers.userId, userId));
+  const gameCursorFilter = accountExportKeysetFilter(games.createdAt, games.id, options.gameCursor);
   const rows = await db
     .select({
       id: games.id,
@@ -505,13 +529,17 @@ export async function getAccountExportPage(
       gamePlayers,
       and(eq(gamePlayers.gameId, games.id), eq(gamePlayers.userId, userId)),
     )
-    .where(or(eq(games.hostId, userId), eq(gamePlayers.userId, userId)))
+    .where(gameCursorFilter ? and(gameMembershipFilter, gameCursorFilter) : gameMembershipFilter)
     .orderBy(desc(games.createdAt), desc(games.id))
-    .limit(pageSize + 1)
-    .offset((page - 1) * pageSize);
+    .limit(pageSize + 1);
   const hasMore = rows.length > pageSize;
   const pageRows = rows.slice(0, pageSize);
   const gameIds = pageRows.map((game) => game.id);
+  const eventCursorFilter = accountExportKeysetFilter(
+    gameEvents.createdAt,
+    gameEvents.id,
+    options.eventCursor,
+  );
 
   const eventRows = gameIds.length === 0
     ? []
@@ -532,6 +560,7 @@ export async function getAccountExportPage(
         .where(
           and(
             inArray(gameEvents.gameId, gameIds),
+            eventCursorFilter,
             or(
               eq(gameEvents.visibility, "public"),
               and(eq(gameEvents.actorId, userId), ne(gameEvents.visibility, "moderator")),
@@ -539,12 +568,12 @@ export async function getAccountExportPage(
           ),
         )
         .orderBy(desc(gameEvents.createdAt), desc(gameEvents.id))
-        .limit(eventPageSize + 1)
-        .offset((eventPage - 1) * eventPageSize);
+        .limit(eventPageSize + 1);
   const eventsHasMore = eventRows.length > eventPageSize;
+  const eventPageRows = eventRows.slice(0, eventPageSize);
   const eventsByGameId = new Map<string, Array<Record<string, unknown>>>();
 
-  for (const event of eventRows.slice(0, eventPageSize)) {
+  for (const event of eventPageRows) {
     if (event.visibility === "moderator" || (event.visibility !== "public" && event.actorId !== userId)) {
       continue;
     }
@@ -597,7 +626,46 @@ export async function getAccountExportPage(
     eventPage,
     eventPageSize,
     eventsHasMore,
+    nextGameCursor: hasMore ? encodeAccountExportCursor(pageRows.at(-1)) : null,
+    nextEventCursor: eventsHasMore ? encodeAccountExportCursor(eventPageRows.at(-1)) : null,
   };
+}
+
+export function parseAccountExportCursor(value: string | null | undefined): AccountExportCursor | null {
+  if (!value) {
+    return null;
+  }
+
+  const separator = value.indexOf("|");
+  if (separator <= 0 || separator !== value.lastIndexOf("|")) {
+    return null;
+  }
+
+  const createdAt = new Date(value.slice(0, separator));
+  const id = value.slice(separator + 1);
+  if (Number.isNaN(createdAt.getTime()) || !id || id.length > 128) {
+    return null;
+  }
+
+  return { createdAt, id };
+}
+
+function encodeAccountExportCursor(row: { createdAt: Date | string; id: string } | undefined) {
+  return row ? `${normalizeDatabaseDate(row.createdAt).toISOString()}|${row.id}` : null;
+}
+
+function accountExportKeysetFilter(
+  createdAtColumn: typeof games.createdAt | typeof gameEvents.createdAt,
+  idColumn: typeof games.id | typeof gameEvents.id,
+  cursor: AccountExportCursor | null | undefined,
+) {
+  if (!cursor) {
+    return undefined;
+  }
+  return or(
+    lt(createdAtColumn, cursor.createdAt),
+    and(eq(createdAtColumn, cursor.createdAt), lt(idColumn, cursor.id)),
+  );
 }
 
 export async function getDeletedUserIdentityMap(db: Database, userIds: string[]): Promise<Map<string, string>> {

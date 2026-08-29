@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { createDatabase, deleteUserAccountAtomically } from "@werewolf/database";
+import { safeMonitoringErrorMetadata } from "@werewolf/shared";
 import { ACCOUNT_DELETE_FRESH_AGE_SECONDS, auth } from "@/lib/auth";
 import {
   createRuntimeIntakeRateLimiter,
@@ -71,12 +72,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Досието вече не съществува." }, { status: 401 });
     }
   } catch (error) {
-    console.error("[account-delete] deletion failed", safeErrorMetadata(error));
+    console.error("[account-delete] deletion failed", safeMonitoringErrorMetadata(error));
     return NextResponse.json({ error: "Не успяхме да изтрием досието." }, { status: 500 });
   }
 
-  revalidateTag("public-leaderboard", "max");
-  revalidateTag("public-game-history", "max");
+  revalidateTag("public-leaderboard", { expire: 0 });
+  revalidateTag("public-game-history", { expire: 0 });
 
   return NextResponse.json({ ok: true });
 }
@@ -98,19 +99,6 @@ function isFreshSession(createdAt: Date | string | undefined): boolean {
     Number.isFinite(createdAtMs) &&
     Date.now() - createdAtMs < ACCOUNT_DELETE_FRESH_AGE_SECONDS * 1_000
   );
-}
-
-function safeErrorMetadata(error: unknown) {
-  if (!error || typeof error !== "object") {
-    return { name: "UnknownError", code: null, status: null };
-  }
-
-  const record = error as Record<string, unknown>;
-  return {
-    name: typeof record.name === "string" ? record.name : "UnknownError",
-    code: typeof record.code === "string" ? record.code : null,
-    status: typeof record.status === "number" ? record.status : null,
-  };
 }
 
 function isAllowedOrigin(request: Request): boolean {

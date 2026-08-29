@@ -525,6 +525,51 @@ describe("replay persistence", () => {
 });
 
 describe("deleteUserAccountAtomically", () => {
+  it("raises the timeout only inside the transaction before scrubbing a large active history", async () => {
+    const statements: Array<{ sql: string; params: unknown[] }> = [];
+    const simulatedActiveHistoryEvents = 50_000;
+    let effectiveStatementTimeoutMs = 15_000;
+    const execute = vi.fn(async (statement: unknown) => {
+      const query = new PgDialect().sqlToQuery(
+        statement as Parameters<PgDialect["sqlToQuery"]>[0],
+      );
+      statements.push(query);
+
+      if (query.sql.includes("set_config") && query.sql.includes("statement_timeout")) {
+        const configuredTimeout = query.params.find(
+          (param): param is string => typeof param === "string" && param.endsWith("ms"),
+        );
+        effectiveStatementTimeoutMs = Number.parseInt(configuredTimeout ?? "", 10);
+        return [];
+      }
+
+      if (query.sql.includes("werewolf_delete_account")) {
+        expect(simulatedActiveHistoryEvents).toBeGreaterThan(10_000);
+        if (effectiveStatementTimeoutMs <= 15_000) {
+          throw new Error("canceling statement due to statement timeout");
+        }
+        return [{ deleted: true }];
+      }
+      return [];
+    });
+    const transaction = vi.fn(async (
+      operation: (transaction: { execute: typeof execute }) => Promise<boolean>,
+    ) => operation({ execute }));
+
+    await expect(deleteUserAccountAtomically(
+      { transaction } as unknown as Database,
+      "user-with-large-active-history",
+    )).resolves.toBe(true);
+
+    const timeoutIndex = statements.findIndex((query) => query.sql.includes("set_config"));
+    const deletionIndex = statements.findIndex((query) => query.sql.includes("werewolf_delete_account"));
+    expect(timeoutIndex).toBeGreaterThanOrEqual(0);
+    expect(deletionIndex).toBeGreaterThan(timeoutIndex);
+    expect(effectiveStatementTimeoutMs).toBeGreaterThan(15_000);
+    expect(statements[timeoutIndex]?.sql).toContain("true");
+    expect(transaction).toHaveBeenCalledOnce();
+  });
+
   it("анонимизира архивните връзки и изтрива auth user-а в една транзакция", async () => {
     const select = vi.fn(() => ({
       from: vi.fn((table: unknown) => ({
@@ -872,6 +917,104 @@ describe("scrubDeletedIdentityFromEventPayload", () => {
 });
 
 describe("getAccountExportPage", () => {
+  it("uses descending created-at and id keysets as deterministic tie-breakers", async () => {
+    const getAccountExportPage = (databaseQueries as Record<string, unknown>).getAccountExportPage;
+    expect(getAccountExportPage).toBeTypeOf("function");
+    if (typeof getAccountExportPage !== "function") {
+      return;
+    }
+
+    const gameCursor = {
+      createdAt: new Date("2026-01-02T00:00:00.000Z"),
+      id: "ffffffff-ffff-4fff-8fff-ffffffffffff",
+    };
+    const eventCursor = {
+      createdAt: new Date("2026-01-01T23:00:00.000Z"),
+      id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+    };
+    const sharedCreatedAt = new Date("2026-01-01T00:00:00.000Z");
+    let gameWhere: { sql: string; params: unknown[] } | undefined;
+    let eventWhere: { sql: string; params: unknown[] } | undefined;
+    let gameOrder = "";
+    let eventOrder = "";
+    const dialect = new PgDialect();
+    const gameLimit = vi.fn(async () => [
+      exportGameRow({ id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc", createdAt: sharedCreatedAt }),
+      exportGameRow({ id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", createdAt: sharedCreatedAt }),
+      exportGameRow({ id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", createdAt: sharedCreatedAt }),
+    ]);
+    const eventLimit = vi.fn(async () => []);
+    const select = vi.fn(() => ({
+      from: vi.fn((table: unknown) => table === games
+        ? {
+            leftJoin: vi.fn(() => ({
+              where: vi.fn((condition: Parameters<PgDialect["sqlToQuery"]>[0]) => {
+                gameWhere = dialect.sqlToQuery(condition);
+                return {
+                  orderBy: vi.fn((...clauses: Parameters<PgDialect["sqlToQuery"]>[0][]) => {
+                    gameOrder = clauses.map((clause) => dialect.sqlToQuery(clause).sql).join(" ");
+                    return { limit: gameLimit };
+                  }),
+                };
+              }),
+            })),
+          }
+        : {
+            where: vi.fn((condition: Parameters<PgDialect["sqlToQuery"]>[0]) => {
+              eventWhere = dialect.sqlToQuery(condition);
+              return {
+                orderBy: vi.fn((...clauses: Parameters<PgDialect["sqlToQuery"]>[0][]) => {
+                  eventOrder = clauses.map((clause) => dialect.sqlToQuery(clause).sql).join(" ");
+                  return { limit: eventLimit };
+                }),
+              };
+            }),
+          }),
+    }));
+
+    const result = await (getAccountExportPage as (
+      db: Database,
+      userId: string,
+      options: {
+        page: number;
+        pageSize: number;
+        eventPage: number;
+        eventPageSize: number;
+        gameCursor: typeof gameCursor;
+        eventCursor: typeof eventCursor;
+      },
+    ) => Promise<{ nextGameCursor: string | null }>)(
+      { select } as unknown as Database,
+      "user-1",
+      {
+        page: 2,
+        pageSize: 2,
+        eventPage: 2,
+        eventPageSize: 20,
+        gameCursor,
+        eventCursor,
+      },
+    );
+
+    expect(gameWhere?.sql).toContain('"games"."created_at" <');
+    expect(gameWhere?.sql).toContain('"games"."created_at" =');
+    expect(gameWhere?.sql).toContain('"games"."id" <');
+    expect(gameWhere?.params.map(String)).toContain(gameCursor.createdAt.toISOString());
+    expect(gameWhere?.params).toContain(gameCursor.id);
+    expect(gameOrder).toContain('"games"."created_at" desc');
+    expect(gameOrder).toContain('"games"."id" desc');
+    expect(eventWhere?.sql).toContain('"game_events"."created_at" <');
+    expect(eventWhere?.sql).toContain('"game_events"."created_at" =');
+    expect(eventWhere?.sql).toContain('"game_events"."id" <');
+    expect(eventWhere?.params.map(String)).toContain(eventCursor.createdAt.toISOString());
+    expect(eventWhere?.params).toContain(eventCursor.id);
+    expect(eventOrder).toContain('"game_events"."created_at" desc');
+    expect(eventOrder).toContain('"game_events"."id" desc');
+    expect(result.nextGameCursor).toBe(
+      "2026-01-01T00:00:00.000Z|bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+    );
+  });
+
   it("ограничава games/events и връща payload само за собствени събития", async () => {
     const getAccountExportPage = (databaseQueries as Record<string, unknown>).getAccountExportPage;
     expect(getAccountExportPage).toBeTypeOf("function");
@@ -879,12 +1022,14 @@ describe("getAccountExportPage", () => {
       return;
     }
 
-    const gameLimit = vi.fn((limit: number) => ({
-      offset: vi.fn(async () => [
-        exportGameRow({ id: "game-1", hostId: "foreign-host" }),
-        exportGameRow({ id: "game-2", isHost: true }),
-      ]),
-    }));
+    const gameLimit = vi.fn(async (_limit: number) => [
+      exportGameRow({ id: "game-1", hostId: "foreign-host" }),
+      exportGameRow({
+        id: "game-2",
+        isHost: true,
+        createdAt: new Date("2026-01-01T00:02:00.000Z"),
+      }),
+    ]);
     const eventOffset = vi.fn(async () => [
       {
         id: "event-1",
@@ -911,7 +1056,7 @@ describe("getAccountExportPage", () => {
         createdAt: new Date("2026-01-01T00:01:00.000Z"),
       },
     ]);
-    const eventLimit = vi.fn(() => ({ offset: eventOffset }));
+    const eventLimit = vi.fn(async (_limit: number) => eventOffset());
     const select = vi.fn(() => ({
       from: vi.fn((table: unknown) => table === games
         ? {
@@ -931,17 +1076,29 @@ describe("getAccountExportPage", () => {
     const result = await (getAccountExportPage as (
       db: Database,
       userId: string,
-      options: { page: number; pageSize: number; eventPage: number; eventPageSize: number },
+        options: {
+          page: number;
+          pageSize: number;
+          eventPage: number;
+          eventPageSize: number;
+          gameCursor?: { createdAt: Date; id: string };
+          eventCursor?: { createdAt: Date; id: string };
+        },
     ) => Promise<Record<string, unknown>>)(
       { select } as unknown as Database,
       "user-1",
-      { page: 2, pageSize: 1, eventPage: 3, eventPageSize: 200 },
+      {
+        page: 2,
+        pageSize: 1,
+        eventPage: 3,
+        eventPageSize: 200,
+        gameCursor: { createdAt: new Date("2026-01-02T00:00:00.000Z"), id: "ffffffff-ffff-4fff-8fff-ffffffffffff" },
+        eventCursor: { createdAt: new Date("2026-01-02T00:00:00.000Z"), id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee" },
+      },
     );
 
     expect(gameLimit).toHaveBeenCalledWith(2);
-    expect(gameLimit.mock.results[0]?.value.offset).toHaveBeenCalledWith(1);
     expect(eventLimit).toHaveBeenCalledWith(201);
-    expect(eventOffset).toHaveBeenCalledWith(400);
     expect(result).toMatchObject({
       page: 2,
       pageSize: 1,
@@ -949,6 +1106,8 @@ describe("getAccountExportPage", () => {
       eventPage: 3,
       eventPageSize: 200,
       eventsHasMore: false,
+      nextGameCursor: "2026-01-01T00:00:00.000Z|game-1",
+      nextEventCursor: null,
     });
     expect(JSON.stringify(result)).not.toContain("foreign-host");
     expect(JSON.stringify(result)).not.toContain("must-not-escape");

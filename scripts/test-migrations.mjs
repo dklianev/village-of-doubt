@@ -252,9 +252,13 @@ async function verifySchema(databaseUrl) {
 }
 
 function createLegacyMigrationsFolder() {
+  return createMigrationsFolderThrough(5, "werewolf-drizzle-legacy-");
+}
+
+function createMigrationsFolderThrough(maxIndex, prefix) {
   const journal = JSON.parse(readFileSync(path.join(migrationsDir, "meta", "_journal.json"), "utf8"));
-  const legacyEntries = journal.entries.filter((entry) => entry.idx <= 5);
-  const legacyDir = mkdtempSync(path.join(tmpdir(), "werewolf-drizzle-legacy-"));
+  const legacyEntries = journal.entries.filter((entry) => entry.idx <= maxIndex);
+  const legacyDir = mkdtempSync(path.join(tmpdir(), prefix));
   const legacyJournal = { ...journal, entries: legacyEntries };
 
   mkdirSync(path.join(legacyDir, "meta"));
@@ -266,11 +270,75 @@ function createLegacyMigrationsFolder() {
   return { legacyDir, legacyEntries };
 }
 
+async function verifyConflictingLiveCodeUpgradeFails() {
+  const userId = "duplicate-live-code-host";
+  const { legacyDir, legacyEntries } = createMigrationsFolderThrough(
+    12,
+    "werewolf-drizzle-live-code-conflict-",
+  );
+
+  try {
+    await recreateTestDb(CONFLICT_TEST_DB_URL);
+    await runMigrations(CONFLICT_TEST_DB_URL, legacyDir);
+
+    const before = postgres(CONFLICT_TEST_DB_URL, { max: 1 });
+    try {
+      await before`
+        INSERT INTO "user" ("id", "name", "email")
+        VALUES (${userId}, 'Домакин с конфликт', 'duplicate-live-code@invalid')
+      `;
+      await before`
+        INSERT INTO "games" (
+          "id", "code", "host_id", "config", "ruleset_version", "status"
+        ) VALUES
+          ('15555555-5555-5555-5555-555555555551', 'SAMECODE', ${userId}, '{}'::jsonb, 'legacy-test', 'lobby'),
+          ('15555555-5555-5555-5555-555555555552', 'SAMECODE', ${userId}, '{}'::jsonb, 'legacy-test', 'active')
+      `;
+    } finally {
+      await before.end();
+    }
+
+    let migrationFailure = "";
+    try {
+      await runMigrations(CONFLICT_TEST_DB_URL);
+    } catch (error) {
+      migrationFailure = error instanceof Error
+        ? `${error.message} ${error.cause instanceof Error ? error.cause.message : ""}`
+        : String(error);
+    }
+    if (!migrationFailure.includes("Conflicting live game codes")) {
+      throw new Error(`Expected live-code conflict diagnostic, received: ${migrationFailure || "no error"}`);
+    }
+
+    const after = postgres(CONFLICT_TEST_DB_URL, { max: 1 });
+    try {
+      const [state] = await after`
+        SELECT
+          (SELECT count(*)::int FROM "games" WHERE "code" = 'SAMECODE') AS "gameCount",
+          (SELECT count(*)::int FROM drizzle.__drizzle_migrations) AS "migrationCount",
+          to_regclass('public.games_live_code_uidx') IS NULL AS "indexAbsent"
+      `;
+      if (
+        state?.gameCount !== 2
+        || state?.migrationCount !== legacyEntries.length
+        || !state?.indexAbsent
+      ) {
+        throw new Error(`Live-code conflict migration did not roll back cleanly: ${JSON.stringify(state)}`);
+      }
+    } finally {
+      await after.end();
+    }
+  } finally {
+    rmSync(legacyDir, { recursive: true, force: true });
+  }
+}
+
 async function verifyLegacyDeletedPlayersUpgrade() {
   const sentinelId = "00000000-0000-0000-0000-000000000000";
   const memberId = "legacy-member";
   const legacyGameId = "11111111-1111-1111-1111-111111111111";
   const duplicateGameId = "12222222-2222-2222-2222-222222222222";
+  const archivedReuseGameId = "13333333-3333-3333-3333-333333333333";
   const { legacyDir, legacyEntries } = createLegacyMigrationsFolder();
 
   try {
@@ -325,9 +393,26 @@ async function verifyLegacyDeletedPlayersUpgrade() {
         throw new Error(`Drizzle migration history was not upgraded: ${JSON.stringify(migrations)}`);
       }
 
+      let duplicateLiveCodeRejected = false;
+      try {
+        await after`
+          INSERT INTO "games" ("id", "code", "host_id", "config", "ruleset_version")
+          VALUES (${archivedReuseGameId}, 'LEGACY', ${sentinelId}, '{}'::jsonb, 'legacy-test')
+        `;
+      } catch (error) {
+        duplicateLiveCodeRejected = error?.code === "23505"
+          && error?.constraint_name === "games_live_code_uidx";
+      }
+      if (!duplicateLiveCodeRejected) {
+        throw new Error("Live room code uniqueness was not enforced after migration 0013.");
+      }
+
       await after`
-        INSERT INTO "games" ("id", "code", "host_id", "config", "ruleset_version")
-        VALUES ('13333333-3333-3333-3333-333333333333', 'LEGACY', ${sentinelId}, '{}'::jsonb, 'legacy-test')
+        INSERT INTO "games" (
+          "id", "code", "host_id", "config", "ruleset_version", "status", "ended_at"
+        ) VALUES (
+          ${archivedReuseGameId}, 'LEGACY', ${sentinelId}, '{}'::jsonb, 'legacy-test', 'ended', now()
+        )
       `;
 
       const [legacyPlayers] = await after`
@@ -360,7 +445,8 @@ async function verifyLegacyDeletedPlayersUpgrade() {
             WHERE pg_namespace.nspname = 'public'
               AND pg_class.relname = 'game_players_game_user_idx'
               AND pg_index.indisunique
-          ) AS "playerIndex"
+          ) AS "playerIndex",
+          (SELECT count(*)::int FROM "games" WHERE "code" = 'LEGACY') AS "reusedCodeCount"
       `;
 
       if (legacyPlayers?.total !== 2 || legacyPlayers?.identities !== 2 || legacyPlayers?.roles?.join(",") !== "doctor,villager") {
@@ -382,7 +468,13 @@ async function verifyLegacyDeletedPlayersUpgrade() {
       ) {
         throw new Error(`Deduplication retained unexpected player values: ${JSON.stringify(retainedPlayer)}`);
       }
-      if (!expectedTables?.deletedIdentities || !expectedTables?.drizzleMigrations || !expectedTables?.avatarId || !expectedTables?.playerIndex) {
+      if (
+        !expectedTables?.deletedIdentities
+        || !expectedTables?.drizzleMigrations
+        || !expectedTables?.avatarId
+        || !expectedTables?.playerIndex
+        || expectedTables?.reusedCodeCount !== 2
+      ) {
         throw new Error(`Expected migration tables are missing: ${JSON.stringify(expectedTables)}`);
       }
     } finally {
@@ -468,6 +560,9 @@ async function main() {
 
   console.log("▶ Проверявам отказ при конфликтни duplicate player rows...");
   await verifyConflictingDuplicateUpgradeFails();
+
+  console.log("▶ Проверявам отказ при конфликтни активни кодове...");
+  await verifyConflictingLiveCodeUpgradeFails();
 
   console.log("✓ Migration tests passed");
 }

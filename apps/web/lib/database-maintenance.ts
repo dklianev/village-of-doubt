@@ -11,6 +11,7 @@ import {
   symmetricEncrypt,
   type SecretConfig,
 } from "better-auth/crypto";
+import { safeMonitoringErrorMetadata } from "@werewolf/shared";
 
 type MaintenanceEnvironment = Record<string, string | undefined>;
 type MaintenanceTimer = ReturnType<typeof setInterval>;
@@ -18,6 +19,27 @@ type BetterAuthEncryptionKey = string | SecretConfig;
 
 const OAUTH_TOKEN_BATCH_SIZE = 100;
 const OAUTH_TOKEN_MAX_BATCHES_PER_PASS = 10;
+const TRANSIENT_DATABASE_MAINTENANCE_ERROR_CODES = new Set([
+  "CONNECT_TIMEOUT",
+  "CONNECTION_CLOSED",
+  "CONNECTION_DESTROYED",
+  "EAI_AGAIN",
+  "ECONNREFUSED",
+  "ECONNRESET",
+  "EHOSTUNREACH",
+  "ENETUNREACH",
+  "ENOTFOUND",
+  "EPIPE",
+  "ETIMEDOUT",
+  "08000",
+  "08001",
+  "08003",
+  "08006",
+  "08007",
+  "57P01",
+  "57P02",
+  "57P03",
+]);
 
 interface MaintenanceRuntime {
   run: () => Promise<MaintenanceRunResult | undefined>;
@@ -78,14 +100,19 @@ export async function startDatabaseMaintenanceLoop(
         event: "failed",
         timestamp: new Date(finishedAt).toISOString(),
         durationMs: Math.max(0, finishedAt - startedAt),
-        errorName: error instanceof Error ? error.name : "UnknownError",
-        message: error instanceof Error ? error.message : String(error),
+        error: safeMonitoringErrorMetadata(error),
       });
       throw error;
     }
   };
 
-  await runPass();
+  try {
+    await runPass();
+  } catch (error) {
+    if (!isTransientDatabaseMaintenanceError(error)) {
+      throw error;
+    }
+  }
   const run = () => {
     void runPass().catch(() => undefined);
   };
@@ -93,6 +120,22 @@ export async function startDatabaseMaintenanceLoop(
   const timer = maintenanceRuntime.setInterval(run, intervalMs);
   timer.unref?.();
   return timer;
+}
+
+function isTransientDatabaseMaintenanceError(error: unknown): boolean {
+  let candidate = error;
+  for (let depth = 0; depth < 2; depth += 1) {
+    if (!candidate || typeof candidate !== "object") {
+      return false;
+    }
+
+    const code = "code" in candidate ? candidate.code : undefined;
+    if (typeof code === "string" && TRANSIENT_DATABASE_MAINTENANCE_ERROR_CODES.has(code)) {
+      return true;
+    }
+    candidate = "cause" in candidate ? candidate.cause : undefined;
+  }
+  return false;
 }
 
 export function readDatabaseMaintenanceConfig(
@@ -108,6 +151,12 @@ export function readDatabaseMaintenanceConfig(
     staleLobbyHours: readBoundedInteger(
       environment.DATABASE_STALE_LOBBY_HOURS,
       48,
+      1,
+      24 * 30,
+    ),
+    staleActiveHours: readBoundedInteger(
+      environment.DATABASE_STALE_ACTIVE_HOURS,
+      24,
       1,
       24 * 30,
     ),

@@ -35,6 +35,7 @@ export function createDatabase(databaseUrl = process.env.DATABASE_URL) {
     prepare: false,
     connection: {
       application_name: readApplicationName(databaseUrl),
+      TimeZone: "UTC",
       statement_timeout: 15_000,
       lock_timeout: readPositiveInteger("DATABASE_LOCK_TIMEOUT_MS", 3_000),
       idle_in_transaction_session_timeout: readPositiveInteger(
@@ -45,7 +46,11 @@ export function createDatabase(databaseUrl = process.env.DATABASE_URL) {
     onnotice: (notice) => {
       const severity = notice.severity ?? notice.severity_local;
       if (severity && ["WARNING", "ERROR", "FATAL", "PANIC"].includes(severity)) {
-        console.error("[db-pool]", notice.message ?? notice);
+        console.error("[db-pool]", {
+          severity,
+          code: safeDatabaseNoticeValue(notice.code, /^[0-9A-Z]{5}$/),
+          routine: safeDatabaseNoticeValue(notice.routine, /^[A-Za-z0-9_]{1,64}$/),
+        });
       }
     },
   });
@@ -126,6 +131,10 @@ function readApplicationName(databaseUrl: string) {
   } catch {
     return "werewolf-app";
   }
+}
+
+function safeDatabaseNoticeValue(value: unknown, pattern: RegExp) {
+  return typeof value === "string" && pattern.test(value) ? value : null;
 }
 
 export type Database = ReturnType<typeof createDrizzleDatabase>;

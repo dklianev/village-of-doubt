@@ -52,6 +52,7 @@ describe("database maintenance loop", () => {
         sessionsDeleted: 2,
         verificationsDeleted: 3,
         gamesAbandoned: 1,
+        activeGamesAbandoned: 0,
         eventsDeleted: 40,
       },
       oauthTokens: {
@@ -76,6 +77,7 @@ describe("database maintenance loop", () => {
         sessionsDeleted: 2,
         verificationsDeleted: 3,
         gamesAbandoned: 1,
+        activeGamesAbandoned: 0,
         eventsDeleted: 40,
       },
       oauthTokens: {
@@ -99,6 +101,7 @@ describe("database maintenance loop", () => {
         sessionsDeleted: 0,
         verificationsDeleted: 0,
         gamesAbandoned: 0,
+        activeGamesAbandoned: 0,
         eventsDeleted: 0,
       },
       oauthTokens: {
@@ -121,6 +124,58 @@ describe("database maintenance loop", () => {
     }));
     expect(error).not.toHaveBeenCalled();
   });
+
+  it("keeps startup available and schedules retry after an allowlisted connection failure", async () => {
+    const info = vi.fn();
+    const error = vi.fn();
+    const now = vi.fn()
+      .mockReturnValueOnce(2_500)
+      .mockReturnValueOnce(2_515);
+    const connectionError = Object.assign(new Error("connect ECONNREFUSED"), {
+      code: "ECONNREFUSED",
+    });
+    const run = vi.fn().mockRejectedValueOnce(connectionError);
+    const unref = vi.fn();
+    const setInterval = vi.fn(() => ({ unref })) as never;
+
+    const timer = await startDatabaseMaintenanceLoop(
+      { NODE_ENV: "production", DATABASE_URL: "postgres://local/db" },
+      { run, setInterval, logger: { info, error }, now },
+    );
+
+    expect(timer).not.toBeNull();
+    expect(setInterval).toHaveBeenCalledOnce();
+    expect(unref).toHaveBeenCalledOnce();
+    expect(error).toHaveBeenCalledOnce();
+    expect(error).toHaveBeenCalledWith("[database-maintenance]", {
+      event: "failed",
+      timestamp: "1970-01-01T00:00:02.515Z",
+      durationMs: 15,
+      error: {
+        name: "Error",
+        code: "ECONNREFUSED",
+        status: null,
+      },
+    });
+    expect(JSON.stringify(error.mock.calls)).not.toContain("connect ECONNREFUSED");
+  });
+
+  it.each(["28P01", "42P01"])(
+    "fails startup for non-transient database error %s",
+    async (code) => {
+      const databaseError = Object.assign(new Error(`database error ${code}`), { code });
+      const run = vi.fn().mockRejectedValueOnce(databaseError);
+      const setInterval = vi.fn() as never;
+      const logger = { info: vi.fn(), error: vi.fn() };
+
+      await expect(startDatabaseMaintenanceLoop(
+        { NODE_ENV: "production", DATABASE_URL: "postgres://local/db" },
+        { run, setInterval, logger },
+      )).rejects.toBe(databaseError);
+      expect(setInterval).not.toHaveBeenCalled();
+      expect(logger.error).toHaveBeenCalledOnce();
+    },
+  );
 
   it("fails startup and does not schedule recurring work when the initial pass fails", async () => {
     const info = vi.fn();
@@ -146,19 +201,25 @@ describe("database maintenance loop", () => {
       event: "failed",
       timestamp: "1970-01-01T00:00:03.015Z",
       durationMs: 15,
-      errorName: "Error",
-      message: "unsafe OAuth key retirement",
+      error: {
+        name: "Error",
+        code: "UNKNOWN",
+        status: null,
+      },
     });
+    expect(JSON.stringify(error.mock.calls)).not.toContain("unsafe OAuth key retirement");
   });
 
   it("parses bounded cleanup and retention settings", () => {
     expect(readDatabaseMaintenanceConfig({
       DATABASE_MAINTENANCE_BATCH_SIZE: "2500",
       DATABASE_STALE_LOBBY_HOURS: "72",
+      DATABASE_STALE_ACTIVE_HOURS: "36",
       DATABASE_EVENT_RETENTION_DAYS: "365",
     })).toEqual({
       batchSize: 2_500,
       staleLobbyHours: 72,
+      staleActiveHours: 36,
       eventRetentionDays: 365,
     });
   });

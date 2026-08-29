@@ -92,6 +92,13 @@
       "when": 1787305249515,
       "tag": "0012_soft_alex_power",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1787738675837,
+      "tag": "0013_hesitant_blur",
+      "breakpoints": true
     }
   ]
 }
