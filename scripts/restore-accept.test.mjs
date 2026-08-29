@@ -36,9 +36,12 @@ function runAcceptance({ confirmed = true, schemaProof = true } = {}) {
   writeFileSync(fakeDocker, `#!/usr/bin/env sh
 printf '%s\\n' "$*" >> "$RESTORE_ACCEPT_TEST_LOG"
 case "$*" in
+  *"-v database_name="*)
+    sed 's/^/stdin: /' >> "$RESTORE_ACCEPT_TEST_LOG"
+    printf '1\\n'
+    ;;
   *"restore_semantic_check"*) printf 'ok\\n' ;;
   *"to_regclass('public.user')"*) printf 'ok\\n' ;;
-  *"SELECT count(*) FROM pg_database"*) printf '1\\n' ;;
 esac
 exit 0
 `, { mode: 0o755 });
@@ -104,6 +107,12 @@ test("revalidates database semantics and live ingress before explicit rollback d
   assert.ok(gameReady > semantic);
   assert.ok(publicReady > semantic);
   assert.ok(drop > publicReady);
+  assert.ok(result.commands.some((command) =>
+    command.includes("-v database_name=werewolf") && !command.includes(" -c ")
+  ));
+  assert.ok(result.commands.some((command) =>
+    command.includes("stdin: SELECT count(*) FROM pg_database WHERE datname = :'database_name'")
+  ));
 });
 
 test("retains rollback when signed applied-schema provenance is missing", () => {

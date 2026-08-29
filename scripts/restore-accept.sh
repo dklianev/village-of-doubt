@@ -70,8 +70,9 @@ database_exists() {
   checked_database="$1"
   database_count="$(
     compose exec -T postgres psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d postgres \
-      -v database_name="$checked_database" -Atqc \
-      "SELECT count(*) FROM pg_database WHERE datname = :'database_name';"
+      -v database_name="$checked_database" -Atq <<'SQL'
+SELECT count(*) FROM pg_database WHERE datname = :'database_name';
+SQL
   )"
   test "$database_count" = "1"
 }

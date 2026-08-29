@@ -175,12 +175,12 @@ drop_database() {
 
 terminate_database_sessions() {
   compose exec -T postgres psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d postgres \
-    -v database_name="$1" -c "
-      SELECT pg_terminate_backend(pid)
-      FROM pg_stat_activity
-      WHERE datname = :'database_name'
-        AND pid <> pg_backend_pid();
-    "
+    -v database_name="$1" <<'SQL'
+SELECT pg_terminate_backend(pid)
+FROM pg_stat_activity
+WHERE datname = :'database_name'
+  AND pid <> pg_backend_pid();
+SQL
 }
 
 validate_staging_database() {
@@ -322,7 +322,7 @@ cleanup() {
 
   if [ "$staging_cleanup_safe" -eq 1 ] && [ "$staging_created" -eq 1 ]; then
     drop_database "$staging_db" >/dev/null 2>&1 || true
-  elif [ "$switch_started" -eq 1 ]; then
+  elif [ "$staging_created" -eq 1 ] && [ "$switch_started" -eq 1 ]; then
     printf 'Staging database %s was preserved for diagnosis after cutover began.\n' "$staging_db" >&2
   fi
 

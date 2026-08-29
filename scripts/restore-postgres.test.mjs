@@ -163,6 +163,9 @@ case "$*" in
   *"psql -v ON_ERROR_STOP=1"*"--single-transaction"*)
     cat >/dev/null
     ;;
+  *"psql -v ON_ERROR_STOP=1"*"-v database_name="*)
+    sed 's/^/stdin: /' >> "$RESTORE_TEST_LOG"
+    ;;
   *"psql -v ON_ERROR_STOP=1"*"${stagingDb}"*)
     sed 's/^/stdin: /' >> "$RESTORE_TEST_LOG"
     ;;
@@ -349,6 +352,19 @@ test("offline restore preserves rollback instead of claiming application readine
   );
   assert.equal(indexOf(result.commands, `dropdb --if-exists --force -U werewolf ${rollbackDb}`), -1);
   assert.match(result.stdout, /rollback.*preserved|preserved.*rollback/i);
+  assert.doesNotMatch(result.stderr, /Staging database .* preserved/i);
+});
+
+test("passes the target database as a psql variable through stdin before cutover", () => {
+  const result = runRestore("partial-writers", { restoreOnly: true });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.ok(result.commands.some((command) =>
+    command.includes("-v database_name=werewolf") && !command.includes(" -c ")
+  ));
+  assert.ok(result.commands.some((command) =>
+    command.includes("stdin: WHERE datname = :'database_name'")
+  ));
 });
 
 test("uses the signed active release images and recreates Caddy before live readiness", () => {
