@@ -424,15 +424,16 @@ test("Caddy keeps transport health shallow while the game server rejects new mat
   assert.doesNotMatch(gameBlock, /health_uri \/health\/ready/);
 });
 
-test("load testing drives runtime commands, checks spikes, and includes full rooms", () => {
+test("load testing drives runtime commands, checks p99 spikes, and includes full rooms", () => {
   const loadtest = read("scripts/loadtest.mjs");
   const metrics = read("scripts/loadtest-metrics.mjs");
   const capacity = read("scripts/loadtest-capacity.mjs");
   const packageJson = JSON.parse(read("package.json"));
 
   assert.match(loadtest, /runActiveHold/);
-  assert.match(loadtest, /LOAD_MAX_EVENT_LOOP_PEAK_UTILIZATION/);
-  assert.match(metrics, /peakIntervalEventLoopUtilization/);
+  assert.match(loadtest, /LOAD_MAX_EVENT_LOOP_P99_UTILIZATION/);
+  assert.match(metrics, /eventLoopP99Utilization/);
+  assert.match(metrics, /peakEventLoopUtilization/);
   assert.match(capacity, /LOAD_ROOM_SIZE \?\?= "30"/);
   assert.equal(packageJson.scripts["loadtest:capacity"], "node scripts/loadtest-capacity.mjs");
   assert.match(packageJson.scripts["verify:heavy"], /pnpm loadtest:capacity/);

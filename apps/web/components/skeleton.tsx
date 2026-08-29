@@ -86,7 +86,7 @@ export function EvidenceWallSkeleton() {
           <Skeleton key={item} className="h-10 w-24 rounded-full" />
         ))}
       </div>
-      <section className="evidence-wall">
+      <section className="evidence-wall evidence-wall-skeleton" aria-hidden="true">
         {[0, 1, 2, 3, 4, 5].map((item) => (
           <article key={item} className="history-skeleton-card">
             <div className="history-skeleton-lines">

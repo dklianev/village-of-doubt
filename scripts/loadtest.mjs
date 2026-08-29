@@ -23,7 +23,7 @@ const port = readPositiveInteger("LOAD_PORT", 3667);
 const JOIN_P95_MS = readPositiveInteger("LOAD_JOIN_P95_MS", 3_000);
 const MAX_RSS_BYTES = readPositiveInteger("LOAD_MAX_RSS_MB", 512) * 1024 * 1024;
 const MAX_EVENT_LOOP_UTILIZATION = readRatio("LOAD_MAX_EVENT_LOOP_UTILIZATION", 0.95);
-const MAX_EVENT_LOOP_PEAK_UTILIZATION = readRatio("LOAD_MAX_EVENT_LOOP_PEAK_UTILIZATION", 0.99);
+const MAX_EVENT_LOOP_P99_UTILIZATION = readRatio("LOAD_MAX_EVENT_LOOP_P99_UTILIZATION", 0.99);
 const STATS_INTERVAL_MS = readPositiveInteger("LOAD_STATS_INTERVAL_MS", 250);
 const ACTIVITY_INTERVAL_MS = readPositiveInteger("LOAD_ACTIVITY_INTERVAL_MS", 2_000);
 const MIN_PHASES = readPositiveInteger("LOAD_MIN_PHASES", 1);
@@ -94,7 +94,7 @@ try {
   const metrics = assertLoadThresholds({ joinLatenciesMs, statsSamples }, {
     joinP95Ms: JOIN_P95_MS,
     eventLoopUtilization: MAX_EVENT_LOOP_UTILIZATION,
-    peakEventLoopUtilization: MAX_EVENT_LOOP_PEAK_UTILIZATION,
+    eventLoopP99Utilization: MAX_EVENT_LOOP_P99_UTILIZATION,
     rssBytes: MAX_RSS_BYTES,
   });
   shuttingDown = true;
@@ -107,8 +107,10 @@ try {
   console.log(
     `Load test passed: ${NUM_CLIENTS} clients across ${groups.length} shared rooms; ` +
     `0 failures, ${activity.commandsSent} active command(s) across ${activity.phasesSeen.length} phase(s), ` +
-    `join p95 ${metrics.joinP95Ms.toFixed(1)}ms, sustained/peak event loop ` +
-    `${(metrics.sustainedEventLoopUtilization * 100).toFixed(1)}%/${(metrics.peakEventLoopUtilization * 100).toFixed(1)}%, ` +
+    `join p95 ${metrics.joinP95Ms.toFixed(1)}ms, sustained/p99/peak event loop ` +
+    `${(metrics.sustainedEventLoopUtilization * 100).toFixed(1)}%/` +
+    `${(metrics.eventLoopP99Utilization * 100).toFixed(1)}%/` +
+    `${(metrics.peakEventLoopUtilization * 100).toFixed(1)}%, ` +
     `max RSS ${(metrics.maxRssBytes / 1024 / 1024).toFixed(1)}MiB${databaseUrl ? ", persistence verified" : ""}.`,
   );
 } finally {

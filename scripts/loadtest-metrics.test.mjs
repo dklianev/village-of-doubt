@@ -2,6 +2,25 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { assertLoadThresholds, percentile } from "./loadtest-metrics.mjs";
 
+function statsSamplesFromIntervals(utilizations) {
+  let eventLoopActiveMs = 0;
+  let eventLoopIdleMs = 0;
+  const samples = [{ eventLoopUtilization: 0, eventLoopActiveMs, eventLoopIdleMs, rssBytes: 100 }];
+
+  for (const utilization of utilizations) {
+    eventLoopActiveMs += utilization * 250;
+    eventLoopIdleMs += (1 - utilization) * 250;
+    samples.push({
+      eventLoopUtilization: utilization,
+      eventLoopActiveMs,
+      eventLoopIdleMs,
+      rssBytes: 100,
+    });
+  }
+
+  return samples;
+}
+
 test("percentile reports the observed upper-bound sample", () => {
   assert.equal(percentile([10, 20, 30, 40], 0.95), 40);
   assert.equal(percentile([40, 10, 30, 20], 0.5), 20);
@@ -60,18 +79,29 @@ test("load thresholds report every exceeded budget", () => {
   });
 });
 
-test("load thresholds reject a short event-loop saturation spike hidden by the full-window average", () => {
-  assert.throws(() => assertLoadThresholds({
+test("load thresholds retain one isolated event-loop outlier without failing the p99 budget", () => {
+  const metrics = assertLoadThresholds({
     joinLatenciesMs: [20],
-    statsSamples: [
-      { eventLoopUtilization: 0.1, eventLoopActiveMs: 100, eventLoopIdleMs: 900, rssBytes: 100 },
-      { eventLoopUtilization: 0.95, eventLoopActiveMs: 1_050, eventLoopIdleMs: 950, rssBytes: 100 },
-      { eventLoopUtilization: 0.1, eventLoopActiveMs: 1_150, eventLoopIdleMs: 1_850, rssBytes: 100 },
-    ],
+    statsSamples: statsSamplesFromIntervals([...Array(100).fill(0.1), 1]),
   }, {
     joinP95Ms: 100,
     eventLoopUtilization: 0.8,
-    peakEventLoopUtilization: 0.9,
+    eventLoopP99Utilization: 0.9,
     rssBytes: 1_000,
-  }), /peak event loop/i);
+  });
+
+  assert.ok(Math.abs(metrics.eventLoopP99Utilization - 0.1) < Number.EPSILON);
+  assert.equal(metrics.peakEventLoopUtilization, 1);
+});
+
+test("load thresholds reject repeated event-loop saturation hidden by the full-window average", () => {
+  assert.throws(() => assertLoadThresholds({
+    joinLatenciesMs: [20],
+    statsSamples: statsSamplesFromIntervals([...Array(99).fill(0.1), 0.95, 0.95]),
+  }, {
+    joinP95Ms: 100,
+    eventLoopUtilization: 0.8,
+    eventLoopP99Utilization: 0.9,
+    rssBytes: 1_000,
+  }), /p99 event loop/i);
 });

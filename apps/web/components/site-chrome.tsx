@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -187,7 +187,7 @@ function RoutePathnameSync({
 }) {
   const pathname = usePathname();
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     onPathnameChange(pathname);
   }, [onPathnameChange, pathname]);
 

@@ -675,8 +675,8 @@ function checkFrontendHygieneContracts() {
   assert(!siteChrome.includes("ЗВУК: ВКЛ"), "Navbar sound control must be icon-only.");
   assert(!siteChrome.includes("ТЕМА: СИСТЕМНА"), "Navbar theme control must be icon-only.");
   assert(
-    siteChrome.includes("useLayoutEffect(() =>") && siteChrome.includes("onPathnameChange(pathname)"),
-    "Navbar pathname state must synchronize before paint to avoid stale family chrome during instant navigation.",
+    /useEffect\(\(\) => \{\s*onPathnameChange\(pathname\);/.test(siteChrome) && !siteChrome.includes("useLayoutEffect"),
+    "Navbar pathname state must synchronize after mount so instant hydration cannot update an unmounted parent.",
   );
   assert(
     serviceWorker.includes('const SHELL_URLS = ["/offline"]'),

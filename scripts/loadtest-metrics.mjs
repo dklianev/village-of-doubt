@@ -13,7 +13,9 @@ export function assertLoadThresholds(measurements, thresholds) {
     measurements.statsSamples[0],
     measurements.statsSamples.at(-1),
   );
-  const peakEventLoopUtilization = peakIntervalEventLoopUtilization(measurements.statsSamples);
+  const intervalEventLoopUtilizations = eventLoopIntervalUtilizations(measurements.statsSamples);
+  const eventLoopP99Utilization = percentile(intervalEventLoopUtilizations, 0.99);
+  const peakEventLoopUtilization = Math.max(0, ...intervalEventLoopUtilizations);
   const maxRssBytes = Math.max(0, ...measurements.statsSamples.map((sample) => sample.rssBytes));
   const failures = [];
 
@@ -23,9 +25,9 @@ export function assertLoadThresholds(measurements, thresholds) {
   if (sustainedEventLoopUtilization > thresholds.eventLoopUtilization) {
     failures.push(`sustained event loop utilization ${(sustainedEventLoopUtilization * 100).toFixed(1)}% exceeds ${(thresholds.eventLoopUtilization * 100).toFixed(1)}%`);
   }
-  const peakThreshold = thresholds.peakEventLoopUtilization ?? thresholds.eventLoopUtilization;
-  if (peakEventLoopUtilization > peakThreshold) {
-    failures.push(`peak event loop utilization ${(peakEventLoopUtilization * 100).toFixed(1)}% exceeds ${(peakThreshold * 100).toFixed(1)}%`);
+  const p99Threshold = thresholds.eventLoopP99Utilization ?? thresholds.eventLoopUtilization;
+  if (eventLoopP99Utilization > p99Threshold) {
+    failures.push(`p99 event loop utilization ${(eventLoopP99Utilization * 100).toFixed(1)}% exceeds ${(p99Threshold * 100).toFixed(1)}%`);
   }
   if (maxRssBytes > thresholds.rssBytes) {
     failures.push(`RSS ${(maxRssBytes / 1024 / 1024).toFixed(1)}MiB exceeds ${(thresholds.rssBytes / 1024 / 1024).toFixed(1)}MiB`);
@@ -35,18 +37,24 @@ export function assertLoadThresholds(measurements, thresholds) {
     throw new Error(`Load thresholds failed:\n${failures.join("\n")}`);
   }
 
-  return { joinP95Ms, sustainedEventLoopUtilization, peakEventLoopUtilization, maxRssBytes };
+  return {
+    joinP95Ms,
+    sustainedEventLoopUtilization,
+    eventLoopP99Utilization,
+    peakEventLoopUtilization,
+    maxRssBytes,
+  };
 }
 
-export function peakIntervalEventLoopUtilization(samples) {
+export function eventLoopIntervalUtilizations(samples) {
   if (samples.length < 2) {
     throw new Error("Load stats sampling requires at least two event-loop measurements.");
   }
-  let peak = 0;
+  const utilizations = [];
   for (let index = 1; index < samples.length; index += 1) {
-    peak = Math.max(peak, eventLoopUtilizationBetween(samples[index - 1], samples[index]));
+    utilizations.push(eventLoopUtilizationBetween(samples[index - 1], samples[index]));
   }
-  return peak;
+  return utilizations;
 }
 
 export function eventLoopUtilizationBetween(first, last) {

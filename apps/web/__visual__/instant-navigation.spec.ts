@@ -45,13 +45,15 @@ test.describe("Next.js instant navigation shell", () => {
         await page.goto("/history?visualHistory=fixture");
         await expect(page.locator(".site-chrome")).toBeVisible();
         await expect(page.locator(".history-skeleton-hero")).toBeVisible();
-        await expect(page.locator(".evidence-wall")).toHaveCount(1);
+        await expect(page.locator(".evidence-wall-skeleton")).toBeVisible();
+        await expect(page.getByLabel("Списък с дела")).toHaveCount(0);
       },
       { baseURL },
     );
 
     await expect(page.locator(".history-skeleton-hero")).toHaveCount(0);
-    await expect(page.locator(".evidence-wall")).toBeVisible();
+    await expect(page.locator(".evidence-wall-skeleton")).toHaveCount(0);
+    await expect(page.getByLabel("Списък с дела")).toBeVisible();
     expect(reactWarnings).toEqual([]);
   });
 });
