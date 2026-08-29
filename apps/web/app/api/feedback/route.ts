@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import {
   createRuntimeIntakeRateLimiter,
   IntakeBodyError,
+  isValidIntakeEmail,
   readBoundedJson,
   requestRateLimitKey,
 } from "@/lib/intake-security";
@@ -55,13 +56,20 @@ export async function POST(request: Request) {
   if (text.length > MAX_FEEDBACK_BODY_LENGTH || (email?.length ?? 0) > MAX_EMAIL_LENGTH || page.length > MAX_PAGE_LENGTH) {
     return NextResponse.json({ error: "Бележката съдържа прекалено дълго поле." }, { status: 400 });
   }
+  if (email && !isValidIntakeEmail(email)) {
+    return NextResponse.json({ error: "Въведи валиден имейл." }, { status: 400 });
+  }
 
-  let actor = "анонимен";
-  try {
-    const session = await auth.api.getSession({ headers: request.headers });
-    if (session?.user?.email) actor = `${session.user.name ?? "?"} <${session.user.email}>`;
-  } catch {
-    // Feedback should still be accepted without session context.
+  let actor = email ?? "анонимен";
+  if (email) {
+    try {
+      const session = await auth.api.getSession({ headers: request.headers });
+      if (session?.user?.email.toLowerCase() === email.toLowerCase()) {
+        actor = `${session.user.name ?? "?"} <${session.user.email}>`;
+      }
+    } catch {
+      // Identified feedback remains available even if session lookup fails.
+    }
   }
 
   const operatorEmail = process.env.REPORTS_NOTIFY_EMAIL;

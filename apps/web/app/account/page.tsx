@@ -8,7 +8,13 @@ import {
   getGameHistoryForUser,
   getPlayerOutcomesInGames,
 } from "@werewolf/database";
-import { ACHIEVEMENTS, normalizeAvatarId, type GameMode, type WinnerTeam } from "@werewolf/shared";
+import {
+  ACHIEVEMENTS,
+  normalizeAvatarId,
+  safeMonitoringErrorMetadata,
+  type GameMode,
+  type WinnerTeam,
+} from "@werewolf/shared";
 import { AccountDashboard } from "@/components/account/AccountDashboard";
 import { computePlayerStats } from "@/lib/account-stats";
 import { auth } from "@/lib/auth";
@@ -72,7 +78,7 @@ export default async function AccountPage({
       }));
       activityState = historyRows.some((game) => game.status === "ended") ? "ready" : "empty";
     } catch (error) {
-      console.error("[account]", error);
+      console.error("[account]", safeMonitoringErrorMetadata(error));
     }
   }
 

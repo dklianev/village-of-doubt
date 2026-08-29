@@ -7,13 +7,16 @@ describe("ResourceHints", () => {
     const html = renderToStaticMarkup(
       <ResourceHints
         images={[
+          "/ambiguous-theme-or-breakpoint.webp",
           { href: "/critical.avif", type: "image/avif", fetchPriority: "high" },
           { href: "/secondary.webp" },
         ]}
       />,
     );
 
+    expect(html).not.toContain("/ambiguous-theme-or-breakpoint.webp");
     expect(html).toContain('href="/critical.avif"');
+    expect(html).toContain('href="/secondary.webp"');
     expect(html).toContain('fetchPriority="high"');
     expect(html.match(/fetchPriority=/g)).toHaveLength(1);
   });

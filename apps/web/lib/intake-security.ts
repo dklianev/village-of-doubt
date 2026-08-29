@@ -14,6 +14,12 @@ export class IntakeBodyError extends Error {
   }
 }
 
+const EMAIL_ADDRESS_PATTERN = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
+export function isValidIntakeEmail(value: string) {
+  return EMAIL_ADDRESS_PATTERN.test(value);
+}
+
 export async function readBoundedJson(request: Request, maxBytes: number): Promise<Record<string, unknown>> {
   const declaredLength = Number(request.headers.get("content-length"));
   if (Number.isFinite(declaredLength) && declaredLength > maxBytes) {

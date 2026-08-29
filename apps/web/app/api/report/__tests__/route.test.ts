@@ -2,8 +2,14 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { POST } from "../route";
 
 const { getSession, renderFeedbackEmail, sendEmail } = vi.hoisted(() => ({
-  getSession: vi.fn(() => Promise.resolve(null)),
-  renderFeedbackEmail: vi.fn(() => ({ subject: "Сигнал", html: "<p>Сигнал</p>", text: "Сигнал" })),
+  getSession: vi.fn<() => Promise<{ user: { name: string | null; email: string } } | null>>(
+    () => Promise.resolve(null),
+  ),
+  renderFeedbackEmail: vi.fn((_input: unknown) => ({
+    subject: "Сигнал",
+    html: "<p>Сигнал</p>",
+    text: "Сигнал",
+  })),
   sendEmail: vi.fn(() => Promise.resolve()),
 }));
 
@@ -68,5 +74,64 @@ describe("POST /api/report", () => {
     expect(JSON.stringify(consoleError.mock.calls)).not.toContain(sensitive);
     expect(JSON.stringify(consoleError.mock.calls)).not.toContain("private.person@example.com");
     consoleError.mockRestore();
+  });
+
+  it("не чете или изпраща session identity при анонимен сигнал", async () => {
+    process.env.REPORTS_NOTIFY_EMAIL = "operator@example.com";
+    getSession.mockResolvedValueOnce({
+      user: { name: "Тайно име", email: "private.person@example.com" },
+    });
+
+    const response = await POST(
+      reportRequest({ type: "abuse", body: "Подробно описание на анонимен сигнал.", email: null }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(getSession).not.toHaveBeenCalled();
+    expect(renderFeedbackEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ reporterEmail: null }),
+    );
+    const templateInput = renderFeedbackEmail.mock.calls[0]?.[0];
+    expect(JSON.stringify(templateInput)).not.toContain("private.person@example.com");
+    expect(JSON.stringify(templateInput)).not.toContain("Тайно име");
+  });
+
+  it("отхвърля невалиден имейл и при директна API заявка", async () => {
+    process.env.REPORTS_NOTIFY_EMAIL = "operator@example.com";
+
+    const response = await POST(
+      reportRequest({
+        type: "bug",
+        body: "Подробно описание на възпроизводим проблем.",
+        email: "това не е имейл",
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ error: "Въведи валиден имейл." });
+    expect(getSession).not.toHaveBeenCalled();
+    expect(sendEmail).not.toHaveBeenCalled();
+  });
+
+  it("връща сървърната референция и я включва в операторския имейл", async () => {
+    process.env.REPORTS_NOTIFY_EMAIL = "operator@example.com";
+
+    const response = await POST(
+      reportRequest({
+        type: "bug",
+        body: "Подробно описание на възпроизводим проблем.",
+        email: "reporter@example.com",
+      }),
+    );
+    const payload = (await response.json()) as { referenceId: string };
+
+    expect(response.status).toBe(200);
+    expect(payload.referenceId).toMatch(/^СИГ-[A-F0-9]{10}$/);
+    expect(renderFeedbackEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ body: expect.stringContaining(payload.referenceId) }),
+    );
+    expect(sendEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ subject: expect.stringContaining(payload.referenceId) }),
+    );
   });
 });

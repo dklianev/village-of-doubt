@@ -6,8 +6,6 @@ import { playCue } from "@/lib/sound";
 
 const NARRATOR_CARDS: { value: NarratorMode; label: string; detail: string }[] = [
   { value: "automatic", label: "Автоматичен", detail: "Сървърът води фазите и пази тайните роли." },
-  { value: "honest_human", label: "Честен", detail: "Водещият помага без да вижда тайните роли." },
-  { value: "full_human", label: "Пълен", detail: "Водещият вижда всичко и управлява играта на ръка." },
 ];
 
 const COMMUNICATION_CARDS: { value: CommunicationMode; label: string; detail: string }[] = [

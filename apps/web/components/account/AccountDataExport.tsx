@@ -11,9 +11,11 @@ type AccountExportPage = Record<string, unknown> & {
     page: number;
     pageSize: number;
     hasMore: boolean;
+    nextGameCursor: string | null;
     eventPage: number;
     eventPageSize: number;
     eventsHasMore: boolean;
+    nextEventCursor: string | null;
   };
 };
 
@@ -96,12 +98,15 @@ export async function fetchCompleteAccountExport(
   let filename = `werewolf-mafia-export-${Date.now()}.json`;
   let requestCount = 0;
   let gamePage = 1;
+  let gameCursor: string | null = null;
   let hasMoreGames = true;
   let continuation: string | null = null;
 
   while (hasMoreGames) {
     let eventPage = 1;
+    let eventCursor: string | null = null;
     let hasMoreEvents = true;
+    let nextGameCursor: string | null = null;
 
     while (hasMoreEvents) {
       requestCount += 1;
@@ -115,6 +120,12 @@ export async function fetchCompleteAccountExport(
         eventPage: String(eventPage),
         eventPageSize: String(EXPORT_EVENT_PAGE_SIZE),
       });
+      if (gameCursor) {
+        params.set("gameCursor", gameCursor);
+      }
+      if (eventCursor) {
+        params.set("eventCursor", eventCursor);
+      }
       const response: Response = await fetcher(`/api/account/export?${params}`, {
         headers: {
           Accept: "application/json",
@@ -135,14 +146,17 @@ export async function fetchCompleteAccountExport(
       mergeExportGames(games, page.games);
       assertExportSize({ ...firstPage, games: [...games.values()] });
 
-      hasMoreEvents = page.pagination.eventsHasMore;
+      nextGameCursor ??= page.pagination.nextGameCursor;
+      eventCursor = page.pagination.nextEventCursor;
+      hasMoreEvents = Boolean(eventCursor);
       eventPage += 1;
-      hasMoreGames = page.pagination.hasMore;
+      hasMoreGames = Boolean(nextGameCursor);
       if ((hasMoreEvents || hasMoreGames) && !continuation) {
         throw new Error("missing_export_continuation");
       }
     }
 
+    gameCursor = nextGameCursor;
     gamePage += 1;
   }
 
@@ -216,7 +230,9 @@ function parseAccountExportPage(value: unknown): AccountExportPage {
     !pagination ||
     typeof pagination !== "object" ||
     typeof pagination.hasMore !== "boolean" ||
-    typeof pagination.eventsHasMore !== "boolean"
+    typeof pagination.eventsHasMore !== "boolean" ||
+    !isNullableString(pagination.nextGameCursor) ||
+    !isNullableString(pagination.nextEventCursor)
   ) {
     throw new Error("invalid_account_export");
   }
@@ -226,6 +242,10 @@ function parseAccountExportPage(value: unknown): AccountExportPage {
     }
   }
   return value as AccountExportPage;
+}
+
+function isNullableString(value: unknown): value is string | null {
+  return value === null || typeof value === "string";
 }
 
 function mergeExportGames(

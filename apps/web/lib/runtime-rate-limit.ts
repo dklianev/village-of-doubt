@@ -1,5 +1,6 @@
 import { createClient, type RedisClientType } from "redis";
 import { randomUUID } from "node:crypto";
+import { safeMonitoringErrorMetadata } from "@werewolf/shared";
 import { resolveRedisUrl } from "@werewolf/shared/server";
 import {
   createMemoryRateLimitBackend,
@@ -307,7 +308,7 @@ function getOrCreateRedisClient(url: string | undefined) {
       if (redisConnectPromise === connection) {
         redisConnectPromise = null;
       }
-      console.error("[redis] Връзката не можа да бъде установена.", error);
+      console.error("[redis] Връзката не можа да бъде установена.", safeMonitoringErrorMetadata(error));
     });
   return client;
 }

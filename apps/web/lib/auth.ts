@@ -1,9 +1,13 @@
-import { createDatabase } from "@werewolf/database";
 import { createHash } from "node:crypto";
+import { createDatabase } from "@werewolf/database";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError, createAuthMiddleware } from "better-auth/api";
-import { DEFAULT_AVATAR_ID, isAvatarId } from "@werewolf/shared";
+import {
+  DEFAULT_AVATAR_ID,
+  isAvatarId,
+  safeMonitoringErrorMetadata,
+} from "@werewolf/shared";
 import { normalizeExternalDisplayName, validateDisplayName } from "./display-name";
 import { resolveBetterAuthEncryptionKey } from "./database-maintenance";
 import { sendEmail } from "./email";
@@ -58,7 +62,7 @@ export async function enforceAuthIdentifierRateLimit({
   body,
   backend = authIdentifierRateLimitBackend,
   nodeEnv = process.env.NODE_ENV,
-  now = Date.now(),
+  now,
 }: AuthIdentifierRateLimitInput) {
   if (nodeEnv !== "production" || !(path in AUTH_IDENTIFIER_RATE_LIMIT_RULES)) {
     return;
@@ -77,7 +81,7 @@ export async function enforceAuthIdentifierRateLimit({
     key: `${path}:${identifier}`,
     limit: rule.limit,
     windowMs: rule.windowMs,
-    now,
+    now: now ?? Date.now(),
   });
   if (!result.allowed) {
     throw new APIError("TOO_MANY_REQUESTS", {
@@ -171,7 +175,7 @@ export const auth = betterAuth({
         // revocation is temporarily unavailable; short-lived game tokens still
         // expire independently and the failure remains observable.
         console.error("[auth] game-session revocation failed during password reset", {
-          name: error instanceof Error ? error.name : "UnknownError",
+          error: safeMonitoringErrorMetadata(error),
         });
       }
     },
@@ -283,7 +287,7 @@ export const auth = betterAuth({
         await revokeActiveGameSessions(userId);
       } catch (error) {
         console.error("[auth] game-session revocation failed during password change", {
-          name: error instanceof Error ? error.name : "UnknownError",
+          error: safeMonitoringErrorMetadata(error),
         });
       }
     }),

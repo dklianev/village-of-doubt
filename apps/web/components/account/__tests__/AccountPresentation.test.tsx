@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 import { AccountAchievements } from "../AccountAchievements";
 import { AccountDashboard } from "../AccountDashboard";
 import { AccountDataExport } from "../AccountDataExport";
+import { AccountDangerZone } from "../AccountDangerZone";
 import { AccountHero } from "../AccountHero";
 import { AccountProfile } from "../AccountProfile";
 import { AccountStats } from "../AccountStats";
@@ -146,6 +147,21 @@ describe("account presentation", () => {
       "data-ds-pill",
       "secondary",
     );
+  });
+
+  it("дава достъпно име на диалога за изтриване", async () => {
+    const user = userEvent.setup();
+    Object.defineProperty(HTMLDialogElement.prototype, "showModal", {
+      configurable: true,
+      value(this: HTMLDialogElement) {
+        this.open = true;
+      },
+    });
+    render(<AccountDangerZone email="visual@example.com" />);
+
+    await user.click(screen.getByRole("button", { name: "Изтрий моето досие" }));
+
+    expect(screen.getByRole("dialog", { name: "Сигурен/сигурна ли си?" })).toBeInTheDocument();
   });
 
   it("регистрира scoped account CSS без legacy остров", () => {

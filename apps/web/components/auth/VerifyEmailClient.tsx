@@ -52,6 +52,12 @@ export function VerifyEmailClient() {
     return () => window.clearTimeout(timer);
   }, [router, state]);
 
+  const headline = state === "success"
+    ? "Печатът е поставен."
+    : state === "error"
+      ? "Печатът не беше поставен."
+      : "Притискаме печата...";
+
   return (
     <section className="seal-stage">
       <figure className="seal-art" aria-hidden />
@@ -61,7 +67,7 @@ export function VerifyEmailClient() {
           <MailCheck strokeWidth={1.8} />
         </span>
         <p className="seal-kicker">потвърждение</p>
-        <h1>{state === "success" ? "Печатът е поставен." : "Притискаме печата..."}</h1>
+        <h1>{headline}</h1>
 
         {state === "verifying" || state === "idle" ? <p className="seal-body">Восъкът се втвърдява. Изчакай миг.</p> : null}
 

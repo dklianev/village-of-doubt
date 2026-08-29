@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { createDatabase, getAchievementsForUser } from "@werewolf/database";
+import { safeMonitoringErrorMetadata } from "@werewolf/shared";
 import { auth } from "@/lib/auth";
 
 export async function GET() {
@@ -24,7 +25,7 @@ export async function GET() {
       })),
     });
   } catch (error) {
-    console.error("[achievements]", error);
+    console.error("[achievements]", safeMonitoringErrorMetadata(error));
     return NextResponse.json({ error: "Грешка при зареждане на легенди." }, { status: 500 });
   }
 }

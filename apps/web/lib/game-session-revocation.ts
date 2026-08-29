@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
+import { safeMonitoringErrorMetadata } from "@werewolf/shared";
 import { createDatabase, recordGameSessionRevocation } from "@werewolf/database";
 import {
   GAME_SESSION_REVOCATION_CHANNEL,
@@ -33,7 +34,7 @@ export async function revokeActiveGameSessions(
     return { revokedAtMs, realtimeDelivered: true } as const;
   } catch (error) {
     console.error("[auth] realtime game-session revocation failed after durable write", {
-      name: error instanceof Error ? error.name : "UnknownError",
+      error: safeMonitoringErrorMetadata(error),
     });
     Sentry.captureException(error, {
       tags: { subsystem: "game-session-revocation", durableMarker: "written" },

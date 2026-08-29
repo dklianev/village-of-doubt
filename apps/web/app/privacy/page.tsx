@@ -3,7 +3,7 @@ import "@/components/legal/LegalShell.module.css";
 import "@/components/privacy/LegacyPrivacy.module.css";
 import { headers } from "next/headers";
 import { createDatabase, getAchievementsForUser, getGameHistoryForUser } from "@werewolf/database";
-import { ACHIEVEMENTS } from "@werewolf/shared";
+import { ACHIEVEMENTS, safeMonitoringErrorMetadata } from "@werewolf/shared";
 import { JsonLd } from "@/components/JsonLd";
 import { PrivacyDashboard, type PrivacyUserSnapshot } from "@/components/privacy/PrivacyDashboard";
 import { auth } from "@/lib/auth";
@@ -51,7 +51,7 @@ export default async function PrivacyPage({ searchParams }: PrivacyPageProps) {
           totalGames = games.length;
           totalAchievements = achievements.length;
         } catch (error) {
-          console.error("[privacy-snapshot]", error);
+          console.error("[privacy-snapshot]", safeMonitoringErrorMetadata(error));
         }
       }
 

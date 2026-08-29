@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthGatedEntryClient } from "../auth-gated-entry-client";
@@ -100,6 +100,31 @@ describe("AuthGatedEntryClient", () => {
     expect(spectatorButton).toBeDisabled();
     expect(spectatorButton).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: "Влизам в селото" })).toBeEnabled();
+  });
+
+  it("offers spectator entry when all player slots are occupied", async () => {
+    const user = userEvent.setup();
+    fetchMock.mockResolvedValue(
+      okResponse({
+        code: "ABC234",
+        status: "lobby",
+        playerCount: 10,
+        capacity: 10,
+        family: "werewolves",
+      }),
+    );
+
+    render(<AuthGatedEntryClient family="werewolves" mode="werewolves_classic" initialCode="ABC234" />);
+
+    expect(await screen.findByText(/местата за игра са заети/i)).toBeInTheDocument();
+    const spectatorButton = screen.getByRole("button", { name: "Гледам отстрани, без роля" });
+    expect(spectatorButton).toBeDisabled();
+    expect(spectatorButton).toHaveAttribute("aria-pressed", "true");
+
+    await user.click(screen.getByRole("button", { name: "Влизам в селото" }));
+
+    await waitFor(() => expect(push).toHaveBeenCalledTimes(1));
+    expect(push).toHaveBeenCalledWith(expect.stringMatching(/[?&]spectator=1(?:&|$)/));
   });
 });
 

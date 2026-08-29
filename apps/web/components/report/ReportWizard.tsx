@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { type FormEvent, useId, useMemo, useState } from "react";
+import { type FormEvent, useId, useRef, useState } from "react";
 
 type ReportType = "abuse" | "copyright" | "bug" | "gdpr" | "other";
 type Step = "type" | "details" | "identity" | "review" | "success";
+type InvalidField = "body" | "email";
 
 interface ReportWizardProps {
   userEmail: string | null;
@@ -87,6 +88,7 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
   const [email, setEmail] = useState(userEmail ?? "");
   const [status, setStatus] = useState<"idle" | "submitting" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
+  const [invalidField, setInvalidField] = useState<InvalidField | null>(null);
   const [referenceId, setReferenceId] = useState<string | null>(
     visualStep === "success" ? "СИГ-DDDD" : null,
   );
@@ -94,13 +96,13 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
   const bodyId = useId();
   const evidenceId = useId();
   const emailId = useId();
-  const bodyErrorId = useId();
+  const fieldErrorId = useId();
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
 
   const meta = TYPE_META[type];
   const stepIndex = STEPS.indexOf(step);
   const totalSteps = STEPS.length;
-  const referenceSeed = useMemo(() => generateReferenceId(), []);
-
   function goNext() {
     const next = STEPS[stepIndex + 1];
     if (next) {
@@ -115,18 +117,18 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
     }
   }
 
-  function validateStep(): string | null {
+  function validateStep(): { field: InvalidField; message: string } | null {
     if (step === "details" && body.trim().length < 20) {
-      return "Опиши с поне 20 символа.";
+      return { field: "body", message: "Опиши с поне 20 символа." };
     }
 
     if (step === "identity") {
       const trimmedEmail = email.trim();
       if (identity === "identified" && !trimmedEmail) {
-        return "Въведи имейл или избери анонимен сигнал.";
+        return { field: "email", message: "Въведи имейл или избери анонимен сигнал." };
       }
       if (identity === "identified" && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(trimmedEmail)) {
-        return "Невалиден имейл.";
+        return { field: "email", message: "Невалиден имейл." };
       }
     }
 
@@ -134,18 +136,30 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
   }
 
   function advance() {
-    const error = validateStep();
-    if (error) {
-      setErrorMsg(error);
+    const validation = validateStep();
+    if (validation) {
+      setInvalidField(validation.field);
+      setErrorMsg(validation.message);
+      (validation.field === "body" ? bodyRef.current : emailRef.current)?.focus();
       return;
     }
+    setInvalidField(null);
     setErrorMsg("");
     goNext();
+  }
+
+  function clearFieldError(field: InvalidField) {
+    if (invalidField !== field) {
+      return;
+    }
+    setInvalidField(null);
+    setErrorMsg("");
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setStatus("submitting");
+    setInvalidField(null);
     setErrorMsg("");
 
     try {
@@ -167,7 +181,14 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
         return;
       }
 
-      setReferenceId(referenceSeed);
+      const data = (await response.json()) as { referenceId?: unknown };
+      if (typeof data.referenceId !== "string" || !/^СИГ-[A-F0-9]{10}$/.test(data.referenceId)) {
+        setErrorMsg("Сигналът е изпратен, но референцията не можа да се зареди.");
+        setStatus("error");
+        return;
+      }
+
+      setReferenceId(data.referenceId);
       setStep("success");
       setStatus("idle");
     } catch {
@@ -236,15 +257,19 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
               <label htmlFor={bodyId}>Описание</label>
               <textarea
                 id={bodyId}
+                ref={bodyRef}
                 value={body}
-                onChange={(event) => setBody(event.target.value)}
+                onChange={(event) => {
+                  setBody(event.target.value);
+                  clearFieldError("body");
+                }}
                 placeholder={meta.bodyPlaceholder}
                 rows={6}
                 minLength={20}
                 maxLength={4000}
                 required
-                aria-invalid={Boolean(errorMsg)}
-                aria-describedby={errorMsg ? bodyErrorId : undefined}
+                aria-invalid={invalidField === "body"}
+                aria-describedby={invalidField === "body" ? fieldErrorId : undefined}
               />
               <div className="report-field-foot">
                 <span className="report-field-count">{body.length} / 4000</span>
@@ -281,7 +306,10 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
                   name="report-identity"
                   value="identified"
                   checked={identity === "identified"}
-                  onChange={() => setIdentity("identified")}
+                  onChange={() => {
+                    setIdentity("identified");
+                    clearFieldError("email");
+                  }}
                 />
                 <span className="report-identity-title">С имейл</span>
                 <span className="report-identity-hint">
@@ -295,7 +323,10 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
                   name="report-identity"
                   value="private"
                   checked={identity === "private"}
-                  onChange={() => setIdentity("private")}
+                  onChange={() => {
+                    setIdentity("private");
+                    clearFieldError("email");
+                  }}
                 />
                 <span className="report-identity-title">Анонимно</span>
                 <span className="report-identity-hint">
@@ -309,12 +340,18 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
                 <label htmlFor={emailId}>Твоят имейл</label>
                 <input
                   id={emailId}
+                  ref={emailRef}
                   type="email"
                   value={email}
-                  onChange={(event) => setEmail(event.target.value)}
+                  onChange={(event) => {
+                    setEmail(event.target.value);
+                    clearFieldError("email");
+                  }}
                   placeholder="ime@example.bg"
                   autoComplete="email"
                   required
+                  aria-invalid={invalidField === "email"}
+                  aria-describedby={invalidField === "email" ? fieldErrorId : undefined}
                 />
                 {userEmail ? (
                   <p className="report-field-hint">Предварително попълнен от твоето досие.</p>
@@ -361,7 +398,7 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
         ) : null}
 
         {errorMsg ? (
-          <p id={bodyErrorId} className="report-wizard-error" role="alert">
+          <p id={fieldErrorId} className="report-wizard-error" role="alert">
             {errorMsg}
           </p>
         ) : null}
@@ -394,15 +431,6 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
       </form>
     </section>
   );
-}
-
-function generateReferenceId(): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let id = "";
-  for (let index = 0; index < 4; index += 1) {
-    id += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return `СИГ-${id}`;
 }
 
 function ReportSuccessState({

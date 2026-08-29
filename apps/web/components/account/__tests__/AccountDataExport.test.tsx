@@ -73,8 +73,8 @@ describe("AccountDataExport", () => {
     expect(fetcher).toHaveBeenCalledTimes(3);
     expect(fetcher.mock.calls.map(([url]) => String(url))).toEqual([
       expect.stringContaining("page=1&pageSize=100&eventPage=1&eventPageSize=1000"),
-      expect.stringContaining("page=1&pageSize=100&eventPage=2&eventPageSize=1000"),
-      expect.stringContaining("page=2&pageSize=100&eventPage=1&eventPageSize=1000"),
+      expect.stringContaining("page=1&pageSize=100&eventPage=2&eventPageSize=1000&eventCursor=event-cursor-1"),
+      expect.stringContaining("page=2&pageSize=100&eventPage=1&eventPageSize=1000&gameCursor=game-cursor-1"),
     ]);
     expect(fetcher.mock.calls[0]?.[1]?.headers).toEqual({ Accept: "application/json" });
     expect(fetcher.mock.calls[1]?.[1]?.headers).toEqual({
@@ -106,6 +106,8 @@ function exportResponse(
   page: number,
   eventPage: number,
 ) {
+  const nextGameCursor = hasMore ? `game-cursor-${page}` : null;
+  const nextEventCursor = eventsHasMore ? `event-cursor-${eventPage}` : null;
   return new Response(
     JSON.stringify({
       profile: { id: "user-1" },
@@ -115,9 +117,11 @@ function exportResponse(
         page,
         pageSize: 100,
         hasMore,
+        nextGameCursor,
         eventPage,
         eventPageSize: 1_000,
         eventsHasMore,
+        nextEventCursor,
       },
     }),
     {

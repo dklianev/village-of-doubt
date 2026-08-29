@@ -1625,7 +1625,6 @@
     display: flex;
   }
 
-  :global(body:has(.lobby-wizard) [data-cookie-banner]),
   :global(body:has(.lobby-wizard) .toast-host),
   :global(body:has(.lobby-wizard) button[aria-label="Дай ни бележка"]) {
     bottom: calc(82px + env(safe-area-inset-bottom));
@@ -3630,7 +3629,6 @@
     font-weight: 950;
   }
 
-  :global(body:has(.lobby-wizard[data-layout="quick"]) [data-cookie-banner]),
   :global(body:has(.lobby-wizard[data-layout="quick"]) .toast-host),
   :global(body:has(.lobby-wizard[data-layout="quick"]) button[aria-label="Дай ни бележка"]) {
     bottom: calc(80px + env(safe-area-inset-bottom));

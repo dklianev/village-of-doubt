@@ -18,10 +18,12 @@ export function ResourceHints({
         <link key={href} rel="preconnect" href={href} />
       ))}
       {images.map((image) => {
-        const href = typeof image === "string" ? image : image.href;
-        const media = typeof image === "string" ? undefined : image.media;
-        const type = typeof image === "string" ? "image/webp" : (image.type ?? "image/webp");
-        const fetchPriority = typeof image === "string" ? undefined : image.fetchPriority;
+        if (typeof image === "string") {
+          return null;
+        }
+
+        const { href, media, fetchPriority } = image;
+        const type = image.type ?? "image/webp";
         return (
           <link
             key={`${href}:${media ?? ""}`}

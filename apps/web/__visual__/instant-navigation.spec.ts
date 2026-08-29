@@ -2,6 +2,27 @@ import { instant } from "@next/playwright";
 import { expect, test } from "playwright/test";
 
 test.describe("Next.js instant navigation shell", () => {
+  test("hydrates the landing auth controls without cache races", async ({ page }) => {
+    const hydrationErrors: string[] = [];
+    page.on("console", (message) => {
+      const text = message.text();
+      if (text.includes("Hydration failed") || text.includes("hydration-mismatch")) {
+        hydrationErrors.push(text);
+      }
+    });
+    page.on("pageerror", (error) => {
+      if (error.message.includes("Hydration failed") || error.message.includes("hydration-mismatch")) {
+        hydrationErrors.push(error.message);
+      }
+    });
+
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await expect(page.locator(".game-choice-actions").first()).toBeVisible();
+    await page.waitForTimeout(500);
+
+    expect(hydrationErrors).toEqual([]);
+  });
+
   test("renders shared chrome and a route fallback before history streams", async ({
     page,
     baseURL,

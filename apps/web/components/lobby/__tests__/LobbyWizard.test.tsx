@@ -153,6 +153,20 @@ describe("LobbyWizard", () => {
     expect(within(reopened).getByRole("textbox", { name: "Име на стаята" })).toHaveValue("Нощ край огъня");
   });
 
+  it("offers only the supported automatic narrator mode", async () => {
+    search = new URLSearchParams();
+    const user = userEvent.setup();
+    render(<LobbyWizard family="werewolves" />);
+
+    await user.click(screen.getByRole("button", { name: "Настрой детайлите" }));
+    const dialog = screen.getByRole("dialog", { name: "Настрой детайлите" });
+    await user.click(within(dialog).getByRole("tab", { name: "Ритъм и водене" }));
+
+    expect(within(dialog).getByRole("button", { name: /Автоматичен/ })).toBeInTheDocument();
+    expect(within(dialog).queryByRole("button", { name: /Честен/ })).not.toBeInTheDocument();
+    expect(within(dialog).queryByRole("button", { name: /Пълен/ })).not.toBeInTheDocument();
+  });
+
   it("uses the workspace sheet and exposes explicit role gallery controls", async () => {
     search = new URLSearchParams();
     const user = userEvent.setup();

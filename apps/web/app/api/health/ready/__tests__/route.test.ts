@@ -26,6 +26,7 @@ describe("GET /api/health/ready", () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.clearAllMocks();
     vi.unstubAllEnvs();
     vi.unstubAllGlobals();
@@ -129,6 +130,59 @@ describe("GET /api/health/ready", () => {
     expect(body).not.toContain("private DSN details");
   });
 
+  it("стартира DB, game-server и Redis readiness проверките едновременно", async () => {
+    vi.stubEnv("DATABASE_URL", "postgres://localhost/werewolf");
+    vi.stubEnv("GAME_SERVER_HTTP_URL", "http://game:2567");
+    const database = deferred<boolean>();
+    const gameServer = deferred<Response>();
+    const redis = deferred<boolean>();
+    checkDatabaseReadiness.mockReturnValueOnce(database.promise);
+    checkRuntimeRedisReadiness.mockReturnValueOnce(redis.promise);
+    const fetchMock = vi.fn().mockReturnValueOnce(gameServer.promise);
+    vi.stubGlobal("fetch", fetchMock);
+
+    const responsePromise = GET();
+    await Promise.resolve();
+
+    expect(checkDatabaseReadiness).toHaveBeenCalledOnce();
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(checkRuntimeRedisReadiness).toHaveBeenCalledOnce();
+
+    database.resolve(true);
+    gameServer.resolve(new Response(null, { status: 200 }));
+    redis.resolve(true);
+    await expect(responsePromise).resolves.toMatchObject({ status: 200 });
+  });
+
+  it("ограничава общото време до най-бавната bounded readiness проверка", async () => {
+    vi.useFakeTimers();
+    vi.stubEnv("DATABASE_URL", "postgres://localhost/werewolf");
+    vi.stubEnv("GAME_SERVER_HTTP_URL", "http://game:2567");
+    checkDatabaseReadiness.mockImplementationOnce(
+      () => new Promise((resolve) => setTimeout(() => resolve(true), 1_500)),
+    );
+    checkRuntimeRedisReadiness.mockImplementationOnce(
+      () => new Promise((resolve) => setTimeout(() => resolve(true), 500)),
+    );
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise((resolve) => setTimeout(
+        () => resolve(new Response(null, { status: 200 })),
+        1_500,
+      ))),
+    );
+    let settled = false;
+
+    const responsePromise = GET().then((response) => {
+      settled = true;
+      return response;
+    });
+    await vi.advanceTimersByTimeAsync(1_500);
+
+    expect(settled).toBe(true);
+    await expect(responsePromise).resolves.toMatchObject({ status: 200 });
+  });
+
   it("дедуплицира публичните deep probes в кратък readiness прозорец", async () => {
     let now = 1_000;
     const probe = vi.fn(async () => true);
@@ -142,3 +196,11 @@ describe("GET /api/health/ready", () => {
     expect(probe).toHaveBeenCalledTimes(2);
   });
 });
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((resolvePromise) => {
+    resolve = resolvePromise;
+  });
+  return { promise, resolve };
+}

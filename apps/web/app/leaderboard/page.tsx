@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { cacheLife, cacheTag } from "next/cache";
 import { Suspense } from "react";
 import { createDatabase, getLeaderboardRows } from "@werewolf/database";
+import { safeMonitoringErrorMetadata } from "@werewolf/shared";
 import { JsonLd } from "@/components/JsonLd";
 import { NewspaperEmpty } from "@/components/leaderboard/NewspaperEmpty";
 import { NewspaperPage } from "@/components/leaderboard/NewspaperPage";
@@ -106,7 +107,7 @@ async function loadLeaderboard(visualLeaderboard?: string): Promise<LeaderboardD
     const issueCount = Math.max(1, rows.reduce((sum, row) => sum + row.gamesPlayed, 0));
     return { entries, issueCount: Math.max(1, issueCount) };
   } catch (error) {
-    console.error("[leaderboard]", error);
+    console.error("[leaderboard]", safeMonitoringErrorMetadata(error));
     return { entries: null, issueCount: 1 };
   }
 }

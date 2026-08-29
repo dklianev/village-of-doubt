@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import type { BetterAuthRateLimitStorage } from "better-auth";
+import { safeMonitoringErrorMetadata } from "@werewolf/shared";
 import {
   BoundedMemoryRateLimitStore,
   type SharedRateLimitBackend,
@@ -132,6 +133,9 @@ function defaultRedisErrorReporter(outageMode: RedisOutageMode) {
     const action = outageMode === "deny"
       ? "Заявката е отказана."
       : "Използва се локален fallback.";
-    console.error(`[redis-rate-limit] Redis е недостъпен. ${action}`, error);
+    console.error(
+      `[redis-rate-limit] Redis е недостъпен. ${action}`,
+      safeMonitoringErrorMetadata(error),
+    );
   };
 }

@@ -1,6 +1,13 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
+const privateGameRouteSources = [
+  "/mafia/create",
+  "/mafia/join/:path*",
+  "/werewolf/create",
+  "/werewolf/join/:path*",
+] as const;
+
 const nextConfig: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
@@ -21,6 +28,10 @@ const nextConfig: NextConfig = {
         source: "/sw.js",
         headers: [{ key: "Cache-Control", value: "no-store, must-revalidate" }],
       },
+      ...privateGameRouteSources.map((source) => ({
+        source,
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      })),
     ];
   },
 };

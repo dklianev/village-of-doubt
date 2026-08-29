@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { SceneCard } from "@werewolf/ui/server";
 import {
   createDatabase,
   getGameHistoryById,
@@ -13,11 +13,11 @@ import {
   deriveAchievementsFromEvents,
   getRoleNameBg,
   phaseLabelBg,
+  safeMonitoringErrorMetadata,
   type GameMode,
   type GamePhase,
   type RoleCode,
 } from "@werewolf/shared";
-import { publicGameReference } from "@/lib/game-reference";
 import { isUuid } from "@/lib/identifiers";
 import { collectReplayParticipants } from "@/lib/play/replay-participants";
 import { filterReplayTimelineByVisibility, resolveReplayTimelineVisibility } from "@/lib/replay-visibility";
@@ -43,13 +43,14 @@ export default async function ReplayPage({
 }) {
   const { gameId } = await params;
   const visualReplay = firstSearchValue((await searchParams)?.visualReplay);
-  const visualFixtureEnabled = process.env.NODE_ENV !== "production" && visualReplay === "fixture";
+  const visualFixtureEnabled = process.env.NODE_ENV !== "production"
+    && (visualReplay === "fixture" || visualReplay === "unknown-codes");
   if (!visualFixtureEnabled && !isUuid(gameId)) {
     notFound();
   }
   const replay =
     visualFixtureEnabled
-      ? fixtureReplay(gameId)
+      ? fixtureReplay(gameId, visualReplay === "unknown-codes")
       : await loadReplayForSession(gameId);
   if (!replay) {
     notFound();
@@ -67,29 +68,25 @@ export default async function ReplayPage({
     >
       <div className="framed-shell-inner">
         <header className="replay-hero-v2">
-          <Image
-            src="/game-art/legal/replay-banner.webp"
-            alt=""
-            fill
-            priority
-            sizes="(max-width: 1180px) 100vw, 1180px"
-            className="replay-hero-img"
-          />
-          <div className="replay-hero-scrim" aria-hidden />
-          <div className="replay-hero-copy">
-            <p className="replay-kicker">преглед след игра</p>
-            <h1>Запис на дело {publicGameReference(replay.game.id)}.</h1>
-            <p>
-              Хронология от записаните събития. Тайните роли се показват само ако вече са част от
-              записа.
-            </p>
-            <div className="replay-summary">
-              <Summary label="Режим" value={modeBg(mode)} />
-              <Summary label="Победител" value={winnerBg(replay.game.winnerTeam)} />
-              <Summary label="Времетраене" value={duration} />
-              <Summary label="Събития" value={String(replay.game.eventCount)} />
+          <SceneCard
+            density="lg"
+            background={{ image: "var(--art-replay)", overlay: "scrim", focalY: 44 }}
+          >
+            <div className="replay-hero-copy">
+              <p className="replay-kicker">преглед след игра</p>
+              <h1>Запис на дело №{replayCaseReference(replay.game.id, replay.game.code)}.</h1>
+              <p>
+                Хронология от записаните събития. Тайните роли се показват само ако вече са част от
+                записа.
+              </p>
+              <div className="replay-summary">
+                <Summary label="Режим" value={modeBg(mode)} />
+                <Summary label="Победител" value={winnerBg(replay.game.winnerTeam)} />
+                <Summary label="Времетраене" value={duration} />
+                <Summary label="Събития" value={String(replay.game.eventCount)} />
+              </div>
             </div>
-          </div>
+          </SceneCard>
         </header>
 
         <section className="replay-verdict-card">
@@ -152,7 +149,7 @@ export default async function ReplayPage({
                     <span className="replay-index">{String(index + 1).padStart(2, "0")}</span>
                     <div>
                       <h3>{eventTypeBg(event.type)}</h3>
-                      <p>{formatPayload(event.type, event.payload)}</p>
+                      <p>{formatPayload(event.type, event.payload, mode)}</p>
                       <small>
                         {visibilityBg(event.visibility)} · {formatDate(event.createdAt)}
                       </small>
@@ -223,39 +220,51 @@ async function loadReplay(gameId: string, viewerUserId: string) {
       achievements: deriveAchievementsFromEvents(timeline),
     };
   } catch (error) {
-    console.error("[replay]", error);
+    console.error("[replay]", safeMonitoringErrorMetadata(error));
     return null;
   }
 }
 
-function fixtureReplay(gameId: string): NonNullable<Awaited<ReturnType<typeof loadReplay>>> {
+function fixtureReplay(gameId: string, unknownCodes = false): NonNullable<Awaited<ReturnType<typeof loadReplay>>> {
   const startedAt = new Date("2026-05-14T20:30:00.000Z");
   const endedAt = new Date("2026-05-14T21:18:00.000Z");
-  const timeline = [
-    fixtureReplayEvent(gameId, 0, "role_reveal", 1, startedAt, {
-      type: "role_assignment",
-      payload: { actorNameBg: "Разказвачът", roleNameBg: "Селянин" },
-    }),
-    fixtureReplayEvent(gameId, 1, "first_night", 1, new Date("2026-05-14T20:42:00.000Z"), {
-      type: "night_action_submitted",
-      payload: { actorNameBg: "Гадателката", targetNameBg: "Борис", roleNameBg: "Върколак" },
-    }),
-    fixtureReplayEvent(gameId, 2, "day_discussion", 2, new Date("2026-05-14T20:58:00.000Z"), {
-      type: "vote_tally",
-      payload: { actorNameBg: "Масата", targetNameBg: "Борис" },
-    }),
-    fixtureReplayEvent(gameId, 3, "game_over", 3, endedAt, {
-      type: "game_over",
-      payload: { actorNameBg: "Селото", targetNameBg: "Върколака" },
-    }),
-  ];
+  const timeline = unknownCodes
+    ? [
+        fixtureReplayEvent(gameId, 0, "future_phase" as GamePhase, 1, startedAt, {
+          type: "role_assignment",
+          payload: { actorNameBg: "Архивен играч", role: "future_role" },
+        }),
+        fixtureReplayEvent(gameId, 1, "future_phase" as GamePhase, 1, endedAt, {
+          type: "future_event",
+          visibility: "future_visibility",
+          payload: { futurePayload: "future_payload" },
+        }),
+      ]
+    : [
+        fixtureReplayEvent(gameId, 0, "role_reveal", 1, startedAt, {
+          type: "role_assignment",
+          payload: { actorNameBg: "Разказвачът", roleNameBg: "Селянин" },
+        }),
+        fixtureReplayEvent(gameId, 1, "first_night", 1, new Date("2026-05-14T20:42:00.000Z"), {
+          type: "night_action_submitted",
+          payload: { actorNameBg: "Гадателката", targetNameBg: "Борис", roleNameBg: "Върколак" },
+        }),
+        fixtureReplayEvent(gameId, 2, "day_discussion", 2, new Date("2026-05-14T20:58:00.000Z"), {
+          type: "vote_tally",
+          payload: { actorNameBg: "Масата", targetNameBg: "Борис" },
+        }),
+        fixtureReplayEvent(gameId, 3, "game_over", 3, endedAt, {
+          type: "game_over",
+          payload: { actorNameBg: "Селото", targetNameBg: "Върколака" },
+        }),
+      ];
 
   return {
     game: {
       id: gameId,
       code: "4821",
       config: { mode: "werewolves_classic" },
-      winnerTeam: "village",
+      winnerTeam: unknownCodes ? "future_winner" : "village",
       startedAt,
       endedAt,
       eventCount: timeline.length,
@@ -278,7 +287,7 @@ function fixtureReplayEvent(
   phase: GamePhase,
   round: number,
   createdAt: Date,
-  event: { type: string; payload: Record<string, unknown> },
+  event: { type: string; payload: Record<string, unknown>; visibility?: string },
 ) {
   return {
     id: `fixture-replay-${index + 1}`,
@@ -287,7 +296,7 @@ function fixtureReplayEvent(
     type: event.type,
     phase,
     round,
-    visibility: "public",
+    visibility: event.visibility ?? "public",
     actorId: index === 2 ? null : `fixture-actor-${index + 1}`,
     targetId: index === 0 ? null : `fixture-target-${index + 1}`,
     payload: event.payload,
@@ -350,8 +359,13 @@ function roleNameFromCode(role: string | undefined) {
   try {
     return getRoleNameBg(role as RoleCode);
   } catch {
-    return role;
+    return "Неизвестна роля";
   }
+}
+
+function localizedRoleName(value: unknown) {
+  const role = stringValue(value);
+  return role && /[\u0400-\u04ff]/.test(role) ? role : role ? "Неизвестна роля" : undefined;
 }
 
 function eventTone(type: string) {
@@ -386,11 +400,11 @@ function winnerBg(winner: string | null) {
     draw: "Равенство",
   };
 
-  return winner ? labels[winner] ?? winner : "Няма победител";
+  return winner ? labels[winner] ?? "Победителят не е записан" : "Няма победител";
 }
 
 function phaseBg(phase: string, mode: GameMode) {
-  return isKnownPhase(phase) ? phaseLabelBg(phase, mode) : phase;
+  return isKnownPhase(phase) ? phaseLabelBg(phase, mode) : "Неизвестна фаза";
 }
 
 function modeBg(mode: GameMode) {
@@ -450,7 +464,7 @@ function eventTypeBg(type: string) {
     personal_win: "Лична победа",
   };
 
-  return labels[type] ?? type;
+  return labels[type] ?? "Друго събитие";
 }
 
 function visibilityBg(visibility: string) {
@@ -461,10 +475,10 @@ function visibilityBg(visibility: string) {
     moderator: "модератор",
   };
 
-  return labels[visibility] ?? visibility;
+  return labels[visibility] ?? "неуточнена видимост";
 }
 
-function formatPayload(type: string, payload: unknown) {
+function formatPayload(type: string, payload: unknown, mode: GameMode) {
   if (!payload || typeof payload !== "object") {
     return "Събитието няма допълнителни данни.";
   }
@@ -472,7 +486,7 @@ function formatPayload(type: string, payload: unknown) {
   const record = payloadRecord(payload);
   const actor = stringValue(record.actorNameBg) ?? stringValue(record.actorName);
   const target = stringValue(record.targetNameBg) ?? stringValue(record.targetName);
-  const role = stringValue(record.roleNameBg) ?? roleNameFromCode(stringValue(record.role));
+  const role = localizedRoleName(record.roleNameBg) ?? roleNameFromCode(stringValue(record.role));
 
   if (type === "role_assignment" && actor && role) {
     return `${actor} получи ролята ${role}.`;
@@ -488,9 +502,12 @@ function formatPayload(type: string, payload: unknown) {
   }
 
   const entries = Object.entries(record)
-    .filter(([, value]) => value !== undefined && value !== null && value !== "")
-    .slice(0, 5)
-    .map(([key, value]) => `${payloadKeyBg(key)}: ${String(value)}`);
+    .flatMap(([key, value]) => {
+      const label = payloadKeyBg(key);
+      const formattedValue = payloadValueBg(key, value, mode);
+      return label && formattedValue ? [`${label}: ${formattedValue}`] : [];
+    })
+    .slice(0, 5);
 
   return entries.length > 0 ? entries.join(" · ") : "Събитието е записано без публични детайли.";
 }
@@ -507,13 +524,58 @@ function payloadKeyBg(key: string) {
     reasonBg: "причина",
     role: "роля",
     phase: "фаза",
-    targetUserId: "цел",
-    actorUserId: "действащ",
     action: "действие",
     tally: "гласове",
   };
 
-  return labels[key] ?? key;
+  return labels[key];
+}
+
+function payloadValueBg(key: string, value: unknown, mode: GameMode) {
+  if (key === "role") {
+    return roleNameFromCode(stringValue(value));
+  }
+  if (key === "roleNameBg") {
+    return localizedRoleName(value);
+  }
+  if (key === "winnerTeam") {
+    return winnerBg(stringValue(value) ?? null);
+  }
+  if (key === "phase") {
+    const phase = stringValue(value);
+    return phase ? phaseBg(phase, mode) : undefined;
+  }
+  if (key === "action") {
+    return value === undefined || value === null || value === "" ? undefined : "записано";
+  }
+  if (key === "tally") {
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return String(value);
+    }
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      const total = Object.values(value).reduce<number>(
+        (sum, count) => sum + (typeof count === "number" && Number.isFinite(count) ? count : 0),
+        0,
+      );
+      return total > 0 ? String(total) : "записани гласове";
+    }
+    return undefined;
+  }
+
+  return stringValue(value);
+}
+
+function replayCaseReference(gameId: string, roomCode: string) {
+  if (/^\d{4,}$/.test(roomCode)) {
+    return roomCode;
+  }
+
+  let hash = 2_166_136_261;
+  for (const character of gameId) {
+    hash ^= character.charCodeAt(0);
+    hash = Math.imul(hash, 16_777_619);
+  }
+  return String((hash >>> 0) % 100_000_000).padStart(8, "0");
 }
 
 function formatDate(value: Date | null) {

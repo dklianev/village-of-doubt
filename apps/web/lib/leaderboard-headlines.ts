@@ -1,3 +1,5 @@
+import { formatBulgarianDateTime } from "@/lib/date-time";
+
 export interface LeaderboardEntry {
   id?: string;
   displayName: string;
@@ -81,11 +83,11 @@ export function winRatePercent(entry: LeaderboardEntry): number {
 }
 
 export function formatNewspaperDate(date: Date): string {
-  return new Intl.DateTimeFormat("bg-BG", {
+  return formatBulgarianDateTime(date, {
     day: "2-digit",
     month: "long",
     year: "numeric",
-  }).format(date);
+  });
 }
 
 export function issueNumber(seed: number): string {

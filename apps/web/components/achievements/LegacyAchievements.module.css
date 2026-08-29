@@ -141,7 +141,7 @@
 }
 
 :global(.achievement-hero-lede) {
-  color: #4f3829;
+  color: var(--ds-ink-soft);
   line-height: 1.65;
 }
 

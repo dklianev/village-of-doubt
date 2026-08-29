@@ -95,6 +95,16 @@ export function AuthGatedEntryClient({
   const narrator: NarratorMode = "automatic";
   const hasInviteCode = Boolean(normalizedInitialCode);
   const { rooms: recentRooms, remember } = useRecentRooms(family);
+  const previewRoom = previewState.kind === "room" && previewState.room.code === roomCode ? previewState.room : null;
+  const roomInProgress = previewRoom?.status === "in_game";
+  const roomFull = Boolean(
+    previewRoom?.status === "lobby"
+      && previewRoom.capacity > 0
+      && previewRoom.playerCount >= previewRoom.capacity,
+  );
+  const spectatorRequired = roomInProgress || roomFull;
+  const joinsAsSpectator = spectatorRequired || spectator;
+  const roomAcceptsEntry = previewRoom?.status === "lobby" || roomInProgress;
 
   const playPath = useMemo(() => {
     const params = new URLSearchParams({
@@ -104,11 +114,11 @@ export function AuthGatedEntryClient({
       narrator,
       tempo,
     });
-    if (spectator) {
+    if (joinsAsSpectator) {
       params.set("spectator", "1");
     }
     return `/play/${roomCode}?${params.toString()}`;
-  }, [communication, mode, narrator, playerCount, roomCode, spectator, tempo]);
+  }, [communication, joinsAsSpectator, mode, narrator, playerCount, roomCode, tempo]);
 
   const createPath = useMemo(() => {
     if (!spectator) {
@@ -159,16 +169,6 @@ export function AuthGatedEntryClient({
       controller.abort();
     };
   }, [previewAttempt, roomCode]);
-
-  const previewRoom = previewState.kind === "room" && previewState.room.code === roomCode ? previewState.room : null;
-  const roomInProgress = previewRoom?.status === "in_game";
-  const roomAcceptsEntry = previewRoom?.status === "lobby" || roomInProgress;
-
-  useEffect(() => {
-    if (roomInProgress) {
-      setSpectator(true);
-    }
-  }, [roomInProgress]);
 
   function handleCodeChange(next: string) {
     setRoomCode(normalizeRoomCodeInput(next));
@@ -277,14 +277,14 @@ export function AuthGatedEntryClient({
             <button
               type="button"
               className="join-spectator-toggle"
-              data-active={spectator}
-              aria-pressed={spectator}
-              disabled={roomInProgress}
+              data-active={joinsAsSpectator}
+              aria-pressed={joinsAsSpectator}
+              disabled={spectatorRequired}
               onClick={() => setSpectator((value) => !value)}
             >
               <span className="join-spectator-dot" aria-hidden />
-              {spectator ? <Eye aria-hidden strokeWidth={1.8} /> : <Gamepad2 aria-hidden strokeWidth={1.8} />}
-              {spectator ? copy.spectatorOn : copy.spectatorOff}
+              {joinsAsSpectator ? <Eye aria-hidden strokeWidth={1.8} /> : <Gamepad2 aria-hidden strokeWidth={1.8} />}
+              {joinsAsSpectator ? copy.spectatorOn : copy.spectatorOff}
             </button>
             <p className="join-spectator-hint">{copy.spectatorHint}</p>
           </div>
@@ -362,11 +362,17 @@ function RoomPreviewStatus({ state, onRetry }: { state: RoomPreviewState; onRetr
 }
 
 function RoomPreviewBanner({ preview }: { preview: RoomPreview }) {
+  const full = preview.status === "lobby" && preview.capacity > 0 && preview.playerCount >= preview.capacity;
+
   return (
-    <div className="join-preview-banner" data-status={preview.status} role="status" aria-live="polite">
+    <div className="join-preview-banner" data-status={full ? "full" : preview.status} role="status" aria-live="polite">
       <span className="join-preview-dot" aria-hidden />
       <div className="join-preview-text">
-        {preview.status === "lobby" ? (
+        {full ? (
+          <>
+            <strong>Стая {preview.code}</strong> · местата за игра са заети. Влизаш като наблюдател.
+          </>
+        ) : preview.status === "lobby" ? (
           <>
             <strong>Стая {preview.code}</strong> · {preview.playerCount}/{preview.capacity} {playerCountLabel(preview.playerCount)} в лобито
           </>

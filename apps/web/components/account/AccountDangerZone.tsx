@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import styles from "./Account.module.css";
@@ -12,6 +12,7 @@ export function AccountDangerZone({ email }: { email: string }) {
   const [status, setStatus] = useState<"idle" | "deleting" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const dialogTitleId = useId();
   const canDelete = confirmText.trim().toLocaleUpperCase("bg-BG") === "ИЗТРИЙ";
 
   useEffect(() => {
@@ -88,6 +89,7 @@ export function AccountDangerZone({ email }: { email: string }) {
         <dialog
           ref={dialogRef}
           className={styles.dialog}
+          aria-labelledby={dialogTitleId}
           onCancel={(event) => {
             if (status === "deleting") {
               event.preventDefault();
@@ -98,7 +100,7 @@ export function AccountDangerZone({ email }: { email: string }) {
           onClose={() => setOpen(false)}
         >
           <p className={styles.dialogKicker}>необратимо действие</p>
-          <h3>Сигурен/сигурна ли си?</h3>
+          <h3 id={dialogTitleId}>Сигурен/сигурна ли си?</h3>
           <p>
             За потвърждение напиши <strong>ИЗТРИЙ</strong>. Това действие премахва досието и
             легендите завинаги.

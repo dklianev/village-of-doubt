@@ -1,5 +1,6 @@
-import Image from "next/image";
+import { SceneCard } from "@werewolf/ui/server";
 import type { ServiceStatusKind } from "@/lib/status-health-shared";
+import { formatBulgarianDateTime } from "@/lib/date-time";
 
 interface StatusHeroProps {
   overall: ServiceStatusKind;
@@ -29,50 +30,43 @@ const OVERALL_COPY: Record<ServiceStatusKind, { title: string; subtitle: string 
 
 export function StatusHero({ overall, lastCheckedAt, refreshing, onRefresh }: StatusHeroProps) {
   const copy = OVERALL_COPY[overall];
-  const formatted = new Intl.DateTimeFormat("bg-BG", {
+  const formatted = formatBulgarianDateTime(new Date(lastCheckedAt), {
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
-  }).format(new Date(lastCheckedAt));
+  });
 
   return (
     <header className="status-hero" aria-label="Състояние на услугите">
-      <div className="status-hero-banner">
-        <Image
-          src="/game-art/legal/status-banner.webp"
-          alt=""
-          fill
-          priority
-          sizes="100vw"
-          className="status-hero-img"
-        />
-        <div className="status-hero-scrim" aria-hidden />
-      </div>
+      <SceneCard
+        density="lg"
+        background={{ image: "var(--art-status)", overlay: "veil", focalY: 38 }}
+      >
+        <div className="status-hero-inner">
+          <p className="status-hero-kicker">състояние на услугите</p>
+          <h1 className="status-hero-title">{copy.title}</h1>
+          <p className="status-hero-subtitle">{copy.subtitle}</p>
 
-      <div className="status-hero-inner">
-        <p className="status-hero-kicker">състояние на услугите</p>
-        <h1 className="status-hero-title">{copy.title}</h1>
-        <p className="status-hero-subtitle">{copy.subtitle}</p>
-
-        <div className="status-hero-meta" data-overall={overall}>
-          <span className="status-hero-dot" aria-hidden />
-          <span className="status-hero-meta-label">
-            Последна проверка в{" "}
-            <time className="status-hero-time" dateTime={lastCheckedAt}>
-              {formatted}
-            </time>
-          </span>
-          <button
-            type="button"
-            className="status-hero-refresh"
-            onClick={onRefresh}
-            disabled={refreshing}
-            aria-label="Опресни състоянието сега"
-          >
-            {refreshing ? "Проверяваме..." : "Опресни"}
-          </button>
+          <div className="status-hero-meta" data-overall={overall}>
+            <span className="status-hero-dot" aria-hidden />
+            <span className="status-hero-meta-label">
+              Последна проверка в{" "}
+              <time className="status-hero-time" dateTime={lastCheckedAt}>
+                {formatted}
+              </time>
+            </span>
+            <button
+              type="button"
+              className="status-hero-refresh"
+              onClick={onRefresh}
+              disabled={refreshing}
+              aria-label="Опресни състоянието сега"
+            >
+              {refreshing ? "Проверяваме..." : "Опресни"}
+            </button>
+          </div>
         </div>
-      </div>
+      </SceneCard>
     </header>
   );
 }

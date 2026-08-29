@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
 import { renderFeedbackEmail } from "@/lib/email-templates";
 import { sendEmail } from "@/lib/email";
@@ -5,6 +6,7 @@ import { auth } from "@/lib/auth";
 import {
   createRuntimeIntakeRateLimiter,
   IntakeBodyError,
+  isValidIntakeEmail,
   readBoundedJson,
   requestRateLimitKey,
 } from "@/lib/intake-security";
@@ -66,15 +68,20 @@ export async function POST(request: Request) {
   ) {
     return NextResponse.json({ error: "Сигналът съдържа прекалено дълго поле." }, { status: 400 });
   }
+  if (reporterEmail && !isValidIntakeEmail(reporterEmail)) {
+    return NextResponse.json({ error: "Въведи валиден имейл." }, { status: 400 });
+  }
 
-  let actorContext = "анонимен";
-  try {
-    const session = await auth.api.getSession({ headers: request.headers });
-    if (session?.user?.email) {
-      actorContext = `${session.user.name ?? "?"} <${session.user.email}>`;
+  let actorContext = reporterEmail ?? "анонимен";
+  if (reporterEmail) {
+    try {
+      const session = await auth.api.getSession({ headers: request.headers });
+      if (session?.user?.email.toLowerCase() === reporterEmail.toLowerCase()) {
+        actorContext = `${session.user.name ?? "?"} <${session.user.email}>`;
+      }
+    } catch {
+      // Identified reports remain available even if session lookup fails.
     }
-  } catch {
-    // Signal intake stays available even if session lookup fails.
   }
 
   const operatorEmail = process.env.REPORTS_NOTIFY_EMAIL;
@@ -84,7 +91,8 @@ export async function POST(request: Request) {
   }
 
   const typeLabel = TYPE_LABEL_BG[type] ?? TYPE_LABEL_BG.other;
-  const summary = `[${typeLabel}] ${actorContext} | Доказателство: ${evidence ?? "няма"}\n\n${reportBody}`;
+  const referenceId = createReportReferenceId();
+  const summary = `[${referenceId}] [${typeLabel}] ${actorContext} | Доказателство: ${evidence ?? "няма"}\n\n${reportBody}`;
 
   try {
     const template = renderFeedbackEmail({
@@ -93,11 +101,19 @@ export async function POST(request: Request) {
       reporterEmail,
       page: `/report · ${typeLabel}`,
     });
-    await sendEmail({ to: operatorEmail, ...template });
+    await sendEmail({
+      to: operatorEmail,
+      ...template,
+      subject: `${template.subject} · ${referenceId}`,
+    });
   } catch {
     console.error("[report] email delivery failed");
     return NextResponse.json({ error: "Сигналът не успя да се изпрати. Опитай отново." }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, referenceId });
+}
+
+function createReportReferenceId() {
+  return `СИГ-${randomBytes(5).toString("hex").toUpperCase()}`;
 }

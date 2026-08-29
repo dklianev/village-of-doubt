@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { cacheLife, cacheTag } from "next/cache";
 import { Suspense } from "react";
 import { createDatabase, getPublicGameTimelinesBatch, getRecentEndedGameHistory } from "@werewolf/database";
-import type { GameMode } from "@werewolf/shared";
+import { safeMonitoringErrorMetadata, type GameMode } from "@werewolf/shared";
 import { JsonLd } from "@/components/JsonLd";
 import { EvidenceWall } from "@/components/history/EvidenceWall";
 import { EvidenceWallSkeleton } from "@/components/skeleton";
@@ -86,7 +86,7 @@ async function loadHistory(visualHistory?: string): Promise<HistoryGameView[]> {
   try {
     return await loadCachedPublicHistory();
   } catch (error) {
-    console.error("[history]", error);
+    console.error("[history]", safeMonitoringErrorMetadata(error));
     return [];
   }
 }

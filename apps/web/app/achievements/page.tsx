@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { createDatabase, getAchievementsForUser } from "@werewolf/database";
-import { ACHIEVEMENTS } from "@werewolf/shared";
+import { ACHIEVEMENTS, safeMonitoringErrorMetadata } from "@werewolf/shared";
+import { PaperCard } from "@werewolf/ui/server";
 import Link from "next/link";
 import { AchievementsClient, type OwnedAchievement } from "@/components/achievements-client";
 import { JsonLd } from "@/components/JsonLd";
@@ -51,13 +52,14 @@ export default async function AchievementsPage({ searchParams }: AchievementsPag
   return (
     <main className="shell utility-shell achievement-shell">
       <JsonLd data={achievementsJsonLd} />
-      <section className="achievement-hero-card utility-hero achievement-hero rounded-[2rem] p-8">
-        <p className="section-kicker text-[#842f2b]">легенди</p>
-        <h1 className="mt-3 text-5xl font-black">Малките легенди след всяка игра</h1>
-        <p className="achievement-hero-lede mt-4 max-w-3xl">
-          Гравираните плочи разказват какво се е случило на масата: спасение, предателство, точен изстрел или
-          самостоятелна победа.
-        </p>
+      <section className="achievement-hero-frame">
+        <PaperCard eyebrow="легенди" density="lg">
+          <h1 className="text-5xl font-black">Малките легенди след всяка игра</h1>
+          <p className="achievement-hero-lede max-w-3xl">
+            Гравираните плочи разказват какво се е случило на масата: спасение, предателство, точен изстрел или
+            самостоятелна победа.
+          </p>
+        </PaperCard>
       </section>
 
       <AchievementsClient owned={owned} status={status} />
@@ -88,7 +90,7 @@ async function loadOwnedAchievements(
       status: "ready",
     };
   } catch (error) {
-    console.error("[achievements-page]", error);
+    console.error("[achievements-page]", safeMonitoringErrorMetadata(error));
     return { owned: [], status: "unavailable" };
   }
 }

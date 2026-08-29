@@ -25,7 +25,18 @@ describe("resilience surfaces", () => {
   it("exposes the cookie notice as a named non-modal region", async () => {
     render(<CookieBanner />);
 
-    expect(await screen.findByRole("region", { name: "Бисквитки" })).toBeInTheDocument();
+    const notice = await screen.findByRole("region", { name: "Бисквитки" });
+
+    expect(notice).toBeInTheDocument();
+    expect(notice).toHaveAttribute("aria-describedby");
+    expect(document.getElementById(notice.getAttribute("aria-describedby") ?? "")).toHaveTextContent(
+      "само необходими бисквитки",
+    );
+    expect(screen.getByRole("link", { name: "политиката за поверителност" })).toHaveAttribute(
+      "href",
+      "/privacy",
+    );
+    expect(screen.getByRole("button", { name: "Разбрах" })).toBeEnabled();
     expect(screen.queryByRole("dialog", { name: "Бисквитки" })).not.toBeInTheDocument();
   });
 

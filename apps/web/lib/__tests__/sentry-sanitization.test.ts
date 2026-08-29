@@ -73,4 +73,89 @@ describe("Sentry sanitization", () => {
     expect(event.logentry?.message).toBe("roomCode=[ПРЕМАХНАТО]");
     expect(event.tags).toEqual({ userId: "[ПРЕМАХНАТО]", subsystem: "auth" });
   });
+
+  it("sanitizes breadcrumb messages even when the breadcrumb has no data", () => {
+    expect(sanitizeMonitoringBreadcrumb({
+      category: "console",
+      message: "[GameRoom WOLF42] failed token=private-token",
+    })).toEqual({
+      category: "console",
+      message: "[GameRoom [ПРЕМАХНАТО]] failed token=[ПРЕМАХНАТО]",
+    });
+  });
+
+  it("scrubs private transactions and nested exception variables", () => {
+    const event = sanitizeMonitoringEvent({
+      transaction: "GET /play/WOLF42?role=seer",
+      exception: {
+        values: [{
+          type: "Error",
+          value: "Night action failed role=seer",
+          stacktrace: {
+            frames: [{
+              vars: {
+                role: "seer",
+                displayName: "Тестов играч",
+                details: "cookie=session-secret; roomCode=WOLF42",
+              },
+            }],
+          },
+        }],
+      },
+    });
+
+    expect(event.transaction).toBe("GET /play/[code]");
+    expect(event.exception?.values[0]).toMatchObject({
+      value: "Night action failed role=[ПРЕМАХНАТО]",
+      stacktrace: {
+        frames: [{
+          vars: {
+            role: "[ПРЕМАХНАТО]",
+            displayName: "[ПРЕМАХНАТО]",
+            details: "cookie=[ПРЕМАХНАТО]; roomCode=[ПРЕМАХНАТО]",
+          },
+        }],
+      },
+    });
+  });
+
+  it("drops Drizzle SQL and quoted auth parameters from server events", () => {
+    const rawError = [
+      "Failed query: insert into session (token, user_id) values ($1, $2)",
+      'params: session-token,user@example.com,{"role":"seer","message":"private words"}',
+    ].join("\n");
+
+    const event = sanitizeMonitoringEvent({
+      exception: {
+        values: [{ type: "DrizzleQueryError", value: rawError }],
+      },
+      extra: {
+        query: "insert into session (token, user_id) values ($1, $2)",
+        parameters: ["session-token", "user@example.com"],
+      },
+    });
+
+    expect(event).toMatchObject({
+      exception: {
+        values: [{
+          type: "DrizzleQueryError",
+          value: "Database operation failed; details=[ПРЕМАХНАТО]",
+        }],
+      },
+      extra: {
+        query: "[ПРЕМАХНАТО]",
+        parameters: "[ПРЕМАХНАТО]",
+      },
+    });
+    const serialized = JSON.stringify(event);
+    for (const sensitiveValue of [
+      "insert into session",
+      "session-token",
+      "user@example.com",
+      "seer",
+      "private words",
+    ]) {
+      expect(serialized).not.toContain(sensitiveValue);
+    }
+  });
 });

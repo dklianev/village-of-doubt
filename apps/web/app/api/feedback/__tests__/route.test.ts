@@ -2,8 +2,14 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { POST } from "../route";
 
 const { getSession, renderFeedbackEmail, sendEmail } = vi.hoisted(() => ({
-  getSession: vi.fn(() => Promise.resolve(null)),
-  renderFeedbackEmail: vi.fn(() => ({ subject: "Бележка", html: "<p>Бележка</p>", text: "Бележка" })),
+  getSession: vi.fn<() => Promise<{ user: { name: string | null; email: string } } | null>>(
+    () => Promise.resolve(null),
+  ),
+  renderFeedbackEmail: vi.fn((_input: unknown) => ({
+    subject: "Бележка",
+    html: "<p>Бележка</p>",
+    text: "Бележка",
+  })),
   sendEmail: vi.fn(() => Promise.resolve()),
 }));
 
@@ -65,5 +71,43 @@ describe("POST /api/feedback", () => {
     expect(JSON.stringify(consoleError.mock.calls)).not.toContain(sensitive);
     expect(JSON.stringify(consoleError.mock.calls)).not.toContain("private.person@example.com");
     consoleError.mockRestore();
+  });
+
+  it("не добавя session identity, когато имейлът за връзка е оставен празен", async () => {
+    process.env.REPORTS_NOTIFY_EMAIL = "operator@example.com";
+    getSession.mockResolvedValueOnce({
+      user: { name: "Тайно име", email: "private.person@example.com" },
+    });
+
+    const response = await POST(
+      feedbackRequest({ category: "idea", body: "Полезна анонимна бележка за масата.", email: null, page: "/" }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(getSession).not.toHaveBeenCalled();
+    expect(renderFeedbackEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ reporterEmail: null, body: expect.stringContaining("анонимен") }),
+    );
+    const templateInput = renderFeedbackEmail.mock.calls[0]?.[0];
+    expect(JSON.stringify(templateInput)).not.toContain("private.person@example.com");
+    expect(JSON.stringify(templateInput)).not.toContain("Тайно име");
+  });
+
+  it("отхвърля невалиден имейл и при директна API заявка", async () => {
+    process.env.REPORTS_NOTIFY_EMAIL = "operator@example.com";
+
+    const response = await POST(
+      feedbackRequest({
+        category: "idea",
+        body: "Полезна бележка за масата.",
+        email: "това не е имейл",
+        page: "/",
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ error: "Въведи валиден имейл." });
+    expect(getSession).not.toHaveBeenCalled();
+    expect(sendEmail).not.toHaveBeenCalled();
   });
 });

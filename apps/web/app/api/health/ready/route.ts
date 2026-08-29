@@ -25,19 +25,24 @@ export async function GET() {
 
 async function loadDeepReadiness() {
   const databaseUrl = process.env.DATABASE_URL;
-  let databaseReady = false;
+  const [databaseReady, gameServerReady, redisReady] = await Promise.all([
+    checkConfiguredDatabaseReadiness(databaseUrl),
+    checkGameServerReadiness(process.env.GAME_SERVER_HTTP_URL),
+    checkRuntimeRedisReadiness(),
+  ]);
+  return databaseReady && gameServerReady && redisReady;
+}
 
-  if (databaseUrl) {
-    try {
-      databaseReady = await checkDatabaseReadiness(createDatabase(databaseUrl));
-    } catch {
-      databaseReady = false;
-    }
+async function checkConfiguredDatabaseReadiness(databaseUrl: string | undefined) {
+  if (!databaseUrl) {
+    return false;
   }
 
-  const gameServerReady = await checkGameServerReadiness(process.env.GAME_SERVER_HTTP_URL);
-  const redisReady = await checkRuntimeRedisReadiness();
-  return databaseReady && gameServerReady && redisReady;
+  try {
+    return await checkDatabaseReadiness(createDatabase(databaseUrl));
+  } catch {
+    return false;
+  }
 }
 
 export function createReadinessLoader(

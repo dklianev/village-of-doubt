@@ -541,10 +541,20 @@ for (const viewport of VIEWPORTS) {
       await page.goto(route.path, { waitUntil: "domcontentloaded" });
       await page.waitForLoadState("networkidle").catch(() => {});
       await page.waitForTimeout(600);
+      if (route.name === "achievements") {
+        await pauseAmbientScene(page);
+      }
       if (route.name === "replay") {
         await expect(page.getByText("actorNameBg", { exact: false })).toHaveCount(0);
         await expect(page.getByText("targetNameBg", { exact: false })).toHaveCount(0);
         await expect(page.getByText("roleNameBg", { exact: false })).toHaveCount(0);
+      }
+      if (route.name === "achievements") {
+        const screenshot = await page.screenshot({ animations: "allow", fullPage: true });
+        expect(screenshot).toMatchSnapshot(`${viewport.name}-${route.name}-light.png`, {
+          maxDiffPixelRatio: 0.01,
+        });
+        return;
       }
       await expect(page).toHaveScreenshot(`${viewport.name}-${route.name}-light.png`, {
         fullPage: true,
@@ -641,6 +651,12 @@ for (const viewport of VIEWPORTS) {
 
 function visualMasks(page: Page) {
   return [page.locator(".harbor-foot-time"), page.locator(".status-hero-time")];
+}
+
+async function pauseAmbientScene(page: Page) {
+  await page.addStyleTag({
+    content: "body::before { animation-delay: -1s !important; animation-play-state: paused !important; }",
+  });
 }
 
 async function waitForStablePlayStage(page: Page) {
