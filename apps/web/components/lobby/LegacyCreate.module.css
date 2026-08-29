@@ -103,7 +103,6 @@
   animation-direction: alternate;
 }
 
-:global(.lobby-wizard-main),
 :global(.lobby-step),
 :global(.preview-stat-list),
 :global(.preview-role-stack),
@@ -112,7 +111,6 @@
   gap: 14px;
 }
 
-:global(.lobby-step-pane),
 :global(.lobby-panel),
 :global(.advanced-drawer),
 :global(.sticky-preview) {
@@ -205,52 +203,6 @@
 
 :global(.lobby-step-actions) {
   justify-content: flex-end;
-}
-
-:global(.lobby-step-pane) {
-  display: grid;
-  align-items: start;
-  border-radius: 28px;
-  padding: clamp(18px, 3vw, 34px);
-  background: rgba(8, 10, 10, 0.46);
-  min-height: clamp(560px, 70vh, 880px);
-  contain: layout paint;
-  scroll-margin-top: 6rem;
-}
-
-:global(.lobby-step-slot) {
-  grid-area: 1 / 1;
-  display: grid;
-  gap: 22px;
-  max-width: 100%;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(8px);
-  transition:
-    opacity 180ms ease,
-    transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    visibility 0s linear 220ms;
-  visibility: hidden;
-}
-
-:global(.lobby-step-slot[data-active="true"]) {
-  opacity: 1;
-  pointer-events: auto;
-  transform: translateY(0);
-  transition:
-    opacity 180ms ease,
-    transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    visibility 0s;
-  visibility: visible;
-  z-index: 1;
-}
-
-:global(.lobby-step-slot:not([data-active="true"])) {
-  overflow: hidden;
-}
-
-:global(.lobby-step-slot:not([data-active="true"]) .role-carousel) {
-  display: none;
 }
 
 :global(.lobby-step) {
@@ -1586,10 +1538,6 @@
     width: 100%;
     justify-items: start;
     text-align: left;
-  }
-
-  :global(.lobby-step-pane) {
-    min-height: clamp(480px, 80vh, 720px);
   }
 
   :global(.lobby-step-room .quick-start-row) {

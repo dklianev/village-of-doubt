@@ -140,6 +140,46 @@ describe("account presentation", () => {
     expect(within(archiveActions as HTMLElement).getByRole("heading", { name: "Опасна зона" })).toBeInTheDocument();
   });
 
+  it("подрежда mobile досието в три семантични раздела", async () => {
+    const user = userEvent.setup();
+    const { container } = render(
+      <AccountDashboard
+        userId="visual-account-user"
+        email="visual@example.com"
+        name="Визуален играч"
+        avatarId="portrait-f04"
+        emailVerified
+        providers={["credential"]}
+        activityState="empty"
+        stats={{
+          totalGames: 0,
+          totalWins: 0,
+          winRate: 0,
+          villageWins: 0,
+          threatWins: 0,
+          longestStreak: 0,
+          memberSince: null,
+        }}
+        recentGames={[]}
+        unlockedAchievementIds={[]}
+        totalAchievementCount={7}
+      />,
+    );
+
+    const groups = container.querySelectorAll("[data-account-section]");
+    expect(groups).toHaveLength(3);
+    expect(screen.getByRole("radio", { name: "Хроника" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "Образ и достъп" })).not.toBeChecked();
+    expect(screen.getByRole("radio", { name: "Данни и сигурност" })).not.toBeChecked();
+    expect(screen.getByText("Хроника")).toBeInTheDocument();
+    expect(screen.getByText("Образ и достъп")).toBeInTheDocument();
+    expect(screen.getByText("Данни и сигурност")).toBeInTheDocument();
+
+    await user.click(screen.getByLabelText("Образ и достъп"));
+    expect(screen.getByRole("radio", { name: "Хроника" })).not.toBeChecked();
+    expect(screen.getByRole("radio", { name: "Образ и достъп" })).toBeChecked();
+  });
+
   it("използва Pill за командата за изтегляне", () => {
     render(<AccountDataExport />);
 

@@ -154,7 +154,15 @@ function FinalLandingCta() {
 function LandingLogoMark() {
   return (
     <span className="landing-logo-mark" aria-hidden="true">
-      <Image src="/game-art/logo-landing-mark.webp" alt="" width={118} height={118} loading="eager" sizes="118px" />
+      <Image
+        src="/game-art/logo-landing-mark.webp"
+        alt=""
+        width={118}
+        height={118}
+        loading="eager"
+        fetchPriority="low"
+        sizes="118px"
+      />
     </span>
   );
 }

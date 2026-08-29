@@ -21,6 +21,18 @@ const variants = [
     maxBytes: 48 * 1024,
   },
   {
+    source: "assets/game-art-source/bg-lobby-tavern.png",
+    output: "apps/web/public/game-art/mobile/bg-lobby-tavern.avif",
+    width: 960,
+    maxBytes: 40 * 1024,
+  },
+  {
+    source: "assets/game-art-source/mafia/bg-lobby-tavern.png",
+    output: "apps/web/public/game-art/mobile/mafia/bg-lobby-tavern.avif",
+    width: 960,
+    maxBytes: 40 * 1024,
+  },
+  {
     source: "assets/game-art-source/werewolf/bg-hero-v2.png",
     output: "apps/web/public/game-art/mobile/werewolf/bg-hero-v2.avif",
     width: 640,

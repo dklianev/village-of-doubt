@@ -1481,7 +1481,7 @@ function validProductionEnv() {
     BACKUP_AGE_RECIPIENT: "age1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
     RCLONE_REMOTE: "encrypted-remote:werewolf/backups",
     DATABASE_STALE_ACTIVE_HOURS: "24",
-    DATABASE_EVENT_RETENTION_DAYS: "730",
+    DATABASE_EVENT_RETENTION_DAYS: "365",
     MIGRATION_LOCK_TIMEOUT_MS: "5000",
     MIGRATION_STATEMENT_TIMEOUT_MS: "300000",
     MIGRATION_IDLE_TRANSACTION_TIMEOUT_MS: "300000",

@@ -62,12 +62,16 @@ describe("ModeChoiceCards", () => {
 
     const { container } = render(<ModeChoiceCards games={games} initialSession={null} />);
     const image = container.querySelector(".game-choice-art img");
-    const mobileSource = container.querySelector('.game-choice-art source[media="(max-width: 767px)"]');
+    const mobileSources = container.querySelectorAll('.game-choice-art source[media="(max-width: 767px)"]');
 
     expect(image).toHaveAttribute("fetchpriority", "high");
     expect(image).toHaveAttribute("loading", "eager");
     expect(image).toHaveAttribute("decoding", "async");
-    expect(mobileSource).toHaveAttribute("srcset", "/game-art/mobile/bg-lobby-tavern.webp");
+    expect(mobileSources).toHaveLength(2);
+    expect(mobileSources[0]).toHaveAttribute("type", "image/avif");
+    expect(mobileSources[0]).toHaveAttribute("srcset", "/game-art/mobile/bg-lobby-tavern.avif");
+    expect(mobileSources[1]).toHaveAttribute("type", "image/webp");
+    expect(mobileSources[1]).toHaveAttribute("srcset", "/game-art/mobile/bg-lobby-tavern.webp");
   });
 
   it("не prefetch-ва шест тежки route дървета от първия екран", () => {

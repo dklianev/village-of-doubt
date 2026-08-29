@@ -213,6 +213,16 @@ test("production-container CI supplies every operational production guard", () =
   );
 });
 
+test("production detailed-event retention defaults to one year", () => {
+  const compose = read("docker-compose.yml");
+  const example = read(".env.example");
+  const runbook = read("docs/operations/database-operations.md");
+
+  assert.match(compose, /DATABASE_EVENT_RETENTION_DAYS:\s*\$\{DATABASE_EVENT_RETENTION_DAYS:-365\}/);
+  assert.match(example, /^DATABASE_EVENT_RETENTION_DAYS=365$/m);
+  assert.match(runbook, /Detailed event retention defaults to 365 days\./);
+});
+
 test("CI isolates visual baselines from the serial core verification path", () => {
   const ci = read(".github/workflows/ci.yml");
   const verifyStart = ci.indexOf("  verify:");

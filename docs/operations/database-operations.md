@@ -72,7 +72,7 @@ Each pass is bounded and uses `FOR UPDATE SKIP LOCKED`:
 - old events are deleted only when `DATABASE_EVENT_RETENTION_DAYS` is greater
   than zero and their game is already ended or abandoned.
 
-Detailed event retention defaults to 730 days. Changing it is a product/data-retention
+Detailed event retention defaults to 365 days. Changing it is a product/data-retention
 decision because it removes old replay detail. Start with a documented window,
 take a verified backup, and monitor the first cleanup passes.
 

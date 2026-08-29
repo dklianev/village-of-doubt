@@ -162,7 +162,7 @@ export function readDatabaseMaintenanceConfig(
     ),
     eventRetentionDays: readBoundedInteger(
       environment.DATABASE_EVENT_RETENTION_DAYS,
-      730,
+      365,
       0,
       3_650,
     ),

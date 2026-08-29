@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import { AccountAchievements } from "./AccountAchievements";
 import { AccountDangerZone } from "./AccountDangerZone";
 import { AccountDataExport } from "./AccountDataExport";
@@ -37,33 +39,94 @@ export function AccountDashboard(props: AccountDashboardProps) {
       />
 
       <div className={styles.content}>
-        {props.activityState !== "unavailable" ? (
-          <AccountStats stats={props.stats} activityState={props.activityState} />
-        ) : null}
+        <AccountGroup
+          id="chronicle"
+          index="I"
+          title="Хроника"
+          description="Статистика, легенди и последни игри"
+          defaultChecked
+        >
+          {props.activityState !== "unavailable" ? (
+            <AccountStats stats={props.stats} activityState={props.activityState} />
+          ) : null}
 
-        {props.activityState === "unavailable" ? <AccountActivityUnavailable /> : null}
+          {props.activityState === "unavailable" ? <AccountActivityUnavailable /> : null}
 
-        {props.activityState !== "unavailable" ? (
-          <AccountAchievements unlockedIds={props.unlockedAchievementIds} total={props.totalAchievementCount} />
-        ) : null}
+          {props.activityState !== "unavailable" ? (
+            <AccountAchievements unlockedIds={props.unlockedAchievementIds} total={props.totalAchievementCount} />
+          ) : null}
 
-        {props.activityState === "ready" && props.recentGames.length > 0 ? (
-          <AccountRecentGames games={props.recentGames} />
-        ) : null}
+          {props.activityState === "ready" && props.recentGames.length > 0 ? (
+            <AccountRecentGames games={props.recentGames} />
+          ) : null}
+        </AccountGroup>
 
-        <AccountProfile
-          initialName={props.name}
-          initialAvatarId={props.avatarId}
-          email={props.email}
-          emailVerified={props.emailVerified}
-          providers={props.providers}
-        />
+        <AccountGroup
+          id="identity"
+          index="II"
+          title="Образ и достъп"
+          description="Име, портрет и свързани профили"
+        >
+          <AccountProfile
+            initialName={props.name}
+            initialAvatarId={props.avatarId}
+            email={props.email}
+            emailVerified={props.emailVerified}
+            providers={props.providers}
+          />
+        </AccountGroup>
 
-        <div className={styles.archiveActions} data-account-archive-actions>
-          <AccountDataExport />
-          <AccountDangerZone email={props.email} />
-        </div>
+        <AccountGroup
+          id="security"
+          index="III"
+          title="Данни и сигурност"
+          description="Архив и управление на досието"
+        >
+          <div className={styles.archiveActions} data-account-archive-actions>
+            <AccountDataExport />
+            <AccountDangerZone email={props.email} />
+          </div>
+        </AccountGroup>
       </div>
+    </div>
+  );
+}
+
+function AccountGroup({
+  id,
+  index,
+  title,
+  description,
+  defaultChecked = false,
+  children,
+}: {
+  id: string;
+  index: string;
+  title: string;
+  description: string;
+  defaultChecked?: boolean;
+  children: ReactNode;
+}) {
+  const inputId = `account-section-${id}`;
+
+  return (
+    <div className={styles.accountGroup} data-account-section={id}>
+      <input
+        className={styles.accountGroupToggle}
+        type="radio"
+        name="account-section"
+        id={inputId}
+        aria-label={title}
+        defaultChecked={defaultChecked}
+      />
+      <label className={styles.accountGroupSummary} htmlFor={inputId}>
+        <span className={styles.accountGroupIndex}>{index}</span>
+        <span className={styles.accountGroupLabel}>
+          <strong>{title}</strong>
+          <small>{description}</small>
+        </span>
+      </label>
+      <div className={styles.accountGroupBody}>{children}</div>
     </div>
   );
 }

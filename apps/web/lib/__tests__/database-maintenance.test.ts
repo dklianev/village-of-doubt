@@ -224,8 +224,8 @@ describe("database maintenance loop", () => {
     });
   });
 
-  it("defaults detailed game-event retention to 24 months", () => {
-    expect(readDatabaseMaintenanceConfig({}).eventRetentionDays).toBe(730);
+  it("defaults detailed game-event retention to 12 months", () => {
+    expect(readDatabaseMaintenanceConfig({}).eventRetentionDays).toBe(365);
   });
 
   it("builds the same versioned key ring used by Better Auth token encryption", () => {

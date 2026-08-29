@@ -21,11 +21,13 @@ const GAME_CHOICE_ART = {
   werewolf: {
     desktopAvif: "/game-art/bg-lobby-tavern.avif",
     desktopWebp: "/game-art/bg-lobby-tavern.webp",
+    mobileAvif: "/game-art/mobile/bg-lobby-tavern.avif",
     mobileWebp: "/game-art/mobile/bg-lobby-tavern.webp",
   },
   mafia: {
     desktopAvif: "/game-art/mafia/bg-lobby-tavern.avif",
     desktopWebp: "/game-art/mafia/bg-lobby-tavern.webp",
+    mobileAvif: "/game-art/mobile/mafia/bg-lobby-tavern.avif",
     mobileWebp: "/game-art/mobile/mafia/bg-lobby-tavern.webp",
   },
 } as const;
@@ -55,7 +57,8 @@ export function ModeChoiceCards({ games, initialSession }: { games: readonly Mod
             data-family={game.family}
           >
             <picture className="game-choice-art" aria-hidden="true">
-              <source media="(max-width: 767px)" srcSet={art.mobileWebp} />
+              <source media="(max-width: 767px)" type="image/avif" srcSet={art.mobileAvif} />
+              <source media="(max-width: 767px)" type="image/webp" srcSet={art.mobileWebp} />
               <source type="image/avif" srcSet={art.desktopAvif} />
               <img
                 src={art.desktopWebp}
