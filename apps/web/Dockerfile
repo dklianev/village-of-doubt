@@ -1,5 +1,6 @@
 FROM node:24.19.0-alpine@sha256:d32cdf619f63fe0471182d08996dd516c6275bb5fd31ae06e55a570bd9e1ad43 AS base
 WORKDIR /app
+ENV NEXT_TELEMETRY_DISABLED=1
 RUN corepack enable
 
 FROM base AS migrator-deps

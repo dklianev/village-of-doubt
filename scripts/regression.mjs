@@ -1367,8 +1367,10 @@ function checkProductionOperationsContracts() {
   assert(
     compose.includes("shared_preload_libraries=pg_stat_statements")
       && compose.includes("log_min_duration_statement=${POSTGRES_SLOW_QUERY_MS:-500}")
+      && compose.includes("log_parameter_max_length=0")
+      && compose.includes("log_parameter_max_length_on_error=0")
       && compose.includes("log_line_prefix="),
-    "PostgreSQL must expose statement statistics and labeled slow-query logs.",
+    "PostgreSQL must expose statement statistics without logging bind parameters.",
   );
   assert(
     roleReconciler.includes(
@@ -1419,6 +1421,10 @@ function checkDatabaseMigrationWorkflow() {
       ? spawnSync("cmd.exe", ["/d", "/s", "/c", "pnpm --filter @werewolf/database exec drizzle-kit check --config drizzle.config.ts"], {
           cwd: root,
           encoding: "utf8",
+          env: {
+            ...process.env,
+            PATH: `${path.dirname(process.execPath)}${path.delimiter}${process.env.PATH ?? ""}`,
+          },
         })
       : spawnSync("pnpm", ["--filter", "@werewolf/database", "exec", "drizzle-kit", "check", "--config", "drizzle.config.ts"], {
           cwd: root,
@@ -1462,8 +1468,11 @@ function validProductionEnv() {
     ALLOW_DEV_AUTH: "false",
     GOOGLE_CLIENT_ID: "prod-google-client-id",
     GOOGLE_CLIENT_SECRET: "prod-google-client-secret",
+    DISCORD_CLIENT_ID: "prod-discord-client-id",
+    DISCORD_CLIENT_SECRET: "prod-discord-client-secret",
     RESEND_API_KEY: "re_prod_example_key",
     RESEND_FROM: "Върколак и Мафия <noreply@werewolf.example.com>",
+    REPORTS_NOTIFY_EMAIL: "reports@werewolf.example.com",
     SENTRY_DSN: "https://public@sentry.example.com/1",
     NEXT_PUBLIC_SENTRY_DSN: "https://public@sentry.example.com/2",
     RELEASE_VERSION: "release-2026-07-20.1",
@@ -1471,7 +1480,13 @@ function validProductionEnv() {
     RELEASE_MANIFEST_PUBLIC_KEY: process.execPath,
     BACKUP_AGE_RECIPIENT: "age1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
     RCLONE_REMOTE: "encrypted-remote:werewolf/backups",
+    DATABASE_STALE_ACTIVE_HOURS: "24",
     DATABASE_EVENT_RETENTION_DAYS: "730",
+    MIGRATION_LOCK_TIMEOUT_MS: "5000",
+    MIGRATION_STATEMENT_TIMEOUT_MS: "300000",
+    MIGRATION_IDLE_TRANSACTION_TIMEOUT_MS: "300000",
+    MIGRATION_PROCESS_TIMEOUT_SECONDS: "600",
+    COMPOSE_WAIT_TIMEOUT_SECONDS: "120",
   };
 }
 

@@ -4,6 +4,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { findHostClient } from "./loadtest-clients.mjs";
 import { assertLoadThresholds } from "./loadtest-metrics.mjs";
+import { runActiveHold } from "./loadtest-activity.mjs";
 
 const rootRequire = createRequire(import.meta.url);
 const gameServerRequire = createRequire(path.resolve("apps/game-server/package.json"));
@@ -22,7 +23,10 @@ const port = readPositiveInteger("LOAD_PORT", 3667);
 const JOIN_P95_MS = readPositiveInteger("LOAD_JOIN_P95_MS", 3_000);
 const MAX_RSS_BYTES = readPositiveInteger("LOAD_MAX_RSS_MB", 512) * 1024 * 1024;
 const MAX_EVENT_LOOP_UTILIZATION = readRatio("LOAD_MAX_EVENT_LOOP_UTILIZATION", 0.95);
+const MAX_EVENT_LOOP_PEAK_UTILIZATION = readRatio("LOAD_MAX_EVENT_LOOP_PEAK_UTILIZATION", 0.99);
 const STATS_INTERVAL_MS = readPositiveInteger("LOAD_STATS_INTERVAL_MS", 250);
+const ACTIVITY_INTERVAL_MS = readPositiveInteger("LOAD_ACTIVITY_INTERVAL_MS", 2_000);
+const MIN_PHASES = readPositiveInteger("LOAD_MIN_PHASES", 1);
 const GAME_TOKEN_SECRET = process.env.GAME_TOKEN_SECRET ?? "load-test-secret-that-is-long-enough-for-local-runs";
 const externalTarget = process.env.LOAD_TARGET;
 const target = externalTarget ?? `ws://127.0.0.1:${port}`;
@@ -70,7 +74,17 @@ try {
     hostClient.room.send("startGame");
   }
   await Promise.all(groups.map(waitForGameStart));
-  await delay(HOLD_MS);
+  const activity = await runActiveHold({
+    groups,
+    holdMs: HOLD_MS,
+    activityIntervalMs: ACTIVITY_INTERVAL_MS,
+  });
+  if (activity.commandsSent === 0 || activity.phasesSeen.length < MIN_PHASES) {
+    throw new Error(
+      `Load hold did not exercise enough runtime behavior: ${activity.commandsSent} command(s), ` +
+      `${activity.phasesSeen.length}/${MIN_PHASES} phase(s).`,
+    );
+  }
   assertNoFailures();
   if (databaseUrl) {
     await assertPersistence(databaseUrl, groups.map((group) => group.code));
@@ -80,6 +94,7 @@ try {
   const metrics = assertLoadThresholds({ joinLatenciesMs, statsSamples }, {
     joinP95Ms: JOIN_P95_MS,
     eventLoopUtilization: MAX_EVENT_LOOP_UTILIZATION,
+    peakEventLoopUtilization: MAX_EVENT_LOOP_PEAK_UTILIZATION,
     rssBytes: MAX_RSS_BYTES,
   });
   shuttingDown = true;
@@ -91,7 +106,9 @@ try {
   assertNoFailures();
   console.log(
     `Load test passed: ${NUM_CLIENTS} clients across ${groups.length} shared rooms; ` +
-    `0 failures, join p95 ${metrics.joinP95Ms.toFixed(1)}ms, sustained event loop ${(metrics.sustainedEventLoopUtilization * 100).toFixed(1)}%, ` +
+    `0 failures, ${activity.commandsSent} active command(s) across ${activity.phasesSeen.length} phase(s), ` +
+    `join p95 ${metrics.joinP95Ms.toFixed(1)}ms, sustained/peak event loop ` +
+    `${(metrics.sustainedEventLoopUtilization * 100).toFixed(1)}%/${(metrics.peakEventLoopUtilization * 100).toFixed(1)}%, ` +
     `max RSS ${(metrics.maxRssBytes / 1024 / 1024).toFixed(1)}MiB${databaseUrl ? ", persistence verified" : ""}.`,
   );
 } finally {

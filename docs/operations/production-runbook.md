@@ -10,7 +10,8 @@ Never build application images on the production host.
    the Ed25519-signed `release.json` plus `release.json.sig`.
 3. Copy the manifest to the host and use the absolute candidate path plus the
    immutable-checkout deploy command documented below.
-4. Confirm `/api/health/ready`, the game `/health/ready`, and one real create-to-play flow.
+4. Confirm public HTTPS `/api/health/ready`, public game `/health/ready`, the
+   allowed-origin WSS upgrade through Caddy, and one real create-to-play flow.
 5. Keep the previous two release manifests on the host.
 
 An image rollback is safe only while all applied database migrations remain
@@ -23,6 +24,34 @@ backward-compatible with the previous image. Migrations use expand/contract:
 For an approved destructive migration, stop traffic, create and verify a backup,
 record the maintenance approval, and restore into a new database before switching
 the connection string. Do not overwrite the live database in place.
+
+The host serializes deploy, rollback, restore, and restore acceptance through
+`/var/lib/werewolf/release-state/operations.lock`. A second operation fails
+closed and prints the first owner's PID and start time. Never remove a retained
+lock until that PID and the database/release state have been investigated.
+
+Deploy writes a signed `migration-pending.json` before starting the migrator and
+advances signed `schema-current.json` only after the bounded migrator succeeds.
+A pending marker or a migration-head mismatch blocks automatic image rollback
+with `MAINTENANCE REQUIRED`; do not delete these markers to force a rollback.
+Failed deploys and rollbacks preserve mode-`0600` Compose diagnostics under
+`release-state/forensics/`.
+
+## Required external setup
+
+- Public DNS for `PUBLIC_WEB_DOMAIN` and `PUBLIC_WS_DOMAIN` must resolve to the
+  Caddy host. TCP 80/443 and UDP 443 must reach it, and Caddy must obtain valid
+  public certificates. The deploy gate does not accept HTTP, private origins,
+  redirects, or direct container-only health.
+- Register both Google and Discord OAuth applications and their production
+  callback URLs. Both provider controls are rendered, so all four client ID and
+  secret variables are required by `check-production-env.mjs`.
+- Configure Resend and a valid `REPORTS_NOTIFY_EMAIL`; a production release is
+  rejected when player reports have no delivery destination.
+- Provision server and browser Sentry DSNs, the release-manifest public key,
+  the age backup recipient, and the off-site rclone remote before deploy.
+- Keep the age private identity and backup-signing public key on a separate
+  recovery host. The backup signing private key remains only on production.
 
 ## Backups
 
@@ -175,6 +204,13 @@ identity this rule. The deployment identity also needs Docker daemon access,
 which is root-equivalent; keep it separate from `werewolf`, interactive users,
 and the web/game services.
 
+`COMPOSE_WAIT_TIMEOUT_SECONDS` bounds dependency startup. The migrator also has
+independent PostgreSQL lock, statement, and idle-transaction timeouts plus a
+host process timeout (`MIGRATION_*_TIMEOUT_*`). The process timeout must be
+larger than the server-side limits. Treat a process timeout as unresolved:
+preserve `migration-pending.json`, enter maintenance, and inspect PostgreSQL
+before any rollback decision.
+
 The first deployment may use `SKIP_DEPLOY_BACKUP=1` only when PostgreSQL is new
 and contains no user data. Every later deployment requires a healthy signed
 `current.json`; missing or invalid provenance makes the pre-deploy backup fail
@@ -196,9 +232,41 @@ Run a restore drill at least monthly:
 
 1. Download the latest off-site dump, checksum, signed manifest, and signature on a non-production host.
 2. Copy the trusted backup signing public key to that host and verify the signature before decryption.
-3. Restore into an empty staging database with `scripts/restore-postgres.sh`, setting `BACKUP_SIGNING_PUBLIC_KEY_FILE`.
-4. Run migrations, smoke tests, and a representative account/history query.
-5. Record the backup timestamp, restore duration, and result.
+3. Run `scripts/restore-postgres.sh` from the active immutable checkout with
+   `RESTORE_CONFIRM_DATABASE`, `BACKUP_SIGNING_PUBLIC_KEY_FILE`, and the
+   off-host age identity. By default it verifies signed
+   `release-state/current.json`, pulls that manifest's digest-pinned migrator,
+   web, and game images, then restores and migrates a staging database before
+   stopping writers. If release state was recovered separately, pass the
+   reviewed pair with `RESTORE_RELEASE_MANIFEST` and
+   `RESTORE_RELEASE_MANIFEST_SIGNATURE`; never substitute image tags manually.
+4. After cutover, require the built-in account/history integrity, runtime-role,
+   migration, and deletion-tombstone checks. A live restore also requires deep
+   web/game readiness plus public HTTPS and WSS through a freshly recreated
+   Caddy container. Any failure automatically returns the original database
+   and keeps writers stopped.
+5. Confirm a real sign-in/account view, history view, and create-to-play flow.
+   The original database remains as `<database>_restore_rollback_<run-id>`.
+6. Only after explicit product and operator acceptance, run the exact
+   `RESTORE_ACCEPT_DATABASE` and `RESTORE_ACCEPT_ROLLBACK_DATABASE` command
+   printed by the restore (`sh scripts/restore-accept.sh ...`). The acceptance script repeats semantic and
+   ingress checks and validates signed applied-schema provenance before deleting
+   that one rollback database.
+7. Record the backup timestamp, restore duration, rollback database name,
+   acceptance time, and result. Preserve the restore record under
+   `release-state/forensics/`.
+
+The restore captures current deletion tombstones while writers are stopped,
+reapplies account deletion to the staged copy, and verifies after cutover that
+neither the identities nor their historical references were reintroduced.
+`RESTORE_ONLY=1` still runs database semantics but leaves writers stopped and
+cannot claim application readiness.
+
+Only after all selected restore gates pass does the script copy the verified
+active manifest to signed `schema-current.json` and clear an old
+`migration-pending.json`. A failed restore leaves both pieces of schema evidence
+unchanged. This lets a rehearsed restore resolve an interrupted migration
+without claiming that a merely attempted cutover repaired provenance.
 
 Target recovery objectives for the initial beta are RPO 6 hours and RTO 60 minutes.
 
@@ -209,7 +277,9 @@ Target recovery objectives for the initial beta are RPO 6 hours and RTO 60 minut
 1. Check `docker compose ps` and `docker compose logs --tail 200 web caddy`.
 2. Check web readiness, then game and Redis readiness.
 3. If the candidate image is unhealthy and the schema is compatible, deploy the
-   previous release manifest.
+   previous release manifest. The rollback script permits this only when its
+   migration head exactly matches signed `schema-current.json` and no migration
+   is pending.
 4. If both releases fail, preserve logs and inspect database/Redis dependencies.
 
 ### Redis unavailable

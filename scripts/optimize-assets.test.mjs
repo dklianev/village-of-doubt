@@ -26,6 +26,9 @@ test("detects mismatched dedicated mobile WebP derivatives", async () => {
     sourceRoot: "assets/game-art-source",
     outputRoot: "apps/web/public/game-art",
     imageMetadata: (file) => sharp(file).metadata(),
+    expectedDimensions: new Map([
+      ["bg-landing-hero-composited.png", { width: 640, height: 690 }],
+    ]),
   });
 
   assert.deepEqual(conflicts, []);

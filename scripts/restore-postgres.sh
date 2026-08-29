@@ -1,6 +1,12 @@
 #!/usr/bin/env sh
 set -eu
 
+script_dir="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+# shellcheck disable=SC1091
+. "$script_dir/deploy-operations-lib.sh"
+# shellcheck disable=SC1091
+. "$script_dir/restore-database-checks.sh"
+
 if [ $# -ne 1 ]; then
   printf 'Usage: %s /path/to/werewolf_YYYY-MM-DD_HH-MM-SS.sql.gz[.age]\n' "$0" >&2
   exit 1
@@ -11,6 +17,7 @@ POSTGRES_USER="${POSTGRES_USER:-werewolf}"
 POSTGRES_DB="${POSTGRES_DB:-werewolf}"
 restore_confirmation="${RESTORE_CONFIRM_DATABASE:-}"
 docker_command="${RESTORE_DOCKER_COMMAND:-docker}"
+node_command="${RESTORE_NODE_COMMAND:-node}"
 restore_run_id="${RESTORE_RUN_ID:-$$}"
 restore_health_timeout="${RESTORE_HEALTH_TIMEOUT_SECONDS:-180}"
 restore_only="${RESTORE_ONLY:-0}"
@@ -21,6 +28,22 @@ signing_public_key="${BACKUP_SIGNING_PUBLIC_KEY_FILE:-}"
 manifest_command="${BACKUP_MANIFEST_COMMAND:-$(dirname "$0")/backup-manifest.mjs}"
 restore_max_age_hours="${BACKUP_MAX_RESTORE_AGE_HOURS:-876000}"
 backup_clock_skew_seconds="${BACKUP_CLOCK_SKEW_SECONDS:-300}"
+release_state_dir="${RELEASE_STATE_DIR:-/var/lib/werewolf/release-state}"
+operations_lock_dir="${OPERATIONS_LOCK_DIR:-$release_state_dir/operations.lock}"
+active_release_manifest="${RESTORE_RELEASE_MANIFEST:-$release_state_dir/current.json}"
+active_release_signature="${RESTORE_RELEASE_MANIFEST_SIGNATURE:-${active_release_manifest}.sig}"
+release_manifest_command="${RESTORE_RELEASE_MANIFEST_COMMAND:-$script_dir/release-manifest.mjs}"
+release_manifest_public_key="${RELEASE_MANIFEST_PUBLIC_KEY:-}"
+release_allowed_image_prefix="${RELEASE_ALLOWED_IMAGE_PREFIX:-}"
+schema_manifest="$release_state_dir/schema-current.json"
+pending_migration_manifest="$release_state_dir/migration-pending.json"
+schema_manifest_tmp="$release_state_dir/schema-current.json.restore.$$"
+schema_signature_tmp="$release_state_dir/schema-current.json.sig.restore.$$"
+compose_wait_timeout="${COMPOSE_WAIT_TIMEOUT_SECONDS:-$restore_health_timeout}"
+migration_lock_timeout_ms="${MIGRATION_LOCK_TIMEOUT_MS:-5000}"
+migration_statement_timeout_ms="${MIGRATION_STATEMENT_TIMEOUT_MS:-300000}"
+migration_idle_timeout_ms="${MIGRATION_IDLE_TRANSACTION_TIMEOUT_MS:-300000}"
+migration_process_timeout_seconds="${MIGRATION_PROCESS_TIMEOUT_SECONDS:-600}"
 
 if [ ! -f "$backup_file" ]; then
   printf 'Backup file not found: %s\n' "$backup_file" >&2
@@ -46,6 +69,19 @@ case "$restore_health_timeout" in
     ;;
 esac
 
+require_positive_integer "COMPOSE_WAIT_TIMEOUT_SECONDS" "$compose_wait_timeout"
+require_positive_integer "MIGRATION_LOCK_TIMEOUT_MS" "$migration_lock_timeout_ms"
+require_positive_integer "MIGRATION_STATEMENT_TIMEOUT_MS" "$migration_statement_timeout_ms"
+require_positive_integer "MIGRATION_IDLE_TRANSACTION_TIMEOUT_MS" "$migration_idle_timeout_ms"
+require_positive_integer "MIGRATION_PROCESS_TIMEOUT_SECONDS" "$migration_process_timeout_seconds"
+if [ "$migration_lock_timeout_ms" -ge "$migration_statement_timeout_ms" ] || \
+  [ "$migration_statement_timeout_ms" -ge $((migration_process_timeout_seconds * 1000)) ] || \
+  [ "$migration_idle_timeout_ms" -ge $((migration_process_timeout_seconds * 1000)) ]; then
+  printf 'Migration lock/statement/idle timeouts must fit inside MIGRATION_PROCESS_TIMEOUT_SECONDS.\n' >&2
+  exit 1
+fi
+migration_pgoptions="-c lock_timeout=$migration_lock_timeout_ms -c statement_timeout=$migration_statement_timeout_ms -c idle_in_transaction_session_timeout=$migration_idle_timeout_ms"
+
 case "$restore_only" in
   0|1) ;;
   *)
@@ -62,8 +98,40 @@ case "$require_signature" in
     ;;
 esac
 
+case "$backup_file" in
+  *.age)
+    if [ -z "$age_identity_file" ] || [ ! -f "$age_identity_file" ]; then
+      printf 'BACKUP_AGE_IDENTITY_FILE must reference an existing identity file for encrypted restores.\n' >&2
+      exit 1
+    fi
+    ;;
+esac
+
+if [ "$require_signature" = "1" ] && { [ -z "$signing_public_key" ] || [ ! -f "$signing_public_key" ]; }; then
+  printf 'BACKUP_SIGNING_PUBLIC_KEY_FILE must reference an Ed25519 public key.\n' >&2
+  exit 1
+fi
+
 if [ -z "${MIGRATION_DATABASE_URL:-}" ]; then
   printf 'MIGRATION_DATABASE_URL is required to migrate the staging database.\n' >&2
+  exit 1
+fi
+
+if [ ! -f "$active_release_manifest" ] || [ ! -f "$active_release_signature" ]; then
+  printf 'A signed active release manifest is required for an immutable restore: %s\n' \
+    "$active_release_manifest" >&2
+  exit 1
+fi
+if [ ! -f "$release_manifest_command" ]; then
+  printf 'RESTORE_RELEASE_MANIFEST_COMMAND is unavailable: %s\n' "$release_manifest_command" >&2
+  exit 1
+fi
+if [ -z "$release_manifest_public_key" ] || [ ! -f "$release_manifest_public_key" ]; then
+  printf 'RELEASE_MANIFEST_PUBLIC_KEY must reference the trusted Ed25519 public key for restore.\n' >&2
+  exit 1
+fi
+if [ -z "$release_allowed_image_prefix" ]; then
+  printf 'RELEASE_ALLOWED_IMAGE_PREFIX is required for restore image validation.\n' >&2
   exit 1
 fi
 
@@ -116,35 +184,113 @@ terminate_database_sessions() {
 }
 
 validate_staging_database() {
-  validation_result="$(
-    compose exec -T postgres psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$staging_db" -Atqc "
-      SELECT CASE
-        WHEN to_regclass('public.user') IS NOT NULL
-          AND to_regclass('public.games') IS NOT NULL
-          AND to_regclass('public.deleted_user_identities') IS NOT NULL
-          AND to_regclass('drizzle.__drizzle_migrations') IS NOT NULL
-        THEN 'ok'
-        ELSE 'invalid'
-      END;
-    "
-  )"
-  test "$validation_result" = "ok"
+  restore_validate_database_structure "$staging_db"
+}
+
+capture_current_tombstones() {
+  compose exec -T postgres psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc "
+    SELECT original_user_id || E'\t' || anonymous_user_id
+    FROM public.deleted_user_identities
+    ORDER BY original_user_id;
+  " > "$temporary_tombstones"
+}
+
+reapply_current_tombstones_to_staging() {
+  if [ ! -s "$temporary_tombstones" ]; then
+    return
+  fi
+
+  {
+    cat <<'SQL'
+CREATE TEMP TABLE current_deleted_user_identities (
+  original_user_id text PRIMARY KEY,
+  anonymous_user_id text NOT NULL UNIQUE
+);
+\copy current_deleted_user_identities (original_user_id, anonymous_user_id) FROM STDIN
+SQL
+    cat "$temporary_tombstones"
+    cat <<'SQL'
+\.
+INSERT INTO public.deleted_user_identities (original_user_id, anonymous_user_id)
+SELECT original_user_id, anonymous_user_id
+FROM current_deleted_user_identities
+ON CONFLICT (original_user_id) DO NOTHING;
+DO $$
+DECLARE
+  tombstone record;
+BEGIN
+  FOR tombstone IN
+    SELECT original_user_id, anonymous_user_id
+    FROM current_deleted_user_identities
+    ORDER BY original_user_id
+  LOOP
+    PERFORM public.werewolf_delete_account(tombstone.original_user_id, tombstone.anonymous_user_id);
+  END LOOP;
+END
+$$;
+SQL
+  } > "$temporary_tombstone_sql"
+
+  compose exec -T postgres psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$staging_db" < "$temporary_tombstone_sql"
 }
 
 temporary_sql="$(mktemp "${TMPDIR:-/tmp}/werewolf_restore.XXXXXX")"
 temporary_gzip="$(mktemp "${TMPDIR:-/tmp}/werewolf_restore.XXXXXX.gz")"
+temporary_tombstones="$(mktemp "${TMPDIR:-/tmp}/werewolf_restore_tombstones.XXXXXX")"
+temporary_tombstone_sql="$(mktemp "${TMPDIR:-/tmp}/werewolf_restore_tombstones.XXXXXX.sql")"
+temporary_release_env="$(mktemp "${TMPDIR:-/tmp}/werewolf_restore_release.XXXXXX.env")"
 writers_stopped=0
 restart_attempted=0
 switch_started=0
 target_available=1
 rollback_available=0
 staging_cleanup_safe=1
+staging_created=0
 writers_to_restart=""
+migration_container_started=0
+migrator_container_name="werewolf-restore-migrator-$restore_run_id"
+
+preserve_restore_record() {
+  record_exit_code="$1"
+  record_dir="${OPERATIONS_FORENSICS_DIR:-$release_state_dir/forensics}"
+  record_file="$record_dir/$(date -u +%Y%m%dT%H%M%SZ)-restore-$$.log"
+  umask 077
+  mkdir -p "$record_dir" || return 0
+  {
+    printf 'action=restore\n'
+    printf 'exit_code=%s\n' "$record_exit_code"
+    printf 'backup=%s\n' "$(basename -- "$backup_file")"
+    printf 'target_database=%s\n' "$POSTGRES_DB"
+    printf 'staging_database=%s\n' "$staging_db"
+    printf 'rollback_database=%s\n' "$rollback_db"
+    printf 'rollback_available=%s\n' "$rollback_available"
+    printf 'switch_started=%s\n' "$switch_started"
+    printf 'captured_at=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  } > "$record_file"
+  chmod 600 "$record_file" 2>/dev/null || true
+  printf 'Restore operation record preserved at %s.\n' "$record_file" >&2
+}
+
+record_restored_schema() {
+  cp "$active_release_manifest" "$schema_manifest_tmp"
+  cp "$active_release_signature" "$schema_signature_tmp"
+  chmod 600 "$schema_manifest_tmp" "$schema_signature_tmp"
+  mv "$schema_signature_tmp" "$schema_manifest.sig"
+  mv "$schema_manifest_tmp" "$schema_manifest"
+  rm -f "$pending_migration_manifest" "$pending_migration_manifest.sig"
+}
 
 cleanup() {
   exit_code=$?
   trap - EXIT HUP INT TERM
-  rm -f "$temporary_sql" "$temporary_gzip"
+  rm -f "$temporary_sql" "$temporary_gzip" "$temporary_tombstones" \
+    "$temporary_tombstone_sql" "$temporary_release_env" \
+    "$schema_manifest_tmp" "$schema_signature_tmp"
+
+  if [ "$exit_code" -ne 0 ] && [ "$migration_container_started" -eq 1 ]; then
+    preserve_and_stop_container "$docker_command" "$migrator_container_name" "$release_state_dir" \
+      "restore-migrator" || true
+  fi
 
   if [ "$exit_code" -ne 0 ] && [ "$rollback_available" -eq 1 ]; then
     compose stop web game >/dev/null 2>&1 || true
@@ -155,6 +301,7 @@ cleanup() {
       if rename_database "$POSTGRES_DB" "$staging_db" >/dev/null 2>&1; then
         target_available=0
         staging_cleanup_safe=0
+        staging_created=1
       else
         staging_cleanup_safe=0
         printf 'CRITICAL: failed restored database remains at %s; rollback copy is preserved as %s. Writers remain stopped.\n' "$POSTGRES_DB" "$rollback_db" >&2
@@ -173,7 +320,7 @@ cleanup() {
     fi
   fi
 
-  if [ "$staging_cleanup_safe" -eq 1 ]; then
+  if [ "$staging_cleanup_safe" -eq 1 ] && [ "$staging_created" -eq 1 ]; then
     drop_database "$staging_db" >/dev/null 2>&1 || true
   elif [ "$switch_started" -eq 1 ]; then
     printf 'Staging database %s was preserved for diagnosis after cutover began.\n' "$staging_db" >&2
@@ -187,27 +334,36 @@ cleanup() {
     fi
   fi
 
+  preserve_restore_record "$exit_code"
+  release_operations_lock
   exit "$exit_code"
 }
+
+mkdir -p "$release_state_dir"
+chmod 700 "$release_state_dir" 2>/dev/null || true
+if ! acquire_operations_lock "restore" "$operations_lock_dir"; then
+  rm -f "$temporary_sql" "$temporary_gzip" "$temporary_tombstones" \
+    "$temporary_tombstone_sql" "$temporary_release_env"
+  exit 73
+fi
 trap cleanup EXIT
 trap 'exit 129' HUP
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
-case "$backup_file" in
-  *.age)
-    if [ -z "$age_identity_file" ] || [ ! -f "$age_identity_file" ]; then
-      printf 'BACKUP_AGE_IDENTITY_FILE must reference an existing identity file for encrypted restores.\n' >&2
-      exit 1
-    fi
-    ;;
-esac
+"$node_command" --env-file-if-exists=.env "$release_manifest_command" \
+  "$active_release_manifest" \
+  --signature "$active_release_signature" \
+  --public-key "$release_manifest_public_key" \
+  --allowed-image-prefix "$release_allowed_image_prefix" \
+  --env-output "$temporary_release_env"
+chmod 600 "$temporary_release_env"
+set -a
+# shellcheck disable=SC1090
+. "$temporary_release_env"
+set +a
 
 if [ "$require_signature" = "1" ]; then
-  if [ -z "$signing_public_key" ] || [ ! -f "$signing_public_key" ]; then
-    printf 'BACKUP_SIGNING_PUBLIC_KEY_FILE must reference an Ed25519 public key.\n' >&2
-    exit 1
-  fi
   node "$manifest_command" verify \
     "$backup_file" \
     "$signing_public_key" \
@@ -241,10 +397,19 @@ gzip -t "$temporary_gzip"
 gzip -dc "$temporary_gzip" > "$temporary_sql"
 test -s "$temporary_sql"
 
+compose config --quiet
+compose pull migrate web game caddy
+
 compose exec -T postgres createdb -U "$POSTGRES_USER" -O "$POSTGRES_USER" "$staging_db"
+staging_created=1
 compose exec -T postgres psql -v ON_ERROR_STOP=1 --single-transaction -U "$POSTGRES_USER" "$staging_db" < "$temporary_sql"
 POSTGRES_ROLE_DATABASE="$staging_db" compose run --rm --no-deps -T postgres-roles
-MIGRATION_DATABASE_URL="$staging_database_url" compose run --rm --no-deps -T migrate
+migration_container_started=1
+run_with_process_timeout "$migration_process_timeout_seconds" \
+  env "MIGRATION_DATABASE_URL=$staging_database_url" "PGOPTIONS=$migration_pgoptions" \
+  "$docker_command" compose run --name "$migrator_container_name" --rm --no-deps -T \
+  -e "PGOPTIONS=$migration_pgoptions" migrate
+migration_container_started=0
 POSTGRES_ROLE_DATABASE="$staging_db" compose run --rm --no-deps -T postgres-roles
 validate_staging_database
 
@@ -266,6 +431,9 @@ fi
 
 writers_stopped=1
 compose stop web game >/dev/null
+capture_current_tombstones
+reapply_current_tombstones_to_staging
+terminate_database_sessions "$POSTGRES_DB" >/dev/null
 
 switch_started=1
 staging_cleanup_safe=0
@@ -276,15 +444,30 @@ target_available=0
 rename_database "$staging_db" "$POSTGRES_DB"
 target_available=1
 staging_cleanup_safe=1
+staging_created=0
+
+restore_validate_database_semantics "$POSTGRES_DB"
+restore_verify_captured_tombstones \
+  "$POSTGRES_DB" "$temporary_tombstones" "$temporary_tombstone_sql"
 
 if [ "$restore_only" -ne 1 ]; then
   restart_attempted=1
-  compose up -d --no-recreate --wait --wait-timeout "$restore_health_timeout" web game >/dev/null
+  compose up -d --force-recreate --no-build --no-deps --wait \
+    --wait-timeout "$compose_wait_timeout" web game caddy >/dev/null
+  compose exec -T web \
+    wget -qO- http://127.0.0.1:3000/api/health/ready >/dev/null
+  compose exec -T game \
+    wget -qO- http://127.0.0.1:2567/health/ready >/dev/null
+  "$node_command" --env-file-if-exists=.env "$script_dir/deploy-public-health.mjs"
   writers_stopped=0
+fi
 
-  drop_database "$rollback_db"
-  rollback_available=0
-  printf 'Restore completed.\n'
+record_restored_schema
+
+if [ "$restore_only" -ne 1 ]; then
+  printf 'Restore completed semantic and ingress checks. Rollback database %s is retained until explicit acceptance.\n' "$rollback_db"
+  printf 'Accept with RESTORE_ACCEPT_DATABASE=%s RESTORE_ACCEPT_ROLLBACK_DATABASE=%s sh scripts/restore-accept.sh %s\n' \
+    "$POSTGRES_DB" "$rollback_db" "$rollback_db"
 else
-  printf 'Offline restore completed; rollback database %s is preserved until web and game readiness are verified manually.\n' "$rollback_db"
+  printf 'Offline restore completed semantic database checks; rollback database %s is preserved until application readiness and explicit acceptance.\n' "$rollback_db"
 fi

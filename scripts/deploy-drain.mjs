@@ -3,40 +3,58 @@ import { spawn } from "node:child_process";
 const timeoutMs = readPositiveInteger("DEPLOY_DRAIN_TIMEOUT_MS", 20 * 60_000);
 const pollIntervalMs = readPositiveInteger("DEPLOY_DRAIN_POLL_INTERVAL_MS", 5_000);
 
-await run("docker", [
-  "compose",
-  "exec",
-  "--no-TTY",
-  "game",
-  "node",
-  "--input-type=module",
-  "--eval",
-  "const response = await fetch('http://127.0.0.1:2567/operations/drain', { method: 'POST' }); if (!response.ok) { throw new Error(`drain returned HTTP ${response.status}`); } console.log(await response.text());",
-]);
-
-const startedAt = Date.now();
+let drainStarted = false;
+let drainCompleted = false;
 let lastStatus;
-while (Date.now() - startedAt < timeoutMs) {
-  try {
-    lastStatus = await readStats();
-    if (lastStatus.draining !== true) {
-      throw new Error("game server has not acknowledged drain mode");
+try {
+  await requestDrain("POST");
+  drainStarted = true;
+
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < timeoutMs) {
+    try {
+      lastStatus = await readStats();
+      if (lastStatus.draining !== true) {
+        throw new Error("game server has not acknowledged drain mode");
+      }
+      console.log(`Deploy drain: ${lastStatus.activeRooms} active room(s), ${lastStatus.connectedPlayers} connected player(s).`);
+      if (lastStatus.activeRooms === 0) {
+        drainCompleted = true;
+        console.log("Deploy drain complete. It is safe to replace the game container.");
+        break;
+      }
+    } catch (error) {
+      console.warn(`Deploy drain status unavailable: ${error instanceof Error ? error.message : String(error)}`);
     }
-    console.log(`Deploy drain: ${lastStatus.activeRooms} active room(s), ${lastStatus.connectedPlayers} connected player(s).`);
-    if (lastStatus.activeRooms === 0) {
-      console.log("Deploy drain complete. It is safe to run docker compose up -d --build.");
-      process.exit(0);
-    }
-  } catch (error) {
-    console.warn(`Deploy drain status unavailable: ${error instanceof Error ? error.message : String(error)}`);
+    await delay(pollIntervalMs);
   }
-  await delay(pollIntervalMs);
+
+  if (!drainCompleted) {
+    throw new Error(
+      `Deploy drain timed out after ${timeoutMs}ms with ${lastStatus?.activeRooms ?? "unknown"} active room(s). ` +
+      "The existing game container is still running; deployment was not started.",
+    );
+  }
+} finally {
+  if (drainStarted && !drainCompleted) {
+    await requestDrain("DELETE").catch((error) => {
+      console.error(`Failed to cancel deploy drain: ${error instanceof Error ? error.message : String(error)}`);
+    });
+  }
 }
 
-throw new Error(
-  `Deploy drain timed out after ${timeoutMs}ms with ${lastStatus?.activeRooms ?? "unknown"} active room(s). ` +
-  "The existing game container is still running; deployment was not started.",
-);
+function requestDrain(method) {
+  return run("docker", [
+    "compose",
+    "exec",
+    "--no-TTY",
+    "game",
+    "node",
+    "--input-type=module",
+    "--eval",
+    `const response = await fetch('http://127.0.0.1:2567/operations/drain', { method: '${method}' }); if (!response.ok) { throw new Error(\`drain ${method} returned HTTP \${response.status}\`); } console.log(await response.text());`,
+  ]);
+}
 
 function run(command, args) {
   return new Promise((resolve, reject) => {

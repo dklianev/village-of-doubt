@@ -200,6 +200,7 @@ test("production-container CI supplies every operational production guard", () =
     "RELEASE_ALLOWED_IMAGE_PREFIX",
     "RELEASE_MANIFEST_PUBLIC_KEY",
     "BACKUP_AGE_RECIPIENT",
+    "DATABASE_STALE_ACTIVE_HOURS",
     "DATABASE_EVENT_RETENTION_DAYS",
   ]) {
     assert.match(containers, new RegExp(`^\\s{6}${key}:`, "m"));
@@ -285,7 +286,7 @@ test("deploy validates Compose before disruption and applies database privileges
   const preflight = 'docker compose --env-file .env --env-file "$generated_env" config --quiet';
   const drain = 'pnpm deploy:drain';
   const roles = 'run --rm --no-deps postgres-roles';
-  const migrate = 'run --rm --no-deps migrate';
+  const migrate = 'run_with_process_timeout "$migration_process_timeout_seconds"';
   const grants = 'run --rm --no-deps postgres-grants';
 
   assert.match(deploy, new RegExp(environmentPreflight.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
@@ -294,11 +295,12 @@ test("deploy validates Compose before disruption and applies database privileges
   assert.ok(deploy.indexOf(preflight) < deploy.indexOf(drain));
   assert.ok(deploy.indexOf(roles) < deploy.indexOf(migrate));
   assert.ok(deploy.indexOf(migrate) < deploy.indexOf(grants));
-  assert.ok(deploy.indexOf(grants) < deploy.indexOf("up -d --no-build --no-deps web game caddy"));
+  assert.ok(deploy.indexOf(grants) < deploy.indexOf("up -d --force-recreate --no-build --no-deps web game caddy"));
 });
 
 test("container liveness stays shallow while deploy and rollback require deep web readiness", () => {
   const compose = read("docker-compose.yml");
+  const caddyfile = read("Caddyfile");
   const deploy = read("scripts/deploy-release.sh");
   const rollback = read("scripts/rollback-release.sh");
   const webStart = compose.indexOf("\n  web:");
@@ -310,6 +312,17 @@ test("container liveness stays shallow while deploy and rollback require deep we
   assert.doesNotMatch(webService, /\/api\/health\/ready/);
   assert.match(deploy, /http:\/\/127\.0\.0\.1:3000\/api\/health\/ready/);
   assert.match(rollback, /http:\/\/127\.0\.0\.1:3000\/api\/health\/ready/);
+  for (const script of [deploy, rollback]) {
+    assert.match(script, /ps --format json caddy/);
+    assert.match(script, /scripts\/deploy-public-health\.mjs/);
+    assert.match(script, /--wait-timeout "\$compose_wait_timeout_seconds" postgres redis/);
+  }
+  assert.match(caddyfile, /X-Werewolf-Ingress "web"/);
+  assert.match(caddyfile, /X-Werewolf-Ingress "game"/);
+  assert.match(
+    compose,
+    /PGOPTIONS:[\s\S]*lock_timeout=[\s\S]*statement_timeout=[\s\S]*idle_in_transaction_session_timeout=/,
+  );
 });
 
 test("production CSP blocks executable attributes and active object content", () => {
@@ -332,16 +345,99 @@ test("deploy drain reads operational stats only through the game container loopb
   assert.doesNotMatch(appConfig, /app\.get\("\/stats"/);
 });
 
+test("failed deploy and rollback paths can release drain mode without exposing an operator endpoint", () => {
+  const appConfig = read("apps/game-server/src/app.config.ts");
+  const deployDrain = read("scripts/deploy-drain.mjs");
+  const cancelDrain = read("scripts/deploy-cancel-drain.mjs");
+  const deploy = read("scripts/deploy-release.sh");
+  const rollback = read("scripts/rollback-release.sh");
+  const packageJson = JSON.parse(read("package.json"));
+
+  assert.match(appConfig, /app\.delete\("\/operations\/drain", createLocalDrainCancelHandler\(\)\)/);
+  assert.match(cancelDrain, /127\.0\.0\.1:2567\/operations\/drain/);
+  assert.match(cancelDrain, /method: 'DELETE'/);
+  assert.equal(packageJson.scripts["deploy:cancel-drain"], "node scripts/deploy-cancel-drain.mjs");
+  assert.match(deployDrain, /requestDrain\("DELETE"\)/);
+  for (const script of [deploy, rollback]) {
+    assert.match(script, /trap cancel_drain_on_exit EXIT/);
+    assert.match(script, /pnpm deploy:cancel-drain/);
+    assert.match(script, /SKIP_DEPLOY_DRAIN/);
+    assert.match(script, /docker compose ps -q game/);
+    assert.match(script, /wget -qO- http:\/\/127\.0\.0\.1:2567\/health/);
+  }
+});
+
+test("production ingress exposes HTTP3 and disables Next telemetry in image builds", () => {
+  const compose = read("docker-compose.yml");
+  const webDockerfile = read("apps/web/Dockerfile");
+
+  assert.match(compose, /"443:443\/udp"/);
+  assert.match(webDockerfile, /^ENV NEXT_TELEMETRY_DISABLED=1$/m);
+});
+
+test("production Redis reserves half of its container budget for AOF and allocator peaks", () => {
+  const compose = read("docker-compose.yml");
+  const envExample = read(".env.example");
+
+  assert.match(compose, /\$\{REDIS_MAXMEMORY:-128mb\}/);
+  assert.match(compose, /\$\{REDIS_CONTAINER_MEMORY:-256m\}/);
+  assert.match(envExample, /^REDIS_MAXMEMORY=128mb$/m);
+  assert.match(envExample, /^REDIS_CONTAINER_MEMORY=256m$/m);
+});
+
+test("game shutdown and release health budgets cover their documented worst cases", () => {
+  const compose = read("docker-compose.yml");
+  const envExample = read(".env.example");
+  const deploy = read("scripts/deploy-release.sh");
+  const rollback = read("scripts/rollback-release.sh");
+
+  assert.match(compose, /GAME_DRAIN_TIMEOUT_MS: \$\{GAME_DRAIN_TIMEOUT_MS:-120000\}/);
+  assert.match(compose, /GAME_DEPLOY_DRAIN_MAX_AGE_MS: \$\{GAME_DEPLOY_DRAIN_MAX_AGE_MS:-3600000\}/);
+  assert.match(compose, /GAME_REDIS_CLOSE_TIMEOUT_MS: \$\{GAME_REDIS_CLOSE_TIMEOUT_MS:-5000\}/);
+  assert.match(compose, /stop_grace_period: 260s/);
+  assert.match(compose, /NODE_OPTIONS: --max-old-space-size=\$\{WEB_NODE_MAX_OLD_SPACE_MB:-560\}/);
+  assert.match(compose, /NODE_OPTIONS: --max-old-space-size=\$\{GAME_NODE_MAX_OLD_SPACE_MB:-800\}/);
+  assert.match(envExample, /^RELEASE_HEALTH_TIMEOUT_SECONDS=240$/m);
+  assert.match(envExample, /^RELEASE_HEALTH_POLL_INTERVAL_SECONDS=2$/m);
+  for (const script of [deploy, rollback]) {
+    assert.match(script, /RELEASE_HEALTH_TIMEOUT_SECONDS:-240/);
+    assert.match(script, /health_attempts=/);
+    assert.doesNotMatch(script, /while \[ "\$attempt" -le 45 \]/);
+  }
+});
+
+test("Caddy keeps transport health shallow while the game server rejects new matchmaking during drain", () => {
+  const caddyfile = read("Caddyfile");
+  const gameBlock = caddyfile.slice(caddyfile.indexOf("{$PUBLIC_WS_DOMAIN}"));
+
+  assert.match(gameBlock, /health_uri \/health\s/);
+  assert.doesNotMatch(gameBlock, /health_uri \/health\/ready/);
+});
+
+test("load testing drives runtime commands, checks spikes, and includes full rooms", () => {
+  const loadtest = read("scripts/loadtest.mjs");
+  const metrics = read("scripts/loadtest-metrics.mjs");
+  const capacity = read("scripts/loadtest-capacity.mjs");
+  const packageJson = JSON.parse(read("package.json"));
+
+  assert.match(loadtest, /runActiveHold/);
+  assert.match(loadtest, /LOAD_MAX_EVENT_LOOP_PEAK_UTILIZATION/);
+  assert.match(metrics, /peakIntervalEventLoopUtilization/);
+  assert.match(capacity, /LOAD_ROOM_SIZE \?\?= "30"/);
+  assert.equal(packageJson.scripts["loadtest:capacity"], "node scripts/loadtest-capacity.mjs");
+  assert.match(packageJson.scripts["verify:heavy"], /pnpm loadtest:capacity/);
+});
+
 test("rollback validates and pulls before drain without replaying old migrations", () => {
   const rollback = read("scripts/rollback-release.sh");
   const preflight = 'docker compose --env-file .env --env-file "$rollback_env" config --quiet';
-  const pull = 'docker compose --env-file .env --env-file "$rollback_env" pull web game';
+  const pull = 'docker compose --env-file .env --env-file "$rollback_env" pull web game caddy';
   const drain = "pnpm deploy:drain";
 
   assert.ok(rollback.indexOf(preflight) >= 0);
   assert.ok(rollback.indexOf(preflight) < rollback.indexOf(pull));
   assert.ok(rollback.indexOf(pull) < rollback.indexOf(drain));
-  assert.match(rollback, /up -d --no-build --no-deps web game caddy/);
+  assert.match(rollback, /up -d --force-recreate --no-build --no-deps web game caddy/);
   assert.doesNotMatch(rollback, /\bpull migrate\b|\brun .*\bmigrate\b/);
 });
 
@@ -352,6 +448,8 @@ test("PostgreSQL query observability is enabled without weakening readiness", ()
 
   assert.match(compose, /shared_preload_libraries=pg_stat_statements/);
   assert.match(compose, /log_min_duration_statement=\$\{POSTGRES_SLOW_QUERY_MS:-500\}/);
+  assert.match(compose, /log_parameter_max_length=0/);
+  assert.match(compose, /log_parameter_max_length_on_error=0/);
   assert.match(compose, /log_line_prefix=.*%a/);
   assert.match(compose, /healthcheck:[\s\S]*pg_isready -U werewolf -d werewolf/);
   assert.match(roleReconciler, /CREATE SCHEMA IF NOT EXISTS werewolf_observability/);
@@ -411,6 +509,13 @@ test("database backups are scheduled, verified, retained, and copied off-site", 
   assert.match(freshness, /BACKUP_SIGNING_PUBLIC_KEY_FILE/);
   assert.match(backupManifest, /ed25519/);
   assert.match(restore, /BACKUP_SIGNING_PUBLIC_KEY_FILE/);
+  assert.match(restore, /RESTORE_RELEASE_MANIFEST/);
+  assert.match(restore, /--signature "\$active_release_signature"/);
+  assert.match(restore, /compose pull migrate web game caddy/);
+  assert.match(
+    restore,
+    /up -d --force-recreate --no-build --no-deps --wait/,
+  );
   assert.match(backup, /\.sql\.gz\.age/);
   assert.match(backup, /"\$docker_command" ps/);
   assert.match(backup, /"\$docker_command" exec/);

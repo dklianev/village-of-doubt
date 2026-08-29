@@ -10,6 +10,32 @@ import { signReleaseManifest } from "./release-manifest.mjs";
 const posixShell = process.env.POSIX_SHELL || "/bin/sh";
 const isPosix = process.platform !== "win32" || Boolean(process.env.POSIX_SHELL);
 
+function resolveNativeNodeExecutable() {
+  if (process.platform !== "win32") {
+    return process.execPath;
+  }
+
+  const whereResult = spawnSync("where.exe", ["node.exe"], { encoding: "utf8" });
+  const candidates = [
+    process.execPath,
+    process.env.ProgramFiles ? path.join(process.env.ProgramFiles, "nodejs", "node.exe") : "",
+    ...String(whereResult.stdout || "").split(/\r?\n/u),
+  ];
+  const executable = candidates.find(
+    (candidate) => candidate && candidate.toLowerCase().endsWith(".exe") && existsSync(candidate),
+  );
+
+  if (!executable) {
+    throw new Error("Unable to locate a native node.exe for POSIX shell tests.");
+  }
+  return executable;
+}
+
+const nativeNodeExecutable = resolveNativeNodeExecutable();
+const nativeNodeDirectory = path.dirname(nativeNodeExecutable);
+const nativeNodeExecutableForShell = nativeNodeExecutable.replaceAll("\\", "/");
+const nativeNodeDirectoryForShell = nativeNodeDirectory.replaceAll("\\", "/");
+
 function createFixture() {
   const directory = mkdtempSync(path.join(tmpdir(), "werewolf-backup-test-"));
   const backupDir = path.join(directory, "backups");
@@ -22,13 +48,23 @@ function createFixture() {
   const signingPublicKey = path.join(directory, "backup-signing.pub");
   const dockerStub = path.join(directory, "fake-docker");
   const ageStub = path.join(directory, "fake-age");
+  const nodeStub = path.join(directory, "node");
   const dockerLog = path.join(directory, "docker.log");
 
   writeFileSync(backupScript, normalized("scripts/backup-postgres.sh"), { mode: 0o755 });
   writeFileSync(freshnessScript, normalized("scripts/check-backup-freshness.sh"), { mode: 0o755 });
   writeFileSync(restoreScript, normalized("scripts/restore-postgres.sh"), { mode: 0o755 });
+  writeFileSync(path.join(directory, "deploy-operations-lib.sh"), normalized("scripts/deploy-operations-lib.sh"));
+  writeFileSync(path.join(directory, "restore-database-checks.sh"), normalized("scripts/restore-database-checks.sh"));
   writeFileSync(manifestScript, normalized("scripts/backup-manifest.mjs"), { mode: 0o755 });
   writeFileSync(releaseManifestScript, normalized("scripts/release-manifest.mjs"), { mode: 0o755 });
+  writeFileSync(
+    nodeStub,
+    `#!/bin/sh
+exec "${nativeNodeExecutableForShell}" "$@"
+`,
+    { mode: 0o755 },
+  );
   const signingKeys = generateKeyPairSync("ed25519");
   writeFileSync(signingPrivateKey, signingKeys.privateKey.export({ type: "pkcs8", format: "pem" }), { mode: 0o600 });
   writeFileSync(signingPublicKey, signingKeys.publicKey.export({ type: "spki", format: "pem" }));
@@ -129,9 +165,14 @@ function normalized(file) {
 }
 
 function run(script, env, args = []) {
+  const scriptDirectoryForShell = path.dirname(script).replaceAll("\\", "/");
   return spawnSync(posixShell, [script, ...args], {
     encoding: "utf8",
-    env: { ...process.env, ...env },
+    env: {
+      ...process.env,
+      PATH: `${scriptDirectoryForShell}:${nativeNodeDirectoryForShell}:${process.env.PATH || ""}`,
+      ...env,
+    },
   });
 }
 
@@ -387,7 +428,7 @@ exec "$@"
     `#!/bin/sh
 set -eu
 case "$*" in
-  *"ps --format json web"*|*"ps --format json game"*)
+  *"ps --format json web"*|*"ps --format json game"*|*"ps --format json caddy"*)
     printf '{"Health":"healthy"}\n'
     ;;
 esac
@@ -398,9 +439,9 @@ esac
     path.join(binDir, "node"),
     `#!/bin/sh
 case "$*" in
-  *"check-production-env.mjs"*) exit 0 ;;
+  *"check-production-env.mjs"*|*"deploy-public-health.mjs"*) exit 0 ;;
 esac
-exec "${process.execPath}" "$@"
+exec "${nativeNodeExecutableForShell}" "$@"
 `,
     { mode: 0o755 },
   );
@@ -411,8 +452,8 @@ exec "${process.execPath}" "$@"
     env: {
       ...process.env,
       FAKE_SYSTEMCTL_LOG: serviceLog,
-      PATH: `${binDir}:${process.env.PATH}`,
-      RELEASE_STATE_DIR: releaseDir,
+      PATH: `${binDir}:${nativeNodeDirectoryForShell}:${process.env.PATH}`,
+      RELEASE_STATE_DIR: releaseDir.replaceAll("\\", "/"),
       RELEASE_ALLOWED_IMAGE_PREFIX: "ghcr.io/example/project",
       RELEASE_MANIFEST_PUBLIC_KEY: releasePublicKey,
       SKIP_DEPLOY_DRAIN: "1",
@@ -429,6 +470,7 @@ test("rollback writes transient state outside the immutable checkout", { skip: !
   const releaseDir = path.join(directory, "release-state");
   const releaseManifest = path.join(directory, "previous.json");
   mkdirSync(binDir);
+  mkdirSync(releaseDir);
 
   const digest = "c".repeat(64);
   const commit = "d".repeat(40);
@@ -455,16 +497,31 @@ test("rollback writes transient state outside the immutable checkout", { skip: !
     `${releaseManifest}.sig`,
     `${signReleaseManifest(release, releaseKeys.privateKey, { allowedImagePrefix: "ghcr.io/example/project" })}\n`,
   );
+  writeFileSync(path.join(releaseDir, "schema-current.json"), `${JSON.stringify(release)}\n`);
+  writeFileSync(
+    path.join(releaseDir, "schema-current.json.sig"),
+    `${signReleaseManifest(release, releaseKeys.privateKey, { allowedImagePrefix: "ghcr.io/example/project" })}\n`,
+  );
   writeFileSync(path.join(binDir, "pnpm"), "#!/bin/sh\nexit 0\n", { mode: 0o755 });
   writeFileSync(
     path.join(binDir, "docker"),
     `#!/bin/sh
 set -eu
 case "$*" in
-  *"ps --format json web"*|*"ps --format json game"*)
+  *"ps --format json web"*|*"ps --format json game"*|*"ps --format json caddy"*)
     printf '{"Health":"healthy"}\n'
     ;;
 esac
+`,
+    { mode: 0o755 },
+  );
+  writeFileSync(
+    path.join(binDir, "node"),
+    `#!/bin/sh
+case "$*" in
+  *"deploy-public-health.mjs"*) exit 0 ;;
+esac
+exec "${nativeNodeExecutableForShell}" "$@"
 `,
     { mode: 0o755 },
   );
@@ -474,8 +531,8 @@ esac
     encoding: "utf8",
     env: {
       ...process.env,
-      PATH: `${binDir}:${process.env.PATH}`,
-      RELEASE_STATE_DIR: releaseDir,
+      PATH: `${binDir}:${nativeNodeDirectoryForShell}:${process.env.PATH}`,
+      RELEASE_STATE_DIR: releaseDir.replaceAll("\\", "/"),
       RELEASE_ALLOWED_IMAGE_PREFIX: "ghcr.io/example/project",
       RELEASE_MANIFEST_PUBLIC_KEY: releasePublicKey,
     },

@@ -21,6 +21,7 @@ const required = [
   "CORS_ORIGIN",
   "RESEND_API_KEY",
   "RESEND_FROM",
+  "REPORTS_NOTIFY_EMAIL",
   "SENTRY_DSN",
   "NEXT_PUBLIC_SENTRY_DSN",
   "RELEASE_VERSION",
@@ -28,6 +29,7 @@ const required = [
   "RELEASE_MANIFEST_PUBLIC_KEY",
   "BACKUP_AGE_RECIPIENT",
   "RCLONE_REMOTE",
+  "DATABASE_STALE_ACTIVE_HOURS",
   "DATABASE_EVENT_RETENTION_DAYS",
 ];
 
@@ -127,23 +129,23 @@ if (corsOrigins.some((origin) => origin === "*" || !origin.startsWith("https://"
 
 const hasDiscord = Boolean(process.env.DISCORD_CLIENT_ID && process.env.DISCORD_CLIENT_SECRET);
 const hasGoogle = Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
-if (!hasDiscord && !hasGoogle) {
-  errors.push("Производственото пускане очаква поне един OAuth провайдер (Discord или Google).");
-}
 if (!hasGoogle) {
-  warnings.push("Google OAuth не е конфигуриран; интерфейсът ще покаже само Discord и имейл.");
+  errors.push("Google OAuth се показва в интерфейса и изисква GOOGLE_CLIENT_ID и GOOGLE_CLIENT_SECRET.");
 }
 if (!hasDiscord) {
-  warnings.push("Discord OAuth не е конфигуриран; интерфейсът ще покаже само Google и имейл.");
+  errors.push("Discord OAuth се показва в интерфейса и изисква DISCORD_CLIENT_ID и DISCORD_CLIENT_SECRET.");
 }
 
 checkUrlAlignment();
 checkDatabaseRoles();
+checkNotificationEmail();
 checkSentryDsn("SENTRY_DSN");
 checkSentryDsn("NEXT_PUBLIC_SENTRY_DSN");
 checkReleaseVersion();
 checkReleaseTrust();
+checkStaleActiveHours();
 checkEventRetention();
+checkOperationalTimeouts();
 
 for (const warning of warnings) {
   console.warn(`warning: ${warning}`);
@@ -313,6 +315,13 @@ function checkSentryDsn(key) {
   }
 }
 
+function checkNotificationEmail() {
+  const value = process.env.REPORTS_NOTIFY_EMAIL?.trim();
+  if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+    errors.push("REPORTS_NOTIFY_EMAIL трябва да е валиден имейл адрес.");
+  }
+}
+
 function checkReleaseVersion() {
   const value = process.env.RELEASE_VERSION?.trim();
   if (!value) {
@@ -349,4 +358,88 @@ function checkEventRetention() {
   if (!Number.isInteger(days) || days < 1 || days > 3_650) {
     errors.push("DATABASE_EVENT_RETENTION_DAYS трябва да е цяло число между 1 и 3650.");
   }
+}
+
+function checkStaleActiveHours() {
+  const value = process.env.DATABASE_STALE_ACTIVE_HOURS;
+  if (!value) {
+    return;
+  }
+  const hours = Number(value);
+  if (!Number.isInteger(hours) || hours < 1 || hours > 720) {
+    errors.push("DATABASE_STALE_ACTIVE_HOURS трябва да е цяло число между 1 и 720.");
+  }
+}
+
+function checkOperationalTimeouts() {
+  const lockTimeout = checkIntegerSetting("MIGRATION_LOCK_TIMEOUT_MS", 5_000, 100, 60_000);
+  const statementTimeout = checkIntegerSetting(
+    "MIGRATION_STATEMENT_TIMEOUT_MS",
+    300_000,
+    1_000,
+    3_600_000,
+  );
+  const idleTimeout = checkIntegerSetting(
+    "MIGRATION_IDLE_TRANSACTION_TIMEOUT_MS",
+    300_000,
+    1_000,
+    3_600_000,
+  );
+  const processTimeout = checkIntegerSetting(
+    "MIGRATION_PROCESS_TIMEOUT_SECONDS",
+    600,
+    10,
+    7_200,
+  );
+  checkIntegerSetting("COMPOSE_WAIT_TIMEOUT_SECONDS", 120, 10, 900);
+  checkIntegerSetting("PUBLIC_HEALTH_REQUEST_TIMEOUT_MS", 5_000, 100, 30_000);
+  checkIntegerSetting("RELEASE_HEALTH_TIMEOUT_SECONDS", 240, 30, 900);
+  const gameDrainTimeout = checkIntegerSetting(
+    "GAME_DRAIN_TIMEOUT_MS",
+    120_000,
+    1_000,
+    120_000,
+  );
+  const gameDrainPollInterval = checkIntegerSetting(
+    "GAME_DRAIN_POLL_INTERVAL_MS",
+    1_000,
+    100,
+    5_000,
+  );
+  const gameRedisCloseTimeout = checkIntegerSetting(
+    "GAME_REDIS_CLOSE_TIMEOUT_MS",
+    5_000,
+    100,
+    5_000,
+  );
+  checkIntegerSetting("GAME_DEPLOY_DRAIN_MAX_AGE_MS", 3_600_000, 60_000, 86_400_000);
+  checkIntegerSetting("WEB_NODE_MAX_OLD_SPACE_MB", 560, 256, 640);
+  checkIntegerSetting("GAME_NODE_MAX_OLD_SPACE_MB", 800, 384, 896);
+
+  if (lockTimeout >= statementTimeout) {
+    errors.push("MIGRATION_LOCK_TIMEOUT_MS трябва да е по-малък от MIGRATION_STATEMENT_TIMEOUT_MS.");
+  }
+  if (statementTimeout >= processTimeout * 1_000 || idleTimeout >= processTimeout * 1_000) {
+    errors.push(
+      "MIGRATION_STATEMENT_TIMEOUT_MS и MIGRATION_IDLE_TRANSACTION_TIMEOUT_MS трябва да са по-малки от MIGRATION_PROCESS_TIMEOUT_SECONDS.",
+    );
+  }
+  if (gameDrainPollInterval >= gameDrainTimeout) {
+    errors.push("GAME_DRAIN_POLL_INTERVAL_MS трябва да е по-малък от GAME_DRAIN_TIMEOUT_MS.");
+  }
+  if (gameDrainTimeout + 110_000 + gameRedisCloseTimeout + 5_000 > 260_000) {
+    errors.push(
+      "GAME_DRAIN_TIMEOUT_MS, terminal persistence и close timeout-ите трябва да се побират в stop_grace_period=260s.",
+    );
+  }
+}
+
+function checkIntegerSetting(key, fallback, minimum, maximum) {
+  const raw = process.env[key] ?? String(fallback);
+  const value = Number(raw);
+  if (!Number.isInteger(value) || value < minimum || value > maximum) {
+    errors.push(`${key} трябва да е цяло число между ${minimum} и ${maximum}.`);
+    return fallback;
+  }
+  return value;
 }

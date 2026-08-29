@@ -229,6 +229,7 @@ jobs:
       RELEASE_MANIFEST_PUBLIC_KEY: /tmp/werewolf-ci-release-public.pem
       BACKUP_AGE_RECIPIENT: age19wjvffy6g0yk4r33hpv5mkpsqnv4qgtrlhqqhhtr5gvwpwej94fsj53j22
       RCLONE_REMOTE: encrypted-offsite:werewolf-ci
+      DATABASE_STALE_ACTIVE_HOURS: "24"
       DATABASE_EVENT_RETENTION_DAYS: "365"
     steps:
       - name: Checkout

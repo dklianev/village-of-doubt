@@ -543,7 +543,12 @@ export function mobileDerivativePathFor(file, sourceFiles) {
   return mobileSource.replace(/\.png$/, ".webp");
 }
 
-export async function inspectMobileDerivativeConflicts({ sourceRoot, outputRoot, imageMetadata }) {
+export async function inspectMobileDerivativeConflicts({
+  sourceRoot,
+  outputRoot,
+  imageMetadata,
+  expectedDimensions = new Map(),
+}) {
   const mobileSourceRoot = path.join(sourceRoot, "mobile");
   if (!existsSync(mobileSourceRoot)) {
     return [];
@@ -563,12 +568,14 @@ export async function inspectMobileDerivativeConflicts({ sourceRoot, outputRoot,
       imageMetadata(source),
       imageMetadata(derivative),
     ]);
+    const normalizedFile = normalizeAssetPath(file);
+    const expected = expectedDimensions.get(normalizedFile) ?? sourceMetadata;
     if (
-      sourceMetadata.width !== derivativeMetadata.width
-      || sourceMetadata.height !== derivativeMetadata.height
+      expected.width !== derivativeMetadata.width
+      || expected.height !== derivativeMetadata.height
     ) {
       conflicts.push(
-        `${normalizeAssetPath(file)}: source ${sourceMetadata.width}x${sourceMetadata.height}, `
+        `${normalizedFile}: expected ${expected.width}x${expected.height}, `
           + `WebP ${derivativeMetadata.width}x${derivativeMetadata.height}`,
       );
     }

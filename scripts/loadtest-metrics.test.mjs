@@ -59,3 +59,19 @@ test("load thresholds report every exceeded budget", () => {
     return true;
   });
 });
+
+test("load thresholds reject a short event-loop saturation spike hidden by the full-window average", () => {
+  assert.throws(() => assertLoadThresholds({
+    joinLatenciesMs: [20],
+    statsSamples: [
+      { eventLoopUtilization: 0.1, eventLoopActiveMs: 100, eventLoopIdleMs: 900, rssBytes: 100 },
+      { eventLoopUtilization: 0.95, eventLoopActiveMs: 1_050, eventLoopIdleMs: 950, rssBytes: 100 },
+      { eventLoopUtilization: 0.1, eventLoopActiveMs: 1_150, eventLoopIdleMs: 1_850, rssBytes: 100 },
+    ],
+  }, {
+    joinP95Ms: 100,
+    eventLoopUtilization: 0.8,
+    peakEventLoopUtilization: 0.9,
+    rssBytes: 1_000,
+  }), /peak event loop/i);
+});

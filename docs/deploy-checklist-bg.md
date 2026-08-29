@@ -4,12 +4,14 @@
 
 - Създай Droplet във Frankfurt с Ubuntu LTS, Docker и Docker Compose plugin.
 - Насочи `A` records: `senkite.com` към web и `ws.senkite.com` към същия IP.
+- Разреши TCP `80/443` и UDP `443` във firewall-а. UDP портът активира HTTP/3; при блокиран UDP Caddy продължава през HTTP/2.
 - Попълни `.env` от `.env.example` с истински `DB_PASSWORD`, `BETTER_AUTH_SECRET`, `GAME_TOKEN_SECRET`, OAuth ключове и production URL-и:
   - `PUBLIC_WEB_DOMAIN=senkite.com`
   - `PUBLIC_WS_DOMAIN=ws.senkite.com`
   - `BETTER_AUTH_URL=https://senkite.com`
   - `NEXT_PUBLIC_APP_URL=https://senkite.com`
   - `CORS_ORIGIN=https://senkite.com`
+- Конфигурирай и двата OAuth провайдъра (Google и Discord), защото и двата бутона се показват в екрана за вход. Задай и валиден `REPORTS_NOTIFY_EMAIL`; production env проверката отказва deploy без получател за сигналите.
 - Изпълни `pnpm check:prod-env` с production env променливите.
 - Изтегли `release.json` и `release.json.sig` от trusted GitHub Actions artifact. Провери, че production host-ът има root-owned Ed25519 public key и точен `RELEASE_ALLOWED_IMAGE_PREFIX`; не build-вай application images на production хоста.
 - Release-ът се показва в `/api/health` и се изпраща към server/edge/browser Sentry без лични данни.
@@ -21,10 +23,15 @@
 
 - Изпълни canonical immutable-checkout командата от `docs/operations/production-runbook.md` с `/var/lib/werewolf/releases/candidate.json`. Тя първо активира loopback-only drain, изчаква активните стаи, стартира hardened backup unit-а, после pull-ва digest-pinned images и пуска миграцията.
 - По време на drain статистиката се чете само през `docker compose exec` от loopback `/operations/stats`. Няма публичен operational stats endpoint. Нови стаи не се създават, а текущите връзки продължават да работят.
+- Single-host release-ът е контролиран restart, не zero-downtime deploy: след като активните стаи приключат, нови сесии остават временно спрени до успешния health gate на новите контейнери. Планирай и обявявай кратък maintenance прозорец.
 - Скриптът има bounded timeout (`DEPLOY_DRAIN_TIMEOUT_MS`, по подразбиране 20 минути). При timeout излиза с грешка и оставя стария container да работи; не продължавай deploy-а насила.
+- Dependency startup-ът е ограничен от `COMPOSE_WAIT_TIMEOUT_SECONDS`. Migrator-ът има отделни `MIGRATION_LOCK_TIMEOUT_MS`, `MIGRATION_STATEMENT_TIMEOUT_MS`, `MIGRATION_IDLE_TRANSACTION_TIMEOUT_MS` и host process timeout. Не увеличавай process timeout-а без измерване и maintenance прозорец.
+- Deploy, rollback, restore и restore acceptance ползват един host lock в `release-state/operations.lock`. Не трий lock директорията, преди да провериш записания PID и състоянието на базата.
+- Преди миграция се записва подписан `migration-pending.json`; след успех се обновява `schema-current.json`. Pending marker или различен migration head блокира автоматичния rollback с `MAINTENANCE REQUIRED`.
 - При неуспешен backup, pull, migration или readiness check release-ът спира; не заобикаляй стъпката със `SKIP_DEPLOY_BACKUP=1`, освен при документиран incident.
-- Непланиран `SIGTERM` също спира matchmaking-а и чака до `GAME_DRAIN_TIMEOUT_MS` (по подразбиране 120 секунди) преди bounded shutdown. Compose дава 130 секунди stop grace period.
-- След deploy провери `/api/health` за web liveness, `/api/health/ready` за web плюс DB/game зависимости и `https://ws.senkite.com/health/ready` за game persistence. Web liveness остава 200, когато само game service е недостъпен; това пази публичните страници и показва повредата в `/status`.
+- Непланиран `SIGTERM` също спира matchmaking-а и чака до `GAME_DRAIN_TIMEOUT_MS` (по подразбиране 120 секунди) преди bounded shutdown. Compose дава 260 секунди stop grace period: 120 секунди drain, до 110 секунди terminal persistence, по 5 секунди за Redis/DB и малък резерв.
+- Ако deploy/rollback се провали преди старият game контейнер да бъде заменен, drain режимът се отменя автоматично. При необработен срив fail-safe срокът `GAME_DEPLOY_DRAIN_MAX_AGE_MS` възстановява matchmaking-а след един час. При ръчно възстановяване използвай `pnpm deploy:cancel-drain` само на хоста с достъп до Docker.
+- След deploy провери `/api/health` за web liveness, публичния HTTPS `/api/health/ready`, `https://ws.senkite.com/health/ready` и реален WSS upgrade с origin `https://senkite.com`. Release скриптът изисква Caddy marker-и и за двата hostname-а, не приема само вътрешно зелени контейнери. Web liveness остава 200, когато само game service е недостъпен; това пази публичните страници и показва повредата в `/status`.
 - При спешен rollback използвай предишния immutable release manifest само ако schema-та остава backward-compatible. Не пипай Postgres volume и не пускай миграции назад без rehearsed restore.
 
 ## Backup И Restore
@@ -32,6 +39,7 @@
 - Инсталирай root-owned systemd backup timer-а от `docs/operations/production-runbook.md`; не давай Docker group на `werewolf` акаунта.
 - Настрой `BACKUP_AGE_RECIPIENT` задължително и `RCLONE_REMOTE` за копие извън Droplet-а. Пази private age identity извън production host-а.
 - Поне веднъж преди сериозна игра направи restore rehearsal със `scripts/restore-postgres.sh` върху тестова база.
+- Restore-ът валидира подписания активен release manifest и ползва само неговите digest-pinned migrator/web/game образи. Пази оригиналната база след cutover, валидира account/history връзки, runtime права и deletion tombstones, пресъздава Caddy и проверява вътрешния и публичния ingress. Изтрий rollback копието само с отпечатаната команда `sh scripts/restore-accept.sh` след реални account, history и create-to-play проверки.
 - Запази последните 14 дни локално или промени `BACKUP_RETENTION_DAYS`.
 
 ## Smoke Проверки След Deploy
