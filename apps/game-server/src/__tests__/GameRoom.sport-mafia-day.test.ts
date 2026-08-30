@@ -67,7 +67,7 @@ describe("GameRoom authoritative Sport Mafia day flow", () => {
       firstSpeaker?.client,
       "submitNomination",
       { targetUserId: "missing-player" },
-      "Номинацията трябва да е за жив активен играч.",
+      "Можеш да номинираш само жив участник.",
     );
 
     const firstAck = firstSpeaker?.client.waitForMessage("nomination_ack") as Promise<ServerEvent>;

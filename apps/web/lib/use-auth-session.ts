@@ -20,8 +20,12 @@ interface SessionBootstrapSnapshot {
   expiresAt: number;
 }
 
-let inFlightSessionRequest: Promise<AuthSessionView | null> | null = null;
-let inFlightFreshSessionRequest: Promise<AuthSessionView | null> | null = null;
+type SessionRequestResult =
+  | { kind: "success"; data: AuthSessionView | null }
+  | { kind: "error" };
+
+let inFlightSessionRequest: Promise<SessionRequestResult> | null = null;
+let inFlightFreshSessionRequest: Promise<SessionRequestResult> | null = null;
 let sessionBootstrapSnapshot: SessionBootstrapSnapshot | null = null;
 let latestSessionRequest = 0;
 
@@ -54,13 +58,13 @@ function writeSessionBootstrapSnapshot(data: AuthSessionView | null) {
   };
 }
 
-function fetchSession(): Promise<AuthSessionView | null> {
+function fetchSession(): Promise<SessionRequestResult> {
   const controller = new AbortController();
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
-  const timeout = new Promise<null>((resolve) => {
+  const timeout = new Promise<SessionRequestResult>((resolve) => {
     timeoutId = setTimeout(() => {
       controller.abort();
-      resolve(null);
+      resolve({ kind: "error" });
     }, SESSION_BOOTSTRAP_REQUEST_TIMEOUT_MS);
   });
   const request = fetch("/api/auth/get-session", {
@@ -70,13 +74,18 @@ function fetchSession(): Promise<AuthSessionView | null> {
   })
     .then(async (response) => {
       if (!response.ok) {
-        return null;
+        return { kind: "error" } as const;
       }
 
       const body = (await response.json()) as AuthSessionView | null;
-      return body?.user?.id ? body : null;
+      if (body === null) {
+        return { kind: "success", data: null } as const;
+      }
+      return body.user?.id
+        ? { kind: "success", data: body } as const
+        : { kind: "error" } as const;
     })
-    .catch(() => null);
+    .catch(() => ({ kind: "error" }) as const);
 
   return Promise.race([request, timeout]).finally(() => {
     if (timeoutId !== undefined) {
@@ -88,11 +97,11 @@ function fetchSession(): Promise<AuthSessionView | null> {
 function startSessionRequest() {
   const requestId = latestSessionRequest + 1;
   latestSessionRequest = requestId;
-  return fetchSession().then((session) => {
-    if (requestId === latestSessionRequest) {
-      writeSessionBootstrapSnapshot(session);
+  return fetchSession().then((result) => {
+    if (requestId === latestSessionRequest && result.kind === "success") {
+      writeSessionBootstrapSnapshot(result.data);
     }
-    return session;
+    return result;
   });
 }
 
@@ -137,6 +146,7 @@ export function useAuthSession(initialSession?: AuthSessionView | null) {
     ? readSessionBootstrapSnapshot()
     : null;
   const [data, setData] = useState<AuthSessionView | null>(hasInitialSession ? initialSession ?? null : null);
+  const [isError, setError] = useState(false);
   const [isPending, setPending] = useState(!hasInitialSession);
   const refreshGeneration = useRef(0);
 
@@ -147,10 +157,15 @@ export function useAuthSession(initialSession?: AuthSessionView | null) {
     if (showPending) {
       setPending(true);
     }
+    setError(false);
     try {
-      const nextSession = await requestSession(options?.fresh ? { fresh: true } : undefined);
+      const result = await requestSession(options?.fresh ? { fresh: true } : undefined);
       if (generation === refreshGeneration.current) {
-        setData(nextSession);
+        if (result.kind === "success") {
+          setData(result.data);
+        } else {
+          setError(true);
+        }
       }
     } finally {
       if (showPending && generation === refreshGeneration.current) {
@@ -162,7 +177,7 @@ export function useAuthSession(initialSession?: AuthSessionView | null) {
   useEffect(() => {
     const refreshOnFocus = () => {
       invalidateAuthSessionBootstrapCache();
-      void refresh();
+      void refresh({ showPending: false });
     };
     const refreshOnAuthChange = () => {
       invalidateAuthSessionBootstrapCache();
@@ -190,6 +205,7 @@ export function useAuthSession(initialSession?: AuthSessionView | null) {
 
   return {
     data: cachedSnapshot ? cachedSnapshot.data : data,
+    isError: cachedSnapshot ? false : isError,
     isPending: cachedSnapshot ? false : isPending,
     refresh,
   };

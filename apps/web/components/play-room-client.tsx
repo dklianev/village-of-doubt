@@ -59,6 +59,7 @@ import { isNightPhase } from "@/lib/play/role-rules";
 import { useCueMode } from "@/hooks/play/use-cue-mode";
 import { useGameRoom, type UseGameRoomOptions, type UseGameRoomResult } from "@/hooks/play/use-game-room";
 import { usePhaseTransitions } from "@/hooks/play/use-phase-transitions";
+import type { AuthSessionView } from "@/lib/use-auth-session";
 import { nightTargetHeadingBg, winnerBg } from "@/lib/play/copy";
 import { nextPhaseTransitionArtHref } from "@/lib/play/phase-art";
 import { historyHrefForGame, repeatGameHref } from "@/lib/play/post-game-links";
@@ -69,6 +70,7 @@ export type { PhaseSlice, PublicPlayer } from "@/lib/play/types";
 interface PlayRoomClientProps {
   code: string;
   createOptions?: CreateRoomOptions;
+  initialSession?: AuthSessionView | null;
 }
 
 type PlayRoomHook = (options: UseGameRoomOptions) => UseGameRoomResult;
@@ -80,6 +82,7 @@ export function PlayRoomClient(props: PlayRoomClientProps) {
 export function PlayRoomClientCore({
   code,
   createOptions: createOptionsRaw,
+  initialSession,
   useRoom,
 }: PlayRoomClientProps & { useRoom: PlayRoomHook }) {
   const createOptions = createOptionsRaw;
@@ -91,6 +94,7 @@ export function PlayRoomClientCore({
   const [viewportModeReady, setViewportModeReady] = useState(false);
   const [mobileRailTab, setMobileRailTab] = useState<"events" | "chat">("events");
   const actionDockToggleRef = useRef<HTMLButtonElement>(null);
+  const winnerHeadingRef = useRef<HTMLHeadingElement>(null);
   const suppressNextPhasePulseRef = useRef(false);
   const lastTypingSentRef = useRef<Map<ChatChannel, number>>(new Map());
   const shortcutStateRef = useRef<ShortcutState | null>(null);
@@ -118,6 +122,7 @@ export function PlayRoomClientCore({
   } = useRoom({
     code,
     createOptions,
+    ...(initialSession === undefined ? {} : { initialSession }),
     toast,
     onReconnectSuppressed: () => {
       suppressNextPhasePulseRef.current = true;
@@ -466,9 +471,24 @@ export function PlayRoomClientCore({
     }
   }, [nightActionCapabilities, toast]);
 
-  function sendChatMessage(channel: ChatChannel, message: string) {
-    room?.send("sendChat", { channel, message });
-    sendTypingSignal(channel, false);
+  async function sendChatMessage(channel: ChatChannel, message: string) {
+    if (!room) {
+      toast({ message: "Съобщението остана в полето, защото връзката със стаята е прекъсната.", kind: "error" });
+      return false;
+    }
+
+    try {
+      const response = await room.request("sendChat", { channel, message }) as { accepted?: unknown } | undefined;
+      if (response?.accepted !== true) {
+        return false;
+      }
+      sendTypingSignal(channel, false);
+      return true;
+    } catch (error) {
+      console.error("Chat delivery request failed", error);
+      toast({ message: "Съобщението не беше изпратено. Текстът е запазен, за да опиташ отново.", kind: "error" });
+      return false;
+    }
   }
 
   function sendTypingSignal(channel: ChatChannel, active: boolean) {
@@ -493,6 +513,13 @@ export function PlayRoomClientCore({
     () => snapshot?.narratorMode !== "full_human" || players.every((player) => player.acceptedFullNarrator),
     [players, snapshot?.narratorMode],
   );
+  const startDisabledReason = !room
+    ? "Изчакай връзката със стаята да се възстанови."
+    : !fullNarratorAccepted
+      ? "Всички играчи трябва да приемат, че Разказвачът ще вижда тайните роли."
+      : startCountdown !== null
+        ? "Стартът вече е заявен."
+        : null;
   const privateChatChannel = getAvailablePrivateChatChannel(privateRole?.role, ownPlayer, phase, snapshot?.communicationMode);
   const publicTypers = useMemo(
     () => typingNotices.filter((notice) => notice.channel === "public" && notice.senderUserId !== currentUserId),
@@ -507,6 +534,12 @@ export function PlayRoomClientCore({
     [privateChatChannel, privateChats],
   );
   const hasStageTakeover = Boolean(snapshot?.winnerTeam);
+
+  useEffect(() => {
+    if (hasStageTakeover) {
+      winnerHeadingRef.current?.focus();
+    }
+  }, [hasStageTakeover, snapshot?.winnerTeam]);
   const hasNarratorDesk = Boolean(snapshot && (ownPlayer?.host || ownPlayer?.narrator));
   const hasNarratorWarning = Boolean(
     snapshot?.narratorMode === "full_human" && ownPlayer && !ownPlayer.acceptedFullNarrator,
@@ -570,7 +603,7 @@ export function PlayRoomClientCore({
                 ? `${currentDefenseName} защитава мястото си`
                 : "Защита на номинираните"
           : privateChatChannel
-            ? "Тайният чат е отворен"
+            ? "Тайният разговор е отворен"
             : "Твоят таен ъгъл";
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -714,7 +747,7 @@ export function PlayRoomClientCore({
           </details>
         ) : null}
 
-        <div className="play-rail-tabs" role="tablist" aria-label="Хроника и чат">
+        <div className="play-rail-tabs" role="tablist" aria-label="Хроника и разговор">
           <button
             id={eventsTabId}
             className="play-rail-tab"
@@ -739,7 +772,7 @@ export function PlayRoomClientCore({
             onClick={() => setMobileRailTab("chat")}
             onKeyDown={handleRailTabKeyDown}
           >
-            Чат
+            Разговор
           </button>
         </div>
 
@@ -798,8 +831,8 @@ export function PlayRoomClientCore({
                 <EyeOff className="play-section-icon" aria-hidden strokeWidth={1.8} />
                 <span>
                   {ownPlayer?.playing
-                    ? "Елиминираните играчи могат да четат, но не и да пишат в дневния чат."
-                    : "Разказвачите и наблюдателите не пишат в дневния чат."}
+                    ? "Елиминираните играчи могат да четат, но не и да пишат в дневния разговор."
+                    : "Разказвачите и наблюдателите не пишат в дневния разговор."}
                 </span>
               </div>
             )
@@ -808,20 +841,20 @@ export function PlayRoomClientCore({
           {phase === "day_discussion" && snapshot?.communicationMode !== "built_in_chat" ? (
             <div className="play-muted-note">
               <EyeOff className="play-section-icon" aria-hidden strokeWidth={1.8} />
-              <span>В тази стая публичният чат е изключен. Използвайте външен разговор, игра на живо или указанията на Разказвача.</span>
+              <span>В тази стая публичният разговор е изключен. Използвайте външен разговор, игра на живо или указанията на Разказвача.</span>
             </div>
           ) : null}
 
           {phase !== "day_discussion" && snapshot?.communicationMode === "built_in_chat" ? (
             <div className="play-muted-note">
               <MessageSquare className="play-section-icon" aria-hidden strokeWidth={1.8} />
-              <span>Писането в публичния чат се отваря през дневната дискусия.</span>
+              <span>Писането в публичния разговор се отваря през дневната дискусия.</span>
             </div>
           ) : null}
 
           <h3 className="play-panel-subhead" id={chatHeadingId}>
             <MessageSquare className="play-section-icon" aria-hidden strokeWidth={1.8} />
-            <span>Чат лог</span>
+            <span>Архив на разговора</span>
           </h3>
           <div
             className="mt-3 grid gap-2 text-sm"
@@ -864,13 +897,19 @@ export function PlayRoomClientCore({
               className="btn btn-primary"
               type="button"
               onClick={requestStartGame}
-              disabled={!room || !fullNarratorAccepted || startCountdown !== null}
+              disabled={startDisabledReason !== null}
+              aria-describedby={startDisabledReason ? "play-start-disabled-reason" : undefined}
             >
               <Play className="play-button-icon" aria-hidden strokeWidth={1.8} />
               {startCountdown ? "Започваме..." : "Започни игра"}
             </button>
           ) : null}
         </div>
+        {ownPlayer?.host && startDisabledReason ? (
+          <p id="play-start-disabled-reason" className="play-start-disabled-reason" role="status">
+            {startDisabledReason}
+          </p>
+        ) : null}
       </div>
     );
   };
@@ -881,11 +920,11 @@ export function PlayRoomClientCore({
     }
 
     return (
-      <div className="play-stage-takeover" data-family={family} data-winner={snapshot.winnerTeam} aria-live="polite">
+      <div className="play-stage-takeover" data-family={family} data-winner={snapshot.winnerTeam} role="status" aria-live="polite" aria-atomic="true">
         <div className="play-winner-scene" aria-hidden="true" />
         <article className={`play-winner faction-${snapshot.winnerTeam}`} data-winner={snapshot.winnerTeam}>
           <p className="play-winner-kicker">край на играта</p>
-          <h2 className="play-winner-title">{winnerBg(snapshot.winnerTeam)}</h2>
+          <h2 ref={winnerHeadingRef} className="play-winner-title" tabIndex={-1}>{winnerBg(snapshot.winnerTeam)}</h2>
           {snapshot.winnerReasonBg ? <p className="play-winner-reason">{snapshot.winnerReasonBg}</p> : null}
           <div className="play-winner-actions">
             <Link className="btn btn-primary" href={repeatGameHref(snapshot)}>

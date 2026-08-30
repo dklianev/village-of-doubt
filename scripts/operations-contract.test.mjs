@@ -5,7 +5,7 @@ import test from "node:test";
 const read = (path) => readFileSync(path, "utf8");
 const readOptional = (path) => existsSync(path) ? read(path) : "";
 
-test("developer, CI, production, and asset runtimes pin Node 24.19.0", () => {
+test("developer, CI, production, and asset runtimes pin Node 24.20.0", () => {
   const packageJson = JSON.parse(read("package.json"));
   const workflow = read(".github/workflows/ci.yml");
   const browserWorkflow = read(".github/workflows/browser-quality.yml");
@@ -13,16 +13,18 @@ test("developer, CI, production, and asset runtimes pin Node 24.19.0", () => {
   const gameDockerfile = read("apps/game-server/Dockerfile");
   const assetRunner = read("scripts/run-asset-generators.mjs");
 
-  assert.equal(readOptional(".nvmrc").trim(), "24.19.0");
-  assert.equal(readOptional(".node-version").trim(), "24.19.0");
-  assert.equal(packageJson.engines?.node, ">=24.19.0 <25");
-  assert.equal((workflow.match(/node-version: 24\.19\.0/g) ?? []).length, 3);
-  assert.equal((browserWorkflow.match(/node-version: 24\.19\.0/g) ?? []).length, 1);
-  assert.match(webDockerfile, /^FROM node:24\.19\.0-alpine@sha256:[a-f0-9]{64} AS base$/m);
-  assert.match(gameDockerfile, /^FROM node:24\.19\.0-alpine@sha256:[a-f0-9]{64} AS base$/m);
-  assert.match(assetRunner, /node:24\.19\.0-bookworm@sha256:[a-f0-9]{64}/);
+  assert.equal(readOptional(".nvmrc").trim(), "24.20.0");
+  assert.equal(readOptional(".node-version").trim(), "24.20.0");
+  assert.equal(packageJson.engines?.node, ">=24.20.0 <25");
+  assert.equal((workflow.match(/node-version: 24\.20\.0/g) ?? []).length, 3);
+  assert.equal((browserWorkflow.match(/node-version: 24\.20\.0/g) ?? []).length, 1);
+  assert.match(webDockerfile, /^FROM node:24\.20\.0-alpine@sha256:[a-f0-9]{64} AS base$/m);
+  assert.match(gameDockerfile, /^FROM node:24\.20\.0-alpine@sha256:[a-f0-9]{64} AS base$/m);
+  assert.match(assetRunner, /node:24\.20\.0-bookworm@sha256:[a-f0-9]{64}/);
+  assert.match(packageJson.scripts.visual, /--forbid-only/);
   assert.match(packageJson.scripts.visual, /grep-invert @play-matrix/);
   assert.match(packageJson.scripts["visual:matrix"], /grep @play-matrix/);
+  assert.match(read("playwright.config.ts"), /reuseExistingServer: process\.env\.VISUAL_REUSE_SERVER === "1"/);
   assert.match(workflow, /M35_SHARD_INDEX/);
   assert.match(workflow, /M35_SHARD_TOTAL/);
   assert.match(workflow, /pnpm visual:matrix/);
@@ -533,14 +535,27 @@ test("database backups are scheduled, verified, retained, and copied off-site", 
   assert.match(backup, /gzip -t/);
   assert.match(backup, /sha256sum/);
   assert.match(backup, /RCLONE_REMOTE/);
+  assert.match(backup, /RCLONE_DELETION_LEDGER_REMOTE/);
+  assert.match(backup, /RCLONE_BACKUP_RETENTION_DAYS:-30/);
+  assert.match(backup, /--min-age "\$\{rclone_retention_days\}d"/);
+  assert.match(backup, /--include 'werewolf_\*\.sql\.gz\*'/);
+  assert.match(backup, /werewolf-deletion-ledger-v1/);
+  assert.match(restore, /RESTORE_DELETION_LEDGER_FILE/);
+  assert.match(restore, /merge_deletion_tombstones/);
+  assert.match(runbook, /six-hour ledger RPO/);
+  assert.match(runbook, /Hetzner Object Storage/);
   assert.match(freshness, /BACKUP_MAX_AGE_HOURS/);
   assert.match(freshness, /BACKUP_CLOCK_SKEW_SECONDS/);
   assert.match(freshness, /gzip -t/);
   assert.match(freshness, /sha256sum -c/);
   assert.match(deploy, /node --env-file-if-exists=\.env scripts\/release-manifest\.mjs/);
   assert.match(deploy, /--signature "\$manifest_signature"/);
+  assert.match(deploy, /rev-parse --verify 'HEAD\^\{commit\}'/);
+  assert.match(deploy, /source checkout.*sourceCommit/i);
   assert.match(rollback, /node --env-file-if-exists=\.env scripts\/release-manifest\.mjs/);
   assert.match(rollback, /--signature "\$manifest_signature"/);
+  assert.match(rollback, /rev-parse --verify 'HEAD\^\{commit\}'/);
+  assert.match(rollback, /source checkout.*sourceCommit/i);
   assert.doesNotMatch(deploy, /^\s*scripts\/backup-postgres\.sh$/m);
   assert.match(deploy, /systemctl start "\$backup_service"/);
   assert.match(deploy, /RELEASE_STATE_DIR:-\/var\/lib\/werewolf\/release-state/);
@@ -559,6 +574,7 @@ test("database backups are scheduled, verified, retained, and copied off-site", 
   assert.match(runbook, /```sh\s+set -eu/);
   assert.match(runbook, /if sudo test -e "\$release_source"; then[\s\S]*exit 1[\s\S]*fi/);
   assert.match(runbook, /if \[ "\$actual_source" != "\$expected_source" \]; then[\s\S]*exit 1[\s\S]*fi/);
+  assert.match(runbook, /one replica[\s\S]*shared Next\.js `cacheHandler`[\s\S]*cacheMaxMemorySize: 0/i);
   assert.match(runbook, /if ! sudo test -e \/etc\/werewolf\/backup\.env/);
   assert.match(runbook, /RELEASE_STATE_DIR=\/var\/lib\/werewolf\/release-state/);
   assert.match(runbook, /\/var\/lib\/werewolf\/releases\/candidate\.json/);

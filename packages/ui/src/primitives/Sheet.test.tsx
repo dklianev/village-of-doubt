@@ -35,6 +35,23 @@ describe("Sheet", () => {
     expect(getByRole("button", { name: "Затвори писмата" })).toBeDefined();
   });
 
+  it("locks both page scroll containers while a workspace is open", () => {
+    const { unmount } = render(
+      <Sheet open onOpenChange={() => {}} title="Писма" size="workspace">
+        Съдържание
+      </Sheet>,
+    );
+
+    expect(document.documentElement.style.overflow).toBe("hidden");
+    expect(document.body.style.overflow).toBe("hidden");
+    expect(document.body.style.position).toBe("fixed");
+
+    unmount();
+    expect(document.documentElement.style.overflow).toBe("");
+    expect(document.body.style.overflow).toBe("");
+    expect(document.body.style.position).toBe("");
+  });
+
   it("does not render content when closed", () => {
     const { container, queryByText } = render(
       <Sheet open={false} onOpenChange={() => {}} title="Писма">

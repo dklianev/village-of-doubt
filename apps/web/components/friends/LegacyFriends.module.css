@@ -804,17 +804,23 @@
 
 @media (max-width: 600px) {
   :global(.friends-shell) {
-    --friends-hero-height: 380px;
+    --friends-hero-height: 330px;
   }
 
   :global(.friends-hero-copy) {
     min-height: calc(var(--friends-hero-height) - 32px);
-    padding: 28px 6px 48px;
+    padding: 22px 8px 42px;
   }
 
   :global(.friends-hero-copy h1) {
     max-width: 10ch;
-    font-size: 2.75rem;
+    margin-block: 9px 11px;
+    font-size: 2.5rem;
+  }
+
+  :global(.friends-hero-copy p:not(.friends-kicker)) {
+    font-size: 0.94rem;
+    line-height: 1.55;
   }
 
   :global(.friends-board) {

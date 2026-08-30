@@ -337,17 +337,13 @@ describe("RoomPersistenceCoordinator", () => {
     expect(order).toEqual(["game-start", "game-finish"]);
   });
 
-  it("stops retrying accepted terminal work at its max attempts", async () => {
+  it("retains exhausted terminal work and never reports a successful drain", async () => {
     const persistence = makePersistence();
     const retryDelay = vi.fn(async () => {});
     const captureException = vi.fn();
     const coordinator = new RoomPersistenceCoordinator(persistence, captureException, retryDelay);
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
-    const terminal = vi.fn()
-      .mockRejectedValueOnce(new Error("temporary-1"))
-      .mockRejectedValueOnce(new Error("temporary-2"))
-      .mockRejectedValueOnce(new Error("temporary-3"))
-      .mockResolvedValue(undefined);
+    const terminal = vi.fn().mockRejectedValue(new Error("database unavailable"));
 
     expect(coordinator.queue(context, terminal, {
       priority: "critical",
@@ -355,10 +351,53 @@ describe("RoomPersistenceCoordinator", () => {
       maxAttempts: 2,
     })).toBe(true);
 
-    await expect(coordinator.flush(100)).resolves.toBe(true);
+    await expect(coordinator.flush(100)).resolves.toBe(false);
     expect(terminal).toHaveBeenCalledTimes(2);
     expect(retryDelay).toHaveBeenCalledTimes(1);
+    expect(coordinator.hasPendingTerminalWork).toBe(true);
     expect(consoleError).toHaveBeenCalledWith("[game-persistence]", expect.any(Error));
+
+    await expect(coordinator.flush(100)).resolves.toBe(false);
+    expect(terminal).toHaveBeenCalledTimes(4);
+    expect(coordinator.hasPendingTerminalWork).toBe(true);
+    consoleError.mockRestore();
+  });
+
+  it("replays retained terminal work with stable keys and gates success effects until recovery", async () => {
+    const persistence = makePersistence();
+    vi.mocked(persistence.recordGameCompletion)
+      .mockRejectedValueOnce(new Error("database unavailable-1"))
+      .mockRejectedValueOnce(new Error("database unavailable-2"))
+      .mockResolvedValue(undefined);
+    const retryDelay = vi.fn(async () => {});
+    const coordinator = new RoomPersistenceCoordinator(persistence, vi.fn(), retryDelay);
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    const successEffect = vi.fn();
+    const observedKeys: string[] = [];
+
+    expect(coordinator.queue(
+      { ...context, roomIdempotencyKey: "room-terminal-1" },
+      async ({ persistence: taskPersistence, ensureGame, idempotencyKeys }) => {
+        observedKeys.push(idempotencyKeys?.event("terminal") ?? "missing");
+        const gameId = await ensureGame();
+        await taskPersistence.recordGameCompletion(gameId!, {
+          winnerTeam: "village",
+          players: [],
+        });
+        successEffect();
+      },
+      { priority: "critical", terminal: true, maxAttempts: 2 },
+    )).toBe(true);
+
+    await expect(coordinator.flush(100)).resolves.toBe(false);
+    expect(successEffect).not.toHaveBeenCalled();
+    expect(coordinator.hasPendingTerminalWork).toBe(true);
+
+    await expect(coordinator.flush(100)).resolves.toBe(true);
+    expect(persistence.recordGameCompletion).toHaveBeenCalledTimes(3);
+    expect(successEffect).toHaveBeenCalledOnce();
+    expect(coordinator.hasPendingTerminalWork).toBe(false);
+    expect(new Set(observedKeys)).toEqual(new Set(["room-terminal-1:event:0:terminal"]));
     consoleError.mockRestore();
   });
 
@@ -469,6 +508,38 @@ describe("RoomPersistenceCoordinator", () => {
     await coordinator.flush(100);
 
     expect(persistence.recordEvent).not.toHaveBeenCalled();
+  });
+
+  it("keeps timed-out terminal work observable while fencing its late mutation", async () => {
+    const persistence = makePersistence();
+    const coordinator = new RoomPersistenceCoordinator(persistence);
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    let release!: () => void;
+    let markStarted!: () => void;
+    const blocked = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const started = new Promise<void>((resolve) => {
+      markStarted = resolve;
+    });
+
+    expect(coordinator.queue(context, async ({ persistence: taskPersistence }) => {
+      markStarted();
+      await blocked;
+      await taskPersistence.recordGameCompletion("game-1", {
+        winnerTeam: "village",
+        players: [],
+      });
+    }, { priority: "critical", terminal: true })).toBe(true);
+    await started;
+
+    await expect(coordinator.dispose(1)).resolves.toBe(false);
+    expect(coordinator.hasPendingTerminalWork).toBe(true);
+    release();
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+    expect(persistence.recordGameCompletion).not.toHaveBeenCalled();
+    expect(coordinator.hasPendingTerminalWork).toBe(true);
   });
 
   it("projects Drizzle errors before sending them to Sentry or console", async () => {

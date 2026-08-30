@@ -48,8 +48,10 @@ function createFixture() {
   const signingPublicKey = path.join(directory, "backup-signing.pub");
   const dockerStub = path.join(directory, "fake-docker");
   const ageStub = path.join(directory, "fake-age");
+  const rcloneStub = path.join(directory, "fake-rclone");
   const nodeStub = path.join(directory, "node");
   const dockerLog = path.join(directory, "docker.log");
+  const rcloneLog = path.join(directory, "rclone.log");
 
   writeFileSync(backupScript, normalized("scripts/backup-postgres.sh"), { mode: 0o755 });
   writeFileSync(freshnessScript, normalized("scripts/check-backup-freshness.sh"), { mode: 0o755 });
@@ -101,7 +103,17 @@ case "\${1:-}" in
     esac
     ;;
   exec)
-    printf 'CREATE TABLE backup_probe(id integer);\n'
+    case "$*" in
+      *"pg_dump "*)
+        printf 'CREATE TABLE backup_probe(id integer);\n'
+        ;;
+      *"deleted_user_identities"*)
+        printf 'user-deleted-before-backup\tdeleted_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n'
+        ;;
+      *)
+        exit 66
+        ;;
+    esac
     ;;
   compose)
     printf 'CREATE TABLE compose_backup_probe(id integer);\n'
@@ -110,6 +122,17 @@ case "\${1:-}" in
     exit 64
     ;;
 esac
+`,
+    { mode: 0o755 },
+  );
+  writeFileSync(
+    rcloneStub,
+    `#!/bin/sh
+set -eu
+printf '%s\n' "$*" >> "$FAKE_RCLONE_LOG"
+if [ "\${FAKE_RCLONE_FAILURE:-}" = "delete" ] && [ "\${1:-}" = "delete" ]; then
+  exit 71
+fi
 `,
     { mode: 0o755 },
   );
@@ -124,6 +147,8 @@ esac
     freshnessScript,
     manifestScript,
     releaseManifestScript,
+    rcloneLog,
+    rcloneStub,
     restoreScript,
     signingPrivateKey,
     signingPublicKey,
@@ -189,6 +214,18 @@ function baseEnv(fixture) {
     BACKUP_RELEASE_VERSION: "release-test-42",
     BACKUP_MIGRATION_HEAD: "0010_complete_triton",
     FAKE_DOCKER_LOG: fixture.dockerLog,
+  };
+}
+
+function offsiteEnv(fixture, overrides = {}) {
+  return {
+    ...baseEnv(fixture),
+    BACKUP_COMPOSE_PROJECT: "werewolf",
+    FAKE_RCLONE_LOG: fixture.rcloneLog,
+    RCLONE_COMMAND: fixture.rcloneStub,
+    RCLONE_REMOTE: "backup-store:werewolf/backups",
+    RCLONE_DELETION_LEDGER_REMOTE: "ledger-store:werewolf/deletion-ledger",
+    ...overrides,
   };
 }
 
@@ -328,6 +365,117 @@ test("scheduled backup accepts an explicit fixed container without discovery", {
   assert.match(calls, /^exec -i werewolf-postgres-1 pg_dump /m);
 });
 
+test("retention dry run is scoped to an explicit backup prefix and never reaches Docker", { skip: !isPosix }, () => {
+  const fixture = createFixture();
+  const result = run(fixture.backupScript, offsiteEnv(fixture), ["--retention-dry-run"]);
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(existsSync(fixture.dockerLog), false);
+  assert.equal(existsSync(fixture.backupDir), false);
+  assert.match(
+    readFileSync(fixture.rcloneLog, "utf8"),
+    /^delete backup-store:werewolf\/backups --min-age 30d --include werewolf_\*\.sql\.gz\* --dry-run$/m,
+  );
+});
+
+test("off-site backup fails before Docker without a separate deletion-ledger prefix", { skip: !isPosix }, () => {
+  const fixture = createFixture();
+  const result = run(fixture.backupScript, offsiteEnv(fixture, {
+    RCLONE_DELETION_LEDGER_REMOTE: "",
+  }));
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /RCLONE_DELETION_LEDGER_REMOTE/);
+  assert.equal(existsSync(fixture.dockerLog), false);
+  assert.equal(existsSync(fixture.backupDir), false);
+});
+
+test("off-site backup rejects remote roots and shared credential profiles before Docker", { skip: !isPosix }, () => {
+  for (const overrides of [
+    { RCLONE_REMOTE: "backup-store:" },
+    { RCLONE_DELETION_LEDGER_REMOTE: "backup-store:werewolf/deletion-ledger" },
+  ]) {
+    const fixture = createFixture();
+    const result = run(fixture.backupScript, offsiteEnv(fixture, overrides));
+
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /explicit non-root|separate rclone remote/i);
+    assert.equal(existsSync(fixture.dockerLog), false);
+    assert.equal(existsSync(fixture.backupDir), false);
+  }
+});
+
+test("off-site retention cannot exceed the public 30-day limit", { skip: !isPosix }, () => {
+  const fixture = createFixture();
+  const result = run(fixture.backupScript, offsiteEnv(fixture, {
+    RCLONE_BACKUP_RETENTION_DAYS: "31",
+  }));
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /RCLONE_BACKUP_RETENTION_DAYS.*1.*30/);
+  assert.equal(existsSync(fixture.rcloneLog), false);
+  assert.equal(existsSync(fixture.dockerLog), false);
+});
+
+test("off-site backup prunes only the backup prefix and uploads a protected minimal deletion ledger", { skip: !isPosix }, () => {
+  const fixture = createFixture();
+  const result = run(fixture.backupScript, offsiteEnv(fixture));
+
+  assert.equal(result.status, 0, result.stderr);
+  const ledgerPath = path.join(fixture.backupDir, "werewolf_deletion_ledger.tsv.age");
+  assert.equal(
+    readFileSync(ledgerPath, "utf8"),
+    "werewolf-deletion-ledger-v1\nuser-deleted-before-backup\tdeleted_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n",
+  );
+  assert.equal(existsSync(`${ledgerPath}.sha256`), true);
+  assert.equal(existsSync(`${ledgerPath}.manifest.json`), true);
+  assert.equal(existsSync(`${ledgerPath}.manifest.json.sig`), true);
+  const dockerCalls = readFileSync(fixture.dockerLog, "utf8");
+  assert.match(
+    dockerCalls,
+    /SELECT\s+original_user_id .* anonymous_user_id[\s\S]*FROM public\.deleted_user_identities/su,
+  );
+  assert.doesNotMatch(dockerCalls, /\b(?:email|name|game|deleted_at)\b/iu);
+
+  const rcloneCalls = readFileSync(fixture.rcloneLog, "utf8").trim().split(/\r?\n/u);
+  const retentionCalls = rcloneCalls.filter((call) => call.startsWith("delete "));
+  assert.deepEqual(retentionCalls, [
+    "delete backup-store:werewolf/backups --min-age 30d --include werewolf_*.sql.gz*",
+  ]);
+  assert.ok(rcloneCalls.some((call) =>
+    call.startsWith("copy ") && call.endsWith(" backup-store:werewolf/backups")
+  ));
+  assert.ok(rcloneCalls.some((call) =>
+    /^copyto .*[\\/]werewolf_deletion_ledger\.tsv\.age ledger-store:werewolf\/deletion-ledger\/werewolf_deletion_ledger\.tsv\.age$/u.test(call)
+  ));
+  assert.ok(rcloneCalls.some((call) =>
+    /^copyto .*[\\/]werewolf_deletion_ledger\.tsv\.age\.manifest\.json\.sig ledger-store:werewolf\/deletion-ledger\/werewolf_deletion_ledger\.tsv\.age\.manifest\.json\.sig$/u.test(call)
+  ));
+  const ledgerUploads = rcloneCalls.filter((call) =>
+    call.includes(" ledger-store:werewolf/deletion-ledger/")
+  );
+  assert.equal(ledgerUploads.length, 4);
+  assert.match(ledgerUploads.at(-1), /\.manifest\.json\.sig$/u);
+  assert.ok(rcloneCalls.findIndex((call) =>
+    call.startsWith("copy ") && call.endsWith(" backup-store:werewolf/backups")
+  ) > rcloneCalls.lastIndexOf(ledgerUploads.at(-1)));
+  assert.equal(rcloneCalls.some((call) =>
+    call.startsWith("delete ledger-store:werewolf/deletion-ledger")
+  ), false);
+});
+
+test("off-site backup fails closed before Docker when retention enforcement fails", { skip: !isPosix }, () => {
+  const fixture = createFixture();
+  const result = run(fixture.backupScript, offsiteEnv(fixture, {
+    FAKE_RCLONE_FAILURE: "delete",
+  }));
+
+  assert.notEqual(result.status, 0);
+  assert.equal(existsSync(fixture.dockerLog), false);
+  assert.equal(existsSync(fixture.backupDir), false);
+  assert.match(readFileSync(fixture.rcloneLog, "utf8"), /^delete backup-store:werewolf\/backups /m);
+});
+
 test("freshness trusts the signed creation time instead of mutable file metadata", { skip: !isPosix }, () => {
   const fixture = createFixture();
   const backup = run(fixture.backupScript, {
@@ -424,6 +572,11 @@ exec "$@"
     { mode: 0o755 },
   );
   writeFileSync(
+    path.join(binDir, "git"),
+    "#!/bin/sh\nprintf '%s\\n' \"$FAKE_SOURCE_COMMIT\"\n",
+    { mode: 0o755 },
+  );
+  writeFileSync(
     path.join(binDir, "docker"),
     `#!/bin/sh
 set -eu
@@ -456,6 +609,8 @@ exec "${nativeNodeExecutableForShell}" "$@"
       RELEASE_STATE_DIR: releaseDir.replaceAll("\\", "/"),
       RELEASE_ALLOWED_IMAGE_PREFIX: "ghcr.io/example/project",
       RELEASE_MANIFEST_PUBLIC_KEY: releasePublicKey,
+      RELEASE_GIT_COMMAND: path.join(binDir, "git").replaceAll("\\", "/"),
+      FAKE_SOURCE_COMMIT: commit,
       SKIP_DEPLOY_DRAIN: "1",
     },
   });
@@ -504,6 +659,11 @@ test("rollback writes transient state outside the immutable checkout", { skip: !
   );
   writeFileSync(path.join(binDir, "pnpm"), "#!/bin/sh\nexit 0\n", { mode: 0o755 });
   writeFileSync(
+    path.join(binDir, "git"),
+    "#!/bin/sh\nprintf '%s\\n' \"$FAKE_SOURCE_COMMIT\"\n",
+    { mode: 0o755 },
+  );
+  writeFileSync(
     path.join(binDir, "docker"),
     `#!/bin/sh
 set -eu
@@ -535,6 +695,8 @@ exec "${nativeNodeExecutableForShell}" "$@"
       RELEASE_STATE_DIR: releaseDir.replaceAll("\\", "/"),
       RELEASE_ALLOWED_IMAGE_PREFIX: "ghcr.io/example/project",
       RELEASE_MANIFEST_PUBLIC_KEY: releasePublicKey,
+      RELEASE_GIT_COMMAND: path.join(binDir, "git").replaceAll("\\", "/"),
+      FAKE_SOURCE_COMMIT: commit,
     },
   });
 

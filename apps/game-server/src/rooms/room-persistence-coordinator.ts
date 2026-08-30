@@ -57,6 +57,7 @@ export class RoomPersistenceCoordinator {
   private drainPromise: Promise<void> | undefined;
   private activeTask: PendingPersistenceTask | undefined;
   private readonly taskPersistence: GamePersistence;
+  private failedTerminalTask: PendingPersistenceTask | undefined;
   private persistedGameId: string | undefined;
   private ensureGamePromise: Promise<string | undefined> | undefined;
   private boundContext: { code: string; roomIdempotencyKey: string } | undefined;
@@ -102,7 +103,8 @@ export class RoomPersistenceCoordinator {
 
   get hasPendingTerminalWork() {
     return Boolean(this.activeTask?.terminal)
-      || this.pending.critical.some((task) => task.terminal);
+      || this.pending.critical.some((task) => task.terminal)
+      || Boolean(this.failedTerminalTask);
   }
 
   async flush(timeoutMs: number): Promise<boolean> {
@@ -116,6 +118,7 @@ export class RoomPersistenceCoordinator {
 
   private async waitForDrain(timeoutMs: number, abortOnTimeout: boolean) {
     const deadline = Date.now() + Math.max(0, timeoutMs);
+    this.requeueFailedTerminalTask();
 
     while (this.drainPromise || this.queuedTaskCount > 0) {
       this.startDrain();
@@ -135,7 +138,7 @@ export class RoomPersistenceCoordinator {
       }
     }
 
-    return true;
+    return !this.failedTerminalTask;
   }
 
   private reportFlushTimeout(timeoutMs: number) {
@@ -272,10 +275,14 @@ export class RoomPersistenceCoordinator {
     let pendingTask = this.takeNextTask();
     while (pendingTask && !this.abortDrain) {
       this.activeTask = pendingTask;
+      let succeeded = false;
       try {
-        await this.runTask(pendingTask);
+        succeeded = await this.runTask(pendingTask);
       } finally {
         this.activeTask = undefined;
+      }
+      if (!succeeded && pendingTask.terminal) {
+        this.failedTerminalTask = pendingTask;
       }
       if (this.abortDrain) {
         return;
@@ -288,11 +295,11 @@ export class RoomPersistenceCoordinator {
     return this.pending.critical.shift() ?? this.pending.normal.shift() ?? this.pending["best-effort"].shift();
   }
 
-  private async runTask(pendingTask: PendingPersistenceTask) {
+  private async runTask(pendingTask: PendingPersistenceTask): Promise<boolean> {
     let attempt = 1;
     while (!this.abortDrain) {
       if (this.abortDrain) {
-        return;
+        return false;
       }
       try {
         await pendingTask.task({
@@ -300,17 +307,17 @@ export class RoomPersistenceCoordinator {
           ensureGame: () => this.ensureGame(pendingTask.context, pendingTask.idempotencyKeys.game),
           idempotencyKeys: pendingTask.idempotencyKeys,
         });
-        return;
+        return true;
       } catch (error) {
         if (this.abortDrain) {
-          return;
+          return false;
         }
         const shouldRetry = attempt < pendingTask.maxAttempts;
         if (shouldRetry) {
           await this.retryDelay(Math.min(attempt, pendingTask.maxAttempts));
           attempt += 1;
           if (this.abortDrain) {
-            return;
+            return false;
           }
           continue;
         }
@@ -320,9 +327,10 @@ export class RoomPersistenceCoordinator {
           correlationId: pendingTask.correlationId,
           roomIdentifier: pendingTask.context.code,
         });
-        return;
+        return false;
       }
     }
+    return false;
   }
 
   private async ensureGame(context: RoomPersistenceContext, idempotencyKey: string) {
@@ -380,9 +388,23 @@ export class RoomPersistenceCoordinator {
   }
 
   private clearPending() {
+    this.failedTerminalTask ??= this.activeTask?.terminal
+      ? this.activeTask
+      : this.pending.critical.find((task) => task.terminal);
     this.pending.critical.length = 0;
     this.pending.normal.length = 0;
     this.pending["best-effort"].length = 0;
+  }
+
+  private requeueFailedTerminalTask() {
+    if (this.abortDrain || !this.failedTerminalTask) {
+      return;
+    }
+
+    const failedTerminalTask = this.failedTerminalTask;
+    this.failedTerminalTask = undefined;
+    this.pending.critical.unshift(failedTerminalTask);
+    this.startDrain();
   }
 
   private runPersistenceMutation<T>(operation: () => Promise<T>): Promise<T> {

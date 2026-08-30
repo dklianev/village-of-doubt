@@ -3,7 +3,23 @@ import test from "node:test";
 
 import sharp from "sharp";
 
-import { inspectMobileDerivativeConflicts, mobileDerivativePathFor } from "./optimize-assets.mjs";
+import {
+  avifBudgetKbFor,
+  inspectMobileDerivativeConflicts,
+  maxWidthFor,
+  mobileDerivativePathFor,
+  webpBudgetKbFor,
+} from "./optimize-assets.mjs";
+
+test("keeps dedicated mobile light heroes compact without changing their portrait crop", () => {
+  for (const family of ["werewolf", "mafia"]) {
+    const file = `mobile/${family}/bg-hero-light-v1.png`;
+
+    assert.equal(maxWidthFor(file), 768);
+    assert.equal(avifBudgetKbFor(file), 55);
+    assert.equal(webpBudgetKbFor(file), 92);
+  }
+});
 
 test("does not overwrite a dedicated mobile source with a desktop derivative", () => {
   const sources = new Set([

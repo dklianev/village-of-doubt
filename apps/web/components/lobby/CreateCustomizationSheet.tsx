@@ -9,11 +9,11 @@ import { TempoSettings } from "@/components/lobby/StepRoom";
 
 type DetailTab = "roles" | "rhythm" | "rules" | "invite";
 
-const TABS: { id: DetailTab; label: string; description: string; icon: LucideIcon }[] = [
-  { id: "roles", label: "Роли", description: "Състав и баланс", icon: UsersRound },
-  { id: "rhythm", label: "Ритъм и водене", description: "Темпо и разказвач", icon: TimerReset },
-  { id: "rules", label: "Правила и комуникация", description: "Глас и разговор", icon: BookOpenCheck },
-  { id: "invite", label: "Име и покана", description: "Последни детайли", icon: Mail },
+const TABS: { id: DetailTab; label: string; mobileLabel: string; description: string; icon: LucideIcon }[] = [
+  { id: "roles", label: "Роли", mobileLabel: "Роли", description: "Състав и баланс", icon: UsersRound },
+  { id: "rhythm", label: "Ритъм и водене", mobileLabel: "Ритъм", description: "Темпо и разказвач", icon: TimerReset },
+  { id: "rules", label: "Правила и комуникация", mobileLabel: "Правила", description: "Глас и разговор", icon: BookOpenCheck },
+  { id: "invite", label: "Име и покана", mobileLabel: "Покана", description: "Последни детайли", icon: Mail },
 ];
 
 export function CreateCustomizationSheet({
@@ -83,7 +83,7 @@ export function CreateCustomizationSheet({
                 >
                   <Icon aria-hidden="true" />
                   <span>
-                    <strong>{tab.label}</strong>
+                    <strong data-mobile-label={tab.mobileLabel}>{tab.label}</strong>
                     <small>{tab.description}</small>
                   </span>
                 </button>

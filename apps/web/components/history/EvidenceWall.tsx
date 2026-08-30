@@ -5,17 +5,18 @@ import { CaseFileCard, modeFamily, outcomeFor } from "@/components/history/CaseF
 import { EvidenceWallEmpty } from "@/components/history/EvidenceWallEmpty";
 import type { HistoryGameView } from "@/lib/history-highlights";
 
-type EvidenceFilter = "all" | "werewolves" | "mafia" | "wins" | "losses";
+type EvidenceFilter = "all" | "werewolves" | "mafia" | "good" | "threats";
+type EvidenceWallStatus = "ready" | "unavailable";
 
 const FILTERS: Array<{ value: EvidenceFilter; label: string }> = [
   { value: "all", label: "Всички" },
   { value: "werewolves", label: "Върколак" },
   { value: "mafia", label: "Мафия" },
-  { value: "wins", label: "Победи" },
-  { value: "losses", label: "Загуби" },
+  { value: "good", label: "Селото и влюбените" },
+  { value: "threats", label: "Нощните заплахи" },
 ];
 
-export function EvidenceWall({ games }: { games: HistoryGameView[] }) {
+export function EvidenceWall({ games, status = "ready" }: { games: HistoryGameView[]; status?: EvidenceWallStatus }) {
   const [filter, setFilter] = useState<EvidenceFilter>("all");
   const filteredGames = useMemo(() => games.filter((game) => matchesFilter(game, filter)), [filter, games]);
 
@@ -27,7 +28,7 @@ export function EvidenceWall({ games }: { games: HistoryGameView[] }) {
         <p className="evidence-wall-subtitle">Всяко дело носи дата, играчите, ролите и развръзката.</p>
       </header>
 
-      {games.length > 0 ? (
+      {status === "ready" && games.length > 0 ? (
         <div className="evidence-filters" role="group" aria-label="Филтри по дело">
           {FILTERS.map((item) => (
             <button
@@ -43,7 +44,16 @@ export function EvidenceWall({ games }: { games: HistoryGameView[] }) {
         </div>
       ) : null}
 
-      {games.length === 0 ? (
+      {status === "unavailable" ? (
+        <section className="evidence-filter-empty" data-state="unavailable" role="alert">
+          <p className="section-kicker">връзката прекъсна</p>
+          <h2>Архивът не отговори</h2>
+          <p>Делата са запазени. В момента просто не можем да ги прочетем.</p>
+          <a className="btn btn-primary" href="/history">
+            Опитай отново
+          </a>
+        </section>
+      ) : games.length === 0 ? (
         <EvidenceWallEmpty />
       ) : filteredGames.length > 0 ? (
         <section className="evidence-wall" aria-label="Списък с дела">
@@ -70,9 +80,9 @@ function matchesFilter(game: HistoryGameView, filter: EvidenceFilter) {
       return modeFamily(game.mode) === "werewolves";
     case "mafia":
       return modeFamily(game.mode) === "mafia";
-    case "wins":
+    case "good":
       return outcomeFor(game) === "win";
-    case "losses":
+    case "threats":
       return outcomeFor(game) === "loss";
     case "all":
     default:

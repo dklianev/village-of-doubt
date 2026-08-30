@@ -116,7 +116,7 @@ describe("GameRoom full-night launch smoke", () => {
 
     expect(serverRoom.state.phase).toBe("game_over");
     expect(serverRoom.state.winnerTeam).toBe("werewolves");
-    expect(serverRoom.state.winnerReasonBg).toBe("Върколаците са равни или повече от живите селяни.");
+    expect(serverRoom.state.winnerReasonBg).toBe("Върколаците вече контролират гласуването.");
   });
 });
 

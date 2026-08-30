@@ -138,8 +138,8 @@ export function PrivacyDataPreview({ snapshot }: PrivacyDataPreviewProps) {
       {exportError ? <p className="privacy-export-error" role="alert">{exportError}</p> : null}
 
       <p className="privacy-data-disclaimer">
-        Не виждаме твоя IP адрес след сесия, не пазим клавишни последователности, не четем чат
-        съобщенията извън стаите на играта. Всичко, което показваме тук, можеш да изтеглиш или
+        Не виждаме твоя IP адрес след сесия, не пазим клавишни последователности и не четем
+        съобщения от разговорите извън стаите на играта. Всичко, което показваме тук, можеш да изтеглиш или
         изтриеш по всяко време.
       </p>
     </section>

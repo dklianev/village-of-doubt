@@ -41,7 +41,7 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
   {
     id: "first_blood",
     titleBg: "Първа кръв",
-    descriptionBg: "Играч преживява първата голяма сцена на елиминация в началото на играта.",
+    descriptionBg: "Напускаш играта още през първата нощ.",
     iconBg: "кръв",
     tier: "bronze",
     family: "universal",
@@ -51,7 +51,7 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
   {
     id: "jester_win",
     titleBg: "Шут на годината",
-    descriptionBg: "Шутът успява да убеди масата да го елиминира и печели личната си игра.",
+    descriptionBg: "Караш масата да те елиминира и печелиш личната си игра.",
     iconBg: "маска",
     tier: "silver",
     family: "universal",
@@ -65,7 +65,7 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
   {
     id: "guardian_save",
     titleBg: "Спасител",
-    descriptionBg: "Защитна роля спира поне две смърти в една игра.",
+    descriptionBg: "Спираш поне две нощни смърти в една игра.",
     iconBg: "щит",
     tier: "silver",
     family: "universal",
@@ -83,8 +83,8 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
   },
   {
     id: "hunter_revenge",
-    titleBg: "Ловецът-вдовица",
-    descriptionBg: "Ловецът пада, но последният му изстрел променя финала.",
+    titleBg: "Последният изстрел",
+    descriptionBg: "Падаш като Ловец, но последният ти изстрел променя финала.",
     iconBg: "куршум",
     tier: "gold",
     family: "werewolves",
@@ -98,8 +98,8 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
   },
   {
     id: "silent_civilian",
-    titleBg: "Тих гражданин",
-    descriptionBg: "Обикновен играч оцелява до края, без да пропуска дневния си глас.",
+    titleBg: "Глас до края",
+    descriptionBg: "Оцеляваш като обикновен играч, без да пропуснеш дневен глас.",
     iconBg: "свещ",
     tier: "bronze",
     family: "universal",
@@ -122,8 +122,8 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
   },
   {
     id: "perfect_record",
-    titleBg: "Протокол без празнини",
-    descriptionBg: "Записът има поне 20 запазени събития.",
+    titleBg: "Дълга нощ",
+    descriptionBg: "Участваш в игра с поне 20 важни събития.",
     iconBg: "архив",
     tier: "bronze",
     family: "universal",
@@ -132,7 +132,7 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
   {
     id: "maniac_endgame",
     titleBg: "Сам срещу града",
-    descriptionBg: "Маниакът печели като последна реална заплаха.",
+    descriptionBg: "Печелиш като единствената останала заплаха.",
     iconBg: "нож",
     tier: "gold",
     family: "mafia",

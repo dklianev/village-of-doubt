@@ -1,7 +1,7 @@
 "use client";
 
 import "@/components/games/JoinEntry.module.css";
-import { useEffect, useMemo, useState, useTransition, type FormEvent } from "react";
+import { useEffect, useId, useMemo, useState, useTransition, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, Gamepad2, KeyRound, LoaderCircle, Martini, Moon, Plus, RefreshCw, Users } from "lucide-react";
@@ -16,7 +16,7 @@ import {
   type TempoProfile,
 } from "@werewolf/shared";
 import { JoinCodeSlots } from "@/components/games/join-code-slots";
-import { authClient } from "@/lib/auth-client";
+import { useAuthSession, type AuthSessionView } from "@/lib/use-auth-session";
 import { useRecentRooms } from "@/lib/use-recent-rooms";
 
 type RoomPreview = {
@@ -71,13 +71,15 @@ export function AuthGatedEntryClient({
   family,
   mode,
   initialCode = "",
+  initialSession,
 }: {
   family: GameFamily;
   mode: GameMode;
   initialCode?: string;
+  initialSession?: AuthSessionView | null;
 }) {
   const router = useRouter();
-  const { data: session, isPending } = authClient.useSession();
+  const { data: session, isError: sessionError, isPending, refresh: refreshSession } = useAuthSession(initialSession);
   const normalizedInitialCode = normalizeRoomCodeInput(initialCode);
   const [roomCode, setRoomCode] = useState(normalizedInitialCode);
   const [spectator, setSpectator] = useState(false);
@@ -85,10 +87,13 @@ export function AuthGatedEntryClient({
   const [previewState, setPreviewState] = useState<RoomPreviewState>({ kind: "idle" });
   const [previewAttempt, setPreviewAttempt] = useState(0);
   const [isJoining, startTransition] = useTransition();
+  const errorId = useId();
   const isMafia = family === "mafia";
   const copy = FAMILY_COPY[isMafia ? "mafia" : "werewolves"];
   const FamilyIcon = copy.Icon;
   const gameRoot = isMafia ? "/mafia" : "/werewolf";
+  const joinPath = `${gameRoot}/join${normalizedInitialCode ? `/${normalizedInitialCode}` : ""}`;
+  const signInPath = `/sign-in?redirect=${encodeURIComponent(joinPath)}`;
   const playerCount = mode === "mafia_sport" ? 10 : isMafia ? 10 : 8;
   const tempo: TempoProfile = mode === "mafia_sport" ? "sport_mafia" : "normal_online";
   const communication: CommunicationMode = "built_in_chat";
@@ -206,7 +211,7 @@ export function AuthGatedEntryClient({
     submit("join");
   }
 
-  if (isPending || !session) {
+  if (isPending) {
     return (
       <section className="auth-entry-card join-entry-card join-entry-card--skeleton" data-faction={family} data-family={family}>
         <span className="join-entry-mark" aria-hidden>
@@ -219,8 +224,58 @@ export function AuthGatedEntryClient({
     );
   }
 
+  if (sessionError && !session) {
+    return (
+      <section className="auth-entry-card join-entry-card" data-faction={family} data-family={family}>
+        <header className="join-entry-hero">
+          <span className="join-entry-mark" aria-hidden>
+            <RefreshCw strokeWidth={1.8} />
+          </span>
+          <div>
+            <p className="section-kicker join-entry-kicker">{copy.kicker}</p>
+            <h2>Не успяхме да потвърдим сесията</h2>
+            <p>Провери връзката си и опитай отново, без да напускаш поканата.</p>
+          </div>
+        </header>
+        <div className="join-entry-actions">
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => void refreshSession({ fresh: true })}
+          >
+            <RefreshCw aria-hidden strokeWidth={1.8} />
+            Провери сесията отново
+          </button>
+        </div>
+      </section>
+    );
+  }
+
+  if (!session) {
+    return (
+      <section className="auth-entry-card join-entry-card" data-faction={family} data-family={family}>
+        <header className="join-entry-hero">
+          <span className="join-entry-mark" aria-hidden>
+            <KeyRound strokeWidth={1.8} />
+          </span>
+          <div>
+            <p className="section-kicker join-entry-kicker">{copy.kicker}</p>
+            <h2>Сесията ти е приключила</h2>
+            <p>Влез отново и ще те върнем към поканата за тази стая.</p>
+          </div>
+        </header>
+        <div className="join-entry-actions">
+          <Link className="btn btn-primary" href={signInPath}>
+            <KeyRound aria-hidden strokeWidth={1.8} />
+            Влез отново
+          </Link>
+        </div>
+      </section>
+    );
+  }
+
   const friendlyName = session.user.name?.trim() || "приятел";
-  const canSubmit = !isJoining && roomAcceptsEntry;
+  const canSubmit = !isJoining && (!ROOM_CODE_REGEX.test(roomCode) || roomAcceptsEntry);
 
   return (
     <section className="auth-entry-card join-entry-card" data-faction={family} data-family={family}>
@@ -237,7 +292,7 @@ export function AuthGatedEntryClient({
         </header>
 
         {error ? (
-          <p className="join-entry-error" role="alert" aria-live="polite">
+          <p id={errorId} className="join-entry-error" role="alert" aria-live="polite">
             {error}
           </p>
         ) : null}
@@ -248,7 +303,13 @@ export function AuthGatedEntryClient({
               <KeyRound aria-hidden strokeWidth={1.8} />
               {copy.codeLabel}
             </span>
-            <JoinCodeSlots value={roomCode} onChange={handleCodeChange} invalid={Boolean(error)} autoFocus={!initialCode} />
+            <JoinCodeSlots
+              value={roomCode}
+              onChange={handleCodeChange}
+              invalid={Boolean(error)}
+              {...(error ? { describedBy: errorId } : {})}
+              autoFocus={!initialCode}
+            />
             <span className="join-codeslots-hint">
               {ROOM_CODE_LENGTH} знака - главни латински букви без I и O, цифри 2-9 без 0 и 1
             </span>

@@ -75,7 +75,7 @@ function emptyHeading(family: GameFamily | null) {
   if (family === "mafia") {
     return "Бъди първият на масата";
   }
-  return "Бъди първият на масата";
+  return "Събери първата маса";
 }
 
 function emptyBody(family: GameFamily | null) {

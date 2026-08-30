@@ -5,13 +5,13 @@ import { AdvancedDrawer } from "@/components/lobby/AdvancedDrawer";
 import { playCue } from "@/lib/sound";
 
 const NARRATOR_CARDS: { value: NarratorMode; label: string; detail: string }[] = [
-  { value: "automatic", label: "Автоматичен", detail: "Сървърът води фазите и пази тайните роли." },
+  { value: "automatic", label: "Автоматичен", detail: "Играта води фазите и пази тайните роли." },
 ];
 
 const COMMUNICATION_CARDS: { value: CommunicationMode; label: string; detail: string }[] = [
-  { value: "built_in_chat", label: "Вграден чат", detail: "Играчите пишат директно в стаята." },
-  { value: "no_chat", label: "Без чат", detail: "Подходящо за разговор на живо или външен гласов канал." },
-  { value: "system_only", label: "Само системни", detail: "Видими са фазите, резултатите и служебните съобщения." },
+  { value: "built_in_chat", label: "Вграден разговор", detail: "Играчите пишат директно в стаята." },
+  { value: "no_chat", label: "Без писмен разговор", detail: "Подходящо за разговор на живо или външен гласов канал." },
+  { value: "system_only", label: "Системни съобщения", detail: "Видими са фазите, резултатите и служебните съобщения." },
 ];
 
 const VOICE_DETAILS: Record<NarratorVoice, string> = {
@@ -73,7 +73,7 @@ export function NarratorSettings({
         </div>
         {state.narratorMode === "full_human" ? (
           <p className="narrator-warning">
-            Пълен Разказвач вижда всички роли и действия. Играчите ще трябва да го приемат съзнателно преди старт.
+            Пълен Разказвач вижда всички роли и действия. Играчите трябва да го приемат съзнателно преди началото.
           </p>
         ) : null}
       </section>

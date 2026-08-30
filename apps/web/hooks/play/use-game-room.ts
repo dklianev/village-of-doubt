@@ -18,8 +18,8 @@ import type {
   NarratorVoice,
   RoleCode,
 } from "@werewolf/shared";
-import { authClient } from "@/lib/auth-client";
 import { createGameClient, GAME_ROOM_NAME } from "@/lib/colyseus-client";
+import { useAuthSession, type AuthSessionView } from "@/lib/use-auth-session";
 import type { pushToast } from "@/lib/toast";
 import { arePhaseSlicesEqual, arePlayerListsEqual } from "@/lib/play/equality";
 import { playCue } from "@/lib/sound";
@@ -49,6 +49,7 @@ const MAX_RECONNECT_ATTEMPTS = 5;
 export interface UseGameRoomOptions {
   code: string;
   createOptions: CreateRoomOptions | undefined;
+  initialSession?: AuthSessionView | null;
   toast: typeof pushToast;
   onReconnectSuppressed?: () => void;
 }
@@ -78,6 +79,7 @@ export interface UseGameRoomResult {
 export function useGameRoom({
   code,
   createOptions,
+  initialSession,
   toast,
   onReconnectSuppressed,
 }: UseGameRoomOptions): UseGameRoomResult {
@@ -90,7 +92,13 @@ export function useGameRoom({
     createOptionsRef.current = { signature: createOptionsSignature, value: createOptions };
   }
   const stableCreateOptions = createOptionsRef.current.value;
-  const { data: session, isPending: sessionPending } = authClient.useSession();
+  const {
+    data: session,
+    isError: sessionError,
+    isPending: sessionPending,
+    refresh: refreshSession,
+  } = useAuthSession(initialSession);
+  const sessionUnavailable = sessionError && !session?.user?.id;
   const [room, setRoom] = useState<Room | null>(null);
   const [baseSnapshot, setBaseSnapshot] = useState<GameSnapshot | null>(null);
   const [playersSlice, setPlayersSlice] = useState<PublicPlayer[]>([]);
@@ -178,6 +186,23 @@ export function useGameRoom({
     if (sessionPending) {
       return () => {
         active = false;
+      };
+    }
+
+    if (sessionUnavailable) {
+      const retrySession = () => {
+        setConnectionMessage("Проверяваме сесията ти отново.");
+        setConnectionStatus("connecting");
+        void refreshSession({ fresh: true });
+      };
+      setConnectionMessage("Не успяхме да потвърдим сесията ти.");
+      setConnectionStatus("error");
+      reconnectNowRef.current = retrySession;
+      return () => {
+        active = false;
+        if (reconnectNowRef.current === retrySession) {
+          reconnectNowRef.current = null;
+        }
       };
     }
 
@@ -384,6 +409,15 @@ export function useGameRoom({
         setRecordedGameId(message.gameId);
       });
 
+      void nextRoom.request("syncPrivateState").catch(() => {
+        if (!active || joinedRoom !== nextRoom) {
+          return;
+        }
+        preferFreshJoin = true;
+        setConnectionMessage("Свързахме се, но не успяхме да възстановим личните ти данни. Опитай отново.");
+        setConnectionStatus("error");
+      });
+
       nextRoom.onLeave((leaveCode) => {
         if (!active) {
           return;
@@ -533,7 +567,16 @@ export function useGameRoom({
       clearReconnectTimer();
       joinedRoom?.leave();
     };
-  }, [clearViewerPrivateState, code, session?.user?.id, sessionPending, stableCreateOptions, toast]);
+  }, [
+    clearViewerPrivateState,
+    code,
+    refreshSession,
+    session?.user?.id,
+    sessionPending,
+    sessionUnavailable,
+    stableCreateOptions,
+    toast,
+  ]);
 
   useEffect(() => {
     function handleOffline() {

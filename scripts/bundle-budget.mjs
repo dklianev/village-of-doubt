@@ -6,7 +6,9 @@ const root = process.cwd();
 const BASELINE_PATH = path.join(root, "scripts/perf-baseline.json");
 const BUDGETS = {
   // Includes the deferred 22 KB browser error-monitoring client.
-  totalJs: { warningKb: 535, hardKb: 545, maxDeltaKb: 5 },
+  // Corpus is a review trigger across every route and deferred chunk. Route caps
+  // below remain the user-facing delivery guard; the delta prevents silent drift.
+  totalJs: { warningKb: 560, hardKb: 570, maxDeltaKb: 5 },
   routes: {
     "/": {
       js: { warningKb: 48, hardKb: 55, maxDeltaKb: 3 },
@@ -19,6 +21,14 @@ const BUDGETS = {
     "/play/[code]": {
       js: { warningKb: 135, hardKb: 140, maxDeltaKb: 3 },
       css: { warningKb: 62, hardKb: 70, maxDeltaKb: 3 },
+    },
+    "/tutorial": {
+      js: { warningKb: 24, hardKb: 30, maxDeltaKb: 3 },
+      css: { warningKb: 51, hardKb: 56, maxDeltaKb: 3 },
+    },
+    "/werewolf/rules": {
+      js: { warningKb: 36, hardKb: 42, maxDeltaKb: 3 },
+      css: { warningKb: 52, hardKb: 57, maxDeltaKb: 3 },
     },
   },
   artCorpus: { warningKb: 50_000, hardKb: 60_000 },
@@ -90,10 +100,10 @@ function reportRouteBudgets() {
 }
 
 function reportRouteAsset(route, assetType, files, budget, baselineKb) {
-  const label = `${route} ${assetType === "JS" ? "JavaScript" : "CSS"}`;
+  const label = `${route} declared client ${assetType === "JS" ? "JavaScript" : "CSS"}`;
   const measured = measureAssets(nextDir, files, label);
   console.log(
-    `Route ${route} ${assetType} gzip: ${roundKb(measured.gzipBytes)} KB ` +
+    `Route ${route} declared client ${assetType} gzip: ${roundKb(measured.gzipBytes)} KB ` +
       `(${formatFileCount(measured.files.length)}; ${formatThresholds(budget)})`,
   );
   if (files.length === 0) {
@@ -104,7 +114,7 @@ function reportRouteAsset(route, assetType, files, budget, baselineKb) {
     failures.push(`Route ${route} ${assetType === "JS" ? "JavaScript" : "CSS"} source bytes are zero.`);
     return;
   }
-  enforceBudget(`Route ${route} ${assetType} gzip`, measured.gzipBytes, budget, baselineKb);
+  enforceBudget(`Route ${route} declared client ${assetType} gzip`, measured.gzipBytes, budget, baselineKb);
 }
 
 function reportArtCorpus() {

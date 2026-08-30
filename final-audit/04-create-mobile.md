@@ -1,0 +1,99 @@
+- generic [box=0,-1357,390,2277]:
+  - link [box=8,-56,263,48]:
+    - /url: "#main-content"
+    - text: Към основното съдържание
+  - generic [box=0,-1357,390,64]:
+    - banner [box=0,-1357,390,64]:
+      - button [box=10,-1347,44,44]
+      - link [box=64,-1345,170,40]:
+        - /url: /
+        - generic [box=108,-1342,126,34]:
+          - generic [box=108,-1342,126,14]:
+            - generic [box=108,-1342,66,13]: Върколак
+            - generic [box=178,-1342,4,14]: ·
+            - generic [box=186,-1342,49,13]: Мафия
+          - generic [box=114,-1325,52,17]: БЕТА
+      - link [box=288,-1347,92,44]:
+        - /url: /werewolf/create
+        - generic [box=322,-1331,46,12]: Играй
+  - generic [box=0,-1293,390,1969]:
+    - main [box=10,-1293,370,1969]:
+      - generic [box=10,-1283,370,1903]:
+        - region [box=10,-1271,370,1861]:
+          - generic [box=11,-1270,368,276]:
+            - generic [box=29,-1248,332,173]:
+              - paragraph [box=29,-1248,332,15]: домакин на селото
+              - heading [level=1] [box=29,-1225,332,89]: Подготви селото за една минута
+              - paragraph [box=29,-1124,332,49]: Избери каква вечер искаш. Съставът се балансира автоматично.
+            - generic [box=29,-1051,247,38]: настройките са готови
+          - generic [box=11,-994,368,1583]:
+            - generic [box=27,-976,336,1052]:
+              - group [box=27,-976,336,394]
+              - generic [box=27,-562,336,291]
+              - region [box=27,-252,336,328]
+            - complementary [box=27,94,336,403]:
+              - generic [box=46,113,298,59]
+              - generic [box=46,190,298,191]
+              - button [box=46,399,298,46]: Настрой детайлите
+              - generic [box=46,463,298,15]: Кодът за покана се показва след създаването.
+          - generic [box=10,768,370,68]:
+            - generic [box=20,779,58,46]:
+              - strong [box=39,779,20,30]: "12"
+              - generic [box=30,809,38,16]: ~32 мин
+            - button [box=90,778,280,48]: Създай селото
+  - contentinfo [box=0,700,390,220]:
+    - generic [box=16,725,358,72]:
+      - link [box=54,725,113,32]:
+        - /url: /privacy
+        - text: Поверителност
+      - generic [box=174,725,3,32]: ·
+      - link [box=186,725,63,32]:
+        - /url: /terms
+        - text: Условия
+      - generic [box=257,725,3,32]: ·
+      - link [box=268,725,56,32]:
+        - /url: /report
+        - text: Сигнал
+      - generic [box=333,725,3,32]: ·
+      - link [box=115,765,82,32]:
+        - /url: /status
+        - text: Състояние
+      - generic [box=205,765,3,32]: ·
+      - link [box=217,765,58,32]:
+        - /url: /faq
+        - text: Помощ
+    - paragraph [box=16,805,358,19]: © 2026 Върколак и Мафия · Бета
+  - button "Open Next.js Dev Tools" [ref=f2e163] [cursor=pointer] [box=22,790,32,32]
+  - alert [box=-1,919,1,1]
+  - dialog [active] [ref=f2e169] [box=0,0,390,844]:
+    - heading "Настрой детайлите" [level=2] [ref=f2e170] [box=0,0,390,58]
+    - button "Затвори настройките" [ref=f2e171] [cursor=pointer] [box=338,9,40,40]:
+      - generic [ref=f2e172] [box=352,17,12,25]: ×
+    - paragraph [ref=f2e173] [box=-1,-1,1,1]: Допълнителни роли, ритъм, правила и име на стаята.
+    - generic [ref=f2e174] [box=0,58,390,786]:
+      - complementary [ref=f2e175] [box=0,58,390,83]:
+        - tablist "Групи настройки" [ref=f2e176] [box=14,68,362,62]:
+          - tab "Роли" [selected] [ref=f2e177] [cursor=pointer] [box=14,68,87,62]:
+            - strong [ref=f2e183] [box=43,108,29,11]: РолиРоли
+          - tab "Ритъм и водене" [ref=f2e184] [cursor=pointer] [box=106,68,87,62]:
+            - strong [ref=f2e189] [box=131,108,37,11]: РитъмРитъм и водене
+          - tab "Правила и комуникация" [ref=f2e190] [cursor=pointer] [box=198,68,87,62]:
+            - strong [ref=f2e195] [box=216,108,50,11]: ПравилаПравила и комуникация
+          - tab "Име и покана" [ref=f2e196] [cursor=pointer] [box=289,68,87,62]:
+            - strong [ref=f2e201] [box=311,108,42,11]: ПоканаИме и покана
+      - generic [ref=f2e202] [box=0,141,390,703]:
+        - tabpanel "Роли" [ref=f2e203] [box=0,141,390,639]:
+          - region "Избери ролите" [ref=f2e204] [box=16,74,348,816]:
+            - generic [ref=f2e205] [box=16,74,348,150]:
+              - generic [ref=f2e206] [box=16,74,348,89]
+              - generic "Шаблони за роли" [ref=f2e210] [box=16,175,348,49]
+            - generic [ref=f2e215] [box=16,238,348,582]:
+              - generic [ref=f2e216] [box=16,327,348,494]
+              - region "Състав на масата" [ref=f2e270] [box=16,238,348,75]
+            - generic [ref=f2e279] [box=16,834,348,56]:
+              - button "Запази шаблон" [ref=f2e482] [cursor=pointer] [box=16,836,137,50]
+              - button "Зареди шаблон" [ref=f2e487] [cursor=pointer] [box=162,836,136,50]
+              - button "Отмени последната промяна" [disabled] [ref=f2e490] [box=307,840,24,42]
+              - button "Повтори последната промяна" [disabled] [ref=f2e494] [box=340,840,24,42]
+        - contentinfo [ref=f2e281] [box=0,780,390,64]:
+          - button "Готово" [ref=f2e282] [cursor=pointer] [box=14,791,362,44]

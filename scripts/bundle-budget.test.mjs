@@ -24,19 +24,33 @@ const ROUTES = {
     entry: "[project]/apps/web/app/play/[code]/page",
     manifest: "apps/web/.next/server/app/play/[code]/page_client-reference-manifest.js",
   },
+  "/tutorial": {
+    appPath: "/tutorial/page",
+    entry: "[project]/apps/web/app/tutorial/page",
+    manifest: "apps/web/.next/server/app/tutorial/page_client-reference-manifest.js",
+  },
+  "/werewolf/rules": {
+    appPath: "/werewolf/rules/page",
+    entry: "[project]/apps/web/app/werewolf/rules/page",
+    manifest: "apps/web/.next/server/app/werewolf/rules/page_client-reference-manifest.js",
+  },
 };
 
-test("measures the landing, create, and play routes from Next.js manifests", (context) => {
+test("measures all protected experience routes from Next.js manifests", (context) => {
   const fixture = createFixture();
   context.after(() => rmSync(fixture, { recursive: true, force: true }));
 
   const result = runBudget(fixture);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /JavaScript corpus gzip: .+warning: 535 KB; hard: 545 KB/);
-  assert.match(result.stdout, /Route \/ JS gzip: .+warning: 48 KB; hard: 55 KB/);
-  assert.match(result.stdout, /Route \/create JS gzip: .+warning: 85 KB; hard: 95 KB/);
-  assert.match(result.stdout, /Route \/play\/\[code\] JS gzip: .+warning: 135 KB; hard: 140 KB/);
+  assert.match(result.stdout, /JavaScript corpus gzip: .+warning: 560 KB; hard: 570 KB/);
+  assert.match(result.stdout, /Route \/ declared client JS gzip: .+warning: 48 KB; hard: 55 KB/);
+  assert.match(result.stdout, /Route \/create declared client JS gzip: .+warning: 85 KB; hard: 95 KB/);
+  assert.match(result.stdout, /Route \/play\/\[code\] declared client JS gzip: .+warning: 135 KB; hard: 140 KB/);
+  assert.match(result.stdout, /Route \/tutorial declared client JS gzip: .+warning: 24 KB; hard: 30 KB/);
+  assert.match(result.stdout, /Route \/tutorial declared client CSS gzip: .+warning: 51 KB; hard: 56 KB/);
+  assert.match(result.stdout, /Route \/werewolf\/rules declared client JS gzip: .+warning: 36 KB; hard: 42 KB/);
+  assert.match(result.stdout, /Route \/werewolf\/rules declared client CSS gzip: .+warning: 52 KB; hard: 57 KB/);
   assert.match(result.stdout, /Art corpus: 2 files,/);
   assert.match(result.stdout, /Largest optimized art: portrait\.webp/);
   assert.match(result.stdout, /All budgets within thresholds/);
@@ -46,14 +60,14 @@ test("emits a warning without failing below the hard JavaScript cap", (context) 
   const fixture = createFixture();
   context.after(() => rmSync(fixture, { recursive: true, force: true }));
 
-  writeFixtureFile(fixture, "apps/web/.next/static/chunks/warning.js", randomBytes(538 * 1024));
-  setBaseline(fixture, { totalJsKb: 538 });
+  writeFixtureFile(fixture, "apps/web/.next/static/chunks/warning.js", randomBytes(563 * 1024));
+  setBaseline(fixture, { totalJsKb: 566 });
 
   const result = runBudget(fixture);
 
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stderr, /Budget warnings:/);
-  assert.match(result.stderr, /JavaScript corpus gzip .+ > warning 535 KB/);
+  assert.match(result.stderr, /JavaScript corpus gzip .+ > warning 560 KB/);
 });
 
 test("fails when the JavaScript delta exceeds the checked-in baseline allowance", (context) => {

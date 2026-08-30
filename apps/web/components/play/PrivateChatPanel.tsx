@@ -15,11 +15,12 @@ export function PrivateChatPanel({
 }: {
   channel: ChatChannel;
   messages: PrivateChatMessage[];
-  onSend: (channel: ChatChannel, message: string) => void;
+  onSend: (channel: ChatChannel, message: string) => Promise<boolean>;
   onTyping: (channel: ChatChannel, active: boolean) => void;
   typingNotices: TypingNotice[];
 }) {
   const [value, setValue] = useState("");
+  const [isSending, setIsSending] = useState(false);
   const typingActiveRef = useRef(false);
   const onTypingRef = useRef(onTyping);
   onTypingRef.current = onTyping;
@@ -34,12 +35,17 @@ export function PrivateChatPanel({
     };
   }, [channel]);
 
-  const submit = () => {
+  const submit = async () => {
     const message = value.trim();
-    if (!message) {
+    if (!message || isSending) {
       return;
     }
-    onSend(channel, message);
+    setIsSending(true);
+    const accepted = await onSend(channel, message);
+    setIsSending(false);
+    if (!accepted) {
+      return;
+    }
     typingActiveRef.current = false;
     onTyping(channel, false);
     setValue("");
@@ -57,7 +63,7 @@ export function PrivateChatPanel({
         ))}
         <TypingIndicator notices={typingNotices} compact />
       </div>
-      <div className="mt-4 flex gap-2">
+      <div className="mt-4 flex gap-2" aria-busy={isSending}>
         <input
           className="input w-full"
           value={value}
@@ -72,8 +78,8 @@ export function PrivateChatPanel({
           placeholder="Съобщение само за този канал..."
           maxLength={MAX_CHAT_MESSAGE_LENGTH}
         />
-        <button className="btn btn-primary" type="button" onClick={submit} disabled={value.trim().length === 0}>
-          Изпрати
+        <button className="btn btn-primary" type="button" onClick={() => void submit()} disabled={value.trim().length === 0 || isSending}>
+          {isSending ? "Изпращаме..." : "Изпрати"}
         </button>
       </div>
     </section>

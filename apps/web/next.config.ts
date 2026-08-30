@@ -11,7 +11,7 @@ const privateGameRouteSources = [
 const nextConfig: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
-  // Next 16.3.1 drops the module-sync branch of @swc/helpers from pnpm
+  // Next 16.3 standalone tracing drops the module-sync branch of @swc/helpers from pnpm
   // standalone traces. Remove after vercel/next.js#97372 reaches stable.
   outputFileTracingIncludes: {
     "/*": ["../../node_modules/.pnpm/@swc+helpers@*/node_modules/@swc/helpers/esm/**/*"],

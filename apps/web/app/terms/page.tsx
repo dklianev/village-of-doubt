@@ -44,7 +44,7 @@ export default async function TermsPage({ searchParams }: TermsPageProps) {
 
   return (
     <main className="shell legal-page-shell terms-shell">
-      <ResourceHints images={["/game-art/legal/terms-banner.webp"]} />
+      <ResourceHints images={[{ href: "/game-art/legal/terms-banner.webp", fetchPriority: "high" }]} />
       <JsonLd data={jsonLd} />
       <TermsCodex
         lastUpdated={LAST_UPDATED}

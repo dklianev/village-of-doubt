@@ -41,9 +41,9 @@ type Experience = {
 };
 
 const COMMUNICATION_LABELS: Record<CommunicationMode, string> = {
-  built_in_chat: "Вграден чат",
-  no_chat: "Без чат",
-  system_only: "Само системни",
+  built_in_chat: "Вграден разговор",
+  no_chat: "Без писмен разговор",
+  system_only: "Системни съобщения",
   secret_channels: "Тайни канали",
 };
 

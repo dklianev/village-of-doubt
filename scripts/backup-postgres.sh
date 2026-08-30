@@ -1,6 +1,22 @@
 #!/usr/bin/env sh
 set -eu
 
+retention_dry_run=0
+case "$#" in
+  0) ;;
+  1)
+    if [ "$1" != "--retention-dry-run" ]; then
+      printf 'Usage: %s [--retention-dry-run]\n' "$0" >&2
+      exit 1
+    fi
+    retention_dry_run=1
+    ;;
+  *)
+    printf 'Usage: %s [--retention-dry-run]\n' "$0" >&2
+    exit 1
+    ;;
+esac
+
 BACKUP_DIR="${BACKUP_DIR:-/backups}"
 BACKUP_RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-14}"
 POSTGRES_USER="${POSTGRES_USER:-werewolf}"
@@ -23,6 +39,83 @@ release_manifest_signature="${BACKUP_RELEASE_MANIFEST_SIGNATURE:-${release_manif
 release_manifest_command="${BACKUP_RELEASE_MANIFEST_COMMAND:-$(dirname "$0")/release-manifest.mjs}"
 release_manifest_public_key="${BACKUP_RELEASE_MANIFEST_PUBLIC_KEY_FILE:-/etc/werewolf/release-manifest.pub}"
 release_allowed_image_prefix="${BACKUP_RELEASE_ALLOWED_IMAGE_PREFIX:-}"
+rclone_command="${RCLONE_COMMAND:-rclone}"
+rclone_remote="${RCLONE_REMOTE:-}"
+deletion_ledger_remote="${RCLONE_DELETION_LEDGER_REMOTE:-}"
+rclone_retention_days="${RCLONE_BACKUP_RETENTION_DAYS:-30}"
+
+validate_rclone_prefix() {
+  value="$1"
+  label="$2"
+  remote_name="${value%%:*}"
+  remote_prefix="${value#*:}"
+
+  if [ "$remote_name" = "$value" ]; then
+    printf '%s must be an explicit non-root rclone prefix in remote:path form.\n' "$label" >&2
+    exit 1
+  fi
+  case "$remote_name" in
+    ""|*[!A-Za-z0-9_.-]*)
+      printf '%s must use a named rclone remote with only letters, numbers, dots, underscores, and hyphens.\n' "$label" >&2
+      exit 1
+      ;;
+  esac
+  case "$remote_prefix" in
+    ""|/|.|..|/*|*/|../*|*/../*|*/..)
+      printf '%s must be an explicit non-root rclone prefix without traversal or a trailing slash.\n' "$label" >&2
+      exit 1
+      ;;
+  esac
+}
+
+run_offsite_retention() {
+  if [ "$retention_dry_run" -eq 1 ]; then
+    "$rclone_command" delete "$rclone_remote" \
+      --min-age "${rclone_retention_days}d" \
+      --include 'werewolf_*.sql.gz*' \
+      --dry-run
+  else
+    "$rclone_command" delete "$rclone_remote" \
+      --min-age "${rclone_retention_days}d" \
+      --include 'werewolf_*.sql.gz*'
+  fi
+}
+
+if [ -n "$rclone_remote" ] || [ -n "$deletion_ledger_remote" ] || [ "$retention_dry_run" -eq 1 ]; then
+  if [ -z "$rclone_remote" ]; then
+    printf 'RCLONE_REMOTE is required for off-site retention.\n' >&2
+    exit 1
+  fi
+  if [ -z "$deletion_ledger_remote" ]; then
+    printf 'RCLONE_DELETION_LEDGER_REMOTE is required for protected deletion recovery.\n' >&2
+    exit 1
+  fi
+  validate_rclone_prefix "$rclone_remote" "RCLONE_REMOTE"
+  validate_rclone_prefix "$deletion_ledger_remote" "RCLONE_DELETION_LEDGER_REMOTE"
+  if [ "${rclone_remote%%:*}" = "${deletion_ledger_remote%%:*}" ]; then
+    printf 'RCLONE_REMOTE and RCLONE_DELETION_LEDGER_REMOTE must use separate rclone remote profiles.\n' >&2
+    exit 1
+  fi
+  case "$rclone_retention_days" in
+    ""|*[!0-9]*|0)
+      printf 'RCLONE_BACKUP_RETENTION_DAYS must be an integer from 1 through 30.\n' >&2
+      exit 1
+      ;;
+  esac
+  if [ "$rclone_retention_days" -gt 30 ]; then
+    printf 'RCLONE_BACKUP_RETENTION_DAYS must be an integer from 1 through 30.\n' >&2
+    exit 1
+  fi
+  if ! command -v "$rclone_command" >/dev/null 2>&1; then
+    printf 'Off-site retention is configured, but the rclone command is unavailable: %s\n' "$rclone_command" >&2
+    exit 1
+  fi
+
+  if [ "$retention_dry_run" -eq 1 ]; then
+    run_offsite_retention
+    exit 0
+  fi
+fi
 
 case "$require_encryption" in
   0|1) ;;
@@ -118,6 +211,11 @@ if [ "$require_signature" = "1" ]; then
   fi
 fi
 
+if [ -n "$rclone_remote" ] && { [ "$require_encryption" != "1" ] || [ "$require_signature" != "1" ]; }; then
+  printf 'Off-site backups and deletion ledgers require encryption and signed manifests.\n' >&2
+  exit 1
+fi
+
 validate_docker_identifier() {
   value="$1"
   label="$2"
@@ -164,16 +262,25 @@ resolve_postgres_container() {
   printf '\n'
 }
 
+if [ -n "$rclone_remote" ]; then
+  run_offsite_retention
+fi
+
 mkdir -p "$BACKUP_DIR"
-backup_base="$BACKUP_DIR/werewolf_$(date +%F_%H-%M-%S).sql.gz"
+backup_timestamp="$(date +%F_%H-%M-%S)"
+backup_base="$BACKUP_DIR/werewolf_${backup_timestamp}.sql.gz"
 backup_file="$backup_base"
 [ -z "$age_recipient" ] || backup_file="$backup_base.age"
+deletion_ledger_file="$BACKUP_DIR/werewolf_deletion_ledger.tsv.age"
 temporary_sql="$(mktemp "$BACKUP_DIR/.werewolf_dump.XXXXXX")"
 temporary_gzip="$(mktemp "$BACKUP_DIR/.werewolf_dump.XXXXXX.gz")"
 temporary_encrypted="$backup_file.tmp"
+temporary_deletion_ledger="$(mktemp "$BACKUP_DIR/.werewolf_deletion_ledger.XXXXXX.tsv")"
+temporary_encrypted_deletion_ledger="$deletion_ledger_file.tmp"
 
 cleanup() {
-  rm -f "$temporary_sql" "$temporary_gzip" "$temporary_encrypted"
+  rm -f "$temporary_sql" "$temporary_gzip" "$temporary_encrypted" \
+    "$temporary_deletion_ledger" "$temporary_encrypted_deletion_ledger"
 }
 trap cleanup EXIT HUP INT TERM
 postgres_container="$(resolve_postgres_container)"
@@ -186,6 +293,26 @@ else
     pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB" > "$temporary_sql"
 fi
 test -s "$temporary_sql"
+
+if [ -n "$rclone_remote" ]; then
+  printf 'werewolf-deletion-ledger-v1\n' > "$temporary_deletion_ledger"
+  if [ -n "$postgres_container" ]; then
+    "$docker_command" exec -i "$postgres_container" \
+      psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc "
+        SELECT original_user_id || E'\t' || anonymous_user_id
+        FROM public.deleted_user_identities
+        ORDER BY original_user_id;
+      " >> "$temporary_deletion_ledger"
+  else
+    "$docker_command" compose exec -T postgres \
+      psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc "
+        SELECT original_user_id || E'\t' || anonymous_user_id
+        FROM public.deleted_user_identities
+        ORDER BY original_user_id;
+      " >> "$temporary_deletion_ledger"
+  fi
+fi
+
 gzip -c "$temporary_sql" > "$temporary_gzip"
 gzip -t "$temporary_gzip"
 if [ -n "$age_recipient" ]; then
@@ -204,6 +331,21 @@ if [ "$require_signature" = "1" ]; then
     "$release_version" \
     "$migration_head" >/dev/null
 fi
+
+if [ -n "$rclone_remote" ]; then
+  "$age_command" -r "$age_recipient" \
+    -o "$temporary_encrypted_deletion_ledger" "$temporary_deletion_ledger"
+  test -s "$temporary_encrypted_deletion_ledger"
+  mv "$temporary_encrypted_deletion_ledger" "$deletion_ledger_file"
+  (cd "$(dirname "$deletion_ledger_file")" && \
+    sha256sum "$(basename "$deletion_ledger_file")" > "$(basename "$deletion_ledger_file").sha256")
+  node "$manifest_command" create \
+    "$deletion_ledger_file" \
+    "$signing_private_key" \
+    "$POSTGRES_DB" \
+    "$release_version" \
+    "$migration_head" >/dev/null
+fi
 find "$BACKUP_DIR" -type f \( \
   -name "werewolf_*.sql.gz" -o \
   -name "werewolf_*.sql.gz.sha256" -o \
@@ -213,17 +355,22 @@ find "$BACKUP_DIR" -type f \( \
   -name "werewolf_*.manifest.json.sig" \
 \) -mtime +"$BACKUP_RETENTION_DAYS" -delete
 
-if [ -n "${RCLONE_REMOTE:-}" ]; then
-  if ! command -v rclone >/dev/null 2>&1; then
-    printf 'RCLONE_REMOTE is set, but rclone is unavailable.\n' >&2
-    exit 1
-  fi
-  rclone copy "$backup_file" "$RCLONE_REMOTE"
-  rclone copy "$backup_file.sha256" "$RCLONE_REMOTE"
-  if [ "$require_signature" = "1" ]; then
-    rclone copy "$backup_file.manifest.json" "$RCLONE_REMOTE"
-    rclone copy "$backup_file.manifest.json.sig" "$RCLONE_REMOTE"
-  fi
+if [ -n "$rclone_remote" ]; then
+  ledger_name="$(basename "$deletion_ledger_file")"
+  "$rclone_command" copyto "$deletion_ledger_file" "$deletion_ledger_remote/$ledger_name"
+  "$rclone_command" copyto "$deletion_ledger_file.sha256" "$deletion_ledger_remote/$ledger_name.sha256"
+  "$rclone_command" copyto "$deletion_ledger_file.manifest.json" \
+    "$deletion_ledger_remote/$ledger_name.manifest.json"
+  "$rclone_command" copyto "$deletion_ledger_file.manifest.json.sig" \
+    "$deletion_ledger_remote/$ledger_name.manifest.json.sig"
+
+  "$rclone_command" copy "$backup_file" "$rclone_remote"
+  "$rclone_command" copy "$backup_file.sha256" "$rclone_remote"
+  "$rclone_command" copy "$backup_file.manifest.json" "$rclone_remote"
+  "$rclone_command" copy "$backup_file.manifest.json.sig" "$rclone_remote"
 fi
 
 printf 'Backup written: %s\n' "$backup_file"
+if [ -n "$rclone_remote" ]; then
+  printf 'Protected deletion ledger written: %s\n' "$deletion_ledger_file"
+fi

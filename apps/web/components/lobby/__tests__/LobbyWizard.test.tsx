@@ -71,7 +71,7 @@ describe("LobbyWizard", () => {
     await user.click(screen.getByRole("button", { name: "На живо" }));
 
     expect(screen.getByRole("button", { name: "На живо" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByText("Без чат")).toBeInTheDocument();
+    expect(screen.getByText("Без писмен разговор")).toBeInTheDocument();
     expect(screen.queryByText("Ръчно темпо")).not.toBeInTheDocument();
   });
 

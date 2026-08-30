@@ -61,6 +61,27 @@ const VIEWPORTS = [
   { name: "mobile", width: 390, height: 844 },
 ];
 
+const REPRESENTATIVE_VIEWPORTS = [
+  { name: "compact-375", width: 375, height: 812 },
+  { name: "tablet-768", width: 768, height: 1024 },
+] as const;
+
+const REPRESENTATIVE_ROUTES = [
+  { name: "home", path: "/", pathname: "/", heading: "Върколак или Мафия" },
+  {
+    name: "tutorial-1",
+    path: "/tutorial?step=1",
+    pathname: "/tutorial",
+    heading: "Масата се събира.",
+  },
+  {
+    name: "werewolf-rules",
+    path: "/werewolf/rules",
+    pathname: "/werewolf/rules",
+    heading: "Правила за Върколак",
+  },
+] as const;
+
 const LIGHT_UTILITY_ROUTES = [
   { name: "home", path: "/" },
   { name: "werewolf-home", path: "/werewolf" },
@@ -163,6 +184,9 @@ for (const route of A11Y_ROUTES) {
     }
     await page.goto(route.path, { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle").catch(() => {});
+    if (route.name.endsWith("rules")) {
+      await materializeDeferredRulesContent(page);
+    }
     if (route.name.startsWith("play-")) {
       await waitForStablePlayStage(page);
       await hideNextDevIndicator(page);
@@ -498,6 +522,53 @@ test("@geometry mobile hunter revenge keeps the action sheet inside the viewport
   expect(dockBox!.x + dockBox!.width).toBeLessThanOrEqual(391);
 });
 
+for (const viewport of REPRESENTATIVE_VIEWPORTS) {
+  for (const route of REPRESENTATIVE_ROUTES) {
+    test(`@representative ${viewport.name} ${route.name}`, async ({ page }) => {
+      await page.setViewportSize({ width: viewport.width, height: viewport.height });
+      await setVisualTheme(page, "dark");
+      await page.goto(route.path, { waitUntil: "domcontentloaded" });
+      await page.waitForLoadState("networkidle").catch(() => {});
+      if (route.name.endsWith("rules")) {
+        await materializeDeferredRulesContent(page);
+      }
+      await page.waitForTimeout(600);
+
+      const currentUrl = new URL(page.url());
+      expect(currentUrl.pathname).toBe(route.pathname);
+      if (route.name === "tutorial-1") {
+        expect(currentUrl.searchParams.get("step")).toBe("1");
+      }
+      await expect(page.getByRole("heading", { level: 1, name: route.heading })).toBeVisible();
+      await expect(page).toHaveScreenshot(`${viewport.name}-${route.name}.png`, {
+        fullPage: true,
+        maxDiffPixelRatio: 0.01,
+        mask: visualMasks(page),
+        timeout: 15_000,
+      });
+    });
+  }
+
+  test(`@representative ${viewport.name} werewolf create details`, async ({ page }) => {
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await setVisualTheme(page, "dark");
+    await page.goto("/werewolf/create?visualAuth=1", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle").catch(() => {});
+    expect(new URL(page.url()).pathname).toBe("/werewolf/create");
+
+    await page.getByRole("button", { name: "Настрой детайлите" }).click();
+    await page.getByRole("button", { name: "Настрой ръчно", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "Настрой детайлите" });
+    await expect(dialog).toBeVisible();
+    await expect(page).toHaveScreenshot(`${viewport.name}-werewolf-create-details.png`, {
+      fullPage: false,
+      maxDiffPixelRatio: 0.01,
+      mask: visualMasks(page),
+      timeout: 15_000,
+    });
+  });
+}
+
 for (const viewport of VIEWPORTS) {
   for (const route of ROUTES) {
     test(`${viewport.name} ${route.name}`, async ({ page }) => {
@@ -512,6 +583,9 @@ for (const viewport of VIEWPORTS) {
       }
       await page.goto(route.path, { waitUntil: "domcontentloaded" });
       await page.waitForLoadState("networkidle").catch(() => {});
+      if (route.name.endsWith("rules")) {
+        await materializeDeferredRulesContent(page);
+      }
       if (route.name.startsWith("play-")) {
         await waitForStablePlayStage(page);
         await hideNextDevIndicator(page);
@@ -700,6 +774,38 @@ async function waitForStablePlayStage(page: Page) {
     await nextFrame();
     return first === second && second === readSignature();
   }, undefined, { timeout: 10_000, polling: "raf" });
+}
+
+async function materializeDeferredRulesContent(page: Page) {
+  await page.evaluate(async () => {
+    const settle = () => new Promise<void>((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+    });
+    const step = Math.max(320, Math.floor(window.innerHeight * 0.72));
+
+    for (let top = 0; top < document.documentElement.scrollHeight; top += step) {
+      window.scrollTo({ top, behavior: "instant" });
+      await settle();
+    }
+
+    window.scrollTo({ top: 0, behavior: "instant" });
+    await settle();
+  });
+  await page.addStyleTag({
+    content: `
+      .rules-phase-timeline,
+      .rules-table-protocol,
+      .rules-scenario-section,
+      .rules-chapter-grid {
+        content-visibility: visible !important;
+        contain-intrinsic-size: none !important;
+      }
+    `,
+  });
+  await page.evaluate(() => new Promise<void>((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+  }));
+  await page.waitForLoadState("networkidle").catch(() => {});
 }
 
 async function acceptCookies(page: Page) {

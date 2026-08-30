@@ -59,35 +59,39 @@ async function HistoryRouteContent({
 }
 
 async function HistoryContent({ visualHistory }: { visualHistory: string | undefined }) {
-  const games = await loadHistory(visualHistory);
-  return <EvidenceWall games={games} />;
+  const result = await loadHistory(visualHistory);
+  return <EvidenceWall games={result.games} status={result.status} />;
 }
 
-async function loadHistory(visualHistory?: string): Promise<HistoryGameView[]> {
+type HistoryLoadResult =
+  | { status: "ready"; games: HistoryGameView[] }
+  | { status: "unavailable"; games: [] };
+
+async function loadHistory(visualHistory?: string): Promise<HistoryLoadResult> {
   if (process.env.NODE_ENV !== "production") {
     if (visualHistory === "empty") {
-      return [];
+      return { status: "ready", games: [] };
     }
     if (visualHistory === "fixture") {
-      return fixtureHistory();
+      return { status: "ready", games: fixtureHistory() };
     }
     if (process.env.HISTORY_EVIDENCE_FIXTURE === "empty") {
-      return [];
+      return { status: "ready", games: [] };
     }
     if (process.env.HISTORY_EVIDENCE_FIXTURE === "1") {
-      return fixtureHistory();
+      return { status: "ready", games: fixtureHistory() };
     }
   }
 
   if (!process.env.DATABASE_URL) {
-    return [];
+    return { status: "unavailable", games: [] };
   }
 
   try {
-    return await loadCachedPublicHistory();
+    return { status: "ready", games: await loadCachedPublicHistory() };
   } catch (error) {
     console.error("[history]", safeMonitoringErrorMetadata(error));
-    return [];
+    return { status: "unavailable", games: [] };
   }
 }
 

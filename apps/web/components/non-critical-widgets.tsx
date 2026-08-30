@@ -87,7 +87,7 @@ function DeferredWidgets({
     <>
       {mount.cookie ? <CookieBanner /> : null}
       {mount.welcome ? <WelcomeModal displayName={session?.user?.name ?? "приятел"} /> : null}
-      {mount.feedback ? <FeedbackWidget /> : null}
+      {mount.feedback && session ? <FeedbackWidget session={session} /> : null}
     </>
   );
 }

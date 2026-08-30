@@ -25,16 +25,13 @@ export function evaluateWinCondition(players: WinPlayerState[]): WinResult {
     reasonBg: string | null,
     winnerPlayerIds: string[] = [],
   ): WinResult => ({ winner, reasonBg, winnerPlayerIds, personalWinnerPlayerIds });
-  const winnersForTeam = (team: ReturnType<typeof getRoleTeam>) =>
+  const winnersForTeam = (team: ReturnType<typeof getWinTeam>) =>
     players
-      .filter((player) =>
-        getRoleTeam(player.role) === team
-        || (team === "village" && player.role === "drunk" && !player.alive),
-      )
+      .filter((player) => getWinTeam(player.role) === team)
       .map((player) => player.playerId);
 
   if (alive.length === 0) {
-    return result("draw", "Няма останали живи играчи.");
+    return result("draw", "Никой не остана жив.");
   }
 
   if (
@@ -43,28 +40,38 @@ export function evaluateWinCondition(players: WinPlayerState[]): WinResult {
     alive[0].loverId === alive[1]?.playerId &&
     alive[1].loverId === alive[0]?.playerId
   ) {
-    const teams = new Set(alive.map((player) => getRoleTeam(player.role)));
+    const teams = new Set(alive.map((player) => getWinTeam(player.role)));
     if (teams.size > 1) {
       return result(
         "lovers",
-        "Влюбените останаха последните двама живи.",
+        "Влюбените останаха единствените живи.",
         alive.map((player) => player.playerId),
       );
     }
   }
 
-  const aliveWerewolves = alive.filter((player) => getRoleTeam(player.role) === "werewolves").length;
-  const aliveVampires = alive.filter((player) => getRoleTeam(player.role) === "vampires").length;
-  const aliveMafia = alive.filter((player) => getRoleTeam(player.role) === "mafia").length;
-  const aliveVillage = alive.filter((player) => getRoleTeam(player.role) === "village").length;
+  const aliveWerewolves = alive.filter((player) => getWinTeam(player.role) === "werewolves").length;
+  const aliveVampires = alive.filter((player) => getWinTeam(player.role) === "vampires").length;
+  const aliveMafia = alive.filter((player) => getWinTeam(player.role) === "mafia").length;
+  const aliveVillage = alive.filter((player) => getWinTeam(player.role) === "village").length;
   const aliveManiacs = alive.filter((player) => player.role === "maniac").length;
   const aliveEvil = aliveWerewolves + aliveVampires + aliveMafia;
   const totalAlive = alive.length;
 
+  const aliveLethalFactionCount = [
+    aliveWerewolves,
+    aliveVampires,
+    aliveMafia,
+    aliveManiacs,
+  ].filter((count) => count > 0).length;
+  if (aliveLethalFactionCount > 1) {
+    return result(null, null);
+  }
+
   if (aliveManiacs > 0 && aliveManiacs >= totalAlive - aliveManiacs) {
     return result(
       "maniac",
-      "Маниакът остана последната реална заплаха в града.",
+      "Маниакът остана единствената заплаха на масата.",
       players.filter((player) => player.role === "maniac").map((player) => player.playerId),
     );
   }
@@ -77,22 +84,17 @@ export function evaluateWinCondition(players: WinPlayerState[]): WinResult {
     if (aliveVillage > 0) {
       return result(
         "village",
-        "Всички представители на злата страна са елиминирани.",
+        "Всички вражески роли са извън играта.",
         winnersForTeam("village"),
       );
     }
-    return result("draw", "Останаха само неутрални роли без отборна победа.");
-  }
-
-  // Competing hostile factions must eliminate each other before parity can decide a winner.
-  if (aliveWerewolves > 0 && aliveVampires > 0 && aliveMafia === 0) {
-    return result(null, null);
+    return result("draw", "На масата не остана отбор, който може да спечели.");
   }
 
   if (
     alive.length === 2 &&
     alive.some((player) => player.role === "cook") &&
-    alive.some((player) => getRoleTeam(player.role) === "werewolves" || getRoleTeam(player.role) === "vampires")
+    alive.some((player) => getWinTeam(player.role) === "werewolves" || getWinTeam(player.role) === "vampires")
   ) {
     return result(null, null);
   }
@@ -101,7 +103,7 @@ export function evaluateWinCondition(players: WinPlayerState[]): WinResult {
     if (aliveWerewolves >= totalAlive - aliveWerewolves) {
       return result(
         "werewolves",
-        "Върколаците са равни или повече от живите селяни.",
+        "Върколаците вече контролират гласуването.",
         winnersForTeam("werewolves"),
       );
     }
@@ -112,7 +114,7 @@ export function evaluateWinCondition(players: WinPlayerState[]): WinResult {
     if (aliveVampires >= totalAlive - aliveVampires) {
       return result(
         "vampires",
-        "Вампирите са равни или повече от живите селяни.",
+        "Вампирите вече контролират гласуването.",
         winnersForTeam("vampires"),
       );
     }
@@ -123,7 +125,7 @@ export function evaluateWinCondition(players: WinPlayerState[]): WinResult {
     if (aliveMafia >= totalAlive - aliveMafia) {
       return result(
         "mafia",
-        "Мафията е равна или повече от всички останали живи.",
+        "Мафията вече контролира гласуването.",
         winnersForTeam("mafia"),
       );
     }
@@ -131,4 +133,8 @@ export function evaluateWinCondition(players: WinPlayerState[]): WinResult {
   }
 
   return result(null, null);
+}
+
+function getWinTeam(role: RoleCode) {
+  return role === "drunk" ? "village" as const : getRoleTeam(role);
 }

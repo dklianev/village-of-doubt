@@ -20,6 +20,7 @@ const REDIS_COMMAND_TIMEOUT_MS = 500;
 
 interface RuntimeRedisClient {
   readonly isReady: boolean;
+  withAbortSignal?(signal: AbortSignal): RuntimeRedisClient;
   eval(
     script: string,
     options: { keys: string[]; arguments: string[] },
@@ -28,6 +29,7 @@ interface RuntimeRedisClient {
 
 interface RuntimeRedisReadinessClient {
   readonly isReady: boolean;
+  withAbortSignal?(signal: AbortSignal): RuntimeRedisReadinessClient;
   eval(
     script: string,
     options: { keys: string[]; arguments: string[] },
@@ -36,11 +38,13 @@ interface RuntimeRedisReadinessClient {
 
 interface RuntimeRedisPublishClient {
   readonly isReady: boolean;
+  withAbortSignal?(signal: AbortSignal): RuntimeRedisPublishClient;
   publish(channel: string, message: string): Promise<number>;
 }
 
 interface RuntimeRedisValueClient {
   readonly isReady: boolean;
+  withAbortSignal?(signal: AbortSignal): RuntimeRedisValueClient;
   set(key: string, value: string, options: { expiration: { type: "PX"; value: number } }): Promise<unknown>;
 }
 
@@ -68,7 +72,7 @@ export function createRuntimeRedisEvalClient(
           throw new RedisUnavailableError("Redis още не е готов.");
         }
 
-        await withRedisTimeout(connection, timeoutMs, "Redis връзката изтече.");
+        await withRedisTimeout(() => connection, timeoutMs, "Redis връзката изтече.");
         client = getClient();
         if (!client?.isReady) {
           throw new RedisUnavailableError("Redis още не е готов.");
@@ -77,7 +81,7 @@ export function createRuntimeRedisEvalClient(
 
       try {
         return await withRedisTimeout(
-          client.eval(script, options),
+          (signal) => bindRedisAbortSignal(client, signal).eval(script, options),
           timeoutMs,
           "Redis командата изтече.",
         );
@@ -136,7 +140,7 @@ export function createRuntimeRedisReadinessProbe(
         if (!connection) {
           return false;
         }
-        await withRedisTimeout(connection, timeoutMs, "Redis връзката изтече.");
+        await withRedisTimeout(() => connection, timeoutMs, "Redis връзката изтече.");
         client = getClient();
       }
 
@@ -146,10 +150,12 @@ export function createRuntimeRedisReadinessProbe(
 
       const key = `wm:health:web:${randomUUID()}`;
       return await withRedisTimeout(
-        client.eval(REDIS_READINESS_SCRIPT, {
-          keys: [key],
-          arguments: ["ready", "5000"],
-        }).then((response) => response === "ready"),
+        (signal) => bindRedisAbortSignal(client, signal)
+          .eval(REDIS_READINESS_SCRIPT, {
+            keys: [key],
+            arguments: ["ready", "5000"],
+          })
+          .then((response) => response === "ready"),
         timeoutMs,
         "Redis readiness проверката изтече.",
       );
@@ -189,14 +195,14 @@ export function createRuntimeRedisPublisher(
       if (!connection) {
         throw new RedisUnavailableError("Redis още не е готов.");
       }
-      await withRedisTimeout(connection, timeoutMs, "Redis връзката изтече.");
+      await withRedisTimeout(() => connection, timeoutMs, "Redis връзката изтече.");
       client = getClient();
     }
     if (!client?.isReady) {
       throw new RedisUnavailableError("Redis още не е готов.");
     }
     return withRedisTimeout(
-      client.publish(channel, message),
+      (signal) => bindRedisAbortSignal(client, signal).publish(channel, message),
       timeoutMs,
       "Redis publish командата изтече.",
     );
@@ -213,12 +219,13 @@ export function createRuntimeRedisValueWriter(
     if (!client?.isReady) {
       const connection = waitUntilReady?.();
       if (!connection) throw new RedisUnavailableError("Redis още не е готов.");
-      await withRedisTimeout(connection, timeoutMs, "Redis връзката изтече.");
+      await withRedisTimeout(() => connection, timeoutMs, "Redis връзката изтече.");
       client = getClient();
     }
     if (!client?.isReady) throw new RedisUnavailableError("Redis още не е готов.");
     return withRedisTimeout(
-      client.set(key, value, { expiration: { type: "PX", value: ttlMs } }),
+      (signal) => bindRedisAbortSignal(client, signal)
+        .set(key, value, { expiration: { type: "PX", value: ttlMs } }),
       timeoutMs,
       "Redis write командата изтече.",
     );
@@ -314,24 +321,42 @@ function getOrCreateRedisClient(url: string | undefined) {
 }
 
 async function withRedisTimeout<T>(
-  operation: Promise<T>,
+  operation: (signal: AbortSignal) => Promise<T>,
   timeoutMs: number,
   message: string,
 ) {
-  let timeout: ReturnType<typeof setTimeout> | undefined;
-  try {
-    const timeoutPromise = new Promise<never>((_resolve, reject) => {
-      timeout = setTimeout(() => {
-        reject(new RedisUnavailableError(message));
-      }, timeoutMs);
-      timeout.unref?.();
-    });
-    return await Promise.race([operation, timeoutPromise]);
-  } finally {
-    if (timeout) {
+  const controller = new AbortController();
+  return new Promise<T>((resolve, reject) => {
+    let settled = false;
+    const finish = (callback: (value: T | unknown) => void, value: T | unknown) => {
+      if (settled) return;
+      settled = true;
       clearTimeout(timeout);
+      callback(value);
+    };
+    const timeoutError = new RedisUnavailableError(message);
+    const timeout = setTimeout(() => {
+      controller.abort(timeoutError);
+      finish(reject, timeoutError);
+    }, Math.max(0, timeoutMs));
+    timeout.unref?.();
+
+    try {
+      operation(controller.signal).then(
+        (value) => finish(resolve as (value: T | unknown) => void, value),
+        (error) => finish(reject, controller.signal.aborted ? timeoutError : error),
+      );
+    } catch (error) {
+      finish(reject, error);
     }
-  }
+  });
+}
+
+function bindRedisAbortSignal<T extends { withAbortSignal?(signal: AbortSignal): T }>(
+  client: T,
+  signal: AbortSignal,
+) {
+  return client.withAbortSignal?.(signal) ?? client;
 }
 
 function isRedisConnectivityError(error: unknown) {

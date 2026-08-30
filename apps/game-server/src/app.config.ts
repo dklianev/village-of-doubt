@@ -236,9 +236,12 @@ async function createRedisScaling(securityRedisUrl: string, colyseusRedisUrl: st
     ),
   );
 
+  const driver = new RedisDriver(colyseusRedisUrl);
+  const presence = new RedisPresence(colyseusRedisUrl);
   return {
-    driver: new RedisDriver(colyseusRedisUrl),
-    presence: new RedisPresence(colyseusRedisUrl),
+    driver,
+    presence,
+    colyseusReady: createColyseusRedisReadinessProbe(driver, presence),
     securityClient,
     revocationSubscriber,
     revocationReconcileTimer,
@@ -386,7 +389,10 @@ export function createReadinessHandler(
     const persistenceReady = await persistenceReadiness.refresh();
     return persistenceReady && (
       !redisRuntime
-      || await probeSecurityRedisReady(redisRuntime.securityClient as unknown as AbortableSecurityRedisClient)
+      || await Promise.all([
+        probeSecurityRedisReady(redisRuntime.securityClient as unknown as AbortableSecurityRedisClient),
+        redisRuntime.colyseusReady(),
+      ]).then((results) => results.every(Boolean))
     );
   },
 ) {
@@ -457,6 +463,92 @@ export async function probeSecurityRedisReady(
   } finally {
     await commands.del(key).catch(() => undefined);
   }
+}
+
+interface ColyseusReadinessDriver {
+  has(roomId: string): Promise<boolean>;
+}
+
+interface ColyseusReadinessPresence {
+  subscribe(topic: string, callback: (message: unknown) => void): Promise<unknown>;
+  publish(topic: string, message: unknown): Promise<unknown>;
+  unsubscribe(topic: string, callback?: (message: unknown) => void): Promise<unknown>;
+}
+
+export function createColyseusRedisReadinessProbe(
+  driver: ColyseusReadinessDriver,
+  presence: ColyseusReadinessPresence,
+  timeoutMs = 750,
+) {
+  let rawProbe: Promise<boolean> | undefined;
+  let boundedResult: Promise<boolean> | undefined;
+
+  return () => {
+    if (rawProbe && boundedResult) {
+      return boundedResult;
+    }
+
+    rawProbe = runColyseusRedisRoundTrip(driver, presence);
+    boundedResult = settleBooleanWithin(rawProbe, timeoutMs);
+    const activeProbe = rawProbe;
+    void activeProbe.then(
+      () => {
+        if (rawProbe === activeProbe) {
+          rawProbe = undefined;
+          boundedResult = undefined;
+        }
+      },
+      () => {
+        if (rawProbe === activeProbe) {
+          rawProbe = undefined;
+          boundedResult = undefined;
+        }
+      },
+    );
+    return boundedResult;
+  };
+}
+
+async function runColyseusRedisRoundTrip(
+  driver: ColyseusReadinessDriver,
+  presence: ColyseusReadinessPresence,
+) {
+  const nonce = randomUUID();
+  const topic = `wm:health:colyseus:${nonce}`;
+  let resolveDelivery: ((value: boolean) => void) | undefined;
+  const delivered = new Promise<boolean>((resolve) => {
+    resolveDelivery = resolve;
+  });
+  const onMessage = (message: unknown) => {
+    resolveDelivery?.(message === nonce);
+  };
+
+  await driver.has(`wm-health-missing-room-${nonce}`);
+  await presence.subscribe(topic, onMessage);
+  try {
+    await presence.publish(topic, nonce);
+    return await delivered;
+  } finally {
+    await presence.unsubscribe(topic, onMessage);
+  }
+}
+
+function settleBooleanWithin(operation: Promise<boolean>, timeoutMs: number) {
+  return new Promise<boolean>((resolve) => {
+    let settled = false;
+    const finish = (value: boolean) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      resolve(value);
+    };
+    const timeout = setTimeout(() => finish(false), Math.max(0, timeoutMs));
+    timeout.unref?.();
+    operation.then(
+      (value) => finish(value),
+      () => finish(false),
+    );
+  });
 }
 
 interface GameServerCorsEnvironment {

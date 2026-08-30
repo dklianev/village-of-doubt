@@ -60,9 +60,20 @@
 }
 
 [data-theme="dark"] .page {
-  --acc-paper: oklch(0.205 0.016 52);
-  --acc-paper-raised: oklch(0.265 0.019 56);
-  --acc-paper-deep: oklch(0.135 0.012 46);
+  --acc-paper: oklch(0.215 0.017 52);
+  --acc-paper-raised: oklch(0.29 0.021 56);
+  --acc-paper-deep: oklch(0.125 0.012 46);
+  --acc-ink-muted: oklch(0.87 0.027 84);
+  --acc-ink-soft: oklch(0.79 0.028 80);
+  --acc-line: oklch(0.76 0.06 78 / 0.22);
+  --acc-line-strong: oklch(0.8 0.068 78 / 0.48);
+  --acc-hero-line: oklch(0.84 0.095 78 / 0.46);
+}
+
+[data-theme="dark"] .heroInner {
+  background:
+    linear-gradient(90deg, oklch(0.07 0.012 45 / 0.78), transparent 54%),
+    linear-gradient(270deg, oklch(0.07 0.012 45 / 0.64), transparent 46%);
 }
 
 .hero {
@@ -225,7 +236,8 @@
   font-weight: 900;
   letter-spacing: 0;
   line-height: 0.98;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+  word-break: normal;
   text-wrap: balance;
 }
 
@@ -1620,7 +1632,7 @@
 
 @media (max-width: 420px) {
   .heroName {
-    font-size: 1.9rem;
+    font-size: 1.82rem;
   }
 
   .heroMeta,

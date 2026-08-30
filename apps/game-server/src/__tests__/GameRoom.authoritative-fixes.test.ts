@@ -167,7 +167,7 @@ describe("GameRoom authoritative gameplay boundaries", () => {
       action: { kind: "faction_kill", targetUserId: "outside-this-room" },
     });
     await expect(unknownError).resolves.toMatchObject({
-      messageBg: "Целта не е жив активен играч.",
+      messageBg: "Избраният играч трябва да е жив участник.",
     });
 
     const alliedError = wolves[0]?.client.waitForMessage("safe_error") as Promise<{ messageBg: string }>;
@@ -211,7 +211,7 @@ describe("GameRoom authoritative gameplay boundaries", () => {
     investigator?.client.send("submitNightAction", {
       action: { kind: "investigator_check", targetUserId: "outside-this-room" },
     });
-    await expect(error).resolves.toMatchObject({ messageBg: "Целта не е жив активен играч." });
+    await expect(error).resolves.toMatchObject({ messageBg: "Избраният играч трябва да е жив участник." });
     expect(queue).not.toHaveBeenCalled();
     expect(internals.privatePlayers.get(investigator?.userId ?? "")?.investigatorUsed).not.toBe(true);
 
@@ -671,7 +671,7 @@ describe("GameRoom authoritative gameplay boundaries", () => {
     });
 
     await expect(changedVictimMessage).resolves.toMatchObject({
-      messageBg: "Жертвата на фракцията се промени. Избери отново дали да използваш лечебната отвара.",
+      messageBg: "Избраната жертва се промени. Реши отново дали да използваш лечебната отвара.",
     });
     await expect(refreshedCapabilities).resolves.toMatchObject({
       capabilities: expect.objectContaining({
@@ -784,7 +784,7 @@ describe("GameRoom authoritative gameplay boundaries", () => {
     await splitAck;
 
     await expect(changedVictimMessage).resolves.toMatchObject({
-      messageBg: "Жертвата на фракцията се промени. Избери отново дали да използваш лечебната отвара.",
+      messageBg: "Избраната жертва се промени. Реши отново дали да използваш лечебната отвара.",
     });
     const pendingNightActions = (room as unknown as {
       pendingNightActions: Map<string, Array<{ action: { kind: string } }>>;

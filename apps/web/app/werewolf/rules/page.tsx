@@ -25,7 +25,7 @@ const werewolfRulesJsonLd = {
     { "@type": "HowToStep", name: "Нощ", text: "Активните роли действат в скрит ред.", position: 3 },
     { "@type": "HowToStep", name: "Ден", text: "Живите играчи обсъждат кой лъже.", position: 4 },
     { "@type": "HowToStep", name: "Гласуване", text: "Масата избира кого да елиминира.", position: 5 },
-    { "@type": "HowToStep", name: "Развръзка", text: "Сървърът прилага ефектите и проверява победата.", position: 6 },
+    { "@type": "HowToStep", name: "Развръзка", text: "Всички задействани ефекти се разрешават и се проверява кой печели.", position: 6 },
   ],
 };
 

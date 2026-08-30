@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { MailCheck } from "lucide-react";
@@ -16,6 +16,7 @@ export function VerifyEmailClient() {
 
   const [state, setState] = useState<VerifyState>("idle");
   const [errorMsg, setErrorMsg] = useState("");
+  const submittedTokenRef = useRef("");
 
   useEffect(() => {
     if (!token) {
@@ -23,6 +24,11 @@ export function VerifyEmailClient() {
       setErrorMsg("Този линк е празен или повреден.");
       return;
     }
+
+    if (submittedTokenRef.current === token) {
+      return;
+    }
+    submittedTokenRef.current = token;
 
     setState("verifying");
 
@@ -48,7 +54,7 @@ export function VerifyEmailClient() {
       return;
     }
 
-    const timer = window.setTimeout(() => router.push("/"), 2000);
+    const timer = window.setTimeout(() => router.push("/"), 6000);
     return () => window.clearTimeout(timer);
   }, [router, state]);
 
@@ -72,10 +78,15 @@ export function VerifyEmailClient() {
         {state === "verifying" || state === "idle" ? <p className="seal-body">Восъкът се втвърдява. Изчакай миг.</p> : null}
 
         {state === "success" ? (
-          <>
+          <div role="status" aria-live="polite" aria-atomic="true">
             <p className="seal-body">Имейлът е потвърден. Сега си на масата.</p>
-            <p className="seal-hint">Водим те към началото...</p>
-          </>
+            <p className="seal-hint">След малко ще те отведем към началото.</p>
+            <div className="seal-actions">
+              <Link href="/" className="btn btn-primary">
+                Към началото
+              </Link>
+            </div>
+          </div>
         ) : null}
 
         {state === "error" ? (

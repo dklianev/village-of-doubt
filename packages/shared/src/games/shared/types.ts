@@ -14,7 +14,7 @@ export type TeamCode = (typeof TEAM_CODES)[number];
 export type RoleTag =
   | "основна"
   | "разширена"
-  | "промо"
+  | "настолна"
   | "нощна роля"
   | "защитна"
   | "разследваща"

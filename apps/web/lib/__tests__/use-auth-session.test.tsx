@@ -11,11 +11,12 @@ import {
 } from "../use-auth-session";
 
 function SessionProbe({ initialSession }: { initialSession?: AuthSessionView | null }) {
-  const { data, isPending } = useAuthSession(initialSession);
+  const { data, isError, isPending } = useAuthSession(initialSession);
   return (
     <div>
       <span data-testid="session-state">{data?.user?.name ?? "guest"}</span>
       <span data-testid="pending-state">{isPending ? "pending" : "settled"}</span>
+      <span data-testid="error-state">{isError ? "error" : "ok"}</span>
     </div>
   );
 }
@@ -64,6 +65,37 @@ describe("useAuthSession", () => {
     expect(screen.getByTestId("pending-state")).toHaveTextContent("pending");
     await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/auth/get-session", expect.any(Object)));
     await waitFor(() => expect(screen.getByTestId("pending-state")).toHaveTextContent("settled"));
+    expect(screen.getByTestId("error-state")).toHaveTextContent("ok");
+  });
+
+  it("reports a transient session request failure without confirming signed-out state", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Network request failed")));
+
+    render(<SessionProbe initialSession={null} />);
+
+    await waitFor(() => expect(screen.getByTestId("pending-state")).toHaveTextContent("settled"));
+    expect(screen.getByTestId("session-state")).toHaveTextContent("guest");
+    expect(screen.getByTestId("error-state")).toHaveTextContent("error");
+  });
+
+  it("keeps a known authenticated session when a focus refresh fails", async () => {
+    let rejectResponse: ((reason?: unknown) => void) | undefined;
+    const fetchMock = vi.fn(() => new Promise<Response>((_resolve, reject) => {
+      rejectResponse = reject;
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<SessionProbe initialSession={{ user: { id: "user-1", name: "Мила" } }} />);
+    act(() => window.dispatchEvent(new Event("focus")));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    const pendingDuringRefresh = screen.getByTestId("pending-state").textContent;
+    await act(async () => {
+      rejectResponse?.(new TypeError("Network request failed"));
+    });
+    await waitFor(() => expect(screen.getByTestId("error-state")).toHaveTextContent("error"));
+    expect(screen.getByTestId("session-state")).toHaveTextContent("Мила");
+    expect(pendingDuringRefresh).toBe("settled");
   });
 
   it("deduplicates simultaneous refreshes across hook instances", async () => {

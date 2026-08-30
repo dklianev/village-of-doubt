@@ -1,0 +1,69 @@
+- generic [active] [ref=f6e1] [box=0,0,375,2790]:
+  - link "Към основното съдържание" [ref=f6e2] [cursor=pointer] [box=8,-56,263,48]:
+    - /url: "#main-content"
+  - banner [ref=f6e4] [box=0,0,375,64]:
+    - button "Отвори менюто" [ref=f6e5] [cursor=pointer] [box=10,10,44,44]
+    - link "Върколак и Мафия, начало" [ref=f6e7] [cursor=pointer] [box=64,12,170,40]:
+      - /url: /
+      - generic [ref=f6e9] [box=108,15,126,34]:
+        - generic [ref=f6e10] [box=108,15,126,14]:
+          - generic [ref=f6e11] [box=108,15,66,13]: Върколак
+          - generic [ref=f6e12] [box=178,15,4,14]: ·
+          - generic [ref=f6e13] [box=186,15,49,13]: Мафия
+        - generic [ref=f6e14] [box=114,32,52,17]: БЕТА
+    - link "Играй" [ref=f6e15] [cursor=pointer] [box=273,10,92,44]:
+      - /url: /werewolf/create
+  - main [ref=f6e20] [box=3,64,370,2554]:
+    - generic [ref=f6e21] [box=3,76,370,2398]:
+      - generic "Досие" [ref=f6e22] [box=3,76,370,303]:
+        - generic [ref=f6e26] [box=20,93,336,269]:
+          - img "Портрет на Визуален играч" [ref=f6e28] [box=36,151,85,103]:
+            - generic [ref=f6e30] [box=92,221,37,37]: ЛД
+          - generic [ref=f6e31] [box=134,113,210,139]:
+            - paragraph [ref=f6e32] [box=149,113,195,17]: лично досие
+            - heading "Визуален играч" [level=1] [ref=f6e33] [box=149,135,195,57]
+            - paragraph [ref=f6e34] [box=149,202,195,17]: "Заведено: март 2026 г."
+            - paragraph [ref=f6e35] [box=149,228,74,24]: Дело № 7144
+          - generic "Обобщение на досието" [ref=f6e36] [box=38,266,306,72]:
+            - generic [ref=f6e37] [box=37,265,100,74]
+            - generic [ref=f6e40] [box=141,265,100,74]
+            - generic [ref=f6e43] [box=245,265,99,73]
+      - generic [ref=f6e46] [box=7,377,362,2098]:
+        - generic [ref=f6e47] [box=8,377,360,1943]:
+          - radio "Хроника" [checked] [ref=f6e48] [box=7,376,1,1]
+          - generic [ref=f6e49] [cursor=pointer] [box=8,377,360,76]:
+            - generic [ref=f6e50] [box=40,397,34,34]: I
+            - generic [ref=f6e51] [box=90,397,230,35]
+          - generic [ref=f6e54] [box=8,453,360,1867]:
+            - generic [ref=f6e55] [box=8,453,360,674]
+            - generic [ref=f6e90] [box=8,1127,360,502]
+            - generic [ref=f6e143] [box=8,1628,360,691]
+        - generic [ref=f6e179] [box=8,2319,360,77]:
+          - radio "Образ и достъп" [ref=f6e180] [box=7,2319,1,1]
+          - generic [ref=f6e181] [cursor=pointer] [box=8,2320,360,76]:
+            - generic [ref=f6e182] [box=40,2341,34,34]: II
+            - generic [ref=f6e183] [box=90,2341,230,35]
+        - generic [ref=f6e186] [box=8,2396,360,77]:
+          - radio "Данни и сигурност" [ref=f6e187] [box=7,2396,1,1]
+          - generic [ref=f6e188] [cursor=pointer] [box=8,2397,360,76]:
+            - generic [ref=f6e189] [box=40,2418,34,34]: III
+            - generic [ref=f6e190] [box=90,2418,230,35]
+  - contentinfo [ref=f6e193] [box=0,2642,375,148]:
+    - generic [ref=f6e194] [box=16,2667,343,72]:
+      - link "Поверителност" [ref=f6e195] [cursor=pointer] [box=46,2667,113,32]:
+        - /url: /privacy
+      - generic [ref=f6e196] [box=167,2667,3,32]: ·
+      - link "Условия" [ref=f6e197] [cursor=pointer] [box=178,2667,63,32]:
+        - /url: /terms
+      - generic [ref=f6e198] [box=250,2667,3,32]: ·
+      - link "Сигнал" [ref=f6e199] [cursor=pointer] [box=261,2667,56,32]:
+        - /url: /report
+      - generic [ref=f6e200] [box=325,2667,3,32]: ·
+      - link "Състояние" [ref=f6e201] [cursor=pointer] [box=108,2707,82,32]:
+        - /url: /status
+      - generic [ref=f6e202] [box=198,2707,3,32]: ·
+      - link "Помощ" [ref=f6e203] [cursor=pointer] [box=209,2707,58,32]:
+        - /url: /faq
+    - paragraph [ref=f6e204] [box=16,2747,343,19]: © 2026 Върколак и Мафия · Бета
+  - button "Open Next.js Dev Tools" [ref=f6e210] [cursor=pointer] [box=22,790,32,32]
+  - alert [ref=f6e214] [box=-1,2789,1,1]

@@ -378,9 +378,12 @@ function uniqueNumbers(values) {
   return [...new Set(values)].sort((a, b) => b - a);
 }
 
-function maxWidthFor(file) {
+export function maxWidthFor(file) {
   const basename = path.basename(file);
 
+  if (isMobileLightFamilyHero(file)) {
+    return 768;
+  }
   if (basename.startsWith("portrait-")) {
     return 560;
   }
@@ -423,8 +426,11 @@ function sourcePngBudgetKbFor(file) {
   return 500;
 }
 
-function webpBudgetKbFor(file) {
+export function webpBudgetKbFor(file) {
   const basename = path.basename(file);
+  if (isMobileLightFamilyHero(file)) {
+    return 92;
+  }
   if (basename.startsWith("portrait-")) {
     return 110;
   }
@@ -440,8 +446,15 @@ function webpBudgetKbFor(file) {
   return 360;
 }
 
-function avifBudgetKbFor(file) {
+export function avifBudgetKbFor(file) {
+  if (isMobileLightFamilyHero(file)) {
+    return 55;
+  }
   return Math.min(360, webpBudgetKbFor(file));
+}
+
+function isMobileLightFamilyHero(file) {
+  return /^mobile\/(?:werewolf|mafia)\/bg-hero-light-v1\.png$/.test(normalizeAssetPath(file));
 }
 
 function mobileBudgetKbFor(file) {
@@ -569,7 +582,8 @@ export async function inspectMobileDerivativeConflicts({
       imageMetadata(derivative),
     ]);
     const normalizedFile = normalizeAssetPath(file);
-    const expected = expectedDimensions.get(normalizedFile) ?? sourceMetadata;
+    const expected = expectedDimensions.get(normalizedFile)
+      ?? expectedRasterDimensions(sourceMetadata, `mobile/${normalizedFile}`);
     if (
       expected.width !== derivativeMetadata.width
       || expected.height !== derivativeMetadata.height
@@ -582,6 +596,18 @@ export async function inspectMobileDerivativeConflicts({
   }
 
   return conflicts;
+}
+
+function expectedRasterDimensions(metadata, file) {
+  const maxWidth = maxWidthFor(file);
+  if (!metadata.width || !metadata.height || metadata.width <= maxWidth) {
+    return metadata;
+  }
+
+  return {
+    width: maxWidth,
+    height: Math.round(metadata.height * (maxWidth / metadata.width)),
+  };
 }
 
 function normalizeAssetPath(file) {

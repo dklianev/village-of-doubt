@@ -85,6 +85,52 @@ describe("DrizzleGamePersistence", () => {
     expect(attemptedGames[1]).toMatchObject({ id: gameId, roomVisibility: "public" });
   });
 
+  it("inserts a hosted game inside the host identity-lock transaction", async () => {
+    let insertedGame: Record<string, unknown> | undefined;
+    const transactionInsert = vi.fn((table: unknown) => ({
+      values: vi.fn((values: unknown) => {
+        if (table === user) {
+          return { onConflictDoNothing: vi.fn(async () => undefined) };
+        }
+        if (table === games) {
+          insertedGame = values as Record<string, unknown>;
+          return { returning: vi.fn(async () => [{ id: "game-1" }]) };
+        }
+        throw new Error("Unexpected transaction table in hosted-game boundary test");
+      }),
+    }));
+    const outerInsert = vi.fn((table: unknown) => {
+      if (table === games) {
+        throw new Error("hosted game write escaped the identity-lock transaction");
+      }
+      throw new Error("Unexpected outer table in hosted-game boundary test");
+    });
+    const tx = {
+      execute: vi.fn(async () => undefined),
+      insert: transactionInsert,
+      select: vi.fn(() => ({ from: vi.fn(() => ({ where: vi.fn(async () => []) })) })),
+    };
+    const transaction = vi.fn(async (operation: (innerTx: typeof tx) => Promise<unknown>) =>
+      operation(tx));
+    const persistence = new DrizzleGamePersistence({
+      insert: outerInsert,
+      transaction,
+    } as unknown as Database);
+
+    await expect(persistence.ensureGame({
+      code: "HOSTTX",
+      hostId: "host-1",
+      config: {
+        mode: "werewolves_classic",
+        roomVisibility: "public",
+        rulesetVersion: "test",
+      } as never,
+    })).resolves.toBe("game-1");
+
+    expect(insertedGame).toMatchObject({ hostId: "host-1", code: "HOSTTX" });
+    expect(outerInsert).not.toHaveBeenCalled();
+  });
+
   it("deduplicates an event retry when the first insert committed and then threw", async () => {
     const committedEvents = new Map<string, Record<string, unknown>>();
     const attemptedEvents: Record<string, unknown>[] = [];
@@ -128,6 +174,94 @@ describe("DrizzleGamePersistence", () => {
       id: attemptedEvents[1]?.id,
       createdAt: new Date("2026-07-20T12:34:56.789Z"),
     });
+  });
+
+  it("inserts an identity-bearing event inside the identity-lock transaction", async () => {
+    let insertedEvent: Record<string, unknown> | undefined;
+    const transactionInsert = vi.fn((table: unknown) => ({
+      values: vi.fn((values: unknown) => {
+        if (table === user) {
+          return { onConflictDoNothing: vi.fn(async () => undefined) };
+        }
+        if (table === gameEvents) {
+          insertedEvent = values as Record<string, unknown>;
+          return Promise.resolve();
+        }
+        throw new Error("Unexpected transaction table in event boundary test");
+      }),
+    }));
+    const outerInsert = vi.fn((table: unknown) => {
+      if (table === gameEvents) {
+        throw new Error("event write escaped the identity-lock transaction");
+      }
+      throw new Error("Unexpected outer table in event boundary test");
+    });
+    const tx = {
+      execute: vi.fn(async () => undefined),
+      insert: transactionInsert,
+      select: vi.fn(() => ({ from: vi.fn(() => ({ where: vi.fn(async () => []) })) })),
+    };
+    const transaction = vi.fn(async (operation: (innerTx: typeof tx) => Promise<unknown>) =>
+      operation(tx));
+    const persistence = new DrizzleGamePersistence({
+      insert: outerInsert,
+      transaction,
+    } as unknown as Database);
+
+    await persistence.recordEvent("game-1", {
+      round: 2,
+      phase: "night",
+      type: "night_action_submitted",
+      actorId: "actor-1",
+      participantUserIds: ["actor-1"],
+    });
+
+    expect(transaction).toHaveBeenCalledOnce();
+    expect(insertedEvent).toMatchObject({ actorId: "actor-1", targetId: null });
+    expect(outerInsert).not.toHaveBeenCalled();
+  });
+
+  it("inserts an achievement inside the identity-lock transaction", async () => {
+    let insertedAchievement: Record<string, unknown> | undefined;
+    const transactionInsert = vi.fn((table: unknown) => ({
+      values: vi.fn((values: unknown) => {
+        if (table === user) {
+          return { onConflictDoNothing: vi.fn(async () => undefined) };
+        }
+        if (table === userAchievements) {
+          insertedAchievement = values as Record<string, unknown>;
+          return { onConflictDoNothing: vi.fn(async () => undefined) };
+        }
+        throw new Error("Unexpected transaction table in achievement boundary test");
+      }),
+    }));
+    const outerInsert = vi.fn((table: unknown) => {
+      if (table === userAchievements) {
+        throw new Error("achievement write escaped the identity-lock transaction");
+      }
+      throw new Error("Unexpected outer table in achievement boundary test");
+    });
+    const tx = {
+      execute: vi.fn(async () => undefined),
+      insert: transactionInsert,
+      select: vi.fn(() => ({ from: vi.fn(() => ({ where: vi.fn(async () => []) })) })),
+    };
+    const transaction = vi.fn(async (operation: (innerTx: typeof tx) => Promise<unknown>) =>
+      operation(tx));
+    const persistence = new DrizzleGamePersistence({
+      insert: outerInsert,
+      transaction,
+    } as unknown as Database);
+
+    await persistence.recordAchievement("winner-1", "first_win", "game-1");
+
+    expect(transaction).toHaveBeenCalledOnce();
+    expect(insertedAchievement).toEqual({
+      userId: "winner-1",
+      achievementId: "first_win",
+      gameId: "game-1",
+    });
+    expect(outerInsert).not.toHaveBeenCalled();
   });
 
   it("never synthesizes or references event users outside the captured room participants", async () => {
@@ -298,6 +432,51 @@ describe("DrizzleGamePersistence", () => {
     });
     expect((insertedEvent?.payload as { assignments: Array<Record<string, unknown>> }).assignments[0])
       .not.toHaveProperty("role");
+  });
+
+  it("upserts player identities inside the identity-lock transaction", async () => {
+    let insertedPlayers: Array<Record<string, unknown>> | undefined;
+    const transactionInsert = vi.fn((table: unknown) => ({
+      values: vi.fn((values: unknown) => {
+        if (table === user) {
+          return { onConflictDoNothing: vi.fn(async () => undefined) };
+        }
+        if (table === gamePlayers) {
+          insertedPlayers = values as Array<Record<string, unknown>>;
+          return { onConflictDoUpdate: vi.fn(async () => undefined) };
+        }
+        throw new Error("Unexpected transaction table in player boundary test");
+      }),
+    }));
+    const outerInsert = vi.fn((table: unknown) => {
+      if (table === gamePlayers) {
+        throw new Error("player write escaped the identity-lock transaction");
+      }
+      throw new Error("Unexpected outer table in player boundary test");
+    });
+    const tx = {
+      execute: vi.fn(async () => undefined),
+      insert: transactionInsert,
+      select: vi.fn(() => ({ from: vi.fn(() => ({ where: vi.fn(async () => []) })) })),
+    };
+    const transaction = vi.fn(async (operation: (innerTx: typeof tx) => Promise<unknown>) =>
+      operation(tx));
+    const persistence = new DrizzleGamePersistence({
+      insert: outerInsert,
+      transaction,
+    } as unknown as Database);
+
+    await persistence.upsertPlayers("game-1", [{
+      userId: "player-1",
+      displayName: "Играч",
+      role: "villager",
+      isAlive: true,
+    }]);
+
+    expect(insertedPlayers).toEqual([
+      expect.objectContaining({ gameId: "game-1", userId: "player-1" }),
+    ]);
+    expect(outerInsert).not.toHaveBeenCalled();
   });
 
   it("persists the final won flag when player rows are upserted", async () => {

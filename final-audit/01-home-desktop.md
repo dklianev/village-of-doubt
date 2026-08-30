@@ -1,0 +1,132 @@
+- generic [active] [ref=f1e1] [box=0,0,914,2666]:
+  - link "Към основното съдържание" [ref=f1e2] [cursor=pointer] [box=8,-56,263,48]:
+    - /url: "#main-content"
+  - banner [ref=f1e4] [box=0,0,914,68]:
+    - link "Върколак и Мафия, начало" [ref=f1e5] [cursor=pointer] [box=24,10,210,48]:
+      - /url: /
+      - generic [ref=f1e7] [box=72,10,162,48]:
+        - generic [ref=f1e8] [box=72,10,162,16]:
+          - generic [ref=f1e9] [box=72,10,77,15]: Върколак
+          - generic [ref=f1e10] [box=155,10,4,16]: ·
+          - generic [ref=f1e11] [box=165,10,57,15]: Мафия
+        - generic [ref=f1e12] [box=78,29,52,17]: БЕТА
+        - generic [ref=f1e13] [box=72,49,162,9]: Социална игра на сенки
+    - navigation "Основна навигация" [ref=f1e14] [box=252,12,371,44]:
+      - link "Играй" [ref=f1e15] [cursor=pointer] [box=252,12,88,44]:
+        - /url: /werewolf/create
+      - generic "Семейство игри" [ref=f1e19] [box=354,12,211,44]:
+        - link "Върколак" [ref=f1e20] [cursor=pointer] [box=358,16,109,36]:
+          - /url: /werewolf
+        - link "Мафия" [ref=f1e23] [cursor=pointer] [box=476,16,85,36]:
+          - /url: /mafia
+      - button "Още страници" [ref=f1e26] [cursor=pointer] [box=579,12,44,44]
+    - generic "Настройки" [ref=f1e31] [box=641,12,249,44]:
+      - button "Включи звука" [ref=f1e32] [cursor=pointer] [box=641,12,44,44]
+      - button "Смени на тъмна тема" [ref=f1e188] [cursor=pointer] [box=693,12,44,44]
+      - link "Влез" [ref=f1e195] [cursor=pointer] [box=762,15,128,38]:
+        - /url: /sign-in
+  - main [ref=f1e44] [box=9,68,897,2467]:
+    - generic [ref=f1e45] [box=9,100,897,944]:
+      - paragraph [ref=f1e47] [box=156,226,152,31]: избери игра
+      - heading "Върколак или Мафия" [level=1] [ref=f1e48] [box=38,295,839,72]
+      - paragraph [ref=f1e49] [box=38,391,544,96]: Две отделни игри, два отделни речника и два отделни набора роли. Влизаш с име, създаваш стая или въвеждаш код и започваш веднага.
+      - generic [ref=f1e50] [box=38,519,839,496]:
+        - article [ref=f1e51] [box=38,519,414,496]:
+          - generic [ref=f1e202] [box=335,538,96,26]: Продължи
+          - generic [ref=f1e53] [box=66,548,356,27]: фолклорен хорър
+          - heading "Върколак" [level=2] [ref=f1e54] [box=66,705,356,46]
+          - blockquote [ref=f1e55] [box=66,767,356,45]: Първо пада мъглата. После някой лъже прекалено спокойно.
+          - paragraph [ref=f1e56] [box=66,822,356,40]: Класическо село с тайни роли, нощни събуждания, Върколаци, Вампири и Разказвач.
+          - generic [ref=f1e57] [box=66,862,356,124]:
+            - link "Влез и играй" [ref=f1e203] [cursor=pointer] [box=66,886,164,44]:
+              - /url: /sign-in?redirect=%2Fwerewolf%2Fcreate
+            - link "Роли" [ref=f1e59] [cursor=pointer] [box=243,886,91,44]:
+              - /url: /werewolf/roles
+            - link "Правила" [ref=f1e60] [cursor=pointer] [box=66,942,127,44]:
+              - /url: /werewolf/rules
+        - article [ref=f1e61] [box=463,519,414,496]:
+          - generic [ref=f1e63] [box=492,548,356,27]: градска мистерия
+          - heading "Мафия" [level=2] [ref=f1e64] [box=492,705,356,46]
+          - blockquote [ref=f1e65] [box=492,767,356,45]: Дъждът измива улицата, но не и алибитата.
+          - paragraph [ref=f1e66] [box=492,822,356,40]: Криминална маса с Град, Мафия, Комисар, Доктор, Кръстник и роли за по-опитни групи.
+          - generic [ref=f1e67] [box=492,862,356,124]:
+            - link "Влез и играй" [ref=f1e204] [cursor=pointer] [box=492,886,164,44]:
+              - /url: /sign-in?redirect=%2Fmafia%2Fcreate
+            - link "Роли" [ref=f1e69] [cursor=pointer] [box=668,886,91,44]:
+              - /url: /mafia/roles
+            - link "Правила" [ref=f1e70] [cursor=pointer] [box=492,942,127,44]:
+              - /url: /mafia/rules
+    - region "Първа игра за 30 секунди" [ref=f1e71] [box=9,1091,897,723]:
+      - generic [ref=f1e72] [box=9,1118,897,648]:
+        - generic [ref=f1e73] [box=9,1118,897,120]:
+          - generic [ref=f1e74] [box=9,1118,336,120]:
+            - paragraph [ref=f1e75] [box=37,1138,278,17]: първа игра за 30 секунди
+            - heading "Как започва добра игра" [level=2] [ref=f1e76] [box=37,1163,275,24]
+            - paragraph [ref=f1e77] [box=37,1196,188,23]: Влез, избери стая, играй.
+          - link "Виж често задаваните въпроси" [ref=f1e78] [cursor=pointer] [box=575,1118,331,44]:
+            - /url: /faq
+            - text: Виж често задаваните въпроси
+            - generic [ref=f1e79] [box=873,1131,13,19]: →
+        - list [ref=f1e80] [box=9,1262,897,505]:
+          - listitem [ref=f1e81] [box=9,1262,441,158]:
+            - article [ref=f1e82] [box=9,1262,441,158]
+          - listitem [ref=f1e90] [box=465,1262,441,158]:
+            - article [ref=f1e91] [box=465,1262,441,158]
+          - listitem [ref=f1e101] [box=9,1436,441,158]:
+            - article [ref=f1e102] [box=9,1436,441,158]
+          - listitem [ref=f1e113] [box=465,1436,441,158]:
+            - article [ref=f1e114] [box=465,1436,441,158]
+          - listitem [ref=f1e122] [box=9,1609,441,158]:
+            - article [ref=f1e123] [box=9,1609,441,158]
+    - generic [ref=f1e130] [box=9,1846,897,349]:
+      - article [ref=f1e131] [box=9,1860,441,302]:
+        - paragraph [ref=f1e132] [box=32,1889,395,19]: в момента играят
+        - generic [ref=f1e138] [box=110,1922,317,166]:
+          - paragraph [ref=f1e139] [box=110,1928,204,29]: ОЧАКВАТ СЕ ГОСТИ
+          - heading "Бъди първият на масата" [level=3] [ref=f1e140] [box=110,1966,317,22]
+          - paragraph [ref=f1e141] [box=110,1994,317,39]: Покани приятели или сподели кода — стаята започва с теб.
+          - link "Създай стая" [ref=f1e142] [cursor=pointer] [box=110,2044,162,44]:
+            - /url: /werewolf/create
+            - text: Създай стая
+            - generic [ref=f1e143] [box=241,2057,13,19]: →
+      - article [ref=f1e144] [box=465,1860,441,302]:
+        - paragraph [ref=f1e145] [box=488,1889,395,19]: последни истории
+        - generic [ref=f1e146] [box=488,1922,395,217]:
+          - generic [ref=f1e150] [box=550,1922,331,47]:
+            - heading "Първите герои ще се появят тук." [level=3] [ref=f1e151] [box=550,1922,331,22]
+            - paragraph [ref=f1e152] [box=550,1950,331,19]: След първата завършена игра.
+          - article [ref=f1e153] [box=488,1986,395,153]:
+            - generic [ref=f1e154] [box=800,1999,69,19]: ПРИМЕР
+            - paragraph [ref=f1e155] [box=509,2011,353,19]: ДЕЛО №4821
+            - heading [level=3] [ref=f1e156] [box=509,2038,353,18]: Селото оцеля през три нощи.
+            - paragraph [ref=f1e157] [box=509,2064,353,56]: Гадателката разпозна Върколака преди последното гласуване. Никой не повярва, докато сутринта камбаната не зазвъня.
+    - region "Готов ли си да седнеш на масата" [ref=f1e158] [box=9,2217,897,262]:
+      - generic [ref=f1e159] [box=9,2235,897,188]:
+        - generic [ref=f1e160] [box=37,2264,315,130]:
+          - paragraph [ref=f1e161] [box=37,2264,315,26]: ГОТОВ ЛИ СИ?
+          - heading "Сядаме на масата." [level=2] [ref=f1e162] [box=37,2298,315,36]
+          - paragraph [ref=f1e163] [box=37,2342,315,52]: Избери коя игра започва вечерта ти.
+        - generic [ref=f1e164] [box=380,2303,497,52]:
+          - link "Към върколаците" [ref=f1e165] [cursor=pointer] [box=380,2303,269,52]:
+            - /url: /werewolf
+          - link "Към мафията" [ref=f1e166] [cursor=pointer] [box=660,2303,216,52]:
+            - /url: /mafia
+  - contentinfo [ref=f1e167] [box=0,2559,914,108]:
+    - generic [ref=f1e168] [box=16,2584,882,32]:
+      - link "Поверителност" [ref=f1e169] [cursor=pointer] [box=232,2584,113,32]:
+        - /url: /privacy
+      - generic [ref=f1e170] [box=353,2584,3,32]: ·
+      - link "Условия" [ref=f1e171] [cursor=pointer] [box=364,2584,63,32]:
+        - /url: /terms
+      - generic [ref=f1e172] [box=435,2584,3,32]: ·
+      - link "Сигнал" [ref=f1e173] [cursor=pointer] [box=447,2584,56,32]:
+        - /url: /report
+      - generic [ref=f1e174] [box=511,2584,3,32]: ·
+      - link "Състояние" [ref=f1e175] [cursor=pointer] [box=522,2584,82,32]:
+        - /url: /status
+      - generic [ref=f1e176] [box=612,2584,3,32]: ·
+      - link "Помощ" [ref=f1e177] [cursor=pointer] [box=624,2584,58,32]:
+        - /url: /faq
+    - paragraph [ref=f1e178] [box=16,2624,882,19]: © 2026 Върколак и Мафия · Бета
+  - button "Open Next.js Dev Tools" [ref=f1e184] [cursor=pointer] [box=22,799,32,32]
+  - alert [ref=f1e205] [box=-1,2665,1,1]

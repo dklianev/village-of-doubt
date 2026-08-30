@@ -676,6 +676,14 @@
   padding-inline: 10px;
 }
 
+:global(.play-start-disabled-reason) {
+  max-width: 42rem;
+  margin: 8px 12px 0;
+  color: color-mix(in oklch, var(--paper) 74%, transparent);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
 :global(.play-stage-takeover) {
   --winner-scene: var(--art-resolution);
   --winner-scene-tone: rgba(209, 154, 66, 0.18);

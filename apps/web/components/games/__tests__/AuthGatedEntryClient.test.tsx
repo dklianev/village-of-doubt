@@ -3,24 +3,19 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthGatedEntryClient } from "../auth-gated-entry-client";
 
-const { fetchMock, push, remember } = vi.hoisted(() => ({
+const { fetchMock, push, refreshSession, remember, useAuthSession } = vi.hoisted(() => ({
   fetchMock: vi.fn(),
   push: vi.fn(),
+  refreshSession: vi.fn(),
   remember: vi.fn(),
+  useAuthSession: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push }),
 }));
 
-vi.mock("@/lib/auth-client", () => ({
-  authClient: {
-    useSession: () => ({
-      data: { user: { name: "Димитър" } },
-      isPending: false,
-    }),
-  },
-}));
+vi.mock("@/lib/use-auth-session", () => ({ useAuthSession }));
 
 vi.mock("@/lib/use-recent-rooms", () => ({
   useRecentRooms: () => ({ rooms: [], remember }),
@@ -30,12 +25,129 @@ describe("AuthGatedEntryClient", () => {
   beforeEach(() => {
     fetchMock.mockReset();
     push.mockReset();
+    refreshSession.mockReset();
     remember.mockReset();
+    useAuthSession.mockReset();
+    useAuthSession.mockReturnValue({
+      data: { user: { id: "user-1", name: "Димитър" } },
+      isError: false,
+      isPending: false,
+      refresh: refreshSession,
+    });
+    fetchMock.mockResolvedValue(okResponse({ status: "missing" }));
     vi.stubGlobal("fetch", fetchMock);
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
+  });
+
+  it("uses the minimal server session on the first render", () => {
+    const initialSession = { user: { id: "user-1", name: "Рада" } };
+    useAuthSession.mockImplementation((session) => ({
+      data: session,
+      isError: false,
+      isPending: false,
+      refresh: refreshSession,
+    }));
+
+    render(
+      <AuthGatedEntryClient
+        family="werewolves"
+        mode="werewolves_classic"
+        initialCode="ABC234"
+        initialSession={initialSession}
+      />,
+    );
+
+    expect(screen.getByRole("heading", { name: "Добре дошъл в селото, Рада." })).toBeInTheDocument();
+    expect(useAuthSession).toHaveBeenCalledWith(initialSession);
+  });
+
+  it("renders the Mafia entry from the minimal server session", () => {
+    const initialSession = { user: { id: "user-1", name: "Рада" } };
+    useAuthSession.mockImplementation((session) => ({
+      data: session,
+      isError: false,
+      isPending: false,
+      refresh: refreshSession,
+    }));
+
+    render(
+      <AuthGatedEntryClient
+        family="mafia"
+        mode="mafia_free"
+        initialCode="ABC234"
+        initialSession={initialSession}
+      />,
+    );
+
+    expect(screen.getByRole("heading", { name: "Добре дошъл в бара, Рада." })).toBeInTheDocument();
+    expect(screen.getByText("Парола на бара")).toBeInTheDocument();
+    expect(useAuthSession).toHaveBeenCalledWith(initialSession);
+  });
+
+  it("offers a retry when the client cannot confirm the session", async () => {
+    const user = userEvent.setup();
+    useAuthSession.mockReturnValue({
+      data: null,
+      isError: true,
+      isPending: false,
+      refresh: refreshSession,
+    });
+
+    render(<AuthGatedEntryClient family="werewolves" mode="werewolves_classic" initialCode="ABC234" />);
+
+    expect(screen.getByRole("heading", { name: "Не успяхме да потвърдим сесията" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Провери сесията отново" }));
+    expect(refreshSession).toHaveBeenCalledWith({ fresh: true });
+  });
+
+  it("keeps a known server session usable when a background refresh fails", () => {
+    useAuthSession.mockReturnValue({
+      data: { user: { id: "user-1", name: "Рада" } },
+      isError: true,
+      isPending: false,
+      refresh: refreshSession,
+    });
+
+    render(<AuthGatedEntryClient family="werewolves" mode="werewolves_classic" initialCode="ABC234" />);
+
+    expect(screen.getByRole("heading", { name: "Добре дошъл в селото, Рада." })).toBeInTheDocument();
+    expect(screen.queryByText("Не успяхме да потвърдим сесията")).not.toBeInTheDocument();
+  });
+
+  it("offers the preserved sign-in redirect after a confirmed sign-out", () => {
+    useAuthSession.mockReturnValue({
+      data: null,
+      isError: false,
+      isPending: false,
+      refresh: refreshSession,
+    });
+
+    render(<AuthGatedEntryClient family="werewolves" mode="werewolves_classic" initialCode="ABC234" />);
+
+    expect(screen.getByRole("heading", { name: "Сесията ти е приключила" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Влез отново" })).toHaveAttribute(
+      "href",
+      "/sign-in?redirect=%2Fwerewolf%2Fjoin%2FABC234",
+    );
+  });
+
+  it("focuses and describes the first invalid room-code slot after submit", async () => {
+    const user = userEvent.setup();
+    render(<AuthGatedEntryClient family="werewolves" mode="werewolves_classic" />);
+
+    const joinButton = screen.getByRole("button", { name: "Влизам в селото" });
+    expect(joinButton).toBeEnabled();
+    await user.click(joinButton);
+
+    const error = screen.getByRole("alert");
+    const firstSlot = screen.getByRole("textbox", { name: "Символ 1 от 6" });
+    expect(error).toHaveTextContent("Въведи кода на стаята.");
+    expect(firstSlot).toHaveFocus();
+    expect(firstSlot).toHaveAttribute("aria-invalid", "true");
+    expect(firstSlot).toHaveAttribute("aria-describedby", error.id);
   });
 
   it.each([

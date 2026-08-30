@@ -399,7 +399,7 @@ function readAllowedString<T extends string>(
 
 function sanitizeRoleDistribution(value: unknown): RoleDistribution {
   if (!isPlainRecord(value)) {
-    throw new Error("Невалидно разпределение на ролите.");
+    throw new Error("Съставът на ролите не е валиден.");
   }
 
   const roles: RoleDistribution = {};
@@ -411,7 +411,7 @@ function sanitizeRoleDistribution(value: unknown): RoleDistribution {
       || !Number.isInteger(count)
       || count < 0
     ) {
-      throw new Error("Невалидно разпределение на ролите.");
+      throw new Error("Съставът на ролите не е валиден.");
     }
     roles[role as RoleCode] = count;
   }
@@ -420,20 +420,20 @@ function sanitizeRoleDistribution(value: unknown): RoleDistribution {
 
 function sanitizeCustomTimers(value: unknown): Partial<PhaseTimers> {
   if (!isPlainRecord(value)) {
-    throw new Error("Невалидни настройки на таймерите.");
+    throw new Error("Настройките на таймерите не са валидни.");
   }
 
   const timers: Partial<PhaseTimers> = {};
   for (const [key, timerValue] of Object.entries(value)) {
     if (key === "autoAdvanceWhenReady") {
       if (typeof timerValue !== "boolean") {
-        throw new Error("Невалидни настройки на таймерите.");
+        throw new Error("Настройките на таймерите не са валидни.");
       }
       timers.autoAdvanceWhenReady = timerValue;
       continue;
     }
     if (!Object.hasOwn(PHASE_TIMER_LIMITS, key) || typeof timerValue !== "number" || !Number.isFinite(timerValue)) {
-      throw new Error("Невалидни настройки на таймерите.");
+      throw new Error("Настройките на таймерите не са валидни.");
     }
     timers[key as NumericTimerKey] = timerValue;
   }
@@ -442,7 +442,7 @@ function sanitizeCustomTimers(value: unknown): Partial<PhaseTimers> {
 
 function sanitizeGameConfigOptions(value: unknown): GameConfigOptions {
   if (!isPlainRecord(value)) {
-    throw new Error("Невалидни настройки на стаята.");
+    throw new Error("Настройките на стаята не са валидни.");
   }
 
   // Room creation also carries transport/auth metadata, so only copy authoritative config fields.
@@ -461,7 +461,7 @@ function sanitizeGameConfigOptions(value: unknown): GameConfigOptions {
   const narratorVoice = readAllowedString(value, "narratorVoice", NARRATOR_VOICES, "Невалиден глас на Разказвача.");
 
   if (narratorMode === "honest_human" || narratorMode === "full_human") {
-    throw new Error("Човешкият Разказвач не е достъпен в бета версията. Избери Автоматичен Разказвач.");
+    throw new Error("Режимът с човешки Разказвач още не е достъпен в бета версията. Избери Автоматичен Разказвач.");
   }
 
   Object.assign(sanitized, {
@@ -481,13 +481,13 @@ function sanitizeGameConfigOptions(value: unknown): GameConfigOptions {
 
   if (value.playerCount !== undefined) {
     if (typeof value.playerCount !== "number" || !Number.isFinite(value.playerCount) || !Number.isInteger(value.playerCount)) {
-      throw new Error("Броят играчи трябва да е цяло число.");
+      throw new Error("Броят на играчите трябва да е цяло число.");
     }
     if (value.playerCount > 30) {
       throw new Error("Играта поддържа най-много 30 играчи.");
     }
     if (value.playerCount < 1) {
-      throw new Error("Броят играчи трябва да е между 1 и 30.");
+      throw new Error("Броят на играчите трябва да е между 1 и 30.");
     }
     sanitized.playerCount = value.playerCount;
   }
@@ -507,7 +507,7 @@ function sanitizeGameConfigOptions(value: unknown): GameConfigOptions {
 
   if (value.roomName !== undefined) {
     if (typeof value.roomName !== "string") {
-      throw new Error("Невалидно име на стаята.");
+      throw new Error("Името на стаята не е валидно.");
     }
     const roomName = value.roomName.trim();
     if (roomName.length === 0 || roomName.length > 42) {
@@ -530,7 +530,7 @@ function sanitizeGameConfigOptions(value: unknown): GameConfigOptions {
       continue;
     }
     if (typeof optionValue !== "boolean") {
-      throw new Error("Невалидна стойност за настройка на стаята.");
+      throw new Error("Една от настройките на стаята не е валидна.");
     }
     mutableSanitized[key] = optionValue;
   }
@@ -600,14 +600,14 @@ export function getMafiaSportPreset(playerCount: number): RoleDistribution {
 export function getMafiaFreePreset(playerCount: number): RoleDistribution {
   const preset = MAFIA_FREE_PRESETS[playerCount];
   if (!preset) {
-    throw new Error("Мафия поддържа 4-24 играчи в основния режим.");
+    throw new Error("Основният режим на Мафия се играе с 4 до 24 души.");
   }
   return { ...preset };
 }
 
 export function getWerewolvesClassicPreset(playerCount: number): RoleDistribution {
   if (playerCount < 6 || playerCount > 30) {
-    throw new Error("Върколак поддържа 6-30 играчи в основния режим.");
+    throw new Error("Основният режим на Върколак се играе с 6 до 30 души.");
   }
 
   const fixed = WEREWOLF_CLASSIC_PRESETS[playerCount];
@@ -656,7 +656,7 @@ export function getWerewolfAdvancedPreset(playerCount: number): RoleDistribution
 
 export function getWerewolfVampiresPreset(playerCount: number): RoleDistribution {
   if (playerCount < 14) {
-    throw new Error("Върколаци и вампири е подходящо за поне 14 играчи.");
+    throw new Error("Режимът с Върколаци и Вампири изисква поне 14 играчи.");
   }
 
   const werewolves = Math.max(3, Math.floor(playerCount / 6));
@@ -781,7 +781,7 @@ export function validateRoleDistributionIssuesForMode(
       push("MAYOR_MODE_REQUIRED", "Куче пазач може да се използва само с публично избран Кмет.");
     }
     if ((distribution.stray_cat ?? 0) > 0) {
-      push("ADVANCED_ROLE_NOTICE", "Улична котка е промо роля. Включвай я само в разширен режим.");
+      push("ADVANCED_ROLE_NOTICE", "Уличната котка е ръчно водена роля. Включи я само ако Разказвачът ще следи картата на масата.");
     }
   } else {
     const mafiaCount = (distribution.mafioso ?? 0) + (distribution.don ?? 0);
@@ -964,7 +964,7 @@ export function normalizeRoleDistributionForMode(mode: GameMode, distribution: R
   const family = getGameFamily(mode);
   const unknownRoles = Object.keys(normalized).filter((role) => !(role in ROLE_DEFINITIONS));
   if (unknownRoles.length > 0) {
-    throw new Error(`Непознати роли: ${unknownRoles.join(", ")}.`);
+    throw new Error("Съставът съдържа непозната роля.");
   }
 
   const overLimitRoles = (Object.keys(normalized) as RoleCode[]).filter(
@@ -974,13 +974,14 @@ export function normalizeRoleDistributionForMode(mode: GameMode, distribution: R
     const limits = overLimitRoles
       .map((role) => `${getRoleNameBg(role)} (максимум ${ROLE_DEFINITIONS[role].maxCopies})`)
       .join(", ");
-    throw new Error(`Превишен е максималният брой копия: ${limits}.`);
+    throw new Error(`Има твърде много копия от следните роли: ${limits}.`);
   }
   const invalidRoles = (Object.keys(normalized) as RoleCode[]).filter((role) => !isRoleAvailableInFamily(role, family));
 
   if (invalidRoles.length > 0) {
     const roleNames = invalidRoles.map((role) => getRoleNameBg(role)).join(", ");
-    throw new Error(`Тези роли не са налични за ${getGameModeNameBg(mode)}: ${roleNames}.`);
+    const gamePreposition = mode === "werewolves_classic" ? "във" : "в";
+    throw new Error(`Тези роли не могат да се използват ${gamePreposition} ${getGameModeNameBg(mode)}: ${roleNames}.`);
   }
 
   return normalized;

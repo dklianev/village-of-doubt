@@ -26,6 +26,7 @@ age_identity_file="${BACKUP_AGE_IDENTITY_FILE:-}"
 require_signature="${BACKUP_REQUIRE_SIGNATURE:-1}"
 signing_public_key="${BACKUP_SIGNING_PUBLIC_KEY_FILE:-}"
 manifest_command="${BACKUP_MANIFEST_COMMAND:-$(dirname "$0")/backup-manifest.mjs}"
+deletion_ledger_file="${RESTORE_DELETION_LEDGER_FILE:-}"
 restore_max_age_hours="${BACKUP_MAX_RESTORE_AGE_HOURS:-876000}"
 backup_clock_skew_seconds="${BACKUP_CLOCK_SKEW_SECONDS:-300}"
 release_state_dir="${RELEASE_STATE_DIR:-/var/lib/werewolf/release-state}"
@@ -112,6 +113,31 @@ if [ "$require_signature" = "1" ] && { [ -z "$signing_public_key" ] || [ ! -f "$
   exit 1
 fi
 
+if [ "$require_signature" = "1" ]; then
+  if [ -z "$deletion_ledger_file" ] || [ ! -f "$deletion_ledger_file" ]; then
+    printf 'RESTORE_DELETION_LEDGER_FILE must reference the latest protected deletion ledger for signed restores.\n' >&2
+    exit 1
+  fi
+  case "$deletion_ledger_file" in
+    */werewolf_deletion_ledger.tsv.age|werewolf_deletion_ledger.tsv.age) ;;
+    *)
+      printf 'RESTORE_DELETION_LEDGER_FILE must be the encrypted werewolf_deletion_ledger.tsv.age artifact.\n' >&2
+      exit 1
+      ;;
+  esac
+  if [ -z "$age_identity_file" ] || [ ! -f "$age_identity_file" ]; then
+    printf 'BACKUP_AGE_IDENTITY_FILE must reference an existing identity file for the encrypted deletion ledger.\n' >&2
+    exit 1
+  fi
+  if [ ! -f "$deletion_ledger_file.sha256" ]; then
+    printf 'The encrypted deletion ledger requires its matching SHA-256 sidecar.\n' >&2
+    exit 1
+  fi
+elif [ -n "$deletion_ledger_file" ]; then
+  printf 'RESTORE_DELETION_LEDGER_FILE is accepted only when signed backup verification is enabled.\n' >&2
+  exit 1
+fi
+
 if [ -z "${MIGRATION_DATABASE_URL:-}" ]; then
   printf 'MIGRATION_DATABASE_URL is required to migrate the staging database.\n' >&2
   exit 1
@@ -188,11 +214,29 @@ validate_staging_database() {
 }
 
 capture_current_tombstones() {
-  compose exec -T postgres psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc "
-    SELECT original_user_id || E'\t' || anonymous_user_id
-    FROM public.deleted_user_identities
-    ORDER BY original_user_id;
-  " > "$temporary_tombstones"
+  : > "$temporary_current_tombstones"
+  current_ledger_table="$(
+    compose exec -T postgres psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc \
+      "SELECT to_regclass('public.deleted_user_identities');"
+  )"
+  case "$current_ledger_table" in
+    deleted_user_identities|public.deleted_user_identities)
+      compose exec -T postgres psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc "
+        SELECT original_user_id || E'\t' || anonymous_user_id
+        FROM public.deleted_user_identities
+        ORDER BY original_user_id;
+      " > "$temporary_current_tombstones"
+      ;;
+  esac
+}
+
+merge_deletion_tombstones() {
+  {
+    cat "$temporary_current_tombstones"
+    if [ -s "$temporary_deletion_ledger_plain" ]; then
+      sed '1d' "$temporary_deletion_ledger_plain"
+    fi
+  } | LC_ALL=C sort -u > "$temporary_tombstones"
 }
 
 reapply_current_tombstones_to_staging() {
@@ -236,6 +280,10 @@ SQL
 
 temporary_sql="$(mktemp "${TMPDIR:-/tmp}/werewolf_restore.XXXXXX")"
 temporary_gzip="$(mktemp "${TMPDIR:-/tmp}/werewolf_restore.XXXXXX.gz")"
+temporary_backup_manifest="$(mktemp "${TMPDIR:-/tmp}/werewolf_restore_backup_manifest.XXXXXX.json")"
+temporary_deletion_ledger_manifest="$(mktemp "${TMPDIR:-/tmp}/werewolf_restore_deletion_manifest.XXXXXX.json")"
+temporary_deletion_ledger_plain="$(mktemp "${TMPDIR:-/tmp}/werewolf_restore_deletion_ledger.XXXXXX.tsv")"
+temporary_current_tombstones="$(mktemp "${TMPDIR:-/tmp}/werewolf_restore_current_tombstones.XXXXXX")"
 temporary_tombstones="$(mktemp "${TMPDIR:-/tmp}/werewolf_restore_tombstones.XXXXXX")"
 temporary_tombstone_sql="$(mktemp "${TMPDIR:-/tmp}/werewolf_restore_tombstones.XXXXXX.sql")"
 temporary_release_env="$(mktemp "${TMPDIR:-/tmp}/werewolf_restore_release.XXXXXX.env")"
@@ -260,6 +308,9 @@ preserve_restore_record() {
     printf 'action=restore\n'
     printf 'exit_code=%s\n' "$record_exit_code"
     printf 'backup=%s\n' "$(basename -- "$backup_file")"
+    if [ -n "$deletion_ledger_file" ]; then
+      printf 'deletion_ledger=%s\n' "$(basename -- "$deletion_ledger_file")"
+    fi
     printf 'target_database=%s\n' "$POSTGRES_DB"
     printf 'staging_database=%s\n' "$staging_db"
     printf 'rollback_database=%s\n' "$rollback_db"
@@ -283,7 +334,9 @@ record_restored_schema() {
 cleanup() {
   exit_code=$?
   trap - EXIT HUP INT TERM
-  rm -f "$temporary_sql" "$temporary_gzip" "$temporary_tombstones" \
+  rm -f "$temporary_sql" "$temporary_gzip" "$temporary_backup_manifest" \
+    "$temporary_deletion_ledger_manifest" "$temporary_deletion_ledger_plain" \
+    "$temporary_current_tombstones" "$temporary_tombstones" \
     "$temporary_tombstone_sql" "$temporary_release_env" \
     "$schema_manifest_tmp" "$schema_signature_tmp"
 
@@ -342,7 +395,9 @@ cleanup() {
 mkdir -p "$release_state_dir"
 chmod 700 "$release_state_dir" 2>/dev/null || true
 if ! acquire_operations_lock "restore" "$operations_lock_dir"; then
-  rm -f "$temporary_sql" "$temporary_gzip" "$temporary_tombstones" \
+  rm -f "$temporary_sql" "$temporary_gzip" "$temporary_backup_manifest" \
+    "$temporary_deletion_ledger_manifest" "$temporary_deletion_ledger_plain" \
+    "$temporary_current_tombstones" "$temporary_tombstones" \
     "$temporary_tombstone_sql" "$temporary_release_env"
   exit 73
 fi
@@ -364,12 +419,54 @@ set -a
 set +a
 
 if [ "$require_signature" = "1" ]; then
-  node "$manifest_command" verify \
+  "$node_command" "$manifest_command" verify \
     "$backup_file" \
     "$signing_public_key" \
     "$POSTGRES_DB" \
     "$restore_max_age_hours" \
-    "$backup_clock_skew_seconds" >/dev/null
+    "$backup_clock_skew_seconds" > "$temporary_backup_manifest"
+  "$node_command" "$manifest_command" verify \
+    "$deletion_ledger_file" \
+    "$signing_public_key" \
+    "$POSTGRES_DB" \
+    "$restore_max_age_hours" \
+    "$backup_clock_skew_seconds" > "$temporary_deletion_ledger_manifest"
+
+  backup_created_at="$(
+    sed -n 's/.*"createdAt":"\([^"]*\)".*/\1/p' "$temporary_backup_manifest" | sed -n '1p'
+  )"
+  deletion_ledger_created_at="$(
+    sed -n 's/.*"createdAt":"\([^"]*\)".*/\1/p' "$temporary_deletion_ledger_manifest" | sed -n '1p'
+  )"
+  if [ -z "$backup_created_at" ] || [ -z "$deletion_ledger_created_at" ]; then
+    printf 'Signed backup and deletion-ledger manifests must contain creation timestamps.\n' >&2
+    exit 1
+  fi
+  oldest_created_at="$(
+    printf '%s\n%s\n' "$backup_created_at" "$deletion_ledger_created_at" | \
+      LC_ALL=C sort | sed -n '1p'
+  )"
+  if [ "$oldest_created_at" != "$backup_created_at" ]; then
+    printf 'The protected deletion ledger is older than the selected backup.\n' >&2
+    exit 1
+  fi
+
+  (cd "$(dirname "$deletion_ledger_file")" && \
+    sha256sum -c "$(basename "$deletion_ledger_file").sha256")
+  if ! command -v "$age_command" >/dev/null 2>&1; then
+    printf 'Encrypted deletion-ledger restore requires the age command.\n' >&2
+    exit 1
+  fi
+  "$age_command" -d -i "$age_identity_file" \
+    -o "$temporary_deletion_ledger_plain" "$deletion_ledger_file"
+  if ! awk -F '\t' '
+    NR == 1 { if ($0 != "werewolf-deletion-ledger-v1") exit 1; next }
+    NF != 2 || $1 == "" || $2 == "" { exit 1 }
+    END { if (NR < 1) exit 1 }
+  ' "$temporary_deletion_ledger_plain"; then
+    printf 'The protected deletion ledger has an invalid format.\n' >&2
+    exit 1
+  fi
 fi
 
 if [ -f "$backup_file.sha256" ]; then
@@ -432,6 +529,7 @@ fi
 writers_stopped=1
 compose stop web game >/dev/null
 capture_current_tombstones
+merge_deletion_tombstones
 reapply_current_tombstones_to_staging
 terminate_database_sessions "$POSTGRES_DB" >/dev/null
 

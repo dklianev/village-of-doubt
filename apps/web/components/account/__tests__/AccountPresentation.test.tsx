@@ -204,6 +204,40 @@ describe("account presentation", () => {
     expect(screen.getByRole("dialog", { name: "Сигурен/сигурна ли си?" })).toBeInTheDocument();
   });
 
+  it("представя филтрите за портрети като независими натиснати бутони", () => {
+    render(
+      <AccountProfile
+        email="visual@example.com"
+        initialName="Визуален играч"
+        initialAvatarId="portrait-f04"
+        emailVerified
+        providers={["credential"]}
+      />,
+    );
+
+    const all = screen.getByRole("button", { name: "Всички" });
+    expect(all).toHaveAttribute("aria-pressed", "true");
+    expect(screen.queryByRole("tablist")).not.toBeInTheDocument();
+  });
+
+  it("изключва отказа, докато необратимото изтриване се изпълнява", async () => {
+    const user = userEvent.setup();
+    Object.defineProperty(HTMLDialogElement.prototype, "showModal", {
+      configurable: true,
+      value(this: HTMLDialogElement) {
+        this.open = true;
+      },
+    });
+    vi.spyOn(globalThis, "fetch").mockImplementation(() => new Promise(() => {}));
+    render(<AccountDangerZone email="visual@example.com" />);
+
+    await user.click(screen.getByRole("button", { name: "Изтрий моето досие" }));
+    await user.type(screen.getByLabelText("Напиши ИЗТРИЙ за потвърждение"), "ИЗТРИЙ");
+    await user.click(screen.getByRole("button", { name: "Изтрий завинаги" }));
+
+    expect(screen.getByRole("button", { name: "Отказ" })).toBeDisabled();
+  });
+
   it("регистрира scoped account CSS без legacy остров", () => {
     const accountSources = [
       "app/account/page.tsx",

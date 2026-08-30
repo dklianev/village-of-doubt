@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { describe, expect, it, vi } from "vitest";
 import {
   createDeadlineBoundSecurityRedisClient,
+  createColyseusRedisReadinessProbe,
   closeRedisClientWithinDeadline,
   createLocalDrainCancelHandler,
   createLocalStatsHandler,
@@ -106,6 +107,50 @@ describe("game-server Redis startup guard", () => {
 
     await expect(probeSecurityRedisReady(healthy)).resolves.toBe(true);
     await expect(probeSecurityRedisReady(readOnly)).resolves.toBe(false);
+  });
+
+  it("checks both the Colyseus driver and Presence publish/subscribe path", async () => {
+    let subscriber: ((message: unknown) => void) | undefined;
+    const driver = { has: vi.fn(async () => false) };
+    const presence = {
+      subscribe: vi.fn(async (_topic: string, callback: (message: unknown) => void) => {
+        subscriber = callback;
+      }),
+      publish: vi.fn(async (_topic: string, message: unknown) => {
+        subscriber?.(message);
+      }),
+      unsubscribe: vi.fn(async () => undefined),
+    };
+    const probe = createColyseusRedisReadinessProbe(driver, presence, 100);
+
+    await expect(probe()).resolves.toBe(true);
+    expect(driver.has).toHaveBeenCalledOnce();
+    expect(presence.subscribe).toHaveBeenCalledOnce();
+    expect(presence.publish).toHaveBeenCalledOnce();
+    expect(presence.unsubscribe).toHaveBeenCalledOnce();
+  });
+
+  it("shares one hung Colyseus probe instead of accumulating Redis work", async () => {
+    vi.useFakeTimers();
+    const driver = { has: vi.fn(() => new Promise<boolean>(() => {})) };
+    const presence = {
+      subscribe: vi.fn(async () => undefined),
+      publish: vi.fn(async () => undefined),
+      unsubscribe: vi.fn(async () => undefined),
+    };
+    const probe = createColyseusRedisReadinessProbe(driver, presence, 50);
+
+    const first = probe();
+    const second = probe();
+    await vi.advanceTimersByTimeAsync(50);
+    await expect(first).resolves.toBe(false);
+    await expect(second).resolves.toBe(false);
+
+    const third = probe();
+    await vi.advanceTimersByTimeAsync(50);
+    await expect(third).resolves.toBe(false);
+    expect(driver.has).toHaveBeenCalledOnce();
+    vi.useRealTimers();
   });
 });
 

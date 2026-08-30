@@ -33,7 +33,7 @@ export function KeyboardShortcutsModal({ onClose }: KeyboardShortcutsModalProps)
         <p className="section-kicker">клавиши</p>
         <h2>Команди от масата</h2>
         <p>
-          Ползвай ги само когато екранът е пред теб. Сървърът пак решава дали действието е валидно.
+          Ползвай ги само когато екранът е пред теб. Командата се изпълнява само ако действието е позволено в текущата фаза.
         </p>
         <dl>
           {SHORTCUTS.map(([key, description]) => (

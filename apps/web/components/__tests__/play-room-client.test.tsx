@@ -267,12 +267,20 @@ describe("PlayRoomClient orchestrator", () => {
 
   it("passes the room code and create options into useGameRoom", () => {
     const createOptions = { mode: "werewolves_classic" } as const;
+    const initialSession = { user: { id: "u1" } };
 
-    render(<PlayRoomClient code="ROOM42" createOptions={createOptions} />);
+    render(
+      <PlayRoomClient
+        code="ROOM42"
+        createOptions={createOptions}
+        initialSession={initialSession}
+      />,
+    );
 
     expect(mocks.useGameRoom).toHaveBeenCalledWith(expect.objectContaining({
       code: "ROOM42",
       createOptions,
+      initialSession,
     }));
   });
 
@@ -312,7 +320,25 @@ describe("PlayRoomClient orchestrator", () => {
     expect(document.querySelector(".play-layout")).not.toHaveAttribute("data-stage-takeover");
   });
 
-  it("lets the winner takeover own game over without private or narrator chrome", () => {
+  it("explains why the host cannot start a full-narrator lobby", () => {
+    mockHooks("lobby", {
+      snapshot: {
+        ...snapshotForPhase("lobby"),
+        narratorMode: "full_human",
+        players: [{ ...player, acceptedFullNarrator: false }],
+      },
+    });
+
+    render(<PlayRoomClient code="ABCD" createOptions={{ mode: "werewolves_classic" }} />);
+
+    const startButton = screen.getByRole("button", { name: "Започни игра" });
+    expect(startButton).toBeDisabled();
+    expect(startButton).toHaveAccessibleDescription(
+      "Всички играчи трябва да приемат, че Разказвачът ще вижда тайните роли.",
+    );
+  });
+
+  it("lets the winner takeover own game over without private or narrator chrome", async () => {
     mockHooks("game_over", {
       privateRole: { role: "seer", roleNameBg: "Гадателка" },
       narratorSnapshot: { players: [] },
@@ -320,7 +346,9 @@ describe("PlayRoomClient orchestrator", () => {
 
     render(<PlayRoomClient code="ABCD" createOptions={{ mode: "werewolves_classic" }} />);
 
-    expect(screen.getByText("Селото печели")).toBeInTheDocument();
+    const winnerHeading = screen.getByRole("heading", { name: "Селото печели" });
+    expect(winnerHeading).toBeInTheDocument();
+    await waitFor(() => expect(winnerHeading).toHaveFocus());
     expect(screen.getByTestId("post-game-story")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Повтори настройките" })).toHaveAttribute(
       "href",

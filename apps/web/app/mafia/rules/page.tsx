@@ -25,7 +25,7 @@ const mafiaRulesJsonLd = {
     { "@type": "HowToStep", name: "Нощ", text: "Мафията и активните роли действат скрито.", position: 3 },
     { "@type": "HowToStep", name: "Ден", text: "Градът обсъжда алибита и подозрения.", position: 4 },
     { "@type": "HowToStep", name: "Гласуване", text: "Живите играчи избират присъда.", position: 5 },
-    { "@type": "HowToStep", name: "Развръзка", text: "Сървърът прилага резултата и проверява победата.", position: 6 },
+    { "@type": "HowToStep", name: "Развръзка", text: "Присъдата се изпълнява и се проверява кой печели.", position: 6 },
   ],
 };
 

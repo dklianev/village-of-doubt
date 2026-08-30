@@ -14,10 +14,11 @@ export function PublicChatComposer({
 }: {
   inputId: string;
   typingNotices: TypingNotice[];
-  onSend: (message: string) => void;
+  onSend: (message: string) => Promise<boolean>;
   onTyping: (active: boolean) => void;
 }) {
   const [value, setValue] = useState("");
+  const [isSending, setIsSending] = useState(false);
   const typingActiveRef = useRef(false);
   const onTypingRef = useRef(onTyping);
   onTypingRef.current = onTyping;
@@ -30,26 +31,31 @@ export function PublicChatComposer({
     }
   }, []);
 
-  const submit = (event: FormEvent<HTMLFormElement>) => {
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const message = value.trim();
-    if (!message) {
+    if (!message || isSending) {
       return;
     }
-    onSend(message);
+    setIsSending(true);
+    const accepted = await onSend(message);
+    setIsSending(false);
+    if (!accepted) {
+      return;
+    }
     typingActiveRef.current = false;
     onTyping(false);
     setValue("");
   };
 
   return (
-    <form className="grid gap-3" onSubmit={submit}>
+    <form className="grid gap-3" onSubmit={submit} aria-busy={isSending}>
       <h3 className="play-panel-subhead">
         <MessageSquare className="play-section-icon" aria-hidden strokeWidth={1.8} />
-        <span>Дневен чат</span>
+        <span>Дневен разговор</span>
       </h3>
       <div className="grid gap-1">
-        <label className="sr-only" htmlFor={inputId}>Съобщение в дневния чат</label>
+        <label className="sr-only" htmlFor={inputId}>Съобщение в дневния разговор</label>
         <input
           id={inputId}
           className="input"
@@ -73,9 +79,9 @@ export function PublicChatComposer({
         </span>
       </div>
       <TypingIndicator notices={typingNotices} />
-      <button className="btn btn-primary" type="submit" disabled={value.trim().length === 0}>
+      <button className="btn btn-primary" type="submit" disabled={value.trim().length === 0 || isSending}>
         <MessageSquare className="play-button-icon" aria-hidden strokeWidth={1.8} />
-        <span>Изпрати</span>
+        <span>{isSending ? "Изпращаме..." : "Изпрати"}</span>
       </button>
     </form>
   );

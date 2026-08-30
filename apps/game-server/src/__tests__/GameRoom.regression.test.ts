@@ -76,6 +76,29 @@ describe("GameRoom gameplay regressions", () => {
     ).rejects.toThrow("Стая с този код вече е отворена.");
   });
 
+  it("acknowledges accepted chat requests and rejects invalid ones without losing delivery state", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "CHT234",
+      mode: "werewolves_classic",
+      playerCount: 6,
+      communicationMode: "built_in_chat",
+    });
+    const clients = await connectPlayers(colyseus, serverRoom, 6, "chat-ack");
+    const speaker = clients[0]?.client;
+    expect(speaker).toBeDefined();
+
+    serverRoom.state.phase = "day_discussion";
+    await expect(speaker?.request("sendChat", { channel: "public", message: "Чувате ли ме?" })).resolves.toEqual({
+      accepted: true,
+    });
+
+    const safeError = speaker?.waitForMessage("safe_error") as Promise<{ messageBg: string }>;
+    await expect(speaker?.request("sendChat", { channel: "mafia", message: "Чужд канал" })).resolves.toEqual({
+      accepted: false,
+    });
+    await expect(safeError).resolves.toMatchObject({ messageBg: expect.any(String) });
+  });
+
   it.each([
     {
       code: "BADMDE",
@@ -85,7 +108,7 @@ describe("GameRoom gameplay regressions", () => {
     {
       code: "BADNAR",
       hostileOptions: { narratorMode: "full_human" },
-      messageBg: "Човешкият Разказвач не е достъпен в бета версията. Избери Автоматичен Разказвач.",
+      messageBg: "Режимът с човешки Разказвач още не е достъпен в бета версията. Избери Автоматичен Разказвач.",
     },
     {
       code: "BADVSE",
@@ -95,7 +118,7 @@ describe("GameRoom gameplay regressions", () => {
     {
       code: "BADRLE",
       hostileOptions: { roles: { ordinary_villager: 4, werewolf: "2" } },
-      messageBg: "Невалидно разпределение на ролите.",
+      messageBg: "Съставът на ролите не е валиден.",
     },
     {
       code: "BADMAX",
@@ -105,12 +128,12 @@ describe("GameRoom gameplay regressions", () => {
     {
       code: "BADBKL",
       hostileOptions: { firstNightKill: "false" },
-      messageBg: "Невалидна стойност за настройка на стаята.",
+      messageBg: "Една от настройките на стаята не е валидна.",
     },
     {
       code: "BADTMR",
       hostileOptions: { tempoProfile: "manual", customTimers: { voteSeconds: "веднага" } },
-      messageBg: "Невалидни настройки на таймерите.",
+      messageBg: "Настройките на таймерите не са валидни.",
     },
   ])("rejects hostile authoritative room options for $code", async ({ code, hostileOptions, messageBg }) => {
     await expect(
@@ -544,7 +567,7 @@ describe("GameRoom gameplay regressions", () => {
       action: { kind: "healer_protect", targetUserId: healer?.userId },
     });
     await expect(error).resolves.toMatchObject({
-      messageBg: "Лечителят не може да лекува себе си.",
+      messageBg: "Лечителят не може да пази себе си.",
     });
 
     const savedTarget = roleClients.find((item) => item.role === "ordinary_villager");
@@ -615,7 +638,7 @@ describe("GameRoom gameplay regressions", () => {
     });
 
     await expect(repeatError).resolves.toMatchObject({
-      messageBg: "Лечителят не може да лекува същия играч две нощи поред.",
+      messageBg: "Лечителят не може да пази същия играч две нощи поред.",
     });
   });
 
@@ -708,7 +731,7 @@ describe("GameRoom gameplay regressions", () => {
           werewolf: 1,
         },
       }),
-    ).rejects.toThrow("Тези роли не са налични за Мафия: Върколак.");
+    ).rejects.toThrow("Тези роли не могат да се използват в Мафия: Върколак.");
   });
 
   it("still asks for a Mayor successor when a Hunter Mayor revenge times out", async () => {
@@ -1124,7 +1147,8 @@ describe("GameRoom gameplay regressions", () => {
       firstNightKill: true,
       roles: {
         vampire_hunter: 1,
-        ordinary_villager: 4,
+        witch: 1,
+        ordinary_villager: 3,
         werewolf: 1,
       },
     });
@@ -1132,9 +1156,14 @@ describe("GameRoom gameplay regressions", () => {
     const hunterRoles = await startGameAndCollectRoles(hunterClients);
     await advanceToFirstNight(hunterClients[0]?.client, hunterRoom);
     const vampireHunter = hunterRoles.find((item) => item.role === "vampire_hunter");
+    const witch = hunterRoles.find((item) => item.role === "witch");
     const innocent = hunterRoles.find((item) => item.role === "ordinary_villager");
+    expect(vampireHunter && witch && innocent).toBeTruthy();
     vampireHunter?.client.send("submitNightAction", {
       action: { kind: "faction_kill", targetUserId: innocent?.userId },
+    });
+    witch?.client.send("submitNightAction", {
+      action: { kind: "witch_poison", targetUserId: innocent?.userId },
     });
     hunterClients[0]?.client.send("narratorAdvance", {});
     await hunterRoom.waitForNextPatch(20);
@@ -1179,7 +1208,7 @@ describe("GameRoom gameplay regressions", () => {
     clients[0]?.client.send("narratorAdvance", {});
     const payload = await result;
     expect(payload).toMatchObject({
-      messageBg: expect.stringContaining("двамата съседни"),
+      messageBg: expect.stringContaining("двамата ти съседи"),
     });
     expect(payload).not.toHaveProperty("role");
   });
@@ -1611,7 +1640,7 @@ describe("GameRoom gameplay regressions", () => {
     clients[1]?.client.send("ready", { ready: false });
 
     await expect(error).resolves.toMatchObject({
-      messageBg: "Готовността се променя само преди старт.",
+      messageBg: "Можеш да промениш готовността си само преди началото.",
     });
     expect(findPublicPlayer(serverRoom, "ready-player-2")?.ready).toBe(true);
   });

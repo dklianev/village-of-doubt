@@ -27,7 +27,12 @@ import {
   type CreateRoomOptions,
   type WinResult,
 } from "@werewolf/shared";
-import { getRoleblockedActorIds, resolveNight, type SubmittedNightAction } from "../game-logic/night-resolver.js";
+import {
+  getRoleblockedActorIds,
+  resolveNight,
+  type NightResolution,
+  type SubmittedNightAction,
+} from "../game-logic/night-resolver.js";
 import {
   GameState,
   NominationState,
@@ -53,6 +58,7 @@ import {
   chooseDrunkRealRole,
   CommandRateLimiter,
   ensureNightActionAllowed,
+  formatPublicDeathMessage,
   areLivingNightActorsReady,
   generateRoomCode,
   getActionTargetUserId,
@@ -63,6 +69,7 @@ import {
   isNightPhase,
   MAX_PUBLIC_EVENTS,
   PHASE_FLOW,
+  safeClientErrorMessage,
   type ClientAuth,
   type PrivatePlayerState,
 } from "./game-room-runtime.js";
@@ -107,6 +114,7 @@ export async function authenticateGameJoin(
   if (!ROOM_CODE_REGEX.test(roomCode)) {
     throw new Error("Невалиден код на стая.");
   }
+  options.code = roomCode;
 
   const allowDevAuth = process.env.ALLOW_DEV_AUTH === "true" && process.env.NODE_ENV !== "production";
   if (allowDevAuth && options.userId && options.displayName) {
@@ -345,6 +353,26 @@ export class GameRoom extends Room<{ state: GameState }> {
     this.state.phase = "lobby";
     this.syncPublicConfig();
 
+    this.onMessage("syncPrivateState", (client, payload) => {
+      const command = parseClientCommand("syncPrivateState", payload);
+      if (!command) {
+        this.sendSafeError(client, "Това действие не беше разпознато. Опитай отново.");
+        return { synchronized: false };
+      }
+      return this.handleCommand(client, command);
+    });
+
+    // Chat uses Colyseus request/reply so the composer keeps its draft until
+    // the authoritative room has accepted the message.
+    this.onMessage("sendChat", (client, payload) => {
+      const command = parseClientCommand("sendChat", payload);
+      if (!command) {
+        this.sendSafeError(client, "Това действие не беше разпознато. Опитай отново.");
+        return { accepted: false };
+      }
+      return this.handleCommand(client, command);
+    });
+
     this.onMessage("*", (client, type, payload) => {
       const command = parseClientCommand(type, payload);
       if (!command) {
@@ -354,13 +382,13 @@ export class GameRoom extends Room<{ state: GameState }> {
           && this.playerPresence.getClient(auth.userId) === client
           && !this.commandRateLimiter.allowInvalid(auth.userId)
         ) {
-          this.sendSafeError(client, "Изпращаш командите твърде бързо. Изчакай малко.");
+          this.sendSafeError(client, "Действаш твърде бързо. Изчакай малко.");
           return;
         }
-        this.sendSafeError(client, "Невалидна команда.");
+        this.sendSafeError(client, "Това действие не беше разпознато. Опитай отново.");
         return;
       }
-      this.handleCommand(client, command);
+      return this.handleCommand(client, command);
     });
 
     this.addPublicEvent("system", "Стаята е създадена.");
@@ -474,7 +502,6 @@ export class GameRoom extends Room<{ state: GameState }> {
       actorId: auth.userId,
       payload: { displayName: auth.displayName, spectator: Boolean(options.spectator) },
     });
-    this.sendRecordedGameId(client);
   }
 
   private activateClient(auth: ClientAuth, client: Client, previousClient?: Client) {
@@ -486,7 +513,7 @@ export class GameRoom extends Room<{ state: GameState }> {
 
     previousClient.send("safe_error", {
       type: "safe_error",
-      messageBg: "Влязохте от друго устройство.",
+      messageBg: "Профилът ти беше отворен от друго устройство.",
     } satisfies ServerEvent);
     previousClient.leave(1000);
   }
@@ -507,7 +534,6 @@ export class GameRoom extends Room<{ state: GameState }> {
       !options.spectator && !this.state.locked && this.state.phase === "lobby" && !player.playing;
     if (promotingLobbySpectator) {
       if (!this.hasAvailablePlayerSlot(auth.userId)) {
-        await this.releaseTrackedActiveRoom(auth.userId);
         this.sendSafeError(client, "Стаята е пълна.");
         client.leave();
         return true;
@@ -526,10 +552,6 @@ export class GameRoom extends Room<{ state: GameState }> {
     this.activateClient(auth, client, this.playerPresence.getClient(auth.userId));
     player.connected = true;
     this.ensureHostAssigned();
-    this.privateEvents.sendPrivateRole(client, auth.userId);
-    this.privateEvents.sendNarratorRoleSnapshot(client, auth.userId);
-    this.sendNightActionCapabilities(auth.userId, client);
-    this.sendRecordedGameId(client);
     this.addPublicEvent(
       "presence",
       promotingLobbySpectator
@@ -601,10 +623,6 @@ export class GameRoom extends Room<{ state: GameState }> {
     if (player) {
       player.connected = true;
       this.ensureHostAssigned();
-      this.privateEvents.sendPrivateRole(client, auth.userId);
-      this.privateEvents.sendNarratorRoleSnapshot(client, auth.userId);
-      this.sendNightActionCapabilities(auth.userId, client);
-      this.sendRecordedGameId(client);
       this.addPublicEvent("presence", `${player.displayName} възстанови връзката.`);
     }
   }
@@ -702,11 +720,11 @@ export class GameRoom extends Room<{ state: GameState }> {
     const auth = getAuth(client);
     if (!auth || this.playerPresence.getClient(auth.userId) !== client) {
       this.sendSafeError(client, "Тази връзка вече не е активна.");
-      return;
+      return command.type === "sendChat" ? { accepted: false } : undefined;
     }
     if (!this.commandRateLimiter.allow(auth.userId, command.type)) {
-      this.sendSafeError(client, "Изпращаш командите твърде бързо. Изчакай малко.");
-      return;
+      this.sendSafeError(client, "Действаш твърде бързо. Изчакай малко.");
+      return command.type === "sendChat" ? { accepted: false } : undefined;
     }
 
     try {
@@ -731,7 +749,7 @@ export class GameRoom extends Room<{ state: GameState }> {
           break;
         case "sendChat":
           this.chatRouter.sendChat(client, command.channel, command.message);
-          break;
+          return { accepted: true };
         case "typing":
           this.chatRouter.sendTyping(client, command.channel, command.active);
           break;
@@ -744,6 +762,9 @@ export class GameRoom extends Room<{ state: GameState }> {
         case "acceptFullNarrator":
           this.acceptFullNarrator(client);
           break;
+        case "syncPrivateState":
+          this.syncPrivateState(client, auth.userId);
+          return { synchronized: true };
         case "narratorPause":
           this.pauseByNarrator(client);
           break;
@@ -754,20 +775,28 @@ export class GameRoom extends Room<{ state: GameState }> {
           this.extendTimerByNarrator(client, command.seconds);
           break;
         default:
-          this.sendSafeError(client, "Непозната команда.");
+          this.sendSafeError(client, "Това действие не е достъпно.");
       }
     } catch (error) {
-      this.sendSafeError(client, error instanceof Error ? error.message : "Възникна грешка.");
+      this.sendSafeError(client, safeClientErrorMessage(error));
+      return command.type === "sendChat" ? { accepted: false } : undefined;
     }
+  }
+
+  private syncPrivateState(client: Client, userId: string) {
+    this.privateEvents.sendPrivateRole(client, userId);
+    this.privateEvents.sendNarratorRoleSnapshot(client, userId);
+    this.sendNightActionCapabilities(userId, client);
+    this.sendRecordedGameId(client);
   }
 
   private setReady(client: Client, ready: boolean) {
     const player = this.getPublicPlayer(client);
     if (this.state.phase !== "lobby") {
-      throw new Error("Готовността се променя само преди старт.");
+      throw new Error("Можеш да промениш готовността си само преди началото.");
     }
     if (!player.playing) {
-      throw new Error("Само активен играч може да променя готовността си.");
+      throw new Error("Само участниците в играта могат да променят готовността си.");
     }
     player.ready = ready;
     this.tryAutoStart();
@@ -788,7 +817,10 @@ export class GameRoom extends Room<{ state: GameState }> {
     try {
       this.startGame(hostClient);
     } catch (error) {
-      this.sendSafeError(hostClient, error instanceof Error ? error.message : "Автоматичният старт не успя.");
+      this.sendSafeError(
+        hostClient,
+        safeClientErrorMessage(error, "Не успяхме да започнем автоматично. Опитай отново."),
+      );
     }
   }
 
@@ -805,7 +837,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       throw new Error("Само домакинът може да избере Разказвач.");
     }
     if (this.state.phase !== "lobby") {
-      throw new Error("Разказвачът се избира само преди старт.");
+      throw new Error("Можеш да избереш Разказвач само преди началото.");
     }
     if (this.config.narratorMode === "automatic") {
       throw new Error("Тази стая е с Автоматичен Разказвач.");
@@ -813,7 +845,7 @@ export class GameRoom extends Room<{ state: GameState }> {
 
     const target = this.findPlayerByUserId(targetUserId);
     if (!target?.playing && !target?.narrator) {
-      throw new Error("Разказвач може да бъде само участник в стаята.");
+      throw new Error("Избери Разказвач сред участниците в стаята.");
     }
 
     for (const player of this.state.players.values()) {
@@ -850,7 +882,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       throw new Error("Тази стая не използва Пълен Разказвач.");
     }
     if (this.state.phase !== "lobby") {
-      throw new Error("Предупреждението за Пълен Разказвач се приема само преди старт.");
+      throw new Error("Можеш да приемеш предупреждението за Пълен Разказвач само преди началото.");
     }
     if (!player.playing && !player.narrator) {
       throw new Error("Само участник може да приеме предупреждението за Пълен Разказвач.");
@@ -876,12 +908,12 @@ export class GameRoom extends Room<{ state: GameState }> {
       throw new Error("Кметът не е активен за този режим.");
     }
     if (this.state.phase !== "lobby" && this.state.phase !== "mayor_successor") {
-      throw new Error("Кмет се избира само в лоби или при наследяване.");
+      throw new Error("Кмет може да бъде избран само преди играта или при предаване на титлата.");
     }
 
     const target = this.findPlayerByUserId(targetUserId);
     if (!target?.playing || !target.alive) {
-      throw new Error("Кмет може да бъде само жив активен играч.");
+      throw new Error("Избери Кмет сред живите участници.");
     }
 
     for (const player of this.state.players.values()) {
@@ -916,7 +948,7 @@ export class GameRoom extends Room<{ state: GameState }> {
 
     const allPlayers = [...this.state.players.values()];
     if (this.config.narratorMode !== "automatic" && !allPlayers.some((item) => item.narrator)) {
-      throw new Error("Изберете Разказвач преди старт.");
+      throw new Error("Избери Разказвач преди началото.");
     }
     if (this.config.narratorMode === "full_human") {
       const pendingAcceptance = allPlayers.filter(
@@ -1094,7 +1126,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       throw new Error("В момента не се приемат нощни действия.");
     }
     if (!privatePlayer.alive) {
-      throw new Error("Елиминиран играч не може да действа.");
+      throw new Error("Не можеш да действаш, след като си елиминиран.");
     }
     if (!privatePlayer.role) {
       throw new Error("Ролите още не са раздадени.");
@@ -1325,7 +1357,7 @@ export class GameRoom extends Room<{ state: GameState }> {
           if (client) {
             client.send("system", {
               type: "system",
-              messageBg: "Жертвата на фракцията се промени. Избери отново дали да използваш лечебната отвара.",
+              messageBg: "Избраната жертва се промени. Реши отново дали да използваш лечебната отвара.",
             } satisfies ServerEvent);
           }
         }
@@ -1354,13 +1386,13 @@ export class GameRoom extends Room<{ state: GameState }> {
       throw new Error("Номинациите с ред на изказване са само за Спортна Мафия.");
     }
     if (this.state.phase !== "day_discussion") {
-      throw new Error("Номинации се приемат само по време на дневните речи.");
+      throw new Error("Можеш да номинираш само по време на дневните речи.");
     }
 
     const actor = this.getPublicPlayer(client);
     const privateActor = this.getPrivatePlayer(actor.userId);
     if (!actor.playing || !actor.alive || !privateActor.alive) {
-      throw new Error("Само жив активен играч може да номинира.");
+      throw new Error("Можеш да номинираш само докато си жив участник.");
     }
     if (this.state.currentSpeakerUserId !== actor.userId) {
       throw new Error("Само текущият говорител може да направи номинация.");
@@ -1372,7 +1404,7 @@ export class GameRoom extends Room<{ state: GameState }> {
     const target = this.findPlayerByUserId(targetUserId);
     const privateTarget = this.privatePlayers.get(targetUserId);
     if (!target?.playing || !target.alive || !privateTarget?.alive) {
-      throw new Error("Номинацията трябва да е за жив активен играч.");
+      throw new Error("Можеш да номинираш само жив участник.");
     }
 
     const existingIndex = this.state.nominations.findIndex(
@@ -1413,10 +1445,10 @@ export class GameRoom extends Room<{ state: GameState }> {
     const publicPlayer = this.getPublicPlayer(client);
     const privatePlayer = this.getPrivatePlayer(publicPlayer.userId);
     if (this.state.phase !== "voting") {
-      throw new Error("В момента не се приема гласуване.");
+      throw new Error("Гласуването не е отворено в момента.");
     }
     if (!privatePlayer.alive) {
-      throw new Error("Елиминиран играч не може да гласува.");
+      throw new Error("Не можеш да гласуваш, след като си елиминиран.");
     }
     if (
       this.state.revoteEligibleUserIds.length > 0
@@ -1456,7 +1488,7 @@ export class GameRoom extends Room<{ state: GameState }> {
     const target = this.findPlayerByUserId(targetUserId);
     const privateTarget = this.privatePlayers.get(targetUserId);
     if (!target?.playing || !target.alive || !privateTarget?.alive) {
-      throw new Error("Целта не е жив играч.");
+      throw new Error("Избраният играч вече не е в играта.");
     }
     if (privatePlayer.loverId === targetUserId) {
       throw new Error("Влюбените не могат да гласуват един срещу друг.");
@@ -1505,7 +1537,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       targetUserId,
     } satisfies ServerEvent);
     this.pendingHunterRevengeUserId = undefined;
-    const deaths = this.applyDeaths([{ userId: targetUserId, causeBg: "Застрелян от Ловеца.", publicEventKind: "hunter_shot" }]);
+    const deaths = this.applyDeaths([{ userId: targetUserId, causeBg: "Падна от последния изстрел на Ловеца.", publicEventKind: "hunter_shot" }]);
     // queueMayorSuccessor consults this.pendingMayorSuccessor too, so a mayor
     // who died alongside a hunter still triggers a successor selection here.
     if (this.queueMayorSuccessor(deaths)) {
@@ -1548,12 +1580,12 @@ export class GameRoom extends Room<{ state: GameState }> {
     }
     if (action.kind === "healer_protect" && privatePlayer.role === "healer") {
       if (action.targetUserId === publicPlayer.userId) {
-        throw new Error("Лечителят не може да лекува себе си.");
+        throw new Error("Лечителят не може да пази себе си.");
       }
       if (
         privatePlayer.lastResolvedHealerTargetUserId === action.targetUserId
       ) {
-        throw new Error("Лечителят не може да лекува същия играч две нощи поред.");
+        throw new Error("Лечителят не може да пази същия играч две нощи поред.");
       }
     }
     if (action.kind === "healer_protect" && privatePlayer.role === "doctor" && action.targetUserId === publicPlayer.userId) {
@@ -1615,21 +1647,21 @@ export class GameRoom extends Room<{ state: GameState }> {
     }
     if (action.kind === "blacksmith_sword") {
       this.requireLivingActiveTarget(action.receiverUserId, "Получателят на меча");
-      this.requireLivingActiveTarget(action.targetUserId, "Целта на меча");
+      this.requireLivingActiveTarget(action.targetUserId, "Избраният за удара играч");
       return;
     }
 
     this.requireLivingActiveTarget(action.targetUserId);
   }
 
-  private requireLivingActiveTarget(targetUserId: string, label = "Целта") {
+  private requireLivingActiveTarget(targetUserId: string, label = "Избраният играч") {
     const publicTarget = this.findPlayerByUserId(targetUserId);
     const privateTarget = this.privatePlayers.get(targetUserId);
     if (!publicTarget?.playing || !publicTarget.alive || !privateTarget?.alive) {
-      throw new Error(`${label} не е жив активен играч.`);
+    throw new Error(`${label} трябва да е жив участник.`);
     }
     if (!privateTarget.role) {
-      throw new Error("Целта още няма раздадена роля.");
+      throw new Error("Избраният играч още няма раздадена роля.");
     }
     return { publicTarget, privateTarget: privateTarget as PrivatePlayerState & { role: RoleCode } };
   }
@@ -1676,10 +1708,10 @@ export class GameRoom extends Room<{ state: GameState }> {
     const target = this.getPrivatePlayer(targetUserId);
     const publicTarget = this.findPlayerByUserId(targetUserId);
     if (!publicTarget?.playing || !publicTarget.alive || !target.alive) {
-      throw new Error("Крадецът може да краде само от жив активен играч.");
+      throw new Error("Избери жив участник, от когото да откраднеш карта.");
     }
     if (!target.role) {
-      throw new Error("Целта още няма раздадена роля.");
+      throw new Error("Избраният играч още няма раздадена роля.");
     }
 
     return { target: target as PrivatePlayerState & { role: RoleCode }, publicTarget };
@@ -1749,7 +1781,7 @@ export class GameRoom extends Room<{ state: GameState }> {
     const target = this.getPrivatePlayer(targetUserId);
     const publicTarget = this.findPlayerByUserId(targetUserId);
     if (!publicTarget?.playing || !publicTarget.alive || !target.alive) {
-      throw new Error("Свещеникът може да благослови само жив активен играч.");
+      throw new Error("Избери жив участник за благословията.");
     }
     if (target.priestBlessed) {
       throw new Error("Този играч вече е благословен.");
@@ -1997,7 +2029,6 @@ export class GameRoom extends Room<{ state: GameState }> {
         GameRoom.recentEndings.length = GameRoom.MAX_RECENT_ENDINGS;
       }
       const achievementUnlocks = this.evaluateAchievementUnlocks();
-      this.sendAchievementUnlocks(achievementUnlocks);
       const finalWin = this.evaluateWin();
       const finalPlayers = this.buildFinalPlayerPersistenceRows(finalWin);
       this.queuePersistence(async ({ persistence, ensureGame }) => {
@@ -2012,12 +2043,16 @@ export class GameRoom extends Room<{ state: GameState }> {
             })),
           });
           this.recordedGameId = gameId;
+          this.sendAchievementUnlocks(achievementUnlocks);
           this.broadcast("game_recorded", {
             type: "game_recorded",
             gameId,
           } satisfies ServerEvent);
         }
       }, { priority: "critical", terminal: true, maxAttempts: 3 }, "terminal game-over");
+      if (!this.persistenceCoordinator.enabled) {
+        this.sendAchievementUnlocks(achievementUnlocks);
+      }
     }
 
     this.scheduleCurrentPhaseTimer(duration);
@@ -2244,7 +2279,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       (submission) => !blockedActorIds.has(submission.actorUserId) || submission.action.kind === "roleblock",
     );
     this.sendInsomniacResults(effectiveActions);
-    this.markNightActionConsumables(effectiveActions, resolution.deaths);
+    this.markNightActionConsumables(effectiveActions, resolution.deathSources);
     this.pendingNightActions.clear();
 
     for (const check of resolution.checks) {
@@ -2387,8 +2422,8 @@ export class GameRoom extends Room<{ state: GameState }> {
         targetUserId: player.userId,
         targetUserIds: neighbors.map((neighbor) => neighbor.userId),
         messageBg: someoneMoved
-          ? "Неспящата усети движение до себе си: поне един от двамата съседни играчи действа тази нощ."
-          : "Неспящата не усети движение до себе си тази нощ.",
+          ? "Усети движение до себе си: поне един от двамата ти съседи действа тази нощ."
+          : "Не усети движение до себе си тази нощ.",
       });
     }
   }
@@ -2457,7 +2492,7 @@ export class GameRoom extends Room<{ state: GameState }> {
         const deaths = this.applyDeaths([
           {
             userId: targetUserId,
-            causeBg: `Елиминиран чрез дневно гласуване${this.config.revealRolesOnDeath ? role : ""}.`,
+            causeBg: `Напусна играта след дневното гласуване${this.config.revealRolesOnDeath ? role : ""}.`,
           },
         ]);
         if (privatePlayer.role === "jester") {
@@ -2467,7 +2502,10 @@ export class GameRoom extends Room<{ state: GameState }> {
             targetId: targetUserId,
             visibility: "public",
           });
-          this.sendAchievementUnlocks([{ userId: targetUserId, achievementId: "jester_win" }]);
+          this.persistAndSendAchievementUnlocks(
+            [{ userId: targetUserId, achievementId: "jester_win" }],
+            "jester achievement",
+          );
         }
         if (this.queueHunterRevenge(deaths)) {
           return;
@@ -2538,7 +2576,10 @@ export class GameRoom extends Room<{ state: GameState }> {
         ...(wasPublicMayor ? { wasMayor: true } : {}),
         ...(privatePlayer.role ? { role: privatePlayer.role } : {}),
       });
-      this.addPublicEvent(death.publicEventKind ?? "death", `${publicPlayer.displayName}: ${death.causeBg}`);
+      this.addPublicEvent(
+        death.publicEventKind ?? "death",
+        formatPublicDeathMessage(publicPlayer.displayName, death.causeBg),
+      );
       this.persistGameEvent("death", {
         targetId: death.userId,
         payload: {
@@ -2550,7 +2591,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       if (privatePlayer.loverId) {
         const lover = this.privatePlayers.get(privatePlayer.loverId);
         if (lover?.alive) {
-          queue.push({ userId: privatePlayer.loverId, causeBg: "Умря от разбито сърце." });
+          queue.push({ userId: privatePlayer.loverId, causeBg: "Не преживя загубата на любимия човек." });
         }
       }
     }
@@ -2618,7 +2659,7 @@ export class GameRoom extends Room<{ state: GameState }> {
 
   private markNightActionConsumables(
     actions: SubmittedNightAction[],
-    resolvedDeaths: Array<{ userId: string; causeBg: string }>,
+    resolvedDeathSources: NightResolution["deathSources"],
   ) {
     for (const submission of actions) {
       const privatePlayer = this.privatePlayers.get(submission.actorUserId);
@@ -2643,10 +2684,10 @@ export class GameRoom extends Room<{ state: GameState }> {
       if (submission.action.kind === "faction_kill" && privatePlayer.role === "vampire_hunter") {
         const targetUserId = submission.action.targetUserId;
         const target = this.privatePlayers.get(targetUserId);
-        const hunterKilledTarget = resolvedDeaths.some(
+        const hunterKilledTarget = resolvedDeathSources.some(
           (death) =>
             death.userId === targetUserId &&
-            death.causeBg === "Повален от Убиеца на вампири.",
+            death.sourceRole === "vampire_hunter",
         );
         if (
           hunterKilledTarget &&
@@ -2659,7 +2700,7 @@ export class GameRoom extends Room<{ state: GameState }> {
           if (client) {
             client.send("system", {
               type: "system",
-              messageBg: "Уби невинен. Умението на Убиеца на вампири е изгубено до края на играта.",
+          messageBg: "Уби невинен и изгуби умението си до края на играта.",
             } satisfies ServerEvent);
           }
         }
@@ -2711,7 +2752,7 @@ export class GameRoom extends Room<{ state: GameState }> {
         this.privateEvents.sendPrivateRole(client, privatePlayer.userId);
         client.send("system", {
           type: "system",
-          messageBg: `Пияницата изтрезня. Истинската ти роля вече е ${getRoleNameBg(newRole)}.`,
+          messageBg: `Изтрезня. Истинската ти роля вече е ${getRoleNameBg(newRole)}.`,
         } satisfies ServerEvent);
       }
       this.persistGameEvent("drunk_role_revealed", {
@@ -2800,6 +2841,27 @@ export class GameRoom extends Room<{ state: GameState }> {
         achievementIds,
       } satisfies ServerEvent);
     });
+  }
+
+  private persistAndSendAchievementUnlocks(unlocks: AchievementUnlock[], operation: string) {
+    if (unlocks.length === 0) {
+      return true;
+    }
+    if (!this.persistenceCoordinator.enabled) {
+      this.sendAchievementUnlocks(unlocks);
+      return true;
+    }
+
+    return this.queuePersistence(async ({ persistence, ensureGame }) => {
+      const gameId = await ensureGame();
+      if (!gameId) {
+        throw new Error("Cannot persist achievements without a game record.");
+      }
+      for (const unlock of unlocks) {
+        await persistence.recordAchievement(unlock.userId, unlock.achievementId, gameId);
+      }
+      this.sendAchievementUnlocks(unlocks);
+    }, { priority: "critical", maxAttempts: 3 }, operation);
   }
 
   private auditNarratorAction(player: PlayerPublicState, type: string, payload: Record<string, unknown> = {}) {

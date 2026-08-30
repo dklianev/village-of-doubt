@@ -1,8 +1,8 @@
-# Production Checklist За DigitalOcean
+# Production Checklist За Hetzner
 
 ## Преди първи deploy
 
-- Създай Droplet във Frankfurt с Ubuntu LTS, Docker и Docker Compose plugin.
+- Създай Hetzner Cloud сървър в избрана европейска локация с Ubuntu LTS, Docker и Docker Compose plugin.
 - Насочи `A` records: `senkite.com` към web и `ws.senkite.com` към същия IP.
 - Разреши TCP `80/443` и UDP `443` във firewall-а. UDP портът активира HTTP/3; при блокиран UDP Caddy продължава през HTTP/2.
 - Попълни `.env` от `.env.example` с истински `DB_PASSWORD`, `BETTER_AUTH_SECRET`, `GAME_TOKEN_SECRET`, OAuth ключове и production URL-и:
@@ -37,10 +37,13 @@
 ## Backup И Restore
 
 - Инсталирай root-owned systemd backup timer-а от `docs/operations/production-runbook.md`; не давай Docker group на `werewolf` акаунта.
-- Настрой `BACKUP_AGE_RECIPIENT` задължително и `RCLONE_REMOTE` за копие извън Droplet-а. Пази private age identity извън production host-а.
-- Поне веднъж преди сериозна игра направи restore rehearsal със `scripts/restore-postgres.sh` върху тестова база.
-- Restore-ът валидира подписания активен release manifest и ползва само неговите digest-pinned migrator/web/game образи. Пази оригиналната база след cutover, валидира account/history връзки, runtime права и deletion tombstones, пресъздава Caddy и проверява вътрешния и публичния ingress. Изтрий rollback копието само с отпечатаната команда `sh scripts/restore-accept.sh` след реални account, history и create-to-play проверки.
+- Настрой `BACKUP_AGE_RECIPIENT`, явен непривилегирован префикс в `RCLONE_REMOTE`, отделен профил и префикс в `RCLONE_DELETION_LEDGER_REMOTE` и `RCLONE_BACKUP_RETENTION_DAYS=30`. Пази частната age самоличност извън production хоста.
+- Дръж основната архивна кофа без управление на версии и с правило за жизнения цикъл на Hetzner, ограничено до архивния префикс и окончателно изтриване след 30 дни. Дръж кофата за регистъра на изтриванията отделна, непублична, защитена и с управление на версии; служебният достъп за архивиране няма право да изтрива обекти от нея, а правилото за жизнения цикъл премахва само старите версии след 30 дни и никога текущия регистър.
+- Изпълни `backup-postgres.sh --retention-dry-run` по точната команда от runbook-а и провери, че показва само архивния префикс, никога регистъра на изтриванията.
+- Поне веднъж преди сериозна игра направи пробно възстановяване със `scripts/restore-postgres.sh` върху тестова база и подай последния защитен регистър чрез `RESTORE_DELETION_LEDGER_FILE`.
+- Възстановяването валидира подписания манифест на активната версия и ползва само посочените в него чрез digest образи за миграции, web и game. Пази оригиналната база след превключването, валидира връзките между досиета и история, правата при изпълнение и обединените външни и текущи маркери за изтриване, пресъздава Caddy и проверява вътрешния и публичния вход. Изтрий копието за връщане назад само с отпечатаната команда `sh scripts/restore-accept.sh` след реални проверки на досие, история и целия път от създаване до игра.
 - Запази последните 14 дни локално или промени `BACKUP_RETENTION_DAYS`.
+- Запиши като изрично остатъчно ограничение, че външният регистър на изтриванията има шестчасова цел за точка на възстановяване (RPO) и не е синхронен журнал.
 
 ## Smoke Проверки След Deploy
 

@@ -269,13 +269,13 @@
 
 :global(.manual-role-counter) {
   display: grid;
-  grid-template-columns: 38px minmax(0, 1fr) 38px;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
   gap: 6px;
 }
 
 :global(.manual-role-counter button),
 :global(.manual-role-counter input) {
-  min-height: 38px;
+  min-height: 44px;
   border: 1px solid rgba(248, 236, 210, 0.14);
   border-radius: 12px;
   text-align: center;

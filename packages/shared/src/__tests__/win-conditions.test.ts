@@ -10,7 +10,7 @@ describe("evaluateWinCondition", () => {
       ]),
     ).toMatchObject({
       winner: "maniac",
-      reasonBg: "Маниакът остана последната реална заплаха в града.",
+      reasonBg: "Маниакът остана единствената заплаха на масата.",
     });
   });
 
@@ -27,6 +27,56 @@ describe("evaluateWinCondition", () => {
     });
   });
 
+  it("keeps Maniac and Mafioso alive as competing lethal factions", () => {
+    expect(
+      evaluateWinCondition([
+        { playerId: "maniac", role: "maniac", alive: true },
+        { playerId: "mafioso", role: "mafioso", alive: true },
+      ]),
+    ).toMatchObject({
+      winner: null,
+      reasonBg: null,
+    });
+  });
+
+  it("does not award Mafia parity while a Maniac remains alive", () => {
+    expect(
+      evaluateWinCondition([
+        { playerId: "maniac", role: "maniac", alive: true },
+        { playerId: "don", role: "don", alive: true },
+        { playerId: "mafioso", role: "mafioso", alive: true },
+      ]),
+    ).toMatchObject({
+      winner: null,
+      reasonBg: null,
+    });
+  });
+
+  it("treats the last living unresolved Drunk as a Village winner", () => {
+    expect(
+      evaluateWinCondition([
+        { playerId: "drunk", role: "drunk", alive: true },
+        { playerId: "wolf", role: "werewolf", alive: false },
+      ]),
+    ).toMatchObject({
+      winner: "village",
+      winnerPlayerIds: ["drunk"],
+    });
+  });
+
+  it("includes a living unresolved Drunk among Village winners", () => {
+    expect(
+      evaluateWinCondition([
+        { playerId: "drunk", role: "drunk", alive: true },
+        { playerId: "villager", role: "ordinary_villager", alive: true },
+        { playerId: "wolf", role: "werewolf", alive: false },
+      ]),
+    ).toMatchObject({
+      winner: "village",
+      winnerPlayerIds: ["drunk", "villager"],
+    });
+  });
+
   it("lets Werewolves win at parity (1 wolf vs 1 villager)", () => {
     expect(
       evaluateWinCondition([
@@ -35,7 +85,7 @@ describe("evaluateWinCondition", () => {
       ]),
     ).toMatchObject({
       winner: "werewolves",
-      reasonBg: "Върколаците са равни или повече от живите селяни.",
+      reasonBg: "Върколаците вече контролират гласуването.",
     });
   });
 
@@ -73,7 +123,7 @@ describe("evaluateWinCondition", () => {
       ]),
     ).toMatchObject({
       winner: "vampires",
-      reasonBg: "Вампирите са равни или повече от живите селяни.",
+      reasonBg: "Вампирите вече контролират гласуването.",
     });
   });
 

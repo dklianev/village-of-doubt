@@ -10,7 +10,8 @@ describe("route CSS ownership", () => {
   it("keeps the decorative logo outside the LCP priority lane", () => {
     const landing = read("components/landing-experience.tsx");
 
-    expect(landing).toMatch(/logo-landing-mark\.webp[\s\S]*fetchPriority="low"/);
+    expect(landing).toMatch(/mobile\/logo-landing-mark\.webp[\s\S]*fetchPriority="low"/);
+    expect(landing).toMatch(/mobile\/logo-landing-mark\.webp[\s\S]*unoptimized/);
   });
 
   it("keeps landing mobile rules in the landing surface only", () => {
@@ -26,6 +27,16 @@ describe("route CSS ownership", () => {
       expect(landing).toContain(selector);
       expect(globals).not.toContain(selector);
     }
+  });
+
+  it("keeps landing-only art tokens and hero declarations out of shared CSS", () => {
+    const globals = read("app/globals.css");
+    const landing = read("components/landing/LandingSurface.module.css");
+
+    expect(globals).not.toContain("--art-landing-dual");
+    expect(globals).not.toContain("--art-landing-hero-composited");
+    expect(landing).toContain("--art-landing-dual: image-set(");
+    expect(landing.match(/min-height:\s*520px/g)).toHaveLength(1);
   });
 
   it("does not ship selectors from the retired multi-step create layout", () => {

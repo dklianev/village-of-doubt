@@ -16,7 +16,7 @@ test("runs asset generators directly on the canonical Linux runtime", () => {
     platform: "linux",
     rootDirectory: "/workspace",
     nodeExecutable: "/usr/bin/node",
-    sharpVersion: "0.35.3",
+    sharpVersion: "0.35.4",
     generators,
   });
 
@@ -34,7 +34,7 @@ test("uses the pinned Linux encoder outside Linux", () => {
     platform: "win32",
     rootDirectory: "E:\\werewolf_mafia",
     nodeExecutable: "node.exe",
-    sharpVersion: "0.35.3",
+    sharpVersion: "0.35.4",
     generators,
   });
 
@@ -42,7 +42,7 @@ test("uses the pinned Linux encoder outside Linux", () => {
   assert.equal(invocation.executable, "docker");
   assert.ok(invocation.args.includes(CANONICAL_ASSET_IMAGE));
   assert.ok(invocation.args.includes("type=bind,source=E:\\werewolf_mafia,target=/repo"));
-  assert.match(invocation.args.at(-1), /sharp@0\.35\.3/);
+  assert.match(invocation.args.at(-1), /sharp@0\.35\.4/);
   assert.match(invocation.args.at(-1), /optimize-assets\.mjs/);
   assert.match(invocation.args.at(-1), /generate-critical-mobile-assets\.mjs/);
   assert.doesNotMatch(invocation.args.at(-1), /pnpm install/);
@@ -55,7 +55,7 @@ test("rejects generator paths that could escape the repository", () => {
         platform: "win32",
         rootDirectory: "E:\\werewolf_mafia",
         nodeExecutable: "node.exe",
-        sharpVersion: "0.35.3",
+        sharpVersion: "0.35.4",
         generators: ["../outside.mjs"],
       }),
     /Invalid asset generator path/,

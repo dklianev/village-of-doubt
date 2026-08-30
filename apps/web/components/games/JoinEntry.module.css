@@ -188,13 +188,14 @@
 }
 
 :global(.join-codeslots) {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, clamp(48px, 10vw, 72px)));
   gap: clamp(6px, 1.2vw, 12px);
 }
 
 :global(.join-codeslot) {
-  width: clamp(48px, 10vw, 72px);
+  width: 100%;
+  min-width: 0;
   height: clamp(64px, 12vw, 92px);
   border: 2px solid rgba(245, 232, 200, 0.18);
   border-radius: 14px;

@@ -21,6 +21,9 @@ describe("runtime command parsing", () => {
       type: "narratorPause",
       reason: "Кратка пауза",
     });
+    expect(parseClientCommand("syncPrivateState", undefined)).toEqual({ type: "syncPrivateState" });
+    expect(parseClientCommand("syncPrivateState", null)).toEqual({ type: "syncPrivateState" });
+    expect(parseClientCommand("syncPrivateState", {})).toEqual({ type: "syncPrivateState" });
   });
 
   it("rejects malformed payloads instead of trusting TypeScript casts", () => {

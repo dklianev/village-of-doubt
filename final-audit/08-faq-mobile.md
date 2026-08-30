@@ -1,0 +1,106 @@
+- generic [active] [ref=f5e1] [box=0,0,375,3861]:
+  - link "Към основното съдържание" [ref=f5e2] [cursor=pointer] [box=8,-56,263,48]:
+    - /url: "#main-content"
+  - banner [ref=f5e305] [box=0,0,375,64]:
+    - button "Отвори менюто" [ref=f5e306] [cursor=pointer] [box=10,10,44,44]
+    - link "Върколак и Мафия, начало" [ref=f5e308] [cursor=pointer] [box=64,12,170,40]:
+      - /url: /
+      - generic [ref=f5e310] [box=108,15,126,34]:
+        - generic [ref=f5e311] [box=108,15,126,14]:
+          - generic [ref=f5e312] [box=108,15,66,13]: Върколак
+          - generic [ref=f5e313] [box=178,15,4,14]: ·
+          - generic [ref=f5e314] [box=186,15,49,13]: Мафия
+        - generic [ref=f5e315] [box=114,32,52,17]: БЕТА
+    - link "Играй" [ref=f5e316] [cursor=pointer] [box=273,10,92,44]:
+      - /url: /werewolf/create
+  - main [ref=f5e5] [box=10,80,355,3569]:
+    - article [ref=f5e6] [box=11,81,353,3527]:
+      - generic "Седни до огъня" [ref=f5e7] [box=11,81,353,280]:
+        - generic [ref=f5e10] [box=11,81,353,280]:
+          - paragraph [ref=f5e11] [box=29,156,317,18]:
+            - generic [ref=f5e14] [box=53,156,168,18]: седни до огъня
+          - heading "Седни до огъня." [level=1] [ref=f5e15] [box=29,186,317,40]
+          - paragraph [ref=f5e16] [box=29,240,317,81]: Отговори за геймплея, досието, техниката и поверителността — споделени на топло.
+      - generic [ref=f5e17] [box=11,361,353,309]:
+        - search [ref=f5e18] [box=29,389,317,52]:
+          - searchbox "Търсене в често задавани въпроси" [ref=f5e22] [box=74,390,255,50]
+        - group "Категории" [ref=f5e23] [box=29,455,317,200]:
+          - button "Всички" [pressed] [ref=f5e24] [cursor=pointer] [box=29,455,74,44]
+          - button "Преди първа игра" [ref=f5e25] [cursor=pointer] [box=111,455,165,44]
+          - button "Геймплей" [ref=f5e31] [cursor=pointer] [box=29,507,111,44]
+          - button "Досие и сесия" [ref=f5e37] [cursor=pointer] [box=148,507,138,44]
+          - button "Технически" [ref=f5e43] [cursor=pointer] [box=29,559,124,44]
+          - button "Поверителност и контакт" [ref=f5e50] [cursor=pointer] [box=29,611,217,44]
+      - generic [ref=f5e56] [box=11,670,353,2633]:
+        - generic [ref=f5e57] [box=29,678,317,343]:
+          - heading "Преди първа игра" [level=2] [ref=f5e63] [box=61,678,198,28]
+          - list [ref=f5e64] [box=29,727,317,294]:
+            - listitem [ref=f5e65] [box=29,727,317,80]
+            - listitem [ref=f5e71] [box=29,813,317,58]
+            - listitem [ref=f5e77] [box=29,877,317,58]
+            - listitem [ref=f5e83] [box=29,941,317,80]
+        - generic [ref=f5e89] [box=29,1049,317,665]:
+          - heading "Геймплей" [level=2] [ref=f5e95] [box=61,1049,116,28]
+          - list [ref=f5e96] [box=29,1097,317,616]:
+            - listitem [ref=f5e97] [box=29,1097,317,80]
+            - listitem [ref=f5e103] [box=29,1183,317,58]
+            - listitem [ref=f5e109] [box=29,1247,317,80]
+            - listitem [ref=f5e115] [box=29,1333,317,58]
+            - listitem [ref=f5e121] [box=29,1397,317,80]
+            - listitem [ref=f5e127] [box=29,1483,317,80]
+            - listitem [ref=f5e133] [box=29,1569,317,58]
+            - listitem [ref=f5e139] [box=29,1633,317,80]
+        - generic [ref=f5e145] [box=29,1741,317,493]:
+          - heading "Досие и сесия" [level=2] [ref=f5e151] [box=61,1741,167,28]
+          - list [ref=f5e152] [box=29,1790,317,444]:
+            - listitem [ref=f5e153] [box=29,1790,317,58]
+            - listitem [ref=f5e159] [box=29,1854,317,58]
+            - listitem [ref=f5e165] [box=29,1918,317,80]
+            - listitem [ref=f5e171] [box=29,2004,317,80]
+            - listitem [ref=f5e177] [box=29,2090,317,58]
+            - listitem [ref=f5e183] [box=29,2154,317,80]
+        - generic [ref=f5e189] [box=29,2262,317,493]:
+          - heading "Технически" [level=2] [ref=f5e196] [box=61,2262,141,28]
+          - list [ref=f5e197] [box=29,2310,317,444]:
+            - listitem [ref=f5e198] [box=29,2310,317,80]
+            - listitem [ref=f5e204] [box=29,2396,317,80]
+            - listitem [ref=f5e210] [box=29,2482,317,58]
+            - listitem [ref=f5e216] [box=29,2546,317,58]
+            - listitem [ref=f5e222] [box=29,2610,317,58]
+            - listitem [ref=f5e228] [box=29,2674,317,80]
+        - generic [ref=f5e234] [box=29,2782,317,520]:
+          - heading "Поверителност и контакт" [level=2] [ref=f5e240] [box=60,2782,286,55]
+          - list [ref=f5e241] [box=29,2859,317,444]:
+            - listitem [ref=f5e242] [box=29,2859,317,58]
+            - listitem [ref=f5e248] [box=29,2923,317,58]
+            - listitem [ref=f5e254] [box=29,2987,317,80]
+            - listitem [ref=f5e260] [box=29,3073,317,80]
+            - listitem [ref=f5e266] [box=29,3159,317,58]
+            - listitem [ref=f5e272] [box=29,3223,317,80]
+      - generic [ref=f5e278] [box=11,3343,353,266]:
+        - paragraph [ref=f5e279] [box=81,3474,213,23]: Имаш въпрос, който не е тук?
+        - generic [ref=f5e280] [box=35,3510,305,98]:
+          - link "Дай ни бележка" [ref=f5e281] [cursor=pointer] [box=87,3510,202,44]:
+            - /url: /report
+          - link "Към началото" [ref=f5e282] [cursor=pointer] [box=93,3564,189,44]:
+            - /url: /
+      - status [ref=f5e283] [box=10,80,1,1]
+  - contentinfo [ref=f5e284] [box=0,3713,375,148]:
+    - generic [ref=f5e285] [box=16,3738,343,72]:
+      - link "Поверителност" [ref=f5e286] [cursor=pointer] [box=46,3738,113,32]:
+        - /url: /privacy
+      - generic [ref=f5e287] [box=167,3738,3,32]: ·
+      - link "Условия" [ref=f5e288] [cursor=pointer] [box=178,3738,63,32]:
+        - /url: /terms
+      - generic [ref=f5e289] [box=250,3738,3,32]: ·
+      - link "Сигнал" [ref=f5e290] [cursor=pointer] [box=261,3738,56,32]:
+        - /url: /report
+      - generic [ref=f5e291] [box=325,3738,3,32]: ·
+      - link "Състояние" [ref=f5e292] [cursor=pointer] [box=108,3778,82,32]:
+        - /url: /status
+      - generic [ref=f5e293] [box=198,3778,3,32]: ·
+      - link "Помощ" [ref=f5e294] [cursor=pointer] [box=209,3778,58,32]:
+        - /url: /faq
+    - paragraph [ref=f5e295] [box=16,3818,343,19]: © 2026 Върколак и Мафия · Бета
+  - button "Open Next.js Dev Tools" [ref=f5e301] [cursor=pointer] [box=22,790,32,32]
+  - alert [ref=f5e320] [box=-1,3860,1,1]

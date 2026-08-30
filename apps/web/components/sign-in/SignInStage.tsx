@@ -116,7 +116,7 @@ function signInCopyForRedirect(redirectTo: string): SignInCopy {
     return {
       kicker: "активна стая",
       title: ["Върни се", "в играта"],
-      subtitle: "Влез със същото досие, за да те върнем при стаята, чата и личните сигнали.",
+      subtitle: "Влез със същото досие, за да те върнем при стаята, разговора и личните сигнали.",
     };
   }
 

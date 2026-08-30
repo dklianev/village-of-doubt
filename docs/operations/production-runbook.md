@@ -49,7 +49,7 @@ Failed deploys and rollbacks preserve mode-`0600` Compose diagnostics under
 - Configure Resend and a valid `REPORTS_NOTIFY_EMAIL`; a production release is
   rejected when player reports have no delivery destination.
 - Provision server and browser Sentry DSNs, the release-manifest public key,
-  the age backup recipient, and the off-site rclone remote before deploy.
+  the age backup recipient, and the two off-site rclone profiles before deploy.
 - Keep the age private identity and backup-signing public key on a separate
   recovery host. The backup signing private key remains only on production.
 
@@ -57,8 +57,24 @@ Failed deploys and rollbacks preserve mode-`0600` Compose diagnostics under
 
 The systemd timer runs every six hours. The backup script creates a compressed
 logical dump, encrypts it with the configured public age recipient, writes a
-SHA-256 checksum for the encrypted artifact, keeps 14 days locally, and copies
-both files to `RCLONE_REMOTE`. Keep the matching private age identity off-host.
+SHA-256 checksum and signed manifest, keeps 14 days locally, and uploads the
+artifact set to the explicit non-root prefix in `RCLONE_REMOTE`. Before it
+contacts Docker, it deletes only matching database-backup objects older than
+`RCLONE_BACKUP_RETENTION_DAYS`, which must be from 1 through 30. Failure to list
+or delete that scoped prefix fails the service before a new dump is made.
+
+The same run exports `original_user_id` and `anonymous_user_id` from
+`deleted_user_identities` into `werewolf_deletion_ledger.tsv.age`. It does not
+export names, email addresses, account data, or game content. The ledger is
+age-encrypted, checksummed, signed, and uploaded under the distinct rclone
+profile and non-root prefix in `RCLONE_DELETION_LEDGER_REMOTE`. The script never
+deletes from that destination. Keep the matching private age identity off-host.
+
+The external ledger follows the six-hour backup schedule. Therefore its
+explicit residual RPO is six hours: a deletion completed after the last
+successful ledger upload can be absent after immediate total loss. Do not
+describe this as synchronous deletion journaling, and investigate every failed
+backup service run before relying on a recovery point.
 
 The scheduled backup is the only service in this path that talks to the Docker
 daemon. It runs a root-owned, fixed helper and reads a dedicated root-only
@@ -179,10 +195,112 @@ root:root and mode `0600`. `BACKUP_RELEASE_ALLOWED_IMAGE_PREFIX` must match the
 reviewed GHCR repository prefix. The timer verifies the signed active manifest
 under `/var/lib/werewolf/release-state/current.json` and derives both the release
 commit and migration head from it; never copy those values manually into
-`backup.env`. If
-`RCLONE_REMOTE` is enabled, install its configuration at
-`/etc/werewolf/rclone.conf`, owned by root:root and mode `0600`, and keep
-`RCLONE_CONFIG=/etc/werewolf/rclone.conf` in the backup environment.
+`backup.env`. Production off-site protection requires all of these values:
+
+```sh
+RCLONE_REMOTE=backup-store:werewolf/backups
+RCLONE_DELETION_LEDGER_REMOTE=deletion-ledger:werewolf/deletion-ledger
+RCLONE_BACKUP_RETENTION_DAYS=30
+RCLONE_CONFIG=/etc/werewolf/rclone.conf
+```
+
+Both destinations must be explicit non-root prefixes without a trailing slash.
+The script rejects equal rclone profile names so backup-retention deletion can
+never address the ledger profile. Install `/etc/werewolf/rclone.conf` as
+root:root with mode `0600`.
+
+Use separate private Hetzner Object Storage buckets and credentials for the two
+profiles. Keep versioning disabled on the database-backup bucket: otherwise a
+30-day expiry or rclone deletion can leave noncurrent object versions behind.
+Apply a lifecycle rule scoped only to the database-backup prefix and verify the
+stored policy:
+
+```sh
+cat >/root/werewolf-backup-lifecycle.json <<'JSON'
+{
+  "Rules": [{
+    "ID": "werewolf-backups-30-days",
+    "Status": "Enabled",
+    "Prefix": "werewolf/backups/",
+    "Expiration": { "Days": 30 },
+    "AbortIncompleteMultipartUpload": { "DaysAfterInitiation": 1 }
+  }]
+}
+JSON
+aws --endpoint-url "$HETZNER_S3_ENDPOINT" s3api put-bucket-lifecycle-configuration \
+  --bucket "$HETZNER_BACKUP_BUCKET" \
+  --lifecycle-configuration file:///root/werewolf-backup-lifecycle.json
+aws --endpoint-url "$HETZNER_S3_ENDPOINT" s3api get-bucket-lifecycle-configuration \
+  --bucket "$HETZNER_BACKUP_BUCKET"
+aws --endpoint-url "$HETZNER_S3_ENDPOINT" s3api get-bucket-versioning \
+  --bucket "$HETZNER_BACKUP_BUCKET"
+```
+
+The last command must not report `Status: Enabled`. Hetzner lifecycle expiry is
+the host-independent 30-day upper bound; the script's scoped `rclone delete` is
+a second enforcement path and makes failures visible to systemd.
+
+Enable versioning on the separate deletion-ledger bucket and mark the bucket as
+protected in the Hetzner Console. Hetzner access keys have read/write access to
+all buckets in their project by default, so distinct rclone profile names are
+not an authorization boundary. Use a dedicated access key plus a bucket policy
+scoped to the ledger prefix. Allow only the list, read, version-read, and write
+operations the backup needs; explicitly deny `s3:DeleteObject` and
+`s3:DeleteObjectVersion` to that principal and do not grant policy-management
+actions. A separate Hetzner project is the fallback when that policy cannot be
+enforced. Verify the deny against disposable keys in a staging bucket; never
+test deletion against production ledger objects.
+
+The four stable ledger objects are overwritten with the signature last;
+versioning preserves a prior complete set if an upload is interrupted. Expire
+only redundant noncurrent versions after 30 days. The lifecycle must not include
+`Expiration`, because the latest cumulative ledger must remain available:
+
+```sh
+aws --endpoint-url "$HETZNER_S3_ENDPOINT" s3api put-bucket-versioning \
+  --bucket "$HETZNER_LEDGER_BUCKET" \
+  --versioning-configuration Status=Enabled
+aws --endpoint-url "$HETZNER_S3_ENDPOINT" s3api get-bucket-versioning \
+  --bucket "$HETZNER_LEDGER_BUCKET"
+
+cat >/root/werewolf-ledger-lifecycle.json <<'JSON'
+{
+  "Rules": [{
+    "ID": "werewolf-ledger-noncurrent-30-days",
+    "Status": "Enabled",
+    "Prefix": "werewolf/deletion-ledger/",
+    "NoncurrentVersionExpiration": { "NoncurrentDays": 30 },
+    "AbortIncompleteMultipartUpload": { "DaysAfterInitiation": 1 }
+  }]
+}
+JSON
+aws --endpoint-url "$HETZNER_S3_ENDPOINT" s3api put-bucket-lifecycle-configuration \
+  --bucket "$HETZNER_LEDGER_BUCKET" \
+  --lifecycle-configuration file:///root/werewolf-ledger-lifecycle.json
+aws --endpoint-url "$HETZNER_S3_ENDPOINT" s3api get-bucket-lifecycle-configuration \
+  --bucket "$HETZNER_LEDGER_BUCKET"
+```
+
+If the current quartet does not verify after an interrupted upload, recover the
+newest mutually matching artifact and sidecar versions from version history and
+record all four version IDs. Never disable signature verification to work around
+a partial upload.
+
+Before enabling the timer, exercise the exact deletion scope without Docker or
+a database dump:
+
+```sh
+sudo sh -c '
+  set -a
+  . /etc/werewolf/backup.env
+  set +a
+  exec /usr/local/libexec/werewolf/backup-postgres.sh --retention-dry-run
+'
+```
+
+Review the rclone output and confirm that every candidate is below only
+`RCLONE_REMOTE`; the command must not mention the ledger destination. Then run
+the normal service once and verify all database and ledger artifact sidecars.
 
 The Ed25519 key under `/etc/werewolf/backup-signing.key` is the producer identity
 for backup manifests. It must remain root-only and must never be copied to the
@@ -230,11 +348,17 @@ sudo -u "$deploy_user" -H env \
 
 Run a restore drill at least monthly:
 
-1. Download the latest off-site dump, checksum, signed manifest, and signature on a non-production host.
-2. Copy the trusted backup signing public key to that host and verify the signature before decryption.
+1. Download the selected off-site dump, checksum, signed manifest, and signature
+   on a non-production host. Separately download the latest versions of
+   `werewolf_deletion_ledger.tsv.age` and its `.sha256`, `.manifest.json`, and
+   `.manifest.json.sig` sidecars from the protected ledger bucket. Do not use a
+   ledger version chosen merely because it matches an old dump.
+2. Copy the trusted backup signing public key to that host. Keep the age identity
+   off production; the restore verifies both signed artifacts before decryption.
 3. Run `scripts/restore-postgres.sh` from the active immutable checkout with
    `RESTORE_CONFIRM_DATABASE`, `BACKUP_SIGNING_PUBLIC_KEY_FILE`, and the
-   off-host age identity. By default it verifies signed
+   off-host age identity. Set `RESTORE_DELETION_LEDGER_FILE` to the downloaded
+   `werewolf_deletion_ledger.tsv.age`. By default it verifies signed
    `release-state/current.json`, pulls that manifest's digest-pinned migrator,
    web, and game images, then restores and migrates a staging database before
    stopping writers. If release state was recovered separately, pass the
@@ -256,11 +380,23 @@ Run a restore drill at least monthly:
    acceptance time, and result. Preserve the restore record under
    `release-state/forensics/`.
 
-The restore captures current deletion tombstones while writers are stopped,
-reapplies account deletion to the staged copy, and verifies after cutover that
-neither the identities nor their historical references were reintroduced.
-`RESTORE_ONLY=1` still runs database semantics but leaves writers stopped and
-cannot claim application readiness.
+Signed restores fail before Docker unless the external deletion ledger and all
+verification material are present. The ledger's signed creation time must be at
+least as recent as the selected backup. After writers stop, the restore merges
+that external ledger with any tombstones still available in the current
+database, reapplies account deletion to the staged copy, and verifies after
+cutover that neither the identities nor their historical references were
+reintroduced. A total-loss replacement database may have no current tombstone
+table; the verified external ledger remains mandatory and sufficient for the
+known exported deletions. `RESTORE_ONLY=1` still runs database semantics but
+leaves writers stopped and cannot claim application readiness.
+
+The timestamp comparison prevents an older ledger from accompanying a newer
+backup, but it cannot prove that an operator downloaded the newest ledger
+version. Always fetch the current stable objects from the protected bucket and
+record their version IDs in the restore evidence. The six-hour ledger RPO
+remains the explicit limit for deletions completed after the last successful
+upload.
 
 Only after all selected restore gates pass does the script copy the verified
 active manifest to signed `schema-current.json` and clear an old
@@ -330,3 +466,10 @@ past 300 clients per game process or when any of these persist for five minutes:
 
 Scale the game service horizontally only with shared Redis presence/driver enabled.
 Active rooms are not migrated between processes.
+
+Keep the beta web service at one replica while Next.js Cache Components use the
+default in-memory cache. Before adding a second web replica, configure a shared Next.js `cacheHandler`,
+set `cacheMaxMemorySize: 0`, and prove cross-replica
+`cacheTag`/`updateTag` invalidation in an integration test. Redis-backed rate
+limits and sessions are already shared, but they do not make the Next.js route
+cache distributed automatically.

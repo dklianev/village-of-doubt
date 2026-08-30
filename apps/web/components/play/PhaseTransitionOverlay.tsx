@@ -46,10 +46,12 @@ export function PhaseTransitionOverlay({
       data-family={family}
       data-phase={phase}
       data-transition-kind={transitionKind}
-      aria-hidden="true"
+      role="status"
+      aria-live="assertive"
+      aria-atomic="true"
     >
       <div>
-        <span>{phaseSigil(phase)}</span>
+        <span aria-hidden="true">{phaseSigil(phase)}</span>
         <strong>{phaseBg(phase, mode)}</strong>
         <small>{phaseNarratorLine(phase, mode, narratorVoice)}</small>
       </div>

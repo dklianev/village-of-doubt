@@ -13,14 +13,14 @@
 
 | Layer | Choice |
 |---|---|
-| Monorepo | pnpm 10 + Turbo |
+| Monorepo | pnpm 11 + Turbo |
 | Frontend | Next.js 16 (App Router, Turbopack) + React 19 + Tailwind 4 |
-| Auth | Better Auth 1.6 (email/password + Google OAuth + Discord OAuth) + Drizzle adapter |
-| Game server | Colyseus 0.17 (authoritative rooms, schema sync) |
+| Auth | Better Auth 1.7 (email/password + Google OAuth + Discord OAuth) + Drizzle adapter |
+| Game server | Colyseus 0.18 (authoritative rooms, schema sync) |
 | DB | PostgreSQL 17 + Drizzle 0.45 |
 | Validation | t3-env + zod |
 | Tests | Vitest 4 + @colyseus/testing |
-| Deploy | Docker Compose + Caddy на DigitalOcean |
+| Deploy | Docker Compose + Caddy на Hetzner Cloud |
 
 Версиите са актуални за Q2 2026 — ако пишеш API, **използвай context7 MCP за documentation lookup**, не разчитай на тренировъчни данни.
 

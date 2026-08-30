@@ -46,6 +46,11 @@ interface GameRoomPersistenceInternals {
   }>;
   recordedGameId?: string;
   sendRecordedGameId: (client: { send: (type: string, payload: unknown) => void }) => void;
+  sendAchievementUnlocks: (unlocks: Array<{ userId: string; achievementId: string }>) => void;
+  persistAndSendAchievementUnlocks: (
+    unlocks: Array<{ userId: string; achievementId: string }>,
+    operation: string,
+  ) => boolean;
 }
 
 function makePersistence(recordEvent: GamePersistence["recordEvent"]): GamePersistence {
@@ -303,8 +308,15 @@ describe("GameRoom persistence snapshots", () => {
     room.state.winnerTeam = "village";
     room.state.winnerReasonBg = "Победа.";
     const broadcast = vi.spyOn(room, "broadcast");
+    const sendAchievementUnlocks = vi.spyOn(internals, "sendAchievementUnlocks");
+    internals.persistGameEvent("jester_personal_win", {
+      targetId: "jester",
+      visibility: "public",
+    });
 
     internals.transitionTo("game_over");
+
+    expect(sendAchievementUnlocks).not.toHaveBeenCalled();
 
     const persistence = makePersistence(vi.fn(async () => {}));
     await terminalTask?.({
@@ -331,6 +343,10 @@ describe("GameRoom persistence snapshots", () => {
     expect(persistence.upsertPlayers).not.toHaveBeenCalled();
     expect(persistence.finishGame).not.toHaveBeenCalled();
     expect(persistence.recordAchievement).not.toHaveBeenCalled();
+    expect(sendAchievementUnlocks).toHaveBeenCalledOnce();
+    expect(sendAchievementUnlocks).toHaveBeenCalledWith([
+      { userId: "jester", achievementId: "jester_win" },
+    ]);
     expect(broadcast).toHaveBeenCalledWith("game_recorded", {
       type: "game_recorded",
       gameId: "game-1",
@@ -343,6 +359,47 @@ describe("GameRoom persistence snapshots", () => {
       type: "game_recorded",
       gameId: "game-1",
     });
+  });
+
+  it("announces an in-game achievement only after its database write succeeds", async () => {
+    const room = await colyseus.createRoom<GameRoom>("game", {
+      code: "ACHV23",
+      mode: "werewolves_classic",
+      playerCount: 6,
+    });
+    const internals = room as unknown as GameRoomPersistenceInternals;
+    let queuedTask: PersistenceTask | undefined;
+    internals.persistenceCoordinator = {
+      enabled: true,
+      queue: (_context, task) => {
+        queuedTask = task;
+        return true;
+      },
+      dispose: vi.fn(async () => true),
+    };
+    const sendAchievementUnlocks = vi.spyOn(internals, "sendAchievementUnlocks");
+    const persistence = makePersistence(vi.fn(async () => {}));
+
+    expect(internals.persistAndSendAchievementUnlocks(
+      [{ userId: "jester", achievementId: "jester_win" }],
+      "jester achievement",
+    )).toBe(true);
+    expect(sendAchievementUnlocks).not.toHaveBeenCalled();
+
+    await queuedTask?.({
+      persistence,
+      ensureGame: async () => "game-1",
+      idempotencyKeys: {
+        game: "room-instance",
+        event: (scope = "default") => `room-instance:event:1:${scope}`,
+      },
+    });
+
+    expect(persistence.recordAchievement).toHaveBeenCalledWith("jester", "jester_win", "game-1");
+    expect(sendAchievementUnlocks).toHaveBeenCalledOnce();
+    expect(sendAchievementUnlocks).toHaveBeenCalledWith([
+      { userId: "jester", achievementId: "jester_win" },
+    ]);
   });
 
   it("reports a rejected terminal persistence task", async () => {

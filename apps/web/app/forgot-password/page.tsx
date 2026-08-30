@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ForgotPasswordClient } from "@/components/auth/ForgotPasswordClient";
 import { ResourceHints } from "@/components/resource-hints";
+import "@/components/auth/AuthRecoveryBase.css";
 import "@/components/auth/AuthRecovery.module.css";
 
 export const metadata: Metadata = {
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
 export default function ForgotPasswordPage() {
   return (
     <main className="shell locksmith-shell auth-recovery-shell framed-shell">
-      <ResourceHints images={["/game-art/auth/forgot-password-locksmith.webp"]} />
+      <ResourceHints images={[{ href: "/game-art/auth/forgot-password-locksmith.webp", fetchPriority: "high" }]} />
       <div className="framed-shell-inner">
         <ForgotPasswordClient />
       </div>

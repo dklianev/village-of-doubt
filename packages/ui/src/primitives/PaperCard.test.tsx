@@ -21,6 +21,9 @@ describe("PaperCard", () => {
   it("marks density on the surface", () => {
     const { container } = render(<PaperCard density="lg">Съдържание</PaperCard>);
     expect((container.firstChild as HTMLElement).dataset.dsPaperCard).toBe("lg");
+    expect((container.firstChild?.firstChild as HTMLElement).style.padding).toBe(
+      "var(--ds-paper-card-padding, 48px)",
+    );
   });
 
   it("marks interactive cards without changing semantics", () => {

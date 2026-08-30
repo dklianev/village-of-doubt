@@ -77,6 +77,9 @@ interface LeaderboardData {
 
 async function loadLeaderboard(visualLeaderboard?: string): Promise<LeaderboardData> {
   if (process.env.NODE_ENV !== "production") {
+    if (visualLeaderboard === "unavailable") {
+      return { entries: null, issueCount: 1 };
+    }
     if (visualLeaderboard === "empty") {
       return { entries: [], issueCount: 1 };
     }

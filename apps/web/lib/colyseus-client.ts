@@ -1,4 +1,10 @@
-import { Client } from "@colyseus/sdk";
+import { Client } from "@colyseus/sdk/Client";
+import { NoneSerializer } from "@colyseus/sdk/serializer/NoneSerializer";
+import { SchemaSerializer } from "@colyseus/sdk/serializer/SchemaSerializer";
+import { registerSerializer } from "@colyseus/sdk/serializer/Serializer";
+
+registerSerializer("schema", SchemaSerializer);
+registerSerializer("none", NoneSerializer);
 
 export const GAME_ROOM_NAME = "game";
 

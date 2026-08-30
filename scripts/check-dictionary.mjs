@@ -5,7 +5,7 @@
  * Always exits 0. Run: pnpm check:dict
  */
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { extname, join } from "node:path";
+import { extname, join, resolve } from "node:path";
 
 const ROOT = process.cwd();
 
@@ -23,7 +23,11 @@ const RULES = [
   { pattern: />\s*Loading\.{3}\s*</g, hint: "-> „Зареждаме...\"", legacy: false },
   { pattern: /Логин(а|ът|и|ите)?/g, hint: "-> „Влизане\"", legacy: false },
   { pattern: /Аватар(а|ът|и|ите)?/g, hint: "-> „Портрет\"", legacy: false },
-  { pattern: /\bЧат(а|ът|ове|овете)?\b/g, hint: "-> „Разговор\"", legacy: false },
+  {
+    pattern: /(?<![\p{L}\p{N}_])Чат(?:а|ът|ове|овете)?(?![\p{L}\p{N}_])/giu,
+    hint: "-> „Разговор\"",
+    legacy: false,
+  },
   { pattern: /Постижения/g, hint: "spec: „Легенди\" (legacy-OK)", legacy: true },
   { pattern: /Класация/g, hint: "spec: „Вечерен брой\" (legacy-OK)", legacy: true },
   {
@@ -33,8 +37,16 @@ const RULES = [
   },
 ];
 
-const SCAN_DIRS = ["apps/web/app", "apps/web/components"];
-const SKIP_DIRS = new Set(["node_modules", ".next", "dist", "__visual__"]);
+const SCAN_DIRS = process.argv.length > 2
+  ? process.argv.slice(2)
+  : [
+      "apps/web/app",
+      "apps/web/components",
+      "apps/web/lib",
+      "apps/game-server/src",
+      "packages/shared/src",
+    ];
+const SKIP_DIRS = new Set(["node_modules", ".next", "dist", "__tests__", "__visual__"]);
 const SCAN_EXT = new Set([".tsx", ".ts"]);
 
 let warnings = 0;
@@ -51,6 +63,7 @@ function walk(dir) {
 }
 
 function checkFile(path) {
+  if (/\.(?:test|spec)\.[cm]?[jt]sx?$/u.test(path)) return;
   const src = readFileSync(path, "utf8");
   const lines = src.split("\n");
   for (let i = 0; i < lines.length; i++) {
@@ -71,6 +84,6 @@ function checkFile(path) {
 }
 
 console.log("\nDictionary check (audit-only) - Path Б\n");
-for (const dir of SCAN_DIRS) walk(join(ROOT, dir));
+for (const dir of SCAN_DIRS) walk(resolve(ROOT, dir));
 console.log(`\nSummary: ${warnings} hard warnings, ${legacyHits} legacy-OK hits.\nExit code 0.\n`);
 process.exit(0);

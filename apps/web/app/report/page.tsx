@@ -42,7 +42,7 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
 
   return (
     <main className="shell legal-page-shell report-shell">
-      <ResourceHints images={["/game-art/legal/report-banner.webp"]} />
+      <ResourceHints images={[{ href: "/game-art/legal/report-banner.webp", fetchPriority: "high" }]} />
       <JsonLd data={jsonLd} />
       <ReportLighthouse
         userEmail={session?.user?.email ?? null}

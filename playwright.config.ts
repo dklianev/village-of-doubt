@@ -18,7 +18,7 @@ export default defineConfig({
   webServer: {
     command: `pnpm --filter @werewolf/web dev --hostname 127.0.0.1 --port ${port}`,
     url: `http://127.0.0.1:${port}/api/health`,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: process.env.VISUAL_REUSE_SERVER === "1",
     timeout: 90_000,
     env: {
       BETTER_AUTH_URL: `http://127.0.0.1:${port}`,

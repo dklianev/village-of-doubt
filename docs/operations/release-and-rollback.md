@@ -72,7 +72,8 @@ Schema rollback is a recovery operation, not part of normal image rollback:
 2. preserve the failed database volume/snapshot for investigation;
 3. restore the pre-release backup into a new database instance;
 4. verify account/history integrity, runtime-role create privileges, applied
-   migrations, and preserved deletion tombstones after cutover;
+   migrations, and the required protected deletion ledger merged with any live
+   tombstones after cutover;
 5. point the previous application release at the restored database;
 6. run smoke, auth, room creation, and history checks before reopening traffic.
 

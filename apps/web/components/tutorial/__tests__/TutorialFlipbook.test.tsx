@@ -3,8 +3,12 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TutorialFlipbook } from "../TutorialFlipbook";
 
+const navigationState = vi.hoisted(() => ({
+  searchParams: new URLSearchParams(),
+}));
+
 vi.mock("next/navigation", () => ({
-  useSearchParams: () => new URLSearchParams(),
+  useSearchParams: () => navigationState.searchParams,
 }));
 
 const storedValues = new Map<string, string>();
@@ -21,6 +25,7 @@ Object.defineProperty(window, "localStorage", {
 
 describe("TutorialFlipbook", () => {
   beforeEach(() => {
+    navigationState.searchParams = new URLSearchParams();
     window.localStorage.clear();
     window.history.replaceState(null, "", "/tutorial");
   });
@@ -36,6 +41,7 @@ describe("TutorialFlipbook", () => {
     }
 
     expect(screen.getByRole("button", { name: /Събиране/ })).toHaveAttribute("aria-current", "step");
+    expect(screen.queryByRole("link", { name: "Продължи към игра" })).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 1, name: "Масата се събира." })).toBeInTheDocument();
     expect(container.querySelector(".tutorial-slide-copy")).toContainElement(
       screen.getByRole("heading", { level: 1, name: "Масата се събира." }),
@@ -52,8 +58,11 @@ describe("TutorialFlipbook", () => {
 
     await user.click(screen.getByRole("button", { name: "Следваща сцена" }));
 
-    expect(screen.getByRole("heading", { level: 1, name: "Очите се затварят." })).toBeInTheDocument();
-    expect(container.querySelector('[data-tutorial-scene="night"]')).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Очите се затварят." })).toBeInTheDocument();
+    const nightStage = container.querySelector('[data-tutorial-scene="night"]');
+    expect(nightStage).toBeInTheDocument();
+    expect(nightStage).toHaveFocus();
+    expect(screen.getByRole("status")).toHaveTextContent("Сцена 2 от 6: Нощ");
     expect(screen.getByRole("button", { name: /Нощ/ })).toHaveAttribute("aria-current", "step");
     expect(back).toBeEnabled();
   });
@@ -64,9 +73,36 @@ describe("TutorialFlipbook", () => {
 
     await user.click(screen.getByRole("button", { name: /Начало/ }));
 
-    expect(screen.getByRole("link", { name: /Започни Върколак/ })).toHaveAttribute("href", "/werewolf/create");
+    expect(await screen.findByRole("link", { name: /Започни Върколак/ })).toHaveAttribute("href", "/werewolf/create");
     expect(screen.getByRole("link", { name: /Започни Мафия/ })).toHaveAttribute("href", "/mafia/create");
     expect(screen.getByRole("link", { name: /Всички роли/ })).toHaveAttribute("href", "/roles");
-    expect(screen.getByRole("button", { name: "Следваща сцена" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Следваща сцена" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Продължи към игра" })).toBeInTheDocument();
+  });
+
+  it("keeps the requested game destination when the tutorial is skipped", () => {
+    navigationState.searchParams = new URLSearchParams({ redirect: "/mafia/create" });
+
+    render(<TutorialFlipbook />);
+
+    expect(screen.getByRole("link", { name: "Прескочи" })).toHaveAttribute("href", "/mafia/create");
+  });
+
+  it.each([
+    [2, "Очите се затварят."],
+    [3, "Денят се буди. Какво остана?"],
+    [4, "Гласът оставя следа."],
+    [5, "Какво остава, когато утрото дойде."],
+    [6, "Изборът сега е твой."],
+  ])("renders direct step %i without falling back to the setup scene", async (step, heading) => {
+    navigationState.searchParams = new URLSearchParams({ step: String(step) });
+
+    render(<TutorialFlipbook />);
+
+    expect(await screen.findByRole("heading", { level: 1, name: heading })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: new RegExp(`^${step}\\.`) })).toHaveAttribute(
+      "aria-current",
+      "step",
+    );
   });
 });

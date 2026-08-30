@@ -1,0 +1,49 @@
+- generic [ref=f3e1] [box=0,0,390,844]:
+  - link "Към основното съдържание" [ref=f3e2] [cursor=pointer] [box=8,-56,263,48]:
+    - /url: "#main-content"
+  - banner [ref=f3e4] [box=0,0,390,64]:
+    - button "Отвори менюто" [ref=f3e5] [cursor=pointer] [box=10,10,44,44]
+    - link "Върколак и Мафия, начало" [ref=f3e7] [cursor=pointer] [box=64,12,170,40]:
+      - /url: /
+      - generic [ref=f3e9] [box=108,15,126,34]:
+        - generic [ref=f3e10] [box=108,15,126,14]:
+          - generic [ref=f3e11] [box=108,15,66,13]: Върколак
+          - generic [ref=f3e12] [box=178,15,4,14]: ·
+          - generic [ref=f3e13] [box=186,15,49,13]: Мафия
+        - generic [ref=f3e14] [box=114,32,52,17]: БЕТА
+    - link "Играй" [ref=f3e15] [cursor=pointer] [box=288,10,92,44]:
+      - /url: /werewolf/create
+  - main [ref=f3e37] [box=16,88,358,528]:
+    - generic [ref=f3e40] [box=16,105,358,462]:
+      - region [ref=f3e41] [box=16,105,358,462]:
+        - generic [box=16,105,358,92]:
+          - generic [box=16,105,164,84]:
+            - paragraph [box=16,105,164,16]: стая VISUAL · рунд 2
+            - generic [box=16,126,122,32]: "Фаза: Край"
+            - heading [level=1] [box=16,163,164,26]: Край
+        - generic [box=242,121,116,72]:
+          - generic [box=245,121,113,32]: Върколак
+          - generic [box=245,161,113,32]: Вграден разговор
+      - status [ref=f3e42] [box=24,105,342,462]:
+        - article [ref=f3e43] [box=24,105,342,222]:
+          - paragraph [ref=f3e44] [box=39,121,312,14]: край на играта
+          - heading "Върколаците печелят" [active] [level=2] [ref=f3e45] [box=39,143,312,62]
+          - paragraph [ref=f3e46] [box=44,213,302,36]: Върколаците останаха твърде много, а площадът замлъкна.
+          - generic [ref=f3e47] [box=39,261,312,50]:
+            - link "Повтори настройките" [ref=f3e48] [cursor=pointer] [box=39,261,152,50]:
+              - /url: /werewolf/create?mode=werewolves_classic&players=12&maxPlayers=12&preset=manual&communication=built_in_chat&narrator=automatic&tempo=normal_online&lovers=1&reveal=1&skip=0&majority=simple&narratorVoice=classic&roles=seer%3A2%2Cwerewolf%3A1%2Cwitch%3A1%2Chunter%3A1%2Ccupid%3A1%2Chealer%3A1%2Cpriest%3A1%2Cjester%3A1%2Cvampire%3A1%2Cguard_dog%3A1%2Cdrunk%3A1
+            - link "Към архива" [ref=f3e49] [cursor=pointer] [box=199,261,152,50]:
+              - /url: /history
+        - generic [ref=f3e50] [box=24,335,342,231]:
+          - paragraph [ref=f3e51] [box=39,350,312,17]: история на нощта
+          - heading "Как ще я разказвате след играта" [level=2] [ref=f3e52] [box=39,375,312,45]
+          - generic [ref=f3e53] [box=39,430,312,29]:
+            - generic [ref=f3e54] [box=39,430,86,29]: оцеляха 7
+            - generic [ref=f3e55] [box=131,430,88,29]: паднаха 5
+            - generic [ref=f3e56] [box=224,430,83,29]: рундове 2
+          - list [ref=f3e57] [box=39,469,312,83]:
+            - listitem [ref=f3e58] [box=59,469,292,33]: Разказвачът отвори визуална сцена за проверка.
+            - listitem [ref=f3e59] [box=59,510,292,17]: Последната история вече има победител.
+            - listitem [ref=f3e60] [box=59,535,292,17]: На площада вече липсва един глас.
+  - button "Open Next.js Dev Tools" [ref=f3e33] [cursor=pointer] [box=22,790,32,32]
+  - alert [ref=f3e61] [box=-1,615,1,1]

@@ -193,6 +193,7 @@ function checkLandingLayoutContracts() {
   const recentEndingsCard = readText("apps/web/components/landing/RecentEndingsCard.tsx");
   const quickStartIcons = readText("apps/web/components/landing/quickstart-icons.tsx");
   const siteChrome = readText("apps/web/components/site-chrome.tsx");
+  const mobileDrawer = readText("apps/web/components/site-chrome/MobileDrawer.tsx");
   const siteChromeCss = readText("apps/web/components/site-chrome/SiteChrome.module.css");
   const tutorialCss = readText("apps/web/components/tutorial/Tutorial.module.css");
   const chromeCss = `${css}\n${siteChromeCss}`;
@@ -304,7 +305,7 @@ function checkLandingLayoutContracts() {
   assert(existsSync(path.join(sourceArtDir, "bg-landing-ambient.png")), "Missing ambient landing source PNG.");
   assert(existsSync(path.join(gameArtDir, "bg-landing-ambient.webp")), "Missing optimized ambient landing background WebP.");
   assert(existsSync(path.join(gameArtDir, "mobile/bg-landing-ambient.webp")), "Missing mobile ambient landing background WebP.");
-  assert(css.includes("/game-art/bg-landing-hero-composited.webp"), "Landing page must reference the optimized composited hero background.");
+  assert(landingPage.includes("/game-art/bg-landing-hero-composited.webp"), "Landing page must reference the optimized composited hero background.");
   assert(existsSync(path.join(sourceArtDir, "bg-landing-hero-composited.png")), "Missing composited hero landing source PNG.");
   assert(existsSync(path.join(gameArtDir, "bg-landing-hero-composited.webp")), "Missing optimized composited hero landing background WebP.");
   assert(existsSync(path.join(gameArtDir, "mobile/bg-landing-hero-composited.webp")), "Missing mobile composited hero landing background WebP.");
@@ -312,7 +313,10 @@ function checkLandingLayoutContracts() {
   assert(existsSync(path.join(sourceArtDir, "bg-landing-dual-world-v2.png")), "Missing current dual-world landing source PNG.");
   assert(existsSync(path.join(gameArtDir, "bg-landing-dual-world-v2.webp")), "Missing optimized current dual-world landing background WebP.");
   assert(existsSync(path.join(gameArtDir, "mobile/bg-landing-dual-world-v2.webp")), "Missing mobile current dual-world landing background WebP.");
-  assert(siteChrome.includes("prefetch={false}"), "Site chrome navigation should not prefetch every secondary route on first load.");
+  assert(
+    mobileDrawer.includes("prefetch={false}"),
+    "The deferred mobile drawer should not prefetch every secondary route when it opens.",
+  );
   assert(chromeCss.includes("/game-art/logo-chrome-mark.webp"), "Navbar brand should use the chrome-optimized micro-sigil WebP.");
   assert(existsSync(path.join(sourceArtDir, "logo-chrome-mark.png")), "Missing chrome micro-sigil source PNG.");
   assert(existsSync(path.join(gameArtDir, "logo-chrome-mark.webp")), "Missing optimized chrome micro-sigil WebP asset.");
@@ -614,7 +618,7 @@ function checkPlayUiContracts() {
   const css = readPlayStyles();
 
   for (const contract of [
-    "authClient.useSession",
+    "useAuthSession(initialSession)",
     "/api/game-token",
     "CUE_MODE_STORAGE_KEY",
     "LiveCuePanel",
@@ -675,12 +679,13 @@ function checkFrontendHygieneContracts() {
   assert(!siteChrome.includes("ЗВУК: ВКЛ"), "Navbar sound control must be icon-only.");
   assert(!siteChrome.includes("ТЕМА: СИСТЕМНА"), "Navbar theme control must be icon-only.");
   assert(
-    /useEffect\(\(\) => \{\s*onPathnameChange\(pathname\);/.test(siteChrome) && !siteChrome.includes("useLayoutEffect"),
-    "Navbar pathname state must synchronize after mount so instant hydration cannot update an unmounted parent.",
+    siteChrome.includes("const pathname = usePathname();") && !siteChrome.includes("RoutePathnameSync"),
+    "Navbar route state should come directly from usePathname without a delayed mirror state.",
   );
   assert(
-    serviceWorker.includes('const SHELL_URLS = ["/offline"]'),
-    "The service worker shell cache must contain only the navigation fallback that its fetch handler reads.",
+    serviceWorker.includes('cache.put("/offline", response.clone())')
+      && serviceWorker.includes("extractShellAssetUrls(html)"),
+    "The service worker shell cache must retain the navigation fallback and its rendered asset graph.",
   );
   assert(
     uiPackage.scripts["build:js"].includes("preserve-client-boundary.mjs"),
@@ -1179,7 +1184,7 @@ function checkScriptWiring() {
   assert(ciNodeMajor === webNodeMajor, `CI Node ${ciNodeMajor} must match production Node ${webNodeMajor}.`);
   assert(ciWorkflow.includes("scripts/container-ingress-smoke.mjs"), "CI must verify Caddy HTTP and WebSocket ingress.");
   assert(
-    ciWorkflow.includes("redis:8.2-alpine@sha256:a7859ed111db3c1f5404a973a4747505d559fb5ca32d37e447afc0ef845a2103"),
+    ciWorkflow.includes("redis:8.2-alpine@sha256:30abb90e62f14b737010746def3ba99cc79fe19dcdb3d37b41f21fc62e7da19d"),
     "CI production smoke must pin Redis by digest.",
   );
   assert(
@@ -1480,6 +1485,8 @@ function validProductionEnv() {
     RELEASE_MANIFEST_PUBLIC_KEY: process.execPath,
     BACKUP_AGE_RECIPIENT: "age1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
     RCLONE_REMOTE: "encrypted-remote:werewolf/backups",
+    RCLONE_DELETION_LEDGER_REMOTE: "encrypted-ledger:werewolf/deletion-ledger",
+    RCLONE_BACKUP_RETENTION_DAYS: "30",
     DATABASE_STALE_ACTIVE_HOURS: "24",
     DATABASE_EVENT_RETENTION_DAYS: "365",
     MIGRATION_LOCK_TIMEOUT_MS: "5000",

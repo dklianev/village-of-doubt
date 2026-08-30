@@ -192,33 +192,10 @@
   display: block;
   margin-top: 22px;
   border: 1px solid rgba(248, 236, 210, 0.16);
-  border-radius: 34px;
-  padding: clamp(20px, 3vw, 34px);
-  background:
-    radial-gradient(circle at 14% 0%, rgba(209, 154, 66, 0.18), transparent 26rem),
-    radial-gradient(circle at 92% 16%, rgba(43, 93, 105, 0.14), transparent 30rem),
-    linear-gradient(145deg, rgba(18, 10, 8, 0.97), rgba(8, 10, 10, 0.94));
-  box-shadow: 0 32px 96px rgba(0, 0, 0, 0.38), inset 0 1px rgba(255, 255, 255, 0.1);
-}
-
-:global(.phase-timeline-header) {
-  max-width: 860px;
 }
 
 :global(.phase-timeline) {
   position: relative;
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 0;
-  margin-top: clamp(22px, 3vw, 34px);
-  border: 1px solid rgba(248, 236, 210, 0.12);
-  border-radius: 28px;
-  padding: 24px 14px 104px;
-  overflow: hidden;
-  background:
-    linear-gradient(180deg, rgba(248, 236, 210, 0.08), rgba(248, 236, 210, 0.03)),
-    rgba(8, 10, 10, 0.46);
-  box-shadow: inset 0 1px rgba(255, 255, 255, 0.08);
 }
 
 :global(.phase-timeline__line) {
@@ -245,154 +222,30 @@
 }
 
 :global(.phase-node) {
-  position: relative;
   z-index: 1;
-  display: grid;
-  justify-items: center;
   min-width: 0;
-  border: 0;
-  padding: 0 8px;
-  background: transparent;
-  color: #ead9ba;
   cursor: pointer;
   font: inherit;
-  opacity: 0.76;
-  text-align: center;
-  transition:
-    opacity 180ms ease,
-    transform 180ms ease,
-    color 180ms ease;
-}
-
-:global(.phase-node:hover),
-:global(.phase-node:focus-visible) {
-  color: #fff6e5;
-  opacity: 1;
-}
-
-:global(.phase-node.is-selected) {
-  color: #fff6e5;
-  opacity: 1;
-  transform: translateY(-4px);
 }
 
 :global(.phase-node-number) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 34px;
-  min-height: 20px;
   border: 1px solid rgba(209, 154, 66, 0.3);
   border-radius: 999px;
-  margin-bottom: 6px;
-  background: rgba(8, 10, 10, 0.62);
-  color: var(--gold);
-  font-size: 0.66rem;
   font-weight: 950;
   letter-spacing: 0.12em;
 }
 
 :global(.phase-node-medallion) {
   display: block;
-  width: 58px;
-  aspect-ratio: 1;
-  border: 1px solid rgba(248, 236, 210, 0.22);
-  border-radius: 999px;
   background:
     radial-gradient(circle at 50% 42%, rgba(248, 236, 210, 0.18), transparent 50%),
     rgba(8, 10, 10, 0.72);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.26), inset 0 1px rgba(255, 255, 255, 0.12);
-  filter: saturate(0.78) brightness(0.88);
-  transition:
-    border-color 180ms ease,
-    box-shadow 180ms ease,
-    filter 180ms ease,
-    transform 180ms ease;
-}
-
-:global(.phase-node:hover .phase-node-medallion),
-:global(.phase-node:focus-visible .phase-node-medallion) {
-  border-color: rgba(209, 154, 66, 0.58);
-  filter: saturate(1) brightness(1);
-}
-
-:global(.phase-node.is-selected .phase-node-medallion) {
-  border-color: rgba(209, 154, 66, 0.95);
-  box-shadow: 0 0 0 4px rgba(209, 154, 66, 0.16), 0 20px 42px rgba(0, 0, 0, 0.36), inset 0 1px rgba(255, 255, 255, 0.18);
-  filter: saturate(1.08) brightness(1.08);
-}
-
-:global(.phase-node-icon) {
-  background:
-    linear-gradient(180deg, rgba(8, 10, 10, 0.18), rgba(8, 10, 10, 0.5)),
-    var(--phase-node-icon) center / cover no-repeat;
-}
-
-:global(.phase-node-icon.phase-lobby) {
-  --phase-node-icon: image-set(url("/game-art/phase-board/v1/werewolves/icon-phase-lobby-560.webp") type("image/webp"));
-}
-
-:global(.phase-node-icon.phase-role_reveal) {
-  --phase-node-icon: image-set(url("/game-art/phase-board/v1/werewolves/icon-phase-role-reveal-560.webp") type("image/webp"));
-}
-
-:global(.phase-node-icon.phase-night) {
-  --phase-node-icon: image-set(url("/game-art/phase-board/v1/werewolves/icon-phase-night-560.webp") type("image/webp"));
-}
-
-:global(.phase-node-icon.phase-day_discussion) {
-  --phase-node-icon: image-set(url("/game-art/phase-board/v1/werewolves/icon-phase-day-560.webp") type("image/webp"));
-}
-
-:global(.phase-node-icon.phase-voting) {
-  --phase-node-icon: image-set(url("/game-art/phase-board/v1/werewolves/icon-phase-voting-560.webp") type("image/webp"));
-}
-
-:global(.phase-node-icon.phase-resolution) {
-  --phase-node-icon: image-set(url("/game-art/phase-board/v1/werewolves/icon-phase-resolution-560.webp") type("image/webp"));
-}
-
-:global([data-family="mafia"] .phase-node-icon.phase-lobby) {
-  --phase-node-icon: image-set(url("/game-art/phase-board/v1/mafia/icon-phase-lobby-560.webp") type("image/webp"));
-}
-
-:global([data-family="mafia"] .phase-node-icon.phase-role_reveal) {
-  --phase-node-icon: image-set(url("/game-art/phase-board/v1/mafia/icon-phase-role-reveal-560.webp") type("image/webp"));
-}
-
-:global([data-family="mafia"] .phase-node-icon.phase-night) {
-  --phase-node-icon: image-set(url("/game-art/phase-board/v1/mafia/icon-phase-night-560.webp") type("image/webp"));
-}
-
-:global([data-family="mafia"] .phase-node-icon.phase-day_discussion) {
-  --phase-node-icon: image-set(url("/game-art/phase-board/v1/mafia/icon-phase-day-560.webp") type("image/webp"));
-}
-
-:global([data-family="mafia"] .phase-node-icon.phase-voting) {
-  --phase-node-icon: image-set(url("/game-art/phase-board/v1/mafia/icon-phase-voting-560.webp") type("image/webp"));
-}
-
-:global([data-family="mafia"] .phase-node-icon.phase-resolution) {
-  --phase-node-icon: image-set(url("/game-art/phase-board/v1/mafia/icon-phase-resolution-560.webp") type("image/webp"));
-}
-
-:global(.phase-node-label),
-:global(.phase-node-short) {
-  display: block;
-  max-width: 12rem;
-}
-
-:global(.phase-node-label) {
-  margin-top: 14px;
-  font-size: clamp(0.86rem, 1.2vw, 1.06rem);
-  font-weight: 950;
-  line-height: 1.08;
 }
 
 :global(.phase-node-short) {
-  margin-top: 7px;
-  color: var(--gold);
-  font-size: 0.68rem;
   font-weight: 950;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -428,34 +281,15 @@
   text-transform: uppercase;
 }
 
-:global(.phase-detail-panel) {
-  margin-top: 18px;
-  border: 1px solid rgba(83, 52, 31, 0.18);
-  border-radius: 28px;
-  padding: clamp(20px, 2.6vw, 30px);
-  background:
-    radial-gradient(circle at 88% 0%, rgba(209, 154, 66, 0.18), transparent 18rem),
-    linear-gradient(145deg, rgba(255, 247, 229, 0.98), rgba(211, 180, 125, 0.9)),
-    var(--texture-paper) center / 540px 540px;
-  color: var(--ink);
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.24), inset 0 1px rgba(255, 255, 255, 0.34);
-}
-
-:global(.phase-detail-panel__lead) {
-  max-width: 54rem;
-}
-
 :global(.phase-detail-panel__lead h3) {
   margin-top: 8px;
   color: var(--ink);
-  font-size: clamp(2.2rem, 3.8vw, 4rem);
   font-weight: 950;
   line-height: 0.92;
 }
 
 :global(.phase-detail-panel__lead p:not(.section-kicker)) {
   margin-top: 16px;
-  color: #4f3829;
   font-size: 1rem;
   font-weight: 760;
   line-height: 1.64;
@@ -463,21 +297,12 @@
 
 :global(.phase-info-grid) {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-  margin: clamp(18px, 2vw, 24px) 0 0;
 }
 
 :global(.phase-info-chip) {
   display: grid;
   grid-template-rows: auto 1fr;
-  min-height: 152px;
   border: 1px solid rgba(83, 52, 31, 0.14);
-  border-radius: 22px;
-  padding: 15px;
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.44), rgba(255, 255, 255, 0.16)),
-    rgba(34, 22, 17, 0.05);
   box-shadow: inset 0 1px rgba(255, 255, 255, 0.34);
 }
 
@@ -521,45 +346,7 @@
   line-height: 1.45;
 }
 
-@media (max-width: 1023px) {
-  :global(.phase-timeline) {
-    padding-inline: 8px;
-  }
-
-  :global(.phase-node) {
-    padding-inline: 4px;
-  }
-
-  :global(.phase-node-medallion) {
-    width: 52px;
-  }
-
-  :global(.phase-node-label) {
-    font-size: 0.82rem;
-  }
-
-  :global(.phase-detail-panel) {
-    display: block;
-  }
-
-  :global(.phase-info-grid) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
 @media (max-width: 768px) {
-  :global(.phase-timeline-section.rules-phase-timeline) {
-    border-radius: 26px;
-    padding: 18px;
-  }
-
-  :global(.phase-timeline) {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 12px;
-    padding: 18px 14px 18px 16px;
-  }
-
   :global(.phase-timeline__line) {
     top: 46px;
     bottom: 84px;
@@ -574,48 +361,18 @@
   }
 
   :global(.phase-node) {
-    display: grid;
-    grid-template-columns: 58px minmax(0, 1fr);
-    grid-template-rows: auto auto;
     column-gap: 14px;
     align-items: center;
-    justify-items: start;
-    min-height: 86px;
-    border: 1px solid rgba(248, 236, 210, 0.11);
-    border-radius: 22px;
-    padding: 10px 12px;
-    background: rgba(8, 10, 10, 0.42);
-    text-align: left;
   }
 
   :global(.phase-node.is-selected) {
-    transform: none;
-    border-color: rgba(209, 154, 66, 0.42);
     background:
       radial-gradient(circle at 0% 0%, rgba(209, 154, 66, 0.18), transparent 12rem),
       rgba(248, 236, 210, 0.08);
   }
 
-  :global(.phase-node-number) {
-    position: absolute;
-    top: 5px;
-    left: 33px;
-    z-index: 2;
-    min-width: 24px;
-    min-height: 18px;
-    margin: 0;
-    font-size: 0.58rem;
-  }
-
   :global(.phase-node-medallion) {
     grid-row: 1 / span 2;
-    width: 56px;
-  }
-
-  :global(.phase-node-label),
-  :global(.phase-node-short) {
-    max-width: none;
-    margin-top: 0;
   }
 
   :global(.phase-loop-arrow) {
@@ -630,21 +387,6 @@
 
   :global(.phase-loop-badge) {
     transform: translateY(1px);
-  }
-
-  :global(.phase-info-grid) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 520px) {
-  :global(.phase-timeline-section.rules-phase-timeline) {
-    padding: 14px;
-  }
-
-  :global(.phase-detail-panel) {
-    border-radius: 24px;
-    padding: 18px;
   }
 
 }
@@ -1054,18 +796,27 @@
   position: absolute;
   inset: 0;
   z-index: -2;
-  width: auto;
-  aspect-ratio: auto;
+  display: block;
+  width: 100%;
+  height: 100%;
   border: 0;
   border-radius: 0;
-  background-position: center;
-  background-size: cover;
+  object-fit: cover;
+  object-position: center;
   box-shadow: none;
   filter: saturate(0.72) brightness(0.72);
   transform: scale(1.025);
   transition:
     filter 260ms ease,
     transform 500ms ease;
+}
+
+:global(.rules-phase-timeline),
+:global(.rules-table-protocol),
+:global(.rules-scenario-section),
+:global(.rules-chapter-grid) {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 920px;
 }
 
 :global(.phase-node:hover .phase-node-medallion),

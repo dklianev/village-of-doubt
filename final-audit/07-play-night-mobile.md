@@ -1,0 +1,96 @@
+- generic [active] [ref=f4e1] [box=0,0,375,1935]:
+  - link "Към основното съдържание" [ref=f4e2] [cursor=pointer] [box=8,-56,263,48]:
+    - /url: "#main-content"
+  - banner [ref=f4e4] [box=0,0,375,64]:
+    - button "Отвори менюто" [ref=f4e5] [cursor=pointer] [box=10,10,44,44]
+    - link "Върколак и Мафия, начало" [ref=f4e7] [cursor=pointer] [box=64,12,170,40]:
+      - /url: /
+      - generic [ref=f4e9] [box=108,15,126,34]:
+        - generic [ref=f4e10] [box=108,15,126,14]:
+          - generic [ref=f4e11] [box=108,15,66,13]: Върколак
+          - generic [ref=f4e12] [box=178,15,4,14]: ·
+          - generic [ref=f4e13] [box=186,15,49,13]: Мафия
+        - generic [ref=f4e14] [box=114,32,52,17]: БЕТА
+    - link "Играй" [ref=f4e15] [cursor=pointer] [box=273,10,92,44]:
+      - /url: /werewolf/create
+  - main [ref=f4e20] [box=9,88,358,1847]:
+    - generic [ref=f4e22] [box=9,105,358,1805]:
+      - generic [ref=f4e23] [box=9,105,358,644]:
+        - region "Нощ" [ref=f4e24] [box=9,105,358,644]:
+          - generic [box=26,122,324,92]:
+            - generic [box=26,122,164,84]:
+              - paragraph [box=26,122,164,16]: стая VISUAL · рунд 2
+              - generic [box=26,143,120,32]: "Фаза: Нощ"
+              - heading "Нощ" [level=1] [box=26,180,164,26]
+          - group "Игрална маса" [ref=f4e25] [box=26,232,324,500]:
+            - group "Център на масата" [ref=f4e27] [box=120,254,136,136]:
+              - generic [ref=f4e28] [box=181,281,13,22]: ☾
+              - timer "Свободен ход. Фазата продължава без времево ограничение." [ref=f4e29] [box=121,312,132,51]
+              - generic [box=102,373,172,26]: 11 живи · 1 елиминиран
+            - generic [ref=f4e32] [box=38,418,300,278]:
+              - 'group "Искра: онлайн" [ref=f4e34] [box=38,420,72,81]'
+              - 'button "Избери Борил: онлайн · водещ, клавиш 1" [ref=f4e41] [cursor=pointer] [box=114,420,72,81]'
+              - 'button "Избери Рада: онлайн · кмет, клавиш 2" [ref=f4e49] [cursor=pointer] [box=190,420,72,81]'
+              - 'button "Избери Неда: онлайн, клавиш 3" [ref=f4e57] [cursor=pointer] [box=266,420,72,81]'
+              - 'button "Избери Велин: онлайн, клавиш 4" [ref=f4e65] [cursor=pointer] [box=38,512,72,81]'
+              - 'button "Избери Мира: извън връзка, клавиш 5" [ref=f4e73] [cursor=pointer] [box=114,512,72,81]'
+              - 'button "Избери Димо: онлайн, клавиш 6" [ref=f4e81] [cursor=pointer] [box=190,512,72,81]'
+              - 'button "Избери Яна: онлайн, клавиш 7" [ref=f4e89] [cursor=pointer] [box=266,512,72,81]'
+              - 'button "Избери Калин: онлайн, клавиш 8" [ref=f4e97] [cursor=pointer] [box=38,605,72,81]'
+              - 'button "Избери Сияна: онлайн, клавиш 9" [ref=f4e105] [cursor=pointer] [box=114,605,72,81]'
+              - 'button "Избери Тодор: онлайн" [ref=f4e113] [cursor=pointer] [box=190,605,72,81]'
+              - 'group "Елена: Пияница" [ref=f4e120] [box=266,605,72,81]'
+          - generic [ref=f4e126] [box=234,122,116,72]:
+            - generic [ref=f4e127] [box=236,122,113,32]: Върколак
+            - generic [ref=f4e128] [box=236,162,113,32]: Вграден разговор
+        - region "Нощен ход · избери цел" [ref=f4e129] [box=0,774,375,70]:
+          - generic [ref=f4e130] [box=14,787,347,44]:
+            - heading "Нощен ход · избери цел" [level=2] [ref=f4e132] [box=68,801,165,17]
+            - generic [ref=f4e201] [box=263,787,98,44]:
+              - button "Отвори тайното досие" [ref=f4e202] [cursor=pointer] [box=263,787,44,44]
+              - button "Покажи личния ход" [ref=f4e206] [cursor=pointer] [box=315,787,46,44]
+      - region [ref=f4e133] [box=9,784,358,1027]:
+        - generic [ref=f4e134] [box=30,823,316,72]:
+          - paragraph [ref=f4e135] [box=30,823,118,18]:
+            - generic [ref=f4e139] [box=56,824,92,17]: хроника
+          - heading "Пулсът на стаята" [level=2] [ref=f4e140] [box=30,859,316,36]
+        - group [ref=f4e141] [box=30,913,316,66]:
+          - generic "Сигнали за фазите Визуално" [ref=f4e209] [cursor=pointer] [box=31,914,314,64]:
+            - generic [ref=f4e146] [box=97,926,141,40]:
+              - generic [ref=f4e147] [box=97,926,141,22]: Сигнали за фазите
+              - generic [ref=f4e148] [box=97,950,141,16]: Визуално
+        - navigation "Фази на играта" [ref=f4e150] [box=30,997,316,346]:
+          - generic [ref=f4e151] [box=30,997,153,109]:
+            - generic [ref=f4e152] [box=43,1010,127,16]: "01"
+            - generic [ref=f4e154] [box=43,1078,127,15]: Лоби
+          - generic [ref=f4e155] [box=193,997,153,109]:
+            - generic [ref=f4e156] [box=206,1010,127,16]: "02"
+            - generic [ref=f4e158] [box=206,1078,127,15]: Роля
+          - generic [ref=f4e159] [box=30,1112,153,109]:
+            - generic [ref=f4e160] [box=43,1125,127,16]: "03"
+            - generic [ref=f4e162] [box=43,1192,127,15]: Нощ
+          - generic [ref=f4e163] [box=193,1116,153,109]:
+            - generic [ref=f4e164] [box=206,1129,127,16]: "04"
+            - generic [ref=f4e166] [box=206,1196,127,15]: Ден
+          - generic [ref=f4e167] [box=30,1235,153,109]:
+            - generic [ref=f4e168] [box=43,1248,127,16]: "05"
+            - generic [ref=f4e170] [box=43,1315,127,15]: Глас
+          - generic [ref=f4e171] [box=193,1235,153,109]:
+            - generic [ref=f4e172] [box=206,1248,127,16]: "06"
+            - generic [ref=f4e174] [box=206,1315,127,15]: Развръзка
+        - group [ref=f4e175] [box=30,1375,316,68]:
+          - generic "Правила и подсказки Режим, роли и текуща фаза +" [ref=f4e176] [cursor=pointer] [box=45,1390,286,38]:
+            - generic [ref=f4e177] [box=45,1390,265,21]: Правила и подсказки
+            - generic [ref=f4e178] [box=45,1414,265,15]: Режим, роли и текуща фаза
+            - text: +
+        - tablist "Хроника и разговор" [ref=f4e179] [box=30,1466,316,62]:
+          - tab "Събития" [selected] [ref=f4e180] [box=39,1475,145,44]
+          - tab "Разговор" [ref=f4e181] [box=192,1475,145,44]
+        - tabpanel "Събития" [ref=f4e182] [box=30,1560,316,231]:
+          - heading "Събития" [level=3] [ref=f4e183] [box=30,1560,98,24]
+          - log "Събития" [ref=f4e188] [box=30,1599,316,180]:
+            - paragraph [ref=f4e189] [box=30,1599,316,56]: Разказвачът отвори визуална сцена за проверка.
+            - paragraph [ref=f4e190] [box=30,1663,316,56]: Нощта пази действията скрити от площада.
+            - paragraph [ref=f4e191] [box=30,1727,316,52]: На площада вече липсва един глас.
+  - button "Open Next.js Dev Tools" [ref=f4e197] [cursor=pointer] [box=22,790,32,32]
+  - alert [ref=f4e210] [box=-1,1934,1,1]

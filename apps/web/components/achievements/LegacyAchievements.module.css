@@ -113,6 +113,12 @@
   width: min(1240px, calc(100vw - 32px));
 }
 
+:global(.achievement-hero-frame) {
+  --ds-paper-card-padding: 48px;
+  max-width: 1040px;
+  margin: 0 auto;
+}
+
 :global(.achievement-shell::before) {
   position: absolute;
   top: 0;
@@ -500,29 +506,43 @@
 }
 
 @media (max-width: 640px) {
-:global(.achievement-shell) {
+  :global(.achievement-shell) {
     width: min(calc(100vw - 20px), 1240px);
   }
 
-:global(.achievement-shell .achievement-hero) {
+  :global(.achievement-hero-frame) {
+    --ds-paper-card-padding: 26px;
+  }
+
+  :global(.achievement-hero-frame h1) {
+    font-size: clamp(2.35rem, 11vw, 2.75rem) !important;
+    line-height: 1.02;
+  }
+
+  :global(.achievement-hero-lede) {
+    font-size: 0.95rem;
+    line-height: 1.52;
+  }
+
+  :global(.achievement-shell .achievement-hero) {
     padding: 24px !important;
   }
 
-:global(.achievement-shell .achievement-hero h1) {
+  :global(.achievement-shell .achievement-hero h1) {
     font-size: clamp(2.4rem, 15vw, 3.35rem);
     line-height: 0.98;
   }
 
-:global(.achievement-wreath) {
+  :global(.achievement-wreath) {
     gap: 10px;
   }
 
-:global(.achievement-wreath-branch) {
+  :global(.achievement-wreath-branch) {
     width: 46px;
     height: 66px;
   }
 
-:global(.achievement-wreath-count) {
+  :global(.achievement-wreath-count) {
     min-width: 94px;
   }
 

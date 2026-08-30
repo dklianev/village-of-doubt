@@ -4,29 +4,19 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { FeedbackWidget } from "../FeedbackWidget";
 
 let pathname = "/tutorial";
-let session: { user: { email?: string | null; name?: string | null } } | null = null;
-let isPending = false;
 
 vi.mock("next/navigation", () => ({
   usePathname: () => pathname,
 }));
 
-vi.mock("@/lib/auth-client", () => ({
-  authClient: {
-    useSession: () => ({ data: session, isPending }),
-  },
-}));
-
 describe("FeedbackWidget", () => {
   beforeEach(() => {
     pathname = "/tutorial";
-    session = null;
-    isPending = false;
     vi.restoreAllMocks();
   });
 
   it("hides feedback for guests", () => {
-    render(<FeedbackWidget />);
+    render(<FeedbackWidget session={{ user: { id: "" } }} />);
 
     expect(screen.queryByRole("button", { name: "Дай ни бележка" })).not.toBeInTheDocument();
   });
@@ -35,23 +25,21 @@ describe("FeedbackWidget", () => {
     "shows feedback on the service route %s",
     (servicePath) => {
       pathname = servicePath;
-      session = { user: { email: "anna@example.com", name: "Анна" } };
 
-      render(<FeedbackWidget />);
+      render(<FeedbackWidget session={{ user: { id: "user-1", email: "anna@example.com", name: "Анна" } }} />);
 
       expect(screen.getByRole("button", { name: "Дай ни бележка" })).toBeInTheDocument();
     },
   );
 
   it("opens for authenticated product routes and submits category context", async () => {
-    session = { user: { email: "anna@example.com", name: "Анна" } };
     const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => {
       return new Response(JSON.stringify({ ok: true }), { status: 200 });
     });
     vi.stubGlobal("fetch", fetchMock);
     const user = userEvent.setup();
 
-    render(<FeedbackWidget />);
+    render(<FeedbackWidget session={{ user: { id: "user-1", email: "anna@example.com", name: "Анна" } }} />);
     await user.click(screen.getByRole("button", { name: "Дай ни бележка" }));
 
     expect(screen.getByRole("dialog", { name: "Дай ни бележка." })).toBeInTheDocument();

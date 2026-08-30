@@ -1,20 +1,16 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { authClient } from "@/lib/auth-client";
 import { createGameClient, GAME_ROOM_NAME } from "@/lib/colyseus-client";
 import { useGameRoom } from "@/hooks/play/use-game-room";
 import { isVisualGameFixtureEnabled, parseVisualGameFixture } from "@/hooks/play/visual-game-fixture";
 
 const mocks = vi.hoisted(() => ({
+  refreshSession: vi.fn(),
   useSession: vi.fn(),
   createGameClient: vi.fn(),
 }));
 
-vi.mock("@/lib/auth-client", () => ({
-  authClient: {
-    useSession: mocks.useSession,
-  },
-}));
+vi.mock("@/lib/use-auth-session", () => ({ useAuthSession: mocks.useSession }));
 
 vi.mock("@/lib/colyseus-client", () => ({
   GAME_ROOM_NAME: "game_room",
@@ -36,6 +32,7 @@ function createFakeRoom(token = "reconnect-token") {
     reconnectionToken: token,
     leave: vi.fn(),
     send: vi.fn(),
+    request: vi.fn().mockResolvedValue({ synchronized: true }),
     onStateChange: vi.fn((handler: StateHandler) => {
       stateHandlers.push(handler);
     }),
@@ -134,6 +131,7 @@ function makeState() {
 describe("useGameRoom", () => {
   beforeEach(() => {
     vi.useRealTimers();
+    mocks.refreshSession.mockReset();
     mocks.useSession.mockReset();
     mocks.createGameClient.mockReset();
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
@@ -209,13 +207,62 @@ describe("useGameRoom", () => {
   });
 
   it("blocks unauthenticated users before creating a room client", async () => {
-    mocks.useSession.mockReturnValue({ data: null, isPending: false });
+    mocks.useSession.mockReturnValue({
+      data: null,
+      isError: false,
+      isPending: false,
+      refresh: mocks.refreshSession,
+    });
     const toast = vi.fn();
 
     const { result } = renderHook(() => useGameRoom({ code: "ABCD", createOptions: undefined, toast }));
 
     await waitFor(() => expect(result.current.connectionStatus).toBe("disconnected"));
     expect(result.current.connectionMessage).toBe("Трябва да влезеш, за да се присъединиш към стаята.");
+    expect(createGameClient).not.toHaveBeenCalled();
+  });
+
+  it("joins from the initial server session without waiting for another auth request", async () => {
+    const initialSession = { user: { id: "u1", name: "Играч" } };
+    mocks.useSession.mockImplementation((session) => ({
+      data: session ?? null,
+      isError: false,
+      isPending: false,
+      refresh: mocks.refreshSession,
+    }));
+    const { client } = createClient();
+    mocks.createGameClient.mockReturnValue(client);
+    const toast = vi.fn();
+
+    const { result } = renderHook(() => useGameRoom({
+      code: "ABCD",
+      createOptions: undefined,
+      initialSession,
+      toast,
+    }));
+
+    await waitFor(() => expect(result.current.connectionStatus).toBe("connected"));
+    expect(client.joinOrCreate).toHaveBeenCalledTimes(1);
+  });
+
+  it("exposes session verification failures through the existing retry action", async () => {
+    mocks.useSession.mockReturnValue({
+      data: null,
+      isError: true,
+      isPending: false,
+      refresh: mocks.refreshSession,
+    });
+    const { result } = renderHook(() => useGameRoom({
+      code: "ABCD",
+      createOptions: undefined,
+      toast: vi.fn(),
+    }));
+
+    await waitFor(() => expect(result.current.connectionStatus).toBe("error"));
+    expect(result.current.connectionMessage).toBe("Не успяхме да потвърдим сесията ти.");
+
+    act(() => result.current.reconnectNow());
+    expect(mocks.refreshSession).toHaveBeenCalledWith({ fresh: true });
     expect(createGameClient).not.toHaveBeenCalled();
   });
 
@@ -239,6 +286,21 @@ describe("useGameRoom", () => {
     expect(result.current.currentUserId).toBe("u1");
     expect(result.current.snapshot?.players[0]?.displayName).toBe("Играч");
     expect(result.current.snapshot?.doctorCanSelfProtect).toBe(true);
+  });
+
+  it("registers private handlers before requesting the retained private state", async () => {
+    mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
+    const { client, joinRoom } = createClient();
+    mocks.createGameClient.mockReturnValue(client);
+
+    renderHook(() => useGameRoom({ code: "ABCD", createOptions: undefined, toast: vi.fn() }));
+
+    await waitFor(() => expect(joinRoom.request).toHaveBeenCalledWith("syncPrivateState"));
+    const privateRoleRegistration = joinRoom.onMessage.mock.calls.findIndex(([type]) => type === "private_role");
+    expect(privateRoleRegistration).toBeGreaterThanOrEqual(0);
+    expect(joinRoom.onMessage.mock.invocationCallOrder[privateRoleRegistration]).toBeLessThan(
+      joinRoom.request.mock.invocationCallOrder[0] ?? Number.POSITIVE_INFINITY,
+    );
   });
 
   it("uses join-or-create when invite URLs also carry room creation options", async () => {
@@ -449,6 +511,7 @@ describe("useGameRoom", () => {
     expect(result.current.connectionMessage).toBe("Връзката е възстановена.");
     expect(client.reconnect).toHaveBeenCalledWith("reconnect-token");
     expect(reconnectRoom.onStateChange).toHaveBeenCalled();
+    expect(reconnectRoom.request).toHaveBeenCalledWith("syncPrivateState");
     expect(toast).toHaveBeenCalledWith({ message: "Върнахме те в стаята.", kind: "success" });
     vi.useRealTimers();
   });
@@ -476,6 +539,33 @@ describe("useGameRoom", () => {
     await waitFor(() => expect(client.joinOrCreate).toHaveBeenCalledTimes(2));
     await waitFor(() => expect(result.current.connectionStatus).toBe("connected"));
     expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+    expect(client.reconnect).not.toHaveBeenCalled();
+  });
+
+  it("uses a fresh signed token when retained private-state synchronization fails", async () => {
+    mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
+    const firstRoom = createFakeRoom();
+    const freshRoom = createFakeRoom("fresh-private-state-token");
+    firstRoom.request.mockRejectedValueOnce(new Error("private state unavailable"));
+    const client = {
+      joinOrCreate: vi.fn()
+        .mockResolvedValueOnce(firstRoom)
+        .mockResolvedValueOnce(freshRoom),
+      reconnect: vi.fn(),
+    };
+    mocks.createGameClient.mockReturnValue(client);
+    const toast = vi.fn();
+    const { result } = renderHook(() => useGameRoom({
+      code: "ABCD",
+      createOptions: undefined,
+      toast,
+    }));
+
+    await waitFor(() => expect(result.current.connectionStatus).toBe("error"));
+    expect(result.current.connectionMessage).toContain("личните ти данни");
+    act(() => result.current.reconnectNow());
+
+    await waitFor(() => expect(client.joinOrCreate).toHaveBeenCalledTimes(2));
     expect(client.reconnect).not.toHaveBeenCalled();
   });
 });

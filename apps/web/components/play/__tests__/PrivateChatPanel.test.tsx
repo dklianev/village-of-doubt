@@ -37,7 +37,7 @@ describe("PrivateChatPanel", () => {
       />,
     );
 
-    expect(screen.getByText("чат на Мафията")).toBeInTheDocument();
+    expect(screen.getByText("разговор на Мафията")).toBeInTheDocument();
     expect(screen.queryByText(/тайно съобщение 1/)).not.toBeInTheDocument();
     expect(screen.getByText(/тайно съобщение 7/)).toBeInTheDocument();
     expect(screen.getByText("Борис пише...")).toBeInTheDocument();
@@ -46,7 +46,7 @@ describe("PrivateChatPanel", () => {
   it("updates input value and submits the selected private channel", async () => {
     const user = userEvent.setup();
     const onTyping = vi.fn();
-    const onSend = vi.fn();
+    const onSend = vi.fn().mockResolvedValue(true);
 
     render(
       <PrivateChatPanel
@@ -64,6 +64,27 @@ describe("PrivateChatPanel", () => {
     expect(onTyping).toHaveBeenCalledWith("mafia", true);
     expect(onTyping).toHaveBeenLastCalledWith("mafia", false);
     expect(onSend).toHaveBeenCalledWith("mafia", "тук сме");
+    expect(screen.getByRole("textbox", { name: "Съобщение за таен канал" })).toHaveValue("");
+  });
+
+  it("keeps a private draft until the server accepts it", async () => {
+    const user = userEvent.setup();
+    const onSend = vi.fn().mockResolvedValue(false);
+    render(
+      <PrivateChatPanel
+        channel="mafia"
+        messages={[]}
+        onSend={onSend}
+        onTyping={vi.fn()}
+        typingNotices={[]}
+      />,
+    );
+
+    const input = screen.getByRole("textbox", { name: "Съобщение за таен канал" });
+    await user.type(input, "Пази плана");
+    await user.click(screen.getByRole("button", { name: "Изпрати" }));
+
+    expect(input).toHaveValue("Пази плана");
   });
 
   it("clears a live private typing signal when the panel unmounts", async () => {

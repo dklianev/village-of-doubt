@@ -5,15 +5,21 @@ interface TutorialProgressProps {
   current: number;
   total: number;
   onJump: (slide: number) => void;
+  continueHref: string;
 }
 
-export function TutorialProgress({ current, total, onJump }: TutorialProgressProps) {
+export function TutorialProgress({ current, total, onJump, continueHref }: TutorialProgressProps) {
   const scenes = ["Събиране", "Нощ", "Ден", "Глас", "Развръзка", "Начало"].slice(0, total);
 
   return (
     <nav className="tutorial-progress" aria-label="Ход на репетицията">
       <div className="tutorial-progress-bar" aria-hidden="true">
         <div className="tutorial-progress-fill" style={{ width: `${(current / total) * 100}%` }} />
+      </div>
+
+      <div className="tutorial-progress-mobile" aria-live="polite">
+        <span>{String(current).padStart(2, "0")} / {String(total).padStart(2, "0")}</span>
+        <strong>{scenes[current - 1]}</strong>
       </div>
 
       <div className="tutorial-progress-dots">
@@ -40,7 +46,7 @@ export function TutorialProgress({ current, total, onJump }: TutorialProgressPro
         })}
       </div>
 
-      <Link href="/" prefetch={false} className="tutorial-skip-link">
+      <Link href={continueHref} prefetch={false} className="tutorial-skip-link">
         <span>Прескочи</span>
         <ChevronRight className="tutorial-skip-icon" aria-hidden strokeWidth={2} />
       </Link>

@@ -184,6 +184,28 @@ export function normalizeChatMessage(message: unknown): string {
   return message.replace(/[\p{Cc}\p{Cf}]/gu, "").slice(0, MAX_CHAT_MESSAGE_LENGTH);
 }
 
+export function formatPublicDeathMessage(displayName: string, causeBg: string): string {
+  const cause = causeBg.trim();
+  if (!cause) {
+    return `${displayName} напусна играта.`;
+  }
+  return `${displayName} ${cause[0]!.toLocaleLowerCase("bg-BG")}${cause.slice(1)}`;
+}
+
+export function safeClientErrorMessage(
+  error: unknown,
+  fallback = "Нещо се обърка. Опитай отново.",
+): string {
+  if (!(error instanceof Error)) {
+    return fallback;
+  }
+  const message = error.message.trim();
+  if (!message || message.length > 240 || /[\r\n]/u.test(message) || !/\p{Script=Cyrillic}/u.test(message)) {
+    return fallback;
+  }
+  return message;
+}
+
 export function ensureNightActionAllowed(role: RoleCode, action: NightActionCommand, phase: string): void {
   const team = getRoleTeam(role);
   const allowed =

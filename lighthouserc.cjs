@@ -15,11 +15,14 @@ module.exports = {
       startServerReadyTimeout: 60_000,
       url: [
         `${baseUrl}/`,
+        `${baseUrl}/werewolf`,
         `${baseUrl}/tutorial`,
         `${baseUrl}/werewolf/rules`,
+        `${baseUrl}/mafia/rules`,
+        `${baseUrl}/faq`,
         `${baseUrl}/sign-in`,
       ],
-      numberOfRuns: 2,
+      numberOfRuns: 3,
       settings: isDesktop
         ? {
             formFactor: "desktop",

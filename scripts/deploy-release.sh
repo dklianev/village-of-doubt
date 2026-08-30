@@ -23,6 +23,7 @@ schema_signature_tmp="$release_dir/schema-current.json.sig.$$"
 backup_service="${BACKUP_SYSTEMD_SERVICE:-werewolf-backup.service}"
 manifest_signature="${RELEASE_MANIFEST_SIGNATURE:-${manifest_path}.sig}"
 operations_lock_dir="${OPERATIONS_LOCK_DIR:-$release_dir/operations.lock}"
+git_command="${RELEASE_GIT_COMMAND:-git}"
 
 case "$backup_service" in
   ""|*[!A-Za-z0-9@_.-]*)
@@ -75,6 +76,27 @@ set -a
 set +a
 operation_release="$RELEASE_VERSION"
 migrator_container_name="werewolf-migrator-$RELEASE_VERSION"
+
+source_commit="$({
+  GIT_CONFIG_NOSYSTEM=1 \
+  GIT_CONFIG_GLOBAL=/dev/null \
+  "$git_command" -c "safe.directory=$PWD" -c core.hooksPath=/dev/null \
+    rev-parse --verify 'HEAD^{commit}'
+} 2>/dev/null)" || {
+  echo "Release source checkout commit could not be verified." >&2
+  exit 1
+}
+case "$source_commit" in
+  [0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]* ) ;;
+  * )
+    echo "Release source checkout returned an invalid commit." >&2
+    exit 1
+    ;;
+esac
+if [ "$(printf '%s' "$source_commit" | tr 'A-F' 'a-f')" != "$RELEASE_VERSION" ]; then
+  echo "Release source checkout $source_commit does not match signed manifest sourceCommit $RELEASE_VERSION." >&2
+  exit 1
+fi
 
 node --env-file=.env scripts/check-production-env.mjs
 

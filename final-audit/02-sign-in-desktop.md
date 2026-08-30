@@ -1,0 +1,80 @@
+- generic [ref=f1e1] [box=0,0,914,1149]:
+  - link "Към основното съдържание" [ref=f1e2] [cursor=pointer] [box=8,-56,263,48]:
+    - /url: "#main-content"
+  - banner [ref=f1e4] [box=0,0,914,68]:
+    - link "Върколак и Мафия, начало" [ref=f1e5] [cursor=pointer] [box=24,10,210,48]:
+      - /url: /
+      - generic [ref=f1e7] [box=72,10,162,48]:
+        - generic [ref=f1e8] [box=72,10,162,16]:
+          - generic [ref=f1e9] [box=72,10,77,15]: Върколак
+          - generic [ref=f1e10] [box=155,10,4,16]: ·
+          - generic [ref=f1e11] [box=165,10,57,15]: Мафия
+        - generic [ref=f1e12] [box=78,29,52,17]: БЕТА
+        - generic [ref=f1e13] [box=72,49,162,9]: Социална игра на сенки
+    - navigation "Основна навигация" [ref=f1e14] [box=252,12,371,44]:
+      - link "Играй" [active] [ref=f1e15] [cursor=pointer] [box=251,9,90,45]:
+        - /url: /werewolf/create
+      - generic "Семейство игри" [ref=f1e19] [box=354,12,211,44]:
+        - link "Върколак" [ref=f1e20] [cursor=pointer] [box=358,16,109,36]:
+          - /url: /werewolf
+        - link "Мафия" [ref=f1e23] [cursor=pointer] [box=476,16,85,36]:
+          - /url: /mafia
+      - button "Още страници" [ref=f1e26] [cursor=pointer] [box=579,12,44,44]
+    - generic "Настройки" [ref=f1e31] [box=641,12,249,44]:
+      - button "Включи звука" [ref=f1e32] [cursor=pointer] [box=641,12,44,44]
+      - button "Смени на тъмна тема" [ref=f1e188] [cursor=pointer] [box=693,12,44,44]
+      - link "Влез" [ref=f1e195] [cursor=pointer] [box=762,15,128,38]:
+        - /url: /sign-in
+  - main [ref=f1e206] [box=9,68,897,949]:
+    - generic [ref=f1e211] [box=73,144,801,761]:
+      - generic [ref=f1e212] [box=73,376,365,529]:
+        - paragraph [ref=f1e213] [box=73,658,117,31]: нова стая
+        - heading "Стани стопанин" [level=1] [ref=f1e214] [box=73,701,365,109]:
+          - generic [ref=f1e215] [box=73,701,365,54]: Стани
+          - generic [ref=f1e216] [box=73,757,365,54]: стопанин
+        - paragraph [ref=f1e217] [box=73,828,365,51]: Влез, за да създадеш частна стая, да избереш правила и да поканиш хората около масата.
+      - region "Отвори досието си" [ref=f1e218] [box=484,144,390,761]:
+        - generic [ref=f1e219] [box=803,165,48,48]: В
+        - generic [ref=f1e220] [box=512,172,332,105]:
+          - paragraph [ref=f1e221] [box=512,172,332,22]: ВХОД
+          - heading "Отвори досието си" [level=2] [ref=f1e222] [box=512,200,332,28]
+          - paragraph [ref=f1e223] [box=512,234,332,43]: Избери бърз вход или използвай имейл и парола.
+        - generic [ref=f1e224] [box=512,295,332,118]:
+          - button "Продължи с Google" [ref=f1e226] [cursor=pointer] [box=512,295,332,54]
+          - button "Продължи с Discord" [ref=f1e231] [cursor=pointer] [box=512,359,332,54]
+        - separator "или с имейл" [ref=f1e235] [box=512,431,332,17]
+        - generic [ref=f1e237] [box=512,466,332,348]:
+          - tablist "Начин на вход" [ref=f1e238] [box=512,466,332,48]:
+            - tab "Имам досие" [selected] [ref=f1e239] [cursor=pointer] [box=517,471,159,38]
+            - tab "Ново досие" [ref=f1e240] [cursor=pointer] [box=681,471,159,38]
+          - tabpanel "Имам досие" [ref=f1e241] [box=512,526,332,288]:
+            - generic [ref=f1e242] [box=512,526,332,67]
+            - generic [ref=f1e245] [box=512,606,332,67]
+            - link "Забравена парола?" [ref=f1e248] [cursor=pointer] [box=512,685,332,68]:
+              - /url: /forgot-password
+            - button "Влез" [ref=f1e249] [cursor=pointer] [box=512,767,332,44]
+        - generic [ref=f1e250] [box=512,832,332,44]:
+          - link "Поверителност" [ref=f1e251] [cursor=pointer] [box=562,832,133,44]:
+            - /url: /privacy
+          - generic [ref=f1e252] [box=703,832,4,44]: ·
+          - link "Условия" [ref=f1e253] [cursor=pointer] [box=715,832,80,44]:
+            - /url: /terms
+  - contentinfo [ref=f1e167] [box=0,1041,914,108]:
+    - generic [ref=f1e168] [box=16,1066,882,32]:
+      - link "Поверителност" [ref=f1e169] [cursor=pointer] [box=232,1066,113,32]:
+        - /url: /privacy
+      - generic [ref=f1e170] [box=353,1066,3,32]: ·
+      - link "Условия" [ref=f1e171] [cursor=pointer] [box=364,1066,63,32]:
+        - /url: /terms
+      - generic [ref=f1e172] [box=435,1066,3,32]: ·
+      - link "Сигнал" [ref=f1e173] [cursor=pointer] [box=447,1066,56,32]:
+        - /url: /report
+      - generic [ref=f1e174] [box=511,1066,3,32]: ·
+      - link "Състояние" [ref=f1e175] [cursor=pointer] [box=522,1066,82,32]:
+        - /url: /status
+      - generic [ref=f1e176] [box=612,1066,3,32]: ·
+      - link "Помощ" [ref=f1e177] [cursor=pointer] [box=624,1066,58,32]:
+        - /url: /faq
+    - paragraph [ref=f1e178] [box=16,1106,882,19]: © 2026 Върколак и Мафия · Бета
+  - button "Open Next.js Dev Tools" [ref=f1e184] [cursor=pointer] [box=22,799,32,32]
+  - alert [ref=f1e205] [box=-1,1148,1,1]: Стани стопанин

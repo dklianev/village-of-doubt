@@ -133,7 +133,7 @@ describe("role presets", () => {
       mode: "werewolves_classic",
       playerCount: 8,
       roles: { ordinary_villager: 4, werewolf: 2, witch: 2 },
-    })).toThrow("Превишен е максималният брой копия");
+    })).toThrow("Има твърде много копия от следните роли");
   });
 
   it("validates canonical role dependencies and balance warnings for werewolf", () => {
@@ -366,7 +366,7 @@ describe("role presets", () => {
           werewolf: 1,
         },
       }),
-    ).toThrow("Тези роли не са налични за Мафия: Върколак.");
+    ).toThrow("Тези роли не могат да се използват в Мафия: Върколак.");
 
     expect(() =>
       createGameConfigFromOptions({
@@ -377,7 +377,7 @@ describe("role presets", () => {
           don: 1,
         },
       }),
-    ).toThrow("Тези роли не са налични за Върколак: Кръстник.");
+    ).toThrow("Тези роли не могат да се използват във Върколак: Кръстник.");
   });
 
   it("separates mafia and werewolves families without duplicating role definitions", () => {
@@ -432,15 +432,15 @@ describe("runtime game config intake", () => {
   it.each(["honest_human", "full_human"])("rejects unsupported beta narrator mode %s", (narratorMode) => {
     expect(() => createGameConfigFromOptions({
       narratorMode: narratorMode as "honest_human" | "full_human",
-    })).toThrow("Човешкият Разказвач не е достъпен в бета версията. Избери Автоматичен Разказвач.");
+    })).toThrow("Режимът с човешки Разказвач още не е достъпен в бета версията. Избери Автоматичен Разказвач.");
   });
 
   it.each([
-    ["дробен брой играчи", { playerCount: 6.5 }, "Броят играчи трябва да е цяло число."],
-    ["текстова булева стойност", { firstNightKill: "false" }, "Невалидна стойност за настройка на стаята."],
-    ["неизвестна роля", { roles: { invented_role: 1 } }, "Невалидно разпределение на ролите."],
-    ["текстов брой роли", { roles: { ordinary_villager: 4, werewolf: "2" } }, "Невалидно разпределение на ролите."],
-    ["невалиден таймер", { tempoProfile: "manual", customTimers: { voteSeconds: "веднага" } }, "Невалидни настройки на таймерите."],
+    ["дробен брой играчи", { playerCount: 6.5 }, "Броят на играчите трябва да е цяло число."],
+    ["текстова булева стойност", { firstNightKill: "false" }, "Една от настройките на стаята не е валидна."],
+    ["неизвестна роля", { roles: { invented_role: 1 } }, "Съставът на ролите не е валиден."],
+    ["текстов брой роли", { roles: { ordinary_villager: 4, werewolf: "2" } }, "Съставът на ролите не е валиден."],
+    ["невалиден таймер", { tempoProfile: "manual", customTimers: { voteSeconds: "веднага" } }, "Настройките на таймерите не са валидни."],
   ])("rejects malformed config payload: %s", (_name, hostileOptions, messageBg) => {
     expect(() => createGameConfigFromOptions(hostileOptions as never)).toThrow(messageBg);
   });
@@ -505,7 +505,7 @@ describe("assignment and win conditions", () => {
   it("credits the Roleblocker when the City wins", () => {
     expect(ROLE_DEFINITIONS.roleblocker).toMatchObject({
       team: "village",
-      fullDescriptionBg: expect.stringContaining("Печелиш заедно с Града."),
+      fullDescriptionBg: expect.stringContaining("Печелиш с Града."),
     });
     const result = evaluateWinCondition([
       { playerId: "blocker", role: "roleblocker", alive: true },

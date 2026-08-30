@@ -79,6 +79,8 @@ describe("GameRoom reconnect resilience", () => {
       capabilities: NightActionCapabilities;
     }>;
     const rosterPromise = reconnected.waitForMessage("private_faction_roster") as Promise<PrivateFactionRoster>;
+    const syncResult = await reconnected.request("syncPrivateState");
+    expect(syncResult).toEqual({ synchronized: true });
     const privateRole = await privateRolePromise;
     const capabilities = await capabilitiesPromise;
     const roster = await rosterPromise;
@@ -154,6 +156,7 @@ describe("GameRoom reconnect resilience", () => {
       targetUserId: string;
       targetName: string;
     }>;
+    await reconnected.request("syncPrivateState");
 
     await expect(replayedBlessing).resolves.toMatchObject({
       targetUserId: target?.userId,
@@ -202,9 +205,11 @@ describe("GameRoom reconnect resilience", () => {
       userId: reconnectingPriest?.userId ?? "",
       displayName: reconnectingPriest?.displayName ?? "",
     });
-    const capabilities = await reconnected.waitForMessage("night_action_capabilities") as {
+    const capabilitiesPromise = reconnected.waitForMessage("night_action_capabilities") as Promise<{
       capabilities: NightActionCapabilities;
-    };
+    }>;
+    await reconnected.request("syncPrivateState");
+    const capabilities = await capabilitiesPromise;
 
     expect(capabilities.capabilities.availableKinds).toContain("priest_bless");
     expect(capabilities.capabilities.disallowedTargetsByKind.priest_bless).toContainEqual({
@@ -260,9 +265,11 @@ describe("GameRoom reconnect resilience", () => {
       userId: witch?.userId ?? "",
       displayName: witch?.displayName ?? "",
     });
-    const replayedCapabilities = await reconnected.waitForMessage("night_action_capabilities") as {
+    const replayedCapabilitiesPromise = reconnected.waitForMessage("night_action_capabilities") as Promise<{
       capabilities: NightActionCapabilities;
-    };
+    }>;
+    await reconnected.request("syncPrivateState");
+    const replayedCapabilities = await replayedCapabilitiesPromise;
 
     expect(replayedCapabilities.capabilities.allowedTargetIdsByKind?.witch_heal).toEqual([victim?.userId]);
     expect("nightActionCapabilities" in (reconnected.state as unknown as Record<string, unknown>)).toBe(false);
@@ -306,6 +313,7 @@ describe("GameRoom reconnect resilience", () => {
       displayName: commissioner?.displayName ?? "",
     });
     const replayedResult = reconnected.waitForMessage("private_check_result") as Promise<PrivateCheckResult>;
+    await reconnected.request("syncPrivateState");
 
     await expect(replayedResult).resolves.toMatchObject({ targetUserId: target?.userId, isEvil: true });
     expect("privateCheckResult" in (reconnected.state as unknown as Record<string, unknown>)).toBe(false);

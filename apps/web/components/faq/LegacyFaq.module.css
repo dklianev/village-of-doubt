@@ -28,11 +28,7 @@
 :global(.faq-hearth-banner) {
   position: absolute;
   inset: 0;
-}
-
-:global(.faq-hearth-banner-img) {
-  object-fit: cover;
-  object-position: center 38%;
+  background: var(--art-faq) center 38% / cover no-repeat;
 }
 
 :global(.faq-hearth-scrim) {
@@ -162,9 +158,10 @@
 
 :global(.faq-hearth-filter) {
   display: inline-flex;
+  min-height: 44px;
   gap: 6px;
   align-items: center;
-  padding: 6px 14px;
+  padding: 8px 14px;
   color: rgba(245, 232, 200, 0.78);
   background: rgba(13, 10, 8, 0.5);
   border: 1px solid rgba(245, 232, 200, 0.14);

@@ -363,14 +363,18 @@
 
 :global(.newspaper-page-empty[data-state="unavailable"] .empty-headline) {
   align-content: center;
+  min-width: 0;
   min-height: 330px;
   padding-block: 24px;
 }
 
 :global(.newspaper-page-empty[data-state="unavailable"] .headline-main-title) {
-  max-width: 18ch;
+  width: 100%;
+  min-width: 0;
+  max-width: min(18ch, 100%);
   margin-bottom: 8px;
   font-size: clamp(2.35rem, 5vw, 3.35rem);
+  overflow-wrap: break-word;
 }
 
 :global(.empty-lede) {
@@ -506,6 +510,11 @@
 
   :global(.headline-main-title) {
     font-size: 2rem;
+  }
+
+  :global(.newspaper-page-empty[data-state="unavailable"] .headline-main-title) {
+    font-size: clamp(1.65rem, 8.5vw, 2rem);
+    line-height: 1.04;
   }
 
   :global(.headline-stats) {

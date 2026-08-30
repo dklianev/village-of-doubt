@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -14,6 +14,7 @@ import {
   VolumeX,
 } from "lucide-react";
 import { AuthChip } from "@/components/site-chrome/AuthChip";
+import { NavDropdown } from "@/components/site-chrome/NavDropdown";
 import { getSoundEnabled, playCue, setSoundEnabled } from "@/lib/sound";
 import { safeLocalStorage } from "@/lib/safe-storage";
 import type { AuthSessionView } from "@/lib/use-auth-session";
@@ -31,23 +32,20 @@ const MobileDrawer = dynamic(() => import("@/components/site-chrome/MobileDrawer
   ssr: false,
 });
 
-const NavDropdown = dynamic(() => import("@/components/site-chrome/NavDropdown").then((mod) => mod.NavDropdown), {
-  loading: () => null,
-  ssr: false,
-});
-
 export default function SiteChrome({ initialSession }: { initialSession?: AuthSessionView | null }) {
-  const [pathname, setPathname] = useState<string | null>(null);
+  const pathname = usePathname();
+  const [interactive, setInteractive] = useState(false);
   const [soundEnabled, setSoundEnabledState] = useState(false);
   const [themePreference, setThemePreference] = useState<ThemePreference>("dark");
   const [family, setFamily] = useState<ChromeFamily | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [drawerMounted, setDrawerMounted] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const dropdownTriggerRef = useRef<HTMLButtonElement>(null);
   const drawerTriggerRef = useRef<HTMLButtonElement>(null);
 
-  const routeFamily = pathname ? familyFromPath(pathname) : undefined;
+  const routeFamily = familyFromPath(pathname);
   const activeFamily = routeFamily ?? family;
   const playHref = activeFamily === "mafia"
     ? "/mafia/create"
@@ -56,21 +54,18 @@ export default function SiteChrome({ initialSession }: { initialSession?: AuthSe
       : "/create";
 
   useEffect(() => {
-    setMounted(true);
     setSoundEnabledState(getSoundEnabled());
     const savedTheme = readThemePreference();
     const savedFamily = readFamilyPreference();
     setThemePreference(savedTheme);
     setFamily(savedFamily);
     applyThemePreference(savedTheme);
+    setInteractive(true);
   }, []);
 
   useEffect(() => {
     setDropdownOpen(false);
     setDrawerOpen(false);
-    if (!pathname) {
-      return;
-    }
     const nextFamily = familyFromPath(pathname);
     if (!nextFamily) {
       return;
@@ -94,6 +89,7 @@ export default function SiteChrome({ initialSession }: { initialSession?: AuthSe
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setDropdownOpen(false);
+        dropdownTriggerRef.current?.focus();
       }
     }
 
@@ -106,6 +102,7 @@ export default function SiteChrome({ initialSession }: { initialSession?: AuthSe
   }, [dropdownOpen]);
 
   function openDrawer() {
+    setDrawerMounted(true);
     setDrawerOpen(true);
   }
 
@@ -132,40 +129,49 @@ export default function SiteChrome({ initialSession }: { initialSession?: AuthSe
 
   return (
     <header className="site-chrome" data-version="v2" data-family={activeFamily ?? undefined}>
-      <Suspense fallback={null}>
-        <RoutePathnameSync onPathnameChange={setPathname} />
-      </Suspense>
-      <button ref={drawerTriggerRef} className="site-mobile-menu" type="button" aria-label="Отвори менюто" onClick={openDrawer}>
+      <button
+        ref={drawerTriggerRef}
+        className="site-mobile-menu"
+        type="button"
+        aria-label="Отвори менюто"
+        disabled={!interactive}
+        onPointerEnter={() => setDrawerMounted(true)}
+        onFocus={() => setDrawerMounted(true)}
+        onClick={openDrawer}
+      >
         <Menu className="site-icon" aria-hidden strokeWidth={1.9} />
       </button>
 
       <BrandMark compact={false} />
 
       <PrimaryBand
-        pathname={pathname ?? ""}
+        pathname={pathname}
         playHref={playHref}
         dropdownOpen={dropdownOpen}
         dropdownRef={dropdownRef}
+        dropdownTriggerRef={dropdownTriggerRef}
+        interactive={interactive}
         onToggleDropdown={() => setDropdownOpen((open) => !open)}
       />
 
       <UtilityCluster
         soundEnabled={soundEnabled}
         themePreference={themePreference}
+        interactive={interactive}
         {...(initialSession === undefined ? {} : { initialSession })}
         onToggleSound={toggleSound}
         onCycleTheme={cycleThemePreference}
       />
 
-      <Link className="site-play-cta site-play-cta-mobile" href={playHref} prefetch={false}>
+      <Link className="site-play-cta site-play-cta-mobile" href={playHref}>
         <Play className="site-icon" aria-hidden strokeWidth={1.9} />
         <span>Играй</span>
       </Link>
 
-      {mounted ? (
+      {drawerMounted ? (
         <MobileDrawer
           open={drawerOpen}
-          pathname={pathname ?? ""}
+          pathname={pathname}
           soundEnabled={soundEnabled}
           themePreference={themePreference}
           {...(initialSession === undefined ? {} : { initialSession })}
@@ -180,23 +186,9 @@ export default function SiteChrome({ initialSession }: { initialSession?: AuthSe
   );
 }
 
-function RoutePathnameSync({
-  onPathnameChange,
-}: {
-  onPathnameChange: React.Dispatch<React.SetStateAction<string | null>>;
-}) {
-  const pathname = usePathname();
-
-  useEffect(() => {
-    onPathnameChange(pathname);
-  }, [onPathnameChange, pathname]);
-
-  return null;
-}
-
 function BrandMark({ compact }: { compact: boolean }) {
   return (
-    <Link className="site-brand" href="/" prefetch={false}>
+    <Link className="site-brand" href="/" aria-label="Върколак и Мафия, начало">
       <span className="site-brand-mark" aria-hidden="true" />
       <span className="site-brand-text">
         <span className={compact ? "site-brand-wordmark is-compact" : "site-brand-wordmark"}>
@@ -222,17 +214,21 @@ function PrimaryBand({
   playHref,
   dropdownOpen,
   dropdownRef,
+  dropdownTriggerRef,
+  interactive,
   onToggleDropdown,
 }: {
   pathname: string;
   playHref: string;
   dropdownOpen: boolean;
   dropdownRef: React.RefObject<HTMLDivElement | null>;
+  dropdownTriggerRef: React.RefObject<HTMLButtonElement | null>;
+  interactive: boolean;
   onToggleDropdown: () => void;
 }) {
   return (
     <nav className="site-primary-band" aria-label="Основна навигация">
-      <Link className="site-play-cta" href={playHref} prefetch={false}>
+      <Link className="site-play-cta" href={playHref}>
         <Play className="site-icon" aria-hidden strokeWidth={1.9} />
         <span>Играй</span>
       </Link>
@@ -242,7 +238,15 @@ function PrimaryBand({
         <FamilyLink href="/mafia" label="Мафия" active={pathname.startsWith("/mafia")} family="mafia" />
       </div>
       <div className="site-more-menu" ref={dropdownRef}>
-        <button className="site-icon-button" type="button" aria-label="Още страници" aria-expanded={dropdownOpen} onClick={onToggleDropdown}>
+        <button
+          ref={dropdownTriggerRef}
+          className="site-icon-button"
+          type="button"
+          aria-label="Още страници"
+          aria-expanded={dropdownOpen}
+          disabled={!interactive}
+          onClick={onToggleDropdown}
+        >
           <MoreHorizontal className="site-icon" aria-hidden strokeWidth={1.9} />
         </button>
         {dropdownOpen ? <NavDropdown onNavigate={onToggleDropdown} /> : null}
@@ -253,7 +257,7 @@ function PrimaryBand({
 
 function FamilyLink({ href, label, active, family }: { href: string; label: string; active: boolean; family: ChromeFamily }) {
   return (
-    <Link className={active ? "site-family-link is-active" : "site-family-link"} data-family={family} href={href} prefetch={false}>
+    <Link className={active ? "site-family-link is-active" : "site-family-link"} data-family={family} href={href}>
       <span>{label}</span>
     </Link>
   );
@@ -262,6 +266,7 @@ function FamilyLink({ href, label, active, family }: { href: string; label: stri
 function UtilityCluster({
   soundEnabled,
   themePreference,
+  interactive,
   initialSession,
   onToggleSound,
   onCycleTheme,
@@ -269,6 +274,7 @@ function UtilityCluster({
 }: {
   soundEnabled: boolean;
   themePreference: ThemePreference;
+  interactive: boolean;
   initialSession?: AuthSessionView | null;
   onToggleSound: () => void;
   onCycleTheme: () => void;
@@ -276,14 +282,26 @@ function UtilityCluster({
 }) {
   return (
     <div className="site-utility-cluster" aria-label="Настройки">
-      <button className="site-icon-button" type="button" aria-label={soundEnabled ? "Звук включен" : "Звук изключен"} onClick={onToggleSound}>
+      <button
+        className="site-icon-button"
+        type="button"
+        aria-label={soundEnabled ? "Изключи звука" : "Включи звука"}
+        disabled={!interactive}
+        onClick={onToggleSound}
+      >
         {soundEnabled ? (
           <Volume2 className="site-icon" aria-hidden strokeWidth={1.9} />
         ) : (
           <VolumeX className="site-icon" aria-hidden strokeWidth={1.9} />
         )}
       </button>
-      <button className="site-icon-button" type="button" aria-label={themeLabel(themePreference)} onClick={onCycleTheme}>
+      <button
+        className="site-icon-button"
+        type="button"
+        aria-label={themeLabel(themePreference)}
+        disabled={!interactive}
+        onClick={onCycleTheme}
+      >
         {themePreference === "dark" ? (
           <Moon className="site-icon" aria-hidden strokeWidth={1.9} />
         ) : (
@@ -351,5 +369,5 @@ function applyThemePreference(preference: ThemePreference) {
 }
 
 function themeLabel(preference: ThemePreference) {
-  return preference === "dark" ? "Тъмна тема" : "Светла тема";
+  return preference === "dark" ? "Смени на светла тема" : "Смени на тъмна тема";
 }

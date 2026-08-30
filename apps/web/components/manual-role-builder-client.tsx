@@ -69,7 +69,7 @@ export function ManualRoleBuilderClient({
           <p className="section-kicker">ръчно разпределение</p>
           <h2 className="mt-2 text-3xl font-black">Построй своята игра</h2>
           <p className="mt-2 text-sm text-[#ead9ba]">
-            Добавяй роли като карти, гледай баланса в реално време и остави сървъра да валидира невъзможните комбинации.
+            Добавяй роли като карти и следи баланса в реално време. Невъзможните комбинации се отбелязват веднага.
           </p>
         </div>
         <BalanceMeter family={family} balance={balance} total={total} playerCount={playerCount} />

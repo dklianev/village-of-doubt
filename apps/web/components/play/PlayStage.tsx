@@ -174,11 +174,12 @@ export function PlayStage({
       return [];
     }
   }, [measurements, seatCount]);
-  const effectiveMode: LayoutMode = seatLayout.length === seatCount && seatCount >= 3
+  const measuredMode: LayoutMode = seatLayout.length === seatCount && seatCount >= 3
     ? measurements.mode
     : measurements.mode === "mobile-table-grid"
       ? "mobile-table-grid"
       : "dense-table-grid";
+  const effectiveMode: LayoutMode = !hasMeasured ? "mobile-table-grid" : measuredMode;
   const mobileGridColumns = seatCount <= 6 ? 2 : seatCount <= 9 ? 3 : 4;
 
   const closeMenu = useCallback((restoreFocus: boolean) => {
@@ -313,7 +314,7 @@ export function PlayStage({
                 data-nominee={nomineeIds.has(player.userId) ? "true" : undefined}
                 data-menu-x={geometry?.menuPlacement.x ?? (isMobileStartEdge ? "mobile-start" : undefined)}
                 data-menu-y={geometry?.menuPlacement.y ?? (isMobileLastRow ? "up" : undefined)}
-                style={seatStyle(geometry)}
+                style={effectiveMode.endsWith("table-grid") ? undefined : seatStyle(geometry)}
               >
                 <PlaySeat
                   player={player}

@@ -21,6 +21,13 @@ const variants = [
     maxBytes: 48 * 1024,
   },
   {
+    source: "assets/game-art-source/logo-landing-mark.png",
+    output: "apps/web/public/game-art/mobile/logo-landing-mark.webp",
+    format: "webp",
+    width: 256,
+    maxBytes: 12 * 1024,
+  },
+  {
     source: "assets/game-art-source/bg-lobby-tavern.png",
     output: "apps/web/public/game-art/mobile/bg-lobby-tavern.avif",
     width: 960,

@@ -253,7 +253,7 @@ export function NightActionPanel({
         </div>
       ) : null}
       <p className={`night-action-server-note ${styles.serverNote}`}>
-        Можеш да промениш избора си до края на таймера. Сървърът пази последното изпратено действие.
+        Можеш да промениш избора си до края на таймера. Зачита се последното изпратено действие.
       </p>
       {privateRole === "medium" && selectableTargets.length === 0 ? (
         <p className={`night-action-empty-note ${styles.emptyNote}`}>

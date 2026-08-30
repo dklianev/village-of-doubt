@@ -3,7 +3,7 @@ import { GROUP_LABELS, GROUP_ORDER, SECONDARY_LINKS } from "@/components/site-ch
 
 export function NavDropdown({ onNavigate }: { onNavigate: () => void }) {
   return (
-    <div className="nav-dropdown nav-dropdown-overflow" role="menu">
+    <nav className="nav-dropdown nav-dropdown-overflow" aria-label="Още страници">
       {GROUP_ORDER.map((groupKey) => {
         const groupLinks = SECONDARY_LINKS.filter((item) => item.group === groupKey);
         if (groupLinks.length === 0) {
@@ -16,7 +16,7 @@ export function NavDropdown({ onNavigate }: { onNavigate: () => void }) {
             {groupLinks.map((item) => {
               const Icon = item.icon;
               return (
-                <Link key={item.href} href={item.href} role="menuitem" prefetch={false} onClick={onNavigate} className="nav-dropdown-item">
+                <Link key={item.href} href={item.href} prefetch={false} onClick={onNavigate} className="nav-dropdown-item">
                   <Icon className="nav-dropdown-item-icon" aria-hidden strokeWidth={1.8} />
                   <span>{item.label}</span>
                 </Link>
@@ -25,6 +25,6 @@ export function NavDropdown({ onNavigate }: { onNavigate: () => void }) {
           </div>
         );
       })}
-    </div>
+    </nav>
   );
 }

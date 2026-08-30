@@ -6,8 +6,8 @@ import {
   gameEvents,
   gamePlayers,
   games,
-  upsertUsersUnlessDeleted,
   userAchievements,
+  withUserIdentityMutation,
   type Database,
 } from "@werewolf/database";
 import type { GameConfig, GamePhase, RoleCode, WinnerTeam } from "@werewolf/shared";
@@ -128,37 +128,37 @@ export class DrizzleGamePersistence implements GamePersistence {
   constructor(private readonly db: Database) {}
 
   async ensureGame(input: PersistGameInput): Promise<string | undefined> {
-    const hostIdentity = await this.ensureUsers([{
-      userId: input.hostId,
-      displayName: input.hostId,
-    }]);
-    const hostId = hostIdentity.get(input.hostId) ?? input.hostId;
+    return this.withUsers(
+      [{ userId: input.hostId, displayName: input.hostId }],
+      async (mutationDb, hostIdentity) => {
+        const hostId = hostIdentity.get(input.hostId) ?? input.hostId;
+        const gameValues = {
+          code: input.code,
+          hostId,
+          config: input.config,
+          roomVisibility: input.config.roomVisibility,
+          rulesetVersion: input.config.rulesetVersion,
+          status: "lobby" as const,
+        };
+        if (!input.idempotencyKey) {
+          const [row] = await mutationDb
+            .insert(games)
+            .values(gameValues)
+            .returning({ id: games.id });
 
-    const gameValues = {
-      code: input.code,
-      hostId,
-      config: input.config,
-      roomVisibility: input.config.roomVisibility,
-      rulesetVersion: input.config.rulesetVersion,
-      status: "lobby" as const,
-    };
-    if (!input.idempotencyKey) {
-      const [row] = await this.db
-        .insert(games)
-        .values(gameValues)
-        .returning({ id: games.id });
+          return row?.id;
+        }
 
-      return row?.id;
-    }
+        const id = derivePersistenceId("game", input.idempotencyKey);
+        const [row] = await mutationDb
+          .insert(games)
+          .values({ id, ...gameValues })
+          .onConflictDoNothing({ target: games.id })
+          .returning({ id: games.id });
 
-    const id = derivePersistenceId("game", input.idempotencyKey);
-    const [row] = await this.db
-      .insert(games)
-      .values({ id, ...gameValues })
-      .onConflictDoNothing({ target: games.id })
-      .returning({ id: games.id });
-
-    return row?.id ?? id;
+        return row?.id ?? id;
+      },
+    );
   }
 
   async markGameActive(gameId: string, config: GameConfig): Promise<void> {
@@ -181,49 +181,53 @@ export class DrizzleGamePersistence implements GamePersistence {
     }
 
     const playerUserIds = new Set(players.map((player) => player.userId));
-    const identityMap = await this.ensureUsers([
-      ...players,
-      ...players.flatMap((player) =>
-        player.loverUserId && !playerUserIds.has(player.loverUserId)
-          ? [{ userId: player.loverUserId, displayName: player.loverUserId }]
-          : []),
-    ]);
-    const persistedPlayers = players.map((player) => {
-      const userId = identityMap.get(player.userId) ?? player.userId;
-      return {
-        ...player,
-        userId,
-        displayName: userId === player.userId ? player.displayName : DELETED_DISPLAY_NAME,
-        loverUserId: player.loverUserId ? (identityMap.get(player.loverUserId) ?? player.loverUserId) : null,
-      };
-    });
-    await this.db
-      .insert(gamePlayers)
-      .values(persistedPlayers.map((player) => ({
-        gameId,
-        userId: player.userId,
-        displayName: player.displayName,
-        role: player.role,
-        isAlive: player.isAlive,
-        isLover: player.isLover ?? false,
-        loverUserId: player.loverUserId ?? null,
-        won: player.won ?? false,
-        deathRound: player.deathRound ?? null,
-        deathCause: player.deathCause ?? null,
-      })))
-      .onConflictDoUpdate({
-        target: [gamePlayers.gameId, gamePlayers.userId],
-        set: {
-          displayName: sql.raw(`excluded.${gamePlayers.displayName.name}`),
-          role: sql.raw(`excluded.${gamePlayers.role.name}`),
-          isAlive: sql.raw(`excluded.${gamePlayers.isAlive.name}`),
-          isLover: sql.raw(`excluded.${gamePlayers.isLover.name}`),
-          loverUserId: sql.raw(`excluded.${gamePlayers.loverUserId.name}`),
-          won: sql.raw(`excluded.${gamePlayers.won.name}`),
-          deathRound: sql.raw(`excluded.${gamePlayers.deathRound.name}`),
-          deathCause: sql.raw(`excluded.${gamePlayers.deathCause.name}`),
-        },
-      });
+    await this.withUsers(
+      [
+        ...players,
+        ...players.flatMap((player) =>
+          player.loverUserId && !playerUserIds.has(player.loverUserId)
+            ? [{ userId: player.loverUserId, displayName: player.loverUserId }]
+            : []),
+      ],
+      async (mutationDb, identityMap) => {
+        const persistedPlayers = players.map((player) => {
+          const userId = identityMap.get(player.userId) ?? player.userId;
+          return {
+            ...player,
+            userId,
+            displayName: userId === player.userId ? player.displayName : DELETED_DISPLAY_NAME,
+            loverUserId: player.loverUserId ? (identityMap.get(player.loverUserId) ?? player.loverUserId) : null,
+          };
+        });
+        await mutationDb
+          .insert(gamePlayers)
+          .values(persistedPlayers.map((player) => ({
+            gameId,
+            userId: player.userId,
+            displayName: player.displayName,
+            role: player.role,
+            isAlive: player.isAlive,
+            isLover: player.isLover ?? false,
+            loverUserId: player.loverUserId ?? null,
+            won: player.won ?? false,
+            deathRound: player.deathRound ?? null,
+            deathCause: player.deathCause ?? null,
+          })))
+          .onConflictDoUpdate({
+            target: [gamePlayers.gameId, gamePlayers.userId],
+            set: {
+              displayName: sql.raw(`excluded.${gamePlayers.displayName.name}`),
+              role: sql.raw(`excluded.${gamePlayers.role.name}`),
+              isAlive: sql.raw(`excluded.${gamePlayers.isAlive.name}`),
+              isLover: sql.raw(`excluded.${gamePlayers.isLover.name}`),
+              loverUserId: sql.raw(`excluded.${gamePlayers.loverUserId.name}`),
+              won: sql.raw(`excluded.${gamePlayers.won.name}`),
+              deathRound: sql.raw(`excluded.${gamePlayers.deathRound.name}`),
+              deathCause: sql.raw(`excluded.${gamePlayers.deathCause.name}`),
+            },
+          });
+      },
+    );
   }
 
   async recordEvent(gameId: string, event: PersistEventInput): Promise<void> {
@@ -233,58 +237,63 @@ export class DrizzleGamePersistence implements GamePersistence {
     const actorUserId = isCapturedParticipant(event.actorId, participantUserIds) ? event.actorId : null;
     const targetUserId = isCapturedParticipant(event.targetId, participantUserIds) ? event.targetId : null;
     const payloadUserIds = collectStructuredPayloadUserIds(event.payload, participantUserIds);
-    const identityMap = await this.ensureUsers(
+    await this.withUsers(
       [actorUserId, targetUserId, ...payloadUserIds]
         .filter((userId): userId is string => Boolean(userId))
         .map((userId) => ({ userId, displayName: userId })),
+      async (mutationDb, identityMap) => {
+        const actorId = actorUserId ? (identityMap.get(actorUserId) ?? actorUserId) : null;
+        const targetId = targetUserId ? (identityMap.get(targetUserId) ?? targetUserId) : null;
+        const eventValues = {
+          gameId,
+          round: event.round,
+          phase: event.phase,
+          type: event.type,
+          actorId,
+          targetId,
+          visibility: event.visibility ?? "public",
+          payload: scrubPersistedEventPayload(event.payload ?? {}, identityMap, {
+            rootIdentityWasDeleted: Boolean(
+              (actorUserId && identityMap.has(actorUserId))
+              || (targetUserId && identityMap.has(targetUserId)),
+            ),
+          }),
+          createdAt: event.occurredAt ?? new Date(),
+        };
+        if (!event.idempotencyKey) {
+          await mutationDb.insert(gameEvents).values(eventValues);
+          return;
+        }
+
+        await mutationDb
+          .insert(gameEvents)
+          .values({
+            id: derivePersistenceId("event", event.idempotencyKey),
+            ...eventValues,
+          })
+          .onConflictDoNothing({ target: gameEvents.id });
+      },
     );
-    const actorId = actorUserId ? (identityMap.get(actorUserId) ?? actorUserId) : null;
-    const targetId = targetUserId ? (identityMap.get(targetUserId) ?? targetUserId) : null;
-
-    const eventValues = {
-      gameId,
-      round: event.round,
-      phase: event.phase,
-      type: event.type,
-      actorId,
-      targetId,
-      visibility: event.visibility ?? "public",
-      payload: scrubPersistedEventPayload(event.payload ?? {}, identityMap, {
-        rootIdentityWasDeleted: Boolean(
-          (actorUserId && identityMap.has(actorUserId))
-          || (targetUserId && identityMap.has(targetUserId)),
-        ),
-      }),
-      createdAt: event.occurredAt ?? new Date(),
-    };
-    if (!event.idempotencyKey) {
-      await this.db.insert(gameEvents).values(eventValues);
-      return;
-    }
-
-    await this.db
-      .insert(gameEvents)
-      .values({
-        id: derivePersistenceId("event", event.idempotencyKey),
-        ...eventValues,
-      })
-      .onConflictDoNothing({ target: gameEvents.id });
   }
 
   async recordAchievement(userId: string, achievementId: string, gameId: string): Promise<void> {
-    const identityMap = await this.ensureUsers([{ userId, displayName: userId }]);
-    if (identityMap.has(userId)) {
-      return;
-    }
+    await this.withUsers(
+      [{ userId, displayName: userId }],
+      async (mutationDb, identityMap) => {
+        if (identityMap.has(userId)) {
+          return;
+        }
 
-    await this.db
-      .insert(userAchievements)
-      .values({
-        userId,
-        achievementId,
-        gameId,
-      })
-      .onConflictDoNothing();
+        await mutationDb
+          .insert(userAchievements)
+          .values({
+            userId,
+            achievementId,
+            gameId,
+          })
+          .onConflictDoNothing();
+      },
+    );
   }
 
   async finishGame(gameId: string, input: FinishGameInput): Promise<void> {
@@ -310,24 +319,26 @@ export class DrizzleGamePersistence implements GamePersistence {
     });
   }
 
-  private async ensureUsers(
+  private async withUsers<T>(
     players: Array<{ userId: string; displayName: string }>,
-  ): Promise<Map<string, string>> {
+    mutation: (db: Database, deletedIdentityMap: Map<string, string>) => Promise<T>,
+  ): Promise<T> {
     if (players.length === 0) {
-      return new Map();
+      return mutation(this.db, new Map());
     }
 
     const uniquePlayers = [...new Map(players.filter((player) => isValidUserId(player.userId)).map((player) => [player.userId, player])).values()];
     if (uniquePlayers.length === 0) {
-      return new Map();
+      return mutation(this.db, new Map());
     }
 
-    return upsertUsersUnlessDeleted(
+    return withUserIdentityMutation(
       this.db,
       uniquePlayers.map((player) => ({
         ...player,
         email: `${sanitizeUserId(player.userId)}@anonymous.local`,
       })),
+      mutation,
     );
   }
 }

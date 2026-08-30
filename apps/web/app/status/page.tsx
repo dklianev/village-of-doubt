@@ -33,7 +33,7 @@ export default async function StatusPage() {
 
   return (
     <main className="shell legal-page-shell status-shell">
-      <ResourceHints images={["/game-art/legal/status-banner.webp"]} />
+      <ResourceHints images={[{ href: "/game-art/legal/status-banner.webp", fetchPriority: "high" }]} />
       <JsonLd data={jsonLd} />
       <StatusDashboard
         initialServices={services}

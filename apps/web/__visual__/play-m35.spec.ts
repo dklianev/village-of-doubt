@@ -97,7 +97,7 @@ for (const theme of THEMES) {
       MATRIX_VIEWPORTS[1],
     );
     await page.getByText("Правила и подсказки", { exact: true }).click();
-    await page.getByRole("tab", { name: "Чат" }).click();
+    await page.getByRole("tab", { name: "Разговор" }).click();
 
     const accessibility = await new AxeBuilder({ page })
       .include(".play-side-rail")
@@ -256,7 +256,7 @@ test("@play-interaction mobile two-target candidates stay reachable", async ({ p
 
 test("@play-interaction chronicle tabs expose a writable day chat", async ({ page }) => {
   await openFixture(page, { phase: "day_discussion", family: "werewolves", players: 8 }, "dark", MATRIX_VIEWPORTS[6]);
-  const chatTab = page.getByRole("tab", { name: "Чат" });
+  const chatTab = page.getByRole("tab", { name: "Разговор" });
   await chatTab.click();
   await expect(chatTab).toHaveAttribute("aria-selected", "true");
   const composer = page.getByPlaceholder("Напиши обвинение, защита или блъф...");

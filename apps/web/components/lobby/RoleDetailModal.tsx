@@ -16,7 +16,7 @@ export function RoleDetailModal({
 
   return (
     <div ref={ref} className="role-detail-modal" role="dialog" aria-modal="true" aria-labelledby="role-detail-title">
-      <button type="button" className="role-detail-backdrop" aria-label="Затвори ролята" onClick={onClose} />
+      <div className="role-detail-backdrop" aria-hidden="true" onClick={onClose} />
       <article className="role-detail-card">
         <picture aria-hidden="true">
           <source srcSet={roleThumbPath(family, role)} type="image/webp" />

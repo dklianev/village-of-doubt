@@ -87,7 +87,8 @@ async function main() {
   await runCheck("auth gates for lobby routes", testLobbyModeFiltering);
   await runCheck("auth gates for invite lobby routes", testInviteLobbyCopy);
   await runCheck("roles codex assets and responsiveness", testRolesCodex);
-  await runCheck("authenticated entry redirect basics", testAnonymousEntry);
+  await runCheck("anonymous join redirects to sign-in", testAnonymousEntry);
+  await runCheck("authenticated join keeps the room invitation", testAuthenticatedEntry);
   await runCheck("history screen basics", testHistoryScreen);
   await runCheck("achievements, leaderboard and friends screens", testUtilityPages);
   await runCheck("single-player play auth gate", testSinglePlayScreen);
@@ -247,14 +248,28 @@ async function testRolesCodex() {
 async function testAnonymousEntry() {
   const { page, watcher, close } = await newPage("anonymous-entry", viewports.desktop);
   try {
-    await goto(page, "/mafia/join/ABCD12", "authenticated join");
+    await goto(page, "/mafia/join/ABCD12", "anonymous join");
     await page.waitForURL("**/sign-in?redirect=%2Fmafia%2Fjoin%2FABCD12");
     await expectText(page, "Влез с кода");
     await expectNoText(page, "без регистрация");
-    await assertNoHorizontalOverflow(page, "authenticated join");
+    await assertNoHorizontalOverflow(page, "anonymous join");
     await watcher.assertClean();
   } finally {
     await close();
+  }
+}
+
+async function testAuthenticatedEntry() {
+  const entry = await newPage("authenticated-entry", viewports.desktop);
+  try {
+    await signInBrowserContext(entry.context, authFixture.users[0]);
+    await goto(entry.page, "/mafia/join/ABCD12", "authenticated join");
+    await entry.page.waitForURL("**/mafia/join/ABCD12");
+    await expectText(entry.page, "Добре дошъл в бара");
+    await assertNoHorizontalOverflow(entry.page, "authenticated join");
+    await entry.watcher.assertClean();
+  } finally {
+    await entry.close();
   }
 }
 
@@ -567,6 +582,7 @@ async function newPage(label, viewport, identity) {
   const page = await context.newPage();
   const watcher = watchPage(page, label);
   return {
+    context,
     page,
     watcher,
     close: async () => {

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { RefreshCw, WifiOff } from "lucide-react";
 import "@/components/offline/Offline.module.css";
 
@@ -109,16 +108,12 @@ export function OfflineClient() {
         </div>
       </header>
 
-      <section className="offline-actions" aria-label="Бързи връзки">
-        <Link className="btn btn-primary" href="/">
-          Към началото
-        </Link>
-        <Link className="btn btn-secondary" href="/werewolf/rules">
-          Прочети правилата
-        </Link>
-        <Link className="btn btn-secondary" href="/faq">
-          Седни до огъня
-        </Link>
+      <section className="offline-actions" aria-label="Възстановяване на връзката">
+        <button className="btn btn-primary" type="button" onClick={() => window.location.reload()}>
+          <RefreshCw aria-hidden strokeWidth={2} />
+          Провери връзката
+        </button>
+        <p>Началото, правилата и помощта ще се отворят веднага щом връзката се върне.</p>
       </section>
     </article>
   );

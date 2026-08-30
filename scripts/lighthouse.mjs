@@ -1,6 +1,11 @@
 import { spawn } from "node:child_process";
 import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import {
+  formatLighthouseSummary,
+  lighthouseTailFailures,
+  summarizeLighthouseProfile,
+} from "./lighthouse-summary.mjs";
 
 const profiles = [
   { preset: "desktop", port: "3410" },
@@ -10,6 +15,20 @@ const chromePath = process.env.CHROME_PATH ?? findPlaywrightHeadlessShell();
 
 for (const profile of profiles) {
   await runLighthouse(profile);
+}
+
+const tailFailures = [];
+for (const { preset } of profiles) {
+  const outputDir = join(process.cwd(), "output", "lighthouse", preset);
+  const summaries = summarizeLighthouseProfile(outputDir, preset);
+  for (const summary of summaries) {
+    console.log(formatLighthouseSummary(summary));
+  }
+  tailFailures.push(...lighthouseTailFailures(summaries));
+}
+
+if (tailFailures.length > 0) {
+  throw new Error(`Lighthouse run-tail guard failed:\n${tailFailures.map((failure) => `- ${failure}`).join("\n")}`);
 }
 
 console.log("Lighthouse CI passed for desktop and mobile profiles.");

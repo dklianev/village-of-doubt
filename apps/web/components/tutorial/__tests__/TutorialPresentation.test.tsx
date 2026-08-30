@@ -8,16 +8,27 @@ const clueChipsSource = readFileSync(resolve(process.cwd(), "components/tutorial
 const flipbookSource = readFileSync(resolve(process.cwd(), "components/tutorial/TutorialFlipbook.tsx"), "utf8");
 const progressSource = readFileSync(resolve(process.cwd(), "components/tutorial/TutorialProgress.tsx"), "utf8");
 const finalSlideSource = readFileSync(resolve(process.cwd(), "components/tutorial/SlideFinal.tsx"), "utf8");
+const setupSlideSource = readFileSync(resolve(process.cwd(), "components/tutorial/SlideSetup.tsx"), "utf8");
 
 describe("tutorial presentation contract", () => {
   it("resolves the cinematic hero through theme-specific tutorial art tokens", () => {
-    expect(globalsCss).toContain("--art-tutorial-dark: image-set(");
-    expect(globalsCss).toContain("--art-tutorial-light: image-set(");
-    expect(globalsCss).toContain("--art-tutorial: var(--art-tutorial-dark)");
-    expect(globalsCss).toContain("--art-tutorial: var(--art-tutorial-light)");
-    expect(globalsCss).toContain("body:has(.tutorial-shell)::before");
+    expect(globalsCss).not.toContain("--art-tutorial-day");
+    expect(globalsCss).not.toContain("--art-tutorial-night");
+    expect(globalsCss).not.toContain("--art-tutorial-dark");
+    expect(globalsCss).not.toContain("--art-tutorial-light");
+    expect(tutorialCss).toContain("--art-tutorial-dark: image-set(");
+    expect(tutorialCss).toContain("--art-tutorial-light: image-set(");
+    expect(tutorialCss).toContain("--art-tutorial: var(--art-tutorial-dark)");
+    expect(tutorialCss).toContain("--art-tutorial: var(--art-tutorial-light)");
+    expect(tutorialCss).toContain("body:has(.tutorial-shell)::before");
     expect(tutorialCss).toContain(".tutorial-shell::before");
     expect(tutorialCss).toContain("content: none");
+  });
+
+  it("keeps only the first scene in the entry module and lazy-loads scenes two through six as one bundle", () => {
+    expect(flipbookSource).toContain('import { SlideSetup } from "./SlideSetup"');
+    expect(flipbookSource).toContain('import("./TutorialDeferredSlide")');
+    expect(flipbookSource.match(/\bdynamic\(/g)).toHaveLength(1);
   });
 
   it("keeps the narrow day scene compact enough for the fixed mobile stage", () => {
@@ -44,6 +55,11 @@ describe("tutorial presentation contract", () => {
     expect(flipbookSource).toContain('prefetch={false}');
     expect(progressSource).toContain('prefetch={false}');
     expect(finalSlideSource.match(/prefetch=\{false\}/g)).toHaveLength(5);
+  });
+
+  it("matches the current signed-in room flow", () => {
+    expect(setupSlideSource).not.toContain("Никой не се регистрира");
+    expect(setupSlideSource).toContain("Картите се раздават, когато домакинът започне играта");
   });
 });
 

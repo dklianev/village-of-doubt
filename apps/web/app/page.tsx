@@ -5,11 +5,11 @@ import { routeMetadata, SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/seo";
 export const metadata = routeMetadata({
   title: "Върколак и Мафия — социална игра на сенки",
   description:
-    "Онлайн Върколак и Мафия с тайни роли, частни стаи, авторитетен игрови сървър и истории, които се помнят между приятели.",
+    "Върколак и Мафия онлайн с тайни роли и частни стаи. Създай маса, покани приятелите си и виж на кого ще повярваш.",
   path: "/",
   image: "/game-art/og/og-home.png",
   imageAlt: "Нощно село и нощен град",
-  ogDescription: "Тайни роли, частни стаи, една вечер на масата. Играй с приятели без бот игра.",
+  ogDescription: "Тайни роли, частна стая и компания, в която някой лъже. Избери игра и събери масата.",
   type: "website",
   absoluteTitle: true,
 });
@@ -20,7 +20,7 @@ const homeJsonLd = {
   name: SITE_NAME,
   url: SITE_URL,
   slogan: SITE_TAGLINE,
-  description: "Онлайн социална игра с тайни роли. Поддържа Върколак и Мафия за частни стаи с приятели.",
+  description: "Онлайн социална игра с тайни роли за приятелски компании. Избери Върколак или Мафия, създай стая и покани своите хора.",
   applicationCategory: "GameApplication",
   operatingSystem: "Web",
   inLanguage: "bg-BG",

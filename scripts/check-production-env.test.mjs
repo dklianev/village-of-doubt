@@ -41,7 +41,9 @@ function validProductionEnv() {
     RELEASE_ALLOWED_IMAGE_PREFIX: "ghcr.io/example/project",
     RELEASE_MANIFEST_PUBLIC_KEY: process.execPath,
     BACKUP_AGE_RECIPIENT: "age1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
-    RCLONE_REMOTE: "encrypted:werewolf",
+    RCLONE_REMOTE: "encrypted-backups:werewolf/backups",
+    RCLONE_DELETION_LEDGER_REMOTE: "encrypted-ledger:werewolf/deletion-ledger",
+    RCLONE_BACKUP_RETENTION_DAYS: "30",
     DATABASE_STALE_ACTIVE_HOURS: "24",
     DATABASE_EVENT_RETENTION_DAYS: "365",
     MIGRATION_LOCK_TIMEOUT_MS: "5000",
@@ -75,6 +77,21 @@ function runChecker(overrides = {}) {
 test("accepts a complete production notification and OAuth configuration", () => {
   const result = runChecker();
   assert.equal(result.status, 0, result.stderr);
+});
+
+test("requires isolated off-site backup and deletion-ledger destinations", () => {
+  for (const overrides of [
+    { RCLONE_DELETION_LEDGER_REMOTE: "" },
+    { RCLONE_BACKUP_RETENTION_DAYS: "31" },
+    {
+      RCLONE_REMOTE: "shared:werewolf/backups",
+      RCLONE_DELETION_LEDGER_REMOTE: "shared:werewolf/deletion-ledger",
+    },
+  ]) {
+    const result = runChecker(overrides);
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /RCLONE_/);
+  }
 });
 
 test("fails closed when the report notification recipient is absent or malformed", () => {

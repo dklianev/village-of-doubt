@@ -2,7 +2,8 @@
 
 import { type FormEvent, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { authClient } from "@/lib/auth-client";
+import { MessageSquareText } from "lucide-react";
+import type { AuthSessionView } from "@/lib/use-auth-session";
 import { useModal } from "@/lib/use-modal";
 import styles from "./FeedbackWidget.module.css";
 import { shouldMountFeedback } from "./route-policy";
@@ -32,30 +33,11 @@ const CATEGORY_PLACEHOLDERS: Record<FeedbackCategory, string> = {
 };
 
 function FeedbackIcon({ className }: { className?: string | undefined }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 32 32"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <path d="M5 10 L 5 24 Q 5 26 7 26 L 25 26 Q 27 26 27 24 L 27 10" />
-      <path d="M5 10 L 16 18 L 27 10" />
-      <path d="M5 10 Q 5 8 7 8 L 25 8 Q 27 8 27 10" />
-      <path d="M21 4 L 28 11" strokeWidth="1.8" />
-      <path d="M19 5 L 21 4 L 22 6" />
-      <path d="M28 11 L 26 13 L 24 11" />
-    </svg>
-  );
+  return <MessageSquareText className={className} aria-hidden strokeWidth={1.7} />;
 }
 
-export function FeedbackWidget() {
+export function FeedbackWidget({ session }: { session: AuthSessionView }) {
   const pathname = usePathname();
-  const { data: session, isPending } = authClient.useSession();
 
   const [open, setOpen] = useState(false);
   const [category, setCategory] = useState<FeedbackCategory>("bug");
@@ -70,7 +52,7 @@ export function FeedbackWidget() {
   const panelTitleId = useId();
   const firstFieldRef = useRef<HTMLTextAreaElement>(null);
 
-  const hidden = isPending || !session || !shouldMountFeedback(pathname);
+  const hidden = !session.user.id || !shouldMountFeedback(pathname, true);
   const submittedEmail = useMemo(() => email.trim(), [email]);
 
   const close = useCallback(() => {

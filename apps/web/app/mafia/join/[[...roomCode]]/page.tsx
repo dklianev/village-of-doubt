@@ -12,12 +12,23 @@ export const instant = false;
 export default async function MafiaJoinPage({ params }: { params: Promise<{ roomCode?: string[] }> }) {
   const { roomCode } = await params;
   const initialCode = roomCode?.[0] ?? "";
-  await requireSession(`/mafia/join${initialCode ? `/${initialCode}` : ""}`);
+  const session = await requireSession(`/mafia/join${initialCode ? `/${initialCode}` : ""}`);
+  const initialSession = {
+    user: {
+      id: session.user.id,
+      name: session.user.name,
+    },
+  };
 
   return (
     <main className="shell lobby-shell join-shell" data-faction="mafia" data-family="mafia">
       <div className="join-shell-inner">
-        <AuthGatedEntryClient family="mafia" mode="mafia_free" initialCode={initialCode} />
+        <AuthGatedEntryClient
+          family="mafia"
+          mode="mafia_free"
+          initialCode={initialCode}
+          initialSession={initialSession}
+        />
       </div>
     </main>
   );

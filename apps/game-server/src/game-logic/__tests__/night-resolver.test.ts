@@ -60,9 +60,55 @@ describe("resolveNight", () => {
     ]);
 
     expect(result.deaths).toEqual([
-      { userId: "civilian", causeBg: "Повален от ковашкия меч." },
+      { userId: "civilian", causeBg: "Падна от ковашкия меч." },
     ]);
     expect(result.preventedDeaths).toEqual([]);
+  });
+
+  it("heals a faction kill without erasing a concurrent Blacksmith sword kill", () => {
+    const result = resolveNight(players, [
+      action("blacksmith", {
+        kind: "blacksmith_sword",
+        receiverUserId: "vigilante",
+        targetUserId: "civilian",
+      }),
+      action("don", { kind: "faction_kill", targetUserId: "civilian" }),
+      action("mafioso", { kind: "faction_kill", targetUserId: "civilian" }),
+      action("lawyer", { kind: "faction_kill", targetUserId: "civilian" }),
+      action("witch", { kind: "witch_heal", targetUserId: "civilian" }),
+    ]);
+
+    expect(result.deaths).toEqual([
+      { userId: "civilian", causeBg: "Падна от ковашкия меч." },
+    ]);
+    expect(result.preventedDeaths).toEqual([
+      { userId: "civilian", reasonBg: "Лечебната отвара спря нощна атака." },
+    ]);
+  });
+
+  it.each([
+    ["hunter-first", [
+      action("vampire-hunter", { kind: "faction_kill", targetUserId: "civilian" }),
+      action("witch", { kind: "witch_poison", targetUserId: "civilian" }),
+    ]],
+    ["poison-first", [
+      action("witch", { kind: "witch_poison", targetUserId: "civilian" }),
+      action("vampire-hunter", { kind: "faction_kill", targetUserId: "civilian" }),
+    ]],
+  ] as const)("preserves every lethal source when overlapping kills resolve (%s)", (_label, actions) => {
+    const result = resolveNight([
+      ...players,
+      { userId: "vampire-hunter", role: "vampire_hunter", alive: true },
+    ], [...actions]);
+
+    expect(result.deaths).toEqual([{
+      userId: "civilian",
+      causeBg: "Падна от отровата на Вещицата. Падна от удара на Убиеца на вампири.",
+    }]);
+    expect(result.deathSources).toEqual(expect.arrayContaining([
+      { userId: "civilian", sourceRole: "vampire_hunter" },
+      { userId: "civilian", sourceRole: "witch" },
+    ]));
   });
 
   it("requires a clear faction consensus for a night kill", () => {
@@ -103,7 +149,7 @@ describe("resolveNight", () => {
     ]);
 
     expect(result.deaths).toEqual([
-      { userId: "civilian", causeBg: "Убит от Мафията." },
+      { userId: "civilian", causeBg: "Падна от атаката на Мафията." },
     ]);
   });
 
@@ -117,8 +163,8 @@ describe("resolveNight", () => {
 
     expect(result.deaths).toEqual(
       expect.arrayContaining([
-        { userId: "civilian", causeBg: "Убит от Мафията." },
-        { userId: "don", causeBg: "Отровен от Вещицата." },
+        { userId: "civilian", causeBg: "Падна от атаката на Мафията." },
+        { userId: "don", causeBg: "Падна от отровата на Вещицата." },
       ]),
     );
   });
@@ -131,10 +177,10 @@ describe("resolveNight", () => {
 
     expect(result.deaths).toEqual(
       expect.arrayContaining([
-        { userId: "civilian", causeBg: "Изяден от Върколаците." },
+        { userId: "civilian", causeBg: "Падна от атаката на Върколаците." },
       ]),
     );
-    expect(result.delayedDeaths).toEqual([{ userId: "commissioner", causeBg: "Умря от вампирско ухапване." }]);
+    expect(result.delayedDeaths).toEqual([{ userId: "commissioner", causeBg: "Падна от вампирското ухапване." }]);
   });
 
   it("lets the Healer protect against a faction kill", () => {

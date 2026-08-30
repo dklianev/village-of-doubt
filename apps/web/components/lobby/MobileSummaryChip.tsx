@@ -1,8 +1,8 @@
+import { Sheet } from "@werewolf/ui";
 import { ChevronUp } from "lucide-react";
-import { memo, useCallback, useId, type Dispatch } from "react";
+import { memo, useCallback, useRef, type Dispatch } from "react";
 import { roleWarnings, type LobbyFormAction, type LobbyFormState } from "@/lib/lobby-form";
 import { StickyPreview } from "@/components/lobby/StickyPreview";
-import { useModal } from "@/lib/use-modal";
 
 function MobileSummaryChipImpl({
   state,
@@ -12,34 +12,41 @@ function MobileSummaryChipImpl({
   dispatch: Dispatch<LobbyFormAction>;
 }) {
   const warnings = roleWarnings(state);
-  const summaryId = useId();
-  const closeSummary = useCallback(() => dispatch({ type: "SET_MOBILE_SUMMARY_OPEN", open: false }), [dispatch]);
-  const { ref } = useModal({ open: state.mobileSummaryOpen, onClose: closeSummary });
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const setSummaryOpen = useCallback(
+    (open: boolean) => {
+      dispatch({ type: "SET_MOBILE_SUMMARY_OPEN", open });
+      if (!open) {
+        window.requestAnimationFrame(() => triggerRef.current?.focus());
+      }
+    },
+    [dispatch],
+  );
 
   return (
     <>
       <button
+        ref={triggerRef}
         type="button"
         className="mobile-summary-chip"
         aria-expanded={state.mobileSummaryOpen}
-        aria-controls={summaryId}
         aria-haspopup="dialog"
-        onClick={() => dispatch({ type: "SET_MOBILE_SUMMARY_OPEN", open: true })}
+        onClick={() => setSummaryOpen(true)}
       >
         <span>{state.playerCount} играчи · {warnings.length > 0 ? `⚠ ${warnings.length}` : "готово"}</span>
         <ChevronUp aria-hidden />
       </button>
-      {state.mobileSummaryOpen ? (
-        <div id={summaryId} ref={ref} className="mobile-summary-overlay" role="dialog" aria-modal="true" aria-label="Преглед на стаята">
-          <button
-            type="button"
-            className="mobile-summary-backdrop"
-            aria-label="Затвори прегледа"
-            onClick={closeSummary}
-          />
+      <Sheet
+        open={state.mobileSummaryOpen}
+        onOpenChange={setSummaryOpen}
+        title="Преглед на стаята"
+        description="Обобщение на избраните играчи, роли и настройки."
+        closeLabel="Затвори прегледа"
+      >
+        <div className="mobile-summary-sheet">
           <StickyPreview state={state} dispatch={dispatch} compact />
         </div>
-      ) : null}
+      </Sheet>
     </>
   );
 }

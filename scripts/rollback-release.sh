@@ -21,6 +21,7 @@ mkdir -p "$release_dir"
 chmod 700 "$release_dir"
 
 operations_lock_dir="${OPERATIONS_LOCK_DIR:-$release_dir/operations.lock}"
+git_command="${RELEASE_GIT_COMMAND:-git}"
 drain_armed=0
 forensics_enabled=0
 operation_release="unvalidated"
@@ -55,6 +56,20 @@ set -a
 . "$rollback_env"
 set +a
 operation_release="$RELEASE_VERSION"
+
+source_commit="$({
+  GIT_CONFIG_NOSYSTEM=1 \
+  GIT_CONFIG_GLOBAL=/dev/null \
+  "$git_command" -c "safe.directory=$PWD" -c core.hooksPath=/dev/null \
+    rev-parse --verify 'HEAD^{commit}'
+} 2>/dev/null)" || {
+  echo "Rollback source checkout commit could not be verified." >&2
+  exit 1
+}
+if [ "$(printf '%s' "$source_commit" | tr 'A-F' 'a-f')" != "$RELEASE_VERSION" ]; then
+  echo "Rollback source checkout $source_commit does not match signed manifest sourceCommit $RELEASE_VERSION." >&2
+  exit 1
+fi
 
 health_timeout_seconds="${RELEASE_HEALTH_TIMEOUT_SECONDS:-240}"
 health_poll_seconds="${RELEASE_HEALTH_POLL_INTERVAL_SECONDS:-2}"

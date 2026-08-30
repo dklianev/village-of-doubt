@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Menu, Moon, MoreHorizontal, Play, VolumeX } from "lucide-react";
 import { Suspense } from "react";
 import { NavigationTelemetry } from "@/components/navigation-telemetry";
 import { NonCriticalWidgets } from "@/components/non-critical-widgets";
@@ -28,7 +29,7 @@ export const metadata: Metadata = {
     default: SITE_NAME,
     template: `%s | ${SITE_NAME}`,
   },
-  description: "Онлайн Върколак и Мафия с тайни роли, частни стаи и авторитетен игрови сървър.",
+  description: "Върколак и Мафия онлайн с тайни роли, частни стаи и достатъчно причини да не вярваш на приятелите си.",
   icons: {
     icon: [
       { url: "/favicon.svg", type: "image/svg+xml" },
@@ -37,7 +38,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: SITE_NAME,
-    description: "Онлайн Върколак и Мафия с тайни роли, частни стаи и авторитетен игрови сървър.",
+    description: "Върколак и Мафия онлайн с тайни роли, частни стаи и достатъчно причини да не вярваш на приятелите си.",
     url: SITE_URL,
     siteName: SITE_NAME,
     images: [{ url: absoluteUrl("/game-art/og/og-home.png"), width: 1200, height: 630, alt: "Върколак и Мафия" }],
@@ -47,10 +48,66 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: SITE_NAME,
-    description: "Онлайн Върколак и Мафия с тайни роли, частни стаи и авторитетен игрови сървър.",
+    description: "Върколак и Мафия онлайн с тайни роли, частни стаи и достатъчно причини да не вярваш на приятелите си.",
     images: [absoluteUrl("/game-art/og/og-home.png")],
   },
 };
+
+function SiteChromeFallback() {
+  return (
+    <header className="site-chrome" data-version="v2" data-fallback aria-hidden="true">
+      <span className="site-mobile-menu">
+        <Menu className="site-icon" aria-hidden strokeWidth={1.9} />
+      </span>
+
+      <span className="site-brand">
+        <span className="site-brand-mark" aria-hidden="true" />
+        <span className="site-brand-text">
+          <span className="site-brand-wordmark">
+            <span>Върколак</span>
+            <span className="site-brand-dot" aria-hidden="true">·</span>
+            <span>Мафия</span>
+          </span>
+          {process.env.NEXT_PUBLIC_SHOW_BETA_BADGE !== "false" ? <span className="site-beta-badge">БЕТА</span> : null}
+          <span className="site-brand-subtitle">Социална игра на сенки</span>
+        </span>
+      </span>
+
+      <div className="site-primary-band">
+        <span className="site-play-cta">
+          <Play className="site-icon" aria-hidden strokeWidth={1.9} />
+          <span>Играй</span>
+        </span>
+        <div className="site-family-switcher">
+          <span className="site-family-link">Върколак</span>
+          <span className="site-family-divider" aria-hidden="true" />
+          <span className="site-family-link">Мафия</span>
+        </div>
+        <span className="site-icon-button">
+          <MoreHorizontal className="site-icon" aria-hidden strokeWidth={1.9} />
+        </span>
+      </div>
+
+      <div className="site-utility-cluster">
+        <span className="site-icon-button">
+          <VolumeX className="site-icon" aria-hidden strokeWidth={1.9} />
+        </span>
+        <span className="site-icon-button">
+          <Moon className="site-icon" aria-hidden strokeWidth={1.9} />
+        </span>
+        <span className="site-utility-separator" aria-hidden="true" />
+        <span className="auth-chip-slot" data-auth-state="pending">
+          <span className="auth-chip auth-chip-loading" />
+        </span>
+      </div>
+
+      <span className="site-play-cta site-play-cta-mobile">
+        <Play className="site-icon" aria-hidden strokeWidth={1.9} />
+        <span>Играй</span>
+      </span>
+    </header>
+  );
+}
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
@@ -60,8 +117,17 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       </head>
       <body>
         <ResourceHints preconnect={["https://cdn.discordapp.com", "https://lh3.googleusercontent.com"]} />
-        <SiteChrome />
-        {children}
+        <a className="site-skip-link" href="#main-content">
+          Към основното съдържание
+        </a>
+        <div className="site-chrome-boundary" suppressHydrationWarning>
+          <Suspense fallback={<SiteChromeFallback />}>
+            <SiteChrome />
+          </Suspense>
+        </div>
+        <div id="main-content" className="site-main-content" tabIndex={-1}>
+          {children}
+        </div>
         <SiteFooter />
         <ToastHost />
         <Suspense fallback={null}>

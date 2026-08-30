@@ -97,6 +97,7 @@ export type ClientCommand =
   | { type: "setNarrator"; targetUserId: string; narrator: boolean }
   | { type: "setMayor"; targetUserId: string }
   | { type: "acceptFullNarrator" }
+  | { type: "syncPrivateState" }
   | { type: "narratorPause"; reason?: string }
   | { type: "narratorAdvance" }
   | { type: "narratorExtendTimer"; seconds: number };
@@ -138,6 +139,8 @@ export function parseClientCommand(type: unknown, payload: unknown): ClientComma
     case "acceptFullNarrator":
     case "narratorAdvance":
       return payload === undefined || data ? { type } : null;
+    case "syncPrivateState":
+      return payload === undefined || payload === null || data ? { type } : null;
     case "submitNightAction": {
       const action = parseNightActionCommand(data?.action);
       return action ? { type, action } : null;

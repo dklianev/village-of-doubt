@@ -6,6 +6,7 @@ import { createGameToken } from "@werewolf/shared/server";
 import appConfig, { OperationalGameRoom } from "../app.config.js";
 import { authenticateGameJoin, GameRoom } from "../rooms/GameRoom.js";
 import { PlayerPresenceManager } from "../rooms/player-presence-manager.js";
+import { MemoryPlayerSecurityStore } from "../rooms/player-security-store.js";
 import type { GameState } from "../rooms/schemas/GameState.js";
 
 const GAME_TOKEN_SECRET = "test-secret-that-is-long-enough-32-chars";
@@ -188,6 +189,26 @@ describe("GameRoom security boundaries", () => {
       playerCount: 8,
       token: "not-a-signed-token",
     }, {} as never)).rejects.toThrow();
+  });
+
+  it("normalizes room codes before Colyseus computes filter identity", async () => {
+    const firstClient = await colyseus.sdk.joinOrCreate("game", {
+      code: "case24",
+      mode: "werewolves_classic",
+      playerCount: 6,
+      userId: "mixed-code-user-1",
+      displayName: "Играч с малък код",
+    });
+
+    await expect(colyseus.sdk.joinOrCreate("game", {
+      code: "CASE24",
+      mode: "werewolves_classic",
+      playerCount: 6,
+      userId: "mixed-code-user-2",
+      displayName: "Играч с главен код",
+    })).resolves.toMatchObject({ roomId: firstClient.roomId });
+
+    expect(colyseus.getRoomById<GameRoom>(firstClient.roomId).state.code).toBe("CASE24");
   });
 
   it("terminates only the revoked user's active game connection", async () => {
@@ -399,6 +420,48 @@ describe("GameRoom security boundaries", () => {
     } finally {
       releaseSpy.mockRestore();
     }
+  });
+
+  it("keeps the active-room claim when a spectator promotion is rejected", async () => {
+    PlayerPresenceManager.configureSecurityStore(new MemoryPlayerSecurityStore({ maxActiveRooms: 1 }));
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "CLAM24",
+      mode: "werewolves_classic",
+      playerCount: 6,
+    });
+
+    for (let index = 0; index < 6; index += 1) {
+      await serverRoom.onJoin(fakeClient(`claim-player-${index}`), { code: "CLAM24" }, {
+        userId: `claim-player-${index}`,
+        displayName: `Играч ${index + 1}`,
+        avatarId: "portrait-m03",
+      });
+    }
+
+    const spectatorIdentity = {
+      userId: "claim-spectator",
+      displayName: "Наблюдател с активна стая",
+      avatarId: "portrait-m03" as const,
+    };
+    const spectatorClient = fakeClient("claim-spectator-session");
+    await serverRoom.onJoin(spectatorClient, { code: "CLAM24", spectator: true }, spectatorIdentity);
+
+    const promotionClient = fakeClient("claim-promotion-session");
+    await serverRoom.onJoin(promotionClient, { code: "CLAM24" }, spectatorIdentity);
+
+    expect([...serverRoom.state.players.values()].find(
+      (player) => player.userId === spectatorIdentity.userId,
+    )).toMatchObject({ playing: false, connected: true });
+    expect(spectatorClient.leave).not.toHaveBeenCalled();
+    expect(promotionClient.send).toHaveBeenCalledWith(
+      "safe_error",
+      expect.objectContaining({ messageBg: "Стаята е пълна." }),
+    );
+    await expect(PlayerPresenceManager.claimActiveRoom(
+      spectatorIdentity.userId,
+      "EXTRA2",
+      Date.now() + 60_000,
+    )).resolves.toBe(false);
   });
 
   it("releases the matchmaking room claim when the join rate limit rejects onJoin", async () => {
@@ -672,7 +735,7 @@ describe("GameRoom security boundaries", () => {
       playerCount: 4,
       narratorMode: "full_human",
     })).rejects.toThrow(
-      "Човешкият Разказвач не е достъпен в бета версията. Избери Автоматичен Разказвач.",
+      "Режимът с човешки Разказвач още не е достъпен в бета версията. Избери Автоматичен Разказвач.",
     );
   });
 });

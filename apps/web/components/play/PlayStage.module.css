@@ -830,13 +830,32 @@
   display: none;
 }
 
-.stage:not([data-layout-ready="true"]) .tableScene {
-  opacity: 0;
+@media (min-width: 1024px) {
+  .stage:not([data-layout-ready="true"])[data-layout-mode="mobile-table-grid"] {
+    min-height: clamp(460px, 58svh, 650px);
+    overflow: visible;
+  }
+
+  .stage:not([data-layout-ready="true"])[data-layout-mode="mobile-table-grid"] .tableScene.tableScene {
+    position: absolute;
+    top: var(--table-scene-top, 132px);
+    right: clamp(18px, 2.4vw, 32px);
+    bottom: clamp(20px, 3svh, 34px);
+    left: clamp(18px, 2.4vw, 32px);
+    display: block;
+    min-height: 220px;
+    margin: 0;
+    padding: 0;
+  }
+
+  .stage:not([data-layout-ready="true"]) .tableScene {
+    opacity: 0;
+  }
 }
 
 @media (max-width: 1023px) {
   .stage:not([data-layout-ready="true"]):is([data-seat-count="3"], [data-seat-count="4"]) {
-    min-height: 573px;
+    min-height: 531px;
   }
 
   .stage:not([data-layout-ready="true"]):is(
@@ -846,19 +865,19 @@
     [data-seat-count="8"],
     [data-seat-count="9"]
   ) {
-    min-height: 683px;
+    min-height: 641px;
   }
 
   .stage:not([data-layout-ready="true"]):is([data-seat-count="10"], [data-seat-count="11"], [data-seat-count="12"]) {
-    min-height: 637px;
+    min-height: 595px;
   }
 
   .stage:not([data-layout-ready="true"])[data-seat-count="13"] {
-    min-height: 732px;
+    min-height: 690px;
   }
 
   .stage:not([data-layout-ready="true"]):is([data-seat-count="14"], [data-seat-count="15"], [data-seat-count="16"]) {
-    min-height: 692px;
+    min-height: 650px;
   }
 
   .stage:not([data-layout-ready="true"]):is(
@@ -867,7 +886,7 @@
     [data-seat-count="19"],
     [data-seat-count="20"]
   ) {
-    min-height: 776px;
+    min-height: 734px;
   }
 
   .stage:not([data-layout-ready="true"]):is(
@@ -876,7 +895,7 @@
     [data-seat-count="23"],
     [data-seat-count="24"]
   ) {
-    min-height: 860px;
+    min-height: 818px;
   }
 
   .stage:not([data-layout-ready="true"]):is(
@@ -885,11 +904,11 @@
     [data-seat-count="27"],
     [data-seat-count="28"]
   ) {
-    min-height: 944px;
+    min-height: 902px;
   }
 
   .stage:not([data-layout-ready="true"]):is([data-seat-count="29"], [data-seat-count="30"]) {
-    min-height: 1029px;
+    min-height: 987px;
   }
 }
 
@@ -951,6 +970,44 @@
 
   .stage[data-layout-mode="mobile-table-grid"] .seatRing {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Short phones have only ~396px between the chrome and the collapsed command
+ * dock. Tighten the non-interactive table core so the first target row remains
+ * fully above the dock instead of looking tappable through it. */
+@media (max-width: 430px) and (max-height: 640px) {
+  .stage[data-layout-mode="mobile-table-grid"] .tableScene,
+  .stage.stage[data-layout-mode="mobile-table-grid"] .tableScene.tableScene {
+    gap: 6px;
+    margin-top: 2px;
+    padding: 8px 8px 12px;
+  }
+
+  .stage[data-layout-mode="mobile-table-grid"] .core,
+  .stage.stage[data-layout-mode="mobile-table-grid"] .core.core {
+    width: 112px;
+    min-width: 112px;
+    height: 112px;
+    min-height: 112px;
+    margin-bottom: 0;
+  }
+
+  .stage[data-layout-mode="mobile-table-grid"] .seatRing,
+  .stage.stage[data-layout-mode="mobile-table-grid"] .seatRing.seatRing {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+    padding: 0 0 4px;
+  }
+
+  .stage[data-layout-mode="mobile-table-grid"] .seatSlot {
+    --seat-visual-size: 44px;
+    min-height: 64px;
+  }
+
+  .stage[data-layout-mode="mobile-table-grid"] .seatSlot [data-seat-name] {
+    font-size: 0.68rem;
+    line-height: 1;
   }
 }
 

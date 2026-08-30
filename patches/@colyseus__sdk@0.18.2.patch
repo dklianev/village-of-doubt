@@ -1,8 +1,8 @@
 diff --git a/build/transport/WebSocketTransport.cjs b/build/transport/WebSocketTransport.cjs
-index 572d90b626084b0c4f6b24998b2b10a4a8b2e8af..7371efb7328eda5f18d532c05fcf2ea59261e665 100644
+index 602170a5e01ea5627b424663a0dee095289e3065..d02ae37facab51a8ee6ae11bcb7b38064ec74477 100644
 --- a/build/transport/WebSocketTransport.cjs
 +++ b/build/transport/WebSocketTransport.cjs
-@@ -25,11 +25,13 @@ class WebSocketTransport {
+@@ -45,11 +45,13 @@ class WebSocketTransport {
       * @param headers custom headers to send with the connection (only supported in Node.js. Web Browsers do not allow setting custom headers)
       */
      connect(url, headers) {
@@ -20,10 +20,10 @@ index 572d90b626084b0c4f6b24998b2b10a4a8b2e8af..7371efb7328eda5f18d532c05fcf2ea5
              this.ws = new WebSocket(url, this.protocols);
          }
 diff --git a/build/transport/WebSocketTransport.mjs b/build/transport/WebSocketTransport.mjs
-index 0a9de3b89f6e75096ea3297cf4847b2dca23df41..0bff677b2a268832b99eccd696adb3fb8a4473e4 100644
+index 5b1d99fbc672c168a5123cc03c9f1aa2f367ea95..b63a0d705de4de784a4a14a6b7cac2a81fb4d9f6 100644
 --- a/build/transport/WebSocketTransport.mjs
 +++ b/build/transport/WebSocketTransport.mjs
-@@ -26,11 +26,13 @@ class WebSocketTransport {
+@@ -46,11 +46,13 @@ class WebSocketTransport {
       * @param headers custom headers to send with the connection (only supported in Node.js. Web Browsers do not allow setting custom headers)
       */
      connect(url, headers) {
@@ -41,10 +41,10 @@ index 0a9de3b89f6e75096ea3297cf4847b2dca23df41..0bff677b2a268832b99eccd696adb3fb
              this.ws = new WebSocket(url, this.protocols);
          }
 diff --git a/src/transport/WebSocketTransport.ts b/src/transport/WebSocketTransport.ts
-index 83a4782d78e86667142be24eb59a139f7b95a33b..e8f6cceed396492ef37f01ca587c6cc19e9929a2 100644
+index 92e86383eca4ec2b15ffb2ee406e9b41597a1b85..c499f0dbf391f6266ad667300ee825c525a151f7 100644
 --- a/src/transport/WebSocketTransport.ts
 +++ b/src/transport/WebSocketTransport.ts
-@@ -27,11 +27,13 @@ export class WebSocketTransport implements ITransport {
+@@ -48,11 +48,13 @@ export class WebSocketTransport implements ITransport {
       * @param headers custom headers to send with the connection (only supported in Node.js. Web Browsers do not allow setting custom headers)
       */
      public connect(url: string, headers?: any): void {

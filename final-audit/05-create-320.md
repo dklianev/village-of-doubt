@@ -1,0 +1,76 @@
+- generic [box=0,-1357,320,2279]:
+  - link [box=8,-56,263,48]:
+    - /url: "#main-content"
+    - text: Към основното съдържание
+  - generic [box=0,-1357,320,64]:
+    - banner [box=0,-1357,320,64]:
+      - button [box=10,-1347,44,44]
+      - link [box=64,-1345,110,40]:
+        - /url: /
+        - generic [box=108,-1342,66,33]:
+          - generic [box=108,-1342,66,13]: Върколак
+          - generic [box=114,-1325,52,17]: БЕТА
+      - link [box=218,-1347,92,44]:
+        - /url: /werewolf/create
+        - generic [box=252,-1331,46,12]: Играй
+  - generic [box=0,-1293,320,1971]:
+    - main [box=10,-1293,300,1971]:
+      - generic [box=10,-1283,300,1905]:
+        - region [box=10,-1271,300,1863]:
+          - generic [box=11,-1270,298,260]:
+            - generic [box=29,-1248,262,157]
+            - generic [box=29,-1067,247,38]: настройките са готови
+          - generic [box=11,-1010,298,1601]:
+            - generic [box=27,-992,266,1070]
+            - complementary [box=27,96,266,403]
+          - generic [box=10,492,300,68]:
+            - generic [box=20,503,58,46]
+            - button [box=90,502,210,48]: Създай селото
+  - contentinfo [box=0,702,320,220]:
+    - generic [box=16,727,288,72]:
+      - link [box=19,727,113,32]:
+        - /url: /privacy
+        - text: Поверителност
+      - generic [box=139,727,3,32]: ·
+      - link [box=151,727,63,32]:
+        - /url: /terms
+        - text: Условия
+      - generic [box=222,727,3,32]: ·
+      - link [box=233,727,56,32]:
+        - /url: /report
+        - text: Сигнал
+      - generic [box=298,727,3,32]: ·
+      - link [box=80,767,82,32]:
+        - /url: /status
+        - text: Състояние
+      - generic [box=170,767,3,32]: ·
+      - link [box=182,767,58,32]:
+        - /url: /faq
+        - text: Помощ
+    - paragraph [box=16,807,288,19]: © 2026 Върколак и Мафия · Бета
+  - button "Open Next.js Dev Tools" [ref=f2e163] [cursor=pointer] [box=22,514,32,32]
+  - alert [box=-1,921,1,1]
+  - dialog [active] [ref=f2e169] [box=0,0,320,568]:
+    - heading "Настрой детайлите" [level=2] [ref=f2e170] [box=0,0,320,58]
+    - button "Затвори настройките" [ref=f2e171] [cursor=pointer] [box=268,9,40,40]:
+      - generic [ref=f2e172] [box=282,17,12,25]: ×
+    - paragraph [ref=f2e173] [box=-1,-1,1,1]: Допълнителни роли, ритъм, правила и име на стаята.
+    - generic [ref=f2e174] [box=0,58,320,510]:
+      - complementary [ref=f2e175] [box=0,58,320,65]:
+        - tablist "Групи настройки" [ref=f2e176] [box=10,64,300,52]:
+          - tab "Роли" [selected] [ref=f2e177] [cursor=pointer] [box=10,64,71,52]:
+            - strong [ref=f2e183] [box=31,97,28,11]: РолиРоли
+          - tab "Ритъм и водене" [ref=f2e184] [cursor=pointer] [box=86,64,71,52]:
+            - strong [ref=f2e189] [box=104,97,36,11]: РитъмРитъм и водене
+          - tab "Правила и комуникация" [ref=f2e190] [cursor=pointer] [box=163,64,71,52]:
+            - strong [ref=f2e195] [box=174,97,49,11]: ПравилаПравила и комуникация
+          - tab "Име и покана" [ref=f2e196] [cursor=pointer] [box=239,64,71,52]:
+            - strong [ref=f2e201] [box=254,97,41,11]: ПоканаИме и покана
+      - generic [ref=f2e202] [box=0,123,320,445]:
+        - tabpanel "Роли" [ref=f2e203] [box=0,123,320,386]:
+          - region "Избери ролите" [ref=f2e204] [box=12,52,286,799]:
+            - generic [ref=f2e205] [box=12,52,286,150]
+            - generic [ref=f2e215] [box=12,216,286,564]
+            - generic [ref=f2e279] [box=12,795,286,56]
+        - contentinfo [ref=f2e281] [box=0,509,320,59]:
+          - button "Готово" [ref=f2e282] [cursor=pointer] [box=12,517,296,44]

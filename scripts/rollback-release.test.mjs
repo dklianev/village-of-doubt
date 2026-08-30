@@ -35,7 +35,12 @@ function writeSignedManifest(file, value, privateKey) {
   }) + "\n");
 }
 
-function runRollback({ targetHead, schemaHead, pending = false }) {
+function runRollback({
+  targetHead,
+  schemaHead,
+  pending = false,
+  checkoutCommit = "a".repeat(40),
+}) {
   const directory = mkdtempSync(path.join(tmpdir(), "werewolf-rollback-guard-"));
   const releaseDir = path.join(directory, "release-state");
   const binDir = path.join(directory, "bin");
@@ -55,6 +60,7 @@ function runRollback({ targetHead, schemaHead, pending = false }) {
   }
 
   writeFileSync(path.join(binDir, "pnpm"), "#!/bin/sh\nexit 0\n", { mode: 0o755 });
+  writeFileSync(path.join(binDir, "git"), "#!/bin/sh\nprintf '%s\\n' \"$FAKE_SOURCE_COMMIT\"\n", { mode: 0o755 });
   writeFileSync(path.join(binDir, "docker"), `#!/bin/sh
 printf '%s\\n' "$*" >> "$FAKE_DOCKER_LOG"
 case "$*" in
@@ -78,9 +84,11 @@ exec "${process.execPath.replaceAll("\\", "/")}" "$@"
       ...process.env,
       PATH: binDir.replaceAll("\\", "/") + ":" + process.env.PATH,
       FAKE_DOCKER_LOG: dockerLog.replaceAll("\\", "/"),
+      FAKE_SOURCE_COMMIT: checkoutCommit,
       RELEASE_STATE_DIR: releaseDir.replaceAll("\\", "/"),
       RELEASE_ALLOWED_IMAGE_PREFIX: "ghcr.io/example/project",
       RELEASE_MANIFEST_PUBLIC_KEY: publicKey.replaceAll("\\", "/"),
+      RELEASE_GIT_COMMAND: path.join(binDir, "git").replaceAll("\\", "/"),
       SKIP_DEPLOY_DRAIN: "1",
     },
   });
@@ -109,4 +117,15 @@ test("blocks rollback while a migration outcome is unresolved", { skip: !isPosix
   assert.notEqual(result.status, 0);
   assert.equal(result.dockerCalls, "");
   assert.match(result.stderr, /migration.*pending|pending.*migration/i);
+});
+
+test("blocks rollback from a checkout that does not match the signed target", { skip: !isPosix }, () => {
+  const result = runRollback({
+    targetHead: "0013_safe",
+    schemaHead: "0013_safe",
+    checkoutCommit: "c".repeat(40),
+  });
+  assert.notEqual(result.status, 0);
+  assert.equal(result.dockerCalls, "");
+  assert.match(result.stderr, /source checkout.*sourceCommit/i);
 });

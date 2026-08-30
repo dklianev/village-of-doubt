@@ -157,10 +157,10 @@ export function AccountProfile(props: Props) {
 
         <fieldset className={styles.avatarFieldset}>
           <legend id="account-avatar-legend">Избери образ</legend>
-          <div className={styles.avatarFilter} aria-label="Филтър за образи" role="tablist">
-            <button type="button" role="tab" aria-selected={avatarFilter === "all"} data-active={avatarFilter === "all"} onClick={() => setAvatarFilter("all")}>Всички</button>
-            <button type="button" role="tab" aria-selected={avatarFilter === "women"} data-active={avatarFilter === "women"} onClick={() => setAvatarFilter("women")}>Женски образи</button>
-            <button type="button" role="tab" aria-selected={avatarFilter === "men"} data-active={avatarFilter === "men"} onClick={() => setAvatarFilter("men")}>Мъжки образи</button>
+          <div className={styles.avatarFilter} aria-label="Филтър за образи" role="group">
+            <button type="button" aria-pressed={avatarFilter === "all"} data-active={avatarFilter === "all"} onClick={() => setAvatarFilter("all")}>Всички</button>
+            <button type="button" aria-pressed={avatarFilter === "women"} data-active={avatarFilter === "women"} onClick={() => setAvatarFilter("women")}>Женски образи</button>
+            <button type="button" aria-pressed={avatarFilter === "men"} data-active={avatarFilter === "men"} onClick={() => setAvatarFilter("men")}>Мъжки образи</button>
           </div>
           <div className={styles.avatarGrid} role="radiogroup" aria-labelledby="account-avatar-legend">
             {filteredAvatars.map((option, index) => (

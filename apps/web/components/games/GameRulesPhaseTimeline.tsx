@@ -17,11 +17,11 @@ export interface GameRulesPhase {
 
 const PHASE_ICONS: Record<GamePhase, string> = {
   lobby: "lobby",
-  role_reveal: "role_reveal",
+  role_reveal: "role-reveal",
   first_night: "night",
   night: "night",
-  day_announcement: "day_discussion",
-  day_discussion: "day_discussion",
+  day_announcement: "day",
+  day_discussion: "day",
   nomination: "voting",
   defense: "voting",
   voting: "voting",
@@ -41,6 +41,7 @@ export function GameRulesPhaseTimeline({
 }) {
   const firstPhase = phases[0];
   const [activePhaseId, setActivePhaseId] = useState(firstPhase?.id ?? "");
+  const artFamily = mode.startsWith("mafia") ? "mafia" : "werewolves";
 
   if (!firstPhase) {
     return null;
@@ -63,6 +64,7 @@ export function GameRulesPhaseTimeline({
             phase={phase}
             index={index}
             label={phaseLabelBg(phase.phase, mode)}
+            artFamily={artFamily}
             selected={phase.id === activePhase.id}
             onSelect={() => setActivePhaseId(phase.id)}
           />
@@ -80,12 +82,14 @@ function PhaseNode({
   phase,
   index,
   label,
+  artFamily,
   selected,
   onSelect,
 }: {
   phase: GameRulesPhase;
   index: number;
   label: string;
+  artFamily: "mafia" | "werewolves";
   selected: boolean;
   onSelect: () => void;
 }) {
@@ -100,7 +104,16 @@ function PhaseNode({
       onClick={onSelect}
     >
       <span className="phase-node-number">{String(index + 1).padStart(2, "0")}</span>
-      <span className={`phase-node-medallion phase-node-icon phase-${PHASE_ICONS[phase.phase]}`} aria-hidden="true" />
+      <img
+        className="phase-node-medallion"
+        src={`/game-art/phase-board/v1/${artFamily}/icon-phase-${PHASE_ICONS[phase.phase]}-560.webp`}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        fetchPriority="low"
+        width={560}
+        height={560}
+      />
       <span className="phase-node-copy">
         <span className="phase-node-label">{label}</span>
         <span className="phase-node-short">{phase.short}</span>

@@ -39,7 +39,7 @@ jobs:
           docker run --detach --rm
           --name werewolf-ci-redis
           --publish 6379:6379
-          redis:8.2-alpine@sha256:a7859ed111db3c1f5404a973a4747505d559fb5ca32d37e447afc0ef845a2103
+          redis:8.2-alpine@sha256:30abb90e62f14b737010746def3ba99cc79fe19dcdb3d37b41f21fc62e7da19d
           redis-server
           --save ""
           --appendonly no
@@ -53,7 +53,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
-          node-version: 24.19.0
+          node-version: 24.20.0
           cache: pnpm
 
       - name: Install dependencies
@@ -145,7 +145,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
-          node-version: 24.19.0
+          node-version: 24.20.0
           cache: pnpm
 
       - name: Install dependencies
@@ -228,7 +228,9 @@ jobs:
       RELEASE_ALLOWED_IMAGE_PREFIX: ghcr.io/dklianev/village-of-doubt
       RELEASE_MANIFEST_PUBLIC_KEY: /tmp/werewolf-ci-release-public.pem
       BACKUP_AGE_RECIPIENT: age19wjvffy6g0yk4r33hpv5mkpsqnv4qgtrlhqqhhtr5gvwpwej94fsj53j22
-      RCLONE_REMOTE: encrypted-offsite:werewolf-ci
+      RCLONE_REMOTE: encrypted-offsite:werewolf-ci/backups
+      RCLONE_DELETION_LEDGER_REMOTE: encrypted-ledger:werewolf-ci/deletion-ledger
+      RCLONE_BACKUP_RETENTION_DAYS: "30"
       DATABASE_STALE_ACTIVE_HOURS: "24"
       DATABASE_EVENT_RETENTION_DAYS: "365"
     steps:
@@ -357,7 +359,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
-          node-version: 24.19.0
+          node-version: 24.20.0
           cache: pnpm
 
       - name: Install dependencies

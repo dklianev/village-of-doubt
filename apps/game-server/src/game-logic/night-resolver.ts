@@ -12,9 +12,19 @@ export interface SubmittedNightAction {
   action: NightActionCommand;
 }
 
+interface DeathIntent {
+  causeBg: string;
+  sourceTeam?: TeamCode;
+  sourceRole?: RoleCode;
+}
+
+type DeathIntentsByTarget = Map<string, DeathIntent[]>;
+
 export interface NightResolution {
   deaths: Array<{ userId: string; causeBg: string }>;
   delayedDeaths: Array<{ userId: string; causeBg: string }>;
+  deathSources: Array<{ userId: string; sourceTeam?: TeamCode; sourceRole?: RoleCode }>;
+  delayedDeathSources: Array<{ userId: string; sourceTeam?: TeamCode; sourceRole?: RoleCode }>;
   checks: Array<{
     actorUserId: string;
     targetUserId: string;
@@ -51,8 +61,8 @@ export function resolveNight(
 ): NightResolution {
   const aliveById = new Map(players.filter((player) => player.alive).map((player) => [player.userId, player]));
   const livingPlayers = players.filter((player) => player.alive);
-  const deaths = new Map<string, { causeBg: string; sourceTeam?: TeamCode; sourceRole?: RoleCode }>();
-  const delayedDeaths = new Map<string, { causeBg: string; sourceTeam?: TeamCode }>();
+  const deaths: DeathIntentsByTarget = new Map();
+  const delayedDeaths: DeathIntentsByTarget = new Map();
   const checks: NightResolution["checks"] = [];
   const preventedDeaths: NightResolution["preventedDeaths"] = [];
   const privateMessages: NightResolution["privateMessages"] = [];
@@ -115,15 +125,15 @@ export function resolveNight(
         if (target.role === "vampire_hunter") {
           continue;
         }
-        deaths.set(action.targetUserId, {
-          causeBg: "Повален от Убиеца на вампири.",
+        addDeathIntent(deaths, action.targetUserId, {
+          causeBg: "Падна от удара на Убиеца на вампири.",
           sourceRole: actor.role,
         });
         continue;
       }
       if (actor.role === "vigilante" || actor.role === "maniac") {
-        deaths.set(action.targetUserId, {
-          causeBg: actor.role === "maniac" ? "Убит от Маниака." : "Убит от Вигиланте.",
+        addDeathIntent(deaths, action.targetUserId, {
+          causeBg: actor.role === "maniac" ? "Падна от изстрела на Маниака." : "Падна от изстрела на Вигиланте.",
           sourceRole: actor.role,
         });
         continue;
@@ -175,7 +185,7 @@ export function resolveNight(
         targetUserId: action.targetUserId,
         role: covered ? "civilian" : getRoleSeenBySeer(target.role),
         ...(covered
-          ? { coveredByLawyer: true, messageBg: "Досието е прикрито: целта изглежда като Гражданин." }
+          ? { coveredByLawyer: true, messageBg: "Адвокатското алиби скри досието. Избраният играч изглежда като Гражданин." }
           : {}),
       });
     }
@@ -219,8 +229,8 @@ export function resolveNight(
     }
 
     if (action.kind === "blacksmith_sword" && aliveById.has(action.receiverUserId) && aliveById.has(action.targetUserId)) {
-      deaths.set(action.targetUserId, {
-        causeBg: "Повален от ковашкия меч.",
+      addDeathIntent(deaths, action.targetUserId, {
+        causeBg: "Падна от ковашкия меч.",
         sourceRole: actor.role,
       });
       privateMessages.push({
@@ -235,22 +245,22 @@ export function resolveNight(
         continue;
       }
       if (isNightThreat(target.role)) {
-        deaths.set(submission.actorUserId, {
-          causeBg: "Уличната котка попадна при чудовище.",
+        addDeathIntent(deaths, submission.actorUserId, {
+          causeBg: "Падна, след като посети чудовище.",
           sourceRole: actor.role,
         });
-        deaths.set(action.targetUserId, {
-          causeBg: "Разкрит от Уличната котка.",
+        addDeathIntent(deaths, action.targetUserId, {
+          causeBg: "Падна след разкритието на Уличната котка.",
           sourceRole: actor.role,
         });
         privateMessages.push({
           targetUserId: submission.actorUserId,
-          messageBg: "Котката избра чудовище. И двамата падате от играта.",
+          messageBg: "Избра чудовище. И двамата напускате играта.",
         });
       } else {
         privateMessages.push({
           targetUserId: submission.actorUserId,
-          messageBg: "Котката намери безопасен дом тази нощ.",
+          messageBg: "Изборът ти беше безопасен тази нощ.",
         });
       }
     }
@@ -263,12 +273,12 @@ export function resolveNight(
     const factionTarget = resolveConsensusTarget(votes, livingFactionCount);
     if (factionTarget) {
       if (team === "vampires") {
-        delayedDeaths.set(factionTarget, {
-          causeBg: "Умря от вампирско ухапване.",
+        addDeathIntent(delayedDeaths, factionTarget, {
+          causeBg: "Падна от вампирското ухапване.",
           sourceTeam: team,
         });
       } else {
-        deaths.set(factionTarget, {
+        addDeathIntent(deaths, factionTarget, {
           causeBg: factionKillCauseBg(team),
           sourceTeam: team,
         });
@@ -293,8 +303,8 @@ export function resolveNight(
   }
 
   for (const targetUserId of witchPoisonedTargets) {
-    deaths.set(targetUserId, {
-      causeBg: "Отровен от Вещицата.",
+    addDeathIntent(deaths, targetUserId, {
+      causeBg: "Падна от отровата на Вещицата.",
       sourceRole: "witch",
     });
   }
@@ -333,8 +343,10 @@ export function resolveNight(
   protectSpecialFactionTargets(delayedDeaths, aliveById, preventedDeaths, new Set(deaths.keys()));
 
   return {
-    deaths: [...deaths.entries()].map(([userId, death]) => ({ userId, causeBg: death.causeBg })),
-    delayedDeaths: [...delayedDeaths.entries()].map(([userId, death]) => ({ userId, causeBg: death.causeBg })),
+    deaths: resolveDeathIntents(deaths),
+    delayedDeaths: resolveDeathIntents(delayedDeaths),
+    deathSources: resolveDeathSources(deaths),
+    delayedDeathSources: resolveDeathSources(delayedDeaths),
     checks,
     preventedDeaths,
     protectedByPriest: [...new Set(protectedByPriest)],
@@ -355,15 +367,15 @@ function resolveConsensusTarget(votes: Map<string, number>, livingFactionCount: 
 
 function factionKillCauseBg(team: TeamCode) {
   if (team === "werewolves") {
-    return "Изяден от Върколаците.";
+    return "Падна от атаката на Върколаците.";
   }
   if (team === "vampires") {
-    return "Изцеден от Вампирите.";
+    return "Падна от атаката на Вампирите.";
   }
   if (team === "mafia") {
-    return "Убит от Мафията.";
+    return "Падна от атаката на Мафията.";
   }
-  return "Убит през нощта.";
+  return "Не преживя нощта.";
 }
 
 function getRoleSeenBySeer(role: RoleCode): RoleCode {
@@ -398,7 +410,7 @@ function getAdjacentLivingTrio(players: PrivatePlayerForNight[], centerUserId: s
 }
 
 function preventDeath(
-  deaths: Map<string, { causeBg: string; sourceTeam?: TeamCode; sourceRole?: RoleCode }>,
+  deaths: DeathIntentsByTarget,
   targetUserId: string,
   reasonBg: string,
   preventedDeaths: NightResolution["preventedDeaths"],
@@ -411,21 +423,24 @@ function preventDeath(
 }
 
 function preventDeathFromFaction(
-  deaths: Map<string, { causeBg: string; sourceTeam?: TeamCode; sourceRole?: RoleCode }>,
+  deaths: DeathIntentsByTarget,
   targetUserId: string,
   reasonBg: string,
   preventedDeaths: NightResolution["preventedDeaths"],
 ) {
-  const death = deaths.get(targetUserId);
-  if (!death?.sourceTeam || !isFactionTeam(death.sourceTeam)) {
+  const prevented = removeDeathIntents(
+    deaths,
+    targetUserId,
+    (death) => death.sourceTeam !== undefined && isFactionTeam(death.sourceTeam),
+  );
+  if (!prevented) {
     return;
   }
-  deaths.delete(targetUserId);
   preventedDeaths.push({ userId: targetUserId, reasonBg });
 }
 
 function applyBodyguardProtection(
-  deaths: Map<string, { causeBg: string; sourceTeam?: TeamCode; sourceRole?: RoleCode }>,
+  deaths: DeathIntentsByTarget,
   protectedTargets: Map<string, string>,
   reasonBg: string,
   preventedDeaths: NightResolution["preventedDeaths"],
@@ -437,7 +452,7 @@ function applyBodyguardProtection(
     deaths.delete(targetUserId);
     preventedDeaths.push({ userId: targetUserId, reasonBg });
     if (!deaths.has(bodyguardUserId)) {
-      deaths.set(bodyguardUserId, {
+      addDeathIntent(deaths, bodyguardUserId, {
         causeBg: "Загина, докато пазеше друг играч.",
         sourceRole: "bodyguard",
       });
@@ -446,7 +461,7 @@ function applyBodyguardProtection(
 }
 
 function protectSpecialFactionTargets(
-  deaths: Map<string, { causeBg: string; sourceTeam?: TeamCode; sourceRole?: RoleCode }>,
+  deaths: DeathIntentsByTarget,
   aliveById: Map<string, PrivatePlayerForNight>,
   preventedDeaths: NightResolution["preventedDeaths"],
   alreadyDyingUserIds = new Set<string>(),
@@ -454,8 +469,8 @@ function protectSpecialFactionTargets(
   const hunterAlive = [...aliveById.values()].some(
     (player) => player.role === "hunter" && player.alive && !deaths.has(player.userId) && !alreadyDyingUserIds.has(player.userId),
   );
-  for (const [userId, death] of [...deaths.entries()]) {
-    if (death.sourceTeam !== "werewolves" && death.sourceTeam !== "vampires") {
+  for (const [userId, deathIntents] of [...deaths.entries()]) {
+    if (!deathIntents.some((death) => death.sourceTeam === "werewolves" || death.sourceTeam === "vampires")) {
       continue;
     }
     const target = aliveById.get(userId);
@@ -463,7 +478,11 @@ function protectSpecialFactionTargets(
       continue;
     }
     if (target.role === "cook") {
-      deaths.delete(userId);
+      removeDeathIntents(
+        deaths,
+        userId,
+        (death) => death.sourceTeam === "werewolves" || death.sourceTeam === "vampires",
+      );
       preventedDeaths.push({
         userId,
         reasonBg: "Готвачът оцеля след нощната атака.",
@@ -471,8 +490,57 @@ function protectSpecialFactionTargets(
       });
     }
     if (target.role === "red_riding_hood" && hunterAlive) {
-      deaths.delete(userId);
+      removeDeathIntents(
+        deaths,
+        userId,
+        (death) => death.sourceTeam === "werewolves" || death.sourceTeam === "vampires",
+      );
       preventedDeaths.push({ userId, reasonBg: "Ловецът още пази Червената шапчица." });
     }
   }
+}
+
+function addDeathIntent(deaths: DeathIntentsByTarget, targetUserId: string, death: DeathIntent) {
+  const intents = deaths.get(targetUserId) ?? [];
+  intents.push(death);
+  deaths.set(targetUserId, intents);
+}
+
+function removeDeathIntents(
+  deaths: DeathIntentsByTarget,
+  targetUserId: string,
+  shouldRemove: (death: DeathIntent) => boolean,
+) {
+  const intents = deaths.get(targetUserId);
+  if (!intents) {
+    return false;
+  }
+
+  const remaining = intents.filter((death) => !shouldRemove(death));
+  if (remaining.length === intents.length) {
+    return false;
+  }
+  if (remaining.length === 0) {
+    deaths.delete(targetUserId);
+  } else {
+    deaths.set(targetUserId, remaining);
+  }
+  return true;
+}
+
+function resolveDeathIntents(deaths: DeathIntentsByTarget) {
+  return [...deaths.entries()].flatMap(([userId, intents]) => {
+    const causes = [...new Set(intents.map((death) => death.causeBg))].sort();
+    return causes.length > 0 ? [{ userId, causeBg: causes.join(" ") }] : [];
+  });
+}
+
+function resolveDeathSources(deaths: DeathIntentsByTarget): NightResolution["deathSources"] {
+  return [...deaths.entries()].flatMap(([userId, intents]) =>
+    intents.map((intent) => ({
+      userId,
+      ...(intent.sourceTeam ? { sourceTeam: intent.sourceTeam } : {}),
+      ...(intent.sourceRole ? { sourceRole: intent.sourceRole } : {}),
+    })),
+  );
 }

@@ -6,6 +6,7 @@ import {
   areLivingNightActorsReady,
   CommandRateLimiter,
   ensureNightActionAllowed,
+  formatPublicDeathMessage,
   generateRoomCode,
   getActionTargetUserId,
   getPhaseDurationMs,
@@ -14,6 +15,7 @@ import {
   isNightPhase,
   normalizeChatMessage,
   parseChatChannel,
+  safeClientErrorMessage,
   type PrivatePlayerState,
 } from "../game-room-runtime.js";
 import type { GameConfig } from "@werewolf/shared";
@@ -56,6 +58,24 @@ describe("game-room-runtime helpers", () => {
   it("removes invisible control characters before chat reaches other players", () => {
     expect(normalizeChatMessage("добро\u202eлошо\u2066\u200b\u0000")).toBe("добролошо");
     expect(normalizeChatMessage("\u202e".repeat(600) + "видимо")).toBe("видимо");
+  });
+
+  it("turns a death cause into a natural, gender-neutral announcement", () => {
+    expect(formatPublicDeathMessage("Анна", "Падна от атаката на Мафията.")).toBe(
+      "Анна падна от атаката на Мафията.",
+    );
+    expect(formatPublicDeathMessage("Борис", "Не преживя загубата на любимия човек.")).toBe(
+      "Борис не преживя загубата на любимия човек.",
+    );
+  });
+
+  it("keeps intentional Bulgarian errors and hides unexpected internals", () => {
+    expect(safeClientErrorMessage(new Error("Стаята е пълна."))).toBe("Стаята е пълна.");
+    expect(safeClientErrorMessage(new Error("Database pool exhausted"))).toBe(
+      "Нещо се обърка. Опитай отново.",
+    );
+    expect(safeClientErrorMessage(new Error("Database pool exhausted"), "Не успяхме да започнем автоматично."))
+      .toBe("Не успяхме да започнем автоматично.");
   });
 
   it("identifies night phases and action target ids", () => {

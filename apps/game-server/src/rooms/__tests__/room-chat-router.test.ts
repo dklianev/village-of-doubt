@@ -116,7 +116,7 @@ describe("RoomChatRouter", () => {
     const { router, clients } = createRouter();
 
     expect(() => router.sendChat(clients.dead as never, "public", "тихо")).toThrow(
-      "Само живи играчи могат да пишат в публичния дневен чат.",
+      "Само живите играчи могат да пишат в дневния разговор.",
     );
   });
 
@@ -126,14 +126,14 @@ describe("RoomChatRouter", () => {
 
     router.sendChat(clients.villager as never, "public", "моята реч");
     expect(() => router.sendChat(clients.wolf as never, "public", "прекъсване")).toThrow(
-      "Само текущият говорител може да пише в публичния чат.",
+      "Само текущият говорител може да пише в общия разговор.",
     );
 
     state.phase = "defense";
     state.currentDefenseUserId = "wolf";
     router.sendChat(clients.wolf as never, "public", "моята защита");
     expect(() => router.sendChat(clients.villager as never, "public", "чужда защита")).toThrow(
-      "Само текущият говорител може да пише в публичния чат.",
+      "Само текущият говорител може да пише в общия разговор.",
     );
 
     expect([...state.publicChat].map((message) => [message.senderUserId, message.message])).toEqual([
@@ -209,7 +209,7 @@ describe("RoomChatRouter", () => {
     const { router, clients } = createRouter();
 
     expect(() => router.sendChat(clients.villager as never, "werewolves", "чужд канал")).toThrow(
-      "Няма достъп до този чат канал.",
+      "Нямаш достъп до този канал.",
     );
   });
 
@@ -232,10 +232,10 @@ describe("RoomChatRouter", () => {
     const { router, clients } = createRouter();
 
     expect(() => router.sendChat(clients.spectator as never, "dead", "наблюдавам")).toThrow(
-      "Няма достъп до този чат канал.",
+      "Нямаш достъп до този канал.",
     );
     expect(() => router.sendChat(clients.narrator as never, "dead", "разказвам")).toThrow(
-      "Няма достъп до този чат канал.",
+      "Нямаш достъп до този канал.",
     );
     expect(clients.dead.send).not.toHaveBeenCalled();
   });

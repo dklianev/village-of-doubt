@@ -29,6 +29,8 @@ const required = [
   "RELEASE_MANIFEST_PUBLIC_KEY",
   "BACKUP_AGE_RECIPIENT",
   "RCLONE_REMOTE",
+  "RCLONE_DELETION_LEDGER_REMOTE",
+  "RCLONE_BACKUP_RETENTION_DAYS",
   "DATABASE_STALE_ACTIVE_HOURS",
   "DATABASE_EVENT_RETENTION_DAYS",
 ];
@@ -143,6 +145,7 @@ checkSentryDsn("SENTRY_DSN");
 checkSentryDsn("NEXT_PUBLIC_SENTRY_DSN");
 checkReleaseVersion();
 checkReleaseTrust();
+checkOffsiteBackup();
 checkStaleActiveHours();
 checkEventRetention();
 checkOperationalTimeouts();
@@ -347,6 +350,40 @@ function checkReleaseTrust() {
   if (recipient && !/^age1[0-9a-z]+$/i.test(recipient)) {
     errors.push("BACKUP_AGE_RECIPIENT трябва да е валиден age recipient.");
   }
+}
+
+function checkOffsiteBackup() {
+  const backup = parseRclonePrefix("RCLONE_REMOTE");
+  const ledger = parseRclonePrefix("RCLONE_DELETION_LEDGER_REMOTE");
+  if (backup && ledger && backup.remote === ledger.remote) {
+    errors.push("RCLONE_REMOTE и RCLONE_DELETION_LEDGER_REMOTE трябва да използват отделни rclone профили.");
+  }
+
+  const retentionDays = Number(process.env.RCLONE_BACKUP_RETENTION_DAYS);
+  if (!Number.isInteger(retentionDays) || retentionDays < 1 || retentionDays > 30) {
+    errors.push("RCLONE_BACKUP_RETENTION_DAYS трябва да е цяло число между 1 и 30.");
+  }
+}
+
+function parseRclonePrefix(key) {
+  const value = process.env[key]?.trim();
+  if (!value) {
+    return null;
+  }
+  const separator = value.indexOf(":");
+  const remote = separator > 0 ? value.slice(0, separator) : "";
+  const prefix = separator > 0 ? value.slice(separator + 1) : "";
+  if (
+    !/^[A-Za-z0-9_.-]+$/.test(remote)
+    || !prefix
+    || prefix.startsWith("/")
+    || prefix.endsWith("/")
+    || prefix.split("/").some((part) => part === "" || part === "." || part === "..")
+  ) {
+    errors.push(`${key} трябва да е явен непривилегирован префикс във формат remote:path.`);
+    return null;
+  }
+  return { remote, prefix };
 }
 
 function checkEventRetention() {

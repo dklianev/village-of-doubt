@@ -31,6 +31,7 @@ export function FaqHearth({ items }: { items: readonly FaqItem[] }) {
   const [activeCategory, setActiveCategory] = useState<FaqCategory | "all">("all");
   const [openSlugs, setOpenSlugs] = useState<Set<string>>(new Set());
   const [feedback, setFeedback] = useState<FeedbackState>({});
+  const [announcement, setAnnouncement] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
   const initialQueryState = useRef<"pending" | "opening" | "ready">("pending");
 
@@ -112,8 +113,9 @@ export function FaqHearth({ items }: { items: readonly FaqItem[] }) {
     const url = `${window.location.origin}/faq?q=${encodeURIComponent(slug)}`;
     try {
       await copyTextToClipboard(url);
+      setAnnouncement("Линкът е копиран.");
     } catch {
-      // Clipboard access can be blocked in non-secure preview contexts.
+      setAnnouncement("Не успяхме да копираме линка.");
     }
   }, []);
 
@@ -128,15 +130,7 @@ export function FaqHearth({ items }: { items: readonly FaqItem[] }) {
   return (
     <article className="faq-hearth">
       <header className="faq-hearth-hero" aria-label="Седни до огъня">
-        <div className="faq-hearth-banner">
-          <Image
-            src="/game-art/legal/faq-hearth-banner.webp"
-            alt=""
-            fill
-            priority
-            sizes="100vw"
-            className="faq-hearth-banner-img"
-          />
+        <div className="faq-hearth-banner" aria-hidden="true">
           <div className="faq-hearth-scrim" aria-hidden />
         </div>
 
@@ -159,7 +153,13 @@ export function FaqHearth({ items }: { items: readonly FaqItem[] }) {
             ref={searchInputRef}
             type="search"
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={(event) => {
+              const value = event.target.value;
+              setSearch(value);
+              if (value.trim()) {
+                setActiveCategory("all");
+              }
+            }}
             placeholder="Питай огъня..."
             aria-label="Търсене в често задавани въпроси"
             className="faq-hearth-search-input"
@@ -174,6 +174,7 @@ export function FaqHearth({ items }: { items: readonly FaqItem[] }) {
             type="button"
             className="faq-hearth-filter"
             data-active={activeCategory === "all"}
+            aria-pressed={activeCategory === "all"}
             onClick={() => setActiveCategory("all")}
           >
             Всички
@@ -185,6 +186,7 @@ export function FaqHearth({ items }: { items: readonly FaqItem[] }) {
               className="faq-hearth-filter"
               data-active={activeCategory === category}
               data-category={category}
+              aria-pressed={activeCategory === category}
               onClick={() => setActiveCategory(category)}
             >
               <CategoryIcon category={category} className="faq-hearth-filter-icon" />
@@ -253,6 +255,7 @@ export function FaqHearth({ items }: { items: readonly FaqItem[] }) {
                                   type="button"
                                   className="faq-hearth-item-thumb"
                                   data-active={feedbackValue === "up"}
+                                  aria-pressed={feedbackValue === "up"}
                                   onClick={() => setFeedbackFor(item.slug, "up")}
                                   aria-label="Да, помогна"
                                 >
@@ -262,6 +265,7 @@ export function FaqHearth({ items }: { items: readonly FaqItem[] }) {
                                   type="button"
                                   className="faq-hearth-item-thumb"
                                   data-active={feedbackValue === "down"}
+                                  aria-pressed={feedbackValue === "down"}
                                   onClick={() => setFeedbackFor(item.slug, "down")}
                                   aria-label="Не, не помогна"
                                 >
@@ -299,6 +303,9 @@ export function FaqHearth({ items }: { items: readonly FaqItem[] }) {
           </Link>
         </div>
       </footer>
+      <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {announcement}
+      </p>
     </article>
   );
 }

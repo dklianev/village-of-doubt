@@ -11,6 +11,7 @@ describe("leaderboard database cache", () => {
     expect(pageSource).toContain('"use cache"');
     expect(pageSource).toContain('cacheTag("public-leaderboard")');
     expect(pageSource).toMatch(/cacheLife\(\{[\s\S]*revalidate:\s*60/);
+    expect(pageSource).toContain('visualLeaderboard === "unavailable"');
     expect(pageSource).not.toContain("unstable_cache");
   });
 

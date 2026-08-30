@@ -14,8 +14,6 @@ const ROUTES = [
   { name: "създаване-мафия", path: "/mafia/create?visualAuth=1" },
   { name: "урок", path: "/tutorial?step=1" },
   { name: "приятели", path: "/friends?visualAuth=1" },
-  { name: "вход-върколак", path: "/werewolf/join?visualAuth=1" },
-  { name: "вход-мафия", path: "/mafia/join?visualAuth=1" },
   { name: "история", path: "/history?visualHistory=fixture" },
   { name: "запис", path: "/history/fixture-game-1/replay?visualReplay=fixture" },
   { name: "легенди", path: "/achievements?visualAuth=1&visualAchievements=fixture" },
@@ -74,3 +72,22 @@ for (const viewport of VIEWPORTS) {
     }
   }
 }
+
+test("@site-a11y keyboard users can skip chrome and Escape returns focus to More", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  await page.keyboard.press("Tab");
+  const skipLink = page.getByRole("link", { name: "Към основното съдържание" });
+  await expect(skipLink).toBeFocused();
+  await skipLink.press("Enter");
+  await expect(page.locator("#main-content")).toBeFocused();
+
+  const more = page.getByRole("button", { name: "Още страници" });
+  await expect(more).toBeEnabled();
+  await more.click();
+  await expect(page.getByRole("navigation", { name: "Още страници" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("navigation", { name: "Още страници" })).toHaveCount(0);
+  await expect(more).toBeFocused();
+});

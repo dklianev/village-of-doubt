@@ -35,7 +35,7 @@ function writeSigned(file, value, privateKey) {
   }) + "\n");
 }
 
-function runDeploy({ failMigration = false } = {}) {
+function runDeploy({ failMigration = false, checkoutCommit = "b".repeat(40) } = {}) {
   const directory = mkdtempSync(path.join(tmpdir(), "werewolf-deploy-state-"));
   const releaseDir = path.join(directory, "release-state");
   const binDir = path.join(directory, "bin");
@@ -54,6 +54,7 @@ function runDeploy({ failMigration = false } = {}) {
   writeFileSync(path.join(binDir, "id"), "#!/bin/sh\nprintf '0\\n'\n", { mode: 0o755 });
   writeFileSync(path.join(binDir, "systemctl"), "#!/bin/sh\nexit 0\n", { mode: 0o755 });
   writeFileSync(path.join(binDir, "pnpm"), "#!/bin/sh\nexit 0\n", { mode: 0o755 });
+  writeFileSync(path.join(binDir, "git"), "#!/bin/sh\nprintf '%s\\n' \"$FAKE_SOURCE_COMMIT\"\n", { mode: 0o755 });
   writeFileSync(path.join(binDir, "docker"), `#!/bin/sh
 printf '%s\\n' "$*" >> "$FAKE_DOCKER_LOG"
 case "$*" in
@@ -81,9 +82,11 @@ exec "${process.execPath.replaceAll("\\", "/")}" "$@"
       PATH: binDir.replaceAll("\\", "/") + ":" + process.env.PATH,
       FAKE_DOCKER_LOG: dockerLog.replaceAll("\\", "/"),
       FAIL_MIGRATION: failMigration ? "1" : "0",
+      FAKE_SOURCE_COMMIT: checkoutCommit,
       RELEASE_STATE_DIR: releaseDir.replaceAll("\\", "/"),
       RELEASE_ALLOWED_IMAGE_PREFIX: "ghcr.io/example/project",
       RELEASE_MANIFEST_PUBLIC_KEY: publicKey.replaceAll("\\", "/"),
+      RELEASE_GIT_COMMAND: path.join(binDir, "git").replaceAll("\\", "/"),
       SKIP_DEPLOY_DRAIN: "1",
       SKIP_DEPLOY_BACKUP: "1",
     },
@@ -118,4 +121,12 @@ test("preserves an unresolved migration marker when the migrator fails", { skip:
   assert.equal(result.files.pending, true);
   assert.equal(JSON.parse(result.files.schema).migrationHead, "0012_previous");
   assert.doesNotMatch(result.dockerCalls, /up -d --force-recreate --no-build --no-deps web game caddy/);
+});
+
+test("rejects a signed release from a different source checkout", { skip: !isPosix }, () => {
+  const result = runDeploy({ checkoutCommit: "c".repeat(40) });
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /source checkout.*sourceCommit/i);
+  assert.equal(result.dockerCalls, "");
 });

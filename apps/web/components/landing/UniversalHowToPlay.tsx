@@ -16,22 +16,22 @@ const STEPS = [
   },
   {
     label: "Стая",
-    body: "Създаваш стая с код или се присъединяваш към приятел.",
+    body: "Създаваш стая или влизаш при приятел с код.",
     icon: <HouseIcon />,
   },
   {
     label: "Роля",
-    body: "Сървърът ти показва само твоята карта.",
+    body: "Виждаш само собствената си роля. Чуждите тайни остават скрити.",
     icon: <MaskIcon />,
   },
   {
     label: "Нощ",
-    body: "Действаш тихо, ако ролята ти го позволява.",
+    body: "Когато дойде редът ти, действаш без другите да разберат.",
     icon: <MoonIcon />,
   },
   {
     label: "Гласуване",
-    body: "Денят решава кой ще напусне играта.",
+    body: "Обсъждате, обвинявате и решавате кой напуска играта.",
     icon: <BallotIcon />,
   },
 ] as const;
@@ -44,10 +44,10 @@ export function UniversalHowToPlay() {
           <div className="quickstart-header-plaque">
             <p className="section-kicker">първа игра за 30 секунди</p>
             <h2>Как започва добра игра</h2>
-            <p>Влез, избери стая, играй.</p>
+            <p>Създай стая, сподели кода и започнете.</p>
           </div>
           <Link href="/faq" className="quickstart-rules-cta">
-            Виж често задаваните въпроси <span aria-hidden="true">→</span>
+            Виж правилата и отговорите <span aria-hidden="true">→</span>
           </Link>
         </div>
 

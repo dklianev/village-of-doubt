@@ -1,7 +1,7 @@
 "use client";
 
 import * as RDialog from "@radix-ui/react-dialog";
-import { useInsertionEffect, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useInsertionEffect, type CSSProperties, type ReactNode } from "react";
 
 export interface SheetProps {
   open: boolean;
@@ -98,6 +98,13 @@ const SHEET_RUNTIME_CSS = `
   background: var(--ds-surface-paper);
 }
 
+.ds-sheet-title {
+  margin: 0;
+  font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  font-size: var(--ds-type-h3);
+  letter-spacing: 0;
+}
+
 .ds-sheet-close {
   position: absolute;
   top: 18px;
@@ -132,6 +139,34 @@ const SHEET_RUNTIME_CSS = `
 
 .ds-sheet[data-state="closed"] {
   animation: ds-sheet-close 280ms cubic-bezier(0.32, 0, 0.67, 0) both;
+}
+
+@media (max-width: 767px) {
+  .ds-sheet[data-size="workspace"] {
+    inset: 0;
+    width: 100vw;
+    height: 100dvh;
+    min-height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .ds-sheet[data-size="workspace"] > .ds-sheet-title {
+    display: flex;
+    min-height: 58px;
+    align-items: center;
+    padding: 12px 62px 12px 16px;
+    font-size: 1.25rem;
+    line-height: 1.1;
+  }
+
+  .ds-sheet[data-size="workspace"] > .ds-sheet-close {
+    top: 9px;
+    right: 12px;
+    width: 40px;
+    height: 40px;
+  }
 }
 
 @media (min-width: 768px) {
@@ -188,20 +223,44 @@ export function Sheet({
 }: SheetProps) {
   useSheetStyles();
 
+  useEffect(() => {
+    if (!open || size !== "workspace") {
+      return;
+    }
+
+    const root = document.documentElement;
+    const body = document.body;
+    const scrollY = window.scrollY;
+    const rootOverflow = root.style.overflow;
+    const bodyOverflow = body.style.overflow;
+    const bodyPosition = body.style.position;
+    const bodyTop = body.style.top;
+    const bodyWidth = body.style.width;
+
+    root.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.width = "100%";
+
+    return () => {
+      root.style.overflow = rootOverflow;
+      body.style.overflow = bodyOverflow;
+      body.style.position = bodyPosition;
+      body.style.top = bodyTop;
+      body.style.width = bodyWidth;
+      if (scrollY > 0) {
+        window.scrollTo({ top: scrollY, behavior: "auto" });
+      }
+    };
+  }, [open, size]);
+
   return (
     <RDialog.Root open={open} onOpenChange={onOpenChange}>
       <RDialog.Portal>
         <RDialog.Overlay className="ds-sheet-overlay" />
         <RDialog.Content className="ds-sheet" data-ds-sheet data-size={size}>
-          <RDialog.Title
-            className="ds-sheet-title"
-            style={{
-              fontFamily: '"Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif',
-              fontSize: "var(--ds-type-h3)",
-              letterSpacing: 0,
-              margin: 0,
-            }}
-          >
+          <RDialog.Title className="ds-sheet-title">
             {title}
           </RDialog.Title>
           {closeLabel ? (

@@ -7,7 +7,7 @@ import type { GameSnapshot } from "@/lib/play/types";
 export function RulesSummary({ snapshot }: { snapshot: GameSnapshot }) {
   return (
     <section className="ritual-panel mt-8 rounded-[2rem] p-6">
-      <p className="section-kicker">правила преди старт</p>
+      <p className="section-kicker">правила преди началото</p>
       <div className="rules-summary-metrics-grid mt-4 grid gap-3 md:grid-cols-2">
         <SummaryPill label="Режим" value={modeBg(snapshot.mode)} />
         <SummaryPill

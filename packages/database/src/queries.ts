@@ -192,11 +192,19 @@ export async function upsertUsersUnlessDeleted(
   db: Database,
   users: PlaceholderUserUpsert[],
 ): Promise<Map<string, string>> {
+  return withUserIdentityMutation(db, users, async (_tx, identityMap) => identityMap);
+}
+
+export async function withUserIdentityMutation<T>(
+  db: Database,
+  users: PlaceholderUserUpsert[],
+  mutation: (tx: Database, deletedIdentityMap: Map<string, string>) => Promise<T>,
+): Promise<T> {
   const uniqueUsers = [
     ...new Map(users.filter((item) => item.userId).map((item) => [item.userId, item])).values(),
   ];
   if (uniqueUsers.length === 0) {
-    return new Map();
+    return mutation(db, new Map());
   }
 
   return db.transaction(async (tx) => {
@@ -229,7 +237,7 @@ export async function upsertUsersUnlessDeleted(
     ];
 
     await tx.insert(user).values(persistedUsers).onConflictDoNothing();
-    return deletedIdentityMap;
+    return mutation(tx as unknown as Database, deletedIdentityMap);
   });
 }
 

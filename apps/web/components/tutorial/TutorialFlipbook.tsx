@@ -1,18 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { X } from "lucide-react";
 import { safeLocalStorage } from "@/lib/safe-storage";
 import { safeInternalRedirect } from "@/lib/safe-internal-redirect";
-import { SlideDay } from "./SlideDay";
-import { SlideFinal } from "./SlideFinal";
-import { SlideNight } from "./SlideNight";
-import { SlideResolution } from "./SlideResolution";
 import { SlideSetup } from "./SlideSetup";
-import { SlideVote } from "./SlideVote";
 import { TutorialProgress } from "./TutorialProgress";
+
+const TutorialDeferredSlide = dynamic(() =>
+  import("./TutorialDeferredSlide").then((module) => module.TutorialDeferredSlide),
+);
 
 const TOTAL_SLIDES = 6;
 const SCENE_IDS = ["setup", "night", "day", "vote", "resolution", "final"] as const;
@@ -36,6 +36,8 @@ export function TutorialFlipbook() {
   const [welcomeVisible, setWelcomeVisible] = useState(() => searchParams.get("welcome") === "1");
   const continueHref = safeInternalRedirect(searchParams.get("redirect"), "/werewolf/create");
   const urlUpdateTimerRef = useRef<number | null>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const navigationStartedRef = useRef(false);
 
   useEffect(() => {
     if (searchParams.get("step")) {
@@ -86,6 +88,7 @@ export function TutorialFlipbook() {
     if (slide < 1 || slide > TOTAL_SLIDES) {
       return;
     }
+    navigationStartedRef.current = true;
     setCurrent(slide);
   }, []);
 
@@ -111,6 +114,12 @@ export function TutorialFlipbook() {
   }, [next, prev]);
 
   useEffect(() => {
+    if (navigationStartedRef.current) {
+      stageRef.current?.focus();
+    }
+  }, [current]);
+
+  useEffect(() => {
     if (!welcomeVisible) {
       return;
     }
@@ -124,15 +133,11 @@ export function TutorialFlipbook() {
       case 1:
         return <SlideSetup />;
       case 2:
-        return <SlideNight />;
       case 3:
-        return <SlideDay />;
       case 4:
-        return <SlideVote />;
       case 5:
-        return <SlideResolution />;
       case 6:
-        return <SlideFinal />;
+        return <TutorialDeferredSlide slide={current} />;
       default:
         return <SlideSetup />;
     }
@@ -151,16 +156,22 @@ export function TutorialFlipbook() {
         </aside>
       ) : null}
 
-      <TutorialProgress current={current} total={TOTAL_SLIDES} onJump={goTo} />
+      <TutorialProgress current={current} total={TOTAL_SLIDES} onJump={goTo} continueHref={continueHref} />
 
       <div
+        ref={stageRef}
         className="tutorial-slide-stage"
         role="region"
         aria-label={`Сцена ${current}: ${SCENE_LABELS[current - 1]}`}
         data-tutorial-scene={SCENE_IDS[current - 1]}
+        tabIndex={-1}
       >
         {slide}
       </div>
+
+      <span className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        Сцена {current} от {TOTAL_SLIDES}: {SCENE_LABELS[current - 1]}
+      </span>
 
       <nav className="tutorial-nav" aria-label="Навигация между сцените">
         <button type="button" className="btn btn-secondary" onClick={prev} disabled={current === 1} aria-label="Предишна сцена">
@@ -170,18 +181,20 @@ export function TutorialFlipbook() {
           <strong>{SCENE_LABELS[current - 1]}</strong>
           <span>Сцена {current} от {TOTAL_SLIDES}</span>
         </span>
-        <Link href={continueHref} prefetch={false} className="btn btn-secondary tutorial-play-link">
-          Продължи към игра
-        </Link>
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={next}
-          disabled={current === TOTAL_SLIDES}
-          aria-label="Следваща сцена"
-        >
-          Напред
-        </button>
+        {current === TOTAL_SLIDES ? (
+          <Link href={continueHref} prefetch={false} className="btn btn-primary tutorial-play-link tutorial-nav-action">
+            Продължи към игра
+          </Link>
+        ) : (
+          <button
+            type="button"
+            className="btn btn-primary tutorial-nav-action"
+            onClick={next}
+            aria-label="Следваща сцена"
+          >
+            Напред
+          </button>
+        )}
       </nav>
 
       <p

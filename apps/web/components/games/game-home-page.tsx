@@ -22,13 +22,10 @@ export function GameHomePage({ family }: { family: GameFamily }) {
   const subtitle = isMafia
     ? "Криминален ноар за град, който трябва да различи алиби от лъжа."
     : "Фолклорен хорър за село, което заспива заедно, но не всички се будят невинни.";
-  const heroImages = isMafia
-    ? ["/game-art/mafia/bg-hero-v2.webp", "/game-art/mobile/mafia/bg-hero-v2.webp"]
-    : ["/game-art/werewolf/bg-hero-v2.webp", "/game-art/mobile/werewolf/bg-hero-v2.webp"];
 
   return (
     <main className="shell game-home-shell" data-faction={family} data-family={family}>
-      <ResourceHints images={heroImages} />
+      <ResourceHints images={getGameHomeHeroPreloads(family)} />
       <GameHero family={family} root={root} eyebrow={eyebrow} title={title} subtitle={subtitle} />
 
       {family === "werewolves" ? <WerewolfNightTimeline /> : <MafiaNightTimeline />}
@@ -47,6 +44,40 @@ export function GameHomePage({ family }: { family: GameFamily }) {
       </Suspense>
     </main>
   );
+}
+
+export function getGameHomeHeroPreloads(family: GameFamily) {
+  const familyPath = family === "mafia" ? "mafia" : "werewolf";
+  const mobileDarkVersion = family === "mafia" ? "v2" : "v3";
+  const desktopRoot = `/game-art/${familyPath}`;
+  const mobileRoot = `/game-art/mobile/${familyPath}`;
+
+  return [
+    {
+      href: `${desktopRoot}/bg-hero-v2.avif`,
+      media: "(min-width: 721px) and (prefers-color-scheme: dark)",
+      type: "image/avif",
+      fetchPriority: "high" as const,
+    },
+    {
+      href: `${desktopRoot}/bg-hero-light-v1.avif`,
+      media: "(min-width: 721px) and (prefers-color-scheme: light)",
+      type: "image/avif",
+      fetchPriority: "high" as const,
+    },
+    {
+      href: `${mobileRoot}/bg-hero-${mobileDarkVersion}.avif`,
+      media: "(max-width: 720px) and (prefers-color-scheme: dark)",
+      type: "image/avif",
+      fetchPriority: "high" as const,
+    },
+    {
+      href: `${mobileRoot}/bg-hero-light-v1.avif`,
+      media: "(max-width: 720px) and (prefers-color-scheme: light)",
+      type: "image/avif",
+      fetchPriority: "high" as const,
+    },
+  ];
 }
 
 async function GameStatsRow({ family }: { family: GameFamily }) {

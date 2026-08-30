@@ -32,7 +32,13 @@ const faqJsonLd = {
 export default function FaqPage() {
   return (
     <main className="shell legal-page-shell faq-shell">
-      <ResourceHints images={["/game-art/legal/faq-hearth-banner.webp"]} />
+      <ResourceHints
+        images={[{
+          href: "/game-art/legal/faq-hearth-banner.avif",
+          type: "image/avif",
+          fetchPriority: "high",
+        }]}
+      />
       <JsonLd data={faqJsonLd} />
       <FaqHearth items={FAQ_DATA} />
     </main>

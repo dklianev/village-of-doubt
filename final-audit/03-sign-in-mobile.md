@@ -1,0 +1,67 @@
+- generic [active] [ref=f1e1] [box=0,0,375,1399]:
+  - link "Към основното съдържание" [ref=f1e2] [cursor=pointer] [box=8,-56,263,48]:
+    - /url: "#main-content"
+  - banner [ref=f1e4] [box=0,0,375,64]:
+    - button "Отвори менюто" [ref=f1e254] [cursor=pointer] [box=10,10,44,44]
+    - link "Върколак и Мафия, начало" [ref=f1e5] [cursor=pointer] [box=64,12,170,40]:
+      - /url: /
+      - generic [ref=f1e7] [box=108,15,126,34]:
+        - generic [ref=f1e8] [box=108,15,126,14]:
+          - generic [ref=f1e9] [box=108,15,66,13]: Върколак
+          - generic [ref=f1e10] [box=178,15,4,14]: ·
+          - generic [ref=f1e11] [box=186,15,49,13]: Мафия
+        - generic [ref=f1e12] [box=114,32,52,17]: БЕТА
+    - link "Играй" [ref=f1e256] [cursor=pointer] [box=273,10,92,44]:
+      - /url: /werewolf/create
+  - main [ref=f1e206] [box=3,64,370,1163]:
+    - generic [ref=f1e211] [box=59,124,258,1011]:
+      - generic [ref=f1e212] [box=59,124,258,236]:
+        - paragraph [ref=f1e213] [box=59,124,117,31]: нова стая
+        - heading "Стани стопанин" [level=1] [ref=f1e214] [box=59,167,258,92]:
+          - generic [ref=f1e215] [box=59,167,258,45]: Стани
+          - generic [ref=f1e216] [box=59,214,258,45]: стопанин
+        - paragraph [ref=f1e217] [box=59,271,258,64]: Влез, за да създадеш частна стая, да избереш правила и да поканиш хората около масата.
+      - region "Отвори досието си" [ref=f1e218] [box=59,378,258,757]:
+        - generic [ref=f1e219] [box=258,396,41,41]: В
+        - generic [ref=f1e220] [box=80,405,216,104]:
+          - paragraph [ref=f1e221] [box=80,405,216,22]: ВХОД
+          - heading "Отвори досието си" [level=2] [ref=f1e222] [box=80,433,216,27]
+          - paragraph [ref=f1e223] [box=80,466,216,43]: Избери бърз вход или използвай имейл и парола.
+        - generic [ref=f1e224] [box=80,525,216,114]:
+          - button "Продължи с Google" [ref=f1e226] [cursor=pointer] [box=80,525,216,52]
+          - button "Продължи с Discord" [ref=f1e231] [cursor=pointer] [box=80,587,216,52]
+        - separator "или с имейл" [ref=f1e235] [box=80,655,216,34]
+        - generic [ref=f1e237] [box=80,704,216,348]:
+          - tablist "Начин на вход" [ref=f1e238] [box=80,704,216,48]:
+            - tab "Имам досие" [selected] [ref=f1e239] [cursor=pointer] [box=85,709,101,38]
+            - tab "Ново досие" [ref=f1e240] [cursor=pointer] [box=190,709,101,38]
+          - tabpanel "Имам досие" [ref=f1e241] [box=80,764,216,288]:
+            - generic [ref=f1e242] [box=80,764,216,67]
+            - generic [ref=f1e245] [box=80,844,216,67]
+            - link "Забравена парола?" [ref=f1e248] [cursor=pointer] [box=80,923,216,68]:
+              - /url: /forgot-password
+            - button "Влез" [ref=f1e249] [cursor=pointer] [box=80,1005,216,44]
+        - generic [ref=f1e250] [box=80,1068,216,44]:
+          - link "Поверителност" [ref=f1e251] [cursor=pointer] [box=80,1068,121,44]:
+            - /url: /privacy
+          - link "Условия" [ref=f1e253] [cursor=pointer] [box=205,1068,91,44]:
+            - /url: /terms
+  - contentinfo [ref=f1e167] [box=0,1251,375,148]:
+    - generic [ref=f1e168] [box=16,1276,343,72]:
+      - link "Поверителност" [ref=f1e169] [cursor=pointer] [box=46,1276,113,32]:
+        - /url: /privacy
+      - generic [ref=f1e170] [box=167,1276,3,32]: ·
+      - link "Условия" [ref=f1e171] [cursor=pointer] [box=178,1276,63,32]:
+        - /url: /terms
+      - generic [ref=f1e172] [box=250,1276,3,32]: ·
+      - link "Сигнал" [ref=f1e173] [cursor=pointer] [box=261,1276,56,32]:
+        - /url: /report
+      - generic [ref=f1e174] [box=325,1276,3,32]: ·
+      - link "Състояние" [ref=f1e175] [cursor=pointer] [box=108,1316,82,32]:
+        - /url: /status
+      - generic [ref=f1e176] [box=198,1316,3,32]: ·
+      - link "Помощ" [ref=f1e177] [cursor=pointer] [box=209,1316,58,32]:
+        - /url: /faq
+    - paragraph [ref=f1e178] [box=16,1356,343,19]: © 2026 Върколак и Мафия · Бета
+  - button "Open Next.js Dev Tools" [ref=f1e184] [cursor=pointer] [box=22,790,32,32]
+  - alert [ref=f1e205] [box=-1,1398,1,1]: Стани стопанин

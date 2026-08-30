@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { ArrowRight, ChevronDown, History, LogOut, Trophy, User, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -7,6 +8,11 @@ import { useRouter } from "next/navigation";
 import { ProfilePortrait } from "@/components/ProfilePortrait";
 import { avatarIdForUser } from "@/lib/avatar-catalog";
 import { useAuthSession, type AuthSessionView } from "@/lib/use-auth-session";
+
+const Dialog = dynamic(() => import("@werewolf/ui").then((module) => module.Dialog), {
+  loading: () => null,
+  ssr: false,
+});
 
 export function AuthChip({ initialSession }: { initialSession?: AuthSessionView | null }) {
   const router = useRouter();
@@ -16,7 +22,8 @@ export function AuthChip({ initialSession }: { initialSession?: AuthSessionView 
   const [open, setOpen] = useState(false);
   const [confirmSignOut, setConfirmSignOut] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!open) {
@@ -24,7 +31,7 @@ export function AuthChip({ initialSession }: { initialSession?: AuthSessionView 
     }
 
     function onPointerDown(event: PointerEvent) {
-      if (ref.current?.contains(event.target as Node)) {
+      if (menuRef.current?.contains(event.target as Node)) {
         return;
       }
       setOpen(false);
@@ -32,7 +39,9 @@ export function AuthChip({ initialSession }: { initialSession?: AuthSessionView 
 
     function onKey(event: KeyboardEvent) {
       if (event.key === "Escape") {
+        event.preventDefault();
         setOpen(false);
+        window.requestAnimationFrame(() => triggerRef.current?.focus());
       }
     }
 
@@ -79,10 +88,19 @@ export function AuthChip({ initialSession }: { initialSession?: AuthSessionView 
     router.push("/");
   }
 
+  function closeSignOut() {
+    if (signingOut) {
+      return;
+    }
+    setConfirmSignOut(false);
+    window.requestAnimationFrame(() => triggerRef.current?.focus());
+  }
+
   return (
     <div className="auth-chip-slot" data-auth-state="authenticated">
-      <div className="auth-chip auth-chip-avatar" ref={ref}>
+      <div className="auth-chip auth-chip-avatar" ref={menuRef}>
         <button
+          ref={triggerRef}
           type="button"
           className="auth-chip-trigger"
           onClick={() => setOpen((value) => !value)}
@@ -97,23 +115,22 @@ export function AuthChip({ initialSession }: { initialSession?: AuthSessionView 
         </button>
 
         {open ? (
-          <div className="nav-dropdown nav-dropdown-user" role="menu">
-            <Link href="/account" role="menuitem" prefetch={false} onClick={() => setOpen(false)} className="nav-dropdown-item">
+          <nav className="nav-dropdown nav-dropdown-user" aria-label="Профил">
+            <Link href="/account" prefetch={false} onClick={() => setOpen(false)} className="nav-dropdown-item">
               <User className="nav-dropdown-item-icon" aria-hidden strokeWidth={1.8} />
               <span>Моето досие</span>
             </Link>
-            <Link href="/history" role="menuitem" prefetch={false} onClick={() => setOpen(false)} className="nav-dropdown-item">
+            <Link href="/history" prefetch={false} onClick={() => setOpen(false)} className="nav-dropdown-item">
               <History className="nav-dropdown-item-icon" aria-hidden strokeWidth={1.8} />
               <span>История</span>
             </Link>
-            <Link href="/achievements" role="menuitem" prefetch={false} onClick={() => setOpen(false)} className="nav-dropdown-item">
+            <Link href="/achievements" prefetch={false} onClick={() => setOpen(false)} className="nav-dropdown-item">
               <Trophy className="nav-dropdown-item-icon" aria-hidden strokeWidth={1.8} />
               <span>Легенди</span>
             </Link>
             <div className="nav-dropdown-divider" role="separator" />
             <button
               type="button"
-              role="menuitem"
               className="nav-dropdown-item nav-dropdown-item-danger"
               onClick={() => {
                 setOpen(false);
@@ -123,14 +140,14 @@ export function AuthChip({ initialSession }: { initialSession?: AuthSessionView 
               <LogOut className="nav-dropdown-item-icon" aria-hidden strokeWidth={1.8} />
               <span>Изход</span>
             </button>
-          </div>
+          </nav>
         ) : null}
 
         {confirmSignOut ? (
           <SignOutConfirmDialog
             userName={displayName}
             pending={signingOut}
-            onCancel={() => setConfirmSignOut(false)}
+            onCancel={closeSignOut}
             onConfirm={confirmLogout}
           />
         ) : null}
@@ -150,40 +167,36 @@ function SignOutConfirmDialog({
   onCancel: () => void;
   onConfirm: () => void;
 }) {
-  useEffect(() => {
-    function onKey(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        onCancel();
-      }
-    }
-
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onCancel]);
-
   return (
-    <div className="signout-modal-backdrop" role="presentation" onClick={onCancel}>
-      <dialog className="signout-modal" open aria-labelledby="signout-title" onClick={(event) => event.stopPropagation()}>
-        <button type="button" className="signout-modal-close" onClick={onCancel} aria-label="Затвори" disabled={pending}>
-          <X aria-hidden strokeWidth={2} />
-        </button>
-        <header className="signout-modal-head">
-          <span className="signout-modal-icon" aria-hidden>
-            <LogOut strokeWidth={1.8} />
-          </span>
-          <h2 id="signout-title">Излизаш ли от масата?</h2>
-          <p>Здрасти, {userName}. Сесията ще се затвори и ще се върнеш на началната страница.</p>
-        </header>
-        <div className="signout-modal-actions">
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open && !pending) {
+          onCancel();
+        }
+      }}
+      title="Излизаш ли от масата?"
+      description={`Здрасти, ${userName}. Сесията ще се затвори и ще се върнеш на началната страница.`}
+      footer={
+        <>
           <button type="button" className="signout-modal-cancel" onClick={onCancel} disabled={pending}>
             Отказ
           </button>
           <button type="button" className="signout-modal-confirm" onClick={onConfirm} disabled={pending}>
             {pending ? "Излизане..." : "Излизам"}
           </button>
-        </div>
-      </dialog>
-    </div>
+        </>
+      }
+    >
+      <div className="signout-modal-head">
+        <button type="button" className="signout-modal-close" onClick={onCancel} aria-label="Затвори" disabled={pending}>
+          <X aria-hidden strokeWidth={2} />
+        </button>
+        <span className="signout-modal-icon" aria-hidden>
+          <LogOut strokeWidth={1.8} />
+        </span>
+      </div>
+    </Dialog>
   );
 }
 

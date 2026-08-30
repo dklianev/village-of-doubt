@@ -46,9 +46,21 @@ describe("createRuntimeRedisEvalClient", () => {
 
   it("прекъсва бавна команда в ограничения срок", async () => {
     vi.useFakeTimers();
+    let abortCount = 0;
     const client = createRuntimeRedisEvalClient(() => ({
       isReady: true,
       eval: vi.fn(() => new Promise(() => {})),
+      withAbortSignal(signal: AbortSignal) {
+        return {
+          isReady: true,
+          eval: vi.fn(() => new Promise((_resolve, reject) => {
+            signal.addEventListener("abort", () => {
+              abortCount += 1;
+              reject(signal.reason);
+            }, { once: true });
+          })),
+        };
+      },
     }), 250);
     const result = client.eval("return 1", {
       keys: [],
@@ -58,6 +70,7 @@ describe("createRuntimeRedisEvalClient", () => {
 
     await vi.advanceTimersByTimeAsync(250);
     await assertion;
+    expect(abortCount).toBe(1);
     vi.useRealTimers();
   });
 

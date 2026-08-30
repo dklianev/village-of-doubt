@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { gzipSync } from "node:zlib";
 import { chmodSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -30,9 +31,13 @@ function runRestore(failure = "", options = {}) {
   const backupFile = path.join(fixtureDir, "backup.sql.gz");
   const fakeDocker = path.join(fixtureDir, "fake-docker.sh");
   const fakeNode = path.join(fixtureDir, "fake-node.sh");
+  const fakeAge = path.join(fixtureDir, "fake-age.sh");
+  const fakeBackupManifest = path.join(fixtureDir, "fake-backup-manifest.mjs");
   const logFile = path.join(fixtureDir, "commands.log");
   const releaseStateDir = path.join(fixtureDir, "release-state");
   const releasePublicKey = path.join(fixtureDir, "release-manifest.pub");
+  const ageIdentity = path.join(fixtureDir, "age-identity.txt");
+  const deletionLedger = path.join(fixtureDir, "werewolf_deletion_ledger.tsv.age");
   mkdirSync(scratchDir);
   mkdirSync(releaseStateDir);
   writeFileSync(backupFile, gzipSync("-- restore fixture\n"));
@@ -41,9 +46,48 @@ function runRestore(failure = "", options = {}) {
   writeFileSync(path.join(releaseStateDir, "migration-pending.json"), '{"signed":"unresolved-candidate"}\n');
   writeFileSync(path.join(releaseStateDir, "migration-pending.json.sig"), "signed-unresolved-candidate\n");
   writeFileSync(releasePublicKey, "test-public-key\n");
+  writeFileSync(ageIdentity, "AGE-SECRET-KEY-test\n");
+  if (options.externalLedger) {
+    const ledgerContents = options.ledgerContents
+      ?? "werewolf-deletion-ledger-v1\nuser-deleted-after-total-loss\tdeleted_cccccccccccccccccccccccccccccccc\n";
+    writeFileSync(
+      deletionLedger,
+      ledgerContents,
+    );
+    const checksum = createHash("sha256").update(ledgerContents).digest("hex");
+    writeFileSync(`${deletionLedger}.sha256`, `${checksum}  ${path.basename(deletionLedger)}\n`);
+    writeFileSync(`${deletionLedger}.manifest.json`, '{"fixture":"signed-ledger"}\n');
+    writeFileSync(`${deletionLedger}.manifest.json.sig`, "signed-ledger\n");
+  }
   writeFileSync(fakeDocker, fakeDockerSource(), { mode: 0o755 });
+  writeFileSync(fakeBackupManifest, `const artifact = process.argv[3] ?? "";
+const isLedger = artifact.includes("werewolf_deletion_ledger.tsv.age");
+const createdAt = isLedger && process.env.RESTORE_TEST_LEDGER_STALE === "1"
+  ? "2026-08-19T00:00:00.000Z"
+  : isLedger
+    ? "2026-08-21T00:00:00.000Z"
+    : "2026-08-20T00:00:00.000Z";
+process.stdout.write(JSON.stringify({ createdAt }) + "\\n");
+`);
   writeFileSync(fakeNode, `#!/usr/bin/env sh
 printf 'node %s\\n' "$*" >> "$RESTORE_TEST_LOG"
+case "$*" in
+  *"backup-manifest.mjs verify"*)
+    case "$*" in
+      *"werewolf_deletion_ledger.tsv.age"*)
+        if [ "\${RESTORE_TEST_LEDGER_STALE:-}" = "1" ]; then
+          printf '{"createdAt":"2026-08-19T00:00:00.000Z"}\n'
+        else
+          printf '{"createdAt":"2026-08-21T00:00:00.000Z"}\n'
+        fi
+        ;;
+      *)
+        printf '{"createdAt":"2026-08-20T00:00:00.000Z"}\n'
+        ;;
+    esac
+    exit 0
+    ;;
+esac
 env_output=""
 previous=""
 for argument in "$@"; do
@@ -63,8 +107,23 @@ EOF
 fi
 exit 0
 `, { mode: 0o755 });
+  writeFileSync(fakeAge, `#!/usr/bin/env sh
+set -eu
+output=""
+input=""
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    -o) output="$2"; shift 2 ;;
+    -i) shift 2 ;;
+    -d) shift ;;
+    *) input="$1"; shift ;;
+  esac
+done
+cp "$input" "$output"
+`, { mode: 0o755 });
   chmodSync(fakeDocker, 0o755);
   chmodSync(fakeNode, 0o755);
+  chmodSync(fakeAge, 0o755);
 
   const result = spawnSync(shell.command, [...shell.prefix, toShellPath(restoreScript), toShellPath(backupFile)], {
     cwd: root,
@@ -75,13 +134,21 @@ exit 0
         "postgres://werewolf_migrator:secret@postgres:5432/werewolf?application_name=werewolf-migrator",
       POSTGRES_USER: "werewolf",
       POSTGRES_DB: "werewolf",
-      BACKUP_REQUIRE_SIGNATURE: "0",
+      BACKUP_REQUIRE_SIGNATURE: options.requireSignature ? "1" : "0",
+      BACKUP_SIGNING_PUBLIC_KEY_FILE: toShellPath(releasePublicKey),
+      BACKUP_MANIFEST_COMMAND: toShellPath(fakeBackupManifest),
+      BACKUP_AGE_COMMAND: toShellPath(fakeAge),
+      BACKUP_AGE_IDENTITY_FILE: toShellPath(ageIdentity),
       RESTORE_CONFIRM_DATABASE: "werewolf",
+      RESTORE_DELETION_LEDGER_FILE: options.externalLedger ? toShellPath(deletionLedger) : "",
       RESTORE_DOCKER_COMMAND: toShellPath(fakeDocker),
       RESTORE_NODE_COMMAND: toShellPath(fakeNode),
       RESTORE_RUN_ID: runId,
       RESTORE_TEST_FAILURE: failure,
+      RESTORE_TEST_LEDGER_STALE: options.staleLedger ? "1" : "0",
       RESTORE_TEST_LOG: toShellPath(logFile),
+      RESTORE_TEST_CURRENT_TOMBSTONES: options.currentTombstones ?? "present",
+      RESTORE_TEST_CURRENT_LEDGER_TABLE: options.currentLedgerTable ?? "present",
       RESTORE_ONLY: options.restoreOnly ? "1" : "",
       RELEASE_STATE_DIR: toShellPath(releaseStateDir),
       RELEASE_MANIFEST_PUBLIC_KEY: toShellPath(releasePublicKey),
@@ -152,8 +219,15 @@ case "$*" in
     ;;
   *"psql -v ON_ERROR_STOP=1"*"-Atqc"*)
     case "$*" in
+      *"SELECT to_regclass('public.deleted_user_identities');"*)
+        if [ "\${RESTORE_TEST_CURRENT_LEDGER_TABLE:-present}" != "missing" ]; then
+          printf 'public.deleted_user_identities\\n'
+        fi
+        ;;
       *"original_user_id || E'\\t'"*)
-        printf 'user-deleted-after-backup\\tdeleted_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\\n'
+        if [ "\${RESTORE_TEST_CURRENT_TOMBSTONES:-present}" != "none" ]; then
+          printf 'user-deleted-after-backup\\tdeleted_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\\n'
+        fi
         ;;
       *)
         printf 'ok\\n'
@@ -254,7 +328,7 @@ test("runs a bounded migrator, validates after cutover, and retains rollback for
   );
   const dropRollback = indexOf(result.commands, `dropdb --if-exists --force -U werewolf ${rollbackDb}`);
 
-  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}\n${result.commands.join("\n")}`);
   assert.ok(migrate >= 0);
   assert.ok(
     result.commands.includes(
@@ -290,7 +364,7 @@ test("reapplies current deletion tombstones to staging before cutover", () => {
   );
   const renameTarget = indexOf(result.commands, `ALTER DATABASE "werewolf" RENAME TO "${rollbackDb}"`);
 
-  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}\n${result.commands.join("\n")}`);
   assert.ok(validate >= 0);
   assert.ok(stop > validate);
   assert.ok(captureTombstones > stop);
@@ -302,6 +376,78 @@ test("reapplies current deletion tombstones to staging before cutover", () => {
   assert.ok(result.commands.some((command) =>
     command.includes("stdin: user-deleted-after-backup")
   ));
+});
+
+test("signed restore fails before Docker without the protected external deletion ledger", () => {
+  const result = runRestore("", { requireSignature: true });
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /RESTORE_DELETION_LEDGER_FILE/);
+  assert.equal(result.commands.some((command) => command.startsWith("compose ")), false);
+});
+
+test("signed restore merges the verified external ledger with current tombstones before cutover", () => {
+  const result = runRestore("", {
+    requireSignature: true,
+    externalLedger: true,
+  });
+  const applyExternal = result.commands.findIndex((command) =>
+    command.includes("stdin: user-deleted-after-total-loss")
+  );
+  const applyCurrent = result.commands.findIndex((command) =>
+    command.includes("stdin: user-deleted-after-backup")
+  );
+  const renameTarget = indexOf(result.commands, `ALTER DATABASE "werewolf" RENAME TO "${rollbackDb}"`);
+
+  assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}\n${result.commands.join("\n")}`);
+  assert.ok(result.commands.some((command) =>
+    command.includes("backup-manifest.mjs verify")
+      && command.includes("werewolf_deletion_ledger.tsv.age")
+  ));
+  assert.ok(applyExternal >= 0);
+  assert.ok(applyCurrent >= 0);
+  assert.ok(renameTarget > applyExternal);
+  assert.ok(renameTarget > applyCurrent);
+});
+
+test("signed total-loss restore reapplies external tombstones without a live source ledger", () => {
+  const result = runRestore("", {
+    requireSignature: true,
+    externalLedger: true,
+    currentLedgerTable: "missing",
+  });
+
+  assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}\n${result.commands.join("\n")}`);
+  assert.ok(result.commands.some((command) =>
+    command.includes("stdin: user-deleted-after-total-loss")
+  ));
+  assert.equal(result.commands.some((command) =>
+    command.includes("stdin: user-deleted-after-backup")
+  ), false);
+});
+
+test("signed restore rejects a deletion ledger older than its backup before Docker", () => {
+  const result = runRestore("", {
+    requireSignature: true,
+    externalLedger: true,
+    staleLedger: true,
+  });
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /deletion ledger.*older than.*backup/i);
+  assert.equal(result.commands.some((command) => command.startsWith("compose ")), false);
+});
+
+test("signed restore rejects an invalid deletion-ledger format before Docker", () => {
+  const result = runRestore("", {
+    requireSignature: true,
+    externalLedger: true,
+    ledgerContents: "unexpected-header\nuser\tdeleted_dddddddddddddddddddddddddddddddd\n",
+  });
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /deletion ledger.*format|format.*deletion ledger/i);
+  assert.equal(result.commands.some((command) => command.startsWith("compose ")), false);
 });
 
 test("leaves writers and target untouched when staging migration fails", () => {

@@ -27,6 +27,7 @@ import {
   recordGameSessionRevocation,
   scrubDeletedIdentityFromEventPayload,
   upsertUsersUnlessDeleted,
+  withUserIdentityMutation,
 } from "./queries.js";
 
 describe("durable game-session revocations", () => {
@@ -316,6 +317,57 @@ function createIdentityRaceDatabase() {
     secondLockWaiting: secondLockWaiting.promise,
   };
 }
+
+describe("withUserIdentityMutation", () => {
+  it("keeps the dependent write inside the identity-lock transaction", async () => {
+    let transactionOpen = false;
+    const dependentWrites: string[] = [];
+    const onConflictDoNothing = vi.fn(async () => undefined);
+    const insert = vi.fn((table: unknown) => ({
+      values: vi.fn((values: unknown) => {
+        if (table === user) {
+          return { onConflictDoNothing };
+        }
+        if (table === gameEvents) {
+          expect(transactionOpen).toBe(true);
+          dependentWrites.push((values as { actorId: string }).actorId);
+          return Promise.resolve();
+        }
+        throw new Error("Unexpected table in identity mutation test");
+      }),
+    }));
+    const tx = {
+      execute: vi.fn(async () => undefined),
+      insert,
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({ where: vi.fn(async () => []) })),
+      })),
+    };
+    const transaction = vi.fn(async (
+      operation: (transaction: typeof tx) => Promise<unknown>,
+    ) => {
+      transactionOpen = true;
+      try {
+        return await operation(tx);
+      } finally {
+        transactionOpen = false;
+      }
+    });
+
+    await withUserIdentityMutation(
+      { transaction } as unknown as Database,
+      [{ userId: "user-1", displayName: "Играч", email: "user-1@anonymous.local" }],
+      async (mutationDb, identityMap) => {
+        expect(identityMap).toEqual(new Map());
+        await mutationDb.insert(gameEvents).values({ actorId: "user-1" } as never);
+      },
+    );
+
+    expect(transaction).toHaveBeenCalledOnce();
+    expect(tx.execute).toHaveBeenCalledOnce();
+    expect(dependentWrites).toEqual(["user-1"]);
+  });
+});
 
 describe("getPublicGameTimelinesBatch", () => {
   it("filters at the SQL boundary and returns only a minimal public DTO", async () => {

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { VerifyEmailClient } from "@/components/auth/VerifyEmailClient";
 import { ResourceHints } from "@/components/resource-hints";
+import "@/components/auth/AuthRecoveryBase.css";
 import "@/components/auth/AuthRecovery.module.css";
 
 export const metadata: Metadata = {
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
 export default function VerifyEmailPage() {
   return (
     <main className="shell seal-shell auth-recovery-shell framed-shell">
-      <ResourceHints images={["/game-art/auth/verify-email-seal.webp"]} />
+      <ResourceHints images={[{ href: "/game-art/auth/verify-email-seal.webp", fetchPriority: "high" }]} />
       <div className="framed-shell-inner">
         <Suspense fallback={<p className="seal-loading">Восъкът се топи...</p>}>
           <VerifyEmailClient />

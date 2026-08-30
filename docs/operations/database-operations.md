@@ -173,11 +173,22 @@ a reconciliation job that can rebuild aggregates from history.
   age identity off the application host. Keep the backup signing private key
   root-only on the producer and distribute only its public key to recovery
   hosts. The scheduled path fails closed when encryption or signing is required
-  but its key material is unavailable.
+  but its key material is unavailable. Off-site database artifacts live under
+  an explicit non-root prefix, expire after no more than 30 days, and are
+  covered by both a Hetzner lifecycle rule and scoped rclone deletion.
+- Every scheduled run also exports only the original and anonymous technical
+  identifiers from `deleted_user_identities`. This cumulative ledger is
+  encrypted, checksummed, signed, and stored through a distinct rclone profile
+  in a protected, versioned bucket that the backup service cannot delete from.
+  It contains no name, email address, account fields, or game content. Its
+  external RPO is the six-hour backup interval, not a synchronous guarantee.
 - Encrypted restores require both `BACKUP_AGE_IDENTITY_FILE` and the trusted
-  `BACKUP_SIGNING_PUBLIC_KEY_FILE`. The signed manifest is verified before
-  decryption. Unsigned legacy archives require an explicit
-  `BACKUP_REQUIRE_SIGNATURE=0` during a controlled migration-only restore.
+  `BACKUP_SIGNING_PUBLIC_KEY_FILE`. Signed restores also require the latest
+  protected `RESTORE_DELETION_LEDGER_FILE`; both manifests are verified before
+  decryption, and a ledger older than the selected backup is rejected. Unsigned
+  legacy archives require an explicit `BACKUP_REQUIRE_SIGNATURE=0` during a
+  controlled migration-only restore and must not be used for total-loss
+  recovery of user data.
 - Generate and review SQL under `packages/database/drizzle/`.
 - Apply only expand/contract migrations during a normal release.
 - Keep schema and generated migration metadata in the same commit.
@@ -188,7 +199,9 @@ a reconciliation job that can rebuild aggregates from history.
   cutover. The migrator and application images come from the verified signed
   active release manifest, never a local tag. After cutover it verifies
   migration state, account/history relationships, runtime-role privileges, and
-  captured deletion tombstones.
+  the merged external and live deletion tombstones. If a total-loss replacement
+  has no live tombstone table, the verified external ledger is still reapplied
+  before cutover.
 - The default restore path requires both `web` and `game` to be running. It
   checks deep container-local readiness and public HTTPS/WSS through Caddy.
   `RESTORE_ONLY=1` is intentionally offline: database semantics still run, but

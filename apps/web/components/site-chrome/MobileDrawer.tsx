@@ -81,7 +81,7 @@ export function MobileDrawer({
 
 function DrawerBrandMark() {
   return (
-    <Link className="site-brand" href="/" prefetch={false}>
+    <Link className="site-brand" href="/" aria-label="Върколак и Мафия, начало">
       <span className="site-brand-mark" aria-hidden="true" />
       <span className="site-brand-text">
         <span className="site-brand-wordmark is-compact">
@@ -115,14 +115,14 @@ function DrawerUtilityCluster({
 }) {
   return (
     <div className="site-utility-cluster" aria-label="Настройки">
-      <button className="site-icon-button" type="button" aria-label={soundEnabled ? "Звук включен" : "Звук изключен"} onClick={onToggleSound}>
+      <button className="site-icon-button" type="button" aria-label={soundEnabled ? "Изключи звука" : "Включи звука"} onClick={onToggleSound}>
         {soundEnabled ? (
           <Volume2 className="site-icon" aria-hidden strokeWidth={1.9} />
         ) : (
           <VolumeX className="site-icon" aria-hidden strokeWidth={1.9} />
         )}
       </button>
-      <button className="site-icon-button" type="button" aria-label={themePreference === "dark" ? "Тъмна тема" : "Светла тема"} onClick={onCycleTheme}>
+      <button className="site-icon-button" type="button" aria-label={themePreference === "dark" ? "Смени на светла тема" : "Смени на тъмна тема"} onClick={onCycleTheme}>
         {themePreference === "dark" ? (
           <Moon className="site-icon" aria-hidden strokeWidth={1.9} />
         ) : (

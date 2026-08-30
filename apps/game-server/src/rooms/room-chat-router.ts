@@ -43,12 +43,12 @@ export class RoomChatRouter {
     this.enforceMessageRate(player.userId);
     const chatChannel = parseChatChannel(channel);
     if (!chatChannel) {
-      throw new Error("Непознат чат канал.");
+      throw new Error("Непознат канал за разговор.");
     }
     const text = normalizeChatMessage(message);
     const config = this.context.getConfig();
     if (config.communicationMode === "no_chat" || config.communicationMode === "system_only") {
-      throw new Error("В тази стая няма играчески чат.");
+      throw new Error("В тази стая разговорът е изключен.");
     }
 
     if (chatChannel !== "public") {
@@ -57,7 +57,7 @@ export class RoomChatRouter {
     }
     const state = this.context.getState();
     if (config.communicationMode !== "built_in_chat") {
-      throw new Error("Публичният чат не е активен в тази стая.");
+      throw new Error("Общият разговор не е активен в тази стая.");
     }
     const denialReason = this.getPublicChatDenialReason(player, state, config);
     if (denialReason) {
@@ -138,7 +138,7 @@ export class RoomChatRouter {
     const createdAt = Date.now();
     const recipients = this.getPrivateChatRecipients(player, privatePlayer, channel);
     if (recipients.length === 0) {
-      throw new Error("Няма достъп до този чат канал.");
+      throw new Error("Нямаш достъп до този канал.");
     }
 
     for (const recipient of recipients) {
@@ -202,10 +202,10 @@ export class RoomChatRouter {
   private getPublicChatDenialReason(player: PlayerPublicState, state: GameState, config: GameConfig) {
     const isSportDefense = config.mode === "mafia_sport" && state.phase === "defense";
     if (state.phase !== "day_discussion" && !isSportDefense) {
-      return "Публичният чат е активен само през дневното обсъждане.";
+      return "Общият разговор е достъпен само през дневното обсъждане.";
     }
     if (!player.playing || !player.alive) {
-      return "Само живи играчи могат да пишат в публичния дневен чат.";
+      return "Само живите играчи могат да пишат в дневния разговор.";
     }
     if (config.mode !== "mafia_sport") {
       return undefined;
@@ -214,6 +214,6 @@ export class RoomChatRouter {
     const authorizedUserId = state.phase === "defense" ? state.currentDefenseUserId : state.currentSpeakerUserId;
     return authorizedUserId === player.userId
       ? undefined
-      : "Само текущият говорител може да пише в публичния чат.";
+      : "Само текущият говорител може да пише в общия разговор.";
   }
 }

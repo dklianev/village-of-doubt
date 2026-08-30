@@ -119,6 +119,7 @@ export function AccountDangerZone({ email }: { email: string }) {
               autoComplete="off"
               autoCapitalize="characters"
               autoFocus
+              disabled={status === "deleting"}
             />
           </label>
           {errorMessage ? (
@@ -127,7 +128,7 @@ export function AccountDangerZone({ email }: { email: string }) {
             </p>
           ) : null}
           <div className={styles.dialogActions}>
-            <button type="button" className={styles.cancelButton} onClick={closeDialog}>
+            <button type="button" className={styles.cancelButton} onClick={closeDialog} disabled={status === "deleting"}>
               Отказ
             </button>
             <button

@@ -7,10 +7,11 @@ type JoinCodeSlotsProps = {
   value: string;
   onChange: (next: string) => void;
   invalid?: boolean;
+  describedBy?: string;
   autoFocus?: boolean;
 };
 
-export function JoinCodeSlots({ value, onChange, invalid, autoFocus }: JoinCodeSlotsProps) {
+export function JoinCodeSlots({ value, onChange, invalid, describedBy, autoFocus }: JoinCodeSlotsProps) {
   const refs = useRef<Array<HTMLInputElement | null>>([]);
 
   useEffect(() => {
@@ -18,6 +19,12 @@ export function JoinCodeSlots({ value, onChange, invalid, autoFocus }: JoinCodeS
       refs.current[0]?.focus();
     }
   }, [autoFocus, value]);
+
+  useEffect(() => {
+    if (invalid) {
+      refs.current[0]?.focus();
+    }
+  }, [invalid]);
 
   const setRef = (index: number) => (element: HTMLInputElement | null) => {
     refs.current[index] = element;
@@ -90,6 +97,8 @@ export function JoinCodeSlots({ value, onChange, invalid, autoFocus }: JoinCodeS
           onKeyDown={(event) => handleKeyDown(index, event)}
           onPaste={handlePaste}
           aria-label={`Символ ${index + 1} от ${ROOM_CODE_LENGTH}`}
+          aria-invalid={invalid ? "true" : undefined}
+          aria-describedby={describedBy}
         />
       ))}
     </div>

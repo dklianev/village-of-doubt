@@ -1210,8 +1210,7 @@
   min-height: 34px;
 }
 
-:global(.role-detail-modal),
-:global(.mobile-summary-overlay) {
+:global(.role-detail-modal) {
   position: fixed;
   inset: 0;
   z-index: 80;
@@ -1220,8 +1219,7 @@
   padding: 18px;
 }
 
-:global(.role-detail-backdrop),
-:global(.mobile-summary-backdrop) {
+:global(.role-detail-backdrop) {
   position: absolute;
   inset: 0;
   border: 0;
@@ -1439,12 +1437,12 @@
   height: 18px;
 }
 
-:global(.mobile-summary-overlay .sticky-preview) {
+:global(.mobile-summary-sheet .sticky-preview) {
   position: relative;
-  z-index: 1;
-  width: min(520px, 100%);
-  max-height: calc(100dvh - 64px);
-  overflow: auto;
+  top: auto;
+  width: 100%;
+  max-height: none;
+  overflow: visible;
   overscroll-behavior: contain;
 }
 
@@ -2770,8 +2768,8 @@
 }
 
 :global(.create-customization .role-tile-controls button) {
-  width: 38px;
-  min-height: 38px;
+  width: 44px;
+  min-height: 44px;
   border: 1px solid rgba(255, 235, 194, 0.34);
   box-shadow: 0 7px 16px rgba(0, 0, 0, 0.34);
 }
@@ -3635,8 +3633,14 @@
   }
 
   :global(.create-customization-tabs button strong) {
-    font-size: 0.64rem;
+    font-size: 0;
     line-height: 1.05;
+  }
+
+  :global(.create-customization-tabs button strong::before) {
+    content: attr(data-mobile-label);
+    font-size: 0.7rem;
+    line-height: 1;
   }
 
   :global(.create-customization-tabs button small) {
@@ -3667,6 +3671,21 @@
   :global(.create-customization .roles-step-sticky) {
     grid-template-columns: 1fr;
     align-items: start;
+  }
+
+  :global(.create-customization .preset-chips) {
+    flex-wrap: nowrap;
+    padding-bottom: 5px;
+    scrollbar-width: none;
+  }
+
+  :global(.create-customization .preset-chips::-webkit-scrollbar) {
+    display: none;
+  }
+
+  :global(.create-customization .preset-chips button) {
+    padding: 9px 13px;
+    scroll-snap-align: start;
   }
 
   :global(.create-customization .lobby-step) {
@@ -3796,10 +3815,13 @@
 
   :global(.create-customization .role-carousel[data-layout="workspace"]) {
     display: flex;
+    align-items: stretch;
+    gap: 12px;
     height: auto;
     padding: 4px 4px 14px;
     overflow-x: auto;
     overflow-y: hidden;
+    scroll-padding-inline: 4px;
     scroll-snap-type: x mandatory;
     scrollbar-width: auto;
   }
@@ -3815,6 +3837,20 @@
     min-height: 258px;
   }
 
+  :global(.create-customization .role-carousel[data-layout="workspace"][data-readonly="true"]) {
+    flex-wrap: nowrap;
+    align-content: flex-start;
+    justify-content: flex-start;
+  }
+
+  :global(.create-customization .role-carousel[data-layout="workspace"][data-readonly="true"] .role-tile-large) {
+    flex: 0 0 min(58vw, 210px);
+    width: min(58vw, 210px);
+    height: auto;
+    min-height: 258px;
+    aspect-ratio: 3 / 4.15;
+  }
+
   :global(.create-customization .manual-builder-toolbar) {
     display: grid;
     grid-template-columns: 1fr;
@@ -3828,5 +3864,47 @@
 
   :global(.create-customization .role-tile-large) {
     flex-basis: 138px;
+  }
+}
+
+@media (max-width: 380px) {
+  :global(.create-customization-sidebar) {
+    padding: 6px 10px;
+  }
+
+  :global(.create-customization-tabs button) {
+    min-height: 52px;
+    padding: 5px 2px;
+  }
+
+  :global(.create-customization-tabs button > svg) {
+    width: 17px;
+    height: 17px;
+  }
+
+  :global(.create-customization-tabs button strong) {
+    font-size: 0;
+  }
+
+  :global(.create-customization-tabs button strong::before) {
+    content: attr(data-mobile-label);
+    font-size: 0.68rem;
+    line-height: 1;
+  }
+
+  :global(.create-customization-panel) {
+    padding: 14px 12px;
+  }
+
+  :global(.create-customization-footer) {
+    min-height: 58px;
+    padding: 7px 12px max(7px, env(safe-area-inset-bottom));
+  }
+
+  :global(.create-customization .role-carousel[data-layout="workspace"] .role-tile-large),
+  :global(.create-customization .role-carousel[data-layout="workspace"][data-readonly="true"] .role-tile-large) {
+    flex-basis: min(61vw, 190px);
+    width: min(61vw, 190px);
+    min-height: 246px;
   }
 }

@@ -19,7 +19,7 @@ const GAMES = [
     title: "Върколак",
     eyebrow: "фолклорен хорър",
     description:
-      "Класическо село с тайни роли, нощни събуждания, Върколаци, Вампири и Разказвач.",
+      "Село, тайни роли и нощни събуждания. Сред вас се крият Върколаци, а понякога и нещо по-старо.",
     line: "Първо пада мъглата. После някой лъже прекалено спокойно.",
     href: "/werewolf",
   },
@@ -29,7 +29,7 @@ const GAMES = [
     title: "Мафия",
     eyebrow: "градска мистерия",
     description:
-      "Криминална маса с Град, Мафия, Комисар, Доктор, Кръстник и роли за по-опитни групи.",
+      "Градска игра на алибита, натиск и премерени лъжи. Мафията знае своите; Градът трябва да ги разкрие.",
     line: "Дъждът измива улицата, но не и алибитата.",
     href: "/mafia",
   },
@@ -94,8 +94,8 @@ export function LandingExperience({ initialSession }: { initialSession: LandingS
           Върколак или Мафия
         </h1>
         <p className="landing-hero-copy mt-6 max-w-3xl text-lg leading-8 text-[#ead9ba]">
-          Две отделни игри, два отделни речника и два отделни набора роли. Влизаш с име, създаваш стая
-          или въвеждаш код и започваш веднага.
+          Избери игра, събери приятелите си и започни с код. Всеки вижда само собствената си роля;
+          всичко останало се решава на масата.
         </p>
 
         <ModeChoiceCards games={GAMES} initialSession={initialSession} />
@@ -140,10 +140,10 @@ function FinalLandingCta() {
         </div>
         <div className="landing-final-actions">
           <NextLinkPill href="/werewolf" intent="faction" size="lg" shimmer tracked data-faction="werewolves">
-            Към върколаците
+            Играй Върколак
           </NextLinkPill>
           <NextLinkPill href="/mafia" intent="faction" size="lg" shimmer tracked data-faction="mafia">
-            Към мафията
+            Играй Мафия
           </NextLinkPill>
         </div>
       </div>
@@ -155,13 +155,14 @@ function LandingLogoMark() {
   return (
     <span className="landing-logo-mark" aria-hidden="true">
       <Image
-        src="/game-art/logo-landing-mark.webp"
+        src="/game-art/mobile/logo-landing-mark.webp"
         alt=""
         width={118}
         height={118}
         loading="eager"
         fetchPriority="low"
         sizes="118px"
+        unoptimized
       />
     </span>
   );

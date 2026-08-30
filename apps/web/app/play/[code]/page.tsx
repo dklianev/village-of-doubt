@@ -28,7 +28,7 @@ export async function generateMetadata({
   const roomLabel = ROOM_CODE_REGEX.test(normalizedCode) ? normalizedCode : "частна стая";
   return {
     title: `Игра ${roomLabel}`,
-    description: "Игрова стая с авторитетен сървър, тайни роли и български интерфейс.",
+    description: "Защитена игрова стая с тайни роли, частни действия и български интерфейс.",
     robots: { index: false, follow: false },
   };
 }
@@ -58,13 +58,14 @@ async function PlayRouteContent({ params, searchParams }: PlayRouteContentProps)
     );
   }
 
-  await requireSession(`/play/${code}${query ? `?${query}` : ""}`);
+  const session = await requireSession(`/play/${code}${query ? `?${query}` : ""}`);
 
   return (
     <PlayRoomClient
       key={code}
       code={code}
       createOptions={createOptions}
+      initialSession={{ user: { id: session.user.id } }}
     />
   );
 }
