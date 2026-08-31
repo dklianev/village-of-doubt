@@ -58,7 +58,7 @@
     "@colyseus/loadtest": "^0.18.2",
     "@lhci/cli": "0.15.1",
     "@next/playwright": "16.3.3",
-    "@types/node": "^24.13.3",
+    "@types/node": "^26.4.0",
     "playwright": "^1.62.1",
     "sharp": "0.35.4",
     "tsx": "4.23.12",
