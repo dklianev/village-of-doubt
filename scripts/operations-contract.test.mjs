@@ -157,6 +157,7 @@ test("production Redis uses isolated least-privilege service identities", () => 
   assert.match(entrypoint, /werewolf_colyseus[^\n]*~roomcaches/);
   assert.match(entrypoint, /werewolf_colyseus[^\n]*~ch:\*/);
   assert.match(entrypoint, /werewolf_colyseus[^\n]*&ipc:\*/);
+  assert.match(entrypoint, /werewolf_colyseus[^\n]*&wm:health:colyseus:\*/);
   for (const secret of [
     "WEB_REDIS_PASSWORD",
     "GAME_REDIS_PASSWORD",

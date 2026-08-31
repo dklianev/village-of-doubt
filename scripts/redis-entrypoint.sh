@@ -41,7 +41,7 @@ cat > "$acl_file" <<EOF
 user default off
 user werewolf_web on #$web_password_hash resetkeys resetchannels ~wm:rate:* ~wm:health:web:* ~wm:security:game-session-revoked:* &wm:security:game-session-revoked:v1 +@connection +eval +set +get +del +publish +incr +pttl +pexpire
 user werewolf_security on #$game_password_hash resetkeys resetchannels ~wm:security:* ~wm:health:security:* &wm:security:game-session-revoked:v1 +@connection +eval +set +get +del +subscribe +unsubscribe +incr +pttl +pexpire +zremrangebyscore +zscore +zadd +zcard +zrevrange +pexpireat +zrem
-user werewolf_colyseus on #$colyseus_password_hash resetkeys resetchannels ~roomcaches ~roomcount ~ch:* ~roomhistory ~processhistory &p:* &\$* &concurrent:* &ipc:* +@connection +@hash +@string +@set +@list +@pubsub +@transaction +expire +del +exists +info
+user werewolf_colyseus on #$colyseus_password_hash resetkeys resetchannels ~roomcaches ~roomcount ~ch:* ~roomhistory ~processhistory &p:* &\$* &concurrent:* &ipc:* &wm:health:colyseus:* +@connection +@hash +@string +@set +@list +@pubsub +@transaction +expire +del +exists +info
 EOF
 chown redis:redis "$acl_file"
 
