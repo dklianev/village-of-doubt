@@ -55,14 +55,14 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",
-    "@colyseus/loadtest": "^0.17.8",
+    "@colyseus/loadtest": "^0.18.2",
     "@lhci/cli": "0.15.1",
-    "@next/playwright": "16.3.1",
+    "@next/playwright": "16.3.3",
     "@types/node": "^24.13.3",
     "playwright": "^1.62.1",
     "sharp": "0.35.3",
     "tsx": "4.23.12",
-    "turbo": "^2.10.11",
+    "turbo": "^2.10.12",
     "typescript": "^7.0.2",
     "vitest": "^4.1.11"
   }
