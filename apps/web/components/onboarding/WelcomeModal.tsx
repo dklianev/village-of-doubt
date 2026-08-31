@@ -8,10 +8,53 @@ import styles from "./WelcomeModal.module.css";
 
 const STORAGE_KEY = "welcome-modal-shown";
 
+type IsolatedElementState = {
+  element: HTMLElement;
+  inert: string | null;
+  ariaHidden: string | null;
+};
+
+function isolatePageBehind(layer: HTMLElement) {
+  const isolated: IsolatedElementState[] = [];
+  let current: HTMLElement | null = layer;
+
+  while (current && current !== document.body) {
+    const parent: HTMLElement | null = current.parentElement;
+    if (!parent) break;
+
+    for (const sibling of parent.children) {
+      if (sibling === current || !(sibling instanceof HTMLElement) || /^(SCRIPT|STYLE|LINK)$/.test(sibling.tagName)) {
+        continue;
+      }
+
+      isolated.push({
+        element: sibling,
+        inert: sibling.getAttribute("inert"),
+        ariaHidden: sibling.getAttribute("aria-hidden"),
+      });
+      sibling.setAttribute("inert", "");
+      sibling.setAttribute("aria-hidden", "true");
+    }
+
+    current = parent;
+  }
+
+  return () => {
+    for (const state of isolated.reverse()) {
+      if (state.inert === null) state.element.removeAttribute("inert");
+      else state.element.setAttribute("inert", state.inert);
+
+      if (state.ariaHidden === null) state.element.removeAttribute("aria-hidden");
+      else state.element.setAttribute("aria-hidden", state.ariaHidden);
+    }
+  };
+}
+
 export function WelcomeModal({ displayName }: { displayName: string }) {
   const [visible, setVisible] = useState(false);
   const titleId = useId();
   const descriptionId = useId();
+  const backdropRef = useRef<HTMLDivElement>(null);
   const dialogRef = useRef<HTMLElement>(null);
   const primaryActionRef = useRef<HTMLAnchorElement>(null);
 
@@ -29,6 +72,7 @@ export function WelcomeModal({ displayName }: { displayName: string }) {
 
     const previousOverflow = document.body.style.overflow;
     const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const restorePage = backdropRef.current ? isolatePageBehind(backdropRef.current) : () => {};
 
     document.body.style.overflow = "hidden";
     primaryActionRef.current?.focus();
@@ -61,6 +105,7 @@ export function WelcomeModal({ displayName }: { displayName: string }) {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = previousOverflow;
+      restorePage();
       previouslyFocused?.focus();
     };
   }, [visible]);
@@ -73,7 +118,7 @@ export function WelcomeModal({ displayName }: { displayName: string }) {
   if (!visible) return null;
 
   return (
-    <div className={styles.backdrop} role="presentation" onClick={dismiss}>
+    <div ref={backdropRef} className={styles.backdrop} role="presentation" onClick={dismiss}>
       <aside
         ref={dialogRef}
         className={styles.modal}

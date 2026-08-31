@@ -66,6 +66,27 @@ describe("WelcomeModal", () => {
     expect(skipButton).toHaveFocus();
   });
 
+  it("isolates and restores the page behind the modal", async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <a href="/history">Фоново съдържание</a>
+        <WelcomeModal displayName="Демо играч" />
+      </>,
+    );
+
+    await screen.findByRole("dialog");
+    const backgroundLink = screen.getByText("Фоново съдържание");
+
+    expect(backgroundLink).toHaveAttribute("inert");
+    expect(backgroundLink).toHaveAttribute("aria-hidden", "true");
+
+    await user.click(screen.getByRole("button", { name: "Затвори приветствието" }));
+
+    expect(backgroundLink).not.toHaveAttribute("inert");
+    expect(backgroundLink).not.toHaveAttribute("aria-hidden");
+  });
+
   it("stays hidden after the tutorial is completed", () => {
     storage.getItem.mockImplementation((key: string) => (key === "tutorial-completed" ? "1" : null));
 

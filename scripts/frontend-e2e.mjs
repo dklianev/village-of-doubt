@@ -860,7 +860,8 @@ async function assertInteractiveTouchTargets(page, label) {
       .filter((element) => {
         const style = window.getComputedStyle(element);
         const rect = element.getBoundingClientRect();
-        return style.visibility !== "hidden" && style.display !== "none" && rect.width > 0 && rect.height > 0;
+        const isolated = element.closest('[inert], [aria-hidden="true"]');
+        return !isolated && style.visibility !== "hidden" && style.display !== "none" && rect.width > 0 && rect.height > 0;
       })
       .map((element) => {
         const rect = element.getBoundingClientRect();
@@ -886,7 +887,8 @@ async function assertNoInteractiveOverlap(page, label) {
     const elements = Array.from(document.querySelectorAll(selector)).filter((element) => {
       const style = window.getComputedStyle(element);
       const rect = element.getBoundingClientRect();
-      return style.visibility !== "hidden" && style.display !== "none" && rect.width > 0 && rect.height > 0;
+      const isolated = element.closest('[inert], [aria-hidden="true"]');
+      return !isolated && style.visibility !== "hidden" && style.display !== "none" && rect.width > 0 && rect.height > 0;
     });
     const issues = [];
 
