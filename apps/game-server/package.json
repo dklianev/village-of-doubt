@@ -11,7 +11,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@colyseus/core": "^0.18.8",
+    "@colyseus/core": "^0.18.9",
     "@colyseus/monitor": "^0.18.3",
     "@colyseus/redis-driver": "^0.18.2",
     "@colyseus/redis-presence": "^0.18.3",
