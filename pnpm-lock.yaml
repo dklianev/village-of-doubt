@@ -40,7 +40,7 @@ importers:
         version: 4.13.0(playwright-core@1.62.1)
       '@colyseus/loadtest':
         specifier: ^0.18.2
-        version: 0.18.2(@colyseus/core@0.18.8)(zod@4.4.3)
+        version: 0.18.2(@colyseus/core@0.18.10)(zod@4.5.4)
       '@lhci/cli':
         specifier: 0.15.1
         version: 0.15.1(supports-color@8.1.1)
@@ -72,29 +72,29 @@ importers:
   apps/game-server:
     dependencies:
       '@colyseus/core':
-        specifier: ^0.18.8
-        version: 0.18.8(@colyseus/better-call@1.3.3(zod@4.4.3))(@colyseus/schema@5.0.23(typescript@7.0.2))(@colyseus/ws-transport@0.18.2)(@pm2/io@6.1.0(supports-color@8.1.1))(express@5.2.1(supports-color@8.1.1))(supports-color@8.1.1)(zod@4.4.3)
+        specifier: ^0.18.10
+        version: 0.18.10(@colyseus/better-call@1.3.3(zod@4.5.4))(@colyseus/schema@5.0.27(typescript@7.0.2))(@colyseus/ws-transport@0.18.2)(@pm2/io@6.1.0(supports-color@8.1.1))(express@5.2.1(supports-color@8.1.1))(supports-color@8.1.1)(zod@4.5.4)
       '@colyseus/monitor':
         specifier: ^0.18.3
-        version: 0.18.3(@colyseus/better-call@1.3.3(zod@4.4.3))(@colyseus/schema@5.0.23(typescript@7.0.2))(@colyseus/ws-transport@0.18.2)(@pm2/io@6.1.0(supports-color@8.1.1))(express@5.2.1(supports-color@8.1.1))(supports-color@8.1.1)
+        version: 0.18.3(@colyseus/better-call@1.3.3(zod@4.5.4))(@colyseus/schema@5.0.27(typescript@7.0.2))(@colyseus/ws-transport@0.18.2)(@pm2/io@6.1.0(supports-color@8.1.1))(express@5.2.1(supports-color@8.1.1))(supports-color@8.1.1)
       '@colyseus/redis-driver':
         specifier: ^0.18.2
-        version: 0.18.2(@colyseus/better-call@1.3.3(zod@4.4.3))(@colyseus/schema@5.0.23(typescript@7.0.2))(@colyseus/ws-transport@0.18.2)(@pm2/io@6.1.0(supports-color@8.1.1))(express@5.2.1(supports-color@8.1.1))(supports-color@8.1.1)(zod@4.4.3)
+        version: 0.18.2(@colyseus/better-call@1.3.3(zod@4.5.4))(@colyseus/schema@5.0.27(typescript@7.0.2))(@colyseus/ws-transport@0.18.2)(@pm2/io@6.1.0(supports-color@8.1.1))(express@5.2.1(supports-color@8.1.1))(supports-color@8.1.1)(zod@4.5.4)
       '@colyseus/redis-presence':
         specifier: ^0.18.3
-        version: 0.18.3(@colyseus/better-call@1.3.3(zod@4.4.3))(@colyseus/schema@5.0.23(typescript@7.0.2))(@colyseus/ws-transport@0.18.2)(@pm2/io@6.1.0(supports-color@8.1.1))(express@5.2.1(supports-color@8.1.1))(supports-color@8.1.1)(zod@4.4.3)
+        version: 0.18.3(@colyseus/better-call@1.3.3(zod@4.5.4))(@colyseus/schema@5.0.27(typescript@7.0.2))(@colyseus/ws-transport@0.18.2)(@pm2/io@6.1.0(supports-color@8.1.1))(express@5.2.1(supports-color@8.1.1))(supports-color@8.1.1)(zod@4.5.4)
       '@colyseus/schema':
-        specifier: ^5.0.23
-        version: 5.0.23(typescript@7.0.2)
+        specifier: ^5.0.27
+        version: 5.0.27(typescript@7.0.2)
       '@colyseus/tools':
         specifier: ^0.18.3
-        version: 0.18.3(@colyseus/core@0.18.8)(@colyseus/ws-transport@0.18.2)(supports-color@8.1.1)
+        version: 0.18.3(@colyseus/core@0.18.10)(@colyseus/ws-transport@0.18.2)(supports-color@8.1.1)
       '@colyseus/ws-transport':
         specifier: ^0.18.2
-        version: 0.18.2(@colyseus/core@0.18.8)(express@5.2.1(supports-color@8.1.1))
+        version: 0.18.2(@colyseus/core@0.18.10)(express@5.2.1(supports-color@8.1.1))
       '@sentry/node':
-        specifier: ^10.71.0
-        version: 10.71.0(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))(supports-color@8.1.1)
+        specifier: ^10.73.0
+        version: 10.73.0(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))(supports-color@8.1.1)
       '@werewolf/database':
         specifier: workspace:*
         version: link:../../packages/database
@@ -116,7 +116,7 @@ importers:
     devDependencies:
       '@colyseus/testing':
         specifier: ^0.18.5
-        version: 0.18.5(@colyseus/core@0.18.8)(@colyseus/sdk@0.18.2(patch_hash=9c48f556f2472df819aebe1400e50fd91642c24661c6ccf30104b79492b9a320)(@colyseus/core@0.18.8)(typescript@7.0.2)(zod@4.4.3))(@colyseus/tools@0.18.3(@colyseus/core@0.18.8)(@colyseus/ws-transport@0.18.2)(supports-color@8.1.1))
+        version: 0.18.5(@colyseus/core@0.18.10)(@colyseus/sdk@0.18.2(patch_hash=9c48f556f2472df819aebe1400e50fd91642c24661c6ccf30104b79492b9a320)(@colyseus/core@0.18.10)(typescript@7.0.2)(zod@4.5.4))(@colyseus/tools@0.18.3(@colyseus/core@0.18.10)(@colyseus/ws-transport@0.18.2)(supports-color@8.1.1))
       '@types/cors':
         specifier: ^2.8.19
         version: 2.8.19
@@ -140,16 +140,16 @@ importers:
     dependencies:
       '@colyseus/sdk':
         specifier: ^0.18.2
-        version: 0.18.2(patch_hash=9c48f556f2472df819aebe1400e50fd91642c24661c6ccf30104b79492b9a320)(@colyseus/core@0.18.8)(typescript@7.0.2)(zod@4.4.3)
+        version: 0.18.2(patch_hash=9c48f556f2472df819aebe1400e50fd91642c24661c6ccf30104b79492b9a320)(@colyseus/core@0.18.10)(typescript@7.0.2)(zod@4.5.4)
       '@sentry/browser':
-        specifier: ^10.71.0
-        version: 10.71.0
+        specifier: ^10.73.0
+        version: 10.73.0
       '@sentry/nextjs':
-        specifier: ^10.71.0
-        version: 10.71.0(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.10.0(@opentelemetry/api@1.9.1))(next@16.3.3(@babel/core@7.29.7(supports-color@8.1.1))(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(webpack@5.109.2(esbuild@0.28.1)(lightningcss@1.33.0)(postcss@8.5.23))
+        specifier: ^10.73.0
+        version: 10.73.0(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.10.0(@opentelemetry/api@1.9.1))(next@16.3.4(@babel/core@7.29.7(supports-color@8.1.1))(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(webpack@5.109.2(esbuild@0.28.1)(lightningcss@1.33.0)(postcss@8.5.23))
       '@t3-oss/env-nextjs':
         specifier: ^0.13.11
-        version: 0.13.11(typescript@7.0.2)(zod@4.4.3)
+        version: 0.13.11(typescript@7.0.2)(zod@4.5.4)
       '@werewolf/database':
         specifier: workspace:*
         version: link:../../packages/database
@@ -161,13 +161,13 @@ importers:
         version: link:../../packages/ui
       better-auth:
         specifier: ^1.7.2
-        version: 1.7.2(@opentelemetry/api@1.9.1)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(kysely@0.29.5)(postgres@3.4.9))(next@16.3.3(@babel/core@7.29.7(supports-color@8.1.1))(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@4.1.11(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@30.0.1(@noble/hashes@2.3.0))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.12)))
+        version: 1.7.2(@opentelemetry/api@1.9.1)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(kysely@0.29.5)(postgres@3.4.9))(next@16.3.4(@babel/core@7.29.7(supports-color@8.1.1))(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@4.1.11(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@30.0.1(@noble/hashes@2.3.0))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.12)))
       lucide-react:
-        specifier: ^1.34.0
-        version: 1.34.0(react@19.2.8)
+        specifier: ^1.40.0
+        version: 1.40.0(react@19.2.8)
       next:
-        specifier: ^16.3.3
-        version: 16.3.3(@babel/core@7.29.7(supports-color@8.1.1))(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        specifier: ^16.3.4
+        version: 16.3.4(@babel/core@7.29.7(supports-color@8.1.1))(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       react:
         specifier: ^19.2.8
         version: 19.2.8
@@ -178,14 +178,14 @@ importers:
         specifier: ^6.2.1
         version: 6.2.1(@opentelemetry/api@1.9.1)
       resend:
-        specifier: ^6.24.0
-        version: 6.24.0
+        specifier: ^6.26.0
+        version: 6.26.0
       sharp:
         specifier: 0.35.4
         version: 0.35.4(@types/node@24.13.3)
       zod:
-        specifier: ^4.4.3
-        version: 4.4.3
+        specifier: ^4.5.4
+        version: 4.5.4
     devDependencies:
       '@tailwindcss/postcss':
         specifier: ^4.3.3
@@ -318,17 +318,6 @@ packages:
   '@alloc/quick-lru@5.2.0':
     resolution: {integrity: sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw==}
     engines: {node: '>=10'}
-
-  '@apm-js-collab/code-transformer-bundler-plugins@0.7.4':
-    resolution: {integrity: sha512-nAfOeZPSUAQvJa1iFT/5oCrTm5YQhMMrfCNthNnaXHZiOQhu1KGuLoIx7HtbAi3wfwaBYLaICPIeenIaEwcXIg==}
-    engines: {node: '>=18.0.0'}
-
-  '@apm-js-collab/code-transformer@0.18.1':
-    resolution: {integrity: sha512-u1Hb6bHjWtkSpiprwVP6YaHC1DTN4RAU3zYkUDUe7WMnJwdyU1pwTL9dFKiSJB9IiLue/EQovmyx6xhU7FFtAQ==}
-    hasBin: true
-
-  '@apm-js-collab/tracing-hooks@0.13.0':
-    resolution: {integrity: sha512-mTvWz9rnQwx1U3h0XPTHaX7bgfkpipLLTQyjlC2cdhQpQEuoLT0AGzoydeoq2NxfEVv6fWOOETcSbb2nptleyw==}
 
   '@asamuzakjp/css-color@6.0.7':
     resolution: {integrity: sha512-vC/bk1Lz7Tn/EfU9/apOTBk80/8dyGyWMowPoV1tJ52muDGsDqt2HPT2klrFUiY60MQmQv9q8yIht15JnBgDGw==}
@@ -514,14 +503,14 @@ packages:
   '@colyseus/clock@2.0.3':
     resolution: {integrity: sha512-kziqG0dcGsvSfcerHLZTY1V2PmGnZAdG5DM0T5BKQDAiYBXYoMqfzA1Wxfe3KSnyeZuP99isffkUQLEwpFYF7A==}
 
-  '@colyseus/core@0.18.8':
-    resolution: {integrity: sha512-BKPBwqFr5xHXApwg7EZhFnEgQS5LPpbd8l8D/jsLuNxcFHfjcz3x4tnB2Du0TXCgESnZ22vrJpnIVicPAoNBCQ==}
+  '@colyseus/core@0.18.10':
+    resolution: {integrity: sha512-tbVY+4w+l+q4mRG8lNVflJgG4OHjkIV1wnBh0h9L9GhAxDpXbfrvGEL17Xk0eivYRJfMkjOok5x8CDXp2aPOyw==}
     engines: {node: '>= 22.x'}
     peerDependencies:
-      '@colyseus/auth': ^0.18.1
+      '@colyseus/auth': ^0.18.2
       '@colyseus/better-call': ^1.3.1
       '@colyseus/schema': ^5.0.8
-      '@colyseus/ws-transport': ^0.18.1
+      '@colyseus/ws-transport': ^0.18.2
       '@pm2/io': ^6.1.0
       express: ^4.16.0 || ^5.0.0
       zod: ^4.1.12
@@ -558,8 +547,8 @@ packages:
     resolution: {integrity: sha512-s5KAtwZF1adHtIID2T5/NWVE0oyzkQYSlV000xvwy+wisGUceAfs9/LS4xcoTU4tqYeJrlNlZHedhP6AJ4ByLA==}
     engines: {node: '>= 22.x'}
 
-  '@colyseus/schema@5.0.23':
-    resolution: {integrity: sha512-6fXSIjqBoEYw4PBs4vvzpFL0vGRAQ9ezwxILpazb+Uw2/qsbgUt+F4DGNYzecsdTogsrpHETqHYDlkI783RUig==}
+  '@colyseus/schema@5.0.27':
+    resolution: {integrity: sha512-Pm3BafvZO3Q9Jk4cDGW7bH5sWFbSSSyNdideI2uBo92physNBAxoaIEiYQUAhpx4pltEaS8HgkKkI41USvhTAQ==}
     hasBin: true
     peerDependencies:
       typescript: '>=5.0.0'
@@ -1107,8 +1096,8 @@ packages:
       '@emnapi/core': ^1.7.1 || ^2.0.0-alpha.4
       '@emnapi/runtime': ^1.7.1 || ^2.0.0-alpha.4
 
-  '@next/env@16.3.3':
-    resolution: {integrity: sha512-U2eYQRwXj+dsqxV79zFqExDdatnNY/ZWc2nsJU1p/OgT7fd3dXwlF6OjYaFQCfMoeTA19PWq+wVmYgimVA+V+g==}
+  '@next/env@16.3.4':
+    resolution: {integrity: sha512-cjWZnUUa6jZq2kFaNe/ZyJdZonOZ/QoN0Zka2nz/FLOrfx14pQuM9c5RaSVkWMqgdt4ksgPAMWPyHSs/CyV48Q==}
 
   '@next/playwright@16.3.3':
     resolution: {integrity: sha512-Uha5vKciXER99u9J9ePBW6FQJxMklZp9K2r+xzW/KBvaS2ITvOsP/6BMyQBv2FJbitW5TQv+KNv72aqtnsikuw==}
@@ -1118,54 +1107,54 @@ packages:
       '@playwright/test':
         optional: true
 
-  '@next/swc-darwin-arm64@16.3.3':
-    resolution: {integrity: sha512-8Hiv32QJPwdV6KYJ8meR9SBA061tQqnIKTJDocvOXlEQqib0xMFpzArosuffFUUc0sslbh7QQ8a3Yey1QV8EIw==}
+  '@next/swc-darwin-arm64@16.3.4':
+    resolution: {integrity: sha512-iBr3I5LZNk5/bgl5//iTgD2tcym14MX0Xo7fD//u9dYAEgGzza1y9oywluPtf74YnOswVdH1908aK9xVz7zQTw==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [darwin]
 
-  '@next/swc-darwin-x64@16.3.3':
-    resolution: {integrity: sha512-A1lgKgwVchRYmSe467zdwhxT9040dd8lH+o65sL5Jet8fjB4kegw/rDyPIpYVRb6jAqwXFOJpjIXJLxQKLiE3A==}
+  '@next/swc-darwin-x64@16.3.4':
+    resolution: {integrity: sha512-2dpiSyl2Jw/NrBPaU2MAKGSa+2MR82pJIn4Sm5Rjr+gxAeuh0z158Su3Z2O8zn7UNNq+ej4bToed6RcRN/Lydg==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [darwin]
 
-  '@next/swc-linux-arm64-gnu@16.3.3':
-    resolution: {integrity: sha512-bf0FIssMFueU2dm7vQEWWxk0c8UjKTdW0yzuh0sQsD8pf1+KCLDdaqhYZNMYGmXwEOiHAUzgBKudovIlcvvBjg==}
+  '@next/swc-linux-arm64-gnu@16.3.4':
+    resolution: {integrity: sha512-+t+U8HZT+fApePCS5h89CSH3datz29MkzyfCn+6fpsZBG/oiEOhINcb9rtkv6sdpToLGFn2e6146NzaKCXkqrA==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
     libc: [glibc]
 
-  '@next/swc-linux-arm64-musl@16.3.3':
-    resolution: {integrity: sha512-W7viwCk9JY/cAkdz/A273rd5bb3RgT/IHwR7Upv90tunjBWNtAAhGhoecHh+teRNRSinuAFmE+l7fwZ4YKkrXg==}
+  '@next/swc-linux-arm64-musl@16.3.4':
+    resolution: {integrity: sha512-mx03GNs1ocQA5JQ4FxDMmIsNkdrZh8cuezKCrId28e5/gIPU/l7Kcy2+vmCCzdjnnmXJy+iOAu+7K0QppO6Urg==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
     libc: [musl]
 
-  '@next/swc-linux-x64-gnu@16.3.3':
-    resolution: {integrity: sha512-0W46zw1N3ODpI6n0GeivHvvob1pooozgZVqy65k0mh4/7vr+FbY9+WpHzNVXjHipJf/A3FDheBG19H1s5A25rA==}
+  '@next/swc-linux-x64-gnu@16.3.4':
+    resolution: {integrity: sha512-YIhGY6fSMfha52bnVxnzc9zaVBzJg+cqQTOD8tXIBSx4fuv0pVMxQTE0PaS59YhnMOiYiG09IMwxJAf/CFm/Dw==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
     libc: [glibc]
 
-  '@next/swc-linux-x64-musl@16.3.3':
-    resolution: {integrity: sha512-H4mBso8ZTMBPtdT0PN0pBx2ayTvQuTuvS6qT13d77yVFJXAPCxkyIhLTmdMaGTJs0krQYI/qpzdHijCeihXhbg==}
+  '@next/swc-linux-x64-musl@16.3.4':
+    resolution: {integrity: sha512-+eaaX6axpDb0yF1GCpiERe6njplvdC+nks/fKfcHu3XPGRrald8P3/X7yv7QLdjA51knnxwl9pxdIJsg+w1L+Q==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
     libc: [musl]
 
-  '@next/swc-win32-arm64-msvc@16.3.3':
-    resolution: {integrity: sha512-cTMUJpcEGmeywofCUfhR+rSsoE33+rVPnPEYNTNdLNlsOeEg/vktOsKUSTb28vUGqD2jkm4Zaskcwn7OCI6FQg==}
+  '@next/swc-win32-arm64-msvc@16.3.4':
+    resolution: {integrity: sha512-0jcXW7Xs/uzICrmgV3MhDYDeRy++1CqnpDIerlPIqYO4bhzB4WNbX/aRnQclustsAyTkFKB0z6rbcjmNg5tR8A==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [win32]
 
-  '@next/swc-win32-x64-msvc@16.3.3':
-    resolution: {integrity: sha512-2VR4cTBzHXaBjnGsuH6GyJjENzQOmHeAh11uY1iUhjm3j5dEUrVJuUj+VL78jaGi/Dik8xS76zEj18BsFhlVZQ==}
+  '@next/swc-win32-x64-msvc@16.3.4':
+    resolution: {integrity: sha512-vvBzwu1pYQCp92maZCFCIw/XgOTMR5tur9GjakwIo2cmwRTMKajRZZDS9+e4KsUZWKu1E007WUeAFXRRjZeuzw==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [win32]
@@ -1923,12 +1912,12 @@ packages:
     resolution: {integrity: sha512-p4q8gn8wcFqZGP/s2MnJCAAd8fTikaU6A0mM97RDHQgStcrYiaS0Sc5zUNfb1V+UOLPuvdEdL6MwyxfzjYJQTA==}
     engines: {node: '>= 18'}
 
-  '@sentry/browser-utils@10.71.0':
-    resolution: {integrity: sha512-Djhb+RdEwSdYTlDaMzc2uRCA+bYDIFsFCtZzKEtB9UR7lJNV/bJ0k3el3ifaVGTRELO8WBll/X0elty1Dk5tTw==}
+  '@sentry/browser-utils@10.73.0':
+    resolution: {integrity: sha512-qQygxJZ+RV779+iL1+lrJ4f4sZLgbgW0/JWPNp0YlcEAE62yCsdKbqoTEjB/EugdS4mSjBMX0chZC6rblu2Ycw==}
     engines: {node: '>=18'}
 
-  '@sentry/browser@10.71.0':
-    resolution: {integrity: sha512-fTE9tUDoggJSFv8cQ+h1UA9onovOoUNJWu8Var1MXmUVuVG/W3WqzJFVyKArZMj95lizZkq8aiS63SURvrBsFQ==}
+  '@sentry/browser@10.73.0':
+    resolution: {integrity: sha512-HqTe1S5RrWLufhX2LaFP3yNoMxfNDroh120bq1zdGHZfFDBMJQ0CDXxHO+L4UJfQ5dWdCCzWbXIAiZuWGa/DFQ==}
     engines: {node: '>=18'}
 
   '@sentry/bundler-plugin-core@5.3.0':
@@ -2007,30 +1996,30 @@ packages:
     resolution: {integrity: sha512-ozhCTDqg89oB4XmWfAwuHshABpvT7AkRpaPnogopPfMAaI61G1t8EKCJ4W7aum8JSBonlfyjPCyW5oYZFm0KvA==}
     engines: {node: '>=18'}
 
-  '@sentry/core@10.71.0':
-    resolution: {integrity: sha512-OIjT7rzcWJjUC6r3eBT3Td1j0afDBMkbbx9jTocSD+ZSfc25eEU7hoIPS0WvfeIOTIN3y8bfQnXavwMReaNVHQ==}
+  '@sentry/core@10.73.0':
+    resolution: {integrity: sha512-FLO1UgH19RyasVpofu612WCOgb2nEH0dZy+R72d7p65XU9i0wxlMKm3+sgfwKmiSJp1Qhilaaxs4Jg6BbiM5HA==}
     engines: {node: '>=18'}
 
   '@sentry/core@7.120.4':
     resolution: {integrity: sha512-TXu3Q5kKiq8db9OXGkWyXUbIxMMuttB5vJ031yolOl5T/B69JRyAoKuojLBjRv1XX583gS1rSSoX8YXX7ATFGA==}
     engines: {node: '>=8'}
 
-  '@sentry/feedback@10.71.0':
-    resolution: {integrity: sha512-4+zMAmn1DcbYBtFE0pWt6zo8vWoBHTuP/UhtCMTCoGB4sVYvmwRxv9Hc9OpRHSzE9kSl8beD0zKFxuoVHizKQQ==}
+  '@sentry/feedback@10.73.0':
+    resolution: {integrity: sha512-D6nSngX+e46Mae2/oh2bxBvxNK1z2NERbuMAhB5sx9x4xMBWIyGnYYTECehvEqV9+AqGAgxxhOZoYIG3AmRwww==}
     engines: {node: '>=18'}
 
   '@sentry/integrations@7.120.4':
     resolution: {integrity: sha512-kkBTLk053XlhDCg7OkBQTIMF4puqFibeRO3E3YiVc4PGLnocXMaVpOSCkMqAc1k1kZ09UgGi8DxfQhnFEjUkpA==}
     engines: {node: '>=8'}
 
-  '@sentry/nextjs@10.71.0':
-    resolution: {integrity: sha512-74Q3F65PVGCo6fNr+0UnDLwnfJiHBLASdQ0jMyANcmn149d8BdR8eqwk4OLkI5hIDFNsgdJOfdB+ZVwwp1p6+A==}
+  '@sentry/nextjs@10.73.0':
+    resolution: {integrity: sha512-lZFlQkafIHnYKTo0QCY+VqFC7rEt/SRAVrTCKyM+r1yIAw+iIfU1qM2QT7xn71+t0U520I0xBJ2O+YzqLYXJIQ==}
     engines: {node: '>=18'}
     peerDependencies:
       next: ^13.2.0 || ^14.0 || ^15.0.0-rc.0 || ^16.0.0-0
 
-  '@sentry/node-core@10.71.0':
-    resolution: {integrity: sha512-sxd0/ZW+Uda/17H0R7lB2Othm37VYcdwKdWdyHRizg872TfCX4UwTTPaoS2tMJAUjV2tVh83ZA0fsoC2q9SpjA==}
+  '@sentry/node-core@10.73.0':
+    resolution: {integrity: sha512-GHAGUmZPmm6FKfxfv2maVVJ/A99YAmd7oFOuKMDmITI6O/Msl6JB3vPTEpopVAHLW0LYJQBOjddL9C7o+Jt44g==}
     engines: {node: '>=18'}
     peerDependencies:
       '@opentelemetry/api': ^1.9.0
@@ -2050,38 +2039,38 @@ packages:
       '@opentelemetry/sdk-trace-base':
         optional: true
 
-  '@sentry/node@10.71.0':
-    resolution: {integrity: sha512-bw2M/xkMu2+ATo6QWFmtTZTYp5LV1krt9/DTtYqtt4GmhXmXgdFPXCv6783AJI3HUoEMx2BcehhNbKzGrFXo/g==}
+  '@sentry/node@10.73.0':
+    resolution: {integrity: sha512-jiMJ6GgXDw6UMGzJY+o0c8OoeA9OfHqZ/xEpHfDqy75hn+9CEkRkbNGCIdMvsc7wW/Se1Os394hHfTpU+YEskg==}
     engines: {node: '>=18'}
 
   '@sentry/node@7.120.4':
     resolution: {integrity: sha512-qq3wZAXXj2SRWhqErnGCSJKUhPSlZ+RGnCZjhfjHpP49KNpcd9YdPTIUsFMgeyjdh6Ew6aVCv23g1hTP0CHpYw==}
     engines: {node: '>=8'}
 
-  '@sentry/opentelemetry@10.71.0':
-    resolution: {integrity: sha512-YgeL0xTObKma3MuOrt+/6M/f6mo/Z08LHh3OxPomzQpgpCgCLGyJ/739cDSSH1LRjqWdPQtoia5asl5ZRdhWmw==}
+  '@sentry/opentelemetry@10.73.0':
+    resolution: {integrity: sha512-fQouPQKsH0CQrw6oAn1k0Z2I+tgyochCovifr5qNS69i0OzjknLa03WJyiZ/IuzXc4AVa5jAKfOeE9slABz8Qw==}
     engines: {node: '>=18'}
     peerDependencies:
       '@opentelemetry/api': ^1.9.0
       '@opentelemetry/core': 2.10.0
       '@opentelemetry/sdk-trace-base': ^1.30.1 || ^2.1.0
 
-  '@sentry/react@10.71.0':
-    resolution: {integrity: sha512-Ab1cFyOpl0PKKgEBlckIq/gCRIP/MD75gc4B85YnifdTAHK3KxgSWxz43GCeyTTyNBCx19XQsd0dti9YCRYCkw==}
+  '@sentry/react@10.73.0':
+    resolution: {integrity: sha512-wJrzS98ddPvhGS/MKNHZyE8X7ecd4KwKdz7fHino2qkqBBrF4cxWr+q/uLTIk5PYWMkeJ4oKMjHAjOqmzGR4tg==}
     engines: {node: '>=18'}
     peerDependencies:
       react: ^16.14.0 || 17.x || 18.x || 19.x
 
-  '@sentry/replay-canvas@10.71.0':
-    resolution: {integrity: sha512-YTqesxBh9arExI49LrTm4Y2/xPX40q2GWi0gWRw6lNfYtyNz7/ZfHi8/1N6JEc8dldTslqFhII6ZFecUyU9iaA==}
+  '@sentry/replay-canvas@10.73.0':
+    resolution: {integrity: sha512-sxa2lKkHPfF/j5xFpW7gocthWXRqyoHz8KCPy6yGc8plT477nl57iGSKhQDYsx1Ny10TLjs7YkIuPP1GY/Ax2Q==}
     engines: {node: '>=18'}
 
-  '@sentry/replay@10.71.0':
-    resolution: {integrity: sha512-ytEgVg7isvavQL6hgsgYeuSCkcA3EyOKm9lMLQOZTLkiUCtFT/ItWwGNhzS46vQ6wsTv3Uc0Y1JlcJHSFKe/Kg==}
+  '@sentry/replay@10.73.0':
+    resolution: {integrity: sha512-nN2wjN/Y0J5BOJV5hqRHUEBfxwUsipp1PKjcDHh6Fpxnrtfldu3Y99E8cQInseo5heFdzEvrOHBBrqWZXOHVKQ==}
     engines: {node: '>=18'}
 
-  '@sentry/server-utils@10.71.0':
-    resolution: {integrity: sha512-zdyShKNsghzPGVWVRzc7oybYTsRZdKgdPtq+dsksImo1b6n7ILlD7eYx1Q0eAOZoWkDqDmm+Ml6MQb76IT1eTA==}
+  '@sentry/server-utils@10.73.0':
+    resolution: {integrity: sha512-QskripdKFbM/+gipC6mpa2crLwL7+VbkX84IpHg2z9UlYQ1kNKd3aMT+Qk9NLRSw/zu1rSIAvlbWfx4D3rgNAA==}
     engines: {node: '>=18'}
 
   '@sentry/types@7.120.4':
@@ -2092,8 +2081,8 @@ packages:
     resolution: {integrity: sha512-zCKpyDIWKHwtervNK2ZlaK8mMV7gVUijAgFeJStH+CU/imcdquizV3pFLlSQYRswG+Lbyd6CT/LGRh3IbtkCFw==}
     engines: {node: '>=8'}
 
-  '@sentry/vercel-edge@10.71.0':
-    resolution: {integrity: sha512-s4KN2YcET8L2aOEWvbOyCP7FWX/Xvr4CAE4l5lGJ0mrJHtITJqA0kCdh6Y6aM/ydYi4r2Eo/MzERrU09iRpcbQ==}
+  '@sentry/vercel-edge@10.73.0':
+    resolution: {integrity: sha512-DJLqVzd3ng4IwR+ux/vK1Wth/CSwUrsiwIbNsyneHw79cyhfjYuovFTw1xrjn9zTJoVSE8KkdajLSLwmLbnoTw==}
     engines: {node: '>=18'}
 
   '@sentry/webpack-plugin@5.4.0':
@@ -2816,10 +2805,6 @@ packages:
     resolution: {integrity: sha512-6t10qk83GOG8p0vKmaCr8eiilZwO171AvbROMtvvNiwrTly62t+7XkA8RdIIVbpMhCASAsxgAzdRSwh6nw/5Dg==}
     engines: {node: '>=4'}
 
-  astring@1.9.0:
-    resolution: {integrity: sha512-LElXdjswlqjWrPpJFg1Fx4wpkOCxj1TDHlSV4PlaRxHGWko024xICaa97ZkMfs6DRKlCguiAI+rbXv5GWwXIkg==}
-    hasBin: true
-
   async@2.6.4:
     resolution: {integrity: sha512-mzo5dfJYwAn29PeiJ0zvwTo04zj8HDJj0Mn8TD7sno7q12prdbnasKJHhkm2c1LgrhlJ0teaea8860oxi51mGA==}
 
@@ -3489,10 +3474,6 @@ packages:
     engines: {node: '>=4'}
     hasBin: true
 
-  esquery@1.7.0:
-    resolution: {integrity: sha512-Ap6G0WQwcU/LHsvLwON1fAQX9Zp0A2Y6Y/cJBl9r/JbW90Zyg4/zbG6zzKa2OTALELarYHmKu0GhpM5EO+7T0g==}
-    engines: {node: '>=0.10'}
-
   esrecurse@4.3.0:
     resolution: {integrity: sha512-KmfKL3b6G+RXvP8N1vr3Tq1kL/oCFgn2NYXEtqP8/L3pKapUA4G8cFVaoF3SU323CD4XypR/ffioHmkti6/Tag==}
     engines: {node: '>=4.0'}
@@ -4099,8 +4080,8 @@ packages:
     resolution: {integrity: sha512-jumlc0BIUrS3qJGgIkWZsyfAM7NCWiBcCDhnd+3NNM5KbBmLTgHVfWBcg6W+rLUsIpzpERPsvwUP7CckAQSOoA==}
     engines: {node: '>=12'}
 
-  lucide-react@1.34.0:
-    resolution: {integrity: sha512-vnjGJNI7Htk5+oWW8gXGuaLgwgAb0T6/iZbBrp9JCfRFwdNWZ0YTm3eyxjOLgwN6r8iyAf3UA70zNmBRBNv7yg==}
+  lucide-react@1.40.0:
+    resolution: {integrity: sha512-MaG+8WnOXkDWz9XeElj7TnQ890tTZUB0a36i03aRRCKGWE6e7jJpmdCvtxxuxcjjdqyN6m4sL6qlHVuSUDtYgg==}
     peerDependencies:
       react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
@@ -4142,10 +4123,6 @@ packages:
 
   merge-stream@2.0.0:
     resolution: {integrity: sha512-abv/qOcuPfk3URPfDzmZU1LKmuw8kT+0nIHvKrKgFrwifol/doWcdA4ZqsWQ8ENrFKkd67Mfpo/LovbIUsbt3w==}
-
-  meriyah@6.1.4:
-    resolution: {integrity: sha512-Sz8FzjzI0kN13GK/6MVEsVzMZEPvOhnmmI1lU5+/1cGOiK3QUahntrNNtdVeihrO7t9JpoH75iMNXg6R6uWflQ==}
-    engines: {node: '>=18.0.0'}
 
   metaviewport-parser@0.3.0:
     resolution: {integrity: sha512-EoYJ8xfjQ6kpe9VbVHvZTZHiOl4HL1Z18CrZ+qahvLXT7ZO4YTC2JMyt5FaUp9JJp6J4Ybb/z7IsCXZt86/QkQ==}
@@ -4300,8 +4277,8 @@ packages:
     resolution: {integrity: sha512-eonl3sLUha+S1GzTPxychyhnUzKyeQkZ7jLjKrBagJgPla13F+uQ71HgpFefyHgqrjEbCPkDArxYsjY8/+gLKA==}
     engines: {node: '>= 0.4.0'}
 
-  next@16.3.3:
-    resolution: {integrity: sha512-tuRTx1nQ/yVw83cwJBo9F+njGUgMn3UHQycreWHB8XsStvvAh1AthbI8/4IpKnFaF58F+iSiHejYOlMQ/eq83g==}
+  next@16.3.4:
+    resolution: {integrity: sha512-/Ztf6CeRH+ejEXUrYtqI4gkS66eFIHuSwqi60RgcpWKodxFZx2/dqVCMKBwILfAHXQ+F1b1vAudgj3mnxqtoIA==}
     engines: {node: '>=20.9.0'}
     hasBin: true
     peerDependencies:
@@ -4654,8 +4631,8 @@ packages:
   require-main-filename@2.0.0:
     resolution: {integrity: sha512-NKN5kMDylKuldxYLSUfrbo5Tuzh4hd+2E8NPPX02mZtn1VuREQToYe/ZdlJy+J3uCpfaiGF05e7B8W0iXbQHmg==}
 
-  resend@6.24.0:
-    resolution: {integrity: sha512-ZG+tRzTtg3usrzMMVK1THPILCDbxE0uefG3XEQro/+jb9hcRb8JiQeyzIo2BphMJk2OomBeciZU3rCgX3XWx5w==}
+  resend@6.26.0:
+    resolution: {integrity: sha512-vkrULozV5nGF8o7tyun/t0+qFgtPpn+cyRhVqeorhOsPUNDiSc/9p/pn8AprdHqJpYaTvftpnQgWurW++FkCdw==}
     engines: {node: '>=20'}
     peerDependencies:
       '@react-email/render': '*'
@@ -4736,9 +4713,6 @@ packages:
   schema-utils@4.3.3:
     resolution: {integrity: sha512-eflK8wEtyOE6+hsaRVPxvUKYCpRgzLqDTb8krvAsRIwOGlHoSgYLgBXoubGgLd2fT41/OUYdb48v4k4WWHQurA==}
     engines: {node: '>= 10.13.0'}
-
-  semifies@1.0.0:
-    resolution: {integrity: sha512-xXR3KGeoxTNWPD4aBvL5NUpMTT7WMANr3EWnaS190QVkY52lqqcVRD7Q05UVbBhiWDGWMlJEUam9m7uFFGVScw==}
 
   semver@5.7.2:
     resolution: {integrity: sha512-cBznnQ9KjJqU67B52RMC65CMarK2600WFnbkcaiwWq3xy/5haFJlshgnpjovMVJ+Hff49d8GEn0b87C5pDQ10g==}
@@ -5457,38 +5431,14 @@ packages:
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
-  zod@4.4.3:
-    resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
+  zod@4.5.4:
+    resolution: {integrity: sha512-sC95tT5iHHH9gtpj6A81kh+NEaRAUFN+qlUPDUbRfOMvNf5QCBqsb3WgvnpVtK5Y+4UfA6KqufotuTvMGiTlsA==}
 
 snapshots:
 
   '@adobe/css-tools@4.5.0': {}
 
   '@alloc/quick-lru@5.2.0': {}
-
-  '@apm-js-collab/code-transformer-bundler-plugins@0.7.4':
-    dependencies:
-      '@apm-js-collab/code-transformer': 0.18.1
-      es-module-lexer: 2.3.2
-      magic-string: 0.30.21
-      module-details-from-path: 1.0.4
-
-  '@apm-js-collab/code-transformer@0.18.1':
-    dependencies:
-      '@types/estree': 1.0.9
-      astring: 1.9.0
-      esquery: 1.7.0
-      meriyah: 6.1.4
-      semifies: 1.0.0
-      source-map: 0.6.1
-
-  '@apm-js-collab/tracing-hooks@0.13.0(supports-color@8.1.1)':
-    dependencies:
-      '@apm-js-collab/code-transformer': 0.18.1
-      debug: 4.4.3(supports-color@8.1.1)
-      module-details-from-path: 1.0.4
-    transitivePeerDependencies:
-      - supports-color
 
   '@asamuzakjp/css-color@6.0.7':
     dependencies:
@@ -5612,52 +5562,52 @@ snapshots:
       '@babel/helper-string-parser': 7.29.7
       '@babel/helper-validator-identifier': 7.29.7
 
-  '@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.4.3))(jose@6.2.8)(kysely@0.29.5)(nanostores@1.4.2)':
+  '@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.8)(kysely@0.29.5)(nanostores@1.4.2)':
     dependencies:
       '@better-auth/utils': 0.4.2
       '@better-fetch/fetch': 1.3.1
       '@opentelemetry/semantic-conventions': 1.43.0
       '@standard-schema/spec': 1.1.0
-      better-call: 1.4.0(zod@4.4.3)
+      better-call: 1.4.0(zod@4.5.4)
       jose: 6.2.8
       kysely: 0.29.5
       nanostores: 1.4.2
-      zod: 4.4.3
+      zod: 4.5.4
     optionalDependencies:
       '@opentelemetry/api': 1.9.1
 
-  '@better-auth/drizzle-adapter@1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.4.3))(jose@6.2.8)(kysely@0.29.5)(nanostores@1.4.2))(@better-auth/utils@0.4.2)(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(kysely@0.29.5)(postgres@3.4.9))':
+  '@better-auth/drizzle-adapter@1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.8)(kysely@0.29.5)(nanostores@1.4.2))(@better-auth/utils@0.4.2)(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(kysely@0.29.5)(postgres@3.4.9))':
     dependencies:
-      '@better-auth/core': 1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.4.3))(jose@6.2.8)(kysely@0.29.5)(nanostores@1.4.2)
+      '@better-auth/core': 1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.8)(kysely@0.29.5)(nanostores@1.4.2)
       '@better-auth/utils': 0.4.2
     optionalDependencies:
       drizzle-orm: 0.45.2(@opentelemetry/api@1.9.1)(kysely@0.29.5)(postgres@3.4.9)
 
-  '@better-auth/kysely-adapter@1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.4.3))(jose@6.2.8)(kysely@0.29.5)(nanostores@1.4.2))(@better-auth/utils@0.4.2)(kysely@0.29.5)':
+  '@better-auth/kysely-adapter@1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.8)(kysely@0.29.5)(nanostores@1.4.2))(@better-auth/utils@0.4.2)(kysely@0.29.5)':
     dependencies:
-      '@better-auth/core': 1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.4.3))(jose@6.2.8)(kysely@0.29.5)(nanostores@1.4.2)
+      '@better-auth/core': 1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.8)(kysely@0.29.5)(nanostores@1.4.2)
       '@better-auth/utils': 0.4.2
     optionalDependencies:
       kysely: 0.29.5
 
-  '@better-auth/memory-adapter@1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.4.3))(jose@6.2.8)(kysely@0.29.5)(nanostores@1.4.2))(@better-auth/utils@0.4.2)':
+  '@better-auth/memory-adapter@1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.8)(kysely@0.29.5)(nanostores@1.4.2))(@better-auth/utils@0.4.2)':
     dependencies:
-      '@better-auth/core': 1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.4.3))(jose@6.2.8)(kysely@0.29.5)(nanostores@1.4.2)
+      '@better-auth/core': 1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.8)(kysely@0.29.5)(nanostores@1.4.2)
       '@better-auth/utils': 0.4.2
 
-  '@better-auth/mongo-adapter@1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.4.3))(jose@6.2.8)(kysely@0.29.5)(nanostores@1.4.2))(@better-auth/utils@0.4.2)':
+  '@better-auth/mongo-adapter@1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.8)(kysely@0.29.5)(nanostores@1.4.2))(@better-auth/utils@0.4.2)':
     dependencies:
-      '@better-auth/core': 1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.4.3))(jose@6.2.8)(kysely@0.29.5)(nanostores@1.4.2)
+      '@better-auth/core': 1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.8)(kysely@0.29.5)(nanostores@1.4.2)
       '@better-auth/utils': 0.4.2
 
-  '@better-auth/prisma-adapter@1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.4.3))(jose@6.2.8)(kysely@0.29.5)(nanostores@1.4.2))(@better-auth/utils@0.4.2)':
+  '@better-auth/prisma-adapter@1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.8)(kysely@0.29.5)(nanostores@1.4.2))(@better-auth/utils@0.4.2)':
     dependencies:
-      '@better-auth/core': 1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.4.3))(jose@6.2.8)(kysely@0.29.5)(nanostores@1.4.2)
+      '@better-auth/core': 1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.8)(kysely@0.29.5)(nanostores@1.4.2)
       '@better-auth/utils': 0.4.2
 
-  '@better-auth/telemetry@1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.4.3))(jose@6.2.8)(kysely@0.29.5)(nanostores@1.4.2))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)':
+  '@better-auth/telemetry@1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.8)(kysely@0.29.5)(nanostores@1.4.2))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)':
     dependencies:
-      '@better-auth/core': 1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.4.3))(jose@6.2.8)(kysely@0.29.5)(nanostores@1.4.2)
+      '@better-auth/core': 1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.8)(kysely@0.29.5)(nanostores@1.4.2)
       '@better-auth/utils': 0.4.2
       '@better-fetch/fetch': 1.3.1
 
@@ -5677,22 +5627,22 @@ snapshots:
     dependencies:
       css-tree: 3.2.1
 
-  '@colyseus/better-call@1.3.3(zod@4.4.3)':
+  '@colyseus/better-call@1.3.3(zod@4.5.4)':
     dependencies:
       '@better-auth/utils': 0.3.1
       '@better-fetch/fetch': 1.3.1
       rou3: 0.7.12
       set-cookie-parser: 3.1.2
     optionalDependencies:
-      zod: 4.4.3
+      zod: 4.5.4
 
   '@colyseus/clock@2.0.3': {}
 
-  '@colyseus/core@0.18.8(@colyseus/better-call@1.3.3(zod@4.4.3))(@colyseus/schema@5.0.23(typescript@7.0.2))(@colyseus/ws-transport@0.18.2)(@pm2/io@6.1.0(supports-color@8.1.1))(express@5.2.1(supports-color@8.1.1))(supports-color@8.1.1)(zod@4.4.3)':
+  '@colyseus/core@0.18.10(@colyseus/better-call@1.3.3(zod@4.5.4))(@colyseus/schema@5.0.27(typescript@7.0.2))(@colyseus/ws-transport@0.18.2)(@pm2/io@6.1.0(supports-color@8.1.1))(express@5.2.1(supports-color@8.1.1))(supports-color@8.1.1)(zod@4.5.4)':
     dependencies:
-      '@colyseus/better-call': 1.3.3(zod@4.4.3)
+      '@colyseus/better-call': 1.3.3(zod@4.5.4)
       '@colyseus/greeting-banner': 4.0.2
-      '@colyseus/schema': 5.0.23(typescript@7.0.2)
+      '@colyseus/schema': 5.0.27(typescript@7.0.2)
       '@colyseus/shared-types': 0.18.2
       '@colyseus/timer': 2.0.3
       '@standard-schema/spec': 1.1.0
@@ -5700,18 +5650,18 @@ snapshots:
       msgpackr: 2.1.0
       nanoid: 3.3.18
     optionalDependencies:
-      '@colyseus/ws-transport': 0.18.2(@colyseus/core@0.18.8)(express@5.2.1(supports-color@8.1.1))
+      '@colyseus/ws-transport': 0.18.2(@colyseus/core@0.18.10)(express@5.2.1(supports-color@8.1.1))
       '@pm2/io': 6.1.0(supports-color@8.1.1)
       express: 5.2.1(supports-color@8.1.1)
-      zod: 4.4.3
+      zod: 4.5.4
     transitivePeerDependencies:
       - supports-color
 
   '@colyseus/greeting-banner@4.0.2': {}
 
-  '@colyseus/loadtest@0.18.2(@colyseus/core@0.18.8)(zod@4.4.3)':
+  '@colyseus/loadtest@0.18.2(@colyseus/core@0.18.10)(zod@4.5.4)':
     dependencies:
-      '@colyseus/sdk': 0.18.2(patch_hash=9c48f556f2472df819aebe1400e50fd91642c24661c6ccf30104b79492b9a320)(@colyseus/core@0.18.8)(typescript@6.0.3)(zod@4.4.3)
+      '@colyseus/sdk': 0.18.2(patch_hash=9c48f556f2472df819aebe1400e50fd91642c24661c6ccf30104b79492b9a320)(@colyseus/core@0.18.10)(typescript@6.0.3)(zod@4.5.4)
       blessed: 0.1.81
       minimist: 1.2.8
       typescript: 6.0.3
@@ -5722,11 +5672,11 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@colyseus/monitor@0.18.3(@colyseus/better-call@1.3.3(zod@4.4.3))(@colyseus/schema@5.0.23(typescript@7.0.2))(@colyseus/ws-transport@0.18.2)(@pm2/io@6.1.0(supports-color@8.1.1))(express@5.2.1(supports-color@8.1.1))(supports-color@8.1.1)':
+  '@colyseus/monitor@0.18.3(@colyseus/better-call@1.3.3(zod@4.5.4))(@colyseus/schema@5.0.27(typescript@7.0.2))(@colyseus/ws-transport@0.18.2)(@pm2/io@6.1.0(supports-color@8.1.1))(express@5.2.1(supports-color@8.1.1))(supports-color@8.1.1)':
     dependencies:
-      '@colyseus/core': 0.18.8(@colyseus/better-call@1.3.3(zod@4.4.3))(@colyseus/schema@5.0.23(typescript@7.0.2))(@colyseus/ws-transport@0.18.2)(@pm2/io@6.1.0(supports-color@8.1.1))(express@5.2.1(supports-color@8.1.1))(supports-color@8.1.1)(zod@4.4.3)
+      '@colyseus/core': 0.18.10(@colyseus/better-call@1.3.3(zod@4.5.4))(@colyseus/schema@5.0.27(typescript@7.0.2))(@colyseus/ws-transport@0.18.2)(@pm2/io@6.1.0(supports-color@8.1.1))(express@5.2.1(supports-color@8.1.1))(supports-color@8.1.1)(zod@4.5.4)
       node-os-utils: 2.0.4
-      zod: 4.4.3
+      zod: 4.5.4
     transitivePeerDependencies:
       - '@colyseus/auth'
       - '@colyseus/better-call'
@@ -5736,9 +5686,9 @@ snapshots:
       - express
       - supports-color
 
-  '@colyseus/redis-driver@0.18.2(@colyseus/better-call@1.3.3(zod@4.4.3))(@colyseus/schema@5.0.23(typescript@7.0.2))(@colyseus/ws-transport@0.18.2)(@pm2/io@6.1.0(supports-color@8.1.1))(express@5.2.1(supports-color@8.1.1))(supports-color@8.1.1)(zod@4.4.3)':
+  '@colyseus/redis-driver@0.18.2(@colyseus/better-call@1.3.3(zod@4.5.4))(@colyseus/schema@5.0.27(typescript@7.0.2))(@colyseus/ws-transport@0.18.2)(@pm2/io@6.1.0(supports-color@8.1.1))(express@5.2.1(supports-color@8.1.1))(supports-color@8.1.1)(zod@4.5.4)':
     dependencies:
-      '@colyseus/core': 0.18.8(@colyseus/better-call@1.3.3(zod@4.4.3))(@colyseus/schema@5.0.23(typescript@7.0.2))(@colyseus/ws-transport@0.18.2)(@pm2/io@6.1.0(supports-color@8.1.1))(express@5.2.1(supports-color@8.1.1))(supports-color@8.1.1)(zod@4.4.3)
+      '@colyseus/core': 0.18.10(@colyseus/better-call@1.3.3(zod@4.5.4))(@colyseus/schema@5.0.27(typescript@7.0.2))(@colyseus/ws-transport@0.18.2)(@pm2/io@6.1.0(supports-color@8.1.1))(express@5.2.1(supports-color@8.1.1))(supports-color@8.1.1)(zod@4.5.4)
       ioredis: 5.11.1(supports-color@8.1.1)
     transitivePeerDependencies:
       - '@colyseus/auth'
@@ -5750,9 +5700,9 @@ snapshots:
       - supports-color
       - zod
 
-  '@colyseus/redis-presence@0.18.3(@colyseus/better-call@1.3.3(zod@4.4.3))(@colyseus/schema@5.0.23(typescript@7.0.2))(@colyseus/ws-transport@0.18.2)(@pm2/io@6.1.0(supports-color@8.1.1))(express@5.2.1(supports-color@8.1.1))(supports-color@8.1.1)(zod@4.4.3)':
+  '@colyseus/redis-presence@0.18.3(@colyseus/better-call@1.3.3(zod@4.5.4))(@colyseus/schema@5.0.27(typescript@7.0.2))(@colyseus/ws-transport@0.18.2)(@pm2/io@6.1.0(supports-color@8.1.1))(express@5.2.1(supports-color@8.1.1))(supports-color@8.1.1)(zod@4.5.4)':
     dependencies:
-      '@colyseus/core': 0.18.8(@colyseus/better-call@1.3.3(zod@4.4.3))(@colyseus/schema@5.0.23(typescript@7.0.2))(@colyseus/ws-transport@0.18.2)(@pm2/io@6.1.0(supports-color@8.1.1))(express@5.2.1(supports-color@8.1.1))(supports-color@8.1.1)(zod@4.4.3)
+      '@colyseus/core': 0.18.10(@colyseus/better-call@1.3.3(zod@4.5.4))(@colyseus/schema@5.0.27(typescript@7.0.2))(@colyseus/ws-transport@0.18.2)(@pm2/io@6.1.0(supports-color@8.1.1))(express@5.2.1(supports-color@8.1.1))(supports-color@8.1.1)(zod@4.5.4)
       ioredis: 5.11.1(supports-color@8.1.1)
     transitivePeerDependencies:
       - '@colyseus/auth'
@@ -5764,40 +5714,40 @@ snapshots:
       - supports-color
       - zod
 
-  '@colyseus/schema@5.0.23(typescript@6.0.3)':
+  '@colyseus/schema@5.0.27(typescript@6.0.3)':
     optionalDependencies:
       typescript: 6.0.3
 
-  '@colyseus/schema@5.0.23(typescript@7.0.2)':
+  '@colyseus/schema@5.0.27(typescript@7.0.2)':
     optionalDependencies:
       typescript: 7.0.2
 
-  '@colyseus/sdk@0.18.2(patch_hash=9c48f556f2472df819aebe1400e50fd91642c24661c6ccf30104b79492b9a320)(@colyseus/core@0.18.8)(typescript@6.0.3)(zod@4.4.3)':
+  '@colyseus/sdk@0.18.2(patch_hash=9c48f556f2472df819aebe1400e50fd91642c24661c6ccf30104b79492b9a320)(@colyseus/core@0.18.10)(typescript@6.0.3)(zod@4.5.4)':
     dependencies:
-      '@colyseus/better-call': 1.3.3(zod@4.4.3)
-      '@colyseus/schema': 5.0.23(typescript@6.0.3)
+      '@colyseus/better-call': 1.3.3(zod@4.5.4)
+      '@colyseus/schema': 5.0.27(typescript@6.0.3)
       '@colyseus/shared-types': 0.18.2
       msgpackr: 2.1.0
       tslib: 2.8.1
       ws: 8.21.0
     optionalDependencies:
-      '@colyseus/core': 0.18.8(@colyseus/better-call@1.3.3(zod@4.4.3))(@colyseus/schema@5.0.23(typescript@7.0.2))(@colyseus/ws-transport@0.18.2)(@pm2/io@6.1.0(supports-color@8.1.1))(express@5.2.1(supports-color@8.1.1))(supports-color@8.1.1)(zod@4.4.3)
+      '@colyseus/core': 0.18.10(@colyseus/better-call@1.3.3(zod@4.5.4))(@colyseus/schema@5.0.27(typescript@7.0.2))(@colyseus/ws-transport@0.18.2)(@pm2/io@6.1.0(supports-color@8.1.1))(express@5.2.1(supports-color@8.1.1))(supports-color@8.1.1)(zod@4.5.4)
     transitivePeerDependencies:
       - bufferutil
       - typescript
       - utf-8-validate
       - zod
 
-  '@colyseus/sdk@0.18.2(patch_hash=9c48f556f2472df819aebe1400e50fd91642c24661c6ccf30104b79492b9a320)(@colyseus/core@0.18.8)(typescript@7.0.2)(zod@4.4.3)':
+  '@colyseus/sdk@0.18.2(patch_hash=9c48f556f2472df819aebe1400e50fd91642c24661c6ccf30104b79492b9a320)(@colyseus/core@0.18.10)(typescript@7.0.2)(zod@4.5.4)':
     dependencies:
-      '@colyseus/better-call': 1.3.3(zod@4.4.3)
-      '@colyseus/schema': 5.0.23(typescript@7.0.2)
+      '@colyseus/better-call': 1.3.3(zod@4.5.4)
+      '@colyseus/schema': 5.0.27(typescript@7.0.2)
       '@colyseus/shared-types': 0.18.2
       msgpackr: 2.1.0
       tslib: 2.8.1
       ws: 8.21.0
     optionalDependencies:
-      '@colyseus/core': 0.18.8(@colyseus/better-call@1.3.3(zod@4.4.3))(@colyseus/schema@5.0.23(typescript@7.0.2))(@colyseus/ws-transport@0.18.2)(@pm2/io@6.1.0(supports-color@8.1.1))(express@5.2.1(supports-color@8.1.1))(supports-color@8.1.1)(zod@4.4.3)
+      '@colyseus/core': 0.18.10(@colyseus/better-call@1.3.3(zod@4.5.4))(@colyseus/schema@5.0.27(typescript@7.0.2))(@colyseus/ws-transport@0.18.2)(@pm2/io@6.1.0(supports-color@8.1.1))(express@5.2.1(supports-color@8.1.1))(supports-color@8.1.1)(zod@4.5.4)
     transitivePeerDependencies:
       - bufferutil
       - typescript
@@ -5808,29 +5758,29 @@ snapshots:
     dependencies:
       '@standard-schema/spec': 1.1.0
 
-  '@colyseus/testing@0.18.5(@colyseus/core@0.18.8)(@colyseus/sdk@0.18.2(patch_hash=9c48f556f2472df819aebe1400e50fd91642c24661c6ccf30104b79492b9a320)(@colyseus/core@0.18.8)(typescript@7.0.2)(zod@4.4.3))(@colyseus/tools@0.18.3(@colyseus/core@0.18.8)(@colyseus/ws-transport@0.18.2)(supports-color@8.1.1))':
+  '@colyseus/testing@0.18.5(@colyseus/core@0.18.10)(@colyseus/sdk@0.18.2(patch_hash=9c48f556f2472df819aebe1400e50fd91642c24661c6ccf30104b79492b9a320)(@colyseus/core@0.18.10)(typescript@7.0.2)(zod@4.5.4))(@colyseus/tools@0.18.3(@colyseus/core@0.18.10)(@colyseus/ws-transport@0.18.2)(supports-color@8.1.1))':
     dependencies:
-      '@colyseus/core': 0.18.8(@colyseus/better-call@1.3.3(zod@4.4.3))(@colyseus/schema@5.0.23(typescript@7.0.2))(@colyseus/ws-transport@0.18.2)(@pm2/io@6.1.0(supports-color@8.1.1))(express@5.2.1(supports-color@8.1.1))(supports-color@8.1.1)(zod@4.4.3)
-      '@colyseus/sdk': 0.18.2(patch_hash=9c48f556f2472df819aebe1400e50fd91642c24661c6ccf30104b79492b9a320)(@colyseus/core@0.18.8)(typescript@7.0.2)(zod@4.4.3)
-      '@colyseus/tools': 0.18.3(@colyseus/core@0.18.8)(@colyseus/ws-transport@0.18.2)(supports-color@8.1.1)
+      '@colyseus/core': 0.18.10(@colyseus/better-call@1.3.3(zod@4.5.4))(@colyseus/schema@5.0.27(typescript@7.0.2))(@colyseus/ws-transport@0.18.2)(@pm2/io@6.1.0(supports-color@8.1.1))(express@5.2.1(supports-color@8.1.1))(supports-color@8.1.1)(zod@4.5.4)
+      '@colyseus/sdk': 0.18.2(patch_hash=9c48f556f2472df819aebe1400e50fd91642c24661c6ccf30104b79492b9a320)(@colyseus/core@0.18.10)(typescript@7.0.2)(zod@4.5.4)
+      '@colyseus/tools': 0.18.3(@colyseus/core@0.18.10)(@colyseus/ws-transport@0.18.2)(supports-color@8.1.1)
       httpie: 2.0.0-next.13
 
   '@colyseus/timer@2.0.3':
     dependencies:
       '@colyseus/clock': 2.0.3
 
-  '@colyseus/tools@0.18.3(@colyseus/core@0.18.8)(@colyseus/ws-transport@0.18.2)(supports-color@8.1.1)':
+  '@colyseus/tools@0.18.3(@colyseus/core@0.18.10)(@colyseus/ws-transport@0.18.2)(supports-color@8.1.1)':
     dependencies:
-      '@colyseus/core': 0.18.8(@colyseus/better-call@1.3.3(zod@4.4.3))(@colyseus/schema@5.0.23(typescript@7.0.2))(@colyseus/ws-transport@0.18.2)(@pm2/io@6.1.0(supports-color@8.1.1))(express@5.2.1(supports-color@8.1.1))(supports-color@8.1.1)(zod@4.4.3)
-      '@colyseus/ws-transport': 0.18.2(@colyseus/core@0.18.8)(express@5.2.1(supports-color@8.1.1))
+      '@colyseus/core': 0.18.10(@colyseus/better-call@1.3.3(zod@4.5.4))(@colyseus/schema@5.0.27(typescript@7.0.2))(@colyseus/ws-transport@0.18.2)(@pm2/io@6.1.0(supports-color@8.1.1))(express@5.2.1(supports-color@8.1.1))(supports-color@8.1.1)(zod@4.5.4)
+      '@colyseus/ws-transport': 0.18.2(@colyseus/core@0.18.10)(express@5.2.1(supports-color@8.1.1))
       '@pm2/io': 6.1.0(supports-color@8.1.1)
       dotenv: 17.4.2
     transitivePeerDependencies:
       - supports-color
 
-  '@colyseus/ws-transport@0.18.2(@colyseus/core@0.18.8)(express@5.2.1(supports-color@8.1.1))':
+  '@colyseus/ws-transport@0.18.2(@colyseus/core@0.18.10)(express@5.2.1(supports-color@8.1.1))':
     dependencies:
-      '@colyseus/core': 0.18.8(@colyseus/better-call@1.3.3(zod@4.4.3))(@colyseus/schema@5.0.23(typescript@7.0.2))(@colyseus/ws-transport@0.18.2)(@pm2/io@6.1.0(supports-color@8.1.1))(express@5.2.1(supports-color@8.1.1))(supports-color@8.1.1)(zod@4.4.3)
+      '@colyseus/core': 0.18.10(@colyseus/better-call@1.3.3(zod@4.5.4))(@colyseus/schema@5.0.27(typescript@7.0.2))(@colyseus/ws-transport@0.18.2)(@pm2/io@6.1.0(supports-color@8.1.1))(express@5.2.1(supports-color@8.1.1))(supports-color@8.1.1)(zod@4.5.4)
       '@types/ws': 8.18.1
       ws: 8.21.0
     optionalDependencies:
@@ -6243,32 +6193,32 @@ snapshots:
       '@tybys/wasm-util': 0.10.3
     optional: true
 
-  '@next/env@16.3.3': {}
+  '@next/env@16.3.4': {}
 
   '@next/playwright@16.3.3': {}
 
-  '@next/swc-darwin-arm64@16.3.3':
+  '@next/swc-darwin-arm64@16.3.4':
     optional: true
 
-  '@next/swc-darwin-x64@16.3.3':
+  '@next/swc-darwin-x64@16.3.4':
     optional: true
 
-  '@next/swc-linux-arm64-gnu@16.3.3':
+  '@next/swc-linux-arm64-gnu@16.3.4':
     optional: true
 
-  '@next/swc-linux-arm64-musl@16.3.3':
+  '@next/swc-linux-arm64-musl@16.3.4':
     optional: true
 
-  '@next/swc-linux-x64-gnu@16.3.3':
+  '@next/swc-linux-x64-gnu@16.3.4':
     optional: true
 
-  '@next/swc-linux-x64-musl@16.3.3':
+  '@next/swc-linux-x64-musl@16.3.4':
     optional: true
 
-  '@next/swc-win32-arm64-msvc@16.3.3':
+  '@next/swc-win32-arm64-msvc@16.3.4':
     optional: true
 
-  '@next/swc-win32-x64-msvc@16.3.3':
+  '@next/swc-win32-x64-msvc@16.3.4':
     optional: true
 
   '@noble/ciphers@2.3.0': {}
@@ -6786,19 +6736,19 @@ snapshots:
 
   '@sentry/babel-plugin-component-annotate@5.3.0': {}
 
-  '@sentry/browser-utils@10.71.0':
+  '@sentry/browser-utils@10.73.0':
     dependencies:
       '@sentry/conventions': 0.16.0
-      '@sentry/core': 10.71.0
+      '@sentry/core': 10.73.0
 
-  '@sentry/browser@10.71.0':
+  '@sentry/browser@10.73.0':
     dependencies:
-      '@sentry/browser-utils': 10.71.0
+      '@sentry/browser-utils': 10.73.0
       '@sentry/conventions': 0.16.0
-      '@sentry/core': 10.71.0
-      '@sentry/feedback': 10.71.0
-      '@sentry/replay': 10.71.0
-      '@sentry/replay-canvas': 10.71.0
+      '@sentry/core': 10.73.0
+      '@sentry/feedback': 10.73.0
+      '@sentry/replay': 10.73.0
+      '@sentry/replay-canvas': 10.73.0
 
   '@sentry/bundler-plugin-core@5.3.0(supports-color@8.1.1)':
     dependencies:
@@ -6879,7 +6829,7 @@ snapshots:
     dependencies:
       '@sentry/conventions': 0.16.0
 
-  '@sentry/core@10.71.0':
+  '@sentry/core@10.73.0':
     dependencies:
       '@sentry/conventions': 0.16.0
 
@@ -6888,9 +6838,9 @@ snapshots:
       '@sentry/types': 7.120.4
       '@sentry/utils': 7.120.4
 
-  '@sentry/feedback@10.71.0':
+  '@sentry/feedback@10.73.0':
     dependencies:
-      '@sentry/core': 10.71.0
+      '@sentry/core': 10.73.0
 
   '@sentry/integrations@7.120.4':
     dependencies:
@@ -6899,21 +6849,21 @@ snapshots:
       '@sentry/utils': 7.120.4
       localforage: 1.10.0
 
-  '@sentry/nextjs@10.71.0(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.10.0(@opentelemetry/api@1.9.1))(next@16.3.3(@babel/core@7.29.7(supports-color@8.1.1))(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(webpack@5.109.2(esbuild@0.28.1)(lightningcss@1.33.0)(postcss@8.5.23))':
+  '@sentry/nextjs@10.73.0(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.10.0(@opentelemetry/api@1.9.1))(next@16.3.4(@babel/core@7.29.7(supports-color@8.1.1))(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(webpack@5.109.2(esbuild@0.28.1)(lightningcss@1.33.0)(postcss@8.5.23))':
     dependencies:
       '@opentelemetry/api': 1.9.1
       '@rollup/plugin-commonjs': 28.0.1(rollup@4.62.4)
-      '@sentry/browser-utils': 10.71.0
+      '@sentry/browser-utils': 10.73.0
       '@sentry/bundler-plugin-core': 5.3.0(supports-color@8.1.1)
       '@sentry/conventions': 0.16.0
-      '@sentry/core': 10.71.0
-      '@sentry/node': 10.71.0(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))(supports-color@8.1.1)
-      '@sentry/opentelemetry': 10.71.0(@opentelemetry/api@1.9.1)(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.10.0(@opentelemetry/api@1.9.1))
-      '@sentry/react': 10.71.0(react@19.2.8)
-      '@sentry/server-utils': 10.71.0(supports-color@8.1.1)
-      '@sentry/vercel-edge': 10.71.0
+      '@sentry/core': 10.73.0
+      '@sentry/node': 10.73.0(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))(supports-color@8.1.1)
+      '@sentry/opentelemetry': 10.73.0(@opentelemetry/api@1.9.1)(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.10.0(@opentelemetry/api@1.9.1))
+      '@sentry/react': 10.73.0(react@19.2.8)
+      '@sentry/server-utils': 10.73.0
+      '@sentry/vercel-edge': 10.73.0
       '@sentry/webpack-plugin': 5.4.0(rollup@4.62.4)(supports-color@8.1.1)(webpack@5.109.2(esbuild@0.28.1)(lightningcss@1.33.0)(postcss@8.5.23))
-      next: 16.3.3(@babel/core@7.29.7(supports-color@8.1.1))(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      next: 16.3.4(@babel/core@7.29.7(supports-color@8.1.1))(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       rollup: 4.62.4
       stacktrace-parser: 0.1.11
     transitivePeerDependencies:
@@ -6925,11 +6875,11 @@ snapshots:
       - supports-color
       - webpack
 
-  '@sentry/node-core@10.71.0(@opentelemetry/api@1.9.1)(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))(@opentelemetry/instrumentation@0.220.0(@opentelemetry/api@1.9.1)(supports-color@8.1.1))(@opentelemetry/sdk-trace-base@2.10.0(@opentelemetry/api@1.9.1))':
+  '@sentry/node-core@10.73.0(@opentelemetry/api@1.9.1)(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))(@opentelemetry/instrumentation@0.220.0(@opentelemetry/api@1.9.1)(supports-color@8.1.1))(@opentelemetry/sdk-trace-base@2.10.0(@opentelemetry/api@1.9.1))':
     dependencies:
       '@sentry/conventions': 0.16.0
-      '@sentry/core': 10.71.0
-      '@sentry/opentelemetry': 10.71.0(@opentelemetry/api@1.9.1)(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.10.0(@opentelemetry/api@1.9.1))
+      '@sentry/core': 10.73.0
+      '@sentry/opentelemetry': 10.73.0(@opentelemetry/api@1.9.1)(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.10.0(@opentelemetry/api@1.9.1))
       import-in-the-middle: 3.3.3
     optionalDependencies:
       '@opentelemetry/api': 1.9.1
@@ -6937,16 +6887,16 @@ snapshots:
       '@opentelemetry/instrumentation': 0.220.0(@opentelemetry/api@1.9.1)(supports-color@8.1.1)
       '@opentelemetry/sdk-trace-base': 2.10.0(@opentelemetry/api@1.9.1)
 
-  '@sentry/node@10.71.0(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))(supports-color@8.1.1)':
+  '@sentry/node@10.73.0(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))(supports-color@8.1.1)':
     dependencies:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/instrumentation': 0.220.0(@opentelemetry/api@1.9.1)(supports-color@8.1.1)
       '@opentelemetry/sdk-trace-base': 2.10.0(@opentelemetry/api@1.9.1)
       '@sentry/conventions': 0.16.0
-      '@sentry/core': 10.71.0
-      '@sentry/node-core': 10.71.0(@opentelemetry/api@1.9.1)(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))(@opentelemetry/instrumentation@0.220.0(@opentelemetry/api@1.9.1)(supports-color@8.1.1))(@opentelemetry/sdk-trace-base@2.10.0(@opentelemetry/api@1.9.1))
-      '@sentry/opentelemetry': 10.71.0(@opentelemetry/api@1.9.1)(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.10.0(@opentelemetry/api@1.9.1))
-      '@sentry/server-utils': 10.71.0(supports-color@8.1.1)
+      '@sentry/core': 10.73.0
+      '@sentry/node-core': 10.73.0(@opentelemetry/api@1.9.1)(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))(@opentelemetry/instrumentation@0.220.0(@opentelemetry/api@1.9.1)(supports-color@8.1.1))(@opentelemetry/sdk-trace-base@2.10.0(@opentelemetry/api@1.9.1))
+      '@sentry/opentelemetry': 10.73.0(@opentelemetry/api@1.9.1)(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.10.0(@opentelemetry/api@1.9.1))
+      '@sentry/server-utils': 10.73.0
       import-in-the-middle: 3.3.3
     transitivePeerDependencies:
       - '@opentelemetry/core'
@@ -6961,40 +6911,35 @@ snapshots:
       '@sentry/types': 7.120.4
       '@sentry/utils': 7.120.4
 
-  '@sentry/opentelemetry@10.71.0(@opentelemetry/api@1.9.1)(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.10.0(@opentelemetry/api@1.9.1))':
+  '@sentry/opentelemetry@10.73.0(@opentelemetry/api@1.9.1)(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.10.0(@opentelemetry/api@1.9.1))':
     dependencies:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/core': 2.10.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/sdk-trace-base': 2.10.0(@opentelemetry/api@1.9.1)
       '@sentry/conventions': 0.16.0
-      '@sentry/core': 10.71.0
+      '@sentry/core': 10.73.0
 
-  '@sentry/react@10.71.0(react@19.2.8)':
+  '@sentry/react@10.73.0(react@19.2.8)':
     dependencies:
-      '@sentry/browser': 10.71.0
+      '@sentry/browser': 10.73.0
       '@sentry/conventions': 0.16.0
-      '@sentry/core': 10.71.0
+      '@sentry/core': 10.73.0
       react: 19.2.8
 
-  '@sentry/replay-canvas@10.71.0':
+  '@sentry/replay-canvas@10.73.0':
     dependencies:
-      '@sentry/core': 10.71.0
-      '@sentry/replay': 10.71.0
+      '@sentry/core': 10.73.0
+      '@sentry/replay': 10.73.0
 
-  '@sentry/replay@10.71.0':
+  '@sentry/replay@10.73.0':
     dependencies:
-      '@sentry/browser-utils': 10.71.0
-      '@sentry/core': 10.71.0
+      '@sentry/browser-utils': 10.73.0
+      '@sentry/core': 10.73.0
 
-  '@sentry/server-utils@10.71.0(supports-color@8.1.1)':
+  '@sentry/server-utils@10.73.0':
     dependencies:
-      '@apm-js-collab/code-transformer-bundler-plugins': 0.7.4
-      '@apm-js-collab/tracing-hooks': 0.13.0(supports-color@8.1.1)
       '@sentry/conventions': 0.16.0
-      '@sentry/core': 10.71.0
-      meriyah: 6.1.4
-    transitivePeerDependencies:
-      - supports-color
+      '@sentry/core': 10.73.0
 
   '@sentry/types@7.120.4': {}
 
@@ -7002,10 +6947,10 @@ snapshots:
     dependencies:
       '@sentry/types': 7.120.4
 
-  '@sentry/vercel-edge@10.71.0':
+  '@sentry/vercel-edge@10.73.0':
     dependencies:
       '@opentelemetry/api': 1.9.1
-      '@sentry/core': 10.71.0
+      '@sentry/core': 10.73.0
 
   '@sentry/webpack-plugin@5.4.0(rollup@4.62.4)(supports-color@8.1.1)(webpack@5.109.2(esbuild@0.28.1)(lightningcss@1.33.0)(postcss@8.5.23))':
     dependencies:
@@ -7126,17 +7071,17 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  '@t3-oss/env-core@0.13.11(typescript@7.0.2)(zod@4.4.3)':
+  '@t3-oss/env-core@0.13.11(typescript@7.0.2)(zod@4.5.4)':
     optionalDependencies:
       typescript: 7.0.2
-      zod: 4.4.3
+      zod: 4.5.4
 
-  '@t3-oss/env-nextjs@0.13.11(typescript@7.0.2)(zod@4.4.3)':
+  '@t3-oss/env-nextjs@0.13.11(typescript@7.0.2)(zod@4.5.4)':
     dependencies:
-      '@t3-oss/env-core': 0.13.11(typescript@7.0.2)(zod@4.4.3)
+      '@t3-oss/env-core': 0.13.11(typescript@7.0.2)(zod@4.5.4)
     optionalDependencies:
       typescript: 7.0.2
-      zod: 4.4.3
+      zod: 4.5.4
 
   '@tailwindcss/node@4.3.3':
     dependencies:
@@ -7674,8 +7619,6 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  astring@1.9.0: {}
-
   async@2.6.4:
     dependencies:
       lodash: 4.18.1
@@ -7721,29 +7664,29 @@ snapshots:
 
   basic-ftp@5.3.1: {}
 
-  better-auth@1.7.2(@opentelemetry/api@1.9.1)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(kysely@0.29.5)(postgres@3.4.9))(next@16.3.3(@babel/core@7.29.7(supports-color@8.1.1))(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@4.1.11(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@30.0.1(@noble/hashes@2.3.0))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.12))):
+  better-auth@1.7.2(@opentelemetry/api@1.9.1)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(kysely@0.29.5)(postgres@3.4.9))(next@16.3.4(@babel/core@7.29.7(supports-color@8.1.1))(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@4.1.11(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@30.0.1(@noble/hashes@2.3.0))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.12))):
     dependencies:
-      '@better-auth/core': 1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.4.3))(jose@6.2.8)(kysely@0.29.5)(nanostores@1.4.2)
-      '@better-auth/drizzle-adapter': 1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.4.3))(jose@6.2.8)(kysely@0.29.5)(nanostores@1.4.2))(@better-auth/utils@0.4.2)(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(kysely@0.29.5)(postgres@3.4.9))
-      '@better-auth/kysely-adapter': 1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.4.3))(jose@6.2.8)(kysely@0.29.5)(nanostores@1.4.2))(@better-auth/utils@0.4.2)(kysely@0.29.5)
-      '@better-auth/memory-adapter': 1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.4.3))(jose@6.2.8)(kysely@0.29.5)(nanostores@1.4.2))(@better-auth/utils@0.4.2)
-      '@better-auth/mongo-adapter': 1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.4.3))(jose@6.2.8)(kysely@0.29.5)(nanostores@1.4.2))(@better-auth/utils@0.4.2)
-      '@better-auth/prisma-adapter': 1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.4.3))(jose@6.2.8)(kysely@0.29.5)(nanostores@1.4.2))(@better-auth/utils@0.4.2)
-      '@better-auth/telemetry': 1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.4.3))(jose@6.2.8)(kysely@0.29.5)(nanostores@1.4.2))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)
+      '@better-auth/core': 1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.8)(kysely@0.29.5)(nanostores@1.4.2)
+      '@better-auth/drizzle-adapter': 1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.8)(kysely@0.29.5)(nanostores@1.4.2))(@better-auth/utils@0.4.2)(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(kysely@0.29.5)(postgres@3.4.9))
+      '@better-auth/kysely-adapter': 1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.8)(kysely@0.29.5)(nanostores@1.4.2))(@better-auth/utils@0.4.2)(kysely@0.29.5)
+      '@better-auth/memory-adapter': 1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.8)(kysely@0.29.5)(nanostores@1.4.2))(@better-auth/utils@0.4.2)
+      '@better-auth/mongo-adapter': 1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.8)(kysely@0.29.5)(nanostores@1.4.2))(@better-auth/utils@0.4.2)
+      '@better-auth/prisma-adapter': 1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.8)(kysely@0.29.5)(nanostores@1.4.2))(@better-auth/utils@0.4.2)
+      '@better-auth/telemetry': 1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.8)(kysely@0.29.5)(nanostores@1.4.2))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)
       '@better-auth/utils': 0.4.2
       '@better-fetch/fetch': 1.3.1
       '@noble/ciphers': 2.3.0
       '@noble/hashes': 2.3.0
-      better-call: 1.4.0(zod@4.4.3)
+      better-call: 1.4.0(zod@4.5.4)
       defu: 6.1.7
       jose: 6.2.8
       kysely: 0.29.5
       nanostores: 1.4.2
-      zod: 4.4.3
+      zod: 4.5.4
     optionalDependencies:
       drizzle-kit: 0.31.10
       drizzle-orm: 0.45.2(@opentelemetry/api@1.9.1)(kysely@0.29.5)(postgres@3.4.9)
-      next: 16.3.3(@babel/core@7.29.7(supports-color@8.1.1))(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      next: 16.3.4(@babel/core@7.29.7(supports-color@8.1.1))(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
       vitest: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@30.0.1(@noble/hashes@2.3.0))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.12))
@@ -7751,14 +7694,14 @@ snapshots:
       - '@cloudflare/workers-types'
       - '@opentelemetry/api'
 
-  better-call@1.4.0(zod@4.4.3):
+  better-call@1.4.0(zod@4.5.4):
     dependencies:
       '@better-auth/utils': 0.5.0
       '@better-fetch/fetch': 1.3.1
       rou3: 0.9.2
       set-cookie-parser: 3.1.2
     optionalDependencies:
-      zod: 4.4.3
+      zod: 4.5.4
 
   bidi-js@1.0.3:
     dependencies:
@@ -8198,10 +8141,6 @@ snapshots:
       estraverse: 4.3.0
 
   esprima@4.0.1: {}
-
-  esquery@1.7.0:
-    dependencies:
-      estraverse: 5.3.0
 
   esrecurse@4.3.0:
     dependencies:
@@ -8869,7 +8808,7 @@ snapshots:
 
   lru-cache@7.18.3: {}
 
-  lucide-react@1.34.0(react@19.2.8):
+  lucide-react@1.40.0(react@19.2.8):
     dependencies:
       react: 19.2.8
 
@@ -8898,8 +8837,6 @@ snapshots:
   merge-descriptors@2.0.0: {}
 
   merge-stream@2.0.0: {}
-
-  meriyah@6.1.4: {}
 
   metaviewport-parser@0.3.0: {}
 
@@ -9004,9 +8941,9 @@ snapshots:
 
   netmask@2.1.1: {}
 
-  next@16.3.3(@babel/core@7.29.7(supports-color@8.1.1))(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8):
+  next@16.3.4(@babel/core@7.29.7(supports-color@8.1.1))(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8):
     dependencies:
-      '@next/env': 16.3.3
+      '@next/env': 16.3.4
       '@swc/helpers': 0.5.23
       baseline-browser-mapping: 2.11.15
       caniuse-lite: 1.0.30001809
@@ -9015,14 +8952,14 @@ snapshots:
       react-dom: 19.2.8(react@19.2.8)
       styled-jsx: 5.1.6(@babel/core@7.29.7(supports-color@8.1.1))(react@19.2.8)
     optionalDependencies:
-      '@next/swc-darwin-arm64': 16.3.3
-      '@next/swc-darwin-x64': 16.3.3
-      '@next/swc-linux-arm64-gnu': 16.3.3
-      '@next/swc-linux-arm64-musl': 16.3.3
-      '@next/swc-linux-x64-gnu': 16.3.3
-      '@next/swc-linux-x64-musl': 16.3.3
-      '@next/swc-win32-arm64-msvc': 16.3.3
-      '@next/swc-win32-x64-msvc': 16.3.3
+      '@next/swc-darwin-arm64': 16.3.4
+      '@next/swc-darwin-x64': 16.3.4
+      '@next/swc-linux-arm64-gnu': 16.3.4
+      '@next/swc-linux-arm64-musl': 16.3.4
+      '@next/swc-linux-x64-gnu': 16.3.4
+      '@next/swc-linux-x64-musl': 16.3.4
+      '@next/swc-win32-arm64-msvc': 16.3.4
+      '@next/swc-win32-x64-msvc': 16.3.4
       '@opentelemetry/api': 1.9.1
       sharp: 0.35.4(@types/node@24.13.3)
     transitivePeerDependencies:
@@ -9414,7 +9351,7 @@ snapshots:
 
   require-main-filename@2.0.0: {}
 
-  resend@6.24.0:
+  resend@6.26.0:
     dependencies:
       postal-mime: 2.7.5
       standardwebhooks: 1.0.0
@@ -9531,8 +9468,6 @@ snapshots:
       ajv: 8.20.0
       ajv-formats: 2.1.1(ajv@8.20.0)
       ajv-keywords: 5.1.0(ajv@8.20.0)
-
-  semifies@1.0.0: {}
 
   semver@5.7.2: {}
 
@@ -10300,4 +10235,4 @@ snapshots:
 
   zod@3.25.76: {}
 
-  zod@4.4.3: {}
+  zod@4.5.4: {}
