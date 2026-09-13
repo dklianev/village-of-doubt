@@ -239,7 +239,8 @@ test("CI isolates visual baselines from the serial core verification path", () =
   );
   const visualBlock = ci.slice(visualStart, ci.indexOf("  containers:", visualStart));
   assert.match(visualBlock, /runs-on: windows-2025/);
-  assert.match(visualBlock, /- suite: app/);
+  assert.match(visualBlock, /- suite: app-1/);
+  assert.match(visualBlock, /- suite: app-4/);
   assert.match(visualBlock, /- suite: play-0/);
   assert.match(visualBlock, /- suite: play-3/);
   assert.match(visualBlock, /- suite: ui/);
@@ -249,6 +250,36 @@ test("CI isolates visual baselines from the serial core verification path", () =
   assert.match(visualBlock, /pnpm visual:ui/);
   assert.match(visualBlock, /pnpm visual(?:\s|$)/m);
   assert.doesNotMatch(visualBlock, /apt-get|Install visual fonts/);
+});
+
+test("CI partitions app visuals into four native shards while preserving play and UI jobs", () => {
+  const ci = read(".github/workflows/ci.yml");
+  const visualStart = ci.indexOf("  visual:");
+  const visualBlock = ci.slice(visualStart, ci.indexOf("  containers:", visualStart));
+  const suites = [...visualBlock.matchAll(/^\s+- suite: (\S+)$/gm)].map((match) => match[1]);
+
+  assert.deepEqual(suites, ["app-1", "app-2", "app-3", "app-4", "play-0", "play-1", "play-2", "play-3", "ui"]);
+  for (let shard = 1; shard <= 4; shard += 1) {
+    assert.match(visualBlock, new RegExp(`- suite: app-${shard}\\r?\\n +shard: ${shard}/4(?:\\r?\\n|$)`));
+  }
+  for (let shard = 0; shard < 4; shard += 1) {
+    assert.match(visualBlock, new RegExp(`- suite: play-${shard}\\r?\\n +shardIndex: ${shard}(?:\\r?\\n|$)`));
+  }
+  assert.match(visualBlock, /if: startsWith\(matrix\.suite, 'app-'\)\r?\n +run: pnpm visual --shard=\$\{\{ matrix\.shard \}\}(?:\r?\n|$)/);
+  assert.match(visualBlock, /if: startsWith\(matrix\.suite, 'play-'\)\r?\n +run: pnpm visual:matrix\r?\n +env:\r?\n +M35_SHARD_INDEX: \$\{\{ matrix\.shardIndex \}\}\r?\n +M35_SHARD_TOTAL: 4/);
+  assert.match(visualBlock, /if: matrix\.suite == 'ui'\r?\n +run: pnpm visual:ui(?:\r?\n|$)/);
+  assert.match(visualBlock, /if: matrix\.suite != 'ui'/);
+  assert.match(visualBlock, /fail-fast: false/);
+  assert.match(visualBlock, /timeout-minutes: 50/);
+  assert.match(visualBlock, /name: visual-regression-results-\$\{\{ matrix\.suite \}\}/);
+
+  const packageJson = JSON.parse(read("package.json"));
+  assert.equal(packageJson.scripts.visual, "playwright test --config=playwright.config.ts --forbid-only --grep-invert @play-matrix");
+  const config = read("playwright.config.ts");
+  assert.match(config, /workers: 1,/);
+  assert.match(config, /retries: 1,/);
+  assert.match(config, /timeout: 45_000,/);
+  assert.match(config, /maxDiffPixelRatio: 0\.01,/);
 });
 
 test("release images wait for the cross-browser quality workflow", () => {

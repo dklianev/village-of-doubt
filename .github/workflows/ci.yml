@@ -146,7 +146,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - suite: app
+          - suite: app-1
+            shard: 1/4
+          - suite: app-2
+            shard: 2/4
+          - suite: app-3
+            shard: 3/4
+          - suite: app-4
+            shard: 4/4
           - suite: play-0
             shardIndex: 0
           - suite: play-1
@@ -183,8 +190,8 @@ jobs:
           pnpm --filter @werewolf/ui build
 
       - name: Verify app visual baselines
-        if: matrix.suite == 'app'
-        run: pnpm visual
+        if: startsWith(matrix.suite, 'app-')
+        run: pnpm visual --shard=${{ matrix.shard }}
 
       - name: Verify exhaustive play matrix shard
         if: startsWith(matrix.suite, 'play-')
