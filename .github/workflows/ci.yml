@@ -85,6 +85,9 @@ jobs:
       - name: Verify regression contracts
         run: pnpm regression
 
+      - name: Test agent guidance checker
+        run: node --test scripts/check-agent-guidance.test.mjs
+
       - name: Verify release and operations contracts
         run: pnpm release:manifest:test && pnpm operations:test
 

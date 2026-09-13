@@ -23,6 +23,7 @@
     "ui:dev": "pnpm --filter @werewolf/ui storybook",
     "ui:build": "pnpm --filter @werewolf/ui build",
     "ui:storybook:build": "pnpm --filter @werewolf/ui build-storybook",
+    "check:agents": "node --test scripts/check-agent-guidance.test.mjs && node scripts/check-agent-guidance.mjs",
     "check:dict": "tsx scripts/check-dictionary.mjs",
     "visual:ui": "playwright test --config=playwright.ui.config.ts",
     "audit:css": "node scripts/audit-globals-css.mjs",

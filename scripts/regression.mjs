@@ -7,6 +7,7 @@ const gameArtDir = path.join(root, "apps/web/public/game-art");
 const sourceArtDir = path.join(root, "assets/game-art-source");
 
 const checks = [
+  ["agent guidance contracts", checkAgentGuidanceContracts],
   ["game art WebP pairing", checkGameArtPairing],
   ["CSS image-set delivery", checkCssImageSet],
   ["landing layout contracts", checkLandingLayoutContracts],
@@ -130,6 +131,18 @@ function checkGameArtPairing() {
   ]) {
     assert(existsSync(path.join(gameArtDir, critical)), `Missing critical lightweight asset ${critical}.`);
   }
+}
+
+function checkAgentGuidanceContracts() {
+  const result = spawnSync(process.execPath, [path.join(root, "scripts/check-agent-guidance.mjs")], {
+    cwd: root,
+    encoding: "utf8",
+  });
+
+  assert(
+    result.status === 0,
+    [result.stdout, result.stderr].filter(Boolean).join("\n") || "Agent guidance validation failed.",
+  );
 }
 
 function checkCssImageSet() {

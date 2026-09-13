@@ -28,11 +28,10 @@ audit-v3/**/*.jpeg
 audit-v3/**/*.webp
 audit-v3/**/metrics.json
 
-# Agent automation (Claude Code, Codex CLI, etc.) — kept local, never tracked.
-AGENTS.md
+# Local agent configuration. Project guidance in AGENTS.md and agents-shared/
+# is versioned so every supported coding agent receives the same contracts.
 CLAUDE.md
 .mcp.json
-agents-shared/
 .githooks/
 scripts/agent-hooks/
 scripts/setup-githooks.mjs
