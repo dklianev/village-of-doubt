@@ -4206,7 +4206,8 @@
     height: 5px;
   }
 
-  :global(.create-customization .role-carousel[data-layout="workspace"] .role-tile-large) {
+  :global(.create-customization .role-carousel[data-layout="workspace"] .role-tile-large),
+  :global(.create-customization .role-carousel[data-layout="workspace"][data-readonly="true"] .role-tile-large) {
     position: relative;
     display: grid;
     grid-template-columns: minmax(0, 1fr) 44px;

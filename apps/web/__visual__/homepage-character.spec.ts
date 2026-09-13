@@ -182,22 +182,33 @@ for (const theme of ["light", "dark"] as const) {
           await art.scrollIntoViewIfNeeded();
           await art.evaluate((element) => (element as HTMLImageElement).decode());
           await expect(art).toHaveAttribute("alt", "");
-          const source = await art.evaluate((element) => {
+          const source = await art.evaluate(async (element) => {
             const image = element as HTMLImageElement;
-            return {
+            // naturalWidth/Height are density-corrected integers, not the response's pixels.
+            const response = await fetch(image.currentSrc, {
+              headers: { Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*;q=0.8,*/*;q=0.5" },
+            });
+            if (!response.ok) throw new Error(`Image ${response.status}: ${image.currentSrc}`);
+            const bitmap = await createImageBitmap(await response.blob());
+            const result = {
               url: image.currentSrc,
-              width: image.naturalWidth,
-              height: image.naturalHeight,
+              width: bitmap.width,
+              height: bitmap.height,
               targetWidth: image.getBoundingClientRect().width * devicePixelRatio,
             };
+            bitmap.close();
+            return result;
           });
           const selected = new URL(source.url);
           expect(selected.pathname).toBe("/_next/image");
           expect(selected.searchParams.get("url")).toBe(`/game-art/homepage/choice-${family}-${theme}-${version}.webp`);
           expect(selected.searchParams.get("q")).toBe("85");
           expect(Number(selected.searchParams.get("w"))).toBeGreaterThanOrEqual(source.targetWidth);
-          expect(source.width).toBeGreaterThan(0);
-          expect(source.width / source.height).toBeCloseTo(3 / 2, 2);
+          const nativeHeight = family === "mafia" ? 1022 : 1024;
+          await expect(art).toHaveAttribute("width", "1536");
+          await expect(art).toHaveAttribute("height", String(nativeHeight));
+          expect(source.width).toBe(Math.min(Number(selected.searchParams.get("w")), 1536));
+          expect(source.height).toBe(Math.round(source.width * nativeHeight / 1536));
           await expectChoiceContrast(page.locator(`.game-choice-${family}`), theme);
         }
         await page.locator(".game-choice-grid").screenshot({

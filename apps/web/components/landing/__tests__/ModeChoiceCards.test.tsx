@@ -1,4 +1,6 @@
+import { resolve } from "node:path";
 import { render, screen } from "@testing-library/react";
+import sharp from "sharp";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ModeChoiceCards, type ModeChoiceGame } from "@/components/landing/ModeChoiceCards";
 
@@ -93,13 +95,17 @@ describe("ModeChoiceCards", () => {
       version: "v5",
       fetchPriority: "low",
     },
-  ] as const)("uses the full $game.id master for every responsive candidate without eagerly fetching the hidden theme", ({ game, version, fetchPriority }) => {
+  ] as const)("uses the full $game.id master for every responsive candidate without eagerly fetching the hidden theme", async ({ game, version, fetchPriority }) => {
     useSession.mockReturnValue({ data: null, isPending: false });
 
     const { container } = render(<ModeChoiceCards games={[game]} initialSession={null} />);
     for (const theme of ["dark", "light"]) {
       const picture = container.querySelector(`.game-choice-art--${theme}`);
       const image = picture?.querySelector("img");
+      const metadata = await sharp(resolve(process.cwd(), `public/game-art/homepage/choice-${game.id}-${theme}-${version}.webp`)).metadata();
+      expect(metadata).toMatchObject({ width: 1536, height: game.id === "mafia" ? 1022 : 1024 });
+      expect(image).toHaveAttribute("width", String(metadata.width));
+      expect(image).toHaveAttribute("height", String(metadata.height));
       expect(image).toHaveAttribute("fetchpriority", fetchPriority);
       expect(image).toHaveAttribute("loading", "lazy");
       expect(image).toHaveAttribute("decoding", "async");

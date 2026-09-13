@@ -52,6 +52,9 @@ for (const viewport of [
     const gallery = dialog.locator('.role-carousel[data-layout="workspace"][data-readonly="true"]');
     const cards = gallery.locator(".role-tile-large");
     await expect(cards.first()).toBeVisible();
+    await expect(cards.first()).toHaveCSS("aspect-ratio", "auto");
+    await expect(cards.first().locator("picture")).toHaveCSS("width", "64px");
+    await expect(cards.first().locator("picture")).toHaveCSS("height", "88px");
 
     const cardWidth = await cards.first().evaluate((element) => element.getBoundingClientRect().width);
     const galleryGeometry = await gallery.evaluate((element) => ({
@@ -74,8 +77,9 @@ for (const viewport of [
       expect(rect.right).toBeLessThanOrEqual(viewport.width);
       if (index > 0) expect(rect.top).toBeGreaterThanOrEqual(rectangles[index - 1]!.bottom);
     }
-    await cards.last().scrollIntoViewIfNeeded();
+    await cards.last().evaluate((element) => element.scrollIntoView({ block: "end", inline: "nearest" }));
     await expect(cards.last()).toBeInViewport({ ratio: 1 });
+    await expect(cards.last().locator(".role-tile-caption")).toBeInViewport({ ratio: 1 });
     expect(await page.evaluate(() => window.scrollY)).toBe(pageScrollBefore);
   });
 }
@@ -249,6 +253,7 @@ for (const family of ["werewolves", "mafia"] as const) {
               dock: rect(document.querySelector('[data-play-command-surface][data-expanded="false"]')),
               personal: rect(document.querySelector(".play-personal-area")),
               stage: rect(document.querySelector(".play-stage")),
+              counts: rect(document.querySelector("[data-table-core] > span:last-child")),
               seats: [...document.querySelectorAll("[data-seat-token]")].map((element) => rect(element)!),
             };
           });
@@ -260,8 +265,11 @@ for (const family of ["werewolves", "mafia"] as const) {
           expect(geometry.dock).not.toBeNull();
           expect(geometry.personal).not.toBeNull();
           expect(geometry.stage).not.toBeNull();
+          expect(geometry.counts).not.toBeNull();
           expect(geometry.personal!.y).toBeGreaterThanOrEqual(geometry.stage!.y + geometry.stage!.height);
           expect(geometry.seats).toHaveLength(8);
+          expect(geometry.counts!.y + geometry.counts!.height + 4)
+            .toBeLessThanOrEqual(Math.min(...geometry.seats.map((box) => box.y)));
           for (const box of geometry.seats) {
             expect(box.width).toBeGreaterThanOrEqual(44);
             expect(box.height).toBeGreaterThanOrEqual(44);

@@ -23,10 +23,12 @@ const GAME_CHOICE_ART = {
   werewolf: {
     dark: "choice-werewolf-dark-v7",
     light: "choice-werewolf-light-v7",
+    height: 1024,
   },
   mafia: {
     dark: "choice-mafia-dark-v5",
     light: "choice-mafia-light-v5",
+    height: 1022,
   },
 } as const;
 
@@ -62,7 +64,7 @@ export function ModeChoiceCards({ games, initialSession }: { games: readonly Mod
                   quality: 85,
                   src: `/game-art/homepage/${art[theme]}.webp`,
                   width: 1536,
-                  height: 1024,
+                  height: art.height,
                   loading: "lazy",
                   fetchPriority: prioritizeArt ? "high" : "low",
                 });

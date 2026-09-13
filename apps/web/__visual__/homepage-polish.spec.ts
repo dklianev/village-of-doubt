@@ -2,6 +2,8 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "playwright/test";
 import sharp from "sharp";
 
+test.use({ trace: "retain-on-failure" });
+
 async function expectHeroContrast(page: Page) {
   const selector = ".landing-hero-card > .section-kicker, .landing-title, .landing-hero-copy";
   const lines = await page.locator(selector).evaluateAll((elements) => elements.flatMap((element) => {
