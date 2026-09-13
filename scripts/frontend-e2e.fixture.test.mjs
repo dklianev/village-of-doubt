@@ -23,6 +23,27 @@ test("the anonymous join check is labelled as an auth-gate redirect", () => {
   assert.match(source, /assertNoHorizontalOverflow\(page, "anonymous join"\)/);
 });
 
+test("anonymous entry checks the current join sign-in copy and preserves the invitation", async () => {
+  const events = [];
+  const page = { waitForURL: async (url) => events.push(url) };
+  await loadFunction("testAnonymousEntry", {
+    viewports: { desktop: {} },
+    newPage: async () => ({
+      page,
+      watcher: { assertClean: async () => events.push("clean") },
+      close: async () => events.push("closed"),
+    }),
+    goto: async (_page, path) => events.push(path),
+    expectText: async (_page, text) => events.push(text),
+    expectNoText: async (_page, text) => events.push(`absent:${text}`),
+    assertNoHorizontalOverflow: async () => events.push("layout"),
+  })();
+  assert.deepEqual(events, [
+    "/mafia/join/ABCD12", "**/sign-in?redirect=%2Fmafia%2Fjoin%2FABCD12", "Вход в играта",
+    "absent:без регистрация", "layout", "clean", "closed",
+  ]);
+});
+
 function functionSource(name) {
   const definition = source.match(new RegExp(`(?:async )?function ${name}\\([^\\n]*\\) \\{[\\s\\S]*?\\n\\}`))?.[0];
   assert.ok(definition, `${name} should be defined`);
@@ -32,6 +53,190 @@ function functionSource(name) {
 function loadFunction(name, globals = {}) {
   return runInNewContext(`${functionSource(name)}\n${name}`, { URL, ...globals });
 }
+
+function cssAssetFixture({ status = () => 200, body = () => Buffer.from("asset") } = {}) {
+  const origin = "http://127.0.0.1:3401";
+  const style = (properties) => Object.assign(Object.keys(properties), {
+    getPropertyValue: (property) => properties[property],
+  });
+  const imported = {
+    href: `${origin}/styles/imported/theme.css`,
+    cssRules: [{ cssRules: [{ style: style({ src: 'url("./font.woff2") format("woff2")' }) }] }],
+  };
+  const sheet = {
+    href: `${origin}/_next/static/chunks/app.css`,
+    cssRules: [
+      { style: style({ src: 'local("Fixture"), url("../media/font.woff2") format("woff2")' }) },
+      { styleSheet: imported },
+      { cssRules: [{
+        style: style({ "background-image": 'url("../media/scene.webp")' }),
+        cssRules: [{ style: style({ "mask-image": "url('../media/mask.svg')" }) }],
+      }] },
+      { style: style({ "--art": 'url("../media/a b(1).webp")', "background-image": 'url("../media/scene.webp")' }) },
+    ],
+  };
+  const document = {
+    baseURI: `${origin}/inline/`,
+    styleSheets: [sheet, { href: null, cssRules: [{ style: style({
+      "background-image": 'url("./inline.webp")',
+      "mask-image": 'url("data:image/svg+xml;base64,PHN2Zz4="), url("#mask")',
+    }) }] }],
+    querySelectorAll: () => [{}],
+  };
+  const requested = [];
+  const check = loadFunction("assertCssBackgroundImagesLoaded", {
+    Buffer,
+    document,
+    window: {
+      location: new URL(`${origin}/mafia/join/ABCD12`),
+      getComputedStyle: () => ({
+        backgroundImage: `url("${origin}/_next/static/media/scene.webp"), url("http://127.0.0.1:34010/external.webp")`,
+        maskImage: "url('./computed-mask.svg')",
+        webkitMaskImage: `url("${origin}/inline/computed-mask.svg")`,
+      }),
+    },
+  });
+  const page = {
+    evaluate: async (callback) => callback(),
+    request: { get: async (url) => {
+      requested.push(url);
+      return { ok: () => status(url) < 400, status: () => status(url), body: async () => body(url) };
+    } },
+  };
+  return { check: () => check(page, "fixture"), requested, document };
+}
+
+test("CSS assets use stylesheet/import bases, document base for inline styles and computed image URLs", async () => {
+  const fixture = cssAssetFixture();
+  await fixture.check();
+  assert.deepEqual(fixture.requested.map((url) => new URL(url).pathname), [
+    "/_next/static/media/font.woff2", "/styles/imported/font.woff2",
+    "/_next/static/media/scene.webp", "/_next/static/media/mask.svg", "/_next/static/media/a%20b(1).webp",
+    "/inline/inline.webp", "/inline/computed-mask.svg",
+  ]);
+});
+
+for (const failure of ["404", "empty", "body-error"]) {
+test(`CSS assets still reject genuinely broken image and font responses (${failure})`, async () => {
+  const fixture = cssAssetFixture({
+    status: () => failure === "404" ? 404 : 200,
+    body: () => {
+      if (failure === "body-error") throw new Error("body unavailable");
+      return failure === "empty" ? Buffer.alloc(0) : Buffer.from("asset");
+    },
+  });
+  await assert.rejects(fixture.check(), (error) => {
+    assert.match(error.message, /broken CSS image\/font assets/);
+    assert.match(error.message, /\/_next\/static\/media\/font\.woff2/);
+    assert.match(error.message, /\/styles\/imported\/font\.woff2/);
+    assert.match(error.message, /\/_next\/static\/media\/scene\.webp/);
+    return true;
+  });
+});
+}
+
+test("CSSOM skips inaccessible cross-origin sheets but propagates unexpected traversal errors", async () => {
+  for (const name of ["SecurityError", "TypeError"]) {
+    const fixture = cssAssetFixture();
+    fixture.document.styleSheets.unshift({ get cssRules() {
+      throw Object.assign(new Error("CSSOM unavailable"), { name });
+    } });
+    if (name === "SecurityError") {
+      await fixture.check();
+      assert.ok(fixture.requested.some((url) => url.endsWith("font.woff2")));
+    } else {
+      await assert.rejects(fixture.check(), /CSSOM unavailable/);
+    }
+  }
+});
+
+test("the Sentry mock handles only the exact configured synthetic envelope transport", async () => {
+  const baseUrl = "http://127.0.0.1:3401";
+  const routes = [];
+  const context = { route: async (matches, handler) => routes.push({ matches, handler }) };
+  for (const dsn of [undefined, "", "https://public@sentry.example.test/2", "https://public@example.invalid/1"]) {
+    await loadFunction("mockSyntheticSentry", {
+      process: { env: { NEXT_PUBLIC_SENTRY_DSN: dsn } }, baseUrl,
+    })(context);
+  }
+  assert.equal(routes.length, 0);
+  await loadFunction("mockSyntheticSentry", {
+    process: { env: { NEXT_PUBLIC_SENTRY_DSN: "https://public@example.invalid/2" } }, baseUrl,
+  })(context);
+  assert.equal(routes.length, 1);
+  const { matches, handler } = routes[0];
+  const envelope = "https://example.invalid/api/2/envelope/?sentry_version=7&sentry_key=public&sentry_client=fixture";
+  assert.equal(matches(new URL(envelope)), true);
+  for (const url of [
+    envelope.replace("https:", "http:"), envelope.replace("example.invalid", "example.invalid.other.test"),
+    envelope.replace("/2/", "/1/"), envelope.replace("/envelope/", "/other/"),
+    envelope.replace("key=public", "key=other"), envelope.replace("version=7", "version=8"),
+    "https://example.invalid/api/2/envelope/", `${baseUrl}/api/game-token`,
+    `${baseUrl}/api/auth/sign-in/email`, `${baseUrl}/api/auth/get-session`,
+    `${baseUrl}/api/2/envelope/?sentry_version=7&sentry_key=public`,
+    "https://example.invalid/api/auth/sign-in/email?sentry_version=7&sentry_key=public",
+  ]) assert.equal(matches(new URL(url)), false, url);
+
+  for (const method of ["POST", "OPTIONS", "GET", "DELETE"]) {
+    let fulfilled = false;
+    let continued = false;
+    await handler({
+      request: () => ({ method: () => method }),
+      fallback: async () => { continued = true; },
+      fulfill: async (response) => {
+        fulfilled = true;
+        assert.equal(response.status, 200);
+        assert.deepEqual(Object.keys(response.json), []);
+        assert.equal(response.headers["access-control-allow-origin"], baseUrl);
+      },
+    });
+    assert.equal(fulfilled, method === "POST" || method === "OPTIONS");
+    assert.equal(continued, !fulfilled);
+  }
+});
+
+test("all single, retry and six-player contexts install the synthetic transport before opening a page", async () => {
+  for (const scenario of ["newPage", "testCreateTokenRetry", "testSixClientGameStart"]) {
+    const contexts = [];
+    const stop = new Error("fixture setup complete");
+    const run = loadFunction(scenario, {
+      activeBrowser: { newContext: async () => {
+        const context = {
+          mocked: false, closed: false,
+          addInitScript: async () => {},
+          newPage: async () => {
+            assert.equal(context.mocked, true);
+            if (scenario !== "testSixClientGameStart") throw stop;
+            return {
+              getByLabel: () => ({ waitFor: async () => {} }),
+              getByRole: () => ({ click: async () => {} }),
+              getByTestId: () => ({}), waitForURL: async () => {}, waitForFunction: async () => {},
+            };
+          },
+          pages: () => [],
+          close: async () => { context.closed = true; },
+        };
+        contexts.push(context);
+        return context;
+      } },
+      mockSyntheticSentry: async (context) => { context.mocked = true; },
+      baseUrl: "http://127.0.0.1:3401", wsUrl: "ws://127.0.0.1:3568",
+      viewports: { desktop: {}, mobile: {} },
+      authFixture: { users: Array.from({ length: 6 }, (_, id) => ({ id })) },
+      signInBrowserContext: async (context) => assert.equal(context.mocked, true),
+      installGameSocketProbe: () => {},
+      watchPage: () => ({}),
+      createSixPlayerRoom: async () => new URL("http://127.0.0.1:3401/play/FIXTUR?players=6"),
+      goto: async () => {}, expectText: async () => {}, waitForVisibleText: async () => {},
+      assertNoHorizontalOverflow: async () => {},
+      assertSixPlayerRoster: async () => { throw stop; },
+    });
+    await assert.rejects(run("werewolves"), (error) => error === stop);
+    assert.equal(contexts.length, scenario === "testSixClientGameStart" ? 6 : 1);
+    assert.ok(contexts.every((context) => context.mocked));
+    if (scenario !== "newPage") assert.ok(contexts.every((context) => context.closed));
+  }
+});
 
 for (const family of ["werewolves", "mafia"]) {
 test(`the host selects six players and submits the real ${family} create UI`, async () => {
@@ -344,4 +549,34 @@ test("expected mocked HTTP errors do not silence unrelated or repeated console e
   const normal = makeWatcher();
   normal.emit();
   await assert.rejects(normal.watcher.assertClean(), /console error/);
+});
+
+test("browser watchers retain real image/font failures and application errors, including Sentry errors", async () => {
+  const baseUrl = "http://127.0.0.1:3401";
+  const cases = [
+    ...["image", "font"].flatMap((type) => [
+      ["requestfailed", {
+        url: () => `${baseUrl}/_next/static/media/fixture.${type === "font" ? "woff2" : "webp"}`,
+        resourceType: () => type, failure: () => ({ errorText: "net::ERR_CONNECTION_RESET" }),
+      }, new RegExp(`${type} request failed`)],
+      ["response", {
+        url: () => `${baseUrl}/_next/static/media/fixture.${type === "font" ? "woff2" : "webp"}`,
+        request: () => ({ resourceType: () => type }), status: () => 404,
+      }, new RegExp(`${type} 404`)],
+    ]),
+    ["pageerror", new Error("Application exception"), /page error: Application exception/],
+    ["console", {
+      type: () => "error", text: () => "Sentry transport error: application failure", args: () => [],
+      location: () => ({ url: "https://example.invalid/api/2/envelope/?sentry_key=public&sentry_version=7" }),
+    }, /console error: Sentry transport error/],
+  ];
+  for (const [event, payload, expected] of cases) {
+    const handlers = {};
+    const watcher = loadFunction("watchPage", { baseUrl, describeConsoleArgument: async () => "" })(
+      { on: (name, handler) => { handlers[name] = handler; } }, "fixture",
+    );
+    handlers[event](payload);
+    assert.equal(watcher.failed, true);
+    await assert.rejects(watcher.assertClean(), expected);
+  }
 });

@@ -235,9 +235,15 @@ for (const viewport of VIEWPORTS) {
 
         if (viewport.name === "mobile") {
           const gallery = dialog.locator(".role-carousel");
-          const initialPosition = await gallery.evaluate((element) => element.scrollLeft);
-          await dialog.getByRole("button", { name: "Следващи роли" }).click();
-          await expect.poll(() => gallery.evaluate((element) => element.scrollLeft)).toBeGreaterThan(initialPosition);
+          const galleryGeometry = await gallery.evaluate((element) => ({
+            clientWidth: element.clientWidth,
+            scrollWidth: element.scrollWidth,
+          }));
+          expect(galleryGeometry.scrollWidth).toBeLessThanOrEqual(galleryGeometry.clientWidth + 1);
+          await expect(dialog.getByRole("button", { name: "Следващи роли" })).toHaveCount(0);
+          const lastRole = gallery.locator(".role-tile-large").last();
+          await lastRole.scrollIntoViewIfNeeded();
+          await expect(lastRole).toBeInViewport();
         }
       });
     }
@@ -390,30 +396,35 @@ test("@geometry mobile game over uses document scroll without nested story scrol
 
   const story = page.locator(".play-stage-takeover .post-game-story");
   const winner = page.locator(".play-stage-takeover .play-winner");
-  const timeline = story.locator("ol");
   await expect(story).toBeVisible();
-  const primaryColumn = page.locator(".play-primary-column");
   await expect(page.locator(".play-stage, .play-seat-slot")).toHaveCount(0);
   const takeover = page.locator(".play-stage-takeover");
-  const [storyGeometry, timelineGeometry, columnBox, takeoverBox, winnerBox, storyBox] = await Promise.all([
-    story.evaluate((element) => ({ clientHeight: element.clientHeight, scrollHeight: element.scrollHeight })),
-    timeline.evaluate((element) => ({ clientHeight: element.clientHeight, scrollHeight: element.scrollHeight })),
-    primaryColumn.boundingBox(),
-    takeover.boundingBox(),
-    winner.boundingBox(),
-    story.boundingBox(),
-  ]);
-  expect(storyGeometry.scrollHeight).toBeLessThanOrEqual(storyGeometry.clientHeight + 1);
-  expect(timelineGeometry.scrollHeight).toBeLessThanOrEqual(timelineGeometry.clientHeight + 1);
-  expect(columnBox).not.toBeNull();
-  expect(takeoverBox).not.toBeNull();
-  expect(winnerBox).not.toBeNull();
-  expect(storyBox).not.toBeNull();
-  expect(takeoverBox!.y - columnBox!.y).toBeLessThanOrEqual(48);
-  for (const panelBox of [winnerBox!, storyBox!]) {
-    expect(panelBox.x).toBeGreaterThanOrEqual(23);
-    expect(panelBox.x + panelBox.width).toBeLessThanOrEqual(367);
-  }
+  // Hydration can replace deferred content between separate element measurements.
+  await expect.poll(() => page.evaluate(() => {
+    const column = document.querySelector(".play-primary-column");
+    const stage = column?.querySelector(".play-stage-takeover");
+    const winnerPanel = stage?.querySelector(".play-winner");
+    const storyPanel = stage?.querySelector(".post-game-story");
+    const timeline = storyPanel?.querySelector("ol");
+    if (!column || !stage || !winnerPanel || !storyPanel || !timeline) return ["missing finale content"];
+
+    const violations: string[] = [];
+    for (const element of [column, stage, winnerPanel, storyPanel, timeline]) {
+      const rect = element.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0 || getComputedStyle(element).visibility !== "visible") {
+        violations.push(`hidden finale content: ${element.className}`);
+      }
+    }
+    for (const element of [storyPanel, timeline]) {
+      if (element.scrollHeight > element.clientHeight + 1) violations.push(`nested story scroll: ${element.className}`);
+    }
+    if (stage.getBoundingClientRect().y - column.getBoundingClientRect().y > 48) violations.push("finale top gap");
+    for (const panel of [winnerPanel, storyPanel]) {
+      const rect = panel.getBoundingClientRect();
+      if (rect.left < 23 || rect.right > 367) violations.push(`finale outside gutters: ${panel.className}`);
+    }
+    return violations;
+  })).toEqual([]);
 
   const winnerFrame = await winner.evaluate((element) => {
     const style = getComputedStyle(element, "::before");
@@ -593,6 +604,9 @@ for (const viewport of VIEWPORTS) {
         await waitForStablePlayStage(page);
         await hideNextDevIndicator(page);
       }
+      if (route.name.endsWith("-roles")) {
+        await materializeRolePortraits(page);
+      }
       await page.waitForTimeout(600);
       if (route.name.startsWith("play-")) {
         await hideNextDevIndicator(page);
@@ -744,6 +758,9 @@ async function waitForStablePlayStage(page: Page) {
     await expect(page.locator(".play-stage")).toHaveAttribute("data-layout-ready", "true", {
       timeout: 10_000,
     });
+  } else {
+    await expect(page.locator(".play-winner-actions")).toBeVisible();
+    await expect(page.locator(".post-game-story")).toBeVisible();
   }
 
   await page.waitForFunction(async () => {
@@ -753,8 +770,11 @@ async function waitForStablePlayStage(page: Page) {
       const takeover = document.querySelector<HTMLElement>(".play-stage-takeover");
       if (takeover) {
         const heading = takeover.querySelector("h1");
-        if (!heading) return "";
-        const rects = [takeover.getBoundingClientRect(), heading.getBoundingClientRect()];
+        const story = takeover.querySelector(".post-game-story");
+        const actions = takeover.querySelector(".play-winner-actions");
+        if (!heading || !story || !actions) return "";
+        const rects = [takeover, heading, story, actions].map((element) => element.getBoundingClientRect());
+        if (rects.some((rect) => rect.width <= 0 || rect.height <= 0)) return "";
         return rects.flatMap((rect) => [rect.x, rect.y, rect.width, rect.height].map(Math.round)).join(":");
       }
       const stage = document.querySelector<HTMLElement>(".play-stage");
@@ -789,6 +809,14 @@ async function waitForStablePlayStage(page: Page) {
     await nextFrame();
     return first === second && second === readSignature();
   }, undefined, { timeout: 10_000, polling: "raf" });
+}
+
+async function materializeRolePortraits(page: Page) {
+  for (const portrait of await page.locator(".role-codex-card img").all()) {
+    await portrait.scrollIntoViewIfNeeded();
+    await portrait.evaluate((image: HTMLImageElement) => image.decode());
+  }
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
 }
 
 async function materializeDeferredRulesContent(page: Page) {

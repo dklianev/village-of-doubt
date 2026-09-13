@@ -1,7 +1,7 @@
 "use client";
 
 import * as RDialog from "@radix-ui/react-dialog";
-import type { CSSProperties, ReactNode } from "react";
+import { useInsertionEffect, useRef, type CSSProperties, type ReactNode } from "react";
 
 export interface DialogProps {
   open: boolean;
@@ -101,13 +101,42 @@ const DIALOG_RUNTIME_CSS = `
 }
 `;
 
+function useDialogStyles() {
+  useInsertionEffect(() => {
+    if (document.getElementById("werewolf-ui-dialog-styles")) {
+      return;
+    }
+
+    // Portal children have separate Presence lifetimes; CSS must survive every exit.
+    const style = document.createElement("style");
+    style.id = "werewolf-ui-dialog-styles";
+    style.textContent = DIALOG_RUNTIME_CSS;
+    document.head.append(style);
+  }, []);
+}
+
 export function Dialog({ open, onOpenChange, title, description, children, footer }: DialogProps) {
+  useDialogStyles();
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+
   return (
     <RDialog.Root open={open} onOpenChange={onOpenChange}>
       <RDialog.Portal>
-        <style>{DIALOG_RUNTIME_CSS}</style>
         <RDialog.Overlay className="ds-dialog-overlay" />
-        <RDialog.Content className="ds-dialog" data-ds-dialog>
+        <RDialog.Content
+          className="ds-dialog"
+          data-ds-dialog
+          onOpenAutoFocus={() => {
+            // This controlled wrapper has an external opener, not a Radix Trigger.
+            const activeElement = document.activeElement;
+            returnFocusRef.current = activeElement instanceof HTMLElement ? activeElement : null;
+          }}
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            returnFocusRef.current?.focus({ preventScroll: true });
+            returnFocusRef.current = null;
+          }}
+        >
           <RDialog.Title
             style={{
               fontFamily: "var(--ds-font-display)",

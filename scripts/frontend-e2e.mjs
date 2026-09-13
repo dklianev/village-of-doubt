@@ -253,7 +253,7 @@ async function testAnonymousEntry() {
   try {
     await goto(page, "/mafia/join/ABCD12", "anonymous join");
     await page.waitForURL("**/sign-in?redirect=%2Fmafia%2Fjoin%2FABCD12");
-    await expectText(page, "Влез с кода");
+    await expectText(page, "Вход в играта");
     await expectNoText(page, "без регистрация");
     await assertNoHorizontalOverflow(page, "anonymous join");
     await watcher.assertClean();
@@ -373,6 +373,7 @@ async function testSixClientGameStart(family) {
     for (let index = 0; index < 6; index += 1) {
       const context = await activeBrowser.newContext({ viewport: index === 5 ? viewports.mobile : viewports.desktop });
       contexts.push(context);
+      await mockSyntheticSentry(context);
       await context.addInitScript(() => {
         window.localStorage.setItem("cookie-consent", "1");
         window.localStorage.setItem("welcome-modal-shown", "1");
@@ -587,6 +588,7 @@ async function testCreateTokenRetry() {
   };
 
   try {
+    await mockSyntheticSentry(context);
     await context.addInitScript(() => {
       window.localStorage.setItem("cookie-consent", "1");
       window.localStorage.setItem("welcome-modal-shown", "1");
@@ -778,8 +780,33 @@ function assertLocalTestRedis(value) {
   }
 }
 
+async function mockSyntheticSentry(context) {
+  // Only the CI fixture DSN is mocked; application errors still reach watchPage.
+  if (process.env.NEXT_PUBLIC_SENTRY_DSN !== "https://public@example.invalid/2") return;
+  await context.route(
+    (url) => url.origin === "https://example.invalid" && url.pathname === "/api/2/envelope/"
+      && url.searchParams.get("sentry_key") === "public" && url.searchParams.get("sentry_version") === "7",
+    async (route) => {
+      if (!["POST", "OPTIONS"].includes(route.request().method())) {
+        await route.fallback();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        json: {},
+        headers: {
+          "access-control-allow-origin": baseUrl,
+          "access-control-allow-methods": "POST, OPTIONS",
+          "access-control-allow-headers": "content-type, sentry-trace, baggage",
+        },
+      });
+    },
+  );
+}
+
 async function newPage(label, viewport, identity) {
   const context = await activeBrowser.newContext({ viewport });
+  await mockSyntheticSentry(context);
   await context.addInitScript(() => {
     window.localStorage.setItem("cookie-consent", "1");
     const reportConsoleError = console.error.bind(console);
@@ -873,7 +900,7 @@ function watchPage(page, label, { expectedHttpError } = {}) {
     }
     if (
       request.url().startsWith(baseUrl)
-      && ["document", "script", "stylesheet", "image"].includes(request.resourceType())
+      && ["document", "script", "stylesheet", "image", "font"].includes(request.resourceType())
     ) {
       issues.push(
         `${request.resourceType()} request failed: ${request.url()} (${errorText})`,
@@ -889,7 +916,7 @@ function watchPage(page, label, { expectedHttpError } = {}) {
       url.startsWith(baseUrl) &&
       status >= 400 &&
       !url.includes("favicon") &&
-      ["document", "script", "stylesheet", "image"].includes(resourceType)
+      ["document", "script", "stylesheet", "image", "font"].includes(resourceType)
     ) {
       issues.push(`${resourceType} ${status}: ${url}`);
     }
@@ -1212,46 +1239,62 @@ async function assertHtmlImagesLoaded(page, label) {
 async function assertCssBackgroundImagesLoaded(page, label) {
   const urls = await page.evaluate(() => {
     const found = new Set();
-    const collectUrls = (value) => {
-      for (const match of value.matchAll(/url\(["']?([^"')]+)["']?\)/g)) {
-        const raw = match[1];
-        if (!raw || raw.startsWith("data:")) {
+    const visitedSheets = new Set();
+    const collectUrls = (value, base) => {
+      for (const match of value.matchAll(/url\(\s*(?:"([^"]*)"|'([^']*)'|([^\s)]+))\s*\)/gi)) {
+        const raw = (match[1] ?? match[2] ?? match[3]).trim();
+        if (!raw || raw.startsWith("#")) {
           continue;
         }
-        found.add(new URL(raw, window.location.href).toString());
+        const url = new URL(raw, base);
+        if (["http:", "https:"].includes(url.protocol) && url.origin === window.location.origin) {
+          found.add(url.href);
+        }
       }
     };
 
-    const visitRules = (rules) => {
+    const visitRules = (rules, base) => {
       for (const rule of Array.from(rules)) {
-        if ("cssRules" in rule && rule.cssRules) {
-          visitRules(rule.cssRules);
-          continue;
+        if ("styleSheet" in rule && rule.styleSheet) {
+          visitSheet(rule.styleSheet, base);
         }
         if ("style" in rule && rule.style) {
-          collectUrls(rule.style.cssText);
+          for (const property of Array.from(rule.style)) {
+            collectUrls(rule.style.getPropertyValue(property), base);
+          }
+        }
+        if ("cssRules" in rule && rule.cssRules) {
+          visitRules(rule.cssRules, base);
         }
       }
+    };
+
+    const visitSheet = (sheet, base) => {
+      if (visitedSheets.has(sheet)) return;
+      visitedSheets.add(sheet);
+      let rules;
+      try {
+        rules = sheet.cssRules;
+      } catch (error) {
+        // CSSOM access is forbidden for cross-origin stylesheets without CORS.
+        if (error.name === "SecurityError") return;
+        throw error;
+      }
+      if (rules) visitRules(rules, sheet.href ? new URL(sheet.href, base).href : base);
     };
 
     for (const sheet of Array.from(document.styleSheets)) {
-      try {
-        if (sheet.cssRules) {
-          visitRules(sheet.cssRules);
-        }
-      } catch {
-        // Cross-origin stylesheets are intentionally skipped.
-      }
+      visitSheet(sheet, document.baseURI);
     }
 
     for (const element of Array.from(document.querySelectorAll("*"))) {
       const style = window.getComputedStyle(element);
-      collectUrls(style.backgroundImage);
-      collectUrls(style.maskImage);
-      collectUrls(style.webkitMaskImage);
+      collectUrls(style.backgroundImage, document.baseURI);
+      collectUrls(style.maskImage, document.baseURI);
+      collectUrls(style.webkitMaskImage, document.baseURI);
     }
 
-    return Array.from(found).filter((url) => url.startsWith(window.location.origin));
+    return Array.from(found);
   });
 
   const broken = [];
@@ -1264,7 +1307,7 @@ async function assertCssBackgroundImagesLoaded(page, label) {
   }
 
   if (broken.length > 0) {
-    throw new Error(`${label} has broken CSS image assets:\n${broken.join("\n")}`);
+    throw new Error(`${label} has broken CSS image/font assets:\n${broken.join("\n")}`);
   }
 }
 

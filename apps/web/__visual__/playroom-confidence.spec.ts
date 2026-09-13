@@ -12,7 +12,7 @@ async function openRoom(page: Page, query: string, mobile = true, theme = "dark"
   await page.evaluate(() => document.fonts.ready);
 }
 
-test("mobile command leaves a row of targets visible", async ({ page }) => {
+test("mobile command leaves a row of targets visible", async ({ page }, testInfo) => {
   await openRoom(page, "phase=night&family=mafia&players=10&role=commissioner&timer=90");
   await page.getByRole("button", { name: "Покажи личния ход" }).click();
   const dock = await page.locator(".play-action-dock").boundingBox();
@@ -20,6 +20,12 @@ test("mobile command leaves a row of targets visible", async ({ page }) => {
     const { top, bottom } = node.getBoundingClientRect();
     return { top, bottom };
   }));
+  await testInfo.attach("mobile-command-geometry", {
+    body: JSON.stringify({ dock, targets }, null, 2),
+    contentType: "application/json",
+  });
+  await page.screenshot({ path: testInfo.outputPath("mobile-command.png") });
+  expect(dock).not.toBeNull();
   expect(targets.some((target) => target.top >= 0 && target.bottom < dock!.y)).toBe(true);
   expect(dock!.height).toBeLessThan(844 * 0.5);
 });
@@ -238,28 +244,61 @@ for (const family of ["werewolves", "mafia"] as const) {
   }
 }
 
-test("compact phone keeps target selection above the expanded command", async ({ page }) => {
+test("compact phone keeps target selection above the expanded command", async ({ page }, testInfo) => {
   await openRoom(page, "phase=night&family=werewolves&players=12&role=seer&timer=8", true, "light");
   await page.setViewportSize({ width: 375, height: 812 });
   await page.getByRole("button", { name: "Покажи личния ход" }).click();
   const dock = await page.locator(".play-action-dock").boundingBox();
   const target = page.locator('.play-seat-slot[data-targetable="true"] button[data-seat-token]').first();
   const bounds = await target.boundingBox();
+  await testInfo.attach("compact-command-geometry", {
+    body: JSON.stringify({ dock, target: bounds }, null, 2),
+    contentType: "application/json",
+  });
+  await page.screenshot({ path: testInfo.outputPath("compact-command.png") });
+  expect(dock).not.toBeNull();
+  expect(bounds).not.toBeNull();
   expect(bounds!.y + bounds!.height).toBeLessThan(dock!.y);
   await target.click();
   await expect(page.getByRole("button", { name: "Провери заплахата" })).toBeEnabled();
 });
 
 for (const mobile of [false, true]) {
-  test(`host controls remain in document flow without clipping ${mobile ? "mobile" : "desktop"}`, async ({ page }) => {
+  test(`lobby host controls remain reachable in the command dock ${mobile ? "mobile" : "desktop"}`, async ({ page }) => {
     await openRoom(page, "phase=lobby&family=werewolves&viewer=host&players=12", mobile);
-    const deck = page.locator(".play-narrator-deck");
-    await expect(deck).toBeVisible();
-    const bounds = await deck.evaluate((element) => ({ client: element.clientHeight, scroll: element.scrollHeight }));
-    expect(bounds.scroll).toBeLessThanOrEqual(bounds.client + 1);
-    const lastControl = deck.locator("button").last();
-    await lastControl.scrollIntoViewIfNeeded();
-    await expect(lastControl).toBeInViewport({ ratio: 1 });
+    await expect(page.locator(".play-narrator-deck")).toHaveCount(0);
+    const dock = page.locator('.play-action-dock[data-dock-kind="lobby"]');
+    await expect(dock).toBeVisible();
+    const ready = dock.getByTestId("ready-toggle");
+    const start = dock.getByRole("button", { name: "Започни игра", exact: true });
+    const invite = dock.getByRole("button", { name: "Копирай покана", exact: true });
+    await expect(ready).toBeVisible();
+    await expect(start).toBeVisible();
+    if (mobile) {
+      await expect(dock).toHaveAttribute("data-expanded", "false");
+      await expect(ready).toBeInViewport({ ratio: 1 });
+      await expect(start).toBeInViewport({ ratio: 1 });
+      await expect(invite).not.toBeVisible();
+      await dock.getByRole("button", { name: "Покажи подробностите за стаята", exact: true }).click();
+      await expect(dock).toHaveAttribute("data-expanded", "true");
+    }
+    const bounds = await dock.evaluate((element) => ({
+      clientWidth: element.clientWidth,
+      scrollWidth: element.scrollWidth,
+      clientHeight: element.clientHeight,
+      scrollHeight: element.scrollHeight,
+    }));
+    expect(bounds.scrollWidth).toBeLessThanOrEqual(bounds.clientWidth + 1);
+    if (!mobile) expect(bounds.scrollHeight).toBeLessThanOrEqual(bounds.clientHeight + 1);
+    await expect(invite).toBeVisible();
+    await invite.scrollIntoViewIfNeeded();
+    await expect(invite).toBeInViewport({ ratio: 1 });
+    if (mobile) {
+      await dock.getByRole("button", { name: "Скрий подробностите за стаята", exact: true }).click();
+      await expect(invite).not.toBeVisible();
+      await expect(ready).toBeInViewport({ ratio: 1 });
+      await expect(start).toBeInViewport({ ratio: 1 });
+    }
   });
 }
 

@@ -54,9 +54,13 @@ for (const theme of ["light", "dark"] as const) {
           await expect(hero.getByRole("link", { name: "Създай стая", exact: true })).toHaveAttribute("href", `/${route}/create`);
           expect((await page.locator(".night-timeline").boundingBox())!.y).toBeLessThan(page.viewportSize()!.height);
         } else {
-          await page.locator(".game-choice-card img").first().evaluate((element) => (element as HTMLImageElement).decode());
+          const image = page.locator(".game-choice-card").first().locator("img").filter({ visible: true });
+          await expect(image).toHaveCount(1);
+          await image.scrollIntoViewIfNeeded();
+          await image.evaluate((element) => (element as HTMLImageElement).decode());
           await expect(page.locator(".game-choice-card blockquote").first()).toHaveCSS("font-weight", "600");
-          await expect(page.locator(".game-choice-card > p").first()).toHaveCSS("font-weight", "400");
+          await expect(page.locator(".game-choice-description").first()).toHaveCSS("font-weight", "400");
+          await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
         }
         await capture(page, info, `${route || "home"}-${theme}-${width}`);
         await page.locator(route ? ".game-home-hero" : ".game-choice-card").first().getByRole("link", { name: "Роли", exact: true }).click();

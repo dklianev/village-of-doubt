@@ -79,6 +79,12 @@ jobs:
           path: |
             apps/web/public/game-art/**/*.avif
             apps/web/public/game-art/**/*.webp
+            apps/web/public/game-art/legal/faq-hearth-banner.png
+            apps/web/public/game-art/legal/privacy-banner.png
+            apps/web/public/game-art/legal/report-banner.png
+            apps/web/public/game-art/legal/status-banner.png
+            apps/web/public/game-art/legal/terms-banner.png
+            apps/web/public/game-art/og/*.png
           if-no-files-found: error
           retention-days: 1
 

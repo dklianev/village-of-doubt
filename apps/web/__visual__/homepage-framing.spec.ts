@@ -9,10 +9,14 @@ for (const theme of ["light", "dark"] as const) {
     }, theme);
     await page.goto("/");
     await page.evaluate(() => document.fonts.ready);
+    await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
     for (const width of [320, 390, 640, 641, 667, 720, 767, 768, 820, 1024, 1920]) {
       await page.setViewportSize({ width, height: 1080 });
       for (const card of await page.locator(".game-choice-card").all()) {
         const image = card.locator("img").filter({ visible: true });
+        await expect(image).toHaveCount(1);
+        // Native lazy loading needs the scene in view before decode can finish.
+        await image.scrollIntoViewIfNeeded();
         await image.evaluate((el) => (el as HTMLImageElement).decode());
         const framing = await image.evaluate((el) => {
           const image = el as HTMLImageElement;

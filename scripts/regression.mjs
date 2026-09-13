@@ -954,7 +954,14 @@ function checkLaunchTestingContracts() {
   assert(packageJson.scripts["verify:heavy"]?.includes("pnpm loadtest"), "pnpm verify:heavy must include load tests.");
   assert(!authRoute.includes("OAUTH_MOCK") && !authConfig.includes("OAUTH_MOCK"), "OAuth mock code must not ship in auth production routes.");
   const frontendE2e = readText("scripts/frontend-e2e.mjs");
-  assert(!frontendE2e.includes("context.route("), "Frontend multiplayer E2E must not mock Better Auth or game-token routes.");
+  const sentryFixture = frontendE2e.match(/async function mockSyntheticSentry\(context\) \{[\s\S]*?\n\}/)?.[0];
+  assert(sentryFixture, "Frontend E2E must isolate its synthetic Sentry transport fixture.");
+  assert(!frontendE2e.replace(sentryFixture, "").includes("context.route("), "Frontend multiplayer E2E must not mock Better Auth or game-token routes.");
+  const sentryContract = spawnSync(process.execPath, [
+    "--test", "--test-name-pattern=the Sentry mock handles only",
+    "scripts/frontend-e2e.fixture.test.mjs",
+  ], { cwd: root, encoding: "utf8" });
+  assert(sentryContract.status === 0 && sentryContract.stdout.includes("the Sentry mock handles only"), `Synthetic Sentry routing must reject application/auth URLs:\n${sentryContract.stdout}\n${sentryContract.stderr}`);
   assert(frontendE2e.includes("ROOM_CODE_ALPHABET"), "Frontend multiplayer E2E must use the shared room-code alphabet.");
   assert(frontendE2e.includes("ALLOW_DEV_AUTH: \"false\""), "Frontend multiplayer E2E must run production services without dev auth.");
   assert(frontendE2e.includes("sign-in/email"), "Frontend multiplayer E2E must obtain real Better Auth session cookies.");

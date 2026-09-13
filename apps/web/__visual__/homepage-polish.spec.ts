@@ -73,6 +73,7 @@ for (const theme of ["light", "dark"] as const) {
       await page.goto("/");
       await expect(page).toHaveTitle("Сенките | Върколак и Мафия онлайн");
       await page.evaluate(() => document.fonts.ready);
+      await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
       await expect(page.getByRole("heading", { level: 1 })).toHaveText("Върколак или Мафия");
       const kicker = await page.locator(".landing-hero-card > .section-kicker").boundingBox();
       const title = await page.getByRole("heading", { level: 1 }).boundingBox();
@@ -83,7 +84,10 @@ for (const theme of ["light", "dark"] as const) {
       const cards = page.locator(".game-choice-card");
       await expect(cards).toHaveCount(2);
       for (const card of await cards.all()) {
-        await card.locator("img").filter({ visible: true }).evaluate((image) => (image as HTMLImageElement).decode());
+        const image = card.locator("img").filter({ visible: true });
+        await expect(image).toHaveCount(1);
+        await image.scrollIntoViewIfNeeded();
+        await image.evaluate((element) => (element as HTMLImageElement).decode());
         for (const link of await card.getByRole("link").all()) {
           const box = await link.boundingBox();
           expect(box!.height).toBeGreaterThanOrEqual(28);
@@ -91,6 +95,8 @@ for (const theme of ["light", "dark"] as const) {
           expect(box!.x + box!.width).toBeLessThanOrEqual(width!);
         }
       }
+      // Lazy scenes may be below the fold; measure the first screen back at the top.
+      await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
       const firstAction = await cards.first().getByRole("link", { name: "Създай стая", exact: true }).boundingBox();
       const immediateAction = page.locator(".site-play-cta").filter({ visible: true });
       await expect(immediateAction).toHaveCount(1);

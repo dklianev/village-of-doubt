@@ -3255,7 +3255,7 @@
   gap: 8px;
   max-height: 144px;
   padding: 3px;
-  margin-inline: -3px;
+  margin-inline: 0;
 }
 :global(.play-shell.game-shell .play-action-dock .play-nomination-panel ol[data-selectable] li) { min-width: 0; padding: 0; }
 :global(.play-nominee-choice) {
@@ -3331,13 +3331,13 @@
 :global(.play-shell.game-shell .play-rail-panel > [role="log"]) { margin-top: 0; gap: 0; }
 
 @media (min-width: 1200px) and (max-height: 800px) {
-  :global(.play-shell) { --play-stage-min-height: 460px; }
+  :global(.play-shell) { --play-stage-min-height: 480px; }
   :global(.play-shell.game-shell .play-primary-column) { gap: 14px; }
 }
 
 @media (max-width: 1023px) {
   :global(.play-primary-column) { display: flex; flex-direction: column; gap: 12px; }
-  :global(.play-personal-area) { order: -1; margin-bottom: 2px; }
+  :global(.play-personal-area) { margin-bottom: 2px; }
   :global(.play-personal-loading) { min-height: 98px; padding: 16px 64px 16px 16px; font-size: 0.875rem; }
   :global(.play-personal-area[data-concealed]) { min-height: 64px; }
   :global(.play-personal-concealed) { max-width: 48%; padding: 14px 12px; }

@@ -69,6 +69,17 @@ test("@play-gate mobile stage ledger labels remain complete", async ({ page }) =
   await expectGeometry(page);
 });
 
+for (const theme of THEMES) {
+  for (const phase of ["day_discussion", "defense"] as const) {
+    for (const viewport of [{ width: 1280, height: 800 }, { width: 1366, height: 768 }]) {
+      test(`@play-gate compact table labels ${phase} ${theme} ${viewport.width}`, async ({ page }) => {
+        await openFixture(page, { phase, family: "mafia", players: 13 }, theme, viewport);
+        await expectGeometry(page);
+      });
+    }
+  }
+}
+
 for (const [themeIndex, theme] of THEMES.entries()) {
   for (const family of FAMILIES) {
     test(`@play-gate axe ${family} ${theme}`, async ({ page }) => {
@@ -268,22 +279,33 @@ test("@play-interaction chronicle tabs expose a writable day chat", async ({ pag
   await expect(page.getByRole("button", { name: "Изпрати" })).toBeEnabled();
 });
 
-test("@play-gate initial stage layout stays stable", async ({ page }) => {
+test("@play-gate initial stage layout stays stable", async ({ page }, testInfo) => {
   await openFixture(page, { phase: "night", family: "werewolves", players: 8 }, "dark", MATRIX_VIEWPORTS[1]);
   await page.addInitScript(() => {
-    (window as Window & { __playCls?: number }).__playCls = 0;
+    const target = window as Window & { __playCls?: number; __playShifts?: unknown[] };
+    target.__playCls = 0;
+    target.__playShifts = [];
     new PerformanceObserver((list) => {
       for (const entry of list.getEntries() as Array<PerformanceEntry & {
         hadRecentInput?: boolean;
         value?: number;
-        sources?: Array<{ node?: Node | null }>;
+        sources?: Array<{ node?: Node | null; previousRect?: DOMRectReadOnly; currentRect?: DOMRectReadOnly }>;
       }>) {
         const touchesPlayShell = entry.sources?.some(({ node }) => (
           node instanceof Element && Boolean(node.closest(".play-shell"))
         ));
         if (!entry.hadRecentInput && touchesPlayShell) {
-          const target = window as Window & { __playCls?: number };
           target.__playCls = (target.__playCls ?? 0) + (entry.value ?? 0);
+          target.__playShifts!.push({
+            value: entry.value,
+            startTime: entry.startTime,
+            sources: entry.sources?.map(({ node, previousRect, currentRect }) => ({
+              tag: node instanceof Element ? node.tagName : null,
+              className: node instanceof Element ? node.getAttribute("class") : null,
+              previousRect: previousRect?.toJSON(),
+              currentRect: currentRect?.toJSON(),
+            })),
+          });
         }
       }
     }).observe({ type: "layout-shift" });
@@ -292,6 +314,10 @@ test("@play-gate initial stage layout stays stable", async ({ page }) => {
   await waitForStableStage(page);
   await page.waitForTimeout(400);
   const cls = await page.evaluate(() => (window as Window & { __playCls?: number }).__playCls ?? 0);
+  await testInfo.attach("play-layout-shifts", {
+    body: JSON.stringify(await page.evaluate(() => (window as Window & { __playShifts?: unknown[] }).__playShifts ?? []), null, 2),
+    contentType: "application/json",
+  });
   expect(cls).toBeLessThan(0.02);
 });
 
@@ -436,6 +462,8 @@ async function openFixture(
   await page.goto(`/play/VISUAL?${query}`, { waitUntil: "domcontentloaded" });
   if (scenario.phase === "game_over") {
     await expect(page.locator(".play-stage-takeover")).toBeVisible();
+    await expect(page.locator(".play-winner-actions")).toBeVisible();
+    await expect(page.locator(".post-game-story")).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
     return;
   }
@@ -501,14 +529,37 @@ async function expectGeometry(page: Page) {
   if (await takeover.count()) {
     await expect(page.locator(".play-stage, .play-action-dock")).toHaveCount(0);
     await expect(takeover.getByRole("heading", { level: 1 })).toBeVisible();
-    const viewport = page.viewportSize()!;
-    for (const link of await takeover.getByRole("link").all()) {
-      await expect(link).toBeVisible();
-      const box = (await link.boundingBox())!;
-      expect(box.x).toBeGreaterThanOrEqual(0);
-      expect(box.x + box.width).toBeLessThanOrEqual(viewport.width + 1);
-    }
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+    await expect(takeover.getByRole("link")).toHaveCount(2);
+    // Deferred result content can replace nodes between separate visibility and
+    // boundingBox calls. Inspect one rendered takeover snapshot instead.
+    await expect.poll(() => page.evaluate(() => {
+      const violations: string[] = [];
+      const root = document.querySelector(".play-stage-takeover");
+      if (!root) return ["takeover-content-missing"];
+      const heading = root.querySelector("h1");
+      const actions = root.querySelector(".play-winner-actions");
+      const story = root.querySelector(".post-game-story");
+      const links = [...root.querySelectorAll("a")];
+      if (!heading || !actions || !story || links.length !== 2) return ["takeover-content-missing"];
+      for (const element of [root, heading, actions, story, ...links]) {
+        const rect = element.getBoundingClientRect();
+        const label = element === root ? "takeover" : element.textContent?.trim();
+        if (rect.width === 0 || rect.height === 0 || getComputedStyle(element).visibility !== "visible") {
+          violations.push(`takeover-content-hidden:${label}`);
+        }
+        if (rect.left < 0 || rect.right > innerWidth + 1) {
+          violations.push(`takeover-content-outside-viewport:${label}`);
+        }
+      }
+      for (const element of root.querySelectorAll<HTMLElement>(".post-game-story ol")) {
+        const style = getComputedStyle(element);
+        if (style.overflowY !== "visible" && element.scrollHeight > element.clientHeight + 1) {
+          violations.push("takeover-story-clipped");
+        }
+      }
+      if (document.documentElement.scrollWidth > innerWidth + 1) violations.push("horizontal-overflow");
+      return violations;
+    })).toEqual([]);
     return;
   }
   const result = await page.evaluate(({ allowedHitSelectors }) => {

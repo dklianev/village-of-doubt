@@ -45,8 +45,18 @@ for (const viewport of VIEWPORTS) {
         }, theme);
 
         await page.goto(route.path, { waitUntil: "domcontentloaded" });
-        await page.waitForLoadState("networkidle").catch(() => {});
-        await page.waitForTimeout(250);
+        if (route.path === "/") {
+          // Background requests are not homepage readiness and can consume the entire test timeout.
+          await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
+          await expect(page.getByRole("heading", { level: 1 })).toHaveText("Върколак или Мафия");
+          const play = page.locator("header.site-chrome:not([data-fallback]) .site-play-cta").filter({ visible: true });
+          await expect(play).toBeVisible();
+          await expect(play).toBeEnabled();
+          await page.evaluate(() => document.fonts.ready);
+        } else {
+          await page.waitForLoadState("networkidle").catch(() => {});
+          await page.waitForTimeout(250);
+        }
 
         const accessibility = await new AxeBuilder({ page })
           .include("body")

@@ -184,13 +184,20 @@ for (const theme of ["light", "dark"] as const) {
           await expect(art).toHaveAttribute("alt", "");
           const source = await art.evaluate((element) => {
             const image = element as HTMLImageElement;
-            return { path: new URL(image.currentSrc).pathname, width: image.naturalWidth, height: image.naturalHeight };
+            return {
+              url: image.currentSrc,
+              width: image.naturalWidth,
+              height: image.naturalHeight,
+              targetWidth: image.getBoundingClientRect().width * devicePixelRatio,
+            };
           });
-          expect(source).toEqual({
-            path: `/game-art/${viewport.width < 768 ? "mobile/" : ""}homepage/choice-${family}-${theme}-${version}.webp`,
-            width: viewport.width < 768 ? 720 : 960,
-            height: viewport.width < 768 ? 480 : 640,
-          });
+          const selected = new URL(source.url);
+          expect(selected.pathname).toBe("/_next/image");
+          expect(selected.searchParams.get("url")).toBe(`/game-art/homepage/choice-${family}-${theme}-${version}.webp`);
+          expect(selected.searchParams.get("q")).toBe("85");
+          expect(Number(selected.searchParams.get("w"))).toBeGreaterThanOrEqual(source.targetWidth);
+          expect(source.width).toBeGreaterThan(0);
+          expect(source.width / source.height).toBeCloseTo(3 / 2, 2);
           await expectChoiceContrast(page.locator(`.game-choice-${family}`), theme);
         }
         await page.locator(".game-choice-grid").screenshot({
@@ -244,8 +251,9 @@ for (const family of ["werewolf", "mafia"] as const) {
     await expect(art).toHaveCount(1);
     await art.scrollIntoViewIfNeeded();
     await art.evaluate((element) => (element as HTMLImageElement).decode());
-    const artPath = await art.evaluate((element) => new URL((element as HTMLImageElement).currentSrc).pathname);
-    expect(artPath).toBe(`/game-art/${width < 768 ? "mobile/" : ""}homepage/choice-${family}-${nextTheme}-${version}.webp`);
+    const selected = new URL(await art.evaluate((element) => (element as HTMLImageElement).currentSrc));
+    expect(selected.pathname).toBe("/_next/image");
+    expect(selected.searchParams.get("url")).toBe(`/game-art/homepage/choice-${family}-${nextTheme}-${version}.webp`);
     const roles = card.getByRole("link", { name: "Роли", exact: true });
     await expect(roles).toHaveAttribute("href", `/${family}/roles`);
     await roles.focus();

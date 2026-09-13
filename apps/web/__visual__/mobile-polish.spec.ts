@@ -36,7 +36,8 @@ for (const viewport of [
     expect(geometry.width).toBeGreaterThanOrEqual(viewport.width - 1);
     expect(geometry.height).toBeGreaterThanOrEqual(viewport.height - 1);
     expect(geometry.rootOverflow).toBe("hidden");
-    expect(geometry.bodyOverflow).toBe("hidden");
+    expect(geometry.bodyOverflow).toBe("clip");
+    await expect(page.locator("body")).toHaveAttribute("data-scroll-locked");
 
     const pageScrollBefore = await page.evaluate(() => window.scrollY);
     await page.mouse.wheel(0, 500);
@@ -44,9 +45,10 @@ for (const viewport of [
     expect(await page.evaluate(() => window.scrollY)).toBe(pageScrollBefore);
   });
 
-  test(`create preset roles stay readable and horizontally browsable on ${viewport.name}`, async ({ page }) => {
+  test(`create preset roles stay readable and vertically browsable on ${viewport.name}`, async ({ page }) => {
     await page.setViewportSize(viewport);
     const dialog = await openCreateDetails(page);
+    const pageScrollBefore = await page.evaluate(() => window.scrollY);
     const gallery = dialog.locator('.role-carousel[data-layout="workspace"][data-readonly="true"]');
     const cards = gallery.locator(".role-tile-large");
     await expect(cards.first()).toBeVisible();
@@ -59,8 +61,22 @@ for (const viewport of [
     }));
 
     expect(cardWidth).toBeGreaterThanOrEqual(150);
-    expect(galleryGeometry.overflowX).toBe("auto");
-    expect(galleryGeometry.scrollWidth).toBeGreaterThan(galleryGeometry.clientWidth + 40);
+    expect(galleryGeometry.overflowX).toBe("visible");
+    expect(galleryGeometry.scrollWidth).toBeLessThanOrEqual(galleryGeometry.clientWidth + 1);
+    await expect(dialog.getByRole("button", { name: "Следващи роли" })).toHaveCount(0);
+    const rectangles = await cards.evaluateAll((elements) => elements.map((element) => {
+      const rect = element.getBoundingClientRect();
+      return { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom };
+    }));
+    expect(rectangles.length).toBeGreaterThan(1);
+    for (const [index, rect] of rectangles.entries()) {
+      expect(rect.left).toBeGreaterThanOrEqual(0);
+      expect(rect.right).toBeLessThanOrEqual(viewport.width);
+      if (index > 0) expect(rect.top).toBeGreaterThanOrEqual(rectangles[index - 1]!.bottom);
+    }
+    await cards.last().scrollIntoViewIfNeeded();
+    await expect(cards.last()).toBeInViewport({ ratio: 1 });
+    expect(await page.evaluate(() => window.scrollY)).toBe(pageScrollBefore);
   });
 }
 
@@ -222,14 +238,35 @@ for (const family of ["werewolves", "mafia"] as const) {
           const seats = page.locator("[data-seat-token]");
           await expect(dock).toBeVisible();
           await expect(seats).toHaveCount(8);
-          const dockBox = (await dock.boundingBox())!;
-          for (const seat of await seats.all()) {
-            const box = (await seat.boundingBox())!;
+          const geometry = await page.evaluate(() => {
+            const rect = (element: Element | null) => {
+              if (!element) return null;
+              const { x, y, width, height } = element.getBoundingClientRect();
+              return { x, y, width, height };
+            };
+            return {
+              scrollY: window.scrollY,
+              dock: rect(document.querySelector('[data-play-command-surface][data-expanded="false"]')),
+              personal: rect(document.querySelector(".play-personal-area")),
+              stage: rect(document.querySelector(".play-stage")),
+              seats: [...document.querySelectorAll("[data-seat-token]")].map((element) => rect(element)!),
+            };
+          });
+          await testInfo.attach("short-phone-geometry", {
+            body: JSON.stringify(geometry, null, 2),
+            contentType: "application/json",
+          });
+          await page.screenshot({ path: testInfo.outputPath("short-phone.png"), caret: "initial" });
+          expect(geometry.dock).not.toBeNull();
+          expect(geometry.personal).not.toBeNull();
+          expect(geometry.stage).not.toBeNull();
+          expect(geometry.personal!.y).toBeGreaterThanOrEqual(geometry.stage!.y + geometry.stage!.height);
+          expect(geometry.seats).toHaveLength(8);
+          for (const box of geometry.seats) {
             expect(box.width).toBeGreaterThanOrEqual(44);
             expect(box.height).toBeGreaterThanOrEqual(44);
-            expect(box.y + box.height).toBeLessThanOrEqual(dockBox.y - 4);
+            expect(box.y + box.height).toBeLessThanOrEqual(geometry.dock!.y - 4);
           }
-          await page.screenshot({ path: testInfo.outputPath("short-phone.png"), caret: "initial" });
           if (hydrated) {
             const lastTarget = page.locator('button[data-seat-user-id]').last();
             await lastTarget.click();
