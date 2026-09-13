@@ -42,7 +42,9 @@ module.exports = {
               uploadThroughputKbps: 0,
             },
           }
-        : {},
+        : {
+            ...(process.env.LIGHTHOUSE_SAVE_ASSETS === "1" ? { saveAssets: true } : {}),
+          },
     },
     assert: {
       assertions: {

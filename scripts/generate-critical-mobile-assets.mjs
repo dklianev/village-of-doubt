@@ -58,6 +58,8 @@ export const variants = [
 
 export async function generateCriticalMobileAssets({ rootDirectory = process.cwd(), assets = variants } = {}) {
   sharp.cache(false);
+  // AVIF auto-tiling depends on thread count; pin it for stable pixels across hosts.
+  sharp.concurrency(1);
   let totalBytes = 0;
   for (const variant of assets) {
     const source = path.resolve(rootDirectory, variant.source);

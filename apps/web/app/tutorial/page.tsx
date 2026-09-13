@@ -39,12 +39,12 @@ export default function TutorialPage() {
         images={[
           {
             href: "/game-art/tutorial-day-scene.webp",
-            media: "(min-width: 721px)",
+            media: "(min-width: 721px), (orientation: portrait)",
             fetchPriority: "high",
           },
           {
             href: "/game-art/mobile/tutorial-day-scene.webp",
-            media: "(max-width: 720px)",
+            media: "(max-width: 720px) and (orientation: landscape)",
             fetchPriority: "high",
           },
         ]}

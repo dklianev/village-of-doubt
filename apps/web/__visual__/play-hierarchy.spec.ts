@@ -28,11 +28,8 @@ for (const family of ["werewolves", "mafia"] as const) {
           personalBox: column.querySelector(".play-personal-area")!.getBoundingClientRect().toJSON(),
           stageBox: column.querySelector(".play-stage")!.getBoundingClientRect().toJSON(),
         }));
-        if (width < 1024) {
-          expect(personalBox.y + personalBox.height).toBeLessThanOrEqual(stageBox.y + 1);
-        } else {
-          expect(personalBox.y).toBeGreaterThanOrEqual(stageBox.y + stageBox.height - 1);
-        }
+        expect(personalBox.y, "The persistent role stays below the table at every viewport")
+          .toBeGreaterThanOrEqual(stageBox.y + stageBox.height - 1);
         const dock = page.locator(".play-action-dock");
         await expect(dock.locator("[data-private-dossier]")).toHaveCount(0);
         await expect(dock.getByRole("group", { name: "Лично досие" })).toHaveCount(0);

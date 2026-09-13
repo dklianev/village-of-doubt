@@ -10,6 +10,36 @@ import { avifBudgetKbFor, maxWidthFor, webpBudgetKbFor } from "./optimize-assets
 
 sharp.cache(false);
 
+test("critical mobile generation pins host concurrency before encoding", async (t) => {
+  const { generateCriticalMobileAssets } = await import("./generate-critical-mobile-assets.mjs");
+  const previousConcurrency = sharp.concurrency();
+  t.after(() => sharp.concurrency(previousConcurrency));
+  const root = await temporaryRoot(t);
+  const source = "assets/game-art-source/pattern.png";
+  const output = "apps/web/public/game-art/mobile/pattern.avif";
+  const width = 256;
+  const height = 192;
+  const pixels = Buffer.alloc(width * height * 3);
+  for (let index = 0; index < pixels.length; index += 1) {
+    pixels[index] = (index * 29 + Math.floor(index / (width * 3)) * 17) % 256;
+  }
+  const original = await sharp(pixels, { raw: { width, height, channels: 3 } }).png().toBuffer();
+  await mkdir(path.dirname(path.join(root, source)), { recursive: true });
+  await writeFile(path.join(root, source), original);
+  let expected;
+  for (const hostConcurrency of [1, 4]) {
+    sharp.concurrency(hostConcurrency);
+    await generateCriticalMobileAssets({ rootDirectory: root, assets: [{ source, output, width }] });
+    assert.equal(sharp.concurrency(), 1, `host concurrency ${hostConcurrency}: fixed encoder concurrency`);
+    const encoded = await readFile(path.join(root, output));
+    if (expected) assert.deepEqual(encoded, expected, "host concurrency must not change encoded pixels or bytes");
+    else expected = encoded;
+    const metadata = await sharp(encoded).metadata();
+    assert.deepEqual([metadata.width, metadata.height], [width, height]);
+  }
+  assert.deepEqual(await readFile(path.join(root, source)), original);
+});
+
 test("targeted critical mobile CLI regenerates both landing formats without visiting other sources", async (t) => {
   const root = await temporaryRoot(t);
   const source = path.join(root, "assets/game-art-source/mobile/bg-landing-hero-composited.png");
@@ -102,6 +132,9 @@ test("critical mobile CLI preserves masters and produces crisp, bounded, reprodu
       }
     }
   }
+  const previousConcurrency = sharp.concurrency();
+  t.after(() => sharp.concurrency(previousConcurrency));
+  sharp.concurrency(1);
   const original = originals.get(path.join(root, "assets/game-art-source/mobile/bg-landing-hero-composited.png"));
   for (const format of ["webp", "avif"]) {
     const pipeline = sharp(original).resize({ width: 760, height: 820, fit: "cover", position: "top", withoutEnlargement: true });

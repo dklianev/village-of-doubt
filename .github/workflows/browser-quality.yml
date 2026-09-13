@@ -101,7 +101,11 @@ jobs:
         run: pnpm frontend:e2e:cross-browser
 
       - name: Run Lighthouse profiles
-        run: pnpm lighthouse
+        env:
+          LIGHTHOUSE_SAVE_ASSETS: "1"
+        run: |
+          node --test scripts/lighthouse-config.test.mjs
+          pnpm lighthouse
 
       - name: Upload browser diagnostics
         if: failure()
@@ -111,5 +115,7 @@ jobs:
           path: |
             output/playwright
             output/lighthouse
+            ./*.trace.json
+            ./*.devtoolslog.json
           if-no-files-found: ignore
           retention-days: 14
