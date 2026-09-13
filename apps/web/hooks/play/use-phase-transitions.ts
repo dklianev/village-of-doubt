@@ -41,6 +41,7 @@ export function usePhaseTransitions({
   const hasSeenEventsRef = useRef(false);
   const previousWinnerTeamRef = useRef("");
   const startGameTimersRef = useRef<number[]>([]);
+  const forceSilent = liveMode || cueMode !== "audio_vibration";
 
   const clearStartGameTimers = useCallback(() => {
     for (const timeout of startGameTimersRef.current) {
@@ -50,8 +51,9 @@ export function usePhaseTransitions({
   }, []);
 
   useEffect(() => {
+    setStartCountdown(null);
     return () => clearStartGameTimers();
-  }, [clearStartGameTimers]);
+  }, [clearStartGameTimers, phase, room]);
 
   useEffect(() => {
     if (!phase) {
@@ -79,11 +81,11 @@ export function usePhaseTransitions({
     previousCuePhaseRef.current = phase;
     setShowPhaseTransition(true);
     setPhasePulse((current) => current + 1);
-    playCue("phase-change", { forceSilent: liveMode || cueMode === "silent" });
-    if (cueMode === "audio_vibration") {
+    playCue("phase-change", { forceSilent });
+    if (!forceSilent) {
       triggerDeviceCue(phase, liveMode);
     }
-  }, [cueMode, liveMode, phase, suppressNextPhasePulseRef]);
+  }, [forceSilent, liveMode, phase, suppressNextPhasePulseRef]);
 
   useEffect(() => {
     if (!hasSeenEventsRef.current) {
@@ -97,20 +99,20 @@ export function usePhaseTransitions({
     previousEventIdsRef.current = new Set(publicEvents.map((event) => event.id));
 
     if (newEvents.some((event) => event.type === "death" || event.type === "hunter_shot")) {
-      playCue("kill", { forceSilent: liveMode });
+      playCue("kill", { forceSilent });
     }
-  }, [liveMode, publicEvents]);
+  }, [forceSilent, publicEvents]);
 
   useEffect(() => {
     if (!winnerTeam || previousWinnerTeamRef.current === winnerTeam) {
       return;
     }
     previousWinnerTeamRef.current = winnerTeam;
-    playCue("win", { forceSilent: liveMode });
-  }, [liveMode, winnerTeam]);
+    playCue("win", { forceSilent });
+  }, [forceSilent, winnerTeam]);
 
   const requestStartGame = useCallback(() => {
-    if (!room || startCountdown !== null) {
+    if (!room || phase !== "lobby" || startCountdown !== null) {
       return;
     }
 
@@ -124,7 +126,7 @@ export function usePhaseTransitions({
       setStartCountdown(null);
       clearStartGameTimers();
     }, 1860));
-  }, [clearStartGameTimers, room, startCountdown]);
+  }, [clearStartGameTimers, phase, room, startCountdown]);
 
   return {
     phasePulse,

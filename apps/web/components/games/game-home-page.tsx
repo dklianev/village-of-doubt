@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { ArrowRight, KeyRound, Users, Radio } from "lucide-react";
 import { type GameFamily } from "@werewolf/shared";
-import { ResourceHints } from "@/components/resource-hints";
+import { playerRange } from "@/lib/lobby-form/selectors";
 import { NextLinkPill } from "@/components/next-link-pill";
 import { MafiaMechanicsCallouts } from "@/components/games/MafiaMechanicsCallouts";
 import { MafiaNightTimeline } from "@/components/games/MafiaNightTimeline";
@@ -15,18 +16,9 @@ import "@/components/landing/LandingSurface.module.css";
 import "@/components/games/GameHomePage.module.css";
 
 export function GameHomePage({ family }: { family: GameFamily }) {
-  const isMafia = family === "mafia";
-  const root = isMafia ? "/mafia" : "/werewolf";
-  const title = isMafia ? "Мафия" : "Върколак";
-  const eyebrow = isMafia ? "град под напрежение" : "нощ над селото";
-  const subtitle = isMafia
-    ? "Криминален ноар за град, който трябва да различи алиби от лъжа."
-    : "Фолклорен хорър за село, което заспива заедно, но не всички се будят невинни.";
-
   return (
     <main className="shell game-home-shell" data-faction={family} data-family={family}>
-      <ResourceHints images={getGameHomeHeroPreloads(family)} />
-      <GameHero family={family} root={root} eyebrow={eyebrow} title={title} subtitle={subtitle} />
+      <GameHero family={family} />
 
       {family === "werewolves" ? <WerewolfNightTimeline /> : <MafiaNightTimeline />}
       <RoleSpotlight family={family} />
@@ -42,91 +34,65 @@ export function GameHomePage({ family }: { family: GameFamily }) {
       <Suspense fallback={<GameStatsFallback />}>
         <GameStatsRow family={family} />
       </Suspense>
+      <GameHomeClosing family={family} />
     </main>
   );
 }
 
-export function getGameHomeHeroPreloads(family: GameFamily) {
-  const familyPath = family === "mafia" ? "mafia" : "werewolf";
-  const mobileDarkVersion = family === "mafia" ? "v2" : "v3";
-  const desktopRoot = `/game-art/${familyPath}`;
-  const mobileRoot = `/game-art/mobile/${familyPath}`;
-
-  return [
-    {
-      href: `${desktopRoot}/bg-hero-v2.avif`,
-      media: "(min-width: 721px) and (prefers-color-scheme: dark)",
-      type: "image/avif",
-      fetchPriority: "high" as const,
-    },
-    {
-      href: `${desktopRoot}/bg-hero-light-v1.avif`,
-      media: "(min-width: 721px) and (prefers-color-scheme: light)",
-      type: "image/avif",
-      fetchPriority: "high" as const,
-    },
-    {
-      href: `${mobileRoot}/bg-hero-${mobileDarkVersion}.avif`,
-      media: "(max-width: 720px) and (prefers-color-scheme: dark)",
-      type: "image/avif",
-      fetchPriority: "high" as const,
-    },
-    {
-      href: `${mobileRoot}/bg-hero-light-v1.avif`,
-      media: "(max-width: 720px) and (prefers-color-scheme: light)",
-      type: "image/avif",
-      fetchPriority: "high" as const,
-    },
-  ];
-}
-
 async function GameStatsRow({ family }: { family: GameFamily }) {
   const stats = await loadGameStats();
+  return <GameStatsContent family={family} stats={stats} />;
+}
+
+type GameHomeStats = { liveStats: LiveStats; recentEndings: Ending[] };
+
+export function GameStatsContent({ family, stats }: { family: GameFamily; stats: GameHomeStats | null }) {
+  if (!stats) {
+    return (
+      <aside className="family-stats-unavailable" aria-label="Данни за игрите">
+        <Radio size={18} aria-hidden="true" />
+        <p>Временно няма връзка с данните за игрите.</p>
+        <Link href="/status" className="family-text-link">Състояние<ArrowRight size={15} aria-hidden="true" /></Link>
+      </aside>
+    );
+  }
 
   return (
     <div className="landing-stats-row quickstart-row">
-      <LiveTickerCard family={family} liveStats={stats?.liveStats ?? null} />
-      <RecentEndingsCard family={family} endings={stats?.recentEndings ?? []} />
+      <LiveTickerCard family={family} liveStats={stats.liveStats} />
+      <RecentEndingsCard family={family} endings={stats.recentEndings} />
     </div>
   );
 }
 
 function GameStatsFallback() {
   return (
-    <div className="landing-stats-row quickstart-row" aria-hidden="true">
-      <div className="quickstart-mini-card quickstart-skeleton" />
-      <div className="quickstart-mini-card quickstart-skeleton" />
-    </div>
+    <div className="family-stats-loading" aria-hidden="true" />
   );
 }
 
-function GameHero({
-  family,
-  root,
-  eyebrow,
-  title,
-  subtitle,
-}: {
-  family: GameFamily;
-  root: "/werewolf" | "/mafia";
-  eyebrow: string;
-  title: string;
-  subtitle: string;
-}) {
+export function GameHero({ family }: { family: GameFamily }) {
   const isMafia = family === "mafia";
+  const root = isMafia ? "/mafia" : "/werewolf";
+  const range = playerRange(isMafia ? "mafia_free" : "werewolves_classic");
 
   return (
-    <section className={isMafia ? "card game-home-hero is-mafia" : "card game-home-hero is-werewolf"}>
-      <div className="game-home-hero__art" aria-hidden="true" />
-      <div className="game-home-hero__scrim" aria-hidden="true" />
-      <div className="game-home-hero__vignette" aria-hidden="true" />
-      <div className={isMafia ? "game-home-hero__rain" : "game-home-hero__fog"} aria-hidden="true" />
-      <div className="game-home-hero__grain" aria-hidden="true" />
+    <section className={isMafia ? "game-home-hero is-mafia" : "game-home-hero is-werewolf"}>
+      <div className="game-home-hero__scene" aria-hidden="true">
+        <div className="game-home-hero__art" />
+        <div className="game-home-hero__scrim" />
+      </div>
       <div className="game-home-hero__content">
-        <p className="section-kicker">{eyebrow}</p>
-        <h1>{title}</h1>
+        <p className="section-kicker">{isMafia ? "град под напрежение" : "нощ над селото"}</p>
+        <h1>{isMafia ? "Мафия" : "Върколак"}</h1>
         <span className="game-home-title-accent" aria-hidden="true" />
-        <p className="game-home-hero__lede">{subtitle}</p>
+        <p className="game-home-hero__lede">
+          {isMafia ? "Всеки има алиби. Някой на масата има и причина да лъже." : "Денем сте съседи. Нощем не всички сте хора."}
+        </p>
+        <ul className="game-home-hero__facts" aria-label="За играта">
+          <li><Users size={16} aria-hidden="true" />{range.min}–{range.max} играчи</li>
+          <li>{isMafia ? "Свободен или спортен формат" : "Най-добре с 8–18 приятели"}</li>
+        </ul>
         <div className="game-home-hero__actions">
           <NextLinkPill
             href={`${root}/create`}
@@ -136,26 +102,43 @@ function GameHero({
             shimmer
             tracked
           >
-            Играй
+            Създай стая
           </NextLinkPill>
-          <div className="game-home-hero__secondary-links" aria-label="Още действия">
-            <Link href={`${root}/roles`} prefetch={false}>
-              Роли
-            </Link>
-            <Link href={`${root}/rules`} prefetch={false}>
-              Правила
-            </Link>
-            <Link href={`${root}/join`} prefetch={false}>
-              Влез с код
-            </Link>
-          </div>
+          <NextLinkPill href={`${root}/join`} intent="secondary" size="lg" className="game-home-hero__join">
+            <KeyRound size={17} aria-hidden="true" />Имам код
+          </NextLinkPill>
         </div>
+        <nav className="game-home-hero__secondary-links" aria-label="За ролите и правилата">
+          <Link href={`${root}/roles`} prefetch={false}>
+            Роли
+          </Link>
+          <Link href={`${root}/rules`} prefetch={false}>
+            Правила
+          </Link>
+        </nav>
       </div>
     </section>
   );
 }
 
-async function loadGameStats(): Promise<{ liveStats: LiveStats; recentEndings: Ending[] } | null> {
+export function GameHomeClosing({ family }: { family: GameFamily }) {
+  const root = family === "mafia" ? "/mafia" : "/werewolf";
+  return (
+    <section className="game-home-closing" aria-labelledby={`${family}-invitation-title`}>
+      <div>
+        <p className="section-kicker">следващата вечер</p>
+        <h2 id={`${family}-invitation-title`}>{family === "mafia" ? "Събери масата." : "Събери селото."}</h2>
+        <p>Приятелите са същите. Ролите остават тайна.</p>
+      </div>
+      <div className="game-home-closing__actions">
+        <NextLinkPill href={`${root}/create`} size="lg">Създай стая<ArrowRight size={17} aria-hidden="true" /></NextLinkPill>
+        <NextLinkPill href={`${root}/join`} intent="secondary" size="lg">Имам код</NextLinkPill>
+      </div>
+    </section>
+  );
+}
+
+async function loadGameStats(): Promise<GameHomeStats | null> {
   const gameServerUrl = process.env.NEXT_PUBLIC_GAME_SERVER_URL?.replace(/^ws/, "http") ?? "http://localhost:2567";
   try {
     const response = await fetch(`${gameServerUrl}/stats`, {

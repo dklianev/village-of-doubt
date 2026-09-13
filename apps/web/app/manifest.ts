@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Върколак и Мафия",
-    short_name: "Върколак",
+    name: "Сенките: Върколак и Мафия",
+    short_name: "Сенките",
     description: "Тайни роли, частни стаи и български правила за Върколак и Мафия.",
     start_url: "/",
     scope: "/",
@@ -17,8 +17,10 @@ export default function manifest(): MetadataRoute.Manifest {
         src: "/favicon.svg",
         sizes: "any",
         type: "image/svg+xml",
-        purpose: "maskable",
+        purpose: "any",
       },
+      { src: "/brand/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: "/brand/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
     ],
     shortcuts: [
       {

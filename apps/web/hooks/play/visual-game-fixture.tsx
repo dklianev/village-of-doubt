@@ -4,6 +4,9 @@ import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import type { Room } from "@colyseus/sdk";
 import {
   avatarIdForSeed,
+  createDefaultGameConfig,
+  createRoomOptionsFromConfig,
+  DEFAULT_PHASE_LABELS_BG,
   ROLE_DEFINITIONS,
   getGameFamily,
   type ChatChannel,
@@ -106,23 +109,6 @@ export function VisualPlayRoomClient({
   );
 }
 
-const PHASE_COPY: Record<GamePhase, string> = {
-  lobby: "Стаята чака готовност преди първата карта.",
-  role_reveal: "Всеки вижда само своята тайна карта.",
-  first_night: "Първата нощ подрежда еднократните роли.",
-  night: "Нощта пази действията скрити от площада.",
-  day_announcement: "Утрото брои какво е оцеляло.",
-  day_discussion: "Площадът търси истината в гласовете.",
-  nomination: "Подозренията вече имат имена.",
-  defense: "Обвинените получават последна дума.",
-  voting: "Гласовете превръщат съмнението в присъда.",
-  resolution: "Развръзката обръща картата на масата.",
-  hunter_revenge: "Ловецът избира последния си изстрел.",
-  mayor_successor: "Кметската значка търси следващ пазител.",
-  paused: "Играта е спряна, докато Разказвачът подреди сцената.",
-  game_over: "Последната история вече има победител.",
-};
-
 const WEREWOLF_ROLES: RoleCode[] = [
   "ordinary_villager",
   "werewolf",
@@ -200,7 +186,7 @@ const PRESET_DEFAULTS: Record<string, Partial<ParsedVisualQuery>> = {
   day: { phase: "day_discussion" },
   voting: { phase: "voting", voteTally: "full" },
   resolution: { phase: "resolution", dead: 2 },
-  hunter_revenge: { phase: "hunter_revenge", role: "hunter", dead: 2 },
+  hunter_revenge: { phase: "hunter_revenge", role: "hunter", viewer: "dead", dead: 2 },
   reconnecting: { connection: "reconnecting" },
   winner_village: { phase: "game_over", winner: "village" },
   winner_werewolves: { phase: "game_over", winner: "werewolves" },
@@ -210,6 +196,7 @@ const PRESET_DEFAULTS: Record<string, Partial<ParsedVisualQuery>> = {
 interface ParsedVisualQuery {
   phase: GamePhase;
   family: VisualFamily;
+  mode: GameMode;
   players: number;
   dead: number;
   viewer: VisualViewer;
@@ -281,54 +268,73 @@ export function parseVisualGameFixture(
   const roleCounts = buildRoleCounts(players, assignedRoles);
   const winner = parsed.phase === "game_over" ? parsed.winner || defaultWinner(parsed.family) : "";
   const nominations = buildNominations(parsed, players);
+  const voteTally = buildVoteTally(parsed, players, nominations);
+  const revoteEligibleUserIds = parsed.voteTally === "tie" && voteTally.length > 1
+    ? voteTally.map((item) => item.targetUserId)
+    : [];
   const snapshot: GameSnapshot = {
     code,
-    mode: parsed.family === "mafia" ? "mafia_sport" : "werewolves_classic",
+    mode: parsed.mode,
     playerCount: players.filter((player) => player.playing).length,
     narratorMode: parsed.viewer === "narrator" ? "full_human" : "automatic",
     communicationMode: "built_in_chat",
-    tempoProfile: "normal_online",
+    tempoProfile: parsed.mode === "mafia_sport" ? "sport_mafia" : "normal_online",
     dayDiscussionSeconds: 180,
     playerSpeechSeconds: 60,
     voteSeconds: 60,
     revealRolesOnDeath: true,
     loversEnabled: parsed.family === "werewolves",
     doctorCanSelfProtect: parsed.doctorCanSelfProtect,
-    allowSkipVote: parsed.phase === "voting" && parsed.family !== "mafia",
+    allowSkipVote: parsed.mode !== "mafia_sport",
     majorityMode: "simple",
     narratorVoice: parsed.family === "mafia" ? "inspector" : "classic",
     phase: parsed.phase,
-    round: parsed.phase === "lobby" ? 0 : 2,
+    round: parsed.phase === "lobby" ? 0 : ["role_reveal", "first_night"].includes(parsed.phase) ? 1 : 2,
+    votingCycle: parsed.phase === "voting" ? revoteEligibleUserIds.length > 0 ? 2 : 1 : 0,
     phaseEndsAt: parsed.timerSeconds === null ? 0 : Date.now() + parsed.timerSeconds * 1_000,
     currentSpeakerUserId:
-      parsed.family === "mafia" && parsed.phase === "day_discussion"
+      parsed.mode === "mafia_sport" && parsed.phase === "day_discussion"
         ? players.find((player) => player.playing && player.alive)?.userId ?? ""
         : "",
     currentDefenseUserId:
-      parsed.family === "mafia" && parsed.phase === "defense"
+      parsed.mode === "mafia_sport" && parsed.phase === "defense"
         ? nominations[0]?.targetUserId ?? ""
         : "",
     nominations,
-    revoteEligibleUserIds:
-      parsed.phase === "voting" && parsed.voteTally === "tie"
-        ? players.filter((player) => player.playing && player.alive).slice(0, 2).map((player) => player.userId)
-        : [],
+    revoteEligibleUserIds,
     winnerTeam: winner,
     winnerReasonBg: winner ? winnerReasonBg(winner, parsed.family) : "",
     players,
     roleCounts,
-    voteTally:
-      parsed.phase === "voting" && parsed.voteTally !== "empty" ? buildVoteTally(players, parsed.voteTally) : [],
-    publicEvents: buildPublicEvents(parsed),
+    voteTally,
+    publicEvents: [],
     publicChat: buildPublicChat(parsed.family),
   };
+  snapshot.publicEvents = buildPublicEvents(snapshot);
+  snapshot.nextRoomOptions = createRoomOptionsFromConfig({
+    ...createDefaultGameConfig(parsed.mode, parsed.mode === "mafia_sport" ? 10
+      : parsed.mode === "mafia_free" ? Math.min(24, Math.max(4, snapshot.playerCount))
+        : Math.max(6, snapshot.playerCount)),
+    playerCount: snapshot.playerCount,
+    maxPlayers: snapshot.playerCount,
+    rolePreset: "manual",
+    roles: Object.fromEntries(roleCounts.map(({ role, count }) => [role, count])),
+    narratorMode: parsed.viewer === "narrator" ? "full_human" : "automatic",
+    communicationMode: "built_in_chat",
+    narratorVoice: snapshot.narratorVoice,
+    loversEnabled: snapshot.loversEnabled,
+    doctorCanSelfProtect: parsed.doctorCanSelfProtect,
+    allowSkipVote: snapshot.allowSkipVote,
+  });
 
   const viewerRole = parsed.viewer === "narrator" || parsed.viewer === "spectator" ? null : parsed.role;
   return {
     snapshot,
     currentUserId,
     privateRole: viewerRole ? { role: viewerRole, roleNameBg: ROLE_DEFINITIONS[viewerRole].nameBg } : null,
-    privateResult: viewerRole ? privateResultForRole(viewerRole, players, parsed.family) : null,
+    privateResult: viewerRole && !["lobby", "role_reveal", "first_night"].includes(parsed.phase)
+      ? privateResultForRole(viewerRole, players, assignedRoles)
+      : null,
     privateLover: viewerRole === "cupid" ? privateLoverForPlayers(players) : null,
     nightActionCapabilities: buildVisualNightActionCapabilities(parsed),
     narratorSnapshot: parsed.viewer === "narrator" ? narratorSnapshotFor(players, assignedRoles) : null,
@@ -346,19 +352,26 @@ export function isVisualGameFixtureEnabled(search: string | URLSearchParams, env
 
 function parseVisualQuery(params: URLSearchParams, createOptions: CreateRoomOptions | undefined): ParsedVisualQuery {
   const preset = PRESET_DEFAULTS[params.get("preset") ?? ""] ?? {};
-  const family = parseFamily(params.get("family") ?? preset.family, createOptions);
+  const requestedMode = parseMode(params.get("mode")) ?? createOptions?.mode;
+  const family = parseFamily(params.get("family") ?? preset.family, requestedMode);
+  const mode = requestedMode && getGameFamily(requestedMode) === family
+    ? requestedMode
+    : family === "mafia" ? "mafia_sport" : "werewolves_classic";
   const winnerParam = params.get("winner") ?? preset.winner ?? "";
   const phase = parsePhase(params.get("phase") ?? preset.phase ?? (winnerParam ? "game_over" : "night"));
   const viewer = parseViewer(params.get("viewer") ?? preset.viewer);
   const basePlayers = family === "mafia" ? 10 : 12;
   const playerCount = clampInteger(params.get("players") ?? preset.players, 3, 30, basePlayers);
   const deadMinimum = viewer === "dead" ? 1 : 0;
-  const dead = Math.max(deadMinimum, clampInteger(params.get("dead") ?? preset.dead, 0, playerCount - 1, phase === "lobby" ? 0 : 1));
+  const dead = ["lobby", "role_reveal", "first_night"].includes(phase)
+    ? 0
+    : Math.max(deadMinimum, clampInteger(params.get("dead") ?? preset.dead, 0, playerCount - 1, 1));
   const roleFallback = family === "mafia" ? "commissioner" : "seer";
   const role = parseRole(params.get("role") ?? preset.role, roleFallback);
   return {
     phase,
     family,
+    mode,
     players: playerCount,
     dead,
     viewer,
@@ -428,7 +441,7 @@ function buildPlayers(parsed: ParsedVisualQuery, currentUserId: string, assigned
       narrator: isNarratorViewer,
       acceptedFullNarrator: true,
       mayor: parsed.family === "werewolves" && index === 2,
-      hasVoted: parsed.phase === "voting" && playing && alive && index % 2 === 0,
+      hasVoted: false,
       actedThisPhase: (parsed.phase === "night" || parsed.phase === "first_night") && playing && alive && index % 3 === 0,
       revealedRole,
     };
@@ -437,7 +450,7 @@ function buildPlayers(parsed: ParsedVisualQuery, currentUserId: string, assigned
 
 function deadIndexesFor(playerCount: number, deadCount: number, viewer: VisualViewer) {
   const indexes = new Set<number>();
-  if (viewer === "dead") {
+  if (viewer === "dead" && deadCount > 0) {
     indexes.add(0);
   }
   for (let index = playerCount - 1; indexes.size < deadCount && index >= 0; index -= 1) {
@@ -471,19 +484,53 @@ function buildRoleCounts(players: PublicPlayer[], assignedRoles: RoleCode[]): Pu
   return Array.from(counts, ([role, count]) => ({ role, count }));
 }
 
-function buildVoteTally(players: PublicPlayer[], mode: VisualVoteTally): VoteTallyItem[] {
-  const candidates = players.filter((player) => player.playing && player.alive).slice(1, 4);
-  return candidates.map((player, index) => ({
-    targetUserId: player.userId,
-    targetName: player.displayName,
-    count: mode === "tie" ? 2 : Math.max(1, candidates.length - index),
-    hasMayorVote: index === 0,
-  }));
+function buildVoteTally(parsed: ParsedVisualQuery, players: PublicPlayer[], nominations: PublicNomination[]): VoteTallyItem[] {
+  if (parsed.phase !== "voting" || parsed.voteTally === "empty") return [];
+  const living = players.filter((player) => player.playing && player.alive);
+  if (living.length < 2) return [];
+  let candidates = parsed.mode === "mafia_sport"
+    ? nominations.flatMap((nomination) => living.filter((player) => player.userId === nomination.targetUserId))
+    : living.slice(1, 4);
+  if (parsed.voteTally === "tie" && candidates.length < 2) {
+    candidates = parsed.mode === "mafia_sport" ? candidates : living.slice(0, 2);
+    if (candidates.length < 2) return [];
+  }
+  let remaining = living.length;
+  const tally = candidates.map((player, index) => {
+    const count = parsed.voteTally === "tie"
+      ? Math.min(2, Math.floor(living.length / candidates.length))
+      : Math.min(candidates.length - index, living.length - 1, remaining - (candidates.length - index - 1));
+    remaining -= count;
+    return { targetUserId: player.userId, targetName: player.displayName, count, hasMayorVote: false };
+  });
+
+  // Fixture-only ballots keep the counters, voter badges and mayor marker in sync.
+  const available = [...living];
+  const ballots: Array<{ voter: PublicPlayer; target: VoteTallyItem }> = [];
+  for (const target of tally) {
+    for (let index = 0; index < target.count; index += 1) {
+      const voterIndex = available.findIndex((player) => player.userId !== target.targetUserId);
+      if (voterIndex >= 0) {
+        ballots.push({ voter: available.splice(voterIndex, 1)[0]!, target });
+      } else {
+        // Swap an earlier ballot if the final unassigned voter is this candidate.
+        const voter = available.shift()!;
+        const earlier = ballots.find((ballot) => ballot.target.targetUserId !== voter.userId)!;
+        ballots.push({ voter: earlier.voter, target });
+        earlier.voter = voter;
+      }
+    }
+  }
+  for (const { voter, target } of ballots) {
+    voter.hasVoted = true;
+    target.hasMayorVote ||= voter.mayor;
+  }
+  return tally;
 }
 
 function buildNominations(parsed: ParsedVisualQuery, players: PublicPlayer[]): PublicNomination[] {
   if (
-    parsed.family !== "mafia"
+    parsed.mode !== "mafia_sport"
     || (parsed.phase !== "day_discussion"
       && parsed.phase !== "nomination"
       && parsed.phase !== "defense"
@@ -493,25 +540,53 @@ function buildNominations(parsed: ParsedVisualQuery, players: PublicPlayer[]): P
   }
 
   const living = players.filter((player) => player.playing && player.alive);
-  const firstNominator = living[0];
-  const secondNominator = living[1];
-  const firstTarget = living[2];
-  const secondTarget = living[3];
-  return [
-    ...(firstNominator && firstTarget
-      ? [{ nominatorUserId: firstNominator.userId, targetUserId: firstTarget.userId }]
-      : []),
-    ...(secondNominator && secondTarget
-      ? [{ nominatorUserId: secondNominator.userId, targetUserId: secondTarget.userId }]
-      : []),
-  ];
+  if (living.length < 2) return [];
+  const firstTarget = Math.min(2, Math.max(0, living.length - 2));
+  const targets = living.slice(firstTarget, firstTarget + 2);
+  return targets.map((target) => ({
+    nominatorUserId: living[(living.indexOf(target) + living.length - Math.min(2, living.length - 1)) % living.length]!.userId,
+    targetUserId: target.userId,
+  }));
 }
 
-function buildPublicEvents(parsed: ParsedVisualQuery): PublicEvent[] {
+function buildPublicEvents(snapshot: GameSnapshot): PublicEvent[] {
+  const { phase, players, round, voteTally } = snapshot;
+  const living = players.filter((player) => player.playing && player.alive);
+  const nameFor = (userId: string | undefined) => players.find((player) => player.userId === userId)?.displayName;
+  const speaker = nameFor(snapshot.currentSpeakerUserId);
+  const defender = nameFor(snapshot.currentDefenseUserId);
+  const eligibleNames = snapshot.revoteEligibleUserIds?.map((id) => nameFor(id)).join(", ");
+  const phaseCopy: Record<GamePhase, string> = {
+    lobby: `Масата се събира. Готови участници: ${players.filter((player) => player.playing && player.ready).length} от ${snapshot.playerCount}.`,
+    role_reveal: `Ролите са раздадени на ${snapshot.playerCount} участници.`,
+    first_night: "Започна първата нощ. Нощните действия са отворени.",
+    night: `Започна нощ ${round}. Нощните действия са отворени.`,
+    day_announcement: `Настъпи ден ${round}. Живи участници: ${living.length}.`,
+    day_discussion: speaker ? `Ден ${round}. Думата има ${speaker}.` : `Започна обсъждането за ден ${round}.`,
+    nomination: `Номинациите за ден ${round} са отворени.`,
+    defense: defender ? `${defender} получава думата за защита.` : "Започна фазата за защита. Няма номинирани участници.",
+    voting: eligibleNames ? `Започна прегласуване между ${eligibleNames}.` : `Гласуването за ден ${round} е отворено.`,
+    resolution: `Гласуването за ден ${round} приключи. Живи участници: ${living.length}.`,
+    hunter_revenge: "Играта изчаква избора за последния изстрел.",
+    mayor_successor: "Играта изчаква избора на нов кмет.",
+    paused: `Играта е на пауза в ден ${round}.`,
+    game_over: `Играта приключи. ${snapshot.winnerReasonBg}`,
+  };
   return [
-    { id: "visual-event-1", type: "narrator", messageBg: "Разказвачът отвори визуална сцена за проверка." },
-    { id: "visual-event-2", type: "phase", messageBg: PHASE_COPY[parsed.phase] },
-    ...(parsed.dead > 0 ? [{ id: "visual-event-3", type: "death" as const, messageBg: "На площада вече липсва един глас." }] : []),
+    { id: "visual-event-1", type: "narrator", messageBg: `На масата играят ${snapshot.playerCount} участници.` },
+    ...players.filter((player) => player.playing && !player.alive).map((player) => ({
+      id: `visual-death-${player.userId}`, type: "death" as const, messageBg: `${player.displayName} е извън играта.`,
+    })),
+    ...(snapshot.nominations ?? []).map((nomination) => ({
+      id: `visual-nomination-${nomination.nominatorUserId}`,
+      type: "nomination" as const,
+      messageBg: `${nameFor(nomination.nominatorUserId)} номинира ${nameFor(nomination.targetUserId)}.`,
+    })),
+    { id: "visual-event-2", type: "phase", messageBg: phaseCopy[phase] },
+    ...(voteTally.length > 0 ? [{
+      id: "visual-votes", type: "vote" as const,
+      messageBg: `Гласове до момента: ${voteTally.map((item) => `${item.targetName} (${item.count})`).join(", ")}.`,
+    }] : []),
   ];
 }
 
@@ -552,36 +627,33 @@ function buildTypingNotices(parsed: ParsedVisualQuery): TypingNotice[] {
   }];
 }
 
-function privateResultForRole(role: RoleCode, players: PublicPlayer[], family: VisualFamily): PrivateResult | null {
+function privateResultForRole(role: RoleCode, players: PublicPlayer[], assignedRoles: RoleCode[]): PrivateResult | null {
   const target = players.find((player) => player.playing && player.alive && player.userId !== "visual-player-1") ?? players[1];
   if (!target) {
     return null;
   }
-  if (role === "seer") {
+  const targetRole = assignedRoles[players.indexOf(target)];
+  const targetTeam = targetRole ? ROLE_DEFINITIONS[targetRole].team : undefined;
+  if (role === "seer" || role === "oracle") {
+    const isThreat = targetTeam === "werewolves" || targetTeam === "vampires";
     return {
       targetUserId: target.userId,
-      role: "werewolf",
-      messageBg: `${target.displayName} носи опасна тайна.`,
+      isEvil: isThreat,
+      messageBg: isThreat
+        ? "Видението потвърди нощна заплаха."
+        : "Видението не откри Върколак или Вампир.",
     };
   }
   if (role === "commissioner") {
     return {
       targetUserId: target.userId,
-      isEvil: true,
-      isCommissioner: false,
-      messageBg: `${target.displayName} изглежда свързан с Мафията.`,
+      isEvil: targetTeam === "mafia" || targetTeam === "werewolves" || targetTeam === "vampires",
     };
   }
-  if (role === "hunter") {
+  if (role === "don") {
     return {
       targetUserId: target.userId,
-      messageBg: "Последният изстрел чака избрана цел.",
-    };
-  }
-  if ((family === "mafia" && role === "don") || (family === "werewolves" && role === "werewolf")) {
-    return {
-      targetUserId: target.userId,
-      messageBg: "Фракцията вече обсъжда нощната си цел.",
+      isCommissioner: targetRole === "commissioner",
     };
   }
   return null;
@@ -595,15 +667,17 @@ function privateLoverForPlayers(players: PublicPlayer[]): PrivateLover | null {
 function narratorSnapshotFor(players: PublicPlayer[], assignedRoles: RoleCode[]): NarratorRoleSnapshot {
   return {
     roles: players
-      .filter((player) => player.playing)
-      .map((player, index) => {
+      .flatMap((player, index) => {
+        if (!player.playing) {
+          return [];
+        }
         const role = assignedRoles[index] ?? "ordinary_villager";
-        return {
+        return [{
           userId: player.userId,
           displayName: player.displayName,
           role,
           roleNameBg: ROLE_DEFINITIONS[role].nameBg,
-        };
+        }];
       }),
   };
 }
@@ -636,7 +710,9 @@ function statusForConnection(connection: ConnectionStatus) {
 
 function winnerReasonBg(winner: string, family: VisualFamily) {
   const reasons: Record<string, string> = {
-    village: "Селото събра достатъчно смелост, за да изгони сенките.",
+    village: family === "mafia"
+      ? "Гражданите разкриха Мафията и върнаха спокойствието в града."
+      : "Селото събра достатъчно смелост, за да изгони сенките.",
     werewolves: "Върколаците останаха твърде много, а площадът замлъкна.",
     mafia: "Мафията заключи последното алиби и градът прие нейната версия.",
     lovers: "Влюбените оцеляха между всички обвинения.",
@@ -662,11 +738,15 @@ function createVisualRoom() {
   } as unknown as Room;
 }
 
-function parseFamily(value: string | undefined, createOptions: CreateRoomOptions | undefined): VisualFamily {
+function parseMode(value: string | null): GameMode | undefined {
+  return value === "mafia_free" || value === "mafia_sport" || value === "werewolves_classic" ? value : undefined;
+}
+
+function parseFamily(value: string | undefined, mode: GameMode | undefined): VisualFamily {
   if (value === "mafia" || value === "werewolves") {
     return value;
   }
-  return getGameFamily((createOptions?.mode ?? "werewolves_classic") as GameMode);
+  return getGameFamily(mode ?? "werewolves_classic");
 }
 
 function parsePhase(value: string | undefined): GamePhase {
@@ -674,7 +754,7 @@ function parsePhase(value: string | undefined): GamePhase {
 }
 
 function isGamePhase(value: string | undefined): value is GamePhase {
-  return Boolean(value && value in PHASE_COPY);
+  return Boolean(value && Object.hasOwn(DEFAULT_PHASE_LABELS_BG, value));
 }
 
 function parseViewer(value: string | undefined): VisualViewer {

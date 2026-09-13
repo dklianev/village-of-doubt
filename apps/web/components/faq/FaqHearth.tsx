@@ -129,7 +129,7 @@ export function FaqHearth({ items }: { items: readonly FaqItem[] }) {
 
   return (
     <article className="faq-hearth">
-      <header className="faq-hearth-hero" aria-label="Седни до огъня">
+      <header className="faq-hearth-hero" aria-labelledby="faq-title">
         <div className="faq-hearth-banner" aria-hidden="true">
           <div className="faq-hearth-scrim" aria-hidden />
         </div>
@@ -139,9 +139,9 @@ export function FaqHearth({ items }: { items: readonly FaqItem[] }) {
             <Flame className="faq-hearth-kicker-icon" aria-hidden strokeWidth={2} />
             <span>седни до огъня</span>
           </p>
-          <h1 className="faq-hearth-title">Седни до огъня.</h1>
+          <h1 id="faq-title" className="faq-hearth-title">Помощ</h1>
           <p className="faq-hearth-subtitle">
-            Отговори за геймплея, досието, техниката и поверителността — споделени на топло.
+            Въпроси за играта, досието и връзката.
           </p>
         </div>
       </header>
@@ -160,13 +160,10 @@ export function FaqHearth({ items }: { items: readonly FaqItem[] }) {
                 setActiveCategory("all");
               }
             }}
-            placeholder="Питай огъня..."
+            placeholder="Търси въпрос..."
             aria-label="Търсене в често задавани въпроси"
             className="faq-hearth-search-input"
           />
-          <span className="faq-hearth-search-hotkey" aria-hidden>
-            ⌘K
-          </span>
         </div>
 
         <div className="faq-hearth-filters" role="group" aria-label="Категории">

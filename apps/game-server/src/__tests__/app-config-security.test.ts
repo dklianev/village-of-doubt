@@ -36,8 +36,34 @@ describe("game-server internal HTTP boundaries", () => {
     const credential = createRoomPreviewCredential("ABC234", GAME_TOKEN_SECRET);
     createInternalRoomPreviewHandler(getRoomPreview)(fakeRequest("ABC234", credential), response.value);
 
-    expect(getRoomPreview).toHaveBeenCalledWith("ABC234");
+    expect(getRoomPreview).toHaveBeenCalledWith("ABC234", undefined);
     expect(response.json).toHaveBeenCalledWith(preview);
+  });
+
+  it("passes only the viewer identity bound to the service credential", () => {
+    const getRoomPreview = vi.fn(() => ({ code: "ABC234", status: "lobby" }) as never);
+    const response = fakeResponse();
+    const credential = createRoomPreviewCredential("ABC234", GAME_TOKEN_SECRET, "viewer-1");
+    createInternalRoomPreviewHandler(getRoomPreview)(fakeRequest("ABC234", credential, "viewer-1"), response.value);
+    expect(getRoomPreview).toHaveBeenCalledWith("ABC234", "viewer-1");
+  });
+
+  it.each([undefined, "viewer-2"])("rejects personalized credentials with a substituted or missing viewer: %s", (viewer) => {
+    const getRoomPreview = vi.fn();
+    const response = fakeResponse();
+    const credential = createRoomPreviewCredential("ABC234", GAME_TOKEN_SECRET, "viewer-1");
+    createInternalRoomPreviewHandler(getRoomPreview)(fakeRequest("ABC234", credential, viewer), response.value);
+    expect(getRoomPreview).not.toHaveBeenCalled();
+    expect(response.status).toHaveBeenCalledWith(404);
+  });
+
+  it("ignores untrusted viewer query parameters on an anonymous signed request", () => {
+    const getRoomPreview = vi.fn(() => ({ code: "ABC234", status: "lobby" }) as never);
+    const response = fakeResponse();
+    const credential = createRoomPreviewCredential("ABC234", GAME_TOKEN_SECRET);
+    const request = { ...fakeRequest("ABC234", credential) as object, query: { viewerUserId: "viewer-1" } };
+    createInternalRoomPreviewHandler(getRoomPreview)(request as never, response.value);
+    expect(getRoomPreview).toHaveBeenCalledWith("ABC234", undefined);
   });
 });
 
@@ -55,10 +81,11 @@ describe("game-session revocation control plane", () => {
   });
 });
 
-function fakeRequest(code: string, credential: string) {
+function fakeRequest(code: string, credential: string, viewerUserId?: string) {
   return {
     params: { code },
-    header: vi.fn((name: string) => name.toLowerCase() === "x-werewolf-room-preview" ? credential : undefined),
+    header: vi.fn((name: string) => name.toLowerCase() === "x-werewolf-room-preview"
+      ? credential : name.toLowerCase() === "x-werewolf-room-preview-viewer" ? viewerUserId : undefined),
   } as never;
 }
 

@@ -119,8 +119,17 @@
   color: rgba(245, 232, 200, 0.62);
 }
 
-:global(.auth-recovery-shell .locksmith-foot-link) {
+:global(.auth-recovery-shell .locksmith-foot-link),
+:global(.auth-recovery-shell .forge-foot a) {
   color: #d19a42;
+}
+
+:global(.auth-recovery-shell .forge-foot a) {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 :global(html[data-theme="light"] .auth-recovery-shell .locksmith-card),
@@ -169,7 +178,8 @@
 :global(html[data-theme="light"] .auth-recovery-shell .locksmith-kicker),
 :global(html[data-theme="light"] .auth-recovery-shell .forge-kicker),
 :global(html[data-theme="light"] .auth-recovery-shell .seal-kicker),
-:global(html[data-theme="light"] .auth-recovery-shell .locksmith-foot-link) {
+:global(html[data-theme="light"] .auth-recovery-shell .locksmith-foot-link),
+:global(html[data-theme="light"] .auth-recovery-shell .forge-foot a) {
   color: #842f2b;
 }
 
@@ -178,5 +188,89 @@
 :global(.auth-recovery-shell .forge-stage),
 :global(.auth-recovery-shell .seal-stage) {
     min-height: auto;
+  }
+}
+
+:global(.auth-recovery-shell .locksmith-error),
+:global(.auth-recovery-shell .forge-card .forge-error),
+:global(.auth-recovery-shell .seal-error) {
+  color: #fff0e6;
+  background: #542820;
+}
+
+:global(.auth-recovery-shell .locksmith-success),
+:global(.auth-recovery-shell .forge-card .forge-success) {
+  color: #e6f2df;
+  background: #263d27;
+}
+
+:global(.auth-recovery-shell .locksmith-success-hint),
+:global(.auth-recovery-shell .seal-hint) {
+  color: #d3c8b3;
+}
+
+:global(.auth-recovery-shell .locksmith-form input::placeholder),
+:global(.auth-recovery-shell .forge-form input::placeholder) {
+  color: #bfb4a0;
+  opacity: 1;
+}
+
+:global(html[data-theme="light"] .auth-recovery-shell .locksmith-error),
+:global(html[data-theme="light"] .auth-recovery-shell .forge-card .forge-error),
+:global(html[data-theme="light"] .auth-recovery-shell .seal-error) {
+  color: #782821;
+  background: #f7e4de;
+}
+
+:global(html[data-theme="light"] .auth-recovery-shell .locksmith-success),
+:global(html[data-theme="light"] .auth-recovery-shell .forge-card .forge-success) {
+  color: #234a29;
+  background: #e4efde;
+}
+
+:global(html[data-theme="light"] .auth-recovery-shell .locksmith-success-hint),
+:global(html[data-theme="light"] .auth-recovery-shell .seal-hint),
+:global(html[data-theme="light"] .auth-recovery-shell .locksmith-form input::placeholder),
+:global(html[data-theme="light"] .auth-recovery-shell .forge-form input::placeholder) {
+  color: #594b3d;
+}
+
+:global(html[data-theme="light"] .auth-recovery-shell .locksmith-form label > span),
+:global(html[data-theme="light"] .auth-recovery-shell .forge-form label > span) {
+  color: #782821;
+}
+
+:global(.auth-recovery-shell .locksmith-card),
+:global(.auth-recovery-shell .forge-card),
+:global(.auth-recovery-shell .seal-card) {
+  min-width: 0;
+}
+
+:global(.auth-recovery-shell .seal-actions) {
+  flex-wrap: wrap;
+}
+
+@media (max-width: 719px) {
+  :global(.auth-recovery-shell .locksmith-stage),
+  :global(.auth-recovery-shell .forge-stage),
+  :global(.auth-recovery-shell .seal-stage) {
+    gap: 16px;
+  }
+
+  :global(.auth-recovery-shell .locksmith-art),
+  :global(.auth-recovery-shell .forge-art),
+  :global(.auth-recovery-shell .seal-art) {
+    width: 100%;
+    min-height: 144px;
+    height: 144px;
+    aspect-ratio: auto;
+    border-radius: 8px;
+  }
+
+  :global(.auth-recovery-shell .locksmith-card),
+  :global(.auth-recovery-shell .forge-card),
+  :global(.auth-recovery-shell .seal-card) {
+    gap: 14px;
+    padding: 20px;
   }
 }

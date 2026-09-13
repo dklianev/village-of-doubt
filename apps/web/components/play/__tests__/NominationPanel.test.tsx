@@ -11,6 +11,35 @@ const players: PublicPlayer[] = [
 ];
 
 describe("NominationPanel", () => {
+  it("selects an eligible nominee without submitting and reflects the shared table selection", async () => {
+    const user = userEvent.setup();
+    const onSelectNominee = vi.fn();
+    const onNominate = vi.fn();
+    const props = {
+      phase: "voting" as const, players, currentUserId: "speaker",
+      currentSpeakerUserId: "", currentDefenseUserId: "", canNominate: false,
+      nominations: [
+        { nominatorUserId: "speaker", targetUserId: "target-1" },
+        { nominatorUserId: "target-2", targetUserId: "target-1" },
+        { nominatorUserId: "target-1", targetUserId: "target-2" },
+      ],
+      onNominate, onSelectNominee, selectableNomineeIds: new Set(["target-1"]),
+    };
+    const { rerender } = render(<NominationPanel {...props} selectedTargetId="" />);
+    const vera = screen.getByRole("button", { name: "Избери Вера за гласуване" });
+    expect(vera).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getAllByRole("button", { name: /Избери Вера/ })).toHaveLength(1);
+    await user.click(vera);
+    expect(onSelectNominee).toHaveBeenCalledWith("target-1");
+    expect(onNominate).not.toHaveBeenCalled();
+    const kamen = screen.getByRole("button", { name: "Избери Камен за гласуване" });
+    expect(kamen).toBeDisabled();
+    await user.click(kamen);
+    expect(onSelectNominee).toHaveBeenCalledTimes(1);
+    rerender(<NominationPanel {...props} selectedTargetId="target-1" />);
+    expect(vera).toHaveAttribute("aria-pressed", "true");
+  });
+
   it("lets only the authorized speaker submit and replace a nomination", async () => {
     const user = userEvent.setup();
     const onNominate = vi.fn();

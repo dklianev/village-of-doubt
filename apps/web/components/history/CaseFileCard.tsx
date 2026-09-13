@@ -31,7 +31,7 @@ export function CaseFileCard({ game }: { game: HistoryGameView }) {
         <span className="case-file-number">Дело №{game.code}</span>
         <span className="case-file-date">{shortDate(game.endedAt)}</span>
       </header>
-      <h2 className="case-file-verdict">{winnerBg(game.winnerTeam)}</h2>
+      <h2 className="case-file-verdict">{winnerBg(game.winnerTeam, game.mode)}</h2>
       <p className="case-file-mode">
         {modeBg(game.mode)} · {playerCountBg(game)}
       </p>
@@ -53,7 +53,11 @@ export function CaseFileCard({ game }: { game: HistoryGameView }) {
   );
 }
 
-export function winnerBg(winner: string | null) {
+export function winnerBg(winner: string | null, mode: GameMode = "werewolves_classic") {
+  if (winner === "village" && modeFamily(mode) === "mafia") {
+    return "Гражданите печелят";
+  }
+
   return winner ? WINNER_LABELS[winner] ?? "Неразпозната развръзка" : "Няма победител";
 }
 

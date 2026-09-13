@@ -81,7 +81,7 @@ export default async function ReplayPage({
               </p>
               <div className="replay-summary">
                 <Summary label="Режим" value={modeBg(mode)} />
-                <Summary label="Победител" value={winnerBg(replay.game.winnerTeam)} />
+                <Summary label="Победител" value={winnerBg(replay.game.winnerTeam, mode)} />
                 <Summary label="Времетраене" value={duration} />
                 <Summary label="Събития" value={String(replay.game.eventCount)} />
               </div>
@@ -91,7 +91,7 @@ export default async function ReplayPage({
 
         <section className="replay-verdict-card">
           <p className="replay-kicker">победата</p>
-          <h2>{winnerBg(replay.game.winnerTeam)}</h2>
+          <h2>{winnerBg(replay.game.winnerTeam, mode)}</h2>
           <p>
             Финалът е записан на {formatDate(replay.game.endedAt)}. В хронологията има{" "}
             {replay.timeline.length} събития, групирани по фаза за по-лесен преглед.
@@ -389,9 +389,9 @@ function formatDuration(startedAt: Date | null, endedAt: Date | null) {
   return rest > 0 ? `${hours} ч. ${rest} мин.` : `${hours} ч.`;
 }
 
-function winnerBg(winner: string | null) {
+function winnerBg(winner: string | null, mode: GameMode) {
   const labels: Record<string, string> = {
-    village: "Селото печели",
+    village: mode === "werewolves_classic" ? "Селото печели" : "Гражданите печелят",
     werewolves: "Върколаците печелят",
     vampires: "Вампирите печелят",
     mafia: "Мафията печели",
@@ -539,7 +539,7 @@ function payloadValueBg(key: string, value: unknown, mode: GameMode) {
     return localizedRoleName(value);
   }
   if (key === "winnerTeam") {
-    return winnerBg(stringValue(value) ?? null);
+    return winnerBg(stringValue(value) ?? null, mode);
   }
   if (key === "phase") {
     const phase = stringValue(value);

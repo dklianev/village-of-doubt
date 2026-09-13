@@ -1,12 +1,8 @@
-import { Suspense } from "react";
-import Image from "next/image";
+import { Mail } from "lucide-react";
 import { Display } from "@werewolf/ui/server";
-import type { GameFamily } from "@werewolf/shared";
-import { ResourceHints } from "@/components/resource-hints";
+import { GAME_MODE_DEFINITIONS } from "@werewolf/shared";
 import { ModeChoiceCards, type ModeChoiceGame } from "@/components/landing/ModeChoiceCards";
 import { UniversalHowToPlay } from "@/components/landing/UniversalHowToPlay";
-import { LiveTickerCard, type LiveStats } from "@/components/landing/LiveTickerCard";
-import { RecentEndingsCard, type Ending } from "@/components/landing/RecentEndingsCard";
 import { NextLinkPill } from "@/components/next-link-pill";
 import "@/components/landing/LandingSurface.module.css";
 
@@ -20,8 +16,9 @@ const GAMES = [
     eyebrow: "фолклорен хорър",
     description:
       "Село, тайни роли и нощни събуждания. Сред вас се крият Върколаци, а понякога и нещо по-старо.",
-    line: "Първо пада мъглата. После някой лъже прекалено спокойно.",
+    line: "Денем сте съседи. Нощем не всички сте хора.",
     href: "/werewolf",
+    recommendedPlayers: GAME_MODE_DEFINITIONS.werewolves_classic.recommendedPlayersBg,
   },
   {
     id: "mafia",
@@ -32,169 +29,57 @@ const GAMES = [
       "Градска игра на алибита, натиск и премерени лъжи. Мафията знае своите; Градът трябва да ги разкрие.",
     line: "Дъждът измива улицата, но не и алибитата.",
     href: "/mafia",
+    recommendedPlayers: GAME_MODE_DEFINITIONS.mafia_free.recommendedPlayersBg,
   },
 ] as const satisfies readonly ModeChoiceGame[];
 
 export function LandingExperience({ initialSession }: { initialSession: LandingSession }) {
   return (
     <main className="shell landing-shell">
-      <ResourceHints
-        images={[
-          {
-            href: "/game-art/bg-landing-hero-composited.avif?v=2",
-            media: "(min-width: 721px)",
-            type: "image/avif",
-            fetchPriority: "high",
-          },
-          {
-            href: "/game-art/mobile/bg-landing-hero-composited.avif?v=2",
-            media: "(max-width: 720px)",
-            type: "image/avif",
-            fetchPriority: "high",
-          },
-        ]}
-      />
-      <section className="card landing-hero-card rounded-[2rem] p-7">
-        <div className="landing-hero-art" aria-hidden="true">
-          <picture>
-            <source
-              media="(min-width: 721px)"
-              srcSet="/game-art/bg-landing-hero-composited.avif?v=2"
-              type="image/avif"
-              width="1280"
-              height="720"
-            />
-            <source
-              media="(max-width: 720px)"
-              srcSet="/game-art/mobile/bg-landing-hero-composited.avif?v=2"
-              type="image/avif"
-              width="640"
-              height="690"
-            />
-            <source
-              media="(max-width: 720px)"
-              srcSet="/game-art/mobile/bg-landing-hero-composited.webp?v=2"
-              type="image/webp"
-              width="640"
-              height="690"
-            />
-            <img
-              src="/game-art/bg-landing-hero-composited.webp?v=2"
-              alt=""
-              width="1280"
-              height="720"
-              decoding="async"
-              fetchPriority="high"
-            />
-          </picture>
-        </div>
-        <LandingLogoMark />
+      <section className="landing-hero-card">
+        <div className="landing-hero-art" aria-hidden="true" />
         <p className="section-kicker">избери игра</p>
-        <h1 className="mt-5 text-5xl font-black leading-none text-[#f4e8d1] md:text-7xl">
+        <h1 className="landing-title">
           Върколак или Мафия
         </h1>
-        <p className="landing-hero-copy mt-6 max-w-3xl text-lg leading-8 text-[#ead9ba]">
-          Избери игра, събери приятелите си и започни с код. Всеки вижда само собствената си роля;
-          всичко останало се решава на масата.
+        <p className="landing-hero-copy">
+          Една компания. Тайни роли. На кого ще повярваш?
         </p>
 
         <ModeChoiceCards games={GAMES} initialSession={initialSession} />
       </section>
       <UniversalHowToPlay />
-      <Suspense fallback={<LandingStatsSkeleton />}>
-        <LandingStatsRow />
-      </Suspense>
       <FinalLandingCta />
     </main>
   );
 }
 
-async function LandingStatsRow() {
-  const stats = await loadGameStats();
-
-  return (
-    <div className="landing-stats-row quickstart-row">
-      <LiveTickerCard family={null} liveStats={stats?.liveStats ?? null} />
-      <RecentEndingsCard family={null} endings={stats?.recentEndings ?? []} />
-    </div>
-  );
-}
-
-function LandingStatsSkeleton() {
-  return (
-    <div className="landing-stats-row quickstart-row" aria-hidden="true">
-      <div className="quickstart-mini-card quickstart-skeleton" />
-      <div className="quickstart-mini-card quickstart-skeleton" />
-    </div>
-  );
-}
-
-function FinalLandingCta() {
+export function FinalLandingCta() {
   return (
     <section className="landing-final-cta" aria-label="Готов ли си да седнеш на масата">
       <div className="landing-final-invitation">
+        <picture className="landing-final-art landing-final-art--dark" aria-hidden="true">
+          <source media="(max-width: 767px)" srcSet="/game-art/mobile/homepage/invitation-v1.webp" type="image/webp" />
+          <img src="/game-art/homepage/invitation-v1.webp" alt="" width={1536} height={512} loading="lazy" decoding="async" />
+        </picture>
+        <picture className="landing-final-art landing-final-art--light" aria-hidden="true">
+          <source media="(max-width: 767px)" srcSet="/game-art/mobile/homepage/invitation-light-v1.webp" type="image/webp" />
+          <img src="/game-art/homepage/invitation-light-v1.webp" alt="" width={1536} height={512} loading="lazy" decoding="async" />
+        </picture>
         <div className="landing-final-copy">
-          <p className="section-kicker">ГОТОВ ЛИ СИ?</p>
-          <Display size="h2">Сядаме на масата.</Display>
-          <p>Избери коя игра започва вечерта ти.</p>
-        </div>
-        <div className="landing-final-actions">
-          <NextLinkPill href="/werewolf" intent="faction" size="lg" shimmer tracked data-faction="werewolves">
-            Играй Върколак
-          </NextLinkPill>
-          <NextLinkPill href="/mafia" intent="faction" size="lg" shimmer tracked data-faction="mafia">
-            Играй Мафия
-          </NextLinkPill>
+          <p className="section-kicker"><Mail size={16} aria-hidden="true" /> За следващата ви вечер</p>
+          <Display size="h2">Кого ще поканиш?</Display>
+          <p>Събери приятелите. Виж кой умее да пази тайна.</p>
+          <div className="landing-final-actions">
+            <NextLinkPill href="/werewolf/create" className="landing-invite-action" intent="primary" size="sm" tracked prefetch={false}>
+              Играй Върколак
+            </NextLinkPill>
+            <NextLinkPill href="/mafia/create" className="landing-invite-action" intent="secondary" size="sm" tracked prefetch={false}>
+              Играй Мафия
+            </NextLinkPill>
+          </div>
         </div>
       </div>
     </section>
   );
-}
-
-function LandingLogoMark() {
-  return (
-    <span className="landing-logo-mark" aria-hidden="true">
-      <Image
-        src="/game-art/mobile/logo-landing-mark.webp"
-        alt=""
-        width={118}
-        height={118}
-        loading="eager"
-        fetchPriority="low"
-        sizes="118px"
-        unoptimized
-      />
-    </span>
-  );
-}
-
-async function loadGameStats(): Promise<{ liveStats: LiveStats; recentEndings: Ending[] } | null> {
-  const gameServerUrl = process.env.NEXT_PUBLIC_GAME_SERVER_URL?.replace(/^ws/, "http") ?? "http://localhost:2567";
-  try {
-    const response = await fetch(`${gameServerUrl}/stats`, {
-      next: { revalidate: 5 },
-      signal: AbortSignal.timeout(800),
-    });
-    if (!response.ok) {
-      return null;
-    }
-    const stats = (await response.json()) as {
-      activeRooms?: number;
-      connectedPlayers?: number;
-      byFamily?: Partial<Record<GameFamily, number>>;
-      recentEndings?: Ending[];
-      lastWinner?: Ending | null;
-    };
-
-    return {
-      liveStats: {
-        activeRooms: stats.activeRooms ?? 0,
-        connectedPlayers: stats.connectedPlayers ?? 0,
-        ...(stats.byFamily ? { byFamily: stats.byFamily } : {}),
-      },
-      recentEndings: stats.recentEndings ?? (stats.lastWinner ? [stats.lastWinner] : []),
-    };
-  } catch {
-    return null;
-  }
 }

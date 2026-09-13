@@ -10,6 +10,7 @@ interface PrivateDossierSheetProps {
   onOpenChange: (open: boolean) => void;
   title: string;
   children: ReactNode;
+  onCloseAutoFocus?: (event: Event) => void;
 }
 
 export default function PrivateDossierSheet({
@@ -17,12 +18,14 @@ export default function PrivateDossierSheet({
   onOpenChange,
   title,
   children,
+  onCloseAutoFocus,
 }: PrivateDossierSheetProps) {
   return (
     <Sheet
       open={open}
       onOpenChange={onOpenChange}
       title={title}
+      onCloseAutoFocus={onCloseAutoFocus}
       description="Лично досие с твоята тайна роля и частни сведения."
     >
       <div className={styles.dossierSheet}>

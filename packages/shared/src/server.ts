@@ -90,19 +90,25 @@ export interface VerifyGameTokenOptions {
 
 const ROOM_PREVIEW_CREDENTIAL_CONTEXT = "room-preview:v1";
 
-export function createRoomPreviewCredential(roomCode: string, secret: string): string {
+export function createRoomPreviewCredential(roomCode: string, secret: string, viewerUserId?: string): string {
   assertUsableSecret(secret);
+  if (viewerUserId !== undefined && !isSafeOperationalUserId(viewerUserId)) {
+    throw new Error("Invalid room preview viewer.");
+  }
+  const code = requireCanonicalRoomCode(roomCode);
   return createHmac("sha256", secret)
-    .update(`${ROOM_PREVIEW_CREDENTIAL_CONTEXT}:${requireCanonicalRoomCode(roomCode)}`)
+    .update(viewerUserId === undefined
+      ? `${ROOM_PREVIEW_CREDENTIAL_CONTEXT}:${code}`
+      : JSON.stringify(["room-preview-viewer:v1", code, viewerUserId]))
     .digest("base64url");
 }
 
-export function verifyRoomPreviewCredential(roomCode: string, credential: string, secret: string): boolean {
+export function verifyRoomPreviewCredential(roomCode: string, credential: string, secret: string, viewerUserId?: string): boolean {
   if (!credential) {
     return false;
   }
   try {
-    return safeEqual(credential, createRoomPreviewCredential(roomCode, secret));
+    return safeEqual(credential, createRoomPreviewCredential(roomCode, secret, viewerUserId));
   } catch {
     return false;
   }

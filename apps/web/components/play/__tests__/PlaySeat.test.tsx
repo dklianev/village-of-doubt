@@ -64,6 +64,14 @@ function renderSeat(overrides: Partial<Parameters<typeof PlaySeat>[0]> = {}) {
 }
 
 describe("PlaySeat", () => {
+  it("keeps public identity and readiness available on a non-targetable lobby seat", () => {
+    renderSeat({ phase: "lobby", targetable: false });
+    const seat = screen.getByRole("group", { name: /Анна Иванова/ });
+    expect(seat).toHaveAttribute("data-seat-user-id", "u1");
+    expect(seat).toHaveAttribute("data-ready", "true");
+    expect(screen.queryByRole("button", { name: /Избери/ })).not.toBeInTheDocument();
+  });
+
   it("uses the seat as the target button and exposes selection state accessibly", async () => {
     const user = userEvent.setup();
     const onSelect = vi.fn();

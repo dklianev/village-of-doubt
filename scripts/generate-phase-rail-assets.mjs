@@ -15,7 +15,10 @@ const sourceNames = [
   "icon-phase-resolution.png",
 ];
 const railMaxBytes = 20 * 1024;
-const boardMaxBytes = 48 * 1024;
+const boardVariants = [
+  { width: 560, height: 400, maxBytes: 56 * 1024 },
+  { width: 1120, height: 800, maxBytes: 180 * 1024 },
+];
 
 let totalBytes = 0;
 
@@ -31,26 +34,28 @@ for (const family of ["werewolves", "mafia"]) {
   for (const sourceName of sourceNames) {
     const source = path.join(sourceRoot, sourceName);
     const railOutput = path.join(railFamilyOutput, sourceName.replace(/\.png$/, "-128.webp"));
-    const boardOutput = path.join(boardFamilyOutput, sourceName.replace(/\.png$/, "-560.webp"));
     await sharp(source)
       .resize(128, 128, { fit: "cover", position: "centre", withoutEnlargement: true })
       .webp({ quality: 80, effort: 6 })
       .toFile(railOutput);
-    await sharp(source)
-      .resize(560, 400, { fit: "cover", position: "centre", withoutEnlargement: true })
-      .webp({ quality: 64, effort: 6 })
-      .toFile(boardOutput);
-
     const railBytes = (await stat(railOutput)).size;
-    const boardBytes = (await stat(boardOutput)).size;
     if (railBytes > railMaxBytes) {
       throw new Error(`${path.relative(artRoot, railOutput)} е ${Math.ceil(railBytes / 1024)} KB; лимитът е 20 KB.`);
     }
-    if (boardBytes > boardMaxBytes) {
-      throw new Error(`${path.relative(artRoot, boardOutput)} е ${Math.ceil(boardBytes / 1024)} KB; лимитът е 48 KB.`);
+    totalBytes += railBytes;
+    for (const variant of boardVariants) {
+      const boardOutput = path.join(boardFamilyOutput, sourceName.replace(/\.png$/, `-${variant.width}.webp`));
+      await sharp(source)
+        .resize(variant.width, variant.height, { fit: "cover", position: "centre", withoutEnlargement: true })
+        .webp({ quality: 74, effort: 6 })
+        .toFile(boardOutput);
+      const boardBytes = (await stat(boardOutput)).size;
+      if (boardBytes > variant.maxBytes) {
+        throw new Error(`${path.relative(artRoot, boardOutput)} е ${Math.ceil(boardBytes / 1024)} KB; лимитът е ${variant.maxBytes / 1024} KB.`);
+      }
+      totalBytes += boardBytes;
     }
-    totalBytes += railBytes + boardBytes;
   }
 }
 
-console.log(`Generated ${sourceNames.length * 4} phase assets (${Math.ceil(totalBytes / 1024)} KB total).`);
+console.log(`Generated ${sourceNames.length * 2 * (boardVariants.length + 1)} phase assets (${Math.ceil(totalBytes / 1024)} KB total).`);

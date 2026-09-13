@@ -1,5 +1,6 @@
 import { ROLE_DEFINITIONS, teamLabelBg, type GameFamily, type RoleCode } from "@werewolf/shared";
-import { roleArtPath, roleThumbPath } from "@/lib/role-art";
+import Image from "next/image";
+import { coverImageSizes, roleArtSource } from "@/lib/role-art";
 import { useModal } from "@/lib/use-modal";
 
 export function RoleDetailModal({
@@ -12,15 +13,23 @@ export function RoleDetailModal({
   onClose: () => void;
 }) {
   const definition = ROLE_DEFINITIONS[role];
+  const source = roleArtSource(family, role);
   const { ref } = useModal({ open: true, onClose });
 
   return (
     <div ref={ref} className="role-detail-modal" role="dialog" aria-modal="true" aria-labelledby="role-detail-title">
       <div className="role-detail-backdrop" aria-hidden="true" onClick={onClose} />
       <article className="role-detail-card">
-        <picture aria-hidden="true">
-          <source srcSet={roleThumbPath(family, role)} type="image/webp" />
-          <img src={roleArtPath(family, role, "png")} alt="" width={520} height={728} />
+        <picture className="role-art-frame" data-frame-family={family} aria-hidden="true">
+          <Image
+            {...source}
+            alt=""
+            quality={85}
+            sizes={coverImageSizes(source, [
+              { media: "(max-width: 767px)", width: "calc(100vw - 74px)", aspectRatio: 5 / 7 },
+              { width: 230, aspectRatio: 5 / 7 },
+            ])}
+          />
         </picture>
         <div>
           <p className="section-kicker">{teamLabelBg(definition.team, family)}</p>

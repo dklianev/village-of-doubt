@@ -16,6 +16,7 @@ import type {
   CommissionerResultMode,
 } from "@werewolf/shared";
 import { GAME_MODE_DEFINITIONS, ROLE_DEFINITIONS } from "@werewolf/shared";
+import { ROOM_TIMER_QUERY_KEYS } from "@/lib/room-options-query";
 export { roomOptionsToQuery, stringifyRolesParam } from "@/lib/room-options-query";
 
 export type RoomSearchParams = Record<string, string | string[] | undefined>;
@@ -40,6 +41,7 @@ export function parseRoomCreateOptions(searchParams: RoomSearchParams = {}): Cre
   const preset = first(searchParams.preset);
   const visibility = first(searchParams.visibility);
   const majority = first(searchParams.majority);
+  const tieBreaker = first(searchParams.tieBreaker);
   const variant = first(searchParams.variant);
   const mayorMode = first(searchParams.mayorMode);
   const commissionerResult = first(searchParams.commissionerResult);
@@ -62,23 +64,25 @@ export function parseRoomCreateOptions(searchParams: RoomSearchParams = {}): Cre
     ...(isOneOf(narrator, NARRATOR_MODES) ? { narratorMode: narrator } : {}),
     ...(tempoProfile ? { tempoProfile } : {}),
     ...(customTimers ? { customTimers } : {}),
-    ...(first(searchParams.lovers) === "1" ? { loversEnabled: true } : {}),
+    ...(isBooleanParam(searchParams.lovers) ? { loversEnabled: first(searchParams.lovers) === "1" } : {}),
     ...(first(searchParams.reveal) ? { revealRolesOnDeath: first(searchParams.reveal) !== "0" } : {}),
     ...(first(searchParams.skip) ? { allowSkipVote: first(searchParams.skip) !== "0" } : {}),
     ...(isOneOf(majority, MAJORITY_MODES) ? { majorityMode: majority } : {}),
-    ...(first(searchParams.autoStart) === "1" ? { autoStart: true } : {}),
-    ...(first(searchParams.beginner) === "1" ? { beginnerMode: true } : {}),
-    ...(first(searchParams.advanced) === "1" ? { advancedMode: true } : {}),
+    ...(tieBreaker === "revote" || tieBreaker === "no_elimination" ? { tieBreaker } : {}),
+    ...(isBooleanParam(searchParams.firstNightKill) ? { firstNightKill: first(searchParams.firstNightKill) === "1" } : {}),
+    ...(isBooleanParam(searchParams.autoStart) ? { autoStart: first(searchParams.autoStart) === "1" } : {}),
+    ...(isBooleanParam(searchParams.beginner) ? { beginnerMode: first(searchParams.beginner) === "1" } : {}),
+    ...(isBooleanParam(searchParams.advanced) ? { advancedMode: first(searchParams.advanced) === "1" } : {}),
     ...(isOneOf(variant, WEREWOLF_VARIANTS) ? { werewolfVariant: variant } : {}),
     ...(isOneOf(mayorMode, MAYOR_MODES) ? { mayorMode } : {}),
-    ...(first(searchParams.promo) === "1" ? { promoRolesEnabled: true } : {}),
+    ...(isBooleanParam(searchParams.promo) ? { promoRolesEnabled: first(searchParams.promo) === "1" } : {}),
     ...(first(searchParams.mafiaKill) ? { mafiaNightKill: first(searchParams.mafiaKill) !== "0" } : {}),
-    ...(first(searchParams.doctorSelf) === "1" ? { doctorCanSelfProtect: true } : {}),
+    ...(isBooleanParam(searchParams.doctorSelf) ? { doctorCanSelfProtect: first(searchParams.doctorSelf) === "1" } : {}),
     ...(isOneOf(commissionerResult, COMMISSIONER_RESULT_MODES)
       ? { commissionerResultMode: commissionerResult }
       : {}),
-    ...(first(searchParams.maniac) === "1" ? { maniacEnabled: true } : {}),
-    ...(first(searchParams.jester) === "1" ? { jesterEnabled: true } : {}),
+    ...(isBooleanParam(searchParams.maniac) ? { maniacEnabled: first(searchParams.maniac) === "1" } : {}),
+    ...(isBooleanParam(searchParams.jester) ? { jesterEnabled: first(searchParams.jester) === "1" } : {}),
     ...(isOneOf(narratorVoice, NARRATOR_VOICES) ? { narratorVoice } : {}),
     ...(first(searchParams.spectator) === "1" ? { spectator: true } : {}),
     ...(roles ? { roles } : {}),
@@ -107,22 +111,20 @@ function first(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
 
+function isBooleanParam(value: string | string[] | undefined) {
+  return first(value) === "1" || first(value) === "0";
+}
+
 function parseCustomTimers(searchParams: RoomSearchParams): Partial<PhaseTimers> | undefined {
-  const dayDiscussionSeconds = parseInteger(first(searchParams.tempoDay));
-  const factionNightActionSeconds = parseInteger(first(searchParams.tempoNight));
-  const voteSeconds = parseInteger(first(searchParams.tempoVote));
   const tempoReady = first(searchParams.tempoReady);
   const customTimers: Partial<PhaseTimers> = {};
 
-  if (typeof dayDiscussionSeconds === "number") {
-    customTimers.dayDiscussionSeconds = dayDiscussionSeconds;
+  for (const { key, query } of ROOM_TIMER_QUERY_KEYS) {
+    const value = parseInteger(first(searchParams[query]));
+    if (typeof value === "number") customTimers[key] = value;
   }
-  if (typeof factionNightActionSeconds === "number") {
-    customTimers.factionNightActionSeconds = factionNightActionSeconds;
-    customTimers.personalNightActionSeconds = factionNightActionSeconds;
-  }
-  if (typeof voteSeconds === "number") {
-    customTimers.voteSeconds = voteSeconds;
+  if (customTimers.personalNightActionSeconds === undefined && customTimers.factionNightActionSeconds !== undefined) {
+    customTimers.personalNightActionSeconds = customTimers.factionNightActionSeconds;
   }
   if (tempoReady === "1" || tempoReady === "0") {
     customTimers.autoAdvanceWhenReady = tempoReady === "1";

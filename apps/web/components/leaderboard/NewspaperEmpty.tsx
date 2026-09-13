@@ -10,8 +10,8 @@ export function NewspaperEmpty() {
 
       <div className="empty-headline">
         <p className="headline-kicker">главна новина</p>
-        <h2 className="headline-main-title">Изданието още не е тиражирано</h2>
-        <p className="empty-lede">Утрешният брой ще носи първото име. Завърши една игра и редакцията се събужда.</p>
+        <h2 className="headline-main-title">Още няма класирани играчи</h2>
+        <p className="empty-lede">Първата завършена игра ще отвори броя.</p>
         <div className="empty-press-proof" aria-hidden>
           <span className="empty-press-number">01</span>
           <span />
@@ -20,10 +20,10 @@ export function NewspaperEmpty() {
         </div>
         <div className="empty-cta">
           <Link href="/werewolf/create" className="btn btn-primary">
-            Започни първото издание
+            Създай стая
           </Link>
           <Link href="/tutorial" className="btn btn-secondary">
-            Виж как изглежда вечер
+            Първи стъпки
           </Link>
         </div>
       </div>

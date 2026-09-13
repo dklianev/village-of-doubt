@@ -28,15 +28,15 @@ const RIGHTS: readonly RightAction[] = [
     id: "rectification",
     title: "Право на корекция",
     description: "Промени име на масата или друга информация от досието.",
-    href: "/account",
-    ctaLabel: "Към досието →",
+    href: "/account#account-identity",
+    ctaLabel: "Промени данни →",
   },
   {
     id: "erasure",
     title: "Право на изтриване",
     description: "Изтрий досието окончателно. Заместваме името в игрите с „Изтрит играч“.",
-    href: "/account",
-    ctaLabel: "Към досието →",
+    href: "/account#account-security",
+    ctaLabel: "Към изтриване →",
   },
   {
     id: "objection",
@@ -57,7 +57,7 @@ const RIGHTS: readonly RightAction[] = [
 
 export function PrivacyRights() {
   return (
-    <section className="privacy-section privacy-section-rights">
+    <section id="privacy-rights" tabIndex={-1} className="privacy-section privacy-section-rights">
       <header className="privacy-section-head">
         <p className="privacy-section-kicker">твоите права</p>
         <h2>Какво можеш да направиш.</h2>

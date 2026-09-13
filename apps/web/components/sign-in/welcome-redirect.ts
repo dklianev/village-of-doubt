@@ -1,6 +1,8 @@
 import { safeLocalStorage } from "@/lib/safe-storage";
+import { safeInternalRedirect } from "@/lib/safe-internal-redirect";
 
 export function resolveWelcomeRedirect(redirectTo: string) {
+  redirectTo = safeInternalRedirect(redirectTo);
   if (typeof window === "undefined") {
     return redirectTo;
   }

@@ -19,12 +19,14 @@ export function PublicChatComposer({
 }) {
   const [value, setValue] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const draftRevisionRef = useRef(0);
   const typingActiveRef = useRef(false);
   const onTypingRef = useRef(onTyping);
   onTypingRef.current = onTyping;
   const counterId = `${inputId}-counter`;
 
   useEffect(() => () => {
+    draftRevisionRef.current += 1;
     if (typingActiveRef.current) {
       onTypingRef.current(false);
       typingActiveRef.current = false;
@@ -37,10 +39,17 @@ export function PublicChatComposer({
     if (!message || isSending) {
       return;
     }
+    const submittedRevision = draftRevisionRef.current;
     setIsSending(true);
-    const accepted = await onSend(message);
-    setIsSending(false);
-    if (!accepted) {
+    let accepted: boolean;
+    try {
+      accepted = await onSend(message);
+    } catch {
+      return;
+    } finally {
+      setIsSending(false);
+    }
+    if (!accepted || draftRevisionRef.current !== submittedRevision) {
       return;
     }
     typingActiveRef.current = false;
@@ -63,6 +72,7 @@ export function PublicChatComposer({
           onChange={(event) => {
             const nextValue = event.target.value.slice(0, MAX_CHAT_MESSAGE_LENGTH);
             const active = nextValue.trim().length > 0;
+            draftRevisionRef.current += 1;
             setValue(nextValue);
             typingActiveRef.current = active;
             onTyping(active);
@@ -73,7 +83,8 @@ export function PublicChatComposer({
         />
         <span
           id={counterId}
-          className={`text-right text-xs ${value.length >= 480 ? "text-[#c18a38]" : "text-[#ead9ba]/60"}`}
+          className="play-chat-counter text-right text-xs"
+          data-near-limit={value.length >= 480 ? "true" : undefined}
         >
           {value.length}/{MAX_CHAT_MESSAGE_LENGTH}
         </span>

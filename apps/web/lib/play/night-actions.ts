@@ -98,7 +98,8 @@ export function roleHasNightAction(role: RoleCode, phase: GamePhase) {
 }
 
 export function needsSecondNightTarget(role: RoleCode | undefined, phase: GamePhase) {
-  return role === "blacksmith" || ((role === "cupid" || role === "lovers") && phase === "first_night");
+  return (role === "blacksmith" && (phase === "first_night" || phase === "night"))
+    || ((role === "cupid" || role === "lovers") && phase === "first_night");
 }
 
 export function requiresExplicitNightActionChoice(role: RoleCode, _phase: GamePhase) {

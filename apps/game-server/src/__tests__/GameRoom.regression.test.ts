@@ -1435,6 +1435,84 @@ describe("GameRoom gameplay regressions", () => {
     await expect(acceptedRevote).resolves.toMatchObject({ targetUserId: second?.userId });
   });
 
+  it.each(["werewolves_classic", "mafia_free"] as const)("advances the voting cycle after the final voter ACK in repeated tied ballots (%s)", async (mode) => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "CYC234", mode, playerCount: 6, tempoProfile: "manual", tieBreaker: "revote",
+      customTimers: { autoAdvanceWhenReady: true },
+      roles: mode === "mafia_free" ? { civilian: 5, mafioso: 1 } : { ordinary_villager: 5, werewolf: 1 },
+    });
+    const clients = await connectPlayers(colyseus, serverRoom, 6, "cycle");
+    await startGameAndCollectRoles(clients);
+    await advanceToVoting(clients[0]!.client, serverRoom);
+    const finalVoter = clients[5]!;
+    const observedVotes: boolean[] = [];
+    finalVoter.client.onStateChange((state) => {
+      const viewer = [...state.players.values()].find((player) => player.userId === finalVoter.userId);
+      if (viewer) observedVotes.push(viewer.hasVoted);
+    });
+    const round = serverRoom.state.round;
+    const candidates = [clients[0]!.userId, clients[1]!.userId];
+
+    for (const votingCycle of [1, 2]) {
+      // Observe the decoded client ballot, not just the server's patch broadcast.
+      const nextVotingCycle = new Promise<void>((resolve) => {
+        const onStateChange = (state: GameState) => {
+          if (state.votingCycle !== votingCycle + 1) return;
+          finalVoter.client.onStateChange.remove(onStateChange);
+          resolve();
+        };
+        finalVoter.client.onStateChange(onStateChange);
+      });
+      for (const [index, voter] of clients.entries()) {
+        const ack = voter.client.waitForMessage("vote_ack");
+        voter.client.send("submitVote", { targetUserId: candidates[index < 3 ? 0 : 1] });
+        const message = await ack;
+        if (index === 5) {
+          expect(message).toMatchObject({ phase: "voting", round, votingCycle, targetUserId: candidates[1] });
+        }
+      }
+      await nextVotingCycle;
+      expect(serverRoom.state.votingCycle).toBe(votingCycle + 1);
+      expect(finalVoter.client.state.votingCycle).toBe(votingCycle + 1);
+      expect(finalVoter.client.state.phase).toBe("voting");
+      expect(finalVoter.client.state.round).toBe(round);
+      expect([...finalVoter.client.state.revoteEligibleUserIds].sort()).toEqual([...candidates].sort());
+      expect(findPublicPlayer(serverRoom, finalVoter.userId)?.hasVoted).toBe(false);
+    }
+    expect(observedVotes.length).toBeGreaterThan(0);
+    expect(observedVotes).not.toContain(true);
+  });
+
+  it("keeps the voting cycle and skip acknowledgement stable across timer extension and pause/resume", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "CYCTMR", mode: "werewolves_classic", playerCount: 6, tempoProfile: "manual",
+      allowSkipVote: true, customTimers: { voteSeconds: 60, autoAdvanceWhenReady: false },
+      roles: { ordinary_villager: 5, werewolf: 1 },
+    });
+    const clients = await connectPlayers(colyseus, serverRoom, 6, "cycle-timer");
+    await startGameAndCollectRoles(clients);
+    const host = clients[0]!;
+    await advanceToVoting(host.client, serverRoom);
+    const ack = host.client.waitForMessage("vote_ack");
+    host.client.send("submitVote", { targetUserId: "skip" });
+    await expect(ack).resolves.toMatchObject({ votingCycle: 1, targetUserId: "skip" });
+
+    const deadline = serverRoom.state.phaseEndsAt;
+    host.client.send("narratorExtendTimer", { seconds: 30 });
+    await serverRoom.waitForNextPatch(20);
+    expect(serverRoom.state.phaseEndsAt).toBe(deadline + 30_000);
+    expect(serverRoom.state.votingCycle).toBe(1);
+    host.client.send("narratorPause", {});
+    await serverRoom.waitForNextPatch(20);
+    expect(serverRoom.state.phase).toBe("paused");
+    expect(serverRoom.state.votingCycle).toBe(1);
+    host.client.send("narratorAdvance", {});
+    await serverRoom.waitForNextPatch(20);
+    expect(serverRoom.state.phase).toBe("voting");
+    expect(serverRoom.state.votingCycle).toBe(1);
+    expect(findPublicPlayer(serverRoom, host.userId)?.hasVoted).toBe(true);
+  });
+
   it("supports skip votes and absolute-majority no-elimination", async () => {
     const serverRoom = await colyseus.createRoom<GameRoom>("game", {
       code: "SKJP23",

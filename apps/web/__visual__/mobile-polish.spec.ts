@@ -115,7 +115,7 @@ test("achievements reveals progress before the mobile fold", async ({ page }) =>
   expect(box!.y).toBeLessThanOrEqual(460);
 });
 
-test("compact chrome uses an intentional short wordmark and full touch targets", async ({ page }) => {
+test("compact chrome keeps the complete Senkite wordmark and full touch targets", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 });
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
@@ -124,17 +124,15 @@ test("compact chrome uses an intentional short wordmark and full touch targets",
   const wordmarkGeometry = await wordmark.evaluate((element) => ({
     clientWidth: element.clientWidth,
     scrollWidth: element.scrollWidth,
-    visibleText: [...element.children]
-      .filter((child) => getComputedStyle(child).display !== "none")
-      .map((child) => child.textContent?.trim())
-      .filter(Boolean),
+    mask: getComputedStyle(element).maskImage,
   }));
   expect(wordmarkGeometry.scrollWidth).toBeLessThanOrEqual(wordmarkGeometry.clientWidth + 1);
-  expect(wordmarkGeometry.visibleText).toEqual(["Върколак"]);
+  await expect(wordmark).toHaveAttribute("aria-label", "Сенките");
+  expect(wordmarkGeometry.mask).toContain("senkite-wordmark.svg");
 
   for (const control of [
     page.getByRole("button", { name: "Отвори менюто" }),
-    page.getByRole("banner").getByRole("link", { name: "Играй", exact: true }),
+    page.getByRole("banner").getByRole("button", { name: "Играй", exact: true }),
   ]) {
     const box = await control.boundingBox();
     expect(box).not.toBeNull();
@@ -192,33 +190,60 @@ test("mobile play table is visible before its first measured layout", async ({ p
   expect(Number(await table.evaluate((element) => getComputedStyle(element).opacity))).toBeGreaterThan(0.95);
 });
 
-test("compact night-action dock does not cover a visible seat target", async ({ page }) => {
-  await page.setViewportSize({ width: 320, height: 568 });
-  await page.goto(
-    "/play/VISUAL?visualGame=1&phase=night&family=werewolves&players=8&role=seer",
-    { waitUntil: "domcontentloaded" },
-  );
+for (const family of ["werewolves", "mafia"] as const) {
+  for (const theme of ["light", "dark"] as const) {
+    for (const hydrated of [false, true]) {
+      test(`compact night-action dock leaves all eight seats clear: ${family} ${theme} ${hydrated ? "interactive" : "before-hydration"}`, async ({ browser }, testInfo) => {
+        const context = await browser.newContext({
+          viewport: { width: 320, height: 568 },
+        });
+        try {
+          const page = await context.newPage();
+          if (!hydrated) {
+            // Keep streamed HTML reveal scripts, but hold the client runtime.
+            await page.route("**/_next/static/chunks/**", (route) =>
+              route.request().resourceType() === "script" ? route.abort() : route.continue());
+          }
+          await page.addInitScript((selectedTheme) => {
+            localStorage.setItem("cookie-consent", "1");
+            localStorage.setItem("werewolf-theme", selectedTheme);
+          }, theme);
+          const role = family === "mafia" ? "commissioner" : "seer";
+          await page.goto(`${testInfo.project.use.baseURL}/play/VISUAL?visualGame=1&phase=night&family=${family}&players=8&role=${role}`, { waitUntil: "domcontentloaded" });
+          if (hydrated) {
+            await expect(page.locator(".play-stage")).toHaveAttribute("data-layout-ready", "true");
+          } else {
+            await expect(page.locator(".play-stage")).not.toHaveAttribute("data-layout-ready", "true");
+            await page.evaluate((selectedTheme) => { document.documentElement.dataset.theme = selectedTheme; }, theme);
+          }
+          await page.evaluate(() => document.fonts.ready);
 
-  const dock = page.locator('[data-play-command-surface][data-expanded="false"]');
-  const seats = page.locator("[data-seat-user-id]");
-  await expect(dock).toBeVisible();
-  await expect(seats.first()).toBeVisible();
+          const dock = page.locator('[data-play-command-surface][data-expanded="false"]');
+          const seats = page.locator("[data-seat-token]");
+          await expect(dock).toBeVisible();
+          await expect(seats).toHaveCount(8);
+          const dockBox = (await dock.boundingBox())!;
+          for (const seat of await seats.all()) {
+            const box = (await seat.boundingBox())!;
+            expect(box.width).toBeGreaterThanOrEqual(44);
+            expect(box.height).toBeGreaterThanOrEqual(44);
+            expect(box.y + box.height).toBeLessThanOrEqual(dockBox.y - 4);
+          }
+          await page.screenshot({ path: testInfo.outputPath("short-phone.png"), caret: "initial" });
+          if (hydrated) {
+            const lastTarget = page.locator('button[data-seat-user-id]').last();
+            await lastTarget.click();
+            await expect(lastTarget).toHaveAttribute("aria-pressed", "true");
+          }
+        } finally {
+          await context.close();
+        }
+      });
+    }
+  }
+}
 
-  const dockBox = await dock.boundingBox();
-  expect(dockBox).not.toBeNull();
-  const coveredSeats = await seats.evaluateAll((elements, dockTop) =>
-    elements.flatMap((element) => {
-      const rect = element.getBoundingClientRect();
-      const overlapsDock = rect.top < dockTop && rect.bottom > dockTop && rect.bottom > 0;
-      return overlapsDock ? [element.getAttribute("data-seat-user-id")] : [];
-    }),
-    dockBox!.y,
-  );
-
-  expect(coveredSeats).toEqual([]);
-});
-
-test("compact system and account states stay inside 320px without splitting normal words", async ({ page }) => {
+test("compact system and account states stay inside 320px without splitting normal words", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 320, height: 568 });
 
   await page.goto("/missing-audit-route", { waitUntil: "domcontentloaded" });
@@ -231,7 +256,7 @@ test("compact system and account states stay inside 320px without splitting norm
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
 
   await page.goto("/leaderboard?visualLeaderboard=unavailable", { waitUntil: "domcontentloaded" });
-  const unavailableHeading = page.getByRole("heading", { name: "Данните за броя не пристигнаха" });
+  const unavailableHeading = page.getByRole("heading", { name: "Класацията временно е недостъпна" });
   const unavailableBox = await unavailableHeading.boundingBox();
   expect(unavailableBox).not.toBeNull();
   expect(unavailableBox!.x + unavailableBox!.width).toBeLessThanOrEqual(320);
@@ -239,6 +264,7 @@ test("compact system and account states stay inside 320px without splitting norm
   await page.goto("/account?visualAuth=1", { waitUntil: "domcontentloaded" });
   const accountName = page.getByRole("heading", { level: 1, name: "Визуален играч" });
   await expect(accountName).toBeVisible();
+  await page.evaluate(() => document.fonts.ready);
   const firstWordLineCount = await accountName.evaluate((element) => {
     const text = element.firstChild;
     if (!text) return 0;
@@ -248,6 +274,7 @@ test("compact system and account states stay inside 320px without splitting norm
     return range.getClientRects().length;
   });
   expect(firstWordLineCount).toBe(1);
+  await page.screenshot({ path: testInfo.outputPath("compact-account.png"), caret: "initial" });
 });
 
 test("desktop play stage reserves its final height while measurement is pending", async ({ page }) => {

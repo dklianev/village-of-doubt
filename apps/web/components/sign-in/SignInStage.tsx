@@ -107,8 +107,8 @@ function signInCopyForRedirect(redirectTo: string): SignInCopy {
   if (redirectTo.includes("/join")) {
     return {
       kicker: "покана",
-      title: ["Влез", "с кода"],
-      subtitle: "Досието казва на стаята кой си, без да разкрива ролята ти на никого освен на теб.",
+      title: ["Вход", "в играта"],
+      subtitle: "След това ще продължиш към стаята с код. Нямаш профил? Създай нов.",
     };
   }
 

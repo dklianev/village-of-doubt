@@ -14,11 +14,11 @@ export function PhaseGuide({
   ownPlayer: PublicPlayer | undefined;
 }) {
   const guide = phaseGuideBg(phase, mode);
-  const personalHint = privateRole ? roleWakeHint(privateRole, phase, ownPlayer) : "Ролята ти още не е разкрита на това устройство.";
+  const personalHint = roleWakeHint(privateRole, phase, ownPlayer);
 
   return (
     <section className="phase-guide-card ritual-panel mt-8 rounded-[2rem] p-6">
-      <p className="section-kicker">водене на рунда</p>
+      <p className="section-kicker">текуща фаза</p>
       <h2 className="mt-2 text-3xl font-black">{guide.title}</h2>
       <p className="mt-3 text-[#ead9ba]">{guide.body}</p>
       <div className="mt-4 grid gap-3 md:grid-cols-2">

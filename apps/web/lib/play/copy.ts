@@ -1,115 +1,17 @@
 import {
   GAME_MODE_DEFINITIONS,
-  ROLE_DEFINITIONS,
   getGameFamily,
   getGameModeNameBg,
   phaseLabelBg,
   type ChatChannel,
+  type GameFamily,
   type GameMode,
   type GamePhase,
   type RoleCode,
 } from "@werewolf/shared";
 import { canFactionKill, isNightPhase } from "@/lib/play/role-rules";
-import type { PrivateResult, PublicPlayer } from "@/lib/play/types";
+import type { PublicPlayer } from "@/lib/play/types";
 
-export const ROLE_GUIDE_BG: Partial<Record<RoleCode, { summary: string; team: string; timing: string; win: string }>> = {
-  civilian: {
-    summary: "Нямаш нощно действие. Силата ти е в дневното обсъждане, логиката и гласа.",
-    team: "Мирни граждани",
-    timing: "Ден и гласуване",
-    win: "Открий и елиминирай Мафията",
-  },
-  commissioner: {
-    summary: "Всяка нощ проверяваш играч и разбираш дали е от Мафията. Резултатът е само за теб.",
-    team: "Мирни граждани",
-    timing: "Всяка нощ",
-    win: "Открий Мафията без да се издадеш твърде рано",
-  },
-  mafioso: {
-    summary: "Будиш се с Мафията и участваш в избора на нощна жертва.",
-    team: "Мафия",
-    timing: "Всяка нощ",
-    win: "Мафията да достигне паритет с мирните",
-  },
-  don: {
-    summary: "Водиш Мафията. Можеш да участваш в убийството или да търсиш Комисаря.",
-    team: "Мафия",
-    timing: "Всяка нощ",
-    win: "Открий Комисаря и пази Мафията скрита",
-  },
-  ordinary_villager: {
-    summary: "Нямаш нощно действие. Наблюдавай реакциите, пази логиката и гласувай внимателно.",
-    team: "Село",
-    timing: "Ден и гласуване",
-    win: "Всички Върколаци и други зли роли да бъдат елиминирани",
-  },
-  werewolf: {
-    summary: "Будиш се с Върколаците и избирате една нощна жертва.",
-    team: "Върколаци",
-    timing: "Всяка нощ",
-    win: "Върколаците да достигнат паритет със селото",
-  },
-  seer: {
-    summary: "Всяка нощ проверяваш дали избран играч е Върколак или Вампир. Резултатът е само за теб.",
-    team: "Село",
-    timing: "Всяка нощ",
-    win: "Насочи селото към нощните заплахи",
-  },
-  witch: {
-    summary: "Имаш една лечебна отвара и една отрова. Всяка може да се използва само веднъж.",
-    team: "Село",
-    timing: "Нощ, докато имаш отвара",
-    win: "Спаси ключов играч или елиминирай подозрителен",
-  },
-  healer: {
-    summary: "Всяка нощ пазиш друг играч от нощна смърт. Не можеш да пазиш себе си или един и същ човек две нощи поред.",
-    team: "Село",
-    timing: "Всяка нощ",
-    win: "Прекъсвай нощните убийства без да се издаваш",
-  },
-  priest: {
-    summary: "Веднъж благославяш играч. Благословията остава до края и спира първото убийство срещу него.",
-    team: "Село",
-    timing: "Една нощ в играта",
-    win: "Дай трайна защита на най-ценния съюзник",
-  },
-  hunter: {
-    summary: "Ако умреш, получаваш последен изстрел и можеш да вземеш друг жив играч със себе си.",
-    team: "Село",
-    timing: "При смърт",
-    win: "Накарай злите роли да се страхуват да те елиминират",
-  },
-  cupid: {
-    summary: "Първата нощ избираш двама Влюбени. Ако единият умре, другият умира от разбито сърце.",
-    team: "Село",
-    timing: "Само първата нощ",
-    win: "Селото печели, освен ако Влюбените не останат последни",
-  },
-  vampire: {
-    summary: "Вампирите са отделна зла фракция. Будите се заедно и избирате нощна жертва.",
-    team: "Вампири",
-    timing: "Всяка нощ",
-    win: "Вампирите да достигнат паритет с всички останали",
-  },
-  jester: {
-    summary: "Искаш да те изгонят чрез дневното гласуване. Ако селото те линчува, печелиш лична победа.",
-    team: "Самостоятелен",
-    timing: "Ден и гласуване",
-    win: "Бъди изгонен през гласуване",
-  },
-  little_girl: {
-    summary: "Разширена роля за ръчно водени игри. Наднича, докато Върколаците са будни, но рискува да бъде разкрита.",
-    team: "Село",
-    timing: "Нощ, ръчно/разширено",
-    win: "Събирай информация без да бъдеш хваната",
-  },
-  thief: {
-    summary: "Първата нощ крадеш карта веднъж. Ти ставаш откраднатата роля, а целта става Обикновен селянин.",
-    team: "Променлив",
-    timing: "Само първата нощ",
-    win: "След кражбата печелиш с новия си отбор",
-  },
-};
 
 interface PhaseGuideCopy {
   title: string;
@@ -120,7 +22,7 @@ interface PhaseGuideCopy {
 const PHASE_GUIDE_BG: Partial<Record<GamePhase, PhaseGuideCopy>> = {
   lobby: {
     title: "Настройка на стаята",
-    body: "Водещият избира режим, роли, таймери, начин на разговор и Разказвач. Всички трябва да са готови преди началото.",
+    body: "Домакинът подготвя стаята. При включено автоматично начало се изчаква готовността на всички участници. Домакинът може да започне и без всички да са готови, ако останалите условия за начало са изпълнени.",
     wakes: "Никой още не се буди.",
   },
   role_reveal: {
@@ -136,7 +38,7 @@ const PHASE_GUIDE_BG: Partial<Record<GamePhase, PhaseGuideCopy>> = {
   night: {
     title: "Нощ",
     body: "Играчите с нощни действия избират цел. Изборите остават тайни и се разрешават по установения ред.",
-    wakes: "Мафия/Върколаци/Вампири, Комисар/Ясновидка, Вещица, Лечител, Свещеник.",
+    wakes: "Върколаците, Вампирите, Гадателката, Оракулът и останалите роли с нощни действия.",
   },
   day_announcement: {
     title: "Събуждане и обявяване",
@@ -175,12 +77,12 @@ const PHASE_GUIDE_BG: Partial<Record<GamePhase, PhaseGuideCopy>> = {
   },
   mayor_successor: {
     title: "Наследник на Кмета",
-    body: "Ако Кметът умре, Разказвачът или хостът избира наследник според настройките.",
-    wakes: "Разказвачът/хостът управлява избора.",
+    body: "Ако Кметът умре, Разказвачът или домакинът избира наследник според настройките.",
+    wakes: "Разказвачът или домакинът управлява избора.",
   },
   paused: {
     title: "Пауза",
-    body: "Фазата е спряна временно от Разказвача или хоста.",
+    body: "Фазата е спряна временно от Разказвача или домакина.",
     wakes: "Никой няма задължително действие.",
   },
   game_over: {
@@ -197,7 +99,7 @@ const MAFIA_PHASE_GUIDE_BG: Partial<Record<GamePhase, Partial<PhaseGuideCopy>>> 
     wakes: "Всеки гледа само собствената си роля.",
   },
   first_night: {
-    body: "Първият договор подрежда началните действия преди редовните нощни решения.",
+    body: "Ролите с нощни действия правят първите си избори според настройките на стаята.",
     wakes: "Мафията, Донът и Комисарят според избраните роли.",
   },
   night: {
@@ -251,9 +153,21 @@ export function phaseGuideBg(phase: GamePhase, mode: GameMode): PhaseGuideCopy {
   };
 }
 
-export function roleWakeHint(role: RoleCode, phase: string, ownPlayer: PublicPlayer | undefined) {
+export function roleWakeHint(role: RoleCode | undefined, phase: string, ownPlayer: PublicPlayer | undefined) {
+  if (ownPlayer?.narrator) {
+    return "Ти си Разказвачът. Води фазите и пази тайните на играчите.";
+  }
+  if (ownPlayer && !ownPlayer.playing) {
+    return "Ти наблюдаваш играта. Не участваш в действията и гласуването.";
+  }
   if (ownPlayer && ownPlayer.playing && !ownPlayer.alive) {
+    if (phase === "hunter_revenge" && role === "hunter") {
+      return "Ако е твоят последен изстрел, избери жив играч.";
+    }
     return "Ти си елиминиран. Следи играта, но не влияеш на живите играчи.";
+  }
+  if (!role) {
+    return "Ролята ти още не е разкрита на това устройство.";
   }
   if (role === "thief" && phase === "first_night") {
     return "Сега е твоят единствен шанс да откраднеш карта.";
@@ -288,8 +202,8 @@ export function roleWakeHint(role: RoleCode, phase: string, ownPlayer: PublicPla
     }
     return "В тази нощ нямаш задължително действие.";
   }
-  if (phase === "hunter_revenge" && role === "hunter") {
-    return "Ако си мъртъв Ловец, избери последния си изстрел.";
+  if (phase === "hunter_revenge") {
+    return "Изчакай последния изстрел на Ловеца.";
   }
   if (phase === "voting") {
     return "Гласувай според информацията и блъфовете от деня.";
@@ -300,7 +214,7 @@ export function roleWakeHint(role: RoleCode, phase: string, ownPlayer: PublicPla
 export function nightActionHelpBg(role: RoleCode) {
   const labels: Partial<Record<RoleCode, string>> = {
     mafioso: "Координирай се със съотборниците си в тайния канал. Ако изборите ви се разминават, няма жертва.",
-    don: "Можеш да помогнеш за убийството или да провериш дали някой е Комисарят.",
+    don: "Можеш да помогнеш за убийството и отделно да провериш дали някой е Комисарят през същата нощ.",
     werewolf: "Избери жертва заедно с глутницата. Лечител, Вещица или благословия могат да спрат смъртта.",
     vampire: "Вампирите действат като отделна зла фракция и имат собствена жертва.",
     commissioner: "Проверката казва дали целта е от Мафията, не показва точната роля.",
@@ -309,7 +223,7 @@ export function nightActionHelpBg(role: RoleCode) {
     roleblocker: "Избраният играч няма да може да изпълни нощното си действие.",
     lawyer: "Адвокатът прави целта да изглежда чиста пред разследващите.",
     medium: "Медиумът може да пита вече елиминиран играч каква е била ролята му.",
-    seer: "Ясновидката вижда точната роля, но резултатът не е публичен.",
+    seer: "Проверяваш дали избраният играч е Върколак или Вампир. Получаваш личен отговор за заплаха, без точна роля.",
     oracle: "Оракулът проверява дали целта е Върколак или Вампир.",
     witch: "Лечението и отровата са еднократни. Ако ги изразходваш, после вече не са налични.",
     healer: "Лечителят не може да пази себе си и не може да пази един и същ играч две нощи поред.",
@@ -346,7 +260,7 @@ export function privateChannelBg(channel: ChatChannel) {
 export function nightInstructionBg(role: RoleCode) {
   const labels: Partial<Record<RoleCode, string>> = {
     mafioso: "Мафията избира жертва",
-    don: "Донът избира жертва или търси Комисаря",
+    don: "Донът избира жертва и търси Комисаря",
     werewolf: "Върколаците избират жертва",
     vampire: "Вампирите избират жертва",
     commissioner: "Комисарят проверява подозрителен играч",
@@ -355,9 +269,9 @@ export function nightInstructionBg(role: RoleCode) {
     roleblocker: "Блокиращият спира нощно действие",
     lawyer: "Адвокатът подготвя алиби",
     medium: "Медиумът говори с елиминиран играч",
-    seer: "Ясновидката вижда тайна роля",
+    seer: "Гадателката проверява за нощна заплаха",
     oracle: "Оракулът проверява заплахата",
-    witch: "Вещицата решава дали да лекува или отрови",
+    witch: "Вещицата избира кого да лекува и кого да отрови",
     healer: "Лечителят пази един играч за тази нощ",
     doctor: "Докторът пази един играч за тази нощ",
     bodyguard: "Бодигардът охранява един играч",
@@ -421,25 +335,6 @@ export function nightTargetHeadingBg(role: RoleCode, targetName: string) {
   return `Нощна цел: ${targetName}`;
 }
 
-export function formatPrivateResult(result: PrivateResult, players: PublicPlayer[]) {
-  if (result.messageBg) {
-    return result.messageBg;
-  }
-
-  const targetName = players.find((player) => player.userId === result.targetUserId)?.displayName ?? "избрания играч";
-
-  if (result.role) {
-    return `${targetName} е ${ROLE_DEFINITIONS[result.role].nameBg}.`;
-  }
-  if (typeof result.isEvil === "boolean") {
-    return result.isEvil ? `${targetName} е от злата страна.` : `${targetName} не е от злата страна.`;
-  }
-  if (typeof result.isCommissioner === "boolean") {
-    return result.isCommissioner ? `${targetName} е Комисарят.` : `${targetName} не е Комисарят.`;
-  }
-
-  return `Имаш резултат за ${targetName}.`;
-}
 
 export function modeBg(mode: string) {
   return isKnownMode(mode) ? getGameModeNameBg(mode) : mode;
@@ -491,9 +386,9 @@ export function majorityModeBg(mode: string) {
   return labels[mode] ?? mode;
 }
 
-export function winnerBg(winner: string) {
+export function winnerBg(winner: string, family?: GameFamily) {
   const labels: Record<string, string> = {
-    village: "Селото печели",
+    village: family === "mafia" ? "Гражданите печелят" : "Селото печели",
     werewolves: "Върколаците печелят",
     vampires: "Вампирите печелят",
     mafia: "Мафията печели",

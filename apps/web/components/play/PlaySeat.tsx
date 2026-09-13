@@ -151,6 +151,7 @@ export const PlaySeat = memo(function PlaySeat({
     <div
       className={styles.token}
       data-seat-token
+      data-seat-user-id={player.userId}
       role="group"
       data-alive={player.alive ? "true" : "false"}
       data-connected={player.connected ? "true" : "false"}

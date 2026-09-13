@@ -1,6 +1,7 @@
 import type { Room } from "@colyseus/sdk";
 import type {
   ChatChannel,
+  CreateRoomOptions,
   GameMode,
   GamePhase,
   NarratorVoice,
@@ -76,6 +77,7 @@ export interface PublicNomination {
 }
 
 export interface GameSnapshot {
+  nextRoomOptions?: CreateRoomOptions;
   code: string;
   mode: GameMode;
   playerCount: number;
@@ -98,6 +100,7 @@ export interface GameSnapshot {
   currentDefenseUserId?: string;
   nominations?: PublicNomination[];
   revoteEligibleUserIds?: string[];
+  votingCycle?: number;
   winnerTeam: string;
   winnerReasonBg: string;
   players: PublicPlayer[];

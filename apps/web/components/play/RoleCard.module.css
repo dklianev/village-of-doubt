@@ -5,7 +5,7 @@
   --dossier-frame: rgba(102, 57, 25, 0.55);
   --dossier-ink: #24160f;
   --dossier-muted-ink: #4a3021;
-  --dossier-accent: #8b2f29;
+  --dossier-accent: var(--ds-accent-gold-deep);
   position: relative;
   display: block;
   min-height: 306px;
@@ -30,7 +30,14 @@
   --dossier-paper-mid: rgba(228, 196, 145, 0.97);
   --dossier-paper-deep: rgba(180, 126, 73, 0.93);
   --dossier-frame: rgba(85, 42, 23, 0.64);
-  --dossier-accent: #8f2926;
+}
+
+.dossier[data-role-team="village"] {
+  --dossier-accent: var(--ds-accent-green);
+}
+
+.dossier:is([data-role-team="mafia"], [data-role-team="werewolves"], [data-role-team="vampires"]) {
+  --dossier-accent: var(--ds-accent-blood-deep);
 }
 
 :global(html[data-theme="light"]) .dossier {
@@ -77,7 +84,7 @@
   height: 18px;
   border: 1px solid rgba(255, 235, 190, 0.52);
   border-radius: 50%;
-  background: linear-gradient(145deg, #b54337, #681a16);
+  background: var(--dossier-accent);
   box-shadow:
     0 5px 12px rgba(70, 20, 16, 0.34),
     inset 0 1px rgba(255, 255, 255, 0.22);
@@ -164,7 +171,7 @@
 .header h2 {
   margin: 6px 0 0;
   color: var(--dossier-ink);
-  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-family: var(--font-display);
   font-size: clamp(1.9rem, 3vw, 2.7rem);
   font-weight: 900;
   letter-spacing: 0;
@@ -185,7 +192,7 @@
   aspect-ratio: 1;
   border: 1px solid rgba(113, 60, 24, 0.42);
   border-radius: 50%;
-  background: linear-gradient(145deg, #ad4035, #641814);
+  background: var(--dossier-accent);
   box-shadow:
     0 8px 18px rgba(80, 23, 17, 0.28),
     inset 0 1px rgba(255, 255, 255, 0.22),
@@ -218,11 +225,12 @@
 
 .fact {
   min-width: 0;
-  border: 1px solid rgba(116, 68, 34, 0.22);
-  border-radius: 6px;
+  border: 0;
+  border-top: 1px solid rgba(116, 68, 34, 0.22);
+  border-radius: 0;
   padding: 10px;
   background: rgba(255, 250, 234, 0.7);
-  box-shadow: inset 0 1px rgba(255, 255, 255, 0.48);
+  box-shadow: none;
 }
 
 .fact span {
@@ -230,7 +238,7 @@
   color: var(--dossier-accent);
   font-size: 0.66rem;
   font-weight: 950;
-  letter-spacing: 0.1em;
+  letter-spacing: 0;
   line-height: 1.2;
   text-transform: uppercase;
 }
@@ -246,13 +254,24 @@
 
 .result {
   margin: 0;
-  border: 1px solid rgba(139, 47, 41, 0.28);
-  border-radius: 6px;
-  padding: 11px 13px;
-  background: rgba(139, 47, 41, 0.11);
-  color: #3f291d;
+  border: 0;
+  border-inline-start: 2px solid var(--dossier-muted-ink);
+  border-radius: 0;
+  padding: 4px 0 4px 12px;
+  background: none;
+  color: var(--dossier-ink);
   font-weight: 850;
   line-height: 1.42;
+  overflow-wrap: anywhere;
+}
+
+.resultLabel {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--dossier-muted-ink);
+  font-size: 0.75rem;
+  font-weight: 650;
+  line-height: 1.4;
 }
 
 @container private-dossier (max-width: 520px) {
@@ -362,4 +381,251 @@
   .result {
     margin-top: 0;
   }
+}
+
+.dossier.dossier.compact {
+  --compact-accent: var(--ds-eyebrow-gold);
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  min-height: 0;
+  align-items: start;
+  gap: 16px;
+  border: 0;
+  padding: 14px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--ds-ink-primary);
+}
+
+.dossier.compact[data-role-team="village"] {
+  --compact-accent: color-mix(in oklch, var(--ds-accent-green) 60%, var(--ds-ink-primary));
+}
+
+.dossier.compact:is([data-role-team="mafia"], [data-role-team="werewolves"], [data-role-team="vampires"]) {
+  --compact-accent: var(--ds-eyebrow-blood);
+}
+
+.compact::before,
+.compact::after,
+.compact .art::after,
+.compact .content::before {
+  display: none;
+}
+
+.compact .art {
+  position: relative;
+  inset: auto;
+  width: 112px;
+  height: 150px;
+  border: 0;
+  border-radius: 4px;
+  background: var(--role-art) center 20% / auto 130% no-repeat;
+  filter: none;
+  mask-image: none;
+  -webkit-mask-image: none;
+}
+
+.compact .content {
+  width: 100%;
+  gap: 10px;
+}
+
+.compact .header {
+  padding-inline-end: 52px;
+}
+
+.compact .header h2 {
+  margin-top: 3px;
+  color: var(--ds-ink-primary);
+  font-size: 1.5rem;
+  line-height: 1.15;
+  text-wrap: wrap;
+}
+
+.compact .kicker,
+.compact .team {
+  margin: 0;
+  color: var(--compact-accent);
+  font-size: 0.75rem;
+  font-weight: 750;
+  letter-spacing: 0;
+  line-height: 1.4;
+}
+
+.compact .team {
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+}
+
+.compact .body {
+  gap: 4px;
+}
+
+.compact .body > p,
+.mini .details > p:not(.result) {
+  max-width: 70ch;
+  margin: 0;
+  color: var(--ds-ink-soft);
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.compact .result {
+  border: 0;
+  border-inline-start: 2px solid var(--ds-border-subtle);
+  border-radius: 0;
+  padding: 4px 0 4px 12px;
+  background: none;
+  color: var(--ds-ink-primary);
+  font-size: 0.875rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.compact .resultLabel {
+  color: var(--ds-ink-soft);
+}
+
+.details {
+  min-width: 0;
+  color: var(--ds-ink-soft);
+  font-size: 0.8125rem;
+}
+
+.details > summary {
+  width: fit-content;
+  min-height: 32px;
+  align-content: center;
+  color: var(--compact-accent);
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.details > summary:focus-visible {
+  outline: 2px solid var(--compact-accent);
+  outline-offset: 2px;
+}
+
+.details .fact {
+  display: block;
+  border: 0;
+  padding: 4px 0;
+  background: none;
+}
+
+.details .fact span,
+.details .fact strong {
+  display: inline;
+  color: inherit;
+  font-size: inherit;
+  line-height: 1.4;
+  text-transform: none;
+}
+
+.details .fact span {
+  margin-inline-end: 8px;
+  font-weight: 500;
+}
+
+@media (min-width: 900px) {
+  .compact .content:has(> .result) {
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    column-gap: 24px;
+  }
+
+  .compact .header {
+    grid-column: 1 / -1;
+  }
+
+  .compact .body {
+    grid-column: 1;
+  }
+
+  .compact .result {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: start;
+  }
+}
+
+@media (max-width: 600px) {
+  .dossier.dossier.compact {
+    grid-template-columns: 64px minmax(0, 1fr);
+    gap: 10px 12px;
+    padding: 12px;
+  }
+
+  .compact .art {
+    width: 64px;
+    height: 86px;
+  }
+
+  .compact .content {
+    display: contents;
+  }
+
+  .compact .header {
+    align-self: center;
+  }
+
+  .compact .header h2 {
+    font-size: 1.25rem;
+  }
+
+  .compact .body,
+  .compact .result {
+    grid-column: 1 / -1;
+  }
+
+  .details > summary {
+    min-height: 44px;
+  }
+}
+
+.dossier.compact.mini {
+  grid-template-columns: 56px minmax(0, 1fr);
+  min-height: 98px;
+  gap: 12px;
+  padding: 10px;
+}
+
+@media (min-width: 1200px) and (max-height: 800px) {
+  .dossier.compact:not(.mini) {
+    grid-template-columns: 80px minmax(0, 1fr);
+    padding: 12px;
+  }
+  .compact:not(.mini) .art { width: 80px; height: 108px; }
+  .compact:not(.mini) .content { gap: 6px; }
+  .compact:not(.mini) .header h2 { font-size: 1.25rem; }
+}
+
+.mini .art {
+  width: 56px;
+  height: 72px;
+}
+
+.mini .content {
+  display: grid;
+  gap: 2px;
+}
+
+.mini .header {
+  align-self: start;
+}
+
+.mini .header h2 {
+  margin: 0;
+  font-size: 1.125rem;
+  line-height: 1.2;
+}
+
+.mini .details > summary {
+  min-height: 32px;
+}
+
+.mini > .result {
+  grid-column: 1 / -1;
+  grid-row: auto;
 }

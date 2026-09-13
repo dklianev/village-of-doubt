@@ -7,6 +7,7 @@ import { AccountHero } from "./AccountHero";
 import { AccountProfile } from "./AccountProfile";
 import { AccountRecentGames, type RecentGameSummary } from "./AccountRecentGames";
 import { AccountStats } from "./AccountStats";
+import { AccountSections } from "./AccountSections";
 import styles from "./Account.module.css";
 import type { PlayerStats } from "@/lib/account-stats";
 
@@ -38,14 +39,8 @@ export function AccountDashboard(props: AccountDashboardProps) {
         activityState={props.activityState}
       />
 
-      <div className={styles.content}>
-        <AccountGroup
-          id="chronicle"
-          index="I"
-          title="Хроника"
-          description="Статистика, легенди и последни игри"
-          defaultChecked
-        >
+      <AccountSections>
+        <AccountGroup id="chronicle">
           {props.activityState !== "unavailable" ? (
             <AccountStats stats={props.stats} activityState={props.activityState} />
           ) : null}
@@ -61,12 +56,7 @@ export function AccountDashboard(props: AccountDashboardProps) {
           ) : null}
         </AccountGroup>
 
-        <AccountGroup
-          id="identity"
-          index="II"
-          title="Образ и достъп"
-          description="Име, портрет и свързани профили"
-        >
+        <AccountGroup id="identity">
           <AccountProfile
             initialName={props.name}
             initialAvatarId={props.avatarId}
@@ -76,56 +66,26 @@ export function AccountDashboard(props: AccountDashboardProps) {
           />
         </AccountGroup>
 
-        <AccountGroup
-          id="security"
-          index="III"
-          title="Данни и сигурност"
-          description="Архив и управление на досието"
-        >
+        <AccountGroup id="security">
           <div className={styles.archiveActions} data-account-archive-actions>
             <AccountDataExport />
             <AccountDangerZone email={props.email} />
           </div>
         </AccountGroup>
-      </div>
+      </AccountSections>
     </div>
   );
 }
 
 function AccountGroup({
   id,
-  index,
-  title,
-  description,
-  defaultChecked = false,
   children,
 }: {
   id: string;
-  index: string;
-  title: string;
-  description: string;
-  defaultChecked?: boolean;
   children: ReactNode;
 }) {
-  const inputId = `account-section-${id}`;
-
   return (
-    <div className={styles.accountGroup} data-account-section={id}>
-      <input
-        className={styles.accountGroupToggle}
-        type="radio"
-        name="account-section"
-        id={inputId}
-        aria-label={title}
-        defaultChecked={defaultChecked}
-      />
-      <label className={styles.accountGroupSummary} htmlFor={inputId}>
-        <span className={styles.accountGroupIndex}>{index}</span>
-        <span className={styles.accountGroupLabel}>
-          <strong>{title}</strong>
-          <small>{description}</small>
-        </span>
-      </label>
+    <div id={`account-${id}`} className={styles.accountGroup} data-account-section={id}>
       <div className={styles.accountGroupBody}>{children}</div>
     </div>
   );

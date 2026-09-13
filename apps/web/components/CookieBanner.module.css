@@ -72,3 +72,24 @@
     font-size: 0.7rem;
   }
 }
+
+.homeSlot {
+  padding: 8px max(12px, env(safe-area-inset-right)) 8px max(12px, env(safe-area-inset-left));
+}
+
+.banner.homepage {
+  position: static;
+  inset: auto;
+  z-index: auto;
+  width: min(610px, 100%);
+  margin-inline: auto;
+}
+
+.banner.homepage p {
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.banner.homepage :global(.btn) {
+  min-height: 44px;
+}

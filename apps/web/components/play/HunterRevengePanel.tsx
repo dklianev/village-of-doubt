@@ -1,3 +1,4 @@
+import { Crosshair } from "lucide-react";
 import type { PublicPlayer } from "@/lib/play/types";
 
 export function HunterRevengePanel({
@@ -28,6 +29,7 @@ export function HunterRevengePanel({
           disabled={!selectedTarget}
           onClick={() => selectedTarget && sendHunterRevenge(selectedTarget.userId)}
         >
+          <Crosshair className="play-button-icon" aria-hidden="true" />
           {selectedTarget ? `Застреляй ${selectedTarget.displayName}` : "Потвърди изстрела"}
         </button>
       </div>

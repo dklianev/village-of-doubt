@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, type RefObject } from "react";
+import { useRef, type RefObject } from "react";
 import Link from "next/link";
-import { Moon, Sun, Volume2, VolumeX, X } from "lucide-react";
+import { Moon, Sun, Volume2, VolumeX, KeyRound } from "lucide-react";
 import { Sheet } from "@werewolf/ui";
 import { AuthChip } from "@/components/site-chrome/AuthChip";
-import { DRAWER_LINKS, type DrawerLink } from "@/components/site-chrome/nav-links";
+import { DRAWER_LINKS } from "@/components/site-chrome/nav-links";
+import { PlayChoices } from "@/components/site-chrome/PlayChoices";
 import type { AuthSessionView } from "@/lib/use-auth-session";
 
 type ThemePreference = "light" | "dark";
@@ -15,7 +16,8 @@ export function MobileDrawer({
   pathname,
   soundEnabled,
   themePreference,
-  playHref,
+  mode = "navigation",
+  isRoom = false,
   initialSession,
   triggerRef,
   onOpenChange,
@@ -26,43 +28,57 @@ export function MobileDrawer({
   pathname: string;
   soundEnabled: boolean;
   themePreference: ThemePreference;
-  playHref: string;
+  mode?: "navigation" | "play";
+  isRoom?: boolean;
   initialSession?: AuthSessionView | null;
   triggerRef?: RefObject<HTMLButtonElement | null>;
   onOpenChange: (open: boolean) => void;
   onToggleSound: () => void;
   onCycleTheme: () => void;
 }) {
-  const drawerLinks = useMemo<ReadonlyArray<DrawerLink>>(() => [{ href: playHref, label: "Играй" }, ...DRAWER_LINKS], [playHref]);
-
-  function handleOpenChange(nextOpen: boolean) {
-    onOpenChange(nextOpen);
-    if (!nextOpen) {
-      window.requestAnimationFrame(() => triggerRef?.current?.focus());
-    }
+  const navigating = useRef(false);
+  function navigate() {
+    navigating.current = true;
+    onOpenChange(false);
   }
 
   return (
-    <Sheet open={open} onOpenChange={handleOpenChange} title="Навигация" description="Навигация и настройки за играта.">
+    <Sheet
+      open={open} onOpenChange={onOpenChange}
+      title={mode === "play" ? "Какво ще играем?" : "Навигация"}
+      description={mode === "play" ? "Избор на игра или присъединяване с код." : "Навигация и настройки за играта."}
+      closeLabel={mode === "play" ? "Затвори избора" : "Затвори менюто"}
+      onCloseAutoFocus={(event) => {
+        event.preventDefault();
+        if (!navigating.current) triggerRef?.current?.focus();
+        navigating.current = false;
+      }}
+    >
+      {mode === "play" ? <PlayChoices onNavigate={navigate} includeJoin /> : (
       <div className="site-drawer">
-        <div className="site-drawer-header">
-          <DrawerBrandMark />
-          <button className="site-icon-button" type="button" aria-label="Затвори менюто" onClick={() => handleOpenChange(false)}>
-            <X className="site-icon" aria-hidden strokeWidth={1.9} />
-          </button>
+        <div className="site-drawer-content">
+          <div className="site-drawer-auth">
+            <AuthChip
+              {...(initialSession === undefined ? {} : { initialSession })}
+              variant="drawer"
+              pathname={pathname}
+              onNavigate={navigate}
+            />
+          </div>
+          <nav className="site-drawer-nav" aria-label="Мобилна навигация">
+            {!isRoom ? <Link href="/join" prefetch={false} onNavigate={navigate}><KeyRound className="site-drawer-icon" aria-hidden /><span>Имам код</span></Link> : null}
+            {DRAWER_LINKS.map((item) => {
+              const Icon = item.icon;
+              const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+              return (
+                <Link key={`${item.href}:${item.label}`} className={active ? "is-active" : ""} href={item.href} prefetch={false} aria-current={pathname === item.href ? "page" : active ? "location" : undefined} onNavigate={navigate}>
+                  {Icon ? <Icon aria-hidden strokeWidth={1.8} className="site-drawer-icon" /> : null}
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
         </div>
-        <nav className="site-drawer-nav" aria-label="Мобилна навигация">
-          {drawerLinks.map((item) => {
-            const Icon = item.icon;
-            const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
-            return (
-              <Link key={`${item.href}:${item.label}`} className={active ? "is-active" : ""} href={item.href} prefetch={false} onClick={() => handleOpenChange(false)}>
-                {Icon ? <Icon aria-hidden strokeWidth={1.8} className="site-drawer-icon" /> : null}
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
         <div className="site-drawer-footer">
           <DrawerUtilityCluster
             soundEnabled={soundEnabled}
@@ -70,35 +86,9 @@ export function MobileDrawer({
             onToggleSound={onToggleSound}
             onCycleTheme={onCycleTheme}
           />
-          <div className="site-drawer-auth">
-            <AuthChip {...(initialSession === undefined ? {} : { initialSession })} />
-          </div>
         </div>
-      </div>
+      </div>)}
     </Sheet>
-  );
-}
-
-function DrawerBrandMark() {
-  return (
-    <Link className="site-brand" href="/" aria-label="Върколак и Мафия, начало">
-      <span className="site-brand-mark" aria-hidden="true" />
-      <span className="site-brand-text">
-        <span className="site-brand-wordmark is-compact">
-          <span>Върколак</span>
-          <span className="site-brand-dot" aria-hidden="true">
-            ·
-          </span>
-          <span>Мафия</span>
-        </span>
-        {process.env.NEXT_PUBLIC_SHOW_BETA_BADGE !== "false" ? (
-          <span className="site-beta-badge">
-            БЕТА
-          </span>
-        ) : null}
-        <span className="site-brand-subtitle">Социална игра на сенки</span>
-      </span>
-    </Link>
   );
 }
 

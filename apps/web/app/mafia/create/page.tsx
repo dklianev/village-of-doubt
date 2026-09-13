@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export const instant = true;
 
 type MafiaCreatePageProps = {
-  searchParams?: Promise<{ visualAuth?: string | string[] }>;
+  searchParams?: Promise<{ mode?: string | string[]; visualAuth?: string | string[] }>;
 };
 
 type MafiaCreateRouteContentProps = {
@@ -31,12 +31,19 @@ export default function MafiaCreatePage({ searchParams }: MafiaCreatePageProps) 
 async function MafiaCreateRouteContent({
   searchParams,
 }: MafiaCreateRouteContentProps) {
-  const visualAuth = firstSearchValue((await searchParams)?.visualAuth);
+  const params = await searchParams;
+  const mode = params?.mode === "mafia_sport" || params?.mode === "mafia_free"
+    ? params.mode
+    : undefined;
+  const redirectTo = mode
+    ? `/mafia/create?${new URLSearchParams({ mode })}`
+    : "/mafia/create";
+  const visualAuth = firstSearchValue(params?.visualAuth);
   if (process.env.NODE_ENV === "production" || visualAuth !== "1") {
-    await requireSession("/mafia/create");
+    await requireSession(redirectTo);
   }
 
-  return <LobbyCreateClient initialMode="mafia_free" family="mafia" />;
+  return <LobbyCreateClient initialMode={mode ?? "mafia_free"} family="mafia" />;
 }
 
 function firstSearchValue(value: string | string[] | undefined) {

@@ -1,6 +1,6 @@
 import type { GameFamily, RoleCode, RoleDistribution } from "@werewolf/shared";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { RoleTileLarge } from "@/components/lobby/RoleTileLarge";
 
 export function RoleCarousel({
@@ -13,6 +13,7 @@ export function RoleCarousel({
   onOpen,
   layout = "carousel",
   reserveRole,
+  filterControl,
 }: {
   family: GameFamily;
   roles: RoleCode[];
@@ -23,6 +24,7 @@ export function RoleCarousel({
   onOpen: (role: RoleCode) => void;
   layout?: "carousel" | "workspace";
   reserveRole?: RoleCode;
+  filterControl?: ReactNode;
 }) {
   const galleryId = useId();
   const galleryRef = useRef<HTMLDivElement>(null);
@@ -72,10 +74,6 @@ export function RoleCarousel({
     return () => gallery.removeEventListener("wheel", handleWheel);
   }, [layout]);
 
-  if (roles.length === 0) {
-    return <p className="role-carousel-empty">Няма роли за този филтър.</p>;
-  }
-
   function moveGallery(direction: -1 | 1) {
     const gallery = galleryRef.current;
     if (!gallery) {
@@ -89,6 +87,7 @@ export function RoleCarousel({
       <div className="role-gallery-controls">
         <span>{roles.length} роли</span>
         <div>
+          {filterControl}
           <button
             type="button"
             aria-label="Предишни роли"
@@ -120,6 +119,7 @@ export function RoleCarousel({
         data-readonly={readonly ? "true" : "false"}
         onScroll={updateNavigation}
       >
+        {roles.length === 0 ? <p className="role-carousel-empty">Няма роли за този филтър.</p> : null}
         {roles.map((role) => (
           <RoleTileLarge
             key={role}
@@ -127,6 +127,7 @@ export function RoleCarousel({
             role={role}
             count={distribution[role] ?? 0}
             readonly={readonly}
+            compactOnMobile={layout === "workspace"}
             reserve={role === reserveRole}
             onIncrement={() => onIncrement?.(role)}
             onDecrement={() => onDecrement?.(role)}

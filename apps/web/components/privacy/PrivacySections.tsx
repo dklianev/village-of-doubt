@@ -179,7 +179,7 @@ export function PrivacySections() {
 
       <ol className="privacy-section-list">
         {SECTIONS.map((section) => (
-          <li key={section.id} id={section.id} className="privacy-section-item">
+          <li key={section.id} id={section.id} tabIndex={-1} className="privacy-section-item">
             <h3>
               <span className="privacy-section-num">{section.number}.</span>
               {section.title}

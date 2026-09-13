@@ -19,8 +19,8 @@
   border-radius: 32px;
   padding: clamp(18px, 2.4vw, 32px);
   background:
-    radial-gradient(ellipse at 50% 100%, rgba(8, 6, 5, 0.84), transparent 62%),
-    linear-gradient(180deg, rgba(5, 8, 9, 0.72), rgba(6, 5, 4, 0.86));
+    var(--play-stage-scrim),
+    var(--play-room-art) center top / cover no-repeat;
   box-shadow: 0 34px 90px rgba(0, 0, 0, 0.36), inset 0 1px rgba(255, 255, 255, 0.06);
   isolation: isolate;
   container-type: inline-size;
@@ -31,9 +31,8 @@
 :global(html[data-theme="dark"]) .stage:global(.play-section) {
   border-color: rgba(245, 232, 200, 0.24);
   background:
-    radial-gradient(ellipse at 50% 100%, rgba(8, 6, 5, 0.3), transparent 72%),
-    linear-gradient(180deg, rgba(5, 8, 9, 0.12), rgba(6, 5, 4, 0.42)),
-    var(--play-room-art) center / cover no-repeat;
+    var(--play-stage-scrim),
+    var(--play-room-art) center top / cover no-repeat;
   color: #fff7df;
   box-shadow:
     0 0 0 4px rgba(18, 13, 10, 0.92),
@@ -46,9 +45,8 @@
 :global(html[data-theme="light"]) .stage:global(.play-section) {
   border-color: rgba(106, 74, 39, 0.54);
   background:
-    radial-gradient(ellipse at 50% 100%, rgba(247, 233, 202, 0.16), transparent 70%),
-    linear-gradient(180deg, rgba(236, 227, 202, 0.2), rgba(16, 15, 12, 0.4)),
-    var(--play-room-art) center / cover no-repeat;
+    var(--play-stage-scrim),
+    var(--play-room-art) center top / cover no-repeat;
   color: #fff7df;
   box-shadow: 0 34px 90px rgba(0, 0, 0, 0.44), inset 0 1px rgba(255, 255, 255, 0.08);
 }
@@ -60,8 +58,8 @@
 
 .stage[data-family="mafia"] {
   --play-table-inlay: image-set(
-    url("/game-art/play/table-inlay-mafia-v1.avif") type("image/avif"),
-    url("/game-art/play/table-inlay-mafia-v1.webp") type("image/webp")
+    url("/game-art/play/table-inlay-mafia-v2.avif") type("image/avif"),
+    url("/game-art/play/table-inlay-mafia-v2.webp") type("image/webp")
   );
   --play-table-inlay-opacity: 0.76;
   --play-table-mobile-inlay-opacity: 0.68;
@@ -121,7 +119,7 @@
 }
 
 .stage[data-night="true"] .atmosphereFront {
-  opacity: 1;
+  opacity: 0.12;
 }
 
 .stage[data-night="true"] .atmosphereBack::before,
@@ -134,21 +132,20 @@
 
 .atmosphereBack {
   z-index: 0;
-  background:
-    radial-gradient(ellipse at 50% 42%, transparent 20%, rgba(5, 5, 4, 0.2) 72%, rgba(3, 3, 3, 0.72) 100%),
-    linear-gradient(180deg, rgba(4, 7, 8, 0.08), rgba(5, 5, 4, 0.34));
+  background: radial-gradient(ellipse at 50% 42%, transparent 64%, rgba(3, 3, 3, 0.16) 100%);
 }
 
 .atmosphereFront {
+  inset: auto 0 0;
   z-index: 1;
+  height: 24%;
   opacity: 0;
+  mask-image: linear-gradient(180deg, transparent, #000);
 }
 
 .stage[data-night="true"][data-family="werewolves"] .atmosphereBack::before {
   inset: 0;
-  background:
-    radial-gradient(circle at 80% 5%, rgba(214, 232, 200, 0.18), rgba(120, 150, 110, 0.05) 30%, transparent 58%),
-    radial-gradient(ellipse at 50% 42%, transparent 20%, rgba(8, 24, 22, 0.24) 72%, rgba(3, 10, 10, 0.72) 100%);
+  background: radial-gradient(circle at 80% 5%, rgba(214, 232, 200, 0.06), transparent 32%);
   animation: var(--play-moon-breathe-animation);
 }
 
@@ -169,9 +166,8 @@
 .stage[data-night="true"][data-family="mafia"] .atmosphereBack::before {
   inset: 0;
   background:
-    radial-gradient(ellipse at 16% 5%, rgba(235, 158, 87, 0.22), transparent 48%),
-    radial-gradient(ellipse at 84% 12%, rgba(103, 154, 147, 0.12), transparent 42%),
-    radial-gradient(ellipse at center, transparent 48%, rgba(80, 14, 16, 0.3) 100%);
+    radial-gradient(ellipse at 16% 5%, rgba(235, 158, 87, 0.08), transparent 32%),
+    radial-gradient(ellipse at 84% 12%, rgba(103, 154, 147, 0.04), transparent 28%);
   animation: var(--play-lamp-flicker-animation);
 }
 
@@ -193,24 +189,26 @@
   background:
     radial-gradient(ellipse at 50% 38%, rgba(248, 236, 210, 0.14), transparent 30%),
     linear-gradient(90deg, rgba(132, 47, 43, 0.12), transparent 24% 76%, rgba(132, 47, 43, 0.12));
-  opacity: 0.86;
+  opacity: 0.15;
 }
 
 .hud {
   position: relative;
   z-index: 60;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
   min-height: 92px;
   pointer-events: none;
 }
 
 .copy {
   display: grid;
-  grid-template-columns: auto auto;
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
-  max-width: min(48rem, 78%);
+  min-width: 0;
+  max-width: 48rem;
   gap: 6px 12px;
 }
 
@@ -218,31 +216,36 @@
   grid-column: 1 / -1;
   margin: 0;
   color: #d7a552;
-  font-size: clamp(0.68rem, 1vw, 0.82rem);
+  font-size: 0.75rem;
   font-weight: 900;
-  letter-spacing: 0.26em;
+  letter-spacing: 0;
   text-shadow: var(--play-stage-copy-shadow);
   text-transform: uppercase;
 }
 
 .phasePill {
   display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  min-width: 0;
   min-height: 36px;
   align-items: center;
   gap: 8px;
   border: 1px solid rgba(209, 154, 66, 0.38);
   border-radius: 999px;
-  padding: 0 12px;
+  padding: 6px 12px;
   background: rgba(10, 8, 6, 0.86);
   color: #fff7df;
   font-size: 0.72rem;
   font-weight: 900;
-  letter-spacing: 0.08em;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
   text-shadow: var(--play-stage-copy-shadow);
   text-transform: uppercase;
 }
 
 .phaseDot {
+  flex-shrink: 0;
   width: 8px;
   height: 8px;
   border-radius: 50%;
@@ -253,11 +256,12 @@
 .title {
   margin: 0;
   color: #fff7df;
-  font-size: clamp(1.55rem, 2.9vw, 2.7rem);
+  font-size: 2.25rem;
   font-weight: 950;
-  line-height: 0.95;
+  line-height: 1.08;
+  overflow-wrap: anywhere;
   text-transform: uppercase;
-  text-shadow: 0 14px 42px rgba(0, 0, 0, 0.62);
+  text-shadow: var(--play-stage-copy-shadow);
 }
 
 .status {
@@ -512,6 +516,10 @@
   min-height: 136px;
 }
 
+.stage.stage[data-layout-mode="compact-table"]:is([data-seat-density="full"], [data-seat-density="crowded"]) .core.core {
+  top: 47%;
+}
+
 .seatSlot {
   position: absolute;
   top: var(--seat-y, 50%);
@@ -562,7 +570,7 @@
 
 .stage[data-seat-density="crowded"] .seatSlot [data-seat-name] {
   padding: 2px 6px;
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   line-height: 1;
 }
 
@@ -614,15 +622,11 @@
 }
 
 .ledger {
-  position: absolute;
-  top: clamp(18px, 2.4vw, 30px);
-  right: clamp(18px, 2.4vw, 30px);
-  z-index: 62;
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 8px;
-  max-width: 42%;
+  max-width: 240px;
 }
 
 .ledger span {
@@ -924,14 +928,19 @@
 
   .stage[data-family="mafia"] {
     --play-table-inlay: image-set(
-      url("/game-art/mobile/play/table-inlay-mafia-v1.avif") type("image/avif"),
-      url("/game-art/mobile/play/table-inlay-mafia-v1.webp") type("image/webp")
+      url("/game-art/mobile/play/table-inlay-mafia-v2.avif") type("image/avif"),
+      url("/game-art/mobile/play/table-inlay-mafia-v2.webp") type("image/webp")
     );
+  }
+
+  .hud {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
   }
 
   .copy {
     grid-template-columns: 1fr;
-    max-width: calc(100% - 128px);
+    max-width: 100%;
     gap: 5px;
   }
 
@@ -941,21 +950,17 @@
   }
 
   .phasePill {
-    width: max-content;
     min-height: 32px;
     font-size: 0.68rem;
   }
 
   .title {
-    font-size: clamp(1.35rem, 7vw, 2rem);
+    font-size: 1.75rem;
   }
 
   .ledger {
-    top: 16px;
-    right: 16px;
-    display: grid;
-    width: 116px;
-    max-width: 116px;
+    justify-content: flex-start;
+    max-width: 100%;
   }
 
   .ledger span {
@@ -973,10 +978,22 @@
   }
 }
 
-/* Short phones have only ~396px between the chrome and the collapsed command
- * dock. Tighten the non-interactive table core so the first target row remains
- * fully above the dock instead of looking tappable through it. */
+/* On short phones, retain the phase heading without its duplicate badge so
+ * two full rows of targets fit above the command dock, including before hydration. */
 @media (max-width: 430px) and (max-height: 640px) {
+  .stage:not([data-layout-ready="true"])[data-layout-mode="mobile-table-grid"] {
+    min-height: 0;
+  }
+
+  .stage[data-layout-mode="mobile-table-grid"] .phasePill {
+    display: none;
+  }
+
+  .stage[data-layout-mode="mobile-table-grid"] .title {
+    font-size: 1.375rem;
+    line-height: 1.2;
+  }
+
   .stage[data-layout-mode="mobile-table-grid"] .tableScene,
   .stage.stage[data-layout-mode="mobile-table-grid"] .tableScene.tableScene {
     gap: 6px;
@@ -1006,7 +1023,7 @@
   }
 
   .stage[data-layout-mode="mobile-table-grid"] .seatSlot [data-seat-name] {
-    font-size: 0.68rem;
+    font-size: 0.75rem;
     line-height: 1;
   }
 }
@@ -1021,9 +1038,8 @@
     radial-gradient(ellipse at 50% 52%, transparent 38%, rgba(83, 48, 23, 0.2) 100%);
   border-color: rgba(106, 74, 39, 0.54);
   background:
-    radial-gradient(ellipse at 50% 100%, rgba(249, 236, 207, 0.2), transparent 70%),
-    linear-gradient(180deg, rgba(238, 229, 206, 0.18), rgba(17, 15, 11, 0.38)),
-    var(--play-room-art) center / cover no-repeat;
+    var(--play-stage-scrim),
+    var(--play-room-art) center top / cover no-repeat;
   box-shadow:
     0 0 0 5px rgba(241, 225, 193, 0.74),
     0 0 0 6px rgba(106, 74, 39, 0.28),
@@ -1130,6 +1146,16 @@
   text-shadow: 0 0 18px color-mix(in oklch, var(--play-light-accent, #68794e) 24%, transparent);
 }
 
+.lobbyStatus {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  line-height: 1.15;
+}
+
+.lobbyStatus span { font-size: 0.75rem; }
+.lobbyStatus strong { font-size: 1.5rem; font-variant-numeric: tabular-nums; }
+
 :global(html[data-theme="light"]) .counts {
   border-color: rgba(112, 75, 34, 0.54);
   background: linear-gradient(180deg, rgba(255, 248, 231, 0.98), rgba(218, 190, 146, 0.98));
@@ -1146,4 +1172,81 @@
 
 :global(html[data-theme="light"]) .emptyState p {
   color: rgba(45, 33, 23, 0.72);
+}
+
+@media (max-width: 1023px) {
+  .stage[data-layout-mode="mobile-table-grid"] .hud {
+    min-height: 0;
+  }
+
+  .stage[data-layout-mode="mobile-table-grid"] .phasePill {
+    display: none;
+  }
+
+  .stage[data-layout-mode="mobile-table-grid"] .title {
+    font-size: 1.5rem;
+    line-height: 1.15;
+  }
+
+  .stage[data-layout-mode="mobile-table-grid"] .kicker {
+    font-size: 0.75rem;
+    letter-spacing: 0;
+  }
+
+  .stage[data-layout-mode="mobile-table-grid"] .ledger span {
+    min-height: 24px;
+    padding: 4px 8px;
+    font-size: 0.6875rem;
+  }
+
+  .stage[data-layout-mode="mobile-table-grid"] .tableScene.tableScene {
+    gap: 14px;
+    margin-top: 10px;
+    padding: 12px 8px 24px;
+  }
+
+  .stage.stage[data-layout-mode="mobile-table-grid"] .core.core {
+    grid-template-columns: 1fr;
+    gap: 0;
+    width: 144px;
+    min-width: 144px;
+    height: 74px;
+    min-height: 74px;
+    margin-bottom: 12px;
+    border-radius: 8px;
+    padding: 6px 8px 10px;
+  }
+
+  .stage[data-layout-mode="mobile-table-grid"] .sigil {
+    display: none;
+  }
+
+  .stage[data-layout-mode="mobile-table-grid"] .core :global(.timer-dial) {
+    min-width: 112px;
+    padding: 4px 8px;
+    border: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  .stage[data-layout-mode="mobile-table-grid"] .core :global(.timer-dial)::before {
+    content: none;
+  }
+
+  .stage[data-layout-mode="mobile-table-grid"] .core :global(.timer-dial strong) {
+    font-size: 1.5rem;
+  }
+
+  .stage[data-layout-mode="mobile-table-grid"] .core :global(.timer-dial[data-state="unlimited"] strong) {
+    font-size: 1rem;
+  }
+
+  .stage[data-layout-mode="mobile-table-grid"] .core :global(.timer-dial-label) {
+    letter-spacing: 0;
+  }
+
+  .stage[data-layout-mode="mobile-table-grid"] .seatSlot [data-seat-name] {
+    font-size: 0.75rem;
+    line-height: 1.2;
+  }
 }

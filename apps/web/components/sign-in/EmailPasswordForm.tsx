@@ -1,14 +1,17 @@
 "use client";
 
-import { type FormEvent, type KeyboardEvent, useId, useRef, useState, useTransition } from "react";
+import { type FormEvent, type KeyboardEvent, useEffect, useId, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { mapAuthError } from "@/lib/auth-errors";
+import { MAX_DISPLAY_NAME_LENGTH, validateDisplayName } from "@/lib/display-name";
+import { VerificationEmailRequest } from "@/components/auth/VerificationEmailRequest";
+import { authRedirectURL, verificationCallbackURL } from "@/components/auth/verification-callback";
 import { resolveWelcomeRedirect } from "./welcome-redirect";
 
 type Mode = "sign-in" | "sign-up";
-type ValidationField = "email" | "password" | null;
+type ValidationField = "name" | "email" | "password" | null;
 
 export function EmailPasswordForm({ redirectTo }: { redirectTo: string }) {
   const router = useRouter();
@@ -19,6 +22,7 @@ export function EmailPasswordForm({ redirectTo }: { redirectTo: string }) {
   const [status, setStatus] = useState("");
   const [validationField, setValidationField] = useState<ValidationField>(null);
   const [isSubmitting, setSubmitting] = useState(false);
+  const [verification, setVerification] = useState<{ email: string; cooldown: number } | null>(null);
   const [isPending, startTransition] = useTransition();
   const nameId = useId();
   const emailId = useId();
@@ -28,10 +32,22 @@ export function EmailPasswordForm({ redirectTo }: { redirectTo: string }) {
   const signInTabId = useId();
   const signUpTabId = useId();
   const emailRef = useRef<HTMLInputElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
+  const verificationHeadingRef = useRef<HTMLHeadingElement>(null);
+  const wasVerifyingRef = useRef(false);
   const passwordRef = useRef<HTMLInputElement>(null);
   const signInTabRef = useRef<HTMLButtonElement>(null);
   const signUpTabRef = useRef<HTMLButtonElement>(null);
   const isBusy = isSubmitting || isPending;
+
+  useEffect(() => {
+    if (verification) {
+      verificationHeadingRef.current?.focus();
+    } else if (wasVerifyingRef.current) {
+      emailRef.current?.focus();
+    }
+    wasVerifyingRef.current = verification !== null;
+  }, [verification]);
 
   function selectMode(nextMode: Mode) {
     setMode(nextMode);
@@ -60,7 +76,13 @@ export function EmailPasswordForm({ redirectTo }: { redirectTo: string }) {
     setValidationField(null);
 
     const nextEmail = email.trim();
-    const nextName = name.trim();
+    const checkedName = validateDisplayName(name);
+    if (mode === "sign-up" && !checkedName.ok) {
+      setStatus(checkedName.error);
+      setValidationField("name");
+      nameRef.current?.focus();
+      return;
+    }
     if (!nextEmail) {
       setStatus("Въведи имейл.");
       setValidationField("email");
@@ -81,20 +103,54 @@ export function EmailPasswordForm({ redirectTo }: { redirectTo: string }) {
     }
 
     setSubmitting(true);
-    const result = await (mode === "sign-in"
-      ? authClient.signIn.email({ email: nextEmail, password })
-      : authClient.signUp.email({ name: nextName || "Играч", email: nextEmail, password })).catch(() => {
-      return { error: { message: "Неуспешна заявка." } };
-    });
+    try {
+      const result = mode === "sign-in"
+        ? await authClient.signIn.email({ email: nextEmail, password })
+        : await authClient.signUp.email({
+          name: checkedName.ok ? checkedName.displayName : name,
+          email: nextEmail,
+          password,
+          callbackURL: verificationCallbackURL(redirectTo),
+        });
 
-    if (result.error) {
-      setStatus(mapAuthError(result.error, "Неуспешна заявка. Провери имейла и паролата."));
+      if (result.error) {
+        if (result.error.code === "EMAIL_NOT_VERIFIED") {
+          setPassword("");
+          setVerification({ email: nextEmail, cooldown: 0 });
+        } else {
+          setStatus(mapAuthError(result.error, "Неуспешна заявка. Провери имейла и паролата."));
+        }
+        return;
+      }
+
+      if (mode === "sign-up" && !result.data?.token) {
+        // BetterAuth intentionally returns the same pending result for an existing email.
+        setPassword("");
+        setVerification({ email: nextEmail, cooldown: 60 });
+        return;
+      }
+
+      window.dispatchEvent(new Event("auth-session-change"));
+      startTransition(() => router.push(resolveWelcomeRedirect(redirectTo)));
+    } catch {
+      setStatus("Не успяхме да се свържем. Провери връзката си и опитай отново.");
+    } finally {
       setSubmitting(false);
-      return;
     }
+  }
 
-    window.dispatchEvent(new Event("auth-session-change"));
-    startTransition(() => router.push(resolveWelcomeRedirect(redirectTo)));
+  if (verification) {
+    return (
+      <section className="email-verification-pending" aria-labelledby={panelId}>
+        <h2 id={panelId} ref={verificationHeadingRef} tabIndex={-1}>Провери имейла си</h2>
+        <p>Отвори линка в писмото, за да потвърдиш имейла и да продължиш.</p>
+        <VerificationEmailRequest initialEmail={verification.email} redirectTo={redirectTo} initialCooldownSeconds={verification.cooldown} />
+        <button type="button" className="btn btn-ghost" onClick={() => {
+          setVerification(null);
+          selectMode("sign-in");
+        }}>Към входа</button>
+      </section>
+    );
   }
 
   return (
@@ -138,8 +194,13 @@ export function EmailPasswordForm({ redirectTo }: { redirectTo: string }) {
       >
         {mode === "sign-up" ? (
           <label htmlFor={nameId}>
-            <span>Име на масата (по избор)</span>
-            <input id={nameId} value={name} onChange={(event) => setName(event.target.value)} placeholder="Например: Мила" autoComplete="name" />
+            <span>Име на масата</span>
+            <input ref={nameRef} id={nameId} value={name} onChange={(event) => {
+              setName(event.target.value);
+              if (validationField === "name") setValidationField(null);
+            }} placeholder="Например: Мила" autoComplete="name" required maxLength={MAX_DISPLAY_NAME_LENGTH}
+              aria-invalid={validationField === "name"}
+              aria-describedby={status && validationField === "name" ? statusId : undefined} />
           </label>
         ) : null}
 
@@ -183,7 +244,7 @@ export function EmailPasswordForm({ redirectTo }: { redirectTo: string }) {
         </label>
 
         {mode === "sign-in" ? (
-          <Link href="/forgot-password" className="email-form-help">
+          <Link href={authRedirectURL("/forgot-password", redirectTo)} className="email-form-help">
             Забравена парола?
           </Link>
         ) : null}

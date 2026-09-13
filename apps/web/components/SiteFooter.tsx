@@ -19,7 +19,7 @@ export async function SiteFooter() {
         <span aria-hidden>·</span>
         <Link href="/faq" prefetch={false}>Помощ</Link>
       </div>
-      <p className={styles.tagline}>© {new Date().getFullYear()} Върколак и Мафия · Бета</p>
+      <p className={styles.tagline}>© {new Date().getFullYear()} Сенките · Върколак и Мафия · Бета</p>
     </footer>
   );
 }

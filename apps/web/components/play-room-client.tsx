@@ -1,12 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import {
+  Eye,
   EyeOff,
+  Copy,
+  Check,
+  ExternalLink,
   MessageSquare,
+  ScrollText,
   Play,
-  Settings,
   Users,
 } from "lucide-react";
 import {
@@ -24,24 +28,22 @@ import { useToast } from "@/lib/toast";
 import { KeyboardShortcutsModal } from "@/components/keyboard-shortcuts-modal";
 import { LiveCuePanel } from "@/components/play/LiveCuePanel";
 import { NarratorDesk } from "@/components/play/NarratorDesk";
-import { RulesSummary } from "@/components/play/RulesSummary";
-import { eventLineClass } from "@/lib/play/event-log";
+import { PlayReference } from "@/components/play/PlayReference";
+import { PublicEventLine } from "@/components/play/PublicEventLine";
 import { HunterRevengePanel } from "@/components/play/HunterRevengePanel";
 import { LoverCard } from "@/components/play/LoverCard";
 import { NarratorSnapshotPanel } from "@/components/play/NarratorSnapshotPanel";
-import { PhaseGuide } from "@/components/play/PhaseGuide";
-import { PrivateChatPanel } from "@/components/play/PrivateChatPanel";
+import { PrivateChatPanel, type PrivateChatScrollPosition } from "@/components/play/PrivateChatPanel";
 import { PublicChatComposer } from "@/components/play/PublicChatComposer";
-import { RoleCard } from "@/components/play/RoleCard";
-import { TypingIndicator } from "@/components/play/TypingIndicator";
-import { AchievementUnlockModal } from "@/components/play/AchievementUnlockModal";
+import { PublicChatHistory } from "@/components/play/PublicChatHistory";
 import { ConnectionBanner } from "@/components/play/ConnectionBanner";
 import { DeathRevealCinematic } from "@/components/play/DeathRevealCinematic";
-import { PhaseRail } from "@/components/play/PhaseRail";
+import { Timer } from "@/components/play/Timer";
+import { phaseBg } from "@/lib/play/phase-display";
 import { PhaseTransitionOverlay } from "@/components/play/PhaseTransitionOverlay";
 import { PlayActionDock } from "@/components/play/PlayActionDock";
 import { PlayStage } from "@/components/play/PlayStage";
-import { PostGameStory } from "@/components/play/PostGameStory";
+import { DeferredPostGameExtras } from "@/components/play/DeferredPostGameExtras";
 import { PreGameCountdown } from "@/components/play/PreGameCountdown";
 import { ReconnectModal } from "@/components/play/ReconnectModal";
 import { NightActionPanel } from "@/components/play/NightActionPanel";
@@ -57,15 +59,19 @@ import {
 import { VotingPanel } from "@/components/play/VotingPanel";
 import { isNightPhase } from "@/lib/play/role-rules";
 import { useCueMode } from "@/hooks/play/use-cue-mode";
+import { useActionReceipt } from "@/hooks/play/use-action-receipt";
+import { useLobbyNavigationGuard } from "@/hooks/play/use-lobby-navigation-guard";
 import { useGameRoom, type UseGameRoomOptions, type UseGameRoomResult } from "@/hooks/play/use-game-room";
 import { usePhaseTransitions } from "@/hooks/play/use-phase-transitions";
 import type { AuthSessionView } from "@/lib/use-auth-session";
 import { nightTargetHeadingBg, winnerBg } from "@/lib/play/copy";
 import { nextPhaseTransitionArtHref } from "@/lib/play/phase-art";
-import { historyHrefForGame, repeatGameHref } from "@/lib/play/post-game-links";
 import type { PhaseSlice, PublicPlayer, ShortcutState } from "@/lib/play/types";
 
 export type { PhaseSlice, PublicPlayer } from "@/lib/play/types";
+
+const AchievementUnlockModal = lazy(() => import("@/components/play/AchievementUnlockModal").then((module) => ({ default: module.AchievementUnlockModal })));
+const RoleCard = lazy(() => import("@/components/play/RoleCard").then((module) => ({ default: module.RoleCard })));
 
 interface PlayRoomClientProps {
   code: string;
@@ -93,6 +99,15 @@ export function PlayRoomClientCore({
   const [isCompactViewport, setIsCompactViewport] = useState(false);
   const [viewportModeReady, setViewportModeReady] = useState(false);
   const [mobileRailTab, setMobileRailTab] = useState<"events" | "chat">("events");
+  const [mobileView, setMobileView] = useState<"table" | "conversation">("table");
+  const [privateDrafts, setPrivateDrafts] = useState<Partial<Record<ChatChannel, string>>>({});
+  const privateDraftRevisions = useRef<Partial<Record<ChatChannel, number>>>({});
+  const privateSendRequests = useRef(new Map<ChatChannel, symbol>());
+  const [pendingPrivateSends, setPendingPrivateSends] = useState<Partial<Record<ChatChannel, boolean>>>({});
+  const [privateChatOpen, setPrivateChatOpen] = useState(false);
+  const [privateVisibility, setPrivateVisibility] = useState<{ identity: string; visible: boolean } | null>(null);
+  const [lastReadPrivateMessages, setLastReadPrivateMessages] = useState<Partial<Record<ChatChannel, string>>>({});
+  const privateChatScrollPositions = useRef<Partial<Record<string, PrivateChatScrollPosition>>>({});
   const actionDockToggleRef = useRef<HTMLButtonElement>(null);
   const winnerHeadingRef = useRef<HTMLHeadingElement>(null);
   const suppressNextPhasePulseRef = useRef(false);
@@ -139,10 +154,41 @@ export function PlayRoomClientCore({
   const livingPlayers = useMemo(() => players.filter((player) => player.playing && player.alive), [players]);
   const ownPlayer = useMemo(() => players.find((player) => player.userId === currentUserId), [currentUserId, players]);
   const recentPublicEvents = useMemo(() => snapshot?.publicEvents.slice(-7) ?? [], [snapshot?.publicEvents]);
-  const recentPublicChat = useMemo(() => snapshot?.publicChat.slice(-5) ?? [], [snapshot?.publicChat]);
   const mode = snapshot?.mode ?? createOptions?.mode ?? "werewolves_classic";
   const family = getGameFamily(mode);
   const phase = snapshot?.phase ?? "lobby";
+  const privateIdentity = `${code}:${currentUserId}`;
+  const personalVisible = privateVisibility?.identity === privateIdentity
+    ? privateVisibility.visible
+    : !liveMode && phase !== "role_reveal";
+  const actionReceipt = useActionReceipt(room, phase, snapshot?.round ?? 0, {
+    viewerId: currentUserId,
+    hasVoted: ownPlayer?.hasVoted,
+    revoteEligibleUserIds: snapshot?.revoteEligibleUserIds,
+    votingCycle: snapshot?.votingCycle,
+  });
+  const acceptedTargetName = actionReceipt && "targetUserId" in actionReceipt
+    ? players.find((player) => player.userId === actionReceipt.targetUserId)?.displayName
+    : null;
+  useEffect(() => {
+    setMobileView("table");
+    setMobileRailTab(phase === "day_discussion" ? "chat" : "events");
+  }, [phase]);
+  useEffect(() => {
+    for (const channel of Object.keys(privateDraftRevisions.current) as ChatChannel[]) {
+      privateDraftRevisions.current[channel] = (privateDraftRevisions.current[channel] ?? 0) + 1;
+    }
+    setPrivateDrafts({});
+    privateSendRequests.current.clear();
+    setPendingPrivateSends({});
+    setLastReadPrivateMessages({});
+    privateChatScrollPositions.current = {};
+    setPrivateChatOpen(false);
+  }, [code, currentUserId]);
+  useLobbyNavigationGuard({
+    active: phase === "lobby" && connectionStatus === "connected" && Boolean(ownPlayer),
+    host: Boolean(ownPlayer?.host),
+  });
   const doctorCanSelfProtect =
     snapshot?.doctorCanSelfProtect ?? createOptions?.doctorCanSelfProtect ?? false;
   const nominations = snapshot?.nominations ?? [];
@@ -262,7 +308,7 @@ export function PlayRoomClientCore({
     return () => window.clearTimeout(timeoutId);
   }, [family, phase]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (typeof window.matchMedia !== "function") {
       return;
     }
@@ -353,9 +399,7 @@ export function PlayRoomClientCore({
       return;
     }
 
-    const needsSecondSeat =
-      (role === "blacksmith")
-      || ((role === "cupid" || role === "lovers") && phase === "first_night");
+    const needsSecondSeat = needsSecondNightTarget(role, phase);
 
     if (needsSecondSeat && selectedTargetId && selectedTargetId !== targetUserId) {
       setSecondTargetId((current) => (current === targetUserId ? "" : targetUserId));
@@ -420,7 +464,9 @@ export function PlayRoomClientCore({
 
     if (shouldAutoExpand) {
       setActionDockExpanded(true);
-    } else if (isCompactViewport && phaseHasPrimaryDockAction) {
+    } else if (isCompactViewport && phaseHasPrimaryDockAction
+      && !actionDockToggleRef.current?.closest("[data-play-command-surface]")?.contains(document.activeElement)) {
+      // Clearing an inline choice must not hide the focused control.
       setActionDockExpanded(false);
     }
   }, [canNominate, canUseHunterRevenge, canUseNightAction, canVote, isCompactViewport, isSportDayFlow, phase, privateRole?.role, secondTargetId, selectedTargetId, viewportModeReady]);
@@ -482,12 +528,26 @@ export function PlayRoomClientCore({
       if (response?.accepted !== true) {
         return false;
       }
-      sendTypingSignal(channel, false);
       return true;
     } catch (error) {
       console.error("Chat delivery request failed", error);
       toast({ message: "Съобщението не беше изпратено. Текстът е запазен, за да опиташ отново.", kind: "error" });
       return false;
+    }
+  }
+
+  async function sendPrivateChatMessage(channel: ChatChannel, message: string) {
+    if (privateSendRequests.current.has(channel)) return false;
+    const request = Symbol();
+    privateSendRequests.current.set(channel, request);
+    setPendingPrivateSends((pending) => ({ ...pending, [channel]: true }));
+    try {
+      return await sendChatMessage(channel, message);
+    } finally {
+      if (privateSendRequests.current.get(channel) === request) {
+        privateSendRequests.current.delete(channel);
+        setPendingPrivateSends((pending) => ({ ...pending, [channel]: false }));
+      }
     }
   }
 
@@ -521,6 +581,7 @@ export function PlayRoomClientCore({
         ? "Стартът вече е заявен."
         : null;
   const privateChatChannel = getAvailablePrivateChatChannel(privateRole?.role, ownPlayer, phase, snapshot?.communicationMode);
+  const privateChatIdentity = `${privateIdentity}:${privateChatChannel}`;
   const publicTypers = useMemo(
     () => typingNotices.filter((notice) => notice.channel === "public" && notice.senderUserId !== currentUserId),
     [currentUserId, typingNotices],
@@ -533,6 +594,19 @@ export function PlayRoomClientCore({
     () => privateChats.filter((message) => message.channel === privateChatChannel),
     [privateChatChannel, privateChats],
   );
+  const privateChatActive = privateChatOpen && personalVisible && (!isCompactViewport || mobileView === "table");
+  const markPrivateMessageRead = useCallback((messageId: string) => {
+    if (!privateChatActive || !privateChatChannel || document.visibilityState !== "visible") return;
+    setLastReadPrivateMessages((read) => {
+      const nextIndex = privateChannelMessages.findIndex((message) => message.id === messageId);
+      const previousIndex = privateChannelMessages.findIndex((message) => message.id === read[privateChatChannel]);
+      return nextIndex > previousIndex ? { ...read, [privateChatChannel]: messageId } : read;
+    });
+  }, [privateChatActive, privateChatChannel, privateChannelMessages]);
+  const lastReadPrivateMessage = privateChatChannel ? lastReadPrivateMessages[privateChatChannel] : undefined;
+  const lastReadIndex = privateChannelMessages.findIndex((message) => message.id === lastReadPrivateMessage);
+  const unreadPrivateMessages = privateChannelMessages.slice(lastReadIndex + 1)
+    .filter((message) => message.senderUserId !== currentUserId).length;
   const hasStageTakeover = Boolean(snapshot?.winnerTeam);
 
   useEffect(() => {
@@ -540,7 +614,7 @@ export function PlayRoomClientCore({
       winnerHeadingRef.current?.focus();
     }
   }, [hasStageTakeover, snapshot?.winnerTeam]);
-  const hasNarratorDesk = Boolean(snapshot && (ownPlayer?.host || ownPlayer?.narrator));
+  const hasNarratorDesk = Boolean(snapshot && phase !== "lobby" && (ownPlayer?.host || ownPlayer?.narrator));
   const hasNarratorWarning = Boolean(
     snapshot?.narratorMode === "full_human" && ownPlayer && !ownPlayer.acceptedFullNarrator,
   );
@@ -548,28 +622,13 @@ export function PlayRoomClientCore({
   const hasNarratorDeck = Boolean(
     !hasStageTakeover && (hasNarratorDesk || hasNarratorWarning || hasNarratorSnapshotPanel),
   );
-  const hasActionDock = Boolean(
-    !hasStageTakeover
-      && (
-        privateRole
-        || privateResult
-        || privateLover
-        || isBlessed
-        || phase === "lobby"
-        || canVote
-        || canNominate
-        || canUseHunterRevenge
-        || canUseNightAction
-        || privateChatChannel
-        || isSportDayFlow
-      ),
-  );
   const hasDockRitualPanel = Boolean(
     canVote || canNominate || canUseHunterRevenge || canUseNightAction || privateChatChannel || isSportDayFlow,
   );
   const hasPrimaryDockContent = Boolean(
     phase === "lobby" || canVote || canNominate || canUseHunterRevenge || canUseNightAction || isSportDayFlow,
   );
+  const hasActionDock = !hasStageTakeover && hasPrimaryDockContent;
   const actionDockKind =
     canVote || canNominate || canUseHunterRevenge || canUseNightAction
       ? "action"
@@ -581,9 +640,7 @@ export function PlayRoomClientCore({
   const actionDockHeading = canNominate
     ? `Твоята ${snapshot?.playerSpeechSeconds ?? 60}-секундна реч`
     : canVote
-      ? selectedActionTargetName
-        ? `Глас за ${selectedActionTargetName}`
-        : "Гласуване · избери играч"
+      ? "Твоят глас"
       : canUseHunterRevenge
       ? selectedActionTargetName
         ? `Последен изстрел срещу ${selectedActionTargetName}`
@@ -602,15 +659,19 @@ export function PlayRoomClientCore({
               ? currentDefenseName
                 ? `${currentDefenseName} защитава мястото си`
                 : "Защита на номинираните"
+          : phase === "role_reveal"
+            ? "Картата ти е раздадена"
+          : ownPlayer?.playing && !ownPlayer.alive
+            ? "Твоята игра продължава отстрани"
           : privateChatChannel
             ? "Тайният разговор е отворен"
-            : "Твоят таен ъгъл";
+            : "Твоето досие";
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       const target = event.target instanceof HTMLElement ? event.target : null;
       const current = shortcutStateRef.current;
 
-      if (event.defaultPrevented) {
+      if (event.defaultPrevented || target?.closest('[role="dialog"]')) {
         return;
       }
 
@@ -689,10 +750,6 @@ export function PlayRoomClientCore({
   }, [selectSeatTarget, submitCurrentShortcutAction, toast]);
 
   const renderPlayersPanel = () => {
-    const eventsHeadingId = "events-heading";
-    const chatHeadingId = "chat-heading";
-    const guideHeadingId = "play-rail-guide-heading";
-    const railHeadingId = "play-rail-heading";
     const eventsTabId = "play-rail-tab-events";
     const chatTabId = "play-rail-tab-chat";
     const eventsPanelId = "play-rail-panel-events";
@@ -713,40 +770,7 @@ export function PlayRoomClientCore({
     };
 
     return (
-      <section className="play-section play-players-panel play-side-rail" aria-labelledby={railHeadingId}>
-        <ConnectionBanner status={connectionStatus} message={connectionMessage} />
-
-        <div className="play-rail-intro">
-          <p className="section-kicker play-section-kicker">
-            <Settings className="play-section-icon" aria-hidden strokeWidth={1.8} />
-            <span>хроника</span>
-          </p>
-          <h2 id={railHeadingId} className="mt-3 text-3xl font-black">Пулсът на стаята</h2>
-        </div>
-
-        <LiveCuePanel
-          cueMode={cueMode}
-          liveMode={liveMode}
-          phase={phase}
-          pulseKey={phasePulse}
-          onChange={changeCueMode}
-        />
-
-        <PhaseRail phase={phase} />
-
-        {snapshot ? (
-          <details className="play-rail-disclosure mt-8">
-            <summary id={guideHeadingId}>
-              <span>Правила и подсказки</span>
-              <small>Режим, роли и текуща фаза</small>
-            </summary>
-            <div className="play-rail-guide-body" role="region" aria-labelledby={guideHeadingId}>
-              <RulesSummary snapshot={snapshot} />
-              <PhaseGuide phase={phase} mode={mode} privateRole={privateRole?.role} ownPlayer={ownPlayer} />
-            </div>
-          </details>
-        ) : null}
-
+      <section className="play-section play-players-panel play-side-rail" aria-label="Разговор и събития">
         <div className="play-rail-tabs" role="tablist" aria-label="Хроника и разговор">
           <button
             id={eventsTabId}
@@ -759,6 +783,7 @@ export function PlayRoomClientCore({
             onClick={() => setMobileRailTab("events")}
             onKeyDown={handleRailTabKeyDown}
           >
+            <ScrollText aria-hidden strokeWidth={1.8} />
             Събития
           </button>
           <button
@@ -772,6 +797,7 @@ export function PlayRoomClientCore({
             onClick={() => setMobileRailTab("chat")}
             onKeyDown={handleRailTabKeyDown}
           >
+            <MessageSquare aria-hidden strokeWidth={1.8} />
             Разговор
           </button>
         </div>
@@ -780,19 +806,16 @@ export function PlayRoomClientCore({
           id={eventsPanelId}
           className="play-rail-panel mt-8"
           role="tabpanel"
+          tabIndex={0}
           aria-labelledby={eventsTabId}
           hidden={mobileRailTab !== "events"}
           data-mobile-panel="events"
           data-active={mobileRailTab === "events" ? "true" : undefined}
         >
-          <h3 className="play-panel-subhead" id={eventsHeadingId}>
-            <Settings className="play-section-icon" aria-hidden strokeWidth={1.8} />
-            <span>Събития</span>
-          </h3>
           <div
             className="mt-3 grid gap-2 text-sm"
             role="log"
-            aria-labelledby={eventsHeadingId}
+            aria-label="Събития"
             aria-live="polite"
             aria-relevant="additions"
           >
@@ -802,9 +825,7 @@ export function PlayRoomClientCore({
               </p>
             ) : null}
             {recentPublicEvents.map((event) => (
-              <p key={event.id} className={`event-line ${eventLineClass(event.type)} rounded-xl px-3 py-2`}>
-                {event.messageBg}
-              </p>
+              <PublicEventLine key={event.id} event={event} />
             ))}
           </div>
         </div>
@@ -813,6 +834,7 @@ export function PlayRoomClientCore({
           id={chatPanelId}
           className="play-rail-panel mt-8"
           role="tabpanel"
+          tabIndex={0}
           aria-labelledby={chatTabId}
           hidden={mobileRailTab !== "chat"}
           data-mobile-panel="chat"
@@ -821,6 +843,7 @@ export function PlayRoomClientCore({
           {phase === "day_discussion" && snapshot?.communicationMode === "built_in_chat" ? (
             ownPlayer?.playing && ownPlayer?.alive ? (
               <PublicChatComposer
+                key={`${code}:${currentUserId}`}
                 inputId={chatInputId}
                 typingNotices={publicTypers}
                 onSend={(message) => sendChatMessage("public", message)}
@@ -852,33 +875,52 @@ export function PlayRoomClientCore({
             </div>
           ) : null}
 
-          <h3 className="play-panel-subhead" id={chatHeadingId}>
-            <MessageSquare className="play-section-icon" aria-hidden strokeWidth={1.8} />
-            <span>Архив на разговора</span>
-          </h3>
-          <div
-            className="mt-3 grid gap-2 text-sm"
-            role="log"
-            aria-labelledby={chatHeadingId}
-            aria-live="polite"
-            aria-relevant="additions"
-          >
-            {(snapshot?.publicChat ?? []).length === 0 ? (
-              <p className="chat-line rounded-xl px-3 py-2">Още няма публични реплики.</p>
-            ) : null}
-            {recentPublicChat.map((message) => (
-              <p key={message.id} className="chat-line rounded-xl px-3 py-2">
-                <strong>{message.senderName}:</strong> {message.message}
-              </p>
-            ))}
-            <TypingIndicator notices={publicTypers} compact />
-          </div>
+          <PublicChatHistory key={code} messages={snapshot?.publicChat ?? []} />
         </div>
 
         {showRailDeathReveal ? <DeathRevealCinematic family={family} players={players} /> : null}
+        <div className="play-console-tools">
+          {snapshot ? <PlayReference snapshot={snapshot} privateRole={privateRole?.role} ownPlayer={ownPlayer} /> : null}
+          <LiveCuePanel cueMode={cueMode} liveMode={liveMode} phase={phase} pulseKey={phasePulse} onChange={changeCueMode} />
+        </div>
       </section>
     );
   };
+
+  const renderLobbyReadiness = () => (
+    <>
+      <div className="play-lobby-ready-actions">
+        <button
+          data-testid="ready-toggle"
+          className={`btn ${ownPlayer?.ready || ownPlayer?.host ? "btn-secondary" : "btn-primary"}`}
+          type="button"
+          onClick={sendReady}
+          disabled={!room}
+          aria-pressed={Boolean(ownPlayer?.ready)}
+        >
+          <Users className="play-button-icon" aria-hidden strokeWidth={1.8} />
+          {ownPlayer?.ready ? "Не съм готов" : "Готов"}
+        </button>
+        {ownPlayer?.host ? (
+          <button
+            className="btn btn-primary"
+            type="button"
+            onClick={requestStartGame}
+            disabled={startDisabledReason !== null}
+            aria-describedby={startDisabledReason ? "play-start-disabled-reason" : undefined}
+          >
+            <Play className="play-button-icon" aria-hidden strokeWidth={1.8} />
+            {startCountdown ? "Започваме..." : "Започни игра"}
+          </button>
+        ) : null}
+      </div>
+      {ownPlayer?.host && startDisabledReason ? (
+        <p id="play-start-disabled-reason" className="play-start-disabled-reason" role="status">
+          {startDisabledReason}
+        </p>
+      ) : null}
+    </>
+  );
 
   const renderLobbyControls = () => {
     if (phase !== "lobby") {
@@ -886,30 +928,30 @@ export function PlayRoomClientCore({
     }
 
     return (
-      <div className="action-bar play-lobby-dock-actions">
-        <div className="action-bar-inner">
-          <button data-testid="ready-toggle" className="btn btn-secondary" type="button" onClick={sendReady} disabled={!room}>
-            <Users className="play-button-icon" aria-hidden strokeWidth={1.8} />
-            {ownPlayer?.ready ? "Не съм готов" : "Готов"}
-          </button>
-          {ownPlayer?.host ? (
-            <button
-              className="btn btn-primary"
-              type="button"
-              onClick={requestStartGame}
-              disabled={startDisabledReason !== null}
-              aria-describedby={startDisabledReason ? "play-start-disabled-reason" : undefined}
-            >
-              <Play className="play-button-icon" aria-hidden strokeWidth={1.8} />
-              {startCountdown ? "Започваме..." : "Започни игра"}
-            </button>
-          ) : null}
-        </div>
-        {ownPlayer?.host && startDisabledReason ? (
-          <p id="play-start-disabled-reason" className="play-start-disabled-reason" role="status">
-            {startDisabledReason}
-          </p>
+      <div className="play-lobby-dock-actions">
+        {!isCompactViewport ? renderLobbyReadiness() : null}
+        <button className="btn btn-secondary" type="button" onClick={async () => {
+          try {
+            const invite = new URL(`/lobby/${encodeURIComponent(code)}`, window.location.origin);
+            await navigator.clipboard.writeText(invite.href);
+            toast({ message: "Поканата е копирана.", kind: "success" });
+          } catch {
+            toast({ message: `Не успяхме да копираме поканата. Кодът на стаята е ${code}.`, kind: "error" });
+          }
+        }}>
+          <Copy className="play-button-icon" aria-hidden /> Копирай покана
+        </button>
+        {ownPlayer?.host && players.some((player) => player.playing && !player.ready) ? (
+          <p className="play-lobby-readiness-note">Не всички са готови. Като домакин можеш да започнеш и без потвърждението им.</p>
         ) : null}
+        <p className="play-lobby-navigation-note">
+          {ownPlayer?.host
+            ? "При напускане друг участник може да стане домакин. Връщането назад не възстановява домакинството."
+            : "При напускане освобождаваш мястото си в стаята."}
+          {" "}<a href="/faq" target="_blank" rel="noopener noreferrer">
+            Помощ (нов раздел) <ExternalLink className="play-button-icon" aria-hidden />
+          </a>
+        </p>
       </div>
     );
   };
@@ -923,19 +965,12 @@ export function PlayRoomClientCore({
       <div className="play-stage-takeover" data-family={family} data-winner={snapshot.winnerTeam} role="status" aria-live="polite" aria-atomic="true">
         <div className="play-winner-scene" aria-hidden="true" />
         <article className={`play-winner faction-${snapshot.winnerTeam}`} data-winner={snapshot.winnerTeam}>
-          <p className="play-winner-kicker">край на играта</p>
-          <h2 ref={winnerHeadingRef} className="play-winner-title" tabIndex={-1}>{winnerBg(snapshot.winnerTeam)}</h2>
+          <p className="play-winner-kicker">край на играта · стая {code}</p>
+          <h1 ref={winnerHeadingRef} className="play-winner-title" tabIndex={-1}>{winnerBg(snapshot.winnerTeam, family)}</h1>
           {snapshot.winnerReasonBg ? <p className="play-winner-reason">{snapshot.winnerReasonBg}</p> : null}
-          <div className="play-winner-actions">
-            <Link className="btn btn-primary" href={repeatGameHref(snapshot)}>
-              Повтори настройките
-            </Link>
-            <Link className="btn btn-secondary" href={historyHrefForGame(recordedGameId)}>
-              {recordedGameId ? "Виж записа на играта" : "Към архива"}
-            </Link>
-          </div>
+          <DeferredPostGameExtras section="actions" snapshot={snapshot} recordedGameId={recordedGameId} currentUserId={currentUserId} />
         </article>
-        <PostGameStory snapshot={snapshot} />
+        <DeferredPostGameExtras section="story" snapshot={snapshot} recordedGameId={recordedGameId} currentUserId={currentUserId} />
       </div>
     );
   };
@@ -947,16 +982,30 @@ export function PlayRoomClientCore({
 
     return (
       <PlayActionDock
-        eyebrow={isSportDayFlow ? "дневен ред" : "личен ход"}
+        eyebrow={phase === "lobby" ? "преди началото" : isSportDayFlow || canVote ? "дневен ред" : "личен ход"}
+        privateAction={canUseNightAction}
         heading={actionDockHeading}
         kind={actionDockKind}
         compact={isCompactViewport}
         expanded={actionDockExpanded}
         onExpandedChange={setActionDockExpanded}
         toggleRef={actionDockToggleRef}
-        dossierTitle={privateRole?.roleNameBg ?? "Твоето досие"}
+        compactSummary={phase === "lobby" ? renderLobbyReadiness() : null}
         primaryContent={hasPrimaryDockContent ? (
           <>
+            {actionReceipt ? (
+              <div className="play-action-receipt" role="status" aria-live="polite">
+                <Check aria-hidden />
+                <div>
+                  <strong>{actionReceipt.kind === "night"
+                    ? "Нощният ход е приет"
+                    : actionReceipt.targetUserId === "skip"
+                      ? "Пропускането на гласа е прието"
+                      : `${actionReceipt.kind === "vote" ? "Приет глас" : actionReceipt.kind === "nomination" ? "Приета номинация" : "Приет изстрел"}${acceptedTargetName ? `: ${acceptedTargetName}` : ""}`}</strong>
+                  {actionReceipt.kind !== "revenge" ? <p>Нов избор на масата не променя изпратения ход, докато не го потвърдиш.</p> : null}
+                </div>
+              </div>
+            ) : null}
             {renderLobbyControls()}
 
             {isSportDayFlow ? (
@@ -970,6 +1019,8 @@ export function PlayRoomClientCore({
                 canNominate={canNominate}
                 selectedTargetId={selectedTargetId}
                 onNominate={sendNomination}
+                onSelectNominee={canVote ? selectSeatTarget : undefined}
+                selectableNomineeIds={targetableIds}
               />
             ) : null}
 
@@ -1011,34 +1062,83 @@ export function PlayRoomClientCore({
             ) : null}
           </>
         ) : null}
-        privateContent={privateRole || privateResult || privateLover || isBlessed || privateChatChannel ? (
-          <>
+      />
+    );
+  };
+
+  const renderPersonalArea = () => {
+    if (phase === "lobby" || hasStageTakeover || !(privateRole || privateLover || isBlessed || privateChatChannel)) return null;
+    const draftRevision = privateChatChannel ? privateDraftRevisions.current[privateChatChannel] ?? 0 : 0;
+    const rolePlaceholder = <p className="play-personal-loading" role="status">Зарежда се картата...</p>;
+    return (
+      <section className="play-personal-area" aria-label="Твоята роля" data-concealed={!personalVisible || undefined}>
+        <button
+          className="play-personal-toggle"
+          type="button"
+          aria-label={personalVisible ? "Скрий ролята" : "Виж ролята си"}
+          title={personalVisible ? "Скрий ролята" : "Виж ролята си"}
+          aria-expanded={personalVisible}
+          aria-controls="play-personal-content"
+          onClick={() => setPrivateVisibility({ identity: privateIdentity, visible: !personalVisible })}
+        >
+          {personalVisible ? <EyeOff aria-hidden /> : <Eye aria-hidden />}
+          {!personalVisible ? <span>Виж ролята си</span> : null}
+        </button>
+        {!personalVisible ? <p className="play-personal-concealed">Твоята карта е скрита.</p> : null}
+        <div id="play-personal-content" hidden={!personalVisible}>
+          {personalVisible ? <>
+            <Suspense fallback={rolePlaceholder}>
+              {viewportModeReady
+                ? <RoleCard role={privateRole} result={privateResult} players={players} family={family} presentation={isCompactViewport ? "mini" : "compact"} />
+                : rolePlaceholder}
+            </Suspense>
             {privateLover ? <LoverCard lover={privateLover} /> : null}
 
             {isBlessed ? (
-              <article className="play-blessed-card paper-card mt-8 rounded-[2rem] border-2 border-[#c18a38]/45 p-5">
-                <p className="section-kicker text-[#842f2b]">тайна закрила</p>
-                <h2 className="mt-2 text-2xl font-black">Свещеникът те благослови</h2>
-                <p className="mt-2 text-sm text-[#4f3829]">
+              <article className="play-personal-context play-blessed-card">
+                <p className="section-kicker">тайна закрила</p>
+                <h2>Свещеникът те благослови</h2>
+                <p>
                   Благословията остава върху теб до края на играта и спира нощни убийства срещу теб.
                 </p>
               </article>
             ) : null}
 
-            <RoleCard role={privateRole} result={privateResult} players={players} family={family} />
-
             {privateChatChannel ? (
+              <details className="play-private-conversation" open={privateChatOpen} onToggle={(event) => setPrivateChatOpen(event.currentTarget.open)}>
+                <summary><MessageSquare aria-hidden /> Личен разговор{unreadPrivateMessages > 0 ? <span className="play-private-unread">{unreadPrivateMessages} {unreadPrivateMessages === 1 ? "ново" : "нови"}</span> : null}</summary>
               <PrivateChatPanel
+                key={privateChatIdentity}
                 channel={privateChatChannel}
                 messages={privateChannelMessages}
-                onSend={sendChatMessage}
+                active={privateChatActive}
+                initialScrollPosition={privateChatScrollPositions.current[privateChatIdentity]}
+                onScrollPositionChange={(position) => { privateChatScrollPositions.current[privateChatIdentity] = position; }}
+                onRead={markPrivateMessageRead}
+                onSend={sendPrivateChatMessage}
+                sending={pendingPrivateSends[privateChatChannel] ?? false}
                 onTyping={sendTypingSignal}
                 typingNotices={privateTypers}
+                value={privateDrafts[privateChatChannel] ?? ""}
+                onValueChange={(value) => {
+                  privateDraftRevisions.current[privateChatChannel] = (privateDraftRevisions.current[privateChatChannel] ?? 0) + 1;
+                  setPrivateDrafts((drafts) => ({ ...drafts, [privateChatChannel]: value }));
+                }}
+                onAccepted={(submittedValue) => {
+                  // A hidden chat can still receive its acknowledgement; only clear that exact draft revision.
+                  if ((privateDraftRevisions.current[privateChatChannel] ?? 0) !== draftRevision) return;
+                  privateDraftRevisions.current[privateChatChannel] = draftRevision + 1;
+                  setPrivateDrafts((drafts) => drafts[privateChatChannel] === submittedValue
+                    ? { ...drafts, [privateChatChannel]: "" }
+                    : drafts);
+                  sendTypingSignal(privateChatChannel, false);
+                }}
               />
+              </details>
             ) : null}
-          </>
-        ) : null}
-      />
+          </> : null}
+        </div>
+      </section>
     );
   };
 
@@ -1098,17 +1198,36 @@ export function PlayRoomClientCore({
       ) : null}
       {showShortcuts ? <KeyboardShortcutsModal onClose={() => setShowShortcuts(false)} /> : null}
       {unlockedAchievementIds.length > 0 ? (
-        <AchievementUnlockModal achievementIds={unlockedAchievementIds} onClose={() => setUnlockedAchievementIds([])} />
+        <Suspense fallback={null}>
+          <AchievementUnlockModal achievementIds={unlockedAchievementIds} onClose={() => setUnlockedAchievementIds([])} />
+        </Suspense>
       ) : null}
       <div className="framed-shell-inner play-shell-inner">
+        <ConnectionBanner status={connectionStatus} message={connectionMessage} />
+        {!hasStageTakeover ? (
+          <nav className="play-mobile-navigation" aria-label="Изглед на играта">
+            <button type="button" aria-label="Към масата" aria-pressed={mobileView === "table"} onClick={() => setMobileView("table")}>
+              <Users aria-hidden /> Масата
+            </button>
+            <button type="button" aria-label="Към разговора" aria-pressed={mobileView === "conversation"} onClick={() => {
+              setMobileView("conversation");
+              setMobileRailTab("chat");
+              setActionDockExpanded(false);
+            }}>
+              <MessageSquare aria-hidden /> Разговор
+            </button>
+          </nav>
+        ) : null}
         <section
           className="play-layout"
+          data-mobile-view={mobileView}
+          data-dock-expanded={actionDockExpanded ? "true" : undefined}
           data-has-narrator-deck={hasNarratorDeck ? "true" : undefined}
           data-dock-has-ritual={hasDockRitualPanel ? "true" : undefined}
           data-stage-takeover={hasStageTakeover ? "true" : undefined}
         >
           <div className="play-primary-column">
-            <PlayStage
+            {hasStageTakeover ? null : <PlayStage
               code={code}
               phase={phase}
               mode={mode}
@@ -1132,12 +1251,23 @@ export function PlayRoomClientCore({
               onSelectSeat={selectSeatTarget}
               onMakeNarrator={handleMakeNarrator}
               onMakeMayor={handleMakeMayor}
-            />
+            />}
             {renderStageTakeover()}
-            {renderActionDock()}
+            {renderPersonalArea()}
             {renderNarratorDeck()}
           </div>
-          {hasStageTakeover ? null : renderPlayersPanel()}
+          {hasStageTakeover ? null : (
+            <div className="play-interaction-column" data-has-command={hasActionDock || undefined}>
+              {renderActionDock()}
+              {isCompactViewport && mobileView === "conversation" ? (
+                <div className="play-conversation-context">
+                  <div><span>Стая {code} · рунд {snapshot?.round ?? 0}</span><h1>{phaseBg(phase, mode)}</h1></div>
+                  <Timer endsAt={snapshot?.phaseEndsAt ?? 0} />
+                </div>
+              ) : null}
+              {renderPlayersPanel()}
+            </div>
+          )}
         </section>
       </div>
     </main>

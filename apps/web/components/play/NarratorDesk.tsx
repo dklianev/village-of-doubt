@@ -22,19 +22,19 @@ export function NarratorDesk({
   isNarrator: boolean;
   onOpenShortcuts: () => void;
 }) {
-  const pendingConsent = snapshot.players.filter((player) => !player.acceptedFullNarrator).length;
+  const pendingConsent = snapshot.players.filter((player) => (player.playing || player.narrator) && !player.acceptedFullNarrator).length;
   const activePlayers = snapshot.players.filter((player) => player.playing);
   const aliveCount = activePlayers.filter((player) => player.alive).length;
-  const votedCount = activePlayers.filter((player) => player.hasVoted).length;
+  const votedCount = activePlayers.filter((player) => player.alive && player.hasVoted).length;
 
   return (
     <section className="narrator-desk mt-8 rounded-[2rem] p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="section-kicker">панел на Разказвача</p>
-          <h2 className="mt-2 text-3xl font-black">{isNarrator ? "Водиш играта" : "Контрол на водещия"}</h2>
+          <p className="section-kicker">{isNarrator ? "панел на Разказвача" : "панел на домакина"}</p>
+          <h2 className="mt-2 text-3xl font-black">{isNarrator ? "Водиш играта" : "Управление на домакина"}</h2>
           <p className="mt-3 max-w-2xl text-[#ead9ba]">
-            Управлявай темпото без скрити клиентски решения. Всички действия се записват като събития за проверка на Разказвача.
+            Преди следващата фаза дай време на участниците да завършат действията си.
           </p>
         </div>
         <div className="narrator-phase-seal">
@@ -46,18 +46,18 @@ export function NarratorDesk({
       <div className="mt-5 grid gap-3 md:grid-cols-4">
         <SummaryPill label="Активни" value={`${activePlayers.length}/${snapshot.playerCount}`} />
         <SummaryPill label="Живи" value={`${aliveCount}/${activePlayers.length}`} />
-        <SummaryPill label="Гласували" value={`${votedCount}/${activePlayers.length}`} />
+        <SummaryPill label="Гласували" value={`${votedCount}/${aliveCount}`} />
         <SummaryPill label="Режим" value={narratorBg(snapshot.narratorMode)} />
       </div>
 
       <div className="mt-5 flex flex-wrap gap-3">
-        <button className="btn btn-secondary" type="button" onClick={() => room?.send("narratorPause")} disabled={!room || phase === "paused"}>
+        <button className="btn btn-secondary" type="button" onClick={() => room?.send("narratorPause")} disabled={!room || phase === "paused" || phase === "game_over"}>
           <Pause className="play-button-icon" aria-hidden strokeWidth={1.8} />
           Пауза
         </button>
-        <button className="btn btn-primary" type="button" onClick={() => room?.send("narratorAdvance")} disabled={!room}>
+        <button className="btn btn-primary" type="button" onClick={() => room?.send("narratorAdvance")} disabled={!room || phase === "game_over"}>
           <SkipForward className="play-button-icon" aria-hidden strokeWidth={1.8} />
-          Следваща фаза
+          {phase === "paused" ? "Продължи играта" : "Следваща фаза"}
         </button>
         {[30, 60, 180].map((seconds) => (
           <button
@@ -65,7 +65,7 @@ export function NarratorDesk({
             className="btn btn-secondary"
             type="button"
             onClick={() => room?.send("narratorExtendTimer", { seconds })}
-            disabled={!room || phase === "paused" || phase === "game_over"}
+            disabled={!room || !snapshot.phaseEndsAt || phase === "paused" || phase === "game_over"}
           >
             <Plus className="play-button-icon" aria-hidden strokeWidth={1.8} />
             +{seconds} сек.
@@ -79,7 +79,7 @@ export function NarratorDesk({
 
       {snapshot.narratorMode === "full_human" && pendingConsent > 0 ? (
         <p className="mt-5 rounded-2xl bg-[#842f2b]/25 p-4 font-bold text-[#fff6e5]">
-          Изчакват се {pendingConsent} играчи да приемат, че Пълният Разказвач вижда всички роли.
+          {pendingConsent === 1 ? "Остава 1 участник да приеме" : `Остават ${pendingConsent} участници да приемат`}, че Пълният Разказвач вижда всички роли.
         </p>
       ) : null}
     </section>

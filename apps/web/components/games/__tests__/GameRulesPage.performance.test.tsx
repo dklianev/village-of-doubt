@@ -72,17 +72,21 @@ describe("rules hero image loading", () => {
     expect(phaseArt).toHaveAttribute("loading", "lazy");
     expect(phaseArt).toHaveAttribute("decoding", "async");
     expect(phaseArt).toHaveAttribute("fetchpriority", "low");
+    expect(phaseArt).toHaveAttribute("width", "1120");
+    expect(phaseArt).toHaveAttribute("height", "800");
+    expect(phaseArt!.srcset).toMatch(/\d+w/);
+    expect(phaseArt!.sizes).not.toBe("");
     expect(rulesCss).toContain("content-visibility: auto");
     expect(rulesCss).toContain("contain-intrinsic-size:");
   });
 
   it.each([
-    ["werewolves", "/game-art/phase-board/v1/werewolves/icon-phase-role-reveal-560.webp", "/game-art/phase-board/v1/werewolves/icon-phase-day-560.webp"],
-    ["mafia", "/game-art/phase-board/v1/mafia/icon-phase-role-reveal-560.webp", "/game-art/phase-board/v1/mafia/icon-phase-day-560.webp"],
-  ] as const)("references the shipped %s phase-board files", (family, roleRevealSrc, daySrc) => {
+    ["werewolves", "/game-art/phase-board/v1/werewolves/icon-phase-role-reveal-1120.webp", "/game-art/phase-board/v1/werewolves/icon-phase-day-1120.webp"],
+    ["mafia", "/game-art/phase-board/v1/mafia/icon-phase-role-reveal-1120.webp", "/game-art/phase-board/v1/mafia/icon-phase-day-1120.webp"],
+  ] as const)("uses the high-density %s board crop without expanding small rail thumbnails", (family, roleRevealSrc, daySrc) => {
     const { container } = render(<GameRulesPage family={family} />);
     const phaseSources = Array.from(container.querySelectorAll<HTMLImageElement>(".phase-node-medallion")).map(
-      (image) => image.getAttribute("src"),
+      (image) => new URL(image.src).searchParams.get("url"),
     );
 
     expect(phaseSources).toContain(roleRevealSrc);

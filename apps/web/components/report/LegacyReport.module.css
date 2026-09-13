@@ -65,7 +65,7 @@
   max-width: 18ch;
   margin: 0 0 14px;
   color: var(--legal-report-hero-title-color, #f5e8c8);
-  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-family: var(--font-display);
   font-size: clamp(2.4rem, 6vw, 4rem);
   font-weight: 900;
   letter-spacing: 0;
@@ -123,7 +123,7 @@
 :global(.terms-section-head h2) {
   margin: 0 0 8px;
   color: var(--legal-text);
-  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-family: var(--font-display);
   font-size: clamp(1.5rem, 3.2vw, 2rem);
   font-weight: 900;
   letter-spacing: 0;
@@ -190,7 +190,7 @@
 :global(.terms-acceptance-title) {
   margin: 0;
   color: var(--legal-text);
-  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-family: var(--font-display);
   font-size: 1.1rem;
   font-weight: 800;
 }
@@ -285,7 +285,7 @@
   border-radius: 50%;
   background: var(--legal-accent-warm-soft);
   color: var(--legal-accent-warm);
-  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-family: var(--font-display);
   font-size: 1.05rem;
   font-weight: 900;
 }
@@ -293,7 +293,7 @@
 :global(.terms-commitment-meta h3) {
   margin: 0 0 4px;
   color: var(--legal-text);
-  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-family: var(--font-display);
   font-size: 1.15rem;
   font-weight: 800;
 }
@@ -418,7 +418,7 @@
 :global(.terms-conflict-steps h3) {
   margin: 0 0 6px;
   color: var(--legal-text);
-  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-family: var(--font-display);
   font-size: 1.05rem;
   font-weight: 800;
 }
@@ -487,7 +487,7 @@
 :global(.terms-annex-title) {
   margin: 0 0 4px;
   color: var(--legal-text);
-  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-family: var(--font-display);
   font-size: 1.05rem;
   font-weight: 800;
 }
@@ -520,7 +520,7 @@
   align-items: baseline;
   margin: 0 0 10px;
   color: var(--legal-text);
-  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-family: var(--font-display);
   font-size: 1.05rem;
   font-weight: 800;
 }
@@ -639,7 +639,7 @@
 :global(.report-wizard-step legend) {
   margin: 0;
   color: var(--legal-text);
-  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-family: var(--font-display);
   font-size: 1.4rem;
   font-weight: 900;
 }
@@ -1010,7 +1010,7 @@
 :global(.report-success-title) {
   margin: 0;
   color: var(--legal-text);
-  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-family: var(--font-display);
   font-size: clamp(1.75rem, 4vw, 2.4rem);
   font-weight: 900;
 }
@@ -1156,7 +1156,7 @@
   padding: 0 0 64px;
   color: var(--status-text);
   background: var(--status-bg);
-  font-family: "Noto Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: var(--font-body);
 }
 
 :global(.status-page) {
@@ -1212,7 +1212,7 @@
   max-width: 18ch;
   margin: 0 0 12px;
   color: #f5e8c8 !important;
-  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-family: var(--font-display);
   font-size: clamp(2.4rem, 6vw, 4rem);
   font-weight: 900;
   letter-spacing: 0;
@@ -1334,7 +1334,7 @@
 :global(.status-section-head h2) {
   margin: 0 0 8px;
   color: var(--status-text);
-  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-family: var(--font-display);
   font-size: clamp(1.4rem, 3vw, 1.85rem);
   font-weight: 900;
   letter-spacing: 0;
@@ -1405,7 +1405,7 @@
 :global(.status-tile-head h3) {
   margin: 0;
   color: var(--status-text);
-  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-family: var(--font-display);
   font-size: 1.05rem;
   font-weight: 800;
 }
@@ -1680,6 +1680,145 @@
 
 :global(.report-success) {
   background: var(--legal-report-success-background);
+}
+
+/* Keep the lighthouse visible while bringing the task into the first viewport. */
+:global(.report-hero),
+:global(.report-hero-inner) {
+  min-height: 240px;
+}
+
+:global(.report-hero-inner) {
+  padding-block: 24px;
+}
+
+:global(.report-hero-title) {
+  font-size: 2.5rem;
+}
+
+:global(.report-hero-kicker),
+:global(.report-wizard-progress-label),
+:global(.report-field label) {
+  letter-spacing: 0;
+}
+
+:global(.report-hero-stat) {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+:global(.report-content) {
+  padding-top: 24px;
+}
+
+:global(.report-wizard) {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+:global(.report-wizard-progress) {
+  margin-bottom: 16px;
+}
+
+:global(.report-type-card),
+:global(.report-identity-card) {
+  border-radius: 8px;
+}
+
+:global(.report-type-card:has(input:focus-visible)),
+:global(.report-identity-card:has(input:focus-visible)) {
+  outline: 3px solid var(--legal-accent);
+  outline-offset: 3px;
+}
+
+:global(.report-review) {
+  padding: 16px 0;
+  border-width: 1px 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+:global(.report-review-body) {
+  padding: 0;
+  background: transparent;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  :global(.report-hero),
+  :global(.report-hero-inner) {
+    min-height: 0;
+  }
+
+  :global(.report-hero-inner) {
+    padding: 20px 16px;
+  }
+
+  :global(.report-hero-kicker) {
+    margin-bottom: 6px;
+  }
+
+  :global(.report-hero-title) {
+    margin-bottom: 8px;
+    font-size: 1.85rem;
+  }
+
+  :global(.report-hero-subtitle) {
+    margin-bottom: 10px;
+    font-size: 0.95rem;
+    line-height: 1.45;
+  }
+
+  :global(.report-hero-stat) {
+    font-size: 0.82rem;
+  }
+
+  :global(.report-content) {
+    padding: 18px 16px 0;
+  }
+
+  :global(.report-wizard-step) {
+    gap: 12px;
+  }
+
+  :global(.report-wizard-step legend) {
+    font-size: 1.2rem;
+  }
+
+  :global(.report-wizard-step-lede) {
+    margin-bottom: 0;
+    font-size: 0.9rem;
+  }
+
+  :global(.report-type-grid) {
+    gap: 8px;
+  }
+
+  :global(.report-type-card) {
+    min-height: 80px;
+    padding: 12px;
+    gap: 4px 10px;
+  }
+
+  :global(.report-type-icon) {
+    width: 28px;
+    height: 28px;
+  }
+
+  :global(.report-wizard-actions) {
+    flex-direction: row;
+  }
+
+  :global(.report-wizard-back),
+  :global(.report-wizard-next),
+  :global(.report-wizard-submit) {
+    width: auto;
+    min-height: 44px;
+  }
 }
 
 /* ============================== */

@@ -6,6 +6,7 @@ export * from "./role-assignment.js";
 export * from "./win-conditions.js";
 export * from "./achievements.js";
 export * from "./protocol.js";
+export * from "./repeat-room-options.js";
 export * from "./room-code.js";
 export * from "./avatar-catalog.js";
 export * from "./monitoring-sanitization.js";

@@ -1,6 +1,7 @@
 import { ROLE_DEFINITIONS, type GameFamily, type RoleCode } from "@werewolf/shared";
 import { Minus, Plus } from "lucide-react";
-import { roleArtPath, roleThumbPath } from "@/lib/role-art";
+import Image from "next/image";
+import { coverImageSizes, roleArtSource } from "@/lib/role-art";
 
 export function RoleTileLarge({
   family,
@@ -8,6 +9,7 @@ export function RoleTileLarge({
   count,
   readonly = false,
   reserve = false,
+  compactOnMobile = false,
   onIncrement,
   onDecrement,
   onOpen,
@@ -17,11 +19,13 @@ export function RoleTileLarge({
   count: number;
   readonly?: boolean;
   reserve?: boolean;
+  compactOnMobile?: boolean;
   onIncrement?: () => void;
   onDecrement?: () => void;
   onOpen: () => void;
 }) {
   const definition = ROLE_DEFINITIONS[role];
+  const source = roleArtSource(family, role);
   return (
     <article
       className="role-tile-large"
@@ -31,12 +35,21 @@ export function RoleTileLarge({
       data-team={definition.team}
     >
       <button type="button" className="role-tile-large-body" onClick={onOpen} onContextMenu={(event) => {
+        if (readonly || reserve || count <= 0 || !onDecrement) return;
         event.preventDefault();
-        onDecrement?.();
+        onDecrement();
       }}>
-        <picture aria-hidden="true">
-          <source srcSet={roleThumbPath(family, role)} type="image/webp" />
-          <img src={roleArtPath(family, role, "png")} alt="" loading="lazy" decoding="async" width={520} height={728} />
+        <picture className="role-art-frame" data-frame-family={family} aria-hidden="true">
+          <Image
+            {...source}
+            alt=""
+            loading="lazy"
+            quality={85}
+            sizes={coverImageSizes(source, [
+              { media: "(max-width: 720px)", width: compactOnMobile ? 64 : 210, aspectRatio: compactOnMobile ? 64 / 88 : 2 / 3 },
+              { width: 300, aspectRatio: 2 / 3 },
+            ])}
+          />
         </picture>
         <span className="role-tile-count">{count}</span>
         <span className="role-tile-caption">

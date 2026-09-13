@@ -1,8 +1,19 @@
-import { render } from "@testing-library/react";
+import { render, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { Sheet } from "./Sheet";
 
 describe("Sheet", () => {
+  it("composes a local tool surface without replacing dialog semantics", () => {
+    const { getByRole } = render(
+      <Sheet open onOpenChange={() => {}} title="Правила" className="room-reference" style={{ maxWidth: 640 }}>
+        Съдържание
+      </Sheet>,
+    );
+    const dialog = getByRole("dialog", { name: "Правила" });
+    expect(dialog.classList.contains("ds-sheet")).toBe(true);
+    expect(dialog.classList.contains("room-reference")).toBe(true);
+    expect(dialog.style.maxWidth).toBe("640px");
+  });
   it("renders an accessible dialog when open and titled", () => {
     const { container, getByRole } = render(
       <Sheet open onOpenChange={() => {}} title="Писма">
@@ -73,5 +84,26 @@ describe("Sheet", () => {
     );
     document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     expect(onOpenChange).toHaveBeenCalled();
+  });
+
+  it("lets a controlled sheet restore focus to its external trigger on close", async () => {
+    const trigger = document.createElement("button");
+    document.body.append(trigger);
+    const restoreFocus = (event: Event) => {
+      event.preventDefault();
+      trigger.focus();
+    };
+    const { rerender, unmount } = render(
+      <Sheet open onOpenChange={() => {}} onCloseAutoFocus={restoreFocus} title="Писма">
+        <button>Съдържание</button>
+      </Sheet>,
+    );
+    try {
+      rerender(<Sheet open={false} onOpenChange={() => {}} onCloseAutoFocus={restoreFocus} title="Писма">Съдържание</Sheet>);
+      await waitFor(() => expect(document.activeElement).toBe(trigger));
+    } finally {
+      unmount();
+      trigger.remove();
+    }
   });
 });

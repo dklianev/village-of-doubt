@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
+import { gzipSync } from "node:zlib";
 import { mkdirSync, mkdtempSync, rmSync, truncateSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -83,6 +84,22 @@ test("fails when the JavaScript delta exceeds the checked-in baseline allowance"
   assert.match(result.stderr, /JavaScript corpus grew .+ KB above baseline 1 KB; allowed delta: 5 KB/);
 });
 
+test("reports byte-sized route overages instead of rounding them away", (context) => {
+  const fixture = createFixture();
+  context.after(() => rmSync(fixture, { recursive: true, force: true }));
+  const payload = randomBytes(5 * 1024);
+  writeFixtureFile(fixture, "apps/web/.next/static/chunks/play-code.js", payload);
+  const atLimitBaseline = gzipSync(payload).length / 1024 - 3;
+  setBaseline(fixture, { totalJsKb: 10, routes: { "/play/[code]": { jsKb: atLimitBaseline } } });
+  const atLimit = runBudget(fixture);
+  assert.equal(atLimit.status, 0, atLimit.stderr);
+
+  setBaseline(fixture, { totalJsKb: 10, routes: { "/play/[code]": { jsKb: atLimitBaseline - 10 / 1024 } } });
+  const overLimit = runBudget(fixture);
+  assert.equal(overLimit.status, 1);
+  assert.match(overLimit.stderr, /Route \/play\/\[code\] declared client JS grew .+allowed delta: 3 KB; over by 10 bytes/);
+});
+
 test("fails when a protected route declares no CSS", (context) => {
   const fixture = createFixture({
     overrides: {
@@ -119,12 +136,34 @@ test("fails when the runtime art corpus exceeds its hard release budget", (conte
   const oversizedArt = path.join(fixture, "apps/web/public/game-art/oversized.png");
   mkdirSync(path.dirname(oversizedArt), { recursive: true });
   writeFileSync(oversizedArt, "");
-  truncateSync(oversizedArt, 60_001 * 1024);
+  truncateSync(oversizedArt, 75_001 * 1024);
 
   const result = runBudget(fixture);
 
   assert.equal(result.status, 1);
-  assert.match(result.stderr, /Art corpus .+ KB > hard budget 60000 KB/);
+  assert.match(result.stderr, /Art corpus .+ KB > hard budget 75000 KB/);
+});
+
+test("guards metadata PNG previews separately without relaxing interface image limits", (context) => {
+  const fixture = createFixture();
+  context.after(() => rmSync(fixture, { recursive: true, force: true }));
+  const preview = path.join(fixture, "apps/web/public/game-art/og/og-home.png");
+  mkdirSync(path.dirname(preview), { recursive: true });
+  writeFileSync(preview, "");
+  truncateSync(preview, 461 * 1024);
+  const allowed = runBudget(fixture);
+  assert.equal(allowed.status, 0, allowed.stderr);
+  assert.match(allowed.stderr, /Metadata PNG preview .+ > warning 450 KB/);
+  truncateSync(preview, 501 * 1024);
+  const oversized = runBudget(fixture);
+  assert.equal(oversized.status, 1);
+  assert.match(oversized.stderr, /Metadata PNG preview .+ > hard budget 500 KB/);
+  truncateSync(preview, 400 * 1024);
+  const interfaceArt = path.join(fixture, "apps/web/public/game-art/portrait.webp");
+  truncateSync(interfaceArt, 401 * 1024);
+  const interfaceResult = runBudget(fixture);
+  assert.equal(interfaceResult.status, 1);
+  assert.match(interfaceResult.stderr, /Largest optimized art .+ > hard budget 400 KB/);
 });
 
 function createFixture({ overrides = {} } = {}) {

@@ -1,4 +1,4 @@
-import { useId, useState, type Dispatch, type KeyboardEvent } from "react";
+import { useEffect, useId, useRef, useState, type Dispatch, type KeyboardEvent } from "react";
 import { Sheet } from "@werewolf/ui";
 import { BookOpenCheck, Mail, TimerReset, UsersRound, type LucideIcon } from "lucide-react";
 import type { LobbyFormAction, LobbyFormState } from "@/lib/lobby-form";
@@ -13,7 +13,7 @@ const TABS: { id: DetailTab; label: string; mobileLabel: string; description: st
   { id: "roles", label: "Роли", mobileLabel: "Роли", description: "Състав и баланс", icon: UsersRound },
   { id: "rhythm", label: "Ритъм и водене", mobileLabel: "Ритъм", description: "Темпо и разказвач", icon: TimerReset },
   { id: "rules", label: "Правила и комуникация", mobileLabel: "Правила", description: "Глас и разговор", icon: BookOpenCheck },
-  { id: "invite", label: "Име и покана", mobileLabel: "Покана", description: "Последни детайли", icon: Mail },
+  { id: "invite", label: "Име на стаята", mobileLabel: "Име", description: "Твоята вечер", icon: Mail },
 ];
 
 export function CreateCustomizationSheet({
@@ -21,17 +21,24 @@ export function CreateCustomizationSheet({
   dispatch,
   open,
   onOpenChange,
+  onCloseAutoFocus,
 }: {
   state: LobbyFormState;
   dispatch: Dispatch<LobbyFormAction>;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onCloseAutoFocus?: (event: Event) => void;
 }) {
   const [activeTab, setActiveTab] = useState<DetailTab>("roles");
   const panelId = useId();
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (open && panelRef.current) panelRef.current.scrollTop = 0;
+  }, [open, activeTab, state.manualRolesEnabled]);
 
   function moveTab(event: KeyboardEvent<HTMLButtonElement>, currentIndex: number) {
-    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) {
+    if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) {
       return;
     }
     event.preventDefault();
@@ -40,7 +47,7 @@ export function CreateCustomizationSheet({
         ? 0
         : event.key === "End"
           ? TABS.length - 1
-          : (currentIndex + (event.key === "ArrowRight" ? 1 : -1) + TABS.length) % TABS.length;
+          : (currentIndex + (["ArrowRight", "ArrowDown"].includes(event.key) ? 1 : -1) + TABS.length) % TABS.length;
     const nextTab = TABS[nextIndex];
     if (!nextTab) {
       return;
@@ -53,6 +60,7 @@ export function CreateCustomizationSheet({
     <Sheet
       open={open}
       onOpenChange={onOpenChange}
+      onCloseAutoFocus={onCloseAutoFocus}
       title="Настрой детайлите"
       description="Допълнителни роли, ритъм, правила и име на стаята."
       size="workspace"
@@ -94,6 +102,7 @@ export function CreateCustomizationSheet({
 
         <div className="create-customization-stage">
           <div
+            ref={panelRef}
             id={`${panelId}-${activeTab}-panel`}
             className="create-customization-panel"
             role="tabpanel"
@@ -109,14 +118,16 @@ export function CreateCustomizationSheet({
             {activeTab === "rules" ? (
               <div className="create-customization-stack">
                 <CommunicationSettings state={state} dispatch={dispatch} />
-                <AdvancedDrawer state={state} dispatch={dispatch} />
+                <AdvancedDrawer state={state} dispatch={dispatch} onEditRoles={() => {
+                  setActiveTab("roles");
+                  window.requestAnimationFrame(() => document.getElementById(`${panelId}-roles-tab`)?.focus());
+                }} />
               </div>
             ) : null}
             {activeTab === "invite" ? (
               <section className="create-invite-settings" aria-labelledby={`${panelId}-invite-title`}>
-                <p className="create-customization-kicker">по избор</p>
                 <h2 id={`${panelId}-invite-title`}>Име на стаята</h2>
-                <p>Дай име на вечерта или остави предложеното. Кодът се създава автоматично.</p>
+                <p>Как ще се казва вашата вечер?</p>
                 <label>
                   <span>Име на стаята</span>
                   <input
@@ -126,12 +137,13 @@ export function CreateCustomizationSheet({
                     onChange={(event) => dispatch({ type: "SET_ROOM_NAME", roomName: event.target.value })}
                   />
                 </label>
+                <p className="create-name-note">Кодът за покана ще е готов след създаването.</p>
               </section>
             ) : null}
           </div>
 
           <footer className="create-customization-footer">
-            <span>Промените се запазват автоматично.</span>
+            <span title="Промените не се запазват след презареждане.">За текущата подготовка</span>
             <button type="button" className="btn btn-primary" onClick={() => onOpenChange(false)}>
               Готово
             </button>

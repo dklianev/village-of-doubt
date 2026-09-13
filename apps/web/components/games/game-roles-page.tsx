@@ -1,68 +1,30 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
-import { memo, useCallback, useDeferredValue, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { memo, Suspense, useCallback, useDeferredValue, useEffect, useId, useMemo, useRef, useState } from "react";
+import { ArrowUpRight, ChevronDown, RotateCcw, Search, SlidersHorizontal } from "lucide-react";
 import "@/components/games/GameRolesPage.module.css";
 import {
   ROLE_DEFINITIONS,
-  getRoleAssetKey,
   getRoleRuntimeStatus,
   getRolesForFamily,
   teamLabelBg,
   type GameFamily,
   type RoleCode,
 } from "@werewolf/shared";
-import { roleArtPath, roleThumbPath } from "@/lib/role-art";
-import { useModal } from "@/lib/use-modal";
+import { RoleArt } from "./RoleArt";
+import { RoleDossier } from "./RoleDossier";
 
 type RoleFilter = "all" | "starter" | "advanced" | "night" | "large";
 type TeamFilter = "all" | "town" | "evil" | "vampires" | "lovers" | "neutral";
+type RoleSort = "core" | "team" | "night";
 
-const KNOWN_WEREWOLF_ROLE_ASSETS = new Set([
-  "ordinary-villager",
-  "werewolf",
-  "seer",
-  "witch",
-  "healer",
-  "priest",
-  "hunter",
-  "cupid",
-  "vampire",
-  "red-riding-hood",
-  "oracle",
-  "cook",
-  "blacksmith",
-  "insomniac",
-  "vampire-hunter",
-  "investigator",
-  "drunk",
-  "stray-cat",
-  "guard-dog",
-  "little-girl",
-  "thief",
-  "jester",
-  "mayor",
-]);
+const CORE_ROLES: Record<GameFamily, readonly RoleCode[]> = {
+  werewolves: ["ordinary_villager", "werewolf", "seer", "healer", "witch", "hunter"],
+  mafia: ["civilian", "mafioso", "commissioner", "doctor", "don"],
+};
 
-const KNOWN_MAFIA_ROLE_ASSETS = new Set([
-  "civilian",
-  "commissioner",
-  "don",
-  "mafioso",
-  "doctor",
-  "detective",
-  "bodyguard",
-  "vigilante",
-  "medium",
-  "roleblocker",
-  "lawyer",
-  "informant",
-  "maniac",
-  "jester",
-  "mayor",
-  "lovers",
-]);
 
 const ROLE_HAYSTACK_CACHE = new Map<RoleCode, string>();
 const CYRILLIC_SEARCH_MAP: Record<string, string> = {
@@ -104,14 +66,23 @@ export function GameRolesPage({ family }: { family: GameFamily }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<RoleFilter>("all");
   const [teamFilter, setTeamFilter] = useState<TeamFilter>("all");
+  const [sort, setSort] = useState<RoleSort>("core");
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [selectedRole, setSelectedRole] = useState<RoleCode | null>(null);
+  const catalogRef = useRef<HTMLElement>(null);
+  const filtersId = useId();
+  const sortId = useId();
   const deferredQuery = useDeferredValue(query);
   const isMafia = family === "mafia";
   const title = isMafia ? "Роли в Мафия" : "Роли във Върколак";
   const intro = isMafia
     ? "Бърз справочник за града: кой разследва, кой пази и кой дърпа конците след полунощ."
     : "Бърз справочник за селото: кой вижда, кой лъже и кои роли обръщат нощта.";
-  const allRoles = useMemo(() => [...getRolesForFamily(family)].sort(compareRoles), [family]);
+  const allRoles = useMemo(
+    () => [...getRolesForFamily(family)].sort((left, right) => compareRoles(left, right, sort, family)),
+    [family, sort],
+  );
+  const activeFilterCount = Number(filter !== "all") + Number(teamFilter !== "all") + Number(sort !== "core");
   const normalizedQuery = useMemo(() => normalizeSearch(deferredQuery), [deferredQuery]);
   const roles = useMemo(
     () =>
@@ -124,14 +95,36 @@ export function GameRolesPage({ family }: { family: GameFamily }) {
   const selectRole = useCallback((role: RoleCode) => {
     setSelectedRole(role);
   }, []);
+  const selectLinkedRole = useCallback((role: RoleCode | null) => {
+    const catalog = catalogRef.current;
+    if (role && catalog && !document.querySelector("[data-role-dossier]")) {
+      // Give the dossier a catalogue focus target when there was no local click.
+      const target = catalog.querySelector<HTMLButtonElement>(`.role-${role} button`)
+        ?? catalog.querySelector<HTMLInputElement>(".role-search-input");
+      target?.focus({ preventScroll: true });
+    }
+    setSelectedRole(role);
+  }, []);
+  const closeRole = useCallback(() => {
+    setSelectedRole(null);
+    const url = new URL(window.location.href);
+    if (url.searchParams.has("role")) {
+      url.searchParams.delete("role");
+      window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+    }
+  }, []);
   const resetFilters = useCallback(() => {
     setQuery("");
     setFilter("all");
     setTeamFilter("all");
+    setSort("core");
   }, []);
 
   return (
-    <main className="shell roles-shell" data-faction={family} data-family={family}>
+    <main ref={catalogRef} className="shell roles-shell" data-faction={family} data-family={family}>
+      <Suspense fallback={null}>
+        <RoleCatalogDeepLink family={family} onSelect={selectLinkedRole} />
+      </Suspense>
       <section className="role-codex-hero">
         <div className="role-codex-hero-copy">
           <p className="section-kicker">{isMafia ? "досиета на града" : "книга на персонажите"}</p>
@@ -154,7 +147,7 @@ export function GameRolesPage({ family }: { family: GameFamily }) {
 
       <section className="role-codex-toolbar" aria-label="Филтри за роли">
         <div className="role-search-wrap">
-          <span aria-hidden="true">⌕</span>
+          <Search size={18} aria-hidden="true" />
           <input
             className="role-search-input"
             value={query}
@@ -163,25 +156,48 @@ export function GameRolesPage({ family }: { family: GameFamily }) {
             aria-label="Търси роля"
           />
         </div>
-        <div className="role-filter-stack">
-          <div className="role-filter-chips" aria-label="Тип роли">
+        <button
+          type="button"
+          className="role-filters-toggle"
+          aria-expanded={filtersExpanded}
+          aria-controls={filtersId}
+          aria-label={`Филтри и подредба${activeFilterCount ? `, ${activeFilterCount} активни` : ""}`}
+          onClick={() => setFiltersExpanded((expanded) => !expanded)}
+        >
+          <SlidersHorizontal size={18} aria-hidden="true" />
+          Филтри и подредба
+          {activeFilterCount > 0 ? <span className="role-filter-count">{activeFilterCount}</span> : null}
+          <ChevronDown size={18} aria-hidden="true" />
+        </button>
+        <div className="role-filter-stack" id={filtersId} data-expanded={filtersExpanded}>
+          <label className="role-sort" htmlFor={sortId}>
+            <span>Подредба</span>
+            <select id={sortId} value={sort} onChange={(event) => setSort(event.target.value as RoleSort)}>
+              <option value="core">Основни роли първо</option>
+              <option value="team">По отбор</option>
+              <option value="night">Нощен ред</option>
+            </select>
+          </label>
+          <div className="role-filter-chips" role="group" aria-label="Тип роли">
             {roleFilterOptions.map(([value, label]) => (
               <button
                 key={value}
                 type="button"
                 className={filter === value ? "is-active" : ""}
+                aria-pressed={filter === value}
                 onClick={() => setFilter(value)}
               >
                 {label}
               </button>
             ))}
           </div>
-          <div className="role-filter-chips role-team-chips" aria-label="Отбори">
+          <div className="role-filter-chips role-team-chips" role="group" aria-label="Отбори">
             {teamFilterOptions(family).map(([value, label]) => (
               <button
                 key={value}
                 type="button"
                 className={teamFilter === value ? "is-active" : ""}
+                aria-pressed={teamFilter === value}
                 onClick={() => setTeamFilter(value)}
               >
                 {label}
@@ -192,10 +208,16 @@ export function GameRolesPage({ family }: { family: GameFamily }) {
       </section>
 
       <div className="role-codex-result-line">
-        <span>
+        <span role="status" aria-live="polite">
           Показани {roles.length} от {allRoles.length} роли
         </span>
         {query.trim().length > 0 ? <span>Търсене: “{query.trim()}”</span> : null}
+        {query.trim() || activeFilterCount > 0 ? (
+          <button type="button" className="role-filters-reset" onClick={resetFilters}>
+            <RotateCcw size={16} aria-hidden="true" />
+            Изчисти филтрите
+          </button>
+        ) : null}
       </div>
 
       <div className="role-codex-grid">
@@ -216,9 +238,24 @@ export function GameRolesPage({ family }: { family: GameFamily }) {
           </button>
         </section>
       ) : null}
-      {selectedRole ? <RoleCodexDetail family={family} role={selectedRole} onClose={() => setSelectedRole(null)} /> : null}
+      {selectedRole ? <RoleDossier family={family} role={selectedRole} onClose={closeRole} /> : null}
     </main>
   );
+}
+
+function RoleCatalogDeepLink({ family, onSelect }: {
+  family: GameFamily;
+  onSelect: (role: RoleCode | null) => void;
+}) {
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const values = searchParams?.getAll("role") ?? [];
+    const role = values.length === 1
+      ? getRolesForFamily(family).find((candidate) => candidate === values[0]) ?? null
+      : null;
+    onSelect(role);
+  }, [family, onSelect, searchParams]);
+  return null;
 }
 
 const RoleCodexCard = memo(function RoleCodexCard({
@@ -237,105 +274,46 @@ const RoleCodexCard = memo(function RoleCodexCard({
 
   return (
     <article className={`role-codex-card role-codex-card-compact role-${role}`}>
-      <button type="button" className="role-codex-card-button" onClick={() => onSelect(role)}>
+      <button type="button" className="role-codex-card-button" aria-haspopup="dialog" onClick={() => onSelect(role)}>
         <RoleArt role={role} family={family} eager={eager} />
         <div className="role-codex-copy">
           <div className="role-codex-card-topline">
             <span>{teamLabelBg(definition.team, family)}</span>
-            <span>{definition.nightAction ? "Нощна" : "Дневна"}</span>
           </div>
           <h2 className="role-card-title">{definition.nameBg}</h2>
           <p>{definition.shortDescriptionBg}</p>
           <div className="role-codex-tags" aria-label="Данни за ролята">
-            <span>{runtimeStatus === "playable" ? "Автоматична" : "Ръчно водене"}</span>
+            {runtimeStatus !== "playable" ? <span>Ръчно водене</span> : null}
             {definition.isDefaultEnabled ? <span>Стартова</span> : null}
-            <span>Стойност {formatValue(definition.value)}</span>
-            <span>{definition.nightOrder === null ? "Без нощен ред" : `Ред ${definition.nightOrder}`}</span>
+            <span>{definition.nightAction ? "Нощна способност" : "Без нощно действие"}</span>
           </div>
-          <span className="role-codex-open">Отвори досието</span>
+          <span className="role-codex-open">За ролята <ArrowUpRight size={16} aria-hidden="true" /></span>
         </div>
       </button>
     </article>
   );
 });
 
-function RoleArt({ role, family, eager = false }: { role: RoleCode; family: GameFamily; eager?: boolean }) {
-  const assetKey = getRoleAssetKey(role);
-  const hasAsset =
-    family === "mafia" ? KNOWN_MAFIA_ROLE_ASSETS.has(assetKey) : KNOWN_WEREWOLF_ROLE_ASSETS.has(assetKey);
-  const src = hasAsset ? roleThumbPath(family, role) : "/game-art/thumbs/card-back-secret.webp";
-  const fallbackSrc = hasAsset ? roleArtPath(family, role, "webp") : "/game-art/card-back-secret.webp";
-  const [didFail, setDidFail] = useState(false);
-  const imageSrc = didFail ? fallbackSrc : src;
 
-  return (
-    <picture className="role-codex-art role-codex-frame" aria-hidden="true">
-      <Image
-        src={imageSrc}
-        alt=""
-        loading={eager ? "eager" : "lazy"}
-        fetchPriority={eager ? "high" : "auto"}
-        width={520}
-        height={728}
-        sizes="(max-width: 639px) 44vw, (max-width: 1023px) 28vw, 22vw"
-        onError={didFail ? undefined : () => setDidFail(true)}
-      />
-    </picture>
-  );
-}
-
-function RoleCodexDetail({ family, role, onClose }: { family: GameFamily; role: RoleCode; onClose: () => void }) {
-  const definition = ROLE_DEFINITIONS[role];
-  const runtimeStatus = getRoleRuntimeStatus(role);
-  const { ref } = useModal({ open: true, onClose });
-
-  return (
-    <div ref={ref} className="role-codex-detail" role="dialog" aria-modal="true" aria-labelledby="role-codex-detail-title">
-      <button type="button" className="role-codex-detail-backdrop" aria-label="Затвори досието" onClick={onClose} />
-      <article className="role-codex-detail-panel">
-        <button type="button" className="role-codex-detail-close" aria-label="Затвори досието" onClick={onClose}>
-          ×
-        </button>
-        <RoleArt role={role} family={family} />
-        <div className="role-codex-detail-copy">
-          <p className="section-kicker">{teamLabelBg(definition.team, family)}</p>
-          <h2 id="role-codex-detail-title">{definition.nameBg}</h2>
-          <blockquote className="role-table-quote">{roleQuoteBg(role, family)}</blockquote>
-          <p>{definition.fullDescriptionBg}</p>
-          <div className="role-table-advice">
-            <span>{roleStrategyBg(role, family)}</span>
-            <span>{roleCounterplayBg(role, family)}</span>
-          </div>
-          <div className="role-codex-tags">
-            <span>{runtimeStatus === "playable" ? "Работи в автоматична игра" : "За ръчно водене"}</span>
-            {definition.isDefaultEnabled ? <span>Стартова игра</span> : null}
-            <span>Стойност {formatValue(definition.value)}</span>
-            <span>{definition.nightOrder === null ? "Без нощен ред" : `Нощен ред ${definition.nightOrder}`}</span>
-            <span>{definition.minPlayers}+ играчи</span>
-            <span>{definition.maxCopies === 1 ? "1 копие" : `До ${definition.maxCopies} копия`}</span>
-            {definition.tags.map((tag) => (
-              <span key={tag}>{tag}</span>
-            ))}
-          </div>
-          {definition.dependencies.length > 0 ? (
-            <div className="role-warning">
-              {definition.dependencies.map((dependency) => (
-                <span key={dependency.roleId}>{dependency.reasonBg}</span>
-              ))}
-            </div>
-          ) : null}
-        </div>
-      </article>
-    </div>
-  );
-}
-
-function compareRoles(left: RoleCode, right: RoleCode) {
+function compareRoles(left: RoleCode, right: RoleCode, sort: RoleSort, family: GameFamily) {
   const leftDefinition = ROLE_DEFINITIONS[left];
   const rightDefinition = ROLE_DEFINITIONS[right];
   const leftOrder = leftDefinition.nightOrder ?? 100;
   const rightOrder = rightDefinition.nightOrder ?? 100;
 
+  if (sort === "core") {
+    const coreRoles = CORE_ROLES[family];
+    const leftCore = coreRoles.indexOf(left);
+    const rightCore = coreRoles.indexOf(right);
+    const coreDifference = (leftCore < 0 ? coreRoles.length : leftCore) - (rightCore < 0 ? coreRoles.length : rightCore);
+    if (coreDifference !== 0) return coreDifference;
+    if (leftDefinition.isDefaultEnabled !== rightDefinition.isDefaultEnabled) {
+      return Number(rightDefinition.isDefaultEnabled) - Number(leftDefinition.isDefaultEnabled);
+    }
+  }
+  if (sort === "night" && leftOrder !== rightOrder) {
+    return leftOrder - rightOrder;
+  }
   if (leftDefinition.team !== rightDefinition.team) {
     return teamRank(leftDefinition.team) - teamRank(rightDefinition.team);
   }
@@ -359,10 +337,6 @@ function teamRank(team: string) {
     return 3;
   }
   return 4;
-}
-
-function formatValue(value: number) {
-  return value > 0 ? `+${value}` : String(value);
 }
 
 const roleFilterOptions: Array<[RoleFilter, string]> = [
@@ -456,72 +430,4 @@ function normalizeSearch(value: string) {
     .replace(CYRILLIC_SEARCH_PATTERN, (letter) => CYRILLIC_SEARCH_MAP[letter] ?? letter)
     .replace(/[^a-z0-9а-я]+/gi, " ")
     .trim();
-}
-
-function roleQuoteBg(role: RoleCode, family: GameFamily) {
-  const quotes: Partial<Record<RoleCode, string>> = {
-    seer: "Картите казват истината, но не казват кога да я кажеш.",
-    oracle: "Истината идва на части. Паниката я прави безполезна.",
-    hunter: "Когато падаш, един от тях пада с теб.",
-    witch: "Една отвара спасява нощта. Другата я приключва.",
-    healer: "Най-добрата защита е тази, за която никой не разбира.",
-    priest: "Благословията е тиха, но остава до края.",
-    werewolf: "Селото спи. Гората брои.",
-    vampire: "Не всяка смърт идва сутрин.",
-    mafioso: "Спите в хор. Лъжете поотделно.",
-    don: "Не командваш силно. Командваш така, че да изглежда случайно.",
-    commissioner: "Проверката е оръжие само ако оцелееш да я използваш.",
-    doctor: "Понякога спасяваш човека, който утре ще те обвини.",
-    jester: "Истинската победа е всички да сбъркат по твоя план.",
-  };
-
-  return quotes[role] ?? (family === "mafia" ? "В този град всяко алиби има цена." : "В това село тишината също говори.");
-}
-
-function roleStrategyBg(role: RoleCode, family: GameFamily) {
-  const definition = ROLE_DEFINITIONS[role];
-  if (definition.team === "mafia" || definition.team === "werewolves" || definition.team === "vampires") {
-    return family === "mafia"
-      ? "Стратегия: говори рано, но не води всяко гласуване. Най-доброто алиби е малко несъвършено."
-      : "Стратегия: не се защитавай като отбор. Остави селото само да построи грешната история.";
-  }
-  if (hasRoleTag(role, "разследваща")) {
-    return "Стратегия: събирай информация бавно. Дай намек, не лекция, докато нямаш достатъчно връзки.";
-  }
-  if (hasRoleTag(role, "защитна")) {
-    return "Стратегия: пази хората, които събират доверие, не най-шумните. Шумът често е капан.";
-  }
-  if (hasRoleTag(role, "атакуваща")) {
-    return "Стратегия: стреляй само когато имаш причина, която можеш да защитиш след това.";
-  }
-  if (definition.team === "neutral" || definition.team === "lovers") {
-    return "Стратегия: не играеш по общия ритъм на масата. Използвай хаоса, но не го прави очевиден.";
-  }
-  return "Стратегия: гледай как хората гласуват, не само какво казват. Гласуването помни повече от речта.";
-}
-
-function roleCounterplayBg(role: RoleCode, family: GameFamily) {
-  const definition = ROLE_DEFINITIONS[role];
-  if (definition.team === "mafia" || definition.team === "werewolves" || definition.team === "vampires") {
-    return family === "mafia"
-      ? "Срещу нея: търси резки смени на версията и прекалено удобни обвинения."
-      : "Срещу нея: следи кой оставя подозренията да работят вместо него.";
-  }
-  if (hasRoleTag(role, "разследваща")) {
-    return "Срещу нея: истинската информация често идва с колебание, фалшивата — с прекалена увереност.";
-  }
-  if (hasRoleTag(role, "защитна")) {
-    return "Срещу нея: ако няма смърт, не приемай автоматично, че защитникът е доказан.";
-  }
-  if (hasRoleTag(role, "атакуваща")) {
-    return "Срещу нея: притискай причината за избора, не само резултата.";
-  }
-  if (role === "jester") {
-    return "Срещу нея: ако някой прекалено много иска да бъде изгонен, може би му помагате.";
-  }
-  return "Срещу нея: обикновената роля печели с търпение. Не я подценявай в края.";
-}
-
-function hasRoleTag(role: RoleCode, tag: string) {
-  return (ROLE_DEFINITIONS[role].tags as readonly string[]).includes(tag);
 }

@@ -34,6 +34,23 @@ function publicPlayer(): PublicPlayer {
 }
 
 describe("PlayStage private-data boundary", () => {
+  it("shows participant readiness rather than an active-round timer in the lobby", () => {
+    const players = [publicPlayer(), { ...publicPlayer(), userId: "viewer-2", ready: false },
+      { ...publicPlayer(), userId: "narrator", playing: false, narrator: true }];
+    render(<PlayStage code="TEST" phase="lobby" mode="werewolves_classic" family="werewolves"
+      round={0} phaseEndsAt={0} isPending={false} players={players} hasSnapshot
+      narratorMode="honest_human" communicationMode="built_in_chat" ownPlayer={players[0]}
+      targetableIds={new Set()} shortcutNumbers={new Map()} selectedTargetId="" secondTargetId=""
+      voteCounts={new Map()} currentSpeakerUserId="" currentDefenseUserId="" nomineeIds={new Set()}
+      onSelectSeat={vi.fn()} onMakeNarrator={vi.fn()} onMakeMayor={vi.fn()}
+    />);
+    expect(screen.getByRole("status", { name: "Готови: 1 от 2" })).toHaveTextContent("1 / 2");
+    expect(screen.getByText("2 участници")).toBeVisible();
+    expect(screen.queryByRole("timer")).not.toBeInTheDocument();
+    expect(screen.queryByText(/рунд 0/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/живи/)).not.toBeInTheDocument();
+  });
+
   it("projects public seat fields and drops injected private canaries", () => {
     const injectedPlayer = Object.assign(publicPlayer(), {
       role: "seer",

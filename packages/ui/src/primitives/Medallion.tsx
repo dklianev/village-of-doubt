@@ -18,8 +18,8 @@ export function Medallion({ label, size = 56 }: MedallionProps) {
           "radial-gradient(circle at 50% 38%, oklch(0.97 0.01 80) 0 34%, var(--ds-accent-gold) 68%, oklch(0.48 0.06 60) 100%)",
         boxShadow: "inset 0 0 0 3px oklch(0.97 0.01 80 / 0.78), 0 10px 22px oklch(0.18 0.012 60 / 0.22)",
         color: "var(--ds-ink-primary)",
-        fontFamily: '"Noto Serif", "Iowan Old Style", Georgia, serif',
-        fontWeight: 800,
+        fontFamily: "var(--ds-font-display)",
+        fontWeight: 700,
         fontSize: `${Math.round(size * 0.36)}px`,
         lineHeight: 1,
       }}

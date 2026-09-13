@@ -1,5 +1,13 @@
 import { getRoleNameBg, isRoleAvailableInFamily, ROLE_DEFINITIONS, type RoleCode } from "./roles.js";
-import type { GamePhase } from "./protocol.js";
+import { getGameFamily, getGameModeNameBg } from "./game-metadata.js";
+
+export {
+  GAME_MODE_DEFINITIONS,
+  ROLE_PRESET_LABELS_BG,
+  NARRATOR_VOICE_LABELS_BG,
+  getGameFamily,
+  getGameModeNameBg,
+} from "./game-metadata.js";
 
 export type GameMode = "mafia_sport" | "mafia_free" | "werewolves_classic";
 export type GameFamily = "werewolves" | "mafia";
@@ -140,84 +148,6 @@ export type RoleValidationIssue = {
 
 const DEFAULT_RULESET_VERSION = "bg-werewolf-mafia-2026-04-28-separated-games";
 
-export const GAME_MODE_DEFINITIONS: Record<
-  GameMode,
-  {
-    family: GameFamily;
-    nameBg: string;
-    shortBg: string;
-    recommendedPlayersBg: string;
-    themeKey: GameFamily;
-    phaseLabelsBg: Partial<Record<GamePhase, string>>;
-  }
-> = {
-  werewolves_classic: {
-    family: "werewolves",
-    nameBg: "Върколак",
-    shortBg: "Класическа игра с тайни роли, нощни заплахи и дневно гласуване.",
-    recommendedPlayersBg: "6-30 играчи, най-добре 8-18.",
-    themeKey: "werewolves",
-    phaseLabelsBg: {},
-  },
-  mafia_sport: {
-    family: "mafia",
-    nameBg: "Спортна Мафия",
-    shortBg: "Строг 10-играчов формат с Комисар, Кръстник и точна реч.",
-    recommendedPlayersBg: "Точно 10 играчи.",
-    themeKey: "mafia",
-    phaseLabelsBg: {
-      first_night: "Първи договор",
-      night: "Нощни договорки",
-      day_announcement: "Градът се събужда",
-      day_discussion: "Речи на масата",
-      voting: "Обвинение",
-      resolution: "Присъда",
-    },
-  },
-  mafia_free: {
-    family: "mafia",
-    nameBg: "Мафия",
-    shortBg: "Градска мистерия с гъвкав брой играчи и роли по избор.",
-    recommendedPlayersBg: "4-24 играчи.",
-    themeKey: "mafia",
-    phaseLabelsBg: {
-      first_night: "Първи договор",
-      night: "Сделките започват",
-      day_announcement: "Градът се събужда",
-      day_discussion: "Градът говори",
-      voting: "Обвинение",
-      resolution: "Присъда",
-    },
-  },
-};
-
-export const ROLE_PRESET_LABELS_BG: Record<RolePreset, string> = {
-  sport: "Спортна Мафия",
-  free: "Свободна Мафия",
-  beginner: "Начинаещи",
-  classic: "Класическа игра",
-  advanced: "Разширена игра",
-  wolves_vampires: "Върколаци и вампири",
-  classic_clean: "Класическа чиста",
-  mvp: "Готово разпределение",
-  manual: "Персонализирана",
-};
-
-export const NARRATOR_VOICE_LABELS_BG: Record<NarratorVoice, string> = {
-  classic: "Класически Разказвач",
-  old_villager: "Старият селянин",
-  inspector: "Инспекторът",
-  witch: "Вещицата",
-};
-
-export function getGameFamily(mode: GameMode): GameFamily {
-  return GAME_MODE_DEFINITIONS[mode].family;
-}
-
-export function getGameModeNameBg(mode: GameMode): string {
-  return GAME_MODE_DEFINITIONS[mode].nameBg;
-}
-
 export const TEMPO_PRESETS: Record<TempoProfile, PhaseTimers> = {
   fast_online: {
     roleRevealSeconds: 15,
@@ -357,6 +287,21 @@ const WEREWOLF_VARIANTS = ["werewolves_vs_village", "vampires_vs_village", "thre
 const MAYOR_MODES = ["secret_role", "public_vote"] as const satisfies readonly MayorMode[];
 const COMMISSIONER_RESULT_MODES = ["team_only", "exact_role"] as const satisfies readonly CommissionerResultMode[];
 const NARRATOR_VOICES = ["classic", "old_villager", "inspector", "witch"] as const satisfies readonly NarratorVoice[];
+const STRING_GAME_CONFIG_OPTIONS: readonly [keyof GameConfigOptions, readonly string[], string][] = [
+  ["mode", GAME_MODES, "Невалиден режим на игра."],
+  ["roomVisibility", ROOM_VISIBILITIES, "Невалидна видимост на стаята."],
+  ["rolePreset", ROLE_PRESETS, "Невалидно готово разпределение на ролите."],
+  ["narratorMode", NARRATOR_MODES, "Невалиден режим на Разказвач."],
+  ["communicationMode", COMMUNICATION_MODES, "Невалиден режим на комуникация."],
+  ["tempoProfile", TEMPO_PROFILES, "Невалиден профил на темпото."],
+  ["tieBreaker", TIE_BREAKERS, "Невалидно правило при равенство."],
+  ["majorityMode", MAJORITY_MODES, "Невалидно правило за мнозинство."],
+  ["werewolfVariant", WEREWOLF_VARIANTS, "Невалиден вариант на играта."],
+  ["mayorMode", MAYOR_MODES, "Невалиден режим за Кмет."],
+  ["commissionerResultMode", COMMISSIONER_RESULT_MODES, "Невалиден резултат за Комисаря."],
+  ["narratorVoice", NARRATOR_VOICES, "Невалиден глас на Разказвача."],
+];
+
 const BOOLEAN_GAME_CONFIG_KEYS = [
   "loversEnabled",
   "revealRolesOnDeath",
@@ -447,37 +392,15 @@ function sanitizeGameConfigOptions(value: unknown): GameConfigOptions {
 
   // Room creation also carries transport/auth metadata, so only copy authoritative config fields.
   const sanitized: GameConfigOptions = {};
-  const mode = readAllowedString(value, "mode", GAME_MODES, "Невалиден режим на игра.");
-  const roomVisibility = readAllowedString(value, "roomVisibility", ROOM_VISIBILITIES, "Невалидна видимост на стаята.");
-  const rolePreset = readAllowedString(value, "rolePreset", ROLE_PRESETS, "Невалидно готово разпределение на ролите.");
-  const narratorMode = readAllowedString(value, "narratorMode", NARRATOR_MODES, "Невалиден режим на Разказвач.");
-  const communicationMode = readAllowedString(value, "communicationMode", COMMUNICATION_MODES, "Невалиден режим на комуникация.");
-  const tempoProfile = readAllowedString(value, "tempoProfile", TEMPO_PROFILES, "Невалиден профил на темпото.");
-  const tieBreaker = readAllowedString(value, "tieBreaker", TIE_BREAKERS, "Невалидно правило при равенство.");
-  const majorityMode = readAllowedString(value, "majorityMode", MAJORITY_MODES, "Невалидно правило за мнозинство.");
-  const werewolfVariant = readAllowedString(value, "werewolfVariant", WEREWOLF_VARIANTS, "Невалиден вариант на играта.");
-  const mayorMode = readAllowedString(value, "mayorMode", MAYOR_MODES, "Невалиден режим за Кмет.");
-  const commissionerResultMode = readAllowedString(value, "commissionerResultMode", COMMISSIONER_RESULT_MODES, "Невалиден резултат за Комисаря.");
-  const narratorVoice = readAllowedString(value, "narratorVoice", NARRATOR_VOICES, "Невалиден глас на Разказвача.");
-
-  if (narratorMode === "honest_human" || narratorMode === "full_human") {
-    throw new Error("Режимът с човешки Разказвач още не е достъпен в бета версията. Избери Автоматичен Разказвач.");
+  const mutableSanitized = sanitized as unknown as Record<string, unknown>;
+  for (const [key, allowed, messageBg] of STRING_GAME_CONFIG_OPTIONS) {
+    const optionValue = readAllowedString(value, key, allowed, messageBg);
+    if (optionValue !== undefined) mutableSanitized[key] = optionValue;
   }
 
-  Object.assign(sanitized, {
-    ...(mode === undefined ? {} : { mode }),
-    ...(roomVisibility === undefined ? {} : { roomVisibility }),
-    ...(rolePreset === undefined ? {} : { rolePreset }),
-    ...(narratorMode === undefined ? {} : { narratorMode }),
-    ...(communicationMode === undefined ? {} : { communicationMode }),
-    ...(tempoProfile === undefined ? {} : { tempoProfile }),
-    ...(tieBreaker === undefined ? {} : { tieBreaker }),
-    ...(majorityMode === undefined ? {} : { majorityMode }),
-    ...(werewolfVariant === undefined ? {} : { werewolfVariant }),
-    ...(mayorMode === undefined ? {} : { mayorMode }),
-    ...(commissionerResultMode === undefined ? {} : { commissionerResultMode }),
-    ...(narratorVoice === undefined ? {} : { narratorVoice }),
-  });
+  if (sanitized.narratorMode === "honest_human" || sanitized.narratorMode === "full_human") {
+    throw new Error("Режимът с човешки Разказвач още не е достъпен в бета версията. Избери Автоматичен Разказвач.");
+  }
 
   if (value.playerCount !== undefined) {
     if (typeof value.playerCount !== "number" || !Number.isFinite(value.playerCount) || !Number.isInteger(value.playerCount)) {
@@ -523,7 +446,6 @@ function sanitizeGameConfigOptions(value: unknown): GameConfigOptions {
     sanitized.customTimers = sanitizeCustomTimers(value.customTimers);
   }
 
-  const mutableSanitized = sanitized as unknown as Record<string, unknown>;
   for (const key of BOOLEAN_GAME_CONFIG_KEYS) {
     const optionValue = value[key];
     if (optionValue === undefined) {
@@ -902,39 +824,26 @@ export function createGameConfigFromOptions(rawOptions: GameConfigOptions = {}):
         : config.roles;
   const loversEnabled = (roles.cupid ?? 0) > 0;
 
+  // Sanitization copies only known, defined options. Keep input-only controls
+  // out of runtime state, then apply the mode- and composition-derived values.
+  const { customTimers: _customTimers, enforceRoleCompatibility: _enforceRoleCompatibility, ...overrides } = options;
   const createdConfig: GameConfig = {
     ...config,
-    roomName: options.roomName ?? config.roomName,
+    ...overrides,
     rolePreset,
     maxPlayers:
       mode === "mafia_sport"
         ? playerCount
         : Math.max(playerCount, Math.min(30, requestedMaxPlayers)),
-    roomVisibility: options.roomVisibility ?? config.roomVisibility,
     roles,
-    narratorMode: options.narratorMode ?? config.narratorMode,
-    communicationMode: options.communicationMode ?? config.communicationMode,
     tempoProfile,
     timers,
     liveMode: tempoProfile === "live",
     loversEnabled,
-    revealRolesOnDeath: options.revealRolesOnDeath ?? config.revealRolesOnDeath,
-    tieBreaker: options.tieBreaker ?? config.tieBreaker,
-    firstNightKill: options.firstNightKill ?? config.firstNightKill,
     allowSkipVote: mode === "mafia_sport" ? false : options.allowSkipVote ?? config.allowSkipVote,
-    majorityMode: options.majorityMode ?? config.majorityMode,
-    autoStart: options.autoStart ?? config.autoStart,
     beginnerMode: options.beginnerMode ?? (rolePreset === "beginner"),
     advancedMode: options.advancedMode ?? (rolePreset === "advanced" || rolePreset === "wolves_vampires"),
     werewolfVariant: options.werewolfVariant ?? (rolePreset === "wolves_vampires" ? "three_teams" : config.werewolfVariant),
-    mayorMode: options.mayorMode ?? config.mayorMode,
-    promoRolesEnabled: options.promoRolesEnabled ?? config.promoRolesEnabled,
-    mafiaNightKill: options.mafiaNightKill ?? config.mafiaNightKill,
-    doctorCanSelfProtect: options.doctorCanSelfProtect ?? config.doctorCanSelfProtect,
-    commissionerResultMode: options.commissionerResultMode ?? config.commissionerResultMode,
-    maniacEnabled: options.maniacEnabled ?? config.maniacEnabled,
-    jesterEnabled: options.jesterEnabled ?? config.jesterEnabled,
-    narratorVoice: options.narratorVoice ?? config.narratorVoice,
   };
 
   if (options.enforceRoleCompatibility) {

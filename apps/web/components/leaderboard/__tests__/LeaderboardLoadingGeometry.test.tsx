@@ -44,9 +44,38 @@ afterAll(async () => {
 }, 30_000);
 
 describe("leaderboard loading geometry", () => {
+  it("shows the leading ranks before the portrait on mobile in both themes", async () => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const markup = renderToStaticMarkup(<NewspaperPage entries={entries} issueCount={42} />);
+    for (const theme of ["dark", "light"]) {
+      await page.setContent(`<style>${utilityCss}${css}</style><main class="newspaper-shell">${markup}</main>`);
+      await page.locator("html").evaluate((node, value) => node.setAttribute("data-theme", value), theme);
+      const ranking = await page.getByRole("table", { name: "Начело на класацията" }).boundingBox({ timeout: 1500 });
+      const portrait = await page.locator(".headline-portrait").boundingBox();
+      expect(ranking).not.toBeNull();
+      expect(ranking!.y + ranking!.height).toBeLessThan(600);
+      expect(ranking!.y + ranking!.height).toBeLessThan(portrait!.y);
+      expect(portrait!.width).toBeLessThanOrEqual(168);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+    }
+    await page.setViewportSize({ width: 768, height: 1024 });
+  });
+
+  it("keeps empty and unavailable editions compact on mobile", async () => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    for (const state of [<NewspaperEmpty />, <NewspaperUnavailable />]) {
+      await page.setContent(`<style>${utilityCss}${css}</style><main class="newspaper-shell">${renderToStaticMarkup(state)}</main>`);
+      const edition = await page.locator(".newspaper-page").boundingBox();
+      const actions = await page.locator(".empty-cta").boundingBox();
+      expect(edition!.height).toBeLessThan(600);
+      expect(actions!.y + actions!.height).toBeLessThan(650);
+    }
+  });
+
   it(
     "keeps CLS below 0.05 when the tablet skeleton resolves to every runtime state",
     async () => {
+      await page.setViewportSize({ width: 768, height: 1024 });
       const skeleton = renderToStaticMarkup(<LeaderboardSkeleton />);
       const states = [
         ["empty", renderToStaticMarkup(<NewspaperEmpty />)],

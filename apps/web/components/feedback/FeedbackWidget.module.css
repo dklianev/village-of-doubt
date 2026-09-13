@@ -87,7 +87,7 @@
   border-radius: 16px;
   background: var(--feedback-bg);
   color: var(--feedback-text);
-  font-family: "Noto Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: var(--font-body);
   box-shadow:
     0 32px 64px rgba(0, 0, 0, 0.65),
     0 8px 16px rgba(0, 0, 0, 0.45),
@@ -129,11 +129,11 @@
 .panel h2 {
   margin: 0;
   color: var(--feedback-text);
-  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-family: var(--font-display);
   font-size: 1.25rem;
   font-weight: 800;
   line-height: 1.2;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 
 .close {
@@ -406,7 +406,7 @@
 .sentTitle {
   margin: 0;
   color: var(--feedback-text);
-  font-family: "Noto Serif Display", serif;
+  font-family: var(--font-display);
   font-size: 1.15rem;
   font-weight: 800;
 }

@@ -110,9 +110,9 @@ export function Dialog({ open, onOpenChange, title, description, children, foote
         <RDialog.Content className="ds-dialog" data-ds-dialog>
           <RDialog.Title
             style={{
-              fontFamily: '"Noto Serif Display", "Noto Serif", "Iowan Old Style", serif',
+              fontFamily: "var(--ds-font-display)",
               fontSize: "var(--ds-type-h3)",
-              fontWeight: 800,
+              fontWeight: 600,
               letterSpacing: 0,
               margin: 0,
             }}

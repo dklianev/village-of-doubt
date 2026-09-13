@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { ForgotPasswordClient } from "@/components/auth/ForgotPasswordClient";
 import { ResourceHints } from "@/components/resource-hints";
 import "@/components/auth/AuthRecoveryBase.css";
@@ -15,7 +16,9 @@ export default function ForgotPasswordPage() {
     <main className="shell locksmith-shell auth-recovery-shell framed-shell">
       <ResourceHints images={[{ href: "/game-art/auth/forgot-password-locksmith.webp", fetchPriority: "high" }]} />
       <div className="framed-shell-inner">
-        <ForgotPasswordClient />
+        <Suspense fallback={<p>Зареждаме...</p>}>
+          <ForgotPasswordClient />
+        </Suspense>
       </div>
     </main>
   );

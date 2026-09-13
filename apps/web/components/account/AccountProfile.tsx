@@ -86,6 +86,11 @@ export function AccountProfile(props: Props) {
   }
 
   async function saveProfile() {
+    if (saving) return;
+    if (statusTimerRef.current !== null) {
+      window.clearTimeout(statusTimerRef.current);
+      statusTimerRef.current = null;
+    }
     const next = name.trim();
     if (next.length < 2) {
       setStatus("error");
@@ -95,27 +100,29 @@ export function AccountProfile(props: Props) {
 
     setSaving(true);
     setStatus("");
-    const result = await authClient.updateUser({ name: next, avatarId });
-    setSaving(false);
+    try {
+      const result = await authClient.updateUser({ name: next, avatarId });
+      if (result.error) {
+        setStatus("error");
+        setErrorMessage("Промените не са запазени. Опитай отново след малко.");
+        return;
+      }
 
-    if (result.error) {
+      setSavedName(next);
+      setSavedAvatarId(avatarId);
+      setName(next);
+      setStatus("saved");
+      statusTimerRef.current = window.setTimeout(() => {
+        setStatus("");
+        statusTimerRef.current = null;
+      }, 2200);
+      window.dispatchEvent(new Event("auth-session-change"));
+    } catch {
       setStatus("error");
-      setErrorMessage("Грешка при запис.");
-      return;
+      setErrorMessage("Не успяхме да запазим промените. Провери връзката си и опитай отново.");
+    } finally {
+      setSaving(false);
     }
-
-    setSavedName(next);
-    setSavedAvatarId(avatarId);
-    setName(next);
-    setStatus("saved");
-    if (statusTimerRef.current !== null) {
-      window.clearTimeout(statusTimerRef.current);
-    }
-    statusTimerRef.current = window.setTimeout(() => {
-      setStatus("");
-      statusTimerRef.current = null;
-    }, 2200);
-    window.dispatchEvent(new Event("auth-session-change"));
   }
 
   return (
@@ -192,7 +199,7 @@ export function AccountProfile(props: Props) {
         <div className={styles.profileStatusRow}>
           {status === "saved" ? (
             <p className={`${styles.status} ${styles.statusOk}`} role="status" aria-live="polite">
-              Подпечатано
+              Запазено
             </p>
           ) : null}
           {status === "error" ? (
@@ -209,7 +216,7 @@ export function AccountProfile(props: Props) {
             {props.emailVerified ? (
               <span className={`${styles.badge} ${styles.badgeOk}`}>Потвърден</span>
             ) : (
-              <Link href="/verify-email" className={`${styles.badge} ${styles.badgeWarn}`}>
+              <Link href="/verify-email?redirect=%2Faccount" className={`${styles.badge} ${styles.badgeWarn}`}>
                 Непотвърден · потвърди →
               </Link>
             )}

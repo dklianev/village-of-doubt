@@ -60,7 +60,7 @@
   max-width: 18ch;
   margin: 0 0 14px;
   color: var(--legal-terms-hero-title-color, #f5e8c8);
-  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-family: var(--font-display);
   font-size: clamp(2.4rem, 6vw, 4rem);
   font-weight: 900;
   letter-spacing: 0;
@@ -148,7 +148,7 @@
 :global(.terms-acceptance-title) {
   margin: 0;
   color: var(--legal-text);
-  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-family: var(--font-display);
   font-size: 1.1rem;
   font-weight: 800;
 }
@@ -243,7 +243,7 @@
   border-radius: 50%;
   background: var(--legal-accent-warm-soft);
   color: var(--legal-accent-warm);
-  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-family: var(--font-display);
   font-size: 1.05rem;
   font-weight: 900;
 }
@@ -251,7 +251,7 @@
 :global(.terms-commitment-meta h3) {
   margin: 0 0 4px;
   color: var(--legal-text);
-  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-family: var(--font-display);
   font-size: 1.15rem;
   font-weight: 800;
 }
@@ -376,7 +376,7 @@
 :global(.terms-conflict-steps h3) {
   margin: 0 0 6px;
   color: var(--legal-text);
-  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-family: var(--font-display);
   font-size: 1.05rem;
   font-weight: 800;
 }
@@ -445,7 +445,7 @@
 :global(.terms-annex-title) {
   margin: 0 0 4px;
   color: var(--legal-text);
-  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-family: var(--font-display);
   font-size: 1.05rem;
   font-weight: 800;
 }
@@ -478,7 +478,7 @@
   align-items: baseline;
   margin: 0 0 10px;
   color: var(--legal-text);
-  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-family: var(--font-display);
   font-size: 1.05rem;
   font-weight: 800;
 }
@@ -596,7 +596,7 @@
 :global(.report-wizard-step legend) {
   margin: 0;
   color: var(--legal-text);
-  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-family: var(--font-display);
   font-size: 1.4rem;
   font-weight: 900;
 }
@@ -967,7 +967,7 @@
 :global(.report-success-title) {
   margin: 0;
   color: var(--legal-text);
-  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-family: var(--font-display);
   font-size: clamp(1.75rem, 4vw, 2.4rem);
   font-weight: 900;
 }
@@ -1112,7 +1112,7 @@
   padding: 0 0 64px;
   color: var(--status-text);
   background: var(--status-bg);
-  font-family: "Noto Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: var(--font-body);
 }
 
 :global(.status-page) {
@@ -1168,7 +1168,7 @@
   max-width: 18ch;
   margin: 0 0 12px;
   color: #f5e8c8 !important;
-  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-family: var(--font-display);
   font-size: clamp(2.4rem, 6vw, 4rem);
   font-weight: 900;
   letter-spacing: 0;
@@ -1290,7 +1290,7 @@
 :global(.status-section-head h2) {
   margin: 0 0 8px;
   color: var(--status-text);
-  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-family: var(--font-display);
   font-size: clamp(1.4rem, 3vw, 1.85rem);
   font-weight: 900;
   letter-spacing: 0;
@@ -1361,7 +1361,7 @@
 :global(.status-tile-head h3) {
   margin: 0;
   color: var(--status-text);
-  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-family: var(--font-display);
   font-size: 1.05rem;
   font-weight: 800;
 }

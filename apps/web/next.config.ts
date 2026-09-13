@@ -19,8 +19,20 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   transpilePackages: ["@werewolf/shared", "@werewolf/database", "@werewolf/ui"],
   allowedDevOrigins: ["127.0.0.1"],
+  images: {
+    localPatterns: [
+      { pathname: "/**", search: "" },
+      { pathname: "/game-art/**", search: "?v=2" },
+      { pathname: "/game-art/**", search: "?v=3" },
+    ],
+    qualities: [75, 85],
+    imageSizes: [32, 48, 64, 96, 128, 192, 256, 384],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1536, 1920, 2048, 3840],
+  },
   experimental: {
     instrumentationClientRouterTransitionEvents: true,
+    // Keep shared client code reusable across routes; measured with perf:budget.
+    turbopackChunking: { minChunkSize: 40000 },
   },
   async headers() {
     return [

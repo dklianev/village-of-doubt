@@ -18,10 +18,10 @@ export function ReportHero() {
 
       <div className="report-hero-inner">
         <p className="report-hero-kicker">сигнал</p>
-        <h1 className="report-hero-title">Светим за тебе.</h1>
+        <h1 className="report-hero-title">Подай сигнал</h1>
         <p className="report-hero-subtitle">
-          Ако нещо не е наред — играч с неуместно поведение, спорно съдържание или нарушение на
-          авторски права — кажи ни. Светилникът няма да угасне, докато не разгледаме.
+          Неуместно поведение, спорно съдържание или нарушение на авторски права?
+          Разкажи ни какво се е случило, за да го проверим.
         </p>
         <p className="report-hero-stat">
           <span className="report-hero-stat-icon" aria-hidden>

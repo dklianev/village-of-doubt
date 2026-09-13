@@ -61,6 +61,7 @@ describe("AuthGatedEntryClient", () => {
     );
 
     expect(screen.getByRole("heading", { name: "Добре дошъл в селото, Рада." })).toBeInTheDocument();
+    expect(screen.getByText("Код на стаята")).toBeInTheDocument();
     expect(useAuthSession).toHaveBeenCalledWith(initialSession);
   });
 
@@ -83,7 +84,7 @@ describe("AuthGatedEntryClient", () => {
     );
 
     expect(screen.getByRole("heading", { name: "Добре дошъл в бара, Рада." })).toBeInTheDocument();
-    expect(screen.getByText("Парола на бара")).toBeInTheDocument();
+    expect(screen.getByText("Код на стаята")).toBeInTheDocument();
     expect(useAuthSession).toHaveBeenCalledWith(initialSession);
   });
 
@@ -131,6 +132,55 @@ describe("AuthGatedEntryClient", () => {
     expect(screen.getByRole("link", { name: "Влез отново" })).toHaveAttribute(
       "href",
       "/sign-in?redirect=%2Fwerewolf%2Fjoin%2FABC234",
+    );
+  });
+
+  it.each([
+    { family: "werewolves", mode: "werewolves_classic", root: "/werewolf" },
+    { family: "mafia", mode: "mafia_free", root: "/mafia" },
+  ] as const)("preserves the normalized code typed in the $family form after sign-out", async ({ family, mode, root }) => {
+    const user = userEvent.setup();
+    const { rerender } = render(<AuthGatedEntryClient family={family} mode={mode} />);
+
+    await user.type(screen.getByRole("textbox", { name: "Символ 1 от 6" }), "mn2k7a");
+    expect(screen.getAllByRole("textbox").map((slot) => (slot as HTMLInputElement).value).join("")).toBe("MN2K7A");
+
+    useAuthSession.mockReturnValue({ data: null, isError: false, isPending: false, refresh: refreshSession });
+    rerender(<AuthGatedEntryClient family={family} mode={mode} />);
+
+    expect(screen.getByRole("link", { name: "Влез отново" })).toHaveAttribute(
+      "href",
+      `/sign-in?redirect=${encodeURIComponent(`${root}/join/MN2K7A`)}`,
+    );
+  });
+
+  it.each([
+    { name: "a valid edited code replaces the URL invite", initialCode: "ABC234", edit: "mn2-k7a", expected: "/werewolf/join/MN2K7A" },
+    { name: "an empty edit retains the URL invite", initialCode: "ABC234", edit: "", expected: "/werewolf/join/ABC234" },
+    { name: "an incomplete edit retains the valid URL invite", initialCode: "ABC234", edit: "abc1", expected: "/werewolf/join/ABC234" },
+    { name: "an incomplete typed code is not a redirect", initialCode: "", edit: "abc1", expected: "/werewolf/join" },
+    { name: "a malformed URL invite is not a redirect", initialCode: "ABC123", edit: null, expected: "/werewolf/join" },
+    { name: "invalid URL characters are not a redirect", initialCode: "../?a=1", edit: null, expected: "/werewolf/join" },
+  ])("reauthentication: $name", async ({ initialCode, edit, expected }) => {
+    const user = userEvent.setup();
+    const { rerender } = render(<AuthGatedEntryClient family="werewolves" mode="werewolves_classic" initialCode={initialCode} />);
+
+    if (edit === "") {
+      for (const slot of screen.getAllByRole("textbox").reverse()) {
+        await user.clear(slot);
+      }
+      expect(screen.getAllByRole("textbox").every((slot) => (slot as HTMLInputElement).value === "")).toBe(true);
+    } else if (edit !== null) {
+      await user.click(screen.getByRole("textbox", { name: "Символ 1 от 6" }));
+      await user.paste(edit);
+    }
+
+    useAuthSession.mockReturnValue({ data: null, isError: false, isPending: false, refresh: refreshSession });
+    rerender(<AuthGatedEntryClient family="werewolves" mode="werewolves_classic" initialCode={initialCode} />);
+
+    expect(screen.getByRole("link", { name: "Влез отново" })).toHaveAttribute(
+      "href",
+      `/sign-in?redirect=${encodeURIComponent(expected)}`,
     );
   });
 

@@ -27,6 +27,7 @@ const games = [
     description: "Описание",
     line: "Ред",
     href: "/werewolf",
+    recommendedPlayers: "6-30 играчи, най-добре 8-18.",
   },
 ] as const satisfies readonly ModeChoiceGame[];
 
@@ -40,7 +41,7 @@ describe("ModeChoiceCards", () => {
 
     render(<ModeChoiceCards games={games} initialSession={null} />);
 
-    const link = screen.getByRole("link", { name: "Играй" });
+    const link = screen.getByRole("link", { name: "Създай стая" });
     expect(link).toHaveAttribute("href", "/werewolf/create");
     expect(link).toHaveAttribute("aria-busy", "true");
     expect(screen.queryByText("Влез и играй")).not.toBeInTheDocument();
@@ -51,27 +52,70 @@ describe("ModeChoiceCards", () => {
 
     render(<ModeChoiceCards games={games} initialSession={null} />);
 
-    expect(screen.getByRole("link", { name: "Влез и играй" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Създай стая" })).toHaveAttribute(
       "href",
       "/sign-in?redirect=%2Fwerewolf%2Fcreate",
     );
   });
 
-  it("прави първото игрово изображение discoverable, без да блокира main thread при decode", () => {
+  it("offers invited players a direct join path without sending them through room creation", () => {
+    useSession.mockReturnValue({ data: null, isPending: false });
+    render(<ModeChoiceCards games={games} initialSession={null} />);
+    expect(screen.getByRole("link", { name: "Имам код" })).toHaveAttribute("href", "/werewolf/join");
+  });
+
+  it("keeps the protected create destination when the session check fails", () => {
+    useSession.mockReturnValue({ data: null, isPending: false, isError: true });
+    render(<ModeChoiceCards games={games} initialSession={null} />);
+    expect(screen.getByRole("link", { name: "Създай стая" })).toHaveAttribute("href", "/werewolf/create");
+    expect(screen.getByRole("link", { name: "Създай стая" })).not.toHaveAttribute("aria-busy");
+  });
+
+  it("gives hosts practical group-size guidance before choosing a game", () => {
+    useSession.mockReturnValue({ data: null, isPending: false });
+    render(<ModeChoiceCards games={games} initialSession={null} />);
+    expect(screen.getByText(games[0].recommendedPlayers)).toBeVisible();
+  });
+
+  it("keeps an authenticated host on the direct creation path during session refresh", () => {
+    const session = { user: { id: "homepage-test-host", name: "Тестов домакин" } };
+    useSession.mockReturnValue({ data: null, isPending: true });
+    render(<ModeChoiceCards games={games} initialSession={session} />);
+    const create = screen.getByRole("link", { name: "Създай стая" });
+    expect(create).toHaveAttribute("href", "/werewolf/create");
+    expect(create).not.toHaveAttribute("aria-busy");
+  });
+
+  it.each([
+    { game: games[0], version: "v7", fetchPriority: "high" },
+    {
+      game: { ...games[0], id: "mafia", family: "mafia", title: "Мафия", href: "/mafia" },
+      version: "v5",
+      fetchPriority: "low",
+    },
+  ] as const)("uses the full $game.id master for every responsive candidate without eagerly fetching the hidden theme", ({ game, version, fetchPriority }) => {
     useSession.mockReturnValue({ data: null, isPending: false });
 
-    const { container } = render(<ModeChoiceCards games={games} initialSession={null} />);
-    const image = container.querySelector(".game-choice-art img");
-    const mobileSources = container.querySelectorAll('.game-choice-art source[media="(max-width: 767px)"]');
-
-    expect(image).toHaveAttribute("fetchpriority", "high");
-    expect(image).toHaveAttribute("loading", "eager");
-    expect(image).toHaveAttribute("decoding", "async");
-    expect(mobileSources).toHaveLength(2);
-    expect(mobileSources[0]).toHaveAttribute("type", "image/avif");
-    expect(mobileSources[0]).toHaveAttribute("srcset", "/game-art/mobile/bg-lobby-tavern.avif");
-    expect(mobileSources[1]).toHaveAttribute("type", "image/webp");
-    expect(mobileSources[1]).toHaveAttribute("srcset", "/game-art/mobile/bg-lobby-tavern.webp");
+    const { container } = render(<ModeChoiceCards games={[game]} initialSession={null} />);
+    for (const theme of ["dark", "light"]) {
+      const picture = container.querySelector(`.game-choice-art--${theme}`);
+      const image = picture?.querySelector("img");
+      expect(image).toHaveAttribute("fetchpriority", fetchPriority);
+      expect(image).toHaveAttribute("loading", "lazy");
+      expect(image).toHaveAttribute("decoding", "async");
+      for (const element of picture!.querySelectorAll("img, source")) {
+        const candidates = element.getAttribute("srcset")!.split(", ");
+        expect(candidates.length).toBeGreaterThan(2);
+        for (const candidate of candidates) {
+          const [url, descriptor] = candidate.split(" ");
+          expect(new URL(url!, "http://localhost").searchParams.get("url")).toBe(`/game-art/homepage/choice-${game.id}-${theme}-${version}.webp`);
+          expect(descriptor).toMatch(/^\d+w$/);
+        }
+        expect(element).toHaveAttribute("sizes");
+      }
+      expect(image).toHaveAttribute("alt", "");
+      expect(picture).toHaveAttribute("aria-hidden", "true");
+    }
   });
 
   it("не prefetch-ва шест тежки route дървета от първия екран", () => {

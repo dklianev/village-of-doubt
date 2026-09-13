@@ -50,6 +50,108 @@ function renderPanel(overrides: Partial<Parameters<typeof NightActionPanel>[0]> 
 }
 
 describe("NightActionPanel", () => {
+  it.each([
+    ["werewolf", "Потвърди жертва", { kind: "faction_kill", targetUserId: "u2" }],
+    ["doctor", "Пази тази нощ", { kind: "healer_protect", targetUserId: "u2" }],
+    ["witch", "Лекувай", { kind: "witch_heal", targetUserId: "u2" }],
+    ["blacksmith", "Изкови меч", { kind: "blacksmith_sword", targetUserId: "u1", receiverUserId: "u2" }],
+    ["cupid", "Свържи Влюбените", { kind: "cupid_link", firstUserId: "u1", secondUserId: "u2" }],
+  ] as const)("disarms skip when submitting a %s action without changing the selected targets", async (privateRole, label, action) => {
+    const user = userEvent.setup();
+    const needsTwoTargets = privateRole === "blacksmith" || privateRole === "cupid";
+    const props = renderPanel({
+      privateRole,
+      phase: "first_night",
+      selectedTargetId: needsTwoTargets ? "u1" : "u2",
+      secondTargetId: needsTwoTargets ? "u2" : "",
+    });
+
+    await user.click(screen.getByRole("button", { name: "Пропусни" }));
+    expect(screen.getByRole("button", { name: "Потвърди пропуска" })).toHaveAttribute("aria-pressed", "true");
+    await user.click(screen.getByRole("button", { name: label }));
+
+    expect(props.sendNightAction).toHaveBeenCalledExactlyOnceWith(action);
+    const skip = screen.getByRole("button", { name: "Пропусни" });
+    expect(skip).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("group", { name: "Избрана цел" })).toHaveTextContent("Борис");
+    expect(screen.queryByRole("group", { name: "Приети действия" })).not.toBeInTheDocument();
+
+    await user.click(skip);
+    expect(props.sendNightAction).toHaveBeenCalledTimes(1);
+    await user.click(screen.getByRole("button", { name: "Потвърди пропуска" }));
+    expect(props.sendNightAction).toHaveBeenLastCalledWith({ kind: "skip" });
+  });
+
+  it.each([
+    ["witch", "Лекувай", "Отрови", "witch_heal", "witch_poison"],
+    ["don", "Потвърди жертва", "Търси Комисаря", "faction_kill", "check_commissioner"],
+    ["lawyer", "Потвърди жертва", "Подготви алиби", "faction_kill", "lawyer_cover"],
+    ["informant", "Потвърди жертва", "Отвори досие", "faction_kill", "check_role"],
+  ] as const)("keeps both %s action kinds available and explains that skip does not cancel them", async (privateRole, firstLabel, secondLabel, firstKind, secondKind) => {
+    const props = renderPanel({ privateRole, selectedTargetId: "u2" });
+    const user = userEvent.setup();
+    expect(screen.getByText(/последното прието действие от всеки вид/u)).toBeInTheDocument();
+    expect(screen.getByText(/не отменя вече приетите действия/u)).toBeInTheDocument();
+    expect(screen.queryByText(/последното изпратено действие/u)).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: firstLabel }));
+    await user.click(screen.getByRole("button", { name: secondLabel }));
+    await user.click(screen.getByRole("button", { name: "Пропусни" }));
+    await user.click(screen.getByRole("button", { name: "Потвърди пропуска" }));
+    expect(vi.mocked(props.sendNightAction).mock.calls).toEqual([
+      [{ kind: firstKind, targetUserId: "u2" }],
+      [{ kind: secondKind, targetUserId: "u2" }],
+      [{ kind: "skip" }],
+    ]);
+    expect(screen.getByRole("group", { name: "Избрана цел" })).toHaveTextContent("Борис");
+    expect(screen.queryByRole("group", { name: "Приети действия" })).not.toBeInTheDocument();
+  });
+
+  it("describes the latest accepted action for a single-action role", () => {
+    renderPanel({ privateRole: "seer" });
+    expect(screen.getByText(/последното прието действие\./u)).toBeInTheDocument();
+    expect(screen.queryByText(/не отменя вече приетите действия/u)).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ["werewolf", "Потвърди жертва", "faction_kill"],
+    ["vampire", "Потвърди жертва", "faction_kill"],
+    ["commissioner", "Провери дали е от Мафията", "check_alignment"],
+    ["detective", "Разследвай целта", "check_alignment"],
+    ["informant", "Отвори досие", "check_role"],
+    ["roleblocker", "Блокирай действие", "roleblock"],
+    ["lawyer", "Подготви алиби", "lawyer_cover"],
+    ["medium", "Свържи се с елиминиран", "medium_contact"],
+    ["don", "Търси Комисаря", "check_commissioner"],
+    ["seer", "Провери заплахата", "check_role"],
+    ["oracle", "Провери заплахата", "check_role"],
+    ["investigator", "Провери тройка", "investigator_check"],
+    ["witch", "Лекувай", "witch_heal"],
+    ["witch", "Отрови", "witch_poison"],
+    ["healer", "Пази тази нощ", "healer_protect"],
+    ["doctor", "Пази тази нощ", "healer_protect"],
+    ["bodyguard", "Пази тази нощ", "healer_protect"],
+    ["priest", "Дай благословия", "priest_bless"],
+    ["stray_cat", "Избери дом", "stray_cat_choose"],
+    ["thief", "Открадни карта", "thief_steal"],
+  ] as const)("keeps %s command %s accessible with a real icon and unchanged payload", async (privateRole, label, kind) => {
+    const props = renderPanel({ privateRole, phase: "first_night", selectedTargetId: privateRole === "medium" ? "u3" : "u2" });
+    const command = screen.getByRole("button", { name: label });
+    const icon = command.querySelector("svg");
+    expect(icon).not.toBeNull();
+    expect(icon).toHaveAttribute("aria-hidden", "true");
+    expect(icon!.querySelector("path, circle, line, polyline, rect")).not.toBeNull();
+    await userEvent.click(command);
+    expect(props.sendNightAction).toHaveBeenCalledExactlyOnceWith({ kind, targetUserId: props.selectedTargetId });
+  });
+
+  it.each(["", "missing", "u1"])("cannot submit a missing or ineligible investigation target (%s)", async (selectedTargetId) => {
+    const props = renderPanel({ privateRole: "seer", selectedTargetId });
+    const command = screen.getByRole("button", { name: "Провери заплахата" });
+    expect(command).toBeDisabled();
+    await userEvent.click(command);
+    expect(props.sendNightAction).not.toHaveBeenCalled();
+  });
+
   it("submits the selected faction kill target for a werewolf", async () => {
     const user = userEvent.setup();
     const props = renderPanel({ selectedTargetId: "u2" });

@@ -40,7 +40,7 @@ const FAMILY_COPY = {
     kicker: "частен бар",
     greeting: (name: string) => `Добре дошъл в бара, ${name}.`,
     sub: "Покажи паролата на бара. Настани се на масата.",
-    codeLabel: "Парола на бара",
+    codeLabel: "Код на стаята",
     submitLabel: "Хлопам на вратата",
     submittingLabel: "Хлопаме на вратата...",
     createLabel: "Създай нов бар",
@@ -55,7 +55,7 @@ const FAMILY_COPY = {
     kicker: "тихо село",
     greeting: (name: string) => `Добре дошъл в селото, ${name}.`,
     sub: "Покажи знака на селото. Премини през оградата.",
-    codeLabel: "Знак на селото",
+    codeLabel: "Код на стаята",
     submitLabel: "Влизам в селото",
     submittingLabel: "Тръгваме към селото...",
     createLabel: "Създай ново село",
@@ -92,7 +92,8 @@ export function AuthGatedEntryClient({
   const copy = FAMILY_COPY[isMafia ? "mafia" : "werewolves"];
   const FamilyIcon = copy.Icon;
   const gameRoot = isMafia ? "/mafia" : "/werewolf";
-  const joinPath = `${gameRoot}/join${normalizedInitialCode ? `/${normalizedInitialCode}` : ""}`;
+  const redirectCode = [roomCode, normalizedInitialCode].find((code) => ROOM_CODE_REGEX.test(code));
+  const joinPath = `${gameRoot}/join${redirectCode ? `/${redirectCode}` : ""}`;
   const signInPath = `/sign-in?redirect=${encodeURIComponent(joinPath)}`;
   const playerCount = mode === "mafia_sport" ? 10 : isMafia ? 10 : 8;
   const tempo: TempoProfile = mode === "mafia_sport" ? "sport_mafia" : "normal_online";

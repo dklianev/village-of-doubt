@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { AccountAchievements } from "../AccountAchievements";
 import { AccountDashboard } from "../AccountDashboard";
 import { AccountDataExport } from "../AccountDataExport";
@@ -23,6 +23,23 @@ vi.mock("@/lib/auth-client", () => ({
 }));
 
 describe("account presentation", () => {
+  const scrollIntoViewDescriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "scrollIntoView");
+
+  beforeAll(() => {
+    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+      configurable: true,
+      value: vi.fn(),
+    });
+  });
+
+  afterAll(() => {
+    if (scrollIntoViewDescriptor) {
+      Object.defineProperty(HTMLElement.prototype, "scrollIntoView", scrollIntoViewDescriptor);
+    } else {
+      Reflect.deleteProperty(HTMLElement.prototype, "scrollIntoView");
+    }
+  });
+
   it("използва сценичния primitive и account art token за заглавното досие", () => {
     const { container } = render(
       <AccountHero

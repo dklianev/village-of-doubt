@@ -3,7 +3,7 @@ import { LandingExperience } from "@/components/landing-experience";
 import { routeMetadata, SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/seo";
 
 export const metadata = routeMetadata({
-  title: "Върколак и Мафия — социална игра на сенки",
+  title: "Сенките | Върколак и Мафия онлайн",
   description:
     "Върколак и Мафия онлайн с тайни роли и частни стаи. Създай маса, покани приятелите си и виж на кого ще повярваш.",
   path: "/",

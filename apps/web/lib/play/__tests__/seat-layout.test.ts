@@ -58,6 +58,22 @@ function renderedFootprintOverlapsRect(seat: SeatLayoutItem, rect: SeatLayoutRec
 }
 
 describe("computeSeatLayout", () => {
+  it("keeps nine rendered seats apart beside a desktop command column", () => {
+    const seats = computeSeatLayout({
+      contentWidth: 864,
+      contentHeight: 340,
+      count: 9,
+      reservedHud: { x: 0, y: 0, width: 0, height: 0 },
+      reservedCenter: { x: 352, y: 113.8, width: 160, height: 160 },
+      minHitSize: 44,
+    });
+    for (let first = 0; first < seats.length; first += 1) {
+      for (let second = first + 1; second < seats.length; second += 1) {
+        expect(renderedFootprintsOverlap(seats[first]!, seats[second]!, 33)).toBe(false);
+      }
+    }
+  });
+
   it.each(Array.from({ length: 16 }, (_, index) => index + 3))(
     "produces safe deterministic geometry for %i seats",
     (count) => {

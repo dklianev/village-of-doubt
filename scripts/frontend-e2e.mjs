@@ -92,7 +92,10 @@ async function main() {
   await runCheck("history screen basics", testHistoryScreen);
   await runCheck("achievements, leaderboard and friends screens", testUtilityPages);
   await runCheck("single-player play auth gate", testSinglePlayScreen);
-  await runCheck("six browser players join one WebSocket game and start it", testSixClientGameStart);
+  for (const family of ["werewolves", "mafia"]) {
+    await runCheck(`six browser players reach first voting and reconnect (${family})`, () => testSixClientGameStart(family));
+  }
+  await runCheck("create token failure can be retried", testCreateTokenRetry);
 
   await activeBrowser.close();
   activeBrowser = null;
@@ -118,7 +121,7 @@ async function testLandingDesktop() {
     await assertNoOverlap(page, ".game-choice-werewolf", ".game-choice-mafia", "game picker cards");
     await assertCssBackgroundImagesLoaded(page, "landing desktop");
 
-    await page.locator(".game-choice-mafia").getByRole("link", { name: "Влез и играй" }).click();
+    await page.locator(".game-choice-mafia").getByRole("link", { name: "Създай стая", exact: true }).click();
     await page.waitForURL("**/sign-in?redirect=%2Fmafia%2Fcreate");
     await expectText(page, "Стани");
     await watcher.assertClean();
@@ -336,25 +339,59 @@ async function testSinglePlayScreen() {
   }
 }
 
-async function testSixClientGameStart() {
-  const code = createRoomCode(authFixture.roomCodeAlphabet, authFixture.roomCodeLength);
-  const path = `/play/${code}?mode=werewolves_classic&players=6&communication=built_in_chat&narrator=automatic&tempo=fast_online`;
+async function createWerewolfRoom(page, label) {
+  return createSixPlayerRoom(page, label, "werewolves");
+}
+
+async function createSixPlayerRoom(page, label, family) {
+  const mafia = family === "mafia";
+  await goto(page, mafia ? "/mafia/create" : "/werewolf/create", label);
+  await expectText(page, mafia ? "Стая за Мафия" : "Стая за Върколак");
+  const players = page.getByRole("slider", { name: "Брой играчи" });
+  await players.click();
+  await players.press("Home");
+  if (mafia) {
+    await players.press("ArrowRight");
+    await players.press("ArrowRight");
+  }
+  await expectInputValue(players, "6");
+  await page.getByRole("button", { name: mafia ? "Отвори масата" : "Създай селото", exact: true }).click();
+  await page.waitForURL(/\/play\/[^/?]+(?:\?|$)/);
+  const roomUrl = new URL(page.url());
+  if (roomUrl.searchParams.get("players") !== "6" || roomUrl.searchParams.get("mode") !== (mafia ? "mafia_free" : "werewolves_classic")) {
+    throw new Error(`${label} did not preserve the six-player ${family} configuration.`);
+  }
+  return roomUrl;
+}
+
+async function testSixClientGameStart(family) {
   const contexts = [];
   const watchers = [];
+  let roomUrl;
 
   try {
     for (let index = 0; index < 6; index += 1) {
-      const context = await activeBrowser.newContext({ viewport: viewports.desktop });
+      const context = await activeBrowser.newContext({ viewport: index === 5 ? viewports.mobile : viewports.desktop });
+      contexts.push(context);
       await context.addInitScript(() => {
         window.localStorage.setItem("cookie-consent", "1");
         window.localStorage.setItem("welcome-modal-shown", "1");
       });
+      if (index === 5) await context.addInitScript(installGameSocketProbe, wsUrl);
       const identity = authFixture.users[index];
       await signInBrowserContext(context, identity);
-      contexts.push(context);
       const page = await context.newPage();
-      watchers.push(watchPage(page, `six-client-${index + 1}`));
-      await goto(page, path, `six-client ${index + 1}`);
+      watchers.push(watchPage(page, `six-client-${family}-${index + 1}`));
+      if (index === 0) {
+        roomUrl = await createSixPlayerRoom(page, "six-client host create", family);
+      } else {
+        const code = roomUrl.pathname.split("/").at(-1);
+        await goto(page, `/lobby/${code}${roomUrl.search}`, `six-client ${index + 1} invitation`);
+        await expectText(page, "Покана за масата.");
+        await page.getByLabel(`Код на стаята ${code}`, { exact: true }).waitFor({ state: "visible" });
+        await page.getByRole("link", { name: "Към играта", exact: true }).click();
+        await page.waitForURL((url) => url.pathname === roomUrl.pathname);
+      }
       await waitForVisibleText(page.getByTestId("ready-toggle"), "Готов");
       try {
         await page.waitForFunction(
@@ -366,7 +403,7 @@ async function testSixClientGameStart() {
           { timeout: 30_000 },
         );
       } catch (error) {
-        await screenshot(page, `six-client-${index + 1}-connection-failure.png`).catch(() => {});
+        await screenshot(page, `six-client-${family}-${index + 1}-connection-failure.png`).catch(() => {});
         const state = await page.evaluate(() => ({
           url: window.location.href,
           readyButton: document.querySelector('[data-testid="ready-toggle"]')?.outerHTML ?? null,
@@ -383,17 +420,210 @@ async function testSixClientGameStart() {
     }
 
     const pages = contexts.map((context) => context.pages()[0]);
+    const expectedUserIds = authFixture.users.slice(0, 6).map((user) => user.id);
+    await assertSixPlayerRoster(pages, expectedUserIds);
     await Promise.all(pages.map((page) => page.getByTestId("ready-toggle").click()));
-    await waitForVisibleText(pages[0].getByRole("button", { name: "Започни игра" }), "Започни игра");
-    await pages[0].getByRole("button", { name: "Започни игра" }).click();
-    await Promise.all(pages.map((page) => page
-      .locator("main.play-shell[data-phase='role_reveal'], main.play-shell[data-phase='first_night']")
-      .waitFor({ state: "visible", timeout: 15_000 })));
+    await startReadyGame(pages[0]);
+    await holdFirstGamePhase(pages, "role_reveal");
+    const privateRoles = await Promise.all(pages.map((page) => readPrivateRole(page, family)));
+    if (new Set(privateRoles).size < 2) {
+      throw new Error("The six-player fixture did not render distinct private assignments.");
+    }
+
+    await advanceFirstGamePhase(pages, "role_reveal", "first_night");
+    // Resolve the first night without submitted attacks; role mechanics have server coverage.
+    await advanceFirstGamePhase(pages, "first_night", "day_announcement");
+    await advanceFirstGamePhase(pages, "day_announcement", "day_discussion");
+    await advanceFirstGamePhase(pages, "day_discussion", "voting");
+
+    const mobilePage = pages[5];
+    const target = authFixture.users[0];
+    await mobilePage.locator(`button[data-seat-user-id="${target.id}"]`).click();
+    await mobilePage.getByRole("button", { name: `Потвърди гласа за ${target.name}`, exact: true }).click();
+    await expectTextIn(mobilePage.locator(".play-action-receipt"), `Приет глас: ${target.name}`);
+    const nextTarget = authFixture.users[1];
+    await mobilePage.locator(`button[data-seat-user-id="${nextTarget.id}"]`).click();
+    await mobilePage.locator(`button[data-seat-user-id="${nextTarget.id}"][data-selected="true"]`).waitFor({ state: "visible" });
+    await expectTextIn(mobilePage.locator(".play-action-receipt"), `Приет глас: ${target.name}`);
+    const voterSelector = `[data-seat-user-id="${expectedUserIds[5]}"][data-voted="true"]`;
+    await Promise.all(pages.map((page) => page.locator(voterSelector).waitFor({ state: "visible" })));
+    await reconnectFirstGameGuest(pages, expectedUserIds, privateRoles[5], family, `Приет глас: ${target.name}`);
+    await assertNoHorizontalOverflow(mobilePage, `six-client ${family} mobile voting after reconnect`);
     for (const watcher of watchers) {
       await watcher.assertClean();
     }
   } finally {
     await Promise.allSettled(contexts.map((context) => context.close()));
+  }
+}
+
+async function assertSixPlayerRoster(pages, expectedUserIds) {
+  await Promise.all(pages.map((page) => page.waitForFunction(
+    (ids) => {
+      const seats = Array.from(document.querySelectorAll("[data-seat-user-id]"));
+      return seats.length === ids.length && ids.every((id) => seats.filter((seat) => seat.dataset.seatUserId === id).length === 1);
+    },
+    expectedUserIds,
+    { timeout: 30_000 },
+  )));
+}
+
+async function startReadyGame(host) {
+  await host.waitForFunction(() => {
+    const phase = document.querySelector("main.play-shell")?.getAttribute("data-phase");
+    const seats = Array.from(document.querySelectorAll("[data-seat-user-id]"));
+    return phase === "role_reveal" || (phase === "lobby" && seats.length === 6 && seats.every((seat) => seat.dataset.ready === "true"));
+  }, undefined, { timeout: 15_000 });
+  if (await host.locator("main.play-shell").getAttribute("data-phase") === "lobby") {
+    try {
+      await host.getByRole("button", { name: "Започни игра", exact: true }).click({ timeout: 5_000 });
+    } catch (error) {
+      // Autostart can remove the button between the phase read and the click.
+      if (await host.locator("main.play-shell").getAttribute("data-phase") !== "role_reveal") throw error;
+    }
+  }
+  await host.locator("main.play-shell[data-phase='role_reveal']").waitFor({ state: "visible", timeout: 15_000 });
+}
+
+async function holdFirstGamePhase(pages, phase) {
+  const selector = `main.play-shell[data-phase="${phase}"]`;
+  await pages[0].locator(selector).waitFor({ state: "visible", timeout: 15_000 });
+  // Use the real host control to keep assertions independent of short phase timers.
+  await pages[0].getByRole("button", { name: "+180 сек.", exact: true }).click();
+  await Promise.all(pages.map((page) => page.locator(selector).waitFor({ state: "visible", timeout: 15_000 })));
+}
+
+async function advanceFirstGamePhase(pages, from, to) {
+  const current = await pages[0].locator("main.play-shell").getAttribute("data-phase");
+  if (current === from) {
+    await pages[0].getByRole("button", { name: "Следваща фаза", exact: true }).click();
+  } else if (current !== to) {
+    throw new Error(`Expected first-round phase ${from} or ${to}, received ${current}.`);
+  }
+  await holdFirstGamePhase(pages, to);
+}
+
+async function readPrivateRole(page, family) {
+  const personal = page.getByRole("region", { name: "Твоята роля", exact: true });
+  await personal.waitFor({ state: "visible", timeout: 15_000 });
+  const reveal = personal.getByRole("button", { name: "Виж ролята си", exact: true });
+  if (await reveal.isVisible()) await reveal.click();
+  const card = personal.locator("[data-private-dossier]");
+  await card.waitFor({ state: "visible", timeout: 15_000 });
+  const label = await card.getAttribute("aria-label");
+  if (
+    await page.locator("[data-private-dossier]").count() !== 1
+    || await card.getAttribute("data-role-family") !== family
+    || !label?.startsWith("Тайна роля: ")
+    || label.trim() === "Тайна роля:"
+  ) {
+    throw new Error("Expected exactly one viewer-private role card from the selected family.");
+  }
+  return label;
+}
+
+function installGameSocketProbe(gameEndpoint) {
+  const NativeWebSocket = window.WebSocket;
+  const gameOrigin = new URL(gameEndpoint).origin;
+  const sockets = new Map();
+  let nextId = 0;
+  const openEntries = () => [...sockets].filter(([, socket]) => socket.readyState === NativeWebSocket.OPEN);
+  window.__frontendE2eGameSockets = {
+    openIds: () => openEntries().map(([id]) => id),
+    closeOpen() {
+      const entries = openEntries();
+      if (entries.length !== 1) throw new Error("Expected one open fixture game WebSocket.");
+      const [id, socket] = entries[0];
+      // Exercise the app's new-Room reconnect path; 4000 is a consented leave.
+      socket.close(3001, "test interruption");
+      return id;
+    },
+  };
+  window.WebSocket = new Proxy(NativeWebSocket, {
+    construct(Target, args, NewTarget) {
+      const socket = Reflect.construct(Target, args, NewTarget);
+      if (new URL(socket.url).origin === gameOrigin) {
+        const id = ++nextId;
+        sockets.set(id, socket);
+        socket.addEventListener("close", () => sockets.delete(id), { once: true });
+      }
+      return socket;
+    },
+  });
+}
+
+async function reconnectFirstGameGuest(pages, expectedUserIds, privateRole, family, acceptedReceipt) {
+  const guest = pages[5];
+  const seat = `[data-seat-user-id="${expectedUserIds[5]}"]`;
+  await expectTextIn(guest.locator(".play-action-receipt"), acceptedReceipt);
+  const closedSocketId = await guest.evaluate(() => window.__frontendE2eGameSockets.closeOpen());
+  await pages[0].locator(`${seat}[data-connected="false"]`).waitFor({ state: "visible", timeout: 30_000 });
+  await guest.waitForFunction((previousId) => {
+    const ids = window.__frontendE2eGameSockets.openIds();
+    return ids.length === 1 && ids[0] > previousId;
+  }, closedSocketId, { timeout: 30_000 });
+  await pages[0].locator(`${seat}[data-connected="true"]`).waitFor({ state: "visible", timeout: 30_000 });
+  await guest.locator(".connection-banner").waitFor({ state: "hidden", timeout: 30_000 });
+  await assertSixPlayerRoster(pages, expectedUserIds);
+  if (await readPrivateRole(guest, family) !== privateRole) {
+    throw new Error("The returning guest's private assignment changed.");
+  }
+  await expectTextIn(guest.locator(".play-action-receipt"), acceptedReceipt);
+  await Promise.all(pages.map(async (page) => {
+    await page.locator("main.play-shell[data-phase='voting']").waitFor({ state: "visible" });
+    await page.locator(`${seat}[data-voted="true"]`).waitFor({ state: "visible" });
+  }));
+}
+
+async function testCreateTokenRetry() {
+  const context = await activeBrowser.newContext({ viewport: viewports.desktop });
+  const tokenUrl = `${baseUrl}/api/game-token`;
+  const failureMessage = "Временно неуспешно издаване на игрови ключ.";
+  let page;
+  let failedRequests = 0;
+  const failToken = async (route) => {
+    failedRequests += 1;
+    await route.fulfill({ status: 503, json: { error: failureMessage } });
+  };
+
+  try {
+    await context.addInitScript(() => {
+      window.localStorage.setItem("cookie-consent", "1");
+      window.localStorage.setItem("welcome-modal-shown", "1");
+    });
+    await signInBrowserContext(context, authFixture.users[0]);
+    page = await context.newPage();
+    const watcher = watchPage(page, "create-token-retry", { expectedHttpError: { url: tokenUrl, status: 503 } });
+    await page.route(tokenUrl, failToken, { times: 1 });
+    const roomUrl = await createWerewolfRoom(page, "create-token-retry");
+    const dialog = page.getByRole("dialog", { name: "Връзката със стаята прекъсна" });
+    await dialog.waitFor({ state: "visible", timeout: 30_000 });
+    await expectTextIn(dialog, failureMessage);
+    if (failedRequests !== 1) {
+      throw new Error("The create retry fixture did not inject exactly one token failure.");
+    }
+
+    await page.unroute(tokenUrl, failToken);
+    await Promise.all([
+      page.waitForResponse((response) => response.url() === tokenUrl && response.request().method() === "POST" && response.ok()),
+      dialog.getByRole("button", { name: "Свържи отново", exact: true }).click(),
+    ]);
+    await dialog.waitFor({ state: "hidden" });
+    await page.locator("main.play-shell[data-phase='lobby']").waitFor({ state: "visible" });
+    await page.waitForFunction(() => {
+      const ready = document.querySelector('[data-testid="ready-toggle"]');
+      return ready instanceof HTMLButtonElement && !ready.disabled;
+    }, undefined, { timeout: 30_000 });
+    if (page.url() !== roomUrl.href) {
+      throw new Error("Retry navigated away from the created room.");
+    }
+    await watcher.assertClean();
+  } finally {
+    try {
+      if (page) await page.unroute(tokenUrl, failToken);
+    } finally {
+      await context.close();
+    }
   }
 }
 
@@ -594,10 +824,11 @@ async function newPage(label, viewport, identity) {
   };
 }
 
-function watchPage(page, label) {
+function watchPage(page, label, { expectedHttpError } = {}) {
   const issues = [];
   const pendingDetails = [];
   const ignoreConsolePatterns = [/Download the React DevTools/i];
+  let expectedHttpErrorRemaining = Boolean(expectedHttpError);
 
   page.on("console", (message) => {
     if (message.type() !== "error") {
@@ -608,6 +839,14 @@ function watchPage(page, label) {
       return;
     }
     const location = message.location();
+    // A deliberately mocked HTTP failure can also emit one browser console error.
+    if (
+      expectedHttpErrorRemaining && location.url === expectedHttpError.url &&
+      text.startsWith("Failed to load resource:") && new RegExp(`\\b${expectedHttpError.status}\\b`).test(text)
+    ) {
+      expectedHttpErrorRemaining = false;
+      return;
+    }
     const issueIndex = issues.push(
       `console error: ${text}${location.url ? ` (${location.url})` : ""}`,
     ) - 1;

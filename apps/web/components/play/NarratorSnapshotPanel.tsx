@@ -6,7 +6,7 @@ export function NarratorSnapshotPanel({ snapshot }: { snapshot: NarratorRoleSnap
       <p className="text-sm uppercase tracking-[0.3em] text-[#842f2b]">само за Пълния Разказвач</p>
       <h2 className="mt-2 text-3xl font-black">Тайни роли</h2>
       <p className="mt-3 text-[#4f3829]">
-        Това табло се изпраща само като лично събитие към избрания Пълен Разказвач.
+        Само ти виждаш тези роли. Пази ги в тайна от играчите.
       </p>
       <div className="mt-5 grid gap-3 sm:grid-cols-2">
         {snapshot.roles.map((item) => (

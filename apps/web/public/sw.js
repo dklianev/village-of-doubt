@@ -1,9 +1,15 @@
-const CACHE_VERSION = "v5";
+const CACHE_VERSION = "v6";
 const SHELL_CACHE_NAME = `werewolf-mafia-shell-${CACHE_VERSION}`;
-const ART_CACHE_NAME = `werewolf-mafia-art-${CACHE_VERSION}`;
+// A shell-only upgrade does not invalidate already cached artwork.
+const ART_CACHE_NAME = "werewolf-mafia-art-v5";
 const MAX_ART_ENTRIES = 64;
 const SHELL_STATIC_URLS = [
   "/favicon.svg",
+  "/brand/senkite-wordmark.svg",
+  "/brand/senkite-mark.svg",
+  "/brand/apple-touch-icon.png",
+  "/brand/icon-192.png",
+  "/brand/icon-512.png",
   "/game-art/legal/offline-banner.webp",
   "/game-art/logo-chrome-mark.webp",
   "/game-art/texture-parchment.webp",
@@ -18,7 +24,10 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(keys.filter((key) => ![SHELL_CACHE_NAME, ART_CACHE_NAME].includes(key)).map((key) => caches.delete(key))))
+      .then((keys) => Promise.all(keys.filter((key) =>
+        (key.startsWith("werewolf-mafia-shell-") || key.startsWith("werewolf-mafia-art-"))
+        && ![SHELL_CACHE_NAME, ART_CACHE_NAME].includes(key),
+      ).map((key) => caches.delete(key))))
       .then(() => self.clients.claim()),
   );
 });
@@ -45,6 +54,13 @@ self.addEventListener("fetch", (event) => {
 
   if (requestUrl.pathname.startsWith("/_next/static/")) {
     event.respondWith(caches.match(event.request).then((response) => response ?? fetch(event.request)));
+    return;
+  }
+
+  if (SHELL_STATIC_URLS.includes(requestUrl.pathname) && requestUrl.pathname.startsWith("/brand/")) {
+    event.respondWith(fetch(event.request).catch(() =>
+      caches.open(SHELL_CACHE_NAME).then((cache) => cache.match(event.request)).then((response) => response ?? Response.error()),
+    ));
     return;
   }
 

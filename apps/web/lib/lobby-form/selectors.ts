@@ -25,7 +25,10 @@ import {
   type RoleValidationIssue,
 } from "@werewolf/shared";
 import { randomRoomName } from "@/lib/roomname-generator";
+import { loversAvailableFor } from "./preset-policy";
 import type { AdvancedFlags, LobbyFormState } from "./types";
+
+export { loversAvailableFor } from "./preset-policy";
 
 export function currentConfig(state: LobbyFormState): GameConfig {
   return createGameConfigFromOptions(optionsFromState(state));
@@ -225,10 +228,6 @@ export function rolePresetsForMode(mode: GameMode): RolePreset[] {
     return ["free", "manual"];
   }
   return ["beginner", "classic", "advanced", "manual"];
-}
-
-export function loversAvailableFor(mode: GameMode, playerCount: number, rolePreset: RolePreset) {
-  return mode === "werewolves_classic" && playerCount >= 9 && rolePreset !== "beginner" && rolePreset !== "manual";
 }
 
 export function availableModes(family: GameFamily): GameMode[] {

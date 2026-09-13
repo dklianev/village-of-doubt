@@ -6,7 +6,7 @@ describe("VoteTallyBar", () => {
   it("shows the empty vote state before anyone votes", () => {
     render(<VoteTallyBar items={[]} maxVotes={3} />);
 
-    expect(screen.getByText("Още няма подадени гласове. Първият глас често задава посоката на целия ден.")).toBeInTheDocument();
+    expect(screen.getByText("Още няма подадени гласове.")).toBeInTheDocument();
   });
 
   it("renders current vote counts in a non-focusable live region", () => {

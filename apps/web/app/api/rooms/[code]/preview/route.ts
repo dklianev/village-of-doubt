@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { ROOM_CODE_REGEX, normalizeRoomCodeInput, type GameFamily } from "@werewolf/shared";
+import { ROOM_CODE_REGEX, getGameFamily, normalizeRoomCodeInput, type GameFamily, type RoomInvitationEligibility } from "@werewolf/shared";
 import { createRoomPreviewCredential } from "@werewolf/shared/server";
 import { auth } from "@/lib/auth";
 import { createRuntimeIntakeRateLimiter, requestRateLimitKey } from "@/lib/intake-security";
 import type { RateLimitResult } from "@/lib/rate-limit";
 
-type RoomPreview = {
+type RoomPreview = RoomInvitationEligibility & {
   code: string;
   status: "lobby" | "in_game" | "finished" | "missing";
   playerCount: number;
@@ -63,16 +63,16 @@ export function createRoomPreviewHandler(dependencies: RoomPreviewDependencies) 
     }
 
     try {
-      const [session, response] = await Promise.all([
-        dependencies.getSession(request.headers),
-        dependencies.fetcher(`${gameServerHttpUrl()}/rooms/${code}/preview`, {
-          cache: "no-store",
-          headers: {
-            "X-Werewolf-Room-Preview": createRoomPreviewCredential(code, gameTokenSecret()),
-          },
-          signal: AbortSignal.timeout(2000),
-        }),
-      ]);
+      const session = await dependencies.getSession(request.headers);
+      const viewerUserId = session?.user?.id || undefined;
+      const response = await dependencies.fetcher(`${gameServerHttpUrl()}/rooms/${code}/preview`, {
+        cache: "no-store",
+        headers: {
+          "X-Werewolf-Room-Preview": createRoomPreviewCredential(code, gameTokenSecret(), viewerUserId),
+          ...(viewerUserId ? { "X-Werewolf-Room-Preview-Viewer": viewerUserId } : {}),
+        },
+        signal: AbortSignal.timeout(2000),
+      });
 
       if (response.status === 404) {
         return missingRoomPreview();
@@ -149,6 +149,13 @@ function toRoomPreview(value: unknown): RoomPreview | null {
   ) {
     return null;
   }
+  if ((record.mode !== "mafia_free" && record.mode !== "mafia_sport" && record.mode !== "werewolves_classic")
+    || !family || getGameFamily(record.mode) !== family
+    || (record.roomVisibility !== "private" && record.roomVisibility !== "public")
+    || (record.viewerMembership !== "participant" && record.viewerMembership !== "spectator" && record.viewerMembership !== "none")
+    || typeof record.canJoinAsPlayer !== "boolean" || typeof record.canSpectate !== "boolean") {
+    return null;
+  }
 
   return {
     code,
@@ -156,6 +163,11 @@ function toRoomPreview(value: unknown): RoomPreview | null {
     playerCount: Math.max(0, Math.floor(playerCount)),
     capacity: Math.max(0, Math.floor(capacity)),
     family,
+    mode: record.mode,
+    roomVisibility: record.roomVisibility,
+    viewerMembership: record.viewerMembership,
+    canJoinAsPlayer: record.canJoinAsPlayer,
+    canSpectate: record.canSpectate,
     hostName,
     players,
   };

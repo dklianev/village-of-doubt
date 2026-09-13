@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { PlayActionDock } from "@/components/play/PlayActionDock";
@@ -18,25 +18,49 @@ function dock(props: { compact: boolean; expanded: boolean; onExpandedChange?: (
       expanded={props.expanded}
       onExpandedChange={props.onExpandedChange ?? vi.fn()}
       primaryContent={<button type="button">Потвърди</button>}
-      privateContent={<article data-private-dossier="true">Тайна роля: Ясновидка</article>}
-      dossierTitle="Ясновидка"
     />
   );
 }
 
 describe("PlayActionDock", () => {
-  it("keeps the command and private dossier inline on desktop", () => {
+  it("keeps readiness visible when mobile lobby details are collapsed", async () => {
+    const ready = vi.fn();
+    const expand = vi.fn();
+    render(<PlayActionDock
+      eyebrow="преди началото" heading="Потвърди готовност" kind="lobby"
+      compact expanded={false} onExpandedChange={expand}
+      compactSummary={<button onClick={ready}>Готов</button>}
+      primaryContent={<button>Копирай покана</button>}
+    />);
+
+    expect(screen.getByRole("button", { name: "Готов" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Копирай покана", hidden: true })).not.toBeVisible();
+    await userEvent.click(screen.getByRole("button", { name: "Готов" }));
+    expect(ready).toHaveBeenCalledOnce();
+    expect(expand).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole("button", { name: "Покажи подробностите за стаята" }));
+    expect(expand).toHaveBeenCalledWith(true);
+  });
+
+  it("does not duplicate the compact summary on desktop", () => {
+    render(<PlayActionDock
+      eyebrow="преди началото" heading="Потвърди готовност" kind="lobby"
+      compact={false} expanded={false} onExpandedChange={vi.fn()}
+      compactSummary={<button>Готов</button>}
+      primaryContent={<button>Готов</button>}
+    />);
+    expect(screen.getAllByRole("button", { name: "Готов" })).toHaveLength(1);
+  });
+
+  it("keeps the desktop command independent from the personal role area", () => {
     render(dock({ compact: false, expanded: true }));
 
-    const desk = screen.getByRole("region", { name: "Избери цел" });
+    expect(screen.getByRole("region", { name: "Избери цел" })).toBeVisible();
     const command = screen.getByRole("group", { name: "Текущо действие" });
-    const dossier = screen.getByRole("group", { name: "Лично досие" });
 
     expect(command).toContainElement(screen.getByRole("button", { name: "Потвърди" }));
-    expect(dossier).toContainElement(screen.getByText("Тайна роля: Ясновидка"));
+    expect(screen.queryByRole("group", { name: "Лично досие" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Отвори тайното досие" })).not.toBeInTheDocument();
-    expect(desk).toHaveAttribute("data-private-command-desk", "true");
-    expect(desk).toHaveAttribute("data-has-private", "true");
   });
 
   it("keeps the mobile command collapsed until its controlled state expands", async () => {
@@ -64,47 +88,35 @@ describe("PlayActionDock", () => {
     expect(onExpandedChange).toHaveBeenLastCalledWith(false);
   });
 
-  it("opens the private role only inside the mobile dossier sheet", async () => {
-    const user = userEvent.setup();
+  it("does not add a private modal or an extra navigation step to the mobile command", () => {
     render(dock({ compact: true, expanded: false }));
 
     expect(screen.queryByText("Тайна роля: Ясновидка")).not.toBeInTheDocument();
     expect(screen.queryByRole("dialog", { name: "Ясновидка" })).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Отвори тайното досие" }));
-
-    const dossier = await screen.findByRole(
-      "dialog",
-      { name: "Ясновидка" },
-      { timeout: 5_000 },
-    );
-    expect(dossier).toHaveAccessibleDescription("Лично досие с твоята тайна роля и частни сведения.");
-    expect(dossier).toContainElement(screen.getByText("Тайна роля: Ясновидка"));
-
-    await user.click(screen.getByRole("button", { name: "Затвори досието" }));
-    await waitFor(() => {
-      expect(screen.queryByRole("dialog", { name: "Ясновидка" })).not.toBeInTheDocument();
-    });
+    expect(screen.queryByRole("button", { name: "Отвори тайното досие" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Покажи личния ход" })).toBeVisible();
   });
 
   it("uses document scroll normally and a bounded scroller only on short compact viewports", () => {
     const rootRule = dockCss.match(/\.root\.root\s*\{(?<body>[\s\S]*?)\}/)?.groups?.body;
-    const contentRule = dockCss.match(/\.primaryColumn,\s*\n\.privateColumn\s*\{(?<body>[\s\S]*?)\}/)?.groups?.body;
+    const contentRule = dockCss.match(/\.primaryColumn\s*\{(?<body>[\s\S]*?)\}/)?.groups?.body;
     const compactExpandedRule = dockCss.match(/\.root\.root\[data-expanded="true"\]\s*\{(?<body>[\s\S]*?)\}/)?.groups?.body;
 
     expect(rootRule).toContain("height: auto");
     expect(rootRule).toContain("max-height: none");
     expect(rootRule).toContain("overflow: visible");
     expect(contentRule).not.toMatch(/overflow(?:-y)?:\s*(?:auto|scroll)/);
-    expect(compactExpandedRule).toContain("max-height: calc(100svh");
+    expect(compactExpandedRule).toContain("max-height: min(42svh, 26rem)");
     expect(compactExpandedRule).toContain("overflow-y: auto");
     expect(dockCss).toMatch(/\.root\.root \.primaryColumn[\s\S]*?-webkit-line-clamp:\s*unset/);
   });
 
-  it("joins both desktop zones with a theme-aware material bridge", () => {
-    expect(dockCss).toContain(':global(html[data-theme="light"]) .root');
-    expect(dockCss).toContain(':global(html[data-theme="dark"]) .root');
-    expect(dockCss).toMatch(/\.grid::before\s*\{[\s\S]*?linear-gradient/);
+  it("does not collapse desktop actions when the mobile expansion state is false", () => {
+    render(dock({ compact: false, expanded: false }));
+    const command = screen.getByRole("group", { name: "Текущо действие" });
+    expect(command).toBeVisible();
+    expect(screen.getByRole("button", { name: "Потвърди" })).toBeVisible();
   });
 
   it("keeps the complete action title visible in the collapsed mobile dock", () => {

@@ -35,6 +35,54 @@ const voteTally: VoteTallyItem[] = [
 ];
 
 describe("VotingPanel", () => {
+  it("disarms skip after voting for the selected player and requires a fresh confirmation to skip", async () => {
+    const user = userEvent.setup();
+    const sendVote = vi.fn();
+    render(
+      <VotingPanel
+        currentUserId="u1"
+        livingPlayers={livingPlayers}
+        selectedTargetId="u2"
+        voteTally={[]}
+        allowSkipVote
+        sendVote={sendVote}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Пропусни глас" }));
+    expect(screen.getByRole("button", { name: "Потвърди пропускането" })).toHaveAttribute("aria-pressed", "true");
+    await user.click(screen.getByRole("button", { name: "Потвърди гласа за Борис" }));
+
+    expect(sendVote).toHaveBeenCalledExactlyOnceWith("u2");
+    const skip = screen.getByRole("button", { name: "Пропусни глас" });
+    expect(skip).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByText("Избран играч")).toBeInTheDocument();
+    expect(screen.getByText("Борис")).toBeInTheDocument();
+
+    await user.click(skip);
+    expect(sendVote).toHaveBeenCalledTimes(1);
+    await user.click(screen.getByRole("button", { name: "Потвърди пропускането" }));
+    expect(sendVote.mock.calls).toEqual([["u2"], ["skip"]]);
+  });
+
+  it("uses a stable confirmation caption and does not describe an empty selection as selected", () => {
+    const props = { currentUserId: "u1", livingPlayers, voteTally: [], allowSkipVote: false, sendVote: vi.fn() };
+    const { rerender } = render(<VotingPanel {...props} selectedTargetId="" />);
+    expect(screen.getByRole("button", { name: "Потвърди гласа" })).toBeDisabled();
+    expect(screen.queryByText("Избрано място")).not.toBeInTheDocument();
+    rerender(<VotingPanel {...props} selectedTargetId="u2" />);
+    expect(screen.getByRole("button", { name: "Потвърди гласа за Борис" })).toHaveTextContent(/^Потвърди гласа$/);
+    rerender(<VotingPanel {...props} selectedTargetId="u1" />);
+    expect(screen.getByRole("button", { name: "Потвърди гласа" })).toBeDisabled();
+  });
+
+  it("keeps the full tally behind a disclosure without hiding the vote action", async () => {
+    render(<VotingPanel currentUserId="u1" livingPlayers={livingPlayers} selectedTargetId="u2" voteTally={voteTally} allowSkipVote={false} sendVote={vi.fn()} />);
+    expect(screen.getByRole("button", { name: "Потвърди гласа за Борис" })).toBeVisible();
+    expect(screen.getByRole("region", { name: "Текущо броене на гласовете" })).not.toBeVisible();
+    await userEvent.click(screen.getByText("Преброяване", { exact: true }));
+    expect(screen.getByRole("region", { name: "Текущо броене на гласовете" })).toBeVisible();
+  });
   it("shows the selected table target instead of duplicating the roster", () => {
     render(
       <VotingPanel

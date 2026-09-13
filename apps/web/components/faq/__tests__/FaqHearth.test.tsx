@@ -41,6 +41,14 @@ const faqCss = readFileSync(resolve(process.cwd(), "components/faq/LegacyFaq.mod
 const faqPageSource = readFileSync(resolve(process.cwd(), "app/faq/page.tsx"), "utf8");
 
 describe("FaqHearth search", () => {
+  it("identifies help literally while keeping the hearth as secondary copy", () => {
+    render(<FaqHearth items={items} />);
+
+    expect(screen.getByRole("heading", { level: 1, name: "Помощ" })).toBeInTheDocument();
+    expect(screen.getByText("седни до огъня")).toBeInTheDocument();
+    expect(screen.getByRole("searchbox")).toHaveAttribute("placeholder", "Търси въпрос...");
+  });
+
   it("reuses one preloaded AVIF for the ambient and hero art", () => {
     const { container } = render(<FaqHearth items={items} />);
     const banner = container.querySelector(".faq-hearth-banner");

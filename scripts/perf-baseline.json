@@ -7,7 +7,7 @@
       "cssKb": 56.6
     },
     "/create": {
-      "jsKb": 69.4,
+      "jsKb": 78.2,
       "cssKb": 60.1
     },
     "/play/[code]": {
@@ -19,7 +19,7 @@
       "cssKb": 50.7
     },
     "/werewolf/rules": {
-      "jsKb": 34.1,
+      "jsKb": 40.4,
       "cssKb": 50.8
     }
   }

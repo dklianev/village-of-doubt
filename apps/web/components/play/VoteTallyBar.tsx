@@ -5,7 +5,7 @@ export function VoteTallyBar({ items, maxVotes }: { items: VoteTallyItem[]; maxV
   if (items.length === 0) {
     return (
       <div className="vote-tally-card mt-5">
-        <p>Още няма подадени гласове. Първият глас често задава посоката на целия ден.</p>
+        <p>Още няма подадени гласове.</p>
       </div>
     );
   }

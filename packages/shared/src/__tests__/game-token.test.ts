@@ -103,6 +103,15 @@ describe("game tokens", () => {
     expect(verifyRoomPreviewCredential("RAVN42", `${credential}x`, secret)).toBe(false);
   });
 
+  it("binds personalized preview credentials to the verified viewer as well as the room", () => {
+    const credential = createRoomPreviewCredential("RAVN42", secret, "viewer-1");
+    expect(verifyRoomPreviewCredential("RAVN42", credential, secret, "viewer-1")).toBe(true);
+    expect(verifyRoomPreviewCredential("RAVN42", credential, secret, "viewer-2")).toBe(false);
+    expect(verifyRoomPreviewCredential("RAVN42", credential, secret)).toBe(false);
+    expect(verifyRoomPreviewCredential("OTHER1", credential, secret, "viewer-1")).toBe(false);
+    expect(verifyRoomPreviewCredential("RAVN42", createRoomPreviewCredential("RAVN42", secret), secret, "viewer-1")).toBe(false);
+  });
+
   it("rejects non-catalog avatar identifiers when issuing tokens", () => {
     expect(() =>
       createGameToken({

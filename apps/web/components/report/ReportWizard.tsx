@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { type FormEvent, useId, useRef, useState } from "react";
+import { type FormEvent, useEffect, useId, useRef, useState } from "react";
 
 type ReportType = "abuse" | "copyright" | "bug" | "gdpr" | "other";
 type Step = "type" | "details" | "identity" | "review" | "success";
@@ -99,6 +99,17 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
   const fieldErrorId = useId();
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
+  const legendRef = useRef<HTMLLegendElement>(null);
+  const submitRef = useRef<HTMLButtonElement>(null);
+  const submittingRef = useRef(false);
+  const previousStepRef = useRef(step);
+
+  useEffect(() => {
+    if (previousStepRef.current !== step) {
+      legendRef.current?.focus();
+      previousStepRef.current = step;
+    }
+  }, [step]);
 
   const meta = TYPE_META[type];
   const stepIndex = STEPS.indexOf(step);
@@ -158,6 +169,14 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submittingRef.current) return;
+    if (step !== "review") {
+      advance();
+      return;
+    }
+    // A form submit alone is not consent: only the final review button can send.
+    if ((event.nativeEvent as SubmitEvent).submitter !== submitRef.current) return;
+    submittingRef.current = true;
     setStatus("submitting");
     setInvalidField(null);
     setErrorMsg("");
@@ -194,6 +213,8 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
     } catch {
       setErrorMsg("Грешка при изпращане.");
       setStatus("error");
+    } finally {
+      submittingRef.current = false;
     }
   }
 
@@ -210,7 +231,7 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
             style={{ width: `${((stepIndex + 1) / totalSteps) * 100}%` }}
           />
         </div>
-        <p className="report-wizard-progress-label">
+        <p className="report-wizard-progress-label" role="status" aria-live="polite" aria-atomic="true">
           Стъпка {stepIndex + 1} от {totalSteps}
         </p>
       </nav>
@@ -218,7 +239,7 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
       <form onSubmit={submit}>
         {step === "type" ? (
           <fieldset className="report-wizard-step">
-            <legend>За какво е сигналът?</legend>
+            <legend ref={legendRef} tabIndex={-1}>За какво е сигналът?</legend>
             <p className="report-wizard-step-lede">
               Избери вида, който най-точно описва ситуацията.
             </p>
@@ -248,7 +269,7 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
 
         {step === "details" ? (
           <fieldset className="report-wizard-step">
-            <legend>Какво се случи?</legend>
+            <legend ref={legendRef} tabIndex={-1}>Какво се случи?</legend>
             <p className="report-wizard-step-lede">
               Колкото повече подробности, толкова по-бързо реагираме.
             </p>
@@ -294,7 +315,7 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
 
         {step === "identity" ? (
           <fieldset className="report-wizard-step">
-            <legend>Как искаш да отговорим?</legend>
+            <legend ref={legendRef} tabIndex={-1}>Как искаш да отговорим?</legend>
             <p className="report-wizard-step-lede">
               Можеш да подадеш сигнала анонимно — но няма да можем да ти отговорим лично.
             </p>
@@ -364,7 +385,7 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
 
         {step === "review" ? (
           <fieldset className="report-wizard-step">
-            <legend>Преглед преди изпращане.</legend>
+            <legend ref={legendRef} tabIndex={-1}>Преглед преди изпращане.</legend>
             <p className="report-wizard-step-lede">Виж дали всичко изглежда наред.</p>
 
             <dl className="report-review">
@@ -405,7 +426,7 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
 
         <div className="report-wizard-actions">
           {stepIndex > 0 ? (
-            <button type="button" className="report-wizard-back" onClick={goBack}>
+            <button type="button" className="report-wizard-back" onClick={goBack} disabled={status === "submitting"}>
               ← Назад
             </button>
           ) : (
@@ -416,6 +437,8 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
 
           {step === "review" ? (
             <button
+              key="confirm-report"
+              ref={submitRef}
               type="submit"
               className="report-wizard-submit"
               disabled={status === "submitting"}
@@ -423,7 +446,7 @@ export function ReportWizard({ userEmail, userName, visualStep }: ReportWizardPr
               {status === "submitting" ? "Изпращаме..." : "Изпрати сигнал"}
             </button>
           ) : (
-            <button type="button" className="report-wizard-next" onClick={advance}>
+            <button key="advance-report" type="button" className="report-wizard-next" onClick={advance}>
               Напред →
             </button>
           )}

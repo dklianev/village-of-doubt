@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
-  ROLE_GUIDE_BG,
   communicationBg,
   narratorBg,
   nightActionHelpBg,
   phaseGuideBg,
   tempoBg,
 } from "@/lib/play/copy";
+import { ROLE_GUIDE_BG } from "@/lib/play/private-copy";
 
 describe("play copy quality", () => {
   it("describes role mechanics without contradicting the authoritative rules", () => {

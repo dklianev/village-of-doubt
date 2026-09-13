@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-export const SITE_NAME = "Върколак и Мафия";
+export const SITE_NAME = "Сенките";
 export const SITE_TAGLINE = "Социална игра на сенки";
 
 export function resolveSiteUrl(): string {

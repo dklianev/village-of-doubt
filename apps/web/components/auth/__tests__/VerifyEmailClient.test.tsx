@@ -14,6 +14,8 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/lib/auth-client", () => ({
   authClient: {
     verifyEmail: vi.fn(),
+    getSession: vi.fn(async () => ({ data: null, error: null })),
+    sendVerificationEmail: vi.fn(),
   },
 }));
 
@@ -23,16 +25,17 @@ describe("VerifyEmailClient", () => {
   beforeEach(() => {
     query = new URLSearchParams();
     verifyEmailMock.mockReset();
+    window.localStorage.setItem("tutorial-completed", "1");
   });
 
   it("replaces the loading headline after verification settles with an error", async () => {
     render(<VerifyEmailClient />);
 
     expect(
-      await screen.findByRole("heading", { level: 1, name: "Печатът не беше поставен." }),
+      await screen.findByRole("heading", { level: 1, name: "Потвърждението не е завършено." }),
     ).toBeInTheDocument();
-    expect(screen.queryByText("Притискаме печата...")).not.toBeInTheDocument();
-    expect(screen.getByRole("alert")).toHaveTextContent("Този линк е празен или повреден.");
+    expect(screen.queryByText("Потвърждаваме имейла...")).not.toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("Линкът за потвърждение липсва или е невалиден.");
   });
 
   it("submits a valid token only once during the Strict Mode effect replay", async () => {
@@ -46,11 +49,11 @@ describe("VerifyEmailClient", () => {
     );
 
     expect(
-      await screen.findByRole("heading", { level: 1, name: "Печатът е поставен." }),
+      await screen.findByRole("heading", { level: 1, name: "Имейлът е потвърден." }),
     ).toBeInTheDocument();
     expect(verifyEmailMock).toHaveBeenCalledTimes(1);
     expect(verifyEmailMock).toHaveBeenCalledWith({ query: { token: "single-use-token" } });
     expect(screen.getByRole("status")).toHaveTextContent("Имейлът е потвърден");
-    expect(screen.getByRole("link", { name: "Към началото" })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: "Продължи" })).toHaveAttribute("href", "/");
   });
 });

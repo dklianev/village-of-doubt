@@ -10,12 +10,26 @@ Plain CSS variables in `packages/ui/src/tokens.css`.
 | `--ds-ink-{name}` | `--ds-ink-primary` | Text colors |
 | `--ds-accent-{name}` | `--ds-accent-blood` | CTAs, accents |
 | `--ds-type-{role}` | `--ds-type-h1` | Font sizes (rem) |
+| `--ds-font-{role}` | `--ds-font-display` | App-provided font families with standalone fallbacks |
 | `--ds-space-{step}` | `--ds-space-4` | Spacing (px) |
 | `--ds-radius-{name}` | `--ds-radius-card` | Border radius |
 | `--ds-shadow-{name}` | `--ds-shadow-card` | Box shadow |
 | `--ds-duration-{tier}` | `--ds-duration-base` | Motion |
 | `--ds-ease-{name}` | `--ds-ease-candle` | Easing curves |
 | `--ds-focus-ring` | (single) | Universal focus indicator |
+
+## Typography
+
+The web app supplies self-hosted Literata for display/editorial text and Sofia
+Sans for interface text through `--font-display` and `--font-body`. Primitives
+use `--ds-font-display` and `--ds-font-body`; they must not import `next/font` or
+name an unshipped font. Without app tokens, Storybook falls back to Georgia and
+the platform interface font. Room codes keep a monospace stack.
+
+Use regular 400 for descriptions, 600 for emphasis and headings, and 700 for
+strong actions. The shipped variable fonts cover 400-700; larger numeric values
+do not add hierarchy. Font licenses, coverage and delivery details live in
+`apps/web/app/fonts/README.md`.
 
 ## Radii rationale
 

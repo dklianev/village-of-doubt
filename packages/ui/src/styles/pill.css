@@ -10,9 +10,9 @@
   isolation: isolate;
   border: 1px solid transparent;
   border-radius: var(--ds-radius-chip);
-  font-family: "Noto Serif", "Iowan Old Style", Georgia, serif;
+  font-family: var(--ds-font-body);
   font-size: var(--ds-type-body);
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1;
   color: var(--ds-ink-primary);
   text-align: center;

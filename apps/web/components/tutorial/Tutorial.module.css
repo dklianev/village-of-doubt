@@ -22,7 +22,8 @@
   background: var(--art-tutorial) center / cover no-repeat;
 }
 
-@media (max-width: 720px) {
+/* Tall portrait scenes need native detail; keep the smaller landscape rendition. */
+@media (max-width: 720px) and (orientation: landscape) {
   :global(body:has(.tutorial-shell)) {
     --art-tutorial-day: image-set(url("/game-art/mobile/tutorial-day-scene.webp") type("image/webp"));
     --art-tutorial-night: image-set(url("/game-art/mobile/tutorial-night-scene.webp") type("image/webp"));
@@ -302,6 +303,7 @@
   min-height: 0;
   background-position: center;
   background-size: cover;
+  background-repeat: no-repeat;
   color: #f5e8c8;
 }
 
@@ -337,22 +339,21 @@
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(90deg, rgba(10, 8, 6, 0.78) 0%, rgba(10, 8, 6, 0.5) 48%, rgba(10, 8, 6, 0.72) 100%),
-    linear-gradient(180deg, rgba(10, 8, 6, 0.46) 0%, rgba(10, 8, 6, 0.2) 42%, rgba(10, 8, 6, 0.85) 100%);
+    linear-gradient(90deg, rgba(10, 8, 6, 0.74) 0%, rgba(10, 8, 6, 0.4) 48%, rgba(10, 8, 6, 0.1) 100%),
+    linear-gradient(180deg, rgba(10, 8, 6, 0.18) 0%, rgba(10, 8, 6, 0.1) 42%, rgba(10, 8, 6, 0.62) 100%);
   pointer-events: none;
 }
 
 :global(.slide-bg-low .tutorial-slide-scrim) {
   background:
-    linear-gradient(90deg, rgba(10, 8, 6, 0.84) 0%, rgba(10, 8, 6, 0.62) 52%, rgba(10, 8, 6, 0.84) 100%),
-    linear-gradient(180deg, rgba(10, 8, 6, 0.62) 0%, rgba(10, 8, 6, 0.38) 42%, rgba(10, 8, 6, 0.88) 100%);
+    linear-gradient(90deg, rgba(10, 8, 6, 0.78) 0%, rgba(10, 8, 6, 0.44) 52%, rgba(10, 8, 6, 0.16) 100%),
+    linear-gradient(180deg, rgba(10, 8, 6, 0.24) 0%, rgba(10, 8, 6, 0.14) 42%, rgba(10, 8, 6, 0.66) 100%);
 }
 
 :global(.slide-bg-cropped .tutorial-slide-scrim) {
   background:
-    radial-gradient(ellipse at 26% 36%, rgba(10, 8, 6, 0.16), transparent 24rem),
-    linear-gradient(90deg, rgba(10, 8, 6, 0.84) 0%, rgba(10, 8, 6, 0.54) 48%, rgba(10, 8, 6, 0.84) 100%),
-    linear-gradient(180deg, rgba(10, 8, 6, 0.4) 0%, rgba(10, 8, 6, 0.88) 100%);
+    linear-gradient(90deg, rgba(10, 8, 6, 0.78) 0%, rgba(10, 8, 6, 0.42) 48%, rgba(10, 8, 6, 0.14) 100%),
+    linear-gradient(180deg, rgba(10, 8, 6, 0.2) 0%, rgba(10, 8, 6, 0.66) 100%);
 }
 
 :global(.tutorial-slide-content) {
@@ -423,10 +424,10 @@
   max-width: 14ch;
   margin: 0 0 20px;
   color: #fff4df;
-  font-family: "Noto Serif Display", "Noto Serif", serif;
-  font-size: clamp(2.5rem, 5vw, 4.8rem);
-  font-weight: 900;
-  line-height: 0.98;
+  font-family: var(--font-display);
+  font-size: 3.5rem;
+  font-weight: 600;
+  line-height: 1.12;
   letter-spacing: 0;
   text-shadow: 0 3px 24px rgba(0, 0, 0, 0.74);
   text-wrap: balance;
@@ -437,7 +438,7 @@
   margin: 0 0 12px;
   color: rgba(255, 244, 223, 0.9);
   font-size: 1.05rem;
-  font-weight: 650;
+  font-weight: 400;
   line-height: 1.65;
 }
 
@@ -519,7 +520,7 @@
 
 :global(.tutorial-nav-counter strong) {
   color: #f5e8c8;
-  font-family: "Noto Serif", serif;
+  font-family: var(--font-reading);
   font-size: 0.92rem;
 }
 
@@ -609,7 +610,7 @@
 
 :global(.clue-chip-initial) {
   color: #842f2b;
-  font-family: "Noto Serif Display", serif;
+  font-family: var(--font-display);
   font-size: 1.55rem;
   font-weight: 950;
   line-height: 1;
@@ -714,7 +715,7 @@
 }
 
 :global(.tutorial-final-title) {
-  font-family: "Noto Serif Display", serif;
+  font-family: var(--font-display);
   font-size: 1.5rem;
   font-weight: 950;
 }
@@ -759,7 +760,7 @@
 
 :global(.tutorial-final-secondary-label) {
   color: #f5e8c8;
-  font-family: "Noto Serif", serif;
+  font-family: var(--font-reading);
   font-size: 0.92rem;
   font-weight: 700;
 }
@@ -872,7 +873,7 @@
 
   :global(.tutorial-slide-title) {
     margin-bottom: 14px;
-    font-size: clamp(2.25rem, 4vw, 3.6rem);
+    font-size: 2.75rem;
   }
 
   :global(.tutorial-slide-body p) {
@@ -909,6 +910,19 @@
 }
 
 @media (max-width: 760px) {
+  :global(.slide-bg-zoom),
+  :global(.slide-bg-cropped) {
+    background-size: cover;
+  }
+
+  :global(.tutorial-slide-scrim),
+  :global(.slide-bg-low .tutorial-slide-scrim),
+  :global(.slide-bg-cropped .tutorial-slide-scrim) {
+    background:
+      linear-gradient(90deg, rgba(10, 8, 6, 0.64), rgba(10, 8, 6, 0.54) 50%, rgba(10, 8, 6, 0.58)),
+      linear-gradient(180deg, rgba(10, 8, 6, 0.14), rgba(10, 8, 6, 0.16) 42%, rgba(10, 8, 6, 0.7));
+  }
+
   :global(.tutorial-progress) {
     order: 1;
   }
@@ -960,7 +974,7 @@
 
   :global(.tutorial-progress-mobile span) {
     color: #d19a42;
-    font-family: ui-sans-serif, system-ui, sans-serif;
+    font-family: var(--font-body);
     font-size: 0.68rem;
     font-weight: 900;
     letter-spacing: 0.12em;
@@ -969,7 +983,7 @@
   :global(.tutorial-progress-mobile strong) {
     overflow: hidden;
     color: #fff2d6;
-    font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+    font-family: var(--font-display);
     font-size: 1.08rem;
     line-height: 1;
     text-overflow: ellipsis;

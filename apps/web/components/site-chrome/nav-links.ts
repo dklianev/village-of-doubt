@@ -9,7 +9,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-export type SecondaryLinkGroup = "game" | "social" | "help";
+import { DRAWER_DESTINATIONS, SECONDARY_DESTINATIONS, type SecondaryLinkGroup } from "./nav-destinations";
+export type { SecondaryLinkGroup } from "./nav-destinations";
 
 export interface SecondaryLink {
   href: string;
@@ -24,27 +25,26 @@ export interface DrawerLink {
   icon?: LucideIcon;
 }
 
-export const SECONDARY_LINKS: ReadonlyArray<SecondaryLink> = [
-  { href: "/history", label: "История", icon: Clock, group: "game" },
-  { href: "/achievements", label: "Легенди", icon: Trophy, group: "game" },
-  { href: "/leaderboard", label: "Вечерен брой", icon: ListOrdered, group: "game" },
-  { href: "/friends", label: "Познати на масата", icon: Users, group: "social" },
-  { href: "/tutorial", label: "Първа игра", icon: Sparkles, group: "help" },
-  { href: "/faq", label: "Въпроси", icon: HelpCircle, group: "help" },
-  { href: "/status", label: "Състояние", icon: Activity, group: "help" },
-];
+const icons: Record<(typeof SECONDARY_DESTINATIONS)[number]["href"], LucideIcon> = {
+  "/history": Clock,
+  "/achievements": Trophy,
+  "/leaderboard": ListOrdered,
+  "/friends": Users,
+  "/tutorial": Sparkles,
+  "/faq": HelpCircle,
+  "/status": Activity,
+};
+export const SECONDARY_LINKS: ReadonlyArray<SecondaryLink> = SECONDARY_DESTINATIONS.map((item) => ({ ...item, icon: icons[item.href] }));
 
 export const GROUP_LABELS: Record<SecondaryLinkGroup, string> = {
   game: "Игра",
-  social: "Социал",
+  social: "Компания",
   help: "Помощ",
 };
 
 export const GROUP_ORDER: ReadonlyArray<SecondaryLinkGroup> = ["game", "social", "help"];
 
 export const DRAWER_LINKS: ReadonlyArray<DrawerLink> = [
-  { href: "/", label: "Начало" },
-  { href: "/werewolf", label: "Върколак" },
-  { href: "/mafia", label: "Мафия" },
+  ...DRAWER_DESTINATIONS,
   ...SECONDARY_LINKS,
 ];

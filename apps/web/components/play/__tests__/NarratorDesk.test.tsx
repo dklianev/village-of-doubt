@@ -83,7 +83,7 @@ describe("NarratorDesk", () => {
     expect(screen.getByText("Живи")).toBeInTheDocument();
     expect(screen.getByText("2/2")).toBeInTheDocument();
     expect(screen.getByText("1/2")).toBeInTheDocument();
-    expect(screen.getByText("Изчакват се 1 играчи да приемат, че Пълният Разказвач вижда всички роли.")).toBeInTheDocument();
+    expect(screen.getByText("Остава 1 участник да приеме, че Пълният Разказвач вижда всички роли.")).toBeInTheDocument();
   });
 
   it("routes narrator controls through room commands", async () => {
@@ -94,7 +94,7 @@ describe("NarratorDesk", () => {
     render(
       <NarratorDesk
         room={room(send)}
-        snapshot={snapshot()}
+        snapshot={snapshot({ phaseEndsAt: Date.now() + 60_000 })}
         phase="night"
         family="werewolves"
         isNarrator={false}
@@ -129,5 +129,48 @@ describe("NarratorDesk", () => {
     expect(screen.getByRole("button", { name: /Следваща фаза/ })).toBeDisabled();
     expect(screen.getByRole("button", { name: /\+30 сек\./ })).toBeDisabled();
     expect(screen.getByRole("button", { name: /Клавишни команди/ })).toBeEnabled();
+  });
+
+  it("describes host controls without internal architecture copy", () => {
+    render(<NarratorDesk room={room()} snapshot={snapshot()} phase="night" family="werewolves" isNarrator={false} onOpenShortcuts={vi.fn()} />);
+    expect(screen.getByRole("heading", { name: "Управление на домакина" })).toBeInTheDocument();
+    expect(screen.queryByText(/скрити клиентски решения|събития за проверка/u)).not.toBeInTheDocument();
+  });
+
+  it("excludes spectators from full-narrator consent, but includes the narrator", () => {
+    render(<NarratorDesk room={room()} snapshot={snapshot({ players: [
+      player({ userId: "player" }),
+      player({ userId: "narrator", playing: false, narrator: true, acceptedFullNarrator: false }),
+      player({ userId: "spectator", playing: false, acceptedFullNarrator: false }),
+    ] })} phase="lobby" family="werewolves" isNarrator onOpenShortcuts={vi.fn()} />);
+    expect(screen.getByText("Остава 1 участник да приеме, че Пълният Разказвач вижда всички роли.")).toBeInTheDocument();
+  });
+
+  it("counts only living players as eligible voters", () => {
+    render(<NarratorDesk room={room()} snapshot={snapshot({ players: [
+      player({ userId: "voter", hasVoted: true }),
+      player({ userId: "waiting" }),
+      player({ userId: "dead", alive: false, hasVoted: true }),
+    ] })} phase="voting" family="werewolves" isNarrator onOpenShortcuts={vi.fn()} />);
+    expect(screen.getByText("Гласували").parentElement).toHaveTextContent("1/2");
+  });
+
+  it("does not offer timer extensions when the phase has no timer", () => {
+    render(<NarratorDesk room={room()} snapshot={snapshot()} phase="night" family="werewolves" isNarrator onOpenShortcuts={vi.fn()} />);
+    expect(screen.getByRole("button", { name: /\+30 сек\./ })).toBeDisabled();
+  });
+
+  it("labels the paused advance command as resuming the same phase", async () => {
+    const send = vi.fn();
+    render(<NarratorDesk room={room(send)} snapshot={snapshot()} phase="paused" family="werewolves" isNarrator onOpenShortcuts={vi.fn()} />);
+    await userEvent.click(screen.getByRole("button", { name: "Продължи играта" }));
+    expect(send).toHaveBeenCalledWith("narratorAdvance");
+    expect(screen.queryByRole("button", { name: "Следваща фаза" })).not.toBeInTheDocument();
+  });
+
+  it("disables phase controls after the game ends", () => {
+    render(<NarratorDesk room={room()} snapshot={snapshot()} phase="game_over" family="werewolves" isNarrator onOpenShortcuts={vi.fn()} />);
+    expect(screen.getByRole("button", { name: "Пауза" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Следваща фаза" })).toBeDisabled();
   });
 });

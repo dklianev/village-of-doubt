@@ -1,0 +1,29 @@
+.role-art-frame {
+  position: relative;
+  isolation: isolate;
+}
+
+/* One transparent frame per family, independent of the portrait's source crop. */
+.role-art-frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  border-radius: inherit;
+  background: url("/game-art/frames/frame-werewolves-v1.webp") center / 100% 100% no-repeat;
+  opacity: 0.82;
+}
+
+.role-art-frame[data-frame-family="mafia"]::after {
+  background-image: url("/game-art/frames/frame-mafia-v1.webp");
+  opacity: 0.6;
+}
+
+[data-theme="light"] .role-art-frame::after {
+  opacity: 0.72;
+}
+
+[data-theme="light"] .role-art-frame[data-frame-family="mafia"]::after {
+  opacity: 0.52;
+}

@@ -1,8 +1,8 @@
-import type { Dispatch } from "react";
+import { useId, type Dispatch } from "react";
 import { NARRATOR_VOICE_LABELS_BG, type CommunicationMode, type NarratorMode, type NarratorVoice } from "@werewolf/shared";
 import type { LobbyFormAction, LobbyFormState } from "@/lib/lobby-form";
 import { AdvancedDrawer } from "@/components/lobby/AdvancedDrawer";
-import { playCue } from "@/lib/sound";
+import { phaseNarratorLine } from "@/lib/play/phase-display";
 
 const NARRATOR_CARDS: { value: NarratorMode; label: string; detail: string }[] = [
   { value: "automatic", label: "Автоматичен", detail: "Играта води фазите и пази тайните роли." },
@@ -18,7 +18,7 @@ const VOICE_DETAILS: Record<NarratorVoice, string> = {
   classic: "спокоен тон",
   old_villager: "суха селска мъдрост",
   inspector: "криминален ритъм",
-  witch: "по-мрачен шепот",
+  witch: "мрачни предзнаменования",
 };
 
 export function StepStyle({
@@ -50,6 +50,8 @@ export function NarratorSettings({
   state: LobbyFormState;
   dispatch: Dispatch<LobbyFormAction>;
 }) {
+  const styleId = useId();
+
   return (
     <>
       <section className="lobby-panel">
@@ -79,28 +81,35 @@ export function NarratorSettings({
       </section>
 
       {state.narratorMode === "automatic" ? (
-        <section className="lobby-panel">
+        <section className="lobby-panel narrator-style-panel">
           <div className="lobby-panel-title">
-            <h2>Глас</h2>
+            <h2 id={styleId}>Стил на Разказвача</h2>
           </div>
-          <div className="voice-card-grid">
+          <p className="advanced-panel-note">Текстови реплики, без гласов запис.</p>
+          <div className="voice-card-grid" role="radiogroup" aria-labelledby={styleId}>
             {(Object.entries(NARRATOR_VOICE_LABELS_BG) as [NarratorVoice, string][]).map(([voice, label]) => (
-              <button
+              <label
                 key={voice}
-                type="button"
                 className="voice-tile"
                 data-active={state.advanced.narratorVoice === voice}
-                aria-pressed={state.advanced.narratorVoice === voice}
-                onClick={() => {
-                  dispatch({ type: "SET_ADVANCED", key: "narratorVoice", value: voice });
-                  playCue("vote");
-                }}
               >
-                <strong>{label}</strong>
-                <span>{VOICE_DETAILS[voice]}</span>
-                <small>Проба</small>
-              </button>
+                <input
+                  type="radio"
+                  name={styleId}
+                  value={voice}
+                  checked={state.advanced.narratorVoice === voice}
+                  onChange={() => dispatch({ type: "SET_ADVANCED", key: "narratorVoice", value: voice })}
+                />
+                <span className="voice-style-copy">
+                  <strong>{label}</strong>
+                  <span>{VOICE_DETAILS[voice]}</span>
+                </span>
+              </label>
             ))}
+          </div>
+          <div className="narrator-style-example" aria-live="polite" aria-atomic="true">
+            <span>Примерен текст: Нощ</span>
+            <blockquote>{phaseNarratorLine("night", state.mode, state.advanced.narratorVoice)}</blockquote>
           </div>
         </section>
       ) : null}

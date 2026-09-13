@@ -31,9 +31,9 @@ export function Display({ size = "h1", as, children }: DisplayProps) {
     <Tag
       data-ds-display={size}
       style={{
-        fontFamily: '"Noto Serif Display", "Noto Serif", "Iowan Old Style", serif',
+        fontFamily: "var(--ds-font-display)",
         fontSize: SIZE_FONT[size],
-        fontWeight: 800,
+        fontWeight: 600,
         lineHeight: 1.05,
         letterSpacing: 0,
         margin: 0,

@@ -77,7 +77,7 @@ export const Colors: Story = {
         <section key={group}>
           <h3
             style={{
-              fontFamily: "Noto Serif, Iowan Old Style, Georgia, serif",
+              fontFamily: "var(--ds-font-display)",
               margin: "0 0 16px",
               textTransform: "capitalize",
             }}
@@ -122,7 +122,7 @@ export const Typography: Story = {
             <span
               style={{
                 fontSize: `var(--ds-type-${scale})`,
-                fontFamily: "Noto Serif, Iowan Old Style, Georgia, serif",
+                fontFamily: "var(--ds-font-display)",
               }}
             >
               Селото оцеля
@@ -159,7 +159,7 @@ export const Spacing: Story = {
 export const Motion: Story = {
   render: () => (
     <div style={{ display: "grid", gap: "16px", padding: "32px", maxWidth: "600px" }}>
-      <h3 style={{ fontFamily: "Noto Serif, Iowan Old Style, Georgia, serif", margin: 0 }}>
+      <h3 style={{ fontFamily: "var(--ds-font-display)", margin: 0 }}>
         Продължителности
       </h3>
       {[

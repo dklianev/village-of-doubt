@@ -7,6 +7,8 @@
 :global(.offline-shell) {
   --offline-text: #f5e8c8;
   --offline-text-muted: rgba(245, 232, 200, 0.76);
+  --offline-art-text: #f5e8c8;
+  --offline-art-accent: #e4b469;
   --offline-surface: rgba(13, 10, 8, 0.56);
   --offline-border: rgba(245, 232, 200, 0.14);
   --offline-border-strong: rgba(209, 154, 66, 0.42);
@@ -56,7 +58,7 @@
   align-items: center;
   gap: 9px;
   margin: 0;
-  color: var(--offline-accent);
+  color: var(--offline-art-accent);
   font-size: 0.74rem;
   font-weight: 850;
   letter-spacing: 0.26em;
@@ -71,8 +73,8 @@
 :global(.offline-hero-copy h1) {
   max-width: 13ch;
   margin: 12px 0 14px;
-  color: #f5e8c8;
-  font-family: "Noto Serif Display", serif;
+  color: var(--offline-art-text);
+  font-family: var(--font-display);
   font-size: clamp(2.7rem, 6.5vw, 5.4rem);
   font-weight: 900;
   line-height: 0.98;
@@ -83,7 +85,7 @@
 :global(.offline-hero-copy p:not(.offline-kicker)) {
   max-width: 58ch;
   margin: 0;
-  color: var(--offline-text-muted);
+  color: var(--offline-art-text);
   font-size: 1.02rem;
   line-height: 1.68;
 }
@@ -170,7 +172,7 @@
 
 :global(html[data-theme="light"] .offline-shell) {
   --offline-text: #2a1b10;
-  --offline-text-muted: rgba(245, 232, 200, 0.9);
+  --offline-text-muted: #594b3d;
   --offline-surface: rgba(252, 246, 236, 0.72);
   --offline-border: rgba(83, 52, 31, 0.16);
   --offline-border-strong: rgba(132, 47, 43, 0.34);
@@ -180,8 +182,7 @@
 
 :global(html[data-theme="light"] .offline-hero-scrim) {
   background:
-    linear-gradient(180deg, rgba(7, 10, 12, 0.08) 0%, rgba(7, 10, 12, 0.28) 55%, rgba(252, 246, 236, 0.96) 100%),
-    radial-gradient(ellipse at 24% 46%, rgba(132, 47, 43, 0.14), transparent 28rem);
+    linear-gradient(180deg, rgba(7, 10, 12, 0.16) 0%, rgba(7, 10, 12, 0.64) 45%, rgba(7, 10, 12, 0.96) 100%);
 }
 
 :global(html[data-theme="light"] .offline-status-retry) {

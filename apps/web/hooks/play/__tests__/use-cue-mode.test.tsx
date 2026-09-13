@@ -38,6 +38,9 @@ describe("useCueMode", () => {
     const { result } = renderHook(() => useCueMode({ tempoProfile: "normal", phase: "lobby", liveMode: false }));
 
     await waitFor(() => expect(result.current.cueMode).toBe("audio_vibration"));
+    expect(setSoundEnabled).toHaveBeenLastCalledWith(true);
+    expect(playCue).not.toHaveBeenCalled();
+    expect(triggerDeviceCue).not.toHaveBeenCalled();
   });
 
   it("forces silent mode for live tempo rooms", async () => {
@@ -46,6 +49,58 @@ describe("useCueMode", () => {
     const { result } = renderHook(() => useCueMode({ tempoProfile: "live", phase: "lobby", liveMode: true }));
 
     await waitFor(() => expect(result.current.cueMode).toBe("silent"));
+    expect(setSoundEnabled).toHaveBeenLastCalledWith(false);
+    expect(window.localStorage.getItem("werewolf-cue-mode")).toBe("audio_vibration");
+  });
+
+  it.each(["visual", "silent", "invalid", null])("mutes sound when loading %s mode", (saved) => {
+    if (saved !== null) window.localStorage.setItem("werewolf-cue-mode", saved);
+
+    const { result } = renderHook(() => useCueMode({ tempoProfile: "normal", phase: "night", liveMode: false }));
+
+    expect(result.current.cueMode).toBe(saved === "silent" ? "silent" : "visual");
+    expect(setSoundEnabled).toHaveBeenLastCalledWith(false);
+    expect(playCue).not.toHaveBeenCalled();
+  });
+
+  it("mutes audio when switching from audio vibration to visual mode", () => {
+    const { result } = renderHook(() => useCueMode({ tempoProfile: "normal", phase: "night", liveMode: false }));
+
+    act(() => result.current.changeCueMode("audio_vibration"));
+    expect(setSoundEnabled).toHaveBeenLastCalledWith(true);
+    vi.mocked(playCue).mockClear();
+    vi.mocked(triggerDeviceCue).mockClear();
+
+    act(() => result.current.changeCueMode("visual"));
+
+    expect(result.current.cueMode).toBe("visual");
+    expect(window.localStorage.getItem("werewolf-cue-mode")).toBe("visual");
+    expect(setSoundEnabled).toHaveBeenLastCalledWith(false);
+    expect(playCue).not.toHaveBeenCalled();
+    expect(triggerDeviceCue).not.toHaveBeenCalled();
+  });
+
+  it("mutes live rooms and restores the saved sound mode after leaving live tempo", () => {
+    window.localStorage.setItem("werewolf-cue-mode", "audio_vibration");
+    const { result, rerender } = renderHook(
+      ({ tempoProfile, liveMode }) => useCueMode({ tempoProfile, phase: "night", liveMode }),
+      { initialProps: { tempoProfile: "normal", liveMode: false } },
+    );
+    expect(setSoundEnabled).toHaveBeenLastCalledWith(true);
+
+    rerender({ tempoProfile: "live", liveMode: true });
+    expect(result.current.cueMode).toBe("silent");
+    expect(setSoundEnabled).toHaveBeenLastCalledWith(false);
+
+    act(() => result.current.changeCueMode("audio_vibration"));
+    expect(result.current.cueMode).toBe("silent");
+    expect(setSoundEnabled).toHaveBeenLastCalledWith(false);
+    expect(playCue).not.toHaveBeenCalled();
+    expect(triggerDeviceCue).not.toHaveBeenCalled();
+
+    rerender({ tempoProfile: "normal", liveMode: false });
+    expect(result.current.cueMode).toBe("audio_vibration");
+    expect(setSoundEnabled).toHaveBeenLastCalledWith(true);
   });
 
   it("persists audio vibration and triggers the current phase cue", () => {

@@ -37,6 +37,8 @@
   --ds-pill-danger-color: var(--ds-accent-blood-deep);
 
   /* Typography scale */
+  --ds-font-display: var(--font-display, Georgia, serif);
+  --ds-font-body: var(--font-body, system-ui, sans-serif);
   --ds-type-display: 4rem;
   --ds-type-h1: 2.75rem;
   --ds-type-h2: 2.125rem;

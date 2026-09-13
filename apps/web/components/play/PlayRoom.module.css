@@ -8,92 +8,72 @@
   position: fixed;
   inset: auto 0 0;
   z-index: -1;
-  height: 26vh;
-  background: linear-gradient(to top, rgba(5, 8, 9, 0.78), transparent);
+  height: 18vh;
+  background: linear-gradient(to top, rgba(5, 8, 9, 0.32), transparent);
   content: "";
 }
 
 :global(.play-shell.game-shell) {
-  --phase-art: var(--art-lobby);
+  /* Paused has no public previous-phase metadata; its coherent fallback is day. */
+  --play-room-art: var(--play-day-art);
+  --phase-art: var(--play-room-art);
   --phase-icon: image-set(url("/game-art/icon-phase-lobby.webp") type("image/webp"));
-  --play-body-glow: radial-gradient(circle at 78% 12%, rgba(240, 180, 93, 0.18), transparent 20rem);
-  --play-body-scrim: linear-gradient(110deg, rgba(7, 9, 9, 0.82) 0%, rgba(12, 16, 17, 0.5) 45%, rgba(7, 9, 9, 0.78) 100%);
-  --play-body-filter: saturate(0.98) contrast(1.06) brightness(0.98);
-  --play-stage-glow: radial-gradient(circle at 50% 50%, rgba(209, 154, 66, 0.18), transparent 22rem);
-  --play-stage-scrim: linear-gradient(180deg, rgba(8, 7, 6, 0.3), rgba(8, 7, 6, 0.76));
-  --play-stage-vignette: radial-gradient(ellipse at center, transparent 48%, rgba(3, 4, 4, 0.54) 100%);
-  --play-stage-art-position: center;
+  /* Exterior detail recedes; the framed stage keeps its independent lighting. */
+  --play-body-glow: none;
+  --play-body-scrim: linear-gradient(rgba(18, 20, 20, 0.6), rgba(18, 20, 20, 0.6));
+  --play-body-filter: none;
+  --play-stage-scrim: linear-gradient(180deg, rgba(5, 8, 9, 0.18), rgba(6, 5, 4, 0.26));
 }
 
 :global(.play-shell.game-shell[data-family="werewolves"]) {
-  --play-room-art: var(--art-play-dark-werewolves);
+  --play-day-art: image-set(url("/game-art/play/bg-play-werewolves-day-v2.avif") type("image/avif"), url("/game-art/play/bg-play-werewolves-day-v2.webp") type("image/webp"));
+  --play-night-art: image-set(url("/game-art/play/bg-play-werewolves-night-v2.avif") type("image/avif"), url("/game-art/play/bg-play-werewolves-night-v2.webp") type("image/webp"));
 }
 
 :global(.play-shell.game-shell[data-family="mafia"]) {
-  --play-room-art: var(--art-play-dark-mafia);
+  --play-day-art: image-set(url("/game-art/play/bg-play-mafia-day-v2.avif") type("image/avif"), url("/game-art/play/bg-play-mafia-day-v2.webp") type("image/webp"));
+  --play-night-art: image-set(url("/game-art/play/bg-play-mafia-night-v2.avif") type("image/avif"), url("/game-art/play/bg-play-mafia-night-v2.webp") type("image/webp"));
+}
+
+/* Portrait composition follows the tall table layout, including portrait tablets. */
+@media (max-width: 1023px) and (orientation: portrait) {
+  :global(.play-shell.game-shell[data-family="werewolves"]) {
+    --play-day-art: image-set(url("/game-art/mobile/play/bg-play-werewolves-day-v2.avif") type("image/avif"), url("/game-art/mobile/play/bg-play-werewolves-day-v2.webp") type("image/webp"));
+    --play-night-art: image-set(url("/game-art/mobile/play/bg-play-werewolves-night-v2.avif") type("image/avif"), url("/game-art/mobile/play/bg-play-werewolves-night-v2.webp") type("image/webp"));
+  }
+
+  :global(.play-shell.game-shell[data-family="mafia"]) {
+    --play-day-art: image-set(url("/game-art/mobile/play/bg-play-mafia-day-v2.avif") type("image/avif"), url("/game-art/mobile/play/bg-play-mafia-day-v2.webp") type("image/webp"));
+    --play-night-art: image-set(url("/game-art/mobile/play/bg-play-mafia-night-v2.avif") type("image/avif"), url("/game-art/mobile/play/bg-play-mafia-night-v2.webp") type("image/webp"));
+  }
 }
 
 :global(.play-shell.game-shell[data-phase="role_reveal"]) {
-  --phase-art: var(--art-reveal);
   --phase-icon: image-set(url("/game-art/icon-phase-role-reveal.webp") type("image/webp"));
-  --play-body-glow: radial-gradient(circle at 70% 14%, rgba(209, 154, 66, 0.24), transparent 22rem);
-  --play-stage-glow: radial-gradient(circle at 50% 44%, rgba(209, 154, 66, 0.24), transparent 24rem);
-  --play-stage-scrim: linear-gradient(180deg, rgba(8, 7, 6, 0.24), rgba(8, 7, 6, 0.7));
 }
 
 :global(.play-shell.game-shell[data-phase="first_night"]),
 :global(.play-shell.game-shell[data-phase="night"]) {
-  --phase-art: var(--art-night);
+  --play-room-art: var(--play-night-art);
   --phase-icon: image-set(url("/game-art/icon-phase-night.webp") type("image/webp"));
-  --play-body-glow: radial-gradient(circle at 76% 10%, rgba(196, 224, 226, 0.2), transparent 20rem);
-  --play-body-scrim: linear-gradient(110deg, rgba(4, 7, 9, 0.78) 0%, rgba(8, 17, 18, 0.44) 45%, rgba(4, 7, 9, 0.74) 100%);
-  --play-body-filter: saturate(1) contrast(1.08) brightness(0.98);
-  --play-stage-glow: radial-gradient(circle at 70% 22%, rgba(196, 224, 226, 0.24), transparent 23rem);
-  --play-stage-scrim: linear-gradient(180deg, rgba(4, 7, 9, 0.34), rgba(3, 6, 7, 0.82));
-  /* Almost no vignette — keep the frame evenly lit edge to edge instead of a
-   * centre spotlight with dark corners. */
-  --play-stage-vignette: radial-gradient(ellipse at center, transparent 92%, rgba(1, 5, 5, 0.12) 100%);
-  --play-stage-art-position: center top;
 }
 
 :global(.play-shell.game-shell[data-phase="day_announcement"]),
 :global(.play-shell.game-shell[data-phase="day_discussion"]),
 :global(.play-shell.game-shell[data-phase="nomination"]),
 :global(.play-shell.game-shell[data-phase="defense"]) {
-  --phase-art: var(--art-day);
   --phase-icon: image-set(url("/game-art/icon-phase-day.webp") type("image/webp"));
-  --play-body-glow: radial-gradient(circle at 24% 14%, rgba(245, 210, 146, 0.22), transparent 22rem);
-  --play-body-scrim: linear-gradient(110deg, rgba(22, 13, 8, 0.9) 0%, rgba(24, 18, 12, 0.62) 48%, rgba(13, 8, 6, 0.84) 100%);
-  --play-body-filter: saturate(0.98) contrast(1.04) brightness(1.03);
-  --play-stage-glow: radial-gradient(circle at 38% 20%, rgba(245, 210, 146, 0.24), transparent 24rem);
-  --play-stage-scrim: linear-gradient(180deg, rgba(30, 18, 10, 0.18), rgba(10, 7, 5, 0.62));
-  --play-stage-vignette: radial-gradient(ellipse at center, transparent 50%, rgba(26, 15, 9, 0.5) 100%);
-  --play-stage-art-position: center;
 }
 
 :global(.play-shell.game-shell[data-phase="voting"]) {
-  --phase-art: var(--art-vote);
   --phase-icon: image-set(url("/game-art/icon-phase-voting.webp") type("image/webp"));
-  --play-body-glow: radial-gradient(circle at 50% 8%, rgba(209, 154, 66, 0.26), transparent 20rem);
-  --play-body-scrim: linear-gradient(110deg, rgba(12, 5, 5, 0.97) 0%, rgba(26, 12, 10, 0.76) 48%, rgba(9, 5, 5, 0.94) 100%);
-  --play-body-filter: saturate(1.02) contrast(1.12) brightness(0.92);
-  --play-stage-glow: radial-gradient(circle at 50% 24%, rgba(209, 154, 66, 0.3), transparent 21rem);
-  --play-stage-scrim: linear-gradient(180deg, rgba(18, 8, 7, 0.3), rgba(8, 4, 4, 0.82));
-  --play-stage-vignette: radial-gradient(ellipse at center, transparent 42%, rgba(11, 3, 3, 0.7) 100%);
 }
 
 :global(.play-shell.game-shell[data-phase="resolution"]),
 :global(.play-shell.game-shell[data-phase="hunter_revenge"]),
 :global(.play-shell.game-shell[data-phase="mayor_successor"]),
 :global(.play-shell.game-shell[data-phase="game_over"]) {
-  --phase-art: var(--art-resolution);
   --phase-icon: image-set(url("/game-art/icon-phase-resolution.webp") type("image/webp"));
-  --play-body-glow: radial-gradient(circle at 50% 10%, rgba(248, 236, 210, 0.22), transparent 22rem);
-  --play-body-scrim: linear-gradient(110deg, rgba(9, 7, 6, 0.95) 0%, rgba(24, 18, 13, 0.72) 46%, rgba(9, 7, 6, 0.9) 100%);
-  --play-body-filter: saturate(0.94) contrast(1.08) brightness(0.95);
-  --play-stage-glow: radial-gradient(circle at 50% 32%, rgba(248, 236, 210, 0.24), transparent 24rem);
-  --play-stage-scrim: linear-gradient(180deg, rgba(9, 7, 6, 0.26), rgba(8, 6, 5, 0.76));
-  --play-stage-vignette: radial-gradient(ellipse at center, transparent 46%, rgba(5, 4, 4, 0.64) 100%);
 }
 
 :global(.play-shell.game-shell[data-family="mafia"]) {
@@ -127,50 +107,6 @@
   --phase-icon: image-set(url("/game-art/mafia/icon-phase-resolution.webp") type("image/webp"));
 }
 
-/* Keep phase art more specific than faction-level --phase-art defaults. */
-:global(.play-shell.game-shell[data-family][data-phase="role_reveal"]) {
-  --phase-art: var(--art-reveal);
-}
-
-:global(.play-shell.game-shell[data-family][data-phase="first_night"]),
-:global(.play-shell.game-shell[data-family][data-phase="night"]) {
-  --phase-art: var(--art-night);
-}
-
-:global(.play-shell.game-shell[data-family][data-phase="day_announcement"]),
-:global(.play-shell.game-shell[data-family][data-phase="day_discussion"]),
-:global(.play-shell.game-shell[data-family][data-phase="nomination"]),
-:global(.play-shell.game-shell[data-family][data-phase="defense"]) {
-  --phase-art: var(--art-day);
-}
-
-:global(.play-shell.game-shell[data-family][data-phase="voting"]) {
-  --phase-art: var(--art-vote);
-}
-
-:global(.play-shell.game-shell[data-family][data-phase="resolution"]),
-:global(.play-shell.game-shell[data-family][data-phase="hunter_revenge"]),
-:global(.play-shell.game-shell[data-family][data-phase="mayor_successor"]),
-:global(.play-shell.game-shell[data-family][data-phase="game_over"]) {
-  --phase-art: var(--art-resolution);
-}
-
-/* Faction-specific room lighting keeps the active phase image readable instead
- * of tinting both games through the same near-black veil. */
-:global(.play-shell.game-shell[data-family="werewolves"][data-phase="first_night"]),
-:global(.play-shell.game-shell[data-family="werewolves"][data-phase="night"]) {
-  --play-body-glow: radial-gradient(circle at 72% 9%, rgba(205, 231, 220, 0.24), transparent 24rem);
-}
-
-:global(.play-shell.game-shell[data-family="mafia"][data-phase="first_night"]),
-:global(.play-shell.game-shell[data-family="mafia"][data-phase="night"]) {
-  --play-body-glow:
-    radial-gradient(circle at 18% 12%, rgba(214, 134, 73, 0.22), transparent 22rem),
-    radial-gradient(circle at 82% 8%, rgba(104, 151, 143, 0.15), transparent 25rem);
-  --play-body-scrim: linear-gradient(108deg, rgba(12, 8, 7, 0.76) 0%, rgba(12, 18, 17, 0.38) 48%, rgba(10, 7, 7, 0.7) 100%);
-  --play-body-filter: saturate(1.02) contrast(1.06) brightness(1.02);
-}
-
 :global(.play-shell.game-shell)::before {
   position: fixed;
   inset: 0;
@@ -182,12 +118,19 @@
   background:
     var(--play-body-glow),
     var(--play-body-scrim),
-    var(--phase-art, none) center / cover no-repeat,
+    var(--play-room-art) center top / cover no-repeat,
     #080706;
   box-shadow: none;
   content: "";
   filter: var(--play-body-filter);
   opacity: 1;
+}
+
+/* Phase changes keep the same environment as the page instead of a second scene. */
+:global(.play-shell.game-shell .phase-transition-overlay) {
+  background:
+    linear-gradient(180deg, rgba(5, 8, 9, 0.16), rgba(5, 8, 9, 0.5)),
+    var(--play-room-art) center top / cover no-repeat;
 }
 
 :global(.phase-title) {
@@ -214,10 +157,37 @@
   gap: clamp(16px, 1.8vw, 20px);
 }
 
-:global(.play-layout[data-stage-takeover="true"] [data-stage-hud]),
-:global(.play-layout[data-stage-takeover="true"] [data-stage-ledger]) {
-  opacity: 0;
-  pointer-events: none;
+:global(.play-chat-history-toggle) {
+  margin-top: 12px;
+}
+
+:global(.play-chat-history) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+:global(.play-chat-history[data-expanded="true"]) {
+  max-height: 28rem;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable;
+}
+
+:global(.play-lobby-navigation-note) {
+  margin: 12px 0 0;
+  color: inherit;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+:global(.play-lobby-navigation-note a) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 /* Full-width host/narrator command band below the personal dock. A plain
@@ -231,9 +201,7 @@
   margin-top: 0;
 }
 
-/* /play is an immersive dark room in every theme: drop the framed-shell paper
- * background so the fixed phase-art scrim becomes the full-viewport surface and
- * panels stop reading as dark islands floating on cream. */
+/* The environment fills the viewport; the shell only frames its controls. */
 :global(html[data-theme] .play-shell.framed-shell) {
   width: min(1360px, calc(100vw - 32px));
   border: 0;
@@ -351,7 +319,7 @@
 :global(.rules-summary-roles-heading) {
   margin: 18px 0 0;
   color: rgba(245, 232, 200, 0.9);
-  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-family: var(--font-display);
   font-size: 1rem;
   font-weight: 950;
 }
@@ -660,20 +628,32 @@
 }
 
 :global(.play-lobby-dock-actions) {
+  display: grid;
+  gap: 12px;
   grid-column: 1 / -1;
   margin-top: 0; /* cancel the legacy .action-bar -28px that overlapped the dock heading */
   padding: 0;
 }
 
-:global(.play-action-dock .play-lobby-dock-actions .action-bar-inner) {
-  justify-content: flex-start;
-  gap: 6px;
-  padding: 10px;
+:global(.play-lobby-ready-actions) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
-:global(.play-action-dock .play-lobby-dock-actions .btn) {
-  min-height: 38px;
+:global(.play-action-dock .play-lobby-dock-actions .btn),
+:global(.play-action-dock .play-lobby-ready-actions .btn) {
+  gap: 8px;
+  min-height: 44px;
   padding-inline: 10px;
+}
+
+:global(.play-lobby-ready-actions .btn) { flex: 1 1 110px; }
+
+@media (max-width: 1023px) {
+  :global(.play-shell[data-phase="lobby"] .play-layout:not([data-dock-expanded="true"])) {
+    padding-bottom: calc(210px + env(safe-area-inset-bottom));
+  }
 }
 
 :global(.play-start-disabled-reason) {
@@ -685,7 +665,7 @@
 }
 
 :global(.play-stage-takeover) {
-  --winner-scene: var(--art-resolution);
+  --winner-scene: var(--play-room-art);
   --winner-scene-tone: rgba(209, 154, 66, 0.18);
   position: relative;
   z-index: 9;
@@ -694,7 +674,7 @@
   isolation: isolate;
   gap: 12px;
   width: min(760px, 92%);
-  max-height: min(100%, 760px);
+  max-height: none;
   overflow: visible;
   align-self: center;
   justify-self: center;
@@ -714,19 +694,19 @@
     linear-gradient(180deg, rgba(4, 4, 5, 0.38), rgba(4, 4, 5, 0.86)),
     linear-gradient(90deg, rgba(4, 4, 5, 0.78), transparent 30%, transparent 70%, rgba(4, 4, 5, 0.78)),
     var(--winner-scene) center / cover no-repeat;
-  opacity: 0.36;
+  opacity: 0.55;
   transform: scale(1.02);
   mask-image: radial-gradient(
-    ellipse 70% 72% at 50% 48%,
+    ellipse 50% 50% at 50% 50%,
     black 0 38%,
     rgba(0, 0, 0, 0.78) 55%,
-    transparent 82%
+    transparent 100%
   );
   -webkit-mask-image: radial-gradient(
-    ellipse 70% 72% at 50% 48%,
+    ellipse 50% 50% at 50% 50%,
     black 0 38%,
     rgba(0, 0, 0, 0.78) 55%,
-    transparent 82%
+    transparent 100%
   );
   pointer-events: none;
 }
@@ -738,7 +718,7 @@
   background:
     radial-gradient(circle at 50% 16%, var(--winner-scene-tone), transparent 32%),
     radial-gradient(ellipse at 50% 82%, rgba(0, 0, 0, 0.52), transparent 64%);
-  content: "";
+  content: none;
   pointer-events: none;
   transform: scale(1.36);
 }
@@ -762,6 +742,7 @@
   padding: clamp(20px, 3vw, 34px);
   text-align: center;
   background:
+    linear-gradient(180deg, rgba(5, 9, 8, 0.54), rgba(5, 9, 8, 0.88)),
     radial-gradient(circle at 50% -18%, var(--winner-glow, rgba(209, 154, 66, 0.34)), transparent 58%),
     radial-gradient(ellipse at 50% 120%, var(--winner-accent, rgba(209, 154, 66, 0.22)), transparent 56%),
     var(--winner-texture, var(--texture-wax)) center / 360px 360px,
@@ -804,16 +785,17 @@
   color: var(--winner-text, #e7b667);
   font-size: 0.72rem;
   font-weight: 950;
-  letter-spacing: 0.34em;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
 :global(.play-winner-title) {
   margin: 10px 0 0;
   color: #fff7df;
-  font-size: clamp(2rem, 4.6vw, 3.35rem);
+  font-size: 3rem;
   font-weight: 950;
-  line-height: 0.94;
+  line-height: 1.08;
+  letter-spacing: 0;
   text-transform: uppercase;
   text-wrap: balance;
   text-shadow:
@@ -822,10 +804,28 @@
   -webkit-text-stroke: 1px rgba(248, 236, 210, 0.14);
 }
 
+:global(.play-winner-title:focus) {
+  outline: none;
+}
+
+:global(.play-winner-title:focus-visible) {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.14em;
+}
+
+:global(.play-winner-repeat-note) {
+  max-width: 48ch;
+  margin: 12px auto 0;
+  color: #e6ddc9;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
 :global(.play-winner-reason) {
   margin: 12px auto 0;
   max-width: 46ch;
-  color: rgba(245, 232, 200, 0.84);
+  color: #f5e8c8;
   font-size: 0.96rem;
   font-weight: 600;
   line-height: 1.5;
@@ -1154,7 +1154,7 @@
   :global(.play-layout .play-stage),
   :global(.play-layout:not([data-stage-takeover="true"]):not([data-has-narrator-deck="true"]):not(:has(.play-stage[data-layout-mode="mobile-table-grid"])) .play-stage),
   :global(.play-layout[data-dock-has-ritual="true"]:not([data-stage-takeover="true"]):not([data-has-narrator-deck="true"]):not(:has(.play-stage[data-layout-mode="mobile-table-grid"])) .play-stage) {
-    min-height: clamp(520px, 58svh, 650px);
+    min-height: var(--play-stage-min-height, clamp(520px, 58svh, 650px));
     height: auto;
   }
 
@@ -1283,12 +1283,11 @@
   }
 
   :global(.play-action-dock[data-dock-kind="action"] .play-action-dock-head h2) {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    white-space: normal;
   }
 
   :global(.play-action-dock-head h2) {
@@ -1827,8 +1826,8 @@
     align-self: start;
     justify-self: center;
     width: min(520px, calc(100vw - 32px));
-    max-height: min(68svh, 620px);
-    margin-top: clamp(132px, 22svh, 210px);
+    max-height: none;
+    margin-top: 0;
   }
 
   :global(.play-layout[data-stage-takeover="true"] .play-stage) {
@@ -1855,13 +1854,6 @@
 
   :global(.play-action-dock-grid) {
     grid-template-columns: 1fr;
-  }
-
-  /* In the sticky bottom sheet the contextual action is the priority — float it
-   * above the reference role card so it is the first thing reachable on mobile. */
-  :global(.play-action-dock .ritual-panel),
-  :global(.play-action-dock .night-action-sheet) {
-    order: -1;
   }
 
   :global(.play-action-dock) {
@@ -1950,11 +1942,9 @@
   }
 
   :global(.play-narrator-deck) {
-    max-height: min(46svh, 380px);
-    overflow: auto;
-    overscroll-behavior: contain;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(209, 154, 66, 0.42) transparent;
+    max-height: none;
+    overflow: visible;
+    flex: 0 0 auto;
   }
 
   :global(.play-narrator-deck-scroll) {
@@ -2000,7 +1990,7 @@
 
 @media (min-width: 1241px) {
   :global(.play-primary-column > .play-action-dock[data-dock-kind="action"] .play-action-dock-grid) {
-    grid-template-columns: minmax(320px, 0.72fr) minmax(0, 1fr);
+    grid-template-columns: minmax(320px, 1.12fr) minmax(0, 0.88fr);
   }
 }
 
@@ -2012,9 +2002,9 @@
 
   :global(.play-stage-takeover) {
     width: calc(100vw - 48px);
-    max-height: min(64svh, 520px);
+    max-height: none;
     gap: 8px;
-    margin-top: clamp(112px, 18svh, 150px);
+    margin-top: 0;
     border: 0;
     border-radius: 0;
     padding: 0;
@@ -2022,9 +2012,13 @@
     box-shadow: none;
   }
 
-  :global(.play-stage-takeover)::before,
-  :global(.play-stage-takeover > .play-winner-scene) {
+  :global(.play-stage-takeover)::before {
     display: none;
+  }
+
+  :global(.play-stage-takeover > .play-winner-scene) {
+    inset: -3% 0;
+    transform: none;
   }
 
   :global(.play-winner) {
@@ -2052,8 +2046,8 @@
 
   :global(.play-winner-title) {
     margin-top: 8px;
-    font-size: clamp(1.65rem, 8.5vw, 2.25rem);
-    line-height: 0.94;
+    font-size: 1.85rem;
+    line-height: 1.08;
   }
 
   :global(.play-winner-reason) {
@@ -2259,7 +2253,7 @@
 
   :global(.play-primary-column > .play-stage) {
     grid-area: auto;
-    min-height: clamp(520px, 58svh, 650px);
+    min-height: var(--play-stage-min-height, clamp(520px, 58svh, 650px));
     height: auto;
   }
 
@@ -2306,7 +2300,7 @@
   }
 
   :global(.play-stage) {
-    min-height: clamp(520px, 58svh, 650px);
+    min-height: var(--play-stage-min-height, clamp(520px, 58svh, 650px));
     height: auto;
   }
 
@@ -2432,9 +2426,9 @@
   --play-light-ink: #2d2117;
   --play-light-muted: rgba(45, 33, 23, 0.74);
   --play-light-border: rgba(91, 65, 38, 0.26);
-  --play-body-glow: radial-gradient(circle at 76% 8%, rgba(255, 240, 205, 0.42), transparent 24rem);
-  --play-body-scrim: linear-gradient(110deg, rgba(246, 231, 202, 0.5), rgba(225, 211, 183, 0.2) 48%, rgba(244, 230, 204, 0.46));
-  --play-body-filter: saturate(0.94) contrast(1.01) brightness(1.08);
+  --play-body-scrim: linear-gradient(rgba(218, 217, 213, 0.65), rgba(218, 217, 213, 0.65));
+  --play-body-filter: none;
+  --play-stage-scrim: linear-gradient(180deg, rgba(12, 15, 13, 0.16), rgba(12, 15, 13, 0.2));
 }
 
 :global(html[data-theme="light"] .play-shell.game-shell[data-family="mafia"]) {
@@ -2442,15 +2436,21 @@
   --play-light-accent-strong: #62221e;
   --play-light-paper: rgba(247, 236, 215, 0.97);
   --play-light-paper-deep: rgba(219, 195, 158, 0.96);
-  --play-body-glow:
-    radial-gradient(circle at 18% 10%, rgba(224, 150, 85, 0.3), transparent 22rem),
-    radial-gradient(circle at 82% 8%, rgba(138, 177, 168, 0.2), transparent 24rem);
-  --play-body-scrim: linear-gradient(108deg, rgba(246, 226, 198, 0.48), rgba(218, 215, 194, 0.16) 48%, rgba(242, 224, 197, 0.44));
-  --play-body-filter: saturate(0.94) contrast(1.02) brightness(1.1);
 }
 
 :global(html[data-theme="light"] .play-shell.game-shell::after) {
-  background: linear-gradient(to top, rgba(230, 210, 177, 0.72), transparent);
+  background: linear-gradient(to top, rgba(218, 217, 213, 0.2), transparent);
+}
+
+/* Night lighting is phase-owned, including when the surrounding controls are light. */
+:global(html[data-theme] .play-shell.game-shell:is([data-phase="first_night"], [data-phase="night"])) {
+  --play-body-scrim: linear-gradient(rgba(18, 20, 20, 0.6), rgba(18, 20, 20, 0.6));
+  --play-body-filter: none;
+  --play-stage-scrim: linear-gradient(180deg, rgba(4, 7, 9, 0.14), rgba(3, 6, 7, 0.24));
+}
+
+:global(html[data-theme] .play-shell.game-shell:is([data-phase="first_night"], [data-phase="night"])::after) {
+  background: linear-gradient(to top, rgba(5, 8, 9, 0.24), transparent);
 }
 
 :global(html[data-theme="light"] .play-side-rail) {
@@ -2628,4 +2628,906 @@
     background: none;
     box-shadow: none;
   }
+}
+
+/* Desktop commands share the conversation frame; mobile commands have their own surface. */
+:global(html[data-theme] .play-shell.game-shell .play-action-dock) {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+:global(html[data-theme="light"] .play-shell.game-shell .play-action-dock) {
+  background: transparent;
+}
+
+:global(.play-shell.game-shell .play-action-dock-head h2) {
+  font-size: 1.25rem;
+  line-height: 1.3;
+  letter-spacing: 0;
+  text-wrap: pretty;
+}
+
+:global(.play-shell.game-shell .play-action-dock [aria-label="Текущо действие"] .ritual-panel) {
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: none;
+  box-shadow: none;
+}
+
+:global(.play-shell.game-shell .play-action-dock [aria-label="Текущо действие"] h2) {
+  font-family: var(--font-body);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+:global(.play-shell.game-shell .play-action-dock [aria-label="Текущо действие"] .section-kicker) {
+  display: none;
+}
+
+:global(.play-shell.game-shell .play-action-dock [aria-label="Текущо действие"] .play-selected-target strong) {
+  font-size: 1.125rem;
+  line-height: 1.4;
+}
+
+:global(.play-shell.game-shell .play-action-dock [aria-label="Текущо действие"] .night-action-server-note) {
+  font-weight: 400;
+}
+
+:global(.play-shell.game-shell .play-action-dock .action-btn) {
+  gap: 8px;
+  padding-inline: 14px;
+}
+
+:global(.play-shell.game-shell .play-action-dock .action-btn)::after {
+  content: none;
+}
+
+:global(.play-shell.game-shell .play-action-dock .action-btn .play-button-icon) {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+}
+
+:global(.play-shell.game-shell .play-action-dock .play-nomination-panel),
+:global(.play-shell.game-shell .play-action-dock .vote-tally-card) {
+  border: 0;
+  border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  border-radius: 0;
+  padding: 12px 0;
+  background: none;
+  box-shadow: none;
+}
+
+:global(.play-shell.game-shell .play-action-dock .play-nomination-panel :is(h3, p, li, svg)),
+:global(.play-shell.game-shell .play-action-dock .vote-tally-card :is(p, span, strong, small)) {
+  color: inherit;
+}
+
+:global(.play-shell.game-shell .play-action-dock .play-nomination-panel h3) {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+:global(.play-shell.game-shell .play-action-dock .play-nomination-panel li) {
+  border: 0;
+  border-radius: 0;
+  padding: 4px 8px 4px 0;
+  background: none;
+  font-weight: 600;
+}
+
+:global(.play-shell.game-shell .play-action-dock .vote-tally-row div) {
+  background: color-mix(in srgb, currentColor 15%, transparent);
+}
+
+:global(html[data-theme="light"] .play-shell.game-shell .play-selected-target span) {
+  color: var(--play-light-accent-strong);
+}
+
+:global(.play-shell.game-shell .play-action-dock .role-card) {
+  box-shadow: none;
+}
+
+:global(.play-shell.game-shell .play-action-dock .role-card)::before {
+  content: none;
+}
+
+:global(.play-shell.game-shell .play-action-dock .role-card h2) {
+  font-size: 1.25rem;
+  line-height: 1.3;
+}
+
+:global(html[data-theme] .play-shell.game-shell .play-side-rail) {
+  position: static;
+  align-self: stretch;
+  width: 100%;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  padding: 16px 18px 18px;
+  background: transparent;
+  color: var(--play-console-ink);
+  box-shadow: none;
+}
+
+:global(.play-shell.game-shell .play-rail-intro) {
+  margin-top: 0;
+}
+
+:global(.play-shell.game-shell .play-rail-intro h2) {
+  margin-top: 8px;
+  font-size: 1.25rem;
+  line-height: 1.4;
+}
+
+:global(html[data-theme] .play-shell.game-shell .play-side-rail .play-rail-disclosure),
+:global(html[data-theme] .play-shell.game-shell .play-side-rail .cue-panel),
+:global(html[data-theme] .play-shell.game-shell .play-side-rail .ritual-panel) {
+  border: 0;
+  border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  border-radius: 0;
+  padding: 12px 0;
+  background: none;
+  box-shadow: none;
+}
+
+:global(.play-shell.game-shell .play-side-rail .play-rail-disclosure summary) {
+  min-height: 44px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+:global(html[data-theme] .play-shell.game-shell .play-side-rail .summary-pill),
+:global(html[data-theme] .play-shell.game-shell .play-side-rail .phase-guide-card .grid > div) {
+  border: 0;
+  border-radius: 0;
+  padding: 8px 0;
+  background: none;
+  box-shadow: none;
+}
+
+:global(html[data-theme] .play-shell.game-shell .play-side-rail .summary-pill span),
+:global(html[data-theme] .play-shell.game-shell .play-side-rail .phase-guide-card .grid span) {
+  color: var(--play-console-muted);
+  letter-spacing: 0;
+}
+
+:global(.play-shell.game-shell .play-side-rail .summary-pill strong),
+:global(.play-shell.game-shell .play-side-rail .phase-guide-card .grid strong) {
+  font-weight: 600;
+}
+
+:global(html[data-theme] .play-shell.game-shell .play-side-rail .phase-rail-step) {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  align-items: center;
+  gap: 2px 8px;
+  min-height: 58px;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  border-radius: 0;
+  padding: 8px 4px;
+  background: none;
+  box-shadow: none;
+  opacity: 1;
+  transform: none;
+}
+
+:global(.play-shell.game-shell .play-side-rail .phase-rail-step)::after {
+  content: none;
+}
+
+:global(html[data-theme] .play-shell.game-shell .play-side-rail .phase-rail-step.is-active) {
+  border-bottom-color: currentColor;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+}
+
+:global(.play-shell.game-shell .play-side-rail .phase-rail-icon) {
+  grid-column: 1;
+  grid-row: 1 / 3;
+  width: 32px;
+  margin: 0;
+  border-radius: 6px;
+}
+
+:global(.play-shell.game-shell .play-side-rail .phase-rail-index),
+:global(.play-shell.game-shell .play-side-rail .phase-rail-label) {
+  grid-column: 2;
+  margin: 0;
+  letter-spacing: 0;
+}
+
+:global(html[data-theme] .play-shell.game-shell .play-side-rail .event-line),
+:global(html[data-theme] .play-shell.game-shell .play-side-rail .chat-line) {
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  border-radius: 0;
+  background: none;
+  color: var(--play-console-ink);
+  box-shadow: none;
+  font-weight: 400;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+:global(html[data-theme] .play-shell.game-shell .play-side-rail .chat-line) {
+  padding: 12px 4px;
+}
+
+:global(html[data-theme] .play-shell.game-shell .play-side-rail .play-public-event) {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+  margin: 0;
+  padding: 12px 0;
+}
+
+:global(.play-shell.game-shell .play-side-rail .play-public-event)::before {
+  content: none;
+}
+
+:global(.play-public-event .play-event-icon) {
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  color: var(--play-console-muted);
+}
+
+:global(html[data-theme] .play-shell.game-shell .play-side-rail .play-public-event:is([data-event-type="death"], [data-event-type="hunter_shot"], [data-event-type="reveal"])) {
+  font-weight: 600;
+}
+
+:global(.play-public-event:is([data-event-type="death"], [data-event-type="hunter_shot"]) .play-event-icon) {
+  color: #dfa696;
+}
+
+:global(html[data-theme="light"] .play-public-event:is([data-event-type="death"], [data-event-type="hunter_shot"]) .play-event-icon) {
+  color: #963c30;
+}
+
+:global(.play-shell.game-shell .play-side-rail .chat-line)::before {
+  content: none;
+}
+
+:global(.play-shell.game-shell .play-side-rail .chat-line strong) {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--play-console-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+:global(html[data-theme] .play-shell.game-shell .play-side-rail .play-panel-subhead) {
+  margin: 16px 0 4px;
+  color: var(--play-console-muted);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+:global(html[data-theme] .play-shell.game-shell .play-side-rail .play-muted-note) {
+  border-color: color-mix(in srgb, var(--play-console-border) 40%, transparent);
+  border-radius: 6px;
+  padding: 12px;
+  background: color-mix(in srgb, var(--play-console-border) 8%, var(--play-console-paper));
+  color: var(--play-console-ink);
+  font-size: 0.8125rem;
+  font-weight: 400;
+}
+
+@media (max-width: 1023px) {
+  :global(.play-shell.game-shell .play-action-dock-head h2) {
+    font-size: 1.125rem;
+  }
+
+  :global(html[data-theme] .play-shell.game-shell .play-action-dock[data-expanded="true"] .play-action-dock-head) {
+    background: #111817;
+    box-shadow: none;
+  }
+
+  :global(html[data-theme="light"] .play-shell.game-shell .play-action-dock[data-expanded="true"] .play-action-dock-head) {
+    background: #f5f4ee;
+  }
+}
+
+@media (max-width: 430px) and (max-height: 640px) {
+  :global(.play-shell.game-shell .play-action-dock[data-expanded="false"] .play-action-dock-head) {
+    padding-left: 0;
+  }
+}
+
+/* The table and command share the first viewport; the conversation is a direct mobile destination. */
+:global(.play-mobile-navigation) {
+  display: none;
+}
+
+:global(.play-interaction-column) {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 0;
+  border: 1px solid var(--play-console-border);
+  border-radius: 8px;
+  background: var(--play-console-paper);
+  color: var(--play-console-ink);
+  box-shadow: 0 12px 30px -16px rgba(0, 0, 0, 0.5), inset 0 1px rgba(255, 245, 218, 0.1);
+}
+
+:global(.play-shell.game-shell .play-interaction-column .play-action-dock) {
+  grid-area: auto;
+  padding: 18px;
+}
+
+:global(.play-shell.game-shell .play-interaction-column .play-action-dock-grid) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+:global(.play-shell.game-shell .play-side-rail) {
+  grid-area: auto;
+  padding: 18px;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  gap: 12px;
+  color: inherit;
+}
+
+:global(.play-shell.game-shell .play-rail-intro) {
+  margin-bottom: 12px;
+}
+
+:global(.play-shell.game-shell .play-rail-intro h2) {
+  margin-top: 4px;
+  font-size: 1.25rem;
+}
+
+:global(.play-shell.game-shell .play-rail-panel) {
+  margin-top: 0;
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--play-console-border) transparent;
+}
+
+:global(.play-shell.game-shell .play-rail-disclosure),
+:global(.play-shell.game-shell .cue-panel) {
+  margin-top: 0;
+}
+
+:global(.play-shell.game-shell .play-rail-tabs) {
+  position: static;
+}
+
+:global(.play-lobby-readiness-note) {
+  margin: 12px 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+:global(.play-action-receipt) {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border-left: 3px solid #a6bb8a;
+  padding: 10px 12px;
+  background: rgba(125, 155, 100, 0.12);
+  color: #e4edce;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+:global(.play-action-receipt svg) {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+}
+
+:global(.play-action-receipt p) {
+  margin: 4px 0 0;
+  color: inherit;
+}
+
+:global(html[data-theme="light"] .play-action-receipt) {
+  border-color: #4c683f;
+  color: #2d422c;
+}
+
+:global(.play-shell .typing-indicator),
+:global(.play-chat-counter) {
+  color: #d8c9b0;
+}
+
+:global(.play-chat-counter[data-near-limit="true"]) {
+  color: #f2bf72;
+}
+
+:global(html[data-theme="light"] .play-shell .typing-indicator),
+:global(html[data-theme="light"] .play-chat-counter) {
+  color: #635441;
+}
+
+:global(html[data-theme="light"] .play-chat-counter[data-near-limit="true"]) {
+  color: #855017;
+}
+
+@media (min-width: 1024px) {
+  :global(.play-shell.game-shell .play-layout) {
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 380px);
+    grid-template-rows: auto;
+    gap: 24px;
+    align-items: start;
+  }
+
+  :global(.play-shell.game-shell .play-primary-column) {
+    grid-column: 1;
+    grid-row: 1;
+    gap: 20px;
+  }
+
+  :global(.play-interaction-column) {
+    grid-column: 2;
+    grid-row: 1;
+    height: clamp(600px, calc(100svh - 152px), 850px);
+  }
+
+  :global(.play-interaction-column:has(.play-action-dock details[open])),
+  :global(.play-shell[data-phase="lobby"] .play-interaction-column) {
+    height: auto;
+  }
+
+  :global(.play-interaction-column:has([data-mobile-panel="chat"]:not([hidden]))) {
+    height: auto;
+    min-height: clamp(600px, calc(100svh - 152px), 850px);
+  }
+
+  :global(.play-shell.game-shell .play-rail-panel[data-mobile-panel="chat"]) {
+    flex: 1 0 auto;
+    min-height: 220px;
+    max-height: 360px;
+  }
+
+  :global(.play-interaction-column:has(.play-action-dock details[open]) .play-rail-panel),
+  :global(.play-shell[data-phase="lobby"] .play-rail-panel) {
+    max-height: 320px;
+  }
+
+  :global(.play-shell.game-shell .play-interaction-column .play-action-dock) {
+    position: relative;
+    inset: auto;
+    width: 100%;
+  }
+
+  :global(.play-shell.game-shell .play-action-dock .ritual-panel) {
+    min-height: 0;
+  }
+
+  :global(.play-shell.game-shell .play-action-dock .ritual-panel > .play-action-buttons),
+  :global(.play-shell.game-shell .play-action-dock .ritual-panel > .play-vote-counts) {
+    margin-top: 0;
+  }
+
+  :global(.play-shell.game-shell .play-action-dock[data-dock-kind="quiet"]) {
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
+    padding: 18px;
+  }
+
+  :global(.play-shell.game-shell .play-action-dock[data-dock-kind="quiet"]::after) {
+    content: none;
+  }
+
+  :global(.play-shell.game-shell .play-layout[data-stage-takeover="true"]) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  :global(.play-shell.game-shell .play-narrator-deck) {
+    grid-area: auto;
+  }
+}
+
+:global(.play-shell) {
+  --play-console-paper: #121c19;
+  --play-console-ink: #f4ead6;
+  --play-console-muted: #c3bda9;
+  --play-console-border: #706647;
+}
+
+:global(.play-shell[data-family="mafia"]) {
+  --play-console-paper: #181b1b;
+  --play-console-border: #87724f;
+}
+
+:global(html[data-theme="light"] .play-shell) {
+  --play-console-paper: #f7f3e9;
+  --play-console-ink: #29372f;
+  --play-console-muted: #5d6255;
+  --play-console-border: #a59875;
+}
+
+:global(html[data-theme="light"] .play-shell[data-family="mafia"]) {
+  --play-console-paper: #f3f1ec;
+  --play-console-ink: #303536;
+  --play-console-border: #a18e71;
+}
+
+:global(.play-personal-area) {
+  position: relative;
+  min-width: 0;
+  border: 1px solid var(--play-console-border);
+  border-radius: 8px;
+  background: var(--play-console-paper);
+  color: var(--play-console-ink);
+  box-shadow: 0 12px 30px -20px rgba(0, 0, 0, 0.45);
+}
+
+:global(html[data-theme] .play-shell.game-shell .play-personal-area .role-card[data-private-dossier]) {
+  margin: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+:global(html[data-theme] .play-shell.game-shell .play-personal-area .role-card[data-private-dossier])::before,
+:global(html[data-theme] .play-shell.game-shell .play-personal-area .role-card[data-private-dossier])::after { content: none; }
+
+:global(.play-personal-toggle) {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--play-console-border);
+  border-radius: 6px;
+  padding: 8px;
+  background: var(--play-console-paper);
+  color: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+:global(.play-personal-toggle svg) { width: 18px; height: 18px; }
+:global(.play-personal-toggle:hover) { background: color-mix(in srgb, var(--play-console-paper), var(--play-console-border) 14%); }
+:global(.play-personal-toggle:focus-visible) { outline: 2px solid currentColor; outline-offset: 3px; }
+:global(.play-personal-area[data-concealed]) { min-height: 108px; }
+:global(.play-personal-concealed) { padding: 70px 20px 16px; font-size: 0.875rem; color: var(--play-console-muted); }
+:global(.play-personal-loading) { min-height: 164px; padding: 24px 64px 24px 24px; }
+
+:global(.play-private-conversation) { margin: 0 18px; border-top: 1px solid var(--play-console-border); }
+:global(.play-private-conversation > summary) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+:global(.play-private-conversation > summary svg) { width: 16px; height: 16px; }
+:global(.play-private-conversation .ritual-panel),
+:global(.play-personal-area .play-personal-context),
+:global(.play-personal-area .play-blessed-card) {
+  margin: 0;
+  padding: 12px 18px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: inherit;
+  box-shadow: none;
+}
+:global(.play-personal-area .play-personal-context) { border-top: 1px solid var(--play-console-border); }
+:global(.play-personal-context h2) { margin: 4px 0 0; font-size: 1.125rem; line-height: 1.4; color: var(--play-console-ink); }
+:global(.play-personal-context p) { margin: 8px 0 0; color: var(--play-console-muted); font-size: 0.875rem; line-height: 1.5; }
+:global(.play-personal-context .section-kicker) { margin: 0; font-size: 0.6875rem; letter-spacing: 0; }
+:global(.play-private-conversation h2) { margin: 4px 0 0; font-size: 1.125rem; }
+:global(.play-private-conversation .ritual-panel) { padding: 0 0 16px; }
+:global(.play-private-conversation input) { min-width: 0; }
+:global(.play-private-conversation form) { flex-wrap: wrap; }
+:global(.play-private-conversation input) { flex: 1 1 160px; width: auto; }
+:global(.play-private-conversation [role="log"]) { max-height: 240px; overflow-y: auto; overflow-wrap: anywhere; scrollbar-width: thin; overscroll-behavior: contain; overflow-anchor: none; }
+:global(.play-private-unread) { margin-left: auto; color: var(--play-console-ink); font-variant-numeric: tabular-nums; }
+
+:global(.play-shell.game-shell .play-action-dock-head) { margin-bottom: 12px; }
+:global(.play-shell.game-shell .play-action-dock-head .section-kicker) { letter-spacing: 0; font-size: 0.6875rem; }
+:global(.play-shell.game-shell .play-action-dock .ritual-panel) { margin-top: 0; }
+:global(.play-shell.game-shell .play-action-dock .ritual-panel > h2) { display: none; }
+:global(.play-shell.game-shell .play-action-dock .night-action-description) { display: none; }
+:global(.play-shell.game-shell .play-action-dock .ritual-panel > *) { order: 0; grid-column: 1 / -1; }
+:global(.play-shell.game-shell .play-action-dock .play-nomination-panel) { border-top: 0; padding: 0; gap: 8px; }
+:global(.play-shell.game-shell .play-action-dock .play-nomination-panel ol) { margin-top: 4px; max-height: 96px; overflow-y: auto; }
+:global(.play-shell.game-shell .play-action-dock .play-nomination-panel ol[data-selectable]) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  max-height: 144px;
+  padding: 3px;
+  margin-inline: -3px;
+}
+:global(.play-shell.game-shell .play-action-dock .play-nomination-panel ol[data-selectable] li) { min-width: 0; padding: 0; }
+:global(.play-nominee-choice) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid var(--play-console-border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  background: transparent;
+  color: var(--play-console-ink);
+  font-size: 0.875rem;
+  line-height: 1.35;
+  text-align: left;
+  cursor: pointer;
+}
+:global(.play-nominee-choice > span:not(.play-nominee-portrait)) { min-width: 0; overflow-wrap: anywhere; }
+:global(.play-nominee-choice .play-nominee-portrait) { flex: 0 0 28px; width: 28px; height: 32px; border-radius: 3px; }
+:global(.play-nominee-choice .play-nominee-check) { flex: 0 0 14px; width: 14px; height: 14px; margin-left: auto; visibility: hidden; }
+:global(.play-nominee-choice[aria-pressed="true"]) { background: color-mix(in srgb, var(--play-console-border) 20%, var(--play-console-paper)); box-shadow: inset 3px 0 var(--play-console-border); }
+:global(.play-nominee-choice[aria-pressed="true"] .play-nominee-check) { visibility: visible; }
+:global(.play-nominee-choice:hover:not(:disabled)) { background: color-mix(in srgb, var(--play-console-border) 12%, var(--play-console-paper)); }
+:global(.play-nominee-choice:focus-visible) { outline: 2px solid var(--play-console-ink); outline-offset: 1px; }
+:global(.play-nominee-choice:disabled) { opacity: 0.5; cursor: not-allowed; }
+:global(.play-shell.game-shell .play-action-dock .play-selected-target) { min-height: 52px; margin-top: 0; padding: 8px 12px; }
+:global(.play-shell.game-shell .play-action-dock .play-action-buttons) { margin-top: 10px; gap: 8px; }
+:global(html[data-theme] .play-shell.game-shell .play-action-dock .btn:disabled) { box-shadow: none; filter: none; transform: none; }
+:global(.play-shell.game-shell .play-action-dock .vote-tally-card) { margin-top: 12px; padding-bottom: 0; max-height: 136px; overflow-y: auto; }
+:global(.play-action-explanation) { color: var(--play-console-muted); font-size: 0.8125rem; }
+:global(.play-action-explanation summary) { min-height: 32px; display: flex; align-items: center; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+:global(.play-action-explanation[open] summary) { margin-bottom: 8px; }
+:global(.play-action-explanation p + p) { margin-top: 8px; }
+:global(.play-vote-counts) { margin-top: 10px; }
+:global(.play-vote-counts > summary) { gap: 8px; text-decoration: none; }
+:global(.play-vote-counts > summary svg) { width: 16px; height: 16px; }
+:global(.play-vote-counts[open] > summary svg) { transform: rotate(180deg); }
+
+:global(.play-shell.game-shell .play-console-tools) {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid color-mix(in srgb, var(--play-console-border) 35%, transparent);
+}
+:global(.play-shell.game-shell .play-side-rail .play-rail-tabs) {
+  flex: 0 0 auto;
+  min-height: 44px;
+  margin: 0;
+  padding: 3px;
+  border-radius: 6px;
+  box-shadow: none;
+}
+:global(.play-shell.game-shell .play-side-rail .play-rail-tab) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 44px;
+  border-radius: 4px;
+  padding: 8px;
+  letter-spacing: 0;
+  text-transform: none;
+  font-size: 0.875rem;
+}
+:global(.play-shell.game-shell .play-side-rail .play-rail-tab svg) { flex: 0 0 16px; width: 16px; height: 16px; }
+:global(html[data-theme] .play-shell.game-shell .play-side-rail .play-rail-tab[aria-selected="true"]) { box-shadow: inset 0 1px rgba(255, 255, 255, 0.14); }
+:global(.play-shell.game-shell .play-rail-panel[hidden]) { display: none; }
+:global(.play-shell.game-shell .play-rail-panel:focus-visible) { outline: 2px solid var(--play-console-border); outline-offset: -2px; }
+:global(.play-shell.game-shell .play-rail-panel > [role="log"]) { margin-top: 0; gap: 0; }
+
+@media (min-width: 1200px) and (max-height: 800px) {
+  :global(.play-shell) { --play-stage-min-height: 460px; }
+  :global(.play-shell.game-shell .play-primary-column) { gap: 14px; }
+}
+
+@media (max-width: 1023px) {
+  :global(.play-primary-column) { display: flex; flex-direction: column; gap: 12px; }
+  :global(.play-personal-area) { order: -1; margin-bottom: 2px; }
+  :global(.play-personal-loading) { min-height: 98px; padding: 16px 64px 16px 16px; font-size: 0.875rem; }
+  :global(.play-personal-area[data-concealed]) { min-height: 64px; }
+  :global(.play-personal-concealed) { max-width: 48%; padding: 14px 12px; }
+  :global(.play-interaction-column) { min-height: 0; }
+  :global(.play-layout[data-mobile-view="table"] .play-interaction-column) { border: 0; background: none; box-shadow: none; }
+  :global(.play-layout[data-mobile-view="conversation"] .play-side-rail) { min-height: 380px; }
+  :global(.play-layout[data-mobile-view="conversation"] .play-rail-panel) { max-height: 55svh; }
+  :global(html[data-theme] .play-shell.game-shell .play-action-dock) {
+    border: 1px solid var(--play-console-border);
+    border-radius: 8px 8px 0 0;
+    background: var(--play-console-paper);
+    box-shadow: 0 -8px 24px -12px rgba(0, 0, 0, 0.4);
+  }
+  :global(html[data-theme="light"] .play-shell.game-shell .play-action-dock) { background: var(--play-console-paper); }
+  :global(.play-shell.game-shell .play-action-dock-head h2) { font-size: 1.125rem; }
+  :global(html[data-theme] .play-shell.game-shell .play-action-dock[data-expanded="true"] .play-action-dock-head) {
+    margin: 0 0 8px;
+    padding: 0;
+    position: static;
+    background: none;
+    box-shadow: none;
+  }
+  :global(.play-shell.game-shell .play-action-dock .play-selected-target) { min-height: 0; padding: 6px 10px; }
+  :global(.play-shell.game-shell .play-action-dock .night-action-sheet .play-action-buttons) { display: flex; flex-wrap: wrap; }
+  :global(.play-shell.game-shell .play-action-dock .night-action-sheet .play-action-buttons .btn) { flex: 1 1 140px; min-width: 0; font-size: 0.8125rem; }
+  :global(.play-shell.game-shell .play-action-dock .night-action-sheet .play-action-buttons [data-command-priority="quiet"]) { flex: 0 1 auto; min-width: 90px; }
+  :global(.play-shell.game-shell .play-action-dock .play-action-explanation:not([open]) summary) { min-height: 24px; }
+  :global(.play-shell.game-shell .play-action-dock .play-vote-counts[open] .vote-tally-card) { display: block; max-height: 160px; }
+  :global(.play-mobile-navigation) {
+    position: sticky;
+    top: 8px;
+    z-index: 65;
+    display: flex;
+    gap: 4px;
+    width: fit-content;
+    margin: 0 auto 14px;
+    border: 1px solid rgba(231, 182, 103, 0.38);
+    border-radius: 8px;
+    padding: 4px;
+    background: #111914;
+    box-shadow: 0 5px 18px rgba(0, 0, 0, 0.2);
+  }
+
+  :global(.play-mobile-navigation button) {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 0;
+    border-radius: 4px;
+    padding: 8px 18px;
+    background: transparent;
+    color: #eadfc9;
+    font-size: 0.875rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  :global(.play-mobile-navigation button[aria-pressed="true"]) {
+    background: #e5d3a8;
+    color: #19241c;
+  }
+
+  :global(.play-mobile-navigation button:focus-visible) {
+    outline: 2px solid currentColor;
+    outline-offset: -4px;
+  }
+
+  :global(.play-mobile-navigation svg) {
+    width: 18px;
+    height: 18px;
+  }
+
+  :global(html[data-theme="light"] .play-mobile-navigation) {
+    border-color: #8a784e;
+    background: #f5eddc;
+  }
+
+  :global(html[data-theme="light"] .play-mobile-navigation button) {
+    color: #344336;
+  }
+
+  :global(html[data-theme="light"] .play-mobile-navigation button[aria-pressed="true"]) {
+    background: #344b3b;
+    color: #fff9e9;
+  }
+
+  :global(.play-layout[data-mobile-view="table"] .play-side-rail),
+  :global(.play-layout[data-mobile-view="conversation"] .play-primary-column) {
+    display: none;
+  }
+
+  :global(.play-shell.game-shell .play-layout) {
+    display: block;
+  }
+
+  :global(html[data-theme] .play-shell.game-shell) {
+    margin-top: 8px;
+    padding-top: 8px;
+    /* Reserve the stage's 7px outer frame inside this clipped shell. */
+    padding-inline: 8px;
+  }
+
+  :global(.play-shell-inner) {
+    gap: 0;
+  }
+
+  :global(.play-layout[data-dock-expanded="true"]) {
+    padding-bottom: calc(min(42svh, 26rem) + 24px);
+  }
+
+  :global(.play-conversation-context) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 18px 18px 0;
+  }
+
+  :global(.play-conversation-context > div:first-child) {
+    flex: 1 1 120px;
+    min-width: 0;
+  }
+
+  :global(.play-conversation-context > div > span) {
+    color: var(--play-console-muted);
+    font-size: 0.75rem;
+  }
+
+  :global(.play-conversation-context h1) {
+    margin-top: 4px;
+    color: var(--play-console-ink);
+    font-size: 1.125rem;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+
+  :global(.play-conversation-context .timer-dial) {
+    flex: 0 0 auto;
+    min-width: 116px;
+    max-width: 100%;
+    min-height: 58px;
+    border: 1px solid var(--play-console-border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    background: color-mix(in srgb, var(--play-console-border) 8%, var(--play-console-paper));
+    color: var(--play-console-ink);
+    box-shadow: none;
+    text-align: center;
+  }
+
+  :global(.play-conversation-context .timer-dial)::before {
+    content: none;
+  }
+
+  :global(.play-conversation-context .timer-dial .timer-dial-label) {
+    color: var(--play-console-muted);
+    font-size: 0.6875rem;
+    line-height: 1.4;
+  }
+
+  :global(.play-conversation-context .timer-dial[data-state] strong) {
+    color: var(--play-console-ink);
+    font-size: 1.125rem;
+    line-height: 1.4;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  :global(.play-conversation-context .timer-dial[data-state="unlimited"] strong) {
+    font-size: 0.875rem;
+  }
+
+  :global(.play-conversation-context .timer-dial[data-state="urgent"]) {
+    border-width: 2px;
+    padding: 7px 11px;
+    border-color: var(--play-console-ink);
+  }
+
+  :global(.play-shell.game-shell .play-interaction-column .play-action-dock) {
+    padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+  }
+
+  :global(.play-shell.game-shell .play-action-dock[data-expanded="true"]) {
+    max-height: min(42svh, 26rem);
+  }
+}
+
+@media (max-width: 640px) {
+  :global(.play-primary-column > .play-stage-takeover) { align-self: center; flex: 0 0 auto; }
 }

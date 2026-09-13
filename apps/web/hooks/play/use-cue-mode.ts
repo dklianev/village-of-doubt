@@ -22,32 +22,27 @@ export interface UseCueModeResult {
 
 export function useCueMode({ tempoProfile, phase, liveMode }: UseCueModeOptions): UseCueModeResult {
   const [cueMode, setCueMode] = useState<CueMode>("silent");
+  const forceSilent = liveMode || tempoProfile === "live";
 
   useEffect(() => {
-    if (tempoProfile === "live") {
-      setCueMode("silent");
-      return;
-    }
-
     const saved = safeLocalStorage.getItem(CUE_MODE_STORAGE_KEY);
-    if (isCueMode(saved)) {
-      setCueMode(saved);
-      return;
-    }
-
-    setCueMode("visual");
-  }, [tempoProfile]);
+    const nextMode = forceSilent ? "silent" : isCueMode(saved) ? saved : "visual";
+    setCueMode(nextMode);
+    setSoundEnabled(nextMode === "audio_vibration");
+  }, [forceSilent, tempoProfile]);
 
   function changeCueMode(mode: CueMode) {
+    if (forceSilent) {
+      setCueMode("silent");
+      setSoundEnabled(false);
+      return;
+    }
     setCueMode(mode);
     safeLocalStorage.setItem(CUE_MODE_STORAGE_KEY, mode);
+    setSoundEnabled(mode === "audio_vibration");
     if (mode === "audio_vibration") {
-      setSoundEnabled(true);
       triggerDeviceCue(phase, liveMode);
       playCue("phase-change", { forceSilent: liveMode });
-    }
-    if (mode === "silent") {
-      setSoundEnabled(false);
     }
   }
 

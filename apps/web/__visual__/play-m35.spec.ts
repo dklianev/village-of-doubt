@@ -96,7 +96,10 @@ for (const theme of THEMES) {
       theme,
       MATRIX_VIEWPORTS[1],
     );
-    await page.getByText("Правила и подсказки", { exact: true }).click();
+    await page.getByRole("button", { name: "Към разговора", exact: true }).click();
+    await page.getByRole("button", { name: "Правила", exact: true }).click();
+    await expect(page.getByRole("dialog", { name: "Правила на масата" })).toBeVisible();
+    await page.keyboard.press("Escape");
     await page.getByRole("tab", { name: "Разговор" }).click();
 
     const accessibility = await new AxeBuilder({ page })
@@ -207,26 +210,26 @@ test("@play-interaction short mobile dock keeps its controls reachable", async (
     await expandMobileDock(page);
 
     const dock = page.locator(".play-action-dock");
-    const dossier = page.getByRole("button", { name: "Отвори тайното досие" });
+    await expect(page.getByRole("button", { name: "Отвори тайното досие" })).toHaveCount(0);
+    await expect(dock.locator("[data-private-dossier]")).toHaveCount(0);
+    await expect(page.locator(".play-personal-area .role-card[data-private-dossier]")).toBeVisible();
     const collapse = page.getByRole("button", { name: "Скрий личния ход" });
-    const [dockBox, dossierBox, collapseBox] = await Promise.all([
+    const [dockBox, collapseBox] = await Promise.all([
       dock.boundingBox(),
-      dossier.boundingBox(),
       collapse.boundingBox(),
     ]);
     expect(dockBox).not.toBeNull();
-    expect(dossierBox).not.toBeNull();
     expect(collapseBox).not.toBeNull();
     expect(dockBox!.y).toBeGreaterThanOrEqual(0);
-    expect(dossierBox!.y).toBeGreaterThanOrEqual(dockBox!.y);
     expect(collapseBox!.y).toBeGreaterThanOrEqual(dockBox!.y);
-    expect(dossierBox!.y + dossierBox!.height).toBeLessThanOrEqual(viewport.height);
     expect(collapseBox!.y + collapseBox!.height).toBeLessThanOrEqual(viewport.height);
 
+    const confirm = dock.locator('[data-command-priority="primary"]').first();
     await dock.evaluate((element) => {
       element.scrollTop = element.scrollHeight;
     });
-    await expect(dossier).toBeInViewport();
+    await expect(confirm).toBeInViewport({ ratio: 1 });
+    await collapse.scrollIntoViewIfNeeded();
     await expect(collapse).toBeInViewport();
   }
 });
@@ -327,6 +330,15 @@ for (const [viewer, role] of [
     const stageText = await page.locator(".play-stage").innerText();
     expect(stageText).not.toContain("Гадателка");
     expect(stageText).not.toContain("Ловец");
+    await expect(page.locator(".play-stage [data-private-dossier], .play-interaction-column [data-private-dossier]")).toHaveCount(0);
+    if (viewer === "dead") {
+      const personal = page.locator(".play-personal-area");
+      await expect(personal.locator(".role-card[data-private-dossier]")).toBeVisible();
+      await personal.getByRole("button", { name: "Скрий ролята", exact: true }).click();
+      await expect(page.locator("[data-private-dossier], .play-private-conversation")).toHaveCount(0);
+    } else {
+      await expect(page.locator(".play-personal-area, [data-private-dossier]")).toHaveCount(0);
+    }
     await expectGeometry(page);
   });
 }
@@ -349,28 +361,40 @@ for (const [timer, label] of [
   });
 }
 
-test("@play-interaction persisted game over links to the exact replay and preserves the setup", async ({ page }) => {
-  await openFixture(
-    page,
-    {
-      phase: "game_over",
-      family: "werewolves",
-      players: 8,
-      winner: "village",
-      gameId: "fixture-game-1",
-    },
-    "dark",
-    MATRIX_VIEWPORTS[7],
-  );
-  await expect(page.getByRole("link", { name: "Виж записа на играта" })).toHaveAttribute(
-    "href",
-    "/history/fixture-game-1/replay",
-  );
-  const repeatHref = await page.getByRole("link", { name: "Повтори настройките" }).getAttribute("href");
-  expect(repeatHref).toContain("/werewolf/create?");
-  expect(repeatHref).toContain("players=8");
-  expect(repeatHref).toContain("roles=");
-});
+for (const scenario of [
+  { family: "werewolves", path: "werewolf", players: 8, winner: "village", theme: "dark" },
+  { family: "mafia", path: "mafia", players: 10, winner: "mafia", theme: "light" },
+] as const) {
+  test(`@play-interaction persisted game over ${scenario.family} links to the exact replay and preserves the setup`, async ({ page }) => {
+    await openFixture(
+      page,
+      {
+        phase: "game_over",
+        family: scenario.family,
+        players: scenario.players,
+        winner: scenario.winner,
+        gameId: "fixture-game-1",
+      },
+      scenario.theme,
+      MATRIX_VIEWPORTS[7],
+    );
+    await expect(page.getByRole("link", { name: "Виж записа на играта" })).toHaveAttribute(
+      "href",
+      "/history/fixture-game-1/replay",
+    );
+    const repeatHref = await page.getByRole("link", { name: "Повтори настройките" }).getAttribute("href");
+    expect(repeatHref).toContain(`/${scenario.path}/create?`);
+    expect(repeatHref).toContain(`players=${scenario.players}`);
+    expect(repeatHref).toContain("roles=");
+    await expect(page.getByRole("heading", { name: "Как ще я разказвате след играта" })).toBeVisible();
+    // Only authentication is synthetic; keep the generated setup query intact.
+    await page.goto(`${repeatHref}&visualAuth=1`);
+    await page.getByRole("button", { name: "Настрой детайлите" }).click();
+    const details = page.getByRole("dialog", { name: "Настрой детайлите" });
+    await expect(details).toBeVisible();
+    await expect(details.getByText(`${scenario.players} от ${scenario.players} места`, { exact: true })).toBeVisible();
+  });
+}
 
 test("@play-interaction exhausted night resources are explained and cannot target a seat", async ({ page }) => {
   await openFixture(
@@ -410,6 +434,11 @@ async function openFixture(
     query.set(key, String(value));
   }
   await page.goto(`/play/VISUAL?${query}`, { waitUntil: "domcontentloaded" });
+  if (scenario.phase === "game_over") {
+    await expect(page.locator(".play-stage-takeover")).toBeVisible();
+    await page.evaluate(() => document.fonts.ready);
+    return;
+  }
   await expect(page.locator(".play-stage")).toBeVisible();
   await waitForStableStage(page);
 }
@@ -468,6 +497,20 @@ async function waitForStableStage(page: Page) {
 }
 
 async function expectGeometry(page: Page) {
+  const takeover = page.locator(".play-stage-takeover");
+  if (await takeover.count()) {
+    await expect(page.locator(".play-stage, .play-action-dock")).toHaveCount(0);
+    await expect(takeover.getByRole("heading", { level: 1 })).toBeVisible();
+    const viewport = page.viewportSize()!;
+    for (const link of await takeover.getByRole("link").all()) {
+      await expect(link).toBeVisible();
+      const box = (await link.boundingBox())!;
+      expect(box.x).toBeGreaterThanOrEqual(0);
+      expect(box.x + box.width).toBeLessThanOrEqual(viewport.width + 1);
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+    return;
+  }
   const result = await page.evaluate(({ allowedHitSelectors }) => {
     const stage = document.querySelector<HTMLElement>(".play-stage");
     const core = document.querySelector<HTMLElement>("[data-table-core]");

@@ -187,7 +187,7 @@
   max-width: 18ch;
   margin: 0;
   color: #fff2c9;
-  font-family: "Noto Serif", serif;
+  font-family: var(--font-reading);
   font-size: clamp(1.5rem, 3vw, 2.25rem);
   font-weight: 900;
   line-height: 1.08;
@@ -246,7 +246,7 @@
 }
 
 :global(.achievement-wreath-count strong) {
-  font-family: "Noto Serif", serif;
+  font-family: var(--font-reading);
   font-size: clamp(2.4rem, 4vw, 3.2rem);
   font-weight: 950;
   line-height: 1;
@@ -467,7 +467,7 @@
 :global(.achievement-plaque-title) {
   max-width: 18ch;
   color: var(--plaque-fg-color);
-  font-family: "Noto Serif", serif;
+  font-family: var(--font-reading);
   font-size: clamp(1.14rem, 2vw, 1.34rem);
   font-weight: 950;
   letter-spacing: 0.04em;

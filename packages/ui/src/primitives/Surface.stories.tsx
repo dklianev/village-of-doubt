@@ -18,7 +18,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 const Sample = ({ label }: { label: string }) => (
-  <div style={{ padding: "40px 56px", fontFamily: "Noto Serif, serif", fontSize: "18px" }}>
+  <div style={{ padding: "40px 56px", fontFamily: "var(--ds-font-body)", fontSize: "18px" }}>
     {label}
   </div>
 );

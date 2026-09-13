@@ -1,89 +1,51 @@
-import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
-import {
-  BallotIcon,
-  HouseIcon,
-  KeyIcon,
-  MaskIcon,
-  MoonIcon,
-} from "@/components/landing/quickstart-icons";
+import { ArrowRight, KeyRound, UsersRound, VenetianMask } from "lucide-react";
+import { roleThumbPath } from "@/lib/role-art";
 
 const STEPS = [
   {
-    label: "Вход",
+    label: "Влез",
     body: "Влизаш с Google, Discord или имейл.",
-    icon: <KeyIcon />,
+    icon: KeyRound,
   },
   {
-    label: "Стая",
-    body: "Създаваш стая или влизаш при приятел с код.",
-    icon: <HouseIcon />,
+    label: "Събери компанията",
+    body: "Отвори стая и сподели кода. Поканените влизат при теб.",
+    icon: UsersRound,
   },
   {
-    label: "Роля",
-    body: "Виждаш само собствената си роля. Чуждите тайни остават скрити.",
-    icon: <MaskIcon />,
-  },
-  {
-    label: "Нощ",
-    body: "Когато дойде редът ти, действаш без другите да разберат.",
-    icon: <MoonIcon />,
-  },
-  {
-    label: "Гласуване",
-    body: "Обсъждате, обвинявате и решавате кой напуска играта.",
-    icon: <BallotIcon />,
+    label: "Получи роля",
+    body: "Щом играта започне, получаваш тайна роля на своя екран.",
+    icon: VenetianMask,
   },
 ] as const;
 
 export function UniversalHowToPlay() {
   return (
-    <section className="landing-quickstart how-to-play" aria-label="Първа игра за 30 секунди">
-      <div className="quickstart-surface">
-        <div className="quickstart-header">
-          <div className="quickstart-header-plaque">
-            <p className="section-kicker">първа игра за 30 секунди</p>
-            <h2>Как започва добра игра</h2>
-            <p>Създай стая, сподели кода и започнете.</p>
-          </div>
-          <Link href="/faq" className="quickstart-rules-cta">
-            Виж правилата и отговорите <span aria-hidden="true">→</span>
-          </Link>
-        </div>
-
-        <ol className="quickstart-steps" data-revealed="true">
-          {STEPS.map((step, index) => (
-            <li
-              key={step.label}
-              className="quickstart-step-slot"
-              style={{ "--connector-index": index } as CSSProperties & Record<"--connector-index", number>}
-            >
-              <StepMedallion number={index + 1} icon={step.icon} label={step.label} body={step.body} />
-              {index < STEPS.length - 1 ? <StepConnector /> : null}
-            </li>
-          ))}
-        </ol>
+    <section className="home-start" aria-label="Първата ти игра">
+      <div className="home-start-deck" aria-hidden="true">
+        <img src={roleThumbPath("werewolves", "seer")} alt="" width="520" height="780" loading="lazy" decoding="async" />
+        <img src={roleThumbPath("mafia", "commissioner")} alt="" width="520" height="780" loading="lazy" decoding="async" />
+        <img src="/game-art/thumbs/card-back-secret.webp" alt="" width="520" height="780" loading="lazy" decoding="async" />
       </div>
+      <div className="home-start-intro">
+        <p className="section-kicker">Първата ти игра</p>
+        <h2>Познаваш хората.<br />Не и ролите.</h2>
+        <Link href="/tutorial" prefetch={false} className="home-text-link">
+          Виж как се играе <ArrowRight size={16} aria-hidden="true" />
+        </Link>
+      </div>
+      <ol className="home-start-steps">
+        {STEPS.map(({ label, body, icon: Icon }) => (
+          <li key={label}>
+            <div className="home-start-step-heading">
+              <Icon size={22} strokeWidth={1.5} aria-hidden="true" />
+              <h3>{label}</h3>
+            </div>
+            <p>{body}</p>
+          </li>
+        ))}
+      </ol>
     </section>
-  );
-}
-
-function StepMedallion({ number, icon, label, body }: { number: number; icon: ReactNode; label: string; body: string }) {
-  return (
-    <article className="quickstart-step">
-      <span className="quickstart-medallion">{number}</span>
-      <span className="quickstart-glyph">{icon}</span>
-      <h3>{label}</h3>
-      <p>{body}</p>
-    </article>
-  );
-}
-
-function StepConnector() {
-  return (
-    <span className="quickstart-connector" aria-hidden="true">
-      <i />
-      <i />
-    </span>
   );
 }

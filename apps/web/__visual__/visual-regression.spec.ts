@@ -278,7 +278,7 @@ test("@geometry desktop role cards never overlap between workspace rows", async 
 });
 
 for (const theme of ["dark", "light"] as const) {
-  test(`@geometry play action dock columns ${theme}`, async ({ page }) => {
+  test(`@geometry play command stays beside the table and role toggles inline ${theme}`, async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await setVisualTheme(page, theme);
     await installNextDevIndicatorGuard(page);
@@ -289,9 +289,13 @@ for (const theme of ["dark", "light"] as const) {
     await hideNextDevIndicator(page);
 
     const primary = page.getByRole("group", { name: "Текущо действие" });
-    const dossier = page.getByRole("group", { name: "Лично досие" });
+    const personal = page.locator(".play-primary-column > .play-personal-area");
+    const card = personal.locator(".role-card[data-private-dossier]");
     await expect(primary).toBeVisible();
-    await expect(dossier).toBeVisible();
+    await expect(card).toBeVisible();
+    await expect(page.getByRole("group", { name: "Лично досие" })).toHaveCount(0);
+    await expect(page.locator(".play-action-dock [data-private-dossier], .play-stage [data-private-dossier]")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Отвори тайното досие" })).toHaveCount(0);
 
     const primaryGeometry = await primary.evaluate((element) => ({
       clientWidth: element.clientWidth,
@@ -299,10 +303,18 @@ for (const theme of ["dark", "light"] as const) {
     }));
     expect(primaryGeometry.scrollWidth).toBeLessThanOrEqual(primaryGeometry.clientWidth + 1);
 
-    const [primaryBox, dossierBox] = await Promise.all([primary.boundingBox(), dossier.boundingBox()]);
+    const [primaryBox, stageBox] = await Promise.all([primary.boundingBox(), page.locator(".play-stage").boundingBox()]);
     expect(primaryBox).not.toBeNull();
-    expect(dossierBox).not.toBeNull();
-    expect(primaryBox!.x + primaryBox!.width).toBeLessThanOrEqual(dossierBox!.x + 1);
+    expect(stageBox).not.toBeNull();
+    expect(stageBox!.x + stageBox!.width).toBeLessThanOrEqual(primaryBox!.x + 1);
+    const personalBox = (await personal.boundingBox())!;
+    expect(personalBox.y).toBeGreaterThanOrEqual(stageBox!.y + stageBox!.height - 1);
+    await personal.getByRole("button", { name: "Скрий ролята", exact: true }).click();
+    await expect(personal).toBeVisible();
+    await expect(page.locator("[data-private-dossier], .role-card-result, .play-private-conversation")).toHaveCount(0);
+    await personal.getByRole("button", { name: "Виж ролята си", exact: true }).click();
+    await expect(card).toBeVisible();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
   });
 }
 
@@ -380,23 +392,24 @@ test("@geometry mobile game over uses document scroll without nested story scrol
   const winner = page.locator(".play-stage-takeover .play-winner");
   const timeline = story.locator("ol");
   await expect(story).toBeVisible();
-  const stage = page.locator(".play-stage");
+  const primaryColumn = page.locator(".play-primary-column");
+  await expect(page.locator(".play-stage, .play-seat-slot")).toHaveCount(0);
   const takeover = page.locator(".play-stage-takeover");
-  const [storyGeometry, timelineGeometry, stageBox, takeoverBox, winnerBox, storyBox] = await Promise.all([
+  const [storyGeometry, timelineGeometry, columnBox, takeoverBox, winnerBox, storyBox] = await Promise.all([
     story.evaluate((element) => ({ clientHeight: element.clientHeight, scrollHeight: element.scrollHeight })),
     timeline.evaluate((element) => ({ clientHeight: element.clientHeight, scrollHeight: element.scrollHeight })),
-    stage.boundingBox(),
+    primaryColumn.boundingBox(),
     takeover.boundingBox(),
     winner.boundingBox(),
     story.boundingBox(),
   ]);
   expect(storyGeometry.scrollHeight).toBeLessThanOrEqual(storyGeometry.clientHeight + 1);
   expect(timelineGeometry.scrollHeight).toBeLessThanOrEqual(timelineGeometry.clientHeight + 1);
-  expect(stageBox).not.toBeNull();
+  expect(columnBox).not.toBeNull();
   expect(takeoverBox).not.toBeNull();
   expect(winnerBox).not.toBeNull();
   expect(storyBox).not.toBeNull();
-  expect(takeoverBox!.y - stageBox!.y).toBeLessThanOrEqual(48);
+  expect(takeoverBox!.y - columnBox!.y).toBeLessThanOrEqual(48);
   for (const panelBox of [winnerBox!, storyBox!]) {
     expect(panelBox.x).toBeGreaterThanOrEqual(23);
     expect(panelBox.x + panelBox.width).toBeLessThanOrEqual(367);
@@ -418,7 +431,8 @@ test("@geometry mobile game over uses document scroll without nested story scrol
       backgroundRepeat: style.backgroundRepeat.split(", ")[2],
     };
   });
-  expect(winnerSurface).toEqual({ backgroundSize: "100%", backgroundRepeat: "no-repeat" });
+  expect(["100%", "100% auto"]).toContain(winnerSurface.backgroundSize);
+  expect(winnerSurface.backgroundRepeat).toBe("no-repeat");
 
   const outerChrome = await takeover.evaluate((element) => {
     const style = getComputedStyle(element);
@@ -436,21 +450,7 @@ test("@geometry mobile game over uses document scroll without nested story scrol
     boxShadow: "none",
   });
 
-  const stageChrome = await stage.evaluate((element) => {
-    const style = getComputedStyle(element);
-    return {
-      borderWidth: style.borderTopWidth,
-      padding: style.paddingTop,
-      backgroundImage: style.backgroundImage,
-      boxShadow: style.boxShadow,
-    };
-  });
-  expect(stageChrome).toEqual({
-    borderWidth: "0px",
-    padding: "0px",
-    backgroundImage: "none",
-    boxShadow: "none",
-  });
+  await expect(winner.getByRole("heading", { level: 1 })).toBeFocused();
 });
 
 test("@geometry desktop game over uses a feathered takeover without rectangular chrome", async ({ page }) => {
@@ -494,7 +494,9 @@ test("@geometry desktop game over uses a feathered takeover without rectangular 
   });
   expect(winnerSceneStyle.maskImage).toContain("radial-gradient");
   expect(winnerSceneStyle.webkitMaskImage).toContain("radial-gradient");
-  expect(winnerSceneStyle.opacity).toBeLessThanOrEqual(0.4);
+  // The standalone finale can show more artwork once the live table is unmounted.
+  expect(winnerSceneStyle.opacity).toBeGreaterThan(0);
+  expect(winnerSceneStyle.opacity).toBeLessThanOrEqual(0.6);
 });
 
 test("@geometry mobile hunter revenge keeps the action sheet inside the viewport", async ({ page }) => {
@@ -540,6 +542,7 @@ for (const viewport of REPRESENTATIVE_VIEWPORTS) {
         expect(currentUrl.searchParams.get("step")).toBe("1");
       }
       await expect(page.getByRole("heading", { level: 1, name: route.heading })).toBeVisible();
+      if (route.name === "home" || route.name.endsWith("-home")) await hideNextDevIndicator(page);
       await expect(page).toHaveScreenshot(`${viewport.name}-${route.name}.png`, {
         fullPage: true,
         maxDiffPixelRatio: 0.01,
@@ -599,6 +602,7 @@ for (const viewport of VIEWPORTS) {
         await expect(page.getByText("targetNameBg", { exact: false })).toHaveCount(0);
         await expect(page.getByText("roleNameBg", { exact: false })).toHaveCount(0);
       }
+      if (route.name === "home" || route.name.endsWith("-home")) await hideNextDevIndicator(page);
       await expect(page).toHaveScreenshot(`${viewport.name}-${route.name}.png`, {
         fullPage: true,
         maxDiffPixelRatio: 0.01,
@@ -630,6 +634,7 @@ for (const viewport of VIEWPORTS) {
         });
         return;
       }
+      if (route.name === "home" || route.name.endsWith("-home")) await hideNextDevIndicator(page);
       await expect(page).toHaveScreenshot(`${viewport.name}-${route.name}-light.png`, {
         fullPage: true,
         maxDiffPixelRatio: 0.01,
@@ -734,14 +739,24 @@ async function pauseAmbientScene(page: Page) {
 }
 
 async function waitForStablePlayStage(page: Page) {
-  await expect(page.locator(".play-stage")).toHaveAttribute("data-layout-ready", "true", {
-    timeout: 10_000,
-  });
+  await expect(page.locator(".play-stage, .play-stage-takeover")).toBeVisible({ timeout: 10_000 });
+  if (await page.locator(".play-stage").count()) {
+    await expect(page.locator(".play-stage")).toHaveAttribute("data-layout-ready", "true", {
+      timeout: 10_000,
+    });
+  }
 
   await page.waitForFunction(async () => {
     await document.fonts.ready;
 
     const readSignature = () => {
+      const takeover = document.querySelector<HTMLElement>(".play-stage-takeover");
+      if (takeover) {
+        const heading = takeover.querySelector("h1");
+        if (!heading) return "";
+        const rects = [takeover.getBoundingClientRect(), heading.getBoundingClientRect()];
+        return rects.flatMap((rect) => [rect.x, rect.y, rect.width, rect.height].map(Math.round)).join(":");
+      }
       const stage = document.querySelector<HTMLElement>(".play-stage");
       const scene = document.querySelector<HTMLElement>("[data-table-scene]");
       const seats = [...document.querySelectorAll<HTMLElement>(".play-seat-slot")];

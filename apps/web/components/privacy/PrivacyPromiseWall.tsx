@@ -1,7 +1,3 @@
-"use client";
-
-import { useState } from "react";
-
 interface PrivacyPromise {
   id: string;
   icon: "no-sell" | "no-track" | "no-payment" | "eu-host" | "delete-anytime" | "export-anytime";
@@ -62,14 +58,8 @@ const PROMISES: readonly PrivacyPromise[] = [
 ];
 
 export function PrivacyPromiseWall() {
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-
-  function toggle(id: string) {
-    setExpandedId((current) => (current === id ? null : id));
-  }
-
   return (
-    <section className="privacy-section">
+    <section id="privacy-promises" tabIndex={-1} className="privacy-section">
       <header className="privacy-section-head">
         <p className="privacy-section-kicker">обещания</p>
         <h2>Какво гарантираме.</h2>
@@ -79,27 +69,22 @@ export function PrivacyPromiseWall() {
       </header>
 
       <ul className="privacy-promise-grid">
-        {PROMISES.map((promise) => {
-          const isOpen = expandedId === promise.id;
-          return (
-            <li key={promise.id}>
-              <article className="privacy-promise-card" data-open={isOpen}>
-                <PromiseIcon name={promise.icon} className="privacy-promise-icon" />
-                <h3 className="privacy-promise-title">{promise.title}</h3>
-                <p className="privacy-promise-summary">{promise.summary}</p>
-                <button
-                  type="button"
-                  className="privacy-promise-toggle"
-                  onClick={() => toggle(promise.id)}
-                  aria-expanded={isOpen}
-                >
-                  {isOpen ? "Скрий детайла" : "Виж по-подробно"}
-                </button>
-                {isOpen ? <p className="privacy-promise-detail">{promise.detail}</p> : null}
-              </article>
-            </li>
-          );
-        })}
+        {PROMISES.map((promise) => (
+          <li key={promise.id}>
+            <article className="privacy-promise-card">
+              <PromiseIcon name={promise.icon} className="privacy-promise-icon" />
+              <h3 className="privacy-promise-title">{promise.title}</h3>
+              <p className="privacy-promise-summary">{promise.summary}</p>
+              <details name="privacy-promises">
+                <summary className="privacy-promise-toggle">
+                  <span className="privacy-promise-expand">Виж по-подробно</span>
+                  <span className="privacy-promise-collapse">Скрий детайла</span>
+                </summary>
+                <p className="privacy-promise-detail">{promise.detail}</p>
+              </details>
+            </article>
+          </li>
+        ))}
       </ul>
     </section>
   );

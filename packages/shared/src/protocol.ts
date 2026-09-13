@@ -85,6 +85,19 @@ export interface JoinRoomOptions extends CreateRoomOptions {
   token?: string;
 }
 
+export interface RoomInvitationEligibility {
+  mode: GameMode;
+  roomVisibility: RoomVisibility;
+  viewerMembership: "participant" | "spectator" | "none";
+  canJoinAsPlayer: boolean;
+  canSpectate: boolean;
+}
+
+export interface RepeatRoomSettingsState {
+  /** JSON-encoded allowlisted CreateRoomOptions; absent on older servers. */
+  nextRoomOptionsJson?: string;
+}
+
 export type ClientCommand =
   | { type: "ready"; ready: boolean }
   | { type: "startGame" }
@@ -307,7 +320,7 @@ export type ServerEvent =
   | { type: "game_recorded"; gameId: string }
   | { type: "night_action_ack"; phase: GamePhase; round: number }
   | { type: "nomination_ack"; phase: GamePhase; round: number; targetUserId: string; replaced: boolean }
-  | { type: "vote_ack"; phase: GamePhase; round: number; targetUserId: string }
+  | { type: "vote_ack"; phase: GamePhase; round: number; votingCycle: number; targetUserId: string }
   | { type: "hunter_revenge_ack"; phase: GamePhase; round: number; targetUserId: string }
   | { type: "safe_error"; messageBg: string }
   | { type: "system"; messageBg: string };

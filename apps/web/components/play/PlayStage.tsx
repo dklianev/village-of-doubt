@@ -97,6 +97,8 @@ export function PlayStage({
   const loadingSeatCount = 6;
   const seatCount = hasSnapshot ? seatedPlayers.length : loadingSeatCount;
   const aliveCount = publicPlayers.filter((player) => player.playing && player.alive).length;
+  const participants = publicPlayers.filter((player) => player.playing);
+  const readyCount = participants.filter((player) => player.ready).length;
   const eliminatedCount = publicPlayers.filter((player) => player.playing && !player.alive).length;
   const seatDensity = seatCount >= 14 ? "crowded" : seatCount >= 10 ? "full" : "open";
   const isNight = phase === "first_night" || phase === "night";
@@ -156,7 +158,7 @@ export function PlayStage({
     }
     try {
       const coreSize = measurements.mode === "compact-table" ? 136 : 160;
-      const coreCenterYRatio = measurements.mode === "compact-table" || seatCount >= 10 ? 0.5 : 0.57;
+      const coreCenterYRatio = seatCount >= 10 ? 0.47 : measurements.mode === "compact-table" ? 0.5 : 0.57;
       return computeSeatLayout({
         contentWidth: measurements.sceneWidth,
         contentHeight: measurements.sceneHeight,
@@ -244,11 +246,7 @@ export function PlayStage({
 
       <div ref={hudRef} className={styles.hud} data-stage-hud>
         <div className={styles.copy}>
-          <p className={styles.kicker}>стая {code} · рунд {round}</p>
-          <div className={styles.phasePill}>
-            <span className={styles.phaseDot} aria-hidden />
-            <span>Фаза: {phaseBg(phase, mode)}</span>
-          </div>
+          <p className={styles.kicker}>стая {code}{phase === "lobby" ? " · преди началото" : ` · рунд ${round}`}</p>
           <h1 id={titleId} className={styles.title}>{phaseBg(phase, mode)}</h1>
           {currentSpeaker || currentDefender ? (
             <p className={styles.dayFocus} aria-live="polite">
@@ -261,16 +259,27 @@ export function PlayStage({
             </p>
           ) : null}
         </div>
+        <div className={styles.ledger} data-stage-ledger aria-hidden="true">
+          <span>{modeBg(mode)}</span>
+          <span>{communicationBg(communicationMode)}</span>
+        </div>
       </div>
 
       <div ref={sceneRef} className={styles.tableScene} data-table-scene role="group" aria-label="Игрална маса">
         <div className={styles.tableSurface} aria-hidden="true" />
         <div className={styles.core} data-table-core role="group" aria-label="Център на масата">
           <span className={styles.sigil} aria-hidden="true">{phaseSigil(phase)}</span>
-          <Timer endsAt={phaseEndsAt} />
+          {phase === "lobby" ? (
+            <div className={styles.lobbyStatus} role="status" aria-label={`Готови: ${readyCount} от ${participants.length}`}>
+              <span>Готови</span>
+              <strong>{readyCount} / {participants.length}</strong>
+            </div>
+          ) : <Timer endsAt={phaseEndsAt} />}
           <span className={styles.counts}>
-            {aliveCount} {aliveCount === 1 ? "жив" : "живи"}
-            {eliminatedCount > 0
+            {phase === "lobby"
+              ? `${participants.length} ${participants.length === 1 ? "участник" : "участници"}`
+              : `${aliveCount} ${aliveCount === 1 ? "жив" : "живи"}`}
+            {phase !== "lobby" && eliminatedCount > 0
               ? ` · ${eliminatedCount} ${eliminatedCount === 1 ? "елиминиран" : "елиминирани"}`
               : ""}
           </span>
@@ -359,10 +368,6 @@ export function PlayStage({
         </div>
       </div>
 
-      <div className={styles.ledger} data-stage-ledger aria-hidden="true">
-        <span>{modeBg(mode)}</span>
-        <span>{communicationBg(communicationMode)}</span>
-      </div>
     </section>
   );
 }

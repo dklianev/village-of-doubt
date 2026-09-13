@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { getGameFamily, getGameModeNameBg, normalizeRoomCode, ROOM_CODE_REGEX } from "@werewolf/shared";
+import { normalizeRoomCode, ROOM_CODE_REGEX } from "@werewolf/shared";
 import { LobbyInviteClient } from "@/components/lobby-invite-client";
 import { requireSession } from "@/lib/require-session";
-import { parseRoomCreateOptions, roomOptionsToQuery, type RoomSearchParams } from "@/lib/room-options";
+import type { RoomSearchParams } from "@/lib/room-options";
 
 export const instant = false;
 
@@ -31,30 +31,14 @@ export default async function LobbyCodePage({
   const [{ code }, resolvedSearchParams] = await Promise.all([params, searchParams]);
   const rawQuery = stringifySearchParams(resolvedSearchParams);
   const visualAuth = firstSearchValue(resolvedSearchParams?.visualAuth);
-  const session =
-    process.env.NODE_ENV !== "production" && visualAuth === "1"
-      ? { user: { name: "Домакин" } }
-      : await requireSession(`/lobby/${code}${rawQuery ? `?${rawQuery}` : ""}`);
-  const options = parseRoomCreateOptions(resolvedSearchParams);
-  const query = roomOptionsToQuery(options);
-  const mode = options.mode ?? "werewolves_classic";
-  const family = getGameFamily(mode);
-  const playHref = `/play/${code}${query}`;
-  const spectatorHref = `/play/${code}${withSpectatorQuery(query)}`;
-  const routeLabel = family === "mafia" ? "досие към задната стая" : "маршрут до площада";
+  if (!(process.env.NODE_ENV !== "production" && visualAuth === "1")) {
+    await requireSession(`/lobby/${code}${rawQuery ? `?${rawQuery}` : ""}`);
+  }
 
   return (
-    <main className="shell lobby-shell framed-shell" data-faction={family} data-family={family}>
+    <main className="shell lobby-shell framed-shell">
       <div className="framed-shell-inner">
-        <LobbyInviteClient
-          code={code}
-          family={family}
-          modeLabel={getGameModeNameBg(mode)}
-          playHref={playHref}
-          spectatorHref={spectatorHref}
-          hostName={session.user.name ?? "Домакин"}
-          routeLabel={routeLabel}
-        />
+        <LobbyInviteClient code={normalizeRoomCode(code)} />
       </div>
     </main>
   );
@@ -70,13 +54,6 @@ function stringifySearchParams(searchParams: RoomSearchParams | undefined) {
     }
   }
   return params.toString();
-}
-
-function withSpectatorQuery(query: string) {
-  const params = new URLSearchParams(query.startsWith("?") ? query.slice(1) : query);
-  params.set("spectator", "1");
-  const nextQuery = params.toString();
-  return nextQuery ? `?${nextQuery}` : "?spectator=1";
 }
 
 function firstSearchValue(value: string | string[] | undefined) {

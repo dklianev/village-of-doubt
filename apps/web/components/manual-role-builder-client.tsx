@@ -17,7 +17,7 @@ import {
 } from "@werewolf/shared";
 import { stringifyRolesParam } from "@/lib/room-options";
 import { copyTextToClipboard } from "@/lib/clipboard";
-import { roleThumbPath } from "@/lib/role-art";
+import { coverImageSizes, roleArtSource } from "@/lib/role-art";
 
 export interface ManualRoleBuilderClientProps {
   family: GameFamily;
@@ -257,16 +257,19 @@ function RoleTile({
 }) {
   const definition = ROLE_DEFINITIONS[role];
   const runtimeStatus = getRoleRuntimeStatus(role);
+  const source = roleArtSource(family, role);
 
   return (
     <article className={`manual-role-tile role-${role} ${count > 0 ? "is-selected" : ""}`}>
       <picture className="manual-role-art" aria-hidden="true">
         <Image
-          src={roleThumbPath(family, role)}
+          {...source}
           alt=""
-          width={520}
-          height={728}
-          sizes="(max-width: 768px) 45vw, 180px"
+          quality={85}
+          sizes={coverImageSizes(source, [
+            { media: "(max-width: 760px)", width: "min(206px, calc(72vw - 14px))", aspectRatio: 2 / 3 },
+            { width: 98, aspectRatio: 2 / 3 },
+          ])}
         />
       </picture>
       <div className="manual-role-body">

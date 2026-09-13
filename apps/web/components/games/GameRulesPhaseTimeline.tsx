@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import Image from "next/image";
 import { phaseLabelBg, type GameMode, type GamePhase } from "@werewolf/shared";
 
 export interface GameRulesPhase {
@@ -104,15 +105,20 @@ function PhaseNode({
       onClick={onSelect}
     >
       <span className="phase-node-number">{String(index + 1).padStart(2, "0")}</span>
-      <img
+      <Image
         className="phase-node-medallion"
-        src={`/game-art/phase-board/v1/${artFamily}/icon-phase-${PHASE_ICONS[phase.phase]}-560.webp`}
+        src={`/game-art/phase-board/v1/${artFamily}/icon-phase-${PHASE_ICONS[phase.phase]}-1120.webp`}
         alt=""
         loading="lazy"
         decoding="async"
         fetchPriority="low"
-        width={560}
-        height={560}
+        width={1120}
+        height={800}
+        quality={85}
+        // Account for the 7:5 cover crop and the existing 1.065x selected/hover zoom.
+        sizes={"(max-width: 560px) 249px, (max-width: 980px) " +
+          "max(calc((100vw - 38px - clamp(44px, 6vw, 76px) - clamp(10px, 1.4vw, 16px)) * 0.533), calc(clamp(200px, 36vw, 280px) * 1.5)), " +
+          "calc(clamp(210px, 23vw, 310px) * 1.5)"}
       />
       <span className="phase-node-copy">
         <span className="phase-node-label">{label}</span>

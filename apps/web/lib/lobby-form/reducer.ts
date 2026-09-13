@@ -139,6 +139,9 @@ function applyPlayerCount(state: LobbyFormState, value: number): LobbyFormState 
     manualRoles: state.manualRolesEnabled
       ? resizeManualRolesForPlayerCount(state, playerCount)
       : presetRoles(state.mode, playerCount, state.rolePreset, advanced),
+    // Role history belongs to one table size; old snapshots cannot restore its seat count.
+    manualRoleHistory: playerCount === state.playerCount ? state.manualRoleHistory : [],
+    manualRoleFuture: playerCount === state.playerCount ? state.manualRoleFuture : [],
   };
 }
 
@@ -287,7 +290,11 @@ function applyManualRolesEnabled(state: LobbyFormState, enabled: boolean): Lobby
 function applyAdvanced(state: LobbyFormState, key: keyof AdvancedFlags, value: AdvancedFlags[keyof AdvancedFlags]): LobbyFormState {
   let advanced = { ...state.advanced, [key]: value };
   if (key === "maxPlayers") {
-    advanced.maxPlayers = Math.max(Number(value), boundedPlayerCount(state));
+    const requestedCapacity = Number(value);
+    const safeCapacity = Number.isFinite(requestedCapacity) ? requestedCapacity : state.advanced.maxPlayers;
+    advanced.maxPlayers = state.mode === "mafia_sport"
+      ? 10
+      : Math.min(30, Math.max(Math.round(safeCapacity), boundedPlayerCount(state)));
   }
   advanced = normalizeAdvancedForPreset(state.mode, boundedPlayerCount(state), state.rolePreset, advanced);
   return {

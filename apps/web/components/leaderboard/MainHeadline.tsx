@@ -17,7 +17,7 @@ export function MainHeadline({ entry }: { entry: LeaderboardEntry }) {
             alt=""
             width={512}
             height={683}
-            sizes="(max-width: 768px) 70vw, 512px"
+            sizes="(max-width: 767px) 168px, 220px"
             priority
             className="headline-portrait-img"
           />

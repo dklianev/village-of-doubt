@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { VoteTallyBar } from "@/components/play/VoteTallyBar";
 import type { PublicPlayer, VoteTallyItem } from "@/lib/play/types";
+import styles from "./VotingPanel.module.css";
 
 export function VotingPanel({
   currentUserId,
@@ -26,21 +28,24 @@ export function VotingPanel({
   }, [selectedTargetId]);
 
   return (
-    <section className="ritual-panel mt-8 rounded-[2rem] p-6">
-      <p className="section-kicker">гласуване</p>
-      <h2 className="mt-2 text-3xl font-black">Кого ще изгоните от площада?</h2>
-      <div className="play-selected-target mt-5" data-filled={selectedTarget ? "true" : undefined}>
-        <span>Избрано място</span>
-        <strong>{selectedTarget?.displayName ?? "избери играч от масата"}</strong>
+    <section className="ritual-panel" aria-label="Гласуване">
+      <div className="play-selected-target" data-filled={selectedTarget ? "true" : undefined}>
+        <span>{selectedTarget ? "Избран играч" : "За кого гласуваш?"}</span>
+        <strong className={styles.selectedName}>{selectedTarget?.displayName ?? "Избери играч"}</strong>
       </div>
-      <div className="play-action-buttons mt-5 flex flex-wrap gap-3">
+      <div className="play-action-buttons flex flex-wrap">
         <button
           className="btn btn-primary"
           type="button"
           disabled={!selectedTarget}
-          onClick={() => selectedTarget && sendVote(selectedTarget.userId)}
+          aria-label={selectedTarget ? `Потвърди гласа за ${selectedTarget.displayName}` : "Потвърди гласа"}
+          onClick={() => {
+            if (!selectedTarget) return;
+            setSkipArmed(false);
+            sendVote(selectedTarget.userId);
+          }}
         >
-          {selectedTarget ? `Потвърди гласа за ${selectedTarget.displayName}` : "Потвърди гласа"}
+          Потвърди гласа
         </button>
         {allowSkipVote ? (
           <button
@@ -62,7 +67,10 @@ export function VotingPanel({
           </button>
         ) : null}
       </div>
-      <VoteTallyBar items={voteTally} maxVotes={maxVotes} />
+      <details className="play-action-explanation play-vote-counts">
+        <summary>Преброяване<ChevronDown aria-hidden /></summary>
+        <VoteTallyBar items={voteTally} maxVotes={maxVotes} />
+      </details>
     </section>
   );
 }

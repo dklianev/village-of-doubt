@@ -1,0 +1,105 @@
+{
+  "date": "2026-09-13",
+  "tool": "built-in image_gen",
+  "purpose": "Remove inconsistent baked borders and empty caption panels while preserving recognizable portraits; introduce two reusable transparent family frames.",
+  "sourceRoot": "assets/game-art-source",
+  "runtimeRoot": "apps/web/public/game-art",
+  "promptRecordNote": "promptSummary records edit intent where the verbatim tool input was not retained; it is not an exact prompt transcript.",
+  "assets": [
+    {
+      "source": "mafia/role-commissioner.png",
+      "generation": "exec-99532a84-9d3e-41b6-9938-735dbfb6f577.png",
+      "promptSummary": "Remove only gold frame, flourishes, black rounded margin and decorative scratches. Inpaint edges with adjacent scene. Preserve exact man, face, hair, expression, both hands, magnifier, folder, lighting and room. Same full-bleed 1024x1536 composition; no crop, zoom, border, lettering or new objects."
+    },
+    {
+      "source": "role-seer.png",
+      "generation": "exec-3c2e729e-8886-476a-8529-f164602fc8ce.png",
+      "promptSummary": "Remove the baked decorative card border and continue the adjacent scene. Preserve the recognizable seer, face, hands, divination bowl, embroidered clothing, cabin and lighting; full-bleed unframed portrait, without text or new props."
+    },
+    {
+      "source": "mafia/role-civilian.png",
+      "generation": "exec-185642bd-c7e5-4f09-b0e7-f6e059984b77.png",
+      "prompt": "Use case: precise-object-edit. Image 1 is the EDIT TARGET. Remove ONLY the thin gold decorative frame, corner flourishes, center ornaments, rounded black outer margin and decorative edge scratches. Inpaint the narrow border with a seamless continuation of the immediately adjacent illustrated scene. Full-bleed rectangular UNFRAMED illustration, same 2:3 portrait composition, no crop or zoom. Preserve the exact worried man's face, sideward gaze, coat and lapels, stance, cafe window, rainy street, overhead cable and architectural silhouette. Preserve character identity, anatomy, hands and fingers, expression, placement, original lighting, colors and painterly texture. No smoothing, beautifying, relighting, reinterpretation or new objects. No border, no text, no watermark. Output high-detail 1024x1536 portrait."
+    },
+    {
+      "source": "mafia/role-don.png",
+      "generation": "exec-1b16b7ff-a681-452f-8788-b66b743a4d7a.png",
+      "prompt": "Use case: precise-object-edit. Image 1 is EDIT TARGET. Remove ONLY the gold decorative frame, its corner flourishes and top/bottom emblems, black rounded card margin and superficial edge scratches. Fill those edges with a seamless continuation of this same room and desk. Keep exact composition and scale, portrait 1024x1536, no crop or zoom. Preserve this older man's exact face, deep-set eyes, stern frown, broad shoulders, fur collar, black gloved hand resting on the sealed document, cup, lamp and rainy window. Retain all recognizable identity, pose, objects, original muted lighting and atmospheric painted texture. Keep shadows rich but details readable. Do not add people or objects, do not redesign clothes or fingers, no decorative border, no lettering, no watermark. Full-bleed unframed character illustration."
+    },
+    {
+      "source": "mafia/role-mafioso.png",
+      "generation": "exec-8d904012-3fe1-4da1-89f9-3857d99cd147.png",
+      "prompt": "Use case: precise-object-edit. Image 1 is EDIT TARGET. Remove ONLY the gold decorative outer frame, corner flourishes, top/bottom emblems, black rounded margin and ornamental scratches. Inpaint border with seamless continuation of this rainy street and the man's coat. Same full-bleed unframed 1024x1536 portrait composition, no crop or zoom. Keep exactly the man's lowered face hidden beneath his fedora, hat shape, coat and tucked-away hands, red awning, rainy street and cafe chairs. Preserve his mysterious shaded face; do not expose or redesign the eyes. Preserve placement, noir darkness, highlights and cinematic painted realism. No new people/objects, no new border, no lettering or watermark."
+    },
+    {
+      "source": "role-ordinary-villager.png",
+      "generation": "exec-a80a1b9c-4517-425a-b87a-da1a8f5ff0eb.png",
+      "prompt": "Use case: precise-object-edit. Image 1 is EDIT TARGET. Remove the heavy carved wooden ornamental card border, all decorative embroidery down the outer edges, top and bottom medallions, and the empty parchment caption area at the bottom. Replace only those peripheral design elements with a seamless extension of the actual village scene: existing stone lane and lower coat continue down into the bottom, sky and roofs extend outward. Preserve the exact man, head, concerned gaze, entire hands, lantern, loaf wrapped in embroidered cloth, garments, well, roofs and natural dusk light. Do not remove embroidery on his clothes or bread cloth. Keep the character at exactly the same position and scale as the original, no crop or zoom. Maintain painterly realistic detail, original color balance and light direction. Do not redesign the character or add objects. Output full-bleed rectangular UNFRAMED 1024x1536 portrait artwork, no lettering or watermark."
+    },
+    {
+      "source": "role-werewolf.png",
+      "generation": "exec-fe32fb8e-14c8-4c09-ac58-7a2f0cadaeb7.png",
+      "prompt": "Use case: precise-object-edit. Image 1 is EDIT TARGET. Remove the heavy wooden decorative outer card border, the red textile bands and the top and bottom star medallions. Extend the immediately neighboring authentic wooden doorway, dark roof structure and cobblestone lane through those removed peripheral strips. Preserve the exact wolf head, pointed ears, muzzle, amber eyes, cloak with red embroidery, clawed visible hand, stance, real door planks, moon and background village. Do not remove the real doorway around the character or alter the claw anatomy. No new frames. Keep the character at exactly the same position and scale as the original, no crop or zoom. Maintain painterly realistic detail, original color balance and light direction. Do not redesign the character or add objects. Output full-bleed rectangular UNFRAMED 1024x1536 portrait artwork, no lettering or watermark."
+    },
+    {
+      "source": "role-witch.png",
+      "generation": "exec-ed5dccc4-e64c-4a09-ba32-b9ee119901f5.png",
+      "prompt": "Use case: precise-object-edit. Image 1 is EDIT TARGET. Remove ONLY the decorative outer embroidered/gold card border, large bottom and top corner patterns, and gold rectangular line across the lower tabletop. Fill the removed areas by continuing the nearby real wooden table and rustic cabin walls. Preserve the woman's exact intense face, hood, hair, jeweled clothes, both raised hands with curved fingers, distinct red and green stoppered potion bottles, hanging herbs, candle and village window. Keep the glowing potion colors and warm/cool contrast; do not remove real embroidery on clothing or table cloth. Keep character position and scale unchanged, no crop or zoom. Same painterly realistic detail, same original light direction and coherent atmosphere. Preserve character identity, anatomy, fingers and props. Full-bleed rectangular UNFRAMED 1024x1536 portrait. No added objects, no decorative frame, no text, no watermark."
+    },
+    {
+      "source": "role-healer.png",
+      "generation": "exec-883ecd0b-b7bc-4f2a-a5df-007a8c3a66fb.png",
+      "prompt": "Use case: precise-object-edit. Image 1 is EDIT TARGET. Remove the decorative green/gold card border, top circular medallion, decorative side embroidery strips, bottom ornaments and blank parchment caption panel. Extend only the scene behind these graphic elements: continue the real rustic herbalist's table, cloth and stone floor naturally into the bottom and wood cabin walls at the edges. Preserve the exact woman's face and downcast eyes, braid, headscarf, green cloak, both open hands, bunches of herbs, glass jars, baskets and golden light. Do not alter the embroidery of her real clothing or draped table cloth. Keep character position and scale unchanged, no crop or zoom. Same painterly realistic detail, same original light direction and coherent atmosphere. Preserve character identity, anatomy, fingers and props. Full-bleed rectangular UNFRAMED 1024x1536 portrait. No added objects, no decorative frame, no text, no watermark."
+    },
+    {
+      "source": "role-priest.png",
+      "generation": "exec-127be7bf-1325-413d-b0ad-b34f865bfb8f.png",
+      "prompt": "Use case: precise-object-edit. Image 1 is EDIT TARGET. Remove ONLY the decorative gold graphic card border, arched ornamental top panel and sun medallion, corner flourishes, and the faded empty dark caption field at the bottom. Seamlessly continue the existing stone chapel walls and wooden ceiling into the removed top and side regions and the actual robes and stone floor into the bottom. Preserve the exact priest, his bearded face, raised blessing hand, candle-holding hand, embroidery on real robes, kneeling man and their poses, candlelight and symbolic halo inside the scene. The halo is part of the illustration and must stay; only outer frame graphics go. Keep character position and scale unchanged; no crop, zoom or redesign. Maintain original palette, lighting and painterly realistic details. Full-bleed rectangular UNFRAMED 1024x1536 portrait. No additional people or objects, no new border, no lettering, no watermark."
+    },
+    {
+      "source": "role-hunter.png",
+      "generation": "exec-0bd1ffce-3826-4d8e-8075-85701045d8ad.png",
+      "prompt": "Use case: precise-object-edit. Image 1 is EDIT TARGET. Remove ONLY the outer embroidered card border and the large ornamental corner patches. Fill these strips with continuation of the existing forest, night sky, village buildings and stone ground. Preserve the exact hunter's face, beard, gaze, full-body stance, clothing embroidery, hands, anatomically coherent grip on the same long hunting rifle, belt, moon, evergreen forest and village lights. Do not remove embroidery from the real clothes, do not alter the weapon geometry or hand placement. Keep character position and scale unchanged; no crop, zoom or redesign. Maintain original palette, lighting and painterly realistic details. Full-bleed rectangular UNFRAMED 1024x1536 portrait. No additional people or objects, no new border, no lettering, no watermark."
+    },
+    {
+      "source": "role-cupid.png",
+      "generation": "exec-75450a2b-870e-4a86-8a70-bd902e7c73af.png",
+      "prompt": "Use case: precise-object-edit. Image 1 is EDIT TARGET. Remove only the thin outer graphic card border, its flat embroidered corner patches and empty parchment caption area at the bottom. Preserve the REAL floral wedding arch and real flowers within the scene; they are not card-frame graphics. Continue the scene naturally down through the bottom caption area with hems and dark ground, without inventing new props. Preserve the exact masked Cupid in white, both lovers at left/right, all hands and their connected red thread, white mask shape, flower crown, moon, candlelight, clothes and rich textile embroidery. The main composition, ritual and thread connection must remain unchanged. Keep character position and scale, no zoom/crop. Preserve original atmospheric painterly realism and light direction. Output full-bleed rectangular UNFRAMED 1024x1536 portrait. No new people or objects, no new decorative border, no lettering, no watermark."
+    },
+    {
+      "source": "role-vampire.png",
+      "generation": "exec-4e4284e5-eab0-4b05-8bbd-73ec1f14bd9e.png",
+      "prompt": "Use case: precise-object-edit. Image 1 is EDIT TARGET. Remove ONLY the decorative burgundy/gold outer card frame, its corner vines, thin inner lines and rounded black margins. Extend the actual nearby room/window/cape scene to the rectangular edges. Preserve the exact pale man's face and gaze, hairstyle, raised collar with gold embroidery, goblet-holding hand with ring, glass and red drink, waistcoat, window, curtain, village, moon and bats. Keep original natural proportions and rich burgundy/charcoal palette. No redesign of facial features, hands or glass. Keep character position and scale, no zoom/crop. Preserve original atmospheric painterly realism and light direction. Output full-bleed rectangular UNFRAMED 1024x1536 portrait. No new people or objects, no new decorative border, no lettering, no watermark."
+    },
+    {
+      "source": "role-little-girl.png",
+      "generation": "exec-450c12e9-1208-436d-a37d-72520c8c4e64.png",
+      "prompt": "Use case: precise-object-edit. Image 1 is EDIT TARGET. Remove ONLY the thin graphic card border, flat floral corner designs, and the large empty curved dark caption panel across the bottom. Continue the real wooden door, the girl's skirt, and stone threshold into the removed bottom area. Preserve the same young girl's exact face peeking cautiously from behind the heavy door, wide eye, brown braids, hand on the door edge, modest embroidered clothes, doll at far left, the moonlit village lane and distant wolf. Keep her age, pose and innocent expression exactly as in source. Do not change the real door frame or add characters. Keep all existing character positions and scale, no crop or zoom, preserve original palette and moody painted realism. Full-bleed rectangular UNFRAMED 1024x1536 portrait, no decorative border, no lettering or watermark."
+    },
+    {
+      "source": "role-thief.png",
+      "generation": "exec-1b21d5c9-3abf-445d-be86-1e2abbcc22a3.png",
+      "prompt": "Use case: precise-object-edit. Image 1 is EDIT TARGET. Remove ONLY the gold/orange outer decorative card frame and corner flourishes; continue the adjacent rustic room and wooden tabletop through the narrow removed edges. Preserve the exact hooded man's face, sly eyes, beard, bent posture, fingers hovering over the SAME two cards on the table, rings, cloak embroidery, candle, shoulder-touching hand and other man facing away. Keep the existing hand anatomy and magic/light from the card. No new hands, no additional objects, no change in composition. Keep all existing character positions and scale, no crop or zoom, preserve original palette and moody painted realism. Full-bleed rectangular UNFRAMED 1024x1536 portrait, no decorative border, no lettering or watermark."
+    },
+    {
+      "source": "role-jester-werewolf.png",
+      "generation": "exec-3c079c5d-4d13-407e-b1d6-12dcd7d6eee6.png",
+      "prompt": "Use case: precise-object-edit. Image 1 is EDIT TARGET. Remove the outer decorative rope/embroidered card frame, hanging fringe edging, top emblem and the faded empty bottom caption field. Continue the actual village buildings, lane and character's lower costume through those removed design elements. Preserve the exact jester's face, sly smile, beard, one visible eye, intricately painted wood mask held beside his face, fingers holding mask, jester hat, bells and detailed red-gold costume. Keep the real costume fringe and village torch/moon. No redesign of mask or hands. Preserve original character position and scale, original cinematic painted realism and moody light direction. No zoom/crop. Full-bleed rectangular UNFRAMED 1024x1536 portrait. No decorative border, no text, no watermark."
+    },
+    {
+      "source": "role-mayor.png",
+      "generation": "exec-4b7a0ea9-3578-4dda-b644-e944ecf44074.png",
+      "prompt": "Use case: precise-object-edit. Image 1 is EDIT TARGET. Remove all decorative outer card framing: curved wood-and-metal arch, top medallion, side corner flourishes, bottom medallions and large blank parchment caption panel. Continue the real village setting and actual wooden table into the removed graphic regions, with simple table legs or ground below as needed. Preserve the exact stern village mayor's bearded face, fur hat, right-side hand holding his staff, left-side hand on voting stones, embroidery on actual costume, two candles, wax seals, stones and village houses behind him. No new props, do not turn the removed caption panel into another blank plaque. Preserve original character position and scale, original cinematic painted realism and moody light direction. No zoom/crop. Full-bleed rectangular UNFRAMED 1024x1536 portrait. No decorative border, no text, no watermark."
+    },
+    {
+      "source": "frames/frame-mafia-v1.png",
+      "generation": "exec-6dfdc81f-2045-4c34-9132-19cfe813b99d.png",
+      "promptSummary": "Reusable 2:3 portrait overlay: restrained aged brass Art Deco lines and fan-shaped corners for a noir role-card collection. Real transparent alpha background and empty transparent center, without a portrait, lettering or an opaque checkerboard."
+    },
+    {
+      "source": "frames/frame-werewolves-v1.png",
+      "generation": "exec-a819c941-1fd9-4298-be08-5a239769f91f.png",
+      "promptSummary": "Reusable 2:3 portrait overlay: restrained worn brass lines with Bulgarian embroidery-inspired geometric corners for a folklore role-card collection. Real transparent alpha background and empty transparent center, without a portrait, lettering or an opaque checkerboard."
+    }
+  ]
+}

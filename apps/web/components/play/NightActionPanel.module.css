@@ -22,22 +22,14 @@
 }
 
 .sheet.sheet::before {
-  position: absolute;
-  top: 14px;
-  right: 16px;
-  width: 42px;
-  height: 4px;
-  border-radius: 999px;
-  background: rgba(231, 182, 103, 0.25);
-  content: "";
-  pointer-events: none;
+  content: none;
 }
 
 .commandHeader {
   display: grid;
   gap: 6px;
   min-width: 0;
-  padding-right: 52px;
+  padding-right: 0;
 }
 
 .sheet.sheet .kicker {
@@ -48,8 +40,8 @@
 .sheet.sheet .commandHeader h2 {
   margin: 0;
   color: #fff7df;
-  font-family: "Noto Serif Display", "Noto Serif", serif;
-  font-size: clamp(1.25rem, 2vw, 1.72rem);
+  font-family: var(--font-display);
+  font-size: 1.125rem;
   font-weight: 900;
   line-height: 1.08;
   overflow-wrap: anywhere;
@@ -83,6 +75,11 @@
   margin: 0;
   border-radius: 6px;
   padding: 10px 12px;
+}
+
+.selectedTarget strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .selectedTargets[data-selection-state="ready"] .selectedTarget[data-filled="true"] {
@@ -167,7 +164,7 @@
   }
 
   .sheet.sheet .commandHeader h2 {
-    font-size: clamp(1.2rem, 5.5vw, 1.58rem);
+    font-size: 1.125rem;
   }
 
   .selectedTargets.selectedTargets {

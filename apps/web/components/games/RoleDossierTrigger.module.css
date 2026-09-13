@@ -1,0 +1,16 @@
+:global(:where(.role-dossier-trigger)) {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  width: 100%;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+:global(.role-dossier-trigger:focus-visible) {
+  outline: 2px solid var(--family-accent, currentColor);
+  outline-offset: 5px;
+}

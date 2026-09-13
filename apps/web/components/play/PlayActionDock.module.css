@@ -50,29 +50,11 @@
 }
 
 .root.root::before {
-  inset: 8px;
-  border: 1px solid rgba(231, 182, 103, 0.1);
-  border-radius: 5px;
+  content: none;
 }
 
 .root.root::after {
-  top: 0;
-  right: 12%;
-  left: 12%;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 224, 170, 0.46), transparent);
-}
-
-.inlay {
-  position: absolute;
-  top: 17px;
-  right: 18px;
-  width: 52px;
-  height: 5px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, rgba(231, 182, 103, 0.12), rgba(231, 182, 103, 0.5));
-  box-shadow: 0 0 18px rgba(209, 154, 66, 0.16);
-  pointer-events: none;
+  content: none;
 }
 
 .header {
@@ -82,7 +64,7 @@
   justify-content: space-between;
   gap: 16px;
   margin: 0 0 14px;
-  padding-right: 66px;
+  padding-right: 0;
 }
 
 .headingGroup {
@@ -105,8 +87,8 @@
 .header h2 {
   margin: 5px 0 0;
   color: #fff7df;
-  font-family: "Noto Serif Display", "Noto Serif", serif;
-  font-size: clamp(1.25rem, 2.2vw, 1.8rem);
+  font-family: var(--font-display);
+  font-size: 1.5rem;
   font-weight: 900;
   letter-spacing: 0;
   line-height: 1.08;
@@ -114,16 +96,9 @@
   text-wrap: balance;
 }
 
-.headerActions {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: 8px;
-}
-
-.dossierButton,
 .toggle {
   display: inline-flex;
+  flex-shrink: 0;
   min-width: 44px;
   min-height: 44px;
   align-items: center;
@@ -140,20 +115,17 @@
   transition: transform 180ms ease;
 }
 
-.dossierButton:hover,
 .toggle:hover {
   border-color: rgba(231, 182, 103, 0.58);
   background: rgba(231, 182, 103, 0.14);
   transform: translateY(-1px);
 }
 
-.dossierButton svg,
 .toggle svg {
   width: 18px;
   height: 18px;
 }
 
-.dossierButton:focus-visible,
 .toggle:focus-visible {
   outline: 2px solid #f5e8c8;
   outline-offset: 3px;
@@ -168,64 +140,28 @@
   isolation: isolate;
 }
 
-.grid::before {
-  position: absolute;
-  inset: -5px;
-  z-index: -1;
-  border-radius: 7px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(231, 182, 103, 0.025) 31%,
-    rgba(231, 182, 103, 0.12) 50%,
-    rgba(231, 182, 103, 0.025) 69%,
-    transparent 100%
-  );
-  content: "";
-  pointer-events: none;
-}
-
-.root[data-dock-kind="action"] .grid {
-  grid-template-columns: minmax(250px, 0.78fr) minmax(0, 1.22fr);
-}
-
-.root[data-has-primary="false"] .grid,
-.root[data-has-private="false"] .grid {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.primaryColumn,
-.privateColumn {
+.primaryColumn {
   display: grid;
   min-width: 0;
   align-content: start;
   gap: 14px;
 }
 
-.privateColumn {
-  container-name: private-dossier;
-  container-type: inline-size;
+.compactSummary {
+  margin-top: 10px;
 }
 
-.primaryColumn > :global(*),
-.privateColumn > :global(*) {
+.primaryColumn > :global(*) {
   margin-top: 0;
 }
 
 .root.root .primaryColumn :global(.ritual-panel),
-.root.root .primaryColumn :global(.night-action-sheet),
-.root.root .privateColumn :global(.ritual-panel),
-.root.root .privateColumn :global(.role-card),
-.root.root .privateColumn :global(.play-blessed-card) {
+.root.root .primaryColumn :global(.night-action-sheet) {
   width: 100%;
   height: auto;
   max-height: none;
   overflow: visible;
   margin-top: 0;
-}
-
-.root.root .privateColumn :global(.role-card) {
-  overflow: hidden;
 }
 
 .root.root .primaryColumn :global(.night-action-help),
@@ -274,17 +210,7 @@
   margin-top: 0;
 }
 
-@media (min-width: 1024px) and (max-width: 1180px) {
-  .root[data-dock-kind="action"] .grid {
-    grid-template-columns: minmax(220px, 0.7fr) minmax(0, 1.3fr);
-  }
-}
-
 @media (max-width: 1023px) {
-  .grid::before {
-    display: none;
-  }
-
   .root.root {
     position: fixed;
     right: max(0px, env(safe-area-inset-right));
@@ -298,10 +224,6 @@
     border-radius: 8px 8px 0 0;
     padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
     box-shadow: 0 -20px 52px rgba(0, 0, 0, 0.52), inset 0 1px rgba(255, 255, 255, 0.08);
-  }
-
-  .inlay {
-    display: none;
   }
 
   .root[data-expanded="false"] {
@@ -324,7 +246,7 @@
   }
 
   .root.root[data-expanded="true"] {
-    max-height: calc(100svh - max(8px, env(safe-area-inset-top)));
+    max-height: min(42svh, 26rem);
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior-y: contain;
@@ -347,12 +269,11 @@
 
   .header h2 {
     margin-top: 0;
-    font-size: clamp(1rem, 4.2vw, 1.25rem);
+    font-size: 1.125rem;
     white-space: normal;
   }
 
-  .grid,
-  .root[data-dock-kind="action"] .grid {
+  .grid {
     grid-template-columns: 1fr;
   }
 
@@ -368,27 +289,12 @@
   .root.root .primaryColumn :global(.ritual-panel h2),
   .root.root .primaryColumn :global(.night-action-sheet h2) {
     margin-top: 0;
-    font-size: clamp(1.25rem, 5.5vw, 1.7rem);
+    font-size: 1.125rem;
     line-height: 1.08;
   }
 
   .primaryColumn :global(.vote-tally-card) {
     display: none;
-  }
-}
-
-@media (max-width: 430px) {
-  .dossierButton span {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
-  }
-
-  .dossierButton {
-    padding: 0 12px;
   }
 }
 
@@ -413,11 +319,6 @@
   background: linear-gradient(90deg, transparent, color-mix(in oklch, var(--play-light-accent, #68794e) 56%, #b47d2f), transparent);
 }
 
-:global(html[data-theme="light"]) .inlay {
-  background: linear-gradient(90deg, rgba(91, 65, 38, 0.08), var(--play-light-accent, #68794e));
-  box-shadow: 0 0 16px color-mix(in oklch, var(--play-light-accent, #68794e) 18%, transparent);
-}
-
 :global(html[data-theme="light"]) .eyebrow {
   color: var(--play-light-accent-strong, #465735);
 }
@@ -427,21 +328,15 @@
   text-shadow: none;
 }
 
-:global(html[data-theme="light"]) .dossierButton,
 :global(html[data-theme="light"]) .toggle {
   border-color: color-mix(in oklch, var(--play-light-accent, #68794e) 42%, transparent);
   background: color-mix(in oklch, var(--play-light-accent, #68794e) 8%, rgba(255, 255, 255, 0.22));
   color: var(--play-light-ink, #2d2117);
 }
 
-:global(html[data-theme="light"]) .dossierButton:hover,
 :global(html[data-theme="light"]) .toggle:hover {
   border-color: var(--play-light-accent, #68794e);
   background: color-mix(in oklch, var(--play-light-accent, #68794e) 14%, rgba(255, 255, 255, 0.32));
-}
-
-:global(html[data-theme="light"]) .grid::before {
-  background: linear-gradient(90deg, transparent, rgba(91, 65, 38, 0.08) 50%, transparent);
 }
 
 @media (max-width: 1023px) {

@@ -31,8 +31,11 @@ const BUDGETS = {
       css: { warningKb: 52, hardKb: 57, maxDeltaKb: 3 },
     },
   },
-  artCorpus: { warningKb: 50_000, hardKb: 60_000 },
+  // Restored native artwork and dense candidates measure about 65,000 KiB.
+  // This is the complete deployment corpus, not one page's image transfer.
+  artCorpus: { warningKb: 70_000, hardKb: 75_000 },
   largestArtAsset: { warningKb: 350, hardKb: 400 },
+  metadataPreview: { warningKb: 450, hardKb: 500 },
 };
 
 const failures = [];
@@ -157,6 +160,9 @@ function reportArtCorpus() {
   if (largest) {
     enforceBudget(`Largest optimized art ${largest.file}`, largestBytes, BUDGETS.largestArtAsset);
   }
+  for (const preview of assets.filter((asset) => asset.extension === ".png")) {
+    enforceBudget(`Metadata PNG preview ${preview.file}`, preview.sizeBytes, BUDGETS.metadataPreview);
+  }
 }
 
 function enforceBudget(label, bytes, budget, baselineKb) {
@@ -175,7 +181,8 @@ function enforceBudget(label, bytes, budget, baselineKb) {
   ) {
     failures.push(
       `${label.replace(/ gzip$/, "")} grew ${roundNumber(measuredKb - baselineKb)} KB above baseline ` +
-        `${baselineKb} KB; allowed delta: ${budget.maxDeltaKb} KB`,
+        `${baselineKb} KB; allowed delta: ${budget.maxDeltaKb} KB; ` +
+        `over by ${Math.ceil(bytes - (baselineKb + budget.maxDeltaKb) * 1024)} bytes`,
     );
   }
 }

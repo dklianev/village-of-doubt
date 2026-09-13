@@ -9,7 +9,10 @@ export interface SheetProps {
   title: string;
   description?: string;
   size?: "default" | "workspace";
+  className?: string;
+  style?: CSSProperties;
   closeLabel?: string;
+  onCloseAutoFocus?: ((event: Event) => void) | undefined;
   children: ReactNode;
 }
 
@@ -100,7 +103,8 @@ const SHEET_RUNTIME_CSS = `
 
 .ds-sheet-title {
   margin: 0;
-  font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  font-family: var(--ds-font-display);
+  font-weight: 600;
   font-size: var(--ds-type-h3);
   letter-spacing: 0;
 }
@@ -218,7 +222,10 @@ export function Sheet({
   title,
   description = "Допълнителен панел.",
   size = "default",
+  className,
+  style,
   closeLabel,
+  onCloseAutoFocus,
   children,
 }: SheetProps) {
   useSheetStyles();
@@ -259,7 +266,7 @@ export function Sheet({
     <RDialog.Root open={open} onOpenChange={onOpenChange}>
       <RDialog.Portal>
         <RDialog.Overlay className="ds-sheet-overlay" />
-        <RDialog.Content className="ds-sheet" data-ds-sheet data-size={size}>
+        <RDialog.Content className={["ds-sheet", className].filter(Boolean).join(" ")} style={style} data-ds-sheet data-size={size} onCloseAutoFocus={onCloseAutoFocus}>
           <RDialog.Title className="ds-sheet-title">
             {title}
           </RDialog.Title>

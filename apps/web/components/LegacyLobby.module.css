@@ -64,7 +64,7 @@
   max-width: 12ch;
   margin: 12px 0 14px;
   color: #f5e8c8;
-  font-family: "Noto Serif Display", serif;
+  font-family: var(--font-display);
   font-size: clamp(2.7rem, 7vw, 5.6rem);
   font-weight: 900;
   line-height: 0.95;
@@ -188,7 +188,7 @@
   border-radius: 50%;
   background: rgba(209, 154, 66, 0.18);
   color: var(--invite-accent);
-  font-family: "Noto Serif Display", serif;
+  font-family: var(--font-display);
   font-size: 1.05rem;
 }
 

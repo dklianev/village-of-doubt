@@ -29,7 +29,7 @@ export function PrivacyDataPreview({ snapshot }: PrivacyDataPreviewProps) {
   }
 
   return (
-    <section className="privacy-section privacy-section-preview">
+    <section id="privacy-data" tabIndex={-1} className="privacy-section privacy-section-preview">
       <header className="privacy-section-head">
         <p className="privacy-section-kicker">личен преглед</p>
         <h2>Какво виждаме за теб точно сега.</h2>
@@ -67,7 +67,7 @@ export function PrivacyDataPreview({ snapshot }: PrivacyDataPreviewProps) {
           </dt>
           <dd>
             <code>{snapshot.name || "—"}</code>
-            <Link href="/account" className="privacy-data-edit">
+            <Link href="/account#account-identity" className="privacy-data-edit">
               Промени →
             </Link>
           </dd>

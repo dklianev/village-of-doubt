@@ -54,7 +54,7 @@ export function computeSeatLayout(input: SeatLayoutInput): SeatLayoutItem[] {
     && input.count <= 13
     && input.contentHeight < COMPACT_SCENE_HEIGHT_PX
     ? COMPACT_FULL_VISUAL_SIZE_PX
-    : visualSizeForCount(input.count);
+    : visualSizeForCount(input.count, input.contentWidth);
   const labelWidth = input.count >= 14 ? 8 : 12;
   const labelHeight = input.count >= 14 ? 24 : input.count >= 10 ? 30 : 33;
   const maxFootprintWidth = Math.max(input.minHitSize, visualSize * MAX_SCALE + labelWidth);
@@ -163,12 +163,12 @@ function arcAngles(
   ));
 }
 
-function visualSizeForCount(count: number) {
+function visualSizeForCount(count: number, contentWidth: number) {
   if (count <= 6) {
     return 92;
   }
   if (count <= 9) {
-    return 76;
+    return contentWidth < 900 ? 72 : 76;
   }
   if (count <= 13) {
     return 62;

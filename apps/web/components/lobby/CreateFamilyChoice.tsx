@@ -9,8 +9,8 @@ export function CreateFamilyChoice({ searchParams }: { searchParams: URLSearchPa
     <section className="create-family-choice" aria-labelledby="create-family-title">
       <header className="create-family-heading">
         <p className="create-quick-kicker">нова вечер на масата</p>
-        <h1 id="create-family-title">Коя история започва тази вечер?</h1>
-        <p>Избери света. Ние ще подготвим балансирана стая, която можеш да отвориш веднага.</p>
+        <h1 id="create-family-title">Върколак или Мафия?</h1>
+        <p>Коя игра събира компанията тази вечер?</p>
       </header>
 
       <div className="create-family-scenes">

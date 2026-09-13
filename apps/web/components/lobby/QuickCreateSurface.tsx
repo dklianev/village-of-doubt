@@ -5,7 +5,6 @@ import {
   Monitor,
   Plus,
   Settings2,
-  Sparkles,
   Users,
 } from "lucide-react";
 import {
@@ -15,7 +14,7 @@ import {
   type RoleDistribution,
   type RolePreset,
 } from "@werewolf/shared";
-import type { Dispatch, RefObject } from "react";
+import type { Dispatch } from "react";
 import {
   boundedPlayerCount,
   criticalRoleWarnings,
@@ -34,7 +33,6 @@ type Experience = {
   title: string;
   eyebrow: string;
   detail: string;
-  playerCount: number;
   rolePreset: RolePreset;
   mode: LobbyFormState["mode"];
   advanced?: LobbyTemplate["advanced"];
@@ -52,9 +50,8 @@ const WEREWOLF_EXPERIENCES: Experience[] = [
     id: "first-night",
     eyebrow: "за нова група",
     title: "Първа нощ",
-    detail: "Ясни роли и по-кратка вечер за 6-8 души.",
+    detail: "Основните роли, лесни за първа игра.",
     mode: "werewolves_classic",
-    playerCount: 6,
     rolePreset: "beginner",
   },
   {
@@ -63,16 +60,14 @@ const WEREWOLF_EXPERIENCES: Experience[] = [
     title: "Класическо село",
     detail: "Баланс между разследване, защита и тайна любов.",
     mode: "werewolves_classic",
-    playerCount: 12,
     rolePreset: "classic",
   },
   {
     id: "village-secrets",
     eyebrow: "за опитна маса",
     title: "Село с тайни",
-    detail: "Повече специални роли и напрежение за 14+ души.",
+    detail: "Повече специални роли и неочаквани обрати.",
     mode: "werewolves_classic",
-    playerCount: 14,
     rolePreset: "advanced",
     advanced: { loversEnabled: true },
   },
@@ -85,7 +80,6 @@ const MAFIA_EXPERIENCES: Experience[] = [
     title: "Свободна маса",
     detail: "Настройва се спрямо групата и оставя повече свобода на водещия.",
     mode: "mafia_free",
-    playerCount: 10,
     rolePreset: "free",
   },
   {
@@ -94,7 +88,6 @@ const MAFIA_EXPERIENCES: Experience[] = [
     title: "Спортна маса",
     detail: "Точно 10 играчи, фиксирани роли и състезателно темпо.",
     mode: "mafia_sport",
-    playerCount: 10,
     rolePreset: "sport",
   },
 ];
@@ -104,14 +97,12 @@ export function QuickCreateSurface({
   dispatch,
   onOpenDetails,
   onSubmit,
-  detailsButtonRef,
   transition,
 }: {
   state: LobbyFormState;
   dispatch: Dispatch<LobbyFormAction>;
-  onOpenDetails: () => void;
+  onOpenDetails: (trigger: HTMLButtonElement) => void;
   onSubmit: () => void;
-  detailsButtonRef?: RefObject<HTMLButtonElement | null>;
   transition: (update: () => void) => void;
 }) {
   const config = currentConfig(state);
@@ -122,8 +113,7 @@ export function QuickCreateSurface({
   const canCreate = warnings.length === 0;
   const roles = recommendedRoles(config.roles);
   const context = contextFor(state);
-  const heading =
-    state.family === "werewolves" ? "Подготви селото за една минута" : "Отвори частна маса за една минута";
+  const heading = state.family === "werewolves" ? "Стая за Върколак" : "Стая за Мафия";
   const primaryLabel = state.family === "werewolves" ? "Създай селото" : "Отвори масата";
 
   function selectExperience(experience: Experience) {
@@ -132,7 +122,7 @@ export function QuickCreateSurface({
         type: "APPLY_TEMPLATE",
         template: {
           mode: experience.mode,
-          playerCount: experience.playerCount,
+          playerCount: Math.max(playerRange(experience.mode).min, Math.min(players, playerRange(experience.mode).max)),
           rolePreset: experience.rolePreset,
           tempoProfile: experience.mode === "mafia_sport" ? "sport_mafia" : normalizedTempo(state),
           communicationMode: state.communicationMode,
@@ -164,54 +154,20 @@ export function QuickCreateSurface({
             {state.family === "werewolves" ? "домакин на селото" : "домакин на масата"}
           </p>
           <h1 id="create-quick-title">{heading}</h1>
-          <p>
-            {state.family === "werewolves"
-              ? "Избери каква вечер искаш. Съставът се балансира автоматично."
-              : "Избери формат. Досиетата и ритъмът ще бъдат готови преди първото обвинение."}
-          </p>
+          <p>{state.family === "werewolves" ? "Компанията е твоя. Тайните са на селото." : "Една маса. Всеки със своето алиби."}</p>
         </div>
-        <span className="create-ready-mark" data-ready={canCreate ? "true" : "false"}>
-          <Check aria-hidden="true" />
-          {canCreate ? "настройките са готови" : "провери състава"}
-        </span>
+        <button type="button" className="create-details-button" onClick={(event) => onOpenDetails(event.currentTarget)}>
+          <Settings2 aria-hidden="true" />
+          Настрой детайлите
+        </button>
       </header>
 
       <div className="create-quick-layout">
         <div className="create-quick-controls">
-          <fieldset className="create-choice-group">
-            <legend>{state.family === "werewolves" ? "Каква да бъде вечерта?" : "Какъв е форматът?"}</legend>
-            <div className="create-experience-grid" data-count={experiences.length}>
-              {experiences.map((experience) => {
-                const active =
-                  state.family === "werewolves"
-                    ? state.rolePreset === experience.rolePreset
-                    : state.mode === experience.mode;
-                return (
-                  <button
-                    key={experience.id}
-                    type="button"
-                    className="create-experience-card"
-                    data-active={active ? "true" : "false"}
-                    aria-pressed={active}
-                    onClick={() => selectExperience(experience)}
-                  >
-                    <span>{experience.eyebrow}</span>
-                    <strong>{experience.title}</strong>
-                    <small>{experience.detail}</small>
-                    <i aria-hidden="true">
-                      <Check />
-                    </i>
-                  </button>
-                );
-              })}
-            </div>
-          </fieldset>
-
           <div className="create-quick-row">
             <section className="create-count-panel" aria-labelledby="create-player-count-title">
               <div className="create-control-heading">
                 <div>
-                  <span>групата</span>
                   <h2 id="create-player-count-title">Брой играчи</h2>
                 </div>
                 <strong>{players}</strong>
@@ -278,20 +234,40 @@ export function QuickCreateSurface({
             </section>
           </div>
 
+          <fieldset className="create-choice-group">
+            <legend>{state.family === "werewolves" ? "Каква да бъде вечерта?" : "Какъв е форматът?"}</legend>
+            <div className="create-experience-grid" data-count={experiences.length}>
+              {experiences.map((experience) => {
+                const active = !state.manualRolesEnabled && (state.family === "werewolves"
+                  ? state.rolePreset === experience.rolePreset : state.mode === experience.mode);
+                return (
+                  <button key={experience.id} type="button" className="create-experience-card"
+                    data-active={active ? "true" : "false"} aria-pressed={active}
+                    onClick={() => selectExperience(experience)}>
+                    <span>{experience.eyebrow}</span>
+                    <strong>{experience.title}</strong>
+                    <small>{experience.detail}</small>
+                    <i aria-hidden="true"><Check /></i>
+                  </button>
+                );
+              })}
+            </div>
+          </fieldset>
+
           <section className="create-recommendation" aria-labelledby="create-roster-title">
             <div className="create-recommendation-heading">
               <div>
                 <span>{state.manualRolesEnabled ? "твоят състав" : "препоръчан състав"}</span>
                 <h2 id="create-roster-title">{recommendationTitle(state)}</h2>
               </div>
-              <Sparkles aria-hidden="true" />
+              <span className="create-roster-capacity">{players} места</span>
             </div>
-            <div className="create-role-portraits" aria-label="Основни роли в състава">
+            <div className="create-role-portraits" aria-label="Всички роли в състава">
               {roles.map(([role, count]) => (
                 <span className="create-role-portrait" key={role}>
                   <i aria-hidden="true" style={roleThumbStyle(state.family, role)} />
                   <b>{ROLE_DEFINITIONS[role].nameBg}</b>
-                  {count > 1 ? <small>×{count}</small> : null}
+                  <small>×{count}</small>
                 </span>
               ))}
             </div>
@@ -301,20 +277,14 @@ export function QuickCreateSurface({
 
         <aside className="create-receipt" aria-label="Обобщение на стаята">
           <div className="create-receipt-heading">
-            <span>{state.family === "werewolves" ? "печат на селото" : "резервация на масата"}</span>
-            <strong>{state.family === "werewolves" ? "Вечерта е подредена" : "Досиетата са подредени"}</strong>
+            <span>тази вечер</span>
+            <strong>{state.roomName}</strong>
           </div>
+          <span className="create-ready-mark" data-ready={canCreate ? "true" : "false"}>
+            <Check aria-hidden="true" />
+            {canCreate ? "Готови за игра" : "Провери състава"}
+          </span>
           <dl>
-            <div>
-              <dt>
-                <Users aria-hidden="true" />
-                Група
-              </dt>
-              <dd>
-                <strong>{players} играчи</strong>
-                <span>{state.mode === "mafia_sport" ? "фиксиран състав" : "автоматичен баланс"}</span>
-              </dd>
-            </div>
             <div>
               <dt>
                 <Clock3 aria-hidden="true" />
@@ -322,7 +292,6 @@ export function QuickCreateSurface({
               </dt>
               <dd>
                 <strong>{formatEstimatedDuration(estimatedDurationSeconds(state))}</strong>
-                <span>{state.tempoProfile === "live" ? "ритъм за маса на живо" : "водено онлайн"}</span>
               </dd>
             </div>
             <div>
@@ -332,7 +301,6 @@ export function QuickCreateSurface({
               </dt>
               <dd>
                 <strong>{COMMUNICATION_LABELS[state.communicationMode]}</strong>
-                <span>{context === "live" ? "разговор около масата" : "вътре в стаята"}</span>
               </dd>
             </div>
           </dl>
@@ -343,15 +311,6 @@ export function QuickCreateSurface({
             </p>
           ) : null}
 
-          <button
-            ref={detailsButtonRef}
-            type="button"
-            className="create-details-button"
-            onClick={onOpenDetails}
-          >
-            <Settings2 aria-hidden="true" />
-            Настрой детайлите
-          </button>
           <button type="button" className="create-primary-action" disabled={!canCreate} onClick={onSubmit}>
             {primaryLabel}
           </button>
@@ -364,6 +323,10 @@ export function QuickCreateSurface({
           <strong>{players}</strong>
           <small>{formatEstimatedDuration(estimatedDurationSeconds(state))}</small>
         </span>
+        <button type="button" className="create-mobile-details" aria-label="Редактирай настройките" title="Настрой детайлите"
+          onClick={(event) => onOpenDetails(event.currentTarget)}>
+          <Settings2 aria-hidden="true" />
+        </button>
         <button type="button" disabled={!canCreate} onClick={onSubmit}>
           {primaryLabel}
         </button>
@@ -388,17 +351,15 @@ function contextFor(state: LobbyFormState): "online" | "live" | "custom" {
 
 function recommendedRoles(roles: RoleDistribution) {
   const entries = Object.entries(roles).filter((entry): entry is [RoleCode, number] => Boolean(entry[1]));
-  return entries
-    .sort(([first], [second]) => rolePriority(first) - rolePriority(second))
-    .slice(0, 5);
+  return entries.sort(([first], [second]) => rolePriority(first) - rolePriority(second));
 }
 
 function rolePriority(role: RoleCode) {
-  if (role === "civilian") {
+  if (role === "civilian" || role === "ordinary_villager") {
     return 4;
   }
   if (role === "werewolf" || role === "mafioso") {
-    return 3;
+    return 0;
   }
   return 1;
 }

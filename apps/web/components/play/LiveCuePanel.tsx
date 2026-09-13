@@ -1,83 +1,58 @@
-import { useEffect, useState } from "react";
-import { EyeOff, Play, Settings, Volume2 } from "lucide-react";
+import { useId, useRef, useState } from "react";
+import { Eye, EyeOff, Play, Volume2 } from "lucide-react";
 import { triggerDeviceCue } from "@/lib/play/device-cues";
 import type { CueMode } from "@/lib/play/types";
+import { PlayToolSheet } from "./PlayToolSheet";
+import styles from "./PlayTools.module.css";
 
-const CUE_MODE_LABEL: Record<CueMode, string> = {
-  silent: "Тихо",
-  visual: "Визуално",
-  audio_vibration: "Звук + вибрация",
-};
+const MODES = [
+  { value: "silent", label: "Тихо", icon: EyeOff },
+  { value: "visual", label: "Визуално", icon: Eye },
+  { value: "audio_vibration", label: "Звук и вибрация", icon: Volume2 },
+] as const;
 
-export function LiveCuePanel({
-  cueMode,
-  liveMode,
-  phase,
-  pulseKey,
-  onChange,
-}: {
+export function LiveCuePanel({ cueMode, liveMode, phase, pulseKey, onChange }: {
   cueMode: CueMode;
   liveMode: boolean;
   phase: string;
   pulseKey: number;
   onChange: (mode: CueMode) => void;
 }) {
-  const [isOpen, setIsOpen] = useState(liveMode);
-
-  useEffect(() => {
-    if (liveMode) {
-      setIsOpen(true);
-    }
-  }, [liveMode]);
+  const [open, setOpen] = useState(false);
+  const [testPulse, setTestPulse] = useState(0);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const id = useId();
+  const activeMode = liveMode ? "silent" : cueMode;
+  const { label, icon: ModeIcon } = MODES.find((mode) => mode.value === activeMode)!;
 
   return (
-    <details
-      className={`cue-panel cue-${cueMode} ${liveMode ? "is-live" : ""}`}
-      open={isOpen}
-      onToggle={(event) => setIsOpen(event.currentTarget.open)}
-    >
-      <summary className="cue-summary">
-        <span className="cue-summary-row">
-          <span className="cue-orb" aria-hidden="true">
-            <span key={pulseKey} />
-          </span>
-          <span className="cue-summary-copy">
-            <span className="cue-summary-label">Сигнали за фазите</span>
-            <span className="cue-summary-mode">{CUE_MODE_LABEL[cueMode]}</span>
-          </span>
-          <span className="cue-summary-chevron" aria-hidden="true" />
-        </span>
-      </summary>
-      <div className="cue-body">
-        <p className="cue-note">
-          {liveMode
-            ? "Игра на живо: звукът и вибрацията са изключени по подразбиране, защото телефоните са близо един до друг."
-            : "Онлайн игра: визуалният pulse е включен по подразбиране; звук/вибрация се включват само от това устройство."}
-        </p>
-        <div className="cue-actions">
-          <button className="btn btn-secondary" type="button" aria-pressed={cueMode === "silent"} onClick={() => onChange("silent")}>
-            <EyeOff className="play-button-icon" aria-hidden strokeWidth={1.8} />
-            Тихо
-          </button>
-          <button className="btn btn-secondary" type="button" aria-pressed={cueMode === "visual"} onClick={() => onChange("visual")}>
-            <Settings className="play-button-icon" aria-hidden strokeWidth={1.8} />
-            Визуално
-          </button>
-          <button
-            className="btn btn-secondary"
-            type="button"
-            aria-pressed={cueMode === "audio_vibration"}
-            onClick={() => onChange("audio_vibration")}
-          >
-            <Volume2 className="play-button-icon" aria-hidden strokeWidth={1.8} />
-            Звук + вибрация
-          </button>
-          <button className="btn btn-secondary" type="button" onClick={() => triggerDeviceCue(phase)} disabled={cueMode === "silent"}>
-            <Play className="play-button-icon" aria-hidden strokeWidth={1.8} />
-            Тест
-          </button>
+    <>
+      <button ref={trigger} type="button" className={`${styles.tool} ${styles.cueTool}`} aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>
+        <ModeIcon key={pulseKey} data-cue={activeMode} aria-hidden="true" size={18} />
+        <span>Сигнали <small>{label}</small></span>
+      </button>
+      <PlayToolSheet open={open} onOpenChange={setOpen} title="Сигнали за фазите" trigger={trigger} compact>
+        <div className={styles.cueBody}>
+          <fieldset className={styles.modes}>
+            <legend className="sr-only">Режим на сигналите</legend>
+            {MODES.map(({ value, label, icon: Icon }) => (
+              <label key={value}>
+                <Icon size={18} aria-hidden="true" />
+                <span>{label}</span>
+                <input type="radio" name={id} value={value} checked={activeMode === value} onChange={() => onChange(value)} disabled={liveMode && value !== "silent"} />
+              </label>
+            ))}
+          </fieldset>
+          <p className={styles.note}>{liveMode ? "При игра на живо е достъпен само тихият режим." : "Настройката важи само за това устройство."}</p>
+          <div className={styles.preview}>
+            <span className={styles.cuePreview} data-cue={activeMode} aria-hidden="true"><ModeIcon key={`${pulseKey}:${testPulse}`} size={20} /></span>
+            <button type="button" className={styles.testCue} disabled={activeMode === "silent"} onClick={() => {
+              setTestPulse((current) => current + 1);
+              if (activeMode === "audio_vibration") triggerDeviceCue(phase, liveMode);
+            }}><Play size={16} aria-hidden="true" />Пробвай</button>
+          </div>
         </div>
-      </div>
-    </details>
+      </PlayToolSheet>
+    </>
   );
 }

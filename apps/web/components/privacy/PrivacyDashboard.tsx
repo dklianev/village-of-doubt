@@ -28,13 +28,24 @@ export function PrivacyDashboard({ lastUpdated, userSnapshot }: PrivacyDashboard
       <PrivacyHero lastUpdated={lastUpdated} hasSnapshot={Boolean(userSnapshot)} />
 
       <div className="privacy-content">
+        <nav className="privacy-navigation" aria-label="Съдържание на политиката">
+          <a href="#privacy-rights">Права и действия</a>
+          {userSnapshot ? <a href="#privacy-data">Моите данни</a> : null}
+          <a href="#what-and-why">Какви данни</a>
+          <a href="#sharing">Споделяне</a>
+          <a href="#retention">Срокове</a>
+          <a href="#cookies">Бисквитки</a>
+          <a href="#children">Деца</a>
+          <a href="#privacy-promises">Обещания</a>
+        </nav>
+
+        <PrivacyRights />
+
         {userSnapshot ? <PrivacyDataPreview snapshot={userSnapshot} /> : null}
 
         <PrivacyPromiseWall />
 
         <PrivacySections />
-
-        <PrivacyRights />
 
         <PrivacyVersionHistory />
       </div>

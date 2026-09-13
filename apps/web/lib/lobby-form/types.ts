@@ -42,6 +42,8 @@ export type PreservedCreateOptions = Partial<
     | "werewolfVariant"
     | "mayorMode"
     | "promoRolesEnabled"
+    | "tieBreaker"
+    | "firstNightKill"
     | "spectator"
   >
 >;

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import { runInNewContext } from "node:vm";
 
 const source = readFileSync(new URL("./frontend-e2e.mjs", import.meta.url), "utf8");
 
@@ -20,4 +21,327 @@ test("the authenticated join fixture uses a seeded Better Auth session and stays
 test("the anonymous join check is labelled as an auth-gate redirect", () => {
   assert.match(source, /goto\(page, "\/mafia\/join\/ABCD12", "anonymous join"\)/);
   assert.match(source, /assertNoHorizontalOverflow\(page, "anonymous join"\)/);
+});
+
+function functionSource(name) {
+  const definition = source.match(new RegExp(`(?:async )?function ${name}\\([^\\n]*\\) \\{[\\s\\S]*?\\n\\}`))?.[0];
+  assert.ok(definition, `${name} should be defined`);
+  return definition;
+}
+
+function loadFunction(name, globals = {}) {
+  return runInNewContext(`${functionSource(name)}\n${name}`, { URL, ...globals });
+}
+
+for (const family of ["werewolves", "mafia"]) {
+test(`the host selects six players and submits the real ${family} create UI`, async () => {
+  const events = [];
+  const mafia = family === "mafia";
+  const generatedUrl = `http://127.0.0.1:3401/play/ABCDEF?mode=${mafia ? "mafia_free" : "werewolves_classic"}&players=6`;
+  const slider = {
+    click: async () => events.push("slider click"),
+    press: async (key) => events.push(key),
+  };
+  const page = {
+    getByRole(role, { name }) {
+      events.push(`${role}:${name}`);
+      if (role === "slider") return slider;
+      return { click: async () => events.push("submit") };
+    },
+    waitForURL: async () => events.push("navigation"),
+    url: () => generatedUrl,
+  };
+  const createRoom = loadFunction("createSixPlayerRoom", {
+    goto: async (_page, path) => events.push(path),
+    expectText: async (_page, text) => events.push(text),
+    expectInputValue: async (input, value) => {
+      assert.equal(input, slider);
+      assert.equal(value, "6");
+    },
+  });
+
+  const roomUrl = await createRoom(page, "fixture", family);
+  assert.equal(roomUrl.href, generatedUrl);
+  assert.deepEqual(events, [
+    mafia ? "/mafia/create" : "/werewolf/create", mafia ? "Стая за Мафия" : "Стая за Върколак", "slider:Брой играчи",
+    "slider click", "Home", ...(mafia ? ["ArrowRight", "ArrowRight"] : []),
+    mafia ? "button:Отвори масата" : "button:Създай селото", "submit", "navigation",
+  ]);
+});
+}
+
+test("the six-client fixture uses the generated invitation and verifies every seeded player before starting", () => {
+  const scenario = functionSource("testSixClientGameStart");
+  assert.doesNotMatch(scenario, /createRoomCode|visualAuth|dev-user-id|mode=werewolves_classic/);
+  assert.match(scenario, /signInBrowserContext\(context, identity\)/);
+  assert.match(scenario, /createSixPlayerRoom\(page, "six-client host create", family\)/);
+  assert.match(functionSource("main"), /for \(const family of \["werewolves", "mafia"\]\)[\s\S]*testSixClientGameStart\(family\)/);
+  assert.match(scenario, /viewport: index === 5 \? viewports\.mobile : viewports\.desktop/);
+  assert.match(scenario, /if \(index === 5\) await context\.addInitScript\(installGameSocketProbe, wsUrl\)/);
+  assert.match(scenario, /\/lobby\/\$\{code\}\$\{roomUrl\.search\}/);
+  assert.match(scenario, /Покана за масата\./);
+  assert.match(scenario, /Код на стаята \$\{code\}/);
+  assert.match(scenario, /getByRole\("link", \{ name: "Към играта", exact: true \}\)\.click\(\)/);
+  assert.match(scenario, /data-seat-user-id/);
+  assert.ok(scenario.indexOf("assertSixPlayerRoster(pages, expectedUserIds)") < scenario.indexOf('getByTestId("ready-toggle").click()'));
+  assert.match(scenario, /startReadyGame\(pages\[0\]\)/);
+  assert.match(scenario, /role_reveal[\s\S]*first_night/);
+  assert.match(scenario, /readPrivateRole\(page, family\)/);
+  assert.match(scenario, /"first_night", "day_announcement"/);
+  assert.match(scenario, /"day_announcement", "day_discussion"/);
+  assert.match(scenario, /"day_discussion", "voting"/);
+  assert.match(scenario, /Потвърди гласа за/);
+  assert.match(scenario, /expectTextIn\(mobilePage\.locator\("\.play-action-receipt"\), `Приет глас:/);
+  assert.match(scenario, /data-voted="true"/);
+  assert.match(scenario, /nextTarget\.id[\s\S]*data-selected="true"[\s\S]*Приет глас: \$\{target\.name\}/);
+  assert.match(scenario, /reconnectFirstGameGuest\(pages, expectedUserIds, privateRoles\[5\], family, `Приет глас: \$\{target\.name\}`\)/);
+  assert.match(scenario, /finally \{\s*await Promise\.allSettled\(contexts\.map\(\(context\) => context\.close\(\)\)\)/);
+});
+
+test("roster validation rejects missing, duplicate and substituted seats", async () => {
+  const ids = Array.from({ length: 6 }, (_, index) => `fixture-${index}`);
+  for (const actual of [ids, ids.slice(0, 5), [...ids, ids[0]], [...ids.slice(0, 5), ids[0]], [...ids.slice(0, 5), "outsider"]]) {
+    const validate = loadFunction("assertSixPlayerRoster", {
+      document: { querySelectorAll: () => actual.map((id) => ({ dataset: { seatUserId: id } })) },
+    });
+    const page = { waitForFunction: async (predicate, expected) => assert.equal(predicate(expected), true, "roster mismatch") };
+    if (actual === ids) await validate([page], ids);
+    else await assert.rejects(validate([page], ids), /roster mismatch/);
+  }
+});
+
+for (const mode of ["manual", "automatic", "autostart-race", "failed-click", "not-ready"]) {
+test(`start handling preserves ${mode} behavior`, async () => {
+  let phase = mode === "automatic" ? "role_reveal" : "lobby";
+  let clicks = 0;
+  const start = loadFunction("startReadyGame", {
+    document: {
+      querySelector: () => ({ getAttribute: () => phase }),
+      querySelectorAll: () => Array.from({ length: 6 }, () => ({ dataset: { ready: mode === "not-ready" ? "false" : "true" } })),
+    },
+  });
+  const host = {
+    waitForFunction: async (predicate) => assert.equal(predicate(), true, "not ready"),
+    locator: () => ({
+      getAttribute: async () => phase,
+      waitFor: async () => assert.equal(phase, "role_reveal"),
+    }),
+    getByRole: (_role, { name }) => ({ click: async () => {
+      assert.equal(name, "Започни игра");
+      clicks += 1;
+      if (mode === "failed-click") throw new Error("click failed");
+      phase = "role_reveal";
+      if (mode === "autostart-race") throw new Error("button detached");
+    } }),
+  };
+  if (mode === "failed-click" || mode === "not-ready") {
+    await assert.rejects(start(host), /click failed|not ready/);
+  } else {
+    await start(host);
+  }
+  assert.equal(clicks, mode === "automatic" || mode === "not-ready" ? 0 : 1);
+});
+}
+
+test("bounded phase advancement uses the host control and rejects unrelated phases", async () => {
+  for (const current of ["first_night", "day_announcement", "game_over"]) {
+    const events = [];
+    const advance = loadFunction("advanceFirstGamePhase", {
+      holdFirstGamePhase: async (_pages, phase) => events.push(phase),
+    });
+    const host = {
+      locator: () => ({ getAttribute: async () => current }),
+      getByRole: (_role, { name }) => ({ click: async () => events.push(name) }),
+    };
+    if (current === "game_over") {
+      await assert.rejects(advance([host], "first_night", "day_announcement"), /Expected first-round phase/);
+      assert.deepEqual(events, []);
+    } else {
+      await advance([host], "first_night", "day_announcement");
+      assert.deepEqual(events, current === "first_night" ? ["Следваща фаза", "day_announcement"] : ["day_announcement"]);
+    }
+  }
+});
+
+test("phase assertions extend the real host timer before waiting for every client", async () => {
+  const events = [];
+  const pages = Array.from({ length: 6 }, (_, index) => ({
+    locator: (selector) => ({ waitFor: async () => {
+      assert.equal(selector, 'main.play-shell[data-phase="role_reveal"]');
+      events.push(index);
+    } }),
+    getByRole: (_role, { name }) => ({ click: async () => {
+      assert.equal(index, 0);
+      events.push(name);
+    } }),
+  }));
+  await loadFunction("holdFirstGamePhase")(pages, "role_reveal");
+  assert.deepEqual(events, [0, "+180 сек.", 0, 1, 2, 3, 4, 5]);
+});
+
+test("private-role assertions require one viewer card from the selected family", async () => {
+  const label = "Тайна роля: Ясновидка";
+  for (const [count, family, text] of [[1, "werewolves", label], [2, "werewolves", label], [1, "mafia", label], [1, "werewolves", null], [1, "werewolves", "Тайна роля: "]]) {
+    let opened = false;
+    const card = {
+      waitFor: async () => assert.equal(opened, true),
+      getAttribute: async (attribute) => attribute === "aria-label" ? text : family,
+    };
+    const personal = {
+      waitFor: async () => {},
+      getByRole: (role, options) => {
+        assert.equal(role, "button");
+        assert.equal(options.name, "Виж ролята си");
+        assert.equal(options.exact, true);
+        return { isVisible: async () => true, click: async () => { opened = true; } };
+      },
+      locator: () => card,
+    };
+    const page = { getByRole: () => personal, locator: () => ({ count: async () => count }) };
+    const readRole = loadFunction("readPrivateRole");
+    if (count === 1 && family === "werewolves" && text === label) {
+      assert.equal(await readRole(page, "werewolves"), label);
+    } else {
+      await assert.rejects(readRole(page, "werewolves"), /exactly one viewer-private role card/);
+    }
+  }
+});
+
+test("the socket probe closes only the native game transport with a reconnectable code", () => {
+  const closed = [];
+  class NativeWebSocket {
+    static OPEN = 1;
+    constructor(url) {
+      this.url = url;
+      this.readyState = NativeWebSocket.OPEN;
+      this.listeners = [];
+    }
+    addEventListener(event, callback) {
+      assert.equal(event, "close");
+      this.listeners.push(callback);
+    }
+    close(code) {
+      closed.push(code);
+      this.readyState = 3;
+      this.listeners.forEach((callback) => callback());
+    }
+  }
+  const window = { WebSocket: NativeWebSocket };
+  loadFunction("installGameSocketProbe", { window })("ws://127.0.0.1:3568");
+  const probe = window.__frontendE2eGameSockets;
+  const other = new window.WebSocket("ws://127.0.0.1:3000/hmr");
+  assert.throws(() => probe.closeOpen(), /one open fixture game WebSocket/);
+  const game = new window.WebSocket("ws://127.0.0.1:3568/fixture/seat");
+  assert.ok(game instanceof NativeWebSocket);
+  assert.equal(window.WebSocket.OPEN, NativeWebSocket.OPEN);
+  assert.deepEqual(Array.from(probe.openIds()), [1]);
+  assert.equal(probe.closeOpen(), 1);
+  assert.deepEqual(closed, [3001]);
+  assert.equal(other.readyState, NativeWebSocket.OPEN);
+  assert.deepEqual(Array.from(probe.openIds()), []);
+  const replacement = new window.WebSocket("ws://127.0.0.1:3568/fixture/seat");
+  replacement.readyState = 0;
+  assert.deepEqual(Array.from(probe.openIds()), []);
+  replacement.readyState = NativeWebSocket.OPEN;
+  assert.deepEqual(Array.from(probe.openIds()), [2]);
+  new window.WebSocket("ws://127.0.0.1:3568/fixture/duplicate");
+  assert.throws(() => probe.closeOpen(), /one open fixture game WebSocket/);
+});
+
+test("reconnect requires a replacement socket, server presence and the preserved role, ballot and ACK receipt", async () => {
+  for (const mode of ["success", "missing-drop", "unchanged-socket", "changed-role", "cleared-receipt"]) {
+    const events = [];
+    let receiptChecks = 0;
+    const pages = Array.from({ length: 6 }, () => ({ locator: (selector) => ({ waitFor: async () => {
+      events.push(selector);
+      if (mode === "missing-drop" && selector.includes('data-connected="false"')) throw new Error("drop not observed");
+    } }) }));
+    const reconnect = loadFunction("reconnectFirstGameGuest", {
+      assertSixPlayerRoster: async () => events.push("roster"),
+      readPrivateRole: async () => mode === "changed-role" ? "changed" : "same",
+      expectTextIn: async (_locator, text) => {
+        assert.equal(text, "Приет глас: Играч 1");
+        receiptChecks += 1;
+        if (mode === "cleared-receipt" && receiptChecks === 2) throw new Error("ACK receipt lost");
+      },
+      window: { __frontendE2eGameSockets: {
+        closeOpen: () => { events.push("close"); return 1; },
+        openIds: () => mode === "unchanged-socket" ? [1] : [2],
+      } },
+    });
+    pages[5].evaluate = async (callback) => callback();
+    pages[5].waitForFunction = async (predicate, previousId) => {
+      assert.equal(predicate(previousId), true, "replacement socket not observed");
+      events.push("replacement");
+    };
+    const run = reconnect(pages, ["one", "two", "three", "four", "five", "guest"], "same", "werewolves", "Приет глас: Играч 1");
+    if (mode === "success") {
+      await run;
+      assert.ok(events.includes("roster"));
+      assert.equal(receiptChecks, 2);
+      assert.equal(events.filter((event) => typeof event === "string" && event.includes('data-voted="true"')).length, 6);
+    } else {
+      await assert.rejects(run, /drop not observed|replacement socket not observed|private assignment changed|ACK receipt lost/);
+    }
+    assert.equal(events[0], "close");
+    assert.match(events[1], /data-connected="false"/);
+    if (mode === "success" || mode === "changed-role") {
+      assert.equal(events[2], "replacement");
+      assert.match(events[3], /data-connected="true"/);
+    }
+  }
+});
+
+test("the separate retry fixture fails only the first token request then reconnects through real auth", () => {
+  assert.match(source, /runCheck\("create token failure can be retried", testCreateTokenRetry\)/);
+  const scenario = functionSource("testCreateTokenRetry");
+  assert.match(scenario, /signInBrowserContext\(context, authFixture\.users\[0\]\)/);
+  assert.match(scenario, /createWerewolfRoom\(page,/);
+  assert.match(scenario, /\/api\/game-token/);
+  assert.match(scenario, /route\.fulfill\(\{ status: 503, json: \{ error: failureMessage \} \}\)/);
+  assert.match(scenario, /page\.route\(tokenUrl, failToken, \{ times: 1 \}\)/);
+  assert.match(scenario, /Връзката със стаята прекъсна/);
+  assert.match(scenario, /expectTextIn\(dialog, failureMessage\)/);
+  assert.match(scenario, /response\.ok\(\)/);
+  assert.match(scenario, /Свържи отново/);
+  assert.ok(scenario.indexOf("page.unroute(tokenUrl, failToken)") < scenario.indexOf('name: "Свържи отново"'));
+  assert.match(scenario, /page\.url\(\) !== roomUrl\.href/);
+  assert.match(scenario, /finally \{[\s\S]*page\.unroute\(tokenUrl, failToken\)[\s\S]*context\.close\(\)/);
+  assert.doesNotMatch(scenario, /visualAuth|dev-user-id|ALLOW_DEV_AUTH|status: 200|accessToken:/);
+});
+
+test("expected mocked HTTP errors do not silence unrelated or repeated console errors", async () => {
+  const url = "http://127.0.0.1:3401/api/game-token";
+  function makeWatcher(expectedHttpError) {
+    const handlers = {};
+    const watcher = loadFunction("watchPage", {
+      baseUrl: "http://127.0.0.1:3401",
+      describeConsoleArgument: async () => "",
+    })(
+      { on: (event, handler) => { handlers[event] = handler; } },
+      "fixture",
+      { expectedHttpError },
+    );
+    return {
+      watcher,
+      emit(errorUrl = url, text = "Failed to load resource: the server responded with a status of 503 (Service Unavailable)") {
+        handlers.console({ type: () => "error", text: () => text, location: () => ({ url: errorUrl }), args: () => [] });
+      },
+    };
+  }
+
+  const expected = makeWatcher({ url, status: 503 });
+  expected.emit();
+  await expected.watcher.assertClean();
+  expected.emit();
+  await assert.rejects(expected.watcher.assertClean(), /console error/);
+
+  for (const [errorUrl, message] of [[`${url}/other`, undefined], [url, "Application error 503"]]) {
+    const unexpected = makeWatcher({ url, status: 503 });
+    unexpected.emit(errorUrl, message);
+    await assert.rejects(unexpected.watcher.assertClean(), /console error/);
+  }
+  const normal = makeWatcher();
+  normal.emit();
+  await assert.rejects(normal.watcher.assertClean(), /console error/);
 });

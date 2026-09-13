@@ -98,7 +98,7 @@ button.token:focus-visible {
   background: linear-gradient(180deg, rgba(36, 22, 14, 0.94), rgba(12, 8, 6, 0.9));
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.36), inset 0 1px rgba(255, 255, 255, 0.08);
   color: #fff7df;
-  font-size: clamp(0.68rem, 1.05vw, 0.78rem);
+  font-size: 0.8125rem;
   font-weight: 900;
   line-height: 1.15;
   text-overflow: ellipsis;
@@ -288,6 +288,10 @@ button.token:focus-visible {
 }
 
 @media (max-width: 720px) {
+  .shortcutHint {
+    display: none;
+  }
+
   .state {
     display: none;
   }

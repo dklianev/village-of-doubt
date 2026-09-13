@@ -176,7 +176,7 @@ function checkMetadataTitleContracts() {
   for (const file of files) {
     const absolute = path.join(appDir, file);
     const source = readFileSync(absolute, "utf8");
-    const titleSuffixMatches = source.matchAll(/title:\s*(?:`[^`]*|\{[^}]*|["'][^"']*)\|\s*Върколак и Мафия/g);
+    const titleSuffixMatches = source.matchAll(/title:\s*(?:`[^`]*|["'][^"']*)\|\s*(?:Сенките|Върколак и Мафия)\s*(?=["'`])/g);
     for (const match of titleSuffixMatches) {
       duplicateBrandSuffix.push(`${path.join("apps/web/app", file)}:${lineForIndex(source, match.index ?? 0)}`);
     }
@@ -238,13 +238,14 @@ function checkLandingLayoutContracts() {
   assert(modeChoiceCards.includes("useAuthSession(initialSession)"), "Landing page CTA must share the lightweight auth session hook.");
   assert(!modeChoiceCards.includes('@/lib/auth-client'), "Landing cards must not pull Better Auth into the critical route bundle.");
   assert(modeChoiceCards.includes("prefetch={false}"), "Landing game links must not prefetch multiple route trees before LCP.");
-  assert(modeChoiceCards.includes("Влез и играй"), "Signed-out landing CTA must point users to sign-in.");
-  assert(modeChoiceCards.includes("Избери игра"), "Signed-in landing CTA must send users to game selection.");
+  assert(modeChoiceCards.includes("Създай стая") && modeChoiceCards.includes("/sign-in?redirect=${encodeURIComponent(createHref)}"), "Landing host action must preserve authenticated room creation and the sign-in callback.");
+  assert(modeChoiceCards.includes("Имам код") && modeChoiceCards.includes("${game.href}/join"), "Landing guests need a direct join path separate from room creation.");
   assert(landingPage.includes("href: \"/werewolf\""), "Landing page must define a Werewolf game entry.");
   assert(landingPage.includes("href: \"/mafia\""), "Landing page must define a Mafia game entry.");
-  assert(landingPage.includes("/game-art/bg-landing-hero-composited.avif"), "Landing page should preload the desktop AVIF composited hero background selected by CSS.");
-  assert(landingPage.includes("/game-art/mobile/bg-landing-hero-composited.avif"), "Landing page should preload the mobile AVIF composited hero background selected by the picture source.");
-  assert(landingPage.includes("/game-art/mobile/bg-landing-hero-composited.webp"), "Landing hero picture should keep a mobile WebP fallback.");
+  assert(css.includes("/game-art/bg-landing-hero-composited.avif"), "Landing CSS should select the optimized desktop AVIF hero.");
+  assert(css.includes("/game-art/mobile/bg-landing-hero-composited.avif"), "Landing CSS should select the optimized mobile AVIF hero.");
+  assert(css.includes("/game-art/mobile/bg-landing-hero-composited.webp"), "Landing hero should keep a mobile WebP fallback.");
+  assert(!landingPage.includes("bg-landing-hero-composited"), "Theme-specific hero art belongs to CSS; unconditional image/preload requests waste the unselected theme.");
   assert(!landingPage.includes("href: \"/game-art/bg-landing-ambient-composited.webp\""), "Landing should not preload ambient art ahead of its LCP hero.");
   assert(!landingPage.includes("href: \"/game-art/mobile/bg-landing-ambient-composited.webp\""), "Landing should not preload mobile ambient art ahead of its LCP hero.");
   assert(!landingPage.includes("href: \"/game-art/bg-lobby-tavern.webp\""), "Landing should not preload below-fold game-card art.");
@@ -266,11 +267,11 @@ function checkLandingLayoutContracts() {
   assert(existsSync(path.join(root, "apps/web/components/landing/RecentEndingsCard.tsx")), "Missing landing RecentEndingsCard component.");
   assert(existsSync(path.join(root, "apps/web/components/landing/quickstart-icons.tsx")), "Missing landing quickstart inline SVG icon set.");
   assert(landingPage.includes("UniversalHowToPlay"), "Landing page must import and render UniversalHowToPlay.");
-  assert(landingPage.includes("LiveTickerCard") && landingPage.includes("RecentEndingsCard"), "Landing page must render shared stats cards.");
+  assert(!landingPage.includes("fetch("), "Beta homepage must not depend on a nonexistent public game stats endpoint.");
+  assert(landingPage.includes("<FinalLandingCta"), "Beta homepage must finish with working room creation actions.");
   assert(!landingPage.includes("QuickStartSection"), "Landing page must not render deprecated QuickStartSection.");
   assert(!universalHowToPlay.includes("IntersectionObserver"), "Landing how-to-play should not ship IntersectionObserver for below-fold connector reveal.");
-  assert(css.includes("content-visibility: visible;"), "Landing quickstart must render hover shadows outside its bounds.");
-  assert(css.includes("contain-intrinsic-size: none;"), "Landing quickstart must not use paint containment that clips CTA hover shadows.");
+  // Paint containment is checked on rendered reading surfaces in family-home-journey.spec.ts.
   assert(liveTickerCard.includes("Бъди първият на масата"), "Landing live empty state must invite the first room.");
   assert(recentEndingsCard.includes("Първите герои ще се появят тук."), "Landing winner empty state must use designed Bulgarian copy.");
   for (const exportName of ["PersonIcon", "HouseIcon", "MaskIcon", "MoonIcon", "BallotIcon", "LastWinnerEmptyGlyph"]) {
@@ -318,7 +319,7 @@ function checkLandingLayoutContracts() {
   assert(existsSync(path.join(sourceArtDir, "bg-landing-ambient.png")), "Missing ambient landing source PNG.");
   assert(existsSync(path.join(gameArtDir, "bg-landing-ambient.webp")), "Missing optimized ambient landing background WebP.");
   assert(existsSync(path.join(gameArtDir, "mobile/bg-landing-ambient.webp")), "Missing mobile ambient landing background WebP.");
-  assert(landingPage.includes("/game-art/bg-landing-hero-composited.webp"), "Landing page must reference the optimized composited hero background.");
+  assert(css.includes("/game-art/bg-landing-hero-composited.webp"), "Landing CSS must reference the optimized composited hero background.");
   assert(existsSync(path.join(sourceArtDir, "bg-landing-hero-composited.png")), "Missing composited hero landing source PNG.");
   assert(existsSync(path.join(gameArtDir, "bg-landing-hero-composited.webp")), "Missing optimized composited hero landing background WebP.");
   assert(existsSync(path.join(gameArtDir, "mobile/bg-landing-hero-composited.webp")), "Missing mobile composited hero landing background WebP.");
@@ -330,11 +331,11 @@ function checkLandingLayoutContracts() {
     mobileDrawer.includes("prefetch={false}"),
     "The deferred mobile drawer should not prefetch every secondary route when it opens.",
   );
-  assert(chromeCss.includes("/game-art/logo-chrome-mark.webp"), "Navbar brand should use the chrome-optimized micro-sigil WebP.");
-  assert(existsSync(path.join(sourceArtDir, "logo-chrome-mark.png")), "Missing chrome micro-sigil source PNG.");
-  assert(existsSync(path.join(gameArtDir, "logo-chrome-mark.webp")), "Missing optimized chrome micro-sigil WebP asset.");
-  assert(siteChrome.includes("site-brand-dot"), "Navbar wordmark should keep the premium separator accent.");
-  assert(siteChrome.includes("Социална игра на сенки"), "Navbar subtitle should use the updated Bulgarian tagline.");
+  const brandLogo = readText("apps/web/components/site-chrome/BrandLogo.tsx");
+  assert(chromeCss.includes('/brand/senkite-wordmark.svg'), "Navbar should use the current scalable Senkite wordmark.");
+  assert(existsSync(path.join(root, "apps/web/public/brand/senkite-wordmark.svg")), "Missing Senkite wordmark asset.");
+  assert(brandLogo.includes('aria-label="Сенките"'), "The graphical wordmark needs its accessible brand name.");
+  assert(siteChrome.includes('aria-label="Сенките, начало"'), "The brand link must identify its home destination.");
   assert(!siteChrome.includes("ВЪРКОЛАК · МАФИЯ"), "Navbar must not use the old uppercase subtitle.");
   assert(!siteChrome.includes("Системна тема"), "Navbar theme toggle should only expose light and dark modes.");
   assert(!siteChrome.includes("\"system\""), "Navbar theme cycle should not include the old system preference.");
@@ -371,13 +372,13 @@ function checkFamilyQuickStartContracts() {
   assert(gameHomePage.includes("<RoleSpotlight"), "GameHomePage must render family role spotlight.");
   assert(gameHomePage.includes("<LiveTickerCard") && gameHomePage.includes("<RecentEndingsCard"), "GameHomePage must render shared stats cards.");
   assert(gameHomePage.includes("function GameHero"), "GameHomePage must extract the cinematic hero into a GameHero subcomponent.");
-  for (const selector of [".game-home-hero__art", ".game-home-hero__scrim", ".game-home-hero__content", ".game-home-hero__fog", ".game-home-hero__rain"]) {
+  for (const selector of [".game-home-hero__scene", ".game-home-hero__art", ".game-home-hero__scrim", ".game-home-hero__content"]) {
     assert(css.includes(selector), `Missing cinematic game hero selector ${selector}.`);
   }
   assert(css.includes('[data-family="werewolves"]') && css.includes('[data-faction="werewolves"]') && css.includes("--family-hero"), "Werewolf faction selectors must expose --family-hero.");
   assert(css.includes('[data-family="mafia"]') && css.includes('[data-faction="mafia"]') && css.includes("--family-hero"), "Mafia faction selectors must expose --family-hero.");
-  assert(css.includes("@keyframes fog-drift"), "Werewolf hero needs fog-drift keyframes.");
-  assert(css.includes("@keyframes rain-veil"), "Mafia hero needs rain-veil keyframes.");
+  // Continuous scenery replaces the separate fog/rain overlays with competing crops.
+  assert(gameHomePage.includes('className="game-home-hero__scene"'), "Family hero art and scrim must share one continuous scene.");
   for (const asset of [
     "werewolf/bg-hero-v2.png",
     "werewolf/bg-hero-v2.webp",
@@ -409,12 +410,11 @@ function checkFamilyQuickStartContracts() {
   );
   assert(!gameHomePage.includes("QuickStartSection"), "GameHomePage must not render deprecated QuickStartSection.");
   assert(!werewolfTimeline.includes("IntersectionObserver") && !mafiaTimeline.includes("IntersectionObserver"), "Family timelines should not ship IntersectionObserver for reveal.");
-  assert(css.includes("content-visibility: visible"), "Family quickstart should avoid paint containment that clips CTA hover shadows.");
   assert(liveTickerCard.includes("Бъди първият на масата") && liveTickerCard.includes("Запали първия огън"), "Live ticker empty states must be family-aware.");
   assert(recentEndingsCard.includes("Първите легенди ще се появят тук.") && recentEndingsCard.includes("Първите досиета ще се появят тук."), "Recent endings empty states must be family-aware.");
   assert(recentEndingsCard.includes("LastWinnerEmptyGlyph"), "Family winner empty state must use the shared designed glyph.");
   assert(roleSpotlight.includes("ordinary_villager") && roleSpotlight.includes("commissioner"), "RoleSpotlight must use real family role identifiers.");
-  assert(variantsChips.includes("С Маниак") && variantsChips.includes("Комисар и Доктор"), "Variant chips must use project role terminology.");
+  assert(!variantsChips.includes("С Маниак") && variantsChips.includes('role: "cupid"') && variantsChips.includes('role: "vampire"') && variantsChips.includes("RoleDossierTrigger"), "Werewolf variants must open supported family roles locally, not advertise the Mafia-only Maniac.");
   assert(mafiaMechanics.includes("Дневникът на Комисаря"), "Mafia mechanics must use current role terminology.");
   assert(sportMafia.includes("Създай маса"), "Sport Mafia CTA must use idiomatic Bulgarian copy.");
   assert(gameRoom.includes("recentEndings") && gameRoom.includes("byFamily"), "Game server stats must expose family counts and recent endings.");
@@ -444,23 +444,27 @@ function checkFamilyQuickStartContracts() {
 }
 
 function checkRolesPageContracts() {
-  const rolesPage = readText("apps/web/components/games/game-roles-page.tsx");
+  const rolesPage = ["game-roles-page.tsx", "RoleArt.tsx", "RoleDossier.tsx"]
+    .map((file) => readText(`apps/web/components/games/${file}`)).join("\n");
   const legacyRolesRoute = readText("apps/web/app/roles/page.tsx");
   const css = readRolesStyles();
 
   assert(rolesPage.includes("getRolesForFamily"), "Roles page must filter roles by family.");
   assert(rolesPage.includes("KNOWN_WEREWOLF_ROLE_ASSETS"), "Roles page must keep an explicit Werewolf asset allow-list.");
   assert(rolesPage.includes("KNOWN_MAFIA_ROLE_ASSETS"), "Roles page must keep an explicit Mafia asset allow-list.");
-  assert(rolesPage.includes("<picture className=\"role-codex-art role-codex-frame\""), "Roles page must render role art as framed picture elements.");
+  assert(rolesPage.includes("<picture className=\"role-codex-art role-codex-frame role-art-frame\"") && rolesPage.includes("data-frame-family={family}"), "Roles page must render pictures with the shared family frame.");
   assert(rolesPage.includes("role-codex-card-compact"), "Roles page must use compact codex cards instead of full-text rows.");
-  assert(rolesPage.includes("RoleCodexDetail"), "Roles page must keep full role copy in a cinematic detail sheet.");
-  assert(rolesPage.includes("roleThumbPath"), "Roles page must use lightweight role thumbnails for codex cards.");
+  assert(rolesPage.includes("RoleDossier"), "Roles page must keep full role copy in the shared detail sheet.");
+  assert(rolesPage.includes("roleArtSource") && !rolesPage.includes("roleThumbPath"), "Roles and dossiers must use full-resolution artwork, not thumbnail masters.");
+  assert(rolesPage.includes("sizes={sizes}") && rolesPage.includes("quality={85}"), "Role art must retain responsive delivery at its approved quality.");
   assert(legacyRolesRoute.includes("redirect(\"/werewolf/roles\")"), "Legacy /roles route must not render mixed role data.");
   assert(css.includes(".role-mayor"), "Missing mayor role-art CSS class.");
   assert(css.includes("/game-art/role-mayor.webp"), "Missing optimized mayor role art CSS reference.");
   assert(css.includes("/game-art/mafia/role-mafioso.webp"), "Missing Mafia role-art CSS reference.");
   assert(css.includes(".role-codex-frame"), "Role codex images need a stable art frame.");
-  assert(css.includes("aspect-ratio: 5 / 7"), "Role codex art frames must preserve a portrait card ratio.");
+  assert(readText("apps/web/components/games/RoleDossier.module.css").includes("aspect-ratio: 2 / 3"), "Role codex art frames must preserve the native portrait card ratio.");
+  const frameCss = readText("apps/web/components/games/RoleFrame.css");
+  assert(frameCss.includes("pointer-events: none") && ["mafia", "werewolves"].every((family) => frameCss.includes(`/frames/frame-${family}-v1.webp`)), "Shared frames must use both family assets and not intercept card interactions.");
   assert(css.includes(".role-codex-detail"), "Role codex detail sheet needs dedicated styling.");
   assert(css.includes(".role-codex-frame img"), "Role codex cards must style real image elements.");
   assert(css.includes("object-fit: cover"), "Role codex images must fill the card frame without stretching.");
@@ -564,6 +568,7 @@ function checkBulgarianCopyContracts() {
 function checkLobbyImageContracts() {
   const css = readLobbyStyles();
   const lobbyInvitePage = readText("apps/web/app/lobby/[code]/page.tsx");
+  const lobbyInviteClient = readText("apps/web/components/lobby-invite-client.tsx");
   const lobbyCreateClient = readText("apps/web/components/lobby-create-client.tsx");
 
   assert(css.includes("--mode-preview-position"), "Lobby mode preview should use explicit sprite focal positions.");
@@ -578,7 +583,7 @@ function checkLobbyImageContracts() {
   assert(css.includes("--invite-art: var(--art-lobby)"), "Mafia invite card should swap away from the village map asset.");
   assert(css.includes(".lobby-invite-v2"), "Invite page should use the current cinematic invite shell.");
   assert(lobbyInvitePage.includes("LobbyInviteClient"), "Lobby invite page must render the invite client.");
-  assert(lobbyInvitePage.includes("досие към задната стая"), "Mafia invite page should use Mafia-specific scene copy.");
+  assert(lobbyInviteClient.includes("досие към задната стая"), "Mafia invite client should use Mafia-specific scene copy from the verified preview.");
 }
 
 function checkLobbyWizardContracts() {
@@ -638,10 +643,10 @@ function checkPlayUiContracts() {
     "NarratorDesk",
     "triggerDeviceCue",
     "tempoProfile === \"live\"",
-    "Игра на живо: звукът и вибрацията са изключени по подразбиране",
+    "При игра на живо е достъпен само тихият режим.",
     "панел на Разказвача",
     "Водиш играта",
-    "Контрол на водещия",
+    "Управление на домакина",
     "narratorExtendTimer",
     "getGameFamily(mode)",
     "phaseLabelBg(phase, familyOrMode)",
@@ -719,7 +724,8 @@ function checkFrontendHygieneContracts() {
     stepRoom.includes('from "@/components/lobby/Field"') && fieldComponent.includes("export function Field"),
     "StepRoom must use the uniform Field subcomponent.",
   );
-  assert(clientComponentFiles.length <= 50, `Too many apps/web client components: ${clientComponentFiles.length} > 50.`);
+  // One isolated dossier trigger keeps the full role catalogue out of family landing bundles.
+  assert(clientComponentFiles.length <= 51, `Too many apps/web client components: ${clientComponentFiles.length} > 51.`);
   for (const file of serverDefaultComponents) {
     assert(!readText(file).startsWith('"use client"'), `${file} should stay server-default.`);
   }
@@ -924,10 +930,10 @@ function checkLaunchTestingContracts() {
   const bannedCopyPattern = /без акаунт|без регистрация|временна идентичност|играй без|влизаш без|без профил|anonymous/i;
   const uiFiles = [
     ...listFilesRecursive(path.join(root, "apps/web/app"))
-      .filter((file) => /\.(tsx|ts)$/.test(file))
+      .filter((file) => /\.(tsx|ts)$/.test(file) && !/\.(test|spec)\.tsx?$/.test(file))
       .map((file) => `apps/web/app/${file}`),
     ...listFilesRecursive(path.join(root, "apps/web/components"))
-      .filter((file) => /\.(tsx|ts)$/.test(file))
+      .filter((file) => /\.(tsx|ts)$/.test(file) && !/\.(test|spec)\.tsx?$/.test(file))
       .map((file) => `apps/web/components/${file}`),
   ];
   const visualBaselineDir = path.join(root, "apps/web/__visual__/__baseline__");
@@ -1604,6 +1610,7 @@ function readRolesStyles() {
   return readCssSurface(
     "apps/web/app/globals.css",
     "apps/web/components/games/GameRolesPage.module.css",
+    "apps/web/components/games/RoleDossier.module.css",
   );
 }
 

@@ -12,15 +12,20 @@ export type Ending = {
 type RecentEndingsCardProps = {
   family: GameFamily | null;
   endings: Ending[];
+  available?: boolean;
 };
 
-export function RecentEndingsCard({ family, endings }: RecentEndingsCardProps) {
+export function RecentEndingsCard({ family, endings, available = true }: RecentEndingsCardProps) {
   const visible = (family ? endings.filter((ending) => ending.family === family) : endings).slice(0, 3);
 
   return (
     <article className="quickstart-winner quickstart-mini-card recent-endings-card">
       <p className="section-kicker">{kicker(family)}</p>
-      {visible.length === 0 ? (
+      {!available ? (
+        <div className="quickstart-winner-empty quickstart-stats-unavailable">
+          <p>Последните истории временно не са достъпни.</p>
+        </div>
+      ) : visible.length === 0 ? (
         family === null ? (
           <div className="quickstart-winner-empty quickstart-winner-empty--homepage">
             <div className="quickstart-winner-copy">

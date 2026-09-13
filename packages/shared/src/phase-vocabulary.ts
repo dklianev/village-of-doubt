@@ -1,4 +1,5 @@
-import { GAME_MODE_DEFINITIONS, getGameFamily, type GameFamily, type GameMode } from "./game-config.js";
+import { GAME_MODE_DEFINITIONS, getGameFamily } from "./game-metadata.js";
+import type { GameFamily, GameMode } from "./game-config.js";
 import type { GamePhase } from "./protocol.js";
 
 export const DEFAULT_PHASE_LABELS_BG: Record<GamePhase, string> = {

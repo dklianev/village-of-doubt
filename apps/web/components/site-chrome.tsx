@@ -1,373 +1,239 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Menu,
-  Moon,
-  MoreHorizontal,
-  Play,
-  Sun,
-  Volume2,
-  VolumeX,
-} from "lucide-react";
+import { ChevronDown, Menu, Moon, Play, Sun, Volume2, VolumeX } from "lucide-react";
 import { AuthChip } from "@/components/site-chrome/AuthChip";
-import { NavDropdown } from "@/components/site-chrome/NavDropdown";
+import { BrandLogo } from "@/components/site-chrome/BrandLogo";
+import { NavigationFallback } from "@/components/site-chrome/NavigationFallback";
+import { useNavigationPanels } from "@/components/site-chrome/use-navigation-panels";
 import { getSoundEnabled, playCue, setSoundEnabled } from "@/lib/sound";
 import { safeLocalStorage } from "@/lib/safe-storage";
 import type { AuthSessionView } from "@/lib/use-auth-session";
 import "@/components/site-chrome/SiteChrome.module.css";
 
 type ThemePreference = "light" | "dark";
-type ChromeFamily = "werewolves" | "mafia";
-
+type Disclosure = "play" | "more";
 const THEME_STORAGE_KEY = "werewolf-theme";
-const LAST_FAMILY_STORAGE_KEY = "last-family";
-const THEME_OPTIONS: ThemePreference[] = ["light", "dark"];
-
-const MobileDrawer = dynamic(() => import("@/components/site-chrome/MobileDrawer").then((mod) => mod.MobileDrawer), {
-  loading: () => null,
-  ssr: false,
-});
+const transientButtonAttributes = { autoComplete: "off" } as const;
 
 export default function SiteChrome({ initialSession }: { initialSession?: AuthSessionView | null }) {
   const pathname = usePathname();
+  const isRoom = pathname.startsWith("/play/");
   const [interactive, setInteractive] = useState(false);
   const [soundEnabled, setSoundEnabledState] = useState(false);
   const [themePreference, setThemePreference] = useState<ThemePreference>("dark");
-  const [family, setFamily] = useState<ChromeFamily | null>(null);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [disclosure, setDisclosure] = useState<Disclosure | null>(null);
+  const [drawer, setDrawer] = useState<"navigation" | "play" | null>(null);
+  const [drawerMode, setDrawerMode] = useState<"navigation" | "play">("navigation");
   const [drawerMounted, setDrawerMounted] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const dropdownTriggerRef = useRef<HTMLButtonElement>(null);
-  const drawerTriggerRef = useRef<HTMLButtonElement>(null);
-
-  const routeFamily = familyFromPath(pathname);
-  const activeFamily = routeFamily ?? family;
-  const playHref = activeFamily === "mafia"
-    ? "/mafia/create"
-    : activeFamily === "werewolves"
-      ? "/werewolf/create"
-      : "/create";
+  const { panels, status: navigationStatus, preload, retry } = useNavigationPanels();
+  const mobileFallbackRef = useRef<HTMLDivElement>(null);
+  const moreRef = useRef<HTMLDivElement>(null);
+  const playRef = useRef<HTMLDivElement>(null);
+  const moreTriggerRef = useRef<HTMLButtonElement>(null);
+  const playTriggerRef = useRef<HTMLButtonElement>(null);
+  const mobileTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const ids = useId();
 
   useEffect(() => {
     setSoundEnabledState(getSoundEnabled());
-    const savedTheme = readThemePreference();
-    const savedFamily = readFamilyPreference();
-    setThemePreference(savedTheme);
-    setFamily(savedFamily);
-    applyThemePreference(savedTheme);
+    const saved = safeLocalStorage.getItem(THEME_STORAGE_KEY);
+    const theme = saved === "light" || saved === "dark"
+      ? saved
+      : document.documentElement.dataset.theme === "light" ? "light" : "dark";
+    setThemePreference(theme);
+    applyThemePreference(theme);
     setInteractive(true);
   }, []);
 
   useEffect(() => {
-    setDropdownOpen(false);
-    setDrawerOpen(false);
-    const nextFamily = familyFromPath(pathname);
-    if (!nextFamily) {
-      return;
+    setDisclosure(null);
+    setDrawer(null);
+    if (pathname === "/mafia" || pathname.startsWith("/mafia/")) {
+      safeLocalStorage.setItem("last-family", "mafia");
+    } else if (pathname === "/werewolf" || pathname.startsWith("/werewolf/")) {
+      safeLocalStorage.setItem("last-family", "werewolves");
     }
-    setFamily(nextFamily);
-    safeLocalStorage.setItem(LAST_FAMILY_STORAGE_KEY, nextFamily);
   }, [pathname]);
 
   useEffect(() => {
-    if (!dropdownOpen) {
-      return;
+    const mobileFallback = drawer !== null && !panels;
+    if (!disclosure && !mobileFallback) return;
+    const container = mobileFallback ? mobileFallbackRef : disclosure === "play" ? playRef : moreRef;
+    const trigger = mobileFallback ? mobileTriggerRef : disclosure === "play" ? playTriggerRef : moreTriggerRef;
+    function close() {
+      setDisclosure(null);
+      setDrawer(null);
     }
-
-    function onPointerDown(event: PointerEvent) {
-      if (dropdownRef.current?.contains(event.target as Node)) {
-        return;
-      }
-      setDropdownOpen(false);
+    function outside(event: Event) {
+      if (event.target instanceof Node && !container.current?.contains(event.target)
+        && !trigger.current?.contains(event.target)) close();
     }
-
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
-        setDropdownOpen(false);
-        dropdownTriggerRef.current?.focus();
+        event.preventDefault();
+        close();
+        trigger.current?.focus();
       }
     }
-
-    document.addEventListener("pointerdown", onPointerDown);
+    if (mobileFallback) container.current?.querySelector<HTMLElement>("a")?.focus();
+    document.addEventListener("pointerdown", outside);
+    document.addEventListener("focusin", outside);
     document.addEventListener("keydown", onKeyDown);
     return () => {
-      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("pointerdown", outside);
+      document.removeEventListener("focusin", outside);
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [dropdownOpen]);
+  }, [disclosure, drawer, panels]);
 
-  function openDrawer() {
+  useEffect(() => {
+    const media = window.matchMedia("(min-width: 1024px)");
+    function closeAtBreakpoint() {
+      setDisclosure(null);
+      setDrawer(null);
+    }
+    media.addEventListener("change", closeAtBreakpoint);
+    return () => media.removeEventListener("change", closeAtBreakpoint);
+  }, []);
+
+  function openDrawer(mode: "navigation" | "play", trigger: HTMLButtonElement) {
+    preload();
+    mobileTriggerRef.current = trigger;
+    setDisclosure(null);
     setDrawerMounted(true);
-    setDrawerOpen(true);
+    setDrawerMode(mode);
+    setDrawer(mode);
   }
 
   function toggleSound() {
-    const nextEnabled = !soundEnabled;
-    setSoundEnabled(nextEnabled);
-    setSoundEnabledState(nextEnabled);
-    if (nextEnabled) {
-      playCue("phase-change");
-    }
+    const enabled = !soundEnabled;
+    setSoundEnabled(enabled);
+    setSoundEnabledState(enabled);
+    if (enabled) playCue("phase-change");
   }
 
-  function cycleThemePreference() {
-    const currentIndex = THEME_OPTIONS.indexOf(themePreference);
-    const nextPreference = THEME_OPTIONS[(currentIndex + 1) % THEME_OPTIONS.length] ?? "dark";
-    safeLocalStorage.setItem(THEME_STORAGE_KEY, nextPreference);
-    setThemePreference(nextPreference);
-    if ("startViewTransition" in document) {
-      document.startViewTransition(() => applyThemePreference(nextPreference));
-      return;
-    }
-    applyThemePreference(nextPreference);
+  function toggleTheme() {
+    const next = themePreference === "dark" ? "light" : "dark";
+    safeLocalStorage.setItem(THEME_STORAGE_KEY, next);
+    setThemePreference(next);
+    if ("startViewTransition" in document) document.startViewTransition(() => applyThemePreference(next));
+    else applyThemePreference(next);
   }
+
+  const soundLabel = soundEnabled ? "Изключи звука" : "Включи звука";
+  const themeLabel = themePreference === "dark" ? "Смени на светла тема" : "Смени на тъмна тема";
+  const authProps = initialSession === undefined ? {} : { initialSession };
 
   return (
-    <header className="site-chrome" data-version="v2" data-family={activeFamily ?? undefined}>
+    <header className="site-chrome" data-version="v2" data-room={isRoom ? "true" : undefined}>
       <button
-        ref={drawerTriggerRef}
-        className="site-mobile-menu"
-        type="button"
-        aria-label="Отвори менюто"
-        disabled={!interactive}
-        onPointerEnter={() => setDrawerMounted(true)}
-        onFocus={() => setDrawerMounted(true)}
-        onClick={openDrawer}
+        className="site-mobile-menu" type="button" aria-label="Отвори менюто"
+        aria-haspopup={panels ? "dialog" : undefined} aria-expanded={drawer === "navigation"}
+        aria-busy={drawer === "navigation" && navigationStatus === "pending"}
+        {...transientButtonAttributes} disabled={!interactive}
+        onPointerEnter={preload} onFocus={preload}
+        onClick={(event) => openDrawer("navigation", event.currentTarget)}
       >
         <Menu className="site-icon" aria-hidden strokeWidth={1.9} />
       </button>
 
-      <BrandMark compact={false} />
+      <Link className="site-brand" href="/" aria-label="Сенките, начало"><BrandLogo /></Link>
 
-      <PrimaryBand
-        pathname={pathname}
-        playHref={playHref}
-        dropdownOpen={dropdownOpen}
-        dropdownRef={dropdownRef}
-        dropdownTriggerRef={dropdownTriggerRef}
-        interactive={interactive}
-        onToggleDropdown={() => setDropdownOpen((open) => !open)}
-      />
+      <nav className="site-primary-band" aria-label="Основна навигация">
+        {!isRoom ? <>
+          <FamilyLink pathname={pathname} href="/werewolf" label="Върколак" />
+          <FamilyLink pathname={pathname} href="/mafia" label="Мафия" />
+        </> : null}
+        <div className="site-more-menu" ref={moreRef}>
+          <button
+            ref={moreTriggerRef} className="site-more-trigger" type="button" aria-label="Още страници"
+            aria-expanded={disclosure === "more"} aria-controls={`${ids}-more`}
+            aria-busy={disclosure === "more" && navigationStatus === "pending"}
+            onPointerEnter={preload} onFocus={preload}
+            {...transientButtonAttributes} disabled={!interactive}
+            onClick={() => { preload(); setDisclosure((open) => open === "more" ? null : "more"); }}
+          >
+            <span>Още</span><ChevronDown className="site-icon" aria-hidden />
+          </button>
+          {disclosure === "more" ? panels
+            ? <panels.NavDropdown id={`${ids}-more`} pathname={pathname} onNavigate={() => setDisclosure(null)} />
+            : <NavigationFallback id={`${ids}-more`} mode="more" failed={navigationStatus === "error"}
+              onRetry={() => { moreTriggerRef.current?.focus(); retry(); }} onClose={() => setDisclosure(null)} />
+            : null}
+        </div>
+      </nav>
 
-      <UtilityCluster
-        soundEnabled={soundEnabled}
-        themePreference={themePreference}
-        interactive={interactive}
-        {...(initialSession === undefined ? {} : { initialSession })}
-        onToggleSound={toggleSound}
-        onCycleTheme={cycleThemePreference}
-      />
+      {!isRoom ? <div className="site-entry-actions">
+        <Link className="site-join-link" href="/join" prefetch={false}>Имам код</Link>
+        <div className="site-play-menu" ref={playRef}>
+          <button
+            ref={playTriggerRef} className="site-play-cta" type="button"
+            aria-expanded={disclosure === "play"} aria-controls={`${ids}-play`}
+            aria-busy={disclosure === "play" && navigationStatus === "pending"}
+            onPointerEnter={preload} onFocus={preload}
+            {...transientButtonAttributes} disabled={!interactive}
+            onClick={() => { preload(); setDisclosure((open) => open === "play" ? null : "play"); }}
+          >
+            <Play className="site-icon" aria-hidden strokeWidth={1.9} /><span>Играй</span>
+          </button>
+          {disclosure === "play" ? panels ? <div id={`${ids}-play`} className="nav-dropdown site-play-panel">
+            <p className="site-play-panel-title">Какво ще играем?</p>
+            <panels.PlayChoices onNavigate={() => setDisclosure(null)} />
+          </div> : <NavigationFallback id={`${ids}-play`} mode="play" failed={navigationStatus === "error"}
+            onRetry={() => { playTriggerRef.current?.focus(); retry(); }} onClose={() => setDisclosure(null)} /> : null}
+        </div>
+      </div> : null}
 
-      <Link className="site-play-cta site-play-cta-mobile" href={playHref}>
-        <Play className="site-icon" aria-hidden strokeWidth={1.9} />
-        <span>Играй</span>
-      </Link>
+      <div className="site-utility-cluster" aria-label="Настройки">
+        {isRoom ? <button className="site-icon-button" type="button" aria-label={soundLabel} data-tooltip={soundLabel} disabled={!interactive} onClick={toggleSound}>
+          {soundEnabled ? <Volume2 className="site-icon" aria-hidden /> : <VolumeX className="site-icon" aria-hidden />}
+        </button> : null}
+        <button className="site-icon-button" type="button" aria-label={themeLabel} data-tooltip={themeLabel} disabled={!interactive} onClick={toggleTheme}>
+          {themePreference === "dark" ? <Moon className="site-icon" aria-hidden /> : <Sun className="site-icon" aria-hidden />}
+        </button>
+        <span className="site-utility-separator" aria-hidden />
+        <AuthChip {...authProps} pathname={pathname} />
+      </div>
 
-      {drawerMounted ? (
-        <MobileDrawer
-          open={drawerOpen}
-          pathname={pathname}
-          soundEnabled={soundEnabled}
-          themePreference={themePreference}
-          {...(initialSession === undefined ? {} : { initialSession })}
-          playHref={playHref}
-          triggerRef={drawerTriggerRef}
-          onOpenChange={setDrawerOpen}
-          onToggleSound={toggleSound}
-          onCycleTheme={cycleThemePreference}
-        />
-      ) : null}
+      {!isRoom ? <button
+        className="site-play-cta site-play-cta-mobile" type="button" aria-haspopup={panels ? "dialog" : undefined}
+        aria-expanded={drawer === "play"} disabled={!interactive}
+        aria-busy={drawer === "play" && navigationStatus === "pending"}
+        onPointerEnter={preload} onFocus={preload}
+        onClick={(event) => openDrawer("play", event.currentTarget)}
+      >
+        <Play className="site-icon" aria-hidden strokeWidth={1.9} /><span>Играй</span>
+      </button> : <button className="site-icon-button site-room-sound" type="button" aria-label={soundLabel} disabled={!interactive} onClick={toggleSound}>
+        {soundEnabled ? <Volume2 className="site-icon" aria-hidden /> : <VolumeX className="site-icon" aria-hidden />}
+      </button>}
+
+      {drawerMounted && panels ? <panels.MobileDrawer
+        open={drawer !== null} mode={drawerMode} isRoom={isRoom} pathname={pathname}
+        soundEnabled={soundEnabled} themePreference={themePreference} {...authProps}
+        triggerRef={mobileTriggerRef} onOpenChange={(open) => { if (!open) setDrawer(null); }}
+        onToggleSound={toggleSound} onCycleTheme={toggleTheme}
+      /> : null}
+      {drawer && !panels ? <div className="site-navigation-fallback-host" ref={mobileFallbackRef}>
+        <NavigationFallback id={`${ids}-mobile`} mode={drawer} mobile isRoom={isRoom}
+          failed={navigationStatus === "error"} onRetry={retry}
+          onClose={() => { setDrawer(null); mobileTriggerRef.current?.focus(); }} />
+      </div> : null}
     </header>
   );
 }
 
-function BrandMark({ compact }: { compact: boolean }) {
-  return (
-    <Link className="site-brand" href="/" aria-label="Върколак и Мафия, начало">
-      <span className="site-brand-mark" aria-hidden="true" />
-      <span className="site-brand-text">
-        <span className={compact ? "site-brand-wordmark is-compact" : "site-brand-wordmark"}>
-          <span>Върколак</span>
-          <span className="site-brand-dot" aria-hidden="true">
-            ·
-          </span>
-          <span>Мафия</span>
-        </span>
-        {process.env.NEXT_PUBLIC_SHOW_BETA_BADGE !== "false" ? (
-          <span className="site-beta-badge">
-            БЕТА
-          </span>
-        ) : null}
-        <span className="site-brand-subtitle">Социална игра на сенки</span>
-      </span>
-    </Link>
-  );
-}
-
-function PrimaryBand({
-  pathname,
-  playHref,
-  dropdownOpen,
-  dropdownRef,
-  dropdownTriggerRef,
-  interactive,
-  onToggleDropdown,
-}: {
-  pathname: string;
-  playHref: string;
-  dropdownOpen: boolean;
-  dropdownRef: React.RefObject<HTMLDivElement | null>;
-  dropdownTriggerRef: React.RefObject<HTMLButtonElement | null>;
-  interactive: boolean;
-  onToggleDropdown: () => void;
-}) {
-  return (
-    <nav className="site-primary-band" aria-label="Основна навигация">
-      <Link className="site-play-cta" href={playHref}>
-        <Play className="site-icon" aria-hidden strokeWidth={1.9} />
-        <span>Играй</span>
-      </Link>
-      <div className="site-family-switcher" aria-label="Семейство игри">
-        <FamilyLink href="/werewolf" label="Върколак" active={pathname.startsWith("/werewolf")} family="werewolves" />
-        <span className="site-family-divider" aria-hidden="true" />
-        <FamilyLink href="/mafia" label="Мафия" active={pathname.startsWith("/mafia")} family="mafia" />
-      </div>
-      <div className="site-more-menu" ref={dropdownRef}>
-        <button
-          ref={dropdownTriggerRef}
-          className="site-icon-button"
-          type="button"
-          aria-label="Още страници"
-          aria-expanded={dropdownOpen}
-          disabled={!interactive}
-          onClick={onToggleDropdown}
-        >
-          <MoreHorizontal className="site-icon" aria-hidden strokeWidth={1.9} />
-        </button>
-        {dropdownOpen ? <NavDropdown onNavigate={onToggleDropdown} /> : null}
-      </div>
-    </nav>
-  );
-}
-
-function FamilyLink({ href, label, active, family }: { href: string; label: string; active: boolean; family: ChromeFamily }) {
-  return (
-    <Link className={active ? "site-family-link is-active" : "site-family-link"} data-family={family} href={href}>
-      <span>{label}</span>
-    </Link>
-  );
-}
-
-function UtilityCluster({
-  soundEnabled,
-  themePreference,
-  interactive,
-  initialSession,
-  onToggleSound,
-  onCycleTheme,
-  showAuth = true,
-}: {
-  soundEnabled: boolean;
-  themePreference: ThemePreference;
-  interactive: boolean;
-  initialSession?: AuthSessionView | null;
-  onToggleSound: () => void;
-  onCycleTheme: () => void;
-  showAuth?: boolean;
-}) {
-  return (
-    <div className="site-utility-cluster" aria-label="Настройки">
-      <button
-        className="site-icon-button"
-        type="button"
-        aria-label={soundEnabled ? "Изключи звука" : "Включи звука"}
-        disabled={!interactive}
-        onClick={onToggleSound}
-      >
-        {soundEnabled ? (
-          <Volume2 className="site-icon" aria-hidden strokeWidth={1.9} />
-        ) : (
-          <VolumeX className="site-icon" aria-hidden strokeWidth={1.9} />
-        )}
-      </button>
-      <button
-        className="site-icon-button"
-        type="button"
-        aria-label={themeLabel(themePreference)}
-        disabled={!interactive}
-        onClick={onCycleTheme}
-      >
-        {themePreference === "dark" ? (
-          <Moon className="site-icon" aria-hidden strokeWidth={1.9} />
-        ) : (
-          <Sun className="site-icon" aria-hidden strokeWidth={1.9} />
-        )}
-      </button>
-      {showAuth ? (
-        <>
-          <span className="site-utility-separator" aria-hidden />
-          <AuthChip {...(initialSession === undefined ? {} : { initialSession })} />
-        </>
-      ) : null}
-    </div>
-  );
-}
-
-function readThemePreference(): ThemePreference {
-  if (typeof window === "undefined") {
-    return "dark";
-  }
-
-  const saved = safeLocalStorage.getItem(THEME_STORAGE_KEY);
-  if (saved === "dark" || saved === "light") {
-    return saved;
-  }
-
-  const resolvedTheme = document.documentElement.dataset.theme === "light" ? "light" : "dark";
-  safeLocalStorage.setItem(THEME_STORAGE_KEY, resolvedTheme);
-  return resolvedTheme;
-}
-
-function readFamilyPreference(): ChromeFamily {
-  if (typeof window === "undefined") {
-    return "werewolves";
-  }
-
-  const saved = safeLocalStorage.getItem(LAST_FAMILY_STORAGE_KEY);
-  return saved === "mafia" ? "mafia" : "werewolves";
-}
-
-function familyFromPath(pathname: string): ChromeFamily | undefined {
-  if (pathname.startsWith("/mafia")) {
-    return "mafia";
-  }
-  if (pathname.startsWith("/werewolf")) {
-    return "werewolves";
-  }
-  return undefined;
+function FamilyLink({ pathname, href, label }: { pathname: string; href: string; label: string }) {
+  const active = pathname === href || pathname.startsWith(`${href}/`);
+  return <Link className={active ? "site-family-link is-active" : "site-family-link"} href={href}
+    aria-current={pathname === href ? "page" : active ? "location" : undefined}>{label}</Link>;
 }
 
 function applyThemePreference(preference: ThemePreference) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  if (document.documentElement.dataset.theme === preference) {
-    return;
-  }
-
+  if (document.documentElement.dataset.theme === preference) return;
   document.documentElement.dataset.vt = "theme";
   document.documentElement.dataset.theme = preference;
-  window.setTimeout(() => {
-    delete document.documentElement.dataset.vt;
-  }, 320);
-}
-
-function themeLabel(preference: ThemePreference) {
-  return preference === "dark" ? "Смени на светла тема" : "Смени на тъмна тема";
+  window.setTimeout(() => { delete document.documentElement.dataset.vt; }, 320);
 }

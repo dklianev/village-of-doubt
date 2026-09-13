@@ -8,12 +8,12 @@ const PLAY_STAGE_SOURCE = readFileSync(resolve(process.cwd(), "components/play/P
 const TABLE_ASSETS = [
   "public/game-art/play/table-inlay-werewolves-v1.avif",
   "public/game-art/play/table-inlay-werewolves-v1.webp",
-  "public/game-art/play/table-inlay-mafia-v1.avif",
-  "public/game-art/play/table-inlay-mafia-v1.webp",
+  "public/game-art/play/table-inlay-mafia-v2.avif",
+  "public/game-art/play/table-inlay-mafia-v2.webp",
   "public/game-art/mobile/play/table-inlay-werewolves-v1.avif",
   "public/game-art/mobile/play/table-inlay-werewolves-v1.webp",
-  "public/game-art/mobile/play/table-inlay-mafia-v1.avif",
-  "public/game-art/mobile/play/table-inlay-mafia-v1.webp",
+  "public/game-art/mobile/play/table-inlay-mafia-v2.avif",
+  "public/game-art/mobile/play/table-inlay-mafia-v2.webp",
 ] as const;
 
 describe("PlayStage table surface", () => {
@@ -36,11 +36,11 @@ describe("PlayStage table surface", () => {
 
   it("uses dedicated family art and a reduced-detail mobile source", () => {
     expect(PLAY_STAGE_CSS).toContain("table-inlay-werewolves-v1.avif");
-    expect(PLAY_STAGE_CSS).toContain("table-inlay-mafia-v1.avif");
+    expect(PLAY_STAGE_CSS).toContain("table-inlay-mafia-v2.avif");
     expect(PLAY_STAGE_CSS).toContain("/game-art/mobile/play/table-inlay-werewolves-v1.webp");
-    expect(PLAY_STAGE_CSS).toContain("/game-art/mobile/play/table-inlay-mafia-v1.webp");
+    expect(PLAY_STAGE_CSS).toContain("/game-art/mobile/play/table-inlay-mafia-v2.webp");
     expect(PLAY_STAGE_CSS).toContain("/game-art/mobile/play/table-inlay-werewolves-v1.avif");
-    expect(PLAY_STAGE_CSS).toContain("/game-art/mobile/play/table-inlay-mafia-v1.avif");
+    expect(PLAY_STAGE_CSS).toContain("/game-art/mobile/play/table-inlay-mafia-v2.avif");
   });
 
   it("keeps the mobile table visible before ResizeObserver finishes measuring", () => {

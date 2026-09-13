@@ -1,7 +1,29 @@
 import { describe, expect, it } from "vitest";
+import type { CreateRoomOptions } from "@werewolf/shared";
 import { parseRoomCreateOptions, roomOptionsToQuery, stringifyRolesParam } from "../room-options";
 
 describe("room options query helpers", () => {
+  it("preserves explicit false settings instead of falling back to mode defaults", () => {
+    const options: CreateRoomOptions = {
+      loversEnabled: false, autoStart: false, beginnerMode: false, advancedMode: false,
+      promoRolesEnabled: false, doctorCanSelfProtect: false, maniacEnabled: false, jesterEnabled: false,
+      firstNightKill: false, tieBreaker: "revote",
+    };
+    expect(parseRoomCreateOptions(Object.fromEntries(new URLSearchParams(roomOptionsToQuery(options))))).toEqual(options);
+  });
+
+  it("round-trips every manual timer without merging distinct night durations", () => {
+    const options: CreateRoomOptions = {
+      tempoProfile: "manual",
+      customTimers: {
+        roleRevealSeconds: 15, factionNightActionSeconds: 75, personalNightActionSeconds: 45,
+        dayDiscussionSeconds: 300, playerSpeechSeconds: 50, voteSeconds: 60,
+        resolutionSeconds: 12, minimumPhaseSeconds: 8, autoAdvanceWhenReady: false,
+      },
+    };
+    expect(parseRoomCreateOptions(Object.fromEntries(new URLSearchParams(roomOptionsToQuery(options))))).toEqual(options);
+  });
+
   it("serializes and parses manual role distributions", () => {
     const query = roomOptionsToQuery({
       mode: "werewolves_classic",

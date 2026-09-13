@@ -6,8 +6,8 @@ import {
   type RoleCode,
   type RoleDistribution,
 } from "@werewolf/shared";
-import { FolderOpen, Redo2, Save, Undo2, X } from "lucide-react";
-import { useEffect, useMemo, useState, type Dispatch } from "react";
+import { ChevronDown, FolderOpen, Redo2, Save, Search, Undo2, X } from "lucide-react";
+import { useEffect, useId, useMemo, useRef, useState, type Dispatch } from "react";
 import {
   MANUAL_PRESET_STORAGE_KEY,
   adjustManualRoleRoster,
@@ -22,8 +22,10 @@ import {
 import { PresetChips } from "@/components/lobby/PresetChips";
 import { RoleCarousel } from "@/components/lobby/RoleCarousel";
 import { RoleDetailModal } from "@/components/lobby/RoleDetailModal";
-import { roleArtPath, roleThumbPath } from "@/lib/role-art";
+import Image from "next/image";
+import { coverImageSizes, roleArtSource } from "@/lib/role-art";
 import { playCue } from "@/lib/sound";
+import { Sheet } from "@werewolf/ui";
 
 export function StepRoles({
   state,
@@ -41,6 +43,12 @@ export function StepRoles({
   const reserveRole: RoleCode = state.family === "werewolves" ? "ordinary_villager" : "civilian";
   const [pendingReplacement, setPendingReplacement] = useState<RoleCode | null>(null);
   const [roleChangeMessage, setRoleChangeMessage] = useState("");
+  const [summaryExpanded, setSummaryExpanded] = useState(false);
+  const summaryId = useId();
+  const filtersId = useId();
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
+  const [compact, setCompact] = useState(false);
+  const detailTriggerRef = useRef<HTMLElement | null>(null);
   const activeDistribution = state.manualRolesEnabled ? state.manualRoles : config.roles;
   const selectedRoles = getRolesForFamily(state.family).filter(
     (role) => role !== "lovers" && (activeDistribution[role] ?? 0) > 0,
@@ -53,6 +61,15 @@ export function StepRoles({
       return role !== "lovers" && (query.length === 0 || haystack.includes(query)) && getRoleRuntimeStatus(role) === state.runtimeFilter;
     });
   }, [state.family, state.roleSearch, state.runtimeFilter]);
+
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
+    const query = window.matchMedia("(max-width: 720px)");
+    const update = () => setCompact(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
 
   useEffect(() => {
     if (!state.manualRolesEnabled) {
@@ -73,6 +90,7 @@ export function StepRoles({
 
     if (result.status === "replacement-required") {
       setPendingReplacement(role);
+      setSummaryExpanded(true);
       setRoleChangeMessage(`Избери коя роля да замени ${ROLE_DEFINITIONS[role].nameBg}.`);
       return;
     }
@@ -128,7 +146,7 @@ export function StepRoles({
       <div className="create-role-workspace">
         <div className="create-role-gallery">
           {state.manualRolesEnabled ? (
-            <div className="manual-builder-toolbar">
+            <div id={filtersId} className="manual-builder-toolbar" data-expanded={filtersExpanded}>
               <input
                 className="input"
                 value={state.roleSearch}
@@ -166,12 +184,27 @@ export function StepRoles({
             {...(state.manualRolesEnabled ? { reserveRole } : {})}
             onIncrement={(role) => changeRole(role, 1)}
             onDecrement={(role) => changeRole(role, -1)}
-            onOpen={(role) => dispatch({ type: "SET_ROLE_DETAIL", roleDetail: { role, source: "tile" } })}
+            onOpen={(role) => {
+              detailTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+              dispatch({ type: "SET_ROLE_DETAIL", roleDetail: { role, source: "tile" } });
+            }}
+            filterControl={state.manualRolesEnabled ? (
+              <button
+                type="button"
+                aria-label="Търсене и филтри"
+                title="Търсене и филтри"
+                aria-expanded={filtersExpanded}
+                aria-controls={filtersId}
+                onClick={() => setFiltersExpanded((expanded) => !expanded)}
+              >
+                <Search aria-hidden="true" />
+              </button>
+            ) : null}
           />
         </div>
 
-        <section className="create-role-inspector" aria-label="Състав на масата" tabIndex={0}>
-          {state.roleDetail && embedded ? (
+        <section className="create-role-inspector" aria-label="Състав на масата" tabIndex={0} data-expanded={summaryExpanded || Boolean(pendingReplacement)}>
+          {state.roleDetail && embedded && !compact ? (
             <InlineRoleDetail
               family={state.family}
               role={state.roleDetail.role}
@@ -191,6 +224,17 @@ export function StepRoles({
                 </span>
                 <strong>{balance > 0 ? `+${balance}` : balance}</strong>
               </div>
+              <button
+                type="button"
+                className="create-role-summary-toggle"
+                aria-label={summaryExpanded ? "Скрий състава" : "Покажи състава"}
+                aria-expanded={summaryExpanded || Boolean(pendingReplacement)}
+                aria-controls={summaryId}
+                disabled={Boolean(pendingReplacement)}
+                onClick={() => setSummaryExpanded((expanded) => !expanded)}
+              >
+                <ChevronDown aria-hidden="true" />
+              </button>
               {state.manualRolesEnabled && !roleChangeMessage ? (
                 <p className="create-role-roster-rule">
                   Специалните роли заменят {ROLE_DEFINITIONS[reserveRole].nameBg}. Броят места остава точен.
@@ -203,7 +247,7 @@ export function StepRoles({
                   <button type="button" onClick={() => setPendingReplacement(null)}>Откажи</button>
                 </div>
               ) : null}
-              <ul className="create-selected-role-list" data-replacing={pendingReplacement ? "true" : "false"}>
+              <ul id={summaryId} className="create-selected-role-list" data-replacing={pendingReplacement ? "true" : "false"}>
                 {selectedRoles.map((role) => (
                   <li key={role}>
                     {pendingReplacement && role !== pendingReplacement ? (
@@ -246,13 +290,15 @@ export function StepRoles({
             </button>
         ) : (
           <>
-            <button type="button" className="btn btn-secondary min-h-0 px-4 py-2" onClick={() => saveManualPreset(state, dispatch)}>
+            <button type="button" className="btn btn-secondary create-role-preset-action min-h-0 px-4 py-2" aria-label="Запази шаблон" title="Запази шаблон" onClick={() => saveManualPreset(state, dispatch)}>
               <Save aria-hidden="true" />
-              Запази шаблон
+              <span>Запази шаблон</span>
             </button>
             <button
               type="button"
-              className="btn btn-secondary min-h-0 px-4 py-2"
+              className="btn btn-secondary create-role-preset-action min-h-0 px-4 py-2"
+              aria-label="Зареди шаблон"
+              title="Зареди шаблон"
               onClick={() => {
                 setPendingReplacement(null);
                 setRoleChangeMessage("");
@@ -260,7 +306,7 @@ export function StepRoles({
               }}
             >
               <FolderOpen aria-hidden="true" />
-              Зареди шаблон
+              <span>Зареди шаблон</span>
             </button>
             <button
               type="button"
@@ -292,7 +338,7 @@ export function StepRoles({
             </button>
           </>
         )}
-        {state.manualPresetMessage ? <span className="manual-builder-message">{state.manualPresetMessage}</span> : null}
+        {state.manualPresetMessage ? <span className="manual-builder-message" role="status">{state.manualPresetMessage}</span> : null}
       </div>
 
       {state.roleDetail && !embedded ? (
@@ -301,6 +347,19 @@ export function StepRoles({
             role={state.roleDetail.role}
             onClose={() => dispatch({ type: "SET_ROLE_DETAIL", roleDetail: null })}
           />
+      ) : null}
+      {state.roleDetail && embedded && compact ? (
+        <Sheet open onOpenChange={(open) => { if (!open) dispatch({ type: "SET_ROLE_DETAIL", roleDetail: null }); }}
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            detailTriggerRef.current?.focus({ preventScroll: true });
+          }}
+          title={ROLE_DEFINITIONS[state.roleDetail.role].nameBg} description="Карта и умение на ролята.">
+          <div className="create-mobile-role-detail">
+            <InlineRoleDetail family={state.family} role={state.roleDetail.role} heading={false}
+              onClose={() => dispatch({ type: "SET_ROLE_DETAIL", roleDetail: null })} />
+          </div>
+        </Sheet>
       ) : null}
     </section>
   );
@@ -340,25 +399,41 @@ function InlineRoleDetail({
   family,
   role,
   onClose,
+  heading = true,
 }: {
   family: LobbyFormState["family"];
   role: RoleCode;
   onClose: () => void;
+  heading?: boolean;
 }) {
   const definition = ROLE_DEFINITIONS[role];
+  const source = roleArtSource(family, role);
   return (
-    <article className="create-inline-role-detail" aria-labelledby="create-inline-role-title">
+    <article className="create-inline-role-detail" aria-labelledby={heading ? "create-inline-role-title" : undefined} aria-label={heading ? undefined : definition.nameBg}>
       <button type="button" className="create-role-detail-close" aria-label="Затвори ролята" onClick={onClose}>
         <X aria-hidden="true" />
       </button>
-      <picture aria-hidden="true">
-        <source srcSet={roleThumbPath(family, role)} type="image/webp" />
-        <img src={roleArtPath(family, role, "png")} alt="" loading="lazy" decoding="async" width={520} height={728} />
+      <picture className="role-art-frame" data-frame-family={family}
+        style={{ aspectRatio: source.width / source.height, width: `min(100%, calc(var(--role-detail-art-height) * ${source.width / source.height}))` }}
+        aria-hidden="true">
+        <Image
+          {...source}
+          alt=""
+          loading="lazy"
+          quality={85}
+          sizes={coverImageSizes(source, [
+            { media: "(max-width: 380px)", width: "calc(100vw - 56px)", aspectRatio: 1 },
+            { media: "(max-width: 720px)", width: "calc(100vw - 60px)", aspectRatio: 1 },
+            { media: "(max-width: 960px)", width: 192, aspectRatio: 1 },
+            { media: "(max-width: 1100px)", width: 262, aspectRatio: 1 },
+            { width: 254, aspectRatio: 1 },
+          ])}
+        />
       </picture>
-      <div>
+      {heading ? <div>
         <p className="section-kicker">как действа</p>
         <h2 id="create-inline-role-title">{definition.nameBg}</h2>
-      </div>
+      </div> : null}
       <p>{definition.fullDescriptionBg}</p>
       <div className="role-detail-tags">
         {definition.tags.map((tag) => (
@@ -378,7 +453,7 @@ function triggerHaptic(pattern: number | number[]) {
 
 function saveManualPreset(state: LobbyFormState, dispatch: Dispatch<LobbyFormAction>) {
   try {
-    window.localStorage?.setItem(
+    window.localStorage.setItem(
       `${MANUAL_PRESET_STORAGE_KEY}:${state.family}`,
       JSON.stringify({
         mode: state.mode,
@@ -395,13 +470,63 @@ function saveManualPreset(state: LobbyFormState, dispatch: Dispatch<LobbyFormAct
 
 function loadManualPreset(state: LobbyFormState, dispatch: Dispatch<LobbyFormAction>) {
   try {
-    const raw = window.localStorage?.getItem(`${MANUAL_PRESET_STORAGE_KEY}:${state.family}`);
-    if (!raw) {
+    const raw = window.localStorage.getItem(`${MANUAL_PRESET_STORAGE_KEY}:${state.family}`);
+    if (raw === null) {
       dispatch({ type: "SET_MANUAL_PRESET_MESSAGE", message: "Няма запазен шаблон за тази игра." });
       return;
     }
-    const parsed = JSON.parse(raw) as { roles?: RoleDistribution };
-    dispatch({ type: "SET_MANUAL_ROLES", roles: parsed.roles ?? state.manualRoles });
+    const parsed: unknown = JSON.parse(raw);
+    if (
+      typeof parsed !== "object" || parsed === null || Array.isArray(parsed) ||
+      !("roles" in parsed) || typeof parsed.roles !== "object" ||
+      parsed.roles === null || Array.isArray(parsed.roles)
+    ) {
+      throw new Error("Invalid saved role template");
+    }
+
+    const familyRoles = getRolesForFamily(state.family);
+    const roles: RoleDistribution = {};
+    for (const [key, count] of Object.entries(parsed.roles)) {
+      const role = familyRoles.find((candidate) => candidate === key);
+      if (
+        !role || typeof count !== "number" || !Number.isInteger(count) ||
+        count < 0 || count > ROLE_DEFINITIONS[role].maxCopies
+      ) {
+        throw new Error("Invalid saved role template");
+      }
+      roles[role] = count;
+    }
+
+    const total = countRoles(roles);
+    const validTotal = boundedPlayerCount({
+      ...state,
+      mode: state.family === "werewolves" ? "werewolves_classic" : "mafia_free",
+      playerCount: total,
+    });
+    if (total !== validTotal) {
+      throw new Error("Invalid saved role template total");
+    }
+
+    const playerCount = boundedPlayerCount(state);
+    const reserveRole = state.family === "werewolves" ? "ordinary_villager" : "civilian";
+    const reserveCount = (roles[reserveRole] ?? 0) + playerCount - total;
+    if (reserveCount < 0) {
+      dispatch({
+        type: "SET_MANUAL_PRESET_MESSAGE",
+        message: `Шаблонът не може да се зареди за ${playerCount} играчи без премахване на специални роли. Избери повече играчи или друг шаблон.`,
+      });
+      return;
+    }
+    if (reserveCount > ROLE_DEFINITIONS[reserveRole].maxCopies) {
+      dispatch({
+        type: "SET_MANUAL_PRESET_MESSAGE",
+        message: `Шаблонът не може да се зареди за ${playerCount} играчи, защото ще се надвиши допустимият брой за ${ROLE_DEFINITIONS[reserveRole].nameBg}. Избери друг шаблон.`,
+      });
+      return;
+    }
+    roles[reserveRole] = reserveCount;
+
+    dispatch({ type: "SET_MANUAL_ROLES", roles });
     dispatch({ type: "SET_MANUAL_PRESET_MESSAGE", message: "Шаблонът е зареден." });
   } catch {
     dispatch({ type: "SET_MANUAL_PRESET_MESSAGE", message: "Запазеният шаблон не може да бъде прочетен." });

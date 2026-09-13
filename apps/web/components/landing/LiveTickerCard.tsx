@@ -14,12 +14,29 @@ type LiveTickerCardProps = {
 };
 
 export function LiveTickerCard({ family, liveStats }: LiveTickerCardProps) {
-  const root = family === "mafia" ? "/mafia" : "/werewolf";
-  const totalRooms = liveStats?.activeRooms ?? 0;
-  const totalPlayers = liveStats?.connectedPlayers ?? 0;
-  const familyRooms = family && liveStats?.byFamily ? liveStats.byFamily[family] ?? 0 : null;
+  const root = family === null ? "" : family === "mafia" ? "/mafia" : "/werewolf";
+
+  if (liveStats === null) {
+    return (
+      <article className="quickstart-live quickstart-mini-card">
+        <p className="section-kicker">в момента играят</p>
+        <div className="quickstart-empty-live quickstart-stats-unavailable">
+          <div>
+            <p>Данните за активните игри временно не са достъпни.</p>
+            <Link href={`${root}/create`} className="quickstart-card-cta">
+              Създай стая <span aria-hidden="true">→</span>
+            </Link>
+          </div>
+        </div>
+      </article>
+    );
+  }
+
+  const totalRooms = liveStats.activeRooms;
+  const totalPlayers = liveStats.connectedPlayers;
+  const familyRooms = family && liveStats.byFamily ? liveStats.byFamily[family] ?? 0 : null;
   const visibleRooms = family ? (familyRooms ?? totalRooms) : totalRooms;
-  const isEmpty = visibleRooms === 0 && totalPlayers === 0;
+  const isEmpty = familyRooms !== null ? familyRooms === 0 : visibleRooms === 0 && totalPlayers === 0;
 
   return (
     <article className="quickstart-live quickstart-mini-card">
@@ -58,7 +75,7 @@ export function LiveTickerCard({ family, liveStats }: LiveTickerCardProps) {
           <span className="quickstart-pulse" aria-hidden="true" />
           <div>
             <strong className="quickstart-live-count">
-              {formatLine({ family, totalRooms, totalPlayers, byFamily: liveStats?.byFamily })}
+              {formatLine({ family, visibleRooms, totalPlayers, byFamily: liveStats.byFamily })}
             </strong>
             <p>Сега се играе</p>
           </div>
@@ -90,23 +107,21 @@ function emptyBody(family: GameFamily | null) {
 
 function formatLine({
   family,
-  totalRooms,
+  visibleRooms,
   totalPlayers,
   byFamily,
 }: {
   family: GameFamily | null;
-  totalRooms: number;
+  visibleRooms: number;
   totalPlayers: number;
   byFamily: Partial<Record<GameFamily, number>> | undefined;
 }) {
   if (family === "werewolves") {
-    const rooms = byFamily?.werewolves ?? totalRooms;
-    return `${rooms} ${roomWord(rooms, "село")} тази вечер`;
+    return `${visibleRooms} ${roomWord(visibleRooms, "село")} тази вечер`;
   }
 
   if (family === "mafia") {
-    const rooms = byFamily?.mafia ?? totalRooms;
-    return `${rooms} ${roomWord(rooms, "маса")} под напрежение`;
+    return `${visibleRooms} ${roomWord(visibleRooms, "маса")} под напрежение`;
   }
 
   if (byFamily && (typeof byFamily.werewolves === "number" || typeof byFamily.mafia === "number")) {
@@ -115,7 +130,7 @@ function formatLine({
     return `${werewolfRooms} ${roomWord(werewolfRooms, "село")} · ${mafiaRooms} ${roomWord(mafiaRooms, "маса")} · ${totalPlayers} ${playerWord(totalPlayers)}`;
   }
 
-  return `${totalRooms} ${roomWord(totalRooms, "стая")} · ${totalPlayers} ${playerWord(totalPlayers)}`;
+  return `${visibleRooms} ${roomWord(visibleRooms, "стая")} · ${totalPlayers} ${playerWord(totalPlayers)}`;
 }
 
 function roomWord(count: number, kind: "стая" | "маса" | "село") {

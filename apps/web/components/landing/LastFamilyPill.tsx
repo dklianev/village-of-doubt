@@ -15,5 +15,5 @@ export function LastFamilyPill({ family }: { family: LastFamily }) {
     }
   }, []);
 
-  return lastFamily === family ? <span className="mode-choice-continue-pill">Продължи</span> : null;
+  return lastFamily === family ? <span className="mode-choice-continue-pill">Последно разглеждана</span> : null;
 }

@@ -886,39 +886,39 @@
 }
 
 :global(.role-ordinary_villager) {
-  --role-art: image-set(url("/game-art/role-ordinary-villager.webp") type("image/webp"));
+  --role-art: image-set(url("/game-art/role-ordinary-villager.webp?v=3") type("image/webp"));
 }
 
 :global(.role-werewolf) {
-  --role-art: image-set(url("/game-art/role-werewolf.webp") type("image/webp"));
+  --role-art: image-set(url("/game-art/role-werewolf.webp?v=3") type("image/webp"));
 }
 
 :global(.role-seer) {
-  --role-art: image-set(url("/game-art/role-seer.webp") type("image/webp"));
+  --role-art: image-set(url("/game-art/role-seer.webp?v=3") type("image/webp"));
 }
 
 :global(.role-witch) {
-  --role-art: image-set(url("/game-art/role-witch.webp") type("image/webp"));
+  --role-art: image-set(url("/game-art/role-witch.webp?v=3") type("image/webp"));
 }
 
 :global(.role-healer) {
-  --role-art: image-set(url("/game-art/role-healer.webp") type("image/webp"));
+  --role-art: image-set(url("/game-art/role-healer.webp?v=3") type("image/webp"));
 }
 
 :global(.role-priest) {
-  --role-art: image-set(url("/game-art/role-priest.webp") type("image/webp"));
+  --role-art: image-set(url("/game-art/role-priest.webp?v=3") type("image/webp"));
 }
 
 :global(.role-hunter) {
-  --role-art: image-set(url("/game-art/role-hunter.webp") type("image/webp"));
+  --role-art: image-set(url("/game-art/role-hunter.webp?v=3") type("image/webp"));
 }
 
 :global(.role-cupid) {
-  --role-art: image-set(url("/game-art/role-cupid.webp") type("image/webp"));
+  --role-art: image-set(url("/game-art/role-cupid.webp?v=3") type("image/webp"));
 }
 
 :global(.role-vampire) {
-  --role-art: image-set(url("/game-art/role-vampire.webp") type("image/webp"));
+  --role-art: image-set(url("/game-art/role-vampire.webp?v=3") type("image/webp"));
 }
 
 :global(.role-red_riding_hood) {
@@ -938,7 +938,7 @@
 }
 
 :global(.role-insomniac) {
-  --role-art: image-set(url("/game-art/role-insomniac.webp") type("image/webp"));
+  --role-art: image-set(url("/game-art/role-insomniac.webp?v=2") type("image/webp"));
 }
 
 :global(.role-vampire_hunter) {
@@ -962,65 +962,65 @@
 }
 
 :global(.role-jester) {
-  --role-art: image-set(url("/game-art/role-jester-werewolf.webp") type("image/webp"));
+  --role-art: image-set(url("/game-art/role-jester-werewolf.webp?v=3") type("image/webp"));
 }
 
 :global(.role-little_girl) {
-  --role-art: image-set(url("/game-art/role-little-girl.webp") type("image/webp"));
+  --role-art: image-set(url("/game-art/role-little-girl.webp?v=3") type("image/webp"));
 }
 
 :global(.role-thief) {
-  --role-art: image-set(url("/game-art/role-thief.webp") type("image/webp"));
+  --role-art: image-set(url("/game-art/role-thief.webp?v=3") type("image/webp"));
 }
 
 :global(.role-mayor) {
-  --role-art: image-set(url("/game-art/role-mayor.webp") type("image/webp"));
+  --role-art: image-set(url("/game-art/role-mayor.webp?v=3") type("image/webp"));
 }
 
 :global(.role-civilian) {
-  --role-art: image-set(url("/game-art/role-civilian.webp") type("image/webp"));
+  --role-art: image-set(url("/game-art/mafia/role-civilian.webp?v=3") type("image/webp"));
 }
 
 :global(.role-commissioner) {
-  --role-art: image-set(url("/game-art/role-commissioner.webp") type("image/webp"));
+  --role-art: image-set(url("/game-art/mafia/role-commissioner.webp?v=3") type("image/webp"));
 }
 
 :global(.role-mafioso) {
-  --role-art: image-set(url("/game-art/role-mafioso.webp") type("image/webp"));
+  --role-art: image-set(url("/game-art/mafia/role-mafioso.webp?v=3") type("image/webp"));
 }
 
 :global(.role-don) {
-  --role-art: image-set(url("/game-art/role-don.webp") type("image/webp"));
+  --role-art: image-set(url("/game-art/mafia/role-don.webp?v=3") type("image/webp"));
 }
 
 [data-theme="mafia"] .role-civilian,
 :global(.role-civilian[data-theme="mafia"]) {
-  --role-art: image-set(url("/game-art/mafia/role-civilian.webp") type("image/webp"));
+  --role-art: image-set(url("/game-art/mafia/role-civilian.webp?v=3") type("image/webp"));
 }
 
 [data-theme="mafia"] .role-commissioner,
 :global(.role-commissioner[data-theme="mafia"]) {
-  --role-art: image-set(url("/game-art/mafia/role-commissioner.webp") type("image/webp"));
+  --role-art: image-set(url("/game-art/mafia/role-commissioner.webp?v=3") type("image/webp"));
 }
 
 [data-theme="mafia"] .role-mafioso,
 :global(.role-mafioso[data-theme="mafia"]) {
-  --role-art: image-set(url("/game-art/mafia/role-mafioso.webp") type("image/webp"));
+  --role-art: image-set(url("/game-art/mafia/role-mafioso.webp?v=3") type("image/webp"));
 }
 
 [data-theme="mafia"] .role-don,
 :global(.role-don[data-theme="mafia"]) {
-  --role-art: image-set(url("/game-art/mafia/role-don.webp") type("image/webp"));
+  --role-art: image-set(url("/game-art/mafia/role-don.webp?v=3") type("image/webp"));
 }
 
 [data-theme="mafia"] .role-doctor,
 :global(.role-doctor[data-theme="mafia"]) {
-  --role-art: image-set(url("/game-art/mafia/role-doctor.webp") type("image/webp"));
+  --role-art: image-set(url("/game-art/mafia/role-doctor.webp?v=2") type("image/webp"));
 }
 
 [data-theme="mafia"] .role-detective,
 :global(.role-detective[data-theme="mafia"]) {
-  --role-art: image-set(url("/game-art/mafia/role-detective.webp") type("image/webp"));
+  --role-art: image-set(url("/game-art/mafia/role-detective.webp?v=2") type("image/webp"));
 }
 
 [data-theme="mafia"] .role-bodyguard,
@@ -1055,7 +1055,7 @@
 
 [data-theme="mafia"] .role-maniac,
 :global(.role-maniac[data-theme="mafia"]) {
-  --role-art: image-set(url("/game-art/mafia/role-maniac.webp") type("image/webp"));
+  --role-art: image-set(url("/game-art/mafia/role-maniac.webp?v=2") type("image/webp"));
 }
 
 [data-theme="mafia"] .role-jester,
@@ -1070,7 +1070,7 @@
 
 [data-theme="mafia"] .role-lovers,
 :global(.role-lovers[data-theme="mafia"]) {
-  --role-art: image-set(url("/game-art/mafia/role-lovers.webp") type("image/webp"));
+  --role-art: image-set(url("/game-art/mafia/role-lovers.webp?v=2") type("image/webp"));
 }
 
 :global(.connection-banner) {
@@ -1174,7 +1174,7 @@
   max-width: 12ch;
   margin-top: 8px;
   color: #fff6e5;
-  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-family: var(--font-display);
   font-size: clamp(2rem, 7vw, 3.15rem);
   font-weight: 950;
   line-height: 0.96;

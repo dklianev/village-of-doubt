@@ -22,6 +22,8 @@ import { createGameClient, GAME_ROOM_NAME } from "@/lib/colyseus-client";
 import { useAuthSession, type AuthSessionView } from "@/lib/use-auth-session";
 import type { pushToast } from "@/lib/toast";
 import { arePhaseSlicesEqual, arePlayerListsEqual } from "@/lib/play/equality";
+import { isDuplicateNameError } from "@/lib/play/join-errors";
+import { nextRoomOptionsForState } from "@/lib/play/next-room-options";
 import { playCue } from "@/lib/sound";
 import type {
   ConnectionStatus,
@@ -182,6 +184,11 @@ export function useGameRoom({
     let reconnecting = false;
     let freshJoining = false;
     let preferFreshJoin = false;
+    let roomLeft = false;
+    let roomDropped = false;
+    let browserOffline = !navigator.onLine;
+    let needsRecovery = browserOffline;
+    let privateSync: { room: Room } | null = null;
 
     if (sessionPending) {
       return () => {
@@ -233,15 +240,69 @@ export function useGameRoom({
         }, ms);
       });
 
+    const markRecovering = () => {
+      if (!needsRecovery) {
+        onReconnectSuppressedRef.current?.();
+      }
+      needsRecovery = true;
+      setConnectionStatus("reconnecting");
+    };
+
+    const syncRoomPrivateState = async (nextRoom: Room, recovering = false) => {
+      if (privateSync?.room === nextRoom || browserOffline || roomDropped || roomLeft) {
+        return;
+      }
+      const sync = { room: nextRoom };
+      privateSync = sync;
+      try {
+        const response: { synchronized?: boolean } | undefined = await nextRoom.request("syncPrivateState");
+        if (!active || joinedRoom !== nextRoom || privateSync !== sync) {
+          return;
+        }
+        if (response?.synchronized !== true) {
+          throw new Error("Private state synchronization was not acknowledged.");
+        }
+        preferFreshJoin = false;
+        persistReconnectionToken(code, nextRoom.reconnectionToken);
+        if (needsRecovery) {
+          needsRecovery = false;
+          setConnectionStatus("connected");
+          setConnectionMessage("Връзката е възстановена.");
+        }
+      } catch {
+        if (!active || joinedRoom !== nextRoom || privateSync !== sync) {
+          return;
+        }
+        preferFreshJoin = !recovering;
+        setConnectionMessage("Свързахме се, но не успяхме да възстановим личните ти данни. Опитай отново.");
+        setConnectionStatus("error");
+      } finally {
+        if (privateSync === sync) {
+          privateSync = null;
+        }
+      }
+    };
+
     const bindRoom = (nextRoom: Room) => {
       joinedRoom = nextRoom;
+      roomLeft = false;
+      roomDropped = false;
+      privateSync = null;
       preferFreshJoin = false;
       persistReconnectionToken(code, nextRoom.reconnectionToken);
       setRoom(nextRoom);
       setConnectionMessage("Свързан");
-      setConnectionStatus("connected");
+      setConnectionStatus(browserOffline || needsRecovery ? "reconnecting" : "connected");
+
+      const isCurrentRoom = () => active && joinedRoom === nextRoom && !roomLeft;
+      const onMessage = <Message,>(type: string, handler: (message: Message) => void) => {
+        nextRoom.onMessage(type, (message: Message) => {
+          if (isCurrentRoom()) handler(message);
+        });
+      };
 
       nextRoom.onStateChange((state) => {
+        if (!isCurrentRoom()) return;
         const stateView = state as unknown as ColyseusGameState;
         const previousSnapshot = snapshotRef.current;
         const nextPlayers = playersForState(stateView);
@@ -302,66 +363,63 @@ export function useGameRoom({
         });
       });
 
-      nextRoom.onMessage("private_role", (message: { role: RoleCode; roleNameBg: string }) => {
+      onMessage("private_role", (message: { role: RoleCode; roleNameBg: string }) => {
         setPrivateRole(message);
         setPrivateFactionRoster(null);
       });
 
-      nextRoom.onMessage("private_check_result", (message: PrivateResult) => {
+      onMessage("private_check_result", (message: PrivateResult) => {
         setPrivateResult(message);
-        toast({ message: "Получен е личен резултат от нощното действие.", kind: "info" });
+        if (!needsRecovery) toast({ message: "Получен е личен резултат от нощното действие.", kind: "info" });
       });
 
-      nextRoom.onMessage("private_lovers", (message: PrivateLover) => {
+      onMessage("private_lovers", (message: PrivateLover) => {
         setPrivateLover(message);
-        toast({ message: "Купидон те свърза с Влюбен.", kind: "success" });
+        if (!needsRecovery) toast({ message: "Купидон те свърза с Влюбен.", kind: "success" });
       });
 
-      nextRoom.onMessage("private_faction_roster", (message: PrivateFactionRoster) => {
+      onMessage("private_faction_roster", (message: PrivateFactionRoster) => {
         setPrivateFactionRoster(message);
       });
 
-      nextRoom.onMessage("night_action_capabilities", (message: { capabilities: NightActionCapabilities }) => {
+      onMessage("night_action_capabilities", (message: { capabilities: NightActionCapabilities }) => {
         setNightActionCapabilities(message.capabilities);
       });
 
-      nextRoom.onMessage("night_action_ack", () => {
+      onMessage("night_action_ack", () => {
         toast({ message: "Нощното действие е прието.", kind: "success" });
-        if (snapshotRef.current?.tempoProfile !== "live" && "vibrate" in navigator) {
-          navigator.vibrate([24]);
-        }
       });
 
-      nextRoom.onMessage("vote_ack", () => {
+      onMessage("vote_ack", () => {
         toast({ message: "Гласът е приет.", kind: "success" });
         playCue("vote", { forceSilent: snapshotRef.current?.tempoProfile === "live" });
       });
 
-      nextRoom.onMessage("nomination_ack", (message: { replaced: boolean }) => {
+      onMessage("nomination_ack", (message: { replaced: boolean }) => {
         toast({
           message: message.replaced ? "Номинацията е сменена." : "Номинацията е приета.",
           kind: "success",
         });
       });
 
-      nextRoom.onMessage("hunter_revenge_ack", () => {
+      onMessage("hunter_revenge_ack", () => {
         toast({ message: "Последният изстрел е приет.", kind: "success" });
       });
 
-      nextRoom.onMessage("private_blessing", () => {
+      onMessage("private_blessing", () => {
         setIsBlessed(true);
-        toast({ message: "Свещеникът те благослови. Благословията остава върху теб до края на играта.", kind: "success" });
+        if (!needsRecovery) toast({ message: "Свещеникът те благослови. Благословията остава върху теб до края на играта.", kind: "success" });
       });
 
-      nextRoom.onMessage("system", (message: { messageBg: string }) => {
+      onMessage("system", (message: { messageBg: string }) => {
         toast({ message: message.messageBg, kind: "info" });
       });
 
-      nextRoom.onMessage("private_chat", (message: PrivateChatMessage) => {
+      onMessage("private_chat", (message: PrivateChatMessage) => {
         setPrivateChats((current) => [...current.slice(-30), message]);
       });
 
-      nextRoom.onMessage("typing", (message: TypingNotice) => {
+      onMessage("typing", (message: TypingNotice) => {
         const key = `${message.channel}:${message.senderUserId}`;
         setTypingNotices((current) => {
           const withoutCurrent = current.filter((item) => `${item.channel}:${item.senderUserId}` !== key);
@@ -384,16 +442,20 @@ export function useGameRoom({
         }
       });
 
-      nextRoom.onMessage("narrator_role_snapshot", (message: NarratorRoleSnapshot) => {
+      onMessage("narrator_role_snapshot", (message: NarratorRoleSnapshot) => {
         setNarratorSnapshot(message);
-        toast({ message: "Получен е пълен преглед за Разказвача.", kind: "info" });
+        if (!needsRecovery) toast({ message: "Получен е пълен преглед за Разказвача.", kind: "info" });
       });
 
-      nextRoom.onMessage("safe_error", (message: { messageBg: string }) => {
+      let rejectedNameMessage: string | null = null;
+      onMessage("safe_error", (message: { messageBg: string }) => {
+        if (isDuplicateNameError(message.messageBg)) {
+          rejectedNameMessage = message.messageBg;
+        }
         toast({ message: message.messageBg, kind: "error" });
       });
 
-      nextRoom.onMessage("achievements_unlocked", (message: { achievementIds: string[] }) => {
+      onMessage("achievements_unlocked", (message: { achievementIds: string[] }) => {
         setUnlockedAchievementIds(message.achievementIds);
         toast({ message: "Отключи нова легенда.", kind: "success" });
         if (achievementClearTimerRef.current !== null) {
@@ -405,43 +467,60 @@ export function useGameRoom({
         }, 7000);
       });
 
-      nextRoom.onMessage("game_recorded", (message: { gameId: string }) => {
+      onMessage("game_recorded", (message: { gameId: string }) => {
         setRecordedGameId(message.gameId);
       });
 
-      void nextRoom.request("syncPrivateState").catch(() => {
-        if (!active || joinedRoom !== nextRoom) {
-          return;
-        }
-        preferFreshJoin = true;
-        setConnectionMessage("Свързахме се, но не успяхме да възстановим личните ти данни. Опитай отново.");
-        setConnectionStatus("error");
+      nextRoom.onDrop(() => {
+        if (!isCurrentRoom()) return;
+        roomDropped = true;
+        privateSync = null;
+        markRecovering();
+        setConnectionMessage("Връзката прекъсна. Опитваме да те върнем в стаята.");
+      });
+
+      nextRoom.onReconnect(() => {
+        if (!isCurrentRoom()) return;
+        roomDropped = false;
+        void syncRoomPrivateState(nextRoom, true);
       });
 
       nextRoom.onLeave((leaveCode) => {
-        if (!active) {
+        if (!isCurrentRoom()) {
           return;
         }
+        roomLeft = true;
+        roomDropped = false;
+        privateSync = null;
         if (leaveCode === 1000 || leaveCode === 1001) {
+          needsRecovery = false;
+          joinedRoom = null;
+          setRoom(null);
           clearReconnectionToken(code);
           clearViewerPrivateState();
-          setConnectionMessage("Напусна стаята.");
-          setConnectionStatus("disconnected");
+          if (rejectedNameMessage) {
+            preferFreshJoin = true;
+            setConnectionMessage(rejectedNameMessage);
+            setConnectionStatus("error");
+          } else {
+            setConnectionMessage("Напусна стаята.");
+            setConnectionStatus("disconnected");
+          }
           return;
         }
         setConnectionMessage("Връзката прекъсна. Опитваме да те върнем в стаята.");
-        setConnectionStatus("reconnecting");
-        onReconnectSuppressedRef.current?.();
+        markRecovering();
         if (!reconnecting) {
           void attemptReconnect(1);
         }
       });
 
       nextRoom.onError((errorCode, errorMessage) => {
-        if (!active || joinedRoom !== nextRoom) {
+        if (!isCurrentRoom()) {
           return;
         }
         reconnecting = false;
+        privateSync = null;
         preferFreshJoin = true;
         clearReconnectTimer();
         clearReconnectionToken(code);
@@ -452,6 +531,8 @@ export function useGameRoom({
             : `Стаята прекъсна връзката (код ${errorCode}).`,
         );
       });
+
+      void syncRoomPrivateState(nextRoom);
     };
 
     const attemptReconnect = async (attempt: number) => {
@@ -498,7 +579,7 @@ export function useGameRoom({
     };
 
     const connectFresh = async () => {
-      if (freshJoining) {
+      if (!active || freshJoining || reconnecting) {
         return;
       }
       freshJoining = true;
@@ -523,6 +604,9 @@ export function useGameRoom({
           displayName: string;
           roomCode: string;
         };
+        if (!active) {
+          return;
+        }
         setCurrentUserId(tokenResponse.userId);
         const nextRoom = await client.joinOrCreate(GAME_ROOM_NAME, {
           ...stableCreateOptions,
@@ -547,20 +631,45 @@ export function useGameRoom({
     };
 
     const retryReconnect = () => {
+      if (!active || browserOffline || reconnecting || freshJoining || roomDropped) {
+        return;
+      }
       if (preferFreshJoin) {
         void connectFresh();
         return;
       }
-      if (!reconnecting) {
+      if (joinedRoom && !roomLeft) {
+        if (needsRecovery) {
+          setConnectionStatus("reconnecting");
+          void syncRoomPrivateState(joinedRoom, true);
+        }
+      } else {
         void attemptReconnect(1);
       }
     };
     reconnectNowRef.current = retryReconnect;
 
+    const handleOffline = () => {
+      browserOffline = true;
+      if (!joinedRoom && !freshJoining && !reconnecting) return;
+      privateSync = null;
+      markRecovering();
+      setConnectionMessage("Устройството изглежда офлайн. Опитваме да запазим мястото ти в играта.");
+    };
+
+    const handleOnline = () => {
+      browserOffline = false;
+      if (needsRecovery) retryReconnect();
+    };
+
+    window.addEventListener("offline", handleOffline);
+    window.addEventListener("online", handleOnline);
     void connectFresh();
 
     return () => {
       active = false;
+      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("online", handleOnline);
       if (reconnectNowRef.current === retryReconnect) {
         reconnectNowRef.current = null;
       }
@@ -577,24 +686,6 @@ export function useGameRoom({
     stableCreateOptions,
     toast,
   ]);
-
-  useEffect(() => {
-    function handleOffline() {
-      setConnectionStatus("reconnecting");
-      setConnectionMessage("Устройството изглежда офлайн. Опитваме да запазим мястото ти в играта.");
-    }
-
-    function handleOnline() {
-      setConnectionMessage("Интернет връзката се върна. Ако стаята не се обнови, презареди страницата.");
-    }
-
-    window.addEventListener("offline", handleOffline);
-    window.addEventListener("online", handleOnline);
-    return () => {
-      window.removeEventListener("offline", handleOffline);
-      window.removeEventListener("online", handleOnline);
-    };
-  }, []);
 
   useEffect(() => {
     return () => {
@@ -642,6 +733,7 @@ interface ColyseusGameStatePlayer extends Omit<PublicPlayer, "revealedRole"> {
 
 interface ColyseusGameState {
   code: string;
+  nextRoomOptionsJson?: string;
   mode: GameMode;
   playerCount: number;
   narratorMode: string;
@@ -668,6 +760,7 @@ interface ColyseusGameState {
   voteTally: Iterable<VoteTallyItem>;
   nominations?: Iterable<PublicNomination>;
   revoteEligibleUserIds?: Iterable<string>;
+  votingCycle?: number;
   publicEvents: Iterable<PublicEvent>;
   publicChat: Iterable<PublicChatMessage>;
 }
@@ -677,8 +770,10 @@ function snapshotShellForState(
   roleCounts: PublicRoleCount[],
   previousSnapshot: GameSnapshot | null,
 ): GameSnapshot {
+  const nextRoomOptions = nextRoomOptionsForState(state, previousSnapshot?.nextRoomOptions);
   return {
     code: state.code,
+    ...(nextRoomOptions === undefined ? {} : { nextRoomOptions }),
     mode: state.mode,
     playerCount: state.playerCount,
     narratorMode: state.narratorMode,
@@ -699,6 +794,7 @@ function snapshotShellForState(
     winnerTeam: state.winnerTeam,
     winnerReasonBg: state.winnerReasonBg,
     revoteEligibleUserIds: Array.from(state.revoteEligibleUserIds ?? []),
+    ...(state.votingCycle === undefined ? {} : { votingCycle: state.votingCycle }),
     players: previousSnapshot?.players ?? [],
     roleCounts,
     voteTally: previousSnapshot?.voteTally ?? [],
@@ -790,6 +886,7 @@ function areSportDaySlicesEqual(a: SportDaySlice, b: SportDaySlice) {
 
 function areSnapshotShellEqual(a: GameSnapshot, b: GameSnapshot) {
   return a.code === b.code
+    && a.nextRoomOptions === b.nextRoomOptions
     && a.mode === b.mode
     && a.playerCount === b.playerCount
     && a.narratorMode === b.narratorMode
@@ -806,6 +903,7 @@ function areSnapshotShellEqual(a: GameSnapshot, b: GameSnapshot) {
     && a.narratorVoice === b.narratorVoice
     && a.winnerTeam === b.winnerTeam
     && a.winnerReasonBg === b.winnerReasonBg
+    && a.votingCycle === b.votingCycle
     && areStringListsEqual(a.revoteEligibleUserIds ?? [], b.revoteEligibleUserIds ?? [])
     && areRoleCountsEqual(a.roleCounts, b.roleCounts);
 }

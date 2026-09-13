@@ -1,5 +1,5 @@
 body {
-  font-family: "Noto Serif", "Iowan Old Style", Georgia, serif;
+  font-family: var(--ds-font-body);
   color: var(--ds-ink-primary, oklch(0.22 0.018 60));
   background: var(--ds-surface-paper, oklch(0.94 0.022 78));
 }

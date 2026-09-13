@@ -413,6 +413,43 @@ describe("role presets", () => {
 });
 
 describe("runtime game config intake", () => {
+  it("treats undefined options as absent and retains explicit false overrides", () => {
+    expect(createGameConfigFromOptions({
+      mode: undefined, rolePreset: undefined, roomName: undefined,
+      playerCount: undefined, customTimers: undefined, firstNightKill: undefined,
+    })).toEqual(createGameConfigFromOptions());
+    expect(createGameConfigFromOptions({
+      firstNightKill: false, revealRolesOnDeath: false, mafiaNightKill: false,
+    })).toMatchObject({ firstNightKill: false, revealRolesOnDeath: false, mafiaNightKill: false });
+  });
+
+  it("keeps runtime fields and serialization stable without admitting input-only or private fields", () => {
+    const clean = {
+      mode: "mafia_free", playerCount: 10, tempoProfile: "manual",
+      customTimers: { voteSeconds: 73 }, enforceRoleCompatibility: true,
+    } as const;
+    const dirty = Object.fromEntries(Object.entries({
+      ...clean, token: "private-token", userId: "private-user",
+      privatePlayers: { user: { role: "mafioso" } },
+      liveMode: true, mayorEnabled: true, rulesetVersion: "untrusted",
+    }).reverse());
+    const config = createGameConfigFromOptions(dirty);
+    expect(Object.keys(config)).toEqual(Object.keys(createDefaultGameConfig("mafia_free", 10)));
+    expect(JSON.stringify(config)).toBe(JSON.stringify(createGameConfigFromOptions(clean)));
+    expect(config).not.toHaveProperty("customTimers");
+    expect(config).not.toHaveProperty("enforceRoleCompatibility");
+    expect(JSON.stringify(config)).not.toContain("private-");
+  });
+
+  it("reports invalid enums in the same order before rejecting an unavailable narrator", () => {
+    expect(() => createGameConfigFromOptions({
+      narratorMode: "full_human", narratorVoice: "unknown",
+    } as never)).toThrow("Невалиден глас на Разказвача.");
+    expect(() => createGameConfigFromOptions({
+      narratorVoice: "unknown", rolePreset: "unknown", mode: "unknown",
+    } as never)).toThrow("Невалиден режим на игра.");
+  });
+
   it.each([
     ["режим на игра", { mode: "mystery" }, "Невалиден режим на игра."],
     ["видимост", { roomVisibility: "friends" }, "Невалидна видимост на стаята."],

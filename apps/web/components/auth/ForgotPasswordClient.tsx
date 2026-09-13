@@ -2,32 +2,41 @@
 
 import { type FormEvent, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { KeyRound } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { mapAuthError } from "@/lib/auth-errors";
+import { authRedirectURL } from "./verification-callback";
 
 export function ForgotPasswordClient() {
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect");
+  const signInHref = authRedirectURL("/sign-in", redirectTo);
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "submitting" | "sent" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (status === "submitting") return;
     setStatus("submitting");
     setErrorMsg("");
 
-    const result = await authClient.requestPasswordReset({
-      email: email.trim(),
-      redirectTo: "/reset-password",
-    });
-
-    if (result.error) {
-      setErrorMsg(mapAuthError(result.error, "Грешка при заявката."));
+    try {
+      const result = await authClient.requestPasswordReset({
+        email: email.trim(),
+        redirectTo: authRedirectURL("/reset-password", redirectTo),
+      });
+      if (result.error) {
+        setErrorMsg(mapAuthError(result.error, "Заявката не беше приета. Опитай отново след малко."));
+        setStatus("error");
+        return;
+      }
+      setStatus("sent");
+    } catch {
+      setErrorMsg("Не успяхме да се свържем. Провери връзката си и опитай отново.");
       setStatus("error");
-      return;
     }
-
-    setStatus("sent");
   }
 
   return (
@@ -40,7 +49,7 @@ export function ForgotPasswordClient() {
             <KeyRound strokeWidth={1.8} />
           </span>
           <p className="locksmith-kicker">загубен ключ</p>
-          <h1>Майсторим нов ключ.</h1>
+          <h1>Забравена парола</h1>
           <p className="locksmith-subtitle">
             Дай имейла си - ще ти изпратим линк за нова парола. Линкът е валиден за един час.
           </p>
@@ -48,7 +57,7 @@ export function ForgotPasswordClient() {
 
         {status === "sent" ? (
           <div className="locksmith-success" role="status">
-            <p>Готово. Провери имейла си.</p>
+            <p>Ако има досие с този имейл, ще получиш линк за нова парола.</p>
             <p className="locksmith-success-hint">Не виждаш писмото? Провери в "Спам" или "Промоции".</p>
           </div>
         ) : (
@@ -83,7 +92,7 @@ export function ForgotPasswordClient() {
         )}
 
         <footer className="locksmith-foot">
-          <Link href="/sign-in" className="locksmith-foot-link">
+          <Link href={signInHref} className="locksmith-foot-link">
             Към входа
           </Link>
         </footer>

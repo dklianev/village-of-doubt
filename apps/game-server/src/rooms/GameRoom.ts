@@ -4,6 +4,7 @@ import {
   assertRoleCompatibilityForMode,
   avatarIdForSeed,
   createGameConfigFromOptions,
+  createRoomOptionsFromConfig,
   evaluateWinCondition,
   getGameFamily,
   getRoleNameBg,
@@ -25,6 +26,7 @@ import {
   type RoleCode,
   type ServerEvent,
   type CreateRoomOptions,
+  type RoomInvitationEligibility,
   type WinResult,
 } from "@werewolf/shared";
 import {
@@ -173,7 +175,7 @@ export async function authenticateGameJoin(
   };
 }
 
-export interface GameRoomPreview {
+export interface GameRoomPreview extends RoomInvitationEligibility {
   code: string;
   status: "lobby" | "in_game" | "finished";
   playerCount: number;
@@ -249,7 +251,7 @@ export class GameRoom extends Room<{ state: GameState }> {
     return revoked;
   }
 
-  static getRoomPreview(code: string): GameRoomPreview | null {
+  static getRoomPreview(code: string, viewerUserId?: string): GameRoomPreview | null {
     const normalizedCode = code.toUpperCase();
     if (!ROOM_CODE_REGEX.test(normalizedCode)) {
       return null;
@@ -262,6 +264,16 @@ export class GameRoom extends Room<{ state: GameState }> {
 
     const players = [...room.state.players.values()].filter((player) => player.playing);
     const status = room.state.phase === "lobby" ? "lobby" : room.state.phase === "game_over" ? "finished" : "in_game";
+    const viewer = viewerUserId ? room.findPlayerByUserId(viewerUserId) : undefined;
+    const viewerMembership = !viewer ? "none" : viewer.playing || viewer.narrator ? "participant" : "spectator";
+    const hasTransportCapacity = !room.hasReachedMaxClients();
+    // Match onJoin/reattachExistingPlayer: spectator requests never demote a
+    // participant, and promotion of an existing spectator is lobby-only.
+    const returningParticipant = viewer?.playing
+      || (viewer?.narrator && (room.state.locked || room.state.phase !== "lobby"));
+    const canTakePlayerSlot = !room.state.locked
+      && (!viewer || room.state.phase === "lobby")
+      && room.hasAvailablePlayerSlot(viewerUserId);
 
     return {
       code: room.state.code,
@@ -269,6 +281,11 @@ export class GameRoom extends Room<{ state: GameState }> {
       playerCount: players.length,
       capacity: room.config.maxPlayers,
       family: getGameFamily(room.config.mode),
+      mode: room.config.mode,
+      roomVisibility: room.config.roomVisibility,
+      viewerMembership,
+      canJoinAsPlayer: hasTransportCapacity && Boolean(returningParticipant || canTakePlayerSlot),
+      canSpectate: hasTransportCapacity && viewerMembership !== "participant",
       hostName: players.find((player) => player.host)?.displayName ?? null,
       players: players.slice(0, 6).map((player) => ({
         displayName: player.displayName,
@@ -963,6 +980,7 @@ export class GameRoom extends Room<{ state: GameState }> {
     const mode = this.config.mode;
     this.config = createGameConfigFromOptions({
       mode,
+      roomName: this.config.roomName,
       playerCount: players.length,
       maxPlayers: this.config.maxPlayers,
       roomVisibility: this.config.roomVisibility,
@@ -1475,6 +1493,7 @@ export class GameRoom extends Room<{ state: GameState }> {
         type: "vote_ack",
         phase: this.state.phase,
         round: this.state.round,
+        votingCycle: this.state.votingCycle,
         targetUserId: "skip",
       } satisfies ServerEvent);
       if (
@@ -1506,6 +1525,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       type: "vote_ack",
       phase: this.state.phase,
       round: this.state.round,
+      votingCycle: this.state.votingCycle,
       targetUserId,
     } satisfies ServerEvent);
 
@@ -1966,6 +1986,10 @@ export class GameRoom extends Room<{ state: GameState }> {
   private transitionTo(phase: GamePhase) {
     const previousPhase = this.currentPhase();
     this.state.phase = phase;
+    // Timer extensions and pause/resume do not open a new ballot.
+    if (phase === "voting") {
+      this.state.votingCycle += 1;
+    }
 
     if (this.config.mode === "mafia_sport" && phase !== "paused") {
       if (phase !== "day_discussion") {
@@ -2934,6 +2958,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       roleCount.count = count ?? 0;
       this.state.roleCounts.push(roleCount);
     }
+    this.state.nextRoomOptionsJson = JSON.stringify(createRoomOptionsFromConfig(this.config));
   }
 
   private enforceRuntimeRoleAvailability() {

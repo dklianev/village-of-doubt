@@ -6,11 +6,15 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { KeySquare } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { mapAuthError } from "@/lib/auth-errors";
+import { authRedirectURL } from "./verification-callback";
 
 export function ResetPasswordClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token") ?? "";
+  const redirectTo = searchParams.get("redirect");
+  const signInHref = authRedirectURL("/sign-in", redirectTo);
+  const forgotHref = authRedirectURL("/forgot-password", redirectTo);
 
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -22,9 +26,9 @@ export function ResetPasswordClient() {
       return;
     }
 
-    const timer = window.setTimeout(() => router.push("/sign-in"), 1800);
+    const timer = window.setTimeout(() => router.push(signInHref), 1800);
     return () => window.clearTimeout(timer);
-  }, [router, status]);
+  }, [router, status, signInHref]);
 
   if (!token) {
     return (
@@ -32,10 +36,13 @@ export function ResetPasswordClient() {
         <div className="forge-art" aria-hidden />
         <article className="forge-card">
           <h1>Невалиден линк</h1>
-          <p>Този линк е празен или повреден. Заяви нов от страницата "Загубен ключ".</p>
-          <Link href="/forgot-password" className="btn btn-primary">
+          <p>Този линк е невалиден или е изтекъл. Заяви нов линк за смяна на паролата.</p>
+          <Link href={forgotHref} className="btn btn-primary">
             Заяви нов линк
           </Link>
+          <footer className="forge-foot">
+            <Link href={signInHref}>Към входа</Link>
+          </footer>
         </article>
       </section>
     );
@@ -43,6 +50,7 @@ export function ResetPasswordClient() {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (status === "submitting") return;
     setErrorMsg("");
 
     if (password.length < 8) {
@@ -58,14 +66,18 @@ export function ResetPasswordClient() {
 
     setStatus("submitting");
 
-    const result = await authClient.resetPassword({ token, newPassword: password });
-    if (result.error) {
-      setErrorMsg(mapAuthError(result.error, "Грешка при смяната на парола."));
+    try {
+      const result = await authClient.resetPassword({ token, newPassword: password });
+      if (result.error) {
+        setErrorMsg(mapAuthError(result.error, "Паролата не е сменена. Опитай отново или заяви нов линк."));
+        setStatus("error");
+        return;
+      }
+      setStatus("done");
+    } catch {
+      setErrorMsg("Не успяхме да се свържем. Провери връзката си и опитай отново.");
       setStatus("error");
-      return;
     }
-
-    setStatus("done");
   }
 
   return (
@@ -78,15 +90,15 @@ export function ResetPasswordClient() {
             <KeySquare strokeWidth={1.8} />
           </span>
           <p className="forge-kicker">нов ключ</p>
-          <h1>Затвори нов ключ зад себе си.</h1>
+          <h1>Нова парола</h1>
           <p className="forge-subtitle">
-            Избери здрава парола - поне 8 символа. Запомни я добре, защото ще ти отваря вратата всеки път.
+            Използвай поне 8 символа и парола, която не ползваш другаде.
           </p>
         </header>
 
         {status === "done" ? (
           <p className="forge-success" role="status">
-            Готово. Сега те водим към входа...
+            Паролата е сменена. Сега те водим към входа...
           </p>
         ) : (
           <form onSubmit={submit} className="forge-form">
@@ -127,10 +139,14 @@ export function ResetPasswordClient() {
               disabled={status === "submitting"}
               aria-busy={status === "submitting"}
             >
-              {status === "submitting" ? "Заковавам..." : "Затвори ключа"}
+              {status === "submitting" ? "Запазваме..." : "Запази паролата"}
             </button>
+            {status === "error" ? <Link href={forgotHref}>Заяви нов линк</Link> : null}
           </form>
         )}
+        <footer className="forge-foot">
+          <Link href={signInHref}>Към входа</Link>
+        </footer>
       </article>
     </section>
   );

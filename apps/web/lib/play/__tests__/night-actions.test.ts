@@ -4,6 +4,7 @@ import {
   canUseNightKindForTarget,
   isNightActionKindAvailable,
   nightActionUnavailableReasons,
+  needsSecondNightTarget,
   requiresExplicitNightActionChoice,
   secondaryShortcutTargets,
   shortcutTargets,
@@ -31,6 +32,15 @@ function player(userId: string): PublicPlayer {
 
 describe("night action target helpers", () => {
   const livingPlayers = [player("actor"), player("target"), player("receiver")];
+
+  it("limits secondary seat selection to the role's actual night phases", () => {
+    expect(needsSecondNightTarget("blacksmith", "night")).toBe(true);
+    expect(needsSecondNightTarget("blacksmith", "first_night")).toBe(true);
+    expect(needsSecondNightTarget("blacksmith", "voting")).toBe(false);
+    expect(needsSecondNightTarget("blacksmith", "day_discussion")).toBe(false);
+    expect(needsSecondNightTarget("cupid", "first_night")).toBe(true);
+    expect(needsSecondNightTarget("cupid", "night")).toBe(false);
+  });
 
   it("allows Blacksmith to choose self as the sword target but not as the receiver", () => {
     expect(shortcutTargets("night", "blacksmith", livingPlayers, livingPlayers, "actor").map((item) => item.userId))

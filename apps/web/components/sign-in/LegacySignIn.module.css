@@ -53,7 +53,7 @@
   gap: 0.04em;
   margin: 12px 0 0;
   color: #fff6e5;
-  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-family: var(--font-display);
   font-size: clamp(3rem, 6vw, 5.4rem);
   font-weight: 900;
   line-height: 0.96;
@@ -152,7 +152,7 @@
   border-radius: 50%;
   background: linear-gradient(145deg, #a8392e, #651713);
   color: #fff0d3;
-  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-family: var(--font-display);
   font-size: 1.1rem;
   font-weight: 900;
   box-shadow: 0 8px 20px rgba(91, 18, 14, 0.28), inset 0 1px rgba(255, 255, 255, 0.2);
@@ -198,7 +198,7 @@
 :global(.sign-in-form-head h2) {
   margin: 0;
   color: var(--ds-ink-primary);
-  font-family: "Noto Serif Display", "Noto Serif", serif;
+  font-family: var(--font-display);
   font-size: clamp(1.55rem, 2.8vw, 2.1rem);
   font-weight: 900;
   line-height: 1.08;
@@ -236,7 +236,7 @@
   border-radius: 8px;
   color: var(--ds-ink-primary);
   cursor: pointer;
-  font-family: "Noto Sans", system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 0.92rem;
   font-weight: 850;
   letter-spacing: 0;
@@ -369,6 +369,25 @@
 :global(.email-form) {
   display: grid;
   gap: 12px;
+}
+
+:global(.email-verification-pending) {
+  display: grid;
+  min-width: 0;
+  gap: 14px;
+  color: var(--ds-ink-primary);
+}
+
+:global(.email-verification-pending h2) {
+  margin: 0;
+  font-size: 1.35rem;
+  line-height: 1.25;
+  letter-spacing: 0;
+}
+
+:global(.email-verification-pending p) {
+  margin: 0;
+  line-height: 1.5;
 }
 
 :global(.email-form-panel) {

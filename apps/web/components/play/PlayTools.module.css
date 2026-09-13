@@ -1,0 +1,114 @@
+.tool {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: 52px;
+  padding: 6px 10px;
+  border: 1px solid var(--play-console-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--play-console-ink);
+  font: inherit;
+  font-size: 0.8125rem;
+  text-align: left;
+  cursor: pointer;
+}
+.tool > svg { flex: 0 0 auto; }
+.tool > span { min-width: 0; overflow-wrap: anywhere; }
+.tool small { display: block; font-size: 0.6875rem; line-height: 1.35; color: var(--play-console-muted); }
+.tool:hover, .tool[aria-expanded="true"] { background: color-mix(in srgb, var(--play-console-border) 14%, transparent); }
+.tool:focus-visible { outline: 2px solid var(--play-console-ink); outline-offset: 2px; }
+
+.sheet:global(.ds-sheet) {
+  --tool-paper: var(--ds-surface-paper);
+  --tool-ink: var(--ds-ink-primary);
+  --tool-muted: var(--ds-ink-soft);
+  --tool-border: var(--ds-border-subtle);
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+  color: var(--tool-ink);
+  background: var(--tool-paper);
+  border: 1px solid var(--tool-border);
+  border-radius: 8px;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+.sheet > :global(.ds-sheet-title) {
+  padding: 20px 68px 20px 24px;
+  font-size: 1.375rem;
+  line-height: 1.25;
+  border-bottom: 1px solid var(--tool-border);
+}
+.sheet > :global(.ds-sheet-close) { top: 14px; right: 16px; border-radius: 6px; }
+.reference:global(.ds-sheet) { height: min(600px, 85dvh); max-height: 85dvh; }
+.referenceBody { display: flex; flex-direction: column; min-height: 0; }
+.tabs { display: grid; grid-template-columns: 1.25fr 1fr 1fr; flex: 0 0 auto; padding: 0 24px; border-bottom: 1px solid var(--tool-border); }
+.tabs button {
+  min-height: 48px;
+  padding: 8px 6px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: none;
+  color: var(--tool-muted);
+  font: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+.tabs button[aria-selected="true"] { color: var(--tool-ink); border-bottom-color: var(--ds-ink-primary); font-weight: 700; }
+.reading { min-height: 0; padding: 24px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.reading[hidden] { display: none; }
+.reading h3 { margin: 0 0 12px; font-family: var(--ds-font-display); font-size: 1.5rem; line-height: 1.2; }
+.reading p { margin: 0; color: var(--tool-muted); font-size: 0.9375rem; line-height: 1.65; }
+.reading .eyebrow { margin-bottom: 8px; font-size: 0.75rem; }
+.phaseNotes { display: grid; gap: 20px; margin: 24px 0 0; }
+.phaseNotes > div { padding-left: 16px; border-left: 2px solid var(--tool-border); }
+.phaseNotes dt, .metrics dt { color: var(--tool-muted); font-size: 0.8125rem; }
+.phaseNotes dd { margin: 4px 0 0; font-size: 0.9375rem; line-height: 1.6; }
+.metrics { display: grid; margin: 0; }
+.metrics > div { display: grid; grid-template-columns: 1fr 1.3fr; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--tool-border); align-items: baseline; }
+.metrics > div:first-child { padding-top: 0; }
+.metrics dd { margin: 0; font-size: 0.875rem; text-align: right; overflow-wrap: anywhere; }
+.roster { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 24px; margin: 16px 0 0; padding: 0; list-style: none; }
+.roster li { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--tool-border); font-size: 0.875rem; }
+.roster li > span { overflow-wrap: anywhere; }
+.portrait { width: 36px; height: 44px; border-radius: 4px; background: var(--role-art) center / cover no-repeat; }
+.cueBody { padding: 12px 24px 20px; overflow-y: auto; overscroll-behavior: contain; }
+.modes { border: 0; padding: 0; margin: 0; }
+.modes label { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 10px 0; border-bottom: 1px solid var(--tool-border); cursor: pointer; font-size: 0.875rem; }
+.modes label > svg { flex: 0 0 auto; }
+.modes label > span { flex: 1; }
+.modes label:has(:disabled) { opacity: 0.55; cursor: not-allowed; }
+.modes input { width: 18px; height: 18px; margin: 0; accent-color: var(--tool-ink); cursor: inherit; }
+.note, .reading .note { color: var(--tool-muted); font-size: 0.8125rem; line-height: 1.55; margin: 16px 0 0; }
+.preview { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 18px; }
+.cuePreview { display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid var(--tool-border); border-radius: 6px; }
+.testCue { display: flex; align-items: center; gap: 8px; padding: 8px 12px; min-height: 40px; border: 1px solid var(--tool-border); border-radius: 6px; background: transparent; color: inherit; font: inherit; font-size: 0.8125rem; cursor: pointer; }
+.testCue:disabled { opacity: 0.45; cursor: not-allowed; }
+.sheet :is(button, input, [role="tabpanel"]):focus-visible { outline: 2px solid var(--tool-ink); outline-offset: -3px; box-shadow: none; }
+.cuePreview:not([data-cue="silent"]) svg, .cueTool > svg:not([data-cue="silent"]) { animation: cuePulse 650ms ease-out; }
+@keyframes cuePulse { 35% { opacity: 0.35; transform: scale(0.8); } }
+
+@media (min-width: 768px) {
+  .reference:global(.ds-sheet) { width: min(640px, calc(100vw - 48px)); }
+  .settings:global(.ds-sheet) {
+    top: auto;
+    left: var(--tool-left, 16px);
+    bottom: var(--tool-bottom, 16px);
+    width: 360px;
+    max-height: calc(100dvh - var(--tool-bottom, 16px) - 16px);
+    transform: none;
+  }
+  .settings:global(.ds-sheet[data-state="open"]) { animation: toolOpen 160ms ease-out; }
+  .settings:global(.ds-sheet[data-state="closed"]) { animation: toolClose 120ms ease-in; }
+}
+@keyframes toolOpen { from { opacity: 0; translate: 0 6px; } to { opacity: 1; translate: 0 0; } }
+@keyframes toolClose { to { opacity: 0; translate: 0 6px; } }
+@media (max-width: 767px) {
+  .sheet:global(.ds-sheet) { border-bottom: 0; border-radius: 8px 8px 0 0; padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .sheet > :global(.ds-sheet-title) { padding-left: 20px; }
+  .tabs { padding-inline: 12px; }
+  .reading, .cueBody { padding: 20px; }
+  .roster { grid-template-columns: minmax(0, 1fr); }
+}

@@ -63,7 +63,7 @@ export function initialState({
   const rolePreset = manualRolesEnabled ? "manual" : hydratedConfig.rolePreset;
   const normalizedAdvanced = normalizeAdvancedForPreset(mode, playerCount, rolePreset, {
     ...advanced,
-    loversEnabled: advanced.loversEnabled || defaultLoversEnabled(mode, playerCount, rolePreset),
+    loversEnabled: parsed.loversEnabled ?? (advanced.loversEnabled || defaultLoversEnabled(mode, playerCount, rolePreset)),
   });
 
   return {
@@ -144,6 +144,8 @@ function normalizeRetiredMafiaLovers(mode: GameMode, roles: RoleDistribution): R
 
 function pickPreservedOptions(options: CreateRoomOptions): PreservedCreateOptions {
   return {
+    ...(options.tieBreaker ? { tieBreaker: options.tieBreaker } : {}),
+    ...(typeof options.firstNightKill === "boolean" ? { firstNightKill: options.firstNightKill } : {}),
     ...(options.roomVisibility ? { roomVisibility: options.roomVisibility } : {}),
     ...(typeof options.beginnerMode === "boolean" ? { beginnerMode: options.beginnerMode } : {}),
     ...(typeof options.advancedMode === "boolean" ? { advancedMode: options.advancedMode } : {}),

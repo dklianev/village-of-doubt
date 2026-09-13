@@ -1,53 +1,68 @@
 import type { CreateRoomOptions, RoleCode, RoleDistribution } from "@werewolf/shared";
 
+export const ROOM_TIMER_QUERY_KEYS = [
+  { key: "dayDiscussionSeconds", query: "tempoDay" },
+  { key: "factionNightActionSeconds", query: "tempoNight" },
+  { key: "voteSeconds", query: "tempoVote" },
+  { key: "roleRevealSeconds", query: "tempoReveal" },
+  { key: "personalNightActionSeconds", query: "tempoPersonalNight" },
+  { key: "playerSpeechSeconds", query: "tempoSpeech" },
+  { key: "resolutionSeconds", query: "tempoResolution" },
+  { key: "minimumPhaseSeconds", query: "tempoMinimum" },
+] as const;
+
+const BOOLEAN_QUERY_KEYS = [
+  ["loversEnabled", "lovers"],
+  ["revealRolesOnDeath", "reveal"],
+  ["allowSkipVote", "skip"],
+  ["firstNightKill", "firstNightKill"],
+  ["autoStart", "autoStart"],
+  ["beginnerMode", "beginner"],
+  ["advancedMode", "advanced"],
+  ["promoRolesEnabled", "promo"],
+  ["mafiaNightKill", "mafiaKill"],
+  ["doctorCanSelfProtect", "doctorSelf"],
+  ["maniacEnabled", "maniac"],
+  ["jesterEnabled", "jester"],
+] as const;
+
+const STRING_QUERY_KEYS = [
+  ["mode", "mode"],
+  ["roomName", "roomName"],
+  ["roomVisibility", "visibility"],
+  ["rolePreset", "preset"],
+  ["communicationMode", "communication"],
+  ["narratorMode", "narrator"],
+  ["tempoProfile", "tempo"],
+  ["majorityMode", "majority"],
+  ["tieBreaker", "tieBreaker"],
+  ["werewolfVariant", "variant"],
+  ["mayorMode", "mayorMode"],
+  ["commissionerResultMode", "commissionerResult"],
+  ["narratorVoice", "narratorVoice"],
+] as const;
+
 export function roomOptionsToQuery(options: CreateRoomOptions) {
   const params = new URLSearchParams();
 
-  if (options.mode) params.set("mode", options.mode);
+  for (const [key, query] of STRING_QUERY_KEYS) {
+    if (options[key]) params.set(query, options[key]);
+  }
   if (options.playerCount) params.set("players", String(options.playerCount));
   if (options.maxPlayers) params.set("maxPlayers", String(options.maxPlayers));
-  if (options.roomName) params.set("roomName", options.roomName);
-  if (options.roomVisibility) params.set("visibility", options.roomVisibility);
-  if (options.rolePreset) params.set("preset", options.rolePreset);
-  if (options.communicationMode) params.set("communication", options.communicationMode);
-  if (options.narratorMode) params.set("narrator", options.narratorMode);
-  if (options.tempoProfile) params.set("tempo", options.tempoProfile);
   if (options.tempoProfile === "manual" && options.customTimers) {
-    if (typeof options.customTimers.dayDiscussionSeconds === "number") {
-      params.set("tempoDay", String(options.customTimers.dayDiscussionSeconds));
-    }
-    if (typeof options.customTimers.factionNightActionSeconds === "number") {
-      params.set("tempoNight", String(options.customTimers.factionNightActionSeconds));
-    }
-    if (typeof options.customTimers.voteSeconds === "number") {
-      params.set("tempoVote", String(options.customTimers.voteSeconds));
+    for (const { key, query } of ROOM_TIMER_QUERY_KEYS) {
+      if (typeof options.customTimers[key] === "number") {
+        params.set(query, String(options.customTimers[key]));
+      }
     }
     if (typeof options.customTimers.autoAdvanceWhenReady === "boolean") {
       params.set("tempoReady", options.customTimers.autoAdvanceWhenReady ? "1" : "0");
     }
   }
-  if (options.loversEnabled) params.set("lovers", "1");
-  if (typeof options.revealRolesOnDeath === "boolean") {
-    params.set("reveal", options.revealRolesOnDeath ? "1" : "0");
+  for (const [key, query] of BOOLEAN_QUERY_KEYS) {
+    if (typeof options[key] === "boolean") params.set(query, options[key] ? "1" : "0");
   }
-  if (typeof options.allowSkipVote === "boolean") {
-    params.set("skip", options.allowSkipVote ? "1" : "0");
-  }
-  if (options.majorityMode) params.set("majority", options.majorityMode);
-  if (options.autoStart) params.set("autoStart", "1");
-  if (options.beginnerMode) params.set("beginner", "1");
-  if (options.advancedMode) params.set("advanced", "1");
-  if (options.werewolfVariant) params.set("variant", options.werewolfVariant);
-  if (options.mayorMode) params.set("mayorMode", options.mayorMode);
-  if (options.promoRolesEnabled) params.set("promo", "1");
-  if (typeof options.mafiaNightKill === "boolean") {
-    params.set("mafiaKill", options.mafiaNightKill ? "1" : "0");
-  }
-  if (options.doctorCanSelfProtect) params.set("doctorSelf", "1");
-  if (options.commissionerResultMode) params.set("commissionerResult", options.commissionerResultMode);
-  if (options.maniacEnabled) params.set("maniac", "1");
-  if (options.jesterEnabled) params.set("jester", "1");
-  if (options.narratorVoice) params.set("narratorVoice", options.narratorVoice);
   if (options.spectator) params.set("spectator", "1");
   if (options.roles) params.set("roles", stringifyRolesParam(options.roles));
 

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { Menu, Moon, MoreHorizontal, Play, VolumeX } from "lucide-react";
+import { ChevronDown, Menu, Moon, Play } from "lucide-react";
+import { BrandLogo } from "@/components/site-chrome/BrandLogo";
 import { Suspense } from "react";
 import { NavigationTelemetry } from "@/components/navigation-telemetry";
 import { NonCriticalWidgets } from "@/components/non-critical-widgets";
@@ -9,6 +10,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import SiteChrome from "@/components/site-chrome";
 import { ToastHost } from "@/components/toast-host";
 import { absoluteUrl, SITE_NAME, SITE_URL } from "@/lib/seo";
+import { displayFont, interfaceFont } from "./fonts";
 import "./globals.css";
 
 const themeInitScript = `(() => {
@@ -34,7 +36,7 @@ export const metadata: Metadata = {
     icon: [
       { url: "/favicon.svg", type: "image/svg+xml" },
     ],
-    apple: "/favicon.svg",
+    apple: [{ url: "/brand/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
   openGraph: {
     title: SITE_NAME,
@@ -56,62 +58,30 @@ export const metadata: Metadata = {
 function SiteChromeFallback() {
   return (
     <header className="site-chrome" data-version="v2" data-fallback aria-hidden="true">
-      <span className="site-mobile-menu">
-        <Menu className="site-icon" aria-hidden strokeWidth={1.9} />
-      </span>
-
-      <span className="site-brand">
-        <span className="site-brand-mark" aria-hidden="true" />
-        <span className="site-brand-text">
-          <span className="site-brand-wordmark">
-            <span>Върколак</span>
-            <span className="site-brand-dot" aria-hidden="true">·</span>
-            <span>Мафия</span>
-          </span>
-          {process.env.NEXT_PUBLIC_SHOW_BETA_BADGE !== "false" ? <span className="site-beta-badge">БЕТА</span> : null}
-          <span className="site-brand-subtitle">Социална игра на сенки</span>
-        </span>
-      </span>
-
+      <span className="site-mobile-menu"><Menu className="site-icon" aria-hidden /></span>
+      <span className="site-brand"><BrandLogo /></span>
       <div className="site-primary-band">
-        <span className="site-play-cta">
-          <Play className="site-icon" aria-hidden strokeWidth={1.9} />
-          <span>Играй</span>
-        </span>
-        <div className="site-family-switcher">
-          <span className="site-family-link">Върколак</span>
-          <span className="site-family-divider" aria-hidden="true" />
-          <span className="site-family-link">Мафия</span>
-        </div>
-        <span className="site-icon-button">
-          <MoreHorizontal className="site-icon" aria-hidden strokeWidth={1.9} />
-        </span>
+        <span className="site-family-link">Върколак</span>
+        <span className="site-family-link">Мафия</span>
+        <span className="site-more-trigger">Още<ChevronDown className="site-icon" aria-hidden /></span>
       </div>
-
+      <div className="site-entry-actions">
+        <span className="site-join-link">Имам код</span>
+        <span className="site-play-cta"><Play className="site-icon" aria-hidden /><span>Играй</span></span>
+      </div>
       <div className="site-utility-cluster">
-        <span className="site-icon-button">
-          <VolumeX className="site-icon" aria-hidden strokeWidth={1.9} />
-        </span>
-        <span className="site-icon-button">
-          <Moon className="site-icon" aria-hidden strokeWidth={1.9} />
-        </span>
-        <span className="site-utility-separator" aria-hidden="true" />
-        <span className="auth-chip-slot" data-auth-state="pending">
-          <span className="auth-chip auth-chip-loading" />
-        </span>
+        <span className="site-icon-button"><Moon className="site-icon" aria-hidden /></span>
+        <span className="site-utility-separator" aria-hidden />
+        <span className="auth-chip-slot" data-auth-state="pending"><span className="auth-chip auth-chip-loading" /></span>
       </div>
-
-      <span className="site-play-cta site-play-cta-mobile">
-        <Play className="site-icon" aria-hidden strokeWidth={1.9} />
-        <span>Играй</span>
-      </span>
+      <span className="site-play-cta site-play-cta-mobile"><Play className="site-icon" aria-hidden /><span>Играй</span></span>
     </header>
   );
 }
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="bg" suppressHydrationWarning>
+    <html lang="bg" className={`${displayFont.variable} ${interfaceFont.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>

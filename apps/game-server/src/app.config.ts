@@ -181,20 +181,21 @@ export default defineConfig({
 });
 
 export function createInternalRoomPreviewHandler(
-  getRoomPreview = (code: string) => GameRoom.getRoomPreview(code),
+  getRoomPreview = (code: string, viewerUserId?: string) => GameRoom.getRoomPreview(code, viewerUserId),
 ) {
   return (req: Request, res: Response) => {
     const code = normalizeRoomCodeInput(String(req.params.code ?? ""));
     const credential = String(req.header("x-werewolf-room-preview") ?? "");
+    const viewerUserId = req.header("x-werewolf-room-preview-viewer");
     if (
       !ROOM_CODE_REGEX.test(code)
-      || !verifyRoomPreviewCredential(code, credential, getGameTokenSecret())
+      || !verifyRoomPreviewCredential(code, credential, getGameTokenSecret(), viewerUserId)
     ) {
       res.status(404).json({ status: "missing" });
       return;
     }
 
-    const preview = getRoomPreview(code);
+    const preview = getRoomPreview(code, viewerUserId);
     if (!preview) {
       res.status(404).json({ status: "missing" });
       return;

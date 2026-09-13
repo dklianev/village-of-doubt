@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import type { GameFamily, GameMode } from "@werewolf/shared";
 import { playCue } from "@/lib/sound";
 import {
-  MANUAL_PRESET_STORAGE_KEY,
   hrefForState,
   initialState,
   lobbyFormReducer,
@@ -54,6 +53,7 @@ function ConfiguredLobbyWizard({
   }
   const [state, dispatch] = useReducer(lobbyFormReducer, initialRef.current);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [interactive, setInteractive] = useState(false);
   const submitTimerRef = useRef<number | null>(null);
   const detailsTriggerRef = useRef<HTMLButtonElement | null>(null);
   const transition = useCallback((update: () => void) => {
@@ -69,23 +69,8 @@ function ConfiguredLobbyWizard({
   }, []);
 
   useEffect(() => {
-    if (!state.manualRolesEnabled) {
-      return;
-    }
-    try {
-      window.localStorage?.setItem(
-        `${MANUAL_PRESET_STORAGE_KEY}:${state.family}`,
-        JSON.stringify({
-          mode: state.mode,
-          playerCount: state.playerCount,
-          roles: state.manualRoles,
-          savedAt: Date.now(),
-        }),
-      );
-    } catch {
-      // Some privacy modes expose localStorage but reject access to it.
-    }
-  }, [state.family, state.manualRoles, state.manualRolesEnabled, state.mode, state.playerCount]);
+    setInteractive(true);
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -94,13 +79,6 @@ function ConfiguredLobbyWizard({
       }
     };
   }, []);
-
-  function handleDetailsChange(open: boolean) {
-    setDetailsOpen(open);
-    if (!open) {
-      window.requestAnimationFrame(() => detailsTriggerRef.current?.focus());
-    }
-  }
 
   function onSubmit() {
     dispatch({ type: "SET_FORM_ERROR", formError: "" });
@@ -122,13 +100,16 @@ function ConfiguredLobbyWizard({
       data-family={state.family}
       data-layout="quick"
       className="lobby-wizard"
+      inert={!interactive}
     >
       <QuickCreateSurface
         state={state}
         dispatch={dispatch}
-        onOpenDetails={() => setDetailsOpen(true)}
+        onOpenDetails={(trigger) => {
+          detailsTriggerRef.current = trigger;
+          setDetailsOpen(true);
+        }}
         onSubmit={onSubmit}
-        detailsButtonRef={detailsTriggerRef}
         transition={transition}
       />
       {state.formError ? (
@@ -140,7 +121,11 @@ function ConfiguredLobbyWizard({
         state={state}
         dispatch={dispatch}
         open={detailsOpen}
-        onOpenChange={handleDetailsChange}
+        onOpenChange={setDetailsOpen}
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          detailsTriggerRef.current?.focus({ preventScroll: true });
+        }}
       />
       {state.confettiBurst > 0 ? <Confetti key={state.confettiBurst} /> : null}
     </div>

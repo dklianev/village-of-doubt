@@ -92,4 +92,8 @@ export class GameState extends Schema {
   @type([VoteTallyState]) voteTally = new ArraySchema<VoteTallyState>();
   @type([PublicEventState]) publicEvents = new ArraySchema<PublicEventState>();
   @type([ChatMessageState]) publicChat = new ArraySchema<ChatMessageState>();
+  /** Allowlisted public setup, including baseline role counts, never assignments. */
+  @type("string") nextRoomOptionsJson = "";
+  /** Identifies each ballot, including same-round revotes; contains no vote choices. */
+  @type("number") votingCycle = 0;
 }

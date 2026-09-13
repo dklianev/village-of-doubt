@@ -15,9 +15,9 @@ export function NewspaperUnavailable() {
 
       <div className="empty-headline">
         <p className="headline-kicker">извънредно съобщение</p>
-        <h2 className="headline-main-title">Данните за броя не пристигнаха</h2>
+        <h2 className="headline-main-title">Класацията временно е недостъпна</h2>
         <p className="empty-lede">
-          Класацията не е празна и не е занулена. Просто не успяхме да прочетем завършените игри в момента.
+          Не успяхме да заредим резултатите. Опитай отново след малко.
         </p>
         <div className="empty-cta">
           <Link href="/leaderboard" className="btn btn-primary">

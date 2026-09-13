@@ -4,6 +4,19 @@ import { describe, expect, it, vi } from "vitest";
 import { ReconnectModal } from "@/components/play/ReconnectModal";
 
 describe("ReconnectModal", () => {
+  it("offers name correction without navigating away from the failed join", async () => {
+    const onRetry = vi.fn();
+    render(<ReconnectModal status="error" message="Това име вече се използва в стаята." onRetry={onRetry} />);
+
+    const profile = screen.getByRole("link", { name: /Промени името/ });
+    expect(profile).toHaveAttribute("href", "/account");
+    expect(profile).toHaveAttribute("target", "_blank");
+    expect(profile).toHaveAttribute("rel", "noopener noreferrer");
+    expect(screen.queryByRole("button", { name: "Презареди" })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Свържи отново" }));
+    expect(onRetry).toHaveBeenCalledOnce();
+  });
+
   it("keeps the retry action disabled while reconnecting", async () => {
     const user = userEvent.setup();
     const onRetry = vi.fn();
