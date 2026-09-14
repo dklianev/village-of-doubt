@@ -49,7 +49,7 @@ for (const theme of ["light", "dark"] as const) {
   });
 
   for (const family of ["werewolf", "mafia"] as const) {
-    test(`@ui-polish ${theme} ${family} mobile editor keeps a full portrait and recoverable filters`, async ({ page }) => {
+    test(`@ui-polish ${theme} ${family} mobile editor keeps readable portraits and recoverable filters`, async ({ page }) => {
       await prepare(page, theme);
       await page.setViewportSize({ width: 390, height: 844 });
       await page.goto(`/${family}/create?visualAuth=1`);
@@ -61,7 +61,9 @@ for (const theme of ["light", "dark"] as const) {
       await expect(tile).toBeVisible();
       const box = await tile.boundingBox();
       const footer = await done.boundingBox();
-      expect(box!.height / box!.width).toBeCloseTo(1.5, 1);
+      await expect(tile).toHaveCSS("aspect-ratio", "auto");
+      await expect(tile.locator("picture")).toHaveCSS("width", "64px");
+      await expect(tile.locator("picture")).toHaveCSS("height", "88px");
       expect(box!.y + box!.height).toBeLessThan(footer!.y);
       for (const name of ["Запази шаблон", "Зареди шаблон"]) {
         const action = dialog.getByRole("button", { name, exact: true });
@@ -83,8 +85,12 @@ for (const theme of ["light", "dark"] as const) {
       await search.fill("");
       await dialog.getByRole("button", { name: "Търсене и филтри" }).click();
       const gallery = dialog.getByRole("region", { name: "Избор на роли" });
-      await dialog.getByRole("button", { name: "Следващи роли" }).click();
-      await expect.poll(() => gallery.evaluate((element) => element.scrollLeft)).toBeGreaterThan(10);
+      await expect(dialog.getByRole("button", { name: "Следващи роли" })).not.toBeVisible();
+      const lastTile = gallery.locator(".role-tile-large").last();
+      await lastTile.scrollIntoViewIfNeeded();
+      await expect(lastTile).toBeInViewport({ ratio: 1 });
+      await expect(lastTile.locator(".role-tile-caption")).toBeInViewport({ ratio: 1 });
+      expect(await gallery.evaluate((element) => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
       await done.click();
       await expect(dialog).toBeHidden();
       await expect(page.getByRole("button", { name: "Настрой детайлите", exact: true })).toBeFocused();

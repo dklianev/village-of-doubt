@@ -23,6 +23,11 @@ test("Bulgarian display and interface text use self-hosted fonts without externa
   expect(remoteFonts).toEqual([]);
   const deliveredFonts = await page.evaluate(() => performance.getEntriesByType("resource")
     .filter((entry) => /\.woff2(?:\?|$)/.test(entry.name))
+    .filter((entry) => {
+      // Next's local debug overlay is not part of the application's font payload.
+      const url = new URL(entry.name);
+      return !(url.origin === location.origin && /^\/__nextjs_font\/geist(?:-mono)?-latin(?:-ext)?\.woff2$/.test(url.pathname));
+    })
     .map((entry) => ({ url: entry.name, bytes: (entry as PerformanceResourceTiming).encodedBodySize })));
   expect(deliveredFonts).toHaveLength(2);
   expect(deliveredFonts.reduce((bytes, font) => bytes + font.bytes, 0)).toBeLessThan(125 * 1024);
