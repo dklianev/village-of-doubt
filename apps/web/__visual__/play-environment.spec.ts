@@ -1,5 +1,14 @@
-import { expect, test, type Locator, type Page } from "playwright/test";
+import { expect, test, type Page } from "playwright/test";
 import sharp from "sharp";
+import { loadedEnvironment, observePlayEnvironmentResources, playEnvironmentDiagnostics } from "./play-environment-resources";
+
+test.use({ trace: "retain-on-failure" });
+test.beforeEach(async ({ page }) => { await observePlayEnvironmentResources(page); });
+test.afterEach(async ({ page }, info) => {
+  if (info.status === info.expectedStatus) return;
+  const diagnostics = await playEnvironmentDiagnostics(page).catch((error: Error) => ({ error: error.message }));
+  await info.attach("environment-resource-timing", { body: JSON.stringify(diagnostics), contentType: "application/json" });
+});
 
 const phases = [
   "lobby", "role_reveal", "first_night", "night", "day_announcement", "day_discussion",
@@ -11,35 +20,6 @@ const viewports = [
   { width: 768, height: 1024 },
   { width: 844, height: 390 },
 ];
-
-async function loadedEnvironment(target: Locator, pseudo: string | null) {
-  return target.evaluate(async (element, pseudo) => {
-    const style = getComputedStyle(element, pseudo);
-    const candidates = Array.from(style.backgroundImage.matchAll(/url\("([^"]+)"\)/g), (match) => match[1]!);
-    const requested = new Set(performance.getEntriesByType("resource").map((entry) => entry.name));
-    const selected = candidates.find((url) => requested.has(url));
-    const image = new Image();
-    if (selected) {
-      image.src = selected;
-      try {
-        await image.decode();
-      } catch {
-        throw new Error(`Cannot decode selected environment: ${selected}`);
-      }
-    }
-    return {
-      path: selected ? new URL(selected).pathname : null,
-      candidates: candidates.map((url) => new URL(url).pathname),
-      width: parseFloat(style.width),
-      height: parseFloat(style.height),
-      imageWidth: image.naturalWidth,
-      imageHeight: image.naturalHeight,
-      position: style.position,
-      filter: style.filter,
-      backgroundPosition: style.backgroundPosition,
-    };
-  }, pseudo);
-}
 
 async function expectEnvironment(page: Page, portrait: boolean, family: string, night: boolean) {
   const shell = page.locator("main.play-shell:visible");

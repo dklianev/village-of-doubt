@@ -409,6 +409,22 @@ test("auth E2E retains database, registration, reset token and old/new password 
   assert.doesNotMatch(source, /setItem\(["']tutorial-completed|addCookies\(|route\.fulfill\(|visualAuth|dev-user-id/);
 });
 
+test("auth E2E recovery selectors match the current accessible form states", () => {
+  const source = read("scripts/e2e-auth.mjs");
+  const forgot = read("apps/web/components/auth/ForgotPasswordClient.tsx");
+  const reset = read("apps/web/components/auth/ResetPasswordClient.tsx");
+  for (const [component, text] of [
+    [forgot, "Ако има досие с този имейл, ще получиш линк за нова парола."],
+    [reset, "Паролата е сменена."],
+    [reset, "Запази паролата"],
+  ]) {
+    assert.ok(component.includes(text), `Recovery UI changed: ${text}`);
+    assert.ok(source.includes(text), `Recovery E2E misses the UI state: ${text}`);
+  }
+  assert.ok(forgot.includes('role="status"') && reset.includes('role="status"'));
+  assert.doesNotMatch(source, /Готово\. Провери имейла си\.|Затвори ключа|Готово\. Сега те водим/);
+});
+
 test("frontend E2E seeds Better Auth 1.7 credential identities with an issuer", () => {
   const frontendE2e = read("scripts/frontend-e2e.mjs");
 

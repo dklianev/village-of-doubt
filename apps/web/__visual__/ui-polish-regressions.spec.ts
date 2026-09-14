@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "playwright/test";
+import { checkRoleEditorWorkflow } from "./role-editor-workflow";
 
 async function prepare(page: Page, theme: "light" | "dark") {
   await page.addInitScript((value) => {
@@ -56,41 +57,8 @@ for (const theme of ["light", "dark"] as const) {
       await page.getByRole("button", { name: "Настрой детайлите", exact: true }).click();
       const dialog = page.getByRole("dialog", { name: "Настрой детайлите" });
       await dialog.getByRole("button", { name: "Настрой ръчно", exact: true }).click();
-      const tile = dialog.locator(".role-tile-large").first();
       const done = dialog.getByRole("button", { name: "Готово", exact: true });
-      await expect(tile).toBeVisible();
-      const box = await tile.boundingBox();
-      const footer = await done.boundingBox();
-      await expect(tile).toHaveCSS("aspect-ratio", "auto");
-      await expect(tile.locator("picture")).toHaveCSS("width", "64px");
-      await expect(tile.locator("picture")).toHaveCSS("height", "88px");
-      expect(box!.y + box!.height).toBeLessThan(footer!.y);
-      for (const name of ["Запази шаблон", "Зареди шаблон"]) {
-        const action = dialog.getByRole("button", { name, exact: true });
-        const actionBox = await action.boundingBox();
-        expect(actionBox!.width).toBeGreaterThanOrEqual(44);
-        expect(actionBox!.height).toBeGreaterThanOrEqual(44);
-        const icon = await action.locator("svg").boundingBox();
-        expect(icon!.width).toBe(16);
-        expect(icon!.height).toBe(16);
-      }
-      const roster = dialog.getByRole("button", { name: "Покажи състава" });
-      await roster.click();
-      await expect(dialog.getByRole("button", { name: "Скрий състава" })).toHaveAttribute("aria-expanded", "true");
-      await dialog.getByRole("button", { name: "Скрий състава" }).click();
-      await dialog.getByRole("button", { name: "Търсене и филтри" }).click();
-      const search = dialog.getByRole("textbox", { name: "Търси роля" });
-      await search.fill("няма-такава-роля");
-      await expect(dialog.getByText("Няма роли за този филтър.")).toBeVisible();
-      await search.fill("");
-      await dialog.getByRole("button", { name: "Търсене и филтри" }).click();
-      const gallery = dialog.getByRole("region", { name: "Избор на роли" });
-      await expect(dialog.getByRole("button", { name: "Следващи роли" })).not.toBeVisible();
-      const lastTile = gallery.locator(".role-tile-large").last();
-      await lastTile.scrollIntoViewIfNeeded();
-      await expect(lastTile).toBeInViewport({ ratio: 1 });
-      await expect(lastTile.locator(".role-tile-caption")).toBeInViewport({ ratio: 1 });
-      expect(await gallery.evaluate((element) => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
+      await checkRoleEditorWorkflow(dialog, family === "werewolf" ? "werewolves" : "mafia", true);
       await done.click();
       await expect(dialog).toBeHidden();
       await expect(page.getByRole("button", { name: "Настрой детайлите", exact: true })).toBeFocused();

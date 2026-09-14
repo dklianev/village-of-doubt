@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "playwright/test";
+import { expectDecodedImage } from "./image-readiness";
 
 const PLAY_VISUAL_ROUTES = [
   { name: "play-werewolves-lobby", path: "/play/VISUAL?visualGame=1&phase=lobby&family=werewolves&viewer=host" },
@@ -553,6 +554,7 @@ for (const viewport of REPRESENTATIVE_VIEWPORTS) {
         expect(currentUrl.searchParams.get("step")).toBe("1");
       }
       await expect(page.getByRole("heading", { level: 1, name: route.heading })).toBeVisible();
+      if (route.name === "home") await materializeHomepageDeck(page);
       if (route.name === "home" || route.name.endsWith("-home")) await hideNextDevIndicator(page);
       await expect(page).toHaveScreenshot(`${viewport.name}-${route.name}.png`, {
         fullPage: true,
@@ -617,6 +619,7 @@ for (const viewport of VIEWPORTS) {
         await expect(page.getByText("roleNameBg", { exact: false })).toHaveCount(0);
       }
       if (route.name === "home" || route.name.endsWith("-home")) await hideNextDevIndicator(page);
+      if (route.name === "home") await materializeHomepageDeck(page);
       await expect(page).toHaveScreenshot(`${viewport.name}-${route.name}.png`, {
         fullPage: true,
         maxDiffPixelRatio: 0.01,
@@ -649,6 +652,7 @@ for (const viewport of VIEWPORTS) {
         return;
       }
       if (route.name === "home" || route.name.endsWith("-home")) await hideNextDevIndicator(page);
+      if (route.name === "home") await materializeHomepageDeck(page);
       await expect(page).toHaveScreenshot(`${viewport.name}-${route.name}-light.png`, {
         fullPage: true,
         maxDiffPixelRatio: 0.01,
@@ -809,6 +813,16 @@ async function waitForStablePlayStage(page: Page) {
     await nextFrame();
     return first === second && second === readSignature();
   }, undefined, { timeout: 10_000, polling: "raf" });
+}
+
+async function materializeHomepageDeck(page: Page) {
+  // Full-page capture does not scroll, so visit deferred art as a reader would.
+  const deck = page.locator(".home-start-deck");
+  await deck.scrollIntoViewIfNeeded();
+  const images = deck.locator("img");
+  await expect(images).toHaveCount(3);
+  for (const image of await images.all()) await expectDecodedImage(image);
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
 }
 
 async function materializeRolePortraits(page: Page) {

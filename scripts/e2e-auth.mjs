@@ -139,14 +139,16 @@ async function passwordReset(page) {
   await page.goto(`${baseUrl}/forgot-password`, { waitUntil: "domcontentloaded" });
   await page.getByRole("textbox", { name: "Имейл" }).fill(email);
   await page.getByRole("button", { name: "Изпрати линк" }).click();
-  await page.getByText("Готово. Провери имейла си.").waitFor();
+  await page.getByRole("status").filter({
+    hasText: "Ако има досие с този имейл, ще получиш линк за нова парола.",
+  }).waitFor();
 
   const message = await waitForEmail(email, "Нова парола");
   await page.goto(extractResetPasswordUrl(message.html), { waitUntil: "domcontentloaded" });
   await page.getByLabel("Нова парола").fill(newPassword);
   await page.getByLabel("Повтори").fill(newPassword);
-  await page.getByRole("button", { name: "Затвори ключа" }).click();
-  await page.getByText("Готово. Сега те водим към входа...").waitFor();
+  await page.getByRole("button", { name: "Запази паролата", exact: true }).click();
+  await page.getByRole("status").filter({ hasText: "Паролата е сменена." }).waitFor();
   await page.waitForURL(`${baseUrl}/sign-in`, { timeout: 10_000 });
 
   await signInWithPassword(page, email, oldPassword);
