@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
+import { skipWelcomeTutorial } from "./e2e-auth-navigation.mjs";
 
 const read = (path) => readFileSync(path, "utf8");
 const readOptional = (path) => existsSync(path) ? read(path) : "";
@@ -313,6 +314,99 @@ test("auth E2E falls back to its standalone port when the configured local app i
     authE2e,
     /if \(!process\.env\.E2E_AUTH_BASE_URL && !\(await isHealthy\(`\$\{baseUrl\}\/api\/health`\)\)\) \{\s*baseUrl = standaloneBaseUrl;/,
   );
+});
+
+function authWelcomeFixture(redirectTo, overrides = {}) {
+  const baseUrl = "http://127.0.0.1:3412";
+  let currentUrl = overrides.welcomeUrl ?? `${baseUrl}/tutorial?${new URLSearchParams({ welcome: "1", redirect: redirectTo, step: "1" })}`;
+  const events = [];
+  const page = {
+    waitForURL: async (expected, options) => {
+      assert.equal(options.timeout, 10_000);
+      if (typeof expected === "function") {
+        assert.equal(expected(new URL(currentUrl)), true, "unexpected welcome URL");
+        events.push("welcome");
+      } else {
+        assert.equal(currentUrl, expected, "unexpected final redirect");
+        events.push("destination");
+      }
+    },
+    getByRole: (role, options) => {
+      assert.equal(role, "region");
+      assert.equal(options.name, "Наръчник за първа игра");
+      assert.equal(options.exact, true);
+      return { getByRole: (role, options) => {
+        assert.equal(role, "link");
+        assert.equal(options.name, "Прескочи");
+        assert.equal(options.exact, true);
+        return {
+          getAttribute: async (attribute) => {
+            assert.equal(attribute, "href");
+            events.push("href");
+            return overrides.href ?? redirectTo;
+          },
+          click: async () => {
+            events.push("skip");
+            currentUrl = new URL(overrides.destination ?? redirectTo, baseUrl).href;
+          },
+        };
+      } };
+    },
+  };
+  return { events, run: () => skipWelcomeTutorial(page, baseUrl, redirectTo) };
+}
+
+test("auth E2E skips welcome through its UI and asserts the exact final redirect", async () => {
+  for (const redirectTo of ["/", "/werewolf/create", "/werewolf/create?mode=werewolves_classic"]) {
+    const fixture = authWelcomeFixture(redirectTo);
+    await fixture.run();
+    assert.deepEqual(fixture.events, ["welcome", "href", "skip", "destination"]);
+  }
+});
+
+test("auth E2E rejects missing welcome, wrong origin/step/redirect and broken skip navigation", async () => {
+  for (const welcomeUrl of [
+    "http://127.0.0.1:3412/",
+    "http://127.0.0.1:3412/verify-email?error=INVALID_TOKEN",
+    "http://127.0.0.1:3412/tutorial?redirect=%2F&step=1",
+    "http://127.0.0.1:3412/tutorial?welcome=1&redirect=%2Faccount&step=1",
+    "http://127.0.0.1:3412/tutorial?welcome=1&redirect=%2F&step=2",
+    "https://other.invalid/tutorial?welcome=1&redirect=%2F&step=1",
+  ]) {
+    const fixture = authWelcomeFixture("/", { welcomeUrl });
+    await assert.rejects(fixture.run(), /unexpected welcome URL/);
+    assert.deepEqual(fixture.events, []);
+  }
+  const wrongLink = authWelcomeFixture("/", { href: "/account" });
+  await assert.rejects(wrongLink.run(), /did not preserve the intended redirect/);
+  assert.deepEqual(wrongLink.events, ["welcome", "href"]);
+  const wrongDestination = authWelcomeFixture("/werewolf/create", { destination: "/" });
+  await assert.rejects(wrongDestination.run(), /unexpected final redirect/);
+});
+
+test("auth E2E visits the outbox token before welcome and preserves create return without a manual goto", () => {
+  const source = read("scripts/e2e-auth.mjs");
+  assert.match(source, /import \{ skipWelcomeTutorial \} from "\.\/e2e-auth-navigation\.mjs"/);
+  assert.match(source, /const message = await waitForEmail\(email\);\s*const verifyUrl = extractVerificationUrl\(message\.html\);\s*await page\.goto\(verifyUrl, \{ waitUntil: "domcontentloaded" \}\);\s*await skipWelcomeTutorial\(page, baseUrl, redirectTo\)/);
+  assert.ok(source.includes("Verification email did not include a verify-email link."));
+  assert.ok(source.includes('return match[1].replaceAll("&amp;", "&")'));
+  assert.match(source, /await verifyEmailFromOutbox\(page, email, "\/werewolf\/create"\);\s*await page\.locator\("#create-quick-title"\)\.waitFor\(\)/);
+});
+
+test("auth E2E retains database, registration, reset token and old/new password session coverage", () => {
+  const source = read("scripts/e2e-auth.mjs");
+  for (const scenario of ["emailRegistration", "passwordReset", "authenticatedCreateReturn", "accountDeletion"]) {
+    assert.match(source, new RegExp(`hasDatabase \\? ${scenario} : skipped`));
+  }
+  assert.match(source, /await registerAndVerify\(page,/);
+  assert.match(source, /waitForEmail\(email, "Нова парола"\)/);
+  assert.match(source, /page\.goto\(extractResetPasswordUrl\(message\.html\)/);
+  assert.match(source, /signInWithPassword\(page, email, oldPassword\);\s*await page\.getByRole\("alert"\)\.waitFor\(\)/);
+  assert.match(source, /page\.url\(\) !== `\$\{baseUrl\}\/sign-in`/);
+  assert.match(source, /signInWithPassword\(page, email, newPassword\);\s*await skipWelcomeTutorial\(page, baseUrl, "\/"\)/);
+  assert.match(source, /page\.request\.get\(`\$\{baseUrl\}\/api\/auth\/get-session`\)/);
+  assert.match(source, /!sessionResponse\.ok\(\) \|\| session\?\.user\?\.email !== email/);
+  assert.doesNotMatch(source, /setItem\(["']tutorial-completed|addCookies\(|route\.fulfill\(|visualAuth|dev-user-id/);
 });
 
 test("frontend E2E seeds Better Auth 1.7 credential identities with an issuer", () => {

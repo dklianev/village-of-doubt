@@ -2,6 +2,7 @@ import { chromium } from "playwright";
 import { spawn } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { skipWelcomeTutorial } from "./e2e-auth-navigation.mjs";
 
 const webPort = process.env.E2E_AUTH_WEB_PORT ?? "3412";
 // Keep the default aligned with frontend:e2e, which builds NEXT_PUBLIC_GAME_SERVER_URL.
@@ -121,7 +122,6 @@ async function emailRegistration(page) {
   await page.getByLabel("Парола", { exact: true }).fill("Test1234!");
   await page.getByRole("button", { name: "Създай досие" }).click();
   await verifyEmailFromOutbox(page, email);
-  await page.waitForURL(`${baseUrl}/`, { timeout: 10_000 });
   await page.locator(".auth-chip-avatar").waitFor({ timeout: 10_000 });
 }
 
@@ -156,7 +156,7 @@ async function passwordReset(page) {
   }
 
   await signInWithPassword(page, email, newPassword);
-  await page.waitForURL((url) => url.pathname !== "/sign-in", { timeout: 10_000 });
+  await skipWelcomeTutorial(page, baseUrl, "/");
   const sessionResponse = await page.request.get(`${baseUrl}/api/auth/get-session`);
   const session = await sessionResponse.json();
   if (!sessionResponse.ok() || session?.user?.email !== email) {
@@ -173,8 +173,7 @@ async function authenticatedCreateReturn(page) {
   await page.getByRole("textbox", { name: "Имейл" }).fill(email);
   await page.getByLabel("Парола", { exact: true }).fill("Test1234!");
   await page.getByRole("button", { name: "Създай досие" }).click();
-  await verifyEmailFromOutbox(page, email);
-  await page.goto(`${baseUrl}/werewolf/create`, { waitUntil: "domcontentloaded" });
+  await verifyEmailFromOutbox(page, email, "/werewolf/create");
   await page.locator("#create-quick-title").waitFor();
 }
 
@@ -187,7 +186,6 @@ async function accountDeletion(page) {
   await page.getByLabel("Парола", { exact: true }).fill("Test1234!");
   await page.getByRole("button", { name: "Създай досие" }).click();
   await verifyEmailFromOutbox(page, email);
-  await page.waitForURL(`${baseUrl}/`, { timeout: 10_000 });
   await page.goto(`${baseUrl}/account`, { waitUntil: "domcontentloaded" });
   await page.getByRole("button", { name: "Изтрий моето досие" }).click();
   await page.getByRole("textbox", { name: "Напиши ИЗТРИЙ за потвърждение" }).fill("ИЗТРИЙ");
@@ -203,7 +201,6 @@ async function registerAndVerify(page, { email, name, password }) {
   await page.getByLabel("Парола", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Създай досие" }).click();
   await verifyEmailFromOutbox(page, email);
-  await page.waitForURL(`${baseUrl}/`, { timeout: 10_000 });
 }
 
 async function signInWithPassword(page, email, password) {
@@ -224,10 +221,11 @@ function prepareEmailOutbox() {
   rmSync(emailOutbox, { force: true });
 }
 
-async function verifyEmailFromOutbox(page, email) {
+async function verifyEmailFromOutbox(page, email, redirectTo = "/") {
   const message = await waitForEmail(email);
   const verifyUrl = extractVerificationUrl(message.html);
   await page.goto(verifyUrl, { waitUntil: "domcontentloaded" });
+  await skipWelcomeTutorial(page, baseUrl, redirectTo);
 }
 
 async function waitForEmail(email, subjectIncludes) {
