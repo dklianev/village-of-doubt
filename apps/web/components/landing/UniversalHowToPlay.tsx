@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, KeyRound, UsersRound, VenetianMask } from "lucide-react";
 import { roleThumbPath } from "@/lib/role-art";
+import { NearViewportMedia } from "@/components/NearViewportMedia";
 
 const STEPS = [
   {
@@ -24,9 +25,11 @@ export function UniversalHowToPlay() {
   return (
     <section className="home-start" aria-label="Първата ти игра">
       <div className="home-start-deck" aria-hidden="true">
-        <img src={roleThumbPath("werewolves", "seer")} alt="" width="520" height="780" loading="lazy" decoding="async" />
-        <img src={roleThumbPath("mafia", "commissioner")} alt="" width="520" height="780" loading="lazy" decoding="async" />
-        <img src="/game-art/thumbs/card-back-secret.webp" alt="" width="520" height="780" loading="lazy" decoding="async" />
+        <NearViewportMedia>
+          <img src={roleThumbPath("werewolves", "seer")} alt="" width="520" height="780" loading="lazy" decoding="async" />
+          <img src={roleThumbPath("mafia", "commissioner")} alt="" width="520" height="780" loading="lazy" decoding="async" />
+          <img src="/game-art/thumbs/card-back-secret.webp" alt="" width="520" height="780" loading="lazy" decoding="async" />
+        </NearViewportMedia>
       </div>
       <div className="home-start-intro">
         <p className="section-kicker">Първата ти игра</p>

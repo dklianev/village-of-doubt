@@ -1,5 +1,8 @@
 import sharp from "sharp";
 import { expect, test, type Locator, type Page } from "playwright/test";
+import { expectDecodedImage } from "./image-readiness";
+
+test.use({ trace: "retain-on-failure" });
 
 async function prepare(page: Page, theme: "dark" | "light") {
   await page.addInitScript((selectedTheme) => {
@@ -97,7 +100,7 @@ for (const theme of ["dark", "light"] as const) {
           await expect(cards).toHaveCount(6);
           for (const card of await cards.all()) {
             await card.scrollIntoViewIfNeeded();
-            await card.locator("img").evaluate((image) => (image as HTMLImageElement).decode());
+            await expectDecodedImage(card.locator("img"));
           }
           await page.evaluate(() => window.scrollTo(0, 0));
           await page.screenshot({ path: info.outputPath("rules-hero.png"), animations: "disabled" });

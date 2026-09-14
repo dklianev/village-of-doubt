@@ -724,8 +724,10 @@ function checkFrontendHygieneContracts() {
     stepRoom.includes('from "@/components/lobby/Field"') && fieldComponent.includes("export function Field"),
     "StepRoom must use the uniform Field subcomponent.",
   );
-  // One isolated dossier trigger keeps the full role catalogue out of family landing bundles.
-  assert(clientComponentFiles.length <= 51, `Too many apps/web client components: ${clientComponentFiles.length} > 51.`);
+  // The dossier trigger isolates the catalogue; one shared media island defers
+  // offscreen art while keeping the homepage guidance server-rendered.
+  // Its request/layout behavior is browser-tested; byte budgets remain separate.
+  assert(clientComponentFiles.length <= 52, `Too many apps/web client components: ${clientComponentFiles.length} > 52.`);
   for (const file of serverDefaultComponents) {
     assert(!readText(file).startsWith('"use client"'), `${file} should stay server-default.`);
   }

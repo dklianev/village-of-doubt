@@ -1,12 +1,15 @@
 import { expect, test, type Locator } from "playwright/test";
 import sharp from "sharp";
+import { expectDecodedImage } from "./image-readiness";
+
+test.use({ trace: "retain-on-failure" });
 
 async function unobscuredArt(image: Locator) {
   await image.evaluate((element) => element.scrollIntoView({ block: "center", behavior: "instant" }));
   await image.evaluate(async (element) => {
     await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
-    await (element as HTMLImageElement).decode();
   });
+  await expectDecodedImage(image);
   const screenshot = await image.screenshot({ animations: "disabled", scale: "css" });
   // Use the browser's own rasterization at the same fractional position, without foreground layers.
   await image.evaluate(async (element) => {

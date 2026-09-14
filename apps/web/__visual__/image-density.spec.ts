@@ -1,4 +1,7 @@
 import { expect, test, type Locator, type Page } from "playwright/test";
+import { expectDecodedImage } from "./image-readiness";
+
+test.use({ trace: "retain-on-failure" });
 
 const viewports = [
   { width: 390 },
@@ -28,10 +31,14 @@ async function prepare(page: Page, theme: "light" | "dark") {
 
 async function decodedPixels(image: Locator) {
   await image.scrollIntoViewIfNeeded();
-  await expect.poll(() => image.evaluate((node) => Boolean((node as HTMLImageElement).currentSrc))).toBe(true);
+  await expect.poll(() => image.evaluate((node) => {
+    const img = node as HTMLImageElement;
+    return { selected: Boolean(img.currentSrc), src: img.getAttribute("src"), complete: img.complete,
+      box: img.getBoundingClientRect().toJSON(), parentDisplay: getComputedStyle(img.parentElement!).display };
+  })).toMatchObject({ selected: true });
+  await expectDecodedImage(image);
   return image.evaluate(async (node) => {
     const element = node as HTMLImageElement;
-    await element.decode();
     const currentSrc = element.currentSrc;
     // Match an image request; fetch's */* would negotiate a different fallback format.
     const response = await fetch(currentSrc, {
@@ -103,6 +110,7 @@ for (const theme of ["light", "dark"] as const) {
             await page.goto(`/${family}/rules`);
             await page.evaluate(() => document.fonts.ready);
             const phase = page.locator(".phase-node").first();
+            await phase.scrollIntoViewIfNeeded();
             const phasePixels = await decodedPixels(phase.locator("img"));
             expectDensity(phasePixels, dpr, 1120);
             expect(phasePixels.width / phasePixels.height).toBeCloseTo(1.4, 2);

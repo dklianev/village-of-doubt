@@ -2,9 +2,14 @@ import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import SiteChrome from "@/components/site-chrome";
+import type { ComponentProps } from "react";
 
 const route = vi.hoisted(() => ({ pathname: "/" }));
 const drawerRender = vi.hoisted(() => vi.fn());
+vi.mock("next/link", () => ({
+  default: ({ prefetch, ...props }: ComponentProps<"a"> & { prefetch?: boolean }) =>
+    <a {...props} data-prefetch={String(prefetch)} />,
+}));
 vi.mock("@/components/site-chrome/NavigationPanels", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../NavigationPanels")>();
   return {
@@ -34,6 +39,16 @@ describe("Senkite navigation", () => {
     localStorage.clear();
     drawerRender.mockClear();
   });
+
+  it.each(["/", "/tutorial", "/faq", "/werewolf/rules", "/mafia/rules"])(
+    "keeps the brand navigable without prefetching the homepage from %s", (pathname) => {
+      route.pathname = pathname;
+      render(<SiteChrome initialSession={null} />);
+      const brand = screen.getByRole("link", { name: "Сенките, начало" });
+      expect(brand).toHaveAttribute("href", "/");
+      expect(brand).toHaveAttribute("data-prefetch", "false");
+    },
+  );
 
   it("preloads on More hover and focus without rendering a hidden drawer", async () => {
     const user = userEvent.setup();

@@ -1,5 +1,8 @@
 import { expect, test, type Locator, type Page } from "playwright/test";
 import sharp from "sharp";
+import { expectDecodedImage } from "./image-readiness";
+
+test.use({ trace: "retain-on-failure" });
 
 type Theme = "light" | "dark";
 type Box = { x: number; y: number; width: number; height: number };
@@ -89,6 +92,7 @@ async function expectReadableDeck(page: Page, width: number) {
   const introduction = page.getByRole("region", { name: "Първата ти игра" });
   await introduction.scrollIntoViewIfNeeded();
   await expect(introduction.getByRole("heading", { level: 2 })).toHaveText(/Познаваш хората\.\s*Не и ролите\./);
+  await introduction.locator(".home-start-deck").scrollIntoViewIfNeeded();
   const images = introduction.locator(".home-start-deck img");
   await expect(images).toHaveCount(3);
   await expect.poll(() => images.evaluateAll((elements) => elements.every((element) => {
@@ -180,7 +184,7 @@ for (const theme of ["light", "dark"] as const) {
           const art = page.locator(`.game-choice-${family} .game-choice-art img`).filter({ visible: true });
           await expect(art).toHaveCount(1);
           await art.scrollIntoViewIfNeeded();
-          await art.evaluate((element) => (element as HTMLImageElement).decode());
+          await expectDecodedImage(art);
           await expect(art).toHaveAttribute("alt", "");
           const source = await art.evaluate(async (element) => {
             const image = element as HTMLImageElement;
@@ -261,7 +265,7 @@ for (const family of ["werewolf", "mafia"] as const) {
     const art = card.locator("img").filter({ visible: true });
     await expect(art).toHaveCount(1);
     await art.scrollIntoViewIfNeeded();
-    await art.evaluate((element) => (element as HTMLImageElement).decode());
+    await expectDecodedImage(art);
     const selected = new URL(await art.evaluate((element) => (element as HTMLImageElement).currentSrc));
     expect(selected.pathname).toBe("/_next/image");
     expect(selected.searchParams.get("url")).toBe(`/game-art/homepage/choice-${family}-${nextTheme}-${version}.webp`);

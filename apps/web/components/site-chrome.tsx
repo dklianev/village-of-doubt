@@ -140,7 +140,7 @@ export default function SiteChrome({ initialSession }: { initialSession?: AuthSe
         <Menu className="site-icon" aria-hidden strokeWidth={1.9} />
       </button>
 
-      <Link className="site-brand" href="/" aria-label="Сенките, начало"><BrandLogo /></Link>
+      <Link className="site-brand" href="/" prefetch={false} aria-label="Сенките, начало"><BrandLogo /></Link>
 
       <nav className="site-primary-band" aria-label="Основна навигация">
         {!isRoom ? <>

@@ -1,6 +1,9 @@
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { expect, test, type Page, type TestInfo } from "playwright/test";
+import { expectDecodedImage } from "./image-readiness";
+
+test.use({ trace: "retain-on-failure" });
 
 async function prepare(page: Page, theme: "light" | "dark", width: number) {
   await page.setViewportSize({ width, height: width === 320 ? 740 : width === 390 ? 844 : 900 });
@@ -57,7 +60,7 @@ for (const theme of ["light", "dark"] as const) {
           const image = page.locator(".game-choice-card").first().locator("img").filter({ visible: true });
           await expect(image).toHaveCount(1);
           await image.scrollIntoViewIfNeeded();
-          await image.evaluate((element) => (element as HTMLImageElement).decode());
+          await expectDecodedImage(image);
           await expect(page.locator(".game-choice-card blockquote").first()).toHaveCSS("font-weight", "600");
           await expect(page.locator(".game-choice-description").first()).toHaveCSS("font-weight", "400");
           await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));

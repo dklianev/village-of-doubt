@@ -1,4 +1,7 @@
 import { expect, test } from "playwright/test";
+import { expectDecodedImage } from "./image-readiness";
+
+test.use({ trace: "retain-on-failure" });
 
 for (const theme of ["light", "dark"] as const) {
   test(`homepage keeps each complete scene readable at intermediate widths in ${theme}`, async ({ page }) => {
@@ -17,7 +20,7 @@ for (const theme of ["light", "dark"] as const) {
         await expect(image).toHaveCount(1);
         // Native lazy loading needs the scene in view before decode can finish.
         await image.scrollIntoViewIfNeeded();
-        await image.evaluate((el) => (el as HTMLImageElement).decode());
+        await expectDecodedImage(image);
         const framing = await image.evaluate((el) => {
           const image = el as HTMLImageElement;
           const box = image.getBoundingClientRect();
