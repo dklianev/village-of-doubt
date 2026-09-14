@@ -253,7 +253,10 @@ for (const family of ["werewolves", "mafia"] as const) {
               dock: rect(document.querySelector('[data-play-command-surface][data-expanded="false"]')),
               personal: rect(document.querySelector(".play-personal-area")),
               stage: rect(document.querySelector(".play-stage")),
+              core: rect(document.querySelector("[data-table-core]")),
               counts: rect(document.querySelector("[data-table-core] > span:last-child")),
+              dockTitle: rect(document.querySelector(".play-action-dock-head h2")),
+              dockToggle: rect(document.querySelector(".play-action-dock-toggle")),
               seats: [...document.querySelectorAll("[data-seat-token]")].map((element) => rect(element)!),
             };
           });
@@ -265,7 +268,10 @@ for (const family of ["werewolves", "mafia"] as const) {
           expect(geometry.dock).not.toBeNull();
           expect(geometry.personal).not.toBeNull();
           expect(geometry.stage).not.toBeNull();
+          expect(geometry.core).not.toBeNull();
+          expect(geometry.core!.height).toBeGreaterThanOrEqual(74);
           expect(geometry.counts).not.toBeNull();
+          expect(geometry.dockTitle).not.toBeNull();
           expect(geometry.personal!.y).toBeGreaterThanOrEqual(geometry.stage!.y + geometry.stage!.height);
           expect(geometry.seats).toHaveLength(8);
           expect(geometry.counts!.y + geometry.counts!.height + 4)
@@ -275,7 +281,27 @@ for (const family of ["werewolves", "mafia"] as const) {
             expect(box.height).toBeGreaterThanOrEqual(44);
             expect(box.y + box.height).toBeLessThanOrEqual(geometry.dock!.y - 4);
           }
+          const title = geometry.dockTitle!;
+          await expect(dock.getByRole("heading", { level: 2 })).toBeVisible();
+          expect(title.x).toBeGreaterThanOrEqual(geometry.dock!.x);
+          expect(title.x + title.width).toBeLessThanOrEqual(geometry.dock!.x + geometry.dock!.width);
+          expect(title.y).toBeGreaterThanOrEqual(geometry.dock!.y);
+          expect(title.y + title.height).toBeLessThanOrEqual(geometry.dock!.y + geometry.dock!.height);
+          // The CI development indicator is not an app narrator control.
+          const devIndicator = page.getByRole("button", { name: "Open Next.js Dev Tools", exact: true });
+          if (await devIndicator.count()) {
+            const indicator = await devIndicator.boundingBox();
+            if (indicator) {
+              const overlaps = title.x < indicator.x + indicator.width && title.x + title.width > indicator.x
+                && title.y < indicator.y + indicator.height && title.y + title.height > indicator.y;
+              expect(overlaps, "development indicator must not cover the collapsed command title").toBe(false);
+            }
+          }
           if (hydrated) {
+            expect(geometry.dockToggle).not.toBeNull();
+            expect(title.x + title.width + 4).toBeLessThanOrEqual(geometry.dockToggle!.x);
+            expect(geometry.dockToggle!.width).toBeGreaterThanOrEqual(44);
+            expect(geometry.dockToggle!.height).toBeGreaterThanOrEqual(44);
             const lastTarget = page.locator('button[data-seat-user-id]').last();
             await lastTarget.click();
             await expect(lastTarget).toHaveAttribute("aria-pressed", "true");

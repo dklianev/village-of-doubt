@@ -1204,12 +1204,20 @@
 /* Keep short-phone geometry after the general mobile rules so both rows stay
  * above the dock without shrinking their touch targets, even before hydration. */
 @media (max-width: 430px) and (max-height: 640px) {
+  .stage[data-layout-mode="mobile-table-grid"] {
+    padding-block: 8px;
+  }
+
   .stage:not([data-layout-ready="true"])[data-layout-mode="mobile-table-grid"] {
     min-height: 0;
   }
 
+  .stage[data-layout-mode="mobile-table-grid"] .hud {
+    gap: 4px;
+  }
+
   .stage[data-layout-mode="mobile-table-grid"] .title {
-    font-size: 1.375rem;
+    font-size: 1.25rem;
     line-height: 1.2;
   }
 
