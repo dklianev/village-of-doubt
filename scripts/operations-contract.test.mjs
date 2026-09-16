@@ -401,6 +401,7 @@ test("auth E2E retains database, registration, reset token and old/new password 
   assert.match(source, /await registerAndVerify\(page,/);
   assert.match(source, /waitForEmail\(email, "Нова парола"\)/);
   assert.match(source, /page\.goto\(extractResetPasswordUrl\(message\.html\)/);
+  assert.match(source, /const resetSignInUrl = new URL\("\/sign-in", baseUrl\);\s*resetSignInUrl\.searchParams\.set\("redirect", "\/"\);\s*await page\.waitForURL\(resetSignInUrl\.href, \{ timeout: 10_000 \}\)/);
   assert.match(source, /signInWithPassword\(page, email, oldPassword\);\s*await page\.getByRole\("alert"\)\.waitFor\(\)/);
   assert.match(source, /page\.url\(\) !== `\$\{baseUrl\}\/sign-in`/);
   assert.match(source, /signInWithPassword\(page, email, newPassword\);\s*await skipWelcomeTutorial\(page, baseUrl, "\/"\)/);

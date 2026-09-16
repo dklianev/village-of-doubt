@@ -149,7 +149,9 @@ async function passwordReset(page) {
   await page.getByLabel("Повтори").fill(newPassword);
   await page.getByRole("button", { name: "Запази паролата", exact: true }).click();
   await page.getByRole("status").filter({ hasText: "Паролата е сменена." }).waitFor();
-  await page.waitForURL(`${baseUrl}/sign-in`, { timeout: 10_000 });
+  const resetSignInUrl = new URL("/sign-in", baseUrl);
+  resetSignInUrl.searchParams.set("redirect", "/");
+  await page.waitForURL(resetSignInUrl.href, { timeout: 10_000 });
 
   await signInWithPassword(page, email, oldPassword);
   await page.getByRole("alert").waitFor();

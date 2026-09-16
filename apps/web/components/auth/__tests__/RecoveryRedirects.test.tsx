@@ -87,6 +87,18 @@ describe("password recovery invite redirects", () => {
     expect(push).not.toHaveBeenCalled();
   });
 
+  it.each([null, "/"])("returns to sign-in with the home destination after a reset (%s)", async (redirect) => {
+    query = new URLSearchParams({ token: "test-reset-token" });
+    if (redirect !== null) query.set("redirect", redirect);
+    vi.useFakeTimers();
+    render(<ResetPasswordClient />);
+    await act(async () => submitPassword());
+    expect(screen.getByRole("status")).toHaveTextContent("Паролата е сменена");
+    expect(push).not.toHaveBeenCalled();
+    act(() => vi.advanceTimersByTime(1800));
+    expect(push).toHaveBeenCalledExactlyOnceWith("/sign-in?redirect=%2F");
+  });
+
   it.each(["https://outside.invalid", "//outside.invalid", "/%2foutside.invalid", "/\\outside.invalid", "/%0a/outside.invalid"])(
     "sanitizes malicious destinations throughout recovery: %s", async (redirect) => {
       query = new URLSearchParams({ redirect });

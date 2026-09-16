@@ -87,8 +87,17 @@ describe("play environment resource observation", () => {
       await page.locator(".play-stage").evaluate((element, source) => { (element as HTMLElement).style.backgroundImage = `url("${source}")`; }, `${art}.webp`);
       expect((await loadedEnvironment(page.locator(".play-stage"), null)).path).toBe(`${art}.webp`);
       expect(await selectedByOldSampler(page)).toBeNull();
-      await page.addStyleTag({ content: 'main::before { content: none; background-image: url("/game-art/mobile/play/bg-play-mafia-day-v2.webp"); }' });
+      // A missing pseudo-element can still trigger speculative background requests.
+      // An unsupported image-set type is explicitly excluded by the browser instead.
+      const unselectedArt = "/game-art/mobile/play/bg-play-mafia-day-v2.webp";
+      const unselectedRequests: string[] = [];
+      page.on("request", (request) => {
+        if (request.url() === origin + unselectedArt) unselectedRequests.push(request.url());
+      });
+      await page.addStyleTag({ content: `main::before { background-image: image-set(url("${unselectedArt}") type("image/unsupported-fixture")); }` });
       expect((await loadedEnvironment(page.locator("main"), "::before")).path).toBeNull();
+      expect(unselectedRequests).toEqual([]);
+      expect((await playEnvironmentDiagnostics(page)).resources!.sources).not.toHaveProperty(unselectedArt);
     } finally { await page.close(); }
   });
 
