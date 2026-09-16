@@ -63,6 +63,7 @@ const CYRILLIC_SEARCH_MAP: Record<string, string> = {
 const CYRILLIC_SEARCH_PATTERN = /[а-яѝ]/g;
 
 export function GameRolesPage({ family }: { family: GameFamily }) {
+  const [searchReady, setSearchReady] = useState(false);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<RoleFilter>("all");
   const [teamFilter, setTeamFilter] = useState<TeamFilter>("all");
@@ -73,6 +74,8 @@ export function GameRolesPage({ family }: { family: GameFamily }) {
   const filtersId = useId();
   const sortId = useId();
   const deferredQuery = useDeferredValue(query);
+  // A controlled input must not accept text that hydration could discard.
+  useEffect(() => { setSearchReady(true); }, []);
   const isMafia = family === "mafia";
   const title = isMafia ? "Роли в Мафия" : "Роли във Върколак";
   const intro = isMafia
@@ -150,6 +153,7 @@ export function GameRolesPage({ family }: { family: GameFamily }) {
           <Search size={18} aria-hidden="true" />
           <input
             className="role-search-input"
+            disabled={!searchReady}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder={isMafia ? "Търси: лекар, дон, шут..." : "Търси: вампир, лечител, оракул..."}

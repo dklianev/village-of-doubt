@@ -16,6 +16,7 @@ for (const family of ["werewolf", "mafia"] as const) {
         await page.goto(`/${family}/roles`, { waitUntil: "domcontentloaded" });
         const search = page.getByRole("textbox", { name: "Търси роля" });
         await expect(search).toBeVisible();
+        await expect(search).toBeEnabled();
         await expect(page.locator("header.site-chrome:not([data-fallback])")).toBeVisible();
         await page.evaluate(() => document.fonts.ready);
         await search.fill("няма-такава-роля");

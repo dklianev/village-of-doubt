@@ -1,5 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { ROLE_DEFINITIONS, type RoleCode } from "@werewolf/shared";
 import { GameRolesPage } from "../game-roles-page";
@@ -15,6 +16,22 @@ const roleClasses = Object.fromEntries(
 );
 
 describe("roles catalogue discovery", () => {
+  it.each(["werewolves", "mafia"] as const)("keeps %s search disabled until hydration can retain typed input", async (family) => {
+    const container = document.createElement("div");
+    container.innerHTML = renderToString(<GameRolesPage family={family} />);
+    document.body.append(container);
+    const serverInput = within(container).getByRole("textbox", { name: "Търси роля" });
+    expect(serverInput).toBeDisabled();
+
+    render(<GameRolesPage family={family} />, { container, hydrate: true });
+    const input = within(container).getByRole("textbox", { name: "Търси роля" });
+    expect(input).toBe(serverInput);
+    expect(input).toBeEnabled();
+    await userEvent.setup().type(input, "несъществуваща");
+    expect(input).toHaveValue("несъществуваща");
+    expect(within(container).getByRole("heading", { name: "Няма роля по този филтър" })).toBeVisible();
+  });
+
   it.each([
     ["werewolves", ["ordinary_villager", "werewolf", "seer", "healer"]],
     ["mafia", ["civilian", "mafioso", "commissioner", "doctor"]],
