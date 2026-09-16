@@ -1161,7 +1161,13 @@ function checkScriptWiring() {
   assert(smoke.includes("optimized phase transition game art"), "Smoke must check optimized game-art delivery.");
   assert(smoke.includes("play page"), "Smoke must check the play page route.");
   assert(smoke.includes("live-safe play page"), "Smoke must check live-safe play page copy.");
-  assert(smoke.includes("image-set"), "Smoke must check optimized CSS image-set references.");
+  assert(
+    smoke.includes("await assertStaticCss(body, pageUrl, label)")
+      && readText("scripts/smoke-static-css.mjs").includes('css.includes("image-set")')
+      && readText("scripts/smoke-static-css.mjs").includes('css.includes(".webp")')
+      && packageJson.scripts["operations:test"].includes("scripts/smoke-static-css.test.mjs"),
+    "Smoke must check optimized CSS image-set references across route chunks with behavioral coverage.",
+  );
   assert(playtest.includes("night-resolver.test.ts"), "Playtest must include night resolver regression tests.");
   assert(
     ciWorkflow.includes("actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803"),

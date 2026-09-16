@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 import { cpSync, existsSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { extractNextStreamRedirect } from "./next-stream-redirect.mjs";
+import { assertStaticCss } from "./smoke-static-css.mjs";
 
 const isWindows = process.platform === "win32";
 const processes = [];
@@ -138,21 +139,7 @@ async function waitForText(url, expected, label) {
 
 async function waitForStaticAsset(pageUrl, label) {
   const body = await waitFor(pageUrl, label);
-  const cssPath = body.match(/href="([^"]*\/_next\/static\/[^"]+\.css)"/)?.[1];
-
-  if (!cssPath) {
-    throw new Error(`${label} did not include a Next.js CSS asset`);
-  }
-
-  const assetUrl = new URL(cssPath, pageUrl).toString();
-  const response = await fetch(assetUrl);
-  const css = await response.text();
-  if (!response.ok || css.length < 100) {
-    throw new Error(`${label} failed: ${assetUrl} returned HTTP ${response.status}`);
-  }
-  if (!css.includes("image-set") || !css.includes(".webp")) {
-    throw new Error(`${label} did not include optimized image-set WebP references`);
-  }
+  await assertStaticCss(body, pageUrl, label);
 }
 
 async function waitForAsset(url, label) {
