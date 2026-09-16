@@ -31,6 +31,8 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     instrumentationClientRouterTransitionEvents: true,
+    // Reduce unrelated route CSS in shared chunks; keep perf:budget and browser checks.
+    cssChunking: "graph",
     // Keep shared client code reusable across routes; measured with perf:budget.
     turbopackChunking: { minChunkSize: 40000 },
   },
