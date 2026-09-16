@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import test from "node:test";
 
 const workspace = readFileSync(new URL("../pnpm-workspace.yaml", import.meta.url), "utf8");
@@ -13,4 +14,16 @@ test("extract-zip symlinks cannot escape the extraction root", () => {
   assert.match(extractZipPatch, /path\.isAbsolute\(relativeTarget\)/);
   assert.match(extractZipPatch, /relativeTarget\.startsWith\(`\.\.\$\{path\.sep\}`\)/);
   assert.match(extractZipPatch, /await fs\.symlink\(linkTarget, dest\)/);
+});
+
+test("Express query serialization tolerates an untrusted isBuffer property", () => {
+  const serverRequire = createRequire(new URL("../apps/game-server/package.json", import.meta.url));
+  const qs = createRequire(serverRequire.resolve("express"))("qs");
+  for (const options of [{ plainObjects: true }, { allowPrototypes: true }]) {
+    const parsed = qs.parse("item[constructor][isBuffer]=unexpected", options);
+    assert.doesNotThrow(() => qs.stringify(parsed));
+  }
+  assert.deepEqual(qs.parse(qs.stringify({ page: "2", tags: ["first", "second"] })), {
+    page: "2", tags: ["first", "second"],
+  });
 });

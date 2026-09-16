@@ -6,6 +6,11 @@ import { skipWelcomeTutorial } from "./e2e-auth-navigation.mjs";
 const read = (path) => readFileSync(path, "utf8");
 const readOptional = (path) => existsSync(path) ? read(path) : "";
 
+test("Turbo forwards the test worker limit without relaxing test assertions", () => {
+  const turbo = JSON.parse(read("turbo.json"));
+  assert.ok(turbo.tasks.test.passThroughEnv.includes("VITEST_MAX_WORKERS"));
+});
+
 test("developer, CI, production, and asset runtimes pin Node 24.20.0", () => {
   const packageJson = JSON.parse(read("package.json"));
   const workflow = read(".github/workflows/ci.yml");
