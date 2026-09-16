@@ -53,6 +53,13 @@ for (const viewport of VIEWPORTS) {
           await expect(play).toBeVisible();
           await expect(play).toBeEnabled();
           await page.evaluate(() => document.fonts.ready);
+        } else if (route.path.endsWith("/roles")) {
+          // Offscreen portrait requests do not determine catalog readiness.
+          await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
+          await expect(page.getByRole("textbox", { name: "Търси роля" })).toBeEnabled();
+          await expect(page.locator("header.site-chrome:not([data-fallback])")).toBeVisible();
+          await expect(page.locator(".role-codex-card").first()).toBeVisible();
+          await page.evaluate(() => document.fonts.ready);
         } else {
           await page.waitForLoadState("networkidle").catch(() => {});
           await page.waitForTimeout(250);

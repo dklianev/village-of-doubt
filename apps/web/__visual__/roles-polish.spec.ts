@@ -13,8 +13,11 @@ for (const family of ["werewolf", "mafia"] as const) {
           localStorage.setItem("cookie-consent", "1");
           localStorage.setItem("welcome-modal-shown", "1");
         }, theme);
-        await page.goto(`/${family}/roles`);
+        await page.goto(`/${family}/roles`, { waitUntil: "domcontentloaded" });
         const search = page.getByRole("textbox", { name: "Търси роля" });
+        await expect(search).toBeVisible();
+        await expect(page.locator("header.site-chrome:not([data-fallback])")).toBeVisible();
+        await page.evaluate(() => document.fonts.ready);
         await search.fill("няма-такава-роля");
         await expect(page.getByRole("heading", { name: "Няма роля по този филтър" })).toBeVisible();
         await page.getByRole("button", { name: "Покажи всички роли" }).click();
