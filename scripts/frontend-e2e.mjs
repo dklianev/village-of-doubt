@@ -5,6 +5,7 @@ import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { chromium, firefox, webkit } from "playwright";
+import { assertFrontendCssNavigation } from "./frontend-css-navigation.mjs";
 
 const isWindows = process.platform === "win32";
 const processes = [];
@@ -83,6 +84,11 @@ async function main() {
 
   await runCheck("landing desktop layout and theme picker", testLandingDesktop);
   await runCheck("landing mobile layout", testLandingMobile);
+  for (const [viewportName, viewport] of Object.entries(viewports)) {
+    for (const theme of ["light", "dark"]) {
+      await runCheck(`route CSS consistency (${viewportName}, ${theme})`, () => testRouteCssNavigation(viewportName, viewport, theme));
+    }
+  }
   await runCheck("tutorial and offline shell", testTutorialAndOfflineShell);
   await runCheck("auth gates for lobby routes", testLobbyModeFiltering);
   await runCheck("auth gates for invite lobby routes", testInviteLobbyCopy);
@@ -108,6 +114,23 @@ async function main() {
   }
 
   console.log(`Frontend Playwright QA passed in ${browserName}.`);
+}
+
+async function testRouteCssNavigation(viewportName, viewport, theme) {
+  const label = `route-css-${viewportName}-${theme}`;
+  const { page, watcher, close } = await newPage(label, viewport);
+  try {
+    const results = await assertFrontendCssNavigation(page, baseUrl, theme);
+    await assertNoHorizontalOverflow(page, label);
+    await watcher.assertClean();
+    console.log(`CSS navigation: ${JSON.stringify(results)}`);
+    await screenshot(page, `${label}.png`);
+  } catch (error) {
+    await screenshot(page, `${label}-failure.png`).catch(() => {});
+    throw error;
+  } finally {
+    await close();
+  }
 }
 
 async function testLandingDesktop() {
