@@ -11,14 +11,14 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@colyseus/core": "^0.18.8",
+    "@colyseus/core": "^0.18.14",
     "@colyseus/monitor": "^0.18.3",
     "@colyseus/redis-driver": "^0.18.2",
-    "@colyseus/redis-presence": "^0.18.3",
-    "@colyseus/schema": "^5.0.23",
+    "@colyseus/redis-presence": "^0.18.4",
+    "@colyseus/schema": "^5.0.33",
     "@colyseus/tools": "^0.18.3",
     "@colyseus/ws-transport": "^0.18.2",
-    "@sentry/node": "^10.71.0",
+    "@sentry/node": "^10.75.0",
     "@werewolf/database": "workspace:*",
     "@werewolf/shared": "workspace:*",
     "cors": "^2.8.6",
