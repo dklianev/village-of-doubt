@@ -61,7 +61,8 @@ beforeAll(async () => {
     }),
   }));
   browser = await chromium.launch({ headless: true });
-}, 30_000);
+  // Compiling the full Tailwind globals synchronously can exceed 30 s during a parallel suite run.
+}, 90_000);
 
 afterAll(async () => { await browser?.close(); });
 
