@@ -3685,6 +3685,17 @@
   padding-top: 24px;
 }
 
+/* Unframed quick controls need real separation, and the count belongs beside its own label. */
+:global(.lobby-wizard[data-layout="quick"] .create-quick-row) {
+  column-gap: clamp(32px, 4vw, 56px);
+}
+
+:global(.lobby-wizard[data-layout="quick"] .create-count-panel .create-control-heading) {
+  justify-content: flex-start;
+  align-items: baseline;
+  gap: 14px;
+}
+
 :global(.lobby-wizard[data-layout="quick"] .create-receipt) {
   padding: 24px;
   border: 1px solid var(--create-line);

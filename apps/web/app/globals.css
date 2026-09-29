@@ -2974,6 +2974,11 @@ body:has(.site-chrome[data-room="true"]) .site-footer {
   height: 16px;
 }
 
+/* Zero specificity: icon buttons get breathing room without overriding any explicit gap. */
+:where(.btn:has(> .play-button-icon)) {
+  gap: 8px;
+}
+
 .play-muted-note {
   display: flex;
   gap: 10px;
@@ -3803,4 +3808,10 @@ html[data-theme="light"] .framed-shell {
 
 .site-main-content:focus {
   outline: none;
+}
+
+/* Short states (errors, empty collections) keep the footer at the bottom instead of mid-screen. */
+.site-main-content {
+  min-height: calc(100vh - var(--site-chrome-height, 64px) - var(--site-footer-reserve, 108px));
+  min-height: calc(100svh - var(--site-chrome-height, 64px) - var(--site-footer-reserve, 108px));
 }

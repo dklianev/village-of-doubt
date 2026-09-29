@@ -331,7 +331,9 @@ export function PlayStage({
           <p className={styles.kicker}>
             {phase === "lobby"
               ? `${modeBg(mode)} · ${mode === "mafia_sport" ? "Спортен формат" : "Класическа игра"}`
-              : `${modeBg(mode)} · ${isNight ? "нощ" : "ден"} ${round}`}
+              : phase === "role_reveal"
+                ? `${modeBg(mode)} · преди първата нощ`
+                : `${modeBg(mode)} · ${isNight ? "нощ" : "ден"} ${round}`}
           </p>
           <h1 id={titleId} className={styles.title}>{phase === "lobby" ? "Масата се събира" : phaseBg(phase, mode)}</h1>
           {phase === "voting" ? <p className={styles.phaseQuestion}>
