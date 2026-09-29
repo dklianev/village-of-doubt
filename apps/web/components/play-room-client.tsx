@@ -69,6 +69,8 @@ export type { PhaseSlice, PublicPlayer } from "@/lib/play/types";
 const AchievementUnlockModal = lazy(() => import("@/components/play/AchievementUnlockModal").then((module) => ({ default: module.AchievementUnlockModal })));
 const RoleCard = lazy(() => import("@/components/play/RoleCard").then((module) => ({ default: module.RoleCard })));
 const RoleRevealGate = lazy(() => import("@/components/play/RoleRevealRitual").then((module) => ({ default: module.RoleRevealGate })));
+const InviteTools = lazy(() => import("@/components/play/InviteTools").then((module) => ({ default: module.InviteTools })));
+const SoundscapeHost = lazy(() => import("@/components/play/SoundscapeHost").then((module) => ({ default: module.SoundscapeHost })));
 
 interface PlayRoomClientProps {
   code: string;
@@ -1116,6 +1118,11 @@ export function PlayRoomClientCore({
       {connectionStatus === "connected" && showShortcuts && ShortcutsModal ? (
         <ShortcutsModal onClose={() => setShowShortcuts(false)} />
       ) : null}
+      {snapshot ? (
+        <Suspense fallback={null}>
+          <SoundscapeHost mode={mode} phase={snapshot.phase} narratorVoice={snapshot.narratorVoice} liveMode={liveMode} publicEvents={snapshot.publicEvents} />
+        </Suspense>
+      ) : null}
       {/* The dealt card is turned once per role per room; then the private toggle takes over. */}
       {phase === "role_reveal" && privateRole && connectionStatus === "connected" ? (
         <Suspense fallback={null}>
@@ -1178,7 +1185,7 @@ export function PlayRoomClientCore({
               activeRoomAction={<button className="play-room-copy" type="button" aria-label="Копирай кода на стаята" title="Копирай кода на стаята" onClick={() => void copyLobbyInvite(true)}><Copy aria-hidden="true" /></button>}
               lobbyInvitation={phase === "lobby" ? <div className="play-waiting-invite">
                 <span>Код на стаята</span>
-                <div><strong>{code}</strong><button type="button" aria-label="Копирай кода на стаята" title="Копирай кода на стаята" onClick={() => void copyLobbyInvite(true)}><Copy aria-hidden="true" /></button></div>
+                <div><strong>{code}</strong><button type="button" aria-label="Копирай кода на стаята" title="Копирай кода на стаята" onClick={() => void copyLobbyInvite(true)}><Copy aria-hidden="true" /></button><Suspense fallback={null}><InviteTools code={code} onCopyInvite={() => copyLobbyInvite()} /></Suspense></div>
                 <button type="button" onClick={() => void copyLobbyInvite()}><Copy aria-hidden="true" />Копирай покана</button>
               </div> : undefined}
             />

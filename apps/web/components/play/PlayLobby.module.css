@@ -114,6 +114,10 @@
 }
 @media (max-width: 360px) {
   :global(.play-waiting-band) { width: calc(100% - 32px); }
+}
+
+/* Code, copy, share and QR share one row on phones; the text invite moves to its own row. */
+@media (max-width: 480px) {
   :global(.play-waiting-invite) { grid-template-columns: 1fr; }
   :global(.play-waiting-invite > button) { justify-content: start; }
 }
