@@ -68,6 +68,7 @@ export type { PhaseSlice, PublicPlayer } from "@/lib/play/types";
 
 const AchievementUnlockModal = lazy(() => import("@/components/play/AchievementUnlockModal").then((module) => ({ default: module.AchievementUnlockModal })));
 const RoleCard = lazy(() => import("@/components/play/RoleCard").then((module) => ({ default: module.RoleCard })));
+const RoleRevealGate = lazy(() => import("@/components/play/RoleRevealRitual").then((module) => ({ default: module.RoleRevealGate })));
 
 interface PlayRoomClientProps {
   code: string;
@@ -1114,6 +1115,12 @@ export function PlayRoomClientCore({
       ) : null}
       {connectionStatus === "connected" && showShortcuts && ShortcutsModal ? (
         <ShortcutsModal onClose={() => setShowShortcuts(false)} />
+      ) : null}
+      {/* The dealt card is turned once per role per room; then the private toggle takes over. */}
+      {phase === "role_reveal" && privateRole && connectionStatus === "connected" ? (
+        <Suspense fallback={null}>
+          <RoleRevealGate key={`${privateIdentity}:${privateRole.role}`} role={privateRole} family={family} transitioning={showPhaseTransition} />
+        </Suspense>
       ) : null}
       {connectionStatus === "connected" && unlockedAchievementIds.length > 0 ? (
         <Suspense fallback={null}>
