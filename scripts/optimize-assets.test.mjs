@@ -1080,7 +1080,10 @@ test("preserves restored master resolution within category limits", () => {
   assert.equal(maxWidthFor("faction-village.png"), 960);
   assert.equal(webpBudgetKbFor("faction-village.png"), 360);
   assert.equal(webpBudgetKbFor("bg-night-phase.png"), 400);
-  assert.equal(webpBudgetKbFor("icon-ability-bless.png"), 220);
+  assert.equal(webpBudgetKbFor("icon-ability-bless.png"), 64);
+  assert.equal(maxWidthFor("icon-ability-bless.png"), 384);
+  assert.equal(maxWidthFor("mafia/icon-phase-night.png"), 384);
+  assert.equal(maxWidthFor("player-avatar-sheet.png"), 960);
   assert.equal(maxWidthFor("village-map.png"), 1200);
   assert.equal(maxWidthFor("mobile/werewolf/bg-hero-light-v1.png"), 1152);
   assert.equal(maxWidthFor("mobile/werewolf/bg-hero-v3.png"), 1152);
@@ -1548,21 +1551,16 @@ test("recreates native desktop and high-resolution mobile WebPs from repository 
   await mkdir(sourceRoot, { recursive: true });
   await mkdir(outputRoot, { recursive: true });
   const originals = new Map();
-  for (const version of ["v1", "v2", "v3", "dark-v4", "light-v4", "dark-v5", "light-v5"]) {
-    for (const family of ["werewolf", "mafia"]) {
-      const file = `choice-${family}-${version}.png`;
-      const source = new URL(`../assets/game-art-source/homepage/${file}`, import.meta.url);
-      originals.set(file, await readFile(source));
-      await copyFile(source, path.join(sourceRoot, file));
-    }
-  }
-  for (const version of ["v6", "v7"]) {
-    for (const theme of ["dark", "light"]) {
-      const file = `choice-werewolf-${theme}-${version}.png`;
-      const source = new URL(`../assets/game-art-source/homepage/${file}`, import.meta.url);
-      originals.set(file, await readFile(source));
-      await copyFile(source, path.join(sourceRoot, file));
-    }
+  // The masters the homepage actually ships; superseded choice versions were retired from the repo.
+  for (const file of [
+    "choice-mafia-dark-v5.png",
+    "choice-mafia-light-v5.png",
+    "choice-werewolf-dark-v7.png",
+    "choice-werewolf-light-v7.png",
+  ]) {
+    const source = new URL(`../assets/game-art-source/homepage/${file}`, import.meta.url);
+    originals.set(file, await readFile(source));
+    await copyFile(source, path.join(sourceRoot, file));
   }
 
   const runOptimizer = () => {

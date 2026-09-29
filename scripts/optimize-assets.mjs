@@ -421,7 +421,11 @@ export function maxWidthFor(file) {
   if (basename.startsWith("portrait-")) {
     return 560;
   }
-  if (basename.startsWith("icon-") || basename.includes("-sheet")) {
+  // Phase and ability icons render at most ~104 CSS px (rails, sigils, event markers).
+  if (basename.startsWith("icon-")) {
+    return 384;
+  }
+  if (basename.includes("-sheet")) {
     return 960;
   }
   if (basename.startsWith("role-")) {
@@ -471,7 +475,7 @@ export function webpBudgetKbFor(file) {
     return 110;
   }
   if (basename.startsWith("icon-")) {
-    return 220;
+    return 64;
   }
   if (basename.startsWith("role-") || basename.includes("-sheet")) {
     return 220;
