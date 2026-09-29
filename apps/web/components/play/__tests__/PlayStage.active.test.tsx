@@ -161,3 +161,17 @@ describe("active physical table", () => {
     expect(container.querySelectorAll("[data-seat-token]")).toHaveLength(24);
   });
 });
+
+describe("vote pressure", () => {
+  it("marks every seat tied for the most public votes, only while voting", () => {
+    mockDimensions();
+    const voteCounts = new Map([["public-1", 3], ["public-2", 3], ["public-3", 1]]);
+    const { container, rerender } = render(<PlayStage {...props()} voteCounts={voteCounts} />);
+    const leaders = () => [...container.querySelectorAll('[data-vote-leader="true"]')].map((slot) => slot.textContent);
+    expect(leaders()).toHaveLength(2);
+    expect(leaders().join(" ")).toMatch(/Играч 2.*Играч 3/);
+
+    rerender(<PlayStage {...props()} phase="day_discussion" voteCounts={voteCounts} />);
+    expect(leaders()).toHaveLength(0);
+  });
+});

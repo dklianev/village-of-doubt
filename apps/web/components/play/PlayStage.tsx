@@ -124,6 +124,8 @@ export function PlayStage({
   const eliminatedCount = participants.length - aliveCount;
   const seatDensity = seatCount >= 13 ? "crowded" : seatCount >= 10 ? "full" : "open";
   const isNight = phase === "first_night" || phase === "night";
+  // Public tally only: the seat(s) currently drawing the most votes.
+  const leadingVotes = phase === "voting" ? Math.max(0, ...voteCounts.values()) : 0;
   const currentSpeaker = publicPlayers.find((player) => player.userId === currentSpeakerUserId);
   const currentDefender = publicPlayers.find((player) => player.userId === currentDefenseUserId);
   const titleId = "play-stage-title";
@@ -412,6 +414,7 @@ export function PlayStage({
                 data-speaking={player.userId === currentSpeakerUserId ? "true" : undefined}
                 data-defending={player.userId === currentDefenseUserId ? "true" : undefined}
                 data-nominee={nomineeIds.has(player.userId) ? "true" : undefined}
+                data-vote-leader={leadingVotes > 0 && voteCounts.get(player.userId) === leadingVotes ? "true" : undefined}
                 data-menu-x={geometry?.menuPlacement.x ?? (isMobileStartEdge ? "mobile-start" : undefined)}
                 data-menu-y={geometry?.menuPlacement.y ?? (isMobileLastRow ? "up" : undefined)}
                 style={effectiveMode.endsWith("table-grid") ? undefined : seatStyle(geometry)}

@@ -113,7 +113,7 @@ export const PlaySeat = memo(function PlaySeat({
         {shortcutNumber ? (
           <span className={styles.shortcutHint} data-seat-shortcut>{shortcutNumber}</span>
         ) : null}
-        {voteCount > 0 ? <span className={styles.voteCount} data-seat-vote-count>{voteCount}</span> : null}
+        {voteCount > 0 ? <span key={voteCount} className={styles.voteCount} data-seat-vote-count>{voteCount}</span> : null}
         {selected || secondSelected ? (
           <span className={styles.selectedMark} data-seat-selection>
             {secondSelected ? "2" : <Check aria-hidden="true" />}
