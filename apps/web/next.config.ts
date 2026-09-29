@@ -30,8 +30,6 @@ const nextConfig: NextConfig = {
     deviceSizes: [640, 750, 828, 1080, 1200, 1536, 1920, 2048, 3840],
   },
   experimental: {
-    turbopackFileSystemCacheForDev: false,
-    turbopackFileSystemCacheForBuild: false,
     instrumentationClientRouterTransitionEvents: true,
     // Reduce unrelated route CSS in shared chunks; keep perf:budget and browser checks.
     cssChunking: "graph",
