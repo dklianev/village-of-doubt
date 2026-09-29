@@ -51,9 +51,15 @@
   --play-console-muted: #4d5e60;
 }
 
+/* The room plate covers the page, so the site ambient behind it would only cost a download. */
+:global(html[data-theme="dark"] body:has(.play-scene-shell)) { background: #0b1511; }
+:global(html[data-theme="light"] body:has(.play-scene-shell)) { background: #e7ede3; }
+
+/* content: none alone still lets Chromium download the suppressed room plate (~200 KB). */
 :global(html[data-theme] .play-scene-shell)::before,
 :global(html[data-theme] .play-scene-shell)::after {
   content: none;
+  background: none;
 }
 
 :global(.play-scene-shell .play-shell-inner) {
@@ -290,6 +296,29 @@
   :global(.play-scene-shell .play-console-band) { padding-inline: 16px; }
 }
 
+/* Phone conversation reads like a chat: the latest lines first, the composer (or the reason it is
+ * closed) pinned underneath. :not([hidden]) keeps the inactive tab hidden despite display:flex. */
+@media (max-width: 1023px) {
+  /* Outranks the desktop rail cap (html[data-theme] .play-scene-shell .play-side-rail .play-rail-panel). */
+  :global(html[data-theme] .play-scene-shell .play-side-rail .play-rail-panel[data-mobile-panel="chat"]:not([hidden])) {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: none;
+    overflow: visible;
+  }
+  :global(html[data-theme] .play-scene-shell .play-side-rail .play-rail-panel[data-mobile-panel="chat"] > :is(form, .play-muted-note)) {
+    order: 2;
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    margin: 0;
+    border-top: 1px solid var(--play-console-border);
+    padding: 12px 0 calc(12px + env(safe-area-inset-bottom));
+    background: var(--play-console-paper);
+  }
+}
+
 /* Phase light: the room is one physical place, graded by the game clock rather than
  * the UI theme. ::before carries the night (fades in/out), ::after the phase mood.
  * Both sit at z-index -1 inside the isolated column: above the art, below every seat. */
@@ -309,15 +338,34 @@
   transition: opacity 1200ms ease;
 }
 
+/* Only the candle pool breathes; animating a registered property leaves the layer's own
+ * opacity free for the night fade-in. */
+@property --play-candle {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0.16;
+}
+
 :global(html[data-theme] .play-scene-shell .play-primary-column)::before {
   background:
-    radial-gradient(ellipse 30% 26% at 50% 44%, rgb(255 172 86 / 0.16), transparent 72%),
+    radial-gradient(ellipse 30% 26% at 50% 44%, rgb(255 172 86 / var(--play-candle)), transparent 72%),
     radial-gradient(ellipse at 50% 44%, transparent 34%, rgb(2 5 14 / 0.66) 100%),
     linear-gradient(180deg, rgb(10 22 54 / 0.52), rgb(4 10 26 / 0.62));
 }
 
 :global(html[data-theme] .play-scene-shell:is([data-phase="night"], [data-phase="first_night"]) .play-primary-column)::before {
   opacity: 1;
+  animation: play-candle-flicker 4.7s ease-in-out infinite;
+}
+
+@keyframes play-candle-flicker {
+  0%, 100% { --play-candle: 0.16; }
+  13% { --play-candle: 0.22; }
+  27% { --play-candle: 0.13; }
+  41% { --play-candle: 0.2; }
+  58% { --play-candle: 0.12; }
+  74% { --play-candle: 0.21; }
+  88% { --play-candle: 0.15; }
 }
 
 :global(html[data-theme] .play-scene-shell[data-phase="role_reveal"] .play-primary-column)::before {

@@ -2182,8 +2182,11 @@
   padding-inline: 14px;
 }
 
+/* Chromium still fetches backgrounds of pseudo-elements suppressed with content: none,
+ * so every suppression below also drops the inherited artwork. */
 :global(.play-shell.game-shell .play-action-dock .action-btn)::after {
   content: none;
+  background: none;
 }
 
 :global(.play-shell.game-shell .play-action-dock .action-btn .play-button-icon) {
@@ -2372,6 +2375,7 @@
 
 :global(.play-shell.game-shell .play-side-rail .play-public-event)::before {
   content: none;
+  background: none;
 }
 
 :global(.play-public-event .play-event-icon) {
@@ -2395,6 +2399,7 @@
 
 :global(.play-shell.game-shell .play-side-rail .chat-line)::before {
   content: none;
+  background: none;
 }
 
 :global(.play-shell.game-shell .play-side-rail .chat-line strong) {
