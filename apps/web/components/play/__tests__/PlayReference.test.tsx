@@ -10,6 +10,21 @@ function fixture() {
 }
 
 describe("PlayReference", () => {
+  it("opens on demand and resets the reference tab after closing", async () => {
+    const { snapshot } = fixture();
+    render(<PlayReference snapshot={snapshot} privateRole={undefined} ownPlayer={snapshot.players[0]} />);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    const trigger = screen.getByRole("button", { name: "Правила" });
+    fireEvent.click(trigger);
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("tab", { name: "Състав" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Затвори" }));
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(trigger);
+    expect(within(await screen.findByRole("dialog")).getByRole("tab", { name: "Текуща фаза" }))
+      .toHaveAttribute("aria-selected", "true");
+  });
+
   it.each([
     [{ playing: false }, /Ти наблюдаваш играта/u],
     [{ playing: false, narrator: true }, /Ти си Разказвачът/u],

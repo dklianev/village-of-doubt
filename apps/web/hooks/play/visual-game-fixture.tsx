@@ -9,12 +9,15 @@ import {
   DEFAULT_PHASE_LABELS_BG,
   ROLE_DEFINITIONS,
   getGameFamily,
+  getRoleTeam,
   type ChatChannel,
   type CreateRoomOptions,
   type GameMode,
   type GamePhase,
   type NightActionKind,
   type RoleCode,
+  type TerminalGameResult,
+  type WinnerTeam,
 } from "@werewolf/shared";
 import type {
   ConnectionStatus,
@@ -201,7 +204,8 @@ interface ParsedVisualQuery {
   dead: number;
   viewer: VisualViewer;
   role: RoleCode;
-  winner: string;
+  winner: WinnerTeam | "";
+  jesterWin: boolean;
   voteTally: VisualVoteTally;
   connection: ConnectionStatus;
   doctorCanSelfProtect: boolean;
@@ -265,6 +269,12 @@ export function parseVisualGameFixture(
   const assignedRoles = rolesForFamily(parsed.family, parsed.players, parsed.role);
   const currentUserId = "visual-player-1";
   const players = buildPlayers(parsed, currentUserId, assignedRoles);
+  const terminalResult = buildTerminalFixture(parsed, players, assignedRoles);
+  const revealRolesOnDeath = !players.some((player, index) => player.playing && assignedRoles[index] === "jester");
+  if (!revealRolesOnDeath && !terminalResult) players.forEach((player) => { player.revealedRole = ""; });
+  if (parsed.phase === "lobby" && params.get("lobbyReady") === "all") {
+    players.forEach((player) => { player.ready = true; player.connected = true; });
+  }
   const roleCounts = buildRoleCounts(players, assignedRoles);
   const winner = parsed.phase === "game_over" ? parsed.winner || defaultWinner(parsed.family) : "";
   const nominations = buildNominations(parsed, players);
@@ -282,7 +292,7 @@ export function parseVisualGameFixture(
     dayDiscussionSeconds: 180,
     playerSpeechSeconds: 60,
     voteSeconds: 60,
-    revealRolesOnDeath: true,
+    revealRolesOnDeath,
     loversEnabled: parsed.family === "werewolves",
     doctorCanSelfProtect: parsed.doctorCanSelfProtect,
     allowSkipVote: parsed.mode !== "mafia_sport",
@@ -304,6 +314,7 @@ export function parseVisualGameFixture(
     revoteEligibleUserIds,
     winnerTeam: winner,
     winnerReasonBg: winner ? winnerReasonBg(winner, parsed.family) : "",
+    ...(terminalResult ? { terminalResult } : {}),
     players,
     roleCounts,
     voteTally,
@@ -323,11 +334,12 @@ export function parseVisualGameFixture(
     communicationMode: "built_in_chat",
     narratorVoice: snapshot.narratorVoice,
     loversEnabled: snapshot.loversEnabled,
+    revealRolesOnDeath,
     doctorCanSelfProtect: parsed.doctorCanSelfProtect,
     allowSkipVote: snapshot.allowSkipVote,
   });
 
-  const viewerRole = parsed.viewer === "narrator" || parsed.viewer === "spectator" ? null : parsed.role;
+  const viewerRole = parsed.viewer === "narrator" || parsed.viewer === "spectator" ? null : assignedRoles[0] ?? parsed.role;
   return {
     snapshot,
     currentUserId,
@@ -377,6 +389,7 @@ function parseVisualQuery(params: URLSearchParams, createOptions: CreateRoomOpti
     viewer,
     role,
     winner: parseWinner(winnerParam),
+    jesterWin: params.get("jesterWin") === "1",
     voteTally: parseVoteTally(params.get("voteTally") ?? preset.voteTally),
     connection: parseConnection(params.get("connection") ?? preset.connection),
     doctorCanSelfProtect: parseBooleanParam(params.get("doctorSelf"), createOptions?.doctorCanSelfProtect ?? false),
@@ -468,6 +481,57 @@ function rolesForFamily(family: VisualFamily, playerCount: number, viewerRole: R
   const roles: RoleCode[] = Array.from({ length: playerCount }, (_, index) => source[index % source.length] ?? fallback);
   roles[0] = viewerRole;
   return roles;
+}
+
+function buildTerminalFixture(
+  parsed: ParsedVisualQuery,
+  players: PublicPlayer[],
+  assignedRoles: RoleCode[],
+): TerminalGameResult | undefined {
+  if (parsed.phase !== "game_over") return undefined;
+  const winnerTeam = parsed.winner || defaultWinner(parsed.family);
+  const participants = players.flatMap((player, index) => player.playing ? [{ player, index }] : []);
+  const villageRole = parsed.family === "mafia" ? "civilian" : "ordinary_villager";
+  const factionRole = parsed.family === "mafia" ? "mafioso" : "werewolf";
+  // Synthetic terminal data only; the live hook never infers winners from roles.
+  const jester = parsed.jesterWin && (winnerTeam !== "lovers" || participants.length > 2)
+    ? participants.find(({ index }) => assignedRoles[index] === "jester") ?? participants.at(-1)
+    : undefined;
+  if (jester) assignedRoles[jester.index] = "jester";
+  const candidates = participants.filter((entry) => entry !== jester);
+  let winners: typeof participants = [];
+  if (winnerTeam === "lovers") {
+    winners = candidates.slice(0, 2);
+    if (winners[0] && winners[1]) {
+      assignedRoles[winners[0].index] = villageRole;
+      assignedRoles[winners[1].index] = factionRole;
+    }
+  } else if (winnerTeam !== "draw") {
+    const teamFor = (index: number) => assignedRoles[index] === "drunk" ? "village"
+      : assignedRoles[index] === "maniac" ? "maniac" : getRoleTeam(assignedRoles[index]!);
+    winners = candidates.filter(({ index }) => teamFor(index) === winnerTeam);
+    if (!winners.length && candidates[0]) {
+      const roleForWinner: Record<Exclude<WinnerTeam, "lovers" | "draw">, RoleCode> = {
+        village: villageRole, werewolves: "werewolf", vampires: "vampire", mafia: "mafioso", maniac: "maniac",
+      };
+      const candidate = candidates.find(({ index }) => index !== 0) ?? candidates[0];
+      assignedRoles[candidate.index] = roleForWinner[winnerTeam];
+      winners = [candidate];
+    }
+  }
+  const winnerPlayerIds = winners.map(({ player }) => player.userId);
+  const survivingWinners = new Set(winners.filter(({ player }) => player.alive).map(({ player }) => player.userId));
+  if (winnerTeam === "lovers" || !survivingWinners.size) winners.forEach(({ player }) => survivingWinners.add(player.userId));
+  for (const { player, index } of participants) {
+    player.alive = survivingWinners.has(player.userId);
+    player.revealedRole = assignedRoles[index]!;
+  }
+  return {
+    winnerTeam,
+    winnerPlayerIds,
+    personalWinnerPlayerIds: jester ? [jester.player.userId] : [],
+    finalRoles: participants.map(({ player, index }) => ({ userId: player.userId, role: assignedRoles[index]! })),
+  };
 }
 
 function buildRoleCounts(players: PublicPlayer[], assignedRoles: RoleCode[]): PublicRoleCount[] {
@@ -563,7 +627,7 @@ function buildPublicEvents(snapshot: GameSnapshot): PublicEvent[] {
     night: `Започна нощ ${round}. Нощните действия са отворени.`,
     day_announcement: `Настъпи ден ${round}. Живи участници: ${living.length}.`,
     day_discussion: speaker ? `Ден ${round}. Думата има ${speaker}.` : `Започна обсъждането за ден ${round}.`,
-    nomination: `Номинациите за ден ${round} са отворени.`,
+    nomination: `Номинациите за ден ${round} са приключили.`,
     defense: defender ? `${defender} получава думата за защита.` : "Започна фазата за защита. Няма номинирани участници.",
     voting: eligibleNames ? `Започна прегласуване между ${eligibleNames}.` : `Гласуването за ден ${round} е отворено.`,
     resolution: `Гласуването за ден ${round} приключи. Живи участници: ${living.length}.`,
@@ -714,7 +778,9 @@ function winnerReasonBg(winner: string, family: VisualFamily) {
       ? "Гражданите разкриха Мафията и върнаха спокойствието в града."
       : "Селото събра достатъчно смелост, за да изгони сенките.",
     werewolves: "Върколаците останаха твърде много, а площадът замлъкна.",
+    vampires: "Вампирите останаха единствената заплаха и завладяха селото.",
     mafia: "Мафията заключи последното алиби и градът прие нейната версия.",
+    maniac: "Маниакът остана единствената заплаха на масата.",
     lovers: "Влюбените оцеляха между всички обвинения.",
     draw: "Историята се затвори без чист победител.",
   };
@@ -730,6 +796,7 @@ function createVisualRoom() {
     id: "visual-room",
     name: "visual-game-room",
     reconnectionToken: "visual-reconnect-token",
+    connection: { isOpen: true },
     send() {},
     leave() {},
     onStateChange() {},
@@ -765,8 +832,9 @@ function parseRole(value: string | undefined, fallback: RoleCode): RoleCode {
   return value && value in ROLE_DEFINITIONS ? (value as RoleCode) : fallback;
 }
 
-function parseWinner(value: string | undefined) {
-  return value === "village" || value === "werewolves" || value === "mafia" || value === "lovers" || value === "draw" ? value : "";
+function parseWinner(value: string | undefined): WinnerTeam | "" {
+  return value === "village" || value === "werewolves" || value === "vampires" || value === "mafia"
+    || value === "maniac" || value === "lovers" || value === "draw" ? value : "";
 }
 
 function parseVoteTally(value: string | undefined): VisualVoteTally {

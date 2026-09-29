@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, asc, count, desc, eq, gte, inArray, lt, ne, or, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, isNotNull, isNull, lt, ne, or, sql } from "drizzle-orm";
 import {
   deletedUserIdentities,
   gameEvents,
@@ -37,6 +37,30 @@ export interface GameTimelineEvent {
   createdAt: Date;
 }
 
+export class GameTimelineCursorExpiredError extends Error {
+  constructor() {
+    super("Timeline cursor anchor is no longer available");
+    this.name = "GameTimelineCursorExpiredError";
+  }
+}
+
+export type PublicArchiveFamily = "all" | "werewolves" | "mafia";
+export type PublicArchiveOutcome = "all" | "village" | "werewolves" | "vampires" | "mafia" | "maniac" | "lovers" | "draw" | "unknown";
+export interface PublicGameArchiveOptions {
+  family?: PublicArchiveFamily;
+  outcome?: PublicArchiveOutcome;
+  before?: string;
+  after?: string;
+  limit?: number;
+}
+export interface PublicGameArchivePage {
+  games: GameHistorySummary[];
+  hasOlder: boolean;
+  hasNewer: boolean;
+}
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export interface PublicGameTimelineEvent {
   id: string;
   round: number;
@@ -68,10 +92,21 @@ export interface PlayerOutcomeInGameRow extends PlayerRoleInGameRow {
   won: boolean;
 }
 
+export type PlayerGameStatistics = {
+  totalGames: number;
+  totalWins: number;
+  longestStreak: number;
+  winsByRole: Array<{ role: string; winnerTeam: string | null; wins: number }>;
+};
+
+export type RecentCompletedPlayerGame = Pick<GameHistorySummary, "id" | "config" | "winnerTeam" | "endedAt">;
+
 export interface GameReplayParticipantRow {
   userId: string;
   displayName: string;
   role: string | null;
+  avatarId?: string;
+  isAlive?: boolean;
 }
 
 export interface PlaceholderUserUpsert {
@@ -762,6 +797,55 @@ export async function getRecentEndedGameHistory(db: Database, limit = 20): Promi
   }));
 }
 
+export async function getPublicGameArchive(
+  db: Database,
+  options: PublicGameArchiveOptions = {},
+): Promise<PublicGameArchivePage> {
+  const limit = Number.isFinite(options.limit) ? Math.min(Math.max(Math.trunc(options.limit!), 1), 100) : 12;
+  const cursor = options.before ?? options.after;
+  if (cursor && !UUID_PATTERN.test(cursor)) throw new RangeError("Invalid archive cursor");
+  if (options.before && options.after) throw new RangeError("Conflicting archive cursors");
+  const newer = Boolean(options.after);
+  const conditions = [eq(games.status, "ended"), eq(games.roomVisibility, "public")];
+  const mode = sql`COALESCE(${games.config}->>'mode', 'werewolves_classic')`;
+  if (options.family === "werewolves") conditions.push(sql`${mode} = 'werewolves_classic'`);
+  if (options.family === "mafia") conditions.push(sql`${mode} IN ('mafia_free', 'mafia_sport')`);
+  if (options.outcome && options.outcome !== "all") {
+    conditions.push(options.outcome === "unknown" ? isNull(games.winnerTeam) : eq(games.winnerTeam, options.outcome));
+  }
+
+  // Resolve the anchor in Postgres, in the same filtered archive, to preserve
+  // timestamp precision and ensure that the opposite page actually exists.
+  const position = sql`(COALESCE(${games.endedAt}, '-infinity'::timestamp), ${games.id})`;
+  if (cursor) {
+    const anchor = sql`(SELECT COALESCE(${games.endedAt}, '-infinity'::timestamp), ${games.id} FROM ${games}
+      WHERE ${and(...conditions, eq(games.id, cursor))})`;
+    conditions.push(newer ? sql`${position} > ${anchor}` : sql`${position} < ${anchor}`);
+  }
+  const rows = await db.select({
+    id: games.id, code: games.code, hostId: games.hostId, config: games.config,
+    roomVisibility: games.roomVisibility, status: games.status, winnerTeam: games.winnerTeam,
+    startedAt: games.startedAt, endedAt: games.endedAt,
+  }).from(games).where(and(...conditions)).orderBy(
+    newer ? sql`${games.endedAt} ASC NULLS FIRST` : sql`${games.endedAt} DESC NULLS LAST`,
+    newer ? asc(games.id) : desc(games.id),
+  ).limit(limit + 1);
+  const hasMore = rows.length > limit;
+  const page = rows.slice(0, limit);
+  if (newer) page.reverse();
+  if (page.length === 0) return { games: [], hasOlder: false, hasNewer: false };
+  const eventCounts = await db.select({ gameId: gameEvents.gameId, value: count() })
+    .from(gameEvents)
+    .where(and(inArray(gameEvents.gameId, page.map((game) => game.id)), eq(gameEvents.visibility, "public")))
+    .groupBy(gameEvents.gameId);
+  const counts = new Map(eventCounts.map((row) => [row.gameId, row.value]));
+  return {
+    games: page.map((game) => ({ ...game, eventCount: counts.get(game.id) ?? 0 })),
+    hasOlder: newer ? true : hasMore,
+    hasNewer: newer ? hasMore : Boolean(cursor),
+  };
+}
+
 export async function getGameHistoryById(db: Database, gameId: string): Promise<GameHistorySummary | null> {
   const rows = await db
     .select({
@@ -837,6 +921,54 @@ export async function getGameHistoryForUser(db: Database, userId: string, limit 
   }));
 }
 
+export async function getPlayerGameStatistics(db: Database, userId: string): Promise<PlayerGameStatistics> {
+  // Only assigned players are persisted in game_players, not spectators or non-playing hosts.
+  // Keep role classification in shared consumers; this query only aggregates persisted outcomes.
+  const rows = await db.execute<PlayerGameStatistics>(sql`
+    WITH completed_games AS (
+      SELECT ${games.id} AS id, ${games.endedAt} AS ended_at,
+        ${games.winnerTeam} AS winner_team, ${gamePlayers.role} AS role, ${gamePlayers.won} AS won
+      FROM ${gamePlayers}
+      INNER JOIN ${games} ON ${games.id} = ${gamePlayers.gameId}
+      WHERE ${gamePlayers.userId} = ${userId} AND ${games.status} = 'ended'
+    ), streaks AS (
+      SELECT won, COUNT(*) FILTER (WHERE NOT won) OVER (
+        ORDER BY ended_at ASC NULLS FIRST, id ASC ROWS UNBOUNDED PRECEDING
+      ) AS loss_group
+      FROM completed_games
+    ), winning_streaks AS (
+      SELECT COUNT(*) AS length FROM streaks WHERE won GROUP BY loss_group
+    ), role_wins AS (
+      SELECT role, winner_team, COUNT(*)::int AS wins
+      FROM completed_games WHERE won GROUP BY role, winner_team
+    )
+    SELECT COUNT(*)::int AS "totalGames",
+      (COUNT(*) FILTER (WHERE won))::int AS "totalWins",
+      COALESCE((SELECT MAX(length) FROM winning_streaks), 0)::int AS "longestStreak",
+      COALESCE((SELECT jsonb_agg(jsonb_build_object(
+        'role', role, 'winnerTeam', winner_team, 'wins', wins
+      )) FROM role_wins), '[]'::jsonb) AS "winsByRole"
+    FROM completed_games
+  `);
+
+  return rows[0]!;
+}
+
+export async function getRecentCompletedGamesForUser(
+  db: Database,
+  userId: string,
+  limit = 3,
+): Promise<RecentCompletedPlayerGame[]> {
+  const safeLimit = Number.isFinite(limit) ? Math.min(Math.max(Math.trunc(limit), 1), 100) : 3;
+  return db
+    .select({ id: games.id, config: games.config, winnerTeam: games.winnerTeam, endedAt: games.endedAt })
+    .from(gamePlayers)
+    .innerJoin(games, eq(games.id, gamePlayers.gameId))
+    .where(and(eq(gamePlayers.userId, userId), eq(games.status, "ended")))
+    .orderBy(sql`${games.endedAt} DESC NULLS LAST`, desc(games.id))
+    .limit(safeLimit);
+}
+
 export async function getPlayerRolesInGames(
   db: Database,
   userId: string,
@@ -878,14 +1010,47 @@ export async function getPlayerOutcomesInGames(
   return new Map(rows.map((row) => [row.gameId, { role: row.role, won: row.won }]));
 }
 
+export async function getReplayEligibleGameIds(
+  db: Database,
+  userId: string,
+  gameIds: string[],
+): Promise<Set<string>> {
+  if (!userId || gameIds.length === 0) return new Set();
+
+  const rows = await db.select({ gameId: gamePlayers.gameId })
+    .from(gamePlayers)
+    .innerJoin(games, eq(games.id, gamePlayers.gameId))
+    .where(and(eq(gamePlayers.userId, userId), inArray(gamePlayers.gameId, [...new Set(gameIds)]),
+      eq(games.status, "ended"), isNotNull(games.endedAt)));
+  return new Set(rows.map((row) => row.gameId));
+}
+
 export async function getGameTimeline(
   db: Database,
   gameId: string,
   limit = 100,
-  options: { visibilityFilter?: "all" | "public"; order?: "asc" | "desc" } = {},
+  options: {
+    visibilityFilter?: "all" | "public";
+    order?: "asc" | "desc";
+    after?: { createdAt: Date; id: string } | undefined;
+  } = {},
 ): Promise<GameTimelineEvent[]> {
   const visibilityFilter = options.visibilityFilter ?? "all";
-  const safeLimit = Math.min(Math.max(Math.trunc(limit), 1), 1_000);
+  const safeLimit = Number.isFinite(limit) ? Math.min(Math.max(Math.trunc(limit), 1), 1_000) : 100;
+  if (options.after && (options.order === "desc" || !UUID_PATTERN.test(options.after.id)
+    || !(options.after.createdAt instanceof Date) || !Number.isFinite(options.after.createdAt.getTime()))) {
+    throw new RangeError("Invalid chronological timeline cursor");
+  }
+  const chronological = options.order === "asc" || Boolean(options.after);
+  const conditions = [eq(gameEvents.gameId, gameId)];
+  if (visibilityFilter === "public") conditions.push(eq(gameEvents.visibility, "public"));
+  const anchorCondition = options.after ? and(...conditions, eq(gameEvents.id, options.after.id)) : undefined;
+  if (options.after) {
+    // Never fall back to the rounded JS Date: a deleted anchor would replay or
+    // skip sub-millisecond events. A missing/inaccessible anchor yields no rows.
+    const anchorTime = sql`(SELECT ${gameEvents.createdAt} FROM ${gameEvents} WHERE ${anchorCondition})`;
+    conditions.push(sql`(${gameEvents.createdAt}, ${gameEvents.id}) > (${anchorTime}, ${options.after.id}::uuid)`);
+  }
   const query = db
     .select({
       id: gameEvents.id,
@@ -899,14 +1064,28 @@ export async function getGameTimeline(
       createdAt: gameEvents.createdAt,
     })
     .from(gameEvents)
-    .where(
-      visibilityFilter === "public"
-        ? and(eq(gameEvents.gameId, gameId), eq(gameEvents.visibility, "public"))
-        : eq(gameEvents.gameId, gameId),
-    )
-    .orderBy(options.order === "asc" ? asc(gameEvents.createdAt) : desc(gameEvents.createdAt));
+    .where(and(...conditions))
+    .orderBy(
+      chronological ? asc(gameEvents.createdAt) : desc(gameEvents.createdAt),
+      chronological ? asc(gameEvents.id) : desc(gameEvents.id),
+    );
 
-  return query.limit(safeLimit);
+  const events = await query.limit(safeLimit);
+  if (anchorCondition && events.length === 0) {
+    // Check only after the exact-anchor query, so deletion between statements
+    // cannot silently turn a continuation into an apparently finished replay.
+    const anchor = await db.select({ id: gameEvents.id }).from(gameEvents).where(anchorCondition).limit(1);
+    if (anchor.length === 0) throw new GameTimelineCursorExpiredError();
+  }
+  return events;
+}
+
+// Caller must authorize full replay visibility before loading these awards.
+export async function getGameReplayAchievements(db: Database, gameId: string): Promise<string[]> {
+  const rows = await db.selectDistinct({ achievementId: userAchievements.achievementId })
+    .from(userAchievements).where(eq(userAchievements.gameId, gameId))
+    .orderBy(asc(userAchievements.achievementId));
+  return rows.map((row) => row.achievementId);
 }
 
 export async function getGameReplayParticipants(
@@ -920,8 +1099,11 @@ export async function getGameReplayParticipants(
         userId: gamePlayers.userId,
         displayName: gamePlayers.displayName,
         role: gamePlayers.role,
+        avatarId: user.avatarId,
+        isAlive: gamePlayers.isAlive,
       })
       .from(gamePlayers)
+      .innerJoin(user, eq(user.id, gamePlayers.userId))
       .where(eq(gamePlayers.gameId, gameId));
   }
 
@@ -929,10 +1111,49 @@ export async function getGameReplayParticipants(
     .select({
       userId: gamePlayers.userId,
       displayName: gamePlayers.displayName,
+      avatarId: user.avatarId,
+      isAlive: gamePlayers.isAlive,
     })
     .from(gamePlayers)
+    .innerJoin(user, eq(user.id, gamePlayers.userId))
     .where(eq(gamePlayers.gameId, gameId));
   return rows.map((row) => ({ ...row, role: null }));
+}
+
+export async function getReplayParticipantContext(
+  db: Database,
+  gameId: string,
+  userIds: string[],
+  visibilityFilter: "all" | "public",
+): Promise<GameTimelineEvent[]> {
+  const ids = new Set<string>();
+  // A replay page has at most 200 events, each with one actor and one target.
+  for (const id of userIds) {
+    if (id) ids.add(id);
+    if (ids.size === 400) break;
+  }
+  if (ids.size === 0) return [];
+
+  const conditions = [
+    eq(gameEvents.gameId, gameId),
+    eq(gameEvents.type, "player_joined"),
+    inArray(gameEvents.actorId, [...ids]),
+  ];
+  if (visibilityFilter !== "all") conditions.push(eq(gameEvents.visibility, "public"));
+
+  return db.selectDistinctOn([gameEvents.actorId], {
+    id: gameEvents.id,
+    round: gameEvents.round,
+    phase: gameEvents.phase,
+    type: gameEvents.type,
+    actorId: gameEvents.actorId,
+    targetId: gameEvents.targetId,
+    visibility: gameEvents.visibility,
+    payload: gameEvents.payload,
+    createdAt: gameEvents.createdAt,
+  }).from(gameEvents).where(and(...conditions))
+    .orderBy(asc(gameEvents.actorId), desc(gameEvents.createdAt), desc(gameEvents.id))
+    .limit(ids.size);
 }
 
 type PublicGameTimelineEventBatchRow = Record<string, unknown> & {
@@ -979,7 +1200,7 @@ export async function getPublicGameTimelinesBatch(
         type,
         visibility,
         created_at,
-        ROW_NUMBER() OVER (PARTITION BY game_id ORDER BY created_at DESC) AS rn
+        ROW_NUMBER() OVER (PARTITION BY game_id ORDER BY created_at DESC, id DESC) AS rn
       FROM game_events
       WHERE game_id IN (${sql.join(
         gameIds.map((id) => sql`${id}`),
@@ -987,7 +1208,7 @@ export async function getPublicGameTimelinesBatch(
       )}) AND visibility = 'public'
     ) ranked
     WHERE rn <= ${safePerGameLimit}
-    ORDER BY game_id, created_at DESC
+    ORDER BY game_id, created_at DESC, id DESC
   `);
 
   const grouped = new Map<string, PublicGameTimelineEvent[]>();
@@ -1040,7 +1261,7 @@ export async function getLeaderboardRows(
         : and(eq(games.status, "ended"), eq(games.roomVisibility, "public")),
     )
     .groupBy(gamePlayers.userId, user.name)
-    .orderBy(desc(wins), desc(gamesPlayed), desc(lastPlayedAt))
+    .orderBy(desc(wins), desc(gamesPlayed), desc(lastPlayedAt), asc(gamePlayers.userId))
     .limit(limit);
 }
 

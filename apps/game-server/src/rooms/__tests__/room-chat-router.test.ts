@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { GameConfig } from "@werewolf/shared";
+import type { GameConfig, RoleCode } from "@werewolf/shared";
 import { GameState, PlayerPublicState } from "../schemas/GameState.js";
 import { RoomChatRouter } from "../room-chat-router.js";
 import { MAX_PUBLIC_CHAT, type PrivatePlayerState } from "../game-room-runtime.js";
@@ -18,7 +18,7 @@ function makePlayer(userId: string, displayName: string, alive = true, playing =
   return player;
 }
 
-function createRouter(mode: GameConfig["mode"] = "werewolves_classic") {
+function createRouter(mode: GameConfig["mode"] = "werewolves_classic", factionRole: RoleCode = "werewolf") {
   const state = new GameState();
   state.phase = "day_discussion";
   const config = { mode, communicationMode: "built_in_chat" } as GameConfig;
@@ -39,10 +39,10 @@ function createRouter(mode: GameConfig["mode"] = "werewolves_classic") {
     [clients.narrator, makePlayer("narrator", "Разказвач", false, false, true)],
   ]);
   const privatePlayers = new Map<string, PrivatePlayerState>([
-    ["wolf", { userId: "wolf", role: "werewolf", alive: true }],
-    ["wolf-two", { userId: "wolf-two", role: "werewolf", alive: true }],
+    ["wolf", { userId: "wolf", role: factionRole, alive: true }],
+    ["wolf-two", { userId: "wolf-two", role: factionRole, alive: true }],
     ["villager", { userId: "villager", role: "ordinary_villager", alive: true }],
-    ["dead", { userId: "dead", role: "ordinary_villager", alive: false }],
+    ["dead", { userId: "dead", role: factionRole, alive: false }],
     ["spectator", { userId: "spectator", alive: false }],
     ["narrator", { userId: "narrator", alive: false }],
   ]);
@@ -185,7 +185,8 @@ describe("RoomChatRouter", () => {
   );
 
   it("routes faction chat only to matching living faction members", () => {
-    const { router, clients, persistGameEvent } = createRouter();
+    const { router, state, clients, persistGameEvent } = createRouter();
+    state.phase = "night";
 
     router.sendChat(clients.wolf as never, "werewolves", "нощен план");
 
@@ -206,15 +207,17 @@ describe("RoomChatRouter", () => {
   });
 
   it("rejects cross-faction private chat attempts", () => {
-    const { router, clients } = createRouter();
+    const { router, state, clients } = createRouter();
+    state.phase = "night";
 
     expect(() => router.sendChat(clients.villager as never, "werewolves", "чужд канал")).toThrow(
       "Нямаш достъп до този канал.",
     );
   });
 
-  it("routes dead chat only to dead players", () => {
-    const { router, clients } = createRouter();
+  it.each(["first_night", "night", "day_discussion", "voting", "paused"])("routes dead chat only to dead players during %s", (phase) => {
+    const { router, state, clients, broadcast, persistGameEvent } = createRouter();
+    state.phase = phase;
 
     router.sendChat(clients.dead as never, "dead", "отвъд");
 
@@ -226,6 +229,12 @@ describe("RoomChatRouter", () => {
     expect(clients.villager.send).not.toHaveBeenCalled();
     expect(clients.spectator.send).not.toHaveBeenCalled();
     expect(clients.narrator.send).not.toHaveBeenCalled();
+    expect(state.publicChat).toHaveLength(0);
+    expect(broadcast).not.toHaveBeenCalled();
+    expect(persistGameEvent).toHaveBeenCalledWith(
+      "chat",
+      expect.objectContaining({ actorId: "dead", visibility: "private" }),
+    );
   });
 
   it("rejects spectators and human narrators as dead chat senders", () => {
@@ -240,8 +249,9 @@ describe("RoomChatRouter", () => {
     expect(clients.dead.send).not.toHaveBeenCalled();
   });
 
-  it("routes dead typing only between dead playing participants", () => {
-    const { router, clients } = createRouter();
+  it.each(["first_night", "night", "day_discussion", "voting", "paused"])("routes dead typing only between dead playing participants during %s", (phase) => {
+    const { router, state, clients, broadcast, persistGameEvent } = createRouter();
+    state.phase = phase;
 
     router.sendTyping(clients.dead as never, "dead", true);
 
@@ -261,12 +271,16 @@ describe("RoomChatRouter", () => {
     for (const client of Object.values(clients)) {
       expect(client.send).not.toHaveBeenCalled();
     }
+    expect(state.publicChat).toHaveLength(0);
+    expect(broadcast).not.toHaveBeenCalled();
+    expect(persistGameEvent).not.toHaveBeenCalled();
   });
 
   it("routes typing notifications with the same public/private constraints", () => {
-    const { router, clients, broadcast } = createRouter();
+    const { router, state, clients, broadcast } = createRouter();
 
     router.sendTyping(clients.villager as never, "public", true);
+    state.phase = "night";
     router.sendTyping(clients.wolf as never, "werewolves", true);
 
     expect(broadcast).toHaveBeenCalledWith(
@@ -282,5 +296,70 @@ describe("RoomChatRouter", () => {
       expect.objectContaining({ channel: "werewolves", senderUserId: "wolf", active: true }),
     );
     expect(clients.villager.send).not.toHaveBeenCalled();
+  });
+
+  describe.each([
+    { channel: "mafia", role: "mafioso", mode: "mafia_free" },
+    { channel: "werewolves", role: "werewolf", mode: "werewolves_classic" },
+    { channel: "vampires", role: "vampire", mode: "werewolves_classic" },
+  ] as const)("$channel phase authority", ({ channel, role, mode }) => {
+    describe.each(["built_in_chat", "secret_channels"] as const)("%s", (communicationMode) => {
+      it.each(["first_night", "night"])("allows faction chat and typing during %s", (phase) => {
+        const { router, state, config, clients, broadcast, persistGameEvent } = createRouter(mode, role);
+        config.communicationMode = communicationMode;
+        state.phase = phase;
+
+        router.sendChat(clients.wolf as never, channel, "night plan");
+        router.sendTyping(clients.wolf as never, channel, true);
+        router.sendTyping(clients.wolf as never, channel, false);
+
+        for (const recipient of [clients.wolf, clients.wolfTwo]) {
+          expect(recipient.send).toHaveBeenCalledTimes(3);
+          expect(recipient.send).toHaveBeenNthCalledWith(1, "private_chat", expect.objectContaining({
+            channel, senderUserId: "wolf", message: "night plan",
+          }));
+          expect(recipient.send).toHaveBeenNthCalledWith(2, "typing", expect.objectContaining({
+            channel, senderUserId: "wolf", active: true,
+          }));
+          expect(recipient.send).toHaveBeenNthCalledWith(3, "typing", expect.objectContaining({
+            channel, senderUserId: "wolf", active: false,
+          }));
+        }
+        for (const recipient of [clients.villager, clients.dead, clients.spectator, clients.narrator]) {
+          expect(recipient.send).not.toHaveBeenCalled();
+        }
+        expect(state.publicChat).toHaveLength(0);
+        expect(broadcast).not.toHaveBeenCalled();
+        expect(persistGameEvent).toHaveBeenCalledExactlyOnceWith("chat", {
+          actorId: "wolf",
+          visibility: "faction",
+          payload: { channel, message: "night plan" },
+        });
+      });
+
+      it.each([
+        "lobby", "role_reveal", "day_announcement", "day_discussion", "nomination", "defense",
+        "voting", "resolution", "hunter_revenge", "mayor_successor", "paused", "game_over",
+      ])("rejects faction chat and typing without side effects during %s", (phase) => {
+        const { router, state, config, clients, broadcast, persistGameEvent } = createRouter(mode, role);
+        config.communicationMode = communicationMode;
+        state.phase = phase;
+        const before = state.toJSON();
+
+        expect(() => router.sendChat(clients.wolf as never, channel, "day plan")).toThrow(
+          "Нямаш достъп до този канал.",
+        );
+        router.sendTyping(clients.wolf as never, channel, true);
+        router.sendTyping(clients.wolf as never, channel, false);
+
+        for (const recipient of Object.values(clients)) {
+          expect(recipient.send).not.toHaveBeenCalled();
+        }
+        expect(state.toJSON()).toEqual(before);
+        expect(broadcast).not.toHaveBeenCalled();
+        expect(persistGameEvent).not.toHaveBeenCalled();
+      });
+
+    });
   });
 });

@@ -125,8 +125,8 @@ for (const theme of THEMES) {
       labels: [...tabs.querySelectorAll<HTMLElement>(".play-rail-tab")].map((tab) => getComputedStyle(tab).color),
     }));
     if (theme === "light") {
-      expect(tabColors.background).toBe("rgb(243, 229, 201)");
-      expect(tabColors.labels).toEqual(["rgb(74, 47, 28)", "rgb(255, 250, 240)"]);
+      expect(tabColors.background).toBe("rgba(0, 0, 0, 0)");
+      expect(tabColors.labels).toEqual(["rgb(72, 94, 81)", "rgb(32, 56, 45)"]);
     }
   });
 }
@@ -333,8 +333,8 @@ for (const connection of ["reconnecting", "lost", "error"] as const) {
     await expect(banner).toBeVisible();
     if (connection === "reconnecting" || connection === "lost") {
       const dialogName = connection === "reconnecting"
-        ? "Връщаме те обратно"
-        : "Не успяхме да се върнем автоматично";
+        ? "Свързваме се отново"
+        : "Връзката е прекъсната";
       await expect(page.getByRole("dialog", { name: dialogName })).toBeVisible();
     }
     await expectGeometry(page);
@@ -355,7 +355,11 @@ for (const [viewer, role] of [
     );
     const stageText = await page.locator(".play-stage").innerText();
     expect(stageText).not.toContain("Гадателка");
-    expect(stageText).not.toContain("Ловец");
+    // The public phase heading may name the Hunter; no player's role may leak.
+    if (viewer === "dead") {
+      await expect(page.locator(".play-stage h1")).toHaveText("Отмъщение на Ловеца");
+    }
+    expect(stageText.replace("Отмъщение на Ловеца", "")).not.toContain("Ловец");
     await expect(page.locator(".play-stage [data-private-dossier], .play-interaction-column [data-private-dossier]")).toHaveCount(0);
     if (viewer === "dead") {
       const personal = page.locator(".play-personal-area");
@@ -404,14 +408,18 @@ for (const scenario of [
       scenario.theme,
       MATRIX_VIEWPORTS[7],
     );
-    await expect(page.getByRole("link", { name: "Виж записа на играта" })).toHaveAttribute(
+    const conclusion = page.locator(`[data-endgame="${scenario.winner}"]`);
+    await expect(conclusion.getByRole("heading", { level: 1, name: scenario.family === "mafia" ? "Мафията победи" : "Селото победи", exact: true })).toBeVisible();
+    await expect(conclusion.getByRole("link", { name: "Виж записа", exact: true })).toHaveAttribute(
       "href",
       "/history/fixture-game-1/replay",
     );
-    const repeatHref = await page.getByRole("link", { name: "Повтори настройките" }).getAttribute("href");
+    const repeatHref = await conclusion.getByRole("link", { name: "Още една игра", exact: true }).getAttribute("href");
     expect(repeatHref).toContain(`/${scenario.path}/create?`);
     expect(repeatHref).toContain(`players=${scenario.players}`);
     expect(repeatHref).toContain("roles=");
+    await expect(conclusion.getByRole("heading", { name: "Лицата зад сенките", exact: true })).toBeVisible();
+    await expect(conclusion.getByRole("link", { name: "Всички роли", exact: true })).toHaveAttribute("href", `/${scenario.path}/roles`);
     await expect(page.getByRole("heading", { name: "Как ще я разказвате след играта" })).toBeVisible();
     // Only authentication is synthetic; keep the generated setup query intact.
     await page.goto(`${repeatHref}&visualAuth=1`);
@@ -461,9 +469,11 @@ async function openFixture(
   }
   await page.goto(`/play/VISUAL?${query}`, { waitUntil: "domcontentloaded" });
   if (scenario.phase === "game_over") {
-    await expect(page.locator(".play-stage-takeover")).toBeVisible();
-    await expect(page.locator(".play-winner-actions")).toBeVisible();
-    await expect(page.locator(".post-game-story")).toBeVisible();
+    const conclusion = page.locator("[data-endgame]");
+    await expect(conclusion).toBeVisible();
+    await expect(conclusion.getByRole("link", { name: "Още една игра", exact: true })).toBeVisible();
+    await expect(conclusion.locator(".post-game-story")).toBeVisible();
+    await expect.poll(() => conclusion.locator('section[aria-labelledby="conclusion-heading"] > img[src$=".webp"]').first().evaluate((element) => element instanceof HTMLImageElement && element.complete && element.naturalWidth > 0)).toBe(true);
     await page.evaluate(() => document.fonts.ready);
     return;
   }
@@ -525,36 +535,62 @@ async function waitForStableStage(page: Page) {
 }
 
 async function expectGeometry(page: Page) {
-  const takeover = page.locator(".play-stage-takeover");
-  if (await takeover.count()) {
-    await expect(page.locator(".play-stage, .play-action-dock")).toHaveCount(0);
-    await expect(takeover.getByRole("heading", { level: 1 })).toBeVisible();
-    await expect(takeover.getByRole("link")).toHaveCount(2);
+  const conclusion = page.locator("[data-endgame]");
+  if (await conclusion.count()) {
+    await expect(page.locator(".play-stage, .play-action-dock, .play-primary-column")).toHaveCount(0);
+    await expect(conclusion.getByRole("heading", { level: 1 })).toBeVisible();
+    await expect(conclusion.locator('section[aria-labelledby="conclusion-heading"]').getByRole("link")).toHaveCount(2);
     // Deferred result content can replace nodes between separate visibility and
-    // boundingBox calls. Inspect one rendered takeover snapshot instead.
+    // boundingBox calls. Inspect one rendered conclusion snapshot instead.
     await expect.poll(() => page.evaluate(() => {
       const violations: string[] = [];
-      const root = document.querySelector(".play-stage-takeover");
-      if (!root) return ["takeover-content-missing"];
+      const root = document.querySelector("[data-endgame]");
+      if (!root) return ["endgame-content-missing"];
+      const scene = root.querySelector('section[aria-labelledby="conclusion-heading"]');
       const heading = root.querySelector("h1");
-      const actions = root.querySelector(".play-winner-actions");
       const story = root.querySelector(".post-game-story");
-      const links = [...root.querySelectorAll("a")];
-      if (!heading || !actions || !story || links.length !== 2) return ["takeover-content-missing"];
-      for (const element of [root, heading, actions, story, ...links]) {
+      const links = [...(scene?.querySelectorAll("a") ?? [])];
+      const actions = links[0]?.parentElement;
+      const image = scene?.querySelector<HTMLImageElement>(':scope > img[src$=".webp"]');
+      if (!scene || !heading || !actions || !story || !image || links.length !== 2) return ["endgame-content-missing"];
+      if (!image.complete || image.naturalWidth === 0) violations.push("endgame-art-not-loaded");
+      if (new URL(image.currentSrc).pathname !== `/game-art/endgame/${root.getAttribute("data-endgame")}-v1.webp`) violations.push("endgame-art-mismatch");
+      for (const element of [scene, image]) {
         const rect = element.getBoundingClientRect();
-        const label = element === root ? "takeover" : element.textContent?.trim();
+        if (Math.abs(rect.left) > 1 || Math.abs(rect.width - innerWidth) > 1) violations.push("endgame-scene-not-fullbleed");
+      }
+      const sceneRect = scene.getBoundingClientRect();
+      for (const element of [heading, ...links]) {
+        const rect = element.getBoundingClientRect();
+        // Scroll extents include decorative button pseudo-elements and font overhang.
+        const range = document.createRange();
+        range.selectNodeContents(element);
+        const clipsY = getComputedStyle(element).overflowY !== "visible";
+        for (const content of range.getClientRects()) {
+          if (content.left < rect.left - 1 || content.right > rect.right + 1
+            || content.top < (clipsY ? rect.top : sceneRect.top) - 1
+            || content.bottom > (clipsY ? rect.bottom : sceneRect.bottom) + 1) violations.push(`endgame-text-clipped:${element.textContent}`);
+        }
+        if (rect.top < sceneRect.top || rect.bottom > sceneRect.bottom + 1) violations.push("endgame-action-outside-scene");
+      }
+      for (const link of links) {
+        const rect = link.getBoundingClientRect();
+        if (rect.width < 44 || rect.height < 44) violations.push("endgame-action-hit-target");
+      }
+      for (const element of [root, scene, heading, actions, story, ...links]) {
+        const rect = element.getBoundingClientRect();
+        const label = element === root ? "endgame" : element.textContent?.trim();
         if (rect.width === 0 || rect.height === 0 || getComputedStyle(element).visibility !== "visible") {
-          violations.push(`takeover-content-hidden:${label}`);
+          violations.push(`endgame-content-hidden:${label}`);
         }
         if (rect.left < 0 || rect.right > innerWidth + 1) {
-          violations.push(`takeover-content-outside-viewport:${label}`);
+          violations.push(`endgame-content-outside-viewport:${label}`);
         }
       }
       for (const element of root.querySelectorAll<HTMLElement>(".post-game-story ol")) {
         const style = getComputedStyle(element);
         if (style.overflowY !== "visible" && element.scrollHeight > element.clientHeight + 1) {
-          violations.push("takeover-story-clipped");
+          violations.push("endgame-story-clipped");
         }
       }
       if (document.documentElement.scrollWidth > innerWidth + 1) violations.push("horizontal-overflow");
@@ -566,16 +602,16 @@ async function expectGeometry(page: Page) {
     const stage = document.querySelector<HTMLElement>(".play-stage");
     const core = document.querySelector<HTMLElement>("[data-table-core]");
     const seats = [...document.querySelectorAll<HTMLElement>(".play-seat-slot:not(.play-seat-skeleton)")];
-    if (!stage || !core) {
+    if (!stage || (!core && stage.dataset.phase !== "lobby")) {
       return { fatal: "Липсва stage или table core", violations: [] as string[] };
     }
 
     const violations: string[] = [];
     const diagnostics: string[] = [];
     const stageRect = stage.getBoundingClientRect();
-    const coreRect = core.getBoundingClientRect();
-    const timer = core.querySelector<HTMLElement>("[role=\"timer\"]");
-    const counts = core.querySelector<HTMLElement>(":scope > span:last-child");
+    const coreRect = core?.getBoundingClientRect();
+    const timer = core?.querySelector<HTMLElement>("[role=\"timer\"]");
+    const counts = stage.querySelector<HTMLElement>("[data-stage-ledger] > span:last-child");
     const countsRect = counts?.getBoundingClientRect();
     if (counts) {
       if (counts.scrollWidth > counts.clientWidth + 1 || counts.scrollHeight > counts.clientHeight + 1) {
@@ -597,7 +633,8 @@ async function expectGeometry(page: Page) {
         violations.push("table-counts-outside-stage");
       }
     }
-    for (const label of core.closest<HTMLElement>(".play-stage")?.querySelectorAll<HTMLElement>("[data-stage-ledger] span") ?? []) {
+    for (const label of stage.querySelectorAll<HTMLElement>("[data-stage-ledger] span")) {
+      if (label.clientWidth <= 1) continue;
       if (label.scrollWidth > label.clientWidth + 1 || label.scrollHeight > label.clientHeight + 1) {
         violations.push("stage-ledger-label-clipped");
         diagnostics.push(`stage ledger label clipped: ${JSON.stringify({
@@ -635,7 +672,7 @@ async function expectGeometry(page: Page) {
         violations.push("seat-outside-stage");
         diagnostics.push(`seat ${index} outside: ${JSON.stringify(rect.toJSON())}`);
       }
-      if (overlapArea(rect, coreRect) > 4) {
+      if (coreRect && overlapArea(rect, coreRect) > 4) {
         violations.push("seat-overlaps-core");
         diagnostics.push(`seat ${index} overlaps core: ${JSON.stringify(rect.toJSON())}`);
       }
@@ -687,7 +724,7 @@ async function expectGeometry(page: Page) {
       ".night-action-help",
       ".night-action-server-note",
       ".role-card-body > p",
-      ".play-stage-takeover .post-game-story ol",
+      "[data-endgame] .post-game-story ol",
     ]) {
       for (const element of document.querySelectorAll<HTMLElement>(selector)) {
         const style = getComputedStyle(element);
@@ -717,7 +754,7 @@ async function expectGeometry(page: Page) {
           : null,
       },
       stage: stageRect.toJSON(),
-      core: coreRect.toJSON(),
+      core: coreRect?.toJSON(),
     };
 
     function overlapArea(first: DOMRect, second: DOMRect) {

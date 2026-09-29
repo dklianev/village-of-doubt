@@ -1,10 +1,13 @@
 "use client";
 
-import { RouteErrorState } from "@/components/system/RouteErrorState";
+import { RouteErrorState, type RouteErrorBoundaryProps } from "@/components/system/RouteErrorState";
 
-export default function LeaderboardError(props: {
-  error: Error & { digest?: string };
-  reset: () => void;
-}) {
-  return <RouteErrorState {...props} title="Вечерният брой не излезе" />;
+export default function LeaderboardError(props: RouteErrorBoundaryProps) {
+  return (
+    <RouteErrorState
+      {...props}
+      title="Вечерният брой не се зареди"
+      description="Не успяхме да заредим класацията. Опитай отново или се върни към началото."
+    />
+  );
 }

@@ -95,11 +95,12 @@ async function main() {
   await runCheck("roles codex assets and responsiveness", testRolesCodex);
   await runCheck("anonymous join redirects to sign-in", testAnonymousEntry);
   await runCheck("authenticated join keeps the room invitation", testAuthenticatedEntry);
+  await runCheck("profile changes persist after the last avatar and reload", testAccountProfileSave);
   await runCheck("history screen basics", testHistoryScreen);
   await runCheck("achievements, leaderboard and friends screens", testUtilityPages);
   await runCheck("single-player play auth gate", testSinglePlayScreen);
   for (const family of ["werewolves", "mafia"]) {
-    await runCheck(`six browser players reach first voting and reconnect (${family})`, () => testSixClientGameStart(family));
+    await runCheck(`six browser players reconnect, finish, replay and repeat (${family})`, () => testSixClientGameStart(family));
   }
   await runCheck("create token failure can be retried", testCreateTokenRetry);
 
@@ -146,7 +147,7 @@ async function testLandingDesktop() {
 
     await page.locator(".game-choice-mafia").getByRole("link", { name: "Създай стая", exact: true }).click();
     await page.waitForURL("**/sign-in?redirect=%2Fmafia%2Fcreate");
-    await expectText(page, "Стани");
+    await expectText(page, "Събери компанията");
     await watcher.assertClean();
   } finally {
     await close();
@@ -177,7 +178,8 @@ async function testTutorialAndOfflineShell() {
     await assertNoHorizontalOverflow(page, "tutorial screen");
 
     await goto(page, "/offline", "offline screen");
-    await expectText(page, "Лампата свети, чакаме теб.");
+    await expectText(page, "Няма връзка");
+    await page.getByRole("button", { name: "Провери връзката", exact: true }).waitFor({ state: "visible" });
     await assertNoHorizontalOverflow(page, "offline screen");
     await watcher.assertClean();
   } finally {
@@ -190,11 +192,11 @@ async function testLobbyModeFiltering() {
   try {
     await goto(page, "/werewolf/create", "werewolves lobby");
     await page.waitForURL("**/sign-in?redirect=%2Fwerewolf%2Fcreate");
-    await expectText(page, "Стани");
+    await expectText(page, "Събери компанията");
 
     await goto(page, "/mafia/create", "mafia lobby");
     await page.waitForURL("**/sign-in?redirect=%2Fmafia%2Fcreate");
-    await expectText(page, "Стани");
+    await expectText(page, "Събери компанията");
     await assertNoHorizontalOverflow(page, "mafia auth gate");
     await watcher.assertClean();
   } finally {
@@ -211,7 +213,7 @@ async function testInviteLobbyCopy() {
       "mafia invite lobby",
     );
     await page.waitForURL("**/sign-in?redirect=**");
-    await expectText(page, "Покажи се на масата");
+    await expectText(page, "Влез в Сенките");
 
     await goto(
       page,
@@ -219,7 +221,7 @@ async function testInviteLobbyCopy() {
       "werewolves invite lobby",
     );
     await page.waitForURL("**/sign-in?redirect=**");
-    await expectText(page, "Покажи се на масата");
+    await expectText(page, "Влез в Сенките");
     await assertCssBackgroundImagesLoaded(page, "invite auth gates");
     await watcher.assertClean();
   } finally {
@@ -289,13 +291,87 @@ async function testAuthenticatedEntry() {
   const entry = await newPage("authenticated-entry", viewports.desktop);
   try {
     await signInBrowserContext(entry.context, authFixture.users[0]);
-    await goto(entry.page, "/mafia/join/ABCD12", "authenticated join");
-    await entry.page.waitForURL("**/mafia/join/ABCD12");
-    await expectText(entry.page, "Добре дошъл в бара");
+    await goto(entry.page, "/mafia/join/ABCD23", "authenticated join");
+    await entry.page.waitForURL("**/mafia/join/ABCD23");
+    const welcome = entry.page.getByRole("dialog", { name: "Мястото ти е готово.", exact: true });
+    await assertLocatorAttribute(welcome.getByRole("link", { name: "Отвори наръчника", exact: true }), "href",
+      "/tutorial?welcome=1&game=mafia_free&redirect=%2Fmafia%2Fjoin%2FABCD23", "welcome invitation");
+    await welcome.getByRole("button", { name: "Към игрите", exact: true }).click();
+    await welcome.waitFor({ state: "hidden" });
+    await expectText(entry.page, "Влез на масата");
+    for (const [index, character] of [..."ABCD23"].entries()) {
+      await expectInputValue(entry.page.getByRole("textbox", { name: `Символ ${index + 1} от 6`, exact: true }), character);
+    }
+    await expectText(entry.page, "Не открихме стая ABCD23. Провери кода или поискай нов.");
+    if (!await entry.page.getByRole("button", { name: "Влез в стаята", exact: true }).isDisabled()) {
+      throw new Error("A missing room must not accept an entry.");
+    }
     await assertNoHorizontalOverflow(entry.page, "authenticated join");
     await entry.watcher.assertClean();
   } finally {
     await entry.close();
+  }
+}
+
+async function testAccountProfileSave() {
+  const identity = authFixture.users[0];
+  const { page, watcher, close } = await newPage("account-profile-save", viewports.mobile);
+  const savedName = "Проверен образ";
+  let testFailure;
+  try {
+    await signInBrowserContext(page.context(), identity);
+    await page.context().addInitScript(() => localStorage.setItem("welcome-modal-shown", "1"));
+    await goto(page, "/account", "account profile");
+    await page.getByRole("tab", { name: "Образ и достъп", exact: true }).click();
+    if (await page.getByRole("button", { name: "Дай ни бележка", exact: true }).count()) {
+      throw new Error("The floating feedback launcher must not cover account editing.");
+    }
+    const name = page.getByRole("textbox", { name: "Име на масата", exact: true });
+    await name.fill(savedName);
+    const lastAvatar = page.getByRole("radio").last();
+    const avatarId = await lastAvatar.getAttribute("data-avatar-id");
+    if (!avatarId) throw new Error("Profile avatar is missing its identifier.");
+    await lastAvatar.click();
+    const save = page.getByRole("button", { name: "Запази досието", exact: true });
+    const avatarBounds = await lastAvatar.boundingBox();
+    const saveBounds = await save.boundingBox();
+    if (!avatarBounds || !saveBounds || saveBounds.y < avatarBounds.y + avatarBounds.height) {
+      throw new Error("Profile save must follow the last avatar.");
+    }
+    const saved = page.waitForResponse((response) => response.url().endsWith("/api/auth/update-user") && response.request().method() === "POST");
+    await save.click();
+    if (!(await saved).ok()) throw new Error("Profile update was not accepted by the server.");
+    await waitForVisibleText(page.locator("#account-profile-feedback").getByText("Запазено", { exact: true }), "Запазено");
+    await page.reload();
+    await expectInputValue(name, savedName);
+    await page.locator(`button[data-avatar-id="${avatarId}"][aria-checked="true"]`).waitFor({ state: "visible" });
+    const response = await page.context().request.get(`${baseUrl}/api/auth/get-session`);
+    const session = await response.json();
+    if (!response.ok() || session?.user?.name !== savedName || session?.user?.avatarId !== avatarId) {
+      throw new Error("Reloaded session did not retain the saved profile.");
+    }
+    await assertNoHorizontalOverflow(page, "account profile saved");
+    await watcher.assertClean();
+  } catch (error) {
+    testFailure = error;
+    await screenshot(page, "account-profile-save-failure.png").catch(() => {});
+    throw error;
+  } finally {
+    // Other integration scenarios use the fixture's original public identity.
+    try {
+      const restored = await page.context().request.post(`${baseUrl}/api/auth/update-user`, {
+        headers: { Origin: baseUrl },
+        data: { name: identity.name, avatarId: "portrait-f01" },
+      });
+      if (!restored.ok()) {
+        throw new AggregateError([
+          ...(testFailure ? [testFailure] : []),
+          new Error(`Could not restore the synthetic profile: HTTP ${restored.status()}.`),
+        ], "Profile integration or cleanup failed.");
+      }
+    } finally {
+      await close();
+    }
   }
 }
 
@@ -317,7 +393,8 @@ async function testUtilityPages() {
   try {
     await goto(achievements.page, "/achievements", "achievements screen");
     await achievements.page.waitForURL("**/sign-in?redirect=%2Fachievements");
-    await expectText(achievements.page, "Запази");
+    await expectText(achievements.page, "Влез в Сенките");
+    await expectText(achievements.page, "Върни се към своите игри, истории и постижения.");
     await achievements.watcher.assertClean();
   } finally {
     await achievements.close();
@@ -326,7 +403,7 @@ async function testUtilityPages() {
   const leaderboard = await newPage("leaderboard-screen", viewports.desktop);
   try {
     await goto(leaderboard.page, "/leaderboard", "leaderboard screen");
-    await expectText(leaderboard.page, "Вечерен Брой на Масата");
+    await expectText(leaderboard.page, "Вечерен брой");
     await assertNoHorizontalOverflow(leaderboard.page, "leaderboard screen");
     await leaderboard.watcher.assertClean();
   } finally {
@@ -337,7 +414,8 @@ async function testUtilityPages() {
   try {
     await goto(friends.page, "/friends", "friends screen");
     await friends.page.waitForURL("**/sign-in?redirect=%2Ffriends");
-    await expectText(friends.page, "Събери");
+    await expectText(friends.page, "Влез в Сенките");
+    await expectText(friends.page, "Приятелите ти и поканите за следващата игра са тук.");
     await assertNoHorizontalOverflow(friends.page, "utility auth gates");
     await friends.watcher.assertClean();
   } finally {
@@ -397,10 +475,11 @@ async function testSixClientGameStart(family) {
       const context = await activeBrowser.newContext({ viewport: index === 5 ? viewports.mobile : viewports.desktop });
       contexts.push(context);
       await mockSyntheticSentry(context);
-      await context.addInitScript(() => {
+      await context.addInitScript((theme) => {
         window.localStorage.setItem("cookie-consent", "1");
         window.localStorage.setItem("welcome-modal-shown", "1");
-      });
+        window.localStorage.setItem("werewolf-theme", theme);
+      }, index === 5 ? "light" : "dark");
       if (index === 5) await context.addInitScript(installGameSocketProbe, wsUrl);
       const identity = authFixture.users[index];
       await signInBrowserContext(context, identity);
@@ -473,11 +552,128 @@ async function testSixClientGameStart(family) {
     await Promise.all(pages.map((page) => page.locator(voterSelector).waitFor({ state: "visible" })));
     await reconnectFirstGameGuest(pages, expectedUserIds, privateRoles[5], family, `Приет глас: ${target.name}`);
     await assertNoHorizontalOverflow(mobilePage, `six-client ${family} mobile voting after reconnect`);
+    await finishFirstGameAndReplay(pages, privateRoles, family, roomUrl);
     for (const watcher of watchers) {
       await watcher.assertClean();
     }
   } finally {
     await Promise.allSettled(contexts.map((context) => context.close()));
+  }
+}
+
+async function finishFirstGameAndReplay(pages, privateRoles, family, roomUrl) {
+  // Read only each synthetic player's own card; the server still assigns roles and decides victory.
+  const enemyRole = family === "mafia" ? "Мафиот" : "Върколак";
+  const targets = privateRoles.flatMap((role, index) => role === `Тайна роля: ${enemyRole}` ? [index] : []);
+  if (targets.length !== (family === "mafia" ? 1 : 2)) {
+    throw new Error("The six-player starter composition changed; review the postgame scenario.");
+  }
+  const eliminated = new Set();
+  for (const targetIndex of targets) {
+    const target = authFixture.users[targetIndex];
+    const majority = Math.floor((pages.length - eliminated.size) / 2) + 1;
+    const voters = pages.map((_, index) => index)
+      .filter((index) => index !== targetIndex && !eliminated.has(index)).slice(0, majority);
+    for (const index of voters) {
+      const page = pages[index];
+      await page.locator(`button[data-seat-user-id="${target.id}"]`).click();
+      await page.getByRole("button", { name: `Потвърди гласа за ${target.name}`, exact: true }).click();
+      await expectTextIn(page.locator(".play-action-receipt"), `Приет глас: ${target.name}`);
+    }
+    await advanceFirstGamePhase(pages, "voting", "resolution");
+    await Promise.all(pages.map((page) => page.locator(
+      `[data-seat-user-id="${target.id}"][data-alive="false"]`,
+    ).waitFor({ state: "visible" })));
+    eliminated.add(targetIndex);
+    if (eliminated.size < targets.length) {
+      await advanceFirstGamePhase(pages, "resolution", "night");
+      await advanceFirstGamePhase(pages, "night", "day_announcement");
+      await advanceFirstGamePhase(pages, "day_announcement", "day_discussion");
+      await advanceFirstGamePhase(pages, "day_discussion", "voting");
+    }
+  }
+  await pages[0].getByRole("button", { name: "Следваща фаза", exact: true }).click();
+  for (const page of pages) {
+    await page.locator(`[data-endgame="${family === "mafia" ? "town" : "village"}"]`).waitFor({ state: "visible" });
+    for (const [index, identity] of authFixture.users.entries()) {
+      const row = page.locator("[data-endgame] li").filter({ has: page.getByText(identity.name, { exact: true }) });
+      await expectTextIn(row, privateRoles[index].replace("Тайна роля: ", ""));
+      if ((await row.getAttribute("data-winner") === "true") === eliminated.has(index)) {
+        throw new Error("Final player winners disagree with the completed starter scenario.");
+      }
+    }
+    await assertNoHorizontalOverflow(page, `${family} recorded finale`);
+    // game_over precedes persistence; never treat an archive fallback as a successful recording.
+    await page.getByRole("link", { name: "Виж записа", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+    const unlocked = page.getByRole("dialog", { name: "Отключени легенди", exact: true });
+    if (await unlocked.isVisible()) {
+      await unlocked.getByRole("button", { name: "Продължи вечерта", exact: true }).click();
+      await unlocked.waitFor({ state: "hidden" });
+    }
+  }
+  await prepareFinaleScreenshot(pages[0]);
+  await prepareFinaleScreenshot(pages[5]);
+  await screenshot(pages[0], `six-client-${family}-finale-desktop.png`);
+  await screenshot(pages[5], `six-client-${family}-finale-mobile.png`);
+
+  const replayPage = pages[5];
+  await replayPage.getByRole("link", { name: "Виж записа", exact: true }).click();
+  await replayPage.waitForURL(/\/history\/[^/?]+\/replay$/);
+  await replayPage.locator(`[data-replay-shell][data-family="${family}"]`).waitFor({ state: "visible" });
+  await replayPage.getByRole("heading", { level: 1, name: family === "mafia" ? "Градът оцеля." : "Селото оцеля.", exact: true }).waitFor();
+  await expectTextIn(replayPage.locator("[data-replay-summary]"), "Пълен запис");
+  const roster = replayPage.getByRole("complementary", { name: "Участници в записа", exact: true });
+  await roster.locator("summary").click();
+  for (const identity of authFixture.users) await roster.getByText(identity.name, { exact: true }).waitFor();
+  await replayPage.getByRole("link", { name: "Към развръзката", exact: true }).click();
+  await replayPage.getByRole("heading", { level: 4, name: family === "mafia" ? "Гражданите печелят" : "Селото печели", exact: true }).waitFor();
+  await assertNoHorizontalOverflow(replayPage, `${family} recorded replay mobile`);
+  await screenshot(replayPage, `six-client-${family}-replay-mobile.png`);
+
+  const host = pages[0];
+  const repeat = host.getByRole("link", { name: "Още една игра", exact: true });
+  const repeatUrl = new URL(await repeat.getAttribute("href"), baseUrl);
+  assertRepeatedRoomOptions(roomUrl, repeatUrl, authFixture.defaultGameConfig(family === "mafia" ? "mafia_free" : "werewolves_classic", 6));
+  await repeat.click();
+  await host.waitForURL(repeatUrl.href);
+  await expectInputValue(host.getByRole("slider", { name: "Брой играчи" }), "6");
+  await host.getByRole("button", { name: family === "mafia" ? "Отвори масата" : "Създай селото", exact: true }).click();
+  await host.waitForURL(/\/play\/[^/?]+(?:\?|$)/);
+  if (new URL(host.url()).pathname === roomUrl.pathname) throw new Error("Repeat game reused the ended room.");
+  await host.locator("main.play-shell[data-phase='lobby']").waitFor({ state: "visible" });
+  await host.getByTestId("ready-toggle").waitFor({ state: "visible" });
+  await assertSixPlayerRoster([host], [authFixture.users[0].id]);
+  if (await host.locator("main.play-shell[data-phase='lobby']:visible").locator("[data-endgame], [data-private-dossier]").count()) {
+    throw new Error("New room retained the previous game's result or private role.");
+  }
+}
+
+async function prepareFinaleScreenshot(page) {
+  await page.locator("[data-endgame]").evaluate(async (element) => {
+    const images = [...element.querySelectorAll("img")];
+    if (!images.length) throw new Error("The finale has no image assets.");
+    await Promise.all(images.map((image) => image.decode()));
+    if (images.some((image) => image.naturalWidth === 0)) throw new Error("The finale contains a broken image.");
+  });
+  await page.evaluate(() => window.scrollTo({ top: 0, left: 0, behavior: "instant" }));
+}
+
+function assertRepeatedRoomOptions(original, repeated, defaults) {
+  if (repeated.origin !== original.origin || repeated.pathname !== `/${defaults.mode === "mafia_free" ? "mafia" : "werewolf"}/create`) {
+    throw new Error("Repeat game left the original game family or origin.");
+  }
+  for (const [query, option] of [
+    ["mode", "mode"], ["players", "playerCount"], ["communication", "communicationMode"],
+    ["narrator", "narratorMode"], ["tempo", "tempoProfile"], ["reveal", "revealRolesOnDeath"],
+    ["visibility", "roomVisibility"], ["preset", "rolePreset"],
+  ]) {
+    const fallback = typeof defaults[option] === "boolean" ? (defaults[option] ? "1" : "0") : String(defaults[option]);
+    if ((repeated.searchParams.get(query) ?? fallback) !== (original.searchParams.get(query) ?? fallback)) {
+      throw new Error(`Repeat game changed the original ${query} option.`);
+    }
+  }
+  if (["code", "spectator", "winnerTeam", "finalRoles"].some((key) => repeated.searchParams.has(key))) {
+    throw new Error("Repeat game carried terminal or room identity data into creation.");
   }
 }
 
@@ -708,6 +904,7 @@ async function seedAuthFixture(url) {
 
   return {
     users,
+    defaultGameConfig: sharedModule.createDefaultGameConfig,
     roomCodeAlphabet: sharedModule.ROOM_CODE_ALPHABET,
     roomCodeLength: sharedModule.ROOM_CODE_LENGTH,
     async cleanup() {

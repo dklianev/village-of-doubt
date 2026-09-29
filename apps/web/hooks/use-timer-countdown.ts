@@ -13,21 +13,20 @@ export function useTimerCountdown(endsAt: number): TimerCountdownResult {
   const [now, setNow] = useState<number>(() => Date.now());
 
   useEffect(() => {
-    setNow(Date.now());
+    let timer: number | undefined;
 
-    if (!endsAt) {
-      return;
-    }
-
-    const timer = window.setInterval(() => {
+    const tick = () => {
       const next = Date.now();
       setNow(next);
-      if (next >= endsAt) {
-        window.clearInterval(timer);
+      const remainingMs = endsAt - next;
+      if (remainingMs > 0) {
+        // Align to the deadline's second boundaries, including the final partial second.
+        timer = window.setTimeout(tick, remainingMs % 1000 || 1000);
       }
-    }, 1000);
+    };
+    tick();
 
-    return () => window.clearInterval(timer);
+    return () => window.clearTimeout(timer);
   }, [endsAt]);
 
   const remainingSeconds = Math.max(0, Math.ceil((endsAt - now) / 1000));

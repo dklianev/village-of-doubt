@@ -28,6 +28,7 @@ import {
   type CreateRoomOptions,
   type RoomInvitationEligibility,
   type WinResult,
+  type TerminalGameResult,
 } from "@werewolf/shared";
 import {
   getRoleblockedActorIds,
@@ -96,6 +97,7 @@ const CRITICAL_PERSISTED_EVENTS = new Set([
   "priest_blessing_protected",
   "priest_blessing_protected_target",
   "guard_dog_protected_mayor",
+  "jester_personal_win",
 ]);
 
 function persistencePriorityForEvent(type: string): NonNullable<PersistenceQueueOptions["priority"]> {
@@ -805,6 +807,15 @@ export class GameRoom extends Room<{ state: GameState }> {
     this.privateEvents.sendNarratorRoleSnapshot(client, userId);
     this.sendNightActionCapabilities(userId, client);
     this.sendRecordedGameId(client);
+    this.sendPersonalWinConfirmation(client, userId);
+  }
+
+  private sendPersonalWinConfirmation(client: Client, userId: string) {
+    if (!this.personalWinnerUserIds.has(userId)) return;
+    client.send("system", {
+      type: "system",
+      messageBg: "Успя. Постигна лична победа като Шут.",
+    } satisfies ServerEvent);
   }
 
   private setReady(client: Client, ready: boolean) {
@@ -990,7 +1001,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       ...(this.config.tempoProfile === "manual" ? { customTimers: this.config.timers } : {}),
       loversEnabled: this.config.loversEnabled,
       rolePreset: this.config.rolePreset,
-      revealRolesOnDeath: this.config.revealRolesOnDeath,
+      revealRolesOnDeath: this.config.requestedRevealRolesOnDeath,
       tieBreaker: this.config.tieBreaker,
       firstNightKill: this.config.firstNightKill,
       allowSkipVote: this.config.allowSkipVote,
@@ -2042,6 +2053,38 @@ export class GameRoom extends Room<{ state: GameState }> {
 
     if (phase === "game_over" && this.state.winnerTeam && !this.gameFinishPersistenceQueued) {
       this.gameFinishPersistenceQueued = true;
+      const finalReveals: Array<{ messageBg: string; targetId?: string; payload: Record<string, unknown> }> = [];
+      if ((this.config.roles.jester ?? 0) > 0) {
+        const roles: string[] = [];
+        const revealedRoles: Array<{ userId: string; role: RoleCode }> = [];
+        for (const player of this.privatePlayers.values()) {
+          const publicPlayer = this.findPlayerByUserId(player.userId);
+          if (publicPlayer && player.role) {
+            publicPlayer.revealedRole = player.role;
+            roles.push(`${publicPlayer.displayName}: ${getRoleNameBg(player.role)}`);
+            revealedRoles.push({ userId: player.userId, role: player.role });
+          }
+        }
+        if (roles.length > 0) finalReveals.push({ messageBg: `Ролите на масата: ${roles.join("; ")}.`, payload: { roles: revealedRoles } });
+      }
+      for (const userId of this.personalWinnerUserIds) {
+        const player = this.findPlayerByUserId(userId);
+        if (player) {
+          finalReveals.push({
+            messageBg: `${player.displayName} беше Шут и постигна лична победа.`,
+            targetId: userId, payload: { role: "jester", personalWin: true },
+          });
+        }
+      }
+      const finalRevealEvents: PersistEventInput[] = finalReveals.map(({ messageBg, targetId, payload }) => {
+        this.addPublicEvent("reveal", messageBg);
+        return {
+          type: "reveal", round: this.state.round, phase: "game_over", visibility: "public",
+          ...(targetId ? { targetId } : {}), payload,
+          occurredAt: this.nextPersistedEventTime(),
+          participantUserIds: [...this.state.players.values()].map((player) => player.userId),
+        };
+      });
       GameRoom.recentEndings.unshift({
         code: this.state.code,
         winnerTeam: this.state.winnerTeam,
@@ -2055,9 +2098,23 @@ export class GameRoom extends Room<{ state: GameState }> {
       const achievementUnlocks = this.evaluateAchievementUnlocks();
       const finalWin = this.evaluateWin();
       const finalPlayers = this.buildFinalPlayerPersistenceRows(finalWin);
-      this.queuePersistence(async ({ persistence, ensureGame }) => {
+      if (finalWin.winner) {
+        this.state.terminalResultJson = JSON.stringify({
+          winnerTeam: finalWin.winner,
+          winnerPlayerIds: finalWin.winnerPlayerIds,
+          personalWinnerPlayerIds: finalWin.personalWinnerPlayerIds,
+          finalRoles: finalPlayers.map(({ userId, role }) => ({ userId, role })),
+        } satisfies TerminalGameResult);
+      }
+      this.queuePersistence(async ({ persistence, ensureGame, idempotencyKeys }) => {
         const gameId = await ensureGame();
         if (gameId) {
+          for (const [index, event] of finalRevealEvents.entries()) {
+            await persistence.recordEvent(gameId, {
+              ...event,
+              ...(idempotencyKeys ? { idempotencyKey: idempotencyKeys.event(`final-reveal-${index}`) } : {}),
+            });
+          }
           await persistence.recordGameCompletion(gameId, {
             winnerTeam: this.state.winnerTeam as never,
             players: finalPlayers,
@@ -2385,13 +2442,14 @@ export class GameRoom extends Room<{ state: GameState }> {
     return this.applyDeaths(deaths);
   }
 
-  private reportPreventedDeaths(events: Array<{ userId: string; reasonBg: string; public?: boolean }>) {
+  private reportPreventedDeaths(events: Array<{ userId: string; reasonBg: string; public?: boolean; actorUserId?: string }>) {
     const uniqueMessages = new Set<string>();
     for (const event of events) {
       if (event.public !== false) {
         uniqueMessages.add(event.reasonBg);
       }
       this.persistGameEvent("night_death_prevented", {
+        ...(event.actorUserId ? { actorId: event.actorUserId } : {}),
         targetId: event.userId,
         visibility: "moderator",
         payload: { reasonBg: event.reasonBg },
@@ -2404,11 +2462,13 @@ export class GameRoom extends Room<{ state: GameState }> {
 
   private reportPersistentPriestProtection(userIds: string[]) {
     for (const userId of userIds) {
+      const priest = [...this.privatePlayers.values()].find((player) => player.priestBlessedTargetUserId === userId);
       this.addPublicEvent("reveal", "Благословия спря нощна смърт.");
       this.persistGameEvent("priest_blessing_protected", {
         visibility: "public",
       });
       this.persistGameEvent("priest_blessing_protected_target", {
+        ...(priest ? { actorId: priest.userId } : {}),
         targetId: userId,
         visibility: "moderator",
       });
@@ -2454,6 +2514,7 @@ export class GameRoom extends Room<{ state: GameState }> {
 
   private resolveVoting() {
     const voteCounts = new Map<string, number>();
+    const voters: Array<{ userId: string }> = [];
     let mayorVoteTarget: string | undefined;
 
     for (const privatePlayer of this.privatePlayers.values()) {
@@ -2461,6 +2522,7 @@ export class GameRoom extends Room<{ state: GameState }> {
         continue;
       }
       const publicPlayer = this.findPlayerByUserId(privatePlayer.userId);
+      voters.push({ userId: privatePlayer.userId });
       voteCounts.set(privatePlayer.lastVoteTarget, (voteCounts.get(privatePlayer.lastVoteTarget) ?? 0) + 1);
       if (privatePlayer.isMayor || publicPlayer?.mayor) {
         mayorVoteTarget = privatePlayer.lastVoteTarget;
@@ -2486,6 +2548,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       visibility: "moderator",
       payload: {
         tally: ranked.map(([userId, count]) => ({ userId, count })),
+        voters,
         totalVotes,
         livingCount: [...this.privatePlayers.values()].filter((p) => p.alive).length,
         mayorTieBreakerApplied,
@@ -2519,17 +2582,15 @@ export class GameRoom extends Room<{ state: GameState }> {
             causeBg: `Напусна играта след дневното гласуване${this.config.revealRolesOnDeath ? role : ""}.`,
           },
         ]);
-        if (privatePlayer.role === "jester") {
+        if (privatePlayer.role === "jester" && deaths.some((death) => death.userId === targetUserId)) {
           this.personalWinnerUserIds.add(targetUserId);
-          this.addPublicEvent("reveal", `${publicPlayer.displayName} беше Шут и постигна лична победа.`);
           this.persistGameEvent("jester_personal_win", {
+            actorId: targetUserId,
             targetId: targetUserId,
-            visibility: "public",
+            visibility: "private",
           });
-          this.persistAndSendAchievementUnlocks(
-            [{ userId: targetUserId, achievementId: "jester_win" }],
-            "jester achievement",
-          );
+          const client = this.playerPresence.getClient(targetUserId);
+          if (client) this.sendPersonalWinConfirmation(client, targetUserId);
         }
         if (this.queueHunterRevenge(deaths)) {
           return;
@@ -2846,7 +2907,7 @@ export class GameRoom extends Room<{ state: GameState }> {
   }
 
   private evaluateAchievementUnlocks() {
-    return this.achievementBroadcaster.evaluateUnlocks({
+    const unlocks = this.achievementBroadcaster.evaluateUnlocks({
       winnerTeam: this.state.winnerTeam,
       players: [...this.privatePlayers.values()].map((player) => ({
         userId: player.userId,
@@ -2854,7 +2915,13 @@ export class GameRoom extends Room<{ state: GameState }> {
         alive: player.alive,
       })),
     });
-
+    // Personal wins survive the capped event buffer; publish their awards only at game over.
+    for (const userId of this.personalWinnerUserIds) {
+      if (!unlocks.some((unlock) => unlock.userId === userId && unlock.achievementId === "jester_win")) {
+        unlocks.push({ userId, achievementId: "jester_win" });
+      }
+    }
+    return unlocks;
   }
 
   private sendAchievementUnlocks(unlocks: AchievementUnlock[]) {

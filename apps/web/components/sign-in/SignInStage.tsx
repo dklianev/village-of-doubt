@@ -1,140 +1,78 @@
-import { SceneCard } from "@werewolf/ui/server";
+import { ArrowRight, Eye, EyeOff } from "lucide-react";
 import { EmailPasswordForm } from "@/components/sign-in/EmailPasswordForm";
 import { OAuthButton } from "@/components/sign-in/OAuthButton";
-import "@/components/sign-in/LegacySignIn.module.css";
+import "./SignInStage.module.css";
 
-type SignInCopy = {
-  kicker: string;
-  title: [string, string];
-  subtitle: string;
-};
-
-const DEFAULT_COPY: SignInCopy = {
-  kicker: "вход на масата",
-  title: ["Покажи се", "на масата"],
-  subtitle: "Едно досие пази историята, статистиките и поканите. Тайните роли остават на сървъра.",
+export const SIGN_IN_PROVIDERS = {
+  google: {
+    label: "Продължи с Google",
+    pendingLabel: "Отваряме Google...",
+    errorMessage: "Не успяхме да отворим Google. Опитай отново.",
+  },
+  discord: {
+    label: "Продължи с Discord",
+    pendingLabel: "Отваряме Discord...",
+    errorMessage: "Не успяхме да отворим Discord. Опитай отново.",
+  },
 };
 
 export function SignInStage({ redirectTo }: { redirectTo: string }) {
   const copy = signInCopyForRedirect(redirectTo);
-  const title = copy.title.join(" ");
 
   return (
     <section className="sign-in-stage">
-      <SceneCard
-        density="lg"
-        background={{
-          image: "var(--art-sign-in)",
-          overlay: "veil",
-          focalX: 42,
-          focalY: 50,
-          minHeight: "100%",
-        }}
-      >
-        <div className="sign-in-stage-frame">
-          <header className="sign-in-scene-copy">
-            <p className="sign-in-kicker">{copy.kicker}</p>
-            <h1 aria-label={title}>
-              <span>{copy.title[0]}</span>{" "}
-              <span>{copy.title[1]}</span>
-            </h1>
-            <p className="sign-in-subtitle">{copy.subtitle}</p>
-          </header>
-
-          <section className="sign-in-ledger" aria-labelledby="sign-in-ledger-title">
-            <span className="sign-in-ledger-seal" aria-hidden>
-              В
-            </span>
-            <span className="sign-in-ledger-stitch" aria-hidden />
-            <header className="sign-in-form-head">
-              <p className="sign-in-ledger-eyebrow">ВХОД</p>
-              <h2 id="sign-in-ledger-title">Отвори досието си</h2>
-              <p>Избери бърз вход или използвай имейл и парола.</p>
-            </header>
-
-            <div className="sign-in-oauth">
-              <OAuthButton provider="google" redirectTo={redirectTo} />
-              <OAuthButton provider="discord" redirectTo={redirectTo} />
-            </div>
-
-            <div className="sign-in-divider" role="separator" aria-label="или с имейл">
-              <span>или с имейл</span>
-            </div>
-
-            <EmailPasswordForm redirectTo={redirectTo} />
-
-            <footer className="sign-in-foot">
-              <a href="/privacy" className="sign-in-foot-link">
-                Поверителност
-              </a>
-              <span aria-hidden>·</span>
-              <a href="/terms" className="sign-in-foot-link">
-                Условия
-              </a>
-            </footer>
-          </section>
-        </div>
-      </SceneCard>
+      <div className="sign-in-art" aria-hidden="true" />
+      <div className="sign-in-content">
+        <section className="sign-in-panel" aria-label="Вход и регистрация">
+          <EmailPasswordForm redirectTo={redirectTo}
+            intro={<header className="sign-in-heading"><h1>{copy.title}</h1><p>{copy.description}</p></header>}
+            registrationIntro={<header className="sign-in-heading"><h1>Създай профил</h1><p>Един профил за Върколак и Мафия.</p></header>}
+            icons={{
+              showPassword: <Eye size={18} aria-hidden="true" />,
+              hidePassword: <EyeOff size={18} aria-hidden="true" />,
+              submit: <ArrowRight size={18} aria-hidden="true" />,
+            }}
+          >
+            <OAuthButton provider="google" redirectTo={redirectTo} {...SIGN_IN_PROVIDERS.google}>
+              <span className="oauth-button-logo" aria-hidden="true">
+                <img src="/brand/google-g.svg" alt="" width={24} height={24} />
+              </span>
+            </OAuthButton>
+            <OAuthButton provider="discord" redirectTo={redirectTo} {...SIGN_IN_PROVIDERS.discord}>
+              <span className="oauth-button-logo" aria-hidden="true">
+                <img src="/brand/discord-mark.svg" alt="" width={24} height={24} />
+              </span>
+            </OAuthButton>
+          </EmailPasswordForm>
+          <footer className="sign-in-foot">
+            <a href="/privacy">Поверителност</a>
+            <span aria-hidden="true">·</span>
+            <a href="/terms">Условия</a>
+          </footer>
+        </section>
+      </div>
     </section>
   );
 }
 
-function signInCopyForRedirect(redirectTo: string): SignInCopy {
-  if (redirectTo.startsWith("/friends")) {
-    return {
-      kicker: "познати",
-      title: ["Събери", "групата"],
-      subtitle: "Влез, за да пазиш списъка с хората, които каниш най-често за следващата стая.",
-    };
-  }
-
-  if (redirectTo.startsWith("/achievements")) {
-    return {
-      kicker: "легенди",
-      title: ["Запази", "легендата"],
-      subtitle: "Досието отключва значки, статистики и история от игрите, които вече си преживял.",
-    };
-  }
-
-  if (redirectTo.includes("/create")) {
-    return {
-      kicker: "нова стая",
-      title: ["Стани", "стопанин"],
-      subtitle: "Влез, за да създадеш частна стая, да избереш правила и да поканиш хората около масата.",
-    };
-  }
-
+function signInCopyForRedirect(redirectTo: string) {
   if (redirectTo.includes("/join")) {
-    return {
-      kicker: "покана",
-      title: ["Вход", "в играта"],
-      subtitle: "След това ще продължиш към стаята с код. Нямаш профил? Създай нов.",
-    };
+    return { title: "Вход в играта", description: "Влез или създай профил, за да продължиш към поканата." };
   }
-
+  if (redirectTo.includes("/create")) {
+    return { title: "Събери компанията", description: "Влез, за да създадеш стая и да поканиш приятели." };
+  }
   if (redirectTo.startsWith("/play/")) {
-    return {
-      kicker: "активна стая",
-      title: ["Върни се", "в играта"],
-      subtitle: "Влез със същото досие, за да те върнем при стаята, разговора и личните сигнали.",
-    };
+    return { title: "Върни се в играта", description: "Влез със същия профил, за да се върнеш в стаята." };
   }
-
-  if (redirectTo.startsWith("/history")) {
-    return {
-      kicker: "архив",
-      title: ["Отвори", "историите"],
-      subtitle: "Историята пази завършените стаи, ролите след края и ключовите моменти от играта.",
-    };
+  if (redirectTo.startsWith("/friends")) {
+    return { title: "Влез в Сенките", description: "Приятелите ти и поканите за следващата игра са тук." };
   }
-
+  if (redirectTo.startsWith("/history") || redirectTo.startsWith("/achievements")) {
+    return { title: "Влез в Сенките", description: "Върни се към своите игри, истории и постижения." };
+  }
   if (redirectTo.startsWith("/account")) {
-    return {
-      kicker: "досие",
-      title: ["Отвори", "досието"],
-      subtitle: "Тук управляваш името, сесиите и данните, които пазим за игрите ти.",
-    };
+    return { title: "Влез в профила си", description: "Името, настройките и историята ти са на едно място." };
   }
-
-  return DEFAULT_COPY;
+  return { title: "Влез в Сенките", description: "Компанията е позната. Ролите са тайни." };
 }

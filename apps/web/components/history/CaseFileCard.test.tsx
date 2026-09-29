@@ -15,8 +15,8 @@ describe.each([
     { winner: "mafia", label: "Мафията печели" },
     { winner: "maniac", label: "Маниакът печели" },
     { winner: "lovers", label: "Влюбените печелят" },
-    { winner: "draw", label: "Равенство" },
-    { winner: null, label: "Няма победител" },
+    { winner: "draw", label: "Няма победител" },
+    { winner: null, label: "Резултатът не е записан" },
     { winner: "future_winner", label: "Неразпозната развръзка" },
   ])("renders $winner with its family label and replay link", ({ winner, label }) => {
     const game: HistoryGameView = {
@@ -32,9 +32,13 @@ describe.each([
       timeline: [],
     };
 
-    render(<CaseFileCard game={game} />);
+    const { container } = render(<CaseFileCard game={game} />);
 
-    expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent(label);
+    expect(screen.getByRole("heading", { level: 3, name: label })).toBeInTheDocument();
+    if (winner === null || winner === "draw") {
+      expect(container.querySelector("article")).toHaveAttribute("data-outcome", "unknown");
+      expect(screen.queryByText(winner === null ? "Няма победител" : "Резултатът не е записан")).toBeNull();
+    }
     expect(screen.getByRole("link", { name: /Отвори дело/ })).toHaveAttribute(
       "href", `/history/${game.id}/replay`,
     );

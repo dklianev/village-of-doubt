@@ -560,7 +560,8 @@ describe("replay persistence", () => {
       { userId: "user-1", displayName: "Анна" },
       { userId: "user-2", displayName: "Борис" },
     ]);
-    const from = vi.fn(() => ({ where }));
+    const innerJoin = vi.fn(() => ({ where }));
+    const from = vi.fn(() => ({ innerJoin }));
     const select = vi.fn(() => ({ from }));
 
     const rows = await getGameReplayParticipants(

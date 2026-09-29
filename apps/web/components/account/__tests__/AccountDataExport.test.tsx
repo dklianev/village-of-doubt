@@ -1,12 +1,12 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { AccountDataExport } from "../AccountDataExport";
 import {
-  AccountDataExport,
   buildCompleteAccountExport,
   fetchCompleteAccountExport,
   readAccountExportSettings,
-} from "../AccountDataExport";
+} from "../account-export";
 
 describe("AccountDataExport", () => {
   afterEach(() => {

@@ -53,6 +53,26 @@ Failed deploys and rollbacks preserve mode-`0600` Compose diagnostics under
 - Keep the age private identity and backup-signing public key on a separate
   recovery host. The backup signing private key remains only on production.
 
+## Unconfirmed player reports
+
+`/api/report` requires an opaque `Idempotency-Key` from the report form. The
+same draft and payload reuse the same key and reference on explicit retries,
+including after a lost response or a temporary route navigation. Delivery uses
+[Resend's idempotency contract](https://resend.com/docs/dashboard/emails/idempotency-keys),
+not process-local deduplication. Requests time out after 15 seconds in the form;
+the provider request and response body have a separate 10-second deadline.
+
+Retries expire 23 hours after the draft's first submission, before the provider's
+24-hour retention ends. An expired key or changed provider payload returns 409
+without creating a replacement key. The application does not persist report
+drafts: a full reload loses their identity, so do not advise reloading and
+resubmitting an unconfirmed report as a duplicate-safe recovery step. Changed
+session attribution or email templates can also cause a safe conflict.
+
+Missing Resend configuration returns 503, including locally; reports never claim
+delivery through the non-idempotent development email sink. Test timeout, retry,
+and provider-conflict behavior with mocked delivery, not real player reports.
+
 ## Backups
 
 The systemd timer runs every six hours. The backup script creates a compressed

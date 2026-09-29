@@ -2,7 +2,7 @@ import { StrictMode } from "react";
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { authClient } from "@/lib/auth-client";
-import { VerifyEmailClient } from "../VerifyEmailClient";
+import { VerifyEmailForm as VerifyEmailClient } from "./recovery-fixtures";
 
 let query = new URLSearchParams();
 
@@ -32,7 +32,7 @@ describe("VerifyEmailClient", () => {
     render(<VerifyEmailClient />);
 
     expect(
-      await screen.findByRole("heading", { level: 1, name: "Потвърждението не е завършено." }),
+      await screen.findByRole("heading", { level: 1, name: "Невалиден линк" }),
     ).toBeInTheDocument();
     expect(screen.queryByText("Потвърждаваме имейла...")).not.toBeInTheDocument();
     expect(screen.getByRole("alert")).toHaveTextContent("Линкът за потвърждение липсва или е невалиден.");

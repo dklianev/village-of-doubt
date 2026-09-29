@@ -20,11 +20,11 @@ for (const family of ["werewolves", "mafia"] as const) {
         await expect(page.locator(".play-stage")).toHaveAttribute("data-layout-ready", "true");
         await page.evaluate(() => document.fonts.ready);
 
-        const personal = page.locator(".play-primary-column > .play-personal-area");
+        const personal = page.locator(".play-console-band > .play-personal-area");
         const card = personal.locator(".role-card[data-private-dossier]");
         await expect(card).toBeVisible();
         await expect(page.getByRole("dialog")).toHaveCount(0);
-        const { personalBox, stageBox } = await page.locator(".play-primary-column").evaluate((column) => ({
+        const { personalBox, stageBox } = await page.locator(".play-layout").evaluate((column) => ({
           personalBox: column.querySelector(".play-personal-area")!.getBoundingClientRect().toJSON(),
           stageBox: column.querySelector(".play-stage")!.getBoundingClientRect().toJSON(),
         }));
@@ -81,7 +81,8 @@ for (const family of ["werewolves", "mafia"] as const) {
 
         if (width > 1023) {
           const actionBox = await dock.getByRole("group", { name: "Текущо действие" }).boundingBox();
-          expect(actionBox!.x).toBeGreaterThanOrEqual(stageBox.x + stageBox.width - 1);
+          expect(actionBox!.y).toBeGreaterThanOrEqual(stageBox.y + stageBox.height - 1);
+          expect(actionBox!.x).toBeGreaterThanOrEqual(personalBox.x + personalBox.width - 1);
         }
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
         expect(errors).toEqual([]);

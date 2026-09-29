@@ -7,8 +7,8 @@ import { FAQ_DATA, flattenAnswerForSchema } from "@/lib/faq-data";
 import { absoluteUrl, routeMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = routeMetadata({
-  title: "Седни до огъня",
-  description: "Отговори за геймплея, досието, техническите детайли и поверителността — споделени до огъня.",
+  title: "Помощ",
+  description: "Отговори за първата игра, досието и връзката. Намери помощ за Върколак и Мафия в Сенките.",
   path: "/faq",
   image: "/game-art/legal/faq-hearth-banner.png",
   imageAlt: "Каменно огнище с книги и свещ",

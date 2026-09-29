@@ -29,7 +29,7 @@ for (const theme of ["light", "dark"] as const) {
           await expect(page.locator(".create-ready-mark")).toHaveAttribute("data-ready", String(ready));
           const contrast = await new AxeBuilder({ page }).include(".create-ready-mark").withRules(["color-contrast"]).analyze();
           expect(contrast.violations).toEqual([]);
-          // Axe cannot resolve the page's art pseudo-element, so sample the rendered status background.
+          // Sample the actual background without mistaking text or the check icon for it.
           const mark = page.locator(".create-ready-mark");
           const foreground = await mark.evaluate((element) => {
             const canvas = document.createElement("canvas");
@@ -38,7 +38,11 @@ for (const theme of ["light", "dark"] as const) {
             context.fillRect(0, 0, 1, 1);
             return Array.from(context.getImageData(0, 0, 1, 1).data).slice(0, 3);
           });
-          const { data, info } = await sharp(await mark.screenshot({ caret: "initial" })).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+          const { data, info } = await sharp(await mark.screenshot({
+            caret: "initial",
+            animations: "disabled",
+            style: ".create-ready-mark, .create-ready-mark * { color: transparent !important; }",
+          })).removeAlpha().raw().toBuffer({ resolveWithObject: true });
           const ratios = [[6, Math.floor(info.height / 2)], [info.width - 6, Math.floor(info.height / 2)], [Math.floor(info.width / 2), 3]].map(([x, y]) => {
             const offset = (y! * info.width + x!) * info.channels;
             const bg = luminance(Array.from(data.subarray(offset, offset + 3)));

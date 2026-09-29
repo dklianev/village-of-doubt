@@ -119,7 +119,7 @@ test("actual service worker upgrades only owned caches and serves the brand offl
   const brandAssets = ["/brand/senkite-wordmark.svg", "/brand/senkite-mark.svg", "/brand/apple-touch-icon.png", "/brand/icon-192.png", "/brand/icon-512.png"];
   // Registration is normally disabled on localhost. Exercise the shipped worker explicitly.
   await page.evaluate(async () => {
-    for (const name of ["werewolf-mafia-shell-v5", "werewolf-mafia-art-v4", "werewolf-mafia-art-v5", "unrelated-cache"]) {
+    for (const name of ["werewolf-mafia-shell-v5", "werewolf-mafia-shell-v6", "werewolf-mafia-art-v4", "werewolf-mafia-art-v5", "unrelated-cache"]) {
       const cache = await caches.open(name);
       await cache.put("/navigation-test-sentinel", new Response(name));
     }
@@ -128,14 +128,15 @@ test("actual service worker upgrades only owned caches and serves the brand offl
   });
   await expect.poll(() => page.evaluate(() => navigator.serviceWorker.controller?.scriptURL)).toContain("/sw.js");
   const keys = await page.evaluate(() => caches.keys());
-  expect(keys).toContain("werewolf-mafia-shell-v6");
+  expect(keys).toContain("werewolf-mafia-shell-v8");
   expect(keys).toContain("werewolf-mafia-art-v5");
   expect(keys).toContain("unrelated-cache");
   expect(keys).not.toContain("werewolf-mafia-shell-v5");
+  expect(keys).not.toContain("werewolf-mafia-shell-v6");
   expect(keys).not.toContain("werewolf-mafia-art-v4");
   expect(await page.evaluate(async () => (await (await caches.open("werewolf-mafia-art-v5")).match("/navigation-test-sentinel"))?.text())).toBe("werewolf-mafia-art-v5");
   for (const asset of brandAssets) {
-    expect(await page.evaluate(async (url) => Boolean(await (await caches.open("werewolf-mafia-shell-v6")).match(url)), asset)).toBe(true);
+    expect(await page.evaluate(async (url) => Boolean(await (await caches.open("werewolf-mafia-shell-v8")).match(url)), asset)).toBe(true);
   }
 
   await context.setOffline(true);
@@ -143,7 +144,7 @@ test("actual service worker upgrades only owned caches and serves the brand offl
     // A new document cannot rely on the old page's loaded CSS mask or decoded images.
     const response = await page.goto("/navigation-network-offline-probe");
     expect(response?.fromServiceWorker()).toBe(true);
-    await expect(page.getByRole("heading", { name: "Лампата свети, чакаме теб." })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Няма връзка", exact: true })).toBeVisible();
     const wordmark = page.getByRole("img", { name: "Сенките", exact: true });
     await expect(wordmark).toBeVisible();
     await expect(wordmark).toHaveCSS("mask-image", /senkite-wordmark\.svg/);

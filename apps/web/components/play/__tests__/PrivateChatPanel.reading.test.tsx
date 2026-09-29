@@ -152,6 +152,16 @@ describe("PrivateChatPanel reading", () => {
     expect(chat.onRead).toHaveBeenLastCalledWith("mafia-8");
   });
 
+  it("restores an offscreen console log without marking its messages read", () => {
+    layout.moveLog(window.innerHeight + 100);
+    const chat = mount({ initialScrollPosition: { scrollTop: 80, followLatest: false } });
+    expect(chat.log.scrollTop).toBe(80);
+    expect(chat.onRead).not.toHaveBeenCalled();
+    layout.moveLog(100);
+    expect(chat.log.scrollTop).toBe(80);
+    expect(chat.onRead).toHaveBeenLastCalledWith("mafia-5");
+  });
+
   it("preserves older reading while closed or in another mobile pane, including remount", () => {
     let saved: PrivateChatScrollPosition | undefined;
     const chat = mount({ onScrollPositionChange: (position) => { saved = position; } });

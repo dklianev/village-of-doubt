@@ -435,6 +435,38 @@ describe("useGameRoom", () => {
     expect(result.current.snapshot?.phase).toBe("lobby");
   });
 
+  it("consumes terminal results on patches and reconnect, without inferring them from public text", async () => {
+    mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
+    const { client, joinRoom, reconnectRoom } = createClient();
+    mocks.createGameClient.mockReturnValue(client);
+    const toast = vi.fn();
+    const { result } = renderHook(() => useGameRoom({ code: "ABCD", createOptions: undefined, toast }));
+    await waitFor(() => expect(result.current.connectionStatus).toBe("connected"));
+    const terminalResult = {
+      winnerTeam: "draw", winnerPlayerIds: [], personalWinnerPlayerIds: ["u1"],
+      finalRoles: [{ userId: "u1", role: "jester" }],
+    };
+    const state = { ...makeState(), phase: "game_over", winnerTeam: "draw", winnerReasonBg: "Synthetic result." };
+    act(() => joinRoom.emitState(state));
+    expect(result.current.snapshot?.terminalResult).toBeUndefined();
+    const terminalState = { ...state, terminalResultJson: JSON.stringify(terminalResult) };
+    act(() => joinRoom.emitState(terminalState));
+    expect(result.current.snapshot?.terminalResult).toEqual(terminalResult);
+    const snapshot = result.current.snapshot;
+    act(() => joinRoom.emitState(terminalState));
+    expect(result.current.snapshot).toBe(snapshot);
+
+    vi.useFakeTimers();
+    act(() => joinRoom.emitLeave(4001));
+    await act(async () => { await vi.advanceTimersByTimeAsync(1000); });
+    expect(result.current.room).toBe(reconnectRoom);
+    act(() => reconnectRoom.emitState(terminalState));
+    expect(result.current.snapshot?.terminalResult).toEqual(terminalResult);
+    act(() => reconnectRoom.emitState({ ...terminalState, phase: "night" }));
+    expect(result.current.snapshot?.terminalResult).toBeUndefined();
+    vi.useRealTimers();
+  });
+
   it("uses join-or-create when invite URLs also carry room creation options", async () => {
     mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
     const { client } = createClient();
@@ -726,6 +758,40 @@ describe("useGameRoom", () => {
     expect(client.joinOrCreate).toHaveBeenCalledOnce();
     expect(client.reconnect).not.toHaveBeenCalled();
     expect(joinRoom.leave).not.toHaveBeenCalled();
+  });
+
+  it("does not replay an achievement celebration after a transport reconnect", async () => {
+    mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
+    const { client, joinRoom } = createClient();
+    mocks.createGameClient.mockReturnValue(client);
+    const toast = vi.fn();
+    const { result } = renderHook(() => useGameRoom({ code: "ABCD", createOptions: undefined, toast }));
+    await waitFor(() => expect(result.current.connectionStatus).toBe("connected"));
+    act(() => joinRoom.emitMessage("achievements_unlocked", { achievementIds: ["first_win"] }));
+    expect(result.current.unlockedAchievementIds).toEqual(["first_win"]);
+    act(() => joinRoom.emitDrop());
+    expect(result.current.unlockedAchievementIds).toEqual([]);
+    await act(async () => joinRoom.emitReconnect());
+    expect(result.current.connectionStatus).toBe("connected");
+    expect(result.current.unlockedAchievementIds).toEqual([]);
+    act(() => joinRoom.emitMessage("achievements_unlocked", { achievementIds: ["first_blood"] }));
+    expect(result.current.unlockedAchievementIds).toEqual(["first_blood"]);
+  });
+
+  it.each(["offline", "error", "leave"] as const)("clears the transient achievement on %s", async (reason) => {
+    mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
+    const { client, joinRoom } = createClient();
+    mocks.createGameClient.mockReturnValue(client);
+    const toast = vi.fn();
+    const { result } = renderHook(() => useGameRoom({ code: "ABCD", createOptions: undefined, toast }));
+    await waitFor(() => expect(result.current.connectionStatus).toBe("connected"));
+    act(() => joinRoom.emitMessage("achievements_unlocked", { achievementIds: ["first_win"] }));
+    act(() => {
+      if (reason === "offline") window.dispatchEvent(new Event("offline"));
+      else if (reason === "error") joinRoom.emitError(4000);
+      else joinRoom.emitLeave(1000);
+    });
+    expect(result.current.unlockedAchievementIds).toEqual([]);
   });
 
   it.each([false, undefined])("keeps recovery retryable when private resync does not acknowledge success (%s)", async (synchronized) => {

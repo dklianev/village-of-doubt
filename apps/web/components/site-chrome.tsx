@@ -128,7 +128,7 @@ export default function SiteChrome({ initialSession }: { initialSession?: AuthSe
   const authProps = initialSession === undefined ? {} : { initialSession };
 
   return (
-    <header className="site-chrome" data-version="v2" data-room={isRoom ? "true" : undefined}>
+    <header className="site-chrome" data-version="v2" data-route={pathname} data-room={isRoom ? "true" : undefined}>
       <button
         className="site-mobile-menu" type="button" aria-label="Отвори менюто"
         aria-haspopup={panels ? "dialog" : undefined} aria-expanded={drawer === "navigation"}
@@ -188,10 +188,10 @@ export default function SiteChrome({ initialSession }: { initialSession?: AuthSe
       </div> : null}
 
       <div className="site-utility-cluster" aria-label="Настройки">
-        {isRoom ? <button className="site-icon-button" type="button" aria-label={soundLabel} data-tooltip={soundLabel} disabled={!interactive} onClick={toggleSound}>
+        {isRoom ? <button className="site-icon-button" type="button" aria-label={soundLabel} data-tooltip={soundLabel} {...transientButtonAttributes} disabled={!interactive} onClick={toggleSound}>
           {soundEnabled ? <Volume2 className="site-icon" aria-hidden /> : <VolumeX className="site-icon" aria-hidden />}
         </button> : null}
-        <button className="site-icon-button" type="button" aria-label={themeLabel} data-tooltip={themeLabel} disabled={!interactive} onClick={toggleTheme}>
+        <button className="site-icon-button" type="button" aria-label={themeLabel} data-tooltip={themeLabel} {...transientButtonAttributes} disabled={!interactive} onClick={toggleTheme}>
           {themePreference === "dark" ? <Moon className="site-icon" aria-hidden /> : <Sun className="site-icon" aria-hidden />}
         </button>
         <span className="site-utility-separator" aria-hidden />
@@ -200,13 +200,13 @@ export default function SiteChrome({ initialSession }: { initialSession?: AuthSe
 
       {!isRoom ? <button
         className="site-play-cta site-play-cta-mobile" type="button" aria-haspopup={panels ? "dialog" : undefined}
-        aria-expanded={drawer === "play"} disabled={!interactive}
+        aria-expanded={drawer === "play"} {...transientButtonAttributes} disabled={!interactive}
         aria-busy={drawer === "play" && navigationStatus === "pending"}
         onPointerEnter={preload} onFocus={preload}
         onClick={(event) => openDrawer("play", event.currentTarget)}
       >
         <Play className="site-icon" aria-hidden strokeWidth={1.9} /><span>Играй</span>
-      </button> : <button className="site-icon-button site-room-sound" type="button" aria-label={soundLabel} disabled={!interactive} onClick={toggleSound}>
+      </button> : <button className="site-icon-button site-room-sound" type="button" aria-label={soundLabel} {...transientButtonAttributes} disabled={!interactive} onClick={toggleSound}>
         {soundEnabled ? <Volume2 className="site-icon" aria-hidden /> : <VolumeX className="site-icon" aria-hidden />}
       </button>}
 

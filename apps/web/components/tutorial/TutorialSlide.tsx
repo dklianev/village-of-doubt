@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
+import { ChevronDown } from "lucide-react";
 
 interface TutorialSlideProps {
-  bg: "night" | "day" | "day-low" | "day-zoom" | "night-cropped" | "split";
+  bg: "night" | "day";
   kicker: string;
   title: string;
   body: ReactNode;
@@ -15,29 +16,25 @@ interface TutorialSlideProps {
 const BG_CLASS: Record<TutorialSlideProps["bg"], string> = {
   night: "slide-bg-night",
   day: "slide-bg-day",
-  "day-low": "slide-bg-day slide-bg-low",
-  "day-zoom": "slide-bg-day slide-bg-zoom",
-  "night-cropped": "slide-bg-night slide-bg-cropped",
-  split: "slide-bg-split",
 };
 
 export function TutorialSlide({ bg, kicker, title, body, callout, children }: TutorialSlideProps) {
   return (
     <article className={`tutorial-slide ${BG_CLASS[bg]}`}>
-      <div className="tutorial-slide-scrim" aria-hidden="true" />
+      <div className="tutorial-slide-art" aria-hidden="true" />
       <div className="tutorial-slide-content">
         <div className="tutorial-slide-copy">
           <p className="tutorial-slide-kicker">{kicker}</p>
           <h1 className="tutorial-slide-title">{title}</h1>
           <div className="tutorial-slide-body">{body}</div>
-          {callout ? (
-            <aside className="tutorial-slide-callout">
-              <strong>{callout.label}</strong>
-              <span>{callout.text}</span>
-            </aside>
-          ) : null}
         </div>
-        {children}
+        {callout ? (
+          <details className="tutorial-slide-callout">
+            <summary>{callout.label}<ChevronDown size={16} aria-hidden="true" /></summary>
+            <span>{callout.text}</span>
+          </details>
+        ) : null}
+        {children ? <div className="tutorial-slide-interaction">{children}</div> : null}
       </div>
     </article>
   );

@@ -80,15 +80,15 @@ export function PrivateChatPanel({
       && !log.closest("details:not([open])") && log.clientHeight > 0;
     const syncReading = (follow = true) => {
       if (!isVisible()) return;
+      if (!scroll.restored) {
+        log.scrollTop = scroll.position.scrollTop;
+        scroll.restored = true;
+      }
       const bounds = log.getBoundingClientRect();
       const top = Math.max(0, bounds.top + log.clientTop);
       const bottom = Math.min(window.innerHeight, bounds.top + log.clientTop + log.clientHeight);
       if (bottom <= top || bounds.right <= 0 || bounds.left >= window.innerWidth) return;
 
-      if (!scroll.restored) {
-        log.scrollTop = scroll.position.scrollTop;
-        scroll.restored = true;
-      }
       if (follow && scroll.position.followLatest) log.scrollTop = log.scrollHeight;
       savePosition();
 

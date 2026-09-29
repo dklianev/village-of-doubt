@@ -46,9 +46,9 @@ async function main() {
   await waitForJson("http://127.0.0.1:3300/api/health", "web");
   await waitForText("http://127.0.0.1:3300/", "Върколак или Мафия", "landing page");
   await waitForStaticAsset("http://127.0.0.1:3300/", "landing static CSS");
-  await waitForText("http://127.0.0.1:3300/sign-in", "Покажи се на масата", "sign-in page");
-  await waitForText("http://127.0.0.1:3300/werewolf/create", "Стани", "werewolf create auth gate");
-  await waitForText("http://127.0.0.1:3300/mafia/create", "Стани", "mafia create auth gate");
+  await waitForText("http://127.0.0.1:3300/sign-in", "Влез в Сенките", "sign-in page");
+  await waitForText("http://127.0.0.1:3300/werewolf/create", "Събери компанията", "werewolf create auth gate");
+  await waitForText("http://127.0.0.1:3300/mafia/create", "Събери компанията", "mafia create auth gate");
   await waitForText(
     "http://127.0.0.1:3300/play/SMPKE3?mode=werewolves_classic&players=6&communication=built_in_chat&narrator=automatic&tempo=fast_online",
     "Върни се в играта",

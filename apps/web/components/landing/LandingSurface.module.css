@@ -34,12 +34,12 @@
 }
 
 /* The first section owns the artwork and crop; do not repeat it behind the page. */
-:global(html[data-theme] body:has(:is(.landing-shell, .game-home-shell))::before) {
+:global(html[data-theme] body:has(.site-chrome:is([data-route="/"], [data-route="/werewolf"], [data-route="/mafia"]))::before) {
   content: none;
   background-image: none;
 }
 
-:global(html[data-theme] body:has(:is(.landing-shell, .game-home-shell))::after) {
+:global(html[data-theme] body:has(.site-chrome:is([data-route="/"], [data-route="/werewolf"], [data-route="/mafia"]))::after) {
   opacity: 0;
 }
 

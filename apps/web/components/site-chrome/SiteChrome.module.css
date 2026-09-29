@@ -458,7 +458,7 @@
 }
 
 /* ============================== */
-/* Auth chip — modern brass-locket */
+/* Auth controls */
 /* ============================== */
 
 :global(.auth-chip-slot) {
@@ -525,46 +525,61 @@
 
 /* Signed-out variant */
 
-:global(.auth-chip-signin) {
+:global(.auth-chip.auth-chip-signin) {
+  --signin-fill: #191b17;
+  --signin-ink: #f0dfb9;
+  --signin-line: #998257;
+  --signin-hover: #28291f;
+  --signin-hover-line: #c6aa70;
+  --signin-focus: #eedcb4;
+  --signin-current-ink: #c8bca5;
+  width: 104px;
+  max-width: 100%;
+  justify-self: end;
+  gap: 8px;
   padding: 0 16px;
+  border: 1px solid var(--signin-line);
+  border-radius: 999px;
+  background: var(--signin-fill);
+  color: var(--signin-ink);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.25;
+  white-space: nowrap;
+  box-shadow: none;
+  transition: background-color 160ms ease, border-color 160ms ease;
 }
 
-:global(.auth-chip-mark) {
-  display: inline-grid;
-  width: 26px;
-  height: 26px;
-  place-items: center;
-  color: #d19a42;
-  background: rgba(217, 154, 66, 0.18);
-  border: 1px solid rgba(217, 154, 66, 0.45);
-  border-radius: 50%;
+:global(a.auth-chip.auth-chip-signin:hover) {
+  color: var(--signin-ink);
+  background: var(--signin-hover);
+  border-color: var(--signin-hover-line);
+  transform: none;
 }
 
-:global(.auth-chip-mark svg) {
-  width: 14px;
-  height: 14px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.7;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+:global(a.auth-chip.auth-chip-signin:focus-visible) {
+  outline: 2px solid var(--signin-focus);
+  outline-offset: 3px;
+  box-shadow: none;
+}
+
+:global(.auth-chip.auth-chip-signin[aria-current="page"]) {
+  cursor: default;
+  transform: none;
+}
+
+:global(.auth-chip-login-icon) {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  color: inherit;
 }
 
 :global(.auth-chip-text) {
   font-weight: 700;
   line-height: 1;
   letter-spacing: 0;
-}
-
-:global(.auth-chip-arrow) {
-  width: 16px;
-  height: 16px;
-  color: #d19a42;
-  transition: transform 200ms ease;
-}
-
-:global(.auth-chip-signin:hover .auth-chip-arrow) {
-  transform: translateX(3px);
 }
 
 /* Signed-in variant — avatar + name + chevron */
@@ -710,14 +725,28 @@
   border-color: rgba(83, 52, 31, 0.14);
 }
 
-:global([data-theme="light"] .auth-chip-mark) {
-  color: #842f2b;
-  background: rgba(132, 47, 43, 0.14);
-  border-color: rgba(132, 47, 43, 0.45);
+:global(html[data-theme="light"] .auth-chip.auth-chip-signin) {
+  --signin-fill: #fbf5e8;
+  --signin-ink: #463a27;
+  --signin-line: #9b8561;
+  --signin-hover: #efe4cd;
+  --signin-hover-line: #79633e;
+  --signin-focus: #8b352d;
+  --signin-current-ink: #635744;
+  color: var(--signin-ink);
+  background: var(--signin-fill);
+  border-color: var(--signin-line);
 }
 
-:global([data-theme="light"] .auth-chip-arrow) {
-  color: #842f2b;
+:global(html[data-theme="light"] a.auth-chip.auth-chip-signin:hover) {
+  background: var(--signin-hover);
+  border-color: var(--signin-hover-line);
+}
+
+:global(html .auth-chip.auth-chip-signin[aria-current="page"]) {
+  color: var(--signin-current-ink);
+  background: transparent;
+  border-color: transparent;
 }
 
 :global([data-theme="light"] .auth-chip-avatar),
@@ -869,6 +898,10 @@
 :global(.site-drawer-auth .auth-chip-slot) {
   width: 100%;
   flex-basis: 100%;
+}
+
+:global(.site-drawer-auth .auth-chip-signin) {
+  width: 100%;
 }
 
 :global(.site-drawer-profile) {

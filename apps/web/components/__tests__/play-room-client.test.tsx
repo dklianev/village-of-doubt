@@ -1,7 +1,7 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import type { GamePhase } from "@werewolf/shared";
 import { PlayRoomClient } from "@/components/play-room-client";
 import type { GameSnapshot, PublicPlayer } from "@/lib/play/types";
@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   reconnectNow: vi.fn(),
   requestStartGame: vi.fn(),
   privateChatProps: vi.fn(),
+  toast: vi.fn(),
 }));
 
 vi.mock("@/hooks/play/use-game-room", () => ({
@@ -28,7 +29,7 @@ vi.mock("@/hooks/play/use-phase-transitions", () => ({
 }));
 
 vi.mock("@/lib/toast", () => ({
-  useToast: () => vi.fn(),
+  useToast: () => mocks.toast,
 }));
 
 vi.mock("@/components/play/ConnectionBanner", () => ({
@@ -81,7 +82,12 @@ vi.mock("@/components/play/AchievementUnlockModal", () => ({
 }));
 
 vi.mock("@/components/play/NarratorDesk", () => ({
-  NarratorDesk: () => <div data-testid="narrator-desk" />,
+  NarratorDesk: ({ room, phase, onOpenShortcuts }: ComponentProps<typeof import("@/components/play/NarratorDesk").NarratorDesk>) => (
+    <div data-testid="narrator-desk" data-phase={phase}>
+      <button type="button" onClick={() => room?.send("narratorPause")}>Пауза</button>
+      <button type="button" onClick={onOpenShortcuts}>Клавишни команди</button>
+    </div>
+  ),
 }));
 
 vi.mock("@/components/play/NarratorSnapshotPanel", () => ({
@@ -246,29 +252,54 @@ function setCompactViewport(matches: boolean) {
   }));
 }
 
+function deferNarratorTools() {
+  let resolve!: (module: typeof import("@/components/play/NarratorTools")) => void;
+  let reject!: (error: Error) => void;
+  const pending = new Promise<typeof import("@/components/play/NarratorTools")>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  const load = vi.fn(() => pending);
+  vi.doMock("@/components/play/NarratorTools", load);
+  return {
+    load,
+    resolve: async () => {
+      const module = await vi.importActual<typeof import("@/components/play/NarratorTools")>("@/components/play/NarratorTools");
+      await act(async () => { resolve(module); });
+    },
+    reject: async () => { await act(async () => { reject(new Error("Synthetic chunk failure")); }); },
+  };
+}
+
 describe("PlayRoomClient orchestrator", () => {
   beforeEach(() => {
+    vi.doUnmock("@/components/play/NarratorTools");
     mocks.useGameRoom.mockReset();
     mocks.useCueMode.mockReset();
     mocks.usePhaseTransitions.mockReset();
     mocks.reconnectNow.mockReset();
     mocks.requestStartGame.mockReset();
     mocks.privateChatProps.mockReset();
+    mocks.toast.mockReset();
     setCompactViewport(false);
     mockHooks();
   });
 
   it.each(["lobby", "night", "day_discussion", "voting", "game_over"] as GamePhase[])(
     "renders without crashing in %s phase",
-    (phase) => {
+    async (phase) => {
       mockHooks(phase);
 
       render(<PlayRoomClient code="ABCD" createOptions={{ mode: "werewolves_classic" }} />);
 
       if (phase === "game_over") {
-        expect(screen.getByRole("heading", { name: "Селото печели" })).toBeInTheDocument();
+        expect(await screen.findByRole("heading", { name: "Селото победи" })).toBeInTheDocument();
       } else {
-        expect(screen.getAllByText(/стая ABCD/i).length).toBeGreaterThan(0);
+        if (phase === "lobby") {
+          expect(document.querySelector(".play-waiting-invite")).toHaveTextContent("ABCD");
+        } else {
+          expect(document.querySelector("[data-stage-ledger]")).toHaveTextContent("Код на стаятаABCD");
+        }
         expect(screen.getAllByText("Играч").length).toBeGreaterThan(0);
       }
     },
@@ -293,39 +324,386 @@ describe("PlayRoomClient orchestrator", () => {
     }));
   });
 
-  it("keeps mobile lobby readiness actionable without opening the details", async () => {
-    setCompactViewport(true);
+  it.each([false, true])("composes the lobby with header invitations and a bottom control band (compact=%s)", async (compact) => {
+    setCompactViewport(compact);
     const send = vi.fn();
     mockHooks("lobby", { room: { send, onMessage: vi.fn() } });
-    render(<PlayRoomClient code="ABCD" />);
+    const { container } = render(<PlayRoomClient code="ABCD" />);
 
     const ready = screen.getByTestId("ready-toggle");
     expect(ready).toBeVisible();
     expect(ready).toHaveAttribute("aria-pressed", "false");
-    expect(screen.getByRole("button", { name: "Започни игра" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "Копирай покана", hidden: true })).not.toBeVisible();
+    const band = ready.closest(".play-waiting-band");
+    expect(band).not.toBeNull();
+    expect(within(band as HTMLElement).getByRole("button", { name: "Започни игра" })).toBeVisible();
+    expect(within(band as HTMLElement).getByRole("button", { name: "Правила" })).toBeVisible();
+    expect(within(band as HTMLElement).getByTestId("live-cue-panel")).toBeInTheDocument();
+    expect(within(band as HTMLElement).getByRole("link", { name: "Напусни масата" })).toHaveAttribute("href", "/werewolf");
+    for (const name of ["Копирай кода на стаята", "Копирай покана"]) {
+      const copy = screen.getByRole("button", { name });
+      expect(copy).toBeVisible();
+      expect(copy.closest(".play-waiting-invite")).not.toBeNull();
+      expect(copy.closest(".play-stage")).not.toBeNull();
+      expect(copy.closest(".play-waiting-band")).toBeNull();
+    }
+    expect(container.querySelector(".play-interaction-column")).toBeNull();
+    expect(container.querySelector(".play-mobile-navigation")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Покажи подробностите за стаята" })).not.toBeInTheDocument();
     expect(screen.queryByTestId("narrator-desk")).not.toBeInTheDocument();
     await userEvent.click(ready);
     expect(send).toHaveBeenCalledWith("ready", { ready: true });
-    await userEvent.click(screen.getByRole("button", { name: "Покажи подробностите за стаята" }));
-    expect(screen.getByRole("button", { name: "Копирай покана" })).toBeVisible();
     expect(screen.getAllByTestId("ready-toggle")).toHaveLength(1);
   });
 
-  it("restores host phase controls once the game starts", () => {
+  it("keeps readiness server-owned and updates the bottom count from public snapshots", async () => {
+    const send = vi.fn();
+    const players: PublicPlayer[] = [
+      player,
+      { ...player, userId: "u2", displayName: "Рада", host: false, connected: false, ready: true },
+      { ...player, userId: "observer", displayName: "Неда", host: false, playing: false, alive: false, ready: true },
+      { ...player, userId: "narrator", displayName: "Борил", host: false, playing: false, alive: false, narrator: true, ready: true },
+    ];
+    const state = { ...snapshotForPhase("lobby"), players };
+    mockHooks("lobby", { room: { send, onMessage: vi.fn() }, snapshot: state });
+    const { rerender } = render(<PlayRoomClient code="ABCD" />);
+    const ready = screen.getByTestId("ready-toggle");
+    const count = screen.getByRole("status", { name: "Готови: 1 от 2" });
+    expect(count.closest(".play-waiting-readiness")).not.toBeNull();
+    expect(count.closest(".play-waiting-band")).not.toBeNull();
+    expect(count.closest(".play-stage")).toBeNull();
+    await userEvent.click(ready);
+    expect(send).toHaveBeenCalledExactlyOnceWith("ready", { ready: true });
+    expect(ready).toHaveAttribute("aria-pressed", "false");
+
+    mockHooks("lobby", {
+      room: { send, onMessage: vi.fn() },
+      snapshot: { ...state, players: players.map((item) => item.userId === "u1" ? { ...item, ready: true } : item) },
+    });
+    rerender(<PlayRoomClient code="ABCD" />);
+    expect(screen.getByRole("status", { name: "Готови: 2 от 2" })).toHaveAttribute("aria-atomic", "true");
+    expect(ready).toHaveAttribute("aria-pressed", "true");
+    await userEvent.click(ready);
+    expect(send).toHaveBeenLastCalledWith("ready", { ready: false });
+  });
+
+  it("lets the host request a start while participants are not ready", async () => {
+    const send = vi.fn();
+    mockHooks("lobby", { room: { send, onMessage: vi.fn() } });
+    render(<PlayRoomClient code="ABCD" />);
+    const start = screen.getByRole("button", { name: "Започни игра" });
+    expect(start).toBeEnabled();
+    await userEvent.click(start);
+    expect(mocks.requestStartGame).toHaveBeenCalledOnce();
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it("updates countdown eligibility when the connection drops but the Room stays the same", () => {
+    const room = { send: vi.fn(), onMessage: vi.fn() };
+    mockHooks("lobby", { room });
+    const { rerender } = render(<PlayRoomClient code="ABCD" />);
+    expect(mocks.usePhaseTransitions).toHaveBeenLastCalledWith(expect.objectContaining({ room, connected: true }));
+
+    mockHooks("lobby", { room, connectionStatus: "reconnecting" });
+    rerender(<PlayRoomClient code="ABCD" />);
+    expect(mocks.usePhaseTransitions).toHaveBeenLastCalledWith(expect.objectContaining({ room, connected: false }));
+
+    mockHooks("lobby", { room });
+    rerender(<PlayRoomClient code="ABCD" />);
+    expect(mocks.usePhaseTransitions).toHaveBeenLastCalledWith(expect.objectContaining({ room, connected: true }));
+  });
+
+  it("does not declare an empty or disconnected lobby fully assembled", () => {
+    mockHooks("lobby", { snapshot: { ...snapshotForPhase("lobby"), players: [] } });
+    const { rerender } = render(<PlayRoomClient code="ABCD" />);
+    expect(screen.getByRole("status", { name: "Готови: 0 от 0" })).toBeVisible();
+    expect(screen.queryByText("Всички са на масата.")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ready-toggle")).not.toBeInTheDocument();
+    mockHooks("lobby", { snapshot: { ...snapshotForPhase("lobby"), players: [{ ...player, ready: true, connected: false }] } });
+    rerender(<PlayRoomClient code="ABCD" />);
+    expect(screen.getByRole("status", { name: "Готови: 1 от 1" })).toHaveTextContent("Чакаме връзката на участник.");
+    expect(screen.queryByText("Всички са на масата.")).not.toBeInTheDocument();
+    mockHooks("lobby", { snapshot: { ...snapshotForPhase("lobby"), players: [{ ...player, ready: true }] } });
+    rerender(<PlayRoomClient code="ABCD" />);
+    expect(screen.getByRole("status", { name: "Готови: 1 от 1" })).toHaveTextContent("Всички са на масата.");
+  });
+
+  it("disables readiness and explains the unavailable start while the room is missing", () => {
+    mockHooks("lobby", { room: null });
+    render(<PlayRoomClient code="ABCD" />);
+    expect(screen.getByTestId("ready-toggle")).toBeDisabled();
+    const start = screen.getByRole("button", { name: "Започни игра" });
+    expect(start).toBeDisabled();
+    expect(start).toHaveAccessibleDescription("Изчакай връзката със стаята да се възстанови.");
+  });
+
+  it("keeps a pending start disabled without adding a second start request", async () => {
+    mocks.usePhaseTransitions.mockReturnValue({
+      phasePulse: 0, showPhaseTransition: false, startCountdown: 2, requestStartGame: mocks.requestStartGame,
+    });
+    render(<PlayRoomClient code="ABCD" />);
+    const start = screen.getByRole("button", { name: "Започваме..." });
+    expect(start).toBeDisabled();
+    expect(start).toHaveAccessibleDescription("Стартът вече е заявен.");
+    await userEvent.click(start);
+    expect(mocks.requestStartGame).not.toHaveBeenCalled();
+  });
+
+  it("moves start authority with the public host flag without removing player readiness", () => {
+    mockHooks("lobby", { snapshot: { ...snapshotForPhase("lobby"), players: [{ ...player, host: false }] } });
+    const { rerender } = render(<PlayRoomClient code="ABCD" />);
+    expect(screen.getByTestId("ready-toggle")).toBeEnabled();
+    expect(screen.queryByRole("button", { name: "Започни игра" })).not.toBeInTheDocument();
+    mockHooks("lobby");
+    rerender(<PlayRoomClient code="ABCD" />);
+    expect(screen.getByRole("button", { name: "Започни игра" })).toBeEnabled();
+    expect(screen.getAllByTestId("ready-toggle")).toHaveLength(1);
+  });
+
+  it.each([false, true])("does not offer readiness to a non-playing viewer (narrator=%s)", (narrator) => {
+    mockHooks("lobby", {
+      snapshot: { ...snapshotForPhase("lobby"), players: [{ ...player, playing: false, alive: false, host: false, narrator }] },
+    });
+    render(<PlayRoomClient code="ABCD" />);
+    expect(screen.queryByTestId("ready-toggle")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Започни игра" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Правила" })).toBeVisible();
+    expect(screen.getByRole("link", { name: "Напусни масата" })).toBeVisible();
+    expect(screen.getByRole("status", { name: "Готови: 0 от 0" })).toBeVisible();
+  });
+
+  it.each(["Копирай кода на стаята", "Копирай покана"])("copies the intended public value with %s", async (name) => {
+    const user = userEvent.setup();
+    const write = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
+    render(<PlayRoomClient code="ABCD" />);
+    await user.click(screen.getByRole("button", { name }));
+    expect(write).toHaveBeenCalledExactlyOnceWith(name === "Копирай покана"
+      ? new URL("/lobby/ABCD", window.location.origin).href
+      : "ABCD");
+    expect(mocks.toast).toHaveBeenCalledWith(expect.objectContaining({ kind: "success" }));
+  });
+
+  it.each(["Копирай кода на стаята", "Копирай покана"])("keeps the room usable when %s fails", async (name) => {
+    const user = userEvent.setup();
+    vi.spyOn(navigator.clipboard, "writeText").mockRejectedValue(new Error("Clipboard unavailable"));
+    render(<PlayRoomClient code="ABCD" />);
+    await user.click(screen.getByRole("button", { name }));
+    expect(mocks.toast).toHaveBeenCalledWith(expect.objectContaining({ kind: "error", message: expect.stringContaining("ABCD") }));
+    expect(mocks.toast).not.toHaveBeenCalledWith(expect.objectContaining({ kind: "success" }));
+    expect(screen.getByTestId("ready-toggle")).toBeEnabled();
+    expect(screen.getByRole("button", { name })).toBeVisible();
+  });
+
+  it.each([
+    ["werewolves_classic", "/werewolf"],
+    ["mafia_free", "/mafia"],
+  ] as const)("uses the existing guard before leaving the %s table", (mode, href) => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    const leave = vi.fn();
+    const send = vi.fn();
+    mockHooks("lobby", { room: { send, leave, onMessage: vi.fn() }, snapshot: { ...snapshotForPhase("lobby"), mode } });
+    render(<PlayRoomClient code="ABCD" />);
+    const link = screen.getByRole("link", { name: "Напусни масата" });
+    expect(link).toHaveAttribute("href", href);
+    expect(fireEvent.click(link)).toBe(false);
+    expect(confirm).toHaveBeenCalledOnce();
+    expect(confirm).toHaveBeenCalledWith(expect.stringContaining("домакин"));
+    expect(leave).not.toHaveBeenCalled();
+    expect(send).not.toHaveBeenCalled();
+    expect(screen.getByTestId("ready-toggle")).toBeInTheDocument();
+  });
+
+  it("restores host phase controls once the game starts", async () => {
     mockHooks("role_reveal");
     render(<PlayRoomClient code="ABCD" />);
-    expect(screen.getByTestId("narrator-desk")).toBeInTheDocument();
+    expect(await screen.findByTestId("narrator-desk")).toBeInTheDocument();
     expect(screen.queryByTestId("ready-toggle")).not.toBeInTheDocument();
+  });
+
+  it("restores active gameplay composition after a lobby snapshot transition", async () => {
+    const { container, rerender } = render(<PlayRoomClient code="ABCD" />);
+    expect(container.querySelector(".play-waiting-band")).toBeVisible();
+    mockHooks("night");
+    rerender(<PlayRoomClient code="ABCD" />);
+    expect(container.querySelector(".play-waiting-band")).toBeNull();
+    expect(container.querySelector(".play-waiting-invite")).toBeNull();
+    expect(container.querySelector(".play-interaction-column")).not.toBeNull();
+    expect(container.querySelector(".play-mobile-navigation")).not.toBeNull();
+    expect(await screen.findByTestId("narrator-desk")).toBeInTheDocument();
+    expect(screen.queryByTestId("ready-toggle")).not.toBeInTheDocument();
+  });
+
+  it("does not import narrator tools for the waiting room, ordinary players, or consent alone", async () => {
+    const deferred = deferNarratorTools();
+    const { rerender } = render(<PlayRoomClient code="ABCD" />);
+    await act(async () => {});
+    expect(deferred.load).not.toHaveBeenCalled();
+
+    mockHooks("night", { snapshot: { ...snapshotForPhase("night"), players: [{ ...player, host: false }] } });
+    rerender(<PlayRoomClient code="ABCD" />);
+    await act(async () => {});
+    expect(deferred.load).not.toHaveBeenCalled();
+
+    mockHooks("lobby", { snapshot: {
+      ...snapshotForPhase("lobby"), narratorMode: "full_human", players: [{ ...player, acceptedFullNarrator: false }],
+    } });
+    rerender(<PlayRoomClient code="ABCD" />);
+    expect(screen.getByRole("button", { name: "Приемам" })).toBeVisible();
+    await act(async () => {});
+    expect(deferred.load).not.toHaveBeenCalled();
+
+    mockHooks("role_reveal");
+    rerender(<PlayRoomClient code="ABCD" />);
+    await waitFor(() => expect(deferred.load).toHaveBeenCalledOnce());
+    expect(screen.getByText("Зареждаме панела...")).toBeVisible();
+    await deferred.resolve();
+    expect(await screen.findByTestId("narrator-desk")).toBeVisible();
+  });
+
+  it("keeps consent usable and focused while pending tools receive the latest room state", async () => {
+    const user = userEvent.setup();
+    const deferred = deferNarratorTools();
+    const send = vi.fn();
+    const players = [{ ...player, narrator: true, acceptedFullNarrator: false }];
+    mockHooks("night", { snapshot: { ...snapshotForPhase("night"), narratorMode: "full_human", players } });
+    const { rerender } = render(<PlayRoomClient code="ABCD" />);
+    await waitFor(() => expect(deferred.load).toHaveBeenCalledOnce());
+    const consent = screen.getByRole("button", { name: "Приемам" });
+    consent.focus();
+
+    mockHooks("day_discussion", {
+      room: { send, onMessage: vi.fn() },
+      snapshot: { ...snapshotForPhase("day_discussion"), narratorMode: "full_human", players },
+      narratorSnapshot: { roles: [] },
+    });
+    rerender(<PlayRoomClient code="ABCD" />);
+    await deferred.resolve();
+    expect(await screen.findByTestId("narrator-desk")).toHaveAttribute("data-phase", "day_discussion");
+    expect(screen.getByTestId("narrator-snapshot")).toBeVisible();
+    expect(consent).toHaveFocus();
+    await user.click(consent);
+    expect(send).toHaveBeenCalledWith("acceptFullNarrator");
+    await user.click(screen.getByRole("button", { name: "Пауза" }));
+    expect(send).toHaveBeenCalledWith("narratorPause");
+    await user.click(screen.getByRole("button", { name: "Клавишни команди" }));
+    expect(await screen.findByTestId("shortcuts")).toBeVisible();
+  });
+
+  it("isolates narrator chunk failures and supports a focused retry", async () => {
+    const user = userEvent.setup();
+    const deferred = deferNarratorTools();
+    mockHooks("night");
+    const { container } = render(<PlayRoomClient code="ABCD" />);
+    await waitFor(() => expect(deferred.load).toHaveBeenCalledOnce());
+    await deferred.reject();
+    expect(await screen.findByText("Панелът не се зареди.")).toBeVisible();
+    expect(container.querySelector(".play-shell-inner")).not.toHaveAttribute("inert");
+    expect(screen.getByTestId("connection-banner")).toBeVisible();
+
+    const retry = deferNarratorTools();
+    await user.click(screen.getByRole("button", { name: "Опитай пак" }));
+    await waitFor(() => expect(retry.load).toHaveBeenCalledOnce());
+    await retry.resolve();
+    expect(await screen.findByRole("button", { name: "Пауза" })).toHaveFocus();
+    expect(screen.queryByText("Панелът не се зареди.")).not.toBeInTheDocument();
+  });
+
+  it("does not steal focus moved elsewhere during a narrator retry", async () => {
+    const deferred = deferNarratorTools();
+    mockHooks("night", { snapshot: {
+      ...snapshotForPhase("night"), narratorMode: "full_human", players: [{ ...player, acceptedFullNarrator: false }],
+    } });
+    render(<PlayRoomClient code="ABCD" />);
+    await waitFor(() => expect(deferred.load).toHaveBeenCalledOnce());
+    await deferred.reject();
+    const retry = deferNarratorTools();
+    await userEvent.click(await screen.findByRole("button", { name: "Опитай пак" }));
+    const consent = screen.getByRole("button", { name: "Приемам" });
+    consent.focus();
+    await waitFor(() => expect(retry.load).toHaveBeenCalledOnce());
+    await retry.resolve();
+    expect(await screen.findByTestId("narrator-desk")).toBeVisible();
+    expect(consent).toHaveFocus();
+  });
+
+  it.each(["resolve", "reject"] as const)("ignores a narrator load %s during disconnect and recovers", async (outcome) => {
+    const deferred = deferNarratorTools();
+    mockHooks("night", { connectionStatus: "reconnecting" });
+    const { container, rerender } = render(<PlayRoomClient code="ABCD" />);
+    await act(async () => {});
+    expect(deferred.load).not.toHaveBeenCalled();
+    mockHooks("night");
+    rerender(<PlayRoomClient code="ABCD" />);
+    await waitFor(() => expect(deferred.load).toHaveBeenCalledOnce());
+    mockHooks("night", { connectionStatus: "reconnecting" });
+    rerender(<PlayRoomClient code="ABCD" />);
+    await deferred[outcome]();
+    expect(screen.queryByTestId("narrator-desk")).not.toBeInTheDocument();
+    expect(screen.queryByText("Панелът не се зареди.")).not.toBeInTheDocument();
+    expect(container.querySelector(".play-shell-inner")).toHaveAttribute("inert");
+    expect(screen.getByRole("dialog")).toBeVisible();
+
+    const recovered = deferNarratorTools();
+    mockHooks("night");
+    rerender(<PlayRoomClient code="ABCD" />);
+    await waitFor(() => expect(recovered.load).toHaveBeenCalledOnce());
+    await recovered.resolve();
+    expect(await screen.findByTestId("narrator-desk")).toBeVisible();
+    expect(container.querySelector(".play-shell-inner")).not.toHaveAttribute("inert");
   });
 
   it("loads an unlocked legend without replacing the completed game", async () => {
     mockHooks("game_over", { unlockedAchievementIds: ["first_win"] });
     render(<PlayRoomClient code="ABCD" />);
 
-    expect(screen.getByRole("heading", { name: "Селото печели" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Селото победи" })).toBeInTheDocument();
     expect(await screen.findByTestId("achievement-unlock")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Селото печели" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Селото победи" })).toBeInTheDocument();
+  });
+
+  it("loads keyboard help on demand without replacing the lobby", async () => {
+    mockHooks("lobby");
+    render(<PlayRoomClient code="ABCD" />);
+    expect(screen.queryByTestId("shortcuts")).not.toBeInTheDocument();
+    fireEvent.keyDown(window, { key: "?" });
+    expect(await screen.findByTestId("shortcuts")).toBeInTheDocument();
+    expect(screen.getByTestId("ready-toggle")).toBeVisible();
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByTestId("shortcuts")).not.toBeInTheDocument();
+  });
+
+  it("keeps the waiting room usable when shared keyboard help fails and retries on demand", async () => {
+    const deferred = deferNarratorTools();
+    mockHooks("lobby");
+    render(<PlayRoomClient code="ABCD" />);
+    fireEvent.keyDown(window, { key: "?" });
+    await waitFor(() => expect(deferred.load).toHaveBeenCalledOnce());
+    await deferred.reject();
+    expect(mocks.toast).toHaveBeenCalledWith({ kind: "error", message: "Помощта не се зареди. Опитай пак." });
+    expect(screen.getByTestId("ready-toggle")).toBeVisible();
+    expect(screen.queryByTestId("narrator-snapshot")).not.toBeInTheDocument();
+
+    const retry = deferNarratorTools();
+    fireEvent.keyDown(window, { key: "?" });
+    await waitFor(() => expect(retry.load).toHaveBeenCalledOnce());
+    await retry.resolve();
+    expect(await screen.findByTestId("shortcuts")).toBeVisible();
+    expect(screen.queryByTestId("narrator-snapshot")).not.toBeInTheDocument();
+  });
+
+  it.each(["reconnecting", "lost", "error"])("blocks the table and shortcuts during %s and restores them after recovery", async (connectionStatus) => {
+    mockHooks("lobby", { connectionStatus });
+    const { container, rerender } = render(<PlayRoomClient code="ABCD" />);
+    expect(container.querySelector(".play-shell-inner")).toHaveAttribute("inert");
+    expect(screen.getByTestId("connection-banner").closest("[inert]")).toBeNull();
+    expect(screen.getByRole("dialog").closest("[inert]")).toBeNull();
+    fireEvent.keyDown(window, { key: "?" });
+    expect(screen.queryByTestId("shortcuts")).not.toBeInTheDocument();
+
+    mockHooks("lobby");
+    rerender(<PlayRoomClient code="ABCD" />);
+    expect(container.querySelector(".play-shell-inner")).not.toHaveAttribute("inert");
+    fireEvent.keyDown(window, { key: "?" });
+    expect(await screen.findByTestId("shortcuts")).toBeInTheDocument();
   });
 
   it("routes reconnect retry clicks to useGameRoom", async () => {
@@ -341,10 +719,68 @@ describe("PlayRoomClient orchestrator", () => {
     expect(mocks.reconnectNow).toHaveBeenCalledTimes(1);
   });
 
+  it.each(["connecting", "connected", "reconnecting", "disconnected", "lost", "error"] as const)("keeps completed-game navigation available when %s", async (connectionStatus) => {
+    const user = userEvent.setup();
+    mockHooks("game_over", { recordedGameId: "game-1" });
+    const { container, rerender } = render(<PlayRoomClient code="ABCD" />);
+    await waitFor(() => expect(container.querySelectorAll(".play-winner-actions a")).toHaveLength(2));
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Селото победи" })).toHaveFocus());
+    mockHooks("game_over", { connectionStatus, room: null, currentUserId: "", recordedGameId: "game-1", connectionMessage: "Connection update" });
+    rerender(<PlayRoomClient code="ABCD" />);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByTestId("connection-banner")).toHaveTextContent("Connection update");
+    const links = container.querySelectorAll<HTMLAnchorElement>("[data-endgame] a");
+    expect(links).toHaveLength(3);
+    for (const link of links) {
+      expect(link.closest("[inert]")).toBeNull();
+      await user.tab();
+      expect(link).toHaveFocus();
+    }
+    expect(mocks.reconnectNow).not.toHaveBeenCalled();
+  });
+
+  it.each(["reconnecting", "lost", "error"] as const)("keeps %s recovery until both game over and a winner arrive", async (connectionStatus) => {
+    mockHooks("voting", {
+      connectionStatus,
+      snapshot: { ...snapshotForPhase("voting"), winnerTeam: "village" },
+    });
+    const { container, rerender } = render(<PlayRoomClient code="ABCD" />);
+    expect(screen.getByRole("dialog")).toBeVisible();
+    expect(container.querySelector(".play-shell-inner")).toHaveAttribute("inert");
+    expect(container.querySelector("[data-endgame]")).toBeNull();
+
+    mockHooks("game_over", {
+      connectionStatus,
+      snapshot: { ...snapshotForPhase("game_over"), winnerTeam: "" },
+    });
+    rerender(<PlayRoomClient code="ABCD" />);
+    expect(screen.getByRole("dialog")).toBeVisible();
+    expect(container.querySelector("[data-endgame]")).toBeNull();
+    await userEvent.click(screen.getByRole("button", { name: "Опитай пак" }));
+    expect(mocks.reconnectNow).toHaveBeenCalledOnce();
+
+    mockHooks("game_over", { connectionStatus });
+    rerender(<PlayRoomClient code="ABCD" />);
+    expect(await screen.findByRole("heading", { name: "Селото победи" })).toBeVisible();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
   it("does not show a stale private role while waiting in the lobby", () => {
-    mockHooks("lobby", { privateRole: { role: "seer", roleNameBg: "Гадателка" } });
-    render(<PlayRoomClient code="ABCD" />);
+    const canary = "PRIVATE-LOBBY-CANARY";
+    mockHooks("lobby", {
+      privateRole: { role: "seer", roleNameBg: canary },
+      privateResult: { targetName: canary, resultBg: canary },
+      privateLover: { loverUserId: "u2", loverName: canary },
+      privateChats: [{ id: "secret", channel: "werewolves", senderUserId: "u2", senderName: canary, message: canary, createdAt: 1 }],
+      narratorSnapshot: { roles: [{ userId: "u2", displayName: canary, role: "seer", roleNameBg: canary }] },
+      isBlessed: true,
+    });
+    const { container } = render(<PlayRoomClient code="ABCD" />);
     expect(document.querySelector(".play-personal-area")).not.toBeInTheDocument();
+    expect(container.innerHTML).not.toContain(canary);
+    expect(screen.queryByTestId("role-card")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("private-chat")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("narrator-snapshot")).not.toBeInTheDocument();
   });
 
   it("reveals the desktop private role only after an explicit action", async () => {
@@ -562,7 +998,7 @@ describe("PlayRoomClient orchestrator", () => {
     expect(confirm).toHaveBeenCalledOnce();
     expect(navigate).not.toHaveBeenCalled();
     expect(screen.getByRole("button", { name: "Започни игра" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Помощ \(нов раздел\)/ })).toHaveAttribute("target", "_blank");
+    expect(screen.getByRole("link", { name: "Напусни масата" })).toHaveAttribute("href", "/werewolf");
   });
 
   it("removes the lobby link guard once play starts", () => {
@@ -581,15 +1017,15 @@ describe("PlayRoomClient orchestrator", () => {
 
     render(<PlayRoomClient code="ABCD" createOptions={{ mode: "werewolves_classic" }} />);
 
-    const winnerHeading = screen.getByRole("heading", { name: "Селото печели" });
+    const winnerHeading = await screen.findByRole("heading", { name: "Селото победи" });
     expect(winnerHeading).toBeInTheDocument();
     await waitFor(() => expect(winnerHeading).toHaveFocus());
     await userEvent.tab();
-    expect(screen.getByRole("link", { name: "Нова игра" })).toHaveFocus();
+    expect(screen.getByRole("link", { name: "Още една игра" })).toHaveFocus();
     expect(screen.getByTestId("post-game-story")).toBeInTheDocument();
     expect(document.querySelector("[data-table-scene]")).not.toBeInTheDocument();
     expect(document.querySelector(".play-stage")).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Нова игра" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Още една игра" })).toHaveAttribute(
       "href",
       expect.stringContaining("/werewolf/create?"),
     );
@@ -598,33 +1034,35 @@ describe("PlayRoomClient orchestrator", () => {
     expect(screen.queryByTestId("narrator-desk")).not.toBeInTheDocument();
     expect(screen.queryByTestId("narrator-snapshot")).not.toBeInTheDocument();
     expect(screen.queryByText("Пулсът на стаята")).not.toBeInTheDocument();
-    expect(document.querySelector(".play-layout")).toHaveAttribute("data-stage-takeover", "true");
-    expect(document.querySelector(".play-layout")).not.toHaveAttribute("data-has-narrator-deck");
+    expect(document.querySelector(".play-finale-shell")).toBeInTheDocument();
+    expect(document.querySelector(".play-layout")).not.toBeInTheDocument();
   });
 
-  it("links a persisted game-over scene directly to its replay", () => {
+  it("links a persisted game-over scene directly to its replay", async () => {
     mockHooks("game_over", { recordedGameId: "game-1" });
 
     render(<PlayRoomClient code="ABCD" createOptions={{ mode: "werewolves_classic" }} />);
 
-    expect(screen.getByRole("link", { name: "Виж записа на играта" })).toHaveAttribute(
+    expect(await screen.findByRole("link", { name: "Виж записа" })).toHaveAttribute(
       "href",
       "/history/game-1/replay",
     );
   });
 
-  it("does not steal Enter from focused action dock controls", async () => {
+  it("does not steal Enter from focused lobby readiness controls", async () => {
     const user = userEvent.setup();
+    const send = vi.fn();
     setCompactViewport(true);
-    mockHooks("lobby");
+    mockHooks("lobby", { room: { send, onMessage: vi.fn() } });
 
     render(<PlayRoomClient code="ABCD" createOptions={{ mode: "werewolves_classic" }} />);
 
-    const toggle = await screen.findByRole("button", { name: "Покажи подробностите за стаята" });
+    const toggle = screen.getByTestId("ready-toggle");
     toggle.focus();
     await user.keyboard("{Enter}");
 
-    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(send).toHaveBeenCalledExactlyOnceWith("ready", { ready: true });
+    expect(mocks.requestStartGame).not.toHaveBeenCalled();
   });
 
   it("confirms an already selected seat with Enter instead of clearing it", async () => {
@@ -960,13 +1398,15 @@ describe("PlayRoomClient orchestrator", () => {
 
     render(<PlayRoomClient code="ABCD" createOptions={{ mode: "mafia_sport" }} />);
 
+    expect(screen.getByRole("heading", { level: 2, name: "Твоята 60-секундна реч" })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /Избери Камен:/ }));
     await user.click(screen.getByRole("button", { name: "Смени" }));
     expect(send).toHaveBeenCalledWith("submitNomination", { targetUserId: "u3" });
   });
 
   it.each([
-    ["nomination", "Номинациите са отворени", ""],
+    ["day_discussion", "Дневни речи", ""],
+    ["nomination", "Преглед на номинациите", ""],
     ["defense", "Вера защитава мястото си", "u2"],
   ] as const)("labels the Sport Mafia %s dock explicitly", (phase, heading, currentDefenseUserId) => {
     const players: PublicPlayer[] = [
@@ -979,6 +1419,7 @@ describe("PlayRoomClient orchestrator", () => {
         mode: "mafia_sport",
         playerCount: players.length,
         players,
+        currentSpeakerUserId: phase === "day_discussion" ? "u2" : "",
         currentDefenseUserId,
         nominations: [{ nominatorUserId: "u1", targetUserId: "u2" }],
       },
@@ -988,6 +1429,8 @@ describe("PlayRoomClient orchestrator", () => {
     render(<PlayRoomClient code="ABCD" createOptions={{ mode: "mafia_sport" }} />);
 
     expect(screen.getByRole("heading", { level: 2, name: heading })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^(Номинирай|Смени)$/ })).not.toBeInTheDocument();
+    expect(screen.queryByText("Номинациите са отворени")).not.toBeInTheDocument();
   });
 
   it("supports number selection and Enter confirmation for a Sport Mafia nomination", async () => {
@@ -1068,6 +1511,82 @@ describe("PlayRoomClient orchestrator", () => {
     expect(vera).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByText("Приет глас: Вера")).toBeVisible();
     expect(send).not.toHaveBeenCalledWith("submitVote", expect.anything());
+  });
+
+  it("keeps mobile inline deselection open without pointer focus and honors explicit collapse", () => {
+    setCompactViewport(true);
+    const players = [player, { ...player, userId: "u2", displayName: "Вера", host: false }];
+    const snapshot = {
+      ...snapshotForPhase("voting"), mode: "mafia_sport" as const, players, playerCount: 2,
+      nominations: [{ nominatorUserId: "u1", targetUserId: "u2" }],
+    };
+    mockHooks("voting", { snapshot });
+    const { rerender } = render(<PlayRoomClient code="ABCD" />);
+    const dock = document.querySelector(".play-action-dock");
+    expect(dock).toHaveAttribute("data-expanded", "false");
+
+    fireEvent.click(screen.getByRole("button", { name: "Покажи личния ход" }));
+    const nominee = screen.getByRole("button", { name: "Избери Вера за гласуване" });
+    // Pointer activation in WebKit does not focus the clicked button.
+    expect(document.activeElement).toBe(document.body);
+    fireEvent.click(nominee);
+    fireEvent.click(nominee);
+    expect(nominee).toHaveAttribute("aria-pressed", "false");
+    expect(dock).toHaveAttribute("data-expanded", "true");
+
+    fireEvent.click(nominee);
+    fireEvent.click(screen.getByRole("button", { name: "Скрий личния ход" }));
+    mockHooks("voting", { snapshot: { ...snapshot, phaseEndsAt: 5000 } });
+    rerender(<PlayRoomClient code="ABCD" />);
+    expect(dock).toHaveAttribute("data-expanded", "false");
+    expect(screen.getByRole("button", { name: /Избери Вера:/ })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("does not retain the inline deselection preference into the next mobile phase", () => {
+    setCompactViewport(true);
+    const players = [player, { ...player, userId: "u2", displayName: "Вера", host: false }];
+    const snapshot = {
+      ...snapshotForPhase("voting"), mode: "mafia_sport" as const, players, playerCount: 2,
+      nominations: [{ nominatorUserId: "u1", targetUserId: "u2" }],
+    };
+    const privateRole = { role: "mafioso", roleNameBg: "Мафиот" };
+    mockHooks("voting", { snapshot, privateRole });
+    const { rerender } = render(<PlayRoomClient code="ABCD" />);
+    fireEvent.click(screen.getByRole("button", { name: "Покажи личния ход" }));
+    const nominee = screen.getByRole("button", { name: "Избери Вера за гласуване" });
+    fireEvent.click(nominee);
+    fireEvent.click(nominee);
+    expect(document.querySelector(".play-action-dock")).toHaveAttribute("data-expanded", "true");
+
+    mockHooks("night", { snapshot: { ...snapshot, phase: "night" }, privateRole });
+    rerender(<PlayRoomClient code="ABCD" />);
+    expect(document.querySelector(".play-action-dock")).toHaveAttribute("data-expanded", "false");
+  });
+
+  it("keeps mobile two-target actions collapsed until both seats are selected", () => {
+    setCompactViewport(true);
+    const players = [player, { ...player, userId: "u2", displayName: "Борил", host: false },
+      { ...player, userId: "u3", displayName: "Рада", host: false }];
+    mockHooks("first_night", {
+      snapshot: { ...snapshotForPhase("first_night"), players, playerCount: 3 },
+      privateRole: { role: "blacksmith", roleNameBg: "Ковач" },
+    });
+    render(<PlayRoomClient code="ABCD" />);
+    const dock = document.querySelector(".play-action-dock");
+    const primary = screen.getByRole("button", { name: /Избери Борил:/ });
+    const secondary = screen.getByRole("button", { name: /Избери Рада:/ });
+    expect(dock).toHaveAttribute("data-expanded", "false");
+    fireEvent.click(primary);
+    expect(dock).toHaveAttribute("data-expanded", "false");
+    fireEvent.click(secondary);
+    expect(dock).toHaveAttribute("data-expanded", "true");
+    fireEvent.click(secondary);
+    expect(dock).toHaveAttribute("data-expanded", "false");
+    fireEvent.click(secondary);
+    expect(dock).toHaveAttribute("data-expanded", "true");
+    fireEvent.click(primary);
+    expect(dock).toHaveAttribute("data-expanded", "false");
+    expect(screen.getByTestId("night-action")).toHaveTextContent("|");
   });
 
   it("clears the accepted vote in the dock when only the authoritative voting cycle changes", () => {

@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export function TermsConflict() {
   return (
-    <section className="terms-section terms-section-conflict">
+    <section id="terms-conflict" tabIndex={-1} className="terms-section terms-section-conflict">
       <header className="terms-section-head">
         <p className="terms-section-kicker">когато нещо тръгне накриво</p>
         <h2>Стъпки при нарушение.</h2>

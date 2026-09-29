@@ -2,7 +2,7 @@ import Image from "next/image";
 
 export function TermsHero({ lastUpdated }: { lastUpdated: string }) {
   return (
-    <header className="terms-hero" aria-label="Кодекс на масата">
+    <header className="terms-hero" aria-label="Условия за ползване">
       <div className="terms-hero-banner">
         <Image
           src="/game-art/legal/terms-banner.webp"
@@ -16,11 +16,10 @@ export function TermsHero({ lastUpdated }: { lastUpdated: string }) {
       </div>
 
       <div className="terms-hero-inner">
-        <p className="terms-hero-kicker">кодекс на масата</p>
-        <h1 className="terms-hero-title">Сядаме на една маса.</h1>
+        <p className="terms-hero-kicker">Кодекс на масата</p>
+        <h1 className="terms-hero-title">Условия за ползване</h1>
         <p className="terms-hero-subtitle">
-          Правилата, които правят играта честна — за блъфа, за уважението, за чистата игра. Това не
-          са юридически клопки, а обещания между играчи.
+          Правилата за участие в Сенките, условията за услугата и контакт при въпроси.
         </p>
         <p className="terms-hero-meta">
           Последна актуализация: <time>{lastUpdated}</time>

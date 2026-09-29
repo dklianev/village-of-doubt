@@ -47,7 +47,7 @@ export function topMoments(timeline: HistoryTimelineEventView[], limit = 2): Cas
     }));
   }
 
-  return [{ id: "tiha-nosht", label: "Тиха нощ - без явни обрати." }];
+  return [{ id: "no-public-moments", label: "Няма отделени публични моменти." }];
 }
 
 function formatHighlight(event: HistoryTimelineEventView): string {
@@ -55,16 +55,16 @@ function formatHighlight(event: HistoryTimelineEventView): string {
     case "game_over":
       return "Развръзка на масата";
     case "death":
-      return "Смърт в нощта";
+      return "Елиминиран играч";
     case "reveal":
       return "Разкрита роля";
     case "personal_win":
       return "Лична победа";
     case "night_action":
     case "night_action_submitted":
-      return "Тежко нощно действие";
+      return "Записано нощно действие";
     case "vote_tally":
-      return "Гласовете се обърнаха";
+      return "Преброяване на гласовете";
     default:
       return "Записано събитие";
   }

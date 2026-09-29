@@ -22,7 +22,7 @@ describe("history highlights", () => {
 
     expect(moments).toEqual([
       { id: "over", label: "Рунд 4: Развръзка на масата" },
-      { id: "death", label: "Рунд 3: Смърт в нощта" },
+      { id: "death", label: "Рунд 3: Елиминиран играч" },
     ]);
   });
 
@@ -38,9 +38,9 @@ describe("history highlights", () => {
     expect(moments).toEqual([{ id: "reveal", label: "Рунд 2: Разкрита роля" }]);
   });
 
-  it("uses the quiet-night fallback when no high-value events exist", () => {
+  it("does not infer a quiet night from a short public excerpt", () => {
     expect(topMoments([event({ id: "low", type: "phase_change" })])).toEqual([
-      { id: "tiha-nosht", label: "Тиха нощ - без явни обрати." },
+      { id: "no-public-moments", label: "Няма отделени публични моменти." },
     ]);
   });
 });

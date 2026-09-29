@@ -1,7 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useRef } from "react";
-import type { Room } from "@colyseus/sdk";
+import { Room } from "@colyseus/sdk";
 import type { GamePhase } from "@werewolf/shared";
 import { usePhaseTransitions } from "@/hooks/play/use-phase-transitions";
 import { playCue } from "@/lib/sound";
@@ -21,6 +21,7 @@ function useTestPhaseTransitions(
   const suppressNextPhasePulseRef = useRef(false);
   return usePhaseTransitions({
     room: null,
+    connected: true,
     phase: "lobby",
     publicEvents: [],
     winnerTeam: "",
@@ -94,6 +95,7 @@ describe("usePhaseTransitions", () => {
       const suppressNextPhasePulseRef = useRef(true);
       return usePhaseTransitions({
         room: null,
+        connected: true,
         phase,
         publicEvents: [],
         winnerTeam: "",
@@ -117,7 +119,7 @@ describe("usePhaseTransitions", () => {
 
   it("runs the start-game countdown before sending startGame", async () => {
     vi.useFakeTimers();
-    const room = { send: vi.fn() };
+    const room = { send: vi.fn(), connection: { isOpen: true } };
     const { result } = renderHook(() => useTestPhaseTransitions({ room: room as never }));
 
     act(() => result.current.requestStartGame());
@@ -139,8 +141,8 @@ describe("usePhaseTransitions", () => {
 
   it.each(["replacement", "disconnect", "phase change"])("cancels the old countdown on room %s and permits a fresh start", async (change) => {
     vi.useFakeTimers();
-    const oldRoom = { send: vi.fn() } as unknown as Room;
-    const newRoom = { send: vi.fn() } as unknown as Room;
+    const oldRoom = { send: vi.fn(), connection: { isOpen: true } } as unknown as Room;
+    const newRoom = { send: vi.fn(), connection: { isOpen: true } } as unknown as Room;
     const { result, rerender } = renderHook(
       ({ room, phase }) => useTestPhaseTransitions({ room, phase }),
       { initialProps: { room: oldRoom as Room | null, phase: "lobby" as GamePhase } },
@@ -167,9 +169,98 @@ describe("usePhaseTransitions", () => {
     vi.useRealTimers();
   });
 
+  it.each([false, true])("cancels a countdown when the same Room disconnects (reconnect before deadline: %s)", async (quickReconnect) => {
+    vi.useFakeTimers();
+    const room = new Room("synthetic-countdown");
+    const connection = { isOpen: true, send: vi.fn() };
+    room.connection = connection as unknown as Room["connection"];
+    const send = vi.spyOn(room, "send");
+    const { result, rerender } = renderHook(
+      ({ connected }) => useTestPhaseTransitions({ room, connected }),
+      { initialProps: { connected: true } },
+    );
+
+    act(() => result.current.requestStartGame());
+    await act(async () => vi.advanceTimersByTimeAsync(620));
+    expect(result.current.startCountdown).toBe(2);
+
+    connection.isOpen = false;
+    rerender({ connected: false });
+    expect(result.current.startCountdown).toBeNull();
+    act(() => result.current.requestStartGame());
+    expect(result.current.startCountdown).toBeNull();
+
+    if (quickReconnect) {
+      connection.isOpen = true;
+      rerender({ connected: true });
+    }
+    await act(async () => vi.advanceTimersByTimeAsync(2000));
+    expect(send).not.toHaveBeenCalled();
+    expect(connection.send).not.toHaveBeenCalled();
+    expect(room.reconnection.enqueuedMessages).toHaveLength(0);
+
+    connection.isOpen = true;
+    rerender({ connected: true });
+    await act(async () => vi.advanceTimersByTimeAsync(2000));
+    expect(send).not.toHaveBeenCalled();
+    expect(result.current.startCountdown).toBeNull();
+
+    act(() => result.current.requestStartGame());
+    expect(result.current.startCountdown).toBe(3);
+    await act(async () => vi.advanceTimersByTimeAsync(1860));
+    expect(send).toHaveBeenCalledExactlyOnceWith("startGame");
+    expect(connection.send).toHaveBeenCalledTimes(1);
+    expect(room.reconnection.enqueuedMessages).toHaveLength(0);
+    vi.useRealTimers();
+  });
+
+  it("does not queue a delayed start if the transport drops before the connection status rerenders", async () => {
+    vi.useFakeTimers();
+    const room = new Room("synthetic-countdown-race");
+    const connection = { isOpen: true, send: vi.fn() };
+    room.connection = connection as unknown as Room["connection"];
+    const send = vi.spyOn(room, "send");
+    const { result } = renderHook(() => useTestPhaseTransitions({ room }));
+
+    act(() => result.current.requestStartGame());
+    await act(async () => vi.advanceTimersByTimeAsync(1859));
+    connection.isOpen = false;
+    await act(async () => vi.advanceTimersByTimeAsync(1));
+
+    expect(send).not.toHaveBeenCalled();
+    expect(room.reconnection.enqueuedMessages).toHaveLength(0);
+    expect(connection.send).not.toHaveBeenCalled();
+    expect(result.current.startCountdown).toBeNull();
+
+    act(() => result.current.requestStartGame());
+    expect(result.current.startCountdown).toBeNull();
+    connection.isOpen = true;
+    await act(async () => vi.advanceTimersByTimeAsync(2000));
+    expect(send).not.toHaveBeenCalled();
+
+    act(() => result.current.requestStartGame());
+    await act(async () => vi.advanceTimersByTimeAsync(1860));
+    expect(send).toHaveBeenCalledExactlyOnceWith("startGame");
+    expect(room.reconnection.enqueuedMessages).toHaveLength(0);
+    vi.useRealTimers();
+  });
+
+  it("does not start before connection recovery completes even if the transport is open", async () => {
+    vi.useFakeTimers();
+    const room = { send: vi.fn(), connection: { isOpen: true } } as unknown as Room;
+    const { result } = renderHook(() => useTestPhaseTransitions({ room, connected: false }));
+
+    act(() => result.current.requestStartGame());
+    await act(async () => vi.advanceTimersByTimeAsync(2000));
+
+    expect(room.send).not.toHaveBeenCalled();
+    expect(result.current.startCountdown).toBeNull();
+    vi.useRealTimers();
+  });
+
   it("does not schedule a start after the room has left the lobby", async () => {
     vi.useFakeTimers();
-    const room = { send: vi.fn() } as unknown as Room;
+    const room = { send: vi.fn(), connection: { isOpen: true } } as unknown as Room;
     const { result } = renderHook(() => useTestPhaseTransitions({ room, phase: "night" }));
 
     act(() => result.current.requestStartGame());
@@ -182,7 +273,7 @@ describe("usePhaseTransitions", () => {
 
   it("cancels a pending start on unmount", async () => {
     vi.useFakeTimers();
-    const room = { send: vi.fn() } as unknown as Room;
+    const room = { send: vi.fn(), connection: { isOpen: true } } as unknown as Room;
     const { result, unmount } = renderHook(() => useTestPhaseTransitions({ room }));
     act(() => result.current.requestStartGame());
 

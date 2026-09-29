@@ -38,6 +38,55 @@ describe("RoleCard", () => {
   it.each([
     ["seer", "Ясновидка", "werewolves"],
     ["commissioner", "Комисар", "mafia"],
+  ] as const)("renders %s as an unframed console role with an independent private result", async (code, name, family) => {
+    const user = userEvent.setup();
+    const props = { role: { role: code, roleNameBg: name }, family, players, presentation: "console" } as const;
+    const { rerender } = render(<RoleCard {...props} result={{ targetUserId: "u2", isEvil: true }} />);
+    const card = screen.getByRole("article", { name: `Тайна роля: ${name}` });
+    const guide = ROLE_GUIDE_BG[code]!;
+
+    expect(card).toHaveAttribute("data-role-presentation", "console");
+    expect(card).not.toHaveClass("paper-card");
+    expect(card).toHaveAttribute("data-private-dossier", "true");
+    expect(screen.getByText("само за теб")).toBeVisible();
+    expect(screen.getByRole("heading", { name })).toBeVisible();
+    expect(card.getAttribute("style")).not.toContain("/thumbs/");
+    expect(screen.getByRole("status", { name: "Личен резултат" })).toHaveTextContent("Борис е от злата страна.");
+    const details = screen.getByText("За ролята").closest("details");
+    expect(details).not.toContainElement(screen.getByRole("status"));
+    expect(screen.getByText(guide.summary)).not.toBeVisible();
+    expect(screen.getByText(guide.team)).not.toBeVisible();
+
+    await user.tab();
+    expect(screen.getByText("За ролята")).toHaveFocus();
+    await user.click(screen.getByText("За ролята"));
+    expect(screen.getByText(guide.summary)).toBeVisible();
+    expect(screen.getByText(guide.team)).toBeVisible();
+    expect(screen.getByText(guide.timing)).toBeVisible();
+    expect(screen.getByText(guide.win)).toBeVisible();
+    await user.click(screen.getByText("За ролята"));
+
+    rerender(<RoleCard {...props} result={{ targetUserId: "u1", isEvil: false }} />);
+    expect(screen.getByRole("status")).toHaveTextContent("Анна не е от злата страна.");
+    expect(screen.queryByText("Борис е от злата страна.")).not.toBeInTheDocument();
+    expect(details).not.toHaveAttribute("open");
+    rerender(<RoleCard {...props} result={null} />);
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(screen.queryByText("Резултат от проверката")).not.toBeInTheDocument();
+  });
+
+  it("keeps fallback instructions available in the console without inventing a personal result", async () => {
+    render(<RoleCard presentation="console" role={{ role: "doctor", roleNameBg: "Доктор" }} family="mafia" result={null} players={players} />);
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    await userEvent.click(screen.getByText("За ролята"));
+    expect(screen.getByText(getRoleShortDescriptionBg("doctor"))).toBeVisible();
+    expect(screen.getByText("Град")).toBeVisible();
+    expect(screen.getByText("Нощна фаза")).toBeVisible();
+  });
+
+  it.each([
+    ["seer", "Ясновидка", "werewolves"],
+    ["commissioner", "Комисар", "mafia"],
   ] as const)("keeps mini %s identity and latest private result visible independently of the guide", async (code, name, family) => {
     const user = userEvent.setup();
     const props = { role: { role: code, roleNameBg: name }, family, players, presentation: "mini" } as const;
@@ -117,7 +166,7 @@ describe("RoleCard", () => {
     expect(screen.getByText("За ролята").closest("details")).not.toHaveAttribute("open");
   });
 
-  it.each(["full", "compact", "mini"] as const)("keeps %s content hidden without a server-supplied private role", (presentation) => {
+  it.each(["full", "compact", "mini", "console"] as const)("keeps %s content hidden without a server-supplied private role", (presentation) => {
     const { container } = render(
       <RoleCard presentation={presentation} role={null} result={{ targetUserId: "u2", isEvil: true }} players={players} />,
     );
@@ -232,7 +281,7 @@ describe("RoleCard", () => {
     expect(status.textContent).toBe(`Резултат от проверката ${expected}`);
   });
 
-  describe.each(["full", "compact", "mini"] as const)("%s team identity", (presentation) => {
+  describe.each(["full", "compact", "mini", "console"] as const)("%s team identity", (presentation) => {
     it.each([
       ["civilian", "Мирен гражданин", "mafia", "village"],
       ["commissioner", "Комисар", "mafia", "village"],

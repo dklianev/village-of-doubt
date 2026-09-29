@@ -108,9 +108,23 @@ for (const theme of ["dark", "light"] as const) {
           await expectTextContrast(page, hero.locator("h1"), 3);
           await expectTextContrast(page, hero.locator("p:not(.section-kicker)"), 4.5);
           await page.locator(".phase-timeline").screenshot({ path: info.outputPath("rules-phases.png") });
+          const detail = page.locator("#phase-detail-panel");
           for (const card of await cards.all()) {
+            // Scroll the whole card: snapping an inline label can leave its text clipped by the rail.
+            await card.evaluate((element) => element.scrollIntoView({ block: "center", inline: "center", behavior: "instant" }));
+            const cardBox = (await card.boundingBox())!;
+            const railBox = (await page.locator(".phase-timeline").boundingBox())!;
+            expect(cardBox.x).toBeGreaterThanOrEqual(railBox.x);
+            expect(cardBox.x + cardBox.width).toBeLessThanOrEqual(railBox.x + railBox.width);
             await expectTextContrast(page, card.locator(".phase-node-label"), 3);
-            await expectTextContrast(page, card.locator(".phase-node-short"), 4.5);
+            const label = await card.locator(".phase-node-label").innerText();
+            await card.click();
+            await expect(card).toHaveAttribute("aria-pressed", "true");
+            await expect(page.locator('.phase-node[aria-pressed="true"]')).toHaveCount(1);
+            await expect(detail.getByRole("heading", { level: 3 })).toHaveText(label);
+            // The short description now belongs to the selected phase's reading panel.
+            await expectTextContrast(page, detail.locator(".section-kicker"), 4.5);
+            await expectTextContrast(page, detail.locator(".phase-detail-panel__lead > p:not(.section-kicker)"), 4.5);
           }
           await cards.last().click();
           await expect(cards.last()).toHaveAttribute("aria-pressed", "true");
@@ -133,22 +147,34 @@ for (const theme of ["dark", "light"] as const) {
           for (const paragraph of await stage.locator(".tutorial-slide-body p").all()) {
             await expectTextContrast(page, paragraph, 4.5);
           }
-          if (width === 390 && [4, 5].includes(step)) {
-            const covers = await stage.locator(".tutorial-slide").evaluate(async (element) => {
-              const style = getComputedStyle(element);
-              if (style.backgroundSize === "cover") return true;
-              const image = new Image();
-              image.src = style.backgroundImage.match(/url\(["']?([^"')]+)/)![1]!;
-              await image.decode();
-              const box = element.getBoundingClientRect();
-              return box.width * parseFloat(style.backgroundSize) / 100 * image.naturalHeight / image.naturalWidth >= box.height;
+          const artWindow = stage.locator(".tutorial-slide-art");
+          await expect(artWindow).toHaveCSS("background-image", /tutorial-(day|night)-scene\.webp/);
+          await expect(artWindow).toHaveCSS("background-size", "cover");
+          const artBox = (await artWindow.boundingBox())!;
+          const stageBox = (await stage.boundingBox())!;
+          expect(artBox.width).toBeCloseTo(stageBox.width, 0);
+          expect(artBox.height).toBe(width === 390 ? 228 : 360);
+          expect(artBox.height).toBeLessThan(stageBox.height);
+          const contentFits = await stage.evaluate((element) => {
+            const stage = element.getBoundingClientRect();
+            return [...element.querySelectorAll("h1, p, a, button")].every((node) => {
+              const box = node.getBoundingClientRect();
+              return box.left >= stage.left && box.right <= stage.right
+                && box.top >= stage.top && box.bottom <= stage.bottom
+                && node.scrollWidth <= node.clientWidth + 1;
             });
-            expect.soft(covers, `scene ${step}: landscape zoom must cover the tall mobile stage`).toBe(true);
-          }
+          });
+          expect(contentFits, `scene ${step}: the reading area must grow to fit its content`).toBe(true);
           expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
           if (step < 6) await page.getByRole("button", { name: "Следваща сцена" }).click();
         }
-        await expect(page.getByRole("link", { name: "Продължи към игра", exact: true })).toBeVisible();
+        const choices = stage.getByRole("group", { name: "Избери игра", exact: true });
+        await expect(choices.getByRole("link")).toHaveCount(2);
+        await expect(choices.getByRole("link", { name: /Започни Върколак/ })).toBeVisible();
+        await expect(choices.getByRole("link", { name: /Започни Върколак/ })).toHaveAttribute("href", "/werewolf/create");
+        await expect(choices.getByRole("link", { name: /Започни Мафия/ })).toBeVisible();
+        await expect(choices.getByRole("link", { name: /Започни Мафия/ })).toHaveAttribute("href", "/mafia/create");
+        await expect(page.locator(".tutorial-nav").getByRole("link")).toHaveCount(0);
         expect(errors).toEqual([]);
       });
     });

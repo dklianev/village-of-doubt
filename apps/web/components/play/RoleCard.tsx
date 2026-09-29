@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { EyeOff } from "lucide-react";
 import { ROLE_DEFINITIONS, getRoleShortDescriptionBg, teamLabelBg, type GameFamily, type RoleCode } from "@werewolf/shared";
 import { ROLE_GUIDE_BG, formatPrivateResult } from "@/lib/play/private-copy";
 import { roleSigil } from "@/lib/play/player-display";
@@ -17,14 +18,15 @@ export function RoleCard({
   result: PrivateResult | null;
   players: PublicPlayer[];
   family?: GameFamily;
-  presentation?: "full" | "compact" | "mini";
+  presentation?: "full" | "compact" | "mini" | "console";
 }) {
   if (!role) {
     return null;
   }
 
-  const compact = presentation !== "full";
+  const compact = presentation === "compact" || presentation === "mini";
   const mini = presentation === "mini";
+  const consolePresentation = presentation === "console";
   const definition = ROLE_DEFINITIONS[role.role];
   const roleFamily = family ?? definition.availableInFamilies[0] ?? "werewolves";
   const guide = ROLE_GUIDE_BG[role.role] ?? {
@@ -45,8 +47,9 @@ export function RoleCard({
 
   return (
     <article
-      className={`role-card paper-card role-${role.role} ${styles.dossier}${compact ? ` ${styles.compact}` : ""}${mini ? ` ${styles.mini}` : ""}`}
+      className={`role-card role-${role.role} ${consolePresentation ? styles.console : `paper-card ${styles.dossier}${compact ? ` ${styles.compact}` : ""}${mini ? ` ${styles.mini}` : ""}`}`}
       data-private-dossier="true"
+      data-role-presentation={presentation}
       data-role-family={roleFamily}
       data-role-team={definition.team}
       aria-label={`Тайна роля: ${role.roleNameBg}`}
@@ -56,11 +59,11 @@ export function RoleCard({
       <div className={styles.content}>
         <div className={`role-card-header ${styles.header}`}>
           <div>
-            {!mini ? <p className={`section-kicker ${styles.kicker}`}>само за теб</p> : null}
+            {!mini ? <p className={`section-kicker ${styles.kicker}`}>{consolePresentation ? <EyeOff aria-hidden /> : null}само за теб</p> : null}
             <h2>{role.roleNameBg}</h2>
             {compact ? <p className={styles.team}>{guide.team}</p> : null}
           </div>
-          {!compact ? (
+          {!compact && !consolePresentation ? (
             <div className={`role-sigil ${styles.sigil}`} aria-hidden="true">
               {roleSigil(role.role)}
             </div>
@@ -68,11 +71,12 @@ export function RoleCard({
         </div>
         {!mini ? privateResult : null}
         <div className={`role-card-body ${styles.body}`}>
-          {!mini ? <p>{guide.summary}</p> : null}
-          {compact ? (
+          {!mini && !consolePresentation ? <p>{guide.summary}</p> : null}
+          {compact || consolePresentation ? (
             <details className={styles.details}>
               <summary>За ролята</summary>
-              {mini ? <p>{guide.summary}</p> : null}
+              {mini || consolePresentation ? <p>{guide.summary}</p> : null}
+              {consolePresentation ? <RoleFact label="Отбор" value={guide.team} /> : null}
               <RoleFact label="Кога действа" value={guide.timing} />
               <RoleFact label="Цел" value={guide.win} />
             </details>

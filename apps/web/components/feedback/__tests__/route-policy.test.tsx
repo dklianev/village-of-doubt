@@ -13,7 +13,11 @@ describe("feedback route policy", () => {
     expect(shouldMountFeedback("/play/ABCD12")).toBe(false);
   });
 
-  it.each(["/account", "/achievements", "/friends", "/history/game-1/replay"])(
+  it.each([false, true])("keeps account editing clear of the floating launcher (authenticated=%s)", (authenticated) => {
+    expect(shouldMountFeedback("/account", authenticated)).toBe(false);
+  });
+
+  it.each(["/achievements", "/friends", "/history/game-1/replay"])(
     "waits for authentication before mounting feedback on %s",
     (pathname) => {
       expect(shouldMountFeedback(pathname, false)).toBe(false);

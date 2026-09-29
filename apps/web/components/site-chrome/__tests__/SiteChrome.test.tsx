@@ -40,6 +40,14 @@ describe("Senkite navigation", () => {
     drawerRender.mockClear();
   });
 
+  it.each(["/lobby/ABC234", "/play/ABC234"])("does not let Firefox restore transient button states on %s", (pathname) => {
+    route.pathname = pathname;
+    const { container } = render(<SiteChrome initialSession={null} />);
+    for (const button of container.querySelectorAll("header > button, .site-utility-cluster > button")) {
+      expect(button).toHaveAttribute("autocomplete", "off");
+    }
+  });
+
   it.each(["/", "/tutorial", "/faq", "/werewolf/rules", "/mafia/rules"])(
     "keeps the brand navigable without prefetching the homepage from %s", (pathname) => {
       route.pathname = pathname;
@@ -110,5 +118,31 @@ describe("Senkite navigation", () => {
     expect(screen.queryByRole("link", { name: "Играй" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Имам код" })).not.toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "Включи звука" }).length).toBeGreaterThan(0);
+  });
+
+  it("exposes only the current pathname for route styling across cached navigations", () => {
+    const { container, rerender } = render(<SiteChrome initialSession={null} />);
+    const header = container.querySelector("header");
+    for (const pathname of ["/werewolf/create", "/", "/mafia/roles", "/tutorial", "/", "/account", "/achievements", "/faq", "/"]) {
+      route.pathname = pathname;
+      rerender(<SiteChrome initialSession={null} />);
+      expect(container.querySelector("header")).toBe(header);
+      expect(header).toHaveAttribute("data-route", pathname);
+    }
+  });
+
+  it("updates the room chrome marker when navigating away and back", () => {
+    route.pathname = "/play/ROOM42";
+    const { container, rerender } = render(<SiteChrome initialSession={null} />);
+    const header = container.querySelector("header");
+    expect(header).toHaveAttribute("data-room", "true");
+
+    route.pathname = "/";
+    rerender(<SiteChrome initialSession={null} />);
+    expect(header).not.toHaveAttribute("data-room");
+
+    route.pathname = "/play/ROOM42";
+    rerender(<SiteChrome initialSession={null} />);
+    expect(header).toHaveAttribute("data-room", "true");
   });
 });

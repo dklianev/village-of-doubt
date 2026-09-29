@@ -1,9 +1,10 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { ReconnectModal } from "@/components/play/ReconnectModal";
 
 describe("ReconnectModal", () => {
+  afterEach(() => vi.useRealTimers());
   it("offers name correction without navigating away from the failed join", async () => {
     const onRetry = vi.fn();
     render(<ReconnectModal status="error" message="Това име вече се използва в стаята." onRetry={onRetry} />);
@@ -18,7 +19,7 @@ describe("ReconnectModal", () => {
   });
 
   it("keeps the retry action disabled while reconnecting", async () => {
-    const user = userEvent.setup();
+    vi.useFakeTimers();
     const onRetry = vi.fn();
 
     render(
@@ -29,12 +30,15 @@ describe("ReconnectModal", () => {
       />,
     );
 
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    act(() => vi.advanceTimersByTime(3000));
+    vi.useRealTimers();
     const retry = screen.getByRole("button", { name: "Опитваме..." });
-    expect(screen.getByRole("dialog", { name: "Връщаме те обратно" })).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Свързваме се отново" })).toBeInTheDocument();
     expect(retry).toBeDisabled();
     expect(retry).toHaveAttribute("aria-busy", "true");
 
-    await user.click(retry);
+    await userEvent.click(retry);
 
     expect(onRetry).not.toHaveBeenCalled();
   });
@@ -51,7 +55,7 @@ describe("ReconnectModal", () => {
       />,
     );
 
-    expect(screen.getByRole("dialog", { name: "Не успяхме да се върнем автоматично" })).toHaveTextContent(
+    expect(screen.getByRole("dialog", { name: "Връзката е прекъсната" })).toHaveTextContent(
       "Не успяхме да възстановим връзката.",
     );
 
@@ -86,5 +90,34 @@ describe("ReconnectModal", () => {
     expect(screen.getByRole("dialog", { name: "Връзката със стаята прекъсна" })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Свържи отново" }));
     expect(onRetry).toHaveBeenCalledTimes(1);
+  });
+
+  it("cancels the delayed dialog when a short interruption ends", () => {
+    vi.useFakeTimers();
+    const { unmount } = render(<ReconnectModal status="reconnecting" message="Проверяваме връзката." onRetry={vi.fn()} />);
+    act(() => vi.advanceTimersByTime(1500));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    unmount();
+    act(() => vi.advanceTimersByTime(5000));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(document.body.style.overflow).not.toBe("hidden");
+  });
+
+  it("opens a native modal and restores focus after recovery", async () => {
+    const view = (lost: boolean) => <>
+      <button>Към текущата фаза</button>
+      {lost ? <ReconnectModal status="lost" message="Връзката прекъсна." onRetry={vi.fn()} /> : null}
+    </>;
+    const { rerender } = render(view(false));
+    const sheetButton = screen.getByRole("button", { name: "Към текущата фаза" });
+    sheetButton.focus();
+    rerender(view(true));
+    const retry = screen.getByRole("button", { name: "Опитай пак" });
+    await waitFor(() => expect(retry).toHaveFocus());
+    expect(screen.getByRole("dialog")).toHaveAttribute("open");
+    await userEvent.keyboard("{Escape}");
+    expect(screen.getByRole("dialog", { name: "Връзката е прекъсната" })).toBeInTheDocument();
+    rerender(view(false));
+    await waitFor(() => expect(sheetButton).toHaveFocus());
   });
 });

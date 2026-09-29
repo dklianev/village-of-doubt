@@ -191,7 +191,7 @@ describe("resolveNight", () => {
 
     expect(result.deaths).toEqual([]);
     expect(result.preventedDeaths).toEqual([
-      { userId: "civilian", reasonBg: "Лечителят спря нощна атака." },
+      { userId: "civilian", reasonBg: "Лечителят спря нощна атака.", actorUserId: "healer" },
     ]);
   });
 
@@ -292,7 +292,7 @@ describe("resolveNight", () => {
 
     expect(result.deaths).toEqual([]);
     expect(result.preventedDeaths).toEqual([
-      { userId: "civilian", reasonBg: "Лечителят спря нощна атака." },
+      { userId: "civilian", reasonBg: "Лечителят спря нощна атака.", actorUserId: "healer" },
     ]);
   });
 
@@ -304,7 +304,7 @@ describe("resolveNight", () => {
 
     expect(result.deaths).toEqual([]);
     expect(result.preventedDeaths).toEqual([
-      { userId: "civilian", reasonBg: "Докторът спря нощна смърт." },
+      { userId: "civilian", reasonBg: "Докторът спря нощна смърт.", actorUserId: "doctor" },
     ]);
   });
 
@@ -339,7 +339,7 @@ describe("resolveNight", () => {
 
     expect(result.deaths).toEqual([]);
     expect(result.preventedDeaths).toEqual([
-      { userId: "civilian", reasonBg: "Лечителят спря нощна атака." },
+      { userId: "civilian", reasonBg: "Лечителят спря нощна атака.", actorUserId: "healer" },
     ]);
   });
 
@@ -355,7 +355,7 @@ describe("resolveNight", () => {
 
     expect(result.deaths).toEqual([]);
     expect(result.preventedDeaths).toEqual([
-      { userId: "civilian", reasonBg: "Лечителят спря нощна атака." },
+      { userId: "civilian", reasonBg: "Лечителят спря нощна атака.", actorUserId: "healer" },
     ]);
   });
 
@@ -368,7 +368,67 @@ describe("resolveNight", () => {
     ]);
 
     expect(result.deaths).toEqual([{ userId: "bodyguard", causeBg: "Загина, докато пазеше друг играч." }]);
-    expect(result.preventedDeaths).toEqual([{ userId: "commissioner", reasonBg: "Бодигардът пое нощната атака." }]);
+    expect(result.preventedDeaths).toEqual([
+      { userId: "commissioner", reasonBg: "Бодигардът пое нощната атака.", actorUserId: "bodyguard" },
+    ]);
+  });
+
+  it("credits the effective protection instead of an unused lower-priority protection", () => {
+    const result = resolveNight(players, [
+      action("werewolf", { kind: "faction_kill", targetUserId: "civilian" }),
+      action("healer", { kind: "healer_protect", targetUserId: "civilian" }),
+      action("doctor", { kind: "healer_protect", targetUserId: "civilian" }),
+    ]);
+    expect(result.deaths).toEqual([]);
+    expect(result.preventedDeaths.map((event) => event.actorUserId)).toEqual(["healer"]);
+  });
+
+  it("does not give credit to a roleblocked protector", () => {
+    const result = resolveNight(players, [
+      action("werewolf", { kind: "faction_kill", targetUserId: "civilian" }),
+      action("healer", { kind: "healer_protect", targetUserId: "civilian" }),
+      action("roleblocker", { kind: "roleblock", targetUserId: "healer" }),
+      action("doctor", { kind: "healer_protect", targetUserId: "civilian" }),
+    ]);
+    expect(result.deaths).toEqual([]);
+    expect(result.preventedDeaths.map((event) => event.actorUserId)).toEqual(["doctor"]);
+  });
+
+  it("credits the Witch only when a lethal source is actually prevented", () => {
+    const result = resolveNight(players, [
+      action("werewolf", { kind: "faction_kill", targetUserId: "civilian" }),
+      action("witch", { kind: "witch_heal", targetUserId: "civilian" }),
+    ]);
+    expect(result.deaths).toEqual([]);
+    expect(result.preventedDeaths).toEqual([
+      { userId: "civilian", reasonBg: "Лечебната отвара спря нощна атака.", actorUserId: "witch" },
+    ]);
+    expect(resolveNight(players, [action("witch", { kind: "witch_heal", targetUserId: "civilian" })])
+      .preventedDeaths).toEqual([]);
+  });
+
+  it("does not guess credit when identical protections overlap", () => {
+    const result = resolveNight([
+      ...players,
+      { userId: "other-healer", role: "healer", alive: true },
+    ], [
+      action("werewolf", { kind: "faction_kill", targetUserId: "civilian" }),
+      action("healer", { kind: "healer_protect", targetUserId: "civilian" }),
+      action("other-healer", { kind: "healer_protect", targetUserId: "civilian" }),
+    ]);
+    expect(result.deaths).toEqual([]);
+    expect(result.preventedDeaths).toEqual([{ userId: "civilian", reasonBg: "Лечителят спря нощна атака." }]);
+  });
+
+  it("retains both immediate and delayed prevention metadata for the same actor", () => {
+    const result = resolveNight(players, [
+      action("werewolf", { kind: "faction_kill", targetUserId: "civilian" }),
+      action("vampire", { kind: "faction_kill", targetUserId: "civilian" }),
+      action("healer", { kind: "healer_protect", targetUserId: "civilian" }),
+    ]);
+    expect(result.deaths).toEqual([]);
+    expect(result.delayedDeaths).toEqual([]);
+    expect(result.preventedDeaths.map((event) => event.actorUserId)).toEqual(["healer", "healer"]);
   });
 });
 

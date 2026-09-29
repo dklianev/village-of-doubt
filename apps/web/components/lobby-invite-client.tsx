@@ -2,10 +2,9 @@
 
 import "@/components/LegacyLobby.module.css";
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Copy, Eye, RefreshCw, Share2, Sparkles } from "lucide-react";
-import { getGameFamily, getGameModeNameBg, type GameFamily, type RoomInvitationEligibility } from "@werewolf/shared";
+import { ArrowLeft, ArrowRight, Copy, Eye, Link2, RefreshCw, Share2 } from "lucide-react";
+import { getGameFamily, getGameModeNameBg, ROOM_CODE_REGEX, type GameFamily, type RoomInvitationEligibility } from "@werewolf/shared";
 import { copyTextToClipboard } from "@/lib/clipboard";
 import { useToast } from "@/lib/toast";
 
@@ -46,8 +45,7 @@ export function LobbyInviteClient({
   const playHref = `/play/${encodeURIComponent(code)}?mode=${preview?.mode ?? ""}`;
   const spectatorHref = `${playHref}&spectator=1`;
   const modeLabel = preview ? getGameModeNameBg(preview.mode) : "покана с код";
-  const routeLabel = family === "mafia" ? "досие към задната стая" : family === "werewolves" ? "маршрут до площада" : "покана за масата";
-  const joinHref = family === "mafia" ? "/mafia/join" : family === "werewolves" ? "/werewolf/join" : "/";
+  const joinHref = family === "mafia" ? "/mafia/join" : family === "werewolves" ? "/werewolf/join" : "/join";
   const familyLabel = family === "mafia" ? "Мафия" : "Върколак";
   const summary = preview ? roomPreviewSummary(preview)
     : result.status === "missing" ? "Тази стая вече не е достъпна. Поискай нов код от домакина."
@@ -64,7 +62,7 @@ export function LobbyInviteClient({
   };
 
   const shareInvite = async () => {
-    const inviteUrl = window.location.href;
+    const inviteUrl = invitationUrl(code);
     try {
       if (navigator.share) {
         await navigator.share({
@@ -75,51 +73,65 @@ export function LobbyInviteClient({
         return;
       }
       await copyText(inviteUrl, "Линкът за покана е копиран.");
-    } catch {
-      toast({ kind: "info", message: "Поканата остана при теб." });
+    } catch (error) {
+      if (error && typeof error === "object" && "name" in error && error.name === "AbortError") return;
+      await copyText(inviteUrl, "Линкът за покана е копиран.");
     }
   };
 
   return (
-    <article className="lobby-invite-v2" data-family={family} data-faction={family}>
-      <header className="lobby-invite-hero">
-        <Image
-          src="/game-art/legal/lobby-banner.webp"
-          alt=""
-          fill
-          priority
-          sizes="(max-width: 1180px) 100vw, 1180px"
-          className="lobby-invite-hero-img"
-        />
-        <div className="lobby-invite-hero-scrim" aria-hidden />
-        <div className="lobby-invite-hero-copy">
-          <p className="lobby-invite-kicker">{preview ? `${preview.roomVisibility === "public" ? "отворена" : "частна"} стая · ` : ""}{modeLabel}</p>
-          <h1>Покана за масата.</h1>
-          <p>
-            {result.status === "in_game"
-              ? "Играта вече върви. Участниците могат да се върнат, а новите гости могат да наблюдават при свободни места."
-              : result.status === "lobby"
-              ? "Когато всички влязат, домакинът започва играта от общата стая."
-              : "Покана за игра с код от домакина."}
-          </p>
+    <article className="lobby-invite-v2" data-family={family} data-faction={family} data-room-status={result.status}>
+      <div className="lobby-invite-scene" aria-hidden="true" />
+      <div className="lobby-invite-content">
+       <div className="lobby-invite-details">
+        <header className="lobby-invite-hero-copy">
+          <p className="lobby-invite-kicker">{preview ? `${preview.roomVisibility === "public" ? "Отворена" : "Частна"} стая · ` : ""}{modeLabel}</p>
+          <h1>Покана <br />за масата.</h1>
+          <p>{invitationIntro(preview)}</p>
+        </header>
+
+      <section className="lobby-code-panel" aria-labelledby="room-code-title">
+        <div>
+          <p className="lobby-code-label" id="room-code-title">Код на стаята</p>
+          <code className="lobby-code-display" aria-label={`Код на стаята ${code}`}>{code}</code>
         </div>
-      </header>
+        {canShare ? <button type="button" className="lobby-invite-icon" aria-label="Копирай кода" title="Копирай кода" onClick={() => copyText(code, "Кодът е копиран.")}><Copy aria-hidden="true" /></button> : null}
+      </section>
 
       <section className="lobby-route-card" role="status" aria-live="polite" aria-atomic="true">
-        <p className="lobby-route-kicker">
-          {preview ? `${routeLabel} · ${roomStatusLabel(preview.status)}` : routeLabel}
-        </p>
-        <p>{summary}</p>
+        {preview ? <div className="lobby-room-status-line">
+          <p className="lobby-room-status"><span className="lobby-status-dot" aria-hidden="true" />{roomStatusLabel(preview.status)}</p>
+          {preview.status === "lobby" ? <p>{preview.playerCount} от {preview.capacity} места заети</p> : null}
+        </div> : null}
+        {preview?.status === "lobby" ? <>
+          {preview.hostName ? <p className="lobby-room-host">Домакин: {preview.hostName}.</p> : null}
+          {preview.playerCount >= preview.capacity && !preview.canJoinAsPlayer ? <p>Стаята е пълна.</p> : null}
+        </> : <p>{summary}</p>}
       </section>
+
+      {preview && visiblePlayers.length > 0 ? <section className="lobby-player-preview" aria-label="Първи играчи в стаята">
+        <p className="lobby-route-kicker">{preview.status === "finished" ? "Участници" : "Вече са тук"}</p>
+        <div className="lobby-player-preview-row">
+          {visiblePlayers.map((player, index) => (
+            <span className="lobby-player-chip" key={`${player.displayName}:${index}`}>
+              <strong aria-hidden="true">{initialFor(player.displayName)}</strong>
+              <span className="lobby-player-name">{player.displayName}</span>
+              <em>{!player.connected ? "извън линия" : player.host ? "домакин" : player.ready ? "готов" : "в стаята"}</em>
+            </span>
+          ))}
+        </div>
+        {preview.playerCount > visiblePlayers.length ? <p className="lobby-more-players">И още {preview.playerCount - visiblePlayers.length} в стаята.</p> : null}
+      </section> : null}
 
       <nav className="lobby-invite-cta" aria-label="Действия за стаята">
         {canEnter ? (
           <Link href={playHref} className="btn btn-primary" prefetch={false}>
             {preview?.viewerMembership === "participant" ? "Върни се в играта" : "Към играта"}
+            <ArrowRight aria-hidden="true" />
           </Link>
         ) : null}
         {canSpectate ? (
-          <Link href={spectatorHref} className="btn btn-secondary" prefetch={false}>
+          <Link href={spectatorHref} className={`btn ${canEnter ? "btn-secondary" : "btn-primary"}`} prefetch={false}>
             <Eye aria-hidden strokeWidth={1.9} />
             <span>{preview?.viewerMembership === "spectator" ? "Продължи да наблюдаваш" : "Наблюдавай"}</span>
           </Link>
@@ -130,57 +142,20 @@ export function LobbyInviteClient({
             <span>Провери отново</span>
           </button>
         ) : null}
-        <Link href={joinHref} className="btn btn-secondary" prefetch={false}>
-          <ArrowLeft aria-hidden strokeWidth={1.9} />
-          <span>{family ? `Въведи друг код за ${familyLabel}` : "Избери игра"}</span>
-        </Link>
       </nav>
 
-      <section className="lobby-code-panel" aria-labelledby="room-code-title">
-        <div>
-          <p className="lobby-code-label" id="room-code-title">
-            Кодът на стаята
-          </p>
-          <div className="lobby-code-display" aria-label={`Код на стаята ${code}`}>
-            {code}
-          </div>
-          {canShare ? <p className="lobby-code-help">Сподели кода с хората, които искаш да поканиш.</p> : null}
-        </div>
-
+      <footer className="lobby-invite-footer">
         {canShare ? <div className="lobby-code-actions" aria-label="Действия с поканата">
-          <button type="button" className="btn btn-secondary" onClick={() => copyText(code, "Кодът е копиран.")}>
-            <Copy aria-hidden strokeWidth={1.9} />
-            <span>Копирай кода</span>
-          </button>
-          <button type="button" className="btn btn-secondary" onClick={shareInvite}>
-            <Share2 aria-hidden strokeWidth={1.9} />
-            <span>Сподели</span>
-          </button>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={() => copyText(window.location.href, "Линкът за покана е копиран.")}
-          >
-            <Sparkles aria-hidden strokeWidth={1.9} />
-            <span>Копирай линка</span>
-          </button>
+          <button type="button" className="lobby-invite-text-action" onClick={shareInvite}><Share2 aria-hidden="true" />Сподели поканата</button>
+          <button type="button" className="lobby-invite-icon lobby-copy-link" aria-label="Копирай линка" title="Копирай линка" onClick={() => copyText(invitationUrl(code), "Линкът за покана е копиран.")}><Link2 aria-hidden="true" /></button>
         </div> : null}
-      </section>
-
-      {preview && visiblePlayers.length > 0 ? <section className="lobby-player-preview" aria-label="Първи играчи в стаята">
-        <p className="lobby-route-kicker">
-          {`${preview.status === "finished" ? "Участници" : "На живо"} · ${preview.playerCount}/${preview.capacity}`}
-        </p>
-        <div className="lobby-player-preview-row">
-          {visiblePlayers.map((player, index) => (
-            <span className="lobby-player-chip" key={`${player.displayName}:${index}`}>
-              <strong>{initialFor(player.displayName)}</strong>
-              <span>{player.displayName}</span>
-              <em>{player.host ? "домакин" : player.ready ? "готов" : player.connected ? "в стаята" : "извън линия"}</em>
-            </span>
-          ))}
-        </div>
-      </section> : null}
+        <Link href={joinHref} className="lobby-invite-back" prefetch={false} aria-label={family ? `Въведи друг код за ${familyLabel}` : "Въведи друг код"}>
+          <ArrowLeft aria-hidden="true" />
+          <span>Друг код</span>
+        </Link>
+      </footer>
+      </div>
+      </div>
     </article>
   );
 }
@@ -190,6 +165,10 @@ function useLiveRoomPreview(code: string) {
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
+    if (!ROOM_CODE_REGEX.test(code)) {
+      setSnapshot({ code, result: { status: "missing" } });
+      return;
+    }
     let stopped = false;
     let timerId: number | null = null;
     let controller: AbortController | null = null;
@@ -267,6 +246,25 @@ function useLiveRoomPreview(code: string) {
   };
 }
 
+function invitationUrl(code: string) {
+  return new URL(`/lobby/${encodeURIComponent(code)}`, window.location.origin).href;
+}
+
+function invitationIntro(preview: LiveRoomPreview | null) {
+  if (!preview) return "Стая за игра с приятели.";
+  if (preview.status === "finished") return "Тази вечер вече е част от историята.";
+  if (preview.status === "in_game") {
+    if (preview.viewerMembership === "participant") return "Твоето място те чака. Върни се при останалите.";
+    return preview.canSpectate
+      ? "Играта вече започна. Можеш да проследиш как ще завърши."
+      : "Играта вече започна. В момента не приема нови гости.";
+  }
+  if (preview.canJoinAsPlayer) return <>Влез при останалите. <br />Вечерта започва, когато сте готови.</>;
+  return preview.canSpectate
+    ? "Можеш да се присъединиш като наблюдател."
+    : "В момента стаята не приема нови гости.";
+}
+
 function toRoomPreview(value: unknown): RoomPreview {
   if (!value || typeof value !== "object") {
     return { status: "unavailable" };
@@ -327,11 +325,11 @@ function toLiveRoomPlayer(value: unknown): LiveRoomPreview["players"] {
 function roomStatusLabel(status: LiveRoomPreview["status"]) {
   switch (status) {
     case "lobby":
-      return "чака играчи";
+      return "Чака играчи";
     case "in_game":
-      return "играта върви";
+      return "Играта върви";
     case "finished":
-      return "приключила";
+      return "Приключила";
   }
 }
 

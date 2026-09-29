@@ -103,11 +103,11 @@ test("@ui-polish signup waits for verification and keeps the room invitation", a
     return route.fulfill({ json: { token: null, user: { id: "test-pending", emailVerified: false } } });
   });
   await page.goto("/sign-in?redirect=%2Fwerewolf%2Fjoin%3Fcode%3DABC123");
-  await page.getByRole("tab", { name: "Ново досие" }).click();
+  await page.getByRole("tab", { name: "Регистрация" }).click();
   await page.getByRole("textbox", { name: "Име на масата" }).fill("Анна");
   await page.getByRole("textbox", { name: "Имейл", exact: true }).fill("audit@example.invalid");
   await page.getByLabel("Парола", { exact: true }).fill("test-only-passphrase");
-  await page.getByRole("button", { name: "Създай досие", exact: true }).click();
+  await page.getByRole("button", { name: "Създай профил", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Провери имейла си" })).toBeFocused();
   expect(new URL(callback, "http://local.test").searchParams.get("redirect")).toBe("/werewolf/join?code=ABC123");
   await expect(page).toHaveURL(/\/sign-in\?/);

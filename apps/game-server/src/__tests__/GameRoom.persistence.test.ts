@@ -1,5 +1,7 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { boot, type ColyseusTestServer } from "@colyseus/testing";
+import type { AchievementEventLike, RoleCode } from "@werewolf/shared";
+import type { SubmittedNightAction } from "../game-logic/night-resolver.js";
 import type {
   PersistEventInput,
   PersistPlayerInput,
@@ -11,6 +13,7 @@ import type {
   RoomPersistenceTaskApi,
 } from "../rooms/room-persistence-coordinator.js";
 import appConfig from "../app.config.js";
+import type { PrivatePlayerState } from "../rooms/game-room-runtime.js";
 import { getGameRuntimeStats, type GameRoom } from "../rooms/GameRoom.js";
 import { PlayerPublicState } from "../rooms/schemas/GameState.js";
 
@@ -487,5 +490,238 @@ describe("GameRoom persistence snapshots", () => {
       "priest_blessing_protected",
       expect.objectContaining({ targetId: "blessed-player", visibility: "public" }),
     );
+  });
+
+  it("persists personal night-save attribution without adding it to public narration", async () => {
+    const room = await colyseus.createRoom<GameRoom>("game", {
+      code: "SAVE23", mode: "werewolves_classic", playerCount: 6,
+    });
+    const internals = room as unknown as GameRoomPersistenceInternals & {
+      reportPreventedDeaths: (events: Array<{ userId: string; reasonBg: string; actorUserId?: string }>) => void;
+      evaluateAchievementUnlocks: () => Array<{ userId: string; achievementId: string }>;
+    };
+    internals.privatePlayers.set("guardian-user", { userId: "guardian-user", role: "healer", alive: true });
+    internals.privatePlayers.set("other-guardian", { userId: "other-guardian", role: "doctor", alive: true });
+    const persist = vi.spyOn(internals, "persistGameEvent");
+    room.state.phase = "night";
+    for (const round of [2, 3]) {
+      room.state.round = round;
+      internals.reportPreventedDeaths([
+        { userId: "protected-user", actorUserId: "guardian-user", reasonBg: "Лечителят спря нощна атака." },
+      ]);
+    }
+    expect(persist).toHaveBeenCalledWith("night_death_prevented", {
+      actorId: "guardian-user", targetId: "protected-user", visibility: "moderator",
+      payload: { reasonBg: "Лечителят спря нощна атака." },
+    });
+    expect(internals.evaluateAchievementUnlocks()).toEqual([
+      { userId: "guardian-user", achievementId: "guardian_save" },
+    ]);
+    expect(JSON.stringify(room.state.publicEvents.toJSON())).not.toMatch(/guardian-user|protected-user/);
+  });
+
+  it("attributes repeated blessings to the actual Priest even after their death", async () => {
+    const room = await colyseus.createRoom<GameRoom>("game", {
+      code: "PRSV23", mode: "werewolves_classic", playerCount: 6,
+    });
+    const internals = room as unknown as Omit<GameRoomPersistenceInternals, "privatePlayers"> & {
+      privatePlayers: Map<string, PrivatePlayerState>;
+      evaluateAchievementUnlocks: () => Array<{ userId: string; achievementId: string }>;
+    };
+    internals.privatePlayers.set("priest-user", {
+      userId: "priest-user", role: "priest", alive: false, priestBlessedTargetUserId: "blessed-user",
+    });
+    const persist = vi.spyOn(internals, "persistGameEvent");
+    room.state.phase = "night";
+    for (const round of [2, 3]) {
+      room.state.round = round;
+      internals.reportPersistentPriestProtection(["blessed-user"]);
+    }
+    expect(persist).toHaveBeenCalledWith("priest_blessing_protected", { visibility: "public" });
+    expect(persist).toHaveBeenCalledWith("priest_blessing_protected_target", {
+      actorId: "priest-user", targetId: "blessed-user", visibility: "moderator",
+    });
+    expect(internals.evaluateAchievementUnlocks()).toEqual([{ userId: "priest-user", achievementId: "guardian_save" }]);
+    const publicEvents = persist.mock.calls.filter(([, event]) => event?.visibility === "public");
+    expect(JSON.stringify(publicEvents)).not.toMatch(/priest-user|blessed-user/);
+    expect(JSON.stringify(room.state.publicEvents.toJSON())).not.toMatch(/priest-user|blessed-user/);
+  });
+
+  describe("guardian save resolution cycles", () => {
+    async function setup() {
+      const roles: Record<string, RoleCode> = {
+        healer: "healer", wolf: "werewolf", witch: "witch", hunter: "hunter",
+        a: "ordinary_villager", b: "ordinary_villager", source: "ordinary_villager",
+        partner: "ordinary_villager", c: "ordinary_villager",
+      };
+      const room = await colyseus.createRoom<GameRoom>("game", {
+        code: "GDSV23", mode: "werewolves_classic", playerCount: 9,
+        tempoProfile: "manual", mayorEnabled: false,
+      });
+      const internals = room as unknown as {
+        privatePlayers: Map<string, PrivatePlayerState>;
+        pendingNightActions: Map<string, SubmittedNightAction[]>;
+        resolveNightPhase: () => void;
+        resolveVoting: () => void;
+        transitionTo: (phase: string) => void;
+        submitHunterRevenge: (client: { sessionId: string; userData: { userId: string }; send: ReturnType<typeof vi.fn> }, target: string) => void;
+        evaluateAchievementUnlocks: () => Array<{ userId: string; achievementId: string }>;
+        achievementBroadcaster: { recordEvent: (event: AchievementEventLike) => void };
+      };
+      for (const [userId, role] of Object.entries(roles)) {
+        const player = new PlayerPublicState();
+        player.userId = userId;
+        player.displayName = userId;
+        player.alive = true;
+        player.playing = true;
+        room.state.players.set(userId, player);
+        internals.privatePlayers.set(userId, { userId, role, alive: true });
+      }
+      const recorded = vi.spyOn(internals.achievementBroadcaster, "recordEvent");
+      const events = () => recorded.mock.calls.map(([event]) => event);
+      const resolveNight = (round: number, actions: SubmittedNightAction[]) => {
+        room.state.round = round;
+        internals.transitionTo(round === 1 ? "first_night" : "night");
+        for (const action of actions) {
+          internals.pendingNightActions.set(action.actorUserId, [action]);
+        }
+        internals.resolveNightPhase();
+      };
+      const revenge = (target: string) => internals.submitHunterRevenge({
+        sessionId: "hunter", userData: { userId: "hunter" }, send: vi.fn(),
+      }, target);
+      const linkLovers = (a: string, b: string) => {
+        internals.privatePlayers.get(a)!.loverId = b;
+        internals.privatePlayers.get(b)!.loverId = a;
+      };
+      const guardians = () => internals.evaluateAchievementUnlocks()
+        .filter((unlock) => unlock.achievementId === "guardian_save");
+      return { room, internals, events, resolveNight, revenge, linkLovers, guardians };
+    }
+
+    function protect(targetUserId: string): SubmittedNightAction[] {
+      return [
+        { actorUserId: "wolf", action: { kind: "faction_kill", targetUserId } },
+        { actorUserId: "healer", action: { kind: "healer_protect", targetUserId } },
+      ];
+    }
+
+    function poison(targetUserId: string): SubmittedNightAction {
+      return { actorUserId: "witch", action: { kind: "witch_poison", targetUserId } };
+    }
+
+    it.each(["hunter", "lover", "lover-hunter-lover"])(
+      "excludes a prevented attack followed by a same-night %s death chain", async (chain) => {
+        const { room, events, resolveNight, revenge, linkLovers, guardians } = await setup();
+        resolveNight(1, protect("a"));
+        expect(room.state.phase).toBe("day_announcement");
+        if (chain === "lover") {
+          linkLovers("source", "b");
+        } else if (chain === "lover-hunter-lover") {
+          linkLovers("source", "hunter");
+          linkLovers("partner", "b");
+        }
+        resolveNight(2, [...protect("b"), poison(chain === "hunter" ? "hunter" : "source")]);
+        if (chain !== "lover") {
+          expect(room.state.phase).toBe("hunter_revenge");
+          expect(room.state.players.get("b")?.alive).toBe(true);
+          revenge(chain === "hunter" ? "b" : "partner");
+        }
+        expect(room.state.phase).toBe("day_announcement");
+        expect(room.state.players.get("b")?.alive).toBe(false);
+        expect(events()).toContainEqual(expect.objectContaining({
+          type: "night_death_prevented", phase: "night", round: 2, actorId: "healer", targetId: "b",
+        }));
+        expect(events().filter((event) => event.type === "death").map((event) => [event.targetId, event.phase]))
+          .toEqual(chain === "hunter" ? [["hunter", "night"], ["b", "hunter_revenge"]]
+            : chain === "lover" ? [["source", "night"], ["b", "night"]]
+              : [["source", "night"], ["hunter", "night"], ["partner", "hunter_revenge"], ["b", "hunter_revenge"]]);
+        expect(guardians()).toEqual([]);
+      },
+    );
+
+    it("preserves genuine saves when a daytime ballot triggers hunter and lover deaths", async () => {
+      const { room, internals, events, resolveNight, revenge, linkLovers, guardians } = await setup();
+      resolveNight(1, protect("a"));
+      resolveNight(2, protect("b"));
+      expect(room.state.phase).toBe("day_announcement");
+      linkLovers("partner", "b");
+      internals.transitionTo("voting");
+      internals.privatePlayers.get("a")!.lastVoteTarget = "hunter";
+      internals.resolveVoting();
+      expect(room.state.phase).toBe("hunter_revenge");
+      revenge("partner");
+      expect(room.state.phase).toBe("resolution");
+      expect(room.state.players.get("b")?.alive).toBe(false);
+      expect(events()).toContainEqual(expect.objectContaining({
+        type: "death", phase: "hunter_revenge", round: 2, targetId: "b",
+      }));
+      expect(guardians()).toEqual([{ userId: "healer", achievementId: "guardian_save" }]);
+    });
+
+    it.each(["night", "hunter_revenge"])("preserves saves when the target dies the following night in %s", async (phase) => {
+      const { room, events, resolveNight, revenge, guardians } = await setup();
+      resolveNight(1, protect("b"));
+      resolveNight(2, protect("b"));
+      resolveNight(3, [poison(phase === "night" ? "b" : "hunter")]);
+      if (phase === "hunter_revenge") {
+        expect(room.state.phase).toBe("hunter_revenge");
+        revenge("b");
+      }
+      expect(room.state.phase).toBe("day_announcement");
+      expect(room.state.players.get("b")?.alive).toBe(false);
+      expect(events()).toContainEqual(expect.objectContaining({ type: "death", phase, round: 3, targetId: "b" }));
+      expect(guardians()).toEqual([{ userId: "healer", achievementId: "guardian_save" }]);
+    });
+  });
+
+  it("captures only final living voters and checks every completed revote", async () => {
+    const room = await colyseus.createRoom<GameRoom>("game", {
+      code: "VTSV23", mode: "werewolves_classic", playerCount: 6, tempoProfile: "manual",
+    });
+    const internals = room as unknown as Omit<GameRoomPersistenceInternals, "privatePlayers"> & {
+      privatePlayers: Map<string, PrivatePlayerState>;
+      submitVote: (client: { userData: { userId: string }; sessionId: string; send: ReturnType<typeof vi.fn> }, targetUserId: string) => void;
+      resolveVoting: () => void;
+      transitionTo: (phase: string) => void;
+      evaluateAchievementUnlocks: () => Array<{ userId: string; achievementId: string }>;
+    };
+    for (const userId of ["cast", "skipped", "idle", "dead"]) {
+      const player = new PlayerPublicState();
+      player.userId = userId;
+      player.alive = userId !== "dead";
+      player.playing = true;
+      room.state.players.set(userId, player);
+      internals.privatePlayers.set(userId, {
+        userId, role: "ordinary_villager", alive: player.alive,
+        ...(userId === "dead" ? { lastVoteTarget: "idle" } : {}),
+      });
+    }
+    room.state.phase = "voting";
+    room.state.round = 2;
+    const persist = vi.spyOn(internals, "persistGameEvent");
+    vi.spyOn(internals, "transitionTo").mockImplementation(() => {});
+    // Keep all players alive while inspecting the completed ballot snapshots.
+    const deathInternals = room as unknown as { applyDeaths: () => unknown[] };
+    vi.spyOn(deathInternals, "applyDeaths").mockImplementation(() => []);
+    const cast = { userData: { userId: "cast" }, sessionId: "cast", send: vi.fn() };
+    const skipped = { userData: { userId: "skipped" }, sessionId: "skipped", send: vi.fn() };
+    internals.submitVote(cast, "skip");
+    internals.submitVote(cast, "idle");
+    internals.submitVote(skipped, "idle");
+    internals.submitVote(skipped, "skip");
+    internals.resolveVoting();
+
+    expect(persist).toHaveBeenCalledWith("vote_tally", expect.objectContaining({
+      visibility: "moderator", payload: expect.objectContaining({ voters: [{ userId: "cast" }] }),
+    }));
+    expect(internals.evaluateAchievementUnlocks()).toContainEqual({ userId: "cast", achievementId: "silent_civilian" });
+    expect(internals.evaluateAchievementUnlocks().filter((unlock) => unlock.achievementId === "silent_civilian"))
+      .toHaveLength(1);
+
+    // A new completed ballot in the same round must have its own participation.
+    internals.resolveVoting();
+    expect(internals.evaluateAchievementUnlocks().filter((unlock) => unlock.achievementId === "silent_civilian"))
+      .toEqual([]);
   });
 });

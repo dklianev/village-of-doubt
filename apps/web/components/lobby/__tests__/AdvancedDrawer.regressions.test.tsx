@@ -85,6 +85,64 @@ describe("advanced capacity input", () => {
 
 describe("manual optional role controls", () => {
   it.each([
+    { family: "werewolves", requested: true },
+    { family: "werewolves", requested: false },
+    { family: "mafia", requested: true },
+    { family: "mafia", requested: false },
+  ] as const)("restores the hydrated $family reveal=$requested checkbox after removing Jester", async ({ family, requested }) => {
+    const user = userEvent.setup();
+    render(<DrawerHarness initial={initialState({
+      family,
+      urlParams: new URLSearchParams({ players: "10", jester: "1", reveal: String(Number(requested)) }),
+    })} />);
+    await user.click(screen.getByText("Покажи още настройки"));
+    const reveal = screen.getByRole("checkbox", { name: "Разкриване на ролята при смърт" });
+    expect(reveal).toBeDisabled();
+    expect(reveal).not.toBeChecked();
+    expect(reveal).toHaveAccessibleDescription(/всички роли остават скрити до края/);
+    expect(configured().roles.jester).toBe(1);
+
+    await user.click(screen.getByRole("checkbox", { name: "Добави Шут с лична победа" }));
+    expect(reveal).toBeEnabled();
+    expect(reveal).not.toHaveAttribute("aria-describedby");
+    if (requested) expect(reveal).toBeChecked();
+    else expect(reveal).not.toBeChecked();
+    expect(configured().roles.jester ?? 0).toBe(0);
+    expect(configured().revealRolesOnDeath).toBe(requested);
+  });
+
+  it.each(["werewolves", "mafia"] as const)("explains hidden roles with Jester and restores the %s host preference when removed", async (family) => {
+    const user = userEvent.setup();
+    render(<DrawerHarness initial={initialState({ family })} />);
+    await user.click(screen.getByText("Покажи още настройки"));
+    const reveal = screen.getByRole("checkbox", { name: "Разкриване на ролята при смърт" });
+    const jester = screen.getByRole("checkbox", { name: "Добави Шут с лична победа" });
+    expect(reveal).toBeEnabled();
+    expect(reveal).toBeChecked();
+    await user.click(jester);
+    expect(reveal).toBeDisabled();
+    expect(reveal).not.toBeChecked();
+    expect(reveal).toHaveAccessibleDescription(/всички роли остават скрити до края/);
+    expect(configured().revealRolesOnDeath).toBe(false);
+    await user.click(jester);
+    expect(reveal).toBeEnabled();
+    expect(reveal).toBeChecked();
+    expect(configured().revealRolesOnDeath).toBe(true);
+  });
+
+  it.each(["werewolves", "mafia"] as const)("uses the actual manual %s roster to constrain death reveals", async (family) => {
+    const user = userEvent.setup();
+    const { rerender } = render(<AdvancedDrawer state={manualState(family, "jester", true)} dispatch={() => {}} />);
+    await user.click(screen.getByText("Покажи още настройки"));
+    const reveal = screen.getByRole("checkbox", { name: "Разкриване на ролята при смърт" });
+    expect(reveal).toBeDisabled();
+    expect(reveal).not.toBeChecked();
+    rerender(<AdvancedDrawer state={manualState(family, "jester", false)} dispatch={() => {}} />);
+    expect(reveal).toBeEnabled();
+    expect(reveal).toBeChecked();
+  });
+
+  it.each([
     ["werewolves", "jester", "Добави Шут с лична победа"],
     ["mafia", "jester", "Добави Шут с лична победа"],
     ["mafia", "maniac", "Добави Маниак като трета страна"],

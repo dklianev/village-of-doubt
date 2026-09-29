@@ -24,6 +24,7 @@ overrides:
   sharp@<0.35.0: 0.35.4
   tmp@<0.2.7: 0.2.7
   undici@>=7.0.0 <7.29.0: 7.29.0
+  undici@>=8.1.0 <8.10.2: 8.10.2
   vite: 8.2.2
   ws@>=7.0.0 <7.5.11: 7.5.11
   ws@>=8.0.0 <8.21.0: 8.21.0
@@ -5142,8 +5143,8 @@ packages:
   undici-types@7.18.2:
     resolution: {integrity: sha512-AsuCzffGHJybSaRrmr5eHr81mwJU3kjw6M+uprWvCXiNeN9SOGwQ3Jn8jb8m3Z6izVgknn1R0FTCEAP2QrLY/w==}
 
-  undici@8.10.0:
-    resolution: {integrity: sha512-HvltHd7avK13QIw/oLe4qoOLyoVSoafqJ2jYOrtMRBkbYT31eiBQ8O0ehRKZiEZCMEyLFQNIADpgCWC5fALvYQ==}
+  undici@8.10.2:
+    resolution: {integrity: sha512-/y4/bH9YNU5hi9NIrpOuvGXFcxrj3CMrV+/AYpowAYTpHn8gX/XPFjNy766FPoYY0miQhdW977JFWKGNhBdwyQ==}
     engines: {node: '>=22.19.0'}
 
   unique-string@2.0.0:
@@ -8655,7 +8656,7 @@ snapshots:
       saxes: 6.0.0
       symbol-tree: 3.2.4
       tough-cookie: 6.0.2
-      undici: 8.10.0
+      undici: 8.10.2
       w3c-xmlserializer: 5.0.0
       webidl-conversions: 8.0.1
       whatwg-mimetype: 5.0.0
@@ -10031,7 +10032,7 @@ snapshots:
 
   undici-types@7.18.2: {}
 
-  undici@8.10.0: {}
+  undici@8.10.2: {}
 
   unique-string@2.0.0:
     dependencies:

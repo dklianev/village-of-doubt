@@ -1,0 +1,124 @@
+.conclusion {
+  --final-ink: #fff5df;
+  --final-muted: #d6d7c9;
+  --final-metal: #d6b36c;
+  color: var(--final-ink);
+  background: #041a16;
+}
+:global(html[data-theme="light"]) .conclusion {
+  background: #f3f5ee;
+  --final-ink: #173b30;
+  --final-muted: #52594e;
+  --final-metal: #87642d;
+}
+.scene {
+  position: relative;
+  isolation: isolate;
+  min-height: max(680px, calc(100vw / 2.14));
+  color: #fff8e9;
+  background: #081a17;
+  overflow: hidden;
+}
+.backdrop { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; }
+:where([data-family="mafia"]) .scene { min-height: max(650px, calc(100vw / 2.24)); }
+.copy { position: relative; z-index: 2; max-width: 920px; padding: 76px 24px 260px; margin: 0 auto; text-align: center; }
+.copy::before { content: ""; position: absolute; z-index: -1; inset: 0 -32px 230px; background: linear-gradient(transparent, var(--wash, #081a1780) 8% 65%, transparent); mask: linear-gradient(to right, transparent, #000 8% 92%, transparent); pointer-events: none; }
+.copy h1 { margin: 0; font: 700 64px/1.1 var(--font-display); text-wrap: balance; overflow-wrap: anywhere; }
+:where([data-endgame="werewolves"], [data-endgame="vampires"], [data-endgame="lovers"]) .copy h1 { font-size: 56px; }
+:where([data-jester-win]) .copy { padding-top: 66px; }
+:where([data-jester-win]) .copy h1 { font-size: 52px; line-height: 1.12; }
+.copy h1:focus { outline: none; }
+.reason { max-width: 52ch; margin: 6px auto 0; font-size: 22px; line-height: 1.4; text-wrap: balance; }
+.personal { margin-top: 18px; }
+.personalRule { display: flex; align-items: center; gap: 16px; width: min(420px, 90%); margin: 0 auto 2px; color: #eccd83; }
+.personalRule::before, .personalRule::after { content: ""; height: 1px; background: currentColor; flex: 1; }
+.personal h2 { margin: 0; font: 700 36px/1.14 var(--font-display); color: #ffe6a4; text-wrap: balance; overflow-wrap: anywhere; }
+.personal p { margin: 4px auto 0; font-size: 18px; line-height: 1.4; max-width: 60ch; overflow-wrap: anywhere; }
+.actions { display: grid; gap: 10px; width: min(340px, 100%); margin: 28px auto 0; }
+:where([data-jester-win]) .actions { margin-top: 16px; }
+.actions :global(.btn) { gap: 14px; min-height: 46px; padding: 10px 18px; border-radius: 6px; font: 600 20px/1.3 var(--font-display); letter-spacing: 0; text-transform: none; white-space: normal; overflow-wrap: anywhere; box-shadow: none; }
+.actions :global(.btn-primary) { min-height: 54px; font-size: 23px; color: #fff8e9; background: #b5231e; border-color: #e75c41; }
+.actions :global(.btn-secondary) { background: #071d18ee; color: #fff3d7; border-color: #d6b36c; }
+.actions :global(.btn:focus-visible) { outline: 3px solid #fff; outline-offset: 4px; }
+.scene[data-daylight] { --wash: #f4f0e6b8; color: #243b30; background: #e6e4d9; }
+:where([data-daylight]) .reason { font: 23px/1.4 var(--font-display); }
+.scene[data-daylight] .personal h2, .scene[data-daylight] .personalRule { color: #75501a; }
+.scene[data-daylight] .actions :global(.btn-secondary) { color: #2e3c31; background: #f7f2e5ee; border-color: #927344; }
+.scene[data-daylight] .actions :global(.btn:focus-visible) { outline-color: #253e32; }
+.scene .actions[data-quiet] :global(.btn-secondary) { background: transparent; border-color: transparent; color: #173b30; text-decoration: underline; text-underline-offset: 4px; }
+.actions :global(.btn)::before { content: none; }
+.jesterArtifact { position: absolute; right: 4%; bottom: 2.6%; width: 46%; max-height: 48%; object-fit: contain; object-position: bottom right; z-index: 1; pointer-events: none; }
+.revelation { padding: 10px 48px 32px; border-top: 1px solid var(--final-metal); }
+.sectionHeading { display: flex; align-items: center; gap: 20px; }
+.sectionHeading::after { content: ""; height: 1px; background: var(--final-metal); opacity: .4; flex: 1; order: 1; }
+.sectionHeading h2 { margin: 0; font: 650 24px/1.25 var(--font-display); color: var(--final-metal); }
+:global(html[data-theme="light"]) .sectionHeading h2 { color: var(--final-ink); }
+.sectionHeading a { order: 2; display: inline-flex; align-items: center; gap: 10px; min-height: 44px; font-size: 14px; }
+.sectionHeading a:hover { text-decoration: underline; }
+.players { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 28px 22px; list-style: none; margin: 0; padding: 0; }
+.player { display: flex; flex-direction: column; align-items: center; text-align: center; min-width: 0; gap: 3px; }
+.portrait { --portrait-size: 130px; position: relative; isolation: isolate; width: var(--portrait-size); height: var(--portrait-size); padding: 3px; border: 1px solid var(--final-metal); border-radius: 50%; background: #07120f; margin-bottom: 4px; }
+.portrait > :first-child { position: relative; z-index: 1; }
+:where([data-family="mafia"]) .portrait { --portrait-size: 148px; }
+.laurel { position: absolute; z-index: 0; width: calc(var(--portrait-size) + 54px); height: calc(var(--portrait-size) + 54px); max-width: none; bottom: -32px; left: 50%; transform: translateX(-50%); pointer-events: none; }
+.player strong, .role { line-height: 1.35; max-width: 100%; overflow-wrap: anywhere; }
+.player strong { font-size: 18px; font-weight: 650; }
+.role { font-size: 16px; color: var(--final-muted); }
+.winnerLabel, .personalLabel { display: inline-flex; align-items: center; justify-content: center; gap: 6px; max-width: 100%; overflow-wrap: anywhere; margin-top: 4px; padding: 3px 10px; border: 1px solid var(--final-metal); border-radius: 4px; color: var(--final-metal); font-size: 15px; line-height: 1.3; }
+.personalLabel { color: #ffcfbf; border-color: #be5945; background: #621e1b; }
+.personalSeal { position: absolute; z-index: 2; bottom: 0; right: -6px; width: 42px; height: 42px; border-radius: 50%; background: #7f2722; color: #fff3de; border: 1px solid #f0c895; display: grid; place-items: center; }
+.afterword { max-width: 1200px; margin: 0 auto; padding: 0 48px 40px; }
+.repeatNote { font-size: 13px; color: var(--final-muted); margin: 0 0 28px; }
+.afterword section { padding-top: 24px; border-top: 1px solid var(--final-metal); }
+.afterword h2 { font-size: 24px; margin: 0; }
+.afterword :global(.section-kicker) { color: var(--final-metal); }
+.afterword ol { margin: 18px 0 0; padding-left: 20px; line-height: 1.6; color: var(--final-muted); }
+.afterword li { margin: 8px 0; }
+.afterword :global(.post-game-badges) { display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; color: var(--final-muted); }
+@media (prefers-reduced-motion: no-preference) {
+  .copy h1, .reason { animation: var(--play-reveal); }
+  .personal, .jesterArtifact { animation: var(--play-reveal); animation-duration: 520ms; animation-delay: 120ms; }
+}
+@media (max-width: 1000px) {
+  .scene { min-height: 630px; }
+  .copy { padding-top: 36px; }
+  .copy h1 { font-size: 44px; }
+  .reason { font-size: 18px; }
+  .personal h2 { font-size: 30px; }
+  .backdrop { object-position: 53% center; }
+  .revelation { padding: 20px 24px 28px; }
+  .portrait { --portrait-size: 120px; }
+  .afterword { padding: 0 24px 32px; }
+}
+@media (max-width: 600px) {
+  .scene { display: flex; flex-direction: column; min-height: 0; background: #0d211c; }
+  .copy { width: 100%; padding: 28px 20px 24px; }
+  .copy h1 { font-size: 34px; }
+  .reason { font-size: 16px; margin-top: 12px; }
+  .personal h2 { font-size: 26px; }
+  .personal p { font-size: 14px; }
+  .actions { margin-top: 20px; }
+  .actions :global(.btn) { font-size: 17px; min-height: 48px; }
+  .backdrop { position: relative; inset: auto; z-index: 0; order: 1; height: 210px; object-position: 50% 100%; }
+  .jesterArtifact { width: 48%; max-height: 145px; bottom: 12px; right: 2%; }
+  .scene[data-daylight] { background: #e9e7dd; }
+  .copy::before { display: none; }
+  .revelation { padding: 18px 20px 28px; }
+  .sectionHeading { flex-wrap: wrap; gap: 4px 16px; }
+  .sectionHeading h2 { flex-basis: 100%; }
+  .sectionHeading::after { display: none; }
+  .players { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 16px; }
+  .portrait { --portrait-size: 108px; }
+  .laurel { width: 134px; height: 134px; bottom: -24px; }
+  .personalSeal { width: 34px; height: 34px; right: -2px; }
+  .personalSeal svg { width: 20px; height: 20px; }
+  .player strong { font-size: 16px; }
+  .afterword { padding: 0 20px 28px; }
+}
+@media (max-width: 359px) {
+  .copy { padding-inline: 16px; }
+  .copy h1 { font-size: 30px; }
+  .personal h2 { font-size: 24px; }
+  .revelation, .afterword { padding-inline: 16px; }
+  .backdrop { height: 190px; }
+}

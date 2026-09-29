@@ -36,6 +36,10 @@ export function PhaseTransitionOverlay({
     return null;
   }
 
+  if (phase === "game_over") {
+    return <span className="sr-only" role="status" aria-live="polite" aria-atomic="true">Край на играта</span>;
+  }
+
   const family = getGameFamily(mode);
   const transitionKind = transitionKindForPhase(phase);
 

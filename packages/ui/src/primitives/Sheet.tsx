@@ -145,6 +145,21 @@ const SHEET_RUNTIME_CSS = `
   animation: ds-sheet-close 280ms cubic-bezier(0.32, 0, 0.67, 0) both;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .ds-sheet[data-state="open"],
+  .ds-sheet[data-state="closed"] {
+    animation: none;
+  }
+
+  .ds-sheet-close {
+    transition: none;
+  }
+
+  .ds-sheet-close:hover {
+    transform: none;
+  }
+}
+
 @media (max-width: 767px) {
   .ds-sheet[data-size="workspace"] {
     inset: 0;

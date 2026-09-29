@@ -1,0 +1,271 @@
+:global(.sign-in-shell) {
+  --entry-paper: #f8f6ef;
+  --entry-ink: #21362e;
+  --entry-soft: #526059;
+  --entry-line: #b8bbaa;
+  --entry-field: #fffdf8;
+  --entry-accent: #933b30;
+  --entry-error-bg: #f9e9e4;
+  --entry-art: image-set(url("/game-art/auth/bg-sign-in-light-v2.avif") type("image/avif"), url("/game-art/auth/bg-sign-in-light-v2.webp") type("image/webp"));
+  background: #d4d8ca;
+  color: var(--entry-ink);
+  isolation: isolate;
+}
+
+:global(html[data-theme="dark"] .sign-in-shell) {
+  --entry-paper: #14241f;
+  --entry-ink: #f4eddb;
+  --entry-soft: #c2c8b9;
+  --entry-line: #62705e;
+  --entry-field: #0e1b17;
+  --entry-accent: #f0b681;
+  --entry-error-bg: #412623;
+  --entry-art: image-set(url("/game-art/auth/bg-sign-in-dark-v2.avif") type("image/avif"), url("/game-art/auth/bg-sign-in-dark-v2.webp") type("image/webp"));
+  background: #101d18;
+}
+
+:global(.sign-in-stage) {
+  position: relative;
+  display: grid;
+  align-items: center;
+  min-height: calc(100svh - 160px);
+  padding: 40px 24px;
+}
+
+:global(.sign-in-art) {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: var(--entry-art);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  pointer-events: none;
+}
+
+:global(.sign-in-content) {
+  width: min(1180px, 100%);
+  min-width: 0;
+  margin-inline: auto;
+}
+
+:global(.sign-in-panel) {
+  width: min(440px, 100%);
+  padding: 30px 32px 16px;
+  border: 1px solid var(--entry-line);
+  border-radius: 8px;
+  background: var(--entry-paper);
+  box-shadow: 0 12px 42px #07130d24;
+}
+
+:global(.sign-in-heading) {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+:global(.email-form-intro) { display: grid; }
+:global(.email-form-intro > div) { grid-area: 1 / 1; min-width: 0; }
+:global(.email-form-intro > [aria-hidden="true"]) { visibility: hidden; }
+
+:global(.sign-in-heading h1),
+:global(.email-verification-pending h1) {
+  margin: 0;
+  color: var(--entry-ink);
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-weight: 800;
+  line-height: 1.12;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+
+:global(.sign-in-heading p) {
+  min-height: 42px;
+  margin: 0;
+  color: var(--entry-soft);
+  font-size: 14px;
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
+:global(.email-form),
+:global(.email-form-panel) {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+/* Keep room for the registration field so mode changes cannot resize the scene. */
+:global(.email-form-panel) { min-height: 486px; align-content: start; }
+
+:global(.email-form-tabs) {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid var(--entry-line);
+}
+
+:global(.email-form-tabs button) {
+  position: relative;
+  min-height: 44px;
+  border: 0;
+  padding: 10px;
+  background: transparent;
+  color: var(--entry-soft);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+:global(.email-form-tabs button.is-active) { color: var(--entry-accent); }
+:global(.email-form-tabs button.is-active)::after {
+  position: absolute;
+  inset: auto 0 -1px;
+  height: 3px;
+  background: var(--entry-accent);
+  content: "";
+}
+
+:global(.sign-in-oauth) { display: grid; gap: 8px; min-width: 0; margin: 0; padding: 0; border: 0; }
+:global(.oauth-option) { display: grid; gap: 8px; min-width: 0; }
+:global(.oauth-button) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 14px;
+  border: 1px solid var(--entry-line);
+  border-radius: 6px;
+  background: var(--entry-field);
+  color: var(--entry-ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: border-color 140ms ease, background-color 140ms ease;
+}
+:global(.oauth-button:hover:not(:disabled)) { border-color: var(--entry-accent); }
+:global(.oauth-button-logo) { display: grid; place-items: center; width: 24px; height: 24px; flex: 0 0 24px; }
+:global(.oauth-button-logo img) { max-width: 24px; max-height: 24px; }
+:global(.oauth-button-label) { min-width: 0; }
+:global(.oauth-button-spinner) {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: entry-spin 800ms linear infinite;
+}
+@keyframes entry-spin { to { transform: rotate(360deg); } }
+
+:global(.sign-in-divider) {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--entry-soft);
+  font-size: 12px;
+  line-height: 18px;
+}
+:global(.sign-in-divider)::before,
+:global(.sign-in-divider)::after { content: ""; height: 1px; flex: 1; background: var(--entry-line); opacity: 0.65; }
+
+:global(.email-form label),
+:global(.email-password-field) { display: grid; gap: 6px; min-width: 0; }
+:global(.email-form label) { color: var(--entry-ink); font-size: 13px; font-weight: 650; line-height: 20px; }
+:global(.email-form input) {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  border: 1px solid var(--entry-line);
+  border-radius: 6px;
+  padding: 10px 12px;
+  background: var(--entry-field);
+  color: var(--entry-ink);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 400;
+}
+:global(.email-form input)::placeholder { color: var(--entry-soft); opacity: 1; }
+:global(.email-password-label) { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 4px 12px; min-height: 44px; }
+:global(.email-form-help) { display: inline-flex; align-items: center; min-height: 44px; color: var(--entry-accent); font-size: 12px; line-height: 24px; text-underline-offset: 3px; }
+:global(.email-password-input) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
+  align-items: center;
+  border: 1px solid var(--entry-line);
+  border-radius: 6px;
+  background: var(--entry-field);
+}
+:global(.email-password-input input) { min-height: 44px; border: 0; border-radius: 5px 0 0 5px; background: transparent; }
+:global(.email-password-toggle) {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--entry-soft);
+  cursor: pointer;
+}
+:global(.email-password-toggle:hover) { color: var(--entry-ink); }
+
+:global(.email-form-status),
+:global(.oauth-button-status) {
+  margin: 0;
+  border-left: 3px solid var(--entry-accent);
+  border-radius: 0 4px 4px 0;
+  padding: 10px 12px;
+  background: var(--entry-error-bg);
+  color: var(--entry-ink);
+  font-size: 14px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+:global(.email-form input[aria-invalid="true"]) { border-color: var(--entry-accent); }
+:global(.email-form-submit) { display: flex; gap: 10px; width: 100%; min-height: 46px; margin-top: 2px; box-shadow: none; }
+:global(.email-form button:disabled) { opacity: 0.65; cursor: wait; }
+
+:global(.sign-in-panel :is(button, a, input):focus-visible) {
+  outline: 2px solid var(--entry-accent);
+  outline-offset: 3px;
+  box-shadow: none;
+}
+:global(.sign-in-foot) { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 12px; color: var(--entry-soft); font-size: 12px; }
+:global(.sign-in-foot a) { display: inline-flex; align-items: center; min-height: 36px; color: inherit; text-underline-offset: 3px; }
+:global(.email-verification-pending) { display: grid; gap: 18px; min-width: 0; }
+:global(.email-verification-pending p) { margin: 0; color: var(--entry-soft); line-height: 1.5; overflow-wrap: anywhere; }
+:global(.sign-in-loading) { min-height: 70svh; padding: 48px 24px; text-align: center; }
+
+@media (max-width: 800px) {
+  :global(.sign-in-shell) { --entry-art: url("/game-art/mobile/auth/bg-sign-in-light-v2.webp"); }
+  :global(html[data-theme="dark"] .sign-in-shell) { --entry-art: url("/game-art/mobile/auth/bg-sign-in-dark-v2.webp"); }
+  :global(.sign-in-stage) { min-height: calc(100svh - 160px); padding: 132px 16px 28px; align-items: start; }
+  :global(.sign-in-art) {
+    inset: 0 0 auto;
+    /* Keep the focal motif above the fixed panel offset on phones and tablets. */
+    height: 240px;
+    background-position: right 65%;
+    mask-image: linear-gradient(#000 48%, transparent 100%);
+  }
+  :global(.sign-in-content) { width: min(440px, 100%); }
+  :global(.sign-in-panel) { padding: 24px 20px 10px; box-shadow: 0 6px 24px #07130d1a; }
+  :global(.sign-in-heading h1), :global(.email-verification-pending h1) { font-size: 30px; }
+  :global(.sign-in-heading p) { min-height: 0; }
+  :global(.email-form), :global(.email-form-panel) { gap: 14px; }
+  :global(.email-form-panel) { min-height: 476px; }
+}
+@media (max-width: 360px) {
+  :global(.sign-in-panel) { padding-inline: 16px; }
+  :global(.sign-in-heading h1), :global(.email-verification-pending h1) { font-size: 28px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :global(.oauth-button) { transition: none; }
+  :global(.oauth-button-spinner) { animation-duration: 1600ms; }
+}

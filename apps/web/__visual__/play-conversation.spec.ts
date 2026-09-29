@@ -61,13 +61,13 @@ for (const family of ["werewolves", "mafia"] as const) {
         if (mobile) await page.getByRole("button", { name: "Към разговора", exact: true }).click();
 
         const rail = page.locator(".play-side-rail");
-        const frame = page.locator(".play-interaction-column");
+        const frame = page.locator(".play-console-band");
         await expect(rail).toBeVisible();
         const framing = await frame.evaluate((element) => {
           const style = getComputedStyle(element);
-          return { radius: parseFloat(style.borderRadius), border: parseFloat(style.borderRightWidth), background: style.backgroundColor };
+          return { radius: parseFloat(style.borderRadius), border: parseFloat(style.borderTopWidth), background: style.backgroundColor };
         });
-        expect.soft(framing.radius).toBeGreaterThan(0);
+        expect.soft(framing.radius).toBe(0);
         expect.soft(framing.border).toBeGreaterThan(0);
         expect.soft(framing.background, "The conversation frame needs an opaque surface, not the scene behind it").toMatch(/^rgb\(/);
         expect.soft(await rail.evaluate((element) => parseFloat(getComputedStyle(element).borderTopWidth))).toBe(0);
@@ -101,6 +101,7 @@ for (const family of ["werewolves", "mafia"] as const) {
         if (!mobile) {
           const readingArea = await rail.getByRole("tabpanel", { name: "Разговор", exact: true }).boundingBox();
           expect.soft(readingArea!.height, "The chat must not collapse below its status notice").toBeGreaterThanOrEqual(220);
+          await rail.locator(".chat-line").first().scrollIntoViewIfNeeded();
           await expect.soft(rail.locator(".chat-line").first()).toBeInViewport({ ratio: 1 });
         }
         const screenshot = testInfo.outputPath("conversation.png");
@@ -109,7 +110,7 @@ for (const family of ["werewolves", "mafia"] as const) {
         expect.soft(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
         expect.soft(await rail.evaluate((element) => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1);
         if (width === 390) {
-          const accessibility = await new AxeBuilder({ page }).include(".play-interaction-column").withTags(["wcag2a", "wcag2aa"]).analyze();
+          const accessibility = await new AxeBuilder({ page }).include(".play-console-band").withTags(["wcag2a", "wcag2aa"]).analyze();
           expect.soft(accessibility.violations).toEqual([]);
         }
         await chat.press("ArrowLeft");
@@ -117,9 +118,13 @@ for (const family of ["werewolves", "mafia"] as const) {
         const events = rail.getByRole("tabpanel", { name: "Събития", exact: true });
         await expect(events).toBeVisible();
         await page.keyboard.press("Tab");
+        await expect(rail.getByRole("button", { name: "Правила", exact: true })).toBeFocused();
+        await page.keyboard.press("Tab");
+        await expect(rail.getByRole("button", { name: /^Сигнали/ })).toBeFocused();
+        await page.keyboard.press("Tab");
         await expect(events).toBeFocused();
         if (width === 1440 || width === 390) {
-          const accessibility = await new AxeBuilder({ page }).include(".play-interaction-column").withTags(["wcag2a", "wcag2aa"]).analyze();
+          const accessibility = await new AxeBuilder({ page }).include(".play-console-band").withTags(["wcag2a", "wcag2aa"]).analyze();
           expect(accessibility.violations).toEqual([]);
         }
         if (mobile) {

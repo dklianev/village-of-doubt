@@ -24,6 +24,7 @@ import type { pushToast } from "@/lib/toast";
 import { arePhaseSlicesEqual, arePlayerListsEqual } from "@/lib/play/equality";
 import { isDuplicateNameError } from "@/lib/play/join-errors";
 import { nextRoomOptionsForState } from "@/lib/play/next-room-options";
+import { terminalResultForState } from "@/lib/play/terminal-result";
 import { playCue } from "@/lib/sound";
 import type {
   ConnectionStatus,
@@ -150,6 +151,7 @@ export function useGameRoom({
   }, []);
 
   const clearViewerPrivateState = useCallback(() => {
+    setUnlockedAchievementIds([]);
     setCurrentUserId("");
     setPrivateRole(null);
     setPrivateResult(null);
@@ -241,6 +243,8 @@ export function useGameRoom({
       });
 
     const markRecovering = () => {
+      // A transient celebration must not replay when its modal remounts after recovery.
+      setUnlockedAchievementIds([]);
       if (!needsRecovery) {
         onReconnectSuppressedRef.current?.();
       }
@@ -525,6 +529,7 @@ export function useGameRoom({
         clearReconnectTimer();
         clearReconnectionToken(code);
         setConnectionStatus("error");
+        setUnlockedAchievementIds([]);
         setConnectionMessage(
           errorMessage?.trim()
             ? `Стаята прекъсна връзката: ${errorMessage}`
@@ -734,6 +739,7 @@ interface ColyseusGameStatePlayer extends Omit<PublicPlayer, "revealedRole"> {
 interface ColyseusGameState {
   code: string;
   nextRoomOptionsJson?: string;
+  terminalResultJson?: string;
   mode: GameMode;
   playerCount: number;
   narratorMode: string;
@@ -771,6 +777,7 @@ function snapshotShellForState(
   previousSnapshot: GameSnapshot | null,
 ): GameSnapshot {
   const nextRoomOptions = nextRoomOptionsForState(state, previousSnapshot?.nextRoomOptions);
+  const terminalResult = terminalResultForState(state, previousSnapshot?.terminalResult);
   return {
     code: state.code,
     ...(nextRoomOptions === undefined ? {} : { nextRoomOptions }),
@@ -793,6 +800,7 @@ function snapshotShellForState(
     phaseEndsAt: state.phaseEndsAt,
     winnerTeam: state.winnerTeam,
     winnerReasonBg: state.winnerReasonBg,
+    ...(terminalResult === undefined ? {} : { terminalResult }),
     revoteEligibleUserIds: Array.from(state.revoteEligibleUserIds ?? []),
     ...(state.votingCycle === undefined ? {} : { votingCycle: state.votingCycle }),
     players: previousSnapshot?.players ?? [],
@@ -903,6 +911,7 @@ function areSnapshotShellEqual(a: GameSnapshot, b: GameSnapshot) {
     && a.narratorVoice === b.narratorVoice
     && a.winnerTeam === b.winnerTeam
     && a.winnerReasonBg === b.winnerReasonBg
+    && a.terminalResult === b.terminalResult
     && a.votingCycle === b.votingCycle
     && areStringListsEqual(a.revoteEligibleUserIds ?? [], b.revoteEligibleUserIds ?? [])
     && areRoleCountsEqual(a.roleCounts, b.roleCounts);

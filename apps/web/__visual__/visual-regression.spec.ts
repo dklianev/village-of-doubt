@@ -36,7 +36,8 @@ const ROUTES = [
   { name: "history-empty", path: "/history" },
   { name: "history", path: "/history?visualHistory=fixture" },
   { name: "replay", path: "/history/fixture-game-1/replay?visualReplay=fixture" },
-  { name: "leaderboard-empty", path: "/leaderboard" },
+  { name: "leaderboard-empty", path: "/leaderboard?visualLeaderboard=empty" },
+  { name: "leaderboard-filled", path: "/leaderboard?visualLeaderboard=fixture" },
   { name: "achievements-gate", path: "/achievements" },
   { name: "achievements", path: "/achievements?visualAuth=1&visualAchievements=fixture" },
   { name: "friends", path: "/friends?visualAuth=1" },
@@ -47,7 +48,7 @@ const ROUTES = [
   ...PLAY_VISUAL_ROUTES,
   { name: "forgot-password", path: "/forgot-password" },
   { name: "reset-password-invalid", path: "/reset-password" },
-  { name: "verify-email-invalid", path: "/verify-email?token=fake" },
+  { name: "verify-email-invalid", path: "/verify-email?error=TOKEN_EXPIRED" },
   { name: "report", path: "/report" },
   { name: "privacy", path: "/privacy" },
   { name: "privacy-auth", path: "/privacy?visualAuth=1" },
@@ -61,6 +62,8 @@ const VIEWPORTS = [
   { name: "desktop", width: 1440, height: 900 },
   { name: "mobile", width: 390, height: 844 },
 ];
+
+const COLLECTION_VISUAL_ROUTE_NAMES = new Set(["history", "history-empty", "replay", "leaderboard-empty", "leaderboard-filled", "achievements"]);
 
 const REPRESENTATIVE_VIEWPORTS = [
   { name: "compact-375", width: 375, height: 812 },
@@ -91,7 +94,8 @@ const LIGHT_UTILITY_ROUTES = [
   { name: "history-empty", path: "/history" },
   { name: "history", path: "/history?visualHistory=fixture" },
   { name: "replay", path: "/history/fixture-game-1/replay?visualReplay=fixture" },
-  { name: "leaderboard-empty", path: "/leaderboard" },
+  { name: "leaderboard-empty", path: "/leaderboard?visualLeaderboard=empty" },
+  { name: "leaderboard-filled", path: "/leaderboard?visualLeaderboard=fixture" },
   { name: "achievements", path: "/achievements?visualAuth=1&visualAchievements=fixture" },
   { name: "friends", path: "/friends?visualAuth=1" },
   { name: "create", path: "/create?visualAuth=1" },
@@ -114,6 +118,7 @@ const DARK_UTILITY_ROUTE_NAMES = new Set([
   "history",
   "replay",
   "leaderboard-empty",
+  "leaderboard-filled",
   "achievements",
   "friends",
   "privacy",
@@ -150,7 +155,8 @@ const A11Y_ROUTES = [
   { name: "replay", path: "/history/fixture-game-1/replay?visualReplay=fixture" },
   { name: "achievements-gate", path: "/achievements" },
   { name: "achievements", path: "/achievements?visualAuth=1&visualAchievements=fixture" },
-  { name: "leaderboard-empty", path: "/leaderboard" },
+  { name: "leaderboard-empty", path: "/leaderboard?visualLeaderboard=empty" },
+  { name: "leaderboard-filled", path: "/leaderboard?visualLeaderboard=fixture" },
   { name: "friends", path: "/friends?visualAuth=1" },
   { name: "tutorial", path: "/tutorial" },
   { name: "sign-in", path: "/sign-in" },
@@ -162,7 +168,7 @@ const A11Y_ROUTES = [
   { name: "play-mafia-voting", path: "/play/VISUAL?visualGame=1&phase=voting&family=mafia&voteTally=full" },
   { name: "forgot-password", path: "/forgot-password" },
   { name: "reset-password-invalid", path: "/reset-password" },
-  { name: "verify-email-invalid", path: "/verify-email?token=fake" },
+  { name: "verify-email-invalid", path: "/verify-email?error=TOKEN_EXPIRED" },
   { name: "offline", path: "/offline" },
   { name: "not-found", path: "/route-that-does-not-exist" },
 ];
@@ -349,7 +355,7 @@ test("@geometry mobile history stays inside the viewport", async ({ page }) => {
   }
 });
 
-test("@geometry achievements centers an orphan plaque on the hall wall", async ({ page }) => {
+test("@geometry achievements features the latest item above an aligned collection", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await setVisualTheme(page, "dark");
   await page.goto("/achievements?visualAuth=1&visualAchievements=fixture", { waitUntil: "domcontentloaded" });
@@ -357,25 +363,29 @@ test("@geometry achievements centers an orphan plaque on the hall wall", async (
 
   const wall = page.locator(".plaque-wall");
   const plaques = wall.locator(".achievement-plaque");
-  const plaqueCount = await plaques.count();
-  expect(plaqueCount % 3).toBe(1);
-
-  const [wallBox, lastPlaqueBox] = await Promise.all([
-    wall.boundingBox(),
-    plaques.nth(plaqueCount - 1).boundingBox(),
-  ]);
-  expect(wallBox).not.toBeNull();
-  expect(lastPlaqueBox).not.toBeNull();
-
-  const wallCenter = wallBox!.x + wallBox!.width / 2;
-  const plaqueCenter = lastPlaqueBox!.x + lastPlaqueBox!.width / 2;
-  expect(Math.abs(wallCenter - plaqueCenter)).toBeLessThanOrEqual(2);
+  await expect(plaques).toHaveCount(6);
+  const feature = page.locator(".achievement-feature");
+  await expect(feature).toHaveCount(1);
+  const featuredId = await feature.getAttribute("data-achievement-id");
+  await expect(wall.locator(`[data-achievement-id="${featuredId}"]`)).toHaveCount(0);
+  const wallBox = (await wall.boundingBox())!;
+  const featureBox = (await feature.boundingBox())!;
+  expect(featureBox.y + featureBox.height).toBeLessThan(wallBox.y);
+  const boxes = await plaques.evaluateAll(nodes => nodes.map(node => {
+    const box = node.getBoundingClientRect();
+    return { x: box.x, y: box.y, width: box.width };
+  }));
+  for (let column = 0; column < 3; column += 1) {
+    expect(Math.abs(boxes[column]!.x - boxes[column + 3]!.x)).toBeLessThanOrEqual(1);
+    expect(Math.abs(boxes[column]!.width - boxes[column + 3]!.width)).toBeLessThanOrEqual(1);
+    expect(boxes[column + 3]!.y).toBeGreaterThan(boxes[column]!.y);
+  }
 
   const archiveLink = page.getByRole("link", { name: "Виж записаните игри" });
   const archiveBox = await archiveLink.boundingBox();
   expect(archiveBox).not.toBeNull();
-  const archiveCenter = archiveBox!.x + archiveBox!.width / 2;
-  expect(Math.abs(wallCenter - archiveCenter)).toBeLessThanOrEqual(2);
+  expect(Math.abs(wallBox.x - archiveBox!.x)).toBeLessThanOrEqual(2);
+  expect(archiveBox!.y).toBeGreaterThan(wallBox.y + wallBox.height);
 });
 
 test("@geometry mobile game over uses document scroll without nested story scrollbars", async ({ page }) => {
@@ -395,22 +405,25 @@ test("@geometry mobile game over uses document scroll without nested story scrol
   }));
   expect(pageGeometry.scrollWidth).toBeLessThanOrEqual(pageGeometry.clientWidth + 1);
 
-  const story = page.locator(".play-stage-takeover .post-game-story");
-  const winner = page.locator(".play-stage-takeover .play-winner");
+  const conclusion = page.locator('[data-endgame="werewolves"]');
+  const story = conclusion.locator(".post-game-story");
+  const scene = conclusion.locator('section[aria-labelledby="conclusion-heading"]');
+  await expect(scene.getByRole("heading", { level: 1, name: "Върколаците победиха", exact: true })).toBeFocused();
   await expect(story).toBeVisible();
-  await expect(page.locator(".play-stage, .play-seat-slot")).toHaveCount(0);
-  const takeover = page.locator(".play-stage-takeover");
+  await expect(page.locator(".play-stage, .play-seat-slot, .play-primary-column, .play-action-dock")).toHaveCount(0);
   // Hydration can replace deferred content between separate element measurements.
   await expect.poll(() => page.evaluate(() => {
-    const column = document.querySelector(".play-primary-column");
-    const stage = column?.querySelector(".play-stage-takeover");
-    const winnerPanel = stage?.querySelector(".play-winner");
-    const storyPanel = stage?.querySelector(".post-game-story");
+    const shell = document.querySelector("main.play-finale-shell");
+    const root = shell?.querySelector("[data-endgame]");
+    const scenePanel = root?.querySelector('section[aria-labelledby="conclusion-heading"]');
+    const heading = scenePanel?.querySelector("h1");
+    const links = [...(scenePanel?.querySelectorAll("a") ?? [])];
+    const storyPanel = root?.querySelector(".post-game-story");
     const timeline = storyPanel?.querySelector("ol");
-    if (!column || !stage || !winnerPanel || !storyPanel || !timeline) return ["missing finale content"];
+    if (!shell || !root || !scenePanel || !heading || links.length !== 2 || !storyPanel || !timeline) return ["missing finale content"];
 
     const violations: string[] = [];
-    for (const element of [column, stage, winnerPanel, storyPanel, timeline]) {
+    for (const element of [shell, root, scenePanel, heading, storyPanel, timeline, ...links]) {
       const rect = element.getBoundingClientRect();
       if (rect.width <= 0 || rect.height <= 0 || getComputedStyle(element).visibility !== "visible") {
         violations.push(`hidden finale content: ${element.className}`);
@@ -419,34 +432,51 @@ test("@geometry mobile game over uses document scroll without nested story scrol
     for (const element of [storyPanel, timeline]) {
       if (element.scrollHeight > element.clientHeight + 1) violations.push(`nested story scroll: ${element.className}`);
     }
-    if (stage.getBoundingClientRect().y - column.getBoundingClientRect().y > 48) violations.push("finale top gap");
-    for (const panel of [winnerPanel, storyPanel]) {
+    if (scenePanel.getBoundingClientRect().y - shell.getBoundingClientRect().y > 1) violations.push("finale top gap");
+    const sceneRect = scenePanel.getBoundingClientRect();
+    if (Math.abs(sceneRect.left) > 1 || Math.abs(sceneRect.width - innerWidth) > 1) violations.push("scene not fullbleed");
+    for (const panel of [heading, storyPanel, ...links]) {
       const rect = panel.getBoundingClientRect();
-      if (rect.left < 23 || rect.right > 367) violations.push(`finale outside gutters: ${panel.className}`);
+      if (rect.left < 19 || rect.right > innerWidth - 19) violations.push(`finale outside gutters: ${panel.className}`);
+    }
+    for (const element of [heading, ...links]) {
+      const rect = element.getBoundingClientRect();
+      // Measure content, not the decorative button pseudo-element's scroll extent.
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      const clipsY = getComputedStyle(element).overflowY !== "visible";
+      for (const content of range.getClientRects()) {
+        if (content.left < rect.left - 1 || content.right > rect.right + 1
+          || content.top < (clipsY ? rect.top : sceneRect.top) - 1
+          || content.bottom > (clipsY ? rect.bottom : sceneRect.bottom) + 1) violations.push(`finale text clipped: ${element.textContent}`);
+      }
+    }
+    for (const link of links) {
+      const rect = link.getBoundingClientRect();
+      if (rect.width < 44 || rect.height < 44) violations.push("finale action hit target");
     }
     return violations;
   })).toEqual([]);
 
-  const winnerFrame = await winner.evaluate((element) => {
-    const style = getComputedStyle(element, "::before");
-    return {
-      maskImage: style.maskImage,
-      webkitMaskImage: style.webkitMaskImage,
-    };
-  });
-  expect(winnerFrame).toEqual({ maskImage: "none", webkitMaskImage: "none" });
+  const backdrop = scene.locator(':scope > img[src$=".webp"]').first();
+  await expectDecodedImage(backdrop);
+  await expect(backdrop).toHaveAttribute("src", "/game-art/endgame/werewolves-v1.webp");
+  await expect(backdrop).toHaveCSS("object-fit", "cover");
+  await expect(backdrop).toHaveCSS("filter", "none");
+  const archive = scene.getByRole("link", { name: "Към архива", exact: true });
+  await expect(archive).toHaveAttribute("href", "/history");
+  // Compare one connected render; deferred content can remount during hydration.
+  await expect.poll(() => scene.evaluate((element) => {
+    const art = element.querySelector<HTMLImageElement>('img[src$="werewolves-v1.webp"]');
+    const archive = element.querySelector('a[href="/history"]');
+    if (!element.isConnected || !art?.complete || !art.naturalWidth || !archive) return false;
+    const artBox = art.getBoundingClientRect();
+    const archiveBox = archive.getBoundingClientRect();
+    return Math.abs(artBox.x) < 0.5 && Math.abs(artBox.width - 390) < 0.5
+      && artBox.height > 0 && archiveBox.height > 0 && artBox.y >= archiveBox.bottom;
+  })).toBe(true);
 
-  const winnerSurface = await winner.evaluate((element) => {
-    const style = getComputedStyle(element);
-    return {
-      backgroundSize: style.backgroundSize.split(", ")[2],
-      backgroundRepeat: style.backgroundRepeat.split(", ")[2],
-    };
-  });
-  expect(["100%", "100% auto"]).toContain(winnerSurface.backgroundSize);
-  expect(winnerSurface.backgroundRepeat).toBe("no-repeat");
-
-  const outerChrome = await takeover.evaluate((element) => {
+  const outerChrome = await conclusion.evaluate((element) => {
     const style = getComputedStyle(element);
     return {
       borderWidth: style.borderTopWidth,
@@ -462,10 +492,14 @@ test("@geometry mobile game over uses document scroll without nested story scrol
     boxShadow: "none",
   });
 
-  await expect(winner.getByRole("heading", { level: 1 })).toBeFocused();
+  await expect(scene.getByRole("heading", { level: 1, name: "Върколаците победиха", exact: true })).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(scene.getByRole("link", { name: "Още една игра", exact: true })).toBeFocused();
+  await story.scrollIntoViewIfNeeded();
+  expect(await page.evaluate(() => scrollY)).toBeGreaterThan(0);
 });
 
-test("@geometry desktop game over uses a feathered takeover without rectangular chrome", async ({ page }) => {
+test("@geometry desktop game over uses a fullbleed native scene without rectangular chrome", async ({ page }) => {
   await page.setViewportSize({ width: 1150, height: 685 });
   await setVisualTheme(page, "dark");
   await installNextDevIndicatorGuard(page);
@@ -476,11 +510,16 @@ test("@geometry desktop game over uses a feathered takeover without rectangular 
   await waitForStablePlayStage(page);
   await hideNextDevIndicator(page);
 
-  const takeover = page.locator(".play-stage-takeover");
-  const winnerScene = takeover.locator(".play-winner-scene");
-  await expect(takeover).toBeVisible();
+  const conclusion = page.locator('[data-endgame="werewolves"]');
+  const scene = conclusion.locator('section[aria-labelledby="conclusion-heading"]');
+  const backdrop = scene.locator(':scope > img[src$=".webp"]').first();
+  await expect(conclusion).toBeVisible();
+  await expect(page.locator(".play-stage, .play-primary-column, .play-action-dock")).toHaveCount(0);
+  await expectDecodedImage(backdrop);
+  await expect(backdrop).toHaveAttribute("src", "/game-art/endgame/werewolves-v1.webp");
+  await expect(backdrop).toHaveAttribute("alt", "");
 
-  const takeoverChrome = await takeover.evaluate((element) => {
+  const conclusionChrome = await conclusion.evaluate((element) => {
     const style = getComputedStyle(element);
     return {
       borderWidth: style.borderTopWidth,
@@ -489,26 +528,28 @@ test("@geometry desktop game over uses a feathered takeover without rectangular 
       overflow: style.overflow,
     };
   });
-  expect(takeoverChrome).toEqual({
+  expect(conclusionChrome).toEqual({
     borderWidth: "0px",
     backgroundImage: "none",
     boxShadow: "none",
     overflow: "visible",
   });
 
-  const winnerSceneStyle = await winnerScene.evaluate((element) => {
-    const style = getComputedStyle(element);
-    return {
-      maskImage: style.maskImage,
-      webkitMaskImage: style.webkitMaskImage,
-      opacity: Number(style.opacity),
-    };
-  });
-  expect(winnerSceneStyle.maskImage).toContain("radial-gradient");
-  expect(winnerSceneStyle.webkitMaskImage).toContain("radial-gradient");
-  // The standalone finale can show more artwork once the live table is unmounted.
-  expect(winnerSceneStyle.opacity).toBeGreaterThan(0);
-  expect(winnerSceneStyle.opacity).toBeLessThanOrEqual(0.6);
+  await expect(scene).toHaveCSS("border-radius", "0px");
+  await expect(scene).toHaveCSS("border-top-width", "0px");
+  await expect(scene).toHaveCSS("box-shadow", "none");
+  await expect(backdrop).toHaveCSS("object-fit", "cover");
+  await expect(backdrop).toHaveCSS("filter", "none");
+  await expect(backdrop).toHaveCSS("opacity", "1");
+  const sceneBox = (await scene.boundingBox())!;
+  const artBox = (await backdrop.boundingBox())!;
+  expect(sceneBox.x).toBeCloseTo(0, 0);
+  expect(sceneBox.width).toBeCloseTo(1150, 0);
+  expect(artBox).toEqual(sceneBox);
+  await expect(scene.getByRole("heading", { level: 1, name: "Върколаците победиха", exact: true })).toBeVisible();
+  await expect(scene.getByRole("link", { name: "Още една игра", exact: true })).toBeVisible();
+  await expect(scene.getByRole("link", { name: "Към архива", exact: true })).toHaveAttribute("href", "/history");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
 });
 
 test("@geometry mobile hunter revenge keeps the action sheet inside the viewport", async ({ page }) => {
@@ -541,6 +582,7 @@ for (const viewport of REPRESENTATIVE_VIEWPORTS) {
     test(`@representative ${viewport.name} ${route.name}`, async ({ page }) => {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await setVisualTheme(page, "dark");
+      if (route.name.startsWith("tutorial-") || route.name.endsWith("rules")) await installNextDevIndicatorGuard(page);
       await page.goto(route.path, { waitUntil: "domcontentloaded" });
       await page.waitForLoadState("networkidle").catch(() => {});
       if (route.name.endsWith("rules")) {
@@ -556,6 +598,7 @@ for (const viewport of REPRESENTATIVE_VIEWPORTS) {
       await expect(page.getByRole("heading", { level: 1, name: route.heading })).toBeVisible();
       if (route.name === "home") await materializeHomepageDeck(page);
       if (route.name === "home" || route.name.endsWith("-home")) await hideNextDevIndicator(page);
+      if (route.name.startsWith("tutorial-") || route.name.endsWith("rules")) await hideNextDevIndicator(page);
       await expect(page).toHaveScreenshot(`${viewport.name}-${route.name}.png`, {
         fullPage: true,
         maxDiffPixelRatio: 0.01,
@@ -594,7 +637,7 @@ for (const viewport of VIEWPORTS) {
       } else {
         await acceptCookies(page);
       }
-      if (route.name.startsWith("play-")) {
+      if (route.name.startsWith("play-") || route.name.startsWith("tutorial-") || route.name.endsWith("rules") || COLLECTION_VISUAL_ROUTE_NAMES.has(route.name)) {
         await installNextDevIndicatorGuard(page);
       }
       await page.goto(route.path, { waitUntil: "domcontentloaded" });
@@ -619,7 +662,10 @@ for (const viewport of VIEWPORTS) {
         await expect(page.getByText("roleNameBg", { exact: false })).toHaveCount(0);
       }
       if (route.name === "home" || route.name.endsWith("-home")) await hideNextDevIndicator(page);
+      if (route.name.startsWith("tutorial-") || route.name.endsWith("rules")) await hideNextDevIndicator(page);
+      if (COLLECTION_VISUAL_ROUTE_NAMES.has(route.name)) await hideNextDevIndicator(page);
       if (route.name === "home") await materializeHomepageDeck(page);
+      if (route.name === "achievements") await materializeAchievementRelics(page);
       await expect(page).toHaveScreenshot(`${viewport.name}-${route.name}.png`, {
         fullPage: true,
         maxDiffPixelRatio: 0.01,
@@ -633,23 +679,18 @@ for (const viewport of VIEWPORTS) {
     test(`${viewport.name} ${route.name} light`, async ({ page }) => {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await setVisualTheme(page, "light");
+      if (COLLECTION_VISUAL_ROUTE_NAMES.has(route.name)) await installNextDevIndicatorGuard(page);
       await page.goto(route.path, { waitUntil: "domcontentloaded" });
       await page.waitForLoadState("networkidle").catch(() => {});
       await page.waitForTimeout(600);
+      if (COLLECTION_VISUAL_ROUTE_NAMES.has(route.name)) await hideNextDevIndicator(page);
       if (route.name === "achievements") {
-        await pauseAmbientScene(page);
+        await materializeAchievementRelics(page);
       }
       if (route.name === "replay") {
         await expect(page.getByText("actorNameBg", { exact: false })).toHaveCount(0);
         await expect(page.getByText("targetNameBg", { exact: false })).toHaveCount(0);
         await expect(page.getByText("roleNameBg", { exact: false })).toHaveCount(0);
-      }
-      if (route.name === "achievements") {
-        const screenshot = await page.screenshot({ animations: "allow", fullPage: true });
-        expect(screenshot).toMatchSnapshot(`${viewport.name}-${route.name}-light.png`, {
-          maxDiffPixelRatio: 0.01,
-        });
-        return;
       }
       if (route.name === "home" || route.name.endsWith("-home")) await hideNextDevIndicator(page);
       if (route.name === "home") await materializeHomepageDeck(page);
@@ -669,11 +710,13 @@ for (const viewport of VIEWPORTS) {
       window.localStorage.setItem("welcome-modal-shown", "1");
     });
     await mockFeedbackSession(page);
+    await installNextDevIndicatorGuard(page);
     await page.goto("/tutorial", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle").catch(() => {});
     await page.getByRole("button", { name: "Дай ни бележка" }).click();
     await expect(page.getByRole("dialog", { name: "Дай ни бележка." })).toBeVisible();
     await page.waitForTimeout(600);
+    await hideNextDevIndicator(page);
     await expect(page).toHaveScreenshot(`${viewport.name}-tutorial-feedback-open.png`, {
       fullPage: true,
       maxDiffPixelRatio: 0.01,
@@ -735,7 +778,7 @@ for (const viewport of VIEWPORTS) {
     await setVisualTheme(page, "dark");
     await page.goto("/report?visualAuth=1&visualStep=success", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle").catch(() => {});
-    await expect(page.getByText("Светилникът свети.")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Сигналът е изпратен.", exact: true })).toBeVisible();
     await page.waitForTimeout(600);
     await expect(page).toHaveScreenshot(`${viewport.name}-report-success.png`, {
       fullPage: true,
@@ -750,20 +793,14 @@ function visualMasks(page: Page) {
   return [page.locator(".harbor-foot-time"), page.locator(".status-hero-time")];
 }
 
-async function pauseAmbientScene(page: Page) {
-  await page.addStyleTag({
-    content: "body::before { animation-delay: -1s !important; animation-play-state: paused !important; }",
-  });
-}
-
 async function waitForStablePlayStage(page: Page) {
-  await expect(page.locator(".play-stage, .play-stage-takeover")).toBeVisible({ timeout: 10_000 });
+  await expect(page.locator(".play-stage, [data-endgame]")).toBeVisible({ timeout: 10_000 });
   if (await page.locator(".play-stage").count()) {
     await expect(page.locator(".play-stage")).toHaveAttribute("data-layout-ready", "true", {
       timeout: 10_000,
     });
   } else {
-    await expect(page.locator(".play-winner-actions")).toBeVisible();
+    await expect(page.locator("[data-endgame]").getByRole("link", { name: "Още една игра", exact: true })).toBeVisible();
     await expect(page.locator(".post-game-story")).toBeVisible();
   }
 
@@ -771,13 +808,15 @@ async function waitForStablePlayStage(page: Page) {
     await document.fonts.ready;
 
     const readSignature = () => {
-      const takeover = document.querySelector<HTMLElement>(".play-stage-takeover");
-      if (takeover) {
-        const heading = takeover.querySelector("h1");
-        const story = takeover.querySelector(".post-game-story");
-        const actions = takeover.querySelector(".play-winner-actions");
-        if (!heading || !story || !actions) return "";
-        const rects = [takeover, heading, story, actions].map((element) => element.getBoundingClientRect());
+      const conclusion = document.querySelector<HTMLElement>("[data-endgame]");
+      if (conclusion) {
+        const scene = conclusion.querySelector('section[aria-labelledby="conclusion-heading"]');
+        const heading = conclusion.querySelector("h1");
+        const story = conclusion.querySelector(".post-game-story");
+        const actions = [...(scene?.querySelectorAll("a") ?? [])];
+        const image = scene?.querySelector<HTMLImageElement>(':scope > img[src$=".webp"]');
+        if (!scene || !heading || !story || actions.length !== 2 || !image?.complete || !image.naturalWidth) return "";
+        const rects = [conclusion, scene, image, heading, story, ...actions].map((element) => element.getBoundingClientRect());
         if (rects.some((rect) => rect.width <= 0 || rect.height <= 0)) return "";
         return rects.flatMap((rect) => [rect.x, rect.y, rect.width, rect.height].map(Math.round)).join(":");
       }
@@ -831,6 +870,38 @@ async function materializeRolePortraits(page: Page) {
     await portrait.evaluate((image: HTMLImageElement) => image.decode());
   }
   await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+}
+
+async function materializeAchievementRelics(page: Page) {
+  const scene = await page.locator("body").evaluate(async body => {
+    const style = getComputedStyle(body, "::after");
+    const url = style.backgroundImage.match(/url\("([^"]+)"\)/)?.[1];
+    const image = new Image();
+    if (url) {
+      image.src = url;
+      await image.decode();
+    }
+    return { url, width: image.naturalWidth, height: parseFloat(style.height), position: style.position };
+  });
+  expect(scene.url).toContain("/game-art/achievements/collection-table-");
+  expect(scene.width).toBeGreaterThanOrEqual(1280);
+  const sceneHeight = await page.locator("html").getAttribute("data-theme") === "light" && page.viewportSize()!.width >= 640 ? 1112 : 1024;
+  expect(scene.height).toBe(sceneHeight);
+  expect(scene.position).toBe("absolute");
+  const images = page.locator(".achievement-shell img");
+  await expect(images).toHaveCount(8);
+  for (const image of await images.all()) {
+    await image.scrollIntoViewIfNeeded();
+    await expectDecodedImage(image);
+  }
+  await page.evaluate(async () => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+    // Let the compositor repaint the absolute scene after materializing offscreen relics.
+    await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+  });
+  const sceneScreenshot = test.info().outputPath("painted-collection.png");
+  await page.screenshot({ path: sceneScreenshot, fullPage: true });
+  await test.info().attach("painted-collection", { path: sceneScreenshot, contentType: "image/png" });
 }
 
 async function materializeDeferredRulesContent(page: Page) {

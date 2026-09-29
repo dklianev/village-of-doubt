@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { LegalReturnLink } from "../legal/LegalReturnLink";
 
 interface SectionData {
   id: string;
@@ -14,11 +15,11 @@ const SECTIONS: readonly SectionData[] = [
     id: "what-and-why",
     number: 1,
     title: "Какво събираме и защо",
-    tldr: "Имейл, име, OAuth ID, игрова история, легенди. Нищо повече.",
+    tldr: "Данни за досието и входа, игрова история и легенди. Категориите и целите са описани по-долу.",
     body: (
       <>
         <p>
-          "Върколак и Мафия" е онлайн социална игра за стаи с приятели. Тази политика обяснява
+          „Сенките“ е онлайн социална игра за стаи с приятели. Тази политика обяснява
           какви лични данни обработваме, защо са нужни и как можеш да упражниш правата си.
         </p>
         <p>
@@ -189,6 +190,7 @@ export function PrivacySections() {
               <span>{section.tldr}</span>
             </aside>
             <div className="privacy-section-body">{section.body}</div>
+            <LegalReturnLink page="privacy" />
           </li>
         ))}
       </ol>

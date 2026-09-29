@@ -130,7 +130,13 @@ export function GameRolesPage({ family }: { family: GameFamily }) {
       </Suspense>
       <section className="role-codex-hero">
         <div className="role-codex-hero-copy">
-          <p className="section-kicker">{isMafia ? "досиета на града" : "книга на персонажите"}</p>
+          <div className="role-codex-hero-meta">
+            <p className="section-kicker">{isMafia ? "досиета на града" : "книга на персонажите"}</p>
+            <p className="role-codex-hero-stat" aria-label="Брой роли">
+              <strong>{allRoles.length}</strong>
+              <span>{isMafia ? "градски досиета" : "селски роли"}</span>
+            </p>
+          </div>
           <h1>{title}</h1>
           <p>{intro}</p>
           <div className="role-codex-hero-actions">
@@ -141,10 +147,6 @@ export function GameRolesPage({ family }: { family: GameFamily }) {
               {isMafia ? "Виж ролите във Върколак" : "Виж ролите в Мафия"}
             </Link>
           </div>
-        </div>
-        <div className="role-codex-hero-stat" aria-label="Брой роли">
-          <strong>{allRoles.length}</strong>
-          <span>{isMafia ? "градски досиета" : "селски роли"}</span>
         </div>
       </section>
 

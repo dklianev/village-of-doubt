@@ -7,11 +7,37 @@ function read(relativePath: string) {
 }
 
 describe("route CSS ownership", () => {
-  it("keeps the decorative logo outside the LCP priority lane", () => {
+  it("gates page-wide styles on the active route rather than cached page shells", () => {
+    for (const file of [
+      "app/globals.css",
+      "components/games/GameRolesPage.module.css",
+      "components/landing/LandingSurface.module.css",
+      "components/lobby/LegacyCreate.module.css",
+      "components/legal/LegalShell.module.css",
+      "components/faq/LegacyFaq.module.css",
+      "components/tutorial/Tutorial.module.css",
+    ]) {
+      const css = read(file);
+      expect(css, file).not.toMatch(/body:has\(\.(?:landing-shell|game-home-shell|tutorial-shell|account-shell|achievement-shell|friends-shell|roles-shell|legal-page-shell|faq-hearth|lobby-wizard)\b/);
+    }
+  });
+
+  it("stops ambient profile and achievement motion without hiding the artwork", () => {
+    const globals = read("app/globals.css");
+    const media = globals.match(/@media \(prefers-reduced-motion: reduce\)\s*\{([^]*?)\n\}/)?.[1] ?? "";
+    expect(media).toContain('[data-route="/account"]');
+    expect(media).toContain('[data-route="/achievements"]');
+    expect(media).toContain("animation: none;");
+    expect(media).toContain("will-change: auto;");
+    expect(media).not.toContain("display: none");
+  });
+
+  it("uses one composited decorative hero without downloading a second logo layer", () => {
     const landing = read("components/landing-experience.tsx");
 
-    expect(landing).toMatch(/mobile\/logo-landing-mark\.webp[\s\S]*fetchPriority="low"/);
-    expect(landing).toMatch(/mobile\/logo-landing-mark\.webp[\s\S]*unoptimized/);
+    expect(landing.match(/className="landing-hero-art"/g)).toHaveLength(1);
+    expect(landing).toContain('className="landing-hero-art" aria-hidden="true"');
+    expect(landing).not.toContain("logo-landing-mark.webp");
   });
 
   it("keeps landing mobile rules in the landing surface only", () => {
@@ -36,7 +62,9 @@ describe("route CSS ownership", () => {
     expect(globals).not.toContain("--art-landing-dual");
     expect(globals).not.toContain("--art-landing-hero-composited");
     expect(landing).toContain("--art-landing-dual: image-set(");
-    expect(landing.match(/min-height:\s*520px/g)).toHaveLength(1);
+    const hero = landing.match(/:global\(\.landing-hero-card\)\s*\{([^}]+)\}/)?.[1] ?? "";
+    expect(hero).toContain("padding: 20px 24px 24px;");
+    expect(hero).not.toContain("min-height:");
   });
 
   it("does not ship selectors from the retired multi-step create layout", () => {

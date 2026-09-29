@@ -26,19 +26,19 @@ for (const theme of ["light", "dark"] as const) {
             if (method === "click") await button.click();
             else await button.press("Enter");
           };
-          await activate("Напред →");
+          await activate("Напред");
           await page.getByLabel("Описание", { exact: true }).fill("Локален тест на сигнала, без изпращане към сървъра.");
-          await activate("Напред →");
-          await activate("Напред →");
+          await activate("Напред");
+          await activate("Напред");
           await expect(page.getByText("Преглед преди изпращане.", { exact: true })).toBeVisible();
           expect(requests, "entering review must never POST").toHaveLength(0);
-          await activate("← Назад");
+          await activate("Назад");
           await page.locator("label.report-identity-card").filter({ hasText: "С имейл" }).click();
           const email = page.getByLabel("Твоят имейл", { exact: true });
           await email.fill("test@example.com");
           await email.press("Enter");
           expect(requests, "Enter in email must never POST").toHaveLength(0);
-          if (await page.getByRole("button", { name: "Напред →", exact: true }).count()) await activate("Напред →");
+          if (await page.getByRole("button", { name: "Напред", exact: true }).count()) await activate("Напред");
           await expect(page.getByText("Преглед преди изпращане.", { exact: true })).toBeVisible();
           expect(requests).toHaveLength(0);
           await activate("Изпрати сигнал");
@@ -53,23 +53,22 @@ for (const theme of ["light", "dark"] as const) {
       test(`account ${width}: early navigation retains the editor and keyboard focus`, async ({ page }) => {
         await page.setViewportSize({ width, height: 844 });
         await page.goto("/account?visualAuth=1");
-        const identity = page.getByRole("radio", { name: "Образ и достъп", exact: true });
-        const label = page.locator('label[for="account-section-identity"]');
-        await expect(label).toBeInViewport({ ratio: 1 });
-        await label.click();
+        const identity = page.getByRole("tab", { name: "Образ и достъп", exact: true });
+        await expect(identity).toBeInViewport({ ratio: 1 });
+        await identity.click();
         const name = page.getByRole("textbox", { name: "Име на масата", exact: true });
         await expect(name).toBeInViewport({ ratio: 1 });
         await expect(identity).toBeFocused();
         const portraits = page.getByRole("radiogroup", { name: "Избери образ" });
         await expect(portraits).toBeInViewport();
         await identity.press("ArrowRight");
-        const security = page.getByRole("radio", { name: "Данни и сигурност", exact: true });
-        await expect(security).toBeChecked();
+        const security = page.getByRole("tab", { name: "Данни и сигурност", exact: true });
+        await expect(security).toHaveAttribute("aria-selected", "true");
         await security.press("ArrowLeft");
-        await expect(identity).toBeChecked();
+        await expect(identity).toHaveAttribute("aria-selected", "true");
         await expect(name).toBeInViewport({ ratio: 1 });
         await page.goto("/account?visualAuth=1#account-data-export");
-        await expect(security).toBeChecked();
+        await expect(security).toHaveAttribute("aria-selected", "true");
         await expect(page.getByRole("button", { name: "Изтегли моите данни (JSON)", exact: true })).toBeInViewport();
       });
     }
@@ -103,10 +102,10 @@ for (const theme of ["light", "dark"] as const) {
       test(`account ${width}: direct privacy links reveal their target section`, async ({ page }) => {
         await page.setViewportSize({ width, height: 900 });
         await page.goto("/account?visualAuth=1#account-identity");
-        await expect(page.getByRole("radio", { name: "Образ и достъп", exact: true })).toBeChecked();
+        await expect(page.getByRole("tab", { name: "Образ и достъп", exact: true })).toHaveAttribute("aria-selected", "true");
         await expect(page.getByRole("textbox", { name: "Име на масата", exact: true })).toBeInViewport({ ratio: 1 });
         await page.goto("/account?visualAuth=1#account-security");
-        await expect(page.getByRole("radio", { name: "Данни и сигурност", exact: true })).toBeChecked();
+        await expect(page.getByRole("tab", { name: "Данни и сигурност", exact: true })).toHaveAttribute("aria-selected", "true");
         await expect(page.getByRole("button", { name: "Изтегли моите данни (JSON)", exact: true })).toBeInViewport();
       });
     }

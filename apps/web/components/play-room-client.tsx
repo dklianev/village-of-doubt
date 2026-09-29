@@ -1,16 +1,13 @@
 "use client";
 
-import Link from "next/link";
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import {
   Eye,
   EyeOff,
   Copy,
   Check,
-  ExternalLink,
   MessageSquare,
   ScrollText,
-  Play,
   Users,
 } from "lucide-react";
 import {
@@ -24,15 +21,14 @@ import {
   type RoleCode,
 } from "@werewolf/shared";
 import "@/components/play/PlayRoom.module.css";
+import "@/components/play/PlayLobby.module.css";
+import "@/components/play/PlayConsole.module.css";
 import { useToast } from "@/lib/toast";
-import { KeyboardShortcutsModal } from "@/components/keyboard-shortcuts-modal";
 import { LiveCuePanel } from "@/components/play/LiveCuePanel";
-import { NarratorDesk } from "@/components/play/NarratorDesk";
 import { PlayReference } from "@/components/play/PlayReference";
 import { PublicEventLine } from "@/components/play/PublicEventLine";
 import { HunterRevengePanel } from "@/components/play/HunterRevengePanel";
 import { LoverCard } from "@/components/play/LoverCard";
-import { NarratorSnapshotPanel } from "@/components/play/NarratorSnapshotPanel";
 import { PrivateChatPanel, type PrivateChatScrollPosition } from "@/components/play/PrivateChatPanel";
 import { PublicChatComposer } from "@/components/play/PublicChatComposer";
 import { PublicChatHistory } from "@/components/play/PublicChatHistory";
@@ -43,7 +39,8 @@ import { phaseBg } from "@/lib/play/phase-display";
 import { PhaseTransitionOverlay } from "@/components/play/PhaseTransitionOverlay";
 import { PlayActionDock } from "@/components/play/PlayActionDock";
 import { PlayStage } from "@/components/play/PlayStage";
-import { DeferredPostGameExtras } from "@/components/play/DeferredPostGameExtras";
+import { PlayLobbyBand } from "@/components/play/PlayLobbyBand";
+import { DeferredGameConclusion } from "@/components/play/DeferredGameConclusion";
 import { PreGameCountdown } from "@/components/play/PreGameCountdown";
 import { ReconnectModal } from "@/components/play/ReconnectModal";
 import { NightActionPanel } from "@/components/play/NightActionPanel";
@@ -64,8 +61,7 @@ import { useLobbyNavigationGuard } from "@/hooks/play/use-lobby-navigation-guard
 import { useGameRoom, type UseGameRoomOptions, type UseGameRoomResult } from "@/hooks/play/use-game-room";
 import { usePhaseTransitions } from "@/hooks/play/use-phase-transitions";
 import type { AuthSessionView } from "@/lib/use-auth-session";
-import { nightTargetHeadingBg, winnerBg } from "@/lib/play/copy";
-import { nextPhaseTransitionArtHref } from "@/lib/play/phase-art";
+import { nightTargetHeadingBg } from "@/lib/play/copy";
 import type { PhaseSlice, PublicPlayer, ShortcutState } from "@/lib/play/types";
 
 export type { PhaseSlice, PublicPlayer } from "@/lib/play/types";
@@ -95,7 +91,14 @@ export function PlayRoomClientCore({
   const [selectedTargetId, setSelectedTargetId] = useState("");
   const [secondTargetId, setSecondTargetId] = useState("");
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [playTools, setPlayTools] = useState<typeof import("@/components/play/NarratorTools") | null>(null);
+  const ShortcutsModal = playTools?.KeyboardShortcutsModal;
+  const NarratorTools = playTools?.default;
+  const [narratorToolsFailed, setNarratorToolsFailed] = useState(false);
+  const narratorToolsRef = useRef<HTMLDivElement>(null);
+  const narratorRetryFocusRef = useRef(false);
   const [actionDockExpanded, setActionDockExpanded] = useState(false);
+  const keepDockOpenOnDeselectRef = useRef(false);
   const [isCompactViewport, setIsCompactViewport] = useState(false);
   const [viewportModeReady, setViewportModeReady] = useState(false);
   const [mobileRailTab, setMobileRailTab] = useState<"events" | "chat">("events");
@@ -109,7 +112,6 @@ export function PlayRoomClientCore({
   const [lastReadPrivateMessages, setLastReadPrivateMessages] = useState<Partial<Record<ChatChannel, string>>>({});
   const privateChatScrollPositions = useRef<Partial<Record<string, PrivateChatScrollPosition>>>({});
   const actionDockToggleRef = useRef<HTMLButtonElement>(null);
-  const winnerHeadingRef = useRef<HTMLHeadingElement>(null);
   const suppressNextPhasePulseRef = useRef(false);
   const lastTypingSentRef = useRef<Map<ChatChannel, number>>(new Map());
   const shortcutStateRef = useRef<ShortcutState | null>(null);
@@ -281,33 +283,6 @@ export function PlayRoomClientCore({
     [snapshot?.voteTally],
   );
 
-  useEffect(() => {
-    const preloadHref = nextPhaseArtPreloadHref(phase, family);
-    if (!preloadHref || typeof window.Image !== "function") {
-      return;
-    }
-
-    const connection = (navigator as Navigator & {
-      connection?: { saveData?: boolean; effectiveType?: string };
-    }).connection;
-    if (connection?.saveData || connection?.effectiveType === "slow-2g" || connection?.effectiveType === "2g") {
-      return;
-    }
-
-    const preload = () => {
-      const image = new window.Image();
-      image.decoding = "async";
-      image.src = preloadHref;
-    };
-    if (typeof window.requestIdleCallback === "function") {
-      const idleId = window.requestIdleCallback(preload, { timeout: 2_500 });
-      return () => window.cancelIdleCallback(idleId);
-    }
-
-    const timeoutId = window.setTimeout(preload, 1_500);
-    return () => window.clearTimeout(timeoutId);
-  }, [family, phase]);
-
   useLayoutEffect(() => {
     if (typeof window.matchMedia !== "function") {
       return;
@@ -332,6 +307,7 @@ export function PlayRoomClientCore({
     requestStartGame,
   } = usePhaseTransitions({
     room,
+    connected: connectionStatus === "connected",
     phase: snapshot?.phase ?? null,
     publicEvents: snapshot?.publicEvents ?? [],
     winnerTeam: snapshot?.winnerTeam ?? "",
@@ -393,7 +369,7 @@ export function PlayRoomClientCore({
     targetableIds,
   };
 
-  const selectSeatTarget = useCallback((targetUserId: string) => {
+  const selectSeatTarget = useCallback((targetUserId: string, source: "table" | "dock" = "table") => {
     const { selectedTargetId, secondTargetId, role, phase, targetableIds } = seatSelectionRef.current;
     if (!targetableIds.has(targetUserId)) {
       return;
@@ -407,6 +383,7 @@ export function PlayRoomClientCore({
     }
 
     if (selectedTargetId === targetUserId) {
+      keepDockOpenOnDeselectRef.current = source === "dock";
       setSelectedTargetId("");
       setSecondTargetId("");
       return;
@@ -442,9 +419,11 @@ export function PlayRoomClientCore({
     if (!viewportModeReady) {
       return;
     }
+    // Preserve inline deselection only for this update, not subsequent phases.
+    const keepDockOpen = keepDockOpenOnDeselectRef.current;
+    keepDockOpenOnDeselectRef.current = false;
     const phaseHasPrimaryDockAction =
-      phase === "lobby"
-      || canVote
+      canVote
       || canNominate
       || canUseHunterRevenge
       || canUseNightAction
@@ -464,9 +443,7 @@ export function PlayRoomClientCore({
 
     if (shouldAutoExpand) {
       setActionDockExpanded(true);
-    } else if (isCompactViewport && phaseHasPrimaryDockAction
-      && !actionDockToggleRef.current?.closest("[data-play-command-surface]")?.contains(document.activeElement)) {
-      // Clearing an inline choice must not hide the focused control.
+    } else if (isCompactViewport && phaseHasPrimaryDockAction && !keepDockOpen) {
       setActionDockExpanded(false);
     }
   }, [canNominate, canUseHunterRevenge, canUseNightAction, canVote, isCompactViewport, isSportDayFlow, phase, privateRole?.role, secondTargetId, selectedTargetId, viewportModeReady]);
@@ -607,13 +584,8 @@ export function PlayRoomClientCore({
   const lastReadIndex = privateChannelMessages.findIndex((message) => message.id === lastReadPrivateMessage);
   const unreadPrivateMessages = privateChannelMessages.slice(lastReadIndex + 1)
     .filter((message) => message.senderUserId !== currentUserId).length;
-  const hasStageTakeover = Boolean(snapshot?.winnerTeam);
+  const hasStageTakeover = snapshot?.phase === "game_over" && Boolean(snapshot.winnerTeam);
 
-  useEffect(() => {
-    if (hasStageTakeover) {
-      winnerHeadingRef.current?.focus();
-    }
-  }, [hasStageTakeover, snapshot?.winnerTeam]);
   const hasNarratorDesk = Boolean(snapshot && phase !== "lobby" && (ownPlayer?.host || ownPlayer?.narrator));
   const hasNarratorWarning = Boolean(
     snapshot?.narratorMode === "full_human" && ownPlayer && !ownPlayer.acceptedFullNarrator,
@@ -622,19 +594,45 @@ export function PlayRoomClientCore({
   const hasNarratorDeck = Boolean(
     !hasStageTakeover && (hasNarratorDesk || hasNarratorWarning || hasNarratorSnapshotPanel),
   );
+  const needsNarratorTools = hasNarratorDeck && (hasNarratorDesk || hasNarratorSnapshotPanel);
+  useEffect(() => {
+    if ((!needsNarratorTools && !showShortcuts) || playTools || (narratorToolsFailed && !showShortcuts) || connectionStatus !== "connected") return;
+    let active = true;
+    void import("@/components/play/NarratorTools").then(
+      (module) => { if (active) setPlayTools(module); },
+      () => {
+        if (!active) return;
+        if (needsNarratorTools) setNarratorToolsFailed(true);
+        if (showShortcuts) {
+          setShowShortcuts(false);
+          toast({ kind: "error", message: "Помощта не се зареди. Опитай пак." });
+        }
+      },
+    );
+    return () => { active = false; };
+  }, [connectionStatus, needsNarratorTools, playTools, narratorToolsFailed, showShortcuts, toast]);
+  useEffect(() => {
+    if (!needsNarratorTools || connectionStatus !== "connected") {
+      narratorRetryFocusRef.current = false;
+      return;
+    }
+    if ((!NarratorTools && !narratorToolsFailed) || !narratorRetryFocusRef.current) return;
+    narratorRetryFocusRef.current = false;
+    if (document.activeElement === document.body) {
+      narratorToolsRef.current?.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus();
+    }
+  }, [connectionStatus, needsNarratorTools, NarratorTools, narratorToolsFailed]);
   const hasDockRitualPanel = Boolean(
     canVote || canNominate || canUseHunterRevenge || canUseNightAction || privateChatChannel || isSportDayFlow,
   );
   const hasPrimaryDockContent = Boolean(
-    phase === "lobby" || canVote || canNominate || canUseHunterRevenge || canUseNightAction || isSportDayFlow,
+    canVote || canNominate || canUseHunterRevenge || canUseNightAction || isSportDayFlow,
   );
   const hasActionDock = !hasStageTakeover && hasPrimaryDockContent;
   const actionDockKind =
     canVote || canNominate || canUseHunterRevenge || canUseNightAction
       ? "action"
-      : phase === "lobby"
-        ? "lobby"
-        : "quiet";
+      : "quiet";
   const selectedActionTargetName = players.find((player) => player.userId === selectedTargetId)?.displayName;
   const currentDefenseName = players.find((player) => player.userId === snapshot?.currentDefenseUserId)?.displayName;
   const actionDockHeading = canNominate
@@ -649,25 +647,18 @@ export function PlayRoomClientCore({
         ? selectedActionTargetName && privateRole
           ? nightTargetHeadingBg(privateRole.role, selectedActionTargetName)
           : "Нощен ход · избери цел"
-        : phase === "lobby"
-          ? ownPlayer?.ready
-            ? "Готов си за началото"
-            : "Потвърди готовност"
+        : mode === "mafia_sport" && phase === "day_discussion"
+            ? "Дневни речи"
           : phase === "nomination"
-            ? "Номинациите са отворени"
+            ? "Преглед на номинациите"
             : phase === "defense"
               ? currentDefenseName
                 ? `${currentDefenseName} защитава мястото си`
                 : "Защита на номинираните"
-          : phase === "role_reveal"
-            ? "Картата ти е раздадена"
-          : ownPlayer?.playing && !ownPlayer.alive
-            ? "Твоята игра продължава отстрани"
-          : privateChatChannel
-            ? "Тайният разговор е отворен"
-            : "Твоето досие";
+            : "Дневни речи";
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
+      if (connectionStatus !== "connected") return;
       const target = event.target instanceof HTMLElement ? event.target : null;
       const current = shortcutStateRef.current;
 
@@ -747,7 +738,7 @@ export function PlayRoomClientCore({
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [selectSeatTarget, submitCurrentShortcutAction, toast]);
+  }, [connectionStatus, selectSeatTarget, submitCurrentShortcutAction, toast]);
 
   const renderPlayersPanel = () => {
     const eventsTabId = "play-rail-tab-events";
@@ -771,6 +762,7 @@ export function PlayRoomClientCore({
 
     return (
       <section className="play-section play-players-panel play-side-rail" aria-label="Разговор и събития">
+        <div className="play-chronicle-header">
         <div className="play-rail-tabs" role="tablist" aria-label="Хроника и разговор">
           <button
             id={eventsTabId}
@@ -800,6 +792,11 @@ export function PlayRoomClientCore({
             <MessageSquare aria-hidden strokeWidth={1.8} />
             Разговор
           </button>
+        </div>
+        <div className="play-console-tools">
+          {snapshot ? <PlayReference snapshot={snapshot} privateRole={privateRole?.role} ownPlayer={ownPlayer} /> : null}
+          <LiveCuePanel cueMode={cueMode} liveMode={liveMode} phase={phase} pulseKey={phasePulse} onChange={changeCueMode} />
+        </div>
         </div>
 
         <div
@@ -879,100 +876,17 @@ export function PlayRoomClientCore({
         </div>
 
         {showRailDeathReveal ? <DeathRevealCinematic family={family} players={players} /> : null}
-        <div className="play-console-tools">
-          {snapshot ? <PlayReference snapshot={snapshot} privateRole={privateRole?.role} ownPlayer={ownPlayer} /> : null}
-          <LiveCuePanel cueMode={cueMode} liveMode={liveMode} phase={phase} pulseKey={phasePulse} onChange={changeCueMode} />
-        </div>
       </section>
     );
   };
 
-  const renderLobbyReadiness = () => (
-    <>
-      <div className="play-lobby-ready-actions">
-        <button
-          data-testid="ready-toggle"
-          className={`btn ${ownPlayer?.ready || ownPlayer?.host ? "btn-secondary" : "btn-primary"}`}
-          type="button"
-          onClick={sendReady}
-          disabled={!room}
-          aria-pressed={Boolean(ownPlayer?.ready)}
-        >
-          <Users className="play-button-icon" aria-hidden strokeWidth={1.8} />
-          {ownPlayer?.ready ? "Не съм готов" : "Готов"}
-        </button>
-        {ownPlayer?.host ? (
-          <button
-            className="btn btn-primary"
-            type="button"
-            onClick={requestStartGame}
-            disabled={startDisabledReason !== null}
-            aria-describedby={startDisabledReason ? "play-start-disabled-reason" : undefined}
-          >
-            <Play className="play-button-icon" aria-hidden strokeWidth={1.8} />
-            {startCountdown ? "Започваме..." : "Започни игра"}
-          </button>
-        ) : null}
-      </div>
-      {ownPlayer?.host && startDisabledReason ? (
-        <p id="play-start-disabled-reason" className="play-start-disabled-reason" role="status">
-          {startDisabledReason}
-        </p>
-      ) : null}
-    </>
-  );
-
-  const renderLobbyControls = () => {
-    if (phase !== "lobby") {
-      return null;
+  const copyLobbyInvite = async (codeOnly = false) => {
+    try {
+      await navigator.clipboard.writeText(codeOnly ? code : new URL(`/lobby/${encodeURIComponent(code)}`, window.location.origin).href);
+      toast({ message: codeOnly ? "Кодът е копиран." : "Поканата е копирана.", kind: "success" });
+    } catch {
+      toast({ message: `Не успяхме да копираме поканата. Кодът на стаята е ${code}.`, kind: "error" });
     }
-
-    return (
-      <div className="play-lobby-dock-actions">
-        {!isCompactViewport ? renderLobbyReadiness() : null}
-        <button className="btn btn-secondary" type="button" onClick={async () => {
-          try {
-            const invite = new URL(`/lobby/${encodeURIComponent(code)}`, window.location.origin);
-            await navigator.clipboard.writeText(invite.href);
-            toast({ message: "Поканата е копирана.", kind: "success" });
-          } catch {
-            toast({ message: `Не успяхме да копираме поканата. Кодът на стаята е ${code}.`, kind: "error" });
-          }
-        }}>
-          <Copy className="play-button-icon" aria-hidden /> Копирай покана
-        </button>
-        {ownPlayer?.host && players.some((player) => player.playing && !player.ready) ? (
-          <p className="play-lobby-readiness-note">Не всички са готови. Като домакин можеш да започнеш и без потвърждението им.</p>
-        ) : null}
-        <p className="play-lobby-navigation-note">
-          {ownPlayer?.host
-            ? "При напускане друг участник може да стане домакин. Връщането назад не възстановява домакинството."
-            : "При напускане освобождаваш мястото си в стаята."}
-          {" "}<a href="/faq" target="_blank" rel="noopener noreferrer">
-            Помощ (нов раздел) <ExternalLink className="play-button-icon" aria-hidden />
-          </a>
-        </p>
-      </div>
-    );
-  };
-
-  const renderStageTakeover = () => {
-    if (!hasStageTakeover || !snapshot?.winnerTeam) {
-      return null;
-    }
-
-    return (
-      <div className="play-stage-takeover" data-family={family} data-winner={snapshot.winnerTeam} role="status" aria-live="polite" aria-atomic="true">
-        <div className="play-winner-scene" aria-hidden="true" />
-        <article className={`play-winner faction-${snapshot.winnerTeam}`} data-winner={snapshot.winnerTeam}>
-          <p className="play-winner-kicker">край на играта · стая {code}</p>
-          <h1 ref={winnerHeadingRef} className="play-winner-title" tabIndex={-1}>{winnerBg(snapshot.winnerTeam, family)}</h1>
-          {snapshot.winnerReasonBg ? <p className="play-winner-reason">{snapshot.winnerReasonBg}</p> : null}
-          <DeferredPostGameExtras section="actions" snapshot={snapshot} recordedGameId={recordedGameId} currentUserId={currentUserId} />
-        </article>
-        <DeferredPostGameExtras section="story" snapshot={snapshot} recordedGameId={recordedGameId} currentUserId={currentUserId} />
-      </div>
-    );
   };
 
   const renderActionDock = () => {
@@ -982,7 +896,7 @@ export function PlayRoomClientCore({
 
     return (
       <PlayActionDock
-        eyebrow={phase === "lobby" ? "преди началото" : isSportDayFlow || canVote ? "дневен ред" : "личен ход"}
+        eyebrow={isSportDayFlow || canVote ? "дневен ред" : "личен ход"}
         privateAction={canUseNightAction}
         heading={actionDockHeading}
         kind={actionDockKind}
@@ -990,7 +904,6 @@ export function PlayRoomClientCore({
         expanded={actionDockExpanded}
         onExpandedChange={setActionDockExpanded}
         toggleRef={actionDockToggleRef}
-        compactSummary={phase === "lobby" ? renderLobbyReadiness() : null}
         primaryContent={hasPrimaryDockContent ? (
           <>
             {actionReceipt ? (
@@ -1006,8 +919,6 @@ export function PlayRoomClientCore({
                 </div>
               </div>
             ) : null}
-            {renderLobbyControls()}
-
             {isSportDayFlow ? (
               <NominationPanel
                 phase={phase}
@@ -1019,7 +930,7 @@ export function PlayRoomClientCore({
                 canNominate={canNominate}
                 selectedTargetId={selectedTargetId}
                 onNominate={sendNomination}
-                onSelectNominee={canVote ? selectSeatTarget : undefined}
+                onSelectNominee={canVote ? (targetUserId) => selectSeatTarget(targetUserId, "dock") : undefined}
                 selectableNomineeIds={targetableIds}
               />
             ) : null}
@@ -1046,6 +957,7 @@ export function PlayRoomClientCore({
                 currentUserId={currentUserId}
                 livingPlayers={eligibleVotingPlayers}
                 selectedTargetId={selectedTargetId}
+                acceptedTargetId={actionReceipt?.kind === "vote" ? actionReceipt.targetUserId : undefined}
                 voteTally={snapshot?.voteTally ?? []}
                 allowSkipVote={Boolean(snapshot?.allowSkipVote) && revoteEligibleIds.size === 0}
                 sendVote={sendVote}
@@ -1089,7 +1001,7 @@ export function PlayRoomClientCore({
           {personalVisible ? <>
             <Suspense fallback={rolePlaceholder}>
               {viewportModeReady
-                ? <RoleCard role={privateRole} result={privateResult} players={players} family={family} presentation={isCompactViewport ? "mini" : "compact"} />
+                ? <RoleCard role={privateRole} result={privateResult} players={players} family={family} presentation={isCompactViewport ? "mini" : "console"} />
                 : rolePlaceholder}
             </Suspense>
             {privateLover ? <LoverCard lover={privateLover} /> : null}
@@ -1147,64 +1059,70 @@ export function PlayRoomClientCore({
       return null;
     }
 
+    const consentWarning = hasNarratorWarning ? (
+      <article className="narrator-warning-card mt-8 rounded-[2rem] border border-[#842f2b]/50 bg-[#842f2b]/25 p-6">
+        <p className="text-sm uppercase tracking-[0.3em] text-[#c18a38]">важно предупреждение</p>
+        <h2 className="mt-2 text-3xl font-black">Пълен Разказвач вижда всички роли</h2>
+        <p className="mt-3 text-[#ead9ba]">
+          При този режим човекът Разказвач може да види тайните роли и действия, за да води играта ръчно.
+          Натисни приемане само ако си съгласен с това.
+        </p>
+        <button className="btn btn-primary mt-5" type="button" onClick={() => room?.send("acceptFullNarrator")}>
+          Приемам
+        </button>
+      </article>
+    ) : null;
+
     return (
       <section className="play-narrator-deck" aria-label="Команден панел на Разказвача">
-        <div className="play-narrator-deck-scroll">
-          {hasNarratorDesk && snapshot ? (
-            <NarratorDesk
-              room={room}
-              snapshot={snapshot}
-              phase={phase}
-              family={family}
-              isNarrator={Boolean(ownPlayer?.narrator)}
-              onOpenShortcuts={() => setShowShortcuts(true)}
+        <div className="play-narrator-deck-scroll" ref={narratorToolsRef}>
+          {NarratorTools && hasNarratorDesk && snapshot ? (
+            <NarratorTools
+              desk={{
+                room, snapshot, phase, family,
+                isNarrator: Boolean(ownPlayer?.narrator),
+                onOpenShortcuts: () => setShowShortcuts(true),
+              }}
             />
           ) : null}
-
-          {hasNarratorWarning ? (
-            <article className="narrator-warning-card mt-8 rounded-[2rem] border border-[#842f2b]/50 bg-[#842f2b]/25 p-6">
-              <p className="text-sm uppercase tracking-[0.3em] text-[#c18a38]">важно предупреждение</p>
-              <h2 className="mt-2 text-3xl font-black">Пълен Разказвач вижда всички роли</h2>
-              <p className="mt-3 text-[#ead9ba]">
-                При този режим човекът Разказвач може да види тайните роли и действия, за да води играта ръчно.
-                Натисни приемане само ако си съгласен с това.
-              </p>
-              <button className="btn btn-primary mt-5" type="button" onClick={() => room?.send("acceptFullNarrator")}>
-                Приемам
-              </button>
-            </article>
-          ) : null}
-
-          {hasNarratorSnapshotPanel && narratorSnapshot ? (
-            <NarratorSnapshotPanel snapshot={narratorSnapshot} />
-          ) : null}
+          {!NarratorTools && needsNarratorTools ? <div role="status">
+            <p>{narratorToolsFailed ? "Панелът не се зареди." : "Зареждаме панела..."}</p>
+            {narratorToolsFailed ? <button type="button" className="btn btn-secondary" onClick={(event) => {
+              narratorRetryFocusRef.current = document.activeElement === event.currentTarget;
+              setNarratorToolsFailed(false);
+            }}>Опитай пак</button> : null}
+          </div> : null}
+          {consentWarning}
+          {NarratorTools && hasNarratorSnapshotPanel && narratorSnapshot ? <NarratorTools snapshot={narratorSnapshot} /> : null}
         </div>
       </section>
     );
   };
 
   return (
-    <main className="shell game-shell play-shell framed-shell" data-phase={phase} data-family={family}>
+    <main className={hasStageTakeover ? "play-finale-shell" : `shell game-shell play-shell framed-shell${phase !== "lobby" ? " play-scene-shell" : ""}`} data-phase={phase} data-family={family}>
       {showPhaseTransition ? (
         <PhaseTransitionOverlay phase={phase} mode={mode} narratorVoice={snapshot?.narratorVoice ?? "classic"} pulseKey={phasePulse} />
       ) : null}
       <PreGameCountdown value={startCountdown} />
-      {connectionStatus === "reconnecting" || connectionStatus === "lost" || connectionStatus === "error" ? (
+      {!hasStageTakeover && (connectionStatus === "reconnecting" || connectionStatus === "lost" || connectionStatus === "error") ? (
         <ReconnectModal
           status={connectionStatus}
           message={connectionMessage}
           onRetry={reconnectNow}
         />
       ) : null}
-      {showShortcuts ? <KeyboardShortcutsModal onClose={() => setShowShortcuts(false)} /> : null}
-      {unlockedAchievementIds.length > 0 ? (
+      {connectionStatus === "connected" && showShortcuts && ShortcutsModal ? (
+        <ShortcutsModal onClose={() => setShowShortcuts(false)} />
+      ) : null}
+      {connectionStatus === "connected" && unlockedAchievementIds.length > 0 ? (
         <Suspense fallback={null}>
           <AchievementUnlockModal achievementIds={unlockedAchievementIds} onClose={() => setUnlockedAchievementIds([])} />
         </Suspense>
       ) : null}
-      <div className="framed-shell-inner play-shell-inner">
-        <ConnectionBanner status={connectionStatus} message={connectionMessage} />
-        {!hasStageTakeover ? (
+      <ConnectionBanner status={connectionStatus} message={connectionMessage} />
+      {hasStageTakeover && snapshot ? <DeferredGameConclusion snapshot={snapshot} recordedGameId={recordedGameId} currentUserId={currentUserId} /> : <div className="framed-shell-inner play-shell-inner" inert={connectionStatus !== "connected" && phase !== "game_over"}>
+        {phase !== "lobby" ? (
           <nav className="play-mobile-navigation" aria-label="Изглед на играта">
             <button type="button" aria-label="Към масата" aria-pressed={mobileView === "table"} onClick={() => setMobileView("table")}>
               <Users aria-hidden /> Масата
@@ -1224,10 +1142,9 @@ export function PlayRoomClientCore({
           data-dock-expanded={actionDockExpanded ? "true" : undefined}
           data-has-narrator-deck={hasNarratorDeck ? "true" : undefined}
           data-dock-has-ritual={hasDockRitualPanel ? "true" : undefined}
-          data-stage-takeover={hasStageTakeover ? "true" : undefined}
         >
           <div className="play-primary-column">
-            {hasStageTakeover ? null : <PlayStage
+            <PlayStage
               code={code}
               phase={phase}
               mode={mode}
@@ -1251,13 +1168,27 @@ export function PlayRoomClientCore({
               onSelectSeat={selectSeatTarget}
               onMakeNarrator={handleMakeNarrator}
               onMakeMayor={handleMakeMayor}
-            />}
-            {renderStageTakeover()}
-            {renderPersonalArea()}
-            {renderNarratorDeck()}
+              activeRoomAction={<button className="play-room-copy" type="button" aria-label="Копирай кода на стаята" title="Копирай кода на стаята" onClick={() => void copyLobbyInvite(true)}><Copy aria-hidden="true" /></button>}
+              lobbyInvitation={phase === "lobby" ? <div className="play-waiting-invite">
+                <span>Код на стаята</span>
+                <div><strong>{code}</strong><button type="button" aria-label="Копирай кода на стаята" title="Копирай кода на стаята" onClick={() => void copyLobbyInvite(true)}><Copy aria-hidden="true" /></button></div>
+                <button type="button" onClick={() => void copyLobbyInvite()}><Copy aria-hidden="true" />Копирай покана</button>
+              </div> : undefined}
+            />
+            {phase === "lobby" ? renderNarratorDeck() : null}
           </div>
-          {hasStageTakeover ? null : (
-            <div className="play-interaction-column" data-has-command={hasActionDock || undefined}>
+          {phase === "lobby" ? <PlayLobbyBand
+            players={players} ownPlayer={ownPlayer} latestEvent={recentPublicEvents[recentPublicEvents.length - 1]}
+            family={family} connected={Boolean(room)} starting={Boolean(startCountdown)}
+            startDisabledReason={startDisabledReason} onReady={sendReady} onStart={requestStartGame}
+            tools={<>
+              {snapshot ? <PlayReference snapshot={snapshot} privateRole={undefined} ownPlayer={ownPlayer} /> : null}
+              <LiveCuePanel cueMode={cueMode} liveMode={liveMode} phase={phase} pulseKey={phasePulse} onChange={changeCueMode} />
+            </>}
+          /> : (
+            <div className="play-console-band">
+              {renderPersonalArea()}
+              <div className="play-interaction-column" data-has-command={hasActionDock || undefined}>
               {renderActionDock()}
               {isCompactViewport && mobileView === "conversation" ? (
                 <div className="play-conversation-context">
@@ -1266,10 +1197,12 @@ export function PlayRoomClientCore({
                 </div>
               ) : null}
               {renderPlayersPanel()}
+              </div>
             </div>
           )}
+          {phase !== "lobby" ? renderNarratorDeck() : null}
         </section>
-      </div>
+      </div>}
     </main>
   );
 }
@@ -1323,9 +1256,4 @@ function getAvailablePrivateChatChannel(
   }
 
   return null;
-}
-
-function nextPhaseArtPreloadHref(phase: GamePhase, family: GameFamily) {
-  const isMobile = typeof window.matchMedia === "function" && window.matchMedia("(max-width: 720px)").matches;
-  return nextPhaseTransitionArtHref(phase, family, isMobile);
 }

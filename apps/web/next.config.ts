@@ -30,11 +30,17 @@ const nextConfig: NextConfig = {
     deviceSizes: [640, 750, 828, 1080, 1200, 1536, 1920, 2048, 3840],
   },
   experimental: {
+    turbopackFileSystemCacheForDev: false,
+    turbopackFileSystemCacheForBuild: false,
     instrumentationClientRouterTransitionEvents: true,
     // Reduce unrelated route CSS in shared chunks; keep perf:budget and browser checks.
     cssChunking: "graph",
-    // Keep shared client code reusable across routes; measured with perf:budget.
-    turbopackChunking: { minChunkSize: 40000 },
+    // Preserve reusable role/config chunks across entry and in-game routes.
+    turbopackChunking: {
+      minChunkSize: 29000,
+      // Keep large shared modules reusable instead of duplicating them per route.
+      maxMergeChunkSize: 25000,
+    },
   },
   async headers() {
     return [

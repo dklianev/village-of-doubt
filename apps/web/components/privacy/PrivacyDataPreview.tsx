@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { downloadCompleteAccountExport } from "@/components/account/AccountDataExport";
+import { downloadCompleteAccountExport } from "@/components/account/account-export";
+import { formatBulgarianDateTime } from "@/lib/date-time";
 import type { PrivacyUserSnapshot } from "./PrivacyDashboard";
 
 interface PrivacyDataPreviewProps {
@@ -12,9 +13,9 @@ interface PrivacyDataPreviewProps {
 export function PrivacyDataPreview({ snapshot }: PrivacyDataPreviewProps) {
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState("");
-  const memberSinceLabel = snapshot.memberSince
-    ? new Intl.DateTimeFormat("bg-BG", { day: "numeric", month: "long", year: "numeric" }).format(snapshot.memberSince)
-    : "—";
+  const memberSinceLabel = snapshot.memberSince && Number.isFinite(snapshot.memberSince.getTime())
+    ? formatBulgarianDateTime(snapshot.memberSince, { day: "numeric", month: "long", year: "numeric" })
+    : "Няма налична дата";
 
   async function exportData() {
     setExporting(true);
@@ -32,9 +33,10 @@ export function PrivacyDataPreview({ snapshot }: PrivacyDataPreviewProps) {
     <section id="privacy-data" tabIndex={-1} className="privacy-section privacy-section-preview">
       <header className="privacy-section-head">
         <p className="privacy-section-kicker">личен преглед</p>
-        <h2>Какво виждаме за теб точно сега.</h2>
+        <h2>Обобщение на твоите данни.</h2>
         <p className="privacy-section-lede">
-          Това е целият списък с данни, които пазим за твоето досие. Нищо повече, нищо скрито.
+          Основни данни за досието ти и завършените игри, в които си участвал.
+          За повече подробности можеш да изтеглиш копие на данните си.
         </p>
       </header>
 
@@ -78,13 +80,15 @@ export function PrivacyDataPreview({ snapshot }: PrivacyDataPreviewProps) {
             <span className="privacy-data-icon" aria-hidden>
               #
             </span>
-            <span>Игрова история</span>
+            <span>Завършени игри</span>
           </dt>
           <dd>
             <code>
-              {snapshot.totalGames === 0
-                ? "още няма"
-                : `${snapshot.totalGames} ${snapshot.totalGames === 1 ? "игра" : "игри"}`}
+              {snapshot.totalGames === null
+                ? "Временно недостъпни"
+                : snapshot.totalGames === 0
+                  ? "още няма"
+                  : `${snapshot.totalGames} ${snapshot.totalGames === 1 ? "игра" : "игри"}`}
             </code>
             <Link href="/history" className="privacy-data-edit">
               Виж архива →
@@ -101,7 +105,9 @@ export function PrivacyDataPreview({ snapshot }: PrivacyDataPreviewProps) {
           </dt>
           <dd>
             <code>
-              {snapshot.totalAchievements} от {snapshot.achievementTotal} отключени
+              {snapshot.totalAchievements === null
+                ? "Временно недостъпни"
+                : `${snapshot.totalAchievements} от ${snapshot.achievementTotal} отключени`}
             </code>
             <Link href="/achievements" className="privacy-data-edit">
               Виж всички →
@@ -118,10 +124,21 @@ export function PrivacyDataPreview({ snapshot }: PrivacyDataPreviewProps) {
           </dt>
           <dd>
             <code>{memberSinceLabel}</code>
-            <span className="privacy-data-badge">{snapshot.providersUsed} входа</span>
+          </dd>
+        </div>
+        <div className="privacy-data-row">
+          <dt>Свързани начини за вход</dt>
+          <dd>
+            <code>{snapshot.providersUsed === null ? "Временно недостъпни" : snapshot.providersUsed}</code>
           </dd>
         </div>
       </dl>
+
+      {snapshot.totalGames === null || snapshot.totalAchievements === null || snapshot.providersUsed === null ? (
+        <p className="privacy-data-unavailable" role="status">
+          Част от данните временно не могат да се заредят. Това не означава, че липсват. Опитай отново по-късно.
+        </p>
+      ) : null}
 
       <div className="privacy-data-actions">
         <button
@@ -131,16 +148,15 @@ export function PrivacyDataPreview({ snapshot }: PrivacyDataPreviewProps) {
           disabled={exporting}
           aria-busy={exporting}
         >
-          <span>{exporting ? "Подготвяме данните..." : "Изтегли всичките данни"}</span>
-          <span className="privacy-data-action-hint">JSON файл със всичко, което знаем</span>
+          <span>{exporting ? "Подготвяме данните..." : "Изтегли моите данни"}</span>
+          <span className="privacy-data-action-hint">Копие на данните в JSON файл</span>
         </button>
       </div>
       {exportError ? <p className="privacy-export-error" role="alert">{exportError}</p> : null}
 
       <p className="privacy-data-disclaimer">
-        Не виждаме твоя IP адрес след сесия, не пазим клавишни последователности и не четем
-        съобщения от разговорите извън стаите на играта. Всичко, което показваме тук, можеш да изтеглиш или
-        изтриеш по всяко време.
+        Тук виждаш обобщение на данните си. За пълното копие използвай „Изтегли моите данни“,
+        а за промяна или изтриване отвори досието си.
       </p>
     </section>
   );

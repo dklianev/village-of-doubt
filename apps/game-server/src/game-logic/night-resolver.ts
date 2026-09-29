@@ -35,7 +35,7 @@ export interface NightResolution {
     coveredByLawyer?: boolean;
     messageBg?: string;
   }>;
-  preventedDeaths: Array<{ userId: string; reasonBg: string; public?: boolean }>;
+  preventedDeaths: Array<{ userId: string; reasonBg: string; public?: boolean; actorUserId?: string }>;
   protectedByPriest: string[];
   privateMessages: Array<{ targetUserId: string; messageBg: string }>;
 }
@@ -67,10 +67,10 @@ export function resolveNight(
   const preventedDeaths: NightResolution["preventedDeaths"] = [];
   const privateMessages: NightResolution["privateMessages"] = [];
   const factionKillVotes = new Map<TeamCode, Map<string, number>>();
-  const healerProtectedTargets = new Set<string>();
-  const doctorProtectedTargets = new Set<string>();
+  const healerProtectedTargets = new Map<string, string | null>();
+  const doctorProtectedTargets = new Map<string, string | null>();
   const bodyguardProtectedTargets = new Map<string, string>();
-  const witchHealedTargets = new Set<string>();
+  const witchHealedTargets = new Map<string, string | null>();
   const witchPoisonedTargets = new Set<string>();
   const blockedActorIds = getRoleblockedActorIds(players, actions);
   const lawyerCoveredTargets = new Set<string>();
@@ -222,9 +222,9 @@ export function resolveNight(
       if (actor.role === "bodyguard") {
         bodyguardProtectedTargets.set(action.targetUserId, submission.actorUserId);
       } else if (actor.role === "doctor") {
-        doctorProtectedTargets.add(action.targetUserId);
+        rememberProtector(doctorProtectedTargets, action.targetUserId, submission.actorUserId);
       } else {
-        healerProtectedTargets.add(action.targetUserId);
+        rememberProtector(healerProtectedTargets, action.targetUserId, submission.actorUserId);
       }
     }
 
@@ -294,7 +294,7 @@ export function resolveNight(
 
     const action = submission.action;
     if (action.kind === "witch_heal") {
-      witchHealedTargets.add(action.targetUserId);
+      rememberProtector(witchHealedTargets, action.targetUserId, submission.actorUserId);
     }
 
     if (action.kind === "witch_poison" && aliveById.has(action.targetUserId)) {
@@ -309,19 +309,19 @@ export function resolveNight(
     });
   }
 
-  for (const targetUserId of witchHealedTargets) {
-    preventDeathFromFaction(deaths, targetUserId, "Лечебната отвара спря нощна атака.", preventedDeaths);
-    preventDeathFromFaction(delayedDeaths, targetUserId, "Лечебната отвара спря нощна атака.", preventedDeaths);
+  for (const [targetUserId, actorUserId] of witchHealedTargets) {
+    preventDeathFromFaction(deaths, targetUserId, "Лечебната отвара спря нощна атака.", preventedDeaths, actorUserId);
+    preventDeathFromFaction(delayedDeaths, targetUserId, "Лечебната отвара спря нощна атака.", preventedDeaths, actorUserId);
   }
 
-  for (const targetUserId of healerProtectedTargets) {
-    preventDeath(deaths, targetUserId, "Лечителят спря нощна атака.", preventedDeaths);
-    preventDeath(delayedDeaths, targetUserId, "Лечителят спря нощна атака.", preventedDeaths);
+  for (const [targetUserId, actorUserId] of healerProtectedTargets) {
+    preventDeath(deaths, targetUserId, "Лечителят спря нощна атака.", preventedDeaths, actorUserId);
+    preventDeath(delayedDeaths, targetUserId, "Лечителят спря нощна атака.", preventedDeaths, actorUserId);
   }
 
-  for (const targetUserId of doctorProtectedTargets) {
-    preventDeath(deaths, targetUserId, "Докторът спря нощна смърт.", preventedDeaths);
-    preventDeath(delayedDeaths, targetUserId, "Докторът спря нощна смърт.", preventedDeaths);
+  for (const [targetUserId, actorUserId] of doctorProtectedTargets) {
+    preventDeath(deaths, targetUserId, "Докторът спря нощна смърт.", preventedDeaths, actorUserId);
+    preventDeath(delayedDeaths, targetUserId, "Докторът спря нощна смърт.", preventedDeaths, actorUserId);
   }
 
   applyBodyguardProtection(deaths, bodyguardProtectedTargets, "Бодигардът пое нощната атака.", preventedDeaths);
@@ -348,7 +348,14 @@ export function resolveNight(
     deathSources: resolveDeathSources(deaths),
     delayedDeathSources: resolveDeathSources(delayedDeaths),
     checks,
-    preventedDeaths,
+    // A removed attack is not a saved life if another lethal source remains.
+    preventedDeaths: preventedDeaths.map((event) => {
+      if (deaths.has(event.userId) || delayedDeaths.has(event.userId)) {
+        const { actorUserId: _actorUserId, ...unattributed } = event;
+        return unattributed;
+      }
+      return event;
+    }),
     protectedByPriest: [...new Set(protectedByPriest)],
     privateMessages,
   };
@@ -409,17 +416,24 @@ function getAdjacentLivingTrio(players: PrivatePlayerForNight[], centerUserId: s
   return [previous, center, next].filter((player): player is PrivatePlayerForNight => Boolean(player));
 }
 
+function rememberProtector(protectors: Map<string, string | null>, targetUserId: string, actorUserId: string) {
+  // With overlapping identical protections, do not invent a single saver's identity.
+  protectors.set(targetUserId, protectors.has(targetUserId) && protectors.get(targetUserId) !== actorUserId
+    ? null : actorUserId);
+}
+
 function preventDeath(
   deaths: DeathIntentsByTarget,
   targetUserId: string,
   reasonBg: string,
   preventedDeaths: NightResolution["preventedDeaths"],
+  actorUserId: string | null,
 ) {
   if (!deaths.has(targetUserId)) {
     return;
   }
   deaths.delete(targetUserId);
-  preventedDeaths.push({ userId: targetUserId, reasonBg });
+  preventedDeaths.push({ userId: targetUserId, reasonBg, ...(actorUserId ? { actorUserId } : {}) });
 }
 
 function preventDeathFromFaction(
@@ -427,6 +441,7 @@ function preventDeathFromFaction(
   targetUserId: string,
   reasonBg: string,
   preventedDeaths: NightResolution["preventedDeaths"],
+  actorUserId: string | null,
 ) {
   const prevented = removeDeathIntents(
     deaths,
@@ -436,7 +451,7 @@ function preventDeathFromFaction(
   if (!prevented) {
     return;
   }
-  preventedDeaths.push({ userId: targetUserId, reasonBg });
+  preventedDeaths.push({ userId: targetUserId, reasonBg, ...(actorUserId ? { actorUserId } : {}) });
 }
 
 function applyBodyguardProtection(
@@ -450,7 +465,7 @@ function applyBodyguardProtection(
       continue;
     }
     deaths.delete(targetUserId);
-    preventedDeaths.push({ userId: targetUserId, reasonBg });
+    preventedDeaths.push({ userId: targetUserId, reasonBg, actorUserId: bodyguardUserId });
     if (!deaths.has(bodyguardUserId)) {
       addDeathIntent(deaths, bodyguardUserId, {
         causeBg: "Загина, докато пазеше друг играч.",

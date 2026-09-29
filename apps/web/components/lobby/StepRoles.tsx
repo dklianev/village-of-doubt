@@ -395,7 +395,7 @@ function roleBalanceCopy(family: LobbyFormState["family"], balance: number) {
   return balance > 0 ? "преднина за селото" : "преднина за заплахата";
 }
 
-function InlineRoleDetail({
+export function InlineRoleDetail({
   family,
   role,
   onClose,

@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "playwright/test";
 
 test.use({
@@ -37,6 +38,61 @@ function stationary(actual: Awaited<ReturnType<typeof geometry>>, before: Awaite
 }
 
 for (const theme of ["light", "dark"] as const) {
+  for (const width of [390, 1024, 1440]) {
+    test(`guest sign-in stays distinct and usable after navigation: ${width} ${theme}`, async ({ page }, testInfo) => {
+      await page.setViewportSize({ width, height: 900 });
+      await prepare(page, theme);
+      await page.goto("/faq");
+      const header = page.locator("header.site-chrome:not([data-fallback])");
+      await expect(header.getByRole("button", { name: "Играй", exact: true })).toBeEnabled();
+      await expect(header.locator('[data-auth-state="guest"]')).toHaveCount(1);
+      await page.evaluate(() => document.fonts.ready);
+      await header.getByRole("link", { name: "Сенките, начало" }).click();
+      await expect(page).toHaveURL(/\/$/);
+      await page.evaluate(() => document.fonts.ready);
+      if (width < 1024) await page.getByRole("button", { name: "Отвори менюто" }).click();
+      const surface = width < 1024
+        ? page.getByRole("dialog", { name: "Навигация" })
+        : page.locator("header.site-chrome:not([data-fallback])");
+      const login = surface.getByRole("link", { name: "Влез", exact: true });
+      await expect(login).toBeVisible();
+      await expect(login.locator("svg")).toHaveCount(1);
+      await expect(login).toHaveCSS("border-radius", "999px");
+      await surface.evaluate(async (element) => {
+        const animations = element.getAnimations({ subtree: true })
+          .filter((animation) => animation.effect?.getTiming().iterations !== Infinity);
+        await Promise.all(animations.map((animation) => animation.finished.catch(() => {})));
+      });
+      const before = await login.boundingBox();
+      expect(before!.height).toBeGreaterThanOrEqual(44);
+      if (width >= 1024) expect(before!.width).toBe(104);
+      const colors = await login.evaluate((element) => {
+        const style = getComputedStyle(element);
+        return { ink: style.color, fill: style.backgroundColor };
+      });
+      expect(colors.fill).toMatch(/^rgb\(/);
+      expect(colors.fill).not.toBe(colors.ink);
+      expect((await new AxeBuilder({ page }).include(".auth-chip-signin").analyze()).violations).toEqual([]);
+      await testInfo.attach("guest-navigation", { body: await surface.screenshot(), contentType: "image/png" });
+      await login.hover();
+      expect(await login.boundingBox()).toEqual(before);
+      expect((await new AxeBuilder({ page }).include(".auth-chip-signin").analyze()).violations).toEqual([]);
+      await login.focus();
+      await page.keyboard.press("Tab");
+      await page.keyboard.press("Shift+Tab");
+      await expect(login).toBeFocused();
+      await expect(login).toHaveCSS("outline-style", "solid");
+      await expect(login).toHaveCSS("outline-width", "2px");
+      await page.keyboard.press("Enter");
+      await expect(page).toHaveURL(/\/sign-in$/);
+      await expect(page.getByRole("heading", { level: 1, name: "Влез в Сенките" })).toBeVisible();
+      const currentPage = page.locator(".auth-chip-signin[aria-current='page']").first();
+      await expect(currentPage).toHaveText("Вход");
+      await expect(currentPage).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+      await expect(currentPage).not.toHaveAttribute("tabindex");
+    });
+  }
+
   for (const width of [320, 390, 768, 1024, 1440]) {
     test(`Senkite choices, focus and scroll stability: ${width} ${theme}`, async ({ page }) => {
       await page.setViewportSize({ width, height: 800 });

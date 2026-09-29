@@ -59,6 +59,8 @@ export interface GameConfig {
   communicationMode: CommunicationMode;
   tempoProfile: TempoProfile;
   timers: PhaseTimers;
+  // Keep host intent separate from composition-enforced death reveal rules.
+  requestedRevealRolesOnDeath: boolean;
   revealRolesOnDeath: boolean;
   tieBreaker: TieBreaker;
   allowSkipVote: boolean;
@@ -146,7 +148,7 @@ export type RoleValidationIssue = {
   messageBg: string;
 };
 
-const DEFAULT_RULESET_VERSION = "bg-werewolf-mafia-2026-04-28-separated-games";
+const DEFAULT_RULESET_VERSION = "bg-werewolf-mafia-2026-09-27-hidden-jester";
 
 export const TEMPO_PRESETS: Record<TempoProfile, PhaseTimers> = {
   fast_online: {
@@ -771,6 +773,7 @@ export function createDefaultGameConfig(mode: GameMode, playerCount: number): Ga
     communicationMode: "built_in_chat",
     tempoProfile,
     timers: TEMPO_PRESETS[tempoProfile],
+    requestedRevealRolesOnDeath: true,
     revealRolesOnDeath: true,
     tieBreaker: family === "mafia" ? "revote" : "no_elimination",
     allowSkipVote: mode !== "mafia_sport",
@@ -823,6 +826,7 @@ export function createGameConfigFromOptions(rawOptions: GameConfigOptions = {}):
           })
         : config.roles;
   const loversEnabled = (roles.cupid ?? 0) > 0;
+  const requestedRevealRolesOnDeath = options.revealRolesOnDeath ?? config.requestedRevealRolesOnDeath;
 
   // Sanitization copies only known, defined options. Keep input-only controls
   // out of runtime state, then apply the mode- and composition-derived values.
@@ -840,6 +844,9 @@ export function createGameConfigFromOptions(rawOptions: GameConfigOptions = {}):
     timers,
     liveMode: tempoProfile === "live",
     loversEnabled,
+    requestedRevealRolesOnDeath,
+    // A missing death reveal must not identify the Jester by elimination.
+    revealRolesOnDeath: (roles.jester ?? 0) > 0 ? false : requestedRevealRolesOnDeath,
     allowSkipVote: mode === "mafia_sport" ? false : options.allowSkipVote ?? config.allowSkipVote,
     beginnerMode: options.beginnerMode ?? (rolePreset === "beginner"),
     advancedMode: options.advancedMode ?? (rolePreset === "advanced" || rolePreset === "wolves_vampires"),

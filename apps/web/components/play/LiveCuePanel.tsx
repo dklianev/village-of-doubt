@@ -27,7 +27,7 @@ export function LiveCuePanel({ cueMode, liveMode, phase, pulseKey, onChange }: {
 
   return (
     <>
-      <button ref={trigger} type="button" className={`${styles.tool} ${styles.cueTool}`} aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>
+      <button ref={trigger} type="button" className={`${styles.tool} ${styles.cueTool}`} title="Сигнали за фазите" aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>
         <ModeIcon key={pulseKey} data-cue={activeMode} aria-hidden="true" size={18} />
         <span>Сигнали <small>{label}</small></span>
       </button>

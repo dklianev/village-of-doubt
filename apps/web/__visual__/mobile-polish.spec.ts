@@ -86,8 +86,10 @@ for (const viewport of [
 
 test("tutorial puts the lesson before secondary mobile chrome", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(() => localStorage.setItem("cookie-consent", "1"));
   await page.goto("/tutorial?step=1", { waitUntil: "domcontentloaded" });
   await page.waitForLoadState("networkidle").catch(() => {});
+  await page.evaluate(() => document.fonts.ready);
 
   const progress = page.locator(".tutorial-progress");
   const stage = page.locator(".tutorial-slide-stage");
@@ -103,22 +105,80 @@ test("tutorial puts the lesson before secondary mobile chrome", async ({ page })
   expect(progressBox).not.toBeNull();
   expect(stageBox).not.toBeNull();
   expect(navigationBox).not.toBeNull();
-  expect(progressBox!.height).toBeLessThanOrEqual(72);
+  const steps = progress.getByRole("button", { name: /^\d\. / });
+  await expect(steps).toHaveCount(6);
+  const stepBoxes = await steps.evaluateAll((elements) => elements.map((element) => element.getBoundingClientRect().toJSON()));
+  const chooseGame = progress.getByRole("button", { name: "Избери игра", exact: true });
+  const chooseBox = (await chooseGame.boundingBox())!;
+  expect(chooseBox.width).toBeGreaterThanOrEqual(44);
+  expect(chooseBox.height).toBeGreaterThanOrEqual(44);
+  // The status/skip row and six touch targets must fit without hiding the lesson.
+  for (const [index, box] of stepBoxes.entries()) {
+    expect(box.width).toBeGreaterThanOrEqual(44);
+    expect(box.height).toBeGreaterThanOrEqual(44);
+    expect(box.y).toBe(stepBoxes[0]!.y);
+    expect(box.y).toBeGreaterThanOrEqual(chooseBox.y + chooseBox.height);
+    expect(box.bottom).toBeLessThanOrEqual(progressBox!.y + progressBox!.height);
+    if (index > 0) expect(box.left).toBeGreaterThanOrEqual(stepBoxes[index - 1]!.right);
+  }
+  expect(progressBox!.y + progressBox!.height).toBeLessThanOrEqual(stageBox!.y);
   expect(stageBox!.y).toBeLessThanOrEqual(230);
-  expect(navigationBox!.height).toBeLessThanOrEqual(72);
-  await expect(page.getByRole("link", { name: "Продължи към игра" })).toHaveCount(0);
+  expect(await page.evaluate(() => scrollY)).toBe(0);
+  await expect(stage.getByRole("heading", { level: 1 })).toBeInViewport({ ratio: 1 });
+  await expect(stage.locator(".tutorial-slide-body p").first()).toBeInViewport({ ratio: 1 });
+  expect(stageBox!.y + stageBox!.height).toBeLessThanOrEqual(navigationBox!.y);
+  const navButtons = navigation.getByRole("button");
+  await expect(navButtons).toHaveCount(2);
+  const navBoxes = await navButtons.evaluateAll((elements) => elements.map((element) => element.getBoundingClientRect().toJSON()));
+  for (const box of navBoxes) {
+    expect(box.width).toBeGreaterThanOrEqual(44);
+    expect(box.height).toBeGreaterThanOrEqual(44);
+    expect(box.y).toBe(navBoxes[0]!.y);
+    expect(box.y).toBeGreaterThanOrEqual(navigationBox!.y);
+    expect(box.bottom).toBeLessThanOrEqual(navigationBox!.y + navigationBox!.height);
+  }
+  for (const region of [progress, navigation]) {
+    expect(await region.evaluate((element) => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await expect(page.getByRole("group", { name: "Избери игра", exact: true })).toHaveCount(0);
+  await expect(navigation.getByRole("link")).toHaveCount(0);
+  await chooseGame.click();
+  await expect(stage).toHaveAttribute("data-tutorial-scene", "final");
+  await expect(page.getByRole("group", { name: "Избери игра", exact: true })).toBeVisible();
 });
 
-test("tutorial offers the game handoff on the final scene", async ({ page }) => {
+test("tutorial offers both game families on the final scene", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/tutorial?step=6", { waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("link", { name: "Продължи към игра" })).toBeVisible();
+  const choices = page.getByRole("group", { name: "Избери игра", exact: true });
+  await expect(choices.getByRole("link")).toHaveCount(2);
+  for (const [name, href] of [["Започни Върколак", "/werewolf/create"], ["Започни Мафия", "/mafia/create"]]) {
+    const choice = choices.getByRole("link", { name: new RegExp(name!) });
+    await expect(choice).toBeVisible();
+    await expect(choice).toHaveAttribute("href", href!);
+    const box = (await choice.boundingBox())!;
+    expect(box.width).toBeGreaterThanOrEqual(44);
+    expect(box.height).toBeGreaterThanOrEqual(44);
+  }
+  await expect(page.locator(".tutorial-nav").getByRole("link")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Следваща сцена" })).toHaveCount(0);
+});
+
+test("tutorial preserves an explicit final-scene redirect", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const destination = "/mafia/join/ABC123?from=friend#invite";
+  await page.goto(`/tutorial?step=6&redirect=${encodeURIComponent(destination)}`, { waitUntil: "domcontentloaded" });
+  const continueLink = page.getByRole("link", { name: "Продължи", exact: true });
+  await expect(continueLink).toBeVisible();
+  await expect(continueLink).toHaveAttribute("href", destination);
+  await expect(page.getByRole("link", { name: "Прескочи", exact: true })).toHaveAttribute("href", destination);
 });
 
 test("friends brings the working ledger into the first mobile viewport", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/friends?visualAuth=1", { waitUntil: "domcontentloaded" });
-  const board = page.locator(".friends-board");
+  const board = page.getByRole("region", { name: "Твоята компания", exact: true });
   await expect(board).toBeVisible();
   const box = await board.boundingBox();
   expect(box).not.toBeNull();
@@ -128,7 +188,7 @@ test("friends brings the working ledger into the first mobile viewport", async (
 test("achievements reveals progress before the mobile fold", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/achievements?visualAuth=1&visualAchievements=fixture", { waitUntil: "domcontentloaded" });
-  const progress = page.locator(".achievement-wreath");
+  const progress = page.locator(".achievement-progress");
   await expect(progress).toBeVisible();
   const box = await progress.boundingBox();
   expect(box).not.toBeNull();

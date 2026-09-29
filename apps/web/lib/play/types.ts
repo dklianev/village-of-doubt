@@ -10,6 +10,7 @@ import type {
   PrivateFactionRoster,
   PublicEventKind,
   RoleCode,
+  TerminalGameResult,
 } from "@werewolf/shared";
 
 export interface PublicPlayer {
@@ -103,6 +104,7 @@ export interface GameSnapshot {
   votingCycle?: number;
   winnerTeam: string;
   winnerReasonBg: string;
+  terminalResult?: TerminalGameResult;
   players: PublicPlayer[];
   roleCounts: PublicRoleCount[];
   voteTally: VoteTallyItem[];
