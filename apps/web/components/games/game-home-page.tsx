@@ -10,8 +10,9 @@ import { RoleSpotlight } from "@/components/games/RoleSpotlight";
 import { SportMafiaCallout } from "@/components/games/SportMafiaCallout";
 import { VariantsChips } from "@/components/games/VariantsChips";
 import { WerewolfNightTimeline } from "@/components/games/WerewolfNightTimeline";
-import { LiveTickerCard, type LiveStats } from "@/components/landing/LiveTickerCard";
-import { RecentEndingsCard, type Ending } from "@/components/landing/RecentEndingsCard";
+import { LiveTickerCard } from "@/components/landing/LiveTickerCard";
+import { RecentEndingsCard } from "@/components/landing/RecentEndingsCard";
+import { loadGameStats, type GameHomeStats } from "@/lib/game-stats";
 import "@/components/landing/LandingSurface.module.css";
 import "@/components/games/GameHomePage.module.css";
 
@@ -44,7 +45,6 @@ async function GameStatsRow({ family }: { family: GameFamily }) {
   return <GameStatsContent family={family} stats={stats} />;
 }
 
-type GameHomeStats = { liveStats: LiveStats; recentEndings: Ending[] };
 
 export function GameStatsContent({ family, stats }: { family: GameFamily; stats: GameHomeStats | null }) {
   if (!stats) {
@@ -136,35 +136,4 @@ export function GameHomeClosing({ family }: { family: GameFamily }) {
       </div>
     </section>
   );
-}
-
-async function loadGameStats(): Promise<GameHomeStats | null> {
-  const gameServerUrl = process.env.NEXT_PUBLIC_GAME_SERVER_URL?.replace(/^ws/, "http") ?? "http://localhost:2567";
-  try {
-    const response = await fetch(`${gameServerUrl}/stats`, {
-      next: { revalidate: 5 },
-      signal: AbortSignal.timeout(800),
-    });
-    if (!response.ok) {
-      return null;
-    }
-    const stats = (await response.json()) as {
-      activeRooms?: number;
-      connectedPlayers?: number;
-      byFamily?: Partial<Record<GameFamily, number>>;
-      recentEndings?: Ending[];
-      lastWinner?: Ending | null;
-    };
-
-    return {
-      liveStats: {
-        activeRooms: stats.activeRooms ?? 0,
-        connectedPlayers: stats.connectedPlayers ?? 0,
-        ...(stats.byFamily ? { byFamily: stats.byFamily } : {}),
-      },
-      recentEndings: stats.recentEndings ?? (stats.lastWinner ? [stats.lastWinner] : []),
-    };
-  } catch {
-    return null;
-  }
 }

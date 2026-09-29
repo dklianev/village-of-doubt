@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import { Mail } from "lucide-react";
+import { HomeLiveSignal } from "@/components/landing/HomeLiveSignal";
 import { Display } from "@werewolf/ui/server";
 import { GAME_MODE_DEFINITIONS } from "@werewolf/shared";
 import { ModeChoiceCards, type ModeChoiceGame } from "@/components/landing/ModeChoiceCards";
@@ -45,6 +47,9 @@ export function LandingExperience({ initialSession }: { initialSession: LandingS
         <p className="landing-hero-copy">
           Една компания. Тайни роли. На кого ще повярваш?
         </p>
+        <Suspense fallback={null}>
+          <HomeLiveSignal />
+        </Suspense>
 
         <ModeChoiceCards games={GAMES} initialSession={initialSession} />
       </section>
