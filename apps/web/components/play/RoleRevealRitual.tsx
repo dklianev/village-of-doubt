@@ -23,7 +23,7 @@ export function RoleRevealGate({
 }) {
   const [done, setDone] = useState(false);
   if (done) return null;
-  return <RoleRevealRitual role={role} family={family} enterDelayMs={transitioning ? 1300 : 0} onDone={() => setDone(true)} />;
+  return <RoleRevealRitual role={role} family={family} enterDelayMs={transitioning ? 1750 : 0} onDone={() => setDone(true)} />;
 }
 
 /**

@@ -1,5 +1,6 @@
 import { getGameFamily, type GameMode, type GamePhase, type NarratorVoice } from "@werewolf/shared";
 import { phaseBg, phaseNarratorLine, phaseSigil } from "@/lib/play/phase-display";
+import "./PhaseTransitionOverlay.module.css";
 
 function transitionKindForPhase(phase: GamePhase) {
   if (phase === "role_reveal") {

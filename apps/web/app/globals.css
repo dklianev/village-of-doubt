@@ -3174,40 +3174,7 @@ html[data-vt="theme"]::view-transition-new(root) {
 
 .play-shell, .play-finale-shell { --play-reveal: play-reveal-in 420ms ease-out both; }
 
-.phase-transition-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 130;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  pointer-events: none;
-  background: #06120ec7;
-  color: #fff8e9;
-  padding: 20px;
-  opacity: 0;
-  animation: phaseCurtain 1600ms ease both;
-}
-.phase-transition-overlay[data-family="mafia"] { background: #190e0cc7; }
-.phase-transition-overlay > div {
-  width: min(600px, 100%);
-  text-align: center;
-  animation: play-reveal-in 300ms ease-out both;
-}
-.phase-transition-overlay span,
-.phase-transition-overlay strong,
-.phase-transition-overlay small { display: block; }
-.phase-transition-overlay span { color: #e2c17f; font-size: 42px; line-height: 1; }
-.phase-transition-overlay strong {
-  margin: 12px 0;
-  font: 700 48px/1.15 var(--font-display);
-  text-wrap: balance;
-  overflow-wrap: anywhere;
-}
-.phase-transition-overlay small { font-size: 16px; line-height: 1.5; text-wrap: balance; }
-@media (max-width: 600px) {
-  .phase-transition-overlay strong { font-size: 32px; }
-}
+/* Phase curtains live in components/play/PhaseTransitionOverlay.module.css. */
 @media (prefers-reduced-motion: reduce) {
   .play-shell *, .play-shell *::before, .play-shell *::after,
   .play-finale-shell *, .play-finale-shell *::before, .play-finale-shell *::after {
@@ -3215,8 +3182,6 @@ html[data-vt="theme"]::view-transition-new(root) {
     transition: none !important;
     scroll-behavior: auto !important;
   }
-  /* Keep the phase announcement available without covering the table. */
-  .phase-transition-overlay { width: 1px; height: 1px; padding: 0; clip-path: inset(50%); opacity: 1; }
 }
 
 .pre-game-countdown {
@@ -3437,10 +3402,6 @@ html[data-vt="theme"]::view-transition-new(root) {
   font-weight: 850;
 }
 
-@keyframes phaseCurtain {
-  0%, 100% { opacity: 0; }
-  15%, 75% { opacity: 1; }
-}
 @keyframes play-reveal-in {
   from { opacity: .35; transform: translateY(8px); }
   to { opacity: 1; transform: none; }
