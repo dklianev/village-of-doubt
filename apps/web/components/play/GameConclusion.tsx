@@ -1,6 +1,6 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
-import { ArrowRight, Heart, RotateCcw, CirclePlay, Trophy, Theater } from "lucide-react";
+import { ArrowRight, Heart, RotateCcw, CirclePlay, Share2, Trophy, Theater } from "lucide-react";
 import { getGameFamily, ROLE_DEFINITIONS, type RoleCode } from "@werewolf/shared";
 import type { GameSnapshot } from "@/lib/play/types";
 import { ProfilePortrait } from "@/components/ProfilePortrait";
@@ -39,6 +39,44 @@ export function GameConclusion({ snapshot, recordedGameId, currentUserId }: Game
   const quietActions = !hasJester && (scene === "village" || scene === "lovers");
   const replayEligible = canOpenRecordedReplay(snapshot, currentUserId);
   const isRecorded = Boolean(recordedGameId && replayEligible);
+  const revelationRef = useRef<HTMLElement>(null);
+  const [revealed, setRevealed] = useState(false);
+  const [shareState, setShareState] = useState<"idle" | "copied" | "failed">("idle");
+
+  // The roster sits below the finale scene: turn the cards when they are actually seen.
+  useEffect(() => {
+    const node = revelationRef.current;
+    if (!node || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry?.isIntersecting) return;
+      setRevealed(true);
+      observer.disconnect();
+    }, { threshold: 0.2 });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  // Shares only the public outcome; the recorded replay keeps its own access checks.
+  async function shareResult() {
+    const url = isRecorded
+      ? new URL(historyHrefForGame(recordedGameId, replayEligible), window.location.origin).toString()
+      : window.location.origin;
+    const text = `${heading}. Изиграхме ${family === "mafia" ? "Мафия" : "Върколак"} в Сенките.`;
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share({ title: "Сенките", text, url });
+        return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(`${text} ${url}`);
+      setShareState("copied");
+    } catch {
+      setShareState("failed");
+    }
+  }
 
   useEffect(() => {
     const active = document.activeElement;
@@ -71,19 +109,19 @@ export function GameConclusion({ snapshot, recordedGameId, currentUserId }: Game
         {hasJester ? <img className={styles.jesterArtifact} src="/game-art/endgame/jester-v1.webp" alt="" width={960} height={600} /> : null}
       </section>
 
-      <section className={styles.revelation} aria-labelledby="conclusion-roles">
+      <section ref={revelationRef} className={styles.revelation} aria-labelledby="conclusion-roles" data-revealed={revealed || undefined}>
         <header className={styles.sectionHeading}>
           <h2 id="conclusion-roles">Лицата зад сенките</h2>
           <Link tabIndex={0} href={`/${familyPath}/roles`}>Всички роли <ArrowRight size={18} aria-hidden="true" /></Link>
         </header>
         {!result ? <p role="status">Окончателното разкриване на ролите още не е получено.</p> : null}
         <ul className={styles.players}>
-          {players.map((player) => {
+          {players.map((player, index) => {
             const role = roles.get(player.userId);
             const knownRole = role ?? (Object.hasOwn(ROLE_DEFINITIONS, player.revealedRole) ? player.revealedRole as RoleCode : undefined);
             const won = winners.has(player.userId);
             const personalWin = personalWinners.has(player.userId);
-            return <li className={styles.player} key={player.userId} data-winner={won || undefined} data-personal-winner={personalWin || undefined}>
+            return <li className={styles.player} key={player.userId} data-winner={won || undefined} data-personal-winner={personalWin || undefined} style={{ "--reveal-index": index } as CSSProperties}>
               <div className={styles.portrait}>
                 <ProfilePortrait avatarId={avatarIdForUser(player.userId, player.avatarId)} decorative />
                 {won ? <img className={styles.laurel} src="/game-art/endgame/laurel-v1.webp" width={320} height={320} alt="" /> : null}
@@ -98,6 +136,10 @@ export function GameConclusion({ snapshot, recordedGameId, currentUserId }: Game
         </ul>
       </section>
       <div className={styles.afterword}>
+        <button type="button" className={styles.share} onClick={() => void shareResult()} aria-live="polite">
+          <Share2 size={18} aria-hidden="true" />
+          {shareState === "copied" ? "Копирано — пусни го в групата" : shareState === "failed" ? "Не успяхме да копираме връзката" : "Сподели резултата"}
+        </button>
         <p className={styles.repeatNote}>
           <strong>Край на играта · {snapshot.round} {snapshot.round === 1 ? "рунд" : "рунда"}</strong><br />
           Нова стая{snapshot.nextRoomOptions ? " със същите настройки" : " за следващата вечер"}. Участниците се канят отново.

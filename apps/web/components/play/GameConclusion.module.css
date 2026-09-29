@@ -75,9 +75,23 @@
 .afterword ol { margin: 18px 0 0; padding-left: 20px; line-height: 1.6; color: var(--final-muted); }
 .afterword li { margin: 8px 0; }
 .afterword :global(.post-game-badges) { display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; color: var(--final-muted); }
+.share { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin: 0 0 16px; padding: 8px 16px; border: 1px solid var(--final-metal); border-radius: 999px; background: transparent; color: var(--final-metal); font: inherit; font-size: 15px; font-weight: 650; cursor: pointer; }
+.share:hover { background: color-mix(in srgb, var(--final-metal) 14%, transparent); }
+.share:focus-visible { outline: 3px solid var(--final-metal); outline-offset: 3px; }
 @media (prefers-reduced-motion: no-preference) {
   .copy h1, .reason { animation: var(--play-reveal); }
   .personal, .jesterArtifact { animation: var(--play-reveal); animation-duration: 520ms; animation-delay: 120ms; }
+  /* Cards turn face-up one after another once the roster scrolls into view (capped stagger). */
+  .revelation[data-revealed] .player { animation: final-card-turn 760ms cubic-bezier(0.2, 0.8, 0.2, 1) calc(min(var(--reveal-index, 0), 12) * 95ms) both; }
+  .revelation[data-revealed] [data-winner] .laurel { animation: final-laurel 640ms cubic-bezier(0.3, 1.5, 0.4, 1) calc(min(var(--reveal-index, 0), 12) * 95ms + 480ms) both; }
+}
+@keyframes final-card-turn {
+  from { opacity: 0.15; transform: perspective(700px) rotateY(86deg); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes final-laurel {
+  from { opacity: 0; transform: translateX(-50%) scale(0.6) rotate(-10deg); }
+  to { opacity: 1; transform: translateX(-50%) scale(1) rotate(0); }
 }
 @media (max-width: 1000px) {
   .scene { min-height: 630px; }
