@@ -1,9 +1,9 @@
 import type { CSSProperties } from "react";
 import { EyeOff } from "lucide-react";
-import { ROLE_DEFINITIONS, getRoleShortDescriptionBg, teamLabelBg, type GameFamily, type RoleCode } from "@werewolf/shared";
-import { ROLE_GUIDE_BG, formatPrivateResult } from "@/lib/play/private-copy";
+import { ROLE_DEFINITIONS, type GameFamily, type RoleCode } from "@werewolf/shared";
+import { formatPrivateResult, roleGuideBg } from "@/lib/play/private-copy";
 import { roleSigil } from "@/lib/play/player-display";
-import { roleArtPath } from "@/lib/role-art";
+import { roleArtPath, roleThumbPath } from "@/lib/role-art";
 import type { PrivateResult, PublicPlayer } from "@/lib/play/types";
 import styles from "./RoleCard.module.css";
 
@@ -29,14 +29,14 @@ export function RoleCard({
   const consolePresentation = presentation === "console";
   const definition = ROLE_DEFINITIONS[role.role];
   const roleFamily = family ?? definition.availableInFamilies[0] ?? "werewolves";
-  const guide = ROLE_GUIDE_BG[role.role] ?? {
-    summary: getRoleShortDescriptionBg(role.role),
-    team: teamLabelBg(definition.team, roleFamily),
-    timing: definition.nightAction ? "Нощна фаза" : "Ден и гласуване",
-    win: "winConditionBg" in definition ? definition.winConditionBg : "Следвай целта на своя отбор",
-  };
+  const guide = roleGuideBg(role.role, roleFamily);
+  // Console (120x180) and mini portraits stay sharp at 3x with the 520x780 thumb;
+  // only the larger presentations need the full plate.
+  const roleArtUrl = consolePresentation || mini
+    ? roleThumbPath(roleFamily, role.role)
+    : roleArtPath(roleFamily, role.role, "webp");
   const roleArtStyle = {
-    "--role-art": `url("${roleArtPath(roleFamily, role.role, "webp")}")`,
+    "--role-art": `url("${roleArtUrl}")`,
   } as CSSProperties;
   const privateResult = result ? (
     <p className={`role-card-result ${styles.result}`} role="status" aria-label="Личен резултат">

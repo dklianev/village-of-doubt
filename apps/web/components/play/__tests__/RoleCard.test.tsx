@@ -50,7 +50,8 @@ describe("RoleCard", () => {
     expect(card).toHaveAttribute("data-private-dossier", "true");
     expect(screen.getByText("само за теб")).toBeVisible();
     expect(screen.getByRole("heading", { name })).toBeVisible();
-    expect(card.getAttribute("style")).not.toContain("/thumbs/");
+    // The console portrait box tops out at 120x180 CSS px, so the 520x780 thumb stays sharp at 3x.
+    expect(card.getAttribute("style")).toContain("/thumbs/");
     expect(screen.getByRole("status", { name: "Личен резултат" })).toHaveTextContent("Борис е от злата страна.");
     const details = screen.getByText("За ролята").closest("details");
     expect(details).not.toContainElement(screen.getByRole("status"));

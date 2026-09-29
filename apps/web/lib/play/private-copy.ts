@@ -1,4 +1,4 @@
-import { ROLE_DEFINITIONS, type RoleCode } from "@werewolf/shared";
+import { ROLE_DEFINITIONS, getRoleShortDescriptionBg, teamLabelBg, type GameFamily, type RoleCode } from "@werewolf/shared";
 import type { PrivateResult, PublicPlayer } from "@/lib/play/types";
 
 const CITIZEN_GOAL_BG = "Елиминирайте Мафията и Маниака, ако участва";
@@ -103,6 +103,19 @@ export const ROLE_GUIDE_BG: Partial<Record<RoleCode, { summary: string; team: st
     win: "След кражбата следваш целта на новата си роля",
   },
 };
+
+export type RoleGuide = { summary: string; team: string; timing: string; win: string };
+
+/** Curated guide copy for a role, with a generic fallback built from the shared definitions. */
+export function roleGuideBg(role: RoleCode, family: GameFamily): RoleGuide {
+  const definition = ROLE_DEFINITIONS[role];
+  return ROLE_GUIDE_BG[role] ?? {
+    summary: getRoleShortDescriptionBg(role),
+    team: teamLabelBg(definition.team, family),
+    timing: definition.nightAction ? "Нощна фаза" : "Ден и гласуване",
+    win: "winConditionBg" in definition ? definition.winConditionBg : "Следвай целта на своя отбор",
+  };
+}
 
 export function formatPrivateResult(result: PrivateResult, players: PublicPlayer[]) {
   const nameFor = (userId: string) => players.find((player) => player.userId === userId)?.displayName ?? "избрания играч";
