@@ -149,12 +149,19 @@
   text-shadow: none;
 }
 
+/* Two-line free-turn copy sits between the crescent and the label: a tighter line box
+   and a lowered label keep all three apart at every dial size. */
 :global(.play-stage) .instrument[data-state="unlimited"] .value {
-  top: 34%;
+  top: 35%;
   font-family: inherit;
-  font-size: 14px;
-  line-height: 1.2;
+  font-size: 13px;
+  line-height: 1.05;
   white-space: normal;
+  text-wrap: balance;
+}
+
+:global(.play-stage) .instrument[data-state="unlimited"] .label {
+  top: 65%;
 }
 
 :global(.play-stage) .instrument[data-state="finished"] .label {
@@ -184,7 +191,8 @@
     --chronometer-value-size: 21px;
     --chronometer-label-size: 10px;
   }
-  :global(.play-stage) .instrument[data-state="unlimited"] .value { font-size: 12px; }
+  :global(.play-stage) .instrument[data-state="unlimited"] .value { font-size: 11px; }
+  :global(.play-stage) .instrument[data-state="unlimited"] .label { top: 67%; }
 }
 
 @media (prefers-reduced-motion: reduce) {
