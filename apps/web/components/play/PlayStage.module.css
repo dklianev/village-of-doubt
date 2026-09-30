@@ -1217,14 +1217,6 @@
 /* Active seats sit directly on the room plate supplied by the play shell. */
 :global(html[data-theme]) .stage.stage.activeStage {
   --play-stage-copy-shadow: 0 1px 4px var(--play-scene-base, #0b1511);
-}
-
-/* The light theme shows the dark room at night; a pale halo would blur the light copy there. */
-:global(html[data-theme="light"]) .stage.stage.activeStage:is([data-phase="night"], [data-phase="first_night"]) {
-  --play-stage-copy-shadow: 0 1px 4px #0b1511;
-}
-
-:global(html[data-theme]) .stage.stage.activeStage {
   width: 100%;
   max-width: 1780px;
   min-height: 0;
@@ -1286,6 +1278,36 @@
   box-shadow: none;
   color: inherit;
   transform: none;
+}
+
+/* Night: a single candle burns beside the clock. The glow stays local to the table centre so
+ * the room art is never washed; only the registered alpha breathes, so the flicker is cheap. */
+@property --stage-candle {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0.56;
+}
+
+/* The dial covers the middle of the pool, so the light is strongest where the dial ends. */
+.activeStage.stage:is([data-phase="night"], [data-phase="first_night"]) .core.core::before {
+  content: "";
+  position: absolute;
+  inset: -48px;
+  z-index: -1;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(255 196 118 / var(--stage-candle)) 50%, rgb(255 158 72 / calc(var(--stage-candle) * 0.42)) 74%, transparent);
+  pointer-events: none;
+  animation: stage-candle 4.7s ease-in-out infinite;
+}
+
+@keyframes stage-candle {
+  0%, 100% { --stage-candle: 0.56; }
+  13% { --stage-candle: 0.68; }
+  27% { --stage-candle: 0.47; }
+  41% { --stage-candle: 0.64; }
+  58% { --stage-candle: 0.44; }
+  74% { --stage-candle: 0.66; }
+  88% { --stage-candle: 0.53; }
 }
 
 .activeStage.stage .seatRing.seatRing { position: relative; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 28px 16px; align-items: start; padding: 0; }
@@ -1398,8 +1420,6 @@
     mask-composite: intersect;
   }
   :global(html[data-theme="dark"]) .activeStage.stage[data-layout-mode="active-table"] :is(.copy, .activeLedger)::before { content: none; }
-  /* At night the light theme also shows the dark room, so its daylight scrims must go too. */
-  :global(html[data-theme="light"]) .activeStage.stage[data-layout-mode="active-table"]:is([data-phase="night"], [data-phase="first_night"]) :is(.copy, .activeLedger)::before { content: none; }
 }
 
 @media (max-width: 1365px) {
