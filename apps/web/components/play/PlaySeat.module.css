@@ -326,6 +326,8 @@ button.token[data-active-seat="true"]:focus-visible { outline-color: var(--play-
 .token[data-active-seat="true"][data-alive="false"] .avatar { border-color: #aaa79a; box-shadow: 0 0 0 3px #131615, 0 0 0 4px #777b72; filter: grayscale(1) brightness(0.85); }
 .token[data-active-seat="true"]:is([data-selected="true"], [data-second-selected="true"]) .avatar { border-color: #ffdf88; box-shadow: 0 0 0 3px #141912, 0 0 0 5px #e5bd5d, 0 8px 20px #0008; }
 .token[data-active-seat="true"] .statusBadge { left: -8px; bottom: 18px; }
+/* The "Избран" plate grows to 26px on wide tables: lift the nominee pin clear of it. */
+.token[data-active-seat="true"]:is([data-selected="true"], [data-second-selected="true"]) .statusBadge { bottom: 26px; }
 .token[data-active-seat="true"] .selectedMark,
 .eliminatedMark {
   position: absolute;
