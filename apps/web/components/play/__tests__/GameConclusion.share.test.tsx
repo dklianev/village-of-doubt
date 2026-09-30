@@ -58,10 +58,17 @@ describe("GameConclusion sharing and reveal", () => {
   it("turns the role cards only once the roster is actually seen", () => {
     const { container } = render(<GameConclusion snapshot={snapshot} recordedGameId={null} currentUserId="one" />);
     const roster = container.querySelector('[aria-labelledby="conclusion-roles"]')!;
-    expect(roster).not.toHaveAttribute("data-revealed");
+    // Face down from the first paint, so cards already on screen never flash before turning.
+    expect(roster).toHaveAttribute("data-reveal", "waiting");
 
     act(() => observed?.([{ isIntersecting: true }]));
-    expect(roster).toHaveAttribute("data-revealed", "true");
+    expect(roster).toHaveAttribute("data-reveal", "revealed");
     expect(container.querySelector("li")?.getAttribute("style")).toContain("--reveal-index: 0");
+  });
+
+  it("leaves the cards face up when nothing could turn them", () => {
+    vi.stubGlobal("IntersectionObserver", undefined);
+    const { container } = render(<GameConclusion snapshot={snapshot} recordedGameId={null} currentUserId="one" />);
+    expect(container.querySelector('[aria-labelledby="conclusion-roles"]')).not.toHaveAttribute("data-reveal");
   });
 });

@@ -81,9 +81,11 @@
 @media (prefers-reduced-motion: no-preference) {
   .copy h1, .reason { animation: var(--play-reveal); }
   .personal, .jesterArtifact { animation: var(--play-reveal); animation-duration: 520ms; animation-delay: 120ms; }
-  /* Cards turn face-up one after another once the roster scrolls into view (capped stagger). */
-  .revelation[data-revealed] .player { animation: final-card-turn 760ms cubic-bezier(0.2, 0.8, 0.2, 1) calc(min(var(--reveal-index, 0), 12) * 95ms) both; }
-  .revelation[data-revealed] [data-winner] .laurel { animation: final-laurel 640ms cubic-bezier(0.3, 1.5, 0.4, 1) calc(min(var(--reveal-index, 0), 12) * 95ms + 480ms) both; }
+  /* Cards lie face down until the roster scrolls into view, then turn one after another (capped stagger). */
+  .revelation[data-reveal="waiting"] .player { opacity: 0.15; transform: perspective(700px) rotateY(86deg); }
+  .revelation[data-reveal="waiting"] [data-winner] .laurel { opacity: 0; }
+  .revelation[data-reveal="revealed"] .player { animation: final-card-turn 760ms cubic-bezier(0.2, 0.8, 0.2, 1) calc(min(var(--reveal-index, 0), 12) * 95ms) both; }
+  .revelation[data-reveal="revealed"] [data-winner] .laurel { animation: final-laurel 640ms cubic-bezier(0.3, 1.5, 0.4, 1) calc(min(var(--reveal-index, 0), 12) * 95ms + 480ms) both; }
 }
 @keyframes final-card-turn {
   from { opacity: 0.15; transform: perspective(700px) rotateY(86deg); }

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { ArrowRight, Heart, RotateCcw, CirclePlay, Share2, Trophy, Theater } from "lucide-react";
 import { getGameFamily, ROLE_DEFINITIONS, type RoleCode } from "@werewolf/shared";
@@ -40,16 +40,18 @@ export function GameConclusion({ snapshot, recordedGameId, currentUserId }: Game
   const replayEligible = canOpenRecordedReplay(snapshot, currentUserId);
   const isRecorded = Boolean(recordedGameId && replayEligible);
   const revelationRef = useRef<HTMLElement>(null);
-  const [revealed, setRevealed] = useState(false);
+  const [reveal, setReveal] = useState<"waiting" | "revealed" | undefined>(undefined);
   const [shareState, setShareState] = useState<"idle" | "copied" | "failed">("idle");
 
-  // The roster sits below the finale scene: turn the cards when they are actually seen.
-  useEffect(() => {
+  // The roster sits below the finale scene: turn the cards when they are actually seen. The cards
+  // are laid face down before the first paint, and only when something will turn them back.
+  useLayoutEffect(() => {
     const node = revelationRef.current;
     if (!node || typeof IntersectionObserver === "undefined") return;
+    setReveal("waiting");
     const observer = new IntersectionObserver(([entry]) => {
       if (!entry?.isIntersecting) return;
-      setRevealed(true);
+      setReveal("revealed");
       observer.disconnect();
     }, { threshold: 0.2 });
     observer.observe(node);
@@ -109,7 +111,7 @@ export function GameConclusion({ snapshot, recordedGameId, currentUserId }: Game
         {hasJester ? <img className={styles.jesterArtifact} src="/game-art/endgame/jester-v1.webp" alt="" width={960} height={600} /> : null}
       </section>
 
-      <section ref={revelationRef} className={styles.revelation} aria-labelledby="conclusion-roles" data-revealed={revealed || undefined}>
+      <section ref={revelationRef} className={styles.revelation} aria-labelledby="conclusion-roles" data-reveal={reveal}>
         <header className={styles.sectionHeading}>
           <h2 id="conclusion-roles">Лицата зад сенките</h2>
           <Link tabIndex={0} href={`/${familyPath}/roles`}>Всички роли <ArrowRight size={18} aria-hidden="true" /></Link>
