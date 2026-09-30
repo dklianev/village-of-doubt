@@ -2653,17 +2653,25 @@ html[data-theme="light"]:has(.site-chrome[data-room="true"]) {
     #efe2c8;
 }
 
+/* Rooms hide the footer the notice normally follows, so it floats at the bottom instead: clear of
+ * the header and the phone view switch, above the command dock, under every dialog and sheet. The
+ * slot it leaves behind reserves the same space, so the last controls can always scroll clear. */
 body:has(.site-chrome[data-room="true"]) [data-cookie-banner] {
-  top: calc(66px + env(safe-area-inset-top));
+  position: fixed;
+  top: auto;
   right: clamp(18px, 2.4vw, 32px);
-  bottom: auto;
+  bottom: calc(16px + env(safe-area-inset-bottom));
   max-width: min(390px, calc(100vw - 32px));
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
-  padding: 5px 8px 5px 10px;
-  z-index: 120;
+  padding: 4px 6px 4px 10px;
+  z-index: 90;
+}
+
+body:has(.site-chrome[data-room="true"]) div:has(> [data-cookie-banner]) {
+  min-height: calc(76px + env(safe-area-inset-bottom));
 }
 
 body:has(.site-chrome[data-room="true"]) [data-cookie-banner] p {
@@ -2676,37 +2684,35 @@ body:has(.site-chrome[data-room="true"]) [data-cookie-banner] p {
 }
 
 body:has(.site-chrome[data-room="true"]) [data-cookie-banner] .btn {
-  min-height: 28px;
+  min-height: 44px;
   min-width: 82px;
-  padding-inline: 10px;
+  padding-inline: 12px;
   font-size: 0.68rem;
+}
+
+@media (max-width: 1023px) {
+  /* Phones keep the collapsed command dock visible below the notice... */
+  body:has(.site-chrome[data-room="true"]):has([data-play-command-surface]) [data-cookie-banner] {
+    bottom: calc(82px + env(safe-area-inset-bottom));
+  }
+
+  /* ...and an opened dock is a sheet of its own: the notice waits until it closes. */
+  body:has([data-play-command-surface][data-expanded="true"]) [data-cookie-banner] {
+    visibility: hidden;
+  }
 }
 
 @media (max-width: 760px) {
   body:has(.site-chrome[data-room="true"]) [data-cookie-banner] {
-    top: calc(66px + env(safe-area-inset-top));
     right: 12px;
-    bottom: auto;
     left: 12px;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
     max-width: none;
-    gap: 8px;
-    padding: 4px 8px 4px 10px;
   }
 
   body:has(.site-chrome[data-room="true"]) [data-cookie-banner] p {
     font-size: 0.7rem;
     line-height: 1.2;
     -webkit-line-clamp: 1;
-  }
-
-  body:has(.site-chrome[data-room="true"]) [data-cookie-banner] .btn {
-    min-height: 28px;
-    min-width: 82px;
-    padding-inline: 10px;
-    font-size: 0.68rem;
   }
 }
 
