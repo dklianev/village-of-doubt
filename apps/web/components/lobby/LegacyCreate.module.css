@@ -3382,6 +3382,16 @@
   box-shadow: none;
 }
 
+/* The dark-theme gold and faded captions fall under 4.5:1 on the light sidebar. */
+:global(html[data-theme="light"] .create-customization-ledger span) {
+  color: #7a4f12;
+}
+
+:global(html[data-theme="light"] .create-customization-tabs button:not([data-active="true"]) small) {
+  color: #5c554c;
+  opacity: 1;
+}
+
 :global(html[data-theme="light"] .create-customization-tabs button[data-active="true"]) {
   border-color: rgba(119, 42, 34, 0.46);
   background: linear-gradient(135deg, #a33b31, #7e2c25);
