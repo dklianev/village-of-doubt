@@ -56,12 +56,21 @@ function deferred() {
 describe("GameRoom Jester death and terminal persistence privacy", () => {
   let colyseus: ColyseusTestServer;
 
-  beforeAll(async () => { colyseus = await boot(appConfig, 2697); });
+  beforeAll(async () => {
+    // Synthetic clients join with dev identities, like the other GameRoom suites; never rely on ambient env.
+    vi.stubEnv("ALLOW_DEV_AUTH", "true");
+    vi.stubEnv("GAME_TOKEN_SECRET", "jester-privacy-secret-that-is-long-enough");
+    vi.stubEnv("NODE_ENV", "test");
+    colyseus = await boot(appConfig, 2697);
+  });
   afterEach(async () => {
     await colyseus.cleanup();
     vi.restoreAllMocks();
   });
-  afterAll(async () => { await colyseus.shutdown(); });
+  afterAll(async () => {
+    await colyseus.shutdown();
+    vi.unstubAllEnvs();
+  });
 
   describe.each(["mafia_free", "werewolves_classic"] as const)("%s preset room settings", (mode) => {
     it.each([
