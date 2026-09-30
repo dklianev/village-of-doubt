@@ -45,7 +45,6 @@ async function GameStatsRow({ family }: { family: GameFamily }) {
   return <GameStatsContent family={family} stats={stats} />;
 }
 
-
 export function GameStatsContent({ family, stats }: { family: GameFamily; stats: GameHomeStats | null }) {
   if (!stats) {
     return (
@@ -104,7 +103,7 @@ export function GameHero({ family }: { family: GameFamily }) {
           >
             Създай стая
           </NextLinkPill>
-          <NextLinkPill href={`${root}/join`} intent="secondary" size="lg" className="game-home-hero__join">
+          <NextLinkPill href={`${root}/join`} intent="secondary" size="lg" tracked className="game-home-hero__join">
             <KeyRound size={17} aria-hidden="true" />Имам код
           </NextLinkPill>
         </div>
@@ -131,8 +130,8 @@ export function GameHomeClosing({ family }: { family: GameFamily }) {
         <p>Приятелите са същите. Ролите остават тайна.</p>
       </div>
       <div className="game-home-closing__actions">
-        <NextLinkPill href={`${root}/create`} size="lg">Създай стая<ArrowRight size={17} aria-hidden="true" /></NextLinkPill>
-        <NextLinkPill href={`${root}/join`} intent="secondary" size="lg">Имам код</NextLinkPill>
+        <NextLinkPill href={`${root}/create`} size="lg" tracked>Създай стая<ArrowRight size={17} aria-hidden="true" /></NextLinkPill>
+        <NextLinkPill href={`${root}/join`} intent="secondary" size="lg" tracked>Имам код</NextLinkPill>
       </div>
     </section>
   );
