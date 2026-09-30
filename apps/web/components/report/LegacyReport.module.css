@@ -50,6 +50,8 @@
 :global(.report-wizard-actions svg) { width: 18px; height: 18px; flex-shrink: 0; }
 :global(.report-wizard-next:hover), :global(.report-wizard-submit:hover) { filter: brightness(1.08); }
 :global(.report-success) { padding-block: 16px 32px; }
+/* Headings receive focus only to move the reader between steps; they are not controls, so no ring (like #main-content). */
+:global(.report-wizard-step legend:focus), :global(.report-success-title:focus) { outline: none; box-shadow: none; }
 :global(.report-success-icon) { width: 56px; height: 56px; color: var(--support-ok); margin-bottom: 24px; }
 :global(.report-success-kicker) { color: var(--support-ok); font-size: .8rem; }
 :global(.report-success-detail), :global(.report-success-followup) { color: var(--support-muted); max-width: 65ch; }
