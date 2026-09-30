@@ -241,7 +241,9 @@ function every(bed: Bed, minMs: number, maxMs: number, play: () => void) {
   const scheduler = { id: 0 };
   const next = () => minMs + Math.random() * (maxMs - minMs);
   const tick = () => {
-    play();
+    // A suspended context (hidden tab, no gesture yet) freezes currentTime: anything scheduled now
+    // would pile up at one instant and burst out together on resume.
+    if (context?.state === "running") play();
     scheduler.id = window.setTimeout(tick, next());
   };
   scheduler.id = window.setTimeout(tick, next());
@@ -496,7 +498,8 @@ function speak(line: string) {
       synth.addEventListener("voiceschanged", () => {
         const queued = pendingLine;
         pendingLine = null;
-        if (queued) speak(queued);
+        // Voices can arrive long after the phase line; stay quiet if sound or the table is gone.
+        if (queued && lastScene && getSoundEnabled()) speak(queued);
       }, { once: true });
     }
     pendingLine = line;

@@ -20,12 +20,16 @@ function node() {
     type: "", buffer: null as unknown, loop: false,
   };
 }
-const created = { contexts: 0 };
+const created = { contexts: 0, last: null as FakeAudioContext | null };
 class FakeAudioContext {
   currentTime = 0;
   sampleRate = 8000;
+  state: AudioContextState = "running";
   destination = node();
-  constructor() { created.contexts += 1; }
+  constructor() {
+    created.contexts += 1;
+    created.last = this;
+  }
   createGain = vi.fn(node);
   createOscillator = vi.fn(node);
   createBiquadFilter = vi.fn(node);
@@ -93,6 +97,20 @@ describe("table soundscape", () => {
     soundscape.enterPhase({ mode: "mafia_free", phase: "night", narratorVoice: "classic" });
     vi.advanceTimersByTime(1500);
     expect(speech.speak).not.toHaveBeenCalled();
+  });
+
+  it("schedules no ambience while audio is suspended, so nothing bursts out on resume", async () => {
+    const soundscape = await loadSoundscape();
+    soundscape.enterPhase({ mode: "werewolves_classic", phase: "night", narratorVoice: "classic" });
+    const audio = created.last!;
+    audio.state = "suspended";
+    const beforeHidden = audio.createOscillator.mock.calls.length;
+    vi.advanceTimersByTime(8000);
+    expect(audio.createOscillator.mock.calls.length).toBe(beforeHidden);
+
+    audio.state = "running";
+    vi.advanceTimersByTime(2000);
+    expect(audio.createOscillator.mock.calls.length).toBeGreaterThan(beforeHidden);
   });
 
   it("cancels narration when the table is silenced", async () => {
