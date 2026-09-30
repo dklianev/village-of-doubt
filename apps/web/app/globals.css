@@ -2841,9 +2841,7 @@ html[data-theme="light"]:has(.site-chrome[data-room="true"]) {
     #efe2c8;
 }
 
-/* Rooms hide the footer the notice normally follows, so it floats under the header instead. */
 body:has(.site-chrome[data-room="true"]) [data-cookie-banner] {
-  position: fixed;
   top: calc(66px + env(safe-area-inset-top));
   right: clamp(18px, 2.4vw, 32px);
   bottom: auto;
