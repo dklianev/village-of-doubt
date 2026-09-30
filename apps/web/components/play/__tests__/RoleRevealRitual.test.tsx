@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { RoleRevealRitual } from "../RoleRevealRitual";
+import { RoleRevealGate, RoleRevealRitual } from "../RoleRevealRitual";
 
 describe("RoleRevealRitual", () => {
   it("keeps the dealt card face down until the player turns it", () => {
@@ -49,5 +49,18 @@ describe("RoleRevealRitual", () => {
 
     fireEvent.keyDown(document, { key: "Escape" });
     expect(onDone).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not deal the card again after a reload in the same tab, and never stores the role", () => {
+    sessionStorage.clear();
+    const role = { role: "seer", roleNameBg: "Гадателка" } as const;
+    const first = render(<RoleRevealGate role={role} family="werewolves" transitioning={false} seatKey="ROOM1:u1" />);
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    first.unmount();
+
+    render(<RoleRevealGate role={role} family="werewolves" transitioning={false} seatKey="ROOM1:u1" />);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(JSON.stringify({ ...sessionStorage })).not.toMatch(/seer|Гадателка/);
   });
 });

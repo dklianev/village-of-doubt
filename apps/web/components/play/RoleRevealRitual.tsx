@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { ROLE_DEFINITIONS, teamLabelBg, type GameFamily, type RoleCode } from "@werewolf/shared";
 import { roleGuideBg } from "@/lib/play/private-copy";
 import { roleThumbPath } from "@/lib/role-art";
+import { safeSessionStorage } from "@/lib/safe-storage";
 import { useModal } from "@/lib/use-modal";
 import styles from "./RoleRevealRitual.module.css";
 
@@ -11,19 +12,34 @@ const CARD_BACK = "/game-art/thumbs/card-back-secret.webp";
 /**
  * Owns the "turned once" state inside the lazy chunk, so the /play entry only carries the
  * lazy reference. The play room keys it per room and role, which resets it for a new deal.
+ * A reload in the same tab remembers the turn by room and player only, never by role.
  */
 export function RoleRevealGate({
   role,
   family,
   transitioning,
+  seatKey,
 }: {
   role: { role: RoleCode; roleNameBg: string };
   family: GameFamily;
   transitioning: boolean;
+  /** Room and player identity; the role itself is never written to storage. */
+  seatKey: string;
 }) {
-  const [done, setDone] = useState(false);
+  const storageKey = `werewolf-card-turned:${seatKey}`;
+  const [done, setDone] = useState(() => safeSessionStorage.getItem(storageKey) === "1");
   if (done) return null;
-  return <RoleRevealRitual role={role} family={family} enterDelayMs={transitioning ? 1750 : 0} onDone={() => setDone(true)} />;
+  return (
+    <RoleRevealRitual
+      role={role}
+      family={family}
+      enterDelayMs={transitioning ? 1750 : 0}
+      onDone={() => {
+        safeSessionStorage.setItem(storageKey, "1");
+        setDone(true);
+      }}
+    />
+  );
 }
 
 /**

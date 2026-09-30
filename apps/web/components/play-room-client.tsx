@@ -1126,7 +1126,7 @@ export function PlayRoomClientCore({
       {/* The dealt card is turned once per role per room; then the private toggle takes over. */}
       {phase === "role_reveal" && privateRole && connectionStatus === "connected" ? (
         <Suspense fallback={null}>
-          <RoleRevealGate key={`${privateIdentity}:${privateRole.role}`} role={privateRole} family={family} transitioning={showPhaseTransition} />
+          <RoleRevealGate key={`${privateIdentity}:${privateRole.role}`} role={privateRole} family={family} transitioning={showPhaseTransition} seatKey={privateIdentity} />
         </Suspense>
       ) : null}
       {connectionStatus === "connected" && unlockedAchievementIds.length > 0 ? (
