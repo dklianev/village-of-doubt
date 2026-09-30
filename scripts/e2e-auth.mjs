@@ -192,6 +192,8 @@ async function accountDeletion(page) {
   await page.getByRole("button", { name: "Създай профил" }).click();
   await verifyEmailFromOutbox(page, email);
   await page.goto(`${baseUrl}/account`, { waitUntil: "domcontentloaded" });
+  // Deletion lives in the account's "Данни и сигурност" section.
+  await page.getByRole("tab", { name: "Данни и сигурност" }).click();
   await page.getByRole("button", { name: "Изтрий моето досие" }).click();
   await page.getByRole("textbox", { name: "Напиши ИЗТРИЙ за потвърждение" }).fill("ИЗТРИЙ");
   await page.getByRole("button", { name: "Изтрий завинаги" }).click();

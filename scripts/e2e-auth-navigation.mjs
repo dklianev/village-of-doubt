@@ -6,7 +6,9 @@ export async function skipWelcomeTutorial(page, baseUrl, redirectTo) {
     url.searchParams.get("step") === "1"
   ), { timeout: 10_000 });
   const tutorial = page.getByRole("region", { name: "Наръчник за първа игра", exact: true });
-  const skip = tutorial.getByRole("link", { name: "Прескочи", exact: true });
+  // The progress bar carries one skip link back to the saved destination; its copy names that
+  // destination ("Към поканата", "Към Върколак"...), so match the link by its place instead.
+  const skip = tutorial.getByRole("navigation", { name: "Ход на репетицията", exact: true }).getByRole("link");
   if (await skip.getAttribute("href") !== redirectTo) {
     throw new Error("Welcome tutorial did not preserve the intended redirect.");
   }

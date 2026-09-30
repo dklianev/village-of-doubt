@@ -341,20 +341,24 @@ function authWelcomeFixture(redirectTo, overrides = {}) {
       assert.equal(options.name, "Наръчник за първа игра");
       assert.equal(options.exact, true);
       return { getByRole: (role, options) => {
-        assert.equal(role, "link");
-        assert.equal(options.name, "Прескочи");
+        assert.equal(role, "navigation");
+        assert.equal(options.name, "Ход на репетицията");
         assert.equal(options.exact, true);
-        return {
-          getAttribute: async (attribute) => {
-            assert.equal(attribute, "href");
-            events.push("href");
-            return overrides.href ?? redirectTo;
-          },
-          click: async () => {
-            events.push("skip");
-            currentUrl = new URL(overrides.destination ?? redirectTo, baseUrl).href;
-          },
-        };
+        return { getByRole: (role, options) => {
+          assert.equal(role, "link");
+          assert.equal(options, undefined);
+          return {
+            getAttribute: async (attribute) => {
+              assert.equal(attribute, "href");
+              events.push("href");
+              return overrides.href ?? redirectTo;
+            },
+            click: async () => {
+              events.push("skip");
+              currentUrl = new URL(overrides.destination ?? redirectTo, baseUrl).href;
+            },
+          };
+        } };
       } };
     },
   };
@@ -392,7 +396,8 @@ test("auth E2E rejects missing welcome, wrong origin/step/redirect and broken sk
 test("auth E2E visits the outbox token before welcome and preserves create return without a manual goto", () => {
   const source = read("scripts/e2e-auth.mjs");
   assert.match(source, /import \{ skipWelcomeTutorial \} from "\.\/e2e-auth-navigation\.mjs"/);
-  assert.match(source, /const message = await waitForEmail\(email\);\s*const verifyUrl = extractVerificationUrl\(message\.html\);\s*await page\.goto\(verifyUrl, \{ waitUntil: "domcontentloaded" \}\);\s*await skipWelcomeTutorial\(page, baseUrl, redirectTo\)/);
+  // The verified page now waits for "Продължи" instead of redirecting on its own.
+  assert.match(source, /const message = await waitForEmail\(email\);\s*const verifyUrl = extractVerificationUrl\(message\.html\);\s*await page\.goto\(verifyUrl, \{ waitUntil: "domcontentloaded" \}\);\s*await page\.getByRole\("link", \{ name: "Продължи", exact: true \}\)\.click\(\);\s*await skipWelcomeTutorial\(page, baseUrl, redirectTo\)/);
   assert.ok(source.includes("Verification email did not include a verify-email link."));
   assert.ok(source.includes('return match[1].replaceAll("&amp;", "&")'));
   assert.match(source, /await verifyEmailFromOutbox\(page, email, "\/werewolf\/create"\);\s*await page\.locator\("#create-quick-title"\)\.waitFor\(\)/);
@@ -420,7 +425,7 @@ test("auth E2E recovery selectors match the current accessible form states", () 
   const forgot = read("apps/web/components/auth/ForgotPasswordClient.tsx");
   const reset = read("apps/web/components/auth/ResetPasswordClient.tsx");
   for (const [component, text] of [
-    [forgot, "Ако има досие с този имейл, ще получиш линк за нова парола."],
+    [forgot, "Ако има профил с този имейл, ще получиш линк за нова парола."],
     [reset, "Паролата е сменена."],
     [reset, "Запази паролата"],
   ]) {
