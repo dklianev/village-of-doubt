@@ -24,6 +24,7 @@ import "@/components/play/PlayRoom.module.css";
 import "@/components/play/PlayLobby.module.css";
 import "@/components/play/PlayConsole.module.css";
 import { useToast } from "@/lib/toast";
+import { Button } from "@/components/button";
 import { LiveCuePanel } from "@/components/play/LiveCuePanel";
 import { PlayReference } from "@/components/play/PlayReference";
 import { PublicEventLine } from "@/components/play/PublicEventLine";
@@ -1070,9 +1071,9 @@ export function PlayRoomClientCore({
           При този режим човекът Разказвач може да види тайните роли и действия, за да води играта ръчно.
           Натисни приемане само ако си съгласен с това.
         </p>
-        <button className="btn btn-primary mt-5" type="button" onClick={() => room?.send("acceptFullNarrator")}>
+        <Button className="mt-5" onClick={() => room?.send("acceptFullNarrator")}>
           Приемам
-        </button>
+        </Button>
       </article>
     ) : null;
 
@@ -1090,10 +1091,10 @@ export function PlayRoomClientCore({
           ) : null}
           {!NarratorTools && needsNarratorTools ? <div role="status">
             <p>{narratorToolsFailed ? "Панелът не се зареди." : "Зареждаме панела..."}</p>
-            {narratorToolsFailed ? <button type="button" className="btn btn-secondary" onClick={(event) => {
+            {narratorToolsFailed ? <Button variant="secondary" onClick={(event) => {
               narratorRetryFocusRef.current = document.activeElement === event.currentTarget;
               setNarratorToolsFailed(false);
-            }}>Опитай пак</button> : null}
+            }}>Опитай пак</Button> : null}
           </div> : null}
           {consentWarning}
           {NarratorTools && hasNarratorSnapshotPanel && narratorSnapshot ? <NarratorTools snapshot={narratorSnapshot} /> : null}

@@ -1,6 +1,7 @@
 import type { Room } from "@colyseus/sdk";
 import { Keyboard, Pause, Plus, SkipForward } from "lucide-react";
 import type { GameFamily, GamePhase } from "@werewolf/shared";
+import { Button } from "@/components/button";
 import { SummaryPill } from "@/components/play/SummaryPill";
 import { Timer } from "@/components/play/Timer";
 import { narratorBg } from "@/lib/play/copy";
@@ -51,30 +52,29 @@ export function NarratorDesk({
       </div>
 
       <div className="mt-5 flex flex-wrap gap-3">
-        <button className="btn btn-secondary" type="button" onClick={() => room?.send("narratorPause")} disabled={!room || phase === "paused" || phase === "game_over"}>
+        <Button variant="secondary" onClick={() => room?.send("narratorPause")} disabled={!room || phase === "paused" || phase === "game_over"}>
           <Pause className="play-button-icon" aria-hidden strokeWidth={1.8} />
           Пауза
-        </button>
-        <button className="btn btn-primary" type="button" onClick={() => room?.send("narratorAdvance")} disabled={!room || phase === "game_over"}>
+        </Button>
+        <Button onClick={() => room?.send("narratorAdvance")} disabled={!room || phase === "game_over"}>
           <SkipForward className="play-button-icon" aria-hidden strokeWidth={1.8} />
           {phase === "paused" ? "Продължи играта" : "Следваща фаза"}
-        </button>
+        </Button>
         {[30, 60, 180].map((seconds) => (
-          <button
+          <Button
             key={seconds}
-            className="btn btn-secondary"
-            type="button"
+            variant="secondary"
             onClick={() => room?.send("narratorExtendTimer", { seconds })}
             disabled={!room || !snapshot.phaseEndsAt || phase === "paused" || phase === "game_over"}
           >
             <Plus className="play-button-icon" aria-hidden strokeWidth={1.8} />
             +{seconds} сек.
-          </button>
+          </Button>
         ))}
-        <button className="btn btn-secondary" type="button" onClick={onOpenShortcuts}>
+        <Button variant="secondary" onClick={onOpenShortcuts}>
           <Keyboard className="play-button-icon" aria-hidden strokeWidth={1.8} />
           Клавишни команди
-        </button>
+        </Button>
       </div>
 
       {snapshot.narratorMode === "full_human" && pendingConsent > 0 ? (

@@ -3,6 +3,8 @@ import Link from "next/link";
 import { ArrowRight, Heart, RotateCcw, CirclePlay, Share2, Trophy, Theater } from "lucide-react";
 import { getGameFamily, ROLE_DEFINITIONS, type RoleCode } from "@werewolf/shared";
 import type { GameSnapshot } from "@/lib/play/types";
+import { Button } from "@/components/button";
+import { ButtonLink } from "@/components/button-link";
 import { ProfilePortrait } from "@/components/ProfilePortrait";
 import { avatarIdForUser } from "@/lib/avatar-catalog";
 import { canOpenRecordedReplay, historyHrefForGame, repeatGameHref } from "@/lib/play/post-game-links";
@@ -104,8 +106,8 @@ export function GameConclusion({ snapshot, recordedGameId, currentUserId }: Game
           </div> : null}
           {/* Explicit natural tab stops keep these links reachable in WebKit's default keyboard mode. */}
           <div className={`${styles.actions} play-winner-actions`} data-quiet={quietActions || undefined}>
-            <Link tabIndex={0} className="btn btn-primary" href={repeatGameHref(snapshot)}>{!quietActions && <RotateCcw size={23} className="shrink-0" aria-hidden="true" />}Още една игра</Link>
-            <Link tabIndex={0} className="btn btn-secondary" href={historyHrefForGame(recordedGameId, replayEligible)}>{!quietActions && <CirclePlay size={23} className="shrink-0" aria-hidden="true" />}{isRecorded ? "Виж записа" : "Към архива"}</Link>
+            <ButtonLink tabIndex={0} href={repeatGameHref(snapshot)}>{!quietActions && <RotateCcw size={23} className="shrink-0" aria-hidden="true" />}Още една игра</ButtonLink>
+            <ButtonLink tabIndex={0} variant="secondary" href={historyHrefForGame(recordedGameId, replayEligible)}>{!quietActions && <CirclePlay size={23} className="shrink-0" aria-hidden="true" />}{isRecorded ? "Виж записа" : "Към архива"}</ButtonLink>
           </div>
         </div>
         {hasJester ? <img className={styles.jesterArtifact} src="/game-art/endgame/jester-v1.webp" alt="" width={960} height={600} /> : null}
@@ -138,10 +140,10 @@ export function GameConclusion({ snapshot, recordedGameId, currentUserId }: Game
         </ul>
       </section>
       <div className={styles.afterword}>
-        <button type="button" className={styles.share} onClick={() => void shareResult()} aria-live="polite">
+        <Button variant="secondary" className={styles.share} onClick={() => void shareResult()} aria-live="polite">
           <Share2 size={18} aria-hidden="true" />
           {shareState === "copied" ? "Копирано — пусни го в групата" : shareState === "failed" ? "Не успяхме да копираме връзката" : "Сподели резултата"}
-        </button>
+        </Button>
         <p className={styles.repeatNote}>
           <strong>Край на играта · {snapshot.round} {snapshot.round === 1 ? "рунд" : "рунда"}</strong><br />
           Нова стая{snapshot.nextRoomOptions ? " със същите настройки" : " за следващата вечер"}. Участниците се канят отново.

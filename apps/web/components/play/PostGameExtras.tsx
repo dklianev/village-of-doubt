@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { ButtonLink } from "@/components/button-link";
 import type { GameSnapshot } from "@/lib/play/types";
 import { canOpenRecordedReplay, historyHrefForGame, repeatGameHref } from "@/lib/play/post-game-links";
 import { PostGameStory } from "./PostGameStory";
@@ -16,12 +16,12 @@ export function PostGameExtras({ section, snapshot, recordedGameId, currentUserI
   return (
     <>
       <div className="play-winner-actions">
-        <Link className="btn btn-primary" href={repeatGameHref(snapshot)}>
+        <ButtonLink href={repeatGameHref(snapshot)}>
           {snapshot.nextRoomOptions ? "Повтори настройките" : "Нова игра"}
-        </Link>
-        <Link className="btn btn-secondary" href={historyHrefForGame(recordedGameId, replayEligible)}>
+        </ButtonLink>
+        <ButtonLink variant="secondary" href={historyHrefForGame(recordedGameId, replayEligible)}>
           {recordedGameId && replayEligible ? "Виж записа на играта" : "Към архива"}
-        </Link>
+        </ButtonLink>
       </div>
       <p className="play-winner-repeat-note">{snapshot.nextRoomOptions
         ? "Настройки за нова стая. Участниците се канят отново."

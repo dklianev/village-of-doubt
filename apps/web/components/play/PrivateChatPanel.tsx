@@ -1,5 +1,6 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState, type FormEvent } from "react";
 import { MAX_CHAT_MESSAGE_LENGTH, type ChatChannel } from "@werewolf/shared";
+import { Button } from "@/components/button";
 import { TypingIndicator } from "@/components/play/TypingIndicator";
 import { privateChannelBg } from "@/lib/play/copy";
 import type { PrivateChatMessage, TypingNotice } from "@/lib/play/types";
@@ -222,9 +223,9 @@ export function PrivateChatPanel({
           placeholder="Съобщение само за този канал..."
           maxLength={MAX_CHAT_MESSAGE_LENGTH}
         />
-        <button className="btn btn-primary" type="submit" disabled={value.trim().length === 0 || sendPending}>
+        <Button type="submit" disabled={value.trim().length === 0 || sendPending}>
           {sendPending ? "Изпращаме..." : "Изпрати"}
-        </button>
+        </Button>
       </form>
     </section>
   );

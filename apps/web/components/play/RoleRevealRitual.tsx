@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { ROLE_DEFINITIONS, teamLabelBg, type GameFamily, type RoleCode } from "@werewolf/shared";
+import { Button } from "@/components/button";
 import { roleGuideBg } from "@/lib/play/private-copy";
 import { roleThumbPath } from "@/lib/role-art";
 import { safeSessionStorage } from "@/lib/safe-storage";
@@ -128,9 +129,9 @@ export function RoleRevealRitual({
               <h2 id={titleId} className={styles.title}>{role.roleNameBg}</h2>
               <p id={descriptionId} className={styles.summary}>{guide.summary}</p>
               <p className={styles.goal}><span>Цел</span>{guide.win}</p>
-              <button ref={doneRef} type="button" className="btn btn-primary" onClick={finish}>
+              <Button ref={doneRef} onClick={finish}>
                 Запомних
-              </button>
+              </Button>
               <p className={styles.note}>Картата се скрива. Виж я отново от „Виж ролята си“.</p>
             </>
           ) : (
@@ -138,9 +139,9 @@ export function RoleRevealRitual({
               <p className={styles.kicker}>Картите са раздадени</p>
               <h2 id={titleId} className={styles.title}>Твоята тайна карта</h2>
               <p id={descriptionId} className={styles.summary}>Увери се, че никой друг не гледа екрана ти.</p>
-              <button type="button" className="btn btn-primary" onClick={() => setFlipped(true)}>
+              <Button onClick={() => setFlipped(true)}>
                 Обърни картата
-              </button>
+              </Button>
             </>
           )}
         </div>

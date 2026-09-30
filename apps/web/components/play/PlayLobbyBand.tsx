@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Check, Play, Users } from "lucide-react";
 import type { GameFamily } from "@werewolf/shared";
 import type { ReactNode } from "react";
+import { Button } from "@/components/button";
 import type { PublicEvent, PublicPlayer } from "@/lib/play/types";
 import { PublicEventLine } from "./PublicEventLine";
 
@@ -32,22 +33,22 @@ export function PlayLobbyBand({ players, ownPlayer, latestEvent, family, connect
       </div>
       <div className="play-waiting-actions">
         <div className="play-lobby-ready-actions">
-          {ownPlayer?.playing ? <button
+          {ownPlayer?.playing ? <Button
             data-testid="ready-toggle"
-            className={`btn ${ownPlayer.ready || ownPlayer.host ? "btn-secondary" : "btn-primary"}`}
-            type="button" onClick={onReady} disabled={!connected} aria-pressed={ownPlayer.ready}
+            variant={ownPlayer.ready || ownPlayer.host ? "secondary" : "primary"}
+            onClick={onReady} disabled={!connected} aria-pressed={ownPlayer.ready}
           >
             <Users className="play-button-icon" aria-hidden strokeWidth={1.8} />
             {ownPlayer.ready ? "Не съм готов" : "Готов"}
-          </button> : null}
-          {ownPlayer?.host ? <button
-            className="btn btn-primary" type="button" onClick={onStart}
+          </Button> : null}
+          {ownPlayer?.host ? <Button
+            onClick={onStart}
             disabled={startDisabledReason !== null}
             aria-describedby={startDisabledReason ? "play-start-disabled-reason" : undefined}
           >
             <Play className="play-button-icon" aria-hidden strokeWidth={1.8} />
             {starting ? "Започваме..." : "Започни игра"}
-          </button> : null}
+          </Button> : null}
         </div>
         {ownPlayer?.host && startDisabledReason ? <p id="play-start-disabled-reason" className="play-start-disabled-reason" role="status">{startDisabledReason}</p> : null}
         {!ownPlayer?.host ? <p className="play-waiting-note">{ownPlayer?.playing ? "Домакинът започва играта." : "Наблюдаваш масата."}</p> : null}

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Check, ChevronDown } from "lucide-react";
+import { Button } from "@/components/button";
 import { ProfilePortrait } from "@/components/ProfilePortrait";
 import { VoteTallyBar } from "@/components/play/VoteTallyBar";
 import { avatarIdForUser } from "@/lib/avatar-catalog";
@@ -56,9 +57,8 @@ export function VotingPanel({
         </div>
       </div>
       <div className="play-action-buttons flex flex-wrap">
-        <button
-          className={`btn btn-primary ${styles.confirm}`}
-          type="button"
+        <Button
+          className={styles.confirm}
           disabled={!selectedTarget}
           aria-label={selectedTarget ? `Потвърди гласа за ${selectedTarget.displayName}` : "Потвърди гласа"}
           onClick={() => {
@@ -69,13 +69,13 @@ export function VotingPanel({
         >
           <Check aria-hidden />
           Потвърди гласа
-        </button>
+        </Button>
         {allowSkipVote ? (
-          <button
-            className="btn btn-secondary play-confirm-skip"
+          <Button
+            variant="secondary"
+            className="play-confirm-skip"
             data-command-priority="quiet"
             data-confirm-state={skipArmed ? "armed" : "idle"}
-            type="button"
             aria-pressed={skipArmed}
             onClick={() => {
               if (skipArmed) {
@@ -87,7 +87,7 @@ export function VotingPanel({
             }}
           >
             {skipArmed ? "Потвърди пропускането" : "Пропусни глас"}
-          </button>
+          </Button>
         ) : null}
       </div>
       <details className="play-action-explanation play-vote-counts">

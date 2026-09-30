@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { ButtonLink } from "@/components/button-link";
 import { lazy, Suspense } from "react";
 import { getGameFamily } from "@werewolf/shared";
 import type { PostGameExtrasProps } from "./PostGameExtras";
@@ -15,8 +15,8 @@ function ExtrasUnavailable({ section, snapshot }: PostGameExtrasProps) {
     <>
       <p role="status">Обобщението не се зареди. Можеш да започнеш нова игра или да отвориш архива.</p>
       <div className="play-winner-actions">
-        <Link className="btn btn-primary" href={`/${familyPath}/create`}>Нова игра</Link>
-        <Link className="btn btn-secondary" href="/history">Към архива</Link>
+        <ButtonLink href={`/${familyPath}/create`}>Нова игра</ButtonLink>
+        <ButtonLink variant="secondary" href="/history">Към архива</ButtonLink>
       </div>
     </>
   );

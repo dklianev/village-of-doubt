@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useId, useState } from "react";
 import { ExternalLink, RotateCw, WifiOff } from "lucide-react";
 import { createPortal } from "react-dom";
+import { Button } from "@/components/button";
 import { useModal } from "@/lib/use-modal";
 import { isDuplicateNameError } from "@/lib/play/join-errors";
 import type { ConnectionStatus } from "@/lib/play/types";
@@ -63,14 +64,14 @@ function ReconnectDialog({
               Промени името (нов раздел)
             </a>
           ) : null}
-          <button type="button" className={`btn ${duplicateName ? "btn-secondary" : "btn-primary"}`} onClick={onRetry} disabled={reconnecting} aria-busy={reconnecting}>
+          <Button variant={duplicateName ? "secondary" : "primary"} onClick={onRetry} disabled={reconnecting} aria-busy={reconnecting}>
             <RotateCw size={18} aria-hidden />
             {reconnecting ? "Опитваме..." : roomError ? "Свържи отново" : "Опитай пак"}
-          </button>
+          </Button>
           {!duplicateName ? (
-            <button type="button" className="btn btn-secondary" onClick={() => window.location.reload()}>
+            <Button variant="secondary" onClick={() => window.location.reload()}>
               Презареди
-            </button>
+            </Button>
           ) : null}
         </div>
     </dialog>

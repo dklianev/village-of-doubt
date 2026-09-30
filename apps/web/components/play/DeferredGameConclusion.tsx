@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { ButtonLink } from "@/components/button-link";
 import { lazy, Suspense } from "react";
 import { getGameFamily } from "@werewolf/shared";
 import type { GameConclusionProps } from "./GameConclusion";
@@ -13,8 +13,8 @@ function ConclusionUnavailable({ snapshot }: GameConclusionProps) {
     <h1 tabIndex={-1}>Край на играта</h1>
     <p>{snapshot.winnerReasonBg}</p>
     <p role="status">Обобщението не се зареди. Продължи към архива или нова игра.</p>
-    <Link className="btn btn-primary" href={`/${path}/create`}>Нова игра</Link>{" "}
-    <Link className="btn btn-secondary" href="/history">Към архива</Link>
+    <ButtonLink href={`/${path}/create`}>Нова игра</ButtonLink>{" "}
+    <ButtonLink variant="secondary" href="/history">Към архива</ButtonLink>
   </section>;
 }
 
