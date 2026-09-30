@@ -51,7 +51,8 @@
 :global(.play-waiting-host svg) { width: 20px; height: 20px; color: var(--waiting-metal); }
 :global(.play-waiting-invite) { display: grid; justify-items: start; gap: 2px; pointer-events: auto; color: var(--waiting-ink); text-shadow: none; }
 :global(.play-waiting-invite > span) { color: var(--waiting-metal); font-size: 13px; text-transform: uppercase; }
-:global(.play-waiting-invite > div) { display: flex; align-items: center; gap: 16px; }
+/* Code, copy, share and QR wrap under enlarged text instead of widening the whole waiting band. */
+:global(.play-waiting-invite > div) { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; min-width: 0; }
 :global(.play-waiting-invite strong) { font-size: 36px; line-height: 1.3; font-weight: 650; font-variant-numeric: tabular-nums; }
 :global(.play-waiting-invite button) { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 44px; padding: 4px 0; background: none; border: 0; color: inherit; font: 500 15px/1.4 var(--font-body); cursor: pointer; }
 :global(.play-waiting-invite > div button) { width: 44px; border: 1px solid var(--waiting-metal); border-radius: 6px; }
