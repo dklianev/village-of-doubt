@@ -192,7 +192,8 @@
     --chronometer-label-size: 10px;
   }
   :global(.play-stage) .instrument[data-state="unlimited"] .value { font-size: 11px; }
-  :global(.play-stage) .instrument[data-state="unlimited"] .label { top: 67%; }
+  /* At 88px the label's chord is ~60px wide: 9px keeps "БЕЗ ТАЙМЕР" inside the dial ring. */
+  :global(.play-stage) .instrument[data-state="unlimited"] .label { top: 66%; font-size: 9px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

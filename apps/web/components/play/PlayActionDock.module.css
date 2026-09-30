@@ -243,6 +243,11 @@
     min-height: calc(70px + env(safe-area-inset-bottom));
   }
 
+  /* Collapsed, the grid below is hidden: its spacing would only lift the dock over the seats. */
+  .root.root[data-expanded="false"] .header {
+    margin-bottom: 0;
+  }
+
   .header {
     margin: 0;
     padding-right: 0;
