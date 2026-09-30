@@ -254,6 +254,15 @@ for (const family of ["werewolves", "mafia"] as const) {
       await expect(page.locator("[data-private-dossier], .play-private-conversation")).toHaveCount(0);
       await expect(personal.locator("#play-personal-content")).toBeEmpty();
       await expect(page.locator(".play-action-dock")).toHaveCount(0);
+      // The deal arrives face down; putting it away hands the role to the inline toggle.
+      const ritual = page.getByRole("dialog", { name: "Твоята тайна карта" });
+      await expect(ritual).toBeVisible();
+      await expect(ritual).toHaveAttribute("data-flipped", "false");
+      await expect(ritual.locator("[data-private-dossier]")).toHaveCount(0);
+      await page.keyboard.press("Escape");
+      await expect(page.getByRole("dialog")).toHaveCount(0);
+      await expect(personal.getByRole("button", { name: "Виж ролята си", exact: true })).toBeFocused();
+      await expect(personal.locator("#play-personal-content")).toBeEmpty();
       await personal.getByRole("button", { name: "Виж ролята си", exact: true }).click();
       await expect(personal.locator(".role-card[data-private-dossier]")).toBeVisible();
       await expect(personal.getByRole("button", { name: "Скрий ролята", exact: true })).toHaveAttribute("aria-expanded", "true");

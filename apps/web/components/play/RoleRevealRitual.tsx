@@ -58,11 +58,18 @@ export function RoleRevealRitual({
   const { ref } = useModal<HTMLDivElement>({ open: mounted, onClose: finish });
   const definition = ROLE_DEFINITIONS[role.role];
   const guide = roleGuideBg(role.role, family);
-  const cardStyle = { "--ritual-role-art": `url("${roleThumbPath(family, role.role)}")` } as CSSProperties;
+  const roleArt = roleThumbPath(family, role.role);
+  // Face down means nothing of the role in the DOM either; the art is warmed off-DOM so the turn is not blank.
+  const cardStyle = flipped ? ({ "--ritual-role-art": `url("${roleArt}")` } as CSSProperties) : undefined;
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    const image = new Image();
+    image.src = roleArt;
+  }, [roleArt]);
 
   useEffect(() => {
     if (flipped) doneRef.current?.focus();
@@ -93,7 +100,7 @@ export function RoleRevealRitual({
           <span className={styles.cardInner}>
             <span className={`${styles.face} ${styles.back}`} style={{ backgroundImage: `url("${CARD_BACK}")` }} />
             <span className={`${styles.face} ${styles.front}`}>
-              <span className={styles.frontName}>{role.roleNameBg}</span>
+              {flipped ? <span className={styles.frontName}>{role.roleNameBg}</span> : null}
             </span>
           </span>
         </div>

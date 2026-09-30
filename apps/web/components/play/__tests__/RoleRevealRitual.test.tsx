@@ -9,6 +9,9 @@ describe("RoleRevealRitual", () => {
     const dialog = screen.getByRole("dialog", { name: "Твоята тайна карта" });
     expect(dialog).toHaveAttribute("data-flipped", "false");
     expect(screen.queryByRole("heading", { name: "Гадателка" })).not.toBeInTheDocument();
+    // Face down is concealed in the DOM too: no role name, no role art until the turn.
+    expect(document.body).not.toHaveTextContent("Гадателка");
+    expect(document.body.innerHTML).not.toContain("seer");
     expect(screen.getByRole("button", { name: "Обърни картата" })).toHaveFocus();
     expect(screen.getAllByRole("button")).toHaveLength(1);
   });
