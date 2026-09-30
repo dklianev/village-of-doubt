@@ -8,7 +8,7 @@ import { AuthChip } from "@/components/site-chrome/AuthChip";
 import { BrandLogo } from "@/components/site-chrome/BrandLogo";
 import { NavigationFallback } from "@/components/site-chrome/NavigationFallback";
 import { useNavigationPanels } from "@/components/site-chrome/use-navigation-panels";
-import { getSoundEnabled, playCue, setSoundEnabled } from "@/lib/sound";
+import { getSoundEnabled, playCue, setSoundEnabled, SOUND_CHANGE_EVENT } from "@/lib/sound";
 import { safeLocalStorage } from "@/lib/safe-storage";
 import type { AuthSessionView } from "@/lib/use-auth-session";
 import "@/components/site-chrome/SiteChrome.module.css";
@@ -46,6 +46,13 @@ export default function SiteChrome({ initialSession }: { initialSession?: AuthSe
     setThemePreference(theme);
     applyThemePreference(theme);
     setInteractive(true);
+  }, []);
+
+  // A room's signal setting also switches sound; keep the header icon truthful when it does.
+  useEffect(() => {
+    const sync = () => setSoundEnabledState(getSoundEnabled());
+    window.addEventListener(SOUND_CHANGE_EVENT, sync);
+    return () => window.removeEventListener(SOUND_CHANGE_EVENT, sync);
   }, []);
 
   useEffect(() => {

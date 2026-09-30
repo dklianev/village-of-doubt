@@ -27,8 +27,10 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/lib/use-auth-session", () => ({
   useAuthSession: () => ({ data: null, isPending: false }),
 }));
+const sound = vi.hoisted(() => ({ enabled: false }));
 vi.mock("@/lib/sound", () => ({
-  getSoundEnabled: () => false,
+  SOUND_CHANGE_EVENT: "werewolf-sound-change",
+  getSoundEnabled: () => sound.enabled,
   setSoundEnabled: vi.fn(),
   playCue: vi.fn(),
 }));
@@ -36,8 +38,19 @@ vi.mock("@/lib/sound", () => ({
 describe("Senkite navigation", () => {
   beforeEach(() => {
     route.pathname = "/";
+    sound.enabled = false;
     localStorage.clear();
     drawerRender.mockClear();
+  });
+
+  it("keeps the header sound icon in step when a room switches sound", async () => {
+    route.pathname = "/play/ABC234";
+    render(<SiteChrome initialSession={null} />);
+    expect(screen.getAllByRole("button", { name: "Включи звука" }).length).toBeGreaterThan(0);
+    sound.enabled = true;
+    act(() => { window.dispatchEvent(new Event("werewolf-sound-change")); });
+    expect(screen.getAllByRole("button", { name: "Изключи звука" }).length).toBeGreaterThan(0);
+    expect(screen.queryByRole("button", { name: "Включи звука" })).not.toBeInTheDocument();
   });
 
   it.each(["/lobby/ABC234", "/play/ABC234"])("does not let Firefox restore transient button states on %s", (pathname) => {

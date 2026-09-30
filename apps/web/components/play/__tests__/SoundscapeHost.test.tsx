@@ -7,7 +7,7 @@ import { SoundscapeHost } from "../SoundscapeHost";
 vi.mock("@/lib/play/soundscape-bridge", () => ({ setSoundScene: vi.fn(), playSoundStinger: vi.fn() }));
 
 const death = (id: string): PublicEvent => ({ id, type: "death", messageBg: "Някой е извън играта.", createdAt: 1 } as PublicEvent);
-const base = { mode: "werewolves_classic", phase: "night", narratorVoice: "classic", liveMode: false } as const;
+const base = { mode: "werewolves_classic", phase: "night", narratorVoice: "classic", liveMode: false, cueMode: "audio_vibration" } as const;
 
 describe("SoundscapeHost", () => {
   beforeEach(() => {
@@ -26,6 +26,17 @@ describe("SoundscapeHost", () => {
     const { rerender } = render(<SoundscapeHost {...base} liveMode publicEvents={[]} />);
     rerender(<SoundscapeHost {...base} liveMode publicEvents={[death("d1")]} />);
     expect(vi.mocked(setSoundScene).mock.calls.every(([scene]) => scene === null)).toBe(true);
+    expect(playSoundStinger).not.toHaveBeenCalled();
+  });
+
+  it("follows the table signal setting: quiet and visual modes get no soundscape", () => {
+    for (const cueMode of ["silent", "visual"] as const) {
+      vi.mocked(setSoundScene).mockClear();
+      const { rerender, unmount } = render(<SoundscapeHost {...base} cueMode={cueMode} publicEvents={[]} />);
+      rerender(<SoundscapeHost {...base} cueMode={cueMode} publicEvents={[death(`${cueMode}-d`)]} />);
+      expect(vi.mocked(setSoundScene).mock.calls.every(([scene]) => scene === null)).toBe(true);
+      unmount();
+    }
     expect(playSoundStinger).not.toHaveBeenCalled();
   });
 

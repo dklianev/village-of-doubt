@@ -1120,7 +1120,7 @@ export function PlayRoomClientCore({
       ) : null}
       {snapshot ? (
         <Suspense fallback={null}>
-          <SoundscapeHost mode={mode} phase={snapshot.phase} narratorVoice={snapshot.narratorVoice} liveMode={liveMode} publicEvents={snapshot.publicEvents} />
+          <SoundscapeHost mode={mode} phase={snapshot.phase} narratorVoice={snapshot.narratorVoice} liveMode={liveMode} cueMode={cueMode} publicEvents={snapshot.publicEvents} />
         </Suspense>
       ) : null}
       {/* The dealt card is turned once per role per room; then the private toggle takes over. */}
