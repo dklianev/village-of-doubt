@@ -1033,77 +1033,6 @@
   backdrop-filter: blur(14px);
 }
 
-:global(.lovers-feature-card) {
-  display: grid;
-  grid-template-columns: 86px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 16px;
-  border: 1px solid rgba(209, 154, 66, 0.26);
-  border-radius: 24px;
-  padding: 14px;
-  background:
-    radial-gradient(circle at 10% 20%, rgba(209, 154, 66, 0.18), transparent 18rem),
-    linear-gradient(135deg, rgba(255, 247, 229, 0.1), rgba(255, 247, 229, 0.035)),
-    rgba(8, 10, 10, 0.38);
-  box-shadow:
-    0 2px 4px rgba(0, 0, 0, 0.22),
-    0 18px 44px rgba(0, 0, 0, 0.2),
-    inset 0 1px rgba(255, 255, 255, 0.08);
-}
-
-:global(.lovers-feature-card[data-enabled="true"]) {
-  border-color: var(--accent-faction-border);
-  background:
-    radial-gradient(circle at 10% 20%, var(--accent-faction-tint), transparent 18rem),
-    linear-gradient(135deg, rgba(255, 247, 229, 0.14), rgba(255, 247, 229, 0.045)),
-    rgba(8, 10, 10, 0.42);
-}
-
-:global(.lovers-feature-card[data-disabled="true"]) {
-  border-style: dashed;
-  opacity: 0.82;
-}
-
-:global(.lovers-feature-art) {
-  display: block;
-  width: 86px;
-  aspect-ratio: 1;
-  border: 1px solid rgba(248, 236, 210, 0.2);
-  border-radius: 20px;
-  background:
-    radial-gradient(circle at 48% 18%, rgba(255, 247, 229, 0.2), transparent 34%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(9, 6, 5, 0.18)),
-    var(--role-art) center / cover no-repeat,
-    #120b08;
-  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.28), inset 0 1px rgba(255, 255, 255, 0.16);
-}
-
-:global(.lovers-feature-copy) {
-  display: grid;
-  gap: 6px;
-  min-width: 0;
-}
-
-:global(.lovers-feature-copy strong) {
-  color: #fff6e5;
-  font-family: var(--font-reading);
-  font-size: 1.25rem;
-  font-weight: 950;
-  line-height: 1.1;
-}
-
-:global(.lovers-feature-copy span),
-:global(.lovers-feature-copy small) {
-  color: #ead9ba;
-  font-weight: 760;
-  line-height: 1.42;
-}
-
-:global(.lovers-feature-copy small) {
-  color: rgba(255, 247, 229, 0.66);
-  font-size: 0.78rem;
-}
-
 :global(.preset-chips button) {
   flex: 0 0 auto;
   border: 1px solid rgba(248, 236, 210, 0.14);
@@ -1549,16 +1478,6 @@
     min-height: 0;
   }
 
-  :global(.lovers-feature-card) {
-    grid-template-columns: 64px minmax(0, 1fr);
-    align-items: start;
-  }
-
-  :global(.lovers-feature-art) {
-    width: 64px;
-    border-radius: 16px;
-  }
-
   :global(.lobby-step-room .lobby-field-grid) {
     grid-template-columns: 1fr;
     gap: 16px;
@@ -1730,7 +1649,6 @@
 }
 
 :global(.create-quick-kicker),
-:global(.create-customization-kicker),
 :global(.create-recommendation-heading span),
 :global(.create-control-heading span),
 :global(.create-receipt-heading > span) {

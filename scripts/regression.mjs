@@ -193,7 +193,8 @@ function checkCssImageSet() {
   assert(imageSetCount >= 80, `Expected many image-set game-art references, got ${imageSetCount}.`);
   assert(directGameArtVariables.length === 0, `Found direct PNG CSS variables: ${directGameArtVariables.join(", ")}`);
   assert(pngImageSetCandidates.length === 0, "Runtime CSS must not expose source PNG image-set candidates.");
-  assert(css.includes(".cue-panel"), "Missing live cue panel CSS.");
+  // The live cue panel is LiveCuePanel (PlayTools.module.css); the legacy .cue-panel markup is gone.
+  assert(css.includes(".cueBody") && css.includes(".cuePreview"), "Missing live cue panel CSS.");
   assert(css.includes(".narrator-desk"), "Missing narrator desk CSS.");
   assert(css.includes(".toast-host"), "Missing toast host CSS.");
   assert(css.includes(".skeleton"), "Missing loading skeleton CSS.");
@@ -1629,10 +1630,10 @@ function readAppStyles() {
     "apps/web/components/games/GameHomePage.module.css",
     "apps/web/components/history/History.module.css",
     "apps/web/components/achievements/Achievements.module.css",
-    "apps/web/components/friends/LegacyFriends.module.css",
     "apps/web/components/auth/AuthRecovery.module.css",
     "apps/web/components/site-chrome/SiteChrome.module.css",
     "apps/web/components/play/PlayRoom.module.css",
+    "apps/web/components/play/PlayTools.module.css",
     "apps/web/components/play/PhaseRail.module.css",
     "apps/web/components/play/ReconnectModal.module.css",
     "apps/web/components/play/VoteTallyBar.module.css",

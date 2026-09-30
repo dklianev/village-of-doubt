@@ -126,19 +126,6 @@
   opacity: 1;
 }
 
-:global(.phase-title) {
-  text-transform: uppercase;
-  text-wrap: balance;
-  -webkit-text-stroke: 1px rgba(248, 236, 210, 0.18);
-}
-
-:global(.phase-sigil) {
-  background:
-    linear-gradient(145deg, rgba(10, 7, 6, 0.18), rgba(10, 7, 6, 0.42)),
-    var(--phase-icon) center / cover no-repeat;
-  color: transparent;
-}
-
 :global(.play-layout) {
   grid-template-columns: minmax(0, 1.42fr) minmax(330px, 0.58fr);
   width: 100%;
@@ -164,23 +151,6 @@
   overflow-y: auto;
   overscroll-behavior-y: contain;
   scrollbar-gutter: stable;
-}
-
-:global(.play-lobby-navigation-note) {
-  margin: 12px 0 0;
-  color: inherit;
-  font-size: 0.82rem;
-  line-height: 1.5;
-}
-
-:global(.play-lobby-navigation-note a) {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 44px;
-  color: inherit;
-  text-decoration: underline;
-  text-underline-offset: 3px;
 }
 
 /* Full-width host/narrator command band below the personal dock. A plain
@@ -235,41 +205,6 @@
   background: transparent;
 }
 
-:global(.play-rail-intro) {
-  margin-top: 18px;
-}
-
-:global(.play-rail-disclosure) {
-  border: 1px solid rgba(245, 232, 200, 0.12);
-  border-radius: 22px;
-  background: rgba(8, 6, 5, 0.28);
-  padding: 14px;
-}
-
-:global(.play-rail-disclosure summary) {
-  cursor: pointer;
-  color: #f5e8c8;
-  font-size: 0.86rem;
-  font-weight: 950;
-  letter-spacing: 0.12em;
-  list-style: none;
-  text-transform: uppercase;
-}
-
-:global(.play-rail-disclosure summary::-webkit-details-marker) {
-  display: none;
-}
-
-:global(.play-rail-disclosure summary::after) {
-  float: right;
-  content: "+";
-  color: #d19a42;
-}
-
-:global(.play-rail-disclosure[open] summary::after) {
-  content: "-";
-}
-
 :global(.play-rail-guide-body) {
   max-height: min(58svh, 560px);
   overflow: auto;
@@ -277,11 +212,6 @@
   padding-right: 4px;
   scrollbar-color: rgba(209, 154, 66, 0.46) transparent;
   scrollbar-width: thin;
-}
-
-:global(.play-rail-disclosure .ritual-panel) {
-  margin-top: 14px;
-  padding: 16px;
 }
 
 :global(.play-side-rail .rules-summary-metrics-grid),
@@ -561,14 +491,8 @@
 :global(html[data-theme="light"] .play-side-rail h3),
 :global(html[data-theme="light"] .play-side-rail .play-panel-subhead),
 :global(html[data-theme="light"] .play-side-rail .section-kicker),
-:global(html[data-theme="light"] .play-side-rail .play-phase-pill),
-:global(html[data-theme="light"] .play-side-rail .play-rail-disclosure summary) {
+:global(html[data-theme="light"] .play-side-rail .play-phase-pill) {
   color: #4a2f1c;
-}
-
-:global(html[data-theme="light"] .play-side-rail .play-rail-disclosure) {
-  border-color: rgba(132, 47, 43, 0.16);
-  background: rgba(132, 47, 43, 0.04);
 }
 
 :global(html[data-theme="light"] .play-side-rail .play-rail-tabs) {
@@ -620,21 +544,12 @@
     linear-gradient(145deg, rgba(20, 12, 9, 0.86), rgba(10, 7, 6, 0.7));
 }
 
-:global(.play-lobby-dock-actions) {
-  display: grid;
-  gap: 12px;
-  grid-column: 1 / -1;
-  margin-top: 0; /* cancel the legacy .action-bar -28px that overlapped the dock heading */
-  padding: 0;
-}
-
 :global(.play-lobby-ready-actions) {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 
-:global(.play-action-dock .play-lobby-dock-actions .btn),
 :global(.play-action-dock .play-lobby-ready-actions .btn) {
   gap: 8px;
   min-height: 44px;
@@ -993,11 +908,6 @@
   :global(.play-action-dock[data-dock-kind="lobby"] .play-action-dock-grid) {
     grid-template-columns: minmax(320px, 0.42fr) minmax(0, 1fr);
     align-items: start;
-  }
-
-  :global(.play-action-dock[data-dock-kind="lobby"] .play-lobby-dock-actions) {
-    grid-column: 1;
-    grid-row: 1;
   }
 
   :global(.play-action-dock-head) {
@@ -1711,29 +1621,6 @@
   outline-color: #fff7df;
 }
 
-:global(.play-rail-disclosure summary) {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 3px 12px;
-}
-
-:global(.play-rail-disclosure summary small) {
-  grid-column: 1;
-  color: rgba(245, 232, 200, 0.64);
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0;
-  line-height: 1.35;
-  text-transform: none;
-}
-
-:global(.play-rail-disclosure summary::after) {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  float: none;
-}
-
 :global(.play-rail-guide-body),
 :global(.play-side-rail) {
   max-height: none;
@@ -1757,7 +1644,6 @@
 :global(html[data-theme="light"] .play-side-rail h3),
 :global(html[data-theme="light"] .play-side-rail .play-panel-subhead),
 :global(html[data-theme="light"] .play-side-rail .section-kicker),
-:global(html[data-theme="light"] .play-side-rail .play-rail-disclosure summary),
 :global(html[data-theme="light"] .play-action-dock-head h2) {
   color: #fff7df;
 }
@@ -1981,7 +1867,6 @@
 :global(html[data-theme="light"] .play-side-rail h2),
 :global(html[data-theme="light"] .play-side-rail h3),
 :global(html[data-theme="light"] .play-side-rail .play-panel-subhead),
-:global(html[data-theme="light"] .play-side-rail .play-rail-disclosure summary),
 :global(html[data-theme="light"] .play-action-dock-head h2) {
   color: var(--play-light-ink);
   text-shadow: none;
@@ -1991,16 +1876,6 @@
 :global(html[data-theme="light"] .play-side-rail .play-phase-pill),
 :global(html[data-theme="light"] .play-side-rail .phase-rail-index) {
   color: var(--play-light-accent-strong);
-}
-
-:global(html[data-theme="light"] .play-rail-disclosure) {
-  border-color: var(--play-light-border);
-  border-radius: 6px;
-  background: rgba(255, 252, 243, 0.34);
-}
-
-:global(html[data-theme="light"] .play-rail-disclosure summary small) {
-  color: var(--play-light-muted);
 }
 
 :global(html[data-theme="light"] .play-side-rail .phase-rail-step) {
@@ -2259,18 +2134,6 @@
   box-shadow: none;
 }
 
-:global(.play-shell.game-shell .play-rail-intro) {
-  margin-top: 0;
-}
-
-:global(.play-shell.game-shell .play-rail-intro h2) {
-  margin-top: 8px;
-  font-size: 1.25rem;
-  line-height: 1.4;
-}
-
-:global(html[data-theme] .play-shell.game-shell .play-side-rail .play-rail-disclosure),
-:global(html[data-theme] .play-shell.game-shell .play-side-rail .cue-panel),
 :global(html[data-theme] .play-shell.game-shell .play-side-rail .ritual-panel) {
   border: 0;
   border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent);
@@ -2278,13 +2141,6 @@
   padding: 12px 0;
   background: none;
   box-shadow: none;
-}
-
-:global(.play-shell.game-shell .play-side-rail .play-rail-disclosure summary) {
-  min-height: 44px;
-  font-weight: 600;
-  letter-spacing: 0;
-  text-transform: none;
 }
 
 :global(html[data-theme] .play-shell.game-shell .play-side-rail .summary-pill),
@@ -2480,15 +2336,6 @@
   color: inherit;
 }
 
-:global(.play-shell.game-shell .play-rail-intro) {
-  margin-bottom: 12px;
-}
-
-:global(.play-shell.game-shell .play-rail-intro h2) {
-  margin-top: 4px;
-  font-size: 1.25rem;
-}
-
 :global(.play-shell.game-shell .play-rail-panel) {
   margin-top: 0;
   min-height: 0;
@@ -2498,19 +2345,8 @@
   scrollbar-color: var(--play-console-border) transparent;
 }
 
-:global(.play-shell.game-shell .play-rail-disclosure),
-:global(.play-shell.game-shell .cue-panel) {
-  margin-top: 0;
-}
-
 :global(.play-shell.game-shell .play-rail-tabs) {
   position: static;
-}
-
-:global(.play-lobby-readiness-note) {
-  margin: 12px 0 0;
-  font-size: 0.8125rem;
-  line-height: 1.5;
 }
 
 :global(.play-action-receipt) {
