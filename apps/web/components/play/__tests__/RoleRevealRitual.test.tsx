@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { RoleRevealGate, RoleRevealRitual } from "../RoleRevealRitual";
 
@@ -41,6 +41,18 @@ describe("RoleRevealRitual", () => {
 
     expect(screen.getByRole("dialog", { name: "Кръстник" })).toHaveAttribute("data-team", "mafia");
     expect(screen.getByText("Мафия")).toBeInTheDocument();
+  });
+
+  it("hands focus to the card once a delayed deal becomes visible", () => {
+    vi.useFakeTimers();
+    try {
+      render(<RoleRevealRitual role={{ role: "seer", roleNameBg: "Гадателка" }} family="werewolves" enterDelayMs={1750} onDone={vi.fn()} />);
+      (document.activeElement as HTMLElement | null)?.blur();
+      act(() => { vi.advanceTimersByTime(1900); });
+      expect(screen.getByRole("button", { name: "Обърни картата" })).toHaveFocus();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("treats Escape as acknowledging the card", () => {

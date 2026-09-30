@@ -92,6 +92,16 @@ export function RoleRevealRitual({
     if (flipped) doneRef.current?.focus();
   }, [flipped]);
 
+  // A delayed deal stays hidden behind the phase curtain, where it cannot take focus; hand it over
+  // once the card is actually on screen.
+  useEffect(() => {
+    if (!mounted || enterDelayMs <= 0) return;
+    const timeout = window.setTimeout(() => {
+      if (!ref.current?.contains(document.activeElement)) ref.current?.querySelector<HTMLButtonElement>("button")?.focus();
+    }, enterDelayMs + 60);
+    return () => window.clearTimeout(timeout);
+  }, [enterDelayMs, mounted, ref]);
+
   if (!mounted) return null;
 
   // Portalled so the ceremony also dims the site chrome (the play shell is its own stacking context).
