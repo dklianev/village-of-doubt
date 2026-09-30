@@ -99,8 +99,17 @@ async function expectEnvironment(page: Page, viewport: Viewport, family: string,
       expect(scene.backgroundPosition).toBe("0% 0%, 50% 0%");
     } else {
       const compactOval = viewport.height <= 960 && await stage.getAttribute("data-layout-mode") === "active-table";
+      // Measure the room's own --play-compact-height instead of restating its clamp here.
+      const compactHeight = await shell.evaluate((element) => {
+        const probe = document.createElement("div");
+        probe.style.cssText = "position:absolute;visibility:hidden;height:var(--play-compact-height)";
+        element.append(probe);
+        const height = probe.getBoundingClientRect().height;
+        probe.remove();
+        return height;
+      });
       artTop = compactOval
-        ? -64 - (Math.min(viewport.width * 0.47478, 845) - Math.max(430, Math.min(viewport.height - 350, 550))) * 0.65
+        ? -64 - (Math.min(viewport.width * 0.47478, 845) - compactHeight) * 0.65
         : -64;
       expect(scene.backgroundPosition.split(" ")[0]).toBe("50%");
       expect(Number.parseFloat(scene.backgroundPosition.split(" ")[1]!)).toBeCloseTo(artTop, 2);

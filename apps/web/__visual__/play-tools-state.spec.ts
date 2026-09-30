@@ -1,5 +1,8 @@
 import { expect, test } from "playwright/test";
 
+// Keyboard help ships inside the narrator tools chunk, so match the chunk by its code, not its file name.
+const KEYBOARD_HELP_MARKER = "function KeyboardShortcutsModal(";
+
 for (const width of [390, 1440]) {
   test(`closing pending reference cancels the deferred opening ${width}`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
@@ -82,9 +85,14 @@ for (const width of [390, 1440]) {
       localStorage.setItem("welcome-modal-shown", "1");
     });
     let blocked = 0;
-    await page.route("**/*keyboard-shortcuts-modal*.js", (route) => {
-      blocked++;
-      return route.abort("failed");
+    await page.route("**/_next/static/chunks/*.js", async (route) => {
+      const response = await route.fetch();
+      if ((await response.text()).includes(KEYBOARD_HELP_MARKER)) {
+        blocked++;
+        await route.abort("failed");
+      } else {
+        await route.fulfill({ response });
+      }
     });
     await page.goto("/play/VISUAL?visualGame=1&family=werewolves&phase=lobby&players=8&viewer=host");
     const stage = page.locator('.play-stage[data-layout-ready="true"]');
@@ -118,10 +126,17 @@ for (const width of [390, 1440]) {
     let release!: () => void;
     const pending = new Promise<void>((resolve) => { release = resolve; });
     let requested = false;
-    await page.route("**/*keyboard-shortcuts-modal*.js", async (route) => {
-      requested = true;
-      await pending;
-      await route.abort("failed");
+    let blockedUrl = "";
+    await page.route("**/_next/static/chunks/*.js", async (route) => {
+      const response = await route.fetch();
+      if ((await response.text()).includes(KEYBOARD_HELP_MARKER)) {
+        blockedUrl = route.request().url();
+        requested = true;
+        await pending;
+        await route.abort("failed");
+      } else {
+        await route.fulfill({ response });
+      }
     });
     await page.goto("/play/VISUAL?visualGame=1&family=mafia&phase=lobby&players=10&viewer=host");
     const stage = page.locator('.play-stage[data-layout-ready="true"]');
@@ -131,7 +146,7 @@ for (const width of [390, 1440]) {
     await content.press("?");
     await expect.poll(() => requested).toBe(true);
     await content.press("Escape");
-    const failedRequest = page.waitForEvent("requestfailed", (request) => request.url().includes("keyboard-shortcuts-modal"));
+    const failedRequest = page.waitForEvent("requestfailed", (request) => request.url() === blockedUrl);
     release();
     await failedRequest;
     const ready = page.getByTestId("ready-toggle");
