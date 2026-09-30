@@ -31,10 +31,13 @@ for (const viewport of VIEWPORTS) {
       expect(after.mainTop).toBeCloseTo(before.mainTop, 1);
       expect(after.headingTop).toBeCloseTo(before.headingTop, 1);
 
+      // The notice is deferred: it follows the page content instead of floating over it.
+      await notice.scrollIntoViewIfNeeded();
       const geometry = await page.evaluate(() => {
-        const banner = document.querySelector<HTMLElement>("[data-cookie-banner]")?.getBoundingClientRect();
-        const chrome = document.querySelector<HTMLElement>(".site-chrome")?.getBoundingClientRect();
-        if (!banner || !chrome) {
+        const bannerElement = document.querySelector<HTMLElement>("[data-cookie-banner]");
+        const banner = bannerElement?.getBoundingClientRect();
+        const main = document.getElementById("main-content")?.getBoundingClientRect();
+        if (!bannerElement || !banner || !main) {
           return null;
         }
 
@@ -51,8 +54,10 @@ for (const viewport of VIEWPORTS) {
         });
 
         return {
-          banner: { top: banner.top, bottom: banner.bottom, left: banner.left, right: banner.right },
-          chromeBottom: chrome.bottom,
+          position: getComputedStyle(bannerElement).position,
+          bannerTop: banner.top + scrollY,
+          mainBottom: main.bottom + scrollY,
+          banner: { left: banner.left, right: banner.right },
           collisions: visibleTargets.filter((element) => intersects(banner, element.getBoundingClientRect())).map(
             (element) => element.getAttribute("aria-label") || element.textContent?.trim().slice(0, 80) || element.tagName,
           ),
@@ -60,9 +65,8 @@ for (const viewport of VIEWPORTS) {
       });
 
       expect(geometry).not.toBeNull();
-      expect(geometry?.banner.top).toBeGreaterThanOrEqual((geometry?.chromeBottom ?? 0) + 6);
-      expect(geometry?.banner.top).toBeLessThanOrEqual((geometry?.chromeBottom ?? 0) + 24);
-      expect(geometry?.banner.bottom).toBeLessThan(viewport.height * 0.45);
+      expect(geometry?.position).toBe("static");
+      expect(geometry?.bannerTop).toBeGreaterThanOrEqual((geometry?.mainBottom ?? 0) - 1);
       expect(geometry?.banner.left).toBeGreaterThanOrEqual(0);
       expect(geometry?.banner.right).toBeLessThanOrEqual(viewport.width);
       expect(geometry?.collisions).toEqual([]);

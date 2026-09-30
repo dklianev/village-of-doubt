@@ -6,10 +6,9 @@ const viewports = [
   { width: 844, height: 390 },
   { width: 1440, height: 900 },
 ];
+// Family create pages use the quick layout: a masthead band carries their art (checked below).
 const routes = [
   { path: "/create?visualAuth=1", shell: "lobby-shell", art: "bg-lobby-tavern", position: "50% 50%" },
-  { path: "/werewolf/create?visualAuth=1", shell: "lobby-shell", art: "bg-lobby-tavern", position: "50% 50%" },
-  { path: "/mafia/create?visualAuth=1", shell: "lobby-shell", art: "mafia/bg-lobby-tavern", position: "50% 50%" },
   { path: "/werewolf/roles", shell: "roles-shell", art: "bg-night-phase", position: "50% 28%" },
   { path: "/mafia/roles", shell: "roles-shell", art: "mafia/bg-night-phase", position: "50% 30%" },
 ];
@@ -131,6 +130,52 @@ for (const theme of ["dark", "light"] as const) {
   }
 }
 
+for (const family of ["werewolf", "mafia"] as const) {
+  for (const theme of ["dark", "light"] as const) {
+    for (const viewport of viewports) {
+      test(`create masthead quality ${family} ${theme} ${viewport.width}`, async ({ page }) => {
+        await page.setViewportSize(viewport);
+        await prepare(page, theme);
+        const errors: string[] = [];
+        page.on("pageerror", (error) => errors.push(error.message));
+        await page.goto(`/${family}/create?visualAuth=1`);
+        const shell = page.locator("main.lobby-shell:visible");
+        await expect(shell.locator("h1")).toBeVisible();
+        await page.evaluate(() => document.fonts.ready);
+        // The viewport backdrop is retired here; the masthead is the page's only artwork.
+        expect(await shell.evaluate((element) => getComputedStyle(element, "::before").display)).toBe("none");
+        const masthead = page.locator(".create-masthead").first();
+        const art = await masthead.evaluate(async (element) => {
+          const style = getComputedStyle(element, "::before");
+          const url = style.backgroundImage.match(/url\("([^"]+)"\)/)?.[1] ?? "";
+          const image = new Image();
+          image.src = url;
+          await image.decode();
+          return { url, display: style.display, paintedHeight: parseFloat(style.backgroundSize.split(" ").at(-1)!), naturalHeight: image.naturalHeight };
+        });
+        expect(art.display).toBe("block");
+        expect(new URL(art.url).pathname).toBe(`/game-art/create/masthead-${family}-${theme}-v1.webp`);
+        expect(art.paintedHeight / art.naturalHeight, "Masthead art must not be upscaled").toBeLessThanOrEqual(1.35);
+
+        // Geometry alone misses artwork hidden behind an opaque layer: it must change the band's pixels.
+        const box = (await masthead.boundingBox())!;
+        const clip = { x: 0, y: Math.max(0, box.y), width: viewport.width, height: Math.min(box.height, viewport.height - Math.max(0, box.y)) };
+        const visible = await sharp(await page.screenshot({ clip, animations: "disabled", caret: "initial" })).removeAlpha().raw().toBuffer();
+        const hidden = await page.addStyleTag({ content: ".create-masthead::before { visibility: hidden !important; }" });
+        const without = await sharp(await page.screenshot({ clip, animations: "disabled", caret: "initial" })).removeAlpha().raw().toBuffer();
+        await hidden.evaluate((element) => element.parentNode?.removeChild(element));
+        let changed = 0;
+        for (let index = 0; index < visible.length; index += 3) {
+          if (Math.abs(visible[index]! - without[index]!) + Math.abs(visible[index + 1]! - without[index + 1]!) + Math.abs(visible[index + 2]! - without[index + 2]!) > 6) changed++;
+        }
+        expect(changed / (visible.length / 3), "The masthead art must be visible").toBeGreaterThan(0.01);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+        expect(errors).toEqual([]);
+      });
+    }
+  }
+}
+
 for (const family of ["werewolf", "mafia"]) {
   test(`achievements styles do not replace ${family} rules backdrop after navigation`, async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
@@ -186,8 +231,8 @@ async function paintedBackground(target: Locator, pseudo: string | null = "::bef
   }, pseudo);
 }
 
+// The history archive moved its art into a header band (checked separately below).
 const ambientRoutes = [
-  { name: "history", path: "/history?visualHistory=fixture", selector: "main.history-shell:visible", art: (theme: string) => `history/bg-history-archive-desk${theme === "light" ? "-light" : ""}-v1` },
   { name: "account", path: "/account?visualAuth=1", selector: "body", art: (theme: string) => `account/bg-account-archive-room-${theme}-v1` },
   { name: "friends", path: "/friends?visualAuth=1", selector: "body", art: (theme: string) => `friends/bg-friends-invitation-${theme}-v1` },
 ];
@@ -274,7 +319,8 @@ for (const width of theme === "light" ? [320, 390, 768, 1440, 1920] : [320, 390,
     await expect(page.locator(".achievement-load-state")).toBeVisible();
     const bodyHeight = await page.locator("body").evaluate(node => node.getBoundingClientRect().height);
     const scene = await paintedBackground(page.locator("body"), "::after");
-    expect(scene.height + scene.top, "Scenery must not extend a short error page").toBeLessThanOrEqual(bodyHeight);
+    // Computed styles serialize to three decimals while the rect is exact; allow that rounding only.
+    expect(scene.height + scene.top, "Scenery must not extend a short error page").toBeLessThanOrEqual(bodyHeight + 0.01);
   });
 }
 }
@@ -330,6 +376,44 @@ for (const theme of ["dark", "light"] as const) {
     }
   });
   for (const viewport of [{ width: 390, height: 844 }, { width: 640, height: 360 }, { width: 1440, height: 900 }]) {
+    test(`history archive band quality ${theme} ${viewport.width}`, async ({ page }) => {
+      await page.setViewportSize(viewport);
+      await prepare(page, theme);
+      await page.goto("/history?visualHistory=fixture");
+      const archive = page.locator("main:visible").filter({ has: page.getByRole("heading", { level: 1 }) });
+      await expect(archive.getByRole("heading", { level: 1 })).toBeVisible();
+      await page.evaluate(() => document.fonts.ready);
+      const band = await archive.evaluate(async (element) => {
+        const style = getComputedStyle(element, "::after");
+        const url = style.backgroundImage.match(/url\("([^"]+)"\)/)?.[1] ?? "";
+        const image = new Image();
+        image.src = url;
+        await image.decode();
+        const width = parseFloat(style.width);
+        const height = parseFloat(style.height);
+        const size = style.backgroundSize.split(", ").at(-1)!;
+        const scale = size === "cover"
+          ? Math.max(width / image.naturalWidth, height / image.naturalHeight)
+          : parseFloat(size.split(" ").at(-1)!) / image.naturalHeight;
+        return { url, display: style.display, height, scale };
+      });
+      expect(new URL(band.url).pathname).toBe(`/game-art/history/archive-ledger-${theme}-v2.webp`);
+      expect(band.display).toBe("block");
+      expect(band.height).toBeGreaterThan(0);
+      expect(band.scale, "Archive art must not be upscaled").toBeLessThanOrEqual(1.35);
+      const box = (await archive.boundingBox())!;
+      const clip = { x: 0, y: Math.max(0, box.y), width: viewport.width, height: Math.min(band.height, viewport.height - Math.max(0, box.y)) };
+      const visible = await sharp(await page.screenshot({ clip, animations: "disabled", caret: "initial" })).removeAlpha().raw().toBuffer();
+      const hidden = await page.addStyleTag({ content: "main::after { visibility: hidden !important; }" });
+      const without = await sharp(await page.screenshot({ clip, animations: "disabled", caret: "initial" })).removeAlpha().raw().toBuffer();
+      await hidden.evaluate((element) => element.parentNode?.removeChild(element));
+      let changed = 0;
+      for (let index = 0; index < visible.length; index += 3) {
+        if (Math.abs(visible[index]! - without[index]!) + Math.abs(visible[index + 1]! - without[index + 1]!) + Math.abs(visible[index + 2]! - without[index + 2]!) > 6) changed++;
+      }
+      expect(changed / (visible.length / 3), "The archive art must be visible").toBeGreaterThan(0.01);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    });
     for (const route of ambientRoutes) {
       test(`ambient quality ${route.name} ${theme} ${viewport.width}`, async ({ page }, info) => {
         await page.setViewportSize(viewport);
@@ -377,49 +461,26 @@ for (const theme of ["dark", "light"] as const) {
   }
 
   for (const family of ["werewolves", "mafia"] as const) {
-    test(`play backgrounds and portrait inlay ${family} ${theme}`, async ({ page }, info) => {
+    // Active phases paint the room on the primary column; play-environment.spec.ts owns that geometry.
+    test(`play lobby background ${family} ${theme}`, async ({ page }, info) => {
       await page.setViewportSize({ width: 390, height: 844 });
       await prepare(page, theme);
-      for (const [phase, period] of [
-        ["lobby", "day"], ["role_reveal", "day"], ["night", "night"],
-        ["day_discussion", "day"], ["voting", "day"], ["resolution", "day"],
-      ]) {
-        await page.goto(`/play/VISUAL?visualGame=1&family=${family}&phase=${phase}&players=10&viewer=host`);
-        const stage = page.locator(".play-stage:visible");
-        await expect(stage).toHaveAttribute("data-layout-ready", "true");
-        await page.screenshot({ path: info.outputPath(`${phase}.png`), animations: "disabled", caret: "initial" });
-        const shell = page.locator("main.play-shell:visible");
-        const background = await paintedBackground(shell);
-        if (phase === "lobby") {
-          expect(background.path).toBe(`/game-art/lobby/waiting-${family}-${theme}-v1.webp`);
-          expect(background.position).toBe("absolute");
-          expect(background.backgroundSize.split(", ").at(-1)).toBe("auto 800px");
-          expect(800 / background.imageHeight).toBeLessThanOrEqual(1.35);
-          await expect(stage.locator('[data-table-core]')).toHaveCount(0);
-          await expect(stage.locator('[class*="__tableSurface"]')).toBeHidden();
-          await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
-          const scrolled = await paintedBackground(shell);
-          expect(scrolled.path).toBe(background.path);
-          expect(scrolled.backgroundSize).toBe(background.backgroundSize);
-          continue;
-        }
-        expect(background.path).toMatch(new RegExp(`^/game-art/mobile/play/bg-play-${family}-${period}-v2\\.(avif|webp)$`));
-        expect(background.position).toBe("fixed");
-        expect(background.height).toBe(844);
-        expect(background.coverScale).toBeLessThanOrEqual(1.35);
-        const room = await paintedBackground(stage, null);
-        expect(room.path).toBe(background.path);
-        expect(room.coverScale).toBeLessThanOrEqual(1.35);
-        const inlay = await paintedBackground(stage.locator('[class*="__tableSurface"]'));
-        const inlayVersion = family === "mafia" ? "v2" : "v1";
-        expect(inlay.path).toMatch(new RegExp(`^/game-art/mobile/play/table-inlay-${family}-${inlayVersion}\\.(avif|webp)$`));
-        expect(inlay.backgroundPosition).toBe("50% 0%");
-        await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
-        const scrolled = await paintedBackground(shell);
-        expect(scrolled.height).toBe(background.height);
-        expect(scrolled.path).toBe(background.path);
-        expect(scrolled.top).toBe(background.top);
-      }
+      await page.goto(`/play/VISUAL?visualGame=1&family=${family}&phase=lobby&players=10&viewer=host`);
+      const stage = page.locator(".play-stage:visible");
+      await expect(stage).toHaveAttribute("data-layout-ready", "true");
+      await page.screenshot({ path: info.outputPath("lobby.png"), animations: "disabled", caret: "initial" });
+      const shell = page.locator("main.play-shell:visible");
+      const background = await paintedBackground(shell);
+      expect(background.path).toBe(`/game-art/lobby/waiting-${family}-${theme}-v1.webp`);
+      expect(background.position).toBe("absolute");
+      expect(background.backgroundSize.split(", ").at(-1)).toBe("auto 800px");
+      expect(800 / background.imageHeight).toBeLessThanOrEqual(1.35);
+      await expect(stage.locator('[data-table-core]')).toHaveCount(0);
+      await expect(stage.locator('[class*="__tableSurface"]')).toBeHidden();
+      await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
+      const scrolled = await paintedBackground(shell);
+      expect(scrolled.path).toBe(background.path);
+      expect(scrolled.backgroundSize).toBe(background.backgroundSize);
     });
   }
 
@@ -439,7 +500,8 @@ for (const theme of ["dark", "light"] as const) {
       const initial = await paintedBackground(artWindow, null);
       expect(initial.path).toBe(`/game-art/tutorial-${art}-scene.webp`);
       expect(initial.backgroundSize).toBe("cover");
-      expect(initial.height).toBe(228);
+      // Phones: the opening scene keeps a 120px art window, lesson scenes a compact 96px one.
+      expect(initial.height).toBe(scene === "setup" ? 120 : 96);
       const slideBox = await stage.locator(".tutorial-slide").boundingBox();
       expect(slideBox).not.toBeNull();
       expect(initial.width).toBeCloseTo(slideBox!.width, 0);

@@ -1,6 +1,11 @@
-import { expect, test } from "playwright/test";
+import { expect, test, type Page } from "playwright/test";
 
 test.use({ contextOptions: { reducedMotion: "reduce", serviceWorkers: "block" } });
+
+// The progress bar's only link returns to the saved destination; its copy names that destination.
+function skipLink(page: Page) {
+  return page.getByRole("navigation", { name: "Ход на репетицията", exact: true }).getByRole("link");
+}
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => { localStorage.setItem("cookie-consent", "1"); });
@@ -17,7 +22,7 @@ test("tutorial entry keeps the invitation without recursively offering the tutor
   // The authenticated feedback control proves deferred widgets have mounted.
   await expect(page.getByRole("button", { name: "Дай ни бележка", exact: true })).toBeVisible();
   await expect(page.getByRole("dialog", { name: "Мястото ти е готово." })).toHaveCount(0);
-  await expect(page.getByRole("link", { name: "Прескочи", exact: true })).toHaveAttribute("href", "/mafia/join/ABC234");
+  await expect(skipLink(page)).toHaveAttribute("href", "/mafia/join/ABC234");
   expect(new URL(page.url()).searchParams.get("redirect")).toBe("/mafia/join/ABC234");
   expect(await page.evaluate(() => localStorage.getItem("welcome-modal-shown"))).toBeNull();
   await page.screenshot({ path: testInfo.outputPath("tutorial-entry.png") });
@@ -31,7 +36,7 @@ test("fresh homepage welcome opens the tutorial without an invented invitation",
   await link.click();
   await expect(page.locator("#tutorial-game")).toHaveValue("werewolves_classic");
   expect(new URL(page.url()).searchParams.has("redirect")).toBe(false);
-  await expect(page.getByRole("link", { name: "Прескочи", exact: true })).toHaveCount(0);
+  await expect(skipLink(page)).toHaveCount(0);
 });
 
 test("query-code join preserves its complete invitation and sport mode", async ({ page }) => {
@@ -45,7 +50,7 @@ test("query-code join preserves its complete invitation and sport mode", async (
   await expect(link).toHaveAttribute("href", `/tutorial?${new URLSearchParams({ welcome: "1", game: "mafia_sport", redirect })}`);
   await link.click();
   await expect(page.locator("#tutorial-game")).toHaveValue("mafia_sport");
-  await expect(page.getByRole("link", { name: "Прескочи", exact: true })).toHaveAttribute("href", redirect);
+  await expect(skipLink(page)).toHaveAttribute("href", redirect);
 });
 
 for (const { game, redirect, width, theme } of [
@@ -70,7 +75,7 @@ for (const { game, redirect, width, theme } of [
     await link.click();
     await expect(page).toHaveURL(/\/tutorial\?/);
     await expect(page.locator("#tutorial-game")).toHaveValue(game);
-    await expect(page.getByRole("link", { name: "Прескочи", exact: true })).toHaveAttribute("href", redirect);
+    await expect(skipLink(page)).toHaveAttribute("href", redirect);
     await expect(modal).toHaveCount(0);
     const url = new URL(page.url());
     expect(url.searchParams.get("game")).toBe(game);

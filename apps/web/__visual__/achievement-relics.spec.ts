@@ -277,7 +277,9 @@ for (const theme of ["light", "dark"] as const) {
     await expectSafeReplays(page);
     await replay.click();
     await expect(page).toHaveURL(new URL(href, page.url()).href);
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^Запис на дело №\d+\.$/);
+    // The replay now leads with its outcome; the case number sits in the kicker above it.
+    await expect(page.locator("[data-replay-shell] > header")).toContainText(/Дело №\d+/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^\S.+\.$/);
     await expect(page.locator("[data-replay-chapter]:not([hidden]) [data-replay-phase]").first()).toBeVisible();
     await openCollection(page, "empty", 100);
     await page.getByRole("link", { name: "Избери игра", exact: true }).click();

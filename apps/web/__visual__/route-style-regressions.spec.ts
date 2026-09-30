@@ -61,9 +61,11 @@ for (const theme of ["light", "dark"]) {
             return marker && [...seat.querySelectorAll("[data-seat-vote-count], [class*=selectedMark]")]
               .some((counter) => overlaps(marker.parentElement!.getBoundingClientRect(), counter.getBoundingClientRect()));
           }).length,
+          // Selecting a nominee opens the vote sheet over the lower seats; it lists every nominee itself.
           hiddenCounts: seats.flatMap((seat) => [...seat.querySelectorAll("[data-seat-vote-count]")]).filter((count) => {
             const box = count.getBoundingClientRect();
             const hit = document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2);
+            if (hit?.closest("[data-play-command-surface]")) return false;
             return !hit || (hit !== count && !count.contains(hit));
           }).length,
           overflow: document.documentElement.scrollWidth > innerWidth,

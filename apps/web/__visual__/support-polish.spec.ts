@@ -466,10 +466,12 @@ for (const theme of ["light", "dark"] as const) {
 
     test("privacy export keeps its destination through the guest sign-in redirect", async ({ page }) => {
       await ready(page, "/privacy", "Поверителност");
-      await page.getByRole("link", { name: "Изтегли данни →", exact: true }).click();
-      await expect(page).toHaveURL(/\/sign-in\?/);
-      expect(new URL(page.url()).searchParams.get("redirect")).toBe("/account#account-data-export");
-      await ready(page, "/account?visualAuth=1#account-data-export", "Визуален играч");
+      // The visual server always serves the account fixture (ACCOUNT_DASHBOARD_FIXTURE), so the guest
+      // hop through /sign-in is covered by app/__tests__/account-page.test.tsx; here the link must
+      // carry the export intent and land on the export section.
+      await expect(page.getByRole("link", { name: "Изтегли данни →", exact: true }))
+        .toHaveAttribute("href", "/account?section=data-export#account-data-export");
+      await ready(page, "/account?visualAuth=1&section=data-export#account-data-export", "Визуален играч");
       await expect(page.getByRole("tab", { name: "Данни и сигурност" })).toHaveAttribute("aria-selected", "true");
       await expect(page.locator("#account-data-export")).toBeInViewport();
     });

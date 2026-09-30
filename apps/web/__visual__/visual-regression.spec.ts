@@ -291,7 +291,7 @@ test("@geometry desktop role cards never overlap between workspace rows", async 
 });
 
 for (const theme of ["dark", "light"] as const) {
-  test(`@geometry play command stays beside the table and role toggles inline ${theme}`, async ({ page }) => {
+  test(`@geometry play command sits under the table beside the inline role ${theme}`, async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await setVisualTheme(page, theme);
     await installNextDevIndicatorGuard(page);
@@ -301,8 +301,9 @@ for (const theme of ["dark", "light"] as const) {
     await waitForStablePlayStage(page);
     await hideNextDevIndicator(page);
 
+    // The table spans the room; the console band below holds role, command and conversation.
     const primary = page.getByRole("group", { name: "Текущо действие" });
-    const personal = page.locator(".play-primary-column > .play-personal-area");
+    const personal = page.locator(".play-console-band > .play-personal-area");
     const card = personal.locator(".role-card[data-private-dossier]");
     await expect(primary).toBeVisible();
     await expect(card).toBeVisible();
@@ -319,9 +320,10 @@ for (const theme of ["dark", "light"] as const) {
     const [primaryBox, stageBox] = await Promise.all([primary.boundingBox(), page.locator(".play-stage").boundingBox()]);
     expect(primaryBox).not.toBeNull();
     expect(stageBox).not.toBeNull();
-    expect(stageBox!.x + stageBox!.width).toBeLessThanOrEqual(primaryBox!.x + 1);
     const personalBox = (await personal.boundingBox())!;
+    expect(primaryBox!.y).toBeGreaterThanOrEqual(stageBox!.y + stageBox!.height - 1);
     expect(personalBox.y).toBeGreaterThanOrEqual(stageBox!.y + stageBox!.height - 1);
+    expect(personalBox.x + personalBox.width).toBeLessThanOrEqual(primaryBox!.x + 1);
     await personal.getByRole("button", { name: "Скрий ролята", exact: true }).click();
     await expect(personal).toBeVisible();
     await expect(page.locator("[data-private-dossier], .role-card-result, .play-private-conversation")).toHaveCount(0);
@@ -730,7 +732,7 @@ for (const viewport of VIEWPORTS) {
     await setVisualTheme(page, "dark");
     await page.goto("/report", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle").catch(() => {});
-    await page.getByRole("button", { name: "Напред →" }).click();
+    await page.getByRole("button", { name: "Напред", exact: true }).click();
     await expect(page.getByText("Код на стая и приблизителен час")).toBeVisible();
     await page.waitForTimeout(600);
     await expect(page).toHaveScreenshot(`${viewport.name}-report-details-abuse.png`, {
@@ -747,7 +749,7 @@ for (const viewport of VIEWPORTS) {
     await page.goto("/report", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle").catch(() => {});
     await page.getByText("Авторски права", { exact: true }).click();
-    await page.getByRole("button", { name: "Напред →" }).click();
+    await page.getByRole("button", { name: "Напред", exact: true }).click();
     await expect(page.getByText("Линк към материала и кой е автор")).toBeVisible();
     await page.waitForTimeout(600);
     await expect(page).toHaveScreenshot(`${viewport.name}-report-details-copyright.png`, {

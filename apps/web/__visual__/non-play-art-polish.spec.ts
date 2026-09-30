@@ -121,9 +121,14 @@ for (const theme of ["dark", "light"] as const) {
             await card.click();
             await expect(card).toHaveAttribute("aria-pressed", "true");
             await expect(page.locator('.phase-node[aria-pressed="true"]')).toHaveCount(1);
-            await expect(detail.getByRole("heading", { level: 3 })).toHaveText(label);
-            // The short description now belongs to the selected phase's reading panel.
-            await expectTextContrast(page, detail.locator(".section-kicker"), 4.5);
+            // The heading leads with the phase name; a flavor line may follow it ("Нощ Сделките започват").
+            const escaped = label.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            await expect(detail.getByRole("heading", { level: 3 })).toHaveText(new RegExp(`^${escaped}(\\s|$)`));
+            // The short description belongs to the selected phase's reading panel; a phase shows either
+            // its step kicker or a flavor line inside the heading.
+            for (const accent of [detail.locator(".section-kicker"), detail.locator(".phase-detail-flavor")]) {
+              if (await accent.count()) await expectTextContrast(page, accent, 4.5);
+            }
             await expectTextContrast(page, detail.locator(".phase-detail-panel__lead > p:not(.section-kicker)"), 4.5);
           }
           await cards.last().click();
@@ -153,7 +158,9 @@ for (const theme of ["dark", "light"] as const) {
           const artBox = (await artWindow.boundingBox())!;
           const stageBox = (await stage.boundingBox())!;
           expect(artBox.width).toBeCloseTo(stageBox.width, 0);
-          expect(artBox.height).toBe(width === 390 ? 228 : 360);
+          // Opening and closing scenes keep a tall art window; the lesson scenes give copy the room.
+          const heroScene = ["setup", "final"].includes((await stage.getAttribute("data-tutorial-scene")) ?? "");
+          expect(artBox.height).toBe(width === 390 ? (heroScene ? 120 : 96) : (heroScene ? 250 : 130));
           expect(artBox.height).toBeLessThan(stageBox.height);
           const contentFits = await stage.evaluate((element) => {
             const stage = element.getBoundingClientRect();
@@ -168,12 +175,11 @@ for (const theme of ["dark", "light"] as const) {
           expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
           if (step < 6) await page.getByRole("button", { name: "Следваща сцена" }).click();
         }
-        const choices = stage.getByRole("group", { name: "Избери игра", exact: true });
-        await expect(choices.getByRole("link")).toHaveCount(2);
-        await expect(choices.getByRole("link", { name: /Започни Върколак/ })).toBeVisible();
-        await expect(choices.getByRole("link", { name: /Започни Върколак/ })).toHaveAttribute("href", "/werewolf/create");
-        await expect(choices.getByRole("link", { name: /Започни Мафия/ })).toBeVisible();
-        await expect(choices.getByRole("link", { name: /Започни Мафия/ })).toHaveAttribute("href", "/mafia/create");
+        // The final scene hands off to the chosen game (Върколак by default): join with a code or create.
+        await expect(stage.getByRole("link", { name: /Имам код/ })).toBeVisible();
+        await expect(stage.getByRole("link", { name: /Имам код/ })).toHaveAttribute("href", "/werewolf/join");
+        await expect(stage.getByRole("link", { name: /Създай стая/ })).toBeVisible();
+        await expect(stage.getByRole("link", { name: /Създай стая/ })).toHaveAttribute("href", "/werewolf/create");
         await expect(page.locator(".tutorial-nav").getByRole("link")).toHaveCount(0);
         expect(errors).toEqual([]);
       });
