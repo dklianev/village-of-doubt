@@ -705,9 +705,20 @@ async function startReadyGame(host) {
   await host.locator("main.play-shell[data-phase='role_reveal']").waitFor({ state: "visible", timeout: 15_000 });
 }
 
+async function putDealtCardAway(page) {
+  // The deal is a modal moment on every phone: turn the card, then put it away to reach the table.
+  await page.getByRole("dialog", { name: "Твоята тайна карта", exact: true })
+    .getByRole("button", { name: "Обърни картата", exact: true })
+    .click({ timeout: 15_000 });
+  const done = page.getByRole("button", { name: "Запомних", exact: true });
+  await done.click({ timeout: 15_000 });
+  await done.waitFor({ state: "detached", timeout: 15_000 });
+}
+
 async function holdFirstGamePhase(pages, phase) {
   const selector = `main.play-shell[data-phase="${phase}"]`;
   await pages[0].locator(selector).waitFor({ state: "visible", timeout: 15_000 });
+  if (phase === "role_reveal") await Promise.all(pages.map(putDealtCardAway));
   // Use the real host control to keep assertions independent of short phase timers.
   await pages[0].getByRole("button", { name: "+180 сек.", exact: true }).click();
   await Promise.all(pages.map((page) => page.locator(selector).waitFor({ state: "visible", timeout: 15_000 })));
