@@ -482,7 +482,7 @@ test("bounded phase advancement uses the host control and rejects unrelated phas
   }
 });
 
-test("phase assertions extend the real host timer before waiting for every client", async () => {
+test("phase assertions put every dealt card away, then extend the real host timer before waiting for every client", async () => {
   const events = [];
   const pages = Array.from({ length: 6 }, (_, index) => ({
     locator: (selector) => ({ waitFor: async () => {
@@ -494,8 +494,9 @@ test("phase assertions extend the real host timer before waiting for every clien
       events.push(name);
     } }),
   }));
-  await loadFunction("holdFirstGamePhase")(pages, "role_reveal");
-  assert.deepEqual(events, [0, "+180 сек.", 0, 1, 2, 3, 4, 5]);
+  const putDealtCardAway = async (page) => { events.push(`card:${pages.indexOf(page)}`); };
+  await loadFunction("holdFirstGamePhase", { putDealtCardAway })(pages, "role_reveal");
+  assert.deepEqual(events, [0, "card:0", "card:1", "card:2", "card:3", "card:4", "card:5", "+180 сек.", 0, 1, 2, 3, 4, 5]);
 });
 
 test("private-role assertions require one viewer card from the selected family", async () => {
