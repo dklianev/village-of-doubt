@@ -147,4 +147,16 @@ describe("explicit narration previews", () => {
     expect(status).toHaveBeenLastCalledWith("unavailable");
     expect(mocks.load).toHaveBeenCalledTimes(1);
   });
+
+  it("resumes an interrupted context synchronously on the next preview gesture", async () => {
+    const { preview, status } = setup();
+    await preview.play("classic", "preview.night");
+    contexts[0]!.state = "interrupted";
+    contexts[0]!.resume.mockClear();
+    const next = preview.play("witch", "preview.night");
+    expect(contexts[0]!.resume).toHaveBeenCalledOnce();
+    await next;
+    expect(players[0]!.play).toHaveBeenCalledTimes(2);
+    expect(status).toHaveBeenLastCalledWith("playing");
+  });
 });

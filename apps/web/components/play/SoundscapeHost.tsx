@@ -45,7 +45,10 @@ export function SoundscapeHost({
     });
   }, [silent, room, snapshot]);
 
-  useEffect(() => () => setSoundScene(null), []);
+  useEffect(() => () => {
+    seenEvents.current = null;
+    setSoundScene(null);
+  }, []);
 
   // Events already present when the table mounts (join, reconnect) are history, not news.
   useEffect(() => {

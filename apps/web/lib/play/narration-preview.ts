@@ -65,7 +65,7 @@ export function createNarrationPreview(onStatus: (status: NarrationPreviewStatus
       const Constructor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
       if (!Constructor) { notify("unavailable"); return; }
       context ??= new Constructor();
-      const resumed = context.state === "suspended" ? context.resume() : Promise.resolve();
+      const resumed = context.state !== "closed" ? context.resume() : Promise.resolve();
       // Attach a rejection handler before waiting on the lazy modules.
       const resumeResult = resumed.then(() => true, () => false);
       stopCurrentPreview = stop;

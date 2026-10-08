@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { Activity } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NARRATOR_VOICES, NARRATOR_VOICE_LABELS_BG } from "@werewolf/shared";
 import { setSoundEnabled } from "@/lib/sound";
@@ -46,5 +47,32 @@ describe("phase signal narrator preview", () => {
     rerender(<LiveCuePanel {...props} narratorVoice="classic" liveMode />);
     expect(screen.getByRole("button", { name: /Прослушай гласа/ })).toBeDisabled();
     expect(audio.create).not.toHaveBeenCalled();
+  });
+
+  it("disposes the selected preview on voice switch and requires another gesture", async () => {
+    const { rerender, unmount } = render(<LiveCuePanel {...props} narratorVoice="classic" />);
+    fireEvent.click(screen.getByRole("button", { name: /Сигнали/ }));
+    fireEvent.click(await screen.findByRole("button", { name: /Прослушай гласа/ }));
+    rerender(<LiveCuePanel {...props} narratorVoice="witch_moonglow" />);
+    expect(audio.dispose).toHaveBeenCalledOnce();
+    expect(audio.play).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole("button", { name: /Прослушай гласа/ }));
+    expect(audio.play).toHaveBeenLastCalledWith("witch_moonglow", "preview.night");
+    unmount();
+    expect(audio.dispose).toHaveBeenCalledTimes(2);
+  });
+
+  it("disposes on Activity hide without autoplay when the table returns", async () => {
+    const table = (mode: "visible" | "hidden") => (
+      <Activity mode={mode}><LiveCuePanel {...props} narratorVoice="classic" /></Activity>
+    );
+    const { rerender } = render(table("visible"));
+    fireEvent.click(screen.getByRole("button", { name: /Сигнали/ }));
+    fireEvent.click(await screen.findByRole("button", { name: /Прослушай гласа/ }));
+    rerender(table("hidden"));
+    expect(audio.dispose).toHaveBeenCalledOnce();
+    rerender(table("visible"));
+    expect(audio.play).toHaveBeenCalledTimes(1);
+    expect(audio.create).toHaveBeenCalledTimes(1);
   });
 });

@@ -1,4 +1,5 @@
 import { render } from "@testing-library/react";
+import { Activity } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { PublicEvent, PublicPlayer } from "@/lib/play/types";
 import { playSoundStinger, setSoundScene } from "@/lib/play/soundscape-bridge";
@@ -53,6 +54,20 @@ describe("SoundscapeHost", () => {
     rerender(<SoundscapeHost {...base} snapshot={withEvents(death("offline"), death("history"))} />);
     expect(playSoundStinger).not.toHaveBeenCalled();
     expect(setSoundScene).toHaveBeenLastCalledWith(expect.objectContaining({ narration: expect.objectContaining({ gameId: "instance-a" }) }));
+  });
+
+  it("baselines deaths accumulated while Activity was hidden, then plays only fresh events", () => {
+    const table = (mode: "visible" | "hidden", events: PublicEvent[]) => (
+      <Activity mode={mode}><SoundscapeHost {...base} snapshot={withEvents(...events)} /></Activity>
+    );
+    const { rerender } = render(table("visible", []));
+    rerender(table("hidden", []));
+    expect(setSoundScene).toHaveBeenLastCalledWith(null);
+    rerender(table("hidden", [death("history")]));
+    rerender(table("visible", [death("history")]));
+    expect(playSoundStinger).not.toHaveBeenCalled();
+    rerender(table("visible", [death("history"), death("fresh")]));
+    expect(playSoundStinger).toHaveBeenCalledExactlyOnceWith("death");
   });
 
   it("does not confuse another room's history with fresh deaths", () => {
