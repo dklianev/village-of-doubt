@@ -6,6 +6,7 @@ import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { chromium, firefox, webkit } from "playwright";
 import { assertFrontendCssNavigation } from "./frontend-css-navigation.mjs";
+import { assertInteractiveTouchTargets } from "./frontend-touch-targets.mjs";
 import { installNarrationProbe, enableNarrationProbe, assertNarratedPhase, assertNarrationSilent } from "./frontend-narration-probe.mjs";
 import { runPlayPerformance } from "./frontend-play-performance.mjs";
 
@@ -1427,34 +1428,6 @@ async function assertNoOverlap(page, selectorA, selectorB, label) {
   }
   if (result.area > 1) {
     throw new Error(`${label} overlap detected (${result.area}px):\n${JSON.stringify(result, null, 2)}`);
-  }
-}
-
-async function assertInteractiveTouchTargets(page, label) {
-  const failures = await page.evaluate(() => {
-    const selector = 'button, a, input, select, textarea, summary, [role="button"]';
-    return Array.from(document.querySelectorAll(selector))
-      .filter((element) => {
-        const style = window.getComputedStyle(element);
-        const rect = element.getBoundingClientRect();
-        const isolated = element.closest('[inert], [aria-hidden="true"]');
-        return !isolated && style.visibility !== "hidden" && style.display !== "none" && rect.width > 0 && rect.height > 0;
-      })
-      .map((element) => {
-        const rect = element.getBoundingClientRect();
-        return {
-          tag: element.tagName.toLowerCase(),
-          text: (element.textContent ?? element.getAttribute("aria-label") ?? "").trim().replace(/\s+/g, " ").slice(0, 80),
-          width: Math.round(rect.width),
-          height: Math.round(rect.height),
-        };
-      })
-      .filter((item) => item.width < 28 || item.height < 28)
-      .slice(0, 12);
-  });
-
-  if (failures.length > 0) {
-    throw new Error(`${label} has cramped interactive targets:\n${JSON.stringify(failures, null, 2)}`);
   }
 }
 

@@ -15,6 +15,7 @@ on:
       - "scripts/frontend-e2e.mjs"
       - "scripts/frontend-e2e-matrix.mjs"
       - "scripts/frontend-narration-probe*.mjs"
+      - "scripts/frontend-touch-targets*.mjs"
       - "scripts/lighthouse*.mjs"
       - "lighthouserc.cjs"
       - "patches/**"

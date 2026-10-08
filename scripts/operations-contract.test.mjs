@@ -274,6 +274,7 @@ test("CI partitions app visuals into four native shards while preserving play an
   assert.match(visualBlock, /if: startsWith\(matrix\.suite, 'app-'\)\r?\n +run: pnpm visual --shard=\$\{\{ matrix\.shard \}\}(?:\r?\n|$)/);
   assert.match(visualBlock, /if: startsWith\(matrix\.suite, 'play-'\)\r?\n +run: pnpm visual:matrix\r?\n +env:\r?\n +M35_SHARD_INDEX: \$\{\{ matrix\.shardIndex \}\}\r?\n +M35_SHARD_TOTAL: 4/);
   assert.match(visualBlock, /if: matrix\.suite == 'ui'\r?\n +run: pnpm visual:ui(?:\r?\n|$)/);
+  assert.match(visualBlock, /if: startsWith\(matrix\.suite, 'app-'\)\r?\n +run: pnpm exec playwright install firefox webkit(?:\r?\n|$)/);
   assert.match(visualBlock, /if: matrix\.suite != 'ui'/);
   assert.match(visualBlock, /fail-fast: false/);
   assert.match(visualBlock, /timeout-minutes: 50/);
