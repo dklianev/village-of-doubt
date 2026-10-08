@@ -272,6 +272,7 @@ test("all single, retry and six-player contexts install the synthetic transport 
       authFixture: { users: Array.from({ length: 6 }, (_, id) => ({ id })) },
       signInBrowserContext: async (context) => assert.equal(context.mocked, true),
       installGameSocketProbe: () => {},
+      installNarrationProbe: () => {},
       watchPage: () => ({}),
       createSixPlayerRoom: async () => new URL("http://127.0.0.1:3401/play/FIXTUR?players=6"),
       goto: async () => {}, expectText: async () => {}, waitForVisibleText: async () => {},
@@ -347,7 +348,28 @@ test("the six-client fixture uses the generated invitation and verifies every se
   assert.match(scenario, /data-voted="true"/);
   assert.match(scenario, /nextTarget\.id[\s\S]*data-selected="true"[\s\S]*Приет глас: \$\{target\.name\}/);
   assert.match(scenario, /reconnectFirstGameGuest\(pages, expectedUserIds, privateRoles\[5\], family, `Приет глас: \$\{target\.name\}`\)/);
+  assert.match(scenario, /await mobilePage\.reload\(\)[\s\S]*readPrivateRole\(mobilePage, family\)[\s\S]*Приет глас: \$\{target\.name\}/);
+  assert.match(scenario, /assertNarrationSilent\(mobilePage, 0\)/);
   assert.match(scenario, /finally \{\s*await Promise\.allSettled\(contexts\.map\(\(context\) => context\.close\(\)\)\)/);
+});
+
+test("night investigation uses the actor's own controls and waits for the server acknowledgement", async () => {
+  for (const family of ["werewolves", "mafia"]) {
+    const calls = [];
+    const page = {
+      locator: (selector) => ({ click: async () => calls.push(selector) }),
+      getByRole: (role, options) => ({ click: async () => calls.push(options.name) }),
+    };
+    const submit = loadFunction("submitFirstInvestigation", {
+      authFixture: { users: [{ id: "actor" }, { id: "target" }] },
+      expectText: async (actual, text) => { assert.equal(actual, page); calls.push(text); },
+    });
+    const roles = family === "mafia" ? ["Комисар", "Мафиот"] : ["Гадателка", "Върколак"];
+    assert.equal(await submit([page, {}], roles.map(role => `Тайна роля: ${role}`), family), 0);
+    assert.deepEqual(calls, ['button[data-seat-user-id="target"]',
+      family === "mafia" ? "Провери дали е от Мафията" : "Провери заплахата", "Нощното действие е прието."]);
+    await assert.rejects(submit([page], ["Тайна роля: непозната"], family), /no longer matches/);
+  }
 });
 
 test("postgame browser coverage follows a persisted result before replay and opens a fresh room", () => {
@@ -362,6 +384,7 @@ test("postgame browser coverage follows a persisted result before replay and ope
   assert.ok(persistence > 0 && navigation > persistence);
   assert.match(finish, /Пълен запис/);
   assert.match(finish, /Към развръзката/);
+  assert.match(finish, /await replayPage\.goBack\(\)[\s\S]*main\[data-phase='game_over'\]/);
   assert.match(finish, /await repeat\.click\(\)/);
   assert.match(finish, /assertSixPlayerRoster\(\[host\], \[authFixture\.users\[0\]\.id\]\)/);
   assert.match(finish, /data-endgame\], \[data-private-dossier/);
@@ -467,6 +490,7 @@ test("bounded phase advancement uses the host control and rejects unrelated phas
     const events = [];
     const advance = loadFunction("advanceFirstGamePhase", {
       holdFirstGamePhase: async (_pages, phase) => events.push(phase),
+      assertNarratedPhase: async () => {},
     });
     const host = {
       locator: () => ({ getAttribute: async () => current }),
