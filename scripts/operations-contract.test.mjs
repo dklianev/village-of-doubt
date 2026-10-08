@@ -300,6 +300,19 @@ test("release images wait for the cross-browser quality workflow", () => {
   assert.match(release, /^    needs: \[verify, browser-quality\]$/m);
 });
 
+test("Linux browser QA provides a native audio output before verifying narration", () => {
+  const workflow = read(".github/workflows/browser-quality.yml");
+  const audioStart = workflow.indexOf("- name: Start native audio output");
+  const matrixStart = workflow.indexOf("- name: Run production-build browser matrix");
+  assert.ok(audioStart >= 0 && matrixStart > audioStart);
+  const audioSetup = workflow.slice(audioStart, matrixStart);
+  assert.match(audioSetup, /pulseaudio --start --exit-idle-time=-1/);
+  assert.match(audioSetup, /pactl load-module module-null-sink sink_name=ci_output/);
+  assert.match(audioSetup, /pactl set-default-sink ci_output/);
+  assert.doesNotMatch(audioSetup, /continue-on-error|\|\| true/);
+  assert.ok(workflow.includes('"scripts/frontend-narration-probe*.mjs"'));
+});
+
 test("roles browser QA opens a fresh mobile document instead of reloading WebKit", () => {
   const frontendE2e = read("scripts/frontend-e2e.mjs");
   const start = frontendE2e.indexOf("async function testRolesCodex()");

@@ -49,7 +49,7 @@ for (const [index, scenario] of GATE_SCENARIOS.entries()) {
   test(`@play-gate geometry ${scenario.family} ${scenario.phase} ${scenario.players}`, async ({ page }) => {
     const viewport = MATRIX_VIEWPORTS[index % MATRIX_VIEWPORTS.length]!;
     await openFixture(page, scenario, index % 2 === 0 ? "dark" : "light", viewport);
-    await expectGeometry(page);
+    await expectGeometry(page, scenario.phase);
   });
 }
 
@@ -142,7 +142,7 @@ for (const [countIndex, players] of BOUNDARY_COUNTS.entries()) {
         test(`@play-matrix ${players} ${phase} ${family} ${theme}`, async ({ page }) => {
           const viewport = MATRIX_VIEWPORTS[caseIndex % MATRIX_VIEWPORTS.length]!;
           await openFixture(page, { phase, family, players }, theme, viewport);
-          await expectGeometry(page);
+          await expectGeometry(page, phase);
         });
       }
     }
@@ -534,9 +534,11 @@ async function waitForStableStage(page: Page) {
   }, undefined, { timeout: 30_000, polling: 16 });
 }
 
-async function expectGeometry(page: Page) {
+async function expectGeometry(page: Page, phase?: string) {
   const conclusion = page.locator("[data-endgame]");
-  if (await conclusion.count()) {
+  // Hydration can replace the finale subtree between checks; the requested phase is stable.
+  if (phase === "game_over") {
+    await expect(conclusion).toBeVisible();
     await expect(page.locator(".play-stage, .play-action-dock, .play-primary-column")).toHaveCount(0);
     await expect(conclusion.getByRole("heading", { level: 1 })).toBeVisible();
     await expect(conclusion.locator('section[aria-labelledby="conclusion-heading"]').getByRole("link")).toHaveCount(2);
