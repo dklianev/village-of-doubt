@@ -406,12 +406,12 @@ export function useGameRoom({
 
       onMessage("private_check_result", (message: PrivateResult) => {
         setPrivateResult(message);
-        if (!needsRecovery) toast({ message: "Получен е личен резултат от нощното действие.", kind: "info" });
+        if (!needsRecovery && !privateSync) toast({ message: "Получен е личен резултат от нощното действие.", kind: "info" });
       });
 
       onMessage("private_lovers", (message: PrivateLover) => {
         setPrivateLover(message);
-        if (!needsRecovery) toast({ message: "Купидон те свърза с Влюбен.", kind: "success" });
+        if (!needsRecovery && !privateSync) toast({ message: "Купидон те свърза с Влюбен.", kind: "success" });
       });
 
       onMessage("private_faction_roster", (message: PrivateFactionRoster) => {
@@ -444,7 +444,7 @@ export function useGameRoom({
 
       onMessage("private_blessing", () => {
         setIsBlessed(true);
-        if (!needsRecovery) toast({ message: "Свещеникът те благослови. Благословията остава върху теб до края на играта.", kind: "success" });
+        if (!needsRecovery && !privateSync) toast({ message: "Свещеникът те благослови. Благословията остава върху теб до края на играта.", kind: "success" });
       });
 
       onMessage("system", (message: { messageBg: string }) => {
@@ -480,7 +480,7 @@ export function useGameRoom({
 
       onMessage("narrator_role_snapshot", (message: NarratorRoleSnapshot) => {
         setNarratorSnapshot(message);
-        if (!needsRecovery) toast({ message: "Получен е пълен преглед за Разказвача.", kind: "info" });
+        if (!needsRecovery && !privateSync) toast({ message: "Получен е пълен преглед за Разказвача.", kind: "info" });
       });
 
       let rejectedNameMessage: string | null = null;

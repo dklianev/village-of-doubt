@@ -873,6 +873,29 @@ describe("useGameRoom", () => {
     });
   });
 
+  it("restores private data silently on a fresh page and still announces new live results", async () => {
+    mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
+    const { client, joinRoom } = createClient();
+    mocks.createGameClient.mockReturnValue(client);
+    const toast = vi.fn();
+    const restoredResult = { targetUserId: "u2", isEvil: true };
+    joinRoom.request.mockImplementation(async () => {
+      joinRoom.emitMessage("private_check_result", restoredResult);
+      joinRoom.emitMessage("private_lovers", { loverUserId: "u2", loverName: "Борис" });
+      joinRoom.emitMessage("private_blessing", { targetUserId: "u1", targetName: "Рада" });
+      joinRoom.emitMessage("narrator_role_snapshot", { roles: [] });
+      return { synchronized: true };
+    });
+    const { result } = renderHook(() => useGameRoom({ code: "ABCD", createOptions: undefined, toast }));
+    await waitFor(() => expect(result.current.privateResult).toEqual(restoredResult));
+    expect(result.current.privateLover?.loverUserId).toBe("u2");
+    expect(result.current.isBlessed).toBe(true);
+    expect(result.current.narratorSnapshot).toEqual({ roles: [] });
+    expect(toast).not.toHaveBeenCalled();
+    act(() => joinRoom.emitMessage("private_check_result", { targetUserId: "u3", isEvil: false }));
+    expect(toast).toHaveBeenCalledExactlyOnceWith({ message: "Получен е личен резултат от нощното действие.", kind: "info" });
+  });
+
   it("reconnects with the persisted token without announcing restored private data as new", async () => {
     mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
     const { client, joinRoom, reconnectRoom } = createClient();

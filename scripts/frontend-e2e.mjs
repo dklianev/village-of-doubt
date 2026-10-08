@@ -703,6 +703,9 @@ async function finishFirstGameAndReplay(pages, privateRoles, family, roomUrl) {
   await replayPage.locator("main[data-phase='game_over']").waitFor({ state: "visible" });
   await replayPage.locator(`[data-endgame="${family === "mafia" ? "town" : "village"}"]`).waitFor({ state: "visible" });
   await replayPage.getByRole("link", { name: "Виж записа", exact: true }).waitFor({ state: "visible" });
+  if (await replayPage.getByText("Получен е личен резултат от нощното действие.", { exact: true }).count()) {
+    throw new Error("Returning from replay announced a retained investigation as a new action.");
+  }
   await prepareFinaleScreenshot(replayPage);
   await screenshot(replayPage, `six-client-${family}-back-to-game.png`);
 
@@ -1629,7 +1632,7 @@ async function scrollThroughPage(page) {
 }
 
 async function screenshot(page, fileName) {
-  await page.screenshot({ path: join(artifactDir, fileName), fullPage: true });
+  await page.screenshot({ path: join(artifactDir, fileName), fullPage: true, animations: "disabled" });
 }
 
 function ensureWebStandaloneAssets() {
