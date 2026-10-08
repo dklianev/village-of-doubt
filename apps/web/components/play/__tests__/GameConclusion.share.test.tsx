@@ -26,12 +26,17 @@ const snapshot: GameSnapshot = {
 };
 
 let observed: ((entries: Array<{ isIntersecting: boolean }>) => void) | null = null;
+let observationOptions: IntersectionObserverInit | undefined;
 
 describe("GameConclusion sharing and reveal", () => {
   beforeEach(() => {
     observed = null;
+    observationOptions = undefined;
     vi.stubGlobal("IntersectionObserver", class {
-      constructor(callback: (entries: Array<{ isIntersecting: boolean }>) => void) { observed = callback; }
+      constructor(callback: (entries: Array<{ isIntersecting: boolean }>) => void, options?: IntersectionObserverInit) {
+        observed = callback;
+        observationOptions = options;
+      }
       observe() {}
       disconnect() {}
     });
@@ -59,6 +64,10 @@ describe("GameConclusion sharing and reveal", () => {
     const { container } = render(<GameConclusion snapshot={snapshot} recordedGameId={null} currentUserId="one" />);
     const roster = container.querySelector('[aria-labelledby="conclusion-roles"]')!;
     // Face down from the first paint, so cards already on screen never flash before turning.
+    expect(roster).toHaveAttribute("data-reveal", "waiting");
+    // No minimum visible percentage: a 30-player list can be taller than five viewports.
+    expect(observationOptions?.threshold).toBe(0);
+    act(() => observed?.([{ isIntersecting: false }]));
     expect(roster).toHaveAttribute("data-reveal", "waiting");
 
     act(() => observed?.([{ isIntersecting: true }]));

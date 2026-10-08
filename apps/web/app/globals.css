@@ -2697,15 +2697,16 @@ body:has(.site-chrome[data-room="true"]) [data-cookie-banner] .btn {
   }
 
   /* ...and an opened dock is a sheet of its own: the notice waits until it closes. */
-  body:has([data-play-command-surface][data-expanded="true"]) [data-cookie-banner] {
+  body:has(.site-chrome[data-room="true"]):has([data-play-command-surface][data-expanded="true"]) [data-cookie-banner] {
     visibility: hidden;
   }
 }
 
 @media (max-width: 760px) {
   body:has(.site-chrome[data-room="true"]) [data-cookie-banner] {
-    right: 12px;
-    left: 12px;
+    right: max(12px, env(safe-area-inset-right));
+    left: max(12px, env(safe-area-inset-left));
+    width: auto;
     max-width: none;
   }
 

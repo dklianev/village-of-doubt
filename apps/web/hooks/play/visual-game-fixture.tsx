@@ -322,7 +322,7 @@ export function parseVisualGameFixture(
     publicChat: buildPublicChat(parsed.family),
   };
   snapshot.publicEvents = buildPublicEvents(snapshot);
-  snapshot.nextRoomOptions = createRoomOptionsFromConfig({
+  snapshot.nextRoomOptionsJson = JSON.stringify(createRoomOptionsFromConfig({
     ...createDefaultGameConfig(parsed.mode, parsed.mode === "mafia_sport" ? 10
       : parsed.mode === "mafia_free" ? Math.min(24, Math.max(4, snapshot.playerCount))
         : Math.max(6, snapshot.playerCount)),
@@ -337,7 +337,7 @@ export function parseVisualGameFixture(
     revealRolesOnDeath,
     doctorCanSelfProtect: parsed.doctorCanSelfProtect,
     allowSkipVote: snapshot.allowSkipVote,
-  });
+  }));
 
   const viewerRole = parsed.viewer === "narrator" || parsed.viewer === "spectator" ? null : assignedRoles[0] ?? parsed.role;
   return {

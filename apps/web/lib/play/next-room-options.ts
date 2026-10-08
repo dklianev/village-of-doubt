@@ -4,6 +4,15 @@ import {
   type CreateRoomOptions,
   type RepeatRoomSettingsState,
 } from "@werewolf/shared";
+import type { GameSnapshot } from "./types";
+
+export type PostGameSnapshot = GameSnapshot & { nextRoomOptions?: CreateRoomOptions };
+
+// Keep setup normalization in the deferred finale, away from live room updates.
+export function withNextRoomOptions(snapshot: GameSnapshot): PostGameSnapshot {
+  const nextRoomOptions = nextRoomOptionsForState(snapshot);
+  return nextRoomOptions ? { ...snapshot, nextRoomOptions } : snapshot;
+}
 
 export function nextRoomOptionsForState(
   state: RepeatRoomSettingsState,

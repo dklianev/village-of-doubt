@@ -27,16 +27,18 @@ beforeAll(async () => {
     (async () => {
       const filename = resolve('app/globals.css');
       const globals = await postcss([tailwind()]).process(readFileSync(filename, 'utf8'), { from: filename });
+      const { outputFiles } = buildSync(config);
       const modules = ['components/lobby/LegacyCreate.module.css', 'components/ManualRoleBuilder.module.css'];
       const css = globals.css + modules.map(filename => transform({
         filename, code: readFileSync(filename), cssModules: true,
-      }).code.toString()).join('');
-      process.stdout.write(JSON.stringify({ bundle: buildSync(config).outputFiles[0].text, css }));
+      }).code.toString()).join('') + outputFiles.filter(file => file.path.endsWith('.css')).map(file => file.text).join('');
+      process.stdout.write(JSON.stringify({ bundle: outputFiles.find(file => file.path.endsWith('.js')).text, css }));
     })().catch(error => { console.error(error); process.exitCode = 1; });
   `], {
     encoding: "utf8", maxBuffer: 20 * 1024 * 1024,
     input: JSON.stringify({
       absWorkingDir: process.cwd(), bundle: true, write: false, platform: "browser", format: "iife",
+      outfile: "fixture.js",
       alias: { "@": process.cwd(), "next/image": resolve(process.cwd(), "components/__tests__/fixtures/NextImage.tsx") },
       jsx: "automatic", define: { "process.env.NODE_ENV": '"production"', "process.env": "{}" },
       stdin: { resolveDir: process.cwd(), loader: "tsx", contents: `

@@ -6,6 +6,9 @@ import { ResourceHints } from "@/components/resource-hints";
 import { FAQ_DATA, flattenAnswerForSchema } from "@/lib/faq-data";
 import { absoluteUrl, routeMetadata } from "@/lib/seo";
 
+export const prefetch = "partial";
+export const ensureStatic = "navigation";
+
 export const metadata: Metadata = routeMetadata({
   title: "Помощ",
   description: "Отговори за първата игра, досието и връзката. Намери помощ за Върколак и Мафия в Сенките.",

@@ -1,5 +1,7 @@
 import { getRoleNameBg, isRoleAvailableInFamily, ROLE_DEFINITIONS, type RoleCode } from "./roles.js";
 import { getGameFamily, getGameModeNameBg } from "./game-metadata.js";
+import { NARRATOR_VOICES, type NarratorVoice } from "./narrator-voices.js";
+export { NARRATOR_VOICES, NARRATOR_VOICE_PROFILES, getNarratorArchetype, type NarratorVoice, type NarratorArchetype } from "./narrator-voices.js";
 
 export {
   GAME_MODE_DEFINITIONS,
@@ -30,7 +32,6 @@ export type MajorityMode = "simple" | "absolute";
 export type WerewolfVariant = "werewolves_vs_village" | "vampires_vs_village" | "three_teams";
 export type MayorMode = "secret_role" | "public_vote";
 export type CommissionerResultMode = "team_only" | "exact_role";
-export type NarratorVoice = "classic" | "old_villager" | "inspector" | "witch";
 
 export type RoleDistribution = Partial<Record<RoleCode, number>>;
 
@@ -288,7 +289,6 @@ const MAJORITY_MODES = ["simple", "absolute"] as const satisfies readonly Majori
 const WEREWOLF_VARIANTS = ["werewolves_vs_village", "vampires_vs_village", "three_teams"] as const satisfies readonly WerewolfVariant[];
 const MAYOR_MODES = ["secret_role", "public_vote"] as const satisfies readonly MayorMode[];
 const COMMISSIONER_RESULT_MODES = ["team_only", "exact_role"] as const satisfies readonly CommissionerResultMode[];
-const NARRATOR_VOICES = ["classic", "old_villager", "inspector", "witch"] as const satisfies readonly NarratorVoice[];
 const STRING_GAME_CONFIG_OPTIONS: readonly [keyof GameConfigOptions, readonly string[], string][] = [
   ["mode", GAME_MODES, "Невалиден режим на игра."],
   ["roomVisibility", ROOM_VISIBILITIES, "Невалидна видимост на стаята."],

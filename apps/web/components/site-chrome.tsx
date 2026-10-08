@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, Menu, Moon, Play, Sun, Volume2, VolumeX } from "lucide-react";
@@ -8,12 +8,12 @@ import { AuthChip } from "@/components/site-chrome/AuthChip";
 import { BrandLogo } from "@/components/site-chrome/BrandLogo";
 import { NavigationFallback } from "@/components/site-chrome/NavigationFallback";
 import { useNavigationPanels } from "@/components/site-chrome/use-navigation-panels";
+import { createThemeTransition, type ThemePreference } from "@/components/site-chrome/theme-transition";
 import { getSoundEnabled, playCue, setSoundEnabled, SOUND_CHANGE_EVENT } from "@/lib/sound";
 import { safeLocalStorage } from "@/lib/safe-storage";
 import type { AuthSessionView } from "@/lib/use-auth-session";
 import "@/components/site-chrome/SiteChrome.module.css";
 
-type ThemePreference = "light" | "dark";
 type Disclosure = "play" | "more";
 const THEME_STORAGE_KEY = "werewolf-theme";
 const transientButtonAttributes = { autoComplete: "off" } as const;
@@ -24,6 +24,8 @@ export default function SiteChrome({ initialSession }: { initialSession?: AuthSe
   const [interactive, setInteractive] = useState(false);
   const [soundEnabled, setSoundEnabledState] = useState(false);
   const [themePreference, setThemePreference] = useState<ThemePreference>("dark");
+  const themePreferenceRef = useRef<ThemePreference>("dark");
+  const [themeTransition] = useState(createThemeTransition);
   const [disclosure, setDisclosure] = useState<Disclosure | null>(null);
   const [drawer, setDrawer] = useState<"navigation" | "play" | null>(null);
   const [drawerMode, setDrawerMode] = useState<"navigation" | "play">("navigation");
@@ -44,9 +46,12 @@ export default function SiteChrome({ initialSession }: { initialSession?: AuthSe
       ? saved
       : document.documentElement.dataset.theme === "light" ? "light" : "dark";
     setThemePreference(theme);
-    applyThemePreference(theme);
+    themePreferenceRef.current = theme;
+    themeTransition.apply(theme);
     setInteractive(true);
-  }, []);
+  }, [themeTransition]);
+
+  useLayoutEffect(() => () => themeTransition.finish(), [pathname, themeTransition]);
 
   // A room's signal setting also switches sound; keep the header icon truthful when it does.
   useEffect(() => {
@@ -123,11 +128,12 @@ export default function SiteChrome({ initialSession }: { initialSession?: AuthSe
   }
 
   function toggleTheme() {
-    const next = themePreference === "dark" ? "light" : "dark";
+    const next = themePreferenceRef.current === "dark" ? "light" : "dark";
+    themePreferenceRef.current = next;
     safeLocalStorage.setItem(THEME_STORAGE_KEY, next);
     setThemePreference(next);
-    if ("startViewTransition" in document) document.startViewTransition(() => applyThemePreference(next));
-    else applyThemePreference(next);
+    // Document snapshots must not retain a room's private UI after it is hidden.
+    themeTransition.apply(next, !isRoom && !pathname.startsWith("/lobby/"));
   }
 
   const soundLabel = soundEnabled ? "Изключи звука" : "Включи звука";
@@ -236,11 +242,4 @@ function FamilyLink({ pathname, href, label }: { pathname: string; href: string;
   const active = pathname === href || pathname.startsWith(`${href}/`);
   return <Link className={active ? "site-family-link is-active" : "site-family-link"} href={href}
     aria-current={pathname === href ? "page" : active ? "location" : undefined}>{label}</Link>;
-}
-
-function applyThemePreference(preference: ThemePreference) {
-  if (document.documentElement.dataset.theme === preference) return;
-  document.documentElement.dataset.vt = "theme";
-  document.documentElement.dataset.theme = preference;
-  window.setTimeout(() => { delete document.documentElement.dataset.vt; }, 320);
 }

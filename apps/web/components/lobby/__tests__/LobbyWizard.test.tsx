@@ -16,9 +16,16 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => search,
 }));
 
-vi.mock("@/lib/sound", () => ({
+vi.mock("@/lib/sound", async (importOriginal) => ({
+  ...await importOriginal<typeof import("@/lib/sound")>(),
   playCue: vi.fn(),
 }));
+
+async function loadedCustomizationDialog() {
+  const dialog = screen.getByRole("dialog", { name: "Настрой детайлите" });
+  await waitFor(() => expect(within(dialog).getByRole("tabpanel")).toHaveAttribute("aria-busy", "false"));
+  return dialog;
+}
 
 describe("LobbyWizard", () => {
   beforeEach(() => {
@@ -196,7 +203,7 @@ describe("LobbyWizard", () => {
     expect(screen.getAllByRole("button", { name: "Отвори масата" })[0]).toBeEnabled();
 
     await user.click(screen.getByRole("button", { name: "Настрой детайлите" }));
-    const dialog = screen.getByRole("dialog", { name: "Настрой детайлите" });
+    const dialog = await loadedCustomizationDialog();
     await user.click(within(dialog).getByRole("tab", { name: "Правила и комуникация" }));
     await user.click(within(dialog).getByText("Покажи още настройки"));
 
@@ -226,7 +233,7 @@ describe("LobbyWizard", () => {
     const user = userEvent.setup();
     render(<LobbyWizard family="mafia" />);
     await user.click(screen.getByRole("button", { name: "Настрой детайлите" }));
-    const dialog = screen.getByRole("dialog", { name: "Настрой детайлите" });
+    const dialog = await loadedCustomizationDialog();
     await user.click(within(dialog).getByRole("tab", { name: "Правила и комуникация" }));
     await user.click(within(dialog).getByText("Покажи още настройки"));
     await user.click(within(dialog).getByRole("button", { name: "Премини към свободна Мафия" }));
@@ -264,7 +271,7 @@ describe("LobbyWizard", () => {
     render(<LobbyWizard family={family} />);
 
     await user.click(screen.getByRole("button", { name: "Настрой детайлите" }));
-    const dialog = screen.getByRole("dialog", { name: "Настрой детайлите" });
+    const dialog = await loadedCustomizationDialog();
     expect(within(dialog).queryByText(/запазват автоматично/)).not.toBeInTheDocument();
     expect(within(dialog).getByText(/текущата подготовка/)).toBeInTheDocument();
     await user.click(within(dialog).getByRole("tab", { name: "Име на стаята" }));
@@ -277,7 +284,7 @@ describe("LobbyWizard", () => {
     );
 
     await user.click(screen.getByRole("button", { name: "Настрой детайлите" }));
-    const reopened = screen.getByRole("dialog", { name: "Настрой детайлите" });
+    const reopened = await loadedCustomizationDialog();
     await user.click(within(reopened).getByRole("tab", { name: "Име на стаята" }));
     expect(within(reopened).getByRole("textbox", { name: "Име на стаята" })).toHaveValue("Нощ край огъня");
   });
@@ -290,14 +297,14 @@ describe("LobbyWizard", () => {
     const user = userEvent.setup();
     render(<LobbyWizard family={family} />);
     await user.click(screen.getByRole("button", { name: "Настрой детайлите" }));
-    const dialog = screen.getByRole("dialog", { name: "Настрой детайлите" });
+    const dialog = await loadedCustomizationDialog();
     await user.click(within(dialog).getByRole("tab", { name: "Ритъм и водене" }));
     const styles = within(dialog).getByRole("radiogroup", { name: "Стил на Разказвача" });
-    expect(within(styles).getByRole("radio", { name: /Вещицата/ })).toBeChecked();
+    expect(within(styles).getByRole("radio", { name: /Вещицата · Milena/ })).toBeChecked();
     expect(within(dialog).queryByText("Проба")).not.toBeInTheDocument();
     await user.click(within(styles).getByRole("radio", { name: /Инспекторът/ }));
     expect(within(styles).getByRole("radio", { name: /Инспекторът/ })).toBeChecked();
-    expect(within(styles).getByRole("radio", { name: /Вещицата/ })).not.toBeChecked();
+    expect(within(styles).getByRole("radio", { name: /Вещицата · Milena/ })).not.toBeChecked();
     expect(within(dialog).getByText(inspectorLine)).toBeInTheDocument();
     expect(playCue).not.toHaveBeenCalled();
     await user.click(within(dialog).getByRole("button", { name: "Готово" }));
@@ -312,7 +319,7 @@ describe("LobbyWizard", () => {
     render(<LobbyWizard family="werewolves" />);
 
     await user.click(screen.getByRole("button", { name: "Настрой детайлите" }));
-    const dialog = screen.getByRole("dialog", { name: "Настрой детайлите" });
+    const dialog = await loadedCustomizationDialog();
     await user.click(within(dialog).getByRole("tab", { name: "Ритъм и водене" }));
 
     expect(within(dialog).getByRole("button", { name: /Автоматичен/ })).toBeInTheDocument();
@@ -326,7 +333,7 @@ describe("LobbyWizard", () => {
     render(<LobbyWizard family="werewolves" />);
 
     await user.click(screen.getByRole("button", { name: "Настрой детайлите" }));
-    const dialog = screen.getByRole("dialog", { name: "Настрой детайлите" });
+    const dialog = await loadedCustomizationDialog();
     const gallery = within(dialog).getByRole("region", { name: "Избор на роли" });
 
     expect(dialog).toHaveAttribute("data-size", "workspace");
@@ -356,7 +363,7 @@ describe("LobbyWizard", () => {
     render(<LobbyWizard family="werewolves" />);
 
     await user.click(screen.getByRole("button", { name: "Настрой детайлите" }));
-    const dialog = screen.getByRole("dialog", { name: "Настрой детайлите" });
+    const dialog = await loadedCustomizationDialog();
     await user.click(within(dialog).getByRole("button", { name: "Настрой ръчно" }));
     await user.click(within(dialog).getByRole("button", { name: "Добави Лечител" }));
 
@@ -376,7 +383,7 @@ describe("LobbyWizard", () => {
     const user = userEvent.setup();
     render(<LobbyWizard family="werewolves" />);
     await user.click(screen.getByRole("button", { name: "Настрой детайлите" }));
-    const dialog = screen.getByRole("dialog", { name: "Настрой детайлите" });
+    const dialog = await loadedCustomizationDialog();
     const toggle = within(dialog).getByRole("button", { name: "Покажи състава" });
     expect(toggle).toHaveAttribute("aria-expanded", "false");
     await user.click(toggle);
@@ -393,7 +400,7 @@ describe("LobbyWizard", () => {
     render(<LobbyWizard family="werewolves" />);
 
     await user.click(screen.getByRole("button", { name: "Настрой детайлите" }));
-    const dialog = screen.getByRole("dialog", { name: "Настрой детайлите" });
+    const dialog = await loadedCustomizationDialog();
     await user.click(within(dialog).getByRole("button", { name: "Настрой ръчно" }));
     await user.click(within(dialog).getByRole("button", { name: "Добави Лечител" }));
     await user.click(within(dialog).getByRole("button", { name: "Готово" }));
@@ -409,6 +416,7 @@ describe("LobbyWizard", () => {
 
     await user.click(screen.getByRole("button", { name: "Настрой детайлите" }));
 
+    await loadedCustomizationDialog();
     expect(screen.getAllByText("Купидон").length).toBeGreaterThan(0);
     expect(screen.queryByText("Купидон и Влюбени")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Включено" })).not.toBeInTheDocument();
@@ -420,7 +428,7 @@ describe("LobbyWizard", () => {
     render(<LobbyWizard family="werewolves" />);
 
     await user.click(screen.getByRole("button", { name: "Настрой детайлите" }));
-    const dialog = screen.getByRole("dialog", { name: "Настрой детайлите" });
+    const dialog = await loadedCustomizationDialog();
     await user.click(within(dialog).getByRole("tab", { name: "Правила и комуникация" }));
     await user.click(within(dialog).getByText("Покажи още настройки"));
     await user.click(within(dialog).getByRole("checkbox", { name: "Добави Шут с лична победа" }));

@@ -1,17 +1,20 @@
 /**
  * The table soundscape: procedural ambience, stingers and an optional Bulgarian narrator voice.
- * Everything is synthesised with Web Audio (no audio assets), loaded lazily through
+ * Procedural ambience and reviewed local narration are loaded lazily through
  * soundscape-bridge only while sound is enabled, and never used for live tables, where any
  * sound could reveal who is acting at night. It plays public phase information only.
  */
 import { getGameFamily, type GameFamily, type GameMode, type GamePhase, type NarratorVoice } from "@werewolf/shared";
 import { getSoundEnabled, SOUND_CHANGE_EVENT } from "@/lib/sound";
-import { phaseNarratorLine } from "@/lib/play/phase-display";
+import { createNarrationPlayer } from "./narration-player";
+import { loadNarrationClip } from "./narration-assets";
+import { createNarrationCueTracker, narrationOccurrence, selectNarrationCues, type NarrationSceneContext } from "./narration-cues";
 
 export interface SoundScene {
   mode: GameMode;
   phase: GamePhase;
   narratorVoice: NarratorVoice;
+  narration?: NarrationSceneContext;
 }
 
 type Mood = "village-night" | "village-day" | "city-night" | "city-day" | "vote" | "reveal" | "resolution";
@@ -32,18 +35,29 @@ let active: Bed | null = null;
 let lastScene: SoundScene | null = null;
 let listenersBound = false;
 const noiseCache = new Map<NoiseColor, AudioBuffer>();
+const transients = new Set<AudioScheduledSourceNode>();
+const narrationTracker = createNarrationCueTracker();
 
 export function enterPhase(scene: SoundScene) {
   const previous = lastScene;
   lastScene = scene;
-  if (!getSoundEnabled()) {
+  if (typeof window === "undefined") return;
+  bindListeners();
+  const sameOccurrence = previous && narrationOccurrence(previous) === narrationOccurrence(scene)
+    && previous.phase === scene.phase && previous.mode === scene.mode && previous.narratorVoice === scene.narratorVoice;
+  if (!sameOccurrence) cancelNarration();
+  if (scene.phase === "game_over" && narrationRequest
+    && selectNarrationCues(scene).join("|") !== narrationRequest.cues.join("|")) cancelNarration();
+  if (!getSoundEnabled() || document.hidden) {
+    narrationTracker.update(scene, false);
     fadeOut(1.2);
     return;
   }
 
   const audio = ensureContext();
-  if (!audio) return;
-  void audio.resume().catch(() => undefined);
+  if (!audio) { narrationTracker.update(scene, false); return; }
+  // Queue behind a pending suspend even if state still reads running; interrupted contexts also need recovery.
+  if (audio.state !== "closed") void audio.resume().catch(() => undefined);
 
   const family = getGameFamily(scene.mode);
   const mood = moodFor(family, scene.phase);
@@ -53,28 +67,46 @@ export function enterPhase(scene: SoundScene) {
   }
 
   // Joining mid-phase or re-enabling sound restores the bed quietly; only real transitions speak.
-  if (previous && previous.phase !== scene.phase) {
+  const sameRoom = previous && previous.mode === scene.mode && previous.narration?.gameId === scene.narration?.gameId;
+  if (sameRoom && previous.phase !== scene.phase && previous.phase !== "paused" && canPlay()) {
     phaseStinger(audio, family, scene.phase, previous.phase);
-    window.setTimeout(() => {
-      if (lastScene === scene && getSoundEnabled()) speak(phaseNarratorLine(scene.phase, scene.mode, scene.narratorVoice));
+  }
+  const request = narrationTracker.update(scene, canPlay());
+  if (request) {
+    narrationRequest = request;
+    narrationTimer = window.setTimeout(() => {
+      narrationTimer = null;
+      void speak(scene, request);
     }, 950);
   }
 }
 
 export function stinger(kind: "death") {
-  if (!context || !master || !getSoundEnabled() || kind !== "death") return;
+  if (!context || !master || !canPlay() || kind !== "death") return;
   deathBlow(context, master);
 }
 
 export function stopAll() {
   lastScene = null;
+  narrationTracker.reset();
   fadeOut(0.8);
 }
 
 function fadeOut(seconds: number) {
+  if (lastScene) narrationTracker.update(lastScene, false);
+  for (const source of transients) {
+    try { source.stop(); } catch { /* already stopped */ }
+    source.disconnect();
+    source.onended = null;
+  }
+  transients.clear();
   stopBed(active, seconds);
   active = null;
-  if (typeof window !== "undefined") window.speechSynthesis?.cancel();
+  cancelNarration();
+}
+
+function canPlay() {
+  return context?.state === "running" && !document.hidden && getSoundEnabled() && lastScene !== null;
 }
 
 function moodFor(family: GameFamily, phase: GamePhase): Mood | null {
@@ -111,7 +143,6 @@ function ensureContext() {
   master = context.createGain();
   master.gain.value = MASTER_LEVEL;
   master.connect(context.destination);
-  bindListeners();
   return context;
 }
 
@@ -119,13 +150,18 @@ function bindListeners() {
   if (listenersBound) return;
   listenersBound = true;
   // Mobile browsers keep audio suspended until a gesture; resume on the next one.
-  const resume = () => { if (active) void context?.resume().catch(() => undefined); };
+  const resume = () => {
+    if (lastScene && getSoundEnabled() && !document.hidden && context && context.state !== "closed") {
+      void context.resume().catch(() => undefined);
+    }
+  };
   window.addEventListener("pointerdown", resume, { passive: true });
   window.addEventListener("keydown", resume);
   document.addEventListener("visibilitychange", () => {
-    if (!context) return;
-    if (document.hidden) void context.suspend().catch(() => undefined);
-    else if (active) void context.resume().catch(() => undefined);
+    if (document.hidden) {
+      fadeOut(0.8);
+      void context?.suspend().catch(() => undefined);
+    } else if (lastScene) enterPhase(lastScene);
   });
   window.addEventListener(SOUND_CHANGE_EVENT, () => {
     if (!getSoundEnabled()) fadeOut(1);
@@ -243,7 +279,7 @@ function every(bed: Bed, minMs: number, maxMs: number, play: () => void) {
   const tick = () => {
     // A suspended context (hidden tab, no gesture yet) freezes currentTime: anything scheduled now
     // would pile up at one instant and burst out together on resume.
-    if (context?.state === "running") play();
+    if (canPlay()) play();
     scheduler.id = window.setTimeout(tick, next());
   };
   scheduler.id = window.setTimeout(tick, next());
@@ -261,10 +297,20 @@ interface ToneOptions {
   vibrato?: [number, number];
 }
 
+function trackTransient<T extends AudioScheduledSourceNode>(source: T): T {
+  transients.add(source);
+  source.onended = () => {
+    transients.delete(source);
+    source.disconnect();
+    source.onended = null;
+  };
+  return source;
+}
+
 function voice(audio: AudioContext, destination: AudioNode, options: ToneOptions) {
   const start = audio.currentTime + (options.at ?? 0);
   const end = start + options.duration;
-  const oscillator = audio.createOscillator();
+  const oscillator = trackTransient(audio.createOscillator());
   oscillator.type = options.type ?? "sine";
   oscillator.frequency.setValueAtTime(options.frequency, start);
   for (const [frequency, offset] of options.glide ?? []) {
@@ -275,7 +321,7 @@ function voice(audio: AudioContext, destination: AudioNode, options: ToneOptions
   gain.gain.exponentialRampToValueAtTime(options.gain, start + (options.attack ?? 0.01));
   gain.gain.exponentialRampToValueAtTime(0.0001, end);
   if (options.vibrato) {
-    const lfo = audio.createOscillator();
+    const lfo = trackTransient(audio.createOscillator());
     lfo.frequency.value = options.vibrato[0];
     const depth = audio.createGain();
     depth.gain.value = options.vibrato[1];
@@ -292,7 +338,7 @@ function voice(audio: AudioContext, destination: AudioNode, options: ToneOptions
 
 function noiseBurst(audio: AudioContext, destination: AudioNode, color: NoiseColor, filter: [BiquadFilterType, number], attack: number, decay: number, level: number, at = 0) {
   const start = audio.currentTime + at;
-  const source = audio.createBufferSource();
+  const source = trackTransient(audio.createBufferSource());
   source.buffer = noise(audio, color);
   const shape = audio.createBiquadFilter();
   shape.type = filter[0];
@@ -311,9 +357,9 @@ function noiseBurst(audio: AudioContext, destination: AudioNode, color: NoiseCol
 function bell(audio: AudioContext, destination: AudioNode, frequency: number, strikes: number, spacing: number, level: number) {
   for (let strike = 0; strike < strikes; strike += 1) {
     const start = audio.currentTime + strike * spacing;
-    const carrier = audio.createOscillator();
+    const carrier = trackTransient(audio.createOscillator());
     carrier.frequency.value = frequency;
-    const modulator = audio.createOscillator();
+    const modulator = trackTransient(audio.createOscillator());
     modulator.frequency.value = frequency * 1.41;
     const index = audio.createGain();
     index.gain.setValueAtTime(frequency * 2.2, start);
@@ -356,7 +402,7 @@ function howl(audio: AudioContext, destination: AudioNode, level: number) {
 function deathBlow(audio: AudioContext, destination: AudioNode) {
   // A rising breath, then a low blow that settles into the floor.
   const start = audio.currentTime;
-  const source = audio.createBufferSource();
+  const source = trackTransient(audio.createBufferSource());
   source.buffer = noise(audio, "white");
   const sweep = audio.createBiquadFilter();
   sweep.type = "bandpass";
@@ -485,34 +531,52 @@ const BUILDERS: Record<Mood, (audio: AudioContext, bed: Bed) => void> = {
 
 /* ---------- narrator ---------- */
 
-let pendingLine: string | null = null;
+let narrationTimer: number | null = null;
+let narrationPlayer: ReturnType<typeof createNarrationPlayer> | null = null;
+let narrationController: AbortController | null = null;
+let narrationRequest: { occurrence: string; cues: string[] } | null = null;
 
-/** Reads the public phase line, only with a Bulgarian voice; foreign voices would mangle it. */
-function speak(line: string) {
-  const synth = typeof window === "undefined" ? undefined : window.speechSynthesis;
-  if (!synth || !line) return;
-  const voices = synth.getVoices();
-  if (voices.length === 0) {
-    // Voices load asynchronously on first use; retry once when they arrive.
-    if (pendingLine === null) {
-      synth.addEventListener("voiceschanged", () => {
-        const queued = pendingLine;
-        pendingLine = null;
-        // Voices can arrive long after the phase line; stay quiet if sound or the table is gone.
-        if (queued && lastScene && getSoundEnabled()) speak(queued);
-      }, { once: true });
-    }
-    pendingLine = line;
-    return;
+function cancelNarration() {
+  if (narrationTimer !== null) clearTimeout(narrationTimer);
+  narrationTimer = null;
+  narrationRequest = null;
+  narrationController?.abort();
+  narrationController = null;
+  narrationPlayer?.stop();
+}
+
+async function speak(scene: SoundScene, request: { occurrence: string; cues: string[] }) {
+  if (!context || !master || !canPlay()) return;
+  const controller = new AbortController();
+  narrationController = controller;
+  const current = () => !controller.signal.aborted && narrationRequest === request && canPlay()
+    && lastScene?.narratorVoice === scene.narratorVoice
+    && narrationOccurrence(lastScene) === request.occurrence
+    && selectNarrationCues(lastScene).join("|") === request.cues.join("|");
+  if (!current()) return;
+  if (!narrationPlayer) {
+    // Match approved previews; the ambience master must not attenuate the voice.
+    narrationPlayer = createNarrationPlayer({
+      context, destination: context.destination, canPlay,
+      onSpeakingChange(speaking) {
+        if (!active || !context) return;
+        const gain = active.output.gain;
+        gain.cancelScheduledValues(context.currentTime);
+        gain.setValueAtTime(gain.value, context.currentTime);
+        gain.linearRampToValueAtTime(speaking ? 0.35 : 1, context.currentTime + (speaking ? 0.12 : 0.4));
+      },
+    });
   }
-  const bulgarian = voices.find((candidate) => candidate.lang.toLowerCase().startsWith("bg"));
-  if (!bulgarian) return;
-  synth.cancel();
-  const utterance = new SpeechSynthesisUtterance(line);
-  utterance.voice = bulgarian;
-  utterance.lang = bulgarian.lang;
-  utterance.rate = 0.92;
-  utterance.pitch = 0.82;
-  utterance.volume = 0.9;
-  synth.speak(utterance);
+  async function playAt(index: number): Promise<void> {
+    if (!current()) return;
+    const cue = request.cues[index];
+    if (!cue) return;
+    const clip = await loadNarrationClip(scene.narratorVoice, cue, controller.signal);
+    if (!clip || !current()) return;
+    await narrationPlayer!.play(clip, `${request.occurrence}:${cue}`, 0.85, () => {
+      // A missing/cancelled main finale never falls through to a detached personal victory.
+      if (current()) void playAt(index + 1);
+    });
+  }
+  await playAt(0);
 }

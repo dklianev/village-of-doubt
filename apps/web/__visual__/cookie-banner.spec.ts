@@ -33,6 +33,7 @@ for (const viewport of VIEWPORTS) {
 
       // The notice is deferred: it follows the page content instead of floating over it.
       await notice.scrollIntoViewIfNeeded();
+      await expectNoticeBounds(page);
       const geometry = await page.evaluate(() => {
         const bannerElement = document.querySelector<HTMLElement>("[data-cookie-banner]");
         const banner = bannerElement?.getBoundingClientRect();
@@ -84,9 +85,108 @@ for (const viewport of VIEWPORTS) {
   }
 }
 
-async function gateDeferredWidgets(page: Page) {
-  await page.addInitScript(() => {
+for (const family of ["werewolves", "mafia"] as const) {
+  for (const theme of ["light", "dark"] as const) {
+    for (const width of [320, 390, 768]) {
+      test(`@cookie-geometry play dock to home ${family} ${theme} ${width}`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 844 });
+        await page.emulateMedia({ reducedMotion: "reduce", colorScheme: theme });
+        await gateDeferredWidgets(page, theme);
+        await page.route("**/api/auth/get-session**", (route) => route.fulfill({ json: null }));
+        const role = family === "mafia" ? "commissioner" : "seer";
+        await page.goto(`/play/VISUAL?visualGame=1&family=${family}&phase=night&players=8&role=${role}`);
+        await expect(page.locator(".site-chrome")).toHaveAttribute("data-room", "true");
+        await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
+        await expect(page.locator(".play-stage")).toHaveAttribute("data-layout-ready", "true");
+        const dock = page.locator("[data-play-command-surface]");
+        await expect(dock).toHaveAttribute("data-compact", "true");
+        await expect(dock).toHaveAttribute("data-expanded", "false");
+        const notice = page.locator("[data-cookie-banner]");
+        await expect.poll(async () => {
+          await page.evaluate(() => window.__releaseDeferredCallbacks?.());
+          return notice.count();
+        }).toBe(1);
+        await expect(notice).toBeVisible();
+        await expect(notice).toHaveCSS("position", "fixed");
+        await page.evaluate(() => document.fonts.ready);
+
+        const banner = await expectNoticeBounds(page);
+        if (width <= 760) {
+          expect(banner.x).toBeCloseTo(12, 1);
+          expect(banner.x + banner.width).toBeCloseTo(width - 12, 1);
+        }
+        const dockBounds = await dock.boundingBox();
+        expect(dockBounds).not.toBeNull();
+        expect(banner.y + banner.height).toBeLessThanOrEqual(dockBounds!.y);
+
+        await dock.getByRole("button", { name: "Покажи личния ход", exact: true }).click();
+        await expect(dock).toHaveAttribute("data-expanded", "true");
+        await expect(notice).toHaveCSS("visibility", "hidden");
+        await dock.getByRole("button", { name: "Скрий личния ход", exact: true }).click();
+        await expect(dock).toHaveAttribute("data-expanded", "false");
+        await expect(notice).toBeVisible();
+        await expectNoticeBounds(page);
+        await dock.getByRole("button", { name: "Покажи личния ход", exact: true }).click();
+        await expect(dock).toHaveAttribute("data-expanded", "true");
+        await expect(notice).toHaveCSS("visibility", "hidden");
+
+        const documentMarker = await page.evaluate(() => {
+          const marker = crypto.randomUUID();
+          document.documentElement.dataset.cookieNavigation = marker;
+          return marker;
+        });
+        await page.getByRole("link", { name: "Сенките, начало", exact: true }).click();
+        await expect(page).toHaveURL("/");
+        await expect(page.locator("html")).toHaveAttribute("data-cookie-navigation", documentMarker);
+        await expect(page.locator(".site-chrome")).toHaveAttribute("data-route", "/");
+        await expect(page.locator(".site-chrome")).not.toHaveAttribute("data-room");
+        await expect(page.locator("main.landing-shell")).toBeVisible();
+        // Cache Components retains the expanded dock. It must not hide the active page's notice.
+        await expect(dock).toBeAttached();
+        await expect(dock).toHaveAttribute("data-expanded", "true");
+        await expect(dock).toBeHidden();
+        await expect(notice).toHaveCount(1);
+        await expect(notice).toBeVisible();
+        await expect(notice).toHaveCSS("position", "static");
+        await notice.scrollIntoViewIfNeeded();
+        await expectNoticeBounds(page);
+        expect(await notice.evaluate((element) => element.getBoundingClientRect().top
+          >= document.getElementById("main-content")!.getBoundingClientRect().bottom - 1)).toBe(true);
+        expect(await page.evaluate(() => localStorage.getItem("cookie-consent"))).toBeNull();
+        await notice.getByRole("button", { name: "Разбрах", exact: true }).click();
+        await expect(notice).toHaveCount(0);
+        expect(await page.evaluate(() => localStorage.getItem("cookie-consent"))).toBe("1");
+      });
+    }
+  }
+}
+
+async function expectNoticeBounds(page: Page) {
+  const notice = page.locator("[data-cookie-banner]");
+  const banner = await notice.boundingBox();
+  const button = await notice.getByRole("button", { name: "Разбрах", exact: true }).boundingBox();
+  const viewport = page.viewportSize()!;
+  expect(banner).not.toBeNull();
+  expect(button).not.toBeNull();
+  expect(banner!.width).toBeGreaterThan(0);
+  expect(banner!.height).toBeGreaterThan(0);
+  expect(banner!.x).toBeGreaterThanOrEqual(0);
+  expect(banner!.y).toBeGreaterThanOrEqual(0);
+  expect(banner!.x + banner!.width).toBeLessThanOrEqual(viewport.width);
+  expect(banner!.y + banner!.height).toBeLessThanOrEqual(viewport.height);
+  expect(button!.width).toBeGreaterThanOrEqual(44);
+  expect(button!.height).toBeGreaterThanOrEqual(44);
+  expect(button!.x).toBeGreaterThanOrEqual(banner!.x);
+  expect(button!.y).toBeGreaterThanOrEqual(banner!.y);
+  expect(button!.x + button!.width).toBeLessThanOrEqual(banner!.x + banner!.width);
+  expect(button!.y + button!.height).toBeLessThanOrEqual(banner!.y + banner!.height);
+  return banner!;
+}
+
+async function gateDeferredWidgets(page: Page, theme = "dark") {
+  await page.addInitScript((selectedTheme) => {
     const idleCallbacks: IdleRequestCallback[] = [];
+    localStorage.setItem("werewolf-theme", selectedTheme);
     localStorage.removeItem("cookie-consent");
     localStorage.setItem("welcome-modal-shown", "1");
     localStorage.setItem("tutorial-completed", "1");
@@ -100,7 +200,7 @@ async function gateDeferredWidgets(page: Page) {
       return idleCallbacks.length;
     };
     window.cancelIdleCallback = () => {};
-  });
+  }, theme);
 }
 
 async function anchorGeometry(page: Page) {

@@ -41,4 +41,16 @@ describe("InviteTools", () => {
     expect(qr.querySelector("path")?.getAttribute("d")?.length).toBeGreaterThan(100);
     expect(screen.getByText("WOLF42")).toBeInTheDocument();
   });
+
+  it.each(["escape", "close"])("returns focus to the QR trigger after %s", async (method) => {
+    render(<InviteTools code="WOLF42" onCopyInvite={vi.fn()} />);
+    const trigger = screen.getByRole("button", { name: "Покажи QR код за масата" });
+    trigger.focus();
+    fireEvent.click(trigger);
+    await screen.findByRole("dialog", { name: "Покана с QR код" });
+    if (method === "escape") fireEvent.keyDown(document.activeElement ?? document, { key: "Escape" });
+    else fireEvent.click(screen.getByRole("button", { name: "Затвори" }));
+    await waitFor(() => expect(trigger).toHaveFocus());
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
 });

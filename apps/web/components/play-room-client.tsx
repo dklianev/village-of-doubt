@@ -34,7 +34,6 @@ import { PrivateChatPanel, type PrivateChatScrollPosition } from "@/components/p
 import { PublicChatComposer } from "@/components/play/PublicChatComposer";
 import { PublicChatHistory } from "@/components/play/PublicChatHistory";
 import { ConnectionBanner } from "@/components/play/ConnectionBanner";
-import { DeathRevealCinematic } from "@/components/play/DeathRevealCinematic";
 import { Timer } from "@/components/play/Timer";
 import { phaseBg } from "@/lib/play/phase-display";
 import { PhaseTransitionOverlay } from "@/components/play/PhaseTransitionOverlay";
@@ -43,6 +42,8 @@ import { PlayStage } from "@/components/play/PlayStage";
 import { PlayLobbyBand } from "@/components/play/PlayLobbyBand";
 import { DeferredGameConclusion } from "@/components/play/DeferredGameConclusion";
 import { PreGameCountdown } from "@/components/play/PreGameCountdown";
+import { PlayFeatureBoundary } from "@/components/play/PlayFeatureBoundary";
+import { RoleCardFallback } from "@/components/play/RoleCardFallback";
 import { ReconnectModal } from "@/components/play/ReconnectModal";
 import { NightActionPanel } from "@/components/play/NightActionPanel";
 import { NominationPanel } from "@/components/play/NominationPanel";
@@ -72,6 +73,7 @@ const RoleCard = lazy(() => import("@/components/play/RoleCard").then((module) =
 const RoleRevealGate = lazy(() => import("@/components/play/RoleRevealRitual").then((module) => ({ default: module.RoleRevealGate })));
 const InviteTools = lazy(() => import("@/components/play/InviteTools").then((module) => ({ default: module.InviteTools })));
 const SoundscapeHost = lazy(() => import("@/components/play/SoundscapeHost").then((module) => ({ default: module.SoundscapeHost })));
+const DeathRevealCinematic = lazy(() => import("@/components/play/DeathRevealCinematic").then((module) => ({ default: module.DeathRevealCinematic })));
 
 interface PlayRoomClientProps {
   code: string;
@@ -113,6 +115,7 @@ export function PlayRoomClientCore({
   const [pendingPrivateSends, setPendingPrivateSends] = useState<Partial<Record<ChatChannel, boolean>>>({});
   const [privateChatOpen, setPrivateChatOpen] = useState(false);
   const [privateVisibility, setPrivateVisibility] = useState<{ identity: string; visible: boolean } | null>(null);
+  const personalToggleRef = useRef<HTMLButtonElement>(null);
   const [lastReadPrivateMessages, setLastReadPrivateMessages] = useState<Partial<Record<ChatChannel, string>>>({});
   const privateChatScrollPositions = useRef<Partial<Record<string, PrivateChatScrollPosition>>>({});
   const actionDockToggleRef = useRef<HTMLButtonElement>(null);
@@ -163,7 +166,8 @@ export function PlayRoomClientCore({
   const mode = snapshot?.mode ?? createOptions?.mode ?? "werewolves_classic";
   const family = getGameFamily(mode);
   const phase = snapshot?.phase ?? "lobby";
-  const privateIdentity = `${code}:${currentUserId}`;
+  const privateIdentity = `${room?.roomId ?? code}:${currentUserId}`;
+  const dealIdentity = privateIdentity;
   const personalVisible = privateVisibility?.identity === privateIdentity
     ? privateVisibility.visible
     : !liveMode && phase !== "role_reveal";
@@ -799,7 +803,7 @@ export function PlayRoomClientCore({
         </div>
         <div className="play-console-tools">
           {snapshot ? <PlayReference snapshot={snapshot} privateRole={privateRole?.role} ownPlayer={ownPlayer} /> : null}
-          <LiveCuePanel cueMode={cueMode} liveMode={liveMode} phase={phase} pulseKey={phasePulse} onChange={changeCueMode} />
+          <LiveCuePanel cueMode={cueMode} liveMode={liveMode} phase={phase} pulseKey={phasePulse} onChange={changeCueMode} narratorVoice={snapshot?.narratorVoice ?? "classic"} />
         </div>
         </div>
 
@@ -879,7 +883,9 @@ export function PlayRoomClientCore({
           <PublicChatHistory key={code} messages={snapshot?.publicChat ?? []} />
         </div>
 
-        {showRailDeathReveal ? <DeathRevealCinematic family={family} players={players} /> : null}
+        {showRailDeathReveal ? <PlayFeatureBoundary key={`death:${dealIdentity}`}><Suspense fallback={null}>
+          <DeathRevealCinematic family={family} players={players} />
+        </Suspense></PlayFeatureBoundary> : null}
       </section>
     );
   };
@@ -989,6 +995,7 @@ export function PlayRoomClientCore({
     return (
       <section className="play-personal-area" aria-label="Твоята роля" data-concealed={!personalVisible || undefined}>
         <button
+          ref={personalToggleRef}
           className="play-personal-toggle"
           type="button"
           aria-label={personalVisible ? "Скрий ролята" : "Виж ролята си"}
@@ -1003,11 +1010,13 @@ export function PlayRoomClientCore({
         {!personalVisible ? <p className="play-personal-concealed">Твоята карта е скрита.</p> : null}
         <div id="play-personal-content" hidden={!personalVisible}>
           {personalVisible ? <>
+            <PlayFeatureBoundary key={dealIdentity} fallback={<RoleCardFallback role={privateRole} result={privateResult} players={players} family={family} />}>
             <Suspense fallback={rolePlaceholder}>
               {viewportModeReady
                 ? <RoleCard role={privateRole} result={privateResult} players={players} family={family} presentation={isCompactViewport ? "mini" : "console"} />
                 : rolePlaceholder}
             </Suspense>
+            </PlayFeatureBoundary>
             {privateLover ? <LoverCard lover={privateLover} /> : null}
 
             {isBlessed ? (
@@ -1120,20 +1129,26 @@ export function PlayRoomClientCore({
         <ShortcutsModal onClose={() => setShowShortcuts(false)} />
       ) : null}
       {snapshot ? (
+        <PlayFeatureBoundary key={`sound:${dealIdentity}`}>
         <Suspense fallback={null}>
-          <SoundscapeHost mode={mode} phase={snapshot.phase} narratorVoice={snapshot.narratorVoice} liveMode={liveMode} cueMode={cueMode} publicEvents={snapshot.publicEvents} />
+          <SoundscapeHost snapshot={snapshot} room={room} connected={connectionStatus === "connected"} liveMode={liveMode} cueMode={cueMode} />
         </Suspense>
+        </PlayFeatureBoundary>
       ) : null}
-      {/* The dealt card is turned once per role per room; then the private toggle takes over. */}
+      {/* A room instance survives reconnects, unlike its reusable invitation code. */}
       {phase === "role_reveal" && privateRole && connectionStatus === "connected" ? (
+        <PlayFeatureBoundary key={`reveal:${dealIdentity}`}>
         <Suspense fallback={null}>
-          <RoleRevealGate key={`${privateIdentity}:${privateRole.role}`} role={privateRole} family={family} transitioning={showPhaseTransition} seatKey={privateIdentity} />
+          <RoleRevealGate key={`${dealIdentity}:${privateRole.role}`} role={privateRole} family={family} transitioning={showPhaseTransition} seatKey={dealIdentity} returnFocusRef={personalToggleRef} />
         </Suspense>
+        </PlayFeatureBoundary>
       ) : null}
       {connectionStatus === "connected" && unlockedAchievementIds.length > 0 ? (
+        <PlayFeatureBoundary key={`achievement:${dealIdentity}`}>
         <Suspense fallback={null}>
           <AchievementUnlockModal achievementIds={unlockedAchievementIds} onClose={() => setUnlockedAchievementIds([])} />
         </Suspense>
+        </PlayFeatureBoundary>
       ) : null}
       <ConnectionBanner status={connectionStatus} message={connectionMessage} />
       {hasStageTakeover && snapshot ? <DeferredGameConclusion snapshot={snapshot} recordedGameId={recordedGameId} currentUserId={currentUserId} /> : <div className="framed-shell-inner play-shell-inner" inert={connectionStatus !== "connected" && phase !== "game_over"}>
@@ -1186,7 +1201,7 @@ export function PlayRoomClientCore({
               activeRoomAction={<button className="play-room-copy" type="button" aria-label="Копирай кода на стаята" title="Копирай кода на стаята" onClick={() => void copyLobbyInvite(true)}><Copy aria-hidden="true" /></button>}
               lobbyInvitation={phase === "lobby" ? <div className="play-waiting-invite">
                 <span>Код на стаята</span>
-                <div><strong>{code}</strong><button type="button" aria-label="Копирай кода на стаята" title="Копирай кода на стаята" onClick={() => void copyLobbyInvite(true)}><Copy aria-hidden="true" /></button><Suspense fallback={null}><InviteTools code={code} onCopyInvite={() => copyLobbyInvite()} /></Suspense></div>
+                <div><strong>{code}</strong><button type="button" aria-label="Копирай кода на стаята" title="Копирай кода на стаята" onClick={() => void copyLobbyInvite(true)}><Copy aria-hidden="true" /></button><PlayFeatureBoundary key={`invite:${dealIdentity}`}><Suspense fallback={null}><InviteTools code={code} onCopyInvite={() => copyLobbyInvite()} /></Suspense></PlayFeatureBoundary></div>
                 <button type="button" onClick={() => void copyLobbyInvite()}><Copy aria-hidden="true" />Копирай покана</button>
               </div> : undefined}
             />
@@ -1198,7 +1213,7 @@ export function PlayRoomClientCore({
             startDisabledReason={startDisabledReason} onReady={sendReady} onStart={requestStartGame}
             tools={<>
               {snapshot ? <PlayReference snapshot={snapshot} privateRole={undefined} ownPlayer={ownPlayer} /> : null}
-              <LiveCuePanel cueMode={cueMode} liveMode={liveMode} phase={phase} pulseKey={phasePulse} onChange={changeCueMode} />
+              <LiveCuePanel cueMode={cueMode} liveMode={liveMode} phase={phase} pulseKey={phasePulse} onChange={changeCueMode} narratorVoice={snapshot?.narratorVoice ?? "classic"} />
             </>}
           /> : (
             <div className="play-console-band">

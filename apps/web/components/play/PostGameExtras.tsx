@@ -1,5 +1,7 @@
+import { useMemo } from "react";
 import { ButtonLink } from "@/components/button-link";
 import type { GameSnapshot } from "@/lib/play/types";
+import { withNextRoomOptions } from "@/lib/play/next-room-options";
 import { canOpenRecordedReplay, historyHrefForGame, repeatGameHref } from "@/lib/play/post-game-links";
 import { PostGameStory } from "./PostGameStory";
 
@@ -10,7 +12,8 @@ export interface PostGameExtrasProps {
   currentUserId: string;
 }
 
-export function PostGameExtras({ section, snapshot, recordedGameId, currentUserId }: PostGameExtrasProps) {
+export function PostGameExtras({ section, snapshot: rawSnapshot, recordedGameId, currentUserId }: PostGameExtrasProps) {
+  const snapshot = useMemo(() => withNextRoomOptions(rawSnapshot), [rawSnapshot]);
   if (section === "story") return <PostGameStory snapshot={snapshot} />;
   const replayEligible = canOpenRecordedReplay(snapshot, currentUserId);
   return (

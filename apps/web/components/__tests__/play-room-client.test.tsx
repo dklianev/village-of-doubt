@@ -46,7 +46,7 @@ vi.mock("@/components/play/ReconnectModal", () => ({
 }));
 
 vi.mock("@/components/play/LiveCuePanel", () => ({
-  LiveCuePanel: () => <div data-testid="live-cue-panel" />,
+  LiveCuePanel: ({ narratorVoice }: { narratorVoice?: string }) => <div data-testid="live-cue-panel" data-narrator-voice={narratorVoice} />,
 }));
 
 vi.mock("@/components/play/PhaseRail", () => ({
@@ -283,6 +283,46 @@ describe("PlayRoomClient orchestrator", () => {
     mocks.toast.mockReset();
     setCompactViewport(false);
     mockHooks();
+  });
+
+  it.each(["lobby", "day_discussion"] as const)("forwards the current narrator to %s cue previews and defaults missing legacy voices", (phase) => {
+    const snapshot = snapshotForPhase(phase);
+    mockHooks(phase, { snapshot: { ...snapshot, narratorVoice: "witch_moonglow" } });
+    const view = render(<PlayRoomClient code="ABCD" />);
+    expect(screen.getByTestId("live-cue-panel")).toHaveAttribute("data-narrator-voice", "witch_moonglow");
+
+    mockHooks(phase, { snapshot: { ...snapshot, narratorVoice: "classic_nikolay" } });
+    view.rerender(<PlayRoomClient code="ABCD" />);
+    expect(screen.getByTestId("live-cue-panel")).toHaveAttribute("data-narrator-voice", "classic_nikolay");
+
+    const { narratorVoice: _voice, ...legacySnapshot } = snapshot;
+    mockHooks(phase, { snapshot: legacySnapshot });
+    view.rerender(<PlayRoomClient code="ABCD" />);
+    expect(screen.getByTestId("live-cue-panel")).toHaveAttribute("data-narrator-voice", "classic");
+  });
+
+  it("remembers the turned card across reloads but not a different room instance with the same invite code", async () => {
+    sessionStorage.clear();
+    const role = { role: "seer", roleNameBg: "Гадателка" };
+    const room = { roomId: "instance-1", send: vi.fn(), onMessage: vi.fn() };
+    mockHooks("role_reveal", { room, privateRole: role });
+    const first = render(<PlayRoomClient code="ABCD" />);
+    fireEvent.keyDown(await screen.findByRole("dialog", { name: "Твоята тайна карта" }), { key: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    first.unmount();
+
+    const second = render(<PlayRoomClient code="ABCD" />);
+    await waitFor(() => expect(screen.getByRole("button", { name: "Виж ролята си" })).toBeInTheDocument());
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Виж ролята си" }));
+    expect(screen.getByRole("button", { name: "Скрий ролята" })).toHaveAttribute("aria-expanded", "true");
+    mockHooks("role_reveal", { room: { ...room }, privateRole: role, connectionStatus: "reconnecting" });
+    second.rerender(<PlayRoomClient code="ABCD" />);
+    expect(screen.getByRole("button", { name: "Скрий ролята" })).toHaveAttribute("aria-expanded", "true");
+    mockHooks("role_reveal", { room: { ...room, roomId: "instance-2" }, privateRole: role });
+    second.rerender(<PlayRoomClient code="ABCD" />);
+    expect(await screen.findByRole("dialog", { name: "Твоята тайна карта" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Виж ролята си" })).toHaveAttribute("aria-expanded", "false");
   });
 
   it.each(["lobby", "night", "day_discussion", "voting", "game_over"] as GamePhase[])(

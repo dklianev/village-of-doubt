@@ -38,7 +38,15 @@ for (const family of ["werewolves", "mafia"] as const) {
         await expect(finale).toBeVisible();
         await expect(finale).toHaveAttribute("data-family", family);
         await expect(finale).toHaveAttribute("data-endgame", family);
-        await expect(page.locator(`.connection-${connection}`)).toBeVisible();
+        const banner = page.locator(`.connection-${connection}`);
+        await expect(banner).toBeVisible();
+        // The finale has its own shell; it must not fall back to the old dark art
+        // banner with inherited light-theme ink.
+        await expect(banner).toHaveCSS("background-image", "none");
+        await expect(banner).toHaveCSS("background-color", viewport.theme === "light" ? "rgb(244, 243, 235)" : "rgb(24, 35, 30)");
+        await expect(banner).toHaveCSS("color", viewport.theme === "light" ? "rgb(40, 58, 46)" : "rgb(243, 238, 226)");
+        await expect(banner.locator("p")).toHaveCSS("color", viewport.theme === "light" ? "rgb(78, 94, 81)" : "rgb(208, 213, 200)");
+        await expect(banner).toHaveCSS("border-radius", "6px");
         await expect(page.locator("#conclusion-heading")).toBeFocused();
         // Reconnecting mounts its blocking dialog only after three seconds.
         await page.waitForTimeout(3_500);

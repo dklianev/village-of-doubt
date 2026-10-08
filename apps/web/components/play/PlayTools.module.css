@@ -76,6 +76,8 @@
 .roster li > span { overflow-wrap: anywhere; }
 .portrait { width: 36px; height: 44px; border-radius: 4px; background: var(--role-art) center / cover no-repeat; }
 .cueBody { padding: 12px 24px 20px; overflow-y: auto; overscroll-behavior: contain; }
+.narrator { border-top: 1px solid var(--tool-border); margin-top: 20px; padding-top: 16px; min-width: 0; }
+.narrator h3 { margin: 0 0 12px; font-size: 1rem; line-height: 1.4; overflow-wrap: anywhere; }
 .modes { border: 0; padding: 0; margin: 0; }
 .modes label { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 10px 0; border-bottom: 1px solid var(--tool-border); cursor: pointer; font-size: 0.875rem; }
 .modes label > svg { flex: 0 0 auto; }

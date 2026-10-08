@@ -90,7 +90,9 @@ for (const theme of ["light", "dark"] as const) {
           ? "Всички алибита ще бъдат проверени сутринта."
           : "Движението в селото се наблюдава.")).toBeVisible();
         await page.keyboard.press("ArrowRight");
-        await expect(styles.getByRole("radio", { name: /Вещицата/ })).toBeChecked();
+        await expect(styles.getByRole("radio", { name: /^Вещицата · Milena\b/ })).toBeChecked();
+        await page.keyboard.press("ArrowRight");
+        await expect(styles.getByRole("radio", { name: /^Вещицата · Moonglow\b/ })).toBeChecked();
         await expect(dialog.getByText("Проба", { exact: true })).toHaveCount(0);
         await dialog.locator(".narrator-style-example").scrollIntoViewIfNeeded();
         await expect(dialog.getByRole("button", { name: "Готово", exact: true })).toBeInViewport();

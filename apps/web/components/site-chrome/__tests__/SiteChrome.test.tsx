@@ -1,6 +1,6 @@
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import SiteChrome from "@/components/site-chrome";
 import type { ComponentProps } from "react";
 
@@ -34,6 +34,200 @@ vi.mock("@/lib/sound", () => ({
   setSoundEnabled: vi.fn(),
   playCue: vi.fn(),
 }));
+
+describe("theme transition privacy", () => {
+  const originalTransition = Object.getOwnPropertyDescriptor(document, "startViewTransition");
+
+  function installTransitions() {
+    const changes: { update: () => void; finish: () => void; fail: () => void; skip: ReturnType<typeof vi.fn> }[] = [];
+    const start = vi.fn((update: () => void) => {
+      let finish!: () => void;
+      let fail!: () => void;
+      const finished = new Promise<void>((resolve, reject) => {
+        finish = resolve;
+        fail = () => reject(new Error("update failed"));
+      });
+      const skip = vi.fn();
+      changes.push({ update, finish, fail, skip });
+      return { ready: Promise.resolve(), finished, skipTransition: skip };
+    });
+    Object.defineProperty(document, "startViewTransition", { configurable: true, writable: true, value: start });
+    return { start, changes };
+  }
+
+  function expectTheme(theme: "light" | "dark") {
+    expect(document.documentElement).toHaveAttribute("data-theme", theme);
+    expect(localStorage.getItem("werewolf-theme")).toBe(theme);
+    expect(screen.getByRole("button", { name: theme === "light" ? "Смени на тъмна тема" : "Смени на светла тема" })).toBeEnabled();
+  }
+
+  beforeEach(() => {
+    route.pathname = "/";
+    localStorage.clear();
+    document.documentElement.dataset.theme = "dark";
+    delete document.documentElement.dataset.vt;
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    if (originalTransition) Object.defineProperty(document, "startViewTransition", originalTransition);
+    else Reflect.deleteProperty(document, "startViewTransition");
+    delete document.documentElement.dataset.theme;
+    delete document.documentElement.dataset.vt;
+  });
+
+  it.each(["/play/ROOM42", "/play/VISUAL", "/play/ROOM42/private", "/lobby/ROOM42"])(
+    "applies a room theme synchronously without snapshots on %s", (pathname) => {
+      route.pathname = pathname;
+      const { start } = installTransitions();
+      render(<SiteChrome initialSession={null} />);
+      const button = screen.getByRole("button", { name: "Смени на светла тема" });
+      act(() => {
+        button.focus();
+        button.click();
+        expect(document.documentElement.dataset.theme).toBe("light");
+      });
+      expectTheme("light");
+      expect(button).toHaveFocus();
+      expect(start).not.toHaveBeenCalled();
+      expect(document.documentElement).not.toHaveAttribute("data-vt");
+    },
+  );
+
+  it.each(["/", "/werewolf/roles", "/mafia/rules", "/lobby"])(
+    "retains the existing public transition on %s", async (pathname) => {
+      route.pathname = pathname;
+      const { start, changes } = installTransitions();
+      render(<SiteChrome initialSession={null} />);
+      expect(start).not.toHaveBeenCalled();
+      act(() => screen.getByRole("button", { name: "Смени на светла тема" }).click());
+      expect(start).toHaveBeenCalledOnce();
+      expect(document.documentElement.dataset.theme).toBe("dark");
+      act(() => changes[0]!.update());
+      expectTheme("light");
+      expect(document.documentElement).toHaveAttribute("data-vt", "theme");
+      await act(async () => changes[0]!.finish());
+      expect(document.documentElement).not.toHaveAttribute("data-vt");
+    },
+  );
+
+  it.each(["/", "/play/ROOM42"])("respects reduced motion on %s", (pathname) => {
+    route.pathname = pathname;
+    const { start } = installTransitions();
+    const matchMedia = window.matchMedia;
+    vi.stubGlobal("matchMedia", vi.fn((query: string) => ({
+      ...matchMedia(query), matches: query === "(prefers-reduced-motion: reduce)",
+    })));
+    render(<SiteChrome initialSession={null} />);
+    act(() => screen.getByRole("button", { name: "Смени на светла тема" }).click());
+    expectTheme("light");
+    expect(start).not.toHaveBeenCalled();
+    expect(document.documentElement).not.toHaveAttribute("data-vt");
+  });
+
+  it.each(["missing", "undefined"])("falls back immediately when the API is %s", (api) => {
+    if (api === "missing") Reflect.deleteProperty(document, "startViewTransition");
+    else Object.defineProperty(document, "startViewTransition", { configurable: true, value: undefined });
+    render(<SiteChrome initialSession={null} />);
+    act(() => screen.getByRole("button", { name: "Смени на светла тема" }).click());
+    expectTheme("light");
+    expect(document.documentElement).not.toHaveAttribute("data-vt");
+  });
+
+  it("falls back immediately when starting a transition throws", () => {
+    const { start } = installTransitions();
+    start.mockImplementation(() => { throw new Error("unavailable"); });
+    render(<SiteChrome initialSession={null} />);
+    act(() => screen.getByRole("button", { name: "Смени на светла тема" }).click());
+    expectTheme("light");
+    expect(document.documentElement).not.toHaveAttribute("data-vt");
+  });
+
+  it("settles the actual theme when the transition fails before updating", async () => {
+    const { changes } = installTransitions();
+    render(<SiteChrome initialSession={null} />);
+    act(() => screen.getByRole("button", { name: "Смени на светла тема" }).click());
+    await act(async () => changes[0]!.fail());
+    expectTheme("light");
+    expect(document.documentElement).not.toHaveAttribute("data-vt");
+  });
+
+  it("handles a skipped animation without leaving the theme pending", async () => {
+    const { start } = installTransitions();
+    render(<SiteChrome initialSession={null} />);
+    start.mockImplementationOnce((update) => {
+      const finished = Promise.resolve().then(update);
+      return { ready: Promise.reject(new Error("animation skipped")), finished, skipTransition: vi.fn() };
+    });
+    await act(async () => screen.getByRole("button", { name: "Смени на светла тема" }).click());
+    expectTheme("light");
+    expect(document.documentElement).not.toHaveAttribute("data-vt");
+  });
+
+  it("keeps every rapid room toggle synchronous with storage and the control", () => {
+    route.pathname = "/play/ROOM42";
+    const { start } = installTransitions();
+    render(<SiteChrome initialSession={null} />);
+    const button = screen.getByRole("button", { name: "Смени на светла тема" });
+    act(() => {
+      for (const theme of ["light", "dark", "light"]) {
+        button.click();
+        expect(document.documentElement.dataset.theme).toBe(theme);
+        expect(localStorage.getItem("werewolf-theme")).toBe(theme);
+      }
+    });
+    expectTheme("light");
+    expect(start).not.toHaveBeenCalled();
+  });
+
+  it("does not let a skipped public callback or completion overwrite a later toggle", async () => {
+    const { changes } = installTransitions();
+    render(<SiteChrome initialSession={null} />);
+    const button = screen.getByRole("button", { name: "Смени на светла тема" });
+    act(() => { button.click(); button.click(); });
+    expect(changes[0]!.skip).toHaveBeenCalledOnce();
+    act(() => { changes[1]!.update(); changes[0]!.update(); });
+    await act(async () => changes[0]!.finish());
+    expectTheme("dark");
+    expect(document.documentElement).toHaveAttribute("data-vt", "theme");
+    await act(async () => changes[1]!.finish());
+    expect(document.documentElement).not.toHaveAttribute("data-vt");
+  });
+
+  it("cancels a pending public transition on entry to a room and ignores its late callback", async () => {
+    const { changes, start } = installTransitions();
+    const { rerender } = render(<SiteChrome initialSession={null} />);
+    act(() => screen.getByRole("button", { name: "Смени на светла тема" }).click());
+    route.pathname = "/play/ROOM42";
+    rerender(<SiteChrome initialSession={null} />);
+    expect(changes[0]!.skip).toHaveBeenCalledOnce();
+    expectTheme("light");
+    act(() => screen.getByRole("button", { name: "Смени на тъмна тема" }).click());
+    await act(async () => { changes[0]!.update(); changes[0]!.finish(); });
+    expectTheme("dark");
+    expect(start).toHaveBeenCalledOnce();
+    expect(document.documentElement).not.toHaveAttribute("data-vt");
+  });
+
+  it("uses the same immediate room policy in the loaded drawer without losing focus", async () => {
+    route.pathname = "/play/ROOM42";
+    const { start } = installTransitions();
+    const user = userEvent.setup();
+    render(<SiteChrome initialSession={null} />);
+    const opener = screen.getByRole("button", { name: "Отвори менюто" });
+    await user.click(opener);
+    const dialog = await screen.findByRole("dialog", { name: "Навигация" });
+    const button = within(dialog).getByRole("button", { name: "Смени на светла тема" });
+    await user.click(button);
+    expect(document.documentElement.dataset.theme).toBe("light");
+    expect(localStorage.getItem("werewolf-theme")).toBe("light");
+    expect(button).toHaveAccessibleName("Смени на тъмна тема");
+    expect(button).toHaveFocus();
+    expect(start).not.toHaveBeenCalled();
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(opener).toHaveFocus());
+  });
+});
 
 describe("Senkite navigation", () => {
   beforeEach(() => {

@@ -5,6 +5,9 @@ import { JsonLd } from "@/components/JsonLd";
 import { TermsCodex } from "@/components/terms/TermsCodex";
 import { absoluteUrl, routeMetadata } from "@/lib/seo";
 
+export const prefetch = "partial";
+export const ensureStatic = "navigation";
+
 const LAST_UPDATED = "19 май 2026";
 
 export const metadata: Metadata = routeMetadata({

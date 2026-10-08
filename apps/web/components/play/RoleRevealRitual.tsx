@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useId, useRef, useState, type CSSProperties, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { ROLE_DEFINITIONS, teamLabelBg, type GameFamily, type RoleCode } from "@werewolf/shared";
 import { Button } from "@/components/button";
@@ -12,20 +12,22 @@ const CARD_BACK = "/game-art/thumbs/card-back-secret.webp";
 
 /**
  * Owns the "turned once" state inside the lazy chunk, so the /play entry only carries the
- * lazy reference. The play room keys it per room and role, which resets it for a new deal.
- * A reload in the same tab remembers the turn by room and player only, never by role.
+ * lazy reference. The play room keys it per room instance and role for a new deal.
+ * A reload remembers the turn by room instance and player only, never by role.
  */
 export function RoleRevealGate({
   role,
   family,
   transitioning,
   seatKey,
+  returnFocusRef,
 }: {
   role: { role: RoleCode; roleNameBg: string };
   family: GameFamily;
   transitioning: boolean;
-  /** Room and player identity; the role itself is never written to storage. */
+  /** Room instance and player identity; the role is never written to storage. */
   seatKey: string;
+  returnFocusRef?: RefObject<HTMLButtonElement | null> | undefined;
 }) {
   const storageKey = `werewolf-card-turned:${seatKey}`;
   const [done, setDone] = useState(() => safeSessionStorage.getItem(storageKey) === "1");
@@ -35,6 +37,7 @@ export function RoleRevealGate({
       role={role}
       family={family}
       enterDelayMs={transitioning ? 1750 : 0}
+      returnFocusRef={returnFocusRef}
       onDone={() => {
         safeSessionStorage.setItem(storageKey, "1");
         setDone(true);
@@ -53,12 +56,14 @@ export function RoleRevealRitual({
   family,
   enterDelayMs = 0,
   onDone,
+  returnFocusRef,
 }: {
   role: { role: RoleCode; roleNameBg: string };
   family: GameFamily;
   /** Lets the phase curtain finish before the card is dealt. */
   enterDelayMs?: number;
   onDone: () => void;
+  returnFocusRef?: RefObject<HTMLButtonElement | null> | undefined;
 }) {
   const [flipped, setFlipped] = useState(false);
   // The portal target only exists in the browser; server and first client render emit nothing.
@@ -69,8 +74,8 @@ export function RoleRevealRitual({
   // Lives here rather than in the play room so the lazy chunk, not the /play entry, carries it.
   const finish = () => {
     onDone();
-    // Land on the private toggle so the card can be checked again from where it now lives.
-    requestAnimationFrame(() => document.querySelector<HTMLButtonElement>(".play-personal-toggle")?.focus());
+    // Target this room's toggle, not a retained route's copy.
+    requestAnimationFrame(() => returnFocusRef?.current?.focus({ preventScroll: true }));
   };
   const { ref } = useModal<HTMLDivElement>({ open: mounted, onClose: finish });
   const definition = ROLE_DEFINITIONS[role.role];
@@ -120,7 +125,7 @@ export function RoleRevealRitual({
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
         data-flipped={flipped ? "true" : "false"}
-        data-team={definition.team}
+        data-team={flipped ? definition.team : undefined}
       >
         {/* Tapping the card is a pointer shortcut; the labelled button below is the accessible control. */}
         <div className={styles.card} style={cardStyle} onClick={() => setFlipped(true)} aria-hidden="true">

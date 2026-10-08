@@ -1,7 +1,6 @@
 import type { Room } from "@colyseus/sdk";
 import type {
   ChatChannel,
-  CreateRoomOptions,
   GameMode,
   GamePhase,
   NarratorVoice,
@@ -78,7 +77,7 @@ export interface PublicNomination {
 }
 
 export interface GameSnapshot {
-  nextRoomOptions?: CreateRoomOptions;
+  nextRoomOptionsJson?: string;
   code: string;
   mode: GameMode;
   playerCount: number;

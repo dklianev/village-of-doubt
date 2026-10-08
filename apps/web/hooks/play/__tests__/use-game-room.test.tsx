@@ -4,6 +4,7 @@ import { createGameClient, GAME_ROOM_NAME } from "@/lib/colyseus-client";
 import { useGameRoom } from "@/hooks/play/use-game-room";
 import { useActionReceipt } from "@/hooks/play/use-action-receipt";
 import { isVisualGameFixtureEnabled, parseVisualGameFixture } from "@/hooks/play/visual-game-fixture";
+import type { PublicChatMessage, PublicEvent, PublicRoleCount, VoteTallyItem } from "@/lib/play/types";
 
 const mocks = vi.hoisted(() => ({
   refreshSession: vi.fn(),
@@ -150,6 +151,28 @@ function makeState() {
     nominations: [],
     publicEvents: [],
     publicChat: [],
+  };
+}
+
+function makeStateWithPublicRows() {
+  return {
+    ...makeState(),
+    roleCounts: [
+      { role: "werewolf", count: 2 },
+      { role: "ordinary_villager", count: 6 },
+    ] as PublicRoleCount[],
+    voteTally: [
+      { targetUserId: "u1", targetName: "Player 1", count: 1, hasMayorVote: false },
+      { targetUserId: "u2", targetName: "Player 2", count: 2, hasMayorVote: false },
+    ] as VoteTallyItem[],
+    publicEvents: [
+      { id: "event-1", type: "system", messageBg: "Synthetic event" },
+      { id: "event-2", type: "phase", messageBg: "Synthetic phase" },
+    ] as PublicEvent[],
+    publicChat: [
+      { id: "chat-1", channel: "public", senderName: "Player 1", message: "Synthetic message" },
+      { id: "chat-2", channel: "public", senderName: "Player 2", message: "Another message" },
+    ] as PublicChatMessage[],
   };
 }
 
@@ -373,6 +396,139 @@ describe("useGameRoom", () => {
     );
   });
 
+  it.each([
+    { slice: "roleCounts", patch: { role: "seer" } },
+    { slice: "roleCounts", patch: { count: 3 } },
+    { slice: "voteTally", patch: { targetUserId: "u2" } },
+    { slice: "voteTally", patch: { targetName: "Player 2" } },
+    { slice: "voteTally", patch: { count: 2 } },
+    { slice: "voteTally", patch: { hasMayorVote: true } },
+    { slice: "publicEvents", patch: { id: "event-2" } },
+    { slice: "publicEvents", patch: { type: "phase" } },
+    { slice: "publicEvents", patch: { messageBg: "Updated event" } },
+    { slice: "publicChat", patch: { id: "chat-2" } },
+    { slice: "publicChat", patch: { channel: "updated-public-channel" } },
+    { slice: "publicChat", patch: { senderName: "Player 2" } },
+    { slice: "publicChat", patch: { message: "Updated message" } },
+  ] as const)("detects an in-place SDK $slice patch $patch without mutating a retained snapshot", async ({ slice, patch }) => {
+    mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
+    const { client, joinRoom } = createClient();
+    mocks.createGameClient.mockReturnValue(client);
+    const toast = vi.fn();
+    const { result } = renderHook(() => useGameRoom({ code: "ABCD", createOptions: undefined, toast }));
+    await waitFor(() => expect(result.current.connectionStatus).toBe("connected"));
+    const state = makeStateWithPublicRows();
+    act(() => joinRoom.emitState(state));
+    const previous = result.current.snapshot!;
+    const previousRows = previous[slice].map((row) => ({ ...row }));
+
+    Object.assign(state[slice][0]!, patch);
+    expect.soft(previous[slice]).toEqual(previousRows);
+    act(() => joinRoom.emitState(state));
+    const next = result.current.snapshot!;
+    expect(next).not.toBe(previous);
+    expect(next[slice]).not.toBe(previous[slice]);
+    expect(next[slice]).toEqual(state[slice]);
+    expect(previous[slice]).toEqual(previousRows);
+    for (const other of ["players", "roleCounts", "voteTally", "publicEvents", "publicChat"] as const) {
+      if (other !== slice) expect(next[other]).toBe(previous[other]);
+    }
+
+    act(() => joinRoom.emitState(state));
+    expect(result.current.snapshot).toBe(next);
+  });
+
+  it("keeps populated public slices stable across no-op notifications and unrelated shell changes", async () => {
+    mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
+    const { client, joinRoom } = createClient();
+    mocks.createGameClient.mockReturnValue(client);
+    const toast = vi.fn();
+    let renders = 0;
+    const { result } = renderHook(() => {
+      renders += 1;
+      return useGameRoom({ code: "ABCD", createOptions: undefined, toast });
+    });
+    await waitFor(() => expect(result.current.connectionStatus).toBe("connected"));
+    const state = makeStateWithPublicRows();
+    act(() => joinRoom.emitState(state));
+    const first = result.current.snapshot!;
+    const initialRenders = renders;
+    act(() => {
+      joinRoom.emitState(state);
+      joinRoom.emitState(makeStateWithPublicRows());
+      joinRoom.emitState(state);
+    });
+    expect(result.current.snapshot).toBe(first);
+    expect(renders).toBe(initialRenders);
+
+    act(() => joinRoom.emitState({ ...state, narratorVoice: "witch_moonglow" }));
+    const next = result.current.snapshot!;
+    expect(next.narratorVoice).toBe("witch_moonglow");
+    for (const slice of ["players", "roleCounts", "voteTally", "publicEvents", "publicChat"] as const) {
+      expect(next[slice]).toBe(first[slice]);
+    }
+    expect(first.narratorVoice).toBe("classic");
+  });
+
+  it.each(["roleCounts", "voteTally", "publicEvents", "publicChat"] as const)(
+    "tracks reordering, removal and clearing of %s without changing older snapshots", async (slice) => {
+      mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
+      const { client, joinRoom } = createClient();
+      mocks.createGameClient.mockReturnValue(client);
+      const toast = vi.fn();
+      const { result } = renderHook(() => useGameRoom({ code: "ABCD", createOptions: undefined, toast }));
+      await waitFor(() => expect(result.current.connectionStatus).toBe("connected"));
+      const state = makeStateWithPublicRows();
+      act(() => joinRoom.emitState(state));
+      const first = result.current.snapshot!;
+      const originalRows = first[slice].map((row) => ({ ...row }));
+
+      state[slice].reverse();
+      act(() => joinRoom.emitState(state));
+      const reordered = result.current.snapshot!;
+      expect(reordered[slice]).toEqual([...originalRows].reverse());
+      expect(first[slice]).toEqual(originalRows);
+
+      state[slice].shift();
+      act(() => joinRoom.emitState(state));
+      const shortened = result.current.snapshot!;
+      expect(shortened[slice]).toEqual([originalRows[0]]);
+      expect(reordered[slice]).toHaveLength(2);
+
+      state[slice].splice(0);
+      act(() => joinRoom.emitState(state));
+      const cleared = result.current.snapshot!;
+      expect(cleared[slice]).toEqual([]);
+      expect(shortened[slice]).toHaveLength(1);
+      act(() => joinRoom.emitState(state));
+      expect(result.current.snapshot).toBe(cleared);
+    },
+  );
+
+  it("projects only declared public row fields, not mutable SDK metadata", async () => {
+    mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
+    const { client, joinRoom } = createClient();
+    mocks.createGameClient.mockReturnValue(client);
+    const toast = vi.fn();
+    const { result } = renderHook(() => useGameRoom({ code: "ABCD", createOptions: undefined, toast }));
+    await waitFor(() => expect(result.current.connectionStatus).toBe("connected"));
+    const state = makeStateWithPublicRows();
+    const expected = makeStateWithPublicRows();
+    const slices = ["roleCounts", "voteTally", "publicEvents", "publicChat"] as const;
+    for (const slice of slices) {
+      Object.assign(state[slice][0]!, { sdkMetadata: { revision: 1 } });
+    }
+    act(() => joinRoom.emitState(state));
+    const snapshot = result.current.snapshot!;
+    for (const slice of slices) {
+      expect(snapshot[slice]).toEqual(expected[slice]);
+      expect(snapshot[slice][0]).not.toBe(state[slice][0]);
+      Object.assign(state[slice][0]!, { sdkMetadata: { revision: 2 } });
+    }
+    act(() => joinRoom.emitState(state));
+    expect(result.current.snapshot).toBe(snapshot);
+  });
+
   it("propagates a voting-cycle-only patch to the real receipt hook after the final voter ACK", async () => {
     mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
     const { client, joinRoom } = createClient();
@@ -407,7 +563,7 @@ describe("useGameRoom", () => {
     expect(result.current.receipt).toBeNull();
   });
 
-  it("updates repeat-room settings independently of the phase and preserves unchanged snapshots", async () => {
+  it("retains raw repeat-room settings independently of the phase and preserves unchanged snapshots", async () => {
     mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
     const { client, joinRoom } = createClient();
     mocks.createGameClient.mockReturnValue(client);
@@ -425,15 +581,42 @@ describe("useGameRoom", () => {
     const state = { ...makeState(), nextRoomOptionsJson: JSON.stringify(options) };
 
     act(() => joinRoom.emitState(state));
-    expect(result.current.snapshot?.nextRoomOptions).toMatchObject(options);
+    expect(result.current.snapshot?.nextRoomOptionsJson).toBe(state.nextRoomOptionsJson);
+    expect(result.current.snapshot).not.toHaveProperty("nextRoomOptions");
     const firstSnapshot = result.current.snapshot;
-    act(() => joinRoom.emitState(state));
+    act(() => joinRoom.emitState({ ...state }));
     expect(result.current.snapshot).toBe(firstSnapshot);
 
-    act(() => joinRoom.emitState({ ...state, nextRoomOptionsJson: JSON.stringify({ ...options, autoStart: true }) }));
-    expect(result.current.snapshot?.nextRoomOptions).toMatchObject({ ...options, autoStart: true });
+    const updatedJson = JSON.stringify({ ...options, autoStart: true });
+    act(() => joinRoom.emitState({ ...state, nextRoomOptionsJson: updatedJson }));
+    expect(result.current.snapshot?.nextRoomOptionsJson).toBe(updatedJson);
+    expect(result.current.snapshot).not.toBe(firstSnapshot);
     expect(result.current.snapshot?.phase).toBe("lobby");
+
+    act(() => joinRoom.emitState(makeState()));
+    expect(result.current.snapshot?.nextRoomOptionsJson).toBeUndefined();
+    const withoutSettings = result.current.snapshot;
+    act(() => joinRoom.emitState(makeState()));
+    expect(result.current.snapshot).toBe(withoutSettings);
   });
+
+  it.each(["not-json", '{"roomVisibility":"public"}'])(
+    "retains malformed repeat-room wire data for post-game validation: %s", async (nextRoomOptionsJson) => {
+      mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
+      const { client, joinRoom } = createClient();
+      mocks.createGameClient.mockReturnValue(client);
+      const { result } = renderHook(() => useGameRoom({ code: "ABCD", createOptions: undefined, toast: vi.fn() }));
+      await waitFor(() => expect(result.current.connectionStatus).toBe("connected"));
+      const state = { ...makeState(), nextRoomOptionsJson };
+
+      act(() => joinRoom.emitState(state));
+      expect(result.current.snapshot?.nextRoomOptionsJson).toBe(nextRoomOptionsJson);
+      expect(result.current.snapshot).not.toHaveProperty("nextRoomOptions");
+      const snapshot = result.current.snapshot;
+      act(() => joinRoom.emitState({ ...state }));
+      expect(result.current.snapshot).toBe(snapshot);
+    },
+  );
 
   it("consumes terminal results on patches and reconnect, without inferring them from public text", async () => {
     mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });

@@ -1,5 +1,6 @@
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useRef, useState } from "react";
 import { QrCode, Share2 } from "lucide-react";
+import { PlayFeatureBoundary } from "./PlayFeatureBoundary";
 
 const InviteQrSheet = lazy(() => import("./InviteQrSheet").then((module) => ({ default: module.InviteQrSheet })));
 
@@ -9,6 +10,7 @@ const InviteQrSheet = lazy(() => import("./InviteQrSheet").then((module) => ({ d
  */
 export function InviteTools({ code, onCopyInvite }: { code: string; onCopyInvite: () => void | Promise<void> }) {
   const [qrOpen, setQrOpen] = useState(false);
+  const qrTrigger = useRef<HTMLButtonElement>(null);
   const inviteUrl = () => new URL(`/lobby/${encodeURIComponent(code)}`, window.location.origin).href;
 
   async function shareInvite() {
@@ -28,13 +30,19 @@ export function InviteTools({ code, onCopyInvite }: { code: string; onCopyInvite
       <button type="button" aria-label="Сподели поканата" title="Сподели поканата" onClick={() => void shareInvite()}>
         <Share2 aria-hidden="true" />
       </button>
-      <button type="button" aria-label="Покажи QR код за масата" title="QR код за масата" onClick={() => setQrOpen(true)}>
+      <button ref={qrTrigger} type="button" aria-label="Покажи QR код за масата" title="QR код за масата" onClick={() => setQrOpen(true)}>
         <QrCode aria-hidden="true" />
       </button>
       {qrOpen ? (
+        <PlayFeatureBoundary fallback={<span role="status">QR кодът не се зареди. Използвай поканата.</span>}>
         <Suspense fallback={null}>
-          <InviteQrSheet open onOpenChange={setQrOpen} code={code} inviteUrl={inviteUrl()} />
+          <InviteQrSheet open onOpenChange={setQrOpen} code={code} inviteUrl={inviteUrl()}
+            onCloseAutoFocus={(event) => {
+              event.preventDefault();
+              qrTrigger.current?.focus({ preventScroll: true });
+            }} />
         </Suspense>
+        </PlayFeatureBoundary>
       ) : null}
     </>
   );

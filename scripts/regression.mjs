@@ -484,12 +484,18 @@ function checkFamilyQuickStartContracts() {
 }
 
 function checkRolesPageContracts() {
-  const rolesPage = ["game-roles-page.tsx", "RoleArt.tsx", "RoleDossier.tsx"]
-    .map((file) => readText(`apps/web/components/games/${file}`)).join("\n");
+  const rolesPage = ["game-roles-page.tsx", "GameRolesCatalog.tsx", "RoleArt.tsx", "RoleDossier.tsx"]
+    .map((file) => readText(`apps/web/components/games/${file}`)).join("\n")
+    + readText("apps/web/lib/role-presentation.server.ts");
   const legacyRolesRoute = readText("apps/web/app/roles/page.tsx");
   const css = readRolesStyles();
 
   assert(rolesPage.includes("getRolesForFamily"), "Roles page must filter roles by family.");
+  assert(readText("apps/web/components/games/game-roles-page.tsx").includes("catalog={getRoleCatalog(family)}"), "The server must supply only the requested public role catalogue.");
+  for (const file of ["GameRolesCatalog.tsx", "RoleArt.tsx", "RoleDossier.tsx", "RoleDossierButton.tsx"]) {
+    const client = readText(`apps/web/components/games/${file}`);
+    assert(!client.includes("ROLE_DEFINITIONS") && !client.includes("getRolesForFamily") && !client.includes('from "@/lib/role-art"'), `${file} must not import the full role registry into the catalogue client.`);
+  }
   assert(rolesPage.includes("KNOWN_WEREWOLF_ROLE_ASSETS"), "Roles page must keep an explicit Werewolf asset allow-list.");
   assert(rolesPage.includes("KNOWN_MAFIA_ROLE_ASSETS"), "Roles page must keep an explicit Mafia asset allow-list.");
   assert(rolesPage.includes("<picture className=\"role-codex-art role-codex-frame role-art-frame\"") && rolesPage.includes("data-frame-family={family}"), "Roles page must render pictures with the shared family frame.");

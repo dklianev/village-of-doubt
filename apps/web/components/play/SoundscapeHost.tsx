@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
-import type { GameMode, GamePhase, NarratorVoice } from "@werewolf/shared";
 import { playSoundStinger, setSoundScene } from "@/lib/play/soundscape-bridge";
-import type { CueMode, PublicEvent } from "@/lib/play/types";
+import { readNarrationTerminalResult } from "@/lib/play/narration-cues";
+import type { CueMode, GameSnapshot } from "@/lib/play/types";
 
 /**
  * Feeds the table soundscape from public state only. Lazy, so neither this wiring nor the
@@ -10,38 +10,52 @@ import type { CueMode, PublicEvent } from "@/lib/play/types";
  * "Звук и вибрация" for the table.
  */
 export function SoundscapeHost({
-  mode,
-  phase,
-  narratorVoice,
+  snapshot,
+  room,
+  connected,
   liveMode,
   cueMode,
-  publicEvents,
 }: {
-  mode: GameMode;
-  phase: GamePhase;
-  narratorVoice: NarratorVoice | undefined;
+  snapshot: Pick<GameSnapshot, "mode" | "phase" | "round" | "votingCycle" | "narratorVoice" | "winnerTeam" | "players" | "publicEvents">;
+  room: { roomId: string; state: unknown } | null;
+  connected: boolean;
   liveMode: boolean;
   cueMode: CueMode;
-  publicEvents: readonly PublicEvent[];
 }) {
-  const seenEventIds = useRef<Set<string> | null>(null);
-  const silent = liveMode || cueMode !== "audio_vibration";
+  const activeRoom = useRef(room);
+  const seenEvents = useRef<{ room: typeof room; connected: boolean; ids: Set<string> } | null>(null);
+  const silent = !connected || !room || liveMode || cueMode !== "audio_vibration";
 
   useEffect(() => {
-    setSoundScene(silent ? null : { mode, phase, narratorVoice: narratorVoice ?? "classic" });
-  }, [silent, mode, narratorVoice, phase]);
+    if (activeRoom.current !== room) setSoundScene(null);
+    activeRoom.current = room;
+    if (silent || !room) { setSoundScene(null); return; }
+    setSoundScene({
+      mode: snapshot.mode,
+      phase: snapshot.phase,
+      narratorVoice: snapshot.narratorVoice ?? "classic",
+      narration: {
+        gameId: room.roomId,
+        round: snapshot.round,
+        votingCycle: snapshot.votingCycle,
+        winnerTeam: snapshot.winnerTeam,
+        participantIds: snapshot.players.filter((player) => player.playing).map((player) => player.userId),
+        ...readNarrationTerminalResult(room, room.roomId, snapshot.round),
+      },
+    });
+  }, [silent, room, snapshot]);
 
   useEffect(() => () => setSoundScene(null), []);
 
   // Events already present when the table mounts (join, reconnect) are history, not news.
   useEffect(() => {
-    const previous = seenEventIds.current;
-    seenEventIds.current = new Set(publicEvents.map((event) => event.id));
-    if (!previous || silent) return;
-    if (publicEvents.some((event) => !previous.has(event.id) && (event.type === "death" || event.type === "hunter_shot"))) {
+    const previous = seenEvents.current;
+    seenEvents.current = { room, connected, ids: new Set(snapshot.publicEvents.map((event) => event.id)) };
+    if (!previous || silent || !previous.connected || previous.room !== room) return;
+    if (snapshot.publicEvents.some((event) => !previous.ids.has(event.id) && (event.type === "death" || event.type === "hunter_shot"))) {
       playSoundStinger("death");
     }
-  }, [silent, publicEvents]);
+  }, [silent, connected, room, snapshot.publicEvents]);
 
   return null;
 }

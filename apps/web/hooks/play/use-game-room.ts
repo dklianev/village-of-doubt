@@ -23,7 +23,6 @@ import { useAuthSession, type AuthSessionView } from "@/lib/use-auth-session";
 import type { pushToast } from "@/lib/toast";
 import { arePhaseSlicesEqual, arePlayerListsEqual } from "@/lib/play/equality";
 import { isDuplicateNameError } from "@/lib/play/join-errors";
-import { nextRoomOptionsForState } from "@/lib/play/next-room-options";
 import { terminalResultForState } from "@/lib/play/terminal-result";
 import { playCue } from "@/lib/sound";
 import type {
@@ -776,11 +775,10 @@ function snapshotShellForState(
   roleCounts: PublicRoleCount[],
   previousSnapshot: GameSnapshot | null,
 ): GameSnapshot {
-  const nextRoomOptions = nextRoomOptionsForState(state, previousSnapshot?.nextRoomOptions);
   const terminalResult = terminalResultForState(state, previousSnapshot?.terminalResult);
   return {
     code: state.code,
-    ...(nextRoomOptions === undefined ? {} : { nextRoomOptions }),
+    ...(state.nextRoomOptionsJson === undefined ? {} : { nextRoomOptionsJson: state.nextRoomOptionsJson }),
     mode: state.mode,
     playerCount: state.playerCount,
     narratorMode: state.narratorMode,
@@ -804,7 +802,9 @@ function snapshotShellForState(
     revoteEligibleUserIds: Array.from(state.revoteEligibleUserIds ?? []),
     ...(state.votingCycle === undefined ? {} : { votingCycle: state.votingCycle }),
     players: previousSnapshot?.players ?? [],
-    roleCounts,
+    roleCounts: previousSnapshot && areRoleCountsEqual(previousSnapshot.roleCounts, roleCounts)
+      ? previousSnapshot.roleCounts
+      : roleCounts,
     voteTally: previousSnapshot?.voteTally ?? [],
     publicEvents: previousSnapshot?.publicEvents ?? [],
     publicChat: previousSnapshot?.publicChat ?? [],
@@ -819,19 +819,34 @@ function playersForState(state: ColyseusGameState): PublicPlayer[] {
 }
 
 function roleCountsForState(state: ColyseusGameState): PublicRoleCount[] {
-  return Array.from(state.roleCounts);
+  // SDK rows mutate in place; retain only detached public values in React snapshots.
+  return Array.from(state.roleCounts, (item) => ({ role: item.role, count: item.count }));
 }
 
 function voteTallyForState(state: ColyseusGameState): VoteTallyItem[] {
-  return Array.from(state.voteTally);
+  return Array.from(state.voteTally, (item) => ({
+    targetUserId: item.targetUserId,
+    targetName: item.targetName,
+    count: item.count,
+    hasMayorVote: item.hasMayorVote,
+  }));
 }
 
 function publicEventsForState(state: ColyseusGameState): PublicEvent[] {
-  return Array.from(state.publicEvents);
+  return Array.from(state.publicEvents, (item) => ({
+    id: item.id,
+    type: item.type,
+    messageBg: item.messageBg,
+  }));
 }
 
 function publicChatForState(state: ColyseusGameState): PublicChatMessage[] {
-  return Array.from(state.publicChat);
+  return Array.from(state.publicChat, (item) => ({
+    id: item.id,
+    channel: item.channel,
+    senderName: item.senderName,
+    message: item.message,
+  }));
 }
 
 function phaseSliceForState(state: ColyseusGameState): PhaseSlice {
@@ -894,7 +909,7 @@ function areSportDaySlicesEqual(a: SportDaySlice, b: SportDaySlice) {
 
 function areSnapshotShellEqual(a: GameSnapshot, b: GameSnapshot) {
   return a.code === b.code
-    && a.nextRoomOptions === b.nextRoomOptions
+    && a.nextRoomOptionsJson === b.nextRoomOptionsJson
     && a.mode === b.mode
     && a.playerCount === b.playerCount
     && a.narratorMode === b.narratorMode
@@ -922,6 +937,9 @@ function areStringListsEqual(a: string[], b: string[]) {
 }
 
 function areRoleCountsEqual(a: PublicRoleCount[], b: PublicRoleCount[]) {
+  if (a === b) {
+    return true;
+  }
   if (a.length !== b.length) {
     return false;
   }

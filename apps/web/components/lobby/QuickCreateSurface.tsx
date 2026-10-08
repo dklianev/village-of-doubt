@@ -29,7 +29,7 @@ import {
   type LobbyTemplate,
 } from "@/lib/lobby-form";
 import { coverImageSizes, roleArtSource } from "@/lib/role-art";
-import { InlineRoleDetail } from "./StepRoles";
+import { InlineRoleDetail } from "./InlineRoleDetail";
 
 type Experience = {
   id: string;

@@ -65,10 +65,12 @@ export const ROLE_PRESET_LABELS_BG: Record<RolePreset, string> = {
 };
 
 export const NARRATOR_VOICE_LABELS_BG: Record<NarratorVoice, string> = {
-  classic: "Класически Разказвач",
-  old_villager: "Старият селянин",
-  inspector: "Инспекторът",
-  witch: "Вещицата",
+  classic: "Класически Разказвач · Kosta",
+  classic_nikolay: "Класически Разказвач · Nikolay",
+  old_villager: "Старият селянин · Peter K",
+  inspector: "Инспекторът · Yordan",
+  witch: "Вещицата · Milena",
+  witch_moonglow: "Вещицата · Moonglow",
 };
 
 export function getGameFamily(mode: GameMode): GameFamily {

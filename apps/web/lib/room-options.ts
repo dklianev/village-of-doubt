@@ -5,7 +5,6 @@ import type {
   MajorityMode,
   MayorMode,
   NarratorMode,
-  NarratorVoice,
   PhaseTimers,
   RoleCode,
   RoleDistribution,
@@ -15,7 +14,7 @@ import type {
   WerewolfVariant,
   CommissionerResultMode,
 } from "@werewolf/shared";
-import { GAME_MODE_DEFINITIONS, ROLE_DEFINITIONS } from "@werewolf/shared";
+import { GAME_MODE_DEFINITIONS, NARRATOR_VOICES, ROLE_DEFINITIONS } from "@werewolf/shared";
 import { ROOM_TIMER_QUERY_KEYS } from "@/lib/room-options-query";
 export { roomOptionsToQuery, stringifyRolesParam } from "@/lib/room-options-query";
 
@@ -31,7 +30,6 @@ const MAJORITY_MODES: MajorityMode[] = ["simple", "absolute"];
 const WEREWOLF_VARIANTS: WerewolfVariant[] = ["werewolves_vs_village", "vampires_vs_village", "three_teams"];
 const MAYOR_MODES: MayorMode[] = ["secret_role", "public_vote"];
 const COMMISSIONER_RESULT_MODES: CommissionerResultMode[] = ["team_only", "exact_role"];
-const NARRATOR_VOICES: NarratorVoice[] = ["classic", "old_villager", "inspector", "witch"];
 
 export function parseRoomCreateOptions(searchParams: RoomSearchParams = {}): CreateRoomOptions {
   const mode = first(searchParams.mode);

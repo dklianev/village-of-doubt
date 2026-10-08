@@ -1,8 +1,9 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { ArrowRight, Heart, RotateCcw, CirclePlay, Share2, Trophy, Theater } from "lucide-react";
 import { getGameFamily, ROLE_DEFINITIONS, type RoleCode } from "@werewolf/shared";
 import type { GameSnapshot } from "@/lib/play/types";
+import { withNextRoomOptions } from "@/lib/play/next-room-options";
 import { Button } from "@/components/button";
 import { ButtonLink } from "@/components/button-link";
 import { ProfilePortrait } from "@/components/ProfilePortrait";
@@ -23,7 +24,8 @@ const HEADINGS: Record<string, string> = {
   lovers: "Влюбените победиха", draw: "Няма победител",
 };
 
-export function GameConclusion({ snapshot, recordedGameId, currentUserId }: GameConclusionProps) {
+export function GameConclusion({ snapshot: rawSnapshot, recordedGameId, currentUserId }: GameConclusionProps) {
+  const snapshot = useMemo(() => withNextRoomOptions(rawSnapshot), [rawSnapshot]);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const family = getGameFamily(snapshot.mode);
   const familyPath = family === "mafia" ? "mafia" : "werewolf";
@@ -55,7 +57,7 @@ export function GameConclusion({ snapshot, recordedGameId, currentUserId }: Game
       if (!entry?.isIntersecting) return;
       setReveal("revealed");
       observer.disconnect();
-    }, { threshold: 0.2 });
+    }, { threshold: 0 });
     observer.observe(node);
     return () => observer.disconnect();
   }, []);

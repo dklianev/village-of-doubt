@@ -3,17 +3,27 @@ import type { SoundScene } from "./soundscape";
 
 type Soundscape = typeof import("./soundscape");
 
-let loading: Promise<Soundscape | null> | null = null;
+let loading: Promise<void> | null = null;
+let loaded: Soundscape | null = null;
 let scene: SoundScene | null = null;
 let listening = false;
+let previewActive = false;
 
-function load() {
+function syncScene() {
+  if (loaded) {
+    if (scene && getSoundEnabled() && !previewActive) loaded.enterPhase(scene);
+    else loaded.stopAll();
+    return;
+  }
+  if (loading || !scene || !getSoundEnabled() || previewActive) return;
   // A failed chunk request must not lock sound off for the rest of the session.
-  loading ??= import("./soundscape").catch(() => {
+  loading = import("./soundscape").then((soundscape) => {
+    loaded = soundscape;
+    // Import completion reconciles the current table, never a captured phase or old room.
+    syncScene();
+  }).catch(() => {
     loading = null;
-    return null;
   });
-  return loading;
 }
 
 /**
@@ -24,17 +34,18 @@ export function setSoundScene(next: SoundScene | null) {
   scene = next;
   if (!listening && typeof window !== "undefined") {
     listening = true;
-    window.addEventListener(SOUND_CHANGE_EVENT, () => {
-      if (scene && !loading && getSoundEnabled()) void load().then((soundscape) => scene && soundscape?.enterPhase(scene));
+    window.addEventListener(SOUND_CHANGE_EVENT, syncScene);
+    // Keep preview imports out of the table entry path. A preview owns speech even while loading.
+    window.addEventListener("senkite-narration-preview-change", (event) => {
+      const detail = (event as CustomEvent<unknown>).detail;
+      if (!detail || typeof detail !== "object" || !("active" in detail) || typeof detail.active !== "boolean") return;
+      previewActive = detail.active;
+      syncScene();
     });
   }
-  if (!next) {
-    void loading?.then((soundscape) => soundscape?.stopAll());
-    return;
-  }
-  if (loading || getSoundEnabled()) void load().then((soundscape) => soundscape?.enterPhase(next));
+  syncScene();
 }
 
 export function playSoundStinger(kind: "death") {
-  void loading?.then((soundscape) => soundscape?.stinger(kind));
+  if (scene && getSoundEnabled() && !previewActive) loaded?.stinger(kind);
 }

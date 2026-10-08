@@ -17,6 +17,8 @@ const nextConfig: NextConfig = {
     "/*": ["../../node_modules/.pnpm/@swc+helpers@*/node_modules/@swc/helpers/esm/**/*"],
   },
   cacheComponents: true,
+  // Preserve existing link prefetching until the app-shell migration is verified.
+  partialPrefetching: false,
   transpilePackages: ["@werewolf/shared", "@werewolf/database", "@werewolf/ui"],
   allowedDevOrigins: ["127.0.0.1"],
   images: {

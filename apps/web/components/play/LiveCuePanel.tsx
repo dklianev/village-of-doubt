@@ -1,58 +1,34 @@
-import { useId, useRef, useState } from "react";
-import { Eye, EyeOff, Play, Volume2 } from "lucide-react";
-import { triggerDeviceCue } from "@/lib/play/device-cues";
+import { useRef, useState } from "react";
+import type { NarratorVoice } from "@werewolf/shared";
 import type { CueMode } from "@/lib/play/types";
 import { PlayToolSheet } from "./PlayToolSheet";
+import { CUE_MODES } from "./cue-modes";
 import styles from "./PlayTools.module.css";
 
-const MODES = [
-  { value: "silent", label: "Тихо", icon: EyeOff },
-  { value: "visual", label: "Визуално", icon: Eye },
-  { value: "audio_vibration", label: "Звук и вибрация", icon: Volume2 },
-] as const;
-
-export function LiveCuePanel({ cueMode, liveMode, phase, pulseKey, onChange }: {
+export function LiveCuePanel({ cueMode, liveMode, phase, pulseKey, onChange, narratorVoice }: {
   cueMode: CueMode;
   liveMode: boolean;
   phase: string;
   pulseKey: number;
   onChange: (mode: CueMode) => void;
+  narratorVoice?: NarratorVoice;
 }) {
   const [open, setOpen] = useState(false);
   const [testPulse, setTestPulse] = useState(0);
   const trigger = useRef<HTMLButtonElement>(null);
-  const id = useId();
   const activeMode = liveMode ? "silent" : cueMode;
-  const { label, icon: ModeIcon } = MODES.find((mode) => mode.value === activeMode)!;
+  const { label, icon: ModeIcon } = CUE_MODES.find((mode) => mode.value === activeMode)!;
 
   return (
     <>
-      <button ref={trigger} type="button" className={`${styles.tool} ${styles.cueTool}`} title="Сигнали за фазите" aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>
+      <button ref={trigger} type="button" className={`${styles.tool} ${styles.cueTool}`} title="Сигнали за фазите" aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen((current) => !current)}>
         <ModeIcon key={pulseKey} data-cue={activeMode} aria-hidden="true" size={18} />
         <span>Сигнали <small>{label}</small></span>
       </button>
-      <PlayToolSheet open={open} onOpenChange={setOpen} title="Сигнали за фазите" trigger={trigger} compact>
-        <div className={styles.cueBody}>
-          <fieldset className={styles.modes}>
-            <legend className="sr-only">Режим на сигналите</legend>
-            {MODES.map(({ value, label, icon: Icon }) => (
-              <label key={value}>
-                <Icon size={18} aria-hidden="true" />
-                <span>{label}</span>
-                <input type="radio" name={id} value={value} checked={activeMode === value} onChange={() => onChange(value)} disabled={liveMode && value !== "silent"} />
-              </label>
-            ))}
-          </fieldset>
-          <p className={styles.note}>{liveMode ? "При игра на живо е достъпен само тихият режим." : "Настройката важи само за това устройство."}</p>
-          <div className={styles.preview}>
-            <span className={styles.cuePreview} data-cue={activeMode} aria-hidden="true"><ModeIcon key={`${pulseKey}:${testPulse}`} size={20} /></span>
-            <button type="button" className={styles.testCue} disabled={activeMode === "silent"} onClick={() => {
-              setTestPulse((current) => current + 1);
-              if (activeMode === "audio_vibration") triggerDeviceCue(phase, liveMode);
-            }}><Play size={16} aria-hidden="true" />Пробвай</button>
-          </div>
-        </div>
-      </PlayToolSheet>
+      <PlayToolSheet open={open} onOpenChange={setOpen} title="Сигнали за фазите" trigger={trigger} compact
+        activeMode={activeMode} liveMode={liveMode} phase={phase} pulseKey={pulseKey} testPulse={testPulse}
+        narratorVoice={narratorVoice}
+        onChange={onChange} onTest={() => setTestPulse((current) => current + 1)} />
     </>
   );
 }

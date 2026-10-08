@@ -3,6 +3,9 @@ import { JsonLd } from "@/components/JsonLd";
 import { GameRulesPage } from "@/components/games/game-rules-page";
 import { absoluteUrl, routeMetadata } from "@/lib/seo";
 
+export const prefetch = "partial";
+export const ensureStatic = "navigation";
+
 export const metadata: Metadata = routeMetadata({
   title: "Правила за Върколак — нощ, ден и паритет",
   description: "Научи правилата за Върколак: лоби, тайни роли, нощни действия, дневен спор, гласуване, паритет и победа.",

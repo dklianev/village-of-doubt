@@ -14,11 +14,13 @@ export function InviteQrSheet({
   onOpenChange,
   code,
   inviteUrl,
+  onCloseAutoFocus,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   code: string;
   inviteUrl: string;
+  onCloseAutoFocus?: (event: Event) => void;
 }) {
   const qr = useMemo(() => {
     const { data, size } = encode(inviteUrl, { ecc: "M", border: 0 });
@@ -30,7 +32,7 @@ export function InviteQrSheet({
   }, [inviteUrl]);
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange} title="Покана с QR код" closeLabel="Затвори" description="Покажи екрана на масата. Всеки сканира и влиза в стаята.">
+    <Sheet open={open} onOpenChange={onOpenChange} onCloseAutoFocus={onCloseAutoFocus} title="Покана с QR код" closeLabel="Затвори" description="Покажи екрана на масата. Всеки сканира и влиза в стаята.">
       <div className={styles.body}>
         <svg className={styles.qr} viewBox={`0 0 ${qr.span} ${qr.span}`} role="img" aria-label={`QR код за стая ${code}`} shapeRendering="crispEdges">
           <rect width={qr.span} height={qr.span} className={styles.paper} />
