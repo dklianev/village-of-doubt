@@ -1,5 +1,6 @@
 import { useId, useState } from "react";
 import { ChevronDown, ChevronUp, MessageSquare } from "lucide-react";
+import { Button } from "@/components/button";
 import type { PublicChatMessage } from "@/lib/play/types";
 
 export function PublicChatHistory({ messages }: { messages: readonly PublicChatMessage[] }) {
@@ -14,16 +15,16 @@ export function PublicChatHistory({ messages }: { messages: readonly PublicChatM
       <span>Архив на разговора</span>
     </h3>
     {messages.length > 5 ? (
-      <button
-        type="button"
-        className="btn btn-secondary play-chat-history-toggle"
+      <Button
+        variant="secondary"
+        className="play-chat-history-toggle"
         aria-expanded={expanded}
         aria-controls={logId}
         onClick={() => setExpanded((value) => !value)}
       >
         {expanded ? <ChevronUp className="play-button-icon" aria-hidden /> : <ChevronDown className="play-button-icon" aria-hidden />}
         {expanded ? "Само последните 5" : `Виж разговора (${messages.length})`}
-      </button>
+      </Button>
     ) : null}
     <div
       id={logId}

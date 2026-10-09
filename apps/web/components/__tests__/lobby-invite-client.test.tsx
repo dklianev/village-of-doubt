@@ -1,9 +1,11 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LobbyInviteClient } from "../lobby-invite-client";
+import { copyTextToClipboard } from "@/lib/clipboard";
 
 vi.mock("@/lib/toast", () => ({ useToast: () => vi.fn() }));
 vi.mock("next/image", () => ({ default: () => null }));
+vi.mock("@/lib/clipboard", () => ({ copyTextToClipboard: vi.fn().mockResolvedValue(undefined) }));
 
 const props = {
   code: "ABC234", family: "mafia" as const, modeLabel: "Мафия",
@@ -17,6 +19,7 @@ const room = {
   players: [{ displayName: "Анна", connected: true, ready: false, host: true }],
 };
 const fetchPreview = vi.fn();
+const shareLabel = "Сподели поканата";
 
 function respond(value: unknown, status = 200) {
   return new Response(JSON.stringify(value), { status, headers: { "Content-Type": "application/json" } });
@@ -25,6 +28,7 @@ function respond(value: unknown, status = 200) {
 function expectNoRoomActions() {
   expect(screen.queryByRole("link", { name: "Към играта" })).not.toBeInTheDocument();
   expect(screen.queryByRole("link", { name: "Наблюдавай" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("link", { name: /Върни се в играта|Продължи да наблюдаваш/ })).not.toBeInTheDocument();
   expect(screen.queryByRole("button", { name: /Сподели|Копирай/ })).not.toBeInTheDocument();
   expect(screen.queryByText("Име на госта")).not.toBeInTheDocument();
   expect(screen.queryByText(/Поканата остава активна/)).not.toBeInTheDocument();
@@ -33,10 +37,99 @@ function expectNoRoomActions() {
 describe("room invitation preview", () => {
   beforeEach(() => {
     fetchPreview.mockReset();
+    vi.mocked(copyTextToClipboard).mockReset().mockResolvedValue(undefined);
     vi.stubGlobal("fetch", fetchPreview);
     fetchPreview.mockResolvedValue(respond(room));
   });
-  afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+    window.history.replaceState(null, "", "/");
+  });
+
+  it("copies canonical invitation links without query parameters", async () => {
+    window.history.replaceState(null, "", "/lobby/ABC234?visualAuth=1&mode=werewolves_classic&redirect=private#fragment");
+    render(<LobbyInviteClient {...props} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Копирай кода" }));
+    expect(copyTextToClipboard).toHaveBeenLastCalledWith("ABC234");
+    fireEvent.click(screen.getByRole("button", { name: "Копирай линка" }));
+    expect(copyTextToClipboard).toHaveBeenLastCalledWith(`${window.location.origin}/lobby/ABC234`);
+    window.history.replaceState(null, "", "/");
+  });
+
+  it("uses canonical links with native sharing and accepts cancellation without a clipboard fallback", async () => {
+    const share = vi.fn().mockRejectedValue(new DOMException("Canceled", "AbortError"));
+    vi.stubGlobal("navigator", { share });
+    vi.mocked(copyTextToClipboard).mockClear();
+    render(<LobbyInviteClient {...props} />);
+    fireEvent.click(await screen.findByRole("button", { name: shareLabel }));
+    await waitFor(() => expect(share).toHaveBeenCalledWith(expect.objectContaining({ url: `${window.location.origin}/lobby/ABC234` })));
+    expect(copyTextToClipboard).not.toHaveBeenCalled();
+  });
+
+  it.each(["unsupported", "rejected"])("copies the canonical invitation when native sharing is %s", async (availability) => {
+    const share = availability === "rejected" ? vi.fn().mockRejectedValue(new Error("Share unavailable")) : undefined;
+    vi.stubGlobal("navigator", { share });
+    window.history.replaceState(null, "", "/lobby/ABC234?mode=werewolves_classic&visualAuth=1#fragment");
+    render(<LobbyInviteClient {...props} />);
+    fireEvent.click(await screen.findByRole("button", { name: shareLabel }));
+    await waitFor(() => expect(copyTextToClipboard).toHaveBeenCalledWith(`${window.location.origin}/lobby/ABC234`));
+  });
+
+  it("shows only a pending preview until the server supplies public identities and eligibility", async () => {
+    let finishPreview!: (response: Response) => void;
+    fetchPreview.mockImplementationOnce(() => new Promise<Response>((resolve) => { finishPreview = resolve; }));
+    render(<LobbyInviteClient {...props} />);
+    expect(screen.getByRole("status")).toHaveTextContent("Проверяваме стаята");
+    expectNoRoomActions();
+    expect(screen.queryByRole("region", { name: "Първи играчи в стаята" })).not.toBeInTheDocument();
+    expect(fetchPreview).toHaveBeenCalledWith("/api/rooms/ABC234/preview", expect.objectContaining({ cache: "no-store", signal: expect.any(AbortSignal) }));
+    await act(async () => finishPreview(respond(room)));
+    expect(await screen.findByRole("link", { name: "Към играта" })).toHaveAttribute("href", props.playHref);
+  });
+
+  it.each(["mafia", "werewolves"] as const)("places the public %s monograms before entry and keeps sharing in the footer", async (family) => {
+    const players = [
+      { displayName: "Анна", connected: true, ready: true, host: true },
+      { displayName: "Борис", connected: true, ready: true, host: false },
+      { displayName: "Рада", connected: false, ready: true, host: false },
+      { displayName: "Четвърти гост", connected: true, ready: false, host: false },
+      { displayName: "Пети гост", connected: true, ready: false, host: false },
+    ];
+    fetchPreview.mockResolvedValue(respond({ ...room, family, mode: family === "mafia" ? "mafia_free" : "werewolves_classic", players, playerCount: players.length }));
+    const { container } = render(<LobbyInviteClient {...props} />);
+    const roster = await screen.findByRole("region", { name: "Първи играчи в стаята" });
+    expect(container.querySelector(".lobby-invite-details")).toContainElement(roster);
+    expect(container.querySelector(".lobby-invite-paper")).not.toBeInTheDocument();
+    expect([...roster.querySelectorAll(".lobby-player-chip strong")].map((node) => node.textContent)).toEqual(["А", "Б", "Р"]);
+    expect(within(roster).getByText("домакин")).toBeInTheDocument();
+    expect(within(roster).getByText("готов")).toBeInTheDocument();
+    expect(within(roster).getByText("извън линия")).toBeInTheDocument();
+    expect(within(roster).getByText("И още 2 в стаята.")).toBeInTheDocument();
+    expect(screen.queryByText("Четвърти гост")).not.toBeInTheDocument();
+    expect(screen.queryByText("Пети гост")).not.toBeInTheDocument();
+    const actions = screen.getByRole("navigation", { name: "Действия за стаята" });
+    const footer = container.querySelector(".lobby-invite-footer")!;
+    expect(roster.compareDocumentPosition(actions) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(actions.compareDocumentPosition(footer) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(footer).toContainElement(screen.getByRole("button", { name: shareLabel }));
+    expect(footer).toContainElement(screen.getByRole("button", { name: "Копирай линка" }));
+    expect(footer).toContainElement(screen.getByRole("link", { name: family === "mafia" ? "Въведи друг код за Мафия" : "Въведи друг код за Върколак" }));
+    expect(screen.getByRole("status")).toHaveTextContent("Домакин: Анна");
+  });
+
+  it("does not request a preview for malformed codes", async () => {
+    render(<LobbyInviteClient code="ABC/23" />);
+    expect(await screen.findByRole("status")).toHaveTextContent("Тази стая вече не е достъпна");
+    expect(fetchPreview).not.toHaveBeenCalled();
+    expectNoRoomActions();
+  });
+
+  it("shows disconnected players as offline even when their previous ready flag is set", async () => {
+    fetchPreview.mockResolvedValue(respond({ ...room, players: [{ displayName: "Анна", host: true, ready: true, connected: false }] }));
+    render(<LobbyInviteClient {...props} />);
+    expect(await screen.findByText("извън линия")).toBeInTheDocument();
+  });
 
   it("shows a known missing room without invented activity or join/share actions", async () => {
     fetchPreview.mockResolvedValue(respond({ status: "missing" }));
@@ -52,7 +145,7 @@ describe("room invitation preview", () => {
     fetchPreview.mockResolvedValue(respond({ status: "missing" }));
     render(<LobbyInviteClient code="ABC234" />);
     expect(await screen.findByRole("status")).toHaveTextContent("Тази стая вече не е достъпна");
-    expect(screen.getByRole("link", { name: "Избери игра" })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: "Въведи друг код" })).toHaveAttribute("href", "/join");
     expect(screen.queryByRole("link", { name: /отворените маси/ })).not.toBeInTheDocument();
     expectNoRoomActions();
   });
@@ -73,7 +166,7 @@ describe("room invitation preview", () => {
     fireEvent.click(screen.getByRole("button", { name: "Провери отново" }));
     expect(await screen.findByRole("link", { name: "Към играта" })).toHaveAttribute("href", props.playHref);
     expect(screen.getByText("Анна", { selector: "span" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Сподели" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: shareLabel })).toBeEnabled();
   });
 
   it("does not show the guest as host when identities are redacted", async () => {
@@ -81,6 +174,8 @@ describe("room invitation preview", () => {
     render(<LobbyInviteClient {...props} />);
     await screen.findByRole("link", { name: "Към играта" });
     expect(screen.queryByText("Име на госта")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Домакин:/)).not.toBeInTheDocument();
+    expect(screen.queryByText("Анна")).not.toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Първи играчи в стаята" })).not.toBeInTheDocument();
   });
 
@@ -126,9 +221,10 @@ describe("room invitation preview", () => {
   it("does not infer admission from free seats when the server denies both entry modes", async () => {
     fetchPreview.mockResolvedValue(respond({ ...room, canJoinAsPlayer: false, canSpectate: false }));
     render(<LobbyInviteClient {...props} />);
-    await screen.findByText(/В стаята има/);
+    await screen.findByText("1 от 8 места заети");
     expect(screen.queryByRole("link", { name: "Към играта" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Наблюдавай" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Сподели|Копирай/ })).not.toBeInTheDocument();
   });
 
   it("fails closed when a preview omits server admission decisions", async () => {
@@ -146,13 +242,13 @@ describe("room invitation preview", () => {
     expect(screen.getByRole("link", { name: /Въведи друг код/ })).toHaveAttribute("href", "/mafia/join");
   });
 
-  it("removes stale join actions and identities when the room disappears on polling", async () => {
+  it.each(["missing", "unavailable"])("removes stale join actions and identities when polling reports %s", async (status) => {
     vi.useFakeTimers();
-    fetchPreview.mockResolvedValueOnce(respond(room)).mockResolvedValue(respond({ status: "missing" }));
+    fetchPreview.mockResolvedValueOnce(respond(room)).mockResolvedValue(respond({ status }));
     await act(async () => render(<LobbyInviteClient {...props} />));
     expect(screen.getByRole("link", { name: "Към играта" })).toBeInTheDocument();
     await act(async () => vi.advanceTimersByTimeAsync(5000));
-    expect(screen.getByRole("status")).toHaveTextContent("Тази стая вече не е достъпна");
+    expect(screen.getByRole("status")).toHaveTextContent(status === "missing" ? "Тази стая вече не е достъпна" : "Не успяхме да проверим стаята");
     expectNoRoomActions();
     expect(screen.queryByText("Анна", { selector: "span" })).not.toBeInTheDocument();
   });
@@ -165,7 +261,7 @@ describe("room invitation preview", () => {
     expectNoRoomActions();
     await act(async () => vi.advanceTimersByTimeAsync(5000));
     expect(screen.getByRole("link", { name: "Към играта" })).toHaveAttribute("href", props.playHref);
-    expect(screen.getByRole("status")).toHaveTextContent("В стаята има 1 от 8 играчи");
+    expect(screen.getByRole("status")).toHaveTextContent("1 от 8 места заети");
   });
 
   it("ignores a superseded response after checking again on tab visibility", async () => {
@@ -177,6 +273,6 @@ describe("room invitation preview", () => {
     await screen.findByRole("link", { name: "Към играта" });
     await act(async () => finishOld(respond({ status: "missing" })));
     expect(screen.getByRole("link", { name: "Към играта" })).toHaveAttribute("href", props.playHref);
-    expect(screen.getByRole("status")).toHaveTextContent("В стаята има 1 от 8 играчи");
+    expect(screen.getByRole("status")).toHaveTextContent("1 от 8 места заети");
   });
 });

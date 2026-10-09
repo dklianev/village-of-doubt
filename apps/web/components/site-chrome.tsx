@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, Menu, Moon, Play, Sun, Volume2, VolumeX } from "lucide-react";
@@ -8,12 +8,12 @@ import { AuthChip } from "@/components/site-chrome/AuthChip";
 import { BrandLogo } from "@/components/site-chrome/BrandLogo";
 import { NavigationFallback } from "@/components/site-chrome/NavigationFallback";
 import { useNavigationPanels } from "@/components/site-chrome/use-navigation-panels";
-import { getSoundEnabled, playCue, setSoundEnabled } from "@/lib/sound";
+import { createThemeTransition, type ThemePreference } from "@/components/site-chrome/theme-transition";
+import { getSoundEnabled, playCue, setSoundEnabled, SOUND_CHANGE_EVENT } from "@/lib/sound";
 import { safeLocalStorage } from "@/lib/safe-storage";
 import type { AuthSessionView } from "@/lib/use-auth-session";
 import "@/components/site-chrome/SiteChrome.module.css";
 
-type ThemePreference = "light" | "dark";
 type Disclosure = "play" | "more";
 const THEME_STORAGE_KEY = "werewolf-theme";
 const transientButtonAttributes = { autoComplete: "off" } as const;
@@ -24,6 +24,8 @@ export default function SiteChrome({ initialSession }: { initialSession?: AuthSe
   const [interactive, setInteractive] = useState(false);
   const [soundEnabled, setSoundEnabledState] = useState(false);
   const [themePreference, setThemePreference] = useState<ThemePreference>("dark");
+  const themePreferenceRef = useRef<ThemePreference>("dark");
+  const [themeTransition] = useState(createThemeTransition);
   const [disclosure, setDisclosure] = useState<Disclosure | null>(null);
   const [drawer, setDrawer] = useState<"navigation" | "play" | null>(null);
   const [drawerMode, setDrawerMode] = useState<"navigation" | "play">("navigation");
@@ -44,8 +46,18 @@ export default function SiteChrome({ initialSession }: { initialSession?: AuthSe
       ? saved
       : document.documentElement.dataset.theme === "light" ? "light" : "dark";
     setThemePreference(theme);
-    applyThemePreference(theme);
+    themePreferenceRef.current = theme;
+    themeTransition.apply(theme);
     setInteractive(true);
+  }, [themeTransition]);
+
+  useLayoutEffect(() => () => themeTransition.finish(), [pathname, themeTransition]);
+
+  // A room's signal setting also switches sound; keep the header icon truthful when it does.
+  useEffect(() => {
+    const sync = () => setSoundEnabledState(getSoundEnabled());
+    window.addEventListener(SOUND_CHANGE_EVENT, sync);
+    return () => window.removeEventListener(SOUND_CHANGE_EVENT, sync);
   }, []);
 
   useEffect(() => {
@@ -116,11 +128,12 @@ export default function SiteChrome({ initialSession }: { initialSession?: AuthSe
   }
 
   function toggleTheme() {
-    const next = themePreference === "dark" ? "light" : "dark";
+    const next = themePreferenceRef.current === "dark" ? "light" : "dark";
+    themePreferenceRef.current = next;
     safeLocalStorage.setItem(THEME_STORAGE_KEY, next);
     setThemePreference(next);
-    if ("startViewTransition" in document) document.startViewTransition(() => applyThemePreference(next));
-    else applyThemePreference(next);
+    // Document snapshots must not retain a room's private UI after it is hidden.
+    themeTransition.apply(next, !isRoom && !pathname.startsWith("/lobby/"));
   }
 
   const soundLabel = soundEnabled ? "Изключи звука" : "Включи звука";
@@ -128,7 +141,7 @@ export default function SiteChrome({ initialSession }: { initialSession?: AuthSe
   const authProps = initialSession === undefined ? {} : { initialSession };
 
   return (
-    <header className="site-chrome" data-version="v2" data-room={isRoom ? "true" : undefined}>
+    <header className="site-chrome" data-version="v2" data-route={pathname} data-room={isRoom ? "true" : undefined}>
       <button
         className="site-mobile-menu" type="button" aria-label="Отвори менюто"
         aria-haspopup={panels ? "dialog" : undefined} aria-expanded={drawer === "navigation"}
@@ -188,10 +201,10 @@ export default function SiteChrome({ initialSession }: { initialSession?: AuthSe
       </div> : null}
 
       <div className="site-utility-cluster" aria-label="Настройки">
-        {isRoom ? <button className="site-icon-button" type="button" aria-label={soundLabel} data-tooltip={soundLabel} disabled={!interactive} onClick={toggleSound}>
+        {isRoom ? <button className="site-icon-button" type="button" aria-label={soundLabel} data-tooltip={soundLabel} {...transientButtonAttributes} disabled={!interactive} onClick={toggleSound}>
           {soundEnabled ? <Volume2 className="site-icon" aria-hidden /> : <VolumeX className="site-icon" aria-hidden />}
         </button> : null}
-        <button className="site-icon-button" type="button" aria-label={themeLabel} data-tooltip={themeLabel} disabled={!interactive} onClick={toggleTheme}>
+        <button className="site-icon-button" type="button" aria-label={themeLabel} data-tooltip={themeLabel} {...transientButtonAttributes} disabled={!interactive} onClick={toggleTheme}>
           {themePreference === "dark" ? <Moon className="site-icon" aria-hidden /> : <Sun className="site-icon" aria-hidden />}
         </button>
         <span className="site-utility-separator" aria-hidden />
@@ -200,13 +213,13 @@ export default function SiteChrome({ initialSession }: { initialSession?: AuthSe
 
       {!isRoom ? <button
         className="site-play-cta site-play-cta-mobile" type="button" aria-haspopup={panels ? "dialog" : undefined}
-        aria-expanded={drawer === "play"} disabled={!interactive}
+        aria-expanded={drawer === "play"} {...transientButtonAttributes} disabled={!interactive}
         aria-busy={drawer === "play" && navigationStatus === "pending"}
         onPointerEnter={preload} onFocus={preload}
         onClick={(event) => openDrawer("play", event.currentTarget)}
       >
         <Play className="site-icon" aria-hidden strokeWidth={1.9} /><span>Играй</span>
-      </button> : <button className="site-icon-button site-room-sound" type="button" aria-label={soundLabel} disabled={!interactive} onClick={toggleSound}>
+      </button> : <button className="site-icon-button site-room-sound" type="button" aria-label={soundLabel} {...transientButtonAttributes} disabled={!interactive} onClick={toggleSound}>
         {soundEnabled ? <Volume2 className="site-icon" aria-hidden /> : <VolumeX className="site-icon" aria-hidden />}
       </button>}
 
@@ -229,11 +242,4 @@ function FamilyLink({ pathname, href, label }: { pathname: string; href: string;
   const active = pathname === href || pathname.startsWith(`${href}/`);
   return <Link className={active ? "site-family-link is-active" : "site-family-link"} href={href}
     aria-current={pathname === href ? "page" : active ? "location" : undefined}>{label}</Link>;
-}
-
-function applyThemePreference(preference: ThemePreference) {
-  if (document.documentElement.dataset.theme === preference) return;
-  document.documentElement.dataset.vt = "theme";
-  document.documentElement.dataset.theme = preference;
-  window.setTimeout(() => { delete document.documentElement.dataset.vt; }, 320);
 }

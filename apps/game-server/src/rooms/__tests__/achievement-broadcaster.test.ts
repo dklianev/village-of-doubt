@@ -69,4 +69,23 @@ describe("AchievementBroadcaster", () => {
 
     expect(sendToUser).toHaveBeenCalledTimes(2);
   });
+
+  it("does not award voting attendance after an earlier missed ballot leaves the bounded buffer", () => {
+    const broadcaster = new AchievementBroadcaster();
+    const context = { players: [{ userId: "civilian", role: "civilian", alive: true }] };
+    broadcaster.recordEvent({ phase: "voting", round: 1, type: "vote_tally", payload: { voters: [] } });
+    for (let index = 0; index < 500; index += 1) {
+      broadcaster.recordEvent({ phase: "night", round: 2, type: "system", payload: {} });
+    }
+    const attendedBallot = {
+      phase: "voting", round: 2, type: "vote_tally", payload: { voters: [{ userId: "civilian" }] },
+    };
+    broadcaster.recordEvent(attendedBallot);
+    const award = { userId: "civilian", achievementId: "silent_civilian" };
+    expect(broadcaster.evaluateUnlocks(context)).not.toContainEqual(award);
+
+    broadcaster.reset();
+    broadcaster.recordEvent(attendedBallot);
+    expect(broadcaster.evaluateUnlocks(context)).toContainEqual(award);
+  });
 });

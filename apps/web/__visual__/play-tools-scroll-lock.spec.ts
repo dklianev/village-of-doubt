@@ -7,7 +7,7 @@ async function geometry(page: Page) {
   return page.evaluate(() => ({
     scrollY,
     documentHeight: document.documentElement.scrollHeight,
-    boxes: [".site-chrome", ".site-brand", "main.play-shell", ".play-interaction-column"].map((selector) => {
+    boxes: [".site-chrome", ".site-brand", "main.play-shell", ".play-console-band"].map((selector) => {
       const rect = document.querySelector(selector)!.getBoundingClientRect();
       return { selector, x: rect.x, y: rect.y, width: rect.width, height: rect.height };
     }),
@@ -50,6 +50,9 @@ for (const nativeScrollbar of [true, false]) {
               const trigger = tools.getByRole("button", { name });
               await trigger.scrollIntoViewIfNeeded();
               await page.evaluate(() => scrollTo(0, Math.min(180, document.documentElement.scrollHeight - innerHeight)));
+              // Full-width play puts tools below the stage. Establish the lock
+              // baseline after revealing the trigger, not before click auto-scroll.
+              await trigger.scrollIntoViewIfNeeded();
               await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(0);
               const before = await geometry(page);
               expect.soft(before.boxes[0]!.y, "Navbar stays pinned after page scrolling").toBe(0);

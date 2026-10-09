@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Ban, FileSearch, Hammer, Hand, Heart, HeartPulse, House, Search, ShieldCheck, Skull, type LucideIcon } from "lucide-react";
 import type { GamePhase, NightActionCapabilities, NightActionCommand, NightActionKind, PrivateFactionRoster, RoleCode } from "@werewolf/shared";
+import { Button } from "@/components/button";
 import { nightActionHelpBg, nightInstructionBg } from "@/lib/play/copy";
 import { canFactionKill } from "@/lib/play/role-rules";
 import {
@@ -87,16 +88,16 @@ export function NightActionPanel({
     secondary = false,
   ) {
     return (
-      <button
-        className={`btn btn-${secondary ? "secondary" : "primary"} action-btn ability-${ability}`}
+      <Button
+        variant={secondary ? "secondary" : "primary"}
+        className={`action-btn ability-${ability}`}
         data-command-priority="primary"
-        type="button"
         disabled={!targetId || !canUseKind(kind)}
         onClick={() => targetId && submitTargetAction({ kind, targetUserId: targetId })}
       >
         <Icon className="play-button-icon" aria-hidden="true" />
         {label}
-      </button>
+      </Button>
     );
   }
 
@@ -140,9 +141,9 @@ export function NightActionPanel({
       </div>
 
       {needsSecondTarget && selectedTarget ? (
-        <button className={`btn btn-secondary ${styles.resetButton}`} type="button" onClick={onResetPrimaryTarget}>
+        <Button variant="secondary" className={styles.resetButton} onClick={onResetPrimaryTarget}>
           Промени първата цел
-        </button>
+        </Button>
       ) : null}
 
       <div className={`play-action-buttons ${styles.actions}`} role="group" aria-label="Действия за тази нощ">
@@ -189,16 +190,15 @@ export function NightActionPanel({
           targetActionButton("priest_bless", "Дай благословия", ShieldCheck, "bless")
         ) : null}
         {privateRole === "blacksmith" ? (
-          <button
-            className="btn btn-primary action-btn ability-kill"
+          <Button
+            className="action-btn ability-kill"
             data-command-priority="primary"
-            type="button"
             disabled={!canSubmitTarget || !canUseKind("blacksmith_sword")}
             onClick={() => targetId && secondId && submitTargetAction({ kind: "blacksmith_sword", receiverUserId: secondId, targetUserId: targetId })}
           >
             <Hammer className="play-button-icon" aria-hidden="true" />
             Изкови меч
-          </button>
+          </Button>
         ) : null}
         {privateRole === "stray_cat" ? (
           targetActionButton("stray_cat_choose", "Избери дом", House, "investigate")
@@ -207,22 +207,21 @@ export function NightActionPanel({
           targetActionButton("thief_steal", "Открадни карта", Hand, "steal")
         ) : null}
         {(privateRole === "cupid" || privateRole === "lovers") && phase === "first_night" ? (
-          <button
-            className="btn btn-primary action-btn ability-lovers"
+          <Button
+            className="action-btn ability-lovers"
             data-command-priority="primary"
-            type="button"
             disabled={!canSubmitTarget || !canUseKind("cupid_link")}
             onClick={() => targetId && secondId && submitTargetAction({ kind: "cupid_link", firstUserId: targetId, secondUserId: secondId })}
           >
             <Heart className="play-button-icon" aria-hidden="true" />
             Свържи Влюбените
-          </button>
+          </Button>
         ) : null}
-        <button
-          className={`btn btn-secondary play-confirm-skip ${styles.skipButton}`}
+        <Button
+          variant="secondary"
+          className={`play-confirm-skip ${styles.skipButton}`}
           data-command-priority="quiet"
           data-confirm-state={skipArmed ? "armed" : "idle"}
-          type="button"
           aria-pressed={skipArmed}
           onClick={() => {
             if (skipArmed) {
@@ -234,7 +233,7 @@ export function NightActionPanel({
           }}
         >
           {skipArmed ? "Потвърди пропуска" : "Пропусни"}
-        </button>
+        </Button>
       </div>
       {unavailableReasons.length > 0 ? (
         <div className={`night-action-reasons ${styles.reasons}`}>

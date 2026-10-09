@@ -1,5 +1,5 @@
 import { memo, type RefCallback } from "react";
-import { MoreHorizontal } from "lucide-react";
+import { Check, Mic, MoreHorizontal, Pin, Shield, WifiOff } from "lucide-react";
 import { ROLE_DEFINITIONS, type GamePhase, type RoleCode } from "@werewolf/shared";
 import { ProfilePortrait } from "@/components/ProfilePortrait";
 import { avatarIdForUser } from "@/lib/avatar-catalog";
@@ -80,7 +80,7 @@ export const PlaySeat = memo(function PlaySeat({
         : seatStatusText(player, phase, narratorMode);
   const stateParts: string[] = [];
   if (voteCount > 0) {
-    stateParts.push(`${voteCount} гласа`);
+    stateParts.push(`${voteCount} ${voteCount === 1 ? "глас" : "гласа"}`);
   }
   if (shortcutNumber) {
     stateParts.push(`клавиш ${shortcutNumber}`);
@@ -103,21 +103,29 @@ export const PlaySeat = memo(function PlaySeat({
             muted={!player.alive || !player.connected}
           />
         </span>
-        <span className={styles.initialBadge}>{playerInitials(player.displayName)}</span>
+        <span data-seat-initial className={`${styles.initialBadge} ${speaking || defending || nominee ? styles.statusBadge : ""}`}>
+          {speaking || defending || nominee ? (
+            <span className={styles.dayBadge} data-seat-day-status title={speaking ? "Реч" : defending ? "Защита" : "Номиниран"}>
+              {speaking ? <Mic /> : defending ? <Shield /> : <Pin />}
+            </span>
+          ) : playerInitials(player.displayName)}
+        </span>
         {shortcutNumber ? (
           <span className={styles.shortcutHint} data-seat-shortcut>{shortcutNumber}</span>
         ) : null}
-        {voteCount > 0 ? <span className={styles.voteCount}>{voteCount}</span> : null}
+        {voteCount > 0 ? <span key={voteCount} className={styles.voteCount} data-seat-vote-count>{voteCount}</span> : null}
         {selected || secondSelected ? (
-          <span className={styles.selectedMark}>{secondSelected ? "2" : "✓"}</span>
-        ) : null}
-        {speaking || defending || nominee ? (
-          <span className={styles.dayBadge}>
-            {speaking ? "Реч" : defending ? "Защита" : "Номиниран"}
+          <span className={styles.selectedMark} data-seat-selection>
+            {secondSelected ? "2" : <Check aria-hidden="true" />}
+            {phase !== "lobby" ? <span>{secondSelected ? "Втора цел" : "Избран"}</span> : null}
           </span>
         ) : null}
+        {phase !== "lobby" && !player.alive ? <span className={styles.eliminatedMark} data-seat-eliminated>Елиминиран</span> : null}
+        {phase !== "lobby" && player.alive && !player.connected ? <span className={styles.connectionMark} data-seat-disconnected title="Извън връзка"><WifiOff aria-hidden="true" /></span> : null}
       </span>
-      <span className={styles.nameplate} data-seat-name>{player.displayName}</span>
+      <span className={styles.nameplate} data-seat-name title={player.displayName}>
+        <span className={styles.nameText}>{player.displayName}</span>
+      </span>
       <span className={styles.state} data-seat-state-label>{status}</span>
     </>
   );
@@ -127,6 +135,7 @@ export const PlaySeat = memo(function PlaySeat({
       <button
         className={`${styles.token} ${styles.targetable}`}
         data-seat-token
+        data-active-seat={phase !== "lobby" ? "true" : undefined}
         data-seat-user-id={player.userId}
         type="button"
         data-alive={player.alive ? "true" : "false"}
@@ -151,6 +160,7 @@ export const PlaySeat = memo(function PlaySeat({
     <div
       className={styles.token}
       data-seat-token
+      data-active-seat={phase !== "lobby" ? "true" : undefined}
       data-seat-user-id={player.userId}
       role="group"
       data-alive={player.alive ? "true" : "false"}
@@ -170,6 +180,7 @@ export const PlaySeat = memo(function PlaySeat({
             className={styles.menuTrigger}
             type="button"
             aria-label={`Управление за ${player.displayName}`}
+            title={`Управление за ${player.displayName}`}
             aria-expanded={menuOpen}
             aria-controls={menuId}
             data-seat-menu-trigger

@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useMemo, useRef, useState, type KeyboardEvent } from "react";
 import Link from "next/link";
+import { RotateCcw, Save } from "lucide-react";
 import { normalizeAvatarId, type AvatarId } from "@werewolf/shared";
 import { ProfilePortrait } from "@/components/ProfilePortrait";
 import { AVATAR_OPTIONS, type AvatarGroup } from "@/lib/avatar-catalog";
 import { authClient } from "@/lib/auth-client";
+import { useAccountIdentity } from "./AccountIdentity";
 import styles from "./Account.module.css";
 
 const PROVIDER_LABELS: Record<string, string> = {
@@ -37,16 +39,11 @@ export function AccountProfile(props: Props) {
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<"" | "saved" | "error">("");
   const [errorMessage, setErrorMessage] = useState("");
-  const statusTimerRef = useRef<number | null>(null);
+  const pendingRef = useRef(false);
+  const identity = useAccountIdentity();
   const avatarButtonRefs = useRef<Partial<Record<AvatarId, HTMLButtonElement | null>>>({});
 
-  useEffect(() => {
-    return () => {
-      if (statusTimerRef.current !== null) {
-        window.clearTimeout(statusTimerRef.current);
-      }
-    };
-  }, []);
+  const dirty = name.trim() !== savedName || avatarId !== savedAvatarId;
 
   const filteredAvatars = useMemo(
     () => avatarFilter === "all" ? AVATAR_OPTIONS : AVATAR_OPTIONS.filter((option) => option.group === avatarFilter),
@@ -86,22 +83,21 @@ export function AccountProfile(props: Props) {
   }
 
   async function saveProfile() {
-    if (saving) return;
-    if (statusTimerRef.current !== null) {
-      window.clearTimeout(statusTimerRef.current);
-      statusTimerRef.current = null;
-    }
+    if (pendingRef.current || !dirty) return;
+    const submittedName = name;
+    const submittedAvatarId = avatarId;
     const next = name.trim();
-    if (next.length < 2) {
+    if (next.length < 2 || next.length > 32) {
       setStatus("error");
-      setErrorMessage("Името трябва да е поне 2 символа.");
+      setErrorMessage("Името трябва да е между 2 и 32 символа.");
       return;
     }
 
+    pendingRef.current = true;
     setSaving(true);
     setStatus("");
     try {
-      const result = await authClient.updateUser({ name: next, avatarId });
+      const result = await authClient.updateUser({ name: next, avatarId: submittedAvatarId });
       if (result.error) {
         setStatus("error");
         setErrorMessage("Промените не са запазени. Опитай отново след малко.");
@@ -109,18 +105,17 @@ export function AccountProfile(props: Props) {
       }
 
       setSavedName(next);
-      setSavedAvatarId(avatarId);
-      setName(next);
+      setSavedAvatarId(submittedAvatarId);
+      setName((current) => current === submittedName ? next : current);
+      identity?.saveIdentity({ name: next, avatarId: submittedAvatarId });
       setStatus("saved");
-      statusTimerRef.current = window.setTimeout(() => {
-        setStatus("");
-        statusTimerRef.current = null;
-      }, 2200);
       window.dispatchEvent(new Event("auth-session-change"));
     } catch {
       setStatus("error");
       setErrorMessage("Не успяхме да запазим промените. Провери връзката си и опитай отново.");
     } finally {
+      pendingRef.current = false;
+      // Activity can hide this page while the request completes; settle its state too.
       setSaving(false);
     }
   }
@@ -128,17 +123,15 @@ export function AccountProfile(props: Props) {
   return (
     <section className={`${styles.section} ${styles.profileSection}`}>
       <header className={styles.sectionHead}>
-        <p className={styles.sectionKicker}>регистър на самоличността</p>
         <h2>Твоят образ на масата</h2>
-        <p>Избери портрет и име. Те оформят личното ти досие.</p>
+        <p>Така те виждат другите играчи.</p>
       </header>
 
-      <div className={styles.profileForm}>
+      <form className={styles.profileForm} onSubmit={(event) => { event.preventDefault(); void saveProfile(); }}>
         <div className={styles.identityEditor}>
           <div className={styles.identityPreview} aria-label="Преглед на избрания образ">
             <ProfilePortrait avatarId={avatarId} decorative />
             <span>{name.trim() || "Без име"}</span>
-            <span className={styles.registrationStamp} aria-hidden="true">Регистриран</span>
           </div>
           <div className={`${styles.field} ${styles.nameField}`}>
             <label htmlFor="account-name">Име на масата</label>
@@ -147,18 +140,10 @@ export function AccountProfile(props: Props) {
               type="text"
               value={name}
               maxLength={32}
-              onChange={(event) => setName(event.target.value)}
+              onChange={(event) => { setName(event.target.value); setStatus(""); }}
               autoComplete="name"
+              aria-describedby="account-profile-feedback"
             />
-            <button
-              type="button"
-              className={styles.saveButton}
-              onClick={saveProfile}
-              disabled={saving || (name.trim() === savedName && avatarId === savedAvatarId)}
-              aria-busy={saving}
-            >
-              {saving ? "Запазваме..." : "Запази досието"}
-            </button>
           </div>
         </div>
 
@@ -184,7 +169,7 @@ export function AccountProfile(props: Props) {
                 aria-checked={avatarId === option.id}
                 aria-label={option.labelBg}
                 tabIndex={index === rovingIndex ? 0 : -1}
-                onClick={() => setAvatarId(option.id)}
+                onClick={() => { setAvatarId(option.id); setStatus(""); }}
                 onKeyDown={(event) => handleAvatarKeyDown(event, index)}
               >
                 <span className={styles.avatarOptionImage}>
@@ -196,17 +181,30 @@ export function AccountProfile(props: Props) {
           </div>
         </fieldset>
 
-        <div className={styles.profileStatusRow}>
-          {status === "saved" ? (
-            <p className={`${styles.status} ${styles.statusOk}`} role="status" aria-live="polite">
-              Запазено
-            </p>
+        <div className={styles.profileActions}>
+          <button
+            type="submit"
+            className={`btn btn-primary ${styles.saveButton}`}
+            disabled={saving || !dirty}
+            aria-busy={saving}
+          >
+            <Save size={16} aria-hidden="true" />
+            {saving ? "Запазваме..." : "Запази досието"}
+          </button>
+          {dirty ? (
+            <button type="button" className={styles.revertButton} disabled={saving}
+              onClick={() => { setName(savedName); setAvatarId(savedAvatarId); setStatus(""); }}>
+              <RotateCcw size={16} aria-hidden="true" />Отмени промените
+            </button>
           ) : null}
-          {status === "error" ? (
-            <p className={`${styles.status} ${styles.statusError}`} role="alert">
-              {errorMessage}
-            </p>
-          ) : null}
+        </div>
+        <div id="account-profile-feedback" className={styles.profileStatusRow}>
+          {status === "error" ? <p className={`${styles.status} ${styles.statusError}`} role="alert">{errorMessage}</p>
+            : <p className={`${styles.status} ${status === "saved" ? styles.statusOk : ""}`} role="status">
+              {saving ? "Запазване на изпратените промени..." : status === "saved"
+                ? dirty ? "Запазено. Имаш и нови незапазени промени." : "Запазено"
+                : dirty ? "Имаш незапазени промени." : ""}
+            </p>}
         </div>
 
         <div className={`${styles.field} ${styles.accessField}`}>
@@ -224,7 +222,8 @@ export function AccountProfile(props: Props) {
         </div>
 
         <div className={`${styles.field} ${styles.accessField}`}>
-          <p className={styles.fieldLabel}>Активни входове</p>
+          <p className={styles.fieldLabel}>Начини за вход</p>
+          {props.providers.length === 0 ? <p className={styles.emptyNote}>Начините за вход не са достъпни в момента.</p> : null}
           <ul className={styles.providerList}>
             {props.providers.map((provider) => (
               <li key={provider} data-provider={provider}>
@@ -236,7 +235,7 @@ export function AccountProfile(props: Props) {
             ))}
           </ul>
         </div>
-      </div>
+      </form>
     </section>
   );
 }

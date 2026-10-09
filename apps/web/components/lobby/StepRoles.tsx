@@ -6,7 +6,7 @@ import {
   type RoleCode,
   type RoleDistribution,
 } from "@werewolf/shared";
-import { ChevronDown, FolderOpen, Redo2, Save, Search, Undo2, X } from "lucide-react";
+import { ChevronDown, FolderOpen, Redo2, Save, Search, Undo2 } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState, type Dispatch } from "react";
 import {
   MANUAL_PRESET_STORAGE_KEY,
@@ -22,10 +22,11 @@ import {
 import { PresetChips } from "@/components/lobby/PresetChips";
 import { RoleCarousel } from "@/components/lobby/RoleCarousel";
 import { RoleDetailModal } from "@/components/lobby/RoleDetailModal";
-import Image from "next/image";
-import { coverImageSizes, roleArtSource } from "@/lib/role-art";
+import { InlineRoleDetail } from "./InlineRoleDetail";
 import { playCue } from "@/lib/sound";
 import { Sheet } from "@werewolf/ui";
+
+export { InlineRoleDetail } from "./InlineRoleDetail";
 
 export function StepRoles({
   state,
@@ -393,55 +394,6 @@ function roleBalanceCopy(family: LobbyFormState["family"], balance: number) {
     return "равновесие";
   }
   return balance > 0 ? "преднина за селото" : "преднина за заплахата";
-}
-
-function InlineRoleDetail({
-  family,
-  role,
-  onClose,
-  heading = true,
-}: {
-  family: LobbyFormState["family"];
-  role: RoleCode;
-  onClose: () => void;
-  heading?: boolean;
-}) {
-  const definition = ROLE_DEFINITIONS[role];
-  const source = roleArtSource(family, role);
-  return (
-    <article className="create-inline-role-detail" aria-labelledby={heading ? "create-inline-role-title" : undefined} aria-label={heading ? undefined : definition.nameBg}>
-      <button type="button" className="create-role-detail-close" aria-label="Затвори ролята" onClick={onClose}>
-        <X aria-hidden="true" />
-      </button>
-      <picture className="role-art-frame" data-frame-family={family}
-        style={{ aspectRatio: source.width / source.height, width: `min(100%, calc(var(--role-detail-art-height) * ${source.width / source.height}))` }}
-        aria-hidden="true">
-        <Image
-          {...source}
-          alt=""
-          loading="lazy"
-          quality={85}
-          sizes={coverImageSizes(source, [
-            { media: "(max-width: 380px)", width: "calc(100vw - 56px)", aspectRatio: 1 },
-            { media: "(max-width: 720px)", width: "calc(100vw - 60px)", aspectRatio: 1 },
-            { media: "(max-width: 960px)", width: 192, aspectRatio: 1 },
-            { media: "(max-width: 1100px)", width: 262, aspectRatio: 1 },
-            { width: 254, aspectRatio: 1 },
-          ])}
-        />
-      </picture>
-      {heading ? <div>
-        <p className="section-kicker">как действа</p>
-        <h2 id="create-inline-role-title">{definition.nameBg}</h2>
-      </div> : null}
-      <p>{definition.fullDescriptionBg}</p>
-      <div className="role-detail-tags">
-        {definition.tags.map((tag) => (
-          <span key={tag}>{tag}</span>
-        ))}
-      </div>
-    </article>
-  );
 }
 
 function triggerHaptic(pattern: number | number[]) {

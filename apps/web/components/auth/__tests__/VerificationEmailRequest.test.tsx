@@ -49,8 +49,8 @@ describe("VerificationEmailRequest", () => {
     sendVerificationEmail.mockImplementation(() => new Promise((resolve) => { complete = resolve; }));
     render(<VerificationEmailRequest initialEmail="private@example.bg" redirectTo="/" />);
     const button = screen.getByRole("button", { name: "Изпрати нов линк" });
-    fireEvent.click(button);
-    fireEvent.click(button);
+    const form = button.closest("form")!;
+    act(() => { fireEvent.submit(form); fireEvent.submit(form); });
     expect(sendVerificationEmail).toHaveBeenCalledTimes(1);
     expect(button).toBeDisabled();
     await act(async () => complete({ error: { code: "EMAIL_ALREADY_VERIFIED", message: "User exists" } }));
@@ -68,5 +68,32 @@ describe("VerificationEmailRequest", () => {
     expect(screen.getByRole("button", { name: /Изпрати нов линк/ })).toBeDisabled();
     act(() => vi.advanceTimersByTime(60_000));
     expect(screen.getByRole("button", { name: "Изпрати нов линк" })).toBeEnabled();
+  });
+
+  it("preserves the default sign-in markup and secondary button", () => {
+    render(<VerificationEmailRequest redirectTo="/" />);
+    const button = screen.getByRole("button", { name: "Изпрати нов линк" });
+    const email = screen.getByLabelText("Имейл");
+    expect(button).toHaveClass("btn-secondary");
+    expect(button).not.toHaveClass("btn-primary");
+    expect(button.parentElement).toBe(email.parentElement);
+    expect(email.parentElement?.tagName).toBe("FORM");
+    expect(email.closest("form")).not.toHaveClass("recovery-form");
+  });
+
+  it("uses recovery styling only for the primary variant and describes request errors", async () => {
+    sendVerificationEmail.mockRejectedValue(new TypeError("private backend detail"));
+    render(<VerificationEmailRequest initialEmail="own@example.invalid" redirectTo="/" variant="primary" />);
+    const button = screen.getByRole("button", { name: "Изпрати нов линк" });
+    const email = screen.getByLabelText("Имейл");
+    expect(button).toHaveClass("btn-primary");
+    expect(button.parentElement).toHaveClass("recovery-actions");
+    expect(email.parentElement).toHaveClass("recovery-field");
+    expect(email.closest("form")).toHaveClass("recovery-form");
+    fireEvent.click(button);
+    expect(await screen.findByRole("alert")).toHaveClass("recovery-error");
+    expect(email).toHaveAccessibleDescription("Не успяхме да се свържем. Провери връзката си и опитай отново.");
+    expect(email).not.toHaveAttribute("aria-invalid", "true");
+    expect(button).toBeEnabled();
   });
 });

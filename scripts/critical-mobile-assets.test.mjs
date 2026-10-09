@@ -66,6 +66,36 @@ test("targeted critical mobile CLI regenerates both landing formats without visi
   }
 });
 
+test("critical AVIF quality overrides retain source pixels and leave other derivatives at the default", async (t) => {
+  const { generateCriticalMobileAssets, variants } = await import("./generate-critical-mobile-assets.mjs");
+  const previousConcurrency = sharp.concurrency();
+  t.after(() => sharp.concurrency(previousConcurrency));
+  const root = await temporaryRoot(t);
+  const source = "assets/game-art-source/quality-pattern.png";
+  const width = 96;
+  const height = 128;
+  const pixels = Buffer.from(Array.from({ length: width * height * 3 }, (_, index) => (index * 31 + Math.floor(index / 13)) % 256));
+  const original = await sharp(pixels, { raw: { width, height, channels: 3 } }).png().toBuffer();
+  await mkdir(path.dirname(path.join(root, source)), { recursive: true });
+  await writeFile(path.join(root, source), original);
+  for (const quality of [undefined, 30, 40, 50]) {
+    const output = `apps/web/public/game-art/mobile/quality-${quality ?? "default"}.avif`;
+    await generateCriticalMobileAssets({ rootDirectory: root, assets: [{ source, output, width, quality }] });
+    const encoded = await readFile(path.join(root, output));
+    const expected = await sharp(original).rotate().resize({ width, withoutEnlargement: true })
+      .avif({ quality: quality ?? 55, effort: 7, chromaSubsampling: "4:2:0" }).toBuffer();
+    assert.deepEqual(encoded, expected);
+    const metadata = await sharp(encoded).metadata();
+    assert.deepEqual([metadata.width, metadata.height], [width, height]);
+  }
+  assert.deepEqual(await readFile(path.join(root, source)), original);
+  assert.deepEqual(variants.filter((variant) => variant.quality != null && variant.quality !== 55)
+    .map(({ output, quality }) => [output, quality]), [
+    ["apps/web/public/game-art/mobile/werewolf/bg-hero-light-v1-864.avif", 50],
+    ["apps/web/public/game-art/mobile/texture-parchment.avif", 30],
+  ]);
+});
+
 test("critical mobile derivatives apply source orientation before resizing like the optimizer", async (t) => {
   const { generateCriticalMobileAssets } = await import("./generate-critical-mobile-assets.mjs");
   const root = await temporaryRoot(t);
@@ -88,10 +118,8 @@ function runCriticalCli(root, args) {
 
 test("critical mobile CLI preserves masters and produces crisp, bounded, reproducible derivatives", async (t) => {
   const root = await temporaryRoot(t);
-  const sources = [
-    "mobile/bg-landing-hero-composited.png", "logo-landing-mark.png", "bg-lobby-tavern.png",
-    "mafia/bg-lobby-tavern.png", "werewolf/bg-hero-v2.png", "mafia/bg-hero-v2.png",
-  ];
+  const { variants } = await import("./generate-critical-mobile-assets.mjs");
+  const sources = [...new Set(variants.map((asset) => asset.source.slice("assets/game-art-source/".length)))];
   const originals = new Map();
   for (const source of sources) {
     const originalPath = new URL(`../assets/game-art-source/${source}`, import.meta.url);
@@ -103,12 +131,22 @@ test("critical mobile CLI preserves masters and produces crisp, bounded, reprodu
   const outputs = new Map();
   for (const pass of [1, 2]) {
     const result = spawnSync(process.execPath, [fileURLToPath(new URL("./generate-critical-mobile-assets.mjs", import.meta.url))], {
-      cwd: root, encoding: "utf8", windowsHide: true, timeout: 120_000,
+      cwd: root, encoding: "utf8", windowsHide: true, timeout: 300_000,
     });
     assert.ifError(result.error);
     assert.equal(result.status, 0, result.stdout + result.stderr);
     for (const [source, original] of originals) {
       assert.ok((await readFile(source)).equals(original), `pass ${pass}: ${source} unchanged`);
+    }
+    for (const variant of variants) {
+      const encoded = await readFile(path.join(root, variant.output));
+      const metadata = await sharp(encoded).metadata();
+      const source = await sharp(originals.get(path.join(root, variant.source))).metadata();
+      assert.equal(metadata.width, Math.min(source.width, variant.width), variant.output);
+      if (!variant.height) assert.equal(metadata.height, Math.round(source.height * metadata.width / source.width), variant.output);
+      assert.ok(encoded.length <= variant.maxBytes, `${variant.output}: runtime budget`);
+      if (pass === 1) outputs.set(variant.output, encoded);
+      else assert.ok(encoded.equals(outputs.get(variant.output)), `${variant.output}: reproducible`);
     }
     for (const [file, width, height, budget] of [
       ["bg-landing-hero-composited.avif", 760, 820, 96],

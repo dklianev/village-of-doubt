@@ -1,8 +1,9 @@
 import { useId, type Dispatch } from "react";
-import { NARRATOR_VOICE_LABELS_BG, type CommunicationMode, type NarratorMode, type NarratorVoice } from "@werewolf/shared";
+import { NARRATOR_VOICES, NARRATOR_VOICE_LABELS_BG, NARRATOR_VOICE_PROFILES, type CommunicationMode, type NarratorMode } from "@werewolf/shared";
 import type { LobbyFormAction, LobbyFormState } from "@/lib/lobby-form";
 import { AdvancedDrawer } from "@/components/lobby/AdvancedDrawer";
 import { phaseNarratorLine } from "@/lib/play/phase-display";
+import { DeferredNarrationPreview } from "@/components/narration/DeferredNarrationPreview";
 
 const NARRATOR_CARDS: { value: NarratorMode; label: string; detail: string }[] = [
   { value: "automatic", label: "Автоматичен", detail: "Играта води фазите и пази тайните роли." },
@@ -13,13 +14,6 @@ const COMMUNICATION_CARDS: { value: CommunicationMode; label: string; detail: st
   { value: "no_chat", label: "Без писмен разговор", detail: "Подходящо за разговор на живо или външен гласов канал." },
   { value: "system_only", label: "Системни съобщения", detail: "Видими са фазите, резултатите и служебните съобщения." },
 ];
-
-const VOICE_DETAILS: Record<NarratorVoice, string> = {
-  classic: "спокоен тон",
-  old_villager: "суха селска мъдрост",
-  inspector: "криминален ритъм",
-  witch: "мрачни предзнаменования",
-};
 
 export function StepStyle({
   state,
@@ -85,9 +79,8 @@ export function NarratorSettings({
           <div className="lobby-panel-title">
             <h2 id={styleId}>Стил на Разказвача</h2>
           </div>
-          <p className="advanced-panel-note">Текстови реплики, без гласов запис.</p>
           <div className="voice-card-grid" role="radiogroup" aria-labelledby={styleId}>
-            {(Object.entries(NARRATOR_VOICE_LABELS_BG) as [NarratorVoice, string][]).map(([voice, label]) => (
+            {NARRATOR_VOICES.map((voice) => (
               <label
                 key={voice}
                 className="voice-tile"
@@ -101,12 +94,13 @@ export function NarratorSettings({
                   onChange={() => dispatch({ type: "SET_ADVANCED", key: "narratorVoice", value: voice })}
                 />
                 <span className="voice-style-copy">
-                  <strong>{label}</strong>
-                  <span>{VOICE_DETAILS[voice]}</span>
+                  <strong>{NARRATOR_VOICE_LABELS_BG[voice]}</strong>
+                  <span>{NARRATOR_VOICE_PROFILES[voice].detailBg}</span>
                 </span>
               </label>
             ))}
           </div>
+          <DeferredNarrationPreview voice={state.advanced.narratorVoice} disabled={state.tempoProfile === "live"} />
           <div className="narrator-style-example" aria-live="polite" aria-atomic="true">
             <span>Примерен текст: Нощ</span>
             <blockquote>{phaseNarratorLine("night", state.mode, state.advanced.narratorVoice)}</blockquote>

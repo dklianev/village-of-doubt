@@ -1,5 +1,6 @@
 import {
   getGameFamily,
+  getNarratorArchetype,
   phaseLabelBg,
   type GameFamily,
   type GameMode,
@@ -47,8 +48,9 @@ export function phaseSigil(phase: string) {
 
 export function phaseNarratorLine(phase: GamePhase, mode: GameMode, narratorVoice: NarratorVoice = "classic") {
   const mafia = getGameFamily(mode) === "mafia";
-  if (narratorVoice !== "classic") {
-    const voiceLines = narratorVoiceLineBg(narratorVoice, mafia);
+  const archetype = getNarratorArchetype(narratorVoice);
+  if (archetype !== "classic") {
+    const voiceLines = narratorVoiceLineBg(archetype, mafia);
     if (voiceLines[phase]) {
       return voiceLines[phase];
     }

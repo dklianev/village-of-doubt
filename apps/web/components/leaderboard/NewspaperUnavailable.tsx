@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Masthead } from "./Masthead";
 
 export function NewspaperUnavailable() {
   return (
@@ -8,10 +9,7 @@ export function NewspaperUnavailable() {
       aria-label="Недостъпен вечерен брой"
       role="alert"
     >
-      <header className="masthead">
-        <h1 className="masthead-title">Вечерен Брой на Масата</h1>
-        <p className="masthead-meta">Редакцията временно е затворена</p>
-      </header>
+      <Masthead />
 
       <div className="empty-headline">
         <p className="headline-kicker">извънредно съобщение</p>

@@ -9,6 +9,15 @@ import {
 import { ROLE_GUIDE_BG } from "@/lib/play/private-copy";
 
 describe("play copy quality", () => {
+  it("tells the Jester when the personal win is private and when the role is revealed", () => {
+    const { summary, win } = ROLE_GUIDE_BG.jester!;
+    expect(win).toBe("Бъди изгонен през гласуване");
+    expect(summary).toContain("чрез дневен вот печелиш лично");
+    expect(summary).toContain("Само ти научаваш веднага; останалите разбират на финала");
+    expect(summary).toContain("не прекратява автоматично играта");
+    expect(summary).toContain("При нощна смърт не печелиш");
+  });
+
   it("describes role mechanics without contradicting the authoritative rules", () => {
     expect(ROLE_GUIDE_BG.seer?.summary).toContain("дали избран играч е Върколак или Вампир");
     expect(ROLE_GUIDE_BG.seer?.summary).not.toContain("точната роля");

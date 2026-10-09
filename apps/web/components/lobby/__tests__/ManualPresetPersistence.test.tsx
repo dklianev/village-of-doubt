@@ -50,7 +50,7 @@ describe("manual preset persistence", () => {
     const first = render(<LobbyWizard family="werewolves" />);
     await user.click(screen.getByRole("button", { name: "Настрой детайлите" }));
     const dialog = within(screen.getByRole("dialog", { name: "Настрой детайлите" }));
-    await user.click(dialog.getByRole("button", { name: "Настрой ръчно" }));
+    await user.click(await dialog.findByRole("button", { name: "Настрой ръчно" }));
     await user.click(dialog.getByRole("button", { name: "Добави Лечител" }));
     await user.click(dialog.getByRole("button", { name: "Запази шаблон" }));
     const saved = window.localStorage.getItem(savedKey);
@@ -68,7 +68,7 @@ describe("manual preset persistence", () => {
     first.unmount();
     render(<LobbyWizard family="werewolves" />);
     await user.click(screen.getByRole("button", { name: "Настрой детайлите" }));
-    await user.click(screen.getByRole("button", { name: "Настрой ръчно" }));
+    await user.click(await screen.findByRole("button", { name: "Настрой ръчно" }));
     await user.click(screen.getByRole("button", { name: "Зареди шаблон" }));
     expect(screen.getByRole("button", { name: "Премахни Лечител" })).toBeEnabled();
   });
@@ -77,7 +77,7 @@ describe("manual preset persistence", () => {
     const user = userEvent.setup();
     render(<LobbyWizard family="werewolves" />);
     await user.click(screen.getByRole("button", { name: "Настрой детайлите" }));
-    await user.click(screen.getByRole("button", { name: "Настрой ръчно" }));
+    await user.click(await screen.findByRole("button", { name: "Настрой ръчно" }));
     await user.click(screen.getByRole("button", { name: "Добави Лечител" }));
     await user.click(screen.getByRole("button", { name: "Зареди шаблон" }));
     expect(screen.getByText("Няма запазен шаблон за тази игра.")).toBeInTheDocument();

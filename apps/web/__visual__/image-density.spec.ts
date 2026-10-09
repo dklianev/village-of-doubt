@@ -1,4 +1,6 @@
 import { expect, test, type Locator, type Page } from "playwright/test";
+import { resolve } from "node:path";
+import sharp from "sharp";
 import { expectDecodedImage } from "./image-readiness";
 
 test.use({ trace: "retain-on-failure" });
@@ -19,7 +21,8 @@ async function prepare(page: Page, theme: "light" | "dark") {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("console", (message) => {
-    if (/hydrat|quality.*not configured/i.test(message.text())) errors.push(message.text());
+    // React's development console.timeStamp("Hydrated") is not a hydration failure.
+    if (["warning", "error"].includes(message.type()) && /hydrat|quality.*not configured/i.test(message.text())) errors.push(message.text());
   });
   page.on("response", (response) => {
     if (response.status() >= 400 && /game-art|\/_next\/image/.test(response.url())) {
@@ -54,6 +57,7 @@ async function decodedPixels(image: Locator) {
       height: bitmap.height,
       cssWidth: box.width,
       cssHeight: box.height,
+      candidateWidths: Array.from(element.srcset.matchAll(/\s(\d+)w(?:,|$)/g), (match) => Number(match[1])),
       contentType: response.headers.get("content-type"),
     };
     bitmap.close();
@@ -68,6 +72,104 @@ function expectDensity(pixels: Awaited<ReturnType<typeof decodedPixels>>, dpr: n
   expect(pixels.contentType).toContain("image/webp");
   expect(pixels.width, JSON.stringify(pixels)).toBeGreaterThanOrEqual(Math.floor(required) - 1);
   expect(pixels.width, "avoid oversized downloads at low DPR").toBeLessThanOrEqual(Math.ceil(Math.min(required * 1.55, nativeWidth)));
+}
+
+function expectPhaseDensity(pixels: Awaited<ReturnType<typeof decodedPixels>>, dpr: number, native: { width: number; height: number }) {
+  const required = Math.min(Math.max(pixels.cssWidth, pixels.cssHeight * native.width / native.height) * dpr, native.width);
+  expect(pixels.contentType).toContain("image/webp");
+  expect(pixels.width, JSON.stringify(pixels)).toBeGreaterThanOrEqual(Math.floor(required) - 1);
+  // A 400px cover must use 640px when srcset jumps from 384 to 640.
+  // Require the smallest sufficient candidate instead of an impossible ratio budget.
+  const candidate = pixels.candidateWidths.find((width) => width >= required);
+  expect(candidate, "srcset must cover the native-capped requirement").toBeDefined();
+  expect(pixels.width, "avoid downloading more than the next sufficient candidate").toBeLessThanOrEqual(Math.min(candidate!, native.width));
+}
+
+async function decodedPhasePixels(image: Locator, dpr: number) {
+  const pixels = await decodedPixels(image);
+  const source = new URL(pixels.currentSrc).searchParams.get("url")!;
+  const { width, height } = await sharp(resolve(import.meta.dirname, "../public", source.slice(1))).metadata();
+  expectPhaseDensity(pixels, dpr, { width, height });
+  expect(pixels.width / pixels.height).toBeCloseTo(width / height, 2);
+  return { ...pixels, source, nativeWidth: width, nativeHeight: height };
+}
+
+for (const browserName of ["firefox", "webkit"] as const) {
+  test(`${browserName} rules day artwork receives cover pixels at desktop DPR 2`, async ({ playwright, baseURL }, info) => {
+    if (!baseURL) throw new Error("Rules density checks require a configured baseURL");
+    const browser = await playwright[browserName].launch();
+    try {
+      const context = await browser.newContext({ baseURL, viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2,
+        reducedMotion: "reduce", serviceWorkers: "block" });
+      const page = await context.newPage();
+      const errors = await prepare(page, "light");
+      await page.route("**/api/auth/get-session**", (route) => route.fulfill({ json: null }));
+      await page.goto("/werewolf/rules");
+      await page.evaluate(() => document.fonts.ready);
+      const day = page.locator('.phase-node[data-phase="day_discussion"]');
+      await day.scrollIntoViewIfNeeded();
+      const thumbnail = await decodedPhasePixels(day.locator("img"), 2);
+      expect(thumbnail.source).toBe("/game-art/werewolf/bg-hero-light-v1.webp");
+      expect(thumbnail.nativeWidth).toBe(1672);
+      await day.click();
+      await expect(day).toHaveAttribute("aria-pressed", "true");
+      await expect(page.locator("#phase-detail-title")).toBeFocused();
+      const detail = await decodedPhasePixels(page.locator(".phase-detail-art img"), 2);
+      expect(detail.source).toBe(thumbnail.source);
+      await info.attach("day-decoded-pixels", { body: JSON.stringify({ thumbnail, detail }), contentType: "application/json" });
+      await page.screenshot({ path: info.outputPath("day-desktop-dpr2.png") });
+      expect(errors).toEqual([]);
+    } finally {
+      await browser.close();
+    }
+  });
+}
+
+for (const theme of ["light", "dark"] as const) {
+  for (const dpr of [1, 2, 3]) {
+    for (const width of [390, 768, 980, 981, 1440, 1920]) {
+      test.describe(`rules ${theme} ${width}px DPR ${dpr}`, () => {
+        test.use({ viewport: { width, height: 900 }, deviceScaleFactor: dpr, colorScheme: theme,
+          contextOptions: { reducedMotion: "reduce", serviceWorkers: "block" } });
+
+        for (const family of ["werewolf", "mafia"] as const) {
+          test(`${family} rules phase artwork covers all six thumbnails and details`, async ({ page }, info) => {
+            const errors = await prepare(page, theme);
+            await page.route("**/api/auth/get-session**", (route) => route.fulfill({ json: null }));
+            await page.goto(`/${family}/rules`);
+            await page.evaluate(() => document.fonts.ready);
+            const buttons = page.locator(".phase-node");
+            await expect(buttons).toHaveCount(6);
+            const deliveries = [];
+
+            for (let index = 0; index < 6; index++) {
+              const button = buttons.nth(index);
+              await button.scrollIntoViewIfNeeded();
+              const thumbnail = await decodedPhasePixels(button.locator("img"), dpr);
+
+              await button.click();
+              await expect(button).toHaveAttribute("aria-pressed", "true");
+              // Let selection's animation-frame focus/scroll finish before inspecting the art.
+              await expect(page.locator("#phase-detail-title")).toBeFocused();
+              const detailArt = page.locator(".phase-detail-art");
+              if (width <= 760) {
+                await expect(detailArt).toBeHidden();
+                // The mobile layout has no detail artwork, so it must not request it.
+                await expect(detailArt.locator("img")).toHaveCount(0);
+                deliveries.push({ thumbnail, detail: "hidden on mobile" });
+              } else {
+                const detail = await decodedPhasePixels(detailArt.locator("img"), dpr);
+                expect(detail.source).toBe(thumbnail.source);
+                deliveries.push({ thumbnail, detail });
+              }
+            }
+            await info.attach("all-phase-decoded-pixels", { body: JSON.stringify(deliveries), contentType: "application/json" });
+            expect(errors).toEqual([]);
+          });
+        }
+      });
+    }
+  }
 }
 
 for (const theme of ["light", "dark"] as const) {
@@ -112,9 +214,11 @@ for (const theme of ["light", "dark"] as const) {
             const phase = page.locator(".phase-node").first();
             await phase.scrollIntoViewIfNeeded();
             const phasePixels = await decodedPixels(phase.locator("img"));
-            expectDensity(phasePixels, dpr, 1120);
+            expectDensity(phasePixels, dpr, family === "werewolf" ? 1484 : 1120);
             expect(phasePixels.width / phasePixels.height).toBeCloseTo(1.4, 2);
-            expect(new URL(phasePixels.currentSrc).searchParams.get("url")).toMatch(/\/phase-board\/v1\/.*-1120\.webp$/);
+            expect(new URL(phasePixels.currentSrc).searchParams.get("url")).toBe(family === "werewolf"
+              ? "/game-art/rules/werewolf-gathering-v1.webp"
+              : "/game-art/phase-board/v1/mafia/icon-phase-lobby-1120.webp");
             expect(new URL(phasePixels.currentSrc).searchParams.get("q")).toBe("85");
             await info.attach("phase-decoded-pixels", { body: JSON.stringify(phasePixels), contentType: "application/json" });
             await page.locator(".phase-node").nth(1).click();

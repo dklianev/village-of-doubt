@@ -116,7 +116,7 @@ describe("short-phone stage CSS without a Next runtime", () => {
               };
               return {
                 stage: rect(".play-stage"), title: rect(".play-stage h1"), core: rect("[data-table-core]"),
-                counts: rect("[data-table-core] > span:last-child"), dock: rect("[data-play-command-surface]"),
+                counts: rect("[data-stage-counts]"), dock: rect("[data-play-command-surface]"),
                 dockTitle: rect(".play-action-dock-head h2"), personal: rect(".play-personal-area"),
                 seats: [...document.querySelectorAll("[data-seat-token]")].map((element) => {
                   const { x, y, width, height } = element.getBoundingClientRect();
@@ -135,11 +135,11 @@ describe("short-phone stage CSS without a Next runtime", () => {
               console.info(JSON.stringify({ family, theme, measured, viewport, ...geometry }));
             }
             expect(geometry.fontsLoaded).toBe(true);
-            expect(geometry.titleFontSize).toBe(viewport.height <= 640 ? "20px" : "24px");
-            expect(geometry.stagePadding).toBe(viewport.height <= 640 ? "8px" : "16px");
-            expect(geometry.hudGap).toBe(viewport.height <= 640 ? "4px" : "8px");
+            expect(geometry.titleFontSize).toBe(viewport.height <= 640 ? "22px" : "28px");
+            expect(geometry.stagePadding).toBe("0px");
             expect(geometry.seats).toHaveLength(8);
-            expect(geometry.core.height).toBe(74);
+            expect(geometry.core.height).toBe(viewport.height <= 640 ? 88 : 112);
+            expect(geometry.core.y + geometry.core.height + 4).toBeLessThanOrEqual(Math.min(...geometry.seats.map((seat) => seat.y)));
             expect(geometry.counts.y + geometry.counts.height + 4).toBeLessThanOrEqual(Math.min(...geometry.seats.map((seat) => seat.y)));
             expect(geometry.personal.y).toBeGreaterThanOrEqual(geometry.stage.y + geometry.stage.height);
             for (const seat of geometry.seats) {

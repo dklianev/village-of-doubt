@@ -21,7 +21,7 @@ function PageHarness({ mounted = true }: { mounted?: boolean }) {
   );
 }
 
-describe("CookieBanner homepage placement", () => {
+describe("CookieBanner in-flow placement", () => {
   beforeEach(() => {
     route.pathname = "/";
     window.localStorage.clear();
@@ -60,20 +60,21 @@ describe("CookieBanner homepage placement", () => {
     expect(screen.queryByRole("region", { name: "Бисквитки" })).not.toBeInTheDocument();
   });
 
-  it.each(["/privacy", "/werewolf", "/mafia", "/play/ROOM"])(
-    "preserves the existing mount on %s",
+  it.each(["/privacy", "/tutorial", "/sign-in", "/werewolf", "/mafia", "/play/ROOM"])(
+    "keeps %s controls unobstructed with a notice before the footer",
     async (pathname) => {
       route.pathname = pathname;
       const { container } = render(<PageHarness />);
       const notice = await screen.findByRole("region", { name: "Бисквитки" });
-      expect(notice.parentElement).toBe(container);
-      expect(screen.getByRole("contentinfo").compareDocumentPosition(notice) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(notice.parentElement).not.toBe(container);
+      expect(screen.getByRole("main").compareDocumentPosition(notice) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(notice.compareDocumentPosition(screen.getByRole("contentinfo")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
       expect(notice).toHaveAttribute("data-cookie-banner");
       expect(document.querySelector(".site-chrome-boundary")?.nextElementSibling).toHaveAttribute("id", "main-content");
     },
   );
 
-  it("cleans up homepage space when navigating away and restores it on return", async () => {
+  it("cleans up the old slot when navigating and retains one in-flow notice", async () => {
     const view = render(<PageHarness />);
     const firstNotice = await screen.findByRole("region", { name: "Бисквитки" });
     const firstSlot = firstNotice.parentElement;
@@ -82,7 +83,8 @@ describe("CookieBanner homepage placement", () => {
     route.pathname = "/play/ROOM";
     view.rerender(<PageHarness />);
     expect(firstSlot).not.toBeInTheDocument();
-    expect(screen.getByRole("region", { name: "Бисквитки" }).parentElement).toBe(view.container);
+    expect(screen.getByRole("region", { name: "Бисквитки" }).parentElement).not.toBe(view.container);
+    expect(screen.getAllByRole("region", { name: "Бисквитки" })).toHaveLength(1);
 
     route.pathname = "/";
     view.rerender(<PageHarness />);

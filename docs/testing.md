@@ -43,3 +43,29 @@ Migration tests require a local PostgreSQL instance. The load test is hermetic b
 - Bundle budgets inspect the production build with gzip sizes.
 
 Accessibility checks run with the visual suites for the UI primitives and route audits.
+
+## Focused play checks
+
+The default `pnpm frontend:e2e` still runs the full browser gate. With the same
+local test PostgreSQL and Redis configuration, `FRONTEND_E2E_FOCUS=play` runs
+the real six-browser flows for both games and the token-retry case. These cover
+private night investigations, accepted votes, socket reconnect, reload,
+persisted finales, replay/back navigation and a fresh room. Native audio is
+observed by decoded-file hash, including duplicate and overlap checks; it is
+not replaced with a playback mock. Headless playback is not a listening test.
+The Windows WebKit binary lacks Web Audio: that combination explicitly reports
+native narration as unverified while still requiring the complete game flow.
+Other browser/platform combinations must provide working native audio.
+
+`FRONTEND_E2E_FOCUS=performance` runs a separate Chromium-only production
+profile with 30 seeded test accounts, a signed SDK roster and one authenticated
+mobile browser. It measures 12/30-player Werewolf and 12/24-player Mafia tables
+at 390x844 with 4x CPU throttling. The reported click-to-paint estimate, long
+tasks and memory counters are laboratory samples, not field INP or real-phone
+measurements. Run before and after builds on an otherwise idle machine; compare
+several runs before treating small timing changes as improvements.
+
+Use `FRONTEND_E2E_ARTIFACT_DIR` for an external screenshot/JSON directory and
+`FRONTEND_E2E_PERF_LABEL` to distinguish samples. `FRONTEND_E2E_SKIP_BUILD=true`
+is only appropriate when the current production build already targets the test
+ports. Focused runs do not replace the full regression gate or weaken budgets.

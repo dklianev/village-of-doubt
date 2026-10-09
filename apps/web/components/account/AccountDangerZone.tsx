@@ -1,31 +1,40 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useId, useLayoutEffect, useRef, useState } from "react";
+import { Trash2 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
+import { endAuthSession } from "@/lib/auth-session-end";
 import styles from "./Account.module.css";
 
 export function AccountDangerZone({ email }: { email: string }) {
-  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [confirmText, setConfirmText] = useState("");
   const [status, setStatus] = useState<"idle" | "deleting" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const dialogActiveRef = useRef(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const dialogTitleId = useId();
   const canDelete = confirmText.trim().toLocaleUpperCase("bg-BG") === "ИЗТРИЙ";
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) {
       return;
     }
 
+    dialogActiveRef.current = true;
     if (open && !dialog.open) {
       dialog.showModal();
     } else if (!open && dialog.open) {
       dialog.close();
     }
+
+    // Activity preserves the DOM, but native modality must be released while hidden.
+    return () => {
+      dialogActiveRef.current = false;
+      if (dialog.open) dialog.close();
+    };
   }, [open]);
 
   function closeDialog() {
@@ -58,31 +67,37 @@ export function AccountDangerZone({ email }: { email: string }) {
         setStatus("error");
         return;
       }
-
-      await authClient.signOut();
-      window.dispatchEvent(new Event("auth-session-change"));
-      router.replace("/");
     } catch {
       setErrorMessage("Грешка при изтриване.");
       setStatus("error");
+      return;
     }
+
+    try {
+      // Best-effort cookie cleanup; deletion has already revoked server sessions.
+      await authClient.signOut({ fetchOptions: { signal: AbortSignal.timeout(1_500), retry: 0 } });
+    } catch {
+      // A failed or timed-out cleanup must still end the authenticated document.
+    }
+    endAuthSession();
   }
 
   return (
     <section className={`${styles.archivePanel} ${styles.dangerSection}`}>
       <header className={styles.sectionHead}>
-        <p className={styles.sectionKicker}>унищожаване на дело</p>
+        <p className={styles.sectionKicker}>Изтриване на профила</p>
         <h2>Опасна зона</h2>
         <p>Окончателно изтриване на твоето досие.</p>
       </header>
 
       <div className={styles.dangerBody}>
         <p>
-          Изтриването премахва досието и легендите. Имената от твоите игри остават в архива, но се
-          заменят с „Изтрит играч“, за да не се чупи историята на другите играчи.
+          Изтриването премахва досието и легендите. Историята на общите игри остава в архива,
+          като името ти се заменя с „Изтрит играч“.
         </p>
 
-        <button type="button" className={styles.dangerButton} onClick={() => setOpen(true)}>
+        <button ref={triggerRef} type="button" className={styles.dangerButton} onClick={() => setOpen(true)}>
+          <Trash2 size={16} aria-hidden="true" />
           Изтрий моето досие
         </button>
 
@@ -97,7 +112,12 @@ export function AccountDangerZone({ email }: { email: string }) {
             }
             closeDialog();
           }}
-          onClose={() => setOpen(false)}
+          onClose={() => {
+            // Cleanup queues a close event that can arrive after the dialog reopens.
+            if (!dialogActiveRef.current || dialogRef.current?.open) return;
+            setOpen(false);
+            triggerRef.current?.focus({ preventScroll: true });
+          }}
         >
           <p className={styles.dialogKicker}>необратимо действие</p>
           <h3 id={dialogTitleId}>Сигурен/сигурна ли си?</h3>

@@ -28,11 +28,15 @@ const intentionallyBlockingRoutes = [
   "app/roles/page.tsx",
   "app/sign-in/page.tsx",
   "app/status/page.tsx",
-  "app/terms/page.tsx",
   "app/werewolf/join/[[...roomCode]]/page.tsx",
 ];
 
 describe("Cache Components route boundaries", () => {
+  it("keeps static terms synchronous without intentional request blocking", () => {
+    const source = readFileSync(resolve(process.cwd(), "app/terms/page.tsx"), "utf8");
+    expect(source).toContain("export default function TermsPage()");
+    expect(source).not.toMatch(/export default async|export const instant = false|await /);
+  });
   it.each(instantRoutes)("opts into instant navigation validation in %s", (route) => {
     const source = readFileSync(resolve(process.cwd(), route), "utf8");
 

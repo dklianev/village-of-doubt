@@ -89,7 +89,7 @@ describe("ModeChoiceCards", () => {
   });
 
   it.each([
-    { game: games[0], version: "v7", fetchPriority: "high" },
+    { game: games[0], version: "v7", fetchPriority: "low" },
     {
       game: { ...games[0], id: "mafia", family: "mafia", title: "Мафия", href: "/mafia" },
       version: "v5",

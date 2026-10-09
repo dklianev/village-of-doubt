@@ -191,3 +191,27 @@ Final metrics:
 
 `scripts/regression.mjs` now fails on primitive identity overrides by default.
 The closing report lives in `docs/hero-restoration-closing-report.md`.
+
+## Frontend polish sweep — 2026-09-30
+
+Conservative zero-reference sweep. Each class token was checked against every
+`apps/web` TS/TSX source, visual spec, `packages/ui`, `scripts/` and dynamic
+`` `prefix-${x}` `` class construction before deletion.
+
+| Surface | Removed | Notes |
+|---|---:|---|
+| `app/globals.css` legacy cue panel (`.cue-*`, `@keyframes cuePulse`) and `.action-bar*` | 212 LOC | Replaced by `LiveCuePanel` / `PlayTools.module.css`; the regression cue check now targets `.cueBody` and `.cuePreview` |
+| `PlayRoom.module.css` (`.play-rail-disclosure`, `.play-rail-intro`, `.play-lobby-*-note`, `.play-lobby-dock-actions`, `.phase-title`, `.phase-sigil`, `.cue-panel`) | 166 LOC | Shared selector lists keep their live selectors |
+| `History.module.css` (`.evidence-*`, retired `.replay-*` cards) | 336 LOC | Ships with `components/skeleton.tsx` on every loading state |
+| `Achievements.module.css` (retired wreath, empty hall, plaque decoration and skeleton rules) | 564 LOC | |
+| `LegacyCreate.module.css` (`.lovers-feature-*`, `.create-customization-kicker`) | 82 LOC | |
+| `SiteChrome.module.css` (`.auth-chip-initial`), `GameHomePage.module.css` (`.quickstart-skeleton`) | 19 LOC | |
+| `LegacyFriends.module.css`, `LegacyHistory.module.css` | whole files (62 KB) | Imported nowhere; `LegacyFriends` was only read by `readAppStyles` in the regression script |
+
+Kept on purpose:
+
+- `LandingSurface.module.css` `.quickstart-*` and `.game-choice-*`: the regression
+  script asserts them and `scripts/frontend-e2e.mjs` still targets
+  `.game-choice-*`; retiring them needs those contracts updated first.
+- Families that read like dynamic classes (`role-*`, `ability-*`, `mode-*`,
+  `connection-*`, `phase-*`) stay until a typed audit proves them unused.

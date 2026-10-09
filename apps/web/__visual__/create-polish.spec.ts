@@ -8,7 +8,8 @@ for (const theme of ["light", "dark"] as const) {
     try {
       await page.goto(`${testInfo.project.use.baseURL}/werewolf/create?visualAuth=1`);
       await page.evaluate((value) => { document.documentElement.dataset.theme = value; }, theme);
-      const loading = page.locator(".create-loading");
+      const loading = page.locator(".create-loading:visible");
+      await expect(loading).toHaveCount(1);
       await expect(loading.getByRole("heading", { name: "Зареждане на стаята..." })).toBeVisible();
       expect(await loading.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
       const ratios = await loading.locator("h1, p").evaluateAll((elements) => {

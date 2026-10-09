@@ -1,25 +1,18 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import { ForgotPasswordClient } from "@/components/auth/ForgotPasswordClient";
-import { ResourceHints } from "@/components/resource-hints";
-import "@/components/auth/AuthRecoveryBase.css";
-import "@/components/auth/AuthRecovery.module.css";
+import { forgotPasswordIcons } from "@/components/auth/RecoveryIcons";
+import { AuthRecoveryStage } from "@/components/auth/AuthRecoveryStage";
 
 export const metadata: Metadata = {
-  title: "Загубен ключ",
-  description: "Заяви нова парола за твоето досие във Върколак и Мафия.",
+  title: "Забравена парола",
+  description: "Възстанови достъпа до профила си в Сенките.",
   robots: { index: false, follow: false },
 };
 
 export default function ForgotPasswordPage() {
   return (
-    <main className="shell locksmith-shell auth-recovery-shell framed-shell">
-      <ResourceHints images={[{ href: "/game-art/auth/forgot-password-locksmith.webp", fetchPriority: "high" }]} />
-      <div className="framed-shell-inner">
-        <Suspense fallback={<p>Зареждаме...</p>}>
-          <ForgotPasswordClient />
-        </Suspense>
-      </div>
-    </main>
+    <AuthRecoveryStage scene="forgot-password">
+      <ForgotPasswordClient icons={forgotPasswordIcons} />
+    </AuthRecoveryStage>
   );
 }

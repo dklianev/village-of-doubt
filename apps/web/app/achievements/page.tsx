@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
-import { createDatabase, getAchievementsForUser } from "@werewolf/database";
+import { createDatabase, getAchievementsForUser, getReplayEligibleGameIds } from "@werewolf/database";
 import { ACHIEVEMENTS, safeMonitoringErrorMetadata } from "@werewolf/shared";
-import { PaperCard } from "@werewolf/ui/server";
-import Link from "next/link";
 import { AchievementsClient, type OwnedAchievement } from "@/components/achievements-client";
 import { JsonLd } from "@/components/JsonLd";
 import { requireSession } from "@/lib/require-session";
+import { isUuid } from "@/lib/identifiers";
 import { absoluteUrl, routeMetadata } from "@/lib/seo";
 import "@/components/achievements/LegacyAchievements.module.css";
 
@@ -13,9 +12,9 @@ export const metadata: Metadata = routeMetadata({
   title: "Легенди — малките победи",
   description: "Колекция от моменти, отключени от записите: първа кръв, спасени нощи, лични победи и финални обрати.",
   path: "/achievements",
-  image: "/game-art/og/og-achievements.png",
-  imageAlt: "Стена с празни месингови плочи за легенди",
-  ogDescription: "Плочи за спасения, предателства, точни изстрели и лични победи.",
+  image: "/game-art/og/og-achievements.jpg",
+  imageAlt: "Колекция от отличия за изиграните вечери в Сенките",
+  ogDescription: "Твоите отличия за спасения, точни изстрели и лични победи.",
   robots: { index: false, follow: false },
 });
 
@@ -43,30 +42,19 @@ export default async function AchievementsPage({ searchParams }: AchievementsPag
     userId = (await requireSession("/achievements")).user.id;
   }
 
-  const fixtureEnabled =
-    process.env.NODE_ENV !== "production" && visualAuth === "1" && visualAchievements === "fixture";
-  const { owned, status } = fixtureEnabled
+  const fixtureEnabled = process.env.NODE_ENV !== "production" && visualAuth === "1";
+  const { owned, status } = fixtureEnabled && visualAchievements === "fixture"
     ? { owned: visualAchievementFixture(), status: "ready" as const }
+    : fixtureEnabled && visualAchievements === "empty"
+    ? { owned: [], status: "ready" as const }
+    : fixtureEnabled && visualAchievements === "unavailable"
+    ? { owned: [], status: "unavailable" as const }
     : await loadOwnedAchievements(userId);
 
   return (
     <main className="shell utility-shell achievement-shell">
       <JsonLd data={achievementsJsonLd} />
-      <section className="achievement-hero-frame">
-        <PaperCard eyebrow="легенди" density="lg">
-          <h1 className="text-5xl font-black">Малките легенди след всяка игра</h1>
-          <p className="achievement-hero-lede max-w-3xl">
-            Гравираните плочи разказват какво се е случило на масата: спасение, предателство, точен изстрел или
-            самостоятелна победа.
-          </p>
-        </PaperCard>
-      </section>
-
-      <AchievementsClient owned={owned} status={status} />
-
-      <Link className="btn btn-secondary achievement-return" href="/history">
-        Виж записаните игри
-      </Link>
+      <AchievementsClient owned={owned} status={status} visualReplay={fixtureEnabled && visualAchievements === "fixture"} />
     </main>
   );
 }
@@ -81,10 +69,24 @@ async function loadOwnedAchievements(
   try {
     const db = createDatabase(process.env.DATABASE_URL);
     const achievements = await getAchievementsForUser(db, userId);
+    const catalogIds = new Set(ACHIEVEMENTS.map((achievement) => achievement.id));
+    const gameIds = [...new Set(achievements
+      .filter((achievement) => catalogIds.has(achievement.achievementId))
+      .map((achievement) => achievement.gameId)
+      .filter((gameId): gameId is string => gameId !== null && isUuid(gameId)))];
+    let replayGameIds = new Set<string>();
+    if (gameIds.length > 0) {
+      try {
+        // Only completed participant games qualify; the route rechecks access on navigation.
+        replayGameIds = await getReplayEligibleGameIds(db, userId, gameIds);
+      } catch (error) {
+        console.error("[achievement-replay-links]", safeMonitoringErrorMetadata(error));
+      }
+    }
     return {
       owned: achievements.map((achievement) => ({
         achievementId: achievement.achievementId,
-        gameId: achievement.gameId,
+        gameId: achievement.gameId && replayGameIds.has(achievement.gameId) ? achievement.gameId : null,
         unlockedAt: achievement.unlockedAt.toISOString(),
       })),
       status: "ready",
@@ -103,7 +105,7 @@ function visualAchievementFixture(): OwnedAchievement[] {
   const unlockedIds = new Set(["first_blood", "jester_win", "hunter_revenge", "maniac_endgame"]);
   return ACHIEVEMENTS.filter((achievement) => unlockedIds.has(achievement.id)).map((achievement, index) => ({
     achievementId: achievement.id,
-    gameId: `visual-game-${index + 1}`,
+    gameId: index === 0 ? null : `00000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`,
     unlockedAt: new Date(Date.UTC(2026, 4, 20 + index, 18, 30)).toISOString(),
   }));
 }

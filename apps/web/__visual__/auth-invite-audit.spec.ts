@@ -79,13 +79,13 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
         await expect(page.locator(".lobby-player-preview")).toHaveCount(0);
         await expect(page.getByText("Поканата остава активна", { exact: false })).toHaveCount(0);
         await expect(page.locator(".lobby-invite-v2")).not.toHaveAttribute("data-family");
-        const fallback = page.getByRole("link", { name: "Избери игра", exact: true });
-        await expect(fallback).toHaveAttribute("href", "/");
+        const fallback = page.getByRole("link", { name: "Въведи друг код", exact: true });
+        await expect(fallback).toHaveAttribute("href", "/join");
         await expectPageHealth(page, pageErrors);
         await testInfo.attach("missing-room-with-mafia-hint", { body: await page.screenshot({ fullPage: true }), contentType: "image/png" });
         await fallback.click();
-        await expect(page).toHaveURL((url) => url.pathname === "/" && url.search === "");
-        await expect(page.getByRole("heading", { name: "Върколак или Мафия", exact: true })).toBeVisible();
+        await expect(page).toHaveURL((url) => url.pathname === "/sign-in" && url.searchParams.get("redirect") === "/join");
+        await expect(page.getByRole("heading", { name: "Вход в играта", exact: true })).toBeVisible();
       });
 
       test("an unavailable Mafia preview recovers and distinguishes active and finished games", async ({ page }) => {
@@ -105,12 +105,12 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
         await expect(page.locator(".lobby-player-preview")).toHaveCount(0);
         status = "lobby";
         await page.getByRole("button", { name: "Провери отново", exact: true }).click();
-        await expect(preview).toContainText("В стаята има 1 от 8 играчи");
+        await expect(preview).toContainText("1 от 8 места заети");
         await expect(page.locator(".lobby-player-preview")).toContainText("Анна");
         await expect(page.getByRole("link", { name: "Към играта", exact: true })).toBeVisible();
         await expect(page.getByRole("link", { name: "Към играта", exact: true })).toHaveAttribute("href", "/play/ABC234?mode=mafia_free");
         await expect(page.locator(".lobby-invite-v2")).toHaveAttribute("data-family", "mafia");
-        await expect(page.getByRole("button", { name: "Сподели", exact: true })).toBeVisible();
+        await expect(page.getByRole("button", { name: "Сподели поканата", exact: true })).toBeVisible();
         status = "in_game";
         await page.reload();
         await expect(preview).toContainText("Играта вече върви");

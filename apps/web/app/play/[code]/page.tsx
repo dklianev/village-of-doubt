@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { normalizeRoomCode, ROOM_CODE_REGEX } from "@werewolf/shared";
 import { PlayRoomClient } from "@/components/play-room-client";
+import "@/components/play/GameConclusion.module.css";
 import { RouteLoadingState } from "@/components/system/RouteLoadingState";
 import { requireSession } from "@/lib/require-session";
 import { parseRoomCreateOptions, type RoomSearchParams } from "@/lib/room-options";
@@ -35,7 +36,7 @@ export async function generateMetadata({
 
 export default function PlayPage({ params, searchParams }: PlayPageProps) {
   return (
-    <Suspense fallback={<RouteLoadingState title="Подреждаме игровата маса" />}>
+    <Suspense fallback={<RouteLoadingState title="Игровата маса" variant="play" />}>
       <PlayRouteContent params={params} searchParams={searchParams} />
     </Suspense>
   );

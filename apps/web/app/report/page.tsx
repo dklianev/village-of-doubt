@@ -4,13 +4,12 @@ import "@/components/report/LegacyReport.module.css";
 import { headers } from "next/headers";
 import { JsonLd } from "@/components/JsonLd";
 import { ReportLighthouse } from "@/components/report/ReportLighthouse";
-import { ResourceHints } from "@/components/resource-hints";
 import { auth } from "@/lib/auth";
 import { absoluteUrl, routeMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = routeMetadata({
   title: "Сигнал",
-  description: "Подай сигнал — за нарушение, авторски права, бъг или жалба. Преглеждаме в 48 часа.",
+  description: "Подай сигнал за неуместно поведение, технически проблем, авторски права или лични данни.",
   path: "/report",
   image: "/game-art/legal/report-banner.png",
   imageAlt: "Каменен фар сред мъгла",
@@ -42,7 +41,6 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
 
   return (
     <main className="shell legal-page-shell report-shell">
-      <ResourceHints images={[{ href: "/game-art/legal/report-banner.webp", fetchPriority: "high" }]} />
       <JsonLd data={jsonLd} />
       <ReportLighthouse
         userEmail={session?.user?.email ?? null}

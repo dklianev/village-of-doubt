@@ -14,7 +14,8 @@ import type {
   TieBreaker,
   WerewolfVariant,
 } from "./game-config.js";
-import type { RoleCode } from "./roles.js";
+import { ROLE_DEFINITIONS, type RoleCode } from "./roles.js";
+import type { WinnerTeam } from "./win-conditions.js";
 
 export type GamePhase =
   | "lobby"
@@ -96,6 +97,38 @@ export interface RoomInvitationEligibility {
 export interface RepeatRoomSettingsState {
   /** JSON-encoded allowlisted CreateRoomOptions; absent on older servers. */
   nextRoomOptionsJson?: string;
+}
+
+/** Server-authored, public only at game_over; player IDs are stable userIds. */
+export interface TerminalGameResult {
+  winnerTeam: WinnerTeam;
+  winnerPlayerIds: string[];
+  /** Independent personal wins (Jester), not members of the winning team. */
+  personalWinnerPlayerIds: string[];
+  /** Final actual roles, including eliminated players; excludes nonparticipants. */
+  finalRoles: Array<{ userId: string; role: RoleCode }>;
+}
+
+export function parseTerminalGameResult(value: unknown): TerminalGameResult | undefined {
+  if (!isRecord(value)) return undefined;
+  const { winnerTeam, winnerPlayerIds, personalWinnerPlayerIds, finalRoles } = value;
+  if (winnerTeam !== "village" && winnerTeam !== "werewolves" && winnerTeam !== "vampires"
+    && winnerTeam !== "mafia" && winnerTeam !== "maniac" && winnerTeam !== "lovers" && winnerTeam !== "draw") return undefined;
+  if (!Array.isArray(winnerPlayerIds) || !winnerPlayerIds.every(isNonEmptyString)
+    || !Array.isArray(personalWinnerPlayerIds) || !personalWinnerPlayerIds.every(isNonEmptyString)
+    || !Array.isArray(finalRoles)) return undefined;
+  const roles: TerminalGameResult["finalRoles"] = [];
+  const playerIds = new Set<string>();
+  for (const entry of finalRoles) {
+    if (!isRecord(entry) || !isNonEmptyString(entry.userId) || playerIds.has(entry.userId)
+      || typeof entry.role !== "string" || !Object.hasOwn(ROLE_DEFINITIONS, entry.role)) return undefined;
+    playerIds.add(entry.userId);
+    roles.push({ userId: entry.userId, role: entry.role as RoleCode });
+  }
+  if ([...winnerPlayerIds, ...personalWinnerPlayerIds].some((id) => !playerIds.has(id))
+    || new Set(winnerPlayerIds).size !== winnerPlayerIds.length
+    || new Set(personalWinnerPlayerIds).size !== personalWinnerPlayerIds.length) return undefined;
+  return { winnerTeam, winnerPlayerIds: [...winnerPlayerIds], personalWinnerPlayerIds: [...personalWinnerPlayerIds], finalRoles: roles };
 }
 
 export type ClientCommand =

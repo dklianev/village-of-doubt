@@ -1,9 +1,11 @@
-import { act, renderHook, waitFor } from "@testing-library/react";
+import { Activity, StrictMode, useLayoutEffect, useRef, useState } from "react";
+import { act, render, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createGameClient, GAME_ROOM_NAME } from "@/lib/colyseus-client";
 import { useGameRoom } from "@/hooks/play/use-game-room";
 import { useActionReceipt } from "@/hooks/play/use-action-receipt";
 import { isVisualGameFixtureEnabled, parseVisualGameFixture } from "@/hooks/play/visual-game-fixture";
+import type { PublicChatMessage, PublicEvent, PublicRoleCount, VoteTallyItem } from "@/lib/play/types";
 
 const mocks = vi.hoisted(() => ({
   refreshSession: vi.fn(),
@@ -30,32 +32,40 @@ function createFakeRoom(token = "reconnect-token") {
   const dropHandlers: LeaveHandler[] = [];
   const reconnectHandlers: Array<() => void> = [];
   const messageHandlers = new Map<string, MessageHandler[]>();
+  const subscribe = <Handler,>(handlers: Handler[], handler: Handler) => {
+    handlers.push(handler);
+    return () => {
+      const index = handlers.indexOf(handler);
+      if (index !== -1) handlers.splice(index, 1);
+    };
+  };
+  const signal = <Handler,>(handlers: Handler[]) => Object.assign(
+    vi.fn((handler: Handler) => { handlers.push(handler); }),
+    { remove: vi.fn((handler: Handler) => {
+      const index = handlers.indexOf(handler);
+      if (index !== -1) handlers.splice(index, 1);
+    }) },
+  );
 
   return {
     reconnectionToken: token,
     leave: vi.fn(),
     send: vi.fn(),
     request: vi.fn().mockResolvedValue({ synchronized: true }),
-    onStateChange: vi.fn((handler: StateHandler) => {
-      stateHandlers.push(handler);
-    }),
+    onStateChange: signal(stateHandlers),
     onMessage: vi.fn((type: string, handler: MessageHandler) => {
       const handlers = messageHandlers.get(type) ?? [];
-      handlers.push(handler);
       messageHandlers.set(type, handlers);
+      return subscribe(handlers, handler);
     }),
-    onLeave: vi.fn((handler: LeaveHandler) => {
-      leaveHandlers.push(handler);
-    }),
-    onError: vi.fn((handler: ErrorHandler) => {
-      errorHandlers.push(handler);
-    }),
-    onDrop: vi.fn((handler: LeaveHandler) => {
-      dropHandlers.push(handler);
-    }),
-    onReconnect: vi.fn((handler: () => void) => {
-      reconnectHandlers.push(handler);
-    }),
+    onLeave: signal(leaveHandlers),
+    onError: signal(errorHandlers),
+    onDrop: signal(dropHandlers),
+    onReconnect: signal(reconnectHandlers),
+    listenerCount() {
+      return [stateHandlers, leaveHandlers, errorHandlers, dropHandlers, reconnectHandlers,
+        ...messageHandlers.values()].reduce((count, handlers) => count + handlers.length, 0);
+    },
     emitState(state: unknown) {
       for (const handler of stateHandlers) {
         handler(state);
@@ -150,6 +160,28 @@ function makeState() {
     nominations: [],
     publicEvents: [],
     publicChat: [],
+  };
+}
+
+function makeStateWithPublicRows() {
+  return {
+    ...makeState(),
+    roleCounts: [
+      { role: "werewolf", count: 2 },
+      { role: "ordinary_villager", count: 6 },
+    ] as PublicRoleCount[],
+    voteTally: [
+      { targetUserId: "u1", targetName: "Player 1", count: 1, hasMayorVote: false },
+      { targetUserId: "u2", targetName: "Player 2", count: 2, hasMayorVote: false },
+    ] as VoteTallyItem[],
+    publicEvents: [
+      { id: "event-1", type: "system", messageBg: "Synthetic event" },
+      { id: "event-2", type: "phase", messageBg: "Synthetic phase" },
+    ] as PublicEvent[],
+    publicChat: [
+      { id: "chat-1", channel: "public", senderName: "Player 1", message: "Synthetic message" },
+      { id: "chat-2", channel: "public", senderName: "Player 2", message: "Another message" },
+    ] as PublicChatMessage[],
   };
 }
 
@@ -373,6 +405,139 @@ describe("useGameRoom", () => {
     );
   });
 
+  it.each([
+    { slice: "roleCounts", patch: { role: "seer" } },
+    { slice: "roleCounts", patch: { count: 3 } },
+    { slice: "voteTally", patch: { targetUserId: "u2" } },
+    { slice: "voteTally", patch: { targetName: "Player 2" } },
+    { slice: "voteTally", patch: { count: 2 } },
+    { slice: "voteTally", patch: { hasMayorVote: true } },
+    { slice: "publicEvents", patch: { id: "event-2" } },
+    { slice: "publicEvents", patch: { type: "phase" } },
+    { slice: "publicEvents", patch: { messageBg: "Updated event" } },
+    { slice: "publicChat", patch: { id: "chat-2" } },
+    { slice: "publicChat", patch: { channel: "updated-public-channel" } },
+    { slice: "publicChat", patch: { senderName: "Player 2" } },
+    { slice: "publicChat", patch: { message: "Updated message" } },
+  ] as const)("detects an in-place SDK $slice patch $patch without mutating a retained snapshot", async ({ slice, patch }) => {
+    mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
+    const { client, joinRoom } = createClient();
+    mocks.createGameClient.mockReturnValue(client);
+    const toast = vi.fn();
+    const { result } = renderHook(() => useGameRoom({ code: "ABCD", createOptions: undefined, toast }));
+    await waitFor(() => expect(result.current.connectionStatus).toBe("connected"));
+    const state = makeStateWithPublicRows();
+    act(() => joinRoom.emitState(state));
+    const previous = result.current.snapshot!;
+    const previousRows = previous[slice].map((row) => ({ ...row }));
+
+    Object.assign(state[slice][0]!, patch);
+    expect.soft(previous[slice]).toEqual(previousRows);
+    act(() => joinRoom.emitState(state));
+    const next = result.current.snapshot!;
+    expect(next).not.toBe(previous);
+    expect(next[slice]).not.toBe(previous[slice]);
+    expect(next[slice]).toEqual(state[slice]);
+    expect(previous[slice]).toEqual(previousRows);
+    for (const other of ["players", "roleCounts", "voteTally", "publicEvents", "publicChat"] as const) {
+      if (other !== slice) expect(next[other]).toBe(previous[other]);
+    }
+
+    act(() => joinRoom.emitState(state));
+    expect(result.current.snapshot).toBe(next);
+  });
+
+  it("keeps populated public slices stable across no-op notifications and unrelated shell changes", async () => {
+    mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
+    const { client, joinRoom } = createClient();
+    mocks.createGameClient.mockReturnValue(client);
+    const toast = vi.fn();
+    let renders = 0;
+    const { result } = renderHook(() => {
+      renders += 1;
+      return useGameRoom({ code: "ABCD", createOptions: undefined, toast });
+    });
+    await waitFor(() => expect(result.current.connectionStatus).toBe("connected"));
+    const state = makeStateWithPublicRows();
+    act(() => joinRoom.emitState(state));
+    const first = result.current.snapshot!;
+    const initialRenders = renders;
+    act(() => {
+      joinRoom.emitState(state);
+      joinRoom.emitState(makeStateWithPublicRows());
+      joinRoom.emitState(state);
+    });
+    expect(result.current.snapshot).toBe(first);
+    expect(renders).toBe(initialRenders);
+
+    act(() => joinRoom.emitState({ ...state, narratorVoice: "witch_moonglow" }));
+    const next = result.current.snapshot!;
+    expect(next.narratorVoice).toBe("witch_moonglow");
+    for (const slice of ["players", "roleCounts", "voteTally", "publicEvents", "publicChat"] as const) {
+      expect(next[slice]).toBe(first[slice]);
+    }
+    expect(first.narratorVoice).toBe("classic");
+  });
+
+  it.each(["roleCounts", "voteTally", "publicEvents", "publicChat"] as const)(
+    "tracks reordering, removal and clearing of %s without changing older snapshots", async (slice) => {
+      mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
+      const { client, joinRoom } = createClient();
+      mocks.createGameClient.mockReturnValue(client);
+      const toast = vi.fn();
+      const { result } = renderHook(() => useGameRoom({ code: "ABCD", createOptions: undefined, toast }));
+      await waitFor(() => expect(result.current.connectionStatus).toBe("connected"));
+      const state = makeStateWithPublicRows();
+      act(() => joinRoom.emitState(state));
+      const first = result.current.snapshot!;
+      const originalRows = first[slice].map((row) => ({ ...row }));
+
+      state[slice].reverse();
+      act(() => joinRoom.emitState(state));
+      const reordered = result.current.snapshot!;
+      expect(reordered[slice]).toEqual([...originalRows].reverse());
+      expect(first[slice]).toEqual(originalRows);
+
+      state[slice].shift();
+      act(() => joinRoom.emitState(state));
+      const shortened = result.current.snapshot!;
+      expect(shortened[slice]).toEqual([originalRows[0]]);
+      expect(reordered[slice]).toHaveLength(2);
+
+      state[slice].splice(0);
+      act(() => joinRoom.emitState(state));
+      const cleared = result.current.snapshot!;
+      expect(cleared[slice]).toEqual([]);
+      expect(shortened[slice]).toHaveLength(1);
+      act(() => joinRoom.emitState(state));
+      expect(result.current.snapshot).toBe(cleared);
+    },
+  );
+
+  it("projects only declared public row fields, not mutable SDK metadata", async () => {
+    mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
+    const { client, joinRoom } = createClient();
+    mocks.createGameClient.mockReturnValue(client);
+    const toast = vi.fn();
+    const { result } = renderHook(() => useGameRoom({ code: "ABCD", createOptions: undefined, toast }));
+    await waitFor(() => expect(result.current.connectionStatus).toBe("connected"));
+    const state = makeStateWithPublicRows();
+    const expected = makeStateWithPublicRows();
+    const slices = ["roleCounts", "voteTally", "publicEvents", "publicChat"] as const;
+    for (const slice of slices) {
+      Object.assign(state[slice][0]!, { sdkMetadata: { revision: 1 } });
+    }
+    act(() => joinRoom.emitState(state));
+    const snapshot = result.current.snapshot!;
+    for (const slice of slices) {
+      expect(snapshot[slice]).toEqual(expected[slice]);
+      expect(snapshot[slice][0]).not.toBe(state[slice][0]);
+      Object.assign(state[slice][0]!, { sdkMetadata: { revision: 2 } });
+    }
+    act(() => joinRoom.emitState(state));
+    expect(result.current.snapshot).toBe(snapshot);
+  });
+
   it("propagates a voting-cycle-only patch to the real receipt hook after the final voter ACK", async () => {
     mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
     const { client, joinRoom } = createClient();
@@ -407,7 +572,7 @@ describe("useGameRoom", () => {
     expect(result.current.receipt).toBeNull();
   });
 
-  it("updates repeat-room settings independently of the phase and preserves unchanged snapshots", async () => {
+  it("retains raw repeat-room settings independently of the phase and preserves unchanged snapshots", async () => {
     mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
     const { client, joinRoom } = createClient();
     mocks.createGameClient.mockReturnValue(client);
@@ -425,14 +590,73 @@ describe("useGameRoom", () => {
     const state = { ...makeState(), nextRoomOptionsJson: JSON.stringify(options) };
 
     act(() => joinRoom.emitState(state));
-    expect(result.current.snapshot?.nextRoomOptions).toMatchObject(options);
+    expect(result.current.snapshot?.nextRoomOptionsJson).toBe(state.nextRoomOptionsJson);
+    expect(result.current.snapshot).not.toHaveProperty("nextRoomOptions");
     const firstSnapshot = result.current.snapshot;
-    act(() => joinRoom.emitState(state));
+    act(() => joinRoom.emitState({ ...state }));
     expect(result.current.snapshot).toBe(firstSnapshot);
 
-    act(() => joinRoom.emitState({ ...state, nextRoomOptionsJson: JSON.stringify({ ...options, autoStart: true }) }));
-    expect(result.current.snapshot?.nextRoomOptions).toMatchObject({ ...options, autoStart: true });
+    const updatedJson = JSON.stringify({ ...options, autoStart: true });
+    act(() => joinRoom.emitState({ ...state, nextRoomOptionsJson: updatedJson }));
+    expect(result.current.snapshot?.nextRoomOptionsJson).toBe(updatedJson);
+    expect(result.current.snapshot).not.toBe(firstSnapshot);
     expect(result.current.snapshot?.phase).toBe("lobby");
+
+    act(() => joinRoom.emitState(makeState()));
+    expect(result.current.snapshot?.nextRoomOptionsJson).toBeUndefined();
+    const withoutSettings = result.current.snapshot;
+    act(() => joinRoom.emitState(makeState()));
+    expect(result.current.snapshot).toBe(withoutSettings);
+  });
+
+  it.each(["not-json", '{"roomVisibility":"public"}'])(
+    "retains malformed repeat-room wire data for post-game validation: %s", async (nextRoomOptionsJson) => {
+      mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
+      const { client, joinRoom } = createClient();
+      mocks.createGameClient.mockReturnValue(client);
+      const { result } = renderHook(() => useGameRoom({ code: "ABCD", createOptions: undefined, toast: vi.fn() }));
+      await waitFor(() => expect(result.current.connectionStatus).toBe("connected"));
+      const state = { ...makeState(), nextRoomOptionsJson };
+
+      act(() => joinRoom.emitState(state));
+      expect(result.current.snapshot?.nextRoomOptionsJson).toBe(nextRoomOptionsJson);
+      expect(result.current.snapshot).not.toHaveProperty("nextRoomOptions");
+      const snapshot = result.current.snapshot;
+      act(() => joinRoom.emitState({ ...state }));
+      expect(result.current.snapshot).toBe(snapshot);
+    },
+  );
+
+  it("consumes terminal results on patches and reconnect, without inferring them from public text", async () => {
+    mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
+    const { client, joinRoom, reconnectRoom } = createClient();
+    mocks.createGameClient.mockReturnValue(client);
+    const toast = vi.fn();
+    const { result } = renderHook(() => useGameRoom({ code: "ABCD", createOptions: undefined, toast }));
+    await waitFor(() => expect(result.current.connectionStatus).toBe("connected"));
+    const terminalResult = {
+      winnerTeam: "draw", winnerPlayerIds: [], personalWinnerPlayerIds: ["u1"],
+      finalRoles: [{ userId: "u1", role: "jester" }],
+    };
+    const state = { ...makeState(), phase: "game_over", winnerTeam: "draw", winnerReasonBg: "Synthetic result." };
+    act(() => joinRoom.emitState(state));
+    expect(result.current.snapshot?.terminalResult).toBeUndefined();
+    const terminalState = { ...state, terminalResultJson: JSON.stringify(terminalResult) };
+    act(() => joinRoom.emitState(terminalState));
+    expect(result.current.snapshot?.terminalResult).toEqual(terminalResult);
+    const snapshot = result.current.snapshot;
+    act(() => joinRoom.emitState(terminalState));
+    expect(result.current.snapshot).toBe(snapshot);
+
+    vi.useFakeTimers();
+    act(() => joinRoom.emitLeave(4001));
+    await act(async () => { await vi.advanceTimersByTimeAsync(1000); });
+    expect(result.current.room).toBe(reconnectRoom);
+    act(() => reconnectRoom.emitState(terminalState));
+    expect(result.current.snapshot?.terminalResult).toEqual(terminalResult);
+    act(() => reconnectRoom.emitState({ ...terminalState, phase: "night" }));
+    expect(result.current.snapshot?.terminalResult).toBeUndefined();
+    vi.useRealTimers();
   });
 
   it("uses join-or-create when invite URLs also carry room creation options", async () => {
@@ -649,6 +873,29 @@ describe("useGameRoom", () => {
     });
   });
 
+  it("restores private data silently on a fresh page and still announces new live results", async () => {
+    mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
+    const { client, joinRoom } = createClient();
+    mocks.createGameClient.mockReturnValue(client);
+    const toast = vi.fn();
+    const restoredResult = { targetUserId: "u2", isEvil: true };
+    joinRoom.request.mockImplementation(async () => {
+      joinRoom.emitMessage("private_check_result", restoredResult);
+      joinRoom.emitMessage("private_lovers", { loverUserId: "u2", loverName: "Борис" });
+      joinRoom.emitMessage("private_blessing", { targetUserId: "u1", targetName: "Рада" });
+      joinRoom.emitMessage("narrator_role_snapshot", { roles: [] });
+      return { synchronized: true };
+    });
+    const { result } = renderHook(() => useGameRoom({ code: "ABCD", createOptions: undefined, toast }));
+    await waitFor(() => expect(result.current.privateResult).toEqual(restoredResult));
+    expect(result.current.privateLover?.loverUserId).toBe("u2");
+    expect(result.current.isBlessed).toBe(true);
+    expect(result.current.narratorSnapshot).toEqual({ roles: [] });
+    expect(toast).not.toHaveBeenCalled();
+    act(() => joinRoom.emitMessage("private_check_result", { targetUserId: "u3", isEvil: false }));
+    expect(toast).toHaveBeenCalledExactlyOnceWith({ message: "Получен е личен резултат от нощното действие.", kind: "info" });
+  });
+
   it("reconnects with the persisted token without announcing restored private data as new", async () => {
     mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
     const { client, joinRoom, reconnectRoom } = createClient();
@@ -726,6 +973,40 @@ describe("useGameRoom", () => {
     expect(client.joinOrCreate).toHaveBeenCalledOnce();
     expect(client.reconnect).not.toHaveBeenCalled();
     expect(joinRoom.leave).not.toHaveBeenCalled();
+  });
+
+  it("does not replay an achievement celebration after a transport reconnect", async () => {
+    mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
+    const { client, joinRoom } = createClient();
+    mocks.createGameClient.mockReturnValue(client);
+    const toast = vi.fn();
+    const { result } = renderHook(() => useGameRoom({ code: "ABCD", createOptions: undefined, toast }));
+    await waitFor(() => expect(result.current.connectionStatus).toBe("connected"));
+    act(() => joinRoom.emitMessage("achievements_unlocked", { achievementIds: ["first_win"] }));
+    expect(result.current.unlockedAchievementIds).toEqual(["first_win"]);
+    act(() => joinRoom.emitDrop());
+    expect(result.current.unlockedAchievementIds).toEqual([]);
+    await act(async () => joinRoom.emitReconnect());
+    expect(result.current.connectionStatus).toBe("connected");
+    expect(result.current.unlockedAchievementIds).toEqual([]);
+    act(() => joinRoom.emitMessage("achievements_unlocked", { achievementIds: ["first_blood"] }));
+    expect(result.current.unlockedAchievementIds).toEqual(["first_blood"]);
+  });
+
+  it.each(["offline", "error", "leave"] as const)("clears the transient achievement on %s", async (reason) => {
+    mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
+    const { client, joinRoom } = createClient();
+    mocks.createGameClient.mockReturnValue(client);
+    const toast = vi.fn();
+    const { result } = renderHook(() => useGameRoom({ code: "ABCD", createOptions: undefined, toast }));
+    await waitFor(() => expect(result.current.connectionStatus).toBe("connected"));
+    act(() => joinRoom.emitMessage("achievements_unlocked", { achievementIds: ["first_win"] }));
+    act(() => {
+      if (reason === "offline") window.dispatchEvent(new Event("offline"));
+      else if (reason === "error") joinRoom.emitError(4000);
+      else joinRoom.emitLeave(1000);
+    });
+    expect(result.current.unlockedAchievementIds).toEqual([]);
   });
 
   it.each([false, undefined])("keeps recovery retryable when private resync does not acknowledge success (%s)", async (synchronized) => {
@@ -1008,6 +1289,347 @@ describe("useGameRoom", () => {
 
     expect(client.joinOrCreate).not.toHaveBeenCalled();
     expect(client.reconnect).not.toHaveBeenCalled();
+  });
+
+  it.each(["room", "account", "auth-pending"] as const)(
+    "clears retained room and private data during %s changes before the next join",
+    async (change) => {
+      let userId = "u1";
+      let isPending = false;
+      mocks.useSession.mockImplementation(() => ({ data: { user: { id: userId } }, isPending }));
+      const { client, joinRoom } = createClient();
+      mocks.createGameClient.mockReturnValue(client);
+      const toast = vi.fn();
+      const { result, rerender } = renderHook(({ code }) => useGameRoom({ code, createOptions: undefined, toast }), {
+        initialProps: { code: "ABCD" },
+      });
+      await waitFor(() => expect(result.current.connectionStatus).toBe("connected"));
+      act(() => {
+        joinRoom.emitState(makeStateWithPublicRows());
+        joinRoom.emitMessage("private_role", { role: "seer", roleNameBg: "Synthetic role" });
+        joinRoom.emitMessage("private_chat", { id: "old-private-chat", message: "Synthetic private message" });
+        joinRoom.emitMessage("game_recorded", { gameId: "old-game" });
+      });
+      expect(result.current.snapshot).not.toBeNull();
+      expect(result.current.privateChats).toHaveLength(1);
+      vi.mocked(fetch).mockReturnValueOnce(deferred<Response>().promise);
+      if (change === "account") userId = "u2";
+      if (change === "auth-pending") isPending = true;
+      rerender({ code: change === "room" ? "EFGH" : "ABCD" });
+
+      expect(result.current.privateRole).toBeNull();
+      expect(result.current.privateChats).toEqual([]);
+      expect(result.current.room).toBeNull();
+      expect(result.current.snapshot).toBeNull();
+      expect(result.current.recordedGameId).toBeNull();
+      expect(result.current.connectionStatus).toBe("connecting");
+      expect(joinRoom.leave).toHaveBeenCalledOnce();
+      expect(joinRoom.listenerCount()).toBe(0);
+      act(() => {
+        joinRoom.emitState(makeState());
+        joinRoom.emitMessage("private_role", { role: "werewolf", roleNameBg: "Late role" });
+        joinRoom.emitMessage("private_chat", { id: "late-chat", message: "Late private message" });
+        joinRoom.emitMessage("system", { messageBg: "Late event" });
+      });
+      expect(result.current.privateRole).toBeNull();
+      expect(result.current.privateChats).toEqual([]);
+      expect(result.current.snapshot).toBeNull();
+      expect(toast).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(["room", "account", "logout", "auth-pending", "hidden-account"] as const)(
+    "does not commit the previous viewer's private data before passive effects after %s changes",
+    async (change) => {
+      let userId: string | undefined = "u1";
+      let isPending = false;
+      mocks.useSession.mockImplementation(() => ({ data: userId ? { user: { id: userId } } : null, isPending }));
+      const { client, joinRoom } = createClient();
+      mocks.createGameClient.mockReturnValue(client);
+      const toast = vi.fn();
+      const observations: Array<{ value: ReturnType<typeof useGameRoom>; text: string }> = [];
+      function BeforePaint({ value }: { value: ReturnType<typeof useGameRoom> }) {
+        const ref = useRef<HTMLDivElement>(null);
+        // A child layout effect observes committed props/DOM before the parent's effects.
+        useLayoutEffect(() => {
+          observations.push({ value, text: ref.current?.textContent ?? "" });
+        });
+        return <div ref={ref}>{value.privateRole?.roleNameBg}{value.privateChats.map((message) => message.message).join("")}</div>;
+      }
+      function Probe({ code }: { code: string }) {
+        const value = useGameRoom({ code, createOptions: undefined, toast });
+        return <BeforePaint value={value} />;
+      }
+      const view = (code: string, mode: "visible" | "hidden" = "visible") => (
+        <Activity mode={mode}><Probe code={code} /></Activity>
+      );
+      const { rerender } = render(view("ABCD"));
+      await waitFor(() => expect(joinRoom.request).toHaveBeenCalledOnce());
+      act(() => {
+        joinRoom.emitState({ ...makeState(), phase: "night" });
+        joinRoom.emitMessage("private_role", { role: "seer", roleNameBg: "Synthetic secret role" });
+        joinRoom.emitMessage("private_check_result", { targetUserId: "u3", role: "werewolf" });
+        joinRoom.emitMessage("private_faction_roster", { faction: "werewolves", members: [{ userId: "u2", displayName: "Synthetic player" }] });
+        joinRoom.emitMessage("private_lovers", { partnerUserId: "u2", partnerName: "Synthetic player" });
+        joinRoom.emitMessage("night_action_capabilities", { capabilities: { availableKinds: ["check_role"], usedFlags: {}, disallowedTargetsByKind: {} } });
+        joinRoom.emitMessage("narrator_role_snapshot", { players: [] });
+        joinRoom.emitMessage("private_chat", { id: "old-chat", message: "Synthetic secret chat" });
+        joinRoom.emitMessage("typing", { channel: "werewolves", senderUserId: "u2", senderName: "Synthetic player", active: true });
+        joinRoom.emitMessage("private_blessing", {});
+        joinRoom.emitMessage("achievements_unlocked", { achievementIds: ["old-achievement"] });
+        joinRoom.emitMessage("game_recorded", { gameId: "old-game" });
+      });
+      expect(observations.at(-1)?.text).toContain("Synthetic secret role");
+      expect(observations.at(-1)?.text).toContain("Synthetic secret chat");
+      if (change === "hidden-account") rerender(view("ABCD", "hidden"));
+      observations.length = 0;
+      const nextToken = deferred<Response>();
+      const nextRoom = createFakeRoom("next-owner-token");
+      vi.mocked(fetch).mockReturnValueOnce(nextToken.promise);
+      client.joinOrCreate.mockResolvedValueOnce(nextRoom);
+      if (change === "account" || change === "hidden-account") userId = "u2";
+      if (change === "logout") userId = undefined;
+      if (change === "auth-pending") isPending = true;
+      rerender(view(change === "room" ? "EFGH" : "ABCD"));
+
+      expect(observations.length).toBeGreaterThan(0);
+      for (const { value, text } of observations) {
+        expect(text).toBe("");
+        expect(value.privateRole).toBeNull();
+        expect(value.privateResult).toBeNull();
+        expect(value.privateFactionRoster).toBeNull();
+        expect(value.privateLover).toBeNull();
+        expect(value.nightActionCapabilities).toBeNull();
+        expect(value.narratorSnapshot).toBeNull();
+        expect(value.privateChats).toEqual([]);
+        expect(value.typingNotices).toEqual([]);
+        expect(value.isBlessed).toBe(false);
+        expect(value.unlockedAchievementIds).toEqual([]);
+        expect(value.recordedGameId).toBeNull();
+        if (change !== "room") expect(value.currentUserId).not.toBe("u1");
+        expect(value.room).toBeNull();
+        expect(value.snapshot).toBeNull();
+      }
+
+      const nextCode = change === "room" ? "EFGH" : "ABCD";
+      if (change === "logout") userId = "u2";
+      isPending = false;
+      rerender(view(nextCode));
+      await act(async () => nextToken.resolve({
+        ok: true,
+        json: async () => ({ token: "next-game-token", userId, roomCode: nextCode }),
+      } as Response));
+      act(() => {
+        nextRoom.emitState({ ...makeState(), code: nextCode, phase: "night" });
+        nextRoom.emitMessage("private_role", { role: "doctor", roleNameBg: "Current role" });
+        nextRoom.emitMessage("private_chat", { id: "current-chat", message: "Current chat" });
+      });
+      const restored = observations.at(-1);
+      expect(restored?.text).toBe("Current roleCurrent chat");
+      expect(restored?.value.currentUserId).toBe(userId);
+      expect(restored?.value.room).toBe(nextRoom);
+      expect(restored?.value.snapshot?.code).toBe(nextCode);
+      expect(restored?.value.privateChats).toHaveLength(1);
+      expect(client.joinOrCreate).toHaveBeenCalledTimes(2);
+    },
+  );
+
+  it("reuses an Activity subtree without retaining room data or accumulating listeners", async () => {
+    const addListener = vi.spyOn(window, "addEventListener");
+    const removeListener = vi.spyOn(window, "removeEventListener");
+    const browserListeners = () => addListener.mock.calls.filter(([type]) => type === "offline" || type === "online");
+    const removedBrowserListeners = () => removeListener.mock.calls.filter(([type]) => type === "offline" || type === "online");
+    mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
+    const rooms = [createFakeRoom(), createFakeRoom("second"), createFakeRoom("third")];
+    const { client } = createClient();
+    client.joinOrCreate.mockReset();
+    for (const nextRoom of rooms) client.joinOrCreate.mockResolvedValueOnce(nextRoom);
+    mocks.createGameClient.mockReturnValue(client);
+    const toast = vi.fn();
+    const initialize = vi.fn(() => "preserved");
+    let current!: ReturnType<typeof useGameRoom>;
+    function Probe() {
+      useState(initialize);
+      current = useGameRoom({ code: "ABCD", createOptions: undefined, toast });
+      return null;
+    }
+    const view = (mode: "hidden" | "visible") => <Activity mode={mode}><Probe /></Activity>;
+    const { rerender, unmount } = render(view("visible"));
+    await waitFor(() => expect(current.room).toBe(rooms[0]));
+    const expectedListeners = rooms[0]!.listenerCount();
+    expect(expectedListeners).toBeGreaterThan(0);
+    const state = makeStateWithPublicRows();
+
+    for (let index = 0; index < 2; index += 1) {
+      const previousRoom = rooms[index]!;
+      const nextRoom = rooms[index + 1]!;
+      act(() => {
+        previousRoom.emitState(state);
+        previousRoom.emitMessage("private_role", { role: "seer", roleNameBg: "Synthetic role" });
+        previousRoom.emitMessage("private_chat", { id: "private-chat", message: "Synthetic private message" });
+        previousRoom.emitMessage("game_recorded", { gameId: "old-game" });
+      });
+      expect(current.snapshot?.publicChat).toHaveLength(2);
+      rerender(view("hidden"));
+      expect(previousRoom.leave).toHaveBeenCalledOnce();
+      expect(previousRoom.listenerCount()).toBe(0);
+      expect(removedBrowserListeners()).toEqual(browserListeners());
+      await act(async () => {
+        previousRoom.emitMessage("system", { messageBg: "Hidden event" });
+        window.dispatchEvent(new Event("offline"));
+        window.dispatchEvent(new Event("online"));
+      });
+      expect(client.joinOrCreate).toHaveBeenCalledTimes(index + 1);
+      rerender(view("visible"));
+      await waitFor(() => expect(current.room).toBe(nextRoom));
+      expect(current.privateRole).toBeNull();
+      expect(current.privateChats).toEqual([]);
+      expect(current.snapshot).toBeNull();
+      expect(current.recordedGameId).toBeNull();
+      expect(nextRoom.listenerCount()).toBe(expectedListeners);
+      expect(browserListeners().length - removedBrowserListeners().length).toBe(2);
+      act(() => nextRoom.emitState(state));
+      expect(current.snapshot?.publicChat).toHaveLength(2);
+      expect(current.snapshot?.voteTally).toHaveLength(2);
+      expect(nextRoom.request).toHaveBeenCalledExactlyOnceWith("syncPrivateState");
+    }
+    expect(initialize).toHaveBeenCalledOnce();
+    expect(client.reconnect).not.toHaveBeenCalled();
+    expect(toast).not.toHaveBeenCalled();
+    unmount();
+    expect(rooms.every((room) => room.listenerCount() === 0)).toBe(true);
+    expect(removedBrowserListeners()).toEqual(browserListeners());
+  });
+
+  it("disposes a stale Activity join after the reactivated subtree has joined another socket", async () => {
+    mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
+    const { client, joinRoom, reconnectRoom } = createClient();
+    const join = deferred<typeof joinRoom>();
+    client.joinOrCreate.mockReturnValueOnce(join.promise).mockResolvedValueOnce(reconnectRoom);
+    mocks.createGameClient.mockReturnValue(client);
+    const toast = vi.fn();
+    let current!: ReturnType<typeof useGameRoom>;
+    function Probe() {
+      current = useGameRoom({ code: "ABCD", createOptions: undefined, toast });
+      return null;
+    }
+    const view = (mode: "hidden" | "visible") => <Activity mode={mode}><Probe /></Activity>;
+    const { rerender } = render(view("visible"));
+    await waitFor(() => expect(client.joinOrCreate).toHaveBeenCalledOnce());
+    rerender(view("hidden"));
+    rerender(view("visible"));
+    await waitFor(() => expect(current.room).toBe(reconnectRoom));
+    await act(async () => join.resolve(joinRoom));
+    expect(current.room).toBe(reconnectRoom);
+    expect(current.connectionStatus).toBe("connected");
+    expect(joinRoom.leave).toHaveBeenCalledOnce();
+    expect(joinRoom.listenerCount()).toBe(0);
+    expect(joinRoom.request).not.toHaveBeenCalled();
+    expect(client.joinOrCreate).toHaveBeenCalledTimes(2);
+    expect(window.sessionStorage.getItem("room-reconnect:ABCD")).toBe("reconnected-token");
+    expect(toast).not.toHaveBeenCalled();
+  });
+
+  it("opens only one socket under Strict Mode effect replay", async () => {
+    mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
+    const { client, joinRoom } = createClient();
+    mocks.createGameClient.mockReturnValue(client);
+    const toast = vi.fn();
+    const { result, rerender, unmount } = renderHook(() => useGameRoom({ code: "ABCD", createOptions: undefined, toast }), {
+      wrapper: ({ children }) => <StrictMode>{children}</StrictMode>,
+    });
+    await waitFor(() => expect(result.current.room).toBe(joinRoom));
+    rerender();
+    expect(client.joinOrCreate).toHaveBeenCalledOnce();
+    expect(joinRoom.request).toHaveBeenCalledExactlyOnceWith("syncPrivateState");
+    expect(joinRoom.onStateChange).toHaveBeenCalledOnce();
+    expect(joinRoom.onLeave).toHaveBeenCalledOnce();
+    unmount();
+    expect(joinRoom.leave).toHaveBeenCalledOnce();
+    expect(joinRoom.listenerCount()).toBe(0);
+  });
+
+  it("joins a refresh-like remount once with fresh authentication and ignores the old room", async () => {
+    mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
+    const { client, joinRoom, reconnectRoom } = createClient();
+    client.joinOrCreate.mockResolvedValueOnce(joinRoom).mockResolvedValueOnce(reconnectRoom);
+    mocks.createGameClient.mockReturnValue(client);
+    const toast = vi.fn();
+    const first = renderHook(() => useGameRoom({ code: "ABCD", createOptions: undefined, toast }));
+    await waitFor(() => expect(first.result.current.room).toBe(joinRoom));
+    first.unmount();
+    const second = renderHook(() => useGameRoom({ code: "ABCD", createOptions: undefined, toast }));
+    await waitFor(() => expect(second.result.current.room).toBe(reconnectRoom));
+    act(() => {
+      joinRoom.emitMessage("private_role", { role: "seer", roleNameBg: "Old role" });
+      joinRoom.emitLeave(1000);
+      joinRoom.emitDrop();
+      joinRoom.emitReconnect();
+    });
+    expect(second.result.current.connectionStatus).toBe("connected");
+    expect(second.result.current.privateRole).toBeNull();
+    expect(client.joinOrCreate).toHaveBeenCalledTimes(2);
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(client.reconnect).not.toHaveBeenCalled();
+    expect(joinRoom.listenerCount()).toBe(0);
+    expect(reconnectRoom.request).toHaveBeenCalledExactlyOnceWith("syncPrivateState");
+  });
+
+  it("disposes a stale async join that finishes after cleanup without binding private handlers", async () => {
+    mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
+    const { client, joinRoom } = createClient();
+    const join = deferred<typeof joinRoom>();
+    client.joinOrCreate.mockReturnValueOnce(join.promise);
+    mocks.createGameClient.mockReturnValue(client);
+    const toast = vi.fn();
+    const { unmount } = renderHook(() => useGameRoom({ code: "ABCD", createOptions: undefined, toast }));
+    await waitFor(() => expect(client.joinOrCreate).toHaveBeenCalledOnce());
+    unmount();
+    await act(async () => join.resolve(joinRoom));
+    expect(joinRoom.leave).toHaveBeenCalledOnce();
+    expect(joinRoom.listenerCount()).toBe(0);
+    expect(joinRoom.request).not.toHaveBeenCalled();
+    expect(window.sessionStorage.getItem("room-reconnect:ABCD")).toBeNull();
+    expect(toast).not.toHaveBeenCalled();
+  });
+
+  it("retires the previous socket and ignores its leave while a fresh retry is joining", async () => {
+    mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
+    const { client, joinRoom, reconnectRoom } = createClient();
+    joinRoom.request.mockRejectedValueOnce(new Error("private sync unavailable"));
+    const join = deferred<typeof reconnectRoom>();
+    client.joinOrCreate.mockResolvedValueOnce(joinRoom).mockReturnValueOnce(join.promise);
+    mocks.createGameClient.mockReturnValue(client);
+    const toast = vi.fn();
+    const { result } = renderHook(() => useGameRoom({ code: "ABCD", createOptions: undefined, toast }));
+    await waitFor(() => expect(result.current.connectionStatus).toBe("error"));
+    await act(async () => result.current.reconnectNow());
+    expect(client.joinOrCreate).toHaveBeenCalledTimes(2);
+    // The server replaces the previous connection before the fresh join resolves.
+    act(() => joinRoom.emitLeave(1000));
+    await act(async () => join.resolve(reconnectRoom));
+    expect(result.current.currentUserId).toBe("u1");
+    expect(result.current.room).toBe(reconnectRoom);
+    expect(result.current.connectionStatus).toBe("connected");
+    expect(joinRoom.listenerCount()).toBe(0);
+    expect(reconnectRoom.request).toHaveBeenCalledExactlyOnceWith("syncPrivateState");
+  });
+
+  it("closes the replaced socket after a fresh retry even if its server close is delayed", async () => {
+    mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
+    const { client, joinRoom, reconnectRoom } = createClient();
+    joinRoom.request.mockRejectedValueOnce(new Error("private sync unavailable"));
+    client.joinOrCreate.mockResolvedValueOnce(joinRoom).mockResolvedValueOnce(reconnectRoom);
+    mocks.createGameClient.mockReturnValue(client);
+    const toast = vi.fn();
+    const { result, unmount } = renderHook(() => useGameRoom({ code: "ABCD", createOptions: undefined, toast }));
+    await waitFor(() => expect(result.current.connectionStatus).toBe("error"));
+    await act(async () => result.current.reconnectNow());
+    expect(result.current.room).toBe(reconnectRoom);
+    expect(joinRoom.leave).toHaveBeenCalledOnce();
+    expect(joinRoom.listenerCount()).toBe(0);
+    unmount();
+    expect(reconnectRoom.leave).toHaveBeenCalledOnce();
   });
 
   it("uses a fresh signed token when retrying a room-level connection error", async () => {

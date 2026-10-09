@@ -64,6 +64,11 @@ function renderSeat(overrides: Partial<Parameters<typeof PlaySeat>[0]> = {}) {
 }
 
 describe("PlaySeat", () => {
+  it.each([[1, "1 глас"], [2, "2 гласа"]])("announces %s votes naturally", (voteCount, label) => {
+    renderSeat({ voteCount: Number(voteCount), targetable: true });
+    expect(screen.getByRole("button", { name: /Избери Анна Иванова/ })).toHaveAccessibleName(expect.stringContaining(String(label)));
+  });
+
   it("keeps public identity and readiness available on a non-targetable lobby seat", () => {
     renderSeat({ phase: "lobby", targetable: false });
     const seat = screen.getByRole("group", { name: /Анна Иванова/ });
@@ -97,6 +102,43 @@ describe("PlaySeat", () => {
 
     expect(screen.getByText("3")).toHaveAttribute("data-seat-shortcut");
     expect(screen.getByRole("button", { name: /клавиш 3/ })).toBeInTheDocument();
+  });
+
+  it("shows a checked, literal active selection without suggesting the vote was confirmed", () => {
+    renderSeat({ targetable: true, selected: true });
+    const seat = screen.getByRole("button", { name: /Избери Анна Иванова/ });
+    const mark = seat.querySelector("[data-seat-selection]");
+    expect(mark).toHaveTextContent("Избран");
+    expect(mark?.querySelector("svg")).not.toBeNull();
+    expect(seat).not.toHaveAttribute("data-voted");
+  });
+
+  it("distinguishes a second target from the first using text and number", () => {
+    renderSeat({ targetable: true, secondSelected: true });
+    const seat = screen.getByRole("button", { name: /втора цел/ });
+    expect(seat.querySelector("[data-seat-selection]")).toHaveTextContent("2Втора цел");
+    expect(seat).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("labels elimination explicitly without exposing an unrevealed role", () => {
+    renderSeat({ player: player({ alive: false }) });
+    const seat = screen.getByRole("group", { name: "Анна Иванова: елиминиран" });
+    expect(seat.querySelector("[data-seat-eliminated]")).toHaveTextContent("Елиминиран");
+    expect(seat).toHaveAttribute("data-alive", "false");
+    expect(screen.queryByRole("button", { name: /Избери/ })).not.toBeInTheDocument();
+  });
+
+  it("marks a disconnected living participant without suggesting elimination", () => {
+    renderSeat({ player: player({ connected: false }) });
+    const seat = screen.getByRole("group", { name: /Анна Иванова: извън връзка/ });
+    expect(seat.querySelector("[data-seat-disconnected]")).toHaveAttribute("title", "Извън връзка");
+    expect(seat.querySelector("[data-seat-disconnected] svg")).not.toBeNull();
+    expect(seat.querySelector("[data-seat-eliminated]")).toBeNull();
+  });
+
+  it.each(["lobby", "voting"] as const)("does not show a second disconnect marker for an eliminated seat in %s", phase => {
+    renderSeat({ phase, player: player({ connected: false, alive: false }) });
+    expect(screen.getByRole("group").querySelector("[data-seat-disconnected]")).toBeNull();
   });
 
   it("renders revealed eliminated roles only when they are public", () => {
@@ -167,9 +209,28 @@ describe("PlaySeat", () => {
   it("shows only public Sport Mafia day markers", () => {
     renderSeat({ speaking: true, nominee: true, phase: "day_discussion" });
 
-    expect(screen.getByText("Реч")).toBeInTheDocument();
+    expect(screen.getByTitle("Реч")).toHaveAttribute("data-seat-day-status");
     expect(screen.getByRole("group", { name: "Анна Иванова: говори" })).toHaveAttribute("data-speaking", "true");
     expect(screen.getByRole("group", { name: "Анна Иванова: говори" })).toHaveAttribute("data-nominee", "true");
+  });
+
+  it.each([
+    { speaking: true, defending: false, title: "Реч" },
+    { speaking: false, defending: true, title: "Защита" },
+    { speaking: false, defending: false, title: "Номиниран" },
+  ])("reuses the identity badge for $title without consuming name space", ({ speaking, defending, title }) => {
+    renderSeat({ speaking, defending, nominee: true, voteCount: 12, selected: true, targetable: true });
+    const seat = screen.getByRole("button", { name: /Избери Анна Иванова/ });
+    const portrait = seat.querySelector("[data-seat-portrait]");
+    const name = seat.querySelector("[data-seat-name]");
+    const marker = screen.getByTitle(title);
+
+    expect(name).not.toContainElement(marker);
+    expect(portrait).toContainElement(marker);
+    expect(portrait).toContainElement(screen.getByText("12"));
+    expect(seat).toHaveAttribute("aria-pressed", "true");
+    expect(seat).toHaveAccessibleName(/12 гласа/);
+    expect(portrait).toHaveAttribute("aria-hidden", "true");
   });
 
   it("keeps portrait artwork and public labels in one seat stack", () => {

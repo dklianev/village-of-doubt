@@ -6,9 +6,12 @@ import { ResourceHints } from "@/components/resource-hints";
 import { FAQ_DATA, flattenAnswerForSchema } from "@/lib/faq-data";
 import { absoluteUrl, routeMetadata } from "@/lib/seo";
 
+export const prefetch = "partial";
+export const ensureStatic = "navigation";
+
 export const metadata: Metadata = routeMetadata({
-  title: "Седни до огъня",
-  description: "Отговори за геймплея, досието, техническите детайли и поверителността — споделени до огъня.",
+  title: "Помощ",
+  description: "Отговори за първата игра, досието и връзката. Намери помощ за Върколак и Мафия в Сенките.",
   path: "/faq",
   image: "/game-art/legal/faq-hearth-banner.png",
   imageAlt: "Каменно огнище с книги и свещ",
@@ -37,6 +40,12 @@ export default function FaqPage() {
           href: "/game-art/legal/faq-hearth-banner.avif",
           type: "image/avif",
           fetchPriority: "high",
+          media: "(min-width: 481px), (resolution > 2dppx)",
+        }, {
+          href: "/game-art/mobile/legal/faq-hearth-banner.avif",
+          type: "image/avif",
+          fetchPriority: "high",
+          media: "(max-width: 480px) and (max-resolution: 2dppx)",
         }]}
       />
       <JsonLd data={faqJsonLd} />

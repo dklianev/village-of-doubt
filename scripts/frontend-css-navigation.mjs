@@ -5,7 +5,11 @@ const ROUTES = [
     route: "/faq",
     link: '.site-footer a[href="/faq"]',
     main: "main.faq-shell:visible",
-    selectors: [".faq-hearth-hero", "h1", ".faq-hearth-search-input", ".faq-hearth-filter", ".faq-hearth-item-handle"],
+    selectors: [
+      ".faq-hearth-hero", "h1", ".faq-hearth-search-input",
+      { media: "(max-width: 800px)", matches: ".faq-category-mobile select", otherwise: ".faq-hearth-filter" },
+      ".faq-hearth-item-handle",
+    ],
   },
   ...["werewolf", "mafia"].map((family) => ({
     route: `/${family}/rules`,
@@ -84,10 +88,14 @@ async function capture(page, target, theme) {
   const main = page.locator(target.main);
   await main.waitFor({ timeout: 10_000 });
   assert.equal(await main.count(), 1, `${target.route}: expected one visible route surface`);
+  // Select the expected responsive control, never whichever control happens to be visible.
+  const selectors = await page.evaluate((entries) => entries.map((entry) => (
+    typeof entry === "string" ? entry : matchMedia(entry.media).matches ? entry.matches : entry.otherwise
+  )), target.selectors);
   const snapshots = {};
   const probes = [
     [".site-chrome", page.locator(".site-chrome:not([data-fallback]):visible")],
-    ...target.selectors.map((selector) => [selector, main.locator(selector).first()]),
+    ...selectors.map((selector) => [selector, main.locator(selector).first()]),
   ];
   for (const [selector, locator] of probes) {
     await locator.waitFor({ timeout: 10_000 });
@@ -106,10 +114,23 @@ async function capture(page, target, theme) {
           clearTimeout(timer);
         }
       };
-      await Promise.all([
-        boundedReady(Promise.all([...element.querySelectorAll("img")].map((image) => image.decode())), "image decoding"),
-        boundedReady(document.fonts.ready, "font readiness"),
-      ]);
+      const imageListeners = new AbortController();
+      try {
+        await Promise.all([
+          boundedReady(Promise.all([...element.querySelectorAll("img")].map(async (image) => {
+            // Firefox can reject decode() before a lazy image has a current request.
+            if (!image.complete) await new Promise((resolve, reject) => {
+              const options = { once: true, signal: imageListeners.signal };
+              image.addEventListener("load", resolve, options);
+              image.addEventListener("error", () => reject(new Error(`${label}: image failed to load`)), options);
+            });
+            await image.decode();
+          })), "image decoding"),
+          boundedReady(document.fonts.ready, "font readiness"),
+        ]);
+      } finally {
+        imageListeners.abort();
+      }
       const frame = () => new Promise((resolve) => requestAnimationFrame(resolve));
       const styles = (pseudo = null) => {
         const computed = getComputedStyle(element, pseudo);

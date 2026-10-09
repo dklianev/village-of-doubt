@@ -1,6 +1,8 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
+import sharp from "sharp";
+import { isEndgameScene, webpBudgetKbFor } from "./optimize-assets.mjs";
 
 const root = process.cwd();
 const gameArtDir = path.join(root, "apps/web/public/game-art");
@@ -36,7 +38,7 @@ const checks = [
 let failures = 0;
 for (const [name, check] of checks) {
   try {
-    check();
+    await check();
     console.log(`ok: ${name}`);
   } catch (error) {
     failures += 1;
@@ -51,10 +53,11 @@ if (failures > 0) {
   console.log("Regression contract checks passed.");
 }
 
-function checkGameArtPairing() {
+async function checkGameArtPairing() {
   const files = listFilesRecursive(gameArtDir);
   const sourcePngs = listFilesRecursive(sourceArtDir).filter((file) => file.endsWith(".png")).sort();
   const publicPngs = files.filter((file) => file.endsWith(".png")).sort();
+  const publicJpegs = files.filter((file) => /\.jpe?g$/.test(file));
   const webps = new Set(files.filter((file) => file.endsWith(".webp")));
   const openGraphPngs = publicPngs.filter((file) => /^og[\\/]/.test(file));
   const openGraphDerivatives = files.filter(
@@ -68,11 +71,9 @@ function checkGameArtPairing() {
     "legal/report-banner.png",
     "legal/status-banner.png",
     "legal/terms-banner.png",
-    "og/og-achievements.png",
     "og/og-faq.png",
     "og/og-history.png",
     "og/og-home.png",
-    "og/og-leaderboard.png",
     "og/og-mafia.png",
     "og/og-sign-in.png",
     "og/og-tutorial.png",
@@ -80,7 +81,12 @@ function checkGameArtPairing() {
   ]);
 
   assert(sourcePngs.length >= 70, `Expected at least 70 source PNG game-art files, got ${sourcePngs.length}.`);
-  assert(openGraphPngs.length >= 9, `Expected Open Graph PNG sources, got ${openGraphPngs.length}.`);
+  const expectedPublicJpegs = new Set(["og/og-achievements.jpg", "og/og-leaderboard.jpg"]);
+  assert(openGraphPngs.length + publicJpegs.length >= 9, "Expected Open Graph PNG and JPEG previews.");
+  assert(publicJpegs.length === expectedPublicJpegs.size && publicJpegs.every((file) => expectedPublicJpegs.has(file.replaceAll("\\", "/"))), "Runtime metadata JPEG whitelist drifted.");
+  for (const file of expectedPublicJpegs) {
+    assert(statSync(path.join(gameArtDir, file)).size > 10_000, `${file}: metadata JPEG looks too small/corrupt.`);
+  }
   assert(
     publicPngs.length === expectedPublicPngs.size &&
       publicPngs.every((file) => expectedPublicPngs.has(file.replaceAll("\\", "/"))),
@@ -94,9 +100,42 @@ function checkGameArtPairing() {
   assert(mobileAssets.length >= 40, `Expected at least 40 mobile WebP assets, got ${mobileAssets.length}.`);
 
   for (const png of sourcePngs.filter((file) => !/^og[\\/]/.test(file))) {
+    if (isEndgameScene(png)) {
+      const webp = png.replace(/\.png$/, ".webp");
+      assert(webps.has(webp), `Missing optimized WebP for ${png}. Run pnpm optimize:assets.`);
+      const source = await sharp(path.join(sourceArtDir, png)).metadata();
+      const image = sharp(path.join(gameArtDir, webp));
+      const metadata = await image.metadata();
+      const stats = await image.stats();
+      assert(metadata.width === source.width && metadata.height === source.height && metadata.width >= 1800,
+        `${webp}: endgame clean plate must retain native resolution.`);
+      assert(metadata.format === "webp" && stats.entropy > 3 && metadata.hasAlpha === false, `${webp}: invalid or blank scene.`);
+      const bytes = statSync(path.join(gameArtDir, webp)).size;
+      assert(bytes > 10_000 && bytes <= webpBudgetKbFor(png) * 1024 && bytes < statSync(path.join(sourceArtDir, png)).size,
+        `${webp}: endgame asset size contract failed.`);
+      assert(!existsSync(path.join(gameArtDir, png.replace(/\.png$/, ".avif"))), `${webp}: obsolete AVIF must be removed.`);
+      continue;
+    }
     const webp = png.replace(/\.png$/, ".webp");
     assert(webps.has(webp), `Missing optimized WebP for ${png}. Run pnpm optimize:assets.`);
-    assert(statSync(path.join(gameArtDir, webp)).size > 10_000, `${webp} looks too small/corrupt.`);
+    const guestOrnamentWidth = {
+      "endgame/laurel-v1.webp": 320,
+      "friends/invitation-seal-v1.webp": 192,
+      "friends/guest-medallion-v1.webp": 128,
+    }[webp.replaceAll("\\", "/")];
+    if (guestOrnamentWidth) {
+      // Tiny transparent ornaments are validated by decoded pixels, not scene-sized byte counts.
+      const image = sharp(path.join(gameArtDir, webp));
+      const metadata = await image.metadata();
+      const stats = await image.stats();
+      assert(metadata.width === guestOrnamentWidth && metadata.height === guestOrnamentWidth, `${webp}: incorrect ornament dimensions.`);
+      // A laurel surrounds an empty portrait: validate detail in its occupied bounds.
+      const detailStats = webp.replaceAll("\\", "/") === "endgame/laurel-v1.webp"
+        ? await sharp(await image.clone().trim().png().toBuffer()).stats() : stats;
+      assert(metadata.hasAlpha && stats.channels[3].min === 0 && stats.channels[3].max === 255 && detailStats.entropy > 3, `${webp}: invalid or blank transparent ornament.`);
+    } else {
+      assert(statSync(path.join(gameArtDir, webp)).size > 10_000, `${webp} looks too small/corrupt.`);
+    }
     assert(
       statSync(path.join(gameArtDir, webp)).size < statSync(path.join(sourceArtDir, png)).size,
       `${webp} should remain smaller than its source PNG master.`,
@@ -154,7 +193,8 @@ function checkCssImageSet() {
   assert(imageSetCount >= 80, `Expected many image-set game-art references, got ${imageSetCount}.`);
   assert(directGameArtVariables.length === 0, `Found direct PNG CSS variables: ${directGameArtVariables.join(", ")}`);
   assert(pngImageSetCandidates.length === 0, "Runtime CSS must not expose source PNG image-set candidates.");
-  assert(css.includes(".cue-panel"), "Missing live cue panel CSS.");
+  // The live cue panel is LiveCuePanel (PlayTools.module.css); the legacy .cue-panel markup is gone.
+  assert(css.includes(".cueBody") && css.includes(".cuePreview"), "Missing live cue panel CSS.");
   assert(css.includes(".narrator-desk"), "Missing narrator desk CSS.");
   assert(css.includes(".toast-host"), "Missing toast host CSS.");
   assert(css.includes(".skeleton"), "Missing loading skeleton CSS.");
@@ -215,19 +255,19 @@ function checkLandingLayoutContracts() {
   const chromeIconHoverBlock =
     chromeIconHoverStart >= 0 ? chromeCss.slice(chromeIconHoverStart, chromeCss.indexOf("}", chromeIconHoverStart)) : "";
   const heroKickerPattern = /(^|\n)(?::global\()?\.landing-hero-card > \.section-kicker\)?\s*{/;
-  const theatreBackdropStart = css.indexOf("body:has(.landing-shell)::before");
+  const theatreBackdropStart = css.indexOf('body:has(.site-chrome[data-route="/"])::before');
   const theatreBackdropBlock =
     theatreBackdropStart >= 0 ? css.slice(theatreBackdropStart, css.indexOf("}", theatreBackdropStart)) : "";
-  const theatreBodyStart = css.indexOf('html[data-theme="dark"] body:has(.landing-shell)');
+  const theatreBodyStart = css.indexOf('html[data-theme="dark"] body:has(.site-chrome[data-route="/"])');
   const theatreBodyBlock =
     theatreBodyStart >= 0 ? css.slice(theatreBodyStart, css.indexOf("}", theatreBodyStart)) : "";
   const lightBackdropStart = css.indexOf('html[data-theme="light"] .landing-shell::before');
   const lightBackdropBlock =
     lightBackdropStart >= 0 ? css.slice(lightBackdropStart, css.indexOf("}", lightBackdropStart)) : "";
-  const tutorialLightBackdropStart = tutorialCss.indexOf('html[data-theme="light"] .tutorial-shell::before');
+  const tutorialLightBackdropStart = tutorialCss.indexOf('html:is([data-theme="dark"], [data-theme="light"]) .tutorial-shell::before');
   const tutorialLightBackdropBlock =
     tutorialLightBackdropStart >= 0 ? tutorialCss.slice(tutorialLightBackdropStart, tutorialCss.indexOf("}", tutorialLightBackdropStart)) : "";
-  const lightTheatreBackdropStart = css.indexOf('html[data-theme="light"] body:has(.landing-shell)::before');
+  const lightTheatreBackdropStart = css.indexOf('html[data-theme="light"] body:has(.site-chrome[data-route="/"])::before');
   const lightTheatreBackdropBlock =
     lightTheatreBackdropStart >= 0 ? css.slice(lightTheatreBackdropStart, css.indexOf("}", lightTheatreBackdropStart)) : "";
   const publicShellStackPattern =
@@ -306,6 +346,7 @@ function checkLandingLayoutContracts() {
   }
   assert(lightBackdropBlock.includes(".lobby-shell::before"), "Legacy create light theme should match the old shared parchment backdrop.");
   assert(lightBackdropBlock.includes("display: none;"), "Light theme should use the shared homepage body background instead of page-art backdrops.");
+  assert(tutorialLightBackdropBlock.includes("content: none;"), "Tutorial must disable the duplicate shell backdrop in both themes.");
   assert(
     lightTheatreBackdropBlock.includes("#f7ead0") &&
       lightTheatreBackdropBlock.includes("animation: ambient-drift-light 72s") &&
@@ -355,10 +396,10 @@ function checkFamilyQuickStartContracts() {
   const sportMafia = readText("apps/web/components/games/SportMafiaCallout.tsx");
   const gameRoom = readText("apps/game-server/src/rooms/GameRoom.ts");
   const icons = readText("apps/web/components/games/quickstart-icons.tsx");
-  const werewolfTheatreStart = css.indexOf('body:has(.game-home-shell[data-family="werewolves"])::before');
+  const werewolfTheatreStart = css.indexOf('body:has(.site-chrome[data-route="/werewolf"])::before');
   const werewolfTheatreBlock =
     werewolfTheatreStart >= 0 ? css.slice(werewolfTheatreStart, css.indexOf("}", werewolfTheatreStart)) : "";
-  const mafiaTheatreStart = css.indexOf('body:has(.game-home-shell[data-family="mafia"])::before');
+  const mafiaTheatreStart = css.indexOf('body:has(.site-chrome[data-route="/mafia"])::before');
   const mafiaTheatreBlock =
     mafiaTheatreStart >= 0 ? css.slice(mafiaTheatreStart, css.indexOf("}", mafiaTheatreStart)) : "";
 
@@ -444,12 +485,18 @@ function checkFamilyQuickStartContracts() {
 }
 
 function checkRolesPageContracts() {
-  const rolesPage = ["game-roles-page.tsx", "RoleArt.tsx", "RoleDossier.tsx"]
-    .map((file) => readText(`apps/web/components/games/${file}`)).join("\n");
+  const rolesPage = ["game-roles-page.tsx", "GameRolesCatalog.tsx", "RoleArt.tsx", "RoleDossier.tsx"]
+    .map((file) => readText(`apps/web/components/games/${file}`)).join("\n")
+    + readText("apps/web/lib/role-presentation.server.ts");
   const legacyRolesRoute = readText("apps/web/app/roles/page.tsx");
   const css = readRolesStyles();
 
   assert(rolesPage.includes("getRolesForFamily"), "Roles page must filter roles by family.");
+  assert(readText("apps/web/components/games/game-roles-page.tsx").includes("catalog={getRoleCatalog(family)}"), "The server must supply only the requested public role catalogue.");
+  for (const file of ["GameRolesCatalog.tsx", "RoleArt.tsx", "RoleDossier.tsx", "RoleDossierButton.tsx"]) {
+    const client = readText(`apps/web/components/games/${file}`);
+    assert(!client.includes("ROLE_DEFINITIONS") && !client.includes("getRolesForFamily") && !client.includes('from "@/lib/role-art"'), `${file} must not import the full role registry into the catalogue client.`);
+  }
   assert(rolesPage.includes("KNOWN_WEREWOLF_ROLE_ASSETS"), "Roles page must keep an explicit Werewolf asset allow-list.");
   assert(rolesPage.includes("KNOWN_MAFIA_ROLE_ASSETS"), "Roles page must keep an explicit Mafia asset allow-list.");
   assert(rolesPage.includes("<picture className=\"role-codex-art role-codex-frame role-art-frame\"") && rolesPage.includes("data-frame-family={family}"), "Roles page must render pictures with the shared family frame.");
@@ -489,8 +536,11 @@ function checkRulesPlaybookContracts() {
     "Rules phase timeline must keep its page-local contract class.",
   );
   assert(
-    rulesPhaseTimeline.includes("function PhaseDetailPanel"),
-    "Rules phase timeline must render phase details through PhaseDetailPanel.",
+    rulesPhaseTimeline.includes('id="phase-detail-panel"')
+      && rulesPhaseTimeline.includes('aria-controls="phase-detail-panel"')
+      && rulesPhaseTimeline.includes('aria-labelledby="phase-detail-title"')
+      && rulesPhaseTimeline.includes('role="status"'),
+    "Rules phase controls must link to a named detail panel and announce the selected phase.",
   );
   assert(
     rulesPhaseTimeline.includes("phaseLabelBg"),
@@ -514,8 +564,9 @@ function checkRulesPlaybookContracts() {
     ".phase-node",
     ".phase-detail-panel",
     ".phase-info-chip",
-    ".phase-loop-arrow",
-    ".phase-timeline__line.is-loop",
+    ".phase-detail-art",
+    ".rules-objective",
+    ".rules-contents",
     ".rules-chapter-grid",
     ".rules-chapter-card",
     ".rules-scenario-grid",
@@ -578,12 +629,12 @@ function checkLobbyImageContracts() {
   assert(lobbyCreateClient.includes("roleThumbStyle"), "Lobby role chips must override role art with lightweight thumbnails.");
   assert(css.includes(".achievement-preview-strip span"), "Lobby achievement preview strip is missing.");
   assert(css.includes("aspect-ratio: 1"), "Lobby badge tiles must stay square to avoid sprite distortion.");
-  assert(css.includes(".lobby-invite-hero-img"), "Lobby invite hero image must keep explicit image styling.");
-  assert(css.includes("object-position: center 44%"), "Lobby invite hero image must keep its tuned focal point.");
+  assert(css.includes(".lobby-invite-scene"), "Lobby invitation must retain a dedicated scene independent of content height.");
+  assert(css.includes("--invite-image: var(--art-lobby)"), "Verified invitations should use the room family's artwork.");
   assert(css.includes("--invite-art: var(--art-lobby)"), "Mafia invite card should swap away from the village map asset.");
   assert(css.includes(".lobby-invite-v2"), "Invite page should use the current cinematic invite shell.");
   assert(lobbyInvitePage.includes("LobbyInviteClient"), "Lobby invite page must render the invite client.");
-  assert(lobbyInviteClient.includes("досие към задната стая"), "Mafia invite client should use Mafia-specific scene copy from the verified preview.");
+  assert(lobbyInviteClient.includes("getGameModeNameBg(preview.mode)"), "Invitation labels must use the verified room mode, not URL hints.");
 }
 
 function checkLobbyWizardContracts() {
@@ -1586,10 +1637,10 @@ function readAppStyles() {
     "apps/web/components/games/GameHomePage.module.css",
     "apps/web/components/history/History.module.css",
     "apps/web/components/achievements/Achievements.module.css",
-    "apps/web/components/friends/LegacyFriends.module.css",
     "apps/web/components/auth/AuthRecovery.module.css",
     "apps/web/components/site-chrome/SiteChrome.module.css",
     "apps/web/components/play/PlayRoom.module.css",
+    "apps/web/components/play/PlayTools.module.css",
     "apps/web/components/play/PhaseRail.module.css",
     "apps/web/components/play/ReconnectModal.module.css",
     "apps/web/components/play/VoteTallyBar.module.css",

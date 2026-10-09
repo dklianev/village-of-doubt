@@ -8,8 +8,27 @@ async function openRoom(page: Page, query: string, mobile = true, theme = "dark"
     localStorage.setItem("cookie-consent", "1");
   }, theme);
   await page.goto(`/play/VISUAL?visualGame=1&${query}`);
-  await expect(page.locator('.play-stage[data-layout-ready="true"], .play-stage-takeover')).toBeVisible();
+  await expect(page.locator('.play-stage[data-layout-ready="true"], [data-endgame]')).toBeVisible();
   await page.evaluate(() => document.fonts.ready);
+}
+
+for (const theme of ["light", "dark"]) {
+  test(`mobile view switch remains readable at 200% text ${theme}`, async ({ page }) => {
+    await openRoom(page, "phase=voting&family=mafia&players=10", true, theme, { width: 320, height: 844 });
+    await page.addStyleTag({ content: "html { font-size: 200% !important; }" });
+    const navigation = page.getByRole("navigation", { name: "Изглед на играта" });
+    const bounds = await navigation.boundingBox();
+    expect(bounds!.x).toBeGreaterThanOrEqual(16);
+    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(304);
+    for (const button of await navigation.getByRole("button").all()) {
+      expect(await button.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+      await expect(button).toBeInViewport({ ratio: 1 });
+    }
+    await navigation.getByRole("button", { name: "Към разговора" }).click();
+    await expect(page.locator('.play-rail-panel[data-mobile-panel="chat"]')).toBeVisible();
+    await navigation.getByRole("button", { name: "Към масата" }).click();
+    await expect(page.locator(".play-stage")).toBeVisible();
+  });
 }
 
 test("mobile command leaves a row of targets visible", async ({ page }, testInfo) => {
@@ -32,15 +51,15 @@ test("mobile command leaves a row of targets visible", async ({ page }, testInfo
 
 for (const family of ["werewolves", "mafia"] as const) {
   for (const theme of ["dark", "light"] as const) {
-    test(`desktop persistent role and unified interaction frame ${family} ${theme}`, async ({ page }, testInfo) => {
+    test(`desktop persistent role and full-width console ${family} ${theme}`, async ({ page }, testInfo) => {
       const role = family === "mafia" ? "commissioner" : "seer";
-      await openRoom(page, `phase=voting&family=${family}&role=${role}&players=10&voteTally=full&timer=90`, false, theme);
-      const personal = page.locator(".play-primary-column > .play-personal-area");
+      await openRoom(page, `phase=voting&family=${family}&role=${role}&players=10&voteTally=full&timer=90`, false, theme, { width: 1440, height: 1058 });
+      const personal = page.locator(".play-console-band > .play-personal-area");
       const card = personal.locator(".role-card[data-private-dossier]");
       const stage = page.locator(".play-primary-column > .play-stage");
-      const interaction = page.locator(".play-interaction-column");
-      const dock = interaction.locator(":scope > .play-action-dock");
-      const rail = interaction.locator(":scope > .play-side-rail");
+      const interaction = page.locator(".play-console-band");
+      const dock = interaction.locator(".play-action-dock");
+      const rail = interaction.locator(".play-side-rail");
       await expect(card).toBeVisible();
       await expect(card.locator("details > summary")).toHaveText("За ролята");
       await expect(card.locator("details")).not.toHaveAttribute("open");
@@ -70,7 +89,7 @@ for (const family of ["werewolves", "mafia"] as const) {
         })
       ));
       const visibleEventsHeight = Math.max(0,
-        Math.min(eventsBox.y + eventsBox.height, interactionBox.y + interactionBox.height, 900)
+        Math.min(eventsBox.y + eventsBox.height, interactionBox.y + interactionBox.height, 1058)
         - Math.max(eventsBox.y, interactionBox.y, 0),
       );
       const frameStyles = await interaction.evaluate((element) => {
@@ -89,17 +108,17 @@ for (const family of ["werewolves", "mafia"] as const) {
       });
 
       expect.soft(personalBox.y, "The persistent role belongs below the desktop table").toBeGreaterThanOrEqual(stageBox.y + stageBox.height - 1);
-      expect.soft(stageBox.x + stageBox.width).toBeLessThanOrEqual(interactionBox.x + 1);
-      expect.soft(interactionBox.y + interactionBox.height, "The unified right panel must fit the initial viewport").toBeLessThanOrEqual(900);
+      expect.soft(interactionBox.y).toBeGreaterThanOrEqual(stageBox.y + stageBox.height - 1);
+      expect.soft(interactionBox.width).toBeCloseTo(stageBox.width, 0);
       expect.soft(visibleEventsHeight, "Events need at least 150px of visible reading space").toBeGreaterThanOrEqual(150);
-      expect.soft(frameStyles.borders).toEqual([1, 1, 1, 1]);
-      expect.soft(frameStyles.radius).toBeGreaterThan(0);
+      expect.soft(frameStyles.borders).toEqual([1, 0, 0, 0]);
+      expect.soft(frameStyles.radius).toBe(0);
       for (const panel of [dock, rail]) {
         const frame = await panel.evaluate((element) => {
           const style = getComputedStyle(element);
           return [style.borderRightWidth, style.borderBottomWidth, style.borderLeftWidth, style.borderTopLeftRadius].map(parseFloat);
         });
-        expect.soft(frame, "Dock and rail share an outer frame, with only an internal divider").toEqual([0, 0, 0, 0]);
+        expect.soft(frame, "The unframed console groups use only vertical dividers").toEqual([0, 0, 1, 0]);
       }
       expect(headerTextBoxes.length).toBeGreaterThan(0);
       for (const textBox of headerTextBoxes) {
@@ -116,10 +135,10 @@ for (const family of ["werewolves", "mafia"] as const) {
       const viewport = { width: 1366, height: 768 };
       const role = family === "mafia" ? "commissioner" : "seer";
       await openRoom(page, `phase=voting&family=${family}&role=${role}&players=10&voteTally=full&timer=90`, false, theme, viewport);
-      const personal = page.locator(".play-primary-column > .play-personal-area");
+      const personal = page.locator(".play-console-band > .play-personal-area");
       const card = personal.locator(".role-card[data-private-dossier]");
       const stage = page.locator(".play-primary-column > .play-stage");
-      const interaction = page.locator(".play-interaction-column");
+      const interaction = page.locator(".play-console-band");
       await expect(card).toBeVisible();
       await expect(interaction).toBeVisible();
       const stageBox = (await stage.boundingBox())!;
@@ -147,14 +166,16 @@ for (const family of ["werewolves", "mafia"] as const) {
       });
 
       expect.soft(personalBox.y, "The role card must remain below the table on a short desktop").toBeGreaterThanOrEqual(stageBox.y + stageBox.height - 1);
-      for (const box of [stageBox, personalBox]) {
-        expect.soft(box.x + box.width, "The table and role must not overlap the interaction panel").toBeLessThanOrEqual(interactionBox.x + 1);
-      }
+      expect.soft(interactionBox.y, "The console follows the physical table").toBeGreaterThanOrEqual(stageBox.y + stageBox.height - 1);
+      const actionBox = (await interaction.locator(".play-action-dock").boundingBox())!;
+      expect.soft(personalBox.x + personalBox.width, "The role and action occupy separate columns").toBeLessThanOrEqual(actionBox.x + 1);
       for (const box of [stageBox, personalBox, interactionBox]) {
         expect.soft(box.x).toBeGreaterThanOrEqual(0);
         expect.soft(box.x + box.width).toBeLessThanOrEqual(viewport.width);
       }
-      expect.soft(interactionBox.y + interactionBox.height, "The right panel must fit the short desktop viewport").toBeLessThanOrEqual(viewport.height);
+      const confirm = interaction.getByRole("button", { name: /Потвърди гласа/ });
+      await confirm.evaluate((button) => button.scrollIntoView({ block: "center", behavior: "instant" }));
+      await expect(confirm).toBeInViewport({ ratio: 1 });
       expect.soft(headerOverlaps, "The hide button must not cover role header text").toEqual([]);
       expect.soft(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
       await expect(page.locator(".play-stage [data-private-dossier], .play-interaction-column [data-private-dossier]")).toHaveCount(0);
@@ -181,7 +202,7 @@ for (const family of ["werewolves", "mafia"] as const) {
     const viewport = mobile ? "mobile" : "desktop";
     test(`private draft survives inline concealment and conversation switches ${family} ${viewport}`, async ({ page }) => {
       await openRoom(page, `phase=night&family=${family}&players=8&role=${role}&timer=90`, mobile);
-      const personal = page.locator(".play-primary-column > .play-personal-area");
+      const personal = page.locator(".play-console-band > .play-personal-area");
       const card = personal.locator(".role-card[data-private-dossier]");
       const conversation = personal.locator("details").filter({ has: page.locator("summary", { hasText: "Личен разговор" }) });
       const summary = conversation.locator(":scope > summary");
@@ -228,11 +249,20 @@ for (const family of ["werewolves", "mafia"] as const) {
 
     test(`role reveal starts concealed and restores the role inline ${family} ${viewport}`, async ({ page }) => {
       await openRoom(page, `phase=role_reveal&family=${family}&players=8&role=${role}`, mobile);
-      const personal = page.locator(".play-primary-column > .play-personal-area");
+      const personal = page.locator(".play-console-band > .play-personal-area");
       await expect(personal).toHaveAttribute("data-concealed", "true");
       await expect(page.locator("[data-private-dossier], .play-private-conversation")).toHaveCount(0);
       await expect(personal.locator("#play-personal-content")).toBeEmpty();
       await expect(page.locator(".play-action-dock")).toHaveCount(0);
+      // The deal arrives face down; putting it away hands the role to the inline toggle.
+      const ritual = page.getByRole("dialog", { name: "Твоята тайна карта" });
+      await expect(ritual).toBeVisible();
+      await expect(ritual).toHaveAttribute("data-flipped", "false");
+      await expect(ritual.locator("[data-private-dossier]")).toHaveCount(0);
+      await page.keyboard.press("Escape");
+      await expect(page.getByRole("dialog")).toHaveCount(0);
+      await expect(personal.getByRole("button", { name: "Виж ролята си", exact: true })).toBeFocused();
+      await expect(personal.locator("#play-personal-content")).toBeEmpty();
       await personal.getByRole("button", { name: "Виж ролята си", exact: true }).click();
       await expect(personal.locator(".role-card[data-private-dossier]")).toBeVisible();
       await expect(personal.getByRole("button", { name: "Скрий ролята", exact: true })).toHaveAttribute("aria-expanded", "true");
@@ -264,24 +294,19 @@ test("compact phone keeps target selection above the expanded command", async ({
 });
 
 for (const mobile of [false, true]) {
-  test(`lobby host controls remain reachable in the command dock ${mobile ? "mobile" : "desktop"}`, async ({ page }) => {
+  test(`lobby host controls remain reachable beside the table ${mobile ? "mobile" : "desktop"}`, async ({ page }) => {
     await openRoom(page, "phase=lobby&family=werewolves&viewer=host&players=12", mobile);
     await expect(page.locator(".play-narrator-deck")).toHaveCount(0);
-    const dock = page.locator('.play-action-dock[data-dock-kind="lobby"]');
+    const dock = page.locator('.play-waiting-band');
     await expect(dock).toBeVisible();
     const ready = dock.getByTestId("ready-toggle");
     const start = dock.getByRole("button", { name: "Започни игра", exact: true });
-    const invite = dock.getByRole("button", { name: "Копирай покана", exact: true });
+    const invite = page.locator('.play-waiting-invite').getByRole("button", { name: "Копирай покана", exact: true });
     await expect(ready).toBeVisible();
     await expect(start).toBeVisible();
-    if (mobile) {
-      await expect(dock).toHaveAttribute("data-expanded", "false");
-      await expect(ready).toBeInViewport({ ratio: 1 });
-      await expect(start).toBeInViewport({ ratio: 1 });
-      await expect(invite).not.toBeVisible();
-      await dock.getByRole("button", { name: "Покажи подробностите за стаята", exact: true }).click();
-      await expect(dock).toHaveAttribute("data-expanded", "true");
-    }
+    await start.scrollIntoViewIfNeeded();
+    await expect(ready).toBeInViewport({ ratio: 1 });
+    await expect(start).toBeInViewport({ ratio: 1 });
     const bounds = await dock.evaluate((element) => ({
       clientWidth: element.clientWidth,
       scrollWidth: element.scrollWidth,
@@ -293,12 +318,7 @@ for (const mobile of [false, true]) {
     await expect(invite).toBeVisible();
     await invite.scrollIntoViewIfNeeded();
     await expect(invite).toBeInViewport({ ratio: 1 });
-    if (mobile) {
-      await dock.getByRole("button", { name: "Скрий подробностите за стаята", exact: true }).click();
-      await expect(invite).not.toBeVisible();
-      await expect(ready).toBeInViewport({ ratio: 1 });
-      await expect(start).toBeInViewport({ ratio: 1 });
-    }
+    await expect(page.locator('.play-action-dock[data-dock-kind="lobby"]')).toHaveCount(0);
   });
 }
 

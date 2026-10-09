@@ -1,59 +1,16 @@
 import Image from "next/image";
 import { useState } from "react";
-import { getRoleAssetKey, type GameFamily, type RoleCode } from "@werewolf/shared";
-import { coverImageSizes, roleArtSource } from "@/lib/role-art";
+import type { GameFamily } from "@werewolf/shared";
+import { coverImageSizes } from "@/lib/image-sizes";
+import type { RolePresentation } from "@/lib/role-presentation.server";
 import "./RoleDossier.module.css";
 
-const KNOWN_WEREWOLF_ROLE_ASSETS = new Set([
-  "ordinary-villager",
-  "werewolf",
-  "seer",
-  "witch",
-  "healer",
-  "priest",
-  "hunter",
-  "cupid",
-  "vampire",
-  "red-riding-hood",
-  "oracle",
-  "cook",
-  "blacksmith",
-  "insomniac",
-  "vampire-hunter",
-  "investigator",
-  "drunk",
-  "stray-cat",
-  "guard-dog",
-  "little-girl",
-  "thief",
-  "jester",
-  "mayor",
-]);
-
-const KNOWN_MAFIA_ROLE_ASSETS = new Set([
-  "civilian",
-  "commissioner",
-  "don",
-  "mafioso",
-  "doctor",
-  "detective",
-  "bodyguard",
-  "vigilante",
-  "medium",
-  "roleblocker",
-  "lawyer",
-  "informant",
-  "maniac",
-  "jester",
-  "mayor",
-  "lovers",
-]);
-
-export function RoleArt({ role, family, eager = false, detail = false }: { role: RoleCode; family: GameFamily; eager?: boolean; detail?: boolean }) {
-  const assetKey = getRoleAssetKey(role);
-  const hasAsset =
-    family === "mafia" ? KNOWN_MAFIA_ROLE_ASSETS.has(assetKey) : KNOWN_WEREWOLF_ROLE_ASSETS.has(assetKey);
-  const source = hasAsset ? roleArtSource(family, role) : { src: "/game-art/card-back-secret.webp", width: 1024, height: 1536 };
+export function RoleArt({ source, family, eager = false, detail = false }: {
+  source: RolePresentation["art"];
+  family: GameFamily;
+  eager?: boolean;
+  detail?: boolean;
+}) {
   const [didFail, setDidFail] = useState(false);
   // Nested calc keeps Next's vw heuristic from dropping small mobile candidates.
   const sizes = coverImageSizes(source, detail

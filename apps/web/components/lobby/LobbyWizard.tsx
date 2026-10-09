@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useReducer, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { GameFamily, GameMode } from "@werewolf/shared";
-import { playCue } from "@/lib/sound";
 import {
+  createRoomCode,
   hrefForState,
   initialState,
   lobbyFormReducer,
@@ -34,7 +34,7 @@ export function LobbyWizard({
     );
   }
 
-  return <ConfiguredLobbyWizard initialMode={initialMode} family={family} searchParams={searchParams} />;
+  return <ConfiguredLobbyWizard key={`${family ?? ""}:${initialMode}:${searchParams.toString()}`} initialMode={initialMode} family={family} searchParams={searchParams} />;
 }
 
 function ConfiguredLobbyWizard({
@@ -54,6 +54,7 @@ function ConfiguredLobbyWizard({
   const [state, dispatch] = useReducer(lobbyFormReducer, initialRef.current);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [interactive, setInteractive] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
   const submitTimerRef = useRef<number | null>(null);
   const detailsTriggerRef = useRef<HTMLButtonElement | null>(null);
   const transition = useCallback((update: () => void) => {
@@ -69,7 +70,11 @@ function ConfiguredLobbyWizard({
   }, []);
 
   useEffect(() => {
+    const root = rootRef.current;
+    root?.setAttribute("data-create-active", "");
     setInteractive(true);
+    // Activity keeps the DOM but tears down effects while the route is hidden.
+    return () => { root?.removeAttribute("data-create-active"); };
   }, []);
 
   useEffect(() => {
@@ -82,20 +87,20 @@ function ConfiguredLobbyWizard({
 
   function onSubmit() {
     dispatch({ type: "SET_FORM_ERROR", formError: "" });
-    dispatch({ type: "TRIGGER_CONFETTI" });
-    playCue("win");
-    triggerHaptic([18, 24, 18]);
     if (submitTimerRef.current !== null) {
       window.clearTimeout(submitTimerRef.current);
     }
     submitTimerRef.current = window.setTimeout(() => {
       router.push(hrefForState("/play", state));
+      // Activity retains this form after navigation; its next submission needs a fresh room.
+      dispatch({ type: "SET_CODE", code: createRoomCode() });
       submitTimerRef.current = null;
     }, 220);
   }
 
   return (
     <div
+      ref={rootRef}
       data-faction={state.family}
       data-family={state.family}
       data-layout="quick"
@@ -127,33 +132,6 @@ function ConfiguredLobbyWizard({
           detailsTriggerRef.current?.focus({ preventScroll: true });
         }}
       />
-      {state.confettiBurst > 0 ? <Confetti key={state.confettiBurst} /> : null}
     </div>
   );
-}
-
-function Confetti() {
-  return (
-    <div className="lobby-confetti" aria-hidden="true">
-      {Array.from({ length: 30 }, (_, index) => (
-        <i
-          key={index}
-          style={
-            {
-              "--i": index,
-              "--x": `${(index * 37) % 100}%`,
-              "--dx": `${((index % 5) - 2) * 28}px`,
-            } as CSSProperties
-          }
-        />
-      ))}
-    </div>
-  );
-}
-
-function triggerHaptic(pattern: number | number[]) {
-  if (!("vibrate" in navigator)) {
-    return;
-  }
-  navigator.vibrate(pattern);
 }

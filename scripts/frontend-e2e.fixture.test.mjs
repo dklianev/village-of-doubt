@@ -21,8 +21,48 @@ test("the authenticated join fixture uses a seeded Better Auth session and stays
   assert.ok(authenticatedEntry, "testAuthenticatedEntry should be defined");
   assert.match(authenticatedEntry, /newPage\("authenticated-entry", viewports\.desktop\)/);
   assert.match(authenticatedEntry, /signInBrowserContext\(entry\.context, authFixture\.users\[0\]\)/);
-  assert.match(authenticatedEntry, /waitForURL\("\*\*\/mafia\/join\/ABCD12"\)/);
-  assert.match(authenticatedEntry, /Добре дошъл в бара/);
+  assert.match(authenticatedEntry, /waitForURL\("\*\*\/mafia\/join\/ABCD23"\)/);
+  assert.match(authenticatedEntry, /Влез на масата/);
+});
+
+test("authenticated entry preserves every code slot and rejects entry to a missing room", async () => {
+  for (const disabled of [true, false]) {
+    const checkedSlots = [];
+    const text = [];
+    const welcomeActions = [];
+    let closed = false;
+    const check = loadFunction("testAuthenticatedEntry", {
+      viewports: { desktop: {} },
+      authFixture: { users: [{}] },
+      signInBrowserContext: async () => {},
+      newPage: async () => ({
+        context: {},
+        page: {
+          waitForURL: async () => {},
+          getByRole: (role, { name }) => role === "dialog" ? {
+            getByRole: (role, { name }) => role === "link" ? name : { click: async () => welcomeActions.push(name) },
+            waitFor: async ({ state }) => welcomeActions.push(state),
+          } : role === "textbox" ? name : { isDisabled: async () => disabled },
+        },
+        watcher: { assertClean: async () => {} },
+        close: async () => { closed = true; },
+      }),
+      goto: async () => {},
+      assertLocatorAttribute: async (name, attribute, value) => welcomeActions.push([name, attribute, value]),
+      expectInputValue: async (name, character) => checkedSlots.push([name, character]),
+      expectText: async (_page, value) => text.push(value),
+      assertNoHorizontalOverflow: async () => {},
+    });
+    if (disabled) await check();
+    else await assert.rejects(check, /missing room must not accept/);
+    assert.deepEqual(checkedSlots, [..."ABCD23"].map((character, index) => [`Символ ${index + 1} от 6`, character]));
+    assert.deepEqual(text, ["Влез на масата", "Не открихме стая ABCD23. Провери кода или поискай нов."]);
+    assert.deepEqual(welcomeActions, [
+      ["Отвори наръчника", "href", "/tutorial?welcome=1&game=mafia_free&redirect=%2Fmafia%2Fjoin%2FABCD23"],
+      "Към игрите", "hidden",
+    ]);
+    assert.equal(closed, true);
+  }
 });
 
 test("the anonymous join check is labelled as an auth-gate redirect", () => {
@@ -232,6 +272,7 @@ test("all single, retry and six-player contexts install the synthetic transport 
       authFixture: { users: Array.from({ length: 6 }, (_, id) => ({ id })) },
       signInBrowserContext: async (context) => assert.equal(context.mocked, true),
       installGameSocketProbe: () => {},
+      installNarrationProbe: () => {},
       watchPage: () => ({}),
       createSixPlayerRoom: async () => new URL("http://127.0.0.1:3401/play/FIXTUR?players=6"),
       goto: async () => {}, expectText: async () => {}, waitForVisibleText: async () => {},
@@ -307,7 +348,96 @@ test("the six-client fixture uses the generated invitation and verifies every se
   assert.match(scenario, /data-voted="true"/);
   assert.match(scenario, /nextTarget\.id[\s\S]*data-selected="true"[\s\S]*Приет глас: \$\{target\.name\}/);
   assert.match(scenario, /reconnectFirstGameGuest\(pages, expectedUserIds, privateRoles\[5\], family, `Приет глас: \$\{target\.name\}`\)/);
+  assert.match(scenario, /await mobilePage\.reload\(\)[\s\S]*readPrivateRole\(mobilePage, family\)[\s\S]*Приет глас: \$\{target\.name\}/);
+  assert.match(scenario, /assertNarrationSilent\(mobilePage, 0\)/);
   assert.match(scenario, /finally \{\s*await Promise\.allSettled\(contexts\.map\(\(context\) => context\.close\(\)\)\)/);
+});
+
+test("night investigation uses the actor's own controls and waits for the server acknowledgement", async () => {
+  for (const family of ["werewolves", "mafia"]) {
+    const calls = [];
+    const page = {
+      locator: (selector) => ({ click: async () => calls.push(selector) }),
+      getByRole: (role, options) => ({ click: async () => calls.push(options.name) }),
+    };
+    const submit = loadFunction("submitFirstInvestigation", {
+      authFixture: { users: [{ id: "actor" }, { id: "target" }] },
+      expectText: async (actual, text) => { assert.equal(actual, page); calls.push(text); },
+    });
+    const roles = family === "mafia" ? ["Комисар", "Мафиот"] : ["Гадателка", "Върколак"];
+    assert.equal(await submit([page, {}], roles.map(role => `Тайна роля: ${role}`), family), 0);
+    assert.deepEqual(calls, ['button[data-seat-user-id="target"]',
+      family === "mafia" ? "Провери дали е от Мафията" : "Провери заплахата", "Нощното действие е прието."]);
+    await assert.rejects(submit([page], ["Тайна роля: непозната"], family), /no longer matches/);
+  }
+});
+
+test("postgame browser coverage follows a persisted result before replay and opens a fresh room", () => {
+  assert.match(functionSource("testSixClientGameStart"), /await finishFirstGameAndReplay\(pages, privateRoles, family, roomUrl\)/);
+  const finish = functionSource("finishFirstGameAndReplay");
+  assert.match(finish, /index !== targetIndex && !eliminated\.has\(index\)/);
+  assert.match(finish, /Потвърди гласа за/);
+  assert.match(finish, /advanceFirstGamePhase\(pages, "voting", "resolution"\)/);
+  assert.match(finish, /data-winner/);
+  const persistence = finish.indexOf('name: "Виж записа", exact: true }).waitFor');
+  const navigation = finish.indexOf('name: "Виж записа", exact: true }).click');
+  assert.ok(persistence > 0 && navigation > persistence);
+  assert.match(finish, /Пълен запис/);
+  assert.match(finish, /Към развръзката/);
+  assert.match(finish, /await replayPage\.goBack\(\)[\s\S]*main\[data-phase='game_over'\]/);
+  assert.match(finish, /await repeat\.click\(\)/);
+  assert.match(finish, /assertSixPlayerRoster\(\[host\], \[authFixture\.users\[0\]\.id\]\)/);
+  assert.match(finish, /data-endgame\], \[data-private-dossier/);
+  assert.match(finish, /main\.play-shell\[data-phase='lobby'\]:visible/);
+  assert.doesNotMatch(finish, /route\.fulfill|visualGame|context\.request|room\.send|evaluate\(/);
+});
+
+test("postgame fixture fails closed when the starter composition no longer matches", async () => {
+  const finish = loadFunction("finishFirstGameAndReplay");
+  for (const [family, roles] of [
+    ["werewolves", Array(6).fill("Тайна роля: Селянин / Селянка")],
+    ["werewolves", ["Тайна роля: Върколак"]],
+    ["mafia", Array(6).fill("Тайна роля: Гражданин")],
+    ["mafia", ["Тайна роля: Мафиот", "Тайна роля: Мафиот"]],
+  ]) {
+    await assert.rejects(finish([], roles, family, new URL("http://localhost/play/FIXTURE")), /starter composition changed/);
+  }
+});
+
+test("repeat comparison normalizes defaults without accepting changed settings or stale identity", () => {
+  const compare = loadFunction("assertRepeatedRoomOptions");
+  const defaults = { mode: "mafia_free", playerCount: 6, roomVisibility: "private", revealRolesOnDeath: true,
+    communicationMode: "built_in_chat", narratorMode: "automatic", tempoProfile: "normal_online", rolePreset: "free" };
+  const original = new URL("http://localhost/play/FIXTURE?mode=mafia_free&players=6&reveal=0");
+  const repeat = new URL("http://localhost/mafia/create?mode=mafia_free&players=6&reveal=0&visibility=private");
+  compare(original, repeat, defaults);
+  for (const [key, value] of [["visibility", "public"], ["players", "10"], ["reveal", "1"], ["mode", "mafia_sport"],
+    ["tempo", "live"], ["narrator", "full_human"], ["communication", "no_chat"], ["preset", "manual"],
+    ["code", "FIXTURE"], ["spectator", "1"], ["winnerTeam", "village"], ["finalRoles", "anything"]]) {
+    const changed = new URL(repeat);
+    changed.searchParams.set(key, value);
+    assert.throws(() => compare(original, changed, defaults), /changed|terminal or room identity/);
+  }
+  for (const bad of [new URL(repeat.href.replace("localhost", "other.invalid")), new URL(repeat.href.replace("/mafia/", "/werewolf/"))]) {
+    assert.throws(() => compare(original, bad, defaults), /family or origin/);
+  }
+});
+
+test("finale screenshots await real image decoding and reject missing or broken art", async () => {
+  for (const state of ["loaded", "missing", "broken", "empty"]) {
+    let scrolled = false;
+    const prepare = loadFunction("prepareFinaleScreenshot", { window: { scrollTo: () => { scrolled = true; } } });
+    const images = state === "missing" ? [] : [{ naturalWidth: state === "empty" ? 0 : 1200, decode: async () => {
+      if (state === "broken") throw new Error("decode failed");
+    } }];
+    const page = { locator: (selector) => {
+      assert.equal(selector, "[data-endgame]");
+      return { evaluate: async (callback) => callback({ querySelectorAll: () => images }) };
+    }, evaluate: async (callback) => callback() };
+    if (state === "loaded") await prepare(page);
+    else await assert.rejects(prepare(page), /no image|decode failed|broken image/);
+    assert.equal(scrolled, state === "loaded");
+  }
 });
 
 test("roster validation rejects missing, duplicate and substituted seats", async () => {
@@ -360,6 +490,7 @@ test("bounded phase advancement uses the host control and rejects unrelated phas
     const events = [];
     const advance = loadFunction("advanceFirstGamePhase", {
       holdFirstGamePhase: async (_pages, phase) => events.push(phase),
+      assertNarratedPhase: async () => {},
     });
     const host = {
       locator: () => ({ getAttribute: async () => current }),
@@ -375,7 +506,7 @@ test("bounded phase advancement uses the host control and rejects unrelated phas
   }
 });
 
-test("phase assertions extend the real host timer before waiting for every client", async () => {
+test("phase assertions put every dealt card away, then extend the real host timer before waiting for every client", async () => {
   const events = [];
   const pages = Array.from({ length: 6 }, (_, index) => ({
     locator: (selector) => ({ waitFor: async () => {
@@ -387,8 +518,9 @@ test("phase assertions extend the real host timer before waiting for every clien
       events.push(name);
     } }),
   }));
-  await loadFunction("holdFirstGamePhase")(pages, "role_reveal");
-  assert.deepEqual(events, [0, "+180 сек.", 0, 1, 2, 3, 4, 5]);
+  const putDealtCardAway = async (page) => { events.push(`card:${pages.indexOf(page)}`); };
+  await loadFunction("holdFirstGamePhase", { putDealtCardAway })(pages, "role_reveal");
+  assert.deepEqual(events, [0, "card:0", "card:1", "card:2", "card:3", "card:4", "card:5", "+180 сек.", 0, 1, 2, 3, 4, 5]);
 });
 
 test("private-role assertions require one viewer card from the selected family", async () => {

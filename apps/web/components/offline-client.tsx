@@ -1,84 +1,32 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Image from "next/image";
 import { RefreshCw, WifiOff } from "lucide-react";
+import { useOfflineRecovery } from "@/components/offline/use-offline-recovery";
 import "@/components/offline/Offline.module.css";
 
-const RETRY_DELAYS_MS = [5_000, 5_000, 10_000, 10_000, 15_000, 20_000, 30_000, 30_000] as const;
+const STATUS_COPY = {
+  waiting: "Очакваме връзка със сайта.",
+  checking: "Проверяваме връзката...",
+  offline: "Устройството е без връзка.",
+  unavailable: "Сайтът още не е достъпен.",
+  exhausted: "Автоматичните проверки приключиха.",
+  restoring: "Сайтът отговаря. Отваряме страницата...",
+} as const;
 
 export function OfflineClient() {
-  const [retryCount, setRetryCount] = useState(0);
-  const [online, setOnline] = useState(false);
-
-  useEffect(() => {
-    setOnline(navigator.onLine);
-
-    async function checkConnection() {
-      const isOnline = navigator.onLine;
-      setOnline(isOnline);
-      if (!isOnline || document.hidden) {
-        return;
-      }
-
-      try {
-        await fetch("/api/health", {
-          cache: "no-store",
-          signal: AbortSignal.timeout(2000),
-        });
-        window.location.reload();
-      } catch {
-        setOnline(false);
-      }
-    }
-
-    let retryIndex = 0;
-    let timeoutId: number | undefined;
-
-    function scheduleRetry() {
-      if (document.hidden || timeoutId !== undefined || retryIndex >= RETRY_DELAYS_MS.length) {
-        return;
-      }
-      timeoutId = window.setTimeout(retry, RETRY_DELAYS_MS[retryIndex]);
-    }
-
-    function retry() {
-      timeoutId = undefined;
-      if (document.hidden) {
-        return;
-      }
-      retryIndex += 1;
-      setRetryCount((count) => count + 1);
-      void checkConnection().finally(scheduleRetry);
-    }
-
-    const handleOnline = () => void checkConnection();
-    const handleOffline = () => void checkConnection();
-    const handleVisibilityChange = () => scheduleRetry();
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    scheduleRetry();
-
-    return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      if (timeoutId !== undefined) {
-        window.clearTimeout(timeoutId);
-      }
-    };
-  }, []);
+  const { state, checkConnection } = useOfflineRecovery();
 
   return (
     <article className="offline-page">
       <header className="offline-hero">
-        <Image
-          src="/game-art/legal/offline-banner.webp"
+        {/* The optimized original is precached; recovery must not require the image optimizer. */}
+        <img
+          src="/game-art/system/offline-lantern-v1.webp"
           alt=""
-          fill
-          priority
-          sizes="(max-width: 1180px) 100vw, 1180px"
+          width={1536}
+          height={1024}
+          fetchPriority="high"
+          decoding="async"
           className="offline-hero-img"
         />
         <div className="offline-hero-scrim" aria-hidden />
@@ -87,33 +35,30 @@ export function OfflineClient() {
             <WifiOff aria-hidden strokeWidth={2} />
             <span>връзката прекъсна</span>
           </p>
-          <h1>Лампата свети, чакаме теб.</h1>
+          <h1>Няма връзка</h1>
           <p>
-            Ако си бил в активна стая, не затваряй страницата. Когато връзката се върне, ще те
-            върнем към същото място.
+            Страницата не е достъпна в момента. Връзката може да е прекъснала или сайтът да не отговаря.
           </p>
 
-          <div className="offline-status" data-state={online ? "online" : "offline"} role="status">
+          <div className="offline-status" data-state={state} role="status">
             <span className="offline-status-dot" aria-hidden />
-            <span>{online ? "Възстановяваме връзката..." : `Очакваме връзка... (опит ${retryCount + 1})`}</span>
-            <button
-              type="button"
-              className="offline-status-retry"
-              onClick={() => window.location.reload()}
-              aria-label="Опитай отново сега"
-            >
-              <RefreshCw aria-hidden strokeWidth={2} />
-            </button>
+            <span>{STATUS_COPY[state]}</span>
           </div>
         </div>
       </header>
 
       <section className="offline-actions" aria-label="Възстановяване на връзката">
-        <button className="btn btn-primary" type="button" onClick={() => window.location.reload()}>
+        <button
+          className="btn btn-primary"
+          type="button"
+          onClick={checkConnection}
+          disabled={state === "checking" || state === "restoring"}
+          aria-busy={state === "checking"}
+        >
           <RefreshCw aria-hidden strokeWidth={2} />
-          Провери връзката
+          <span>Провери връзката</span>
         </button>
-        <p>Началото, правилата и помощта ще се отворят веднага щом връзката се върне.</p>
+        <p>Участието ти в текущата игра зависи от това дали тя още продължава.</p>
       </section>
     </article>
   );

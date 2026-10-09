@@ -1,7 +1,7 @@
 import { useId, useState, type Dispatch } from "react";
 import type { CommissionerResultMode, MajorityMode } from "@werewolf/shared";
 import { ArrowRight } from "lucide-react";
-import { boundedPlayerCount, type AdvancedFlags, type LobbyFormAction, type LobbyFormState } from "@/lib/lobby-form";
+import { boundedPlayerCount, currentConfig, type AdvancedFlags, type LobbyFormAction, type LobbyFormState } from "@/lib/lobby-form";
 
 const MAJORITY_LABELS: Record<MajorityMode, string> = {
   simple: "Обикновено мнозинство",
@@ -25,6 +25,8 @@ export function AdvancedDrawer({
   const players = boundedPlayerCount(state);
   const capacityHintId = useId();
   const manualRolesHintId = useId();
+  const hiddenRolesHintId = useId();
+  const hiddenRolesUntilEnd = (currentConfig(state).roles.jester ?? 0) > 0;
   const [capacityDraft, setCapacityDraft] = useState<string | null>(null);
   const capacityValue = capacityDraft ?? String(state.advanced.maxPlayers);
   const capacity = capacityValue.trim() === "" ? Number.NaN : Number(capacityValue);
@@ -50,7 +52,18 @@ export function AdvancedDrawer({
       <div className="advanced-drawer-grid">
         <section className="advanced-panel">
           <h3>Правила</h3>
-          <Toggle checked={state.advanced.revealRolesOnDeath} label="Разкриване на ролята при смърт" onChange={(value) => setAdvanced("revealRolesOnDeath", value)} />
+          <Toggle
+            checked={!hiddenRolesUntilEnd && state.advanced.revealRolesOnDeath}
+            disabled={hiddenRolesUntilEnd}
+            describedBy={hiddenRolesUntilEnd ? hiddenRolesHintId : undefined}
+            label="Разкриване на ролята при смърт"
+            onChange={(value) => setAdvanced("revealRolesOnDeath", value)}
+          />
+          {hiddenRolesUntilEnd ? (
+            <p id={hiddenRolesHintId} className="advanced-panel-note">
+              В игра с Шут всички роли остават скрити до края, за да не го издаде липсващото разкритие.
+            </p>
+          ) : null}
           {state.mode === "mafia_sport" ? (
             <p className="advanced-panel-note">Спортният формат изисква избор и не допуска пропускане на глас.</p>
           ) : (

@@ -78,6 +78,7 @@ function DeferredWidgets({
     cookie: !safeLocalStorage.getItem(COOKIE_STORAGE_KEY),
     feedback: shouldMountFeedback(pathname, Boolean(session?.user?.id)),
     welcome:
+      pathname !== "/tutorial" &&
       Boolean(session?.user?.id) &&
       !safeLocalStorage.getItem(WELCOME_STORAGE_KEY) &&
       !safeLocalStorage.getItem(TUTORIAL_STORAGE_KEY),

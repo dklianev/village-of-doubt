@@ -36,7 +36,7 @@ describe("offline visual contract", () => {
     const surfaceText = declaration(lightShell, "--offline-text-muted");
 
     expect(declaration(":global(.offline-hero-copy h1)", "color")).toBe("var(--offline-art-text)");
-    expect(declaration(":global(.offline-hero-copy p:not(.offline-kicker))", "color")).toBe("var(--offline-art-text)");
+    expect(declaration(":global(.offline-hero-copy > p:not(.offline-kicker))", "color")).toBe("var(--offline-art-text)");
     expect(declaration(":global(.offline-actions p)", "color")).toBe("var(--offline-text-muted)");
     expect(artworkText).not.toBe(surfaceText);
 
@@ -46,7 +46,7 @@ describe("offline visual contract", () => {
   });
 
   it("keeps the retry control at a full touch target", () => {
-    expect(declaration(":global(.offline-status-retry)", "width")).toBe("44px");
-    expect(declaration(":global(.offline-status-retry)", "height")).toBe("44px");
+    expect(declaration(":global(.offline-actions .btn)", "min-height")).toBe("44px");
+    expect(css).toContain("prefers-reduced-motion: reduce");
   });
 });

@@ -20,23 +20,23 @@ for (const family of ["werewolves", "mafia"] as const) {
         const clipping = await stage.evaluate((element) => {
           const rect = element.getBoundingClientRect();
           const problems: string[] = [];
-          // The decorative frame extends 7px beyond the stage's border box.
+          // Active play is full-bleed, with no decorative outset.
           for (let parent = element.parentElement; parent; parent = parent.parentElement) {
             const style = getComputedStyle(parent);
             if (!["hidden", "clip", "auto", "scroll"].includes(style.overflowX)) continue;
             const clip = parent.getBoundingClientRect();
-            if (rect.left - 7 < clip.left || rect.right + 7 > clip.right) problems.push(parent.className || parent.tagName);
+            if (rect.left < clip.left - 1 || rect.right > clip.right + 1) problems.push(parent.className || parent.tagName);
           }
           return problems;
         });
-        expect(clipping, "The complete decorative frame must fit inside every clipping ancestor").toEqual([]);
+        expect(clipping, "The active stage must fit inside every clipping ancestor").toEqual([]);
         await stage.screenshot({ path: testInfo.outputPath("table.png") });
 
         if (width < 1024) await page.getByRole("button", { name: "Към разговора", exact: true }).click();
         const tools = page.locator(".play-console-tools");
         const rules = tools.getByRole("button", { name: "Правила", exact: true });
         await rules.scrollIntoViewIfNeeded();
-        const before = await page.locator(".play-interaction-column").boundingBox();
+        const before = await page.locator(".play-console-band").boundingBox();
         const documentHeight = await page.evaluate(() => document.documentElement.scrollHeight);
         await rules.click();
         const reference = page.getByRole("dialog", { name: "Правила на масата" });
@@ -59,7 +59,7 @@ for (const family of ["werewolves", "mafia"] as const) {
         expect(box!.x).toBeGreaterThanOrEqual(0);
         expect(box!.x + box!.width).toBeLessThanOrEqual(width);
         expect(box!.y + box!.height).toBeLessThanOrEqual(901);
-        expect((await page.locator(".play-interaction-column").boundingBox())!.height).toBeCloseTo(before!.height, 0);
+        expect((await page.locator(".play-console-band").boundingBox())!.height).toBeCloseTo(before!.height, 0);
         await reference.screenshot({ path: testInfo.outputPath("rules.png") });
         if (width === 390 || width === 1440) {
           expect((await new AxeBuilder({ page }).include('[role="dialog"]').withTags(["wcag2a", "wcag2aa"]).analyze()).violations).toEqual([]);
@@ -77,7 +77,7 @@ for (const family of ["werewolves", "mafia"] as const) {
         await expect(cues.getByRole("button", { name: "Пробвай" })).toBeDisabled();
         await cues.getByRole("radio", { name: "Визуално", exact: true }).check();
         await cues.getByRole("button", { name: "Пробвай" }).click();
-        expect((await page.locator(".play-interaction-column").boundingBox())!.height).toBeCloseTo(before!.height, 0);
+        expect((await page.locator(".play-console-band").boundingBox())!.height).toBeCloseTo(before!.height, 0);
         await cues.screenshot({ path: testInfo.outputPath("signals.png") });
         await page.keyboard.press("Escape");
         await expect(signals).toBeFocused();

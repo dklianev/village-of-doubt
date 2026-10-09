@@ -26,7 +26,7 @@ describe("ServiceWorkerRegistration", () => {
     const cacheWrite = new Promise<void>((resolveWrite) => {
       releaseCacheWrite = resolveWrite;
     });
-    const networkResponse = { ok: true, clone: () => networkResponse };
+    const networkResponse = new Response("artwork", { status: 200 });
     const cache = {
       put: () => cacheWrite,
       keys: async () => [],
@@ -36,6 +36,7 @@ describe("ServiceWorkerRegistration", () => {
     runInNewContext(workerSource, {
       URL,
       Promise,
+      Response,
       caches: {
         open: async () => cache,
         keys: async () => [],
@@ -80,7 +81,7 @@ describe("ServiceWorkerRegistration", () => {
       <!doctype html>
       <link rel="stylesheet" href="/_next/static/css/offline.css">
       <script src="/_next/static/chunks/offline.js"></script>
-      <img src="/_next/image?url=%2Fgame-art%2Flegal%2Foffline-banner.webp&amp;w=1200&amp;q=75">
+      <img src="/_next/image?url=%2Fgame-art%2Fsystem%2Foffline-lantern-v1.webp&amp;w=1200&amp;q=75">
     `;
     const cache = {
       addAll: async (urls: string[]) => {
@@ -107,7 +108,8 @@ describe("ServiceWorkerRegistration", () => {
         if (request === "/offline") {
           return new Response(offlineHtml, { status: 200, headers: { "content-type": "text/html" } });
         }
-        throw new Error(`Unexpected fetch: ${request}`);
+        addedUrls.push(request);
+        return new Response("public asset", { status: 200 });
       },
       self: {
         addEventListener: (name: string, listener: (event: Record<string, unknown>) => void) => listeners.set(name, listener),
@@ -126,13 +128,13 @@ describe("ServiceWorkerRegistration", () => {
     await installWork;
 
     expect(storedUrls).toContain("/offline");
-    expect(addedUrls).toContain("/game-art/legal/offline-banner.webp");
+    expect(addedUrls).toContain("/game-art/system/offline-lantern-v1.webp");
     expect(addedUrls).toContain("/game-art/logo-chrome-mark.webp");
     expect(addedUrls).toContain("/game-art/texture-parchment.webp");
     expect(addedUrls).toContain("/game-art/mobile/texture-parchment.webp");
     expect(addedUrls).toContain("/_next/static/css/offline.css");
     expect(addedUrls).toContain("/_next/static/chunks/offline.js");
-    expect(addedUrls).not.toContain("/_next/image?url=%2Fgame-art%2Flegal%2Foffline-banner.webp&w=1200&q=75");
+    expect(addedUrls).not.toContain("/_next/image?url=%2Fgame-art%2Fsystem%2Foffline-lantern-v1.webp&w=1200&q=75");
   });
 
   it("serves a precached Next shell asset when the network is unavailable", async () => {
@@ -148,7 +150,7 @@ describe("ServiceWorkerRegistration", () => {
           addAll: async () => undefined,
           put: async () => undefined,
           keys: async () => [],
-          match: async () => undefined,
+          match: async () => cachedResponse,
         }),
         keys: async () => [],
         delete: async () => true,
@@ -197,12 +199,12 @@ describe("ServiceWorkerRegistration", () => {
           addAll: async () => undefined,
           put: async () => undefined,
           keys: async () => [],
-          match: async () => undefined,
+          match: async (request: string) => request === "/game-art/system/offline-lantern-v1.webp" ? originalArtwork : undefined,
         }),
         keys: async () => [],
         delete: async () => true,
         match: async (request: string | { url?: string }) =>
-          request === "/game-art/legal/offline-banner.webp" ? originalArtwork : undefined,
+          request === "/game-art/system/offline-lantern-v1.webp" ? originalArtwork : undefined,
       },
       fetch: async () => {
         throw new Error("offline");
@@ -220,7 +222,7 @@ describe("ServiceWorkerRegistration", () => {
       request: {
         method: "GET",
         mode: "no-cors",
-        url: "https://example.test/_next/image?url=%2Fgame-art%2Flegal%2Foffline-banner.webp&w=640&q=75",
+        url: "https://example.test/_next/image?url=%2Fgame-art%2Fsystem%2Foffline-lantern-v1.webp&w=640&q=75",
       },
       respondWith: (promise: Promise<unknown>) => {
         responsePromise = promise;

@@ -12,7 +12,7 @@ const STORAGE_KEY = "cookie-consent";
 export function CookieBanner() {
   const pathname = usePathname();
   const [state, setState] = useState<"unknown" | "visible" | "hidden">("unknown");
-  const [homeSlot, setHomeSlot] = useState<HTMLDivElement | null>(null);
+  const [slot, setSlot] = useState<HTMLDivElement | null>(null);
   const descriptionId = useId();
 
   useEffect(() => {
@@ -20,19 +20,19 @@ export function CookieBanner() {
   }, []);
 
   useEffect(() => {
-    if (pathname !== "/" || state !== "visible") {
-      setHomeSlot(null);
+    if (state !== "visible") {
+      setSlot(null);
       return;
     }
 
     const main = document.getElementById("main-content");
     if (!main) return;
 
-    // Keep the notice before the footer without shifting the homepage's main content.
+    // Deferred notices must not cover controls or shift the content being read.
     const slot = document.createElement("div");
-    slot.className = styles.homeSlot ?? "";
+    slot.className = styles.slot ?? "";
     main.after(slot);
-    setHomeSlot(slot);
+    setSlot(slot);
     return () => slot.remove();
   }, [pathname, state]);
 
@@ -45,10 +45,9 @@ export function CookieBanner() {
     return null;
   }
 
-  const isHomepage = pathname === "/";
   const notice = (
     <div
-      className={isHomepage ? `${styles.banner} ${styles.homepage}` : styles.banner}
+      className={styles.banner}
       role="region"
       aria-label="Бисквитки"
       aria-describedby={descriptionId}
@@ -65,5 +64,5 @@ export function CookieBanner() {
     </div>
   );
 
-  return isHomepage ? (homeSlot ? createPortal(notice, homeSlot) : null) : notice;
+  return slot ? createPortal(notice, slot) : null;
 }

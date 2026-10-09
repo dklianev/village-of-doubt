@@ -1,7 +1,8 @@
 import { ACHIEVEMENTS } from "@werewolf/shared";
 import { Award, X } from "lucide-react";
-import Link from "next/link";
 import { AchievementIcon } from "@/components/achievements/AchievementIcon";
+import { Button } from "@/components/button";
+import { ButtonLink } from "@/components/button-link";
 import { useModal } from "@/lib/use-modal";
 import styles from "./AchievementUnlockModal.module.css";
 
@@ -45,12 +46,12 @@ export function AchievementUnlockModal({ achievementIds, onClose }: { achievemen
           ))}
         </div>
         <footer className={styles.actions}>
-          <Link className="btn btn-primary" href="/achievements" onClick={onClose}>
+          <ButtonLink href="/achievements" onClick={onClose}>
             Виж залата на легендите
-          </Link>
-          <button className="btn btn-secondary" type="button" onClick={onClose}>
+          </ButtonLink>
+          <Button variant="secondary" onClick={onClose}>
             Продължи вечерта
-          </button>
+          </Button>
         </footer>
       </aside>
     </div>

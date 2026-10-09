@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { MessageSquare } from "lucide-react";
 import { MAX_CHAT_MESSAGE_LENGTH } from "@werewolf/shared";
+import { Button } from "@/components/button";
 import { TypingIndicator } from "@/components/play/TypingIndicator";
 import type { TypingNotice } from "@/lib/play/types";
 
@@ -90,10 +91,10 @@ export function PublicChatComposer({
         </span>
       </div>
       <TypingIndicator notices={typingNotices} />
-      <button className="btn btn-primary" type="submit" disabled={value.trim().length === 0 || isSending}>
+      <Button type="submit" disabled={value.trim().length === 0 || isSending}>
         <MessageSquare className="play-button-icon" aria-hidden strokeWidth={1.8} />
         <span>{isSending ? "Изпращаме..." : "Изпрати"}</span>
-      </button>
+      </Button>
     </form>
   );
 }

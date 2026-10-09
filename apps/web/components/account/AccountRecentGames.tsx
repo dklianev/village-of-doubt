@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getGameModeNameBg, type GameMode, type WinnerTeam } from "@werewolf/shared";
+import { getGameFamily, getGameModeNameBg, type GameMode, type WinnerTeam } from "@werewolf/shared";
 import { LinkPendingHint } from "@/components/navigation-telemetry";
 import styles from "./Account.module.css";
 
@@ -26,7 +26,7 @@ export function AccountRecentGames({ games }: { games: RecentGameSummary[] }) {
     <section className={`${styles.section} ${styles.recentSection}`}>
       <header className={styles.sectionHead}>
         <h2>Последни вечери</h2>
-        <p>Архивът помни последните ти три маси.</p>
+        <p>Последните ти завършени игри.</p>
       </header>
 
       <ul className={styles.gameList}>
@@ -35,10 +35,10 @@ export function AccountRecentGames({ games }: { games: RecentGameSummary[] }) {
             <article className={styles.gameCard} data-winner={game.winnerTeam ?? "unknown"}>
               <header className={styles.gameHead}>
                 <span className={styles.gameCode}>Дело №{game.code}</span>
-                <time className={styles.gameDate}>{formatDate(game.endedAt)}</time>
+                <time className={styles.gameDate} dateTime={game.endedAt?.toISOString()}>{formatDate(game.endedAt)}</time>
               </header>
               <p className={styles.gameVerdict}>
-                {game.winnerTeam ? WINNER_LABEL[game.winnerTeam] : "Незавършена"}
+                {game.winnerTeam === "village" && getGameFamily(game.mode) === "mafia" ? "Градът оцеля" : game.winnerTeam ? WINNER_LABEL[game.winnerTeam] : "Незавършена"}
               </p>
               <p className={styles.gameMode}>{getGameModeNameBg(game.mode)}</p>
               <Link href={`/history/${game.id}/replay`} className={styles.gameLink}>

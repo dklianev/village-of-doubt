@@ -1,6 +1,32 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "playwright/test";
 
+for (const family of ["werewolves", "mafia"] as const) {
+  for (const theme of ["light", "dark"] as const) {
+    for (const viewport of [{ width: 1280, height: 720 }, { width: 1366, height: 768 }]) {
+      test(`low laptop keeps vote confirmation clear ${family} ${theme} ${viewport.width}`, async ({ page }) => {
+        await page.setViewportSize(viewport);
+        await page.addInitScript((theme) => {
+          localStorage.setItem("werewolf-theme", theme);
+          localStorage.setItem("cookie-consent", "1");
+          localStorage.setItem("welcome-modal-shown", "1");
+        }, theme);
+        await page.goto(`/play/VISUAL?visualGame=1&family=${family}&phase=voting&players=${family === "mafia" ? 10 : 12}&voteTally=full`);
+        await expect(page.locator('.play-stage[data-layout-ready="true"]')).toBeVisible();
+        await page.evaluate(() => document.fonts.ready);
+        await page.locator(".play-stage").getByRole("button", { name: /^Избери / }).first().click();
+        const confirm = page.getByRole("button", { name: /^Потвърди гласа/ });
+        await expect(confirm).toBeEnabled();
+        const bounds = await confirm.boundingBox();
+        expect(bounds).not.toBeNull();
+        expect(bounds!.y).toBeGreaterThanOrEqual(0);
+        expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(viewport.height - 16);
+        await expect(page.locator(".play-action-receipt")).toHaveCount(0);
+      });
+    }
+  }
+}
+
 for (const theme of ["light", "dark"] as const) {
   for (const width of [320, 390, 1024, 1440]) {
     test(`nominee selection shares the table state ${theme} ${width}`, async ({ page }, testInfo) => {
@@ -13,7 +39,10 @@ for (const theme of ["light", "dark"] as const) {
       await page.goto("/play/VISUAL?visualGame=1&family=mafia&phase=voting&players=10&voteTally=full");
       await expect(page.locator('.play-stage[data-layout-ready="true"]')).toBeVisible();
       const dock = page.locator(".play-action-dock");
-      if (width < 1024) await dock.getByRole("button", { name: "Покажи личния ход" }).click();
+      if (width < 1024) {
+        await expect(dock).toHaveAttribute("data-expanded", "false");
+        await dock.getByRole("button", { name: "Покажи личния ход" }).click();
+      }
       await expect(dock.getByRole("heading", { name: "Твоят глас", exact: true })).toBeVisible();
       const confirm = dock.getByRole("button", { name: "Потвърди гласа", exact: true });
       await expect(confirm).toBeDisabled();
@@ -40,7 +69,15 @@ for (const theme of ["light", "dark"] as const) {
       await dock.getByRole("button", { name: "Потвърди гласа за Георги", exact: true }).click();
       await expect(page.locator(".play-action-receipt")).toHaveCount(0);
       await georgi.click();
+      await expect(georgi).toHaveAttribute("aria-pressed", "false");
+      await expect(dock).toHaveAttribute("data-expanded", "true");
       await expect(confirm).toBeDisabled();
+      if (width < 1024) {
+        await dock.getByRole("button", { name: "Скрий личния ход" }).click();
+        await expect(dock).toHaveAttribute("data-expanded", "false");
+        await dock.getByRole("button", { name: "Покажи личния ход" }).click();
+        await expect(confirm).toBeDisabled();
+      }
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
       const a11y = await new AxeBuilder({ page }).include(".play-action-dock").withTags(["wcag2a", "wcag2aa"]).analyze();
       expect(a11y.violations).toEqual([]);

@@ -1,133 +1,92 @@
-/* System page styles moved out of globals.css. */
-
-:global(.global-error-screen) {
-  min-height: 100vh;
-  display: grid;
-  place-items: center;
-  padding: 2rem;
-  background:
-    radial-gradient(circle at 20% 20%, rgba(158, 52, 45, 0.25), transparent 32rem),
-    linear-gradient(135deg, #0b1114, #20130f);
-  color: var(--paper);
+:global(.route-state-shell), :global(.route-loading-shell) {
+  --state-surface: #17211e; --state-raised: #23312a; --state-ink: #f1eee4;
+  --state-muted: #c2cbbc; --state-line: #82907a80; --state-accent: #d5b976;
+  width: 100%; max-width: 1228px; padding: 24px 24px 48px; color: var(--state-ink);
 }
-
-:global(.global-error-card) {
-  max-width: 34rem;
-  padding: clamp(1.5rem, 5vw, 3rem);
-  text-align: center;
+:global(html[data-theme="light"] .route-state-shell), :global(html[data-theme="light"] .route-loading-shell) {
+  --state-surface: #f3f4ed; --state-raised: #dde3d8; --state-ink: #26392f;
+  --state-muted: #526454; --state-line: #75806c88; --state-accent: #805c22;
 }
-
-:global(.global-error-card h1:focus) {
-  outline: none;
+:global(.route-state-shell) { min-height: 65vh; display: grid; align-content: center; }
+:global(.route-error-card) {
+  width: min(100%, 780px); margin-inline: auto; padding: 32px;
+  background: var(--state-surface); border: 0; border-block: 1px solid var(--state-line); border-radius: 0; box-shadow: none;
 }
-
-:global(.global-error-actions) {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
-  margin-top: 20px;
+:global(.route-error-kicker) { color: var(--state-accent); letter-spacing: 0; font-size: 0.8rem; }
+:global(.route-error-card h1:focus) { outline: none; }
+:global(.route-error-card h1), :global(.route-loading-heading h1) {
+  margin: 10px 0 16px; font-family: var(--font-display); color: var(--state-ink);
+  font-size: 2.5rem; line-height: 1.15; letter-spacing: 0; overflow-wrap: anywhere;
 }
-
-:global(.not-found-shell) {
-  display: grid;
-  place-items: center;
-  min-height: calc(100vh - 80px);
-  padding: 64px 16px;
+:global(.route-error-card p) { color: var(--state-muted); max-width: 54ch; line-height: 1.65; }
+:global(.route-error-actions) { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 24px; }
+:global(.route-error-actions :is(a, button)) { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+:global(.route-error-report) { margin-top: 20px; }
+:global(.route-error-card a:not(.btn)), :global(.route-loading-exits a) { color: var(--state-ink); text-underline-offset: 4px; }
+:global(.route-state-shell :is(a,button):focus-visible), :global(.route-loading-exits a:focus-visible) { outline: 2px solid var(--state-accent); outline-offset: 4px; }
+:global(.route-loading-heading) { display: flex; align-items: center; gap: 24px; padding: 28px 32px; border-block: 1px solid var(--state-line); background: var(--state-surface); min-height: 168px; }
+:global(.route-loading-account .route-loading-heading) { min-height: 280px; padding: 20px 8px 36px; border: 0; background: transparent; }
+:global(.route-loading-account .route-loading-portrait) { width: 154px; height: 194px; flex-basis: 154px; transform: rotate(-3deg); }
+:global(.route-loading-account .route-loading-structure) { background: transparent; }
+:global(.route-loading-account .route-loading-tabs) { border-top: 1px solid var(--state-line); }
+:global(.route-loading-account .route-loading-items) { padding-top: 28px; }
+:global(.route-loading-account .route-loading-item) { min-height: 300px; padding-inline: 0; border-left: 0; }
+:global(.route-loading-heading h1) { margin-bottom: 0; }
+:global(.route-loading-status) { color: var(--state-muted); margin: 0; font-size: 0.9rem; }
+:global(.route-placeholder) { display: block; background: var(--state-raised); border-radius: 3px; animation: state-pulse 1.8s ease-in-out infinite alternate; }
+:global(.route-loading-portrait) { width: 100px; height: 126px; flex: 0 0 100px; border: 1px solid var(--state-line); }
+:global(.route-loading-structure) { background: var(--state-surface); }
+:global(.route-loading-tabs) { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 32px; padding: 23px 32px; border-bottom: 1px solid var(--state-line); }
+:global(.route-loading-tabs span) { height: 16px; }
+:global(.route-loading-items) { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); }
+:global(.route-loading-item) { display: grid; align-content: center; gap: 16px; padding: 28px 32px; min-height: 190px; border-bottom: 1px solid var(--state-line); }
+:global(.route-loading-item + .route-loading-item) { border-left: 1px solid var(--state-line); }
+:global(.route-loading-item > span) { height: 14px; width: 85%; }
+:global(.route-loading-item > span:last-child) { width: 55%; }
+:global(.route-loading-achievements .route-loading-items) { grid-template-columns: 1fr; gap: 20px; padding-top: 24px; }
+:global(.route-loading-achievements .route-loading-heading) { min-height: 112px; padding-inline: 0; background: transparent; border-top: 0; }
+:global(.route-loading-achievements .route-loading-structure) { background: transparent; }
+:global(.route-loading-achievements .route-loading-item) { min-height: 240px; padding-inline: 0; background: transparent; border: 0; border-bottom: 1px solid var(--state-line); border-radius: 0; }
+:global(.route-loading-item .route-loading-seal) { height: 60px; width: 60px; border-radius: 50%; margin-bottom: 4px; }
+:global(.route-loading-play .route-loading-heading) { min-height: 120px; }
+:global(.route-loading-play .route-loading-structure) { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 24px; background: transparent; padding-top: 24px; }
+:global(.route-loading-play .route-loading-items) { grid-template-columns: 1fr; background: var(--state-surface); }
+:global(.route-loading-play .route-loading-item) { min-height: 130px; border-left: 0; }
+:global(.route-loading-table) { display: grid; align-items: center; min-height: 430px; padding: 36px; border: 1px solid var(--state-line); border-radius: 8px; background: var(--state-surface); }
+:global(.route-loading-table-inset) { display: block; width: 100%; aspect-ratio: 1.65; border: 1px solid var(--state-line); border-radius: 45%; }
+:global(.route-loading-exits) { display: flex; gap: 24px; padding-block: 20px; }
+:global(.route-loading-exits a) { display: inline-flex; align-items: center; min-height: 44px; font-size: 0.9rem; }
+@keyframes state-pulse { to { opacity: 0.5; } }
+@media (prefers-reduced-motion: reduce) { :global(.route-placeholder) { animation: none; } }
+@media (max-width: 900px) {
+  :global(.route-loading-play .route-loading-structure) { grid-template-columns: 1fr; }
+  :global(.route-loading-play .route-loading-items) { display: none; }
 }
-
-:global(.not-found-card) {
-  width: min(100%, 720px);
-  min-width: 0;
-  max-width: 720px;
-  text-align: left;
+@media (min-width: 640px) {
+  :global(.route-loading-achievements .route-loading-items) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-
-:global(.not-found-card > *) {
-  min-width: 0;
-  max-width: 100%;
+@media (min-width: 1024px) {
+  :global(.route-loading-achievements .route-loading-items) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
-
-:global(.not-found-card h1) {
-  overflow-wrap: break-word;
-  text-wrap: balance;
+@media (max-width: 639px) {
+  :global(.route-loading-achievements .route-loading-item) { grid-template-columns: 82px minmax(0, 1fr); gap: 12px 16px; min-height: 160px; }
+  :global(.route-loading-achievements .route-loading-seal) { grid-row: span 3; align-self: center; }
 }
-
-@media (max-width: 420px) {
-  :global(.not-found-shell) {
-    padding: 32px 12px;
-  }
-
-  :global(.not-found-card) {
-    --ds-paper-card-padding: 22px;
-  }
-
-  :global(.not-found-card h1) {
-    font-size: clamp(2rem, 10vw, 2.45rem);
-    line-height: 1.06;
-  }
-}
-
-:global(.route-state-shell) {
-  display: grid;
-  min-height: min(72vh, 760px);
-  place-items: center;
-  padding: 64px 20px;
-}
-
-:global(.route-error-card),
-:global(.route-loading-card) {
-  width: min(100%, 680px);
-  padding: clamp(24px, 5vw, 48px);
-}
-
-:global(.route-error-card h1),
-:global(.route-loading-card h1) {
-  margin: 12px 0;
-  font-family: var(--font-display);
-  font-size: clamp(1.75rem, 4vw, 2.75rem);
-  letter-spacing: 0;
-}
-
-:global(.route-error-card p) {
-  max-width: 54ch;
-}
-
-:global(.route-error-card .btn) {
-  margin-top: 20px;
-}
-
-:global(.route-loading-card) {
-  border: 1px solid color-mix(in oklch, var(--ink) 16%, transparent);
-  border-radius: 8px;
-  background: color-mix(in oklch, var(--paper) 92%, transparent);
-}
-
-:global(.route-loading-lines) {
-  display: grid;
-  gap: 12px;
-  margin-top: 28px;
-}
-
-:global(.route-loading-lines span) {
-  display: block;
-  width: 100%;
-  height: 14px;
-  border-radius: 6px;
-  background: color-mix(in oklch, var(--ink) 12%, transparent);
-  animation: route-loading-pulse 1.4s ease-in-out infinite alternate;
-}
-
-:global(.route-loading-lines span:nth-child(2)) {
-  width: 82%;
-}
-
-:global(.route-loading-lines span:nth-child(3)) {
-  width: 64%;
-}
-
-@keyframes route-loading-pulse {
-  to {
-    opacity: 0.4;
-  }
+@media (max-width: 560px) {
+  :global(.route-state-shell), :global(.route-loading-shell) { padding: 16px 16px 32px; }
+  :global(.route-error-card) { padding: 24px 20px; }
+  :global(.route-error-card h1), :global(.route-loading-heading h1) { font-size: 2rem; }
+  :global(.route-loading-heading) { padding: 24px 20px; gap: 16px; }
+  :global(.route-loading-account .route-loading-heading) { min-height: 290px; padding-inline: 0; }
+  :global(.route-loading-account .route-loading-portrait) { width: 84px; flex-basis: 84px; height: 110px; }
+  :global(.route-loading-account .route-loading-item) { min-height: 140px; }
+  :global(.route-loading-portrait) { width: 64px; flex-basis: 64px; height: 84px; }
+  :global(.route-loading-tabs) { padding-inline: 20px; gap: 20px; }
+  :global(.route-loading-items) { grid-template-columns: 1fr; }
+  :global(.route-loading-item) { min-height: 120px; padding: 24px 20px; }
+  :global(.route-loading-item + .route-loading-item) { border-left: 0; }
+  :global(.route-loading-achievements .route-loading-items) { grid-template-columns: 1fr; gap: 16px; }
+  :global(.route-loading-achievements .route-loading-item) { min-height: 160px; }
+  :global(.route-loading-table) { min-height: 360px; padding: 20px; }
+  :global(.route-loading-table-inset) { aspect-ratio: 0.9; }
 }

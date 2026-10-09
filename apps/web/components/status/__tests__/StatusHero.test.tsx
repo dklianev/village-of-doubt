@@ -39,10 +39,10 @@ describe("StatusHero", () => {
 
     expect(container.querySelector("time")).toHaveTextContent("00:30:45");
     expect(consoleError.mock.calls.flat().join(" ")).not.toMatch(/hydration|did not match/i);
-    expect(container.querySelector('[data-ds-scene-card="lg"]')).toBeInTheDocument();
-    expect(container.querySelector("[data-ds-scene-card-background]")).toHaveStyle({
-      backgroundImage: expect.stringContaining("var(--art-status)"),
-    });
+    expect(container.querySelector("time")).toHaveTextContent("16.01.2026");
+    expect(container.querySelector("h1")).toHaveTextContent("Състояние на услугите");
+    expect(container.querySelector("[data-ds-scene-card]")).not.toBeInTheDocument();
+    expect(container.querySelector(".status-hero-art")).toHaveAttribute("aria-hidden", "true");
 
     await act(async () => root?.unmount());
   });

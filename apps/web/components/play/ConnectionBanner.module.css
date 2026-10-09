@@ -1,0 +1,12 @@
+:global(:is(.play-shell, .play-finale-shell) .connection-banner) {
+  display: flex; align-items: center; gap: 14px; min-height: 70px; margin: 0 0 20px; padding: 16px 20px;
+  border: 1px solid #999275; border-radius: 6px; background: #18231e; color: #f3eee2; box-shadow: none;
+}
+:global(:is(.play-shell, .play-finale-shell) .connection-banner::after) { content: none; }
+:global(:is(.play-shell, .play-finale-shell) .connection-banner svg) { flex-shrink: 0; color: #dec184; }
+:global(:is(.play-shell, .play-finale-shell) .connection-banner strong) { font-size: 0.95rem; }
+:global(:is(.play-shell, .play-finale-shell) .connection-banner p) { margin: 4px 0 0; font-size: 0.85rem; line-height: 1.5; color: #d0d5c8; }
+:global(html[data-theme="light"] :is(.play-shell, .play-finale-shell) .connection-banner) { background: #f4f3eb; color: #283a2e; border-color: #858b76; }
+:global(html[data-theme="light"] :is(.play-shell, .play-finale-shell) .connection-banner svg) { color: #895d23; }
+:global(html[data-theme="light"] :is(.play-shell, .play-finale-shell) .connection-banner p) { color: #4e5e51; }
+:global(.play-finale-shell .connection-banner) { margin: 16px; }

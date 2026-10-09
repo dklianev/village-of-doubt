@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LiveCuePanel } from "@/components/play/LiveCuePanel";
@@ -14,7 +14,46 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("LiveCuePanel", async () => {
+describe("LiveCuePanel", () => {
+  it("restores the trigger on close and preserves the selected mode when reopened", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const props = { liveMode: false, phase: "night", pulseKey: 0, onChange };
+    const { rerender } = render(<LiveCuePanel {...props} cueMode="visual" />);
+    const trigger = screen.getByRole("button", { name: /Сигнали/ });
+    await user.click(trigger);
+    await screen.findByRole("dialog", { name: "Сигнали за фазите" });
+    await user.click(screen.getByRole("radio", { name: "Звук и вибрация" }));
+    expect(onChange).toHaveBeenCalledWith("audio_vibration");
+    rerender(<LiveCuePanel {...props} cueMode="audio_vibration" />);
+
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(trigger).toHaveFocus());
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    await user.click(trigger);
+    await screen.findByRole("dialog", { name: "Сигнали за фазите" });
+    expect(screen.getByRole("radio", { name: "Звук и вибрация" })).toBeChecked();
+    await user.click(screen.getByRole("button", { name: "Затвори" }));
+    await waitFor(() => expect(trigger).toHaveFocus());
+  });
+
+  it("applies live-room restrictions when props change while the settings are open", async () => {
+    const props = { cueMode: "audio_vibration" as const, phase: "night", pulseKey: 0, onChange: vi.fn() };
+    const { rerender } = render(<LiveCuePanel {...props} liveMode={false} />);
+    fireEvent.click(screen.getByRole("button", { name: /Сигнали/ }));
+    await screen.findByRole("dialog", { name: "Сигнали за фазите" });
+
+    rerender(<LiveCuePanel {...props} liveMode />);
+    expect(screen.getByRole("radio", { name: "Тихо" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "Визуално" })).toBeDisabled();
+    expect(screen.getByRole("radio", { name: "Звук и вибрация" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Пробвай" })).toBeDisabled();
+
+    rerender(<LiveCuePanel {...props} liveMode={false} />);
+    expect(screen.getByRole("radio", { name: "Звук и вибрация" })).toBeChecked();
+    expect(screen.getByRole("button", { name: "Пробвай" })).toBeEnabled();
+  });
+
   it("tests visual cues without vibrating the device", async () => {
     render(<LiveCuePanel cueMode="visual" liveMode={false} phase="night" pulseKey={0} onChange={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: /Сигнали/ }));

@@ -1,38 +1,32 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { PaperCard } from "@werewolf/ui/server";
-import "@/components/system/SystemPages.module.css";
+import Image from "next/image";
+import { ArrowLeft, KeyRound } from "lucide-react";
+import "@/components/system/NotFound.module.css";
 
 export const metadata: Metadata = {
-  title: "Страницата я няма",
-  description: "Тази страница не съществува. Върни се към масата.",
+  title: "Тази страница липсва",
+  description: "Адресът не води към страница. Върни се в Сенките или се присъедини с код.",
 };
 
 export default function NotFoundPage() {
   return (
     <main className="shell not-found-shell">
-      <section className="not-found-card">
-        <PaperCard eyebrow="404" density="lg">
-          <h1 className="text-5xl font-black">Страницата я няма на масата.</h1>
-          <p className="max-w-2xl" style={{ color: "var(--ds-ink-soft)" }}>
-            Може кодът на стаята да е изтекъл, или линкът да е грешен. Върни се към началото или избери
-            семейство игри.
-          </p>
-          <div className="flex flex-wrap gap-3">
-            <Link className="btn btn-primary" href="/">
-              Към началото
+      <section className="not-found-scene" aria-labelledby="not-found-heading">
+        <Image src="/game-art/system/missing-page-v1.webp" alt="" fill priority sizes="(max-width: 1240px) 100vw, 1180px" className="not-found-art" />
+        <div className="not-found-copy">
+          <p className="not-found-marker">404 <span>Липсваща страница</span></p>
+          <h1 id="not-found-heading">Тази страница липсва.</h1>
+          <p>Адресът може да е променен или изписан погрешно. Вечерта започва от друго място.</p>
+          <div className="not-found-actions">
+            <Link className="btn btn-primary" href="/" prefetch={false}>
+              <ArrowLeft size={18} aria-hidden /> Към началото
             </Link>
-            <Link className="btn btn-secondary" href="/werewolf">
-              Върколак
-            </Link>
-            <Link className="btn btn-secondary" href="/mafia">
-              Мафия
-            </Link>
-            <Link className="btn btn-secondary" href="/tutorial">
-              Първа игра
+            <Link className="not-found-join" href="/join" prefetch={false}>
+              <KeyRound size={18} aria-hidden /> Имам код
             </Link>
           </div>
-        </PaperCard>
+        </div>
       </section>
     </main>
   );

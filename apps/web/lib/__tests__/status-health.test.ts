@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { checkDatabaseReadiness, createDatabase } = vi.hoisted(() => ({
   checkDatabaseReadiness: vi.fn(),
@@ -25,6 +25,13 @@ import {
 } from "../status-health";
 
 describe("loadStatusServices", () => {
+  beforeEach(() => {
+    for (const name of ["DATABASE_URL", "NEXT_PUBLIC_GAME_SERVER_URL", "REDIS_URL", "GOOGLE_CLIENT_ID",
+      "GOOGLE_CLIENT_SECRET", "DISCORD_CLIENT_ID", "DISCORD_CLIENT_SECRET", "RESEND_API_KEY", "STATUS_HEALTH_FIXTURE"]) {
+      vi.stubEnv(name, "");
+    }
+  });
+
   afterEach(() => {
     resetStatusHealthCacheForTests();
     vi.clearAllMocks();
@@ -88,14 +95,47 @@ describe("loadStatusServices", () => {
 
   it("описва външните доставчици като конфигурирани, без да твърди че са probe-нати", async () => {
     vi.stubEnv("GOOGLE_CLIENT_ID", "google-client");
+    vi.stubEnv("GOOGLE_CLIENT_SECRET", "synthetic-google-secret");
     vi.stubEnv("DISCORD_CLIENT_ID", "discord-client");
+    vi.stubEnv("DISCORD_CLIENT_SECRET", "synthetic-discord-secret");
     vi.stubEnv("RESEND_API_KEY", "resend-key");
 
     const services = await loadStatusServices();
 
-    expect(services.find((service) => service.id === "auth-google")?.detail).toBe("Конфигуриран");
-    expect(services.find((service) => service.id === "auth-discord")?.detail).toBe("Конфигуриран");
-    expect(services.find((service) => service.id === "email")?.detail).toBe("Конфигурирана");
+    expect(services.find((service) => service.id === "auth-google")).toMatchObject({
+      status: "unknown", detail: "Конфигуриран; входът не се проверява автоматично.",
+    });
+    expect(services.find((service) => service.id === "auth-discord")).toMatchObject({
+      status: "unknown", detail: "Конфигуриран; входът не се проверява автоматично.",
+    });
+    expect(services.find((service) => service.id === "email")).toMatchObject({
+      status: "unknown", detail: "Конфигурирана; доставката на имейли не се проверява автоматично.",
+    });
+    expect(JSON.stringify(services)).not.toMatch(/google-client|discord-client|synthetic-.*-secret|resend-key/);
+  });
+
+  it("does not describe partially configured OAuth as ready", async () => {
+    vi.stubEnv("GOOGLE_CLIENT_ID", "synthetic-google-client");
+    vi.stubEnv("DISCORD_CLIENT_SECRET", "synthetic-discord-secret");
+
+    const services = await loadStatusServices();
+
+    for (const id of ["auth-google", "auth-discord"]) {
+      expect(services.find((service) => service.id === id)).toMatchObject({
+        status: "unknown", detail: "Не е конфигуриран напълно.",
+      });
+    }
+  });
+
+  it("keeps dependency addresses and failed probe details private", async () => {
+    vi.stubEnv("DATABASE_URL", "postgres://synthetic:secret@private-db.test/werewolf");
+    vi.stubEnv("NEXT_PUBLIC_GAME_SERVER_URL", "wss://private-game.test");
+    vi.stubEnv("REDIS_URL", "redis://private-redis.test:6379");
+    checkDatabaseReadiness.mockRejectedValueOnce(new Error("private-db.test synthetic secret"));
+    checkRuntimeRedisReadiness.mockResolvedValueOnce(false);
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValueOnce(new Error("private-game.test failed")));
+
+    expect(JSON.stringify(await loadStatusSnapshot())).not.toMatch(/private-|postgres:|redis:|secret|https?:|wss?:/);
   });
 
   it("ползва детерминистичен healthy fixture извън production без реални probes", async () => {

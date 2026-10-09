@@ -95,7 +95,7 @@ async function main() {
     `Optimized ${written} assets. Source PNG: ${formatBytes(originalBytes)} (unchanged, excluded from runtime budgets); runtime WebP: ${formatBytes(optimizedBytes)}.`,
   );
   console.log(
-    `Published ${publishedPngs} metadata PNGs ` +
+    `Published ${publishedPngs} metadata previews ` +
       `(${formatBytes(publishedPngBytes)}) and ${avifsWritten} AVIF assets (${formatBytes(avifBytes)}).`,
   );
   console.log(
@@ -123,7 +123,7 @@ async function cleanupTemporaryArtifacts(directory) {
 async function optimizeAsset(sharp, file, sourceFiles) {
   const input = path.join(sourceArtDir, file);
   const before = (await stat(input)).size;
-  const publicPng = path.join(gameArtDir, file);
+  const publicPng = path.join(gameArtDir, publishedMetadataPath(file));
   let publishedPngBytes = 0;
   let publishedPngs = 0;
   if (shouldPublishPng(file)) {
@@ -131,10 +131,14 @@ async function optimizeAsset(sharp, file, sourceFiles) {
       sharp, input, output: publicPng,
       maxWidth: isOpenGraphSource(file) ? 1200 : 1280,
       maxHeight: isOpenGraphSource(file) ? 630 : 1280,
+      fit: isJpegMetadata(file) ? "cover" : "inside",
       budgetKb: publishedPngBudgetKbFor(file),
-      qualities: [90, 85, 80],
-      encode: (pipeline, q) => pipeline.png({ compressionLevel: 9, palette: true, quality: q, effort: 10, adaptiveFiltering: true }),
+      qualities: isJpegMetadata(file) ? [85] : [90, 85, 80],
+      encode: (pipeline, q) => isJpegMetadata(file)
+        ? pipeline.jpeg({ quality: q, mozjpeg: true })
+        : pipeline.png({ compressionLevel: 9, palette: true, quality: q, effort: 10, adaptiveFiltering: true }),
     });
+    if (publicPng !== path.join(gameArtDir, file)) await rm(path.join(gameArtDir, file), { force: true });
     publishedPngBytes = (await stat(publicPng)).size;
     publishedPngs = 1;
   } else {
@@ -161,7 +165,7 @@ async function optimizeAsset(sharp, file, sourceFiles) {
     await writeAvif(sharp, input, avifOutput, file, maxWidthFor(file), avifBudgetKbFor(file));
     avifBytes = (await stat(avifOutput)).size;
     avifsWritten = 1;
-  } else if (isOpenGraphSource(file)) {
+  } else if (isOpenGraphSource(file) || isCreateMasthead(file) || isChronometer(file) || isEndgameScene(file)) {
     await rm(path.join(gameArtDir, file.replace(/\.png$/, ".avif")), { force: true });
   }
 
@@ -257,7 +261,7 @@ async function printReport(files) {
       : 0;
     const avifKb = await fileKb(path.join(gameArtDir, file.replace(/\.png$/, ".avif")));
     const pngBudget = 0;
-    const runtimePngKb = shouldPublishPng(file) ? await fileKb(path.join(gameArtDir, file)) : 0;
+    const runtimePngKb = shouldPublishPng(file) ? await fileKb(path.join(gameArtDir, publishedMetadataPath(file))) : 0;
     const runtimePngBudget = publishedPngBudgetKbFor(file);
     const webpBudget = shouldCreateWebp(file) ? webpBudgetKbFor(file) : 0;
     const avifBudget = shouldCreateAvif(file) ? avifBudgetKbFor(file) : 0;
@@ -292,7 +296,11 @@ export async function writeWebp(sharp, input, output, file, maxWidth, budgetKb, 
     maxWidth,
     budgetKb,
     qualities: webpQualityStepsFor(file, { preferredQuality }),
-    encode: (pipeline, q) => pipeline.webp({ quality: q, effort: 6, smartSubsample: true }),
+    encode: (pipeline, q) => pipeline.webp(isAchievementRelic(file)
+      ? { quality: q, alphaQuality: 75, effort: 6 }
+      : isEndgameScene(file)
+        ? { quality: q, effort: 6 }
+        : { quality: q, effort: 6, smartSubsample: true }),
   });
 }
 
@@ -308,7 +316,7 @@ export async function writeAvif(sharp, input, output, file, maxWidth, budgetKb) 
   });
 }
 
-async function writeRasterWithBudget({ sharp, input, output, maxWidth, maxHeight, budgetKb, qualities, encode }) {
+async function writeRasterWithBudget({ sharp, input, output, maxWidth, maxHeight, fit = "inside", budgetKb, qualities, encode }) {
   const sourceRelative = path.relative(sourceArtDir, path.resolve(output));
   if (path.resolve(input) === path.resolve(output)
     || (!sourceRelative.startsWith(`..${path.sep}`) && sourceRelative !== ".." && !path.isAbsolute(sourceRelative))) {
@@ -320,7 +328,7 @@ async function writeRasterWithBudget({ sharp, input, output, maxWidth, maxHeight
   try {
     for (const q of qualities) {
       const pipeline = sharp(input, { limitInputPixels: false }).rotate()
-        .resize({ width: maxWidth, height: maxHeight, fit: "inside", withoutEnlargement: true });
+        .resize({ width: maxWidth, height: maxHeight, fit, withoutEnlargement: true });
       await encode(pipeline, q).toFile(tmp);
       const bytes = (await stat(tmp)).size;
       bestBytes = Math.min(bestBytes, bytes);
@@ -348,15 +356,52 @@ function qualitySteps(start, floor) {
 }
 
 export function webpQualityStepsFor(file, { preferredQuality = quality } = {}) {
+  if (isEndgameScene(file)) return [75];
+  if (normalizeAssetPath(file) === "endgame/jester-v1.png") return [78];
+  if (isFriendsScene(file)) return [75];
+  if (normalizeAssetPath(file) === "friends/invitation-paper-v1.png") return [72];
+  if (isHistoryReplayScene(file)) return [65];
+  if (isHistoryLedgerScene(file)) return [75];
+  if (isLeaderboardScene(file)) return [75];
+  if (isAchievementRelic(file)) return [78];
+  if (normalizeAssetPath(file) === "achievements/collection-table-light-v1.png") return [50];
+  if (normalizeAssetPath(file) === "achievements/collection-table-dark-v1.png") return [70];
+  if (normalizeAssetPath(file) === "achievements/collection-slate-dark-v1.png") return [65];
+  if (normalizeAssetPath(file) === "achievements/collection-surface.png") return [55];
+  if (isCreateMasthead(file)) return [70];
   return qualitySteps(preferredQuality, 70);
 }
 
 export function avifQualityStepsFor(file) {
+  // This ambient art sits behind the near-opaque light paper; retain its native crop.
+  if (normalizeAssetPath(file) === "tutorial/bg-tutorial-hall-light-v1.png") return [45];
   return qualitySteps(60, normalizeAssetPath(file).startsWith("mobile/") ? 50 : 55);
 }
 
 export function maxWidthFor(file) {
   const basename = path.basename(file);
+  if (normalizeAssetPath(file) === "endgame/laurel-v1.png") return 320;
+  if (normalizeAssetPath(file) === "endgame/jester-v1.png") return 960;
+  // Replaced as full-screen results by endgame scenes; retained only for small legacy emblems.
+  if (/^(?:mafia\/)?faction-(?:village|werewolves|vampires|mafia|lovers|neutral)\.png$/.test(normalizeAssetPath(file))) return 960;
+  if (isChronometer(file)) return 448;
+  if (/^lobby\/waiting-werewolves-(?:light|dark)-v1\.png$/.test(normalizeAssetPath(file))) return 1320;
+  if (isFriendsScene(file)) return 1448;
+  if (normalizeAssetPath(file) === "friends/invitation-paper-v1.png") return 816;
+  if (normalizeAssetPath(file) === "friends/invitation-seal-v1.png") return 192;
+  if (normalizeAssetPath(file) === "friends/guest-medallion-v1.png") return 128;
+  if (isHistoryReplayScene(file)) return 1440;
+  if (isHistoryLedgerScene(file)) return 1536;
+  if (isLeaderboardScene(file)) return 1536;
+
+  if (isAchievementRelic(file)) return 960;
+  if (normalizeAssetPath(file) === "achievements/collection-table-light-v1.png") return 1536;
+  if (normalizeAssetPath(file) === "achievements/collection-table-dark-v1.png") return 1536;
+  if (normalizeAssetPath(file) === "achievements/collection-slate-dark-v1.png") return 512;
+  if (normalizeAssetPath(file) === "achievements/collection-surface.png") return 512;
+
+  // The expanded masthead uses at most 1152 CSS pixels, without bitmap upscaling.
+  if (isCreateMasthead(file)) return 1152;
 
   if (/^mobile\/play\/bg-play-(?:werewolves|mafia)-(?:day|night)-v2\.png$/.test(normalizeAssetPath(file))) {
     return 960;
@@ -378,7 +423,11 @@ export function maxWidthFor(file) {
   if (basename.startsWith("portrait-")) {
     return 560;
   }
-  if (basename.startsWith("icon-") || basename.includes("-sheet")) {
+  // Phase and ability icons render at most ~104 CSS px (rails, sigils, event markers).
+  if (basename.startsWith("icon-")) {
+    return 384;
+  }
+  if (basename.includes("-sheet")) {
     return 960;
   }
   if (basename.startsWith("role-")) {
@@ -392,6 +441,29 @@ export function maxWidthFor(file) {
 
 export function webpBudgetKbFor(file) {
   const basename = path.basename(file);
+  if (isEndgameScene(file)) return 230;
+  if (normalizeAssetPath(file) === "endgame/laurel-v1.png") return 24;
+  if (normalizeAssetPath(file) === "endgame/jester-v1.png") return 130;
+  if (isChronometer(file)) return 36;
+  if (normalizeAssetPath(file) === "lobby/waiting-werewolves-dark-v1.png") return 220;
+  if (normalizeAssetPath(file) === "lobby/waiting-werewolves-light-v1.png") return 260;
+  if (/^lobby\/waiting-mafia-(?:light|dark)-v1\.png$/.test(normalizeAssetPath(file))) return 200;
+  if (/^invitation\/werewolf-threshold-v1-(?:dark|light)\.png$/.test(normalizeAssetPath(file))) return 300;
+  if (isFriendsScene(file)) return 180;
+  if (normalizeAssetPath(file) === "friends/invitation-paper-v1.png") return 80;
+  if (/^friends\/(?:invitation-seal|guest-medallion)-v1\.png$/.test(normalizeAssetPath(file))) return 16;
+  if (isHistoryReplayScene(file)) return normalizeAssetPath(file) === "history/replay-dawn-dark-v1.png" ? 100 : 156;
+  if (isHistoryLedgerScene(file)) return 180;
+  if (isLeaderboardScene(file)) return 180;
+  if (isAchievementRelic(file)) return 110;
+  if (normalizeAssetPath(file) === "achievements/collection-table-light-v1.png") return 64;
+  if (normalizeAssetPath(file) === "achievements/collection-table-dark-v1.png") return 80;
+  if (normalizeAssetPath(file) === "achievements/collection-slate-dark-v1.png") return 35;
+  if (normalizeAssetPath(file) === "achievements/collection-surface.png") return 24;
+  if (isCreateMasthead(file)) return 60;
+  if (isRecoveryAuthScene(file)) {
+    return 270;
+  }
   if (isHomepageInvitation(file)) {
     return 130;
   }
@@ -405,7 +477,7 @@ export function webpBudgetKbFor(file) {
     return 110;
   }
   if (basename.startsWith("icon-")) {
-    return 220;
+    return 64;
   }
   if (basename.startsWith("role-") || basename.includes("-sheet")) {
     return 220;
@@ -417,10 +489,49 @@ export function webpBudgetKbFor(file) {
 }
 
 export function avifBudgetKbFor(file) {
+  if (isRecoveryAuthScene(file)) {
+    return 180;
+  }
   if (isMobilePortraitFamilyHero(file)) {
     return 256;
   }
   return Math.min(360, webpBudgetKbFor(file));
+}
+
+function isChronometer(file) {
+  return normalizeAssetPath(file) === "play/chronometer-brass-v1.png";
+}
+
+export function isEndgameScene(file) {
+  return /^endgame\/(?:village|town|werewolves|mafia|vampires|maniac|lovers|draw)-v1\.png$/.test(normalizeAssetPath(file));
+}
+
+function isRecoveryAuthScene(file) {
+  return /^auth\/bg-(?:forgot-password|reset-password|verify-email)-(?:light|dark)-v2\.png$/.test(normalizeAssetPath(file));
+}
+
+function isCreateMasthead(file) {
+  return /^create\/masthead-(?:werewolf|mafia)-(?:light|dark)-v1\.png$/.test(normalizeAssetPath(file));
+}
+
+function isLeaderboardScene(file) {
+  return /^leaderboard\/edition-(?:dark|light)-v1\.png$/.test(normalizeAssetPath(file));
+}
+
+function isHistoryLedgerScene(file) {
+  return /^history\/archive-ledger-(?:dark|light)-v2\.png$/.test(normalizeAssetPath(file));
+}
+
+function isHistoryReplayScene(file) {
+  return /^history\/replay-dawn-(?:dark|light)-v1\.png$/.test(normalizeAssetPath(file));
+}
+
+function isFriendsScene(file) {
+  return /^friends\/bg-friends-invitation-(?:dark|light)-v1\.png$/.test(normalizeAssetPath(file));
+}
+
+function isAchievementRelic(file) {
+  return /^achievements\/relics\/[a-z_]+\.png$/.test(normalizeAssetPath(file));
 }
 
 function isMobilePortraitFamilyHero(file) {
@@ -440,6 +551,9 @@ function isHomepageInvitation(file) {
 }
 
 export function mobileBudgetKbFor(file) {
+  if (isRecoveryAuthScene(file)) {
+    return 100;
+  }
   if (normalizeAssetPath(file) === "village-map.png") {
     return 288;
   }
@@ -472,6 +586,14 @@ function isPlaySceneV2(file) {
 
 function shouldCreateWebp(file) {
   return !isOpenGraphSource(file);
+}
+
+function isJpegMetadata(file) {
+  return /^og\/og-(?:achievements|leaderboard)\.png$/.test(normalizeAssetPath(file));
+}
+
+function publishedMetadataPath(file) {
+  return isJpegMetadata(file) ? file.replace(/\.png$/, ".jpg") : file;
 }
 
 function shouldPublishPng(file) {

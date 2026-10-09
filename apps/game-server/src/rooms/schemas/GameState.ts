@@ -19,8 +19,8 @@ export class PlayerPublicState extends Schema {
    */
   @type("boolean") actedThisPhase = false;
   /**
-   * Set only after death and only when revealRolesOnDeath is true.
-   * Empty string while the player is alive — never leaks live role data.
+   * Set after death when revealRolesOnDeath is true, or at game over in Jester games.
+   * Never exposes an unrevealed role during an ongoing game.
    */
   @type("string") revealedRole = "";
 }
@@ -96,4 +96,6 @@ export class GameState extends Schema {
   @type("string") nextRoomOptionsJson = "";
   /** Identifies each ballot, including same-round revotes; contains no vote choices. */
   @type("number") votingCycle = 0;
+  /** JSON-encoded TerminalGameResult; empty until game_over, retained for reconnect. */
+  @type("string") terminalResultJson = "";
 }

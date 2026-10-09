@@ -1,0 +1,29 @@
+/* A terminal document must hide cached pages and both current and later portals. */
+body:has(> #auth-session-ended) > :not(#auth-session-ended) {
+  display: none !important;
+}
+
+#auth-session-ended {
+  pointer-events: auto;
+  max-width: 40rem;
+  width: 90%;
+  padding: 24px;
+  margin: auto;
+  border: 1px solid var(--ds-surface-paper-edge);
+  border-radius: 8px;
+  background: var(--ds-surface-paper);
+  color: var(--ds-ink-primary);
+}
+
+#auth-session-ended h1 {
+  font-size: 1.5rem;
+  line-height: 1.3;
+  margin: 0 0 16px;
+}
+
+#auth-session-ended a {
+  display: inline-block;
+  padding: 10px 0;
+  color: var(--ds-eyebrow-blood);
+  text-decoration: underline;
+}

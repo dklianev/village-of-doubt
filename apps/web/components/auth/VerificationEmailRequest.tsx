@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useId, useRef, useState } from "react";
+import { type FormEvent, type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { verificationCallbackURL } from "./verification-callback";
 import styles from "./VerificationEmailRequest.module.css";
@@ -10,10 +10,14 @@ export function VerificationEmailRequest({
   initialEmail = "",
   redirectTo,
   initialCooldownSeconds = 0,
+  variant = "secondary",
+  sendIcon,
 }: {
   initialEmail?: string;
   redirectTo: string;
   initialCooldownSeconds?: number;
+  variant?: "primary" | "secondary";
+  sendIcon?: ReactNode;
 }) {
   const [email, setEmail] = useState(initialEmail);
   const [busy, setBusy] = useState(false);
@@ -23,6 +27,7 @@ export function VerificationEmailRequest({
   const deadline = useRef(Date.now() + initialCooldownSeconds * 1000);
   const pending = useRef(false);
   const emailId = useId();
+  const recovery = variant === "primary";
 
   useEffect(() => {
     if (remaining <= 0) return;
@@ -65,16 +70,27 @@ export function VerificationEmailRequest({
     }
   }
 
-  return (
-    <form className={styles.form} onSubmit={submit}>
+  const field = (
+    <>
       <label htmlFor={emailId}>Имейл</label>
       <input id={emailId} type="email" autoComplete="email" required value={email}
+        aria-describedby={error ? `${emailId}-error` : undefined}
         onChange={(event) => setEmail(event.target.value)} disabled={busy} />
-      {sent ? <p role="status" aria-live="polite">{SENT_MESSAGE}</p> : null}
-      {error ? <p role="alert">{error}</p> : null}
-      <button type="submit" className="btn btn-secondary" disabled={busy || remaining > 0} aria-busy={busy}>
-        {busy ? "Изпращаме..." : remaining > 0 ? `Изпрати нов линк (${remaining} сек.)` : "Изпрати нов линк"}
-      </button>
+    </>
+  );
+  const button = (
+    <button type="submit" className={recovery ? "btn btn-primary" : "btn btn-secondary"} disabled={busy || remaining > 0} aria-busy={busy}>
+      {recovery ? sendIcon : null}
+      {busy ? "Изпращаме..." : remaining > 0 ? `Изпрати нов линк (${remaining} сек.)` : "Изпрати нов линк"}
+    </button>
+  );
+
+  return (
+    <form className={recovery ? "recovery-form" : styles.form} onSubmit={submit}>
+      {recovery ? <div className="recovery-field">{field}</div> : field}
+      {sent ? <p className={recovery ? "recovery-success" : undefined} role="status" aria-live="polite">{SENT_MESSAGE}</p> : null}
+      {error ? <p id={`${emailId}-error`} className={recovery ? "recovery-error" : undefined} role="alert">{error}</p> : null}
+      {recovery ? <div className="recovery-actions">{button}</div> : button}
     </form>
   );
 }

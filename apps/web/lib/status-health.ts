@@ -1,13 +1,8 @@
 import { checkDatabaseReadiness, createDatabase } from "@werewolf/database";
 import { checkRuntimeRedisReadiness } from "./runtime-rate-limit";
-import type { ServiceHealth, ServiceStatusKind } from "./status-health-shared";
+import type { ServiceHealth, ServiceStatusKind, StatusSnapshot } from "./status-health-shared";
 
-export type { ServiceHealth, ServiceStatusKind } from "./status-health-shared";
-
-export interface StatusSnapshot {
-  services: ServiceHealth[];
-  lastCheckedAt: string;
-}
+export type { ServiceHealth, ServiceStatusKind, StatusSnapshot } from "./status-health-shared";
 
 const DEFAULT_STATUS_CACHE_TTL_MS = 20_000;
 let cachedSnapshot: { expiresAt: number; value: StatusSnapshot } | null = null;
@@ -220,8 +215,10 @@ async function loadUncachedStatusSnapshot(): Promise<StatusSnapshot> {
     id: "auth-google",
     name: "Вход с Google",
     description: "Външен OAuth провайдър.",
-    status: process.env.GOOGLE_CLIENT_ID ? "ok" : "unknown",
-    detail: process.env.GOOGLE_CLIENT_ID ? "Конфигуриран" : "Не е конфигуриран",
+    status: "unknown",
+    detail: process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+      ? "Конфигуриран; входът не се проверява автоматично."
+      : "Не е конфигуриран напълно.",
     icon: "auth",
   });
 
@@ -229,8 +226,10 @@ async function loadUncachedStatusSnapshot(): Promise<StatusSnapshot> {
     id: "auth-discord",
     name: "Вход с Discord",
     description: "Външен OAuth провайдър.",
-    status: process.env.DISCORD_CLIENT_ID ? "ok" : "unknown",
-    detail: process.env.DISCORD_CLIENT_ID ? "Конфигуриран" : "Не е конфигуриран",
+    status: "unknown",
+    detail: process.env.DISCORD_CLIENT_ID && process.env.DISCORD_CLIENT_SECRET
+      ? "Конфигуриран; входът не се проверява автоматично."
+      : "Не е конфигуриран напълно.",
     icon: "auth",
   });
 
@@ -238,8 +237,10 @@ async function loadUncachedStatusSnapshot(): Promise<StatusSnapshot> {
     id: "email",
     name: "Имейл услуга",
     description: "Потвърждения, нови пароли, сигнали.",
-    status: process.env.RESEND_API_KEY ? "ok" : "unknown",
-    detail: process.env.RESEND_API_KEY ? "Конфигурирана" : "Не е конфигурирана",
+    status: "unknown",
+    detail: process.env.RESEND_API_KEY
+      ? "Конфигурирана; доставката на имейли не се проверява автоматично."
+      : "Не е конфигурирана.",
     icon: "email",
   });
 

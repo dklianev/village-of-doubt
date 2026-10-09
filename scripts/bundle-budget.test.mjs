@@ -144,6 +144,24 @@ test("fails when the runtime art corpus exceeds its hard release budget", (conte
   assert.match(result.stderr, /Art corpus .+ KB > hard budget 75000 KB/);
 });
 
+test("counts JPEG previews in the corpus and enforces their metadata limit", (context) => {
+  const fixture = createFixture();
+  context.after(() => rmSync(fixture, { recursive: true, force: true }));
+  const preview = path.join(fixture, "apps/web/public/game-art/og/og-achievements.jpg");
+  mkdirSync(path.dirname(preview), { recursive: true });
+  writeFileSync(preview, "");
+  truncateSync(preview, 461 * 1024);
+  const allowed = runBudget(fixture);
+  assert.equal(allowed.status, 0, allowed.stderr);
+  assert.match(allowed.stdout, /JPG: 1 \/ 461 KB/);
+  assert.match(allowed.stderr, /Metadata JPEG preview .+ > warning 450 KB/);
+  truncateSync(preview, 75_001 * 1024);
+  const oversized = runBudget(fixture);
+  assert.equal(oversized.status, 1);
+  assert.match(oversized.stderr, /Metadata JPEG preview .+ > hard budget 500 KB/);
+  assert.match(oversized.stderr, /Art corpus .+ > hard budget 75000 KB/);
+});
+
 test("guards metadata PNG previews separately without relaxing interface image limits", (context) => {
   const fixture = createFixture();
   context.after(() => rmSync(fixture, { recursive: true, force: true }));

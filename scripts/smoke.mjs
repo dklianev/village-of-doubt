@@ -3,6 +3,7 @@ import { cpSync, existsSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { extractNextStreamRedirect } from "./next-stream-redirect.mjs";
 import { assertStaticCss } from "./smoke-static-css.mjs";
+import { assertOptimizedImage } from "./smoke-image-optimizer.mjs";
 
 const isWindows = process.platform === "win32";
 const processes = [];
@@ -46,9 +47,9 @@ async function main() {
   await waitForJson("http://127.0.0.1:3300/api/health", "web");
   await waitForText("http://127.0.0.1:3300/", "Върколак или Мафия", "landing page");
   await waitForStaticAsset("http://127.0.0.1:3300/", "landing static CSS");
-  await waitForText("http://127.0.0.1:3300/sign-in", "Покажи се на масата", "sign-in page");
-  await waitForText("http://127.0.0.1:3300/werewolf/create", "Стани", "werewolf create auth gate");
-  await waitForText("http://127.0.0.1:3300/mafia/create", "Стани", "mafia create auth gate");
+  await waitForText("http://127.0.0.1:3300/sign-in", "Влез в Сенките", "sign-in page");
+  await waitForText("http://127.0.0.1:3300/werewolf/create", "Събери компанията", "werewolf create auth gate");
+  await waitForText("http://127.0.0.1:3300/mafia/create", "Събери компанията", "mafia create auth gate");
   await waitForText(
     "http://127.0.0.1:3300/play/SMPKE3?mode=werewolves_classic&players=6&communication=built_in_chat&narrator=automatic&tempo=fast_online",
     "Върни се в играта",
@@ -68,6 +69,7 @@ async function main() {
   await waitForText("http://127.0.0.1:3300/mafia/roles", "Роли в Мафия", "mafia roles page");
   await waitForText("http://127.0.0.1:3300/history", "Архив на масата", "history page");
   await waitForAsset("http://127.0.0.1:3300/game-art/og-preview.webp", "optimized OpenGraph game art");
+  await assertOptimizedImage("http://127.0.0.1:3300/game-art/og-preview.webp", 256, "Next.js image optimizer");
   await waitForAsset("http://127.0.0.1:3300/game-art/transition-night-falls.webp", "optimized phase transition game art");
   await waitForAsset("http://127.0.0.1:3300/game-art/faction-village.webp", "faction game art");
   await waitForAsset("http://127.0.0.1:3300/game-art/player-avatar-sheet.webp", "avatar sprite sheet");

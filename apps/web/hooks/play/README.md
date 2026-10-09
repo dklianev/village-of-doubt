@@ -18,5 +18,6 @@
 - Тайните роли идват само през private messages и не се записват в public snapshot.
 - `useGameRoom` пази reconnect token-а в `sessionStorage` със същия prefix като
   предишния client component.
-- `usePhaseTransitions` не добавя `prefers-reduced-motion` guard; проектната
-  конвенция е да няма такъв guard.
+- `usePhaseTransitions` пази съобщенията за нова фаза и при намалено движение.
+  CSS в `globals.css` спира движенията в playroom и оставя фазовото съобщение
+  достъпно за екранен четец, без да закрива масата.

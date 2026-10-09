@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { evaluateWinCondition, parseTerminalGameResult } from "@werewolf/shared";
 import { parseVisualGameFixture } from "../visual-game-fixture";
 
 vi.mock("@/components/play-room-client", () => ({ PlayRoomClientCore: () => null }));
@@ -10,6 +11,67 @@ function fixture(query: string) {
 }
 
 describe("visual playroom fidelity", () => {
+  it.each(["village", "werewolves", "vampires", "mafia", "maniac", "lovers", "draw"])("provides a complete synthetic %s terminal contract at every supported count", (winner) => {
+    for (const family of ["werewolves", "mafia"]) {
+      for (const count of [3, 6, 10, 12, 24, 30]) {
+        for (const jesterWin of [0, 1]) {
+          const { snapshot } = fixture(`family=${family}&winner=${winner}&players=${count}&jesterWin=${jesterWin}`);
+          const terminal = snapshot.terminalResult!;
+          expect(snapshot.phase).toBe("game_over");
+          expect(snapshot.playerCount).toBe(count);
+          expect(terminal.winnerTeam).toBe(winner);
+          expect(parseTerminalGameResult(terminal)).toEqual(terminal);
+          expect(terminal.finalRoles).toHaveLength(count);
+          expect(terminal.personalWinnerPlayerIds).toHaveLength(jesterWin);
+          expect(terminal.winnerPlayerIds.length === 0).toBe(winner === "draw");
+          const win = evaluateWinCondition(terminal.finalRoles.map(({ userId, role }) => ({
+            playerId: userId, role,
+            alive: snapshot.players.find((player) => player.userId === userId)!.alive,
+            personalWin: terminal.personalWinnerPlayerIds.includes(userId),
+            ...(winner === "lovers" && terminal.winnerPlayerIds.includes(userId)
+              ? { loverId: terminal.winnerPlayerIds.find((id) => id !== userId) ?? null } : {}),
+          })));
+          expect(win.winner).toBe(winner);
+          expect(win.winnerPlayerIds).toEqual(terminal.winnerPlayerIds);
+          expect(win.personalWinnerPlayerIds).toEqual(terminal.personalWinnerPlayerIds);
+        }
+      }
+    }
+  });
+
+  it.each(["narrator", "spectator"])("excludes the %s from final roles and winner IDs", (viewer) => {
+    const { snapshot, currentUserId } = fixture(`winner=lovers&jesterWin=1&viewer=${viewer}&players=12`);
+    expect(snapshot.terminalResult?.finalRoles).toHaveLength(snapshot.playerCount);
+    expect(snapshot.terminalResult?.finalRoles.some(({ userId }) => userId === currentUserId)).toBe(false);
+    expect(snapshot.terminalResult?.winnerPlayerIds).not.toContain(currentUserId);
+    expect(snapshot.terminalResult?.personalWinnerPlayerIds).not.toContain(currentUserId);
+  });
+
+  it.each(["lobby", "night", "voting", "resolution", "paused"])("keeps the Jester result and role roster hidden during %s", (phase) => {
+    const { snapshot } = fixture(`phase=${phase}&winner=village&jesterWin=1&role=jester&players=12`);
+    expect(snapshot.terminalResult).toBeUndefined();
+    expect(snapshot.winnerTeam).toBe("");
+    expect(snapshot.revealRolesOnDeath).toBe(false);
+    expect(snapshot.players.every((player) => player.revealedRole === "")).toBe(true);
+  });
+
+  it("supports the viewer's independent Jester win even in a draw", () => {
+    const { snapshot, currentUserId, privateRole } = fixture("winner=draw&role=jester&jesterWin=1&players=10");
+    expect(privateRole?.role).toBe("jester");
+    expect(snapshot.terminalResult?.winnerPlayerIds).toEqual([]);
+    expect(snapshot.terminalResult?.personalWinnerPlayerIds).toEqual([currentUserId]);
+    expect(snapshot.players.every((player) => !player.alive)).toBe(true);
+  });
+
+  it("limits the all-ready portrait fixture to the waiting room", () => {
+    const ready = fixture("phase=lobby&players=8&lobbyReady=all").snapshot;
+    expect(ready.players).toHaveLength(8);
+    expect(ready.players.every((player) => player.ready && player.connected)).toBe(true);
+    expect(fixture("phase=lobby&players=8").snapshot.players.some((player) => !player.ready)).toBe(true);
+    expect(fixture("phase=night&lobbyReady=all").snapshot.players)
+      .toEqual(fixture("phase=night").snapshot.players);
+  });
+
   it("supports classic Mafia without sport-only speeches or nominations", () => {
     const { snapshot } = fixture("family=mafia&mode=mafia_free&phase=day_discussion");
     expect(snapshot.mode).toBe("mafia_free");

@@ -46,6 +46,17 @@ describe("role catalogue deep links", () => {
     window.history.replaceState(null, "", "/werewolf/roles");
   });
 
+  it.each(["werewolves", "mafia"] as const)("keeps a locally opened %s dossier after refreshing catalogue data", async (family) => {
+    const role = family === "mafia" ? "commissioner" : "seer";
+    const view = renderCatalog(family);
+    await userEvent.click(roleButton(view.container, role));
+    const dialog = await screen.findByRole("dialog", { name: ROLE_DEFINITIONS[role].nameBg });
+    view.syncUrl();
+    expect(screen.getByRole("dialog")).toBe(dialog);
+    expect(dialog).toContainElement(document.activeElement as HTMLElement);
+    expect(document.body.style.overflow).toBe("hidden");
+  });
+
   it.each([
     ["werewolves", "/werewolf/roles", "seer"],
     ["mafia", "/mafia/roles", "commissioner"],

@@ -23,7 +23,7 @@ import { useAuthSession, type AuthSessionView } from "@/lib/use-auth-session";
 import type { pushToast } from "@/lib/toast";
 import { arePhaseSlicesEqual, arePlayerListsEqual } from "@/lib/play/equality";
 import { isDuplicateNameError } from "@/lib/play/join-errors";
-import { nextRoomOptionsForState } from "@/lib/play/next-room-options";
+import { terminalResultForState } from "@/lib/play/terminal-result";
 import { playCue } from "@/lib/sound";
 import type {
   ConnectionStatus,
@@ -101,6 +101,10 @@ export function useGameRoom({
     refresh: refreshSession,
   } = useAuthSession(initialSession);
   const sessionUnavailable = sessionError && !session?.user?.id;
+  const [viewerStateOwner, setViewerStateOwner] = useState({ code, userId: session?.user?.id });
+  const ownsViewerState = !sessionPending
+    && viewerStateOwner.code === code
+    && viewerStateOwner.userId === session?.user?.id;
   const [room, setRoom] = useState<Room | null>(null);
   const [baseSnapshot, setBaseSnapshot] = useState<GameSnapshot | null>(null);
   const [playersSlice, setPlayersSlice] = useState<PublicPlayer[]>([]);
@@ -150,6 +154,7 @@ export function useGameRoom({
   }, []);
 
   const clearViewerPrivateState = useCallback(() => {
+    setUnlockedAchievementIds([]);
     setCurrentUserId("");
     setPrivateRole(null);
     setPrivateResult(null);
@@ -171,10 +176,19 @@ export function useGameRoom({
   }, [onReconnectSuppressed]);
 
   useEffect(() => {
-    if (!sessionPending) {
-      clearViewerPrivateState();
-      setRoom(null);
-    }
+    clearViewerPrivateState();
+    setRoom(null);
+    snapshotRef.current = null;
+    setBaseSnapshot(null);
+    setPlayersSlice([]);
+    setPhaseSlice(null);
+    setSportDaySlice(null);
+    setVoteTallySlice([]);
+    setPublicEventsSlice([]);
+    setPublicChatSlice([]);
+    setRecordedGameId(null);
+    // Publish the new owner only in the same update that clears its predecessor's data.
+    setViewerStateOwner({ code, userId: session?.user?.id });
   }, [clearViewerPrivateState, code, session?.user?.id, sessionPending]);
 
   useEffect(() => {
@@ -189,8 +203,14 @@ export function useGameRoom({
     let browserOffline = !navigator.onLine;
     let needsRecovery = browserOffline;
     let privateSync: { room: Room } | null = null;
+    const roomSubscriptions: Array<() => void> = [];
+    const clearRoomSubscriptions = () => {
+      for (const unsubscribe of roomSubscriptions.splice(0)) unsubscribe();
+    };
 
     if (sessionPending) {
+      setConnectionStatus("connecting");
+      setConnectionMessage("Свързване...");
       return () => {
         active = false;
       };
@@ -241,6 +261,8 @@ export function useGameRoom({
       });
 
     const markRecovering = () => {
+      // A transient celebration must not replay when its modal remounts after recovery.
+      setUnlockedAchievementIds([]);
       if (!needsRecovery) {
         onReconnectSuppressedRef.current?.();
       }
@@ -284,7 +306,14 @@ export function useGameRoom({
     };
 
     const bindRoom = (nextRoom: Room) => {
+      const previousRoom = joinedRoom;
+      const previousRoomLeft = roomLeft;
+      clearRoomSubscriptions();
       joinedRoom = nextRoom;
+      // Wait for the authorized replacement before closing the old lobby connection.
+      if (previousRoom && previousRoom !== nextRoom && !previousRoomLeft) {
+        void previousRoom.leave();
+      }
       roomLeft = false;
       roomDropped = false;
       privateSync = null;
@@ -296,12 +325,19 @@ export function useGameRoom({
 
       const isCurrentRoom = () => active && joinedRoom === nextRoom && !roomLeft;
       const onMessage = <Message,>(type: string, handler: (message: Message) => void) => {
-        nextRoom.onMessage(type, (message: Message) => {
+        roomSubscriptions.push(nextRoom.onMessage(type, (message: Message) => {
           if (isCurrentRoom()) handler(message);
-        });
+        }));
+      };
+      const onSignal = <Args extends unknown[]>(
+        signal: { (handler: (...args: Args) => void): unknown; remove(handler: (...args: Args) => void): void },
+        handler: (...args: Args) => void,
+      ) => {
+        signal(handler);
+        roomSubscriptions.push(() => signal.remove(handler));
       };
 
-      nextRoom.onStateChange((state) => {
+      onSignal(nextRoom.onStateChange, (state) => {
         if (!isCurrentRoom()) return;
         const stateView = state as unknown as ColyseusGameState;
         const previousSnapshot = snapshotRef.current;
@@ -370,12 +406,12 @@ export function useGameRoom({
 
       onMessage("private_check_result", (message: PrivateResult) => {
         setPrivateResult(message);
-        if (!needsRecovery) toast({ message: "Получен е личен резултат от нощното действие.", kind: "info" });
+        if (!needsRecovery && !privateSync) toast({ message: "Получен е личен резултат от нощното действие.", kind: "info" });
       });
 
       onMessage("private_lovers", (message: PrivateLover) => {
         setPrivateLover(message);
-        if (!needsRecovery) toast({ message: "Купидон те свърза с Влюбен.", kind: "success" });
+        if (!needsRecovery && !privateSync) toast({ message: "Купидон те свърза с Влюбен.", kind: "success" });
       });
 
       onMessage("private_faction_roster", (message: PrivateFactionRoster) => {
@@ -408,7 +444,7 @@ export function useGameRoom({
 
       onMessage("private_blessing", () => {
         setIsBlessed(true);
-        if (!needsRecovery) toast({ message: "Свещеникът те благослови. Благословията остава върху теб до края на играта.", kind: "success" });
+        if (!needsRecovery && !privateSync) toast({ message: "Свещеникът те благослови. Благословията остава върху теб до края на играта.", kind: "success" });
       });
 
       onMessage("system", (message: { messageBg: string }) => {
@@ -444,7 +480,7 @@ export function useGameRoom({
 
       onMessage("narrator_role_snapshot", (message: NarratorRoleSnapshot) => {
         setNarratorSnapshot(message);
-        if (!needsRecovery) toast({ message: "Получен е пълен преглед за Разказвача.", kind: "info" });
+        if (!needsRecovery && !privateSync) toast({ message: "Получен е пълен преглед за Разказвача.", kind: "info" });
       });
 
       let rejectedNameMessage: string | null = null;
@@ -471,7 +507,7 @@ export function useGameRoom({
         setRecordedGameId(message.gameId);
       });
 
-      nextRoom.onDrop(() => {
+      onSignal(nextRoom.onDrop, () => {
         if (!isCurrentRoom()) return;
         roomDropped = true;
         privateSync = null;
@@ -479,19 +515,21 @@ export function useGameRoom({
         setConnectionMessage("Връзката прекъсна. Опитваме да те върнем в стаята.");
       });
 
-      nextRoom.onReconnect(() => {
+      onSignal(nextRoom.onReconnect, () => {
         if (!isCurrentRoom()) return;
         roomDropped = false;
         void syncRoomPrivateState(nextRoom, true);
       });
 
-      nextRoom.onLeave((leaveCode) => {
+      onSignal(nextRoom.onLeave, (leaveCode) => {
         if (!isCurrentRoom()) {
           return;
         }
         roomLeft = true;
         roomDropped = false;
         privateSync = null;
+        // A fresh join can make the server close the previous socket before it resolves.
+        if (freshJoining) return;
         if (leaveCode === 1000 || leaveCode === 1001) {
           needsRecovery = false;
           joinedRoom = null;
@@ -515,7 +553,7 @@ export function useGameRoom({
         }
       });
 
-      nextRoom.onError((errorCode, errorMessage) => {
+      onSignal(nextRoom.onError, (errorCode, errorMessage) => {
         if (!isCurrentRoom()) {
           return;
         }
@@ -525,6 +563,7 @@ export function useGameRoom({
         clearReconnectTimer();
         clearReconnectionToken(code);
         setConnectionStatus("error");
+        setUnlockedAchievementIds([]);
         setConnectionMessage(
           errorMessage?.trim()
             ? `Стаята прекъсна връзката: ${errorMessage}`
@@ -674,6 +713,7 @@ export function useGameRoom({
         reconnectNowRef.current = null;
       }
       clearReconnectTimer();
+      clearRoomSubscriptions();
       joinedRoom?.leave();
     };
   }, [
@@ -701,23 +741,23 @@ export function useGameRoom({
   }, []);
 
   return {
-    room,
-    snapshot,
-    currentUserId,
-    privateRole,
-    privateResult,
-    privateFactionRoster,
-    privateLover,
-    nightActionCapabilities,
-    narratorSnapshot,
-    privateChats,
-    typingNotices,
-    isBlessed,
+    room: ownsViewerState ? room : null,
+    snapshot: ownsViewerState ? snapshot : null,
+    currentUserId: ownsViewerState ? currentUserId : "",
+    privateRole: ownsViewerState ? privateRole : null,
+    privateResult: ownsViewerState ? privateResult : null,
+    privateFactionRoster: ownsViewerState ? privateFactionRoster : null,
+    privateLover: ownsViewerState ? privateLover : null,
+    nightActionCapabilities: ownsViewerState ? nightActionCapabilities : null,
+    narratorSnapshot: ownsViewerState ? narratorSnapshot : null,
+    privateChats: ownsViewerState ? privateChats : [],
+    typingNotices: ownsViewerState ? typingNotices : [],
+    isBlessed: ownsViewerState && isBlessed,
     connectionMessage,
     connectionStatus,
-    unlockedAchievementIds,
+    unlockedAchievementIds: ownsViewerState ? unlockedAchievementIds : [],
     setUnlockedAchievementIds,
-    recordedGameId,
+    recordedGameId: ownsViewerState ? recordedGameId : null,
     reconnectNow,
     isPending,
   };
@@ -734,6 +774,7 @@ interface ColyseusGameStatePlayer extends Omit<PublicPlayer, "revealedRole"> {
 interface ColyseusGameState {
   code: string;
   nextRoomOptionsJson?: string;
+  terminalResultJson?: string;
   mode: GameMode;
   playerCount: number;
   narratorMode: string;
@@ -770,10 +811,10 @@ function snapshotShellForState(
   roleCounts: PublicRoleCount[],
   previousSnapshot: GameSnapshot | null,
 ): GameSnapshot {
-  const nextRoomOptions = nextRoomOptionsForState(state, previousSnapshot?.nextRoomOptions);
+  const terminalResult = terminalResultForState(state, previousSnapshot?.terminalResult);
   return {
     code: state.code,
-    ...(nextRoomOptions === undefined ? {} : { nextRoomOptions }),
+    ...(state.nextRoomOptionsJson === undefined ? {} : { nextRoomOptionsJson: state.nextRoomOptionsJson }),
     mode: state.mode,
     playerCount: state.playerCount,
     narratorMode: state.narratorMode,
@@ -793,10 +834,13 @@ function snapshotShellForState(
     phaseEndsAt: state.phaseEndsAt,
     winnerTeam: state.winnerTeam,
     winnerReasonBg: state.winnerReasonBg,
+    ...(terminalResult === undefined ? {} : { terminalResult }),
     revoteEligibleUserIds: Array.from(state.revoteEligibleUserIds ?? []),
     ...(state.votingCycle === undefined ? {} : { votingCycle: state.votingCycle }),
     players: previousSnapshot?.players ?? [],
-    roleCounts,
+    roleCounts: previousSnapshot && areRoleCountsEqual(previousSnapshot.roleCounts, roleCounts)
+      ? previousSnapshot.roleCounts
+      : roleCounts,
     voteTally: previousSnapshot?.voteTally ?? [],
     publicEvents: previousSnapshot?.publicEvents ?? [],
     publicChat: previousSnapshot?.publicChat ?? [],
@@ -811,19 +855,34 @@ function playersForState(state: ColyseusGameState): PublicPlayer[] {
 }
 
 function roleCountsForState(state: ColyseusGameState): PublicRoleCount[] {
-  return Array.from(state.roleCounts);
+  // SDK rows mutate in place; retain only detached public values in React snapshots.
+  return Array.from(state.roleCounts, (item) => ({ role: item.role, count: item.count }));
 }
 
 function voteTallyForState(state: ColyseusGameState): VoteTallyItem[] {
-  return Array.from(state.voteTally);
+  return Array.from(state.voteTally, (item) => ({
+    targetUserId: item.targetUserId,
+    targetName: item.targetName,
+    count: item.count,
+    hasMayorVote: item.hasMayorVote,
+  }));
 }
 
 function publicEventsForState(state: ColyseusGameState): PublicEvent[] {
-  return Array.from(state.publicEvents);
+  return Array.from(state.publicEvents, (item) => ({
+    id: item.id,
+    type: item.type,
+    messageBg: item.messageBg,
+  }));
 }
 
 function publicChatForState(state: ColyseusGameState): PublicChatMessage[] {
-  return Array.from(state.publicChat);
+  return Array.from(state.publicChat, (item) => ({
+    id: item.id,
+    channel: item.channel,
+    senderName: item.senderName,
+    message: item.message,
+  }));
 }
 
 function phaseSliceForState(state: ColyseusGameState): PhaseSlice {
@@ -886,7 +945,7 @@ function areSportDaySlicesEqual(a: SportDaySlice, b: SportDaySlice) {
 
 function areSnapshotShellEqual(a: GameSnapshot, b: GameSnapshot) {
   return a.code === b.code
-    && a.nextRoomOptions === b.nextRoomOptions
+    && a.nextRoomOptionsJson === b.nextRoomOptionsJson
     && a.mode === b.mode
     && a.playerCount === b.playerCount
     && a.narratorMode === b.narratorMode
@@ -903,6 +962,7 @@ function areSnapshotShellEqual(a: GameSnapshot, b: GameSnapshot) {
     && a.narratorVoice === b.narratorVoice
     && a.winnerTeam === b.winnerTeam
     && a.winnerReasonBg === b.winnerReasonBg
+    && a.terminalResult === b.terminalResult
     && a.votingCycle === b.votingCycle
     && areStringListsEqual(a.revoteEligibleUserIds ?? [], b.revoteEligibleUserIds ?? [])
     && areRoleCountsEqual(a.roleCounts, b.roleCounts);
@@ -913,6 +973,9 @@ function areStringListsEqual(a: string[], b: string[]) {
 }
 
 function areRoleCountsEqual(a: PublicRoleCount[], b: PublicRoleCount[]) {
+  if (a === b) {
+    return true;
+  }
   if (a.length !== b.length) {
     return false;
   }

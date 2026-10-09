@@ -1,6 +1,8 @@
 import type { CSSProperties } from "react";
 import { ROLE_DEFINITIONS, getRoleAssetKey, type GameFamily, type RoleCode } from "@werewolf/shared";
 
+export { coverImageSizes, type CoverImageSlot } from "./image-sizes";
+
 function visualFamilyForRole(family: GameFamily, role: RoleCode): GameFamily {
   const availableFamilies = ROLE_DEFINITIONS[role].availableInFamilies as readonly GameFamily[];
   return availableFamilies.includes(family) ? family : availableFamilies[0] ?? family;
@@ -29,26 +31,6 @@ export function roleArtSource(family: GameFamily, role: RoleCode) {
       ? { width: 1100, height: 1100 }
       : { width: 1024, height: 1536 };
   return { src: roleArtPath(family, role), ...dimensions };
-}
-
-export type CoverImageSlot = {
-  media?: string;
-  width: number | string;
-  /** Target image box width divided by height, after any frame padding. */
-  aspectRatio: number;
-};
-
-export function coverImageSizes(
-  source: { width: number; height: number },
-  slots: readonly CoverImageSlot[],
-) {
-  return slots.map(({ media, width, aspectRatio }) => {
-    // Cover may scale to the box height. `auto` would discard that extra width.
-    const factor = Math.max(1, source.width / source.height / aspectRatio);
-    const slotWidth = typeof width === "number" ? `${width}px` : width;
-    const size = factor === 1 ? slotWidth : `calc(${slotWidth} * ${factor})`;
-    return media ? `${media} ${size}` : size;
-  }).join(", ");
 }
 
 export function roleThumbPath(family: GameFamily, role: RoleCode) {

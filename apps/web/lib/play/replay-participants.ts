@@ -17,6 +17,7 @@ export type ReplayParticipant = {
   label: string;
   role: string | undefined;
   initial: string;
+  spectator?: boolean;
 };
 
 export function collectReplayParticipants(
@@ -45,6 +46,9 @@ export function collectReplayParticipants(
 
     if (event.actorId) {
       upsertParticipant(participants, event.actorId, actorName, actorRole);
+      if (payload.spectator === true && !persistedPlayers.some((player) => player.userId === event.actorId)) {
+        participants.get(event.actorId)!.spectator = true;
+      }
     }
     if (event.targetId) {
       upsertParticipant(participants, event.targetId, targetName, undefined);
@@ -66,7 +70,7 @@ function upsertParticipant(
   label: string | undefined,
   role: string | undefined,
 ) {
-  const fallbackLabel = shortId(id);
+  const fallbackLabel = "Неназован участник";
   const nextLabel = label ?? fallbackLabel;
   const existing = participants.get(id);
   const resolvedLabel = existing?.label && existing.label !== fallbackLabel ? existing.label : nextLabel;
@@ -75,6 +79,7 @@ function upsertParticipant(
     label: resolvedLabel,
     role: existing?.role ?? role,
     initial: initialFor(resolvedLabel),
+    ...(existing?.spectator ? { spectator: true } : {}),
   });
 }
 
@@ -93,12 +98,8 @@ function roleNameFromCode(role: string | undefined) {
   try {
     return getRoleNameBg(role as RoleCode);
   } catch {
-    return role;
+    return "Неизвестна роля";
   }
-}
-
-function shortId(id: string) {
-  return id.length > 8 ? `играч ${id.slice(0, 4)}` : id;
 }
 
 function initialFor(label: string) {

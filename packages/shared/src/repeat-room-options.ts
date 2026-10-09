@@ -29,7 +29,7 @@ export function createRoomOptionsFromConfig(config: GameConfig): CreateRoomOptio
       autoAdvanceWhenReady: config.timers.autoAdvanceWhenReady,
     },
     loversEnabled: config.loversEnabled,
-    revealRolesOnDeath: config.revealRolesOnDeath,
+    revealRolesOnDeath: config.requestedRevealRolesOnDeath ?? config.revealRolesOnDeath,
     tieBreaker: config.tieBreaker,
     firstNightKill: config.firstNightKill,
     allowSkipVote: config.allowSkipVote,
