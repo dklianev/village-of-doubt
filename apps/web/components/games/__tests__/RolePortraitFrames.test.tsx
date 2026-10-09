@@ -24,10 +24,13 @@ describe.each(["werewolves", "mafia"] as const)("%s portrait frames", (family) =
     const portraits = container.querySelectorAll(".role-spotlight__art");
     expect(portraits).toHaveLength(4);
     for (const portrait of portraits) {
-      expect(portrait).toHaveClass("role-art-frame");
-      expect(portrait).toHaveAttribute("data-frame-family", family);
-      expect(portrait.querySelector("img")).toHaveAttribute("data-nimg", "fill");
+      const frame = portrait.querySelector(".role-art-frame");
+      expect(portrait).not.toHaveClass("role-art-frame");
+      expect(frame).toHaveAttribute("data-frame-family", family);
+      expect(frame).toHaveStyle({ position: "absolute", inset: "0px", borderRadius: family === "mafia" ? "2px" : "6px" });
+      expect(frame?.querySelector("img")).toHaveAttribute("data-nimg", "fill");
       expect(portrait.querySelector(".role-spotlight__open")).toHaveStyle({ zIndex: 2 });
+      expect(portrait.querySelector(".role-spotlight__open")?.closest(".role-art-frame")).toBeNull();
     }
 
     fireEvent.click(portraits[0]!.querySelector(".role-spotlight__open")!);
@@ -41,19 +44,22 @@ describe.each(["werewolves", "mafia"] as const)("%s portrait frames", (family) =
     expect(variants).toHaveLength(3);
     for (const variant of variants) {
       const portrait = variant.querySelector(".variant-chip__art");
+      const frame = portrait?.querySelector(".role-art-frame");
       const trigger = variant.querySelector("button[data-role]");
       expect(portrait?.querySelector("img")).toHaveAttribute("data-nimg", "fill");
+      expect(portrait).not.toHaveClass("role-art-frame");
       if (trigger) {
-        expect(portrait).toHaveClass("role-art-frame");
-        expect(portrait).toHaveAttribute("data-frame-family", family);
+        expect(frame).toHaveAttribute("data-frame-family", family);
+        expect(frame).toHaveStyle({ position: "absolute", inset: "0px", borderRadius: "5px" });
         expect(trigger).toHaveAttribute("aria-haspopup", "dialog");
+        expect(trigger.closest(".role-art-frame")).toBeNull();
       } else {
-        expect(portrait).not.toHaveClass("role-art-frame");
+        expect(frame).toBeNull();
         expect(portrait).not.toHaveAttribute("data-frame-family");
         expect(variant.querySelector("a")).toHaveAttribute("href", family === "mafia" ? "/mafia/create" : "/werewolf/create");
       }
     }
-    expect(container.querySelectorAll(".variant-chip__art.role-art-frame")).toHaveLength(2);
+    expect(container.querySelectorAll(".variant-chip__art .role-art-frame")).toHaveLength(2);
   });
 
   it("frames the tile picture without moving its count, caption, or controls into the overlay", () => {

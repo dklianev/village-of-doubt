@@ -1,9 +1,15 @@
 import { TutorialSlide } from "./TutorialSlide";
 import { EyeOff } from "lucide-react";
+import { getImageProps } from "next/image";
 import { tutorialWorld, type TutorialMode } from "./tutorial-scenario";
 
 export function SlideSetup({ mode }: { mode: TutorialMode }) {
   const world = tutorialWorld(mode);
+  const { props: roleImage } = getImageProps({
+    src: world.roleArt, width: 520, height: 780,
+    sizes: "(max-width: 640px) 84px, 112px", quality: 85,
+    loading: "lazy", fetchPriority: "low", alt: `Карта на ${world.role}`,
+  });
   return (
     <TutorialSlide
       bg="day"
@@ -27,7 +33,7 @@ export function SlideSetup({ mode }: { mode: TutorialMode }) {
       }}
     >
       <aside className="tutorial-role" aria-label="Примерната ти роля">
-        <img src={world.roleArt} width={520} height={780} loading="lazy" decoding="async" alt={`Карта на ${world.role}`} />
+        <img {...roleImage} />
         <div>
           <p className="tutorial-role-private"><EyeOff size={15} aria-hidden="true" /> Само за теб</p>
           <h2>{world.role}</h2>

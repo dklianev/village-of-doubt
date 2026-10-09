@@ -128,17 +128,17 @@ function TutorialSession({ mode, continueHref, setupScene }: { mode: TutorialMod
   const lighting = current === 2 || current >= 5 ? "night" : "day";
   const art = world.mafia
     ? `/game-art/phase-board/v1/mafia/icon-phase-${lighting}-1120.webp`
-    : `/game-art/tutorial-${lighting}-scene.webp`;
+    : `/game-art/tutorial-${lighting}-scene.avif`;
   const slide = current >= 2 && current <= 6
     ? <TutorialSceneLoader slide={current as 2 | 3 | 4 | 5 | 6} {...sceneProps}
         reservedHeight={reservedHeight} onRetryFocus={() => stageRef.current?.focus()} />
     : setupScene;
   return (
     <section className="tutorial-flipbook" aria-label="Наръчник за първа игра" data-family={world.family}>
-      <link rel="preload" as="image" type="image/webp" fetchPriority="high" href={art}
-        media={world.mafia ? undefined : "(min-width: 721px), (orientation: portrait)"} />
-      {!world.mafia ? <link rel="preload" as="image" type="image/webp" fetchPriority="high"
-        href={`/game-art/mobile/tutorial-${lighting}-scene.webp`} media="(max-width: 720px) and (orientation: landscape)" /> : null}
+      <link rel="preload" as="image" type={world.mafia ? "image/webp" : "image/avif"} fetchPriority="high" href={art}
+        media={world.mafia ? undefined : "(min-width: 481px), (resolution > 2dppx)"} />
+      {!world.mafia ? <link rel="preload" as="image" type="image/avif" fetchPriority="high"
+        href={`/game-art/mobile/tutorial-${lighting}-scene-960.avif`} media="(max-width: 480px) and (max-resolution: 2dppx)" /> : null}
       <div className="tutorial-edition">
         <span className="tutorial-edition-kicker">Първата ти вечер</span>
         <label htmlFor="tutorial-game"><span>Игра</span>

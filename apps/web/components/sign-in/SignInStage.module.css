@@ -244,8 +244,8 @@
 :global(.sign-in-loading) { min-height: 70svh; padding: 48px 24px; text-align: center; }
 
 @media (max-width: 800px) {
-  :global(.sign-in-shell) { --entry-art: url("/game-art/mobile/auth/bg-sign-in-light-v2.webp"); }
-  :global(html[data-theme="dark"] .sign-in-shell) { --entry-art: url("/game-art/mobile/auth/bg-sign-in-dark-v2.webp"); }
+  :global(.sign-in-shell) { --entry-art: image-set(url("/game-art/mobile/auth/bg-sign-in-light-v2.avif") type("image/avif"), url("/game-art/mobile/auth/bg-sign-in-light-v2.webp") type("image/webp")); }
+  :global(html[data-theme="dark"] .sign-in-shell) { --entry-art: image-set(url("/game-art/mobile/auth/bg-sign-in-dark-v2.avif") type("image/avif"), url("/game-art/mobile/auth/bg-sign-in-dark-v2.webp") type("image/webp")); }
   :global(.sign-in-stage) { min-height: calc(100svh - 160px); padding: 132px 16px 28px; align-items: start; }
   :global(.sign-in-art) {
     inset: 0 0 auto;

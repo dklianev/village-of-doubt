@@ -54,6 +54,50 @@ export const variants = [
     width: 960,
     maxBytes: 120 * 1024,
   },
+  ...["werewolf", "mafia"].flatMap((family) => ["light-v1", "v3"].map((version) => ({
+    source: `assets/game-art-source/mobile/${family}/bg-hero-${version}.png`,
+    output: `apps/web/public/game-art/mobile/${family}/bg-hero-${version}-864.avif`,
+    width: 864,
+    maxBytes: 160 * 1024,
+  }))),
+  ...["day", "night"].flatMap((lighting) => [
+    {
+      source: `assets/game-art-source/tutorial-${lighting}-scene.png`,
+      output: `apps/web/public/game-art/tutorial-${lighting}-scene.avif`,
+      width: 1672,
+      maxBytes: 120 * 1024,
+    },
+    {
+      source: `assets/game-art-source/tutorial-${lighting}-scene.png`,
+      output: `apps/web/public/game-art/mobile/tutorial-${lighting}-scene-960.avif`,
+      width: 960,
+      maxBytes: 70 * 1024,
+    },
+  ]),
+  ...["light", "dark"].map((theme) => ({
+    source: `assets/game-art-source/auth/bg-sign-in-${theme}-v2.png`,
+    output: `apps/web/public/game-art/mobile/auth/bg-sign-in-${theme}-v2.avif`,
+    width: 960,
+    maxBytes: 100 * 1024,
+  })),
+  {
+    source: "assets/game-art-source/bg-landing-hero-light-v1.png",
+    output: "apps/web/public/game-art/mobile/bg-landing-hero-light-v1.avif",
+    width: 960,
+    maxBytes: 80 * 1024,
+  },
+  ...["parchment", "ornament-sheet"].map((texture) => ({
+    source: `assets/game-art-source/texture-${texture}.png`,
+    output: `apps/web/public/game-art/mobile/texture-${texture}.avif`,
+    width: 640,
+    maxBytes: 60 * 1024,
+  })),
+  {
+    source: "assets/game-art-source/legal/faq-hearth-banner.png",
+    output: "apps/web/public/game-art/mobile/legal/faq-hearth-banner.avif",
+    width: 960,
+    maxBytes: 70 * 1024,
+  },
 ];
 
 export async function generateCriticalMobileAssets({ rootDirectory = process.cwd(), assets = variants } = {}) {

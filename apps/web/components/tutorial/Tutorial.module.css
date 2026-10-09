@@ -1,7 +1,7 @@
 /* Route-local scenery; the rehearsal controls use the same readable paper in both worlds. */
 :global(body:has(.site-chrome[data-route="/tutorial"])) {
-  --art-tutorial-day: image-set(url("/game-art/tutorial-day-scene.webp") type("image/webp"));
-  --art-tutorial-night: image-set(url("/game-art/tutorial-night-scene.webp") type("image/webp"));
+  --art-tutorial-day: image-set(url("/game-art/tutorial-day-scene.avif") type("image/avif"), url("/game-art/tutorial-day-scene.webp") type("image/webp"));
+  --art-tutorial-night: image-set(url("/game-art/tutorial-night-scene.avif") type("image/avif"), url("/game-art/tutorial-night-scene.webp") type("image/webp"));
   --art-tutorial-dark: image-set(
     url("/game-art/tutorial/bg-tutorial-hall-dark-v1.avif") type("image/avif"),
     url("/game-art/tutorial/bg-tutorial-hall-dark-v1.webp") type("image/webp")
@@ -40,10 +40,14 @@
 :global(html[data-theme="light"] .tutorial-flipbook[data-family="mafia"]) { --tutorial-paper: #f2f1ec; --tutorial-selected: #e8e6e0; }
 @media (max-width: 720px) and (orientation: landscape) {
   :global(body:has(.site-chrome[data-route="/tutorial"])) {
-    --art-tutorial-day: image-set(url("/game-art/mobile/tutorial-day-scene.webp") type("image/webp"));
-    --art-tutorial-night: image-set(url("/game-art/mobile/tutorial-night-scene.webp") type("image/webp"));
     --art-tutorial-dark: image-set(url("/game-art/mobile/tutorial/bg-tutorial-hall-dark-v1.webp") type("image/webp"));
     --art-tutorial-light: image-set(url("/game-art/mobile/tutorial/bg-tutorial-hall-light-v1.webp") type("image/webp"));
+  }
+}
+@media (max-width: 480px) and (max-resolution: 2dppx) {
+  :global(body:has(.site-chrome[data-route="/tutorial"])) {
+    --art-tutorial-day: image-set(url("/game-art/mobile/tutorial-day-scene-960.avif") type("image/avif"), url("/game-art/tutorial-day-scene.webp") type("image/webp"));
+    --art-tutorial-night: image-set(url("/game-art/mobile/tutorial-night-scene-960.avif") type("image/avif"), url("/game-art/tutorial-night-scene.webp") type("image/webp"));
   }
 }
 :global(.shell.tutorial-shell) { position: relative; z-index: 0; isolation: isolate; width: min(1200px, calc(100% - 48px)); min-height: 0; padding: 24px 0 56px; }

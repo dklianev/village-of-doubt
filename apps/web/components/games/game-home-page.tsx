@@ -7,6 +7,7 @@ import { NextLinkPill } from "@/components/next-link-pill";
 import { MafiaMechanicsCallouts } from "@/components/games/MafiaMechanicsCallouts";
 import { MafiaNightTimeline } from "@/components/games/MafiaNightTimeline";
 import { RoleSpotlight } from "@/components/games/RoleSpotlight";
+import { FamilyHeroPreload } from "@/components/games/FamilyHeroPreload";
 import { SportMafiaCallout } from "@/components/games/SportMafiaCallout";
 import { VariantsChips } from "@/components/games/VariantsChips";
 import { WerewolfNightTimeline } from "@/components/games/WerewolfNightTimeline";
@@ -77,6 +78,7 @@ export function GameHero({ family }: { family: GameFamily }) {
 
   return (
     <section className={isMafia ? "game-home-hero is-mafia" : "game-home-hero is-werewolf"}>
+      <FamilyHeroPreload family={family} />
       <div className="game-home-hero__scene" aria-hidden="true">
         <div className="game-home-hero__art" />
         <div className="game-home-hero__scrim" />

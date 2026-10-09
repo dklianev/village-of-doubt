@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { preload } from "react-dom";
+import { FamilyHeroPreload } from "./FamilyHeroPreload";
 import { ArrowRight, BookOpen } from "lucide-react";
 import "@/components/games/GameRulesPage.module.css";
 import { getRulesForFamily, type GameFamily, type GameMode } from "@werewolf/shared";
@@ -220,7 +220,6 @@ const MAFIA_SCENARIOS: ScenarioCard[] = [
 ];
 
 export function GameRulesPage({ family }: { family: GameFamily }) {
-  preloadRulesHero(family);
   const rules = getRulesForFamily(family);
   const phases = family === "mafia" ? MAFIA_PHASES : WEREWOLF_PHASES;
   const scenarios = family === "mafia" ? MAFIA_SCENARIOS : WEREWOLF_SCENARIOS;
@@ -231,6 +230,7 @@ export function GameRulesPage({ family }: { family: GameFamily }) {
 
   return (
     <main className="shell rules-shell" data-faction={family} data-family={family}>
+      <FamilyHeroPreload family={family} />
       <section className="rules-playbook-hero">
         <div className="rules-hero-art" aria-hidden="true" />
         <div>
@@ -328,26 +328,4 @@ export function GameRulesPage({ family }: { family: GameFamily }) {
       </footer>
     </main>
   );
-}
-
-function preloadRulesHero(family: GameFamily) {
-  const familyPath = family === "mafia" ? "mafia" : "werewolf";
-  const desktopRoot = `/game-art/${familyPath}`;
-  const mobileRoot = `/game-art/mobile/${familyPath}`;
-  const mobileDarkVersion = family === "werewolves" ? "v3" : "v2";
-  const variants = [
-    { href: `${desktopRoot}/bg-hero-v2.avif`, media: "(min-width: 721px) and (prefers-color-scheme: dark)" },
-    { href: `${desktopRoot}/bg-hero-light-v1.avif`, media: "(min-width: 721px) and (prefers-color-scheme: light)" },
-    { href: `${mobileRoot}/bg-hero-${mobileDarkVersion}.avif`, media: "(max-width: 720px) and (prefers-color-scheme: dark)" },
-    { href: `${mobileRoot}/bg-hero-light-v1.avif`, media: "(max-width: 720px) and (prefers-color-scheme: light)" },
-  ];
-
-  for (const variant of variants) {
-    preload(variant.href, {
-      as: "image",
-      type: "image/avif",
-      fetchPriority: "high",
-      media: variant.media,
-    });
-  }
 }

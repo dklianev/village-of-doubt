@@ -20,17 +20,17 @@ describe("tutorial critical artwork", () => {
         const images = [...html.querySelectorAll<HTMLLinkElement>('link[rel="preload"][as="image"]')];
         expect(images.map((image) => [image.getAttribute("href"), image.media, image.getAttribute("fetchpriority")])).toEqual(
           game === "werewolves_classic" ? [
-            [`/game-art/tutorial-${lighting}-scene.webp`, "(min-width: 721px), (orientation: portrait)", "high"],
-            [`/game-art/mobile/tutorial-${lighting}-scene.webp`, "(max-width: 720px) and (orientation: landscape)", "high"],
+            [`/game-art/tutorial-${lighting}-scene.avif`, "(min-width: 481px), (resolution > 2dppx)", "high"],
+            [`/game-art/mobile/tutorial-${lighting}-scene-960.avif`, "(max-width: 480px) and (max-resolution: 2dppx)", "high"],
           ] : [[`/game-art/phase-board/v1/mafia/icon-phase-${lighting}-1120.webp`, "", "high"]],
         );
       },
     );
   }
 
-  it("keeps the art media queries aligned with compact landscape CSS", () => {
+  it("keeps the art media queries aligned with compact density-aware CSS", () => {
     const html = pageMarkup("game=werewolves_classic&step=1");
-    const compact = html.querySelector('link[href="/game-art/mobile/tutorial-day-scene.webp"]');
+    const compact = html.querySelector('link[href="/game-art/mobile/tutorial-day-scene-960.avif"]');
     const css = readFileSync(resolve(process.cwd(), "components/tutorial/Tutorial.module.css"), "utf8");
     expect(css).toContain(`@media ${compact!.getAttribute("media")}`);
   });
@@ -44,5 +44,14 @@ describe("tutorial critical artwork", () => {
     expect(buttons.every((button) => button.disabled)).toBe(true);
     expect(buttons.every((button) => button.getAttribute("autocomplete") === "off")).toBe(true);
     expect(html.querySelector(".tutorial-skip-link")!.getAttribute("href")).toBe("/mafia/join/ABC123");
+  });
+
+  it.each(["werewolves_classic", "mafia_free", "mafia_sport"])("sizes the %s example portrait for its rendered place", (game) => {
+    const html = pageMarkup(`game=${game}&step=1`);
+    const image = html.querySelector<HTMLImageElement>(".tutorial-role > img")!;
+    expect(image.getAttribute("sizes")).toBe("(max-width: 640px) 84px, 112px");
+    expect(image.getAttribute("srcset")).toContain("256w");
+    expect(image.getAttribute("loading")).toBe("lazy");
+    expect(image.getAttribute("fetchpriority")).toBe("low");
   });
 });

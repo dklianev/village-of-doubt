@@ -40,6 +40,12 @@ export default function FaqPage() {
           href: "/game-art/legal/faq-hearth-banner.avif",
           type: "image/avif",
           fetchPriority: "high",
+          media: "(min-width: 481px), (resolution > 2dppx)",
+        }, {
+          href: "/game-art/mobile/legal/faq-hearth-banner.avif",
+          type: "image/avif",
+          fetchPriority: "high",
+          media: "(max-width: 480px) and (max-resolution: 2dppx)",
         }]}
       />
       <JsonLd data={faqJsonLd} />

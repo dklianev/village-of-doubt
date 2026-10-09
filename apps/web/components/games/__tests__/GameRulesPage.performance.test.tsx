@@ -1,4 +1,3 @@
-import { preload } from "react-dom";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fireEvent, render, screen } from "@testing-library/react";
@@ -6,52 +5,23 @@ import sharp from "sharp";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GameRulesPage } from "../game-rules-page";
 
-vi.mock("react-dom", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("react-dom")>();
-  return { ...actual, preload: vi.fn() };
-});
-
 vi.mock("next/link", () => ({
   default: ({ prefetch, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { prefetch?: boolean }) => (
     <a data-prefetch={String(prefetch)} {...props} />
   ),
 }));
 
-const preloadMock = vi.mocked(preload);
 const rulesCss = readFileSync(resolve(process.cwd(), "components/games/GameRulesPage.module.css"), "utf8");
 
 describe("rules hero image loading", () => {
   beforeEach(() => {
-    preloadMock.mockClear();
     vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} });
   });
 
-  it.each([
-    ["werewolves", "werewolf"],
-    ["mafia", "mafia"],
-  ] as const)("preloads responsive %s hero art at high priority", (family, path) => {
-    GameRulesPage({ family });
-    const mobileDarkVersion = family === "werewolves" ? "v3" : "v2";
-
-    expect(preloadMock).toHaveBeenCalledTimes(4);
-    expect(preloadMock).toHaveBeenCalledWith(`/game-art/${path}/bg-hero-v2.avif`, {
-      as: "image",
-      type: "image/avif",
-      fetchPriority: "high",
-      media: "(min-width: 721px) and (prefers-color-scheme: dark)",
-    });
-    expect(preloadMock).toHaveBeenCalledWith(`/game-art/mobile/${path}/bg-hero-light-v1.avif`, {
-      as: "image",
-      type: "image/avif",
-      fetchPriority: "high",
-      media: "(max-width: 720px) and (prefers-color-scheme: light)",
-    });
-    expect(preloadMock).toHaveBeenCalledWith(`/game-art/mobile/${path}/bg-hero-${mobileDarkVersion}.avif`, {
-      as: "image",
-      type: "image/avif",
-      fetchPriority: "high",
-      media: "(max-width: 720px) and (prefers-color-scheme: dark)",
-    });
+  it.each(["werewolves", "mafia"] as const)("resolves the selected %s theme without OS-theme image preloads", (family) => {
+    const { container } = render(<GameRulesPage family={family} />);
+    expect(container.querySelector("script")?.textContent).toContain("document.documentElement.dataset.theme");
+    expect(container.querySelector('link[rel="preload"]')).toBeNull();
   });
 
   it("не prefetch-ва другата игра и вторичните route дървета от hero действията", () => {

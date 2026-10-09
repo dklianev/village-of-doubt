@@ -88,10 +88,8 @@ function runCriticalCli(root, args) {
 
 test("critical mobile CLI preserves masters and produces crisp, bounded, reproducible derivatives", async (t) => {
   const root = await temporaryRoot(t);
-  const sources = [
-    "mobile/bg-landing-hero-composited.png", "logo-landing-mark.png", "bg-lobby-tavern.png",
-    "mafia/bg-lobby-tavern.png", "werewolf/bg-hero-v2.png", "mafia/bg-hero-v2.png",
-  ];
+  const { variants } = await import("./generate-critical-mobile-assets.mjs");
+  const sources = [...new Set(variants.map((asset) => asset.source.slice("assets/game-art-source/".length)))];
   const originals = new Map();
   for (const source of sources) {
     const originalPath = new URL(`../assets/game-art-source/${source}`, import.meta.url);
@@ -103,12 +101,22 @@ test("critical mobile CLI preserves masters and produces crisp, bounded, reprodu
   const outputs = new Map();
   for (const pass of [1, 2]) {
     const result = spawnSync(process.execPath, [fileURLToPath(new URL("./generate-critical-mobile-assets.mjs", import.meta.url))], {
-      cwd: root, encoding: "utf8", windowsHide: true, timeout: 120_000,
+      cwd: root, encoding: "utf8", windowsHide: true, timeout: 300_000,
     });
     assert.ifError(result.error);
     assert.equal(result.status, 0, result.stdout + result.stderr);
     for (const [source, original] of originals) {
       assert.ok((await readFile(source)).equals(original), `pass ${pass}: ${source} unchanged`);
+    }
+    for (const variant of variants) {
+      const encoded = await readFile(path.join(root, variant.output));
+      const metadata = await sharp(encoded).metadata();
+      const source = await sharp(originals.get(path.join(root, variant.source))).metadata();
+      assert.equal(metadata.width, Math.min(source.width, variant.width), variant.output);
+      if (!variant.height) assert.equal(metadata.height, Math.round(source.height * metadata.width / source.width), variant.output);
+      assert.ok(encoded.length <= variant.maxBytes, `${variant.output}: runtime budget`);
+      if (pass === 1) outputs.set(variant.output, encoded);
+      else assert.ok(encoded.equals(outputs.get(variant.output)), `${variant.output}: reproducible`);
     }
     for (const [file, width, height, budget] of [
       ["bg-landing-hero-composited.avif", 760, 820, 96],

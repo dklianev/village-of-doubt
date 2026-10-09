@@ -1,6 +1,9 @@
 import { renderToStaticMarkup } from "react-dom/server";
+import { ImageConfigContext } from "next/dist/shared/lib/image-config-context.shared-runtime";
+import { imageConfigDefault } from "next/dist/shared/lib/image-config";
 import { describe, expect, it } from "vitest";
 import { ROLE_DEFINITIONS, type RoleCode } from "@werewolf/shared";
+import { roleArtPath } from "@/lib/role-art";
 import { GameHero, GameHomeClosing } from "../game-home-page";
 import { RoleSpotlight } from "../RoleSpotlight";
 import { VariantsChips } from "../VariantsChips";
@@ -9,7 +12,11 @@ import { MafiaNightTimeline } from "../MafiaNightTimeline";
 
 function markup(node: React.ReactNode) {
   const container = document.createElement("div");
-  container.innerHTML = renderToStaticMarkup(node);
+  container.innerHTML = renderToStaticMarkup(
+    <ImageConfigContext.Provider value={{ ...imageConfigDefault, qualities: [75, 85] }}>
+      {node}
+    </ImageConfigContext.Provider>,
+  );
   return container;
 }
 
@@ -32,7 +39,14 @@ describe("family home journey", () => {
       const role = link.dataset.role as RoleCode;
       expect(ROLE_DEFINITIONS[role].availableInFamilies).toContain(family);
       expect(link.textContent).toContain(ROLE_DEFINITIONS[role].nameBg);
-      expect(link.querySelector("img")?.getAttribute("src")).not.toContain("/thumbs/");
+      expect(link.querySelector("img, .role-art-frame")).toBeNull();
+      expect(link.querySelectorAll("noscript")).toHaveLength(1);
+      const fallback = document.createElement("div");
+      fallback.innerHTML = link.querySelector("noscript")!.textContent!;
+      expect(fallback.querySelectorAll("img")).toHaveLength(1);
+      const image = fallback.querySelector("img")!;
+      expect(new URL(image.src).searchParams.get("url")).toBe(roleArtPath(family, role));
+      expect(decodeURIComponent(image.src)).not.toContain("/thumbs/");
     }
     expect(html.textContent).not.toContain("всяка игра");
     expect(html.textContent).not.toContain("Кой се събужда нощем");

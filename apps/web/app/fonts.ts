@@ -1,5 +1,6 @@
 import localFont from "next/font/local";
 
+// Outline data is optimized for CSS weights 400-700; see fonts/README.md before expanding.
 export const displayFont = localFont({
   src: "./fonts/literata-reading.woff2",
   variable: "--font-literata",

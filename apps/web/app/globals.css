@@ -403,7 +403,7 @@
   :root {
     --art-landing: image-set(url("/game-art/mobile/bg-landing-hero.webp") type("image/webp"));
     --art-landing-ambient: image-set(url("/game-art/mobile/bg-landing-ambient.webp") type("image/webp"));
-    --art-landing-hero-light: image-set(url("/game-art/mobile/bg-landing-hero-light-v1.webp") type("image/webp"));
+    --art-landing-hero-light: image-set(url("/game-art/mobile/bg-landing-hero-light-v1.avif") type("image/avif"), url("/game-art/mobile/bg-landing-hero-light-v1.webp") type("image/webp"));
     --art-landing-ambient-composited: image-set(url("/game-art/mobile/bg-landing-ambient-composited.webp") type("image/webp"));
     --art-werewolf: image-set(url("/game-art/mobile/werewolf/bg-hero-v3.avif") type("image/avif"), url("/game-art/mobile/werewolf/bg-hero-v3.webp") type("image/webp"));
     --art-mafia: image-set(url("/game-art/mobile/mafia/bg-hero-v3.avif") type("image/avif"), url("/game-art/mobile/mafia/bg-hero-v3.webp") type("image/webp"));
@@ -428,8 +428,8 @@
     --transition-day: image-set(url("/game-art/mobile/transition-village-wakes.webp") type("image/webp"));
     --transition-vote: image-set(url("/game-art/mobile/transition-voting-starts.webp") type("image/webp"));
     --transition-resolution: image-set(url("/game-art/mobile/transition-resolution.webp") type("image/webp"));
-    --texture-ornament: image-set(url("/game-art/mobile/texture-ornament-sheet.webp") type("image/webp"));
-    --texture-paper: image-set(url("/game-art/mobile/texture-parchment.webp") type("image/webp"));
+    --texture-ornament: image-set(url("/game-art/mobile/texture-ornament-sheet.avif") type("image/avif"), url("/game-art/mobile/texture-ornament-sheet.webp") type("image/webp"));
+    --texture-paper: image-set(url("/game-art/mobile/texture-parchment.avif") type("image/avif"), url("/game-art/mobile/texture-parchment.webp") type("image/webp"));
     --texture-wood: image-set(url("/game-art/mobile/texture-walnut.webp") type("image/webp"));
     --texture-fog: image-set(url("/game-art/mobile/texture-fog.webp") type("image/webp"));
     --texture-wax: image-set(url("/game-art/mobile/texture-wax.webp") type("image/webp"));
@@ -467,6 +467,24 @@
   html[data-theme="light"] {
     --art-werewolf: image-set(url("/game-art/mobile/werewolf/bg-hero-light-v1.avif") type("image/avif"), url("/game-art/mobile/werewolf/bg-hero-light-v1.webp") type("image/webp"));
     --art-mafia: image-set(url("/game-art/mobile/mafia/bg-hero-light-v1.avif") type("image/avif"), url("/game-art/mobile/mafia/bg-hero-light-v1.webp") type("image/webp"));
+  }
+}
+
+/* Narrow portraits cover the hero at this density; Retina keeps the native master. */
+@media (max-width: 480px) and (max-resolution: 1.75dppx) {
+  :root {
+    --art-werewolf: image-set(url("/game-art/mobile/werewolf/bg-hero-v3-864.avif") type("image/avif"), url("/game-art/mobile/werewolf/bg-hero-v3.webp") type("image/webp"));
+    --art-mafia: image-set(url("/game-art/mobile/mafia/bg-hero-v3-864.avif") type("image/avif"), url("/game-art/mobile/mafia/bg-hero-v3.webp") type("image/webp"));
+  }
+  html[data-theme="light"] {
+    --art-werewolf: image-set(url("/game-art/mobile/werewolf/bg-hero-light-v1-864.avif") type("image/avif"), url("/game-art/mobile/werewolf/bg-hero-light-v1.webp") type("image/webp"));
+    --art-mafia: image-set(url("/game-art/mobile/mafia/bg-hero-light-v1-864.avif") type("image/avif"), url("/game-art/mobile/mafia/bg-hero-light-v1.webp") type("image/webp"));
+  }
+}
+
+@media (max-width: 480px) and (max-resolution: 2dppx) {
+  :root {
+    --art-faq: image-set(url("/game-art/mobile/legal/faq-hearth-banner.avif") type("image/avif"), url("/game-art/legal/faq-hearth-banner.webp") type("image/webp"));
   }
 }
 

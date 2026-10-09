@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
+import { dependencies } from "./package.json";
 
 const privateGameRouteSources = [
   "/mafia/create",
@@ -14,7 +15,11 @@ const nextConfig: NextConfig = {
   // Next 16.3 standalone tracing drops the module-sync branch of @swc/helpers from pnpm
   // standalone traces. Remove after vercel/next.js#97372 reaches stable.
   outputFileTracingIncludes: {
-    "/*": ["../../node_modules/.pnpm/@swc+helpers@*/node_modules/@swc/helpers/esm/**/*"],
+    "/*": [
+      "../../node_modules/.pnpm/@swc+helpers@*/node_modules/@swc/helpers/esm/**/*",
+      // Sharp's Windows binding loads adjacent libvips DLLs that static tracing misses.
+      `../../node_modules/.pnpm/@img+sharp-win32-*@${dependencies.sharp}/node_modules/@img/sharp-win32-*/lib/*.dll`,
+    ],
   },
   cacheComponents: true,
   // Preserve existing link prefetching until the app-shell migration is verified.
@@ -34,7 +39,7 @@ const nextConfig: NextConfig = {
   experimental: {
     instrumentationClientRouterTransitionEvents: true,
     // Reduce unrelated route CSS in shared chunks; keep perf:budget and browser checks.
-    cssChunking: "graph",
+    cssChunking: { type: "graph", requestCost: 100000 },
     // Preserve reusable role/config chunks across entry and in-game routes.
     turbopackChunking: {
       minChunkSize: 29000,

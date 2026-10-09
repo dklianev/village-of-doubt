@@ -2,6 +2,7 @@ import { ArrowRight, Eye, EyeOff } from "lucide-react";
 import { EmailPasswordForm } from "@/components/sign-in/EmailPasswordForm";
 import { OAuthButton } from "@/components/sign-in/OAuthButton";
 import "./SignInStage.module.css";
+import { ThemedHeroPreload } from "@/components/themed-hero-preload";
 
 export const SIGN_IN_PROVIDERS = {
   google: {
@@ -21,6 +22,7 @@ export function SignInStage({ redirectTo }: { redirectTo: string }) {
 
   return (
     <section className="sign-in-stage">
+      <ThemedHeroPreload scene="sign-in" />
       <div className="sign-in-art" aria-hidden="true" />
       <div className="sign-in-content">
         <section className="sign-in-panel" aria-label="Вход и регистрация">
