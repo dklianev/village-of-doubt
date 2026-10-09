@@ -24,18 +24,31 @@ const SCENES = [
 
 const GAMES = ["werewolves_classic", "mafia_free", "mafia_sport"] as const;
 
-async function checkLayout(page: Page) {
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  const overflow = await page.locator(".tutorial-flipbook").evaluate((element) => {
+async function findContentOverflow(page: Page) {
+  return page.locator(".tutorial-flipbook").evaluate((element) => {
     const bounds = element.getBoundingClientRect();
     return [...element.querySelectorAll<HTMLElement>("h1, h2, p, button, a, select, label, legend")].flatMap((node) => {
       const rect = node.getBoundingClientRect();
       if (!rect.width || !rect.height || getComputedStyle(node).position === "absolute") return [];
       const outside = rect.left < bounds.left - 1 || rect.right > bounds.right + 1 || rect.bottom > bounds.bottom + 1;
-      return outside || node.scrollWidth > node.clientWidth + 1 ? [node.textContent?.trim()] : [];
+      let contentOverflow = node.scrollWidth > node.clientWidth + 1;
+      if (node.matches(".btn") && ["hidden", "clip"].includes(getComputedStyle(node).overflowX)) {
+        // The clipped hover sheen contributes to scrollWidth, but is not button content.
+        const range = document.createRange();
+        range.selectNodeContents(node);
+        contentOverflow = [...range.getClientRects()].some((content) =>
+          content.width > 0 && content.height > 0 &&
+          (content.left < rect.left - 1 || content.right > rect.right + 1 ||
+            content.top < rect.top - 1 || content.bottom > rect.bottom + 1));
+      }
+      return outside || contentOverflow ? [node.textContent?.trim()] : [];
     });
   });
-  expect(overflow).toEqual([]);
+}
+
+async function checkLayout(page: Page) {
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect(await findContentOverflow(page)).toEqual([]);
   const navigationOverlap = await page.locator(".tutorial-nav").evaluate((nav) => {
     const children = [...nav.children].map((child) => ({ text: child.textContent?.trim(), rect: child.getBoundingClientRect() }));
     return children.flatMap((first, index) => children.slice(index + 1).flatMap((second) => {
@@ -79,6 +92,29 @@ function monitor(page: Page) {
 }
 
 for (const theme of ["light", "dark"] as const) {
+  for (const width of [390, 1440]) {
+    test(`tutorial geometry ${theme} ${width}: hover sheen is clipped but real content must fit`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await prepare(page, theme);
+      await page.goto("/tutorial?step=1&game=werewolves_classic");
+      const next = page.getByRole("button", { name: "Следваща сцена" });
+      await expect(next).toBeEnabled();
+      await page.evaluate(() => document.fonts.ready);
+      await next.hover();
+      await expect.poll(() => next.evaluate((node) => node.scrollWidth > node.clientWidth + 1)).toBe(true);
+      await checkLayout(page);
+      await next.click();
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(SCENES[1]!);
+      await checkLayout(page);
+
+      await next.evaluate((node) => {
+        node.style.width = "24px";
+        node.style.minWidth = "0";
+        node.style.padding = "0";
+      });
+      expect(await findContentOverflow(page)).toContain("Напред");
+    });
+  }
   for (const { width, game } of [320, 390, 768, 1440].flatMap((width) => GAMES.map((game) => ({ width, game })))) {
     test(`tutorial polish ${theme} ${width} ${game}: six scenes and committed practice`, async ({ page }, testInfo) => {
       await page.setViewportSize({ width, height: 900 });
