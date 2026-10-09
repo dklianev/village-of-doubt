@@ -9,7 +9,7 @@ vi.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams(r
 
 async function pageMarkup(query: string) {
   route.query = query;
-  const stream = await renderToReadableStream(<TutorialPage params={Promise.resolve({})}
+  const stream = await renderToReadableStream(<TutorialPage
     searchParams={Promise.resolve(Object.fromEntries(new URLSearchParams(query)))} />);
   await stream.allReady;
   return new DOMParser().parseFromString(await new Response(stream).text(), "text/html");

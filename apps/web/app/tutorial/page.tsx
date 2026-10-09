@@ -31,7 +31,11 @@ const tutorialJsonLd = {
   ],
 };
 
-async function TutorialContent({ searchParams }: PageProps<"/tutorial">) {
+type TutorialPageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+async function TutorialContent({ searchParams }: TutorialPageProps) {
   // Resolve URL data on the server so the scene and its preload precede hydration.
   await searchParams;
   return <TutorialFlipbook setupScenes={{
@@ -41,7 +45,7 @@ async function TutorialContent({ searchParams }: PageProps<"/tutorial">) {
   }} />;
 }
 
-export default function TutorialPage(props: PageProps<"/tutorial">) {
+export default function TutorialPage(props: TutorialPageProps) {
   return (
     <main className="shell tutorial-shell">
       <JsonLd data={tutorialJsonLd} />
