@@ -734,6 +734,31 @@ test("create mastheads reproduce as bounded WebPs without redundant formats or c
   }
 });
 
+test("tutorial ambient light AVIF has a scoped native-size recipe", async (t) => {
+  const file = "tutorial/bg-tutorial-hall-light-v1.png";
+  for (const input of [file, path.join(...file.split("/"))]) {
+    assert.deepEqual(optimizer.avifQualityStepsFor(input), [45]);
+    assert.equal(maxWidthFor(input), 2560);
+    assert.deepEqual(optimizer.webpQualityStepsFor(input), [82, 78, 74, 70]);
+  }
+  for (const other of ["tutorial/bg-tutorial-hall-dark-v1.png", "tutorial/bg-tutorial-hall-light-v2.png", "other/bg-tutorial-hall-light-v1.png"]) {
+    assert.deepEqual(optimizer.avifQualityStepsFor(other), [60, 56, 55]);
+  }
+  const root = await temporaryAssetRoot(t);
+  const input = fileURLToPath(new URL(`../assets/game-art-source/${file}`, import.meta.url));
+  const original = await readFile(input);
+  const output = path.join(root, "hall.avif");
+  await optimizer.writeAvif(sharp, input, output, file, maxWidthFor(file), avifBudgetKbFor(file));
+  const actual = await readFile(output);
+  const expected = await sharp(original).rotate().resize({ width: 2560, fit: "inside", withoutEnlargement: true })
+    .avif({ quality: 45, effort: 6 }).toBuffer();
+  assert.deepEqual(actual, expected);
+  assert.ok(actual.length < 100 * 1024);
+  const metadata = await sharp(actual).metadata();
+  assert.deepEqual([metadata.width, metadata.height], [1672, 941]);
+  assert.deepEqual(await readFile(input), original);
+});
+
 test("exported AVIF writer preserves dimensions, masters and previous output on budget failure", async (t) => {
   assert.equal(typeof optimizer.writeAvif, "function");
   const root = await temporaryAssetRoot(t);

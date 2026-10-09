@@ -373,6 +373,8 @@ export function webpQualityStepsFor(file, { preferredQuality = quality } = {}) {
 }
 
 export function avifQualityStepsFor(file) {
+  // This ambient art sits behind the near-opaque light paper; retain its native crop.
+  if (normalizeAssetPath(file) === "tutorial/bg-tutorial-hall-light-v1.png") return [45];
   return qualitySteps(60, normalizeAssetPath(file).startsWith("mobile/") ? 50 : 55);
 }
 
