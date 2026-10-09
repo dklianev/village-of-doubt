@@ -91,7 +91,7 @@ export const variants = [
     source: `assets/game-art-source/texture-${texture}.png`,
     output: `apps/web/public/game-art/mobile/texture-${texture}.avif`,
     width: 640,
-    quality: texture === "parchment" ? 40 : 55,
+    quality: texture === "parchment" ? 30 : 55,
     maxBytes: 60 * 1024,
   })),
   {

@@ -78,7 +78,7 @@ test("critical AVIF quality overrides retain source pixels and leave other deriv
   const original = await sharp(pixels, { raw: { width, height, channels: 3 } }).png().toBuffer();
   await mkdir(path.dirname(path.join(root, source)), { recursive: true });
   await writeFile(path.join(root, source), original);
-  for (const quality of [undefined, 40, 50]) {
+  for (const quality of [undefined, 30, 40, 50]) {
     const output = `apps/web/public/game-art/mobile/quality-${quality ?? "default"}.avif`;
     await generateCriticalMobileAssets({ rootDirectory: root, assets: [{ source, output, width, quality }] });
     const encoded = await readFile(path.join(root, output));
@@ -92,7 +92,7 @@ test("critical AVIF quality overrides retain source pixels and leave other deriv
   assert.deepEqual(variants.filter((variant) => variant.quality != null && variant.quality !== 55)
     .map(({ output, quality }) => [output, quality]), [
     ["apps/web/public/game-art/mobile/werewolf/bg-hero-light-v1-864.avif", 50],
-    ["apps/web/public/game-art/mobile/texture-parchment.avif", 40],
+    ["apps/web/public/game-art/mobile/texture-parchment.avif", 30],
   ]);
 });
 
