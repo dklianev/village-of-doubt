@@ -392,16 +392,22 @@ for (const browserName of ["chromium", "firefox", "webkit"] as const) {
     { overlay: "native-delete", width: 1440, theme: "dark" },
     { overlay: "native-delete", width: 390, theme: "light" },
   ] as const) {
-    test(`account stale overlay ${browserName} ${width} ${theme} ${overlay}: persisted pageshow covers private UI and leaves an operable home link`, async ({ playwright, baseURL }, testInfo) => {
+    // Runner-owned contexts retain diagnostics and close even on a test timeout.
+    const lifecycleTest = test.extend({
+      browserName,
+      launchOptions: { ignoreDefaultArgs: ["--disable-back-forward-cache"] },
+      viewport: { width, height: 844 },
+      contextOptions: { reducedMotion: "reduce" },
+      serviceWorkers: "block",
+      trace: "retain-on-failure",
+    });
+    lifecycleTest(`account stale overlay ${browserName} ${width} ${theme} ${overlay}: persisted pageshow covers private UI and leaves an operable home link`, async ({ context, page, baseURL }, testInfo) => {
       baseURL ??= "http://127.0.0.1:3000";
       const homeURL = new URL("/", baseURL).href;
-      const browser = await playwright[browserName].launch({ ignoreDefaultArgs: ["--disable-back-forward-cache"] });
       let release!: () => void;
       const responseGate = new Promise<void>((resolve) => { release = resolve; });
       try {
-        const context = await browser.newContext({ baseURL, viewport: { width, height: 844 }, reducedMotion: "reduce", serviceWorkers: "block" });
         const session = await mockSession(context, new URL(baseURL).origin, theme);
-        const page = await context.newPage();
         const errors: string[] = [];
         page.on("pageerror", (error) => errors.push(error.message));
         await page.goto(`${accountURL}#account-identity`);
@@ -519,7 +525,6 @@ for (const browserName of ["chromium", "firefox", "webkit"] as const) {
         testInfo.annotations.push({ type: "pageshow", description: "Synthetic persisted event; no claim of a native BFCache restore." });
       } finally {
         release();
-        await browser.close();
       }
     });
   }

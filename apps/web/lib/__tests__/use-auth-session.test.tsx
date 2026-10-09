@@ -98,6 +98,80 @@ describe("useAuthSession", () => {
     expect(pendingDuringRefresh).toBe("settled");
   });
 
+  it.each(["success", "error"] as const)("settles bootstrap pending after a superseding focus refresh completes with %s", async (outcome) => {
+    let resolveResponse!: (response: Response) => void;
+    let rejectResponse!: (reason: unknown) => void;
+    const fetchMock = vi.fn(() => new Promise<Response>((resolve, reject) => {
+      resolveResponse = resolve;
+      rejectResponse = reject;
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { rerender } = render(<SessionProbe initialSession={null} />);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    act(() => window.dispatchEvent(new Event("focus")));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId("pending-state")).toHaveTextContent("pending");
+
+    await act(async () => {
+      if (outcome === "success") {
+        resolveResponse({
+          ok: true,
+          json: () => Promise.resolve({ user: { id: "user-1", name: "Synthetic user" } }),
+        } as Response);
+      } else {
+        rejectResponse(new TypeError("Network request failed"));
+      }
+    });
+
+    // A cached success reports settled independently of the hook's pending state.
+    invalidateAuthSessionBootstrapCache();
+    rerender(<SessionProbe initialSession={null} />);
+    expect(screen.getByTestId("session-state")).toHaveTextContent(outcome === "success" ? "Synthetic user" : "guest");
+    expect(screen.getByTestId("error-state")).toHaveTextContent(outcome === "error" ? "error" : "ok");
+    expect(screen.getByTestId("pending-state")).toHaveTextContent("settled");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(["success", "error"] as const)("ignores an older bootstrap %s while a newer auth-change request is pending", async (outcome) => {
+    const resolvers: Array<(response: Response) => void> = [];
+    const fetchMock = vi.fn(() => new Promise<Response>((resolve) => {
+      resolvers.push(resolve);
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { rerender } = render(<SessionProbe initialSession={null} />);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    act(() => window.dispatchEvent(new Event("focus")));
+    act(() => window.dispatchEvent(new Event("auth-session-change")));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+
+    await act(async () => {
+      resolvers[0]!({
+        ok: outcome === "success",
+        json: () => Promise.resolve({ user: { id: "old", name: "Old user" } }),
+      } as Response);
+    });
+    invalidateAuthSessionBootstrapCache();
+    rerender(<SessionProbe initialSession={null} />);
+    expect(screen.getByTestId("session-state")).toHaveTextContent("guest");
+    expect(screen.getByTestId("error-state")).toHaveTextContent("ok");
+    expect(screen.getByTestId("pending-state")).toHaveTextContent("pending");
+
+    await act(async () => {
+      resolvers[1]!({
+        ok: true,
+        json: () => Promise.resolve({ user: { id: "new", name: "New user" } }),
+      } as Response);
+    });
+    invalidateAuthSessionBootstrapCache();
+    rerender(<SessionProbe initialSession={null} />);
+    expect(screen.getByTestId("session-state")).toHaveTextContent("New user");
+    expect(screen.getByTestId("error-state")).toHaveTextContent("ok");
+    expect(screen.getByTestId("pending-state")).toHaveTextContent("settled");
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
   it("deduplicates simultaneous refreshes across hook instances", async () => {
     let resolveResponse: ((response: Response) => void) | undefined;
     const fetchMock = vi.fn(
