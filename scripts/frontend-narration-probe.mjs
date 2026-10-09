@@ -51,9 +51,9 @@ const unavailable = new WeakSet();
 const manifest = JSON.parse(readFileSync(new URL("../apps/web/public/audio/narration/manifest.v1.json", import.meta.url), "utf8"));
 
 export async function enableNarrationProbe(page, family) {
-  // The lobby has no signal toolbar. Restore the fixture's saved preference;
-  // the ordinary Ready click below supplies the browser's required user gesture.
-  await page.waitForLoadState("networkidle");
+  // Callers await the connected room UI. Background requests must not gate the
+  // init-script observer; the ordinary Ready click supplies the audio gesture.
+  await page.waitForFunction(() => typeof window.__frontendNarration?.read === "function");
   const support = await page.evaluate(() => window.__frontendNarration.read());
   if (support.unavailable) {
     assert.ok(process.platform === "win32" && page.context().browser().browserType().name() === "webkit",

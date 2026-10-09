@@ -48,12 +48,39 @@ test("silence assertion rejects duplicate starts and continued playback", async 
   await assert.rejects(assertNarrationSilent({ evaluate: async () => ({ events: [{}], active: 1 }) }, 1), /kept playing/);
 });
 
+test("enabling observes probe readiness without waiting for background network activity", async () => {
+  let ready = false;
+  const page = {
+    waitForLoadState: async () => { throw new Error("The room still has pending background requests"); },
+    waitForFunction: async (predicate) => {
+      const check = (window) => runInNewContext(`(${predicate.toString()})()`, { window });
+      assert.equal(check({}), false);
+      assert.equal(check({ __frontendNarration: {} }), false);
+      assert.equal(check({ __frontendNarration: { read: () => ({ events: [], active: 0 }) } }), true);
+      ready = true;
+    },
+    evaluate: async () => {
+      assert.equal(ready, true);
+      return { events: [], active: 0, peak: 0 };
+    },
+  };
+  await enableNarrationProbe(page, "mafia");
+  await assertNarrationSilent(page, 0);
+});
+
+test("enabling fails when the narration observer never becomes ready", async () => {
+  await assert.rejects(enableNarrationProbe({
+    waitForFunction: async () => { throw new Error("Narration observer was not installed"); },
+    evaluate: async () => assert.fail("An absent observer must not be read"),
+  }, "mafia"), /Narration observer was not installed/);
+});
+
 test("missing Web Audio is explicit and fails outside the Windows WebKit limitation", async () => {
   const window = {};
   runInNewContext(`(${installNarrationProbe.toString()})()`, { window });
   assert.equal(window.__frontendNarration.read().unavailable, "Web Audio API unavailable");
   const page = {
-    waitForLoadState: async () => {},
+    waitForFunction: async () => {},
     evaluate: async () => window.__frontendNarration.read(),
     context: () => ({ browser: () => ({ browserType: () => ({ name: () => "chromium" }) }) }),
   };
