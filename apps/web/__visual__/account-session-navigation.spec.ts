@@ -405,6 +405,9 @@ for (const browserName of ["chromium", "firefox", "webkit"] as const) {
         const errors: string[] = [];
         page.on("pageerror", (error) => errors.push(error.message));
         await page.goto(`${accountURL}#account-identity`);
+        // visualAuth renders the account independently of the mocked chrome
+        // session. Establish that session before testing its document lifecycle.
+        await page.locator("header.site-chrome [data-auth-state='authenticated']").waitFor({ state: "attached" });
         await page.locator("#account-name").fill("Synthetic stale private draft");
         await expect.poll(() => page.evaluate(() => localStorage.getItem("auth-logout-revision"))).toBe("0");
         if (overlay === "native-delete") {

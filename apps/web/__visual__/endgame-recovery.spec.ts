@@ -64,14 +64,50 @@ for (const family of ["werewolves", "mafia"] as const) {
           await expect(link).toBeInViewport();
           expect(await link.evaluate((element) => element.closest("[inert]") === null)).toBe(true);
         }
+        const familyPath = family === "mafia" ? "/mafia" : "/werewolf";
+        const mode = family === "mafia" ? "mafia_sport" : "werewolves_classic";
+        const repeatHref = await links.nth(0).getAttribute("href");
+        expect(repeatHref).toBeTruthy();
+        const repeatUrl = new URL(repeatHref!, page.url());
+        expect(repeatUrl.origin).toBe(new URL(page.url()).origin);
+        expect(repeatUrl.pathname).toBe(`${familyPath}/create`);
+        expect(repeatUrl.hash).toBe("");
+        expect(Object.fromEntries(repeatUrl.searchParams)).toMatchObject({
+          mode,
+          players: family === "mafia" ? "10" : "12",
+          maxPlayers: family === "mafia" ? "10" : "12",
+          preset: "manual",
+          communication: "built_in_chat",
+          narrator: "automatic",
+          tempo: family === "mafia" ? "sport_mafia" : "normal_online",
+        });
+        await expect(links.nth(1)).toHaveAttribute("href", "/history");
+        await expect(links.nth(2)).toHaveAttribute("href", `${familyPath}/roles`);
+
+        // This fixture is signed out. Only create requires authentication; wait
+        // for its final redirect, not the transient create URL during streaming.
+        const createReturnPath = family === "mafia" ? `/mafia/create?mode=${mode}` : "/werewolf/create";
+        const expectedPath = connection === "lost"
+          ? `/sign-in?redirect=${encodeURIComponent(createReturnPath)}`
+          : connection === "error" ? "/history" : `${familyPath}/roles`;
+        const expectedUrl = new URL(expectedPath, page.url()).href;
         // Exercise each finale destination across the three connection states.
         const destination = links.nth(connections.indexOf(connection));
-        const href = await destination.getAttribute("href");
-        expect(href).toBeTruthy();
-        const expectedUrl = new URL(href!, page.url()).href;
         expect(errors, "Finale console and runtime errors").toEqual([]);
         await destination.click();
         await expect(page).toHaveURL(expectedUrl);
+        if (connection === "lost") {
+          const form = page.locator("main form.email-form");
+          await expect(form).toBeVisible();
+          await expect(form.getByLabel("Имейл", { exact: true })).toBeVisible();
+          await expect(form.getByLabel("Парола", { exact: true })).toBeVisible();
+          await expect(form.getByRole("button", { name: "Влез", exact: true })).toBeVisible();
+        } else {
+          const heading = connection === "error"
+            ? "Архив на масата"
+            : family === "mafia" ? "Роли в Мафия" : "Роли във Върколак";
+          await expect(page.getByRole("heading", { level: 1, name: heading, exact: true })).toBeVisible();
+        }
       });
     }
   }
