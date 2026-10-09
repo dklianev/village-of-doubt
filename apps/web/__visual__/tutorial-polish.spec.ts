@@ -488,6 +488,8 @@ test("tutorial regression: delayed hydration disables navigation and preserves t
     await page.goto("/tutorial?step=1", { waitUntil: "commit" });
     await expect(selector).toBeVisible();
     await expect.poll(() => delayedScripts).toBeGreaterThan(0);
+    await expect(page.locator(".tutorial-slide-art")).toHaveCSS("background-image", /tutorial-day-scene/);
+    await expect(page.locator(".tutorial-flipbook")).toHaveCSS("color", "rgb(35, 50, 43)");
     await expect(selector).toBeDisabled();
     await expect(page.getByRole("button", { name: "Следваща сцена" })).toBeDisabled();
     await expect(page.getByRole("button", { name: "Избери игра", exact: true })).toBeDisabled();

@@ -29,8 +29,7 @@
   --tutorial-metal: #795421;
   --tutorial-selected: #e3e8dd;
 }
-:global(html[data-theme="dark"] body:has(.site-chrome[data-route="/tutorial"])::before),
-:global(html[data-theme="light"] body:has(.site-chrome[data-route="/tutorial"])::before) { background: var(--art-tutorial) center / cover no-repeat; }
+:global(html:is([data-theme="dark"], [data-theme="light"]) body:has(.site-chrome[data-route="/tutorial"])::before) { background: var(--art-tutorial) center / cover no-repeat; }
 :global(.tutorial-flipbook[data-family="mafia"]) {
   --art-tutorial-day: image-set(url("/game-art/phase-board/v1/mafia/icon-phase-day-1120.webp") type("image/webp"));
   --art-tutorial-night: image-set(url("/game-art/phase-board/v1/mafia/icon-phase-night-1120.webp") type("image/webp"));
@@ -51,8 +50,7 @@
   }
 }
 :global(.shell.tutorial-shell) { position: relative; z-index: 0; isolation: isolate; width: min(1200px, calc(100% - 48px)); min-height: 0; padding: 24px 0 56px; }
-:global(html[data-theme="dark"] .tutorial-shell::before),
-:global(html[data-theme="light"] .tutorial-shell::before) { content: none; }
+:global(html:is([data-theme="dark"], [data-theme="light"]) .tutorial-shell::before) { content: none; }
 :global(.tutorial-flipbook) { min-width: 0; color: var(--tutorial-ink); background: var(--tutorial-paper); letter-spacing: 0; }
 :global(.tutorial-flipbook :is(button,a,input,select)) { letter-spacing: 0; }
 :global(.tutorial-flipbook :is(button,a,input,select):focus-visible) { outline: 2px solid var(--tutorial-accent); outline-offset: 4px; }
@@ -210,4 +208,7 @@
   :global(.tutorial-nav-counter) { grid-row: 2; grid-column: 1 / -1; font-size: 0.68rem; }
   :global(.tutorial-nav-counter strong) { display: none; }
 }
-@media (prefers-reduced-motion: reduce) { :global(.tutorial-progress-fill) { transition: none; } }
+@media (prefers-reduced-motion: reduce) {
+  :global(html:is([data-theme="dark"], [data-theme="light"]) body:has(.site-chrome[data-route="/tutorial"])::before) { animation: none; }
+  :global(.tutorial-progress-fill) { transition: none; }
+}

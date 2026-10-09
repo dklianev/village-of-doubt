@@ -192,6 +192,12 @@ async function testTutorialAndOfflineShell() {
     await expectText(page, "Масата се събира.");
     await expectText(page, "Сцена 1 от 6");
     await assertNoHorizontalOverflow(page, "tutorial screen");
+    for (const theme of ["light", "dark"]) {
+      await page.evaluate((theme) => { document.documentElement.dataset.theme = theme; }, theme);
+      await page.waitForFunction((theme) => getComputedStyle(document.body, "::before").backgroundImage
+        .includes(`/tutorial/bg-tutorial-hall-${theme}-v1.avif`), theme);
+      await assertCssBackgroundImagesLoaded(page, `tutorial ${theme} scenery`);
+    }
 
     await goto(page, "/offline", "offline screen");
     await expectText(page, "Няма връзка");

@@ -264,7 +264,7 @@ function checkLandingLayoutContracts() {
   const lightBackdropStart = css.indexOf('html[data-theme="light"] .landing-shell::before');
   const lightBackdropBlock =
     lightBackdropStart >= 0 ? css.slice(lightBackdropStart, css.indexOf("}", lightBackdropStart)) : "";
-  const tutorialLightBackdropStart = tutorialCss.indexOf('html[data-theme="light"] .tutorial-shell::before');
+  const tutorialLightBackdropStart = tutorialCss.indexOf('html:is([data-theme="dark"], [data-theme="light"]) .tutorial-shell::before');
   const tutorialLightBackdropBlock =
     tutorialLightBackdropStart >= 0 ? tutorialCss.slice(tutorialLightBackdropStart, tutorialCss.indexOf("}", tutorialLightBackdropStart)) : "";
   const lightTheatreBackdropStart = css.indexOf('html[data-theme="light"] body:has(.site-chrome[data-route="/"])::before');
@@ -346,6 +346,7 @@ function checkLandingLayoutContracts() {
   }
   assert(lightBackdropBlock.includes(".lobby-shell::before"), "Legacy create light theme should match the old shared parchment backdrop.");
   assert(lightBackdropBlock.includes("display: none;"), "Light theme should use the shared homepage body background instead of page-art backdrops.");
+  assert(tutorialLightBackdropBlock.includes("content: none;"), "Tutorial must disable the duplicate shell backdrop in both themes.");
   assert(
     lightTheatreBackdropBlock.includes("#f7ead0") &&
       lightTheatreBackdropBlock.includes("animation: ambient-drift-light 72s") &&

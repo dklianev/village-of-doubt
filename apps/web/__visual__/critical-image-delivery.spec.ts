@@ -8,6 +8,22 @@ const profiles = [
   { width: 1440, deviceScaleFactor: 1 },
 ];
 
+for (const theme of ["light", "dark"] as const) {
+  test(`tutorial paints the ${theme} hall backdrop after production CSS optimization`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.addInitScript((theme) => {
+      localStorage.setItem("werewolf-theme", theme);
+      localStorage.setItem("cookie-consent", "1");
+    }, theme);
+    await page.goto("/tutorial");
+    await expect(page.locator('.site-chrome[data-route="/tutorial"]')).toBeVisible();
+    await expect.poll(() => page.evaluate(() => getComputedStyle(document.body, "::before").backgroundImage))
+      .toContain(`/tutorial/bg-tutorial-hall-${theme}-v1.avif`);
+    expect(await page.evaluate(() => getComputedStyle(document.body, "::before").backgroundImage))
+      .not.toContain("texture-ornament");
+  });
+}
+
 for (const profile of profiles) {
   test.describe(`critical image delivery ${profile.width} ${profile.deviceScaleFactor}x`, () => {
     test.use({ viewport: { width: profile.width, height: 900 }, deviceScaleFactor: profile.deviceScaleFactor });

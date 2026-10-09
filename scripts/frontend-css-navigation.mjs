@@ -114,10 +114,23 @@ async function capture(page, target, theme) {
           clearTimeout(timer);
         }
       };
-      await Promise.all([
-        boundedReady(Promise.all([...element.querySelectorAll("img")].map((image) => image.decode())), "image decoding"),
-        boundedReady(document.fonts.ready, "font readiness"),
-      ]);
+      const imageListeners = new AbortController();
+      try {
+        await Promise.all([
+          boundedReady(Promise.all([...element.querySelectorAll("img")].map(async (image) => {
+            // Firefox can reject decode() before a lazy image has a current request.
+            if (!image.complete) await new Promise((resolve, reject) => {
+              const options = { once: true, signal: imageListeners.signal };
+              image.addEventListener("load", resolve, options);
+              image.addEventListener("error", () => reject(new Error(`${label}: image failed to load`)), options);
+            });
+            await image.decode();
+          })), "image decoding"),
+          boundedReady(document.fonts.ready, "font readiness"),
+        ]);
+      } finally {
+        imageListeners.abort();
+      }
       const frame = () => new Promise((resolve) => requestAnimationFrame(resolve));
       const styles = (pseudo = null) => {
         const computed = getComputedStyle(element, pseudo);

@@ -491,10 +491,11 @@ for (const theme of ["dark", "light"] as const) {
     const stage = page.locator(".tutorial-slide-stage:visible");
     await expect(stage).toHaveAttribute("data-tutorial-scene", "setup");
     const compactScene = await page.evaluate(() => matchMedia("(max-width: 480px) and (max-resolution: 2dppx)").matches);
-    const expectedAmbient = "/game-art/mobile/texture-ornament-sheet.avif";
+    const expectedAmbient = `/game-art/tutorial/bg-tutorial-hall-${theme}-v1.avif`;
     await expect.poll(async () => (await paintedBackground(page.locator("body"))).path).toBe(expectedAmbient);
     const ambientBefore = await paintedBackground(page.locator("body"));
-    expect(ambientBefore.backgroundSize).toContain("860px 860px");
+    expect(ambientBefore.backgroundSize).toBe("cover");
+    expect(await page.evaluate(() => getComputedStyle(document.body, "::before").animationName)).toBe("none");
     for (const [scene, art] of [["setup", "day"], ["night", "night"]]) {
       await expect(stage).toHaveAttribute("data-tutorial-scene", scene!);
       const artWindow = stage.locator(".tutorial-slide-art");

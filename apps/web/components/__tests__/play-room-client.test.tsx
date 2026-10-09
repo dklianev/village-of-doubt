@@ -307,8 +307,12 @@ describe("PlayRoomClient orchestrator", () => {
     const room = { roomId: "instance-1", send: vi.fn(), onMessage: vi.fn() };
     mockHooks("role_reveal", { room, privateRole: role });
     const first = render(<PlayRoomClient code="ABCD" />);
-    fireEvent.keyDown(await screen.findByRole("dialog", { name: "Твоята тайна карта" }), { key: "Escape" });
+    const dialog = await screen.findByRole("dialog", { name: "Твоята тайна карта" });
+    // The lazy portal can appear before useModal installs its keyboard listener.
+    await waitFor(() => expect(within(dialog).getByRole("button", { name: "Обърни картата" })).toHaveFocus());
+    fireEvent.keyDown(dialog, { key: "Escape" });
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole("button", { name: "Виж ролята си" })).toHaveFocus());
     first.unmount();
 
     const second = render(<PlayRoomClient code="ABCD" />);

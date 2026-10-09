@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
-import { chromium } from "playwright";
+import { chromium, firefox, webkit } from "playwright";
 import { assertFrontendCssNavigation } from "./frontend-css-navigation.mjs";
 
 const baseUrl = "http://127.0.0.1:47819";
@@ -8,9 +8,10 @@ const routes = ["/faq", "/werewolf/rules", "/mafia/rules"];
 let browser;
 
 before(async () => {
-  browser = await chromium.launch({
+  const name = process.env.FRONTEND_E2E_BROWSER ?? "chromium";
+  browser = await { chromium, firefox, webkit }[name].launch({
     headless: true,
-    ...(process.env.PLAYWRIGHT_CHANNEL ? { channel: process.env.PLAYWRIGHT_CHANNEL } : {}),
+    ...(name === "chromium" && process.env.PLAYWRIGHT_CHANNEL ? { channel: process.env.PLAYWRIGHT_CHANNEL } : {}),
   });
 });
 after(async () => { await browser?.close(); });
@@ -101,6 +102,99 @@ test("bounds stalled image decoding", { timeout: 15_000 }, async (t) => {
     assertFrontendCssNavigation(page, baseUrl, "light"),
     /\/faq \(light\) \.faq-hearth-hero: image decoding did not settle within 5 seconds/,
   );
+});
+
+test("waits for a pending image request before decoding, without retrying", async (t) => {
+  const page = await fixture(t);
+  const decodes = [];
+  await page.exposeFunction("recordImageDecode", (ready) => decodes.push(ready));
+  await page.addInitScript(() => {
+    document.addEventListener("DOMContentLoaded", () => {
+      const hero = document.querySelector(".faq-hearth-hero");
+      if (!hero) return;
+      const image = document.createElement("img");
+      image.style.position = "absolute";
+      let ready = false;
+      Object.defineProperty(image, "complete", { get: () => ready });
+      // Model Firefox's lazy request before source selection, then its load event.
+      const addListener = image.addEventListener.bind(image);
+      image.addEventListener = (type, listener, options) => {
+        addListener(type, listener, options);
+        if (type === "load") queueMicrotask(() => {
+          ready = true;
+          image.dispatchEvent(new Event("load"));
+        });
+      };
+      image.decode = async () => {
+        const wasReady = ready;
+        await window.recordImageDecode(wasReady);
+        if (!wasReady) throw new DOMException("Invalid image request.", "EncodingError");
+      };
+      hero.append(image);
+    }, { once: true });
+  });
+  const results = await assertFrontendCssNavigation(page, baseUrl, "dark");
+  assert.deepEqual(results.map((result) => result.route), routes);
+  assert.deepEqual(decodes, [true]);
+});
+
+test("rejects a pending image request that fails to load", async (t) => {
+  const page = await fixture(t);
+  await page.addInitScript(() => {
+    document.addEventListener("DOMContentLoaded", () => {
+      const image = document.createElement("img");
+      Object.defineProperty(image, "complete", { value: false });
+      const addListener = image.addEventListener.bind(image);
+      image.addEventListener = (type, listener, options) => {
+        addListener(type, listener, options);
+        if (type === "error") queueMicrotask(() => image.dispatchEvent(new Event("error")));
+      };
+      document.querySelector(".faq-hearth-hero")?.append(image);
+    }, { once: true });
+  });
+  await assert.rejects(
+    assertFrontendCssNavigation(page, baseUrl, "dark"),
+    /\/faq \(dark\) \.faq-hearth-hero: image failed to load/,
+  );
+});
+
+test("rejects an already complete broken image", async (t) => {
+  const page = await fixture(t);
+  const decodes = [];
+  await page.exposeFunction("recordImageDecode", (state) => decodes.push(state));
+  await page.addInitScript(() => {
+    document.addEventListener("DOMContentLoaded", () => {
+      const image = document.createElement("img");
+      image.src = "data:image/png;base64,broken";
+      const decode = image.decode.bind(image);
+      image.decode = async () => {
+        await window.recordImageDecode({ complete: image.complete, naturalWidth: image.naturalWidth });
+        await decode();
+      };
+      document.querySelector(".faq-hearth-hero")?.append(image);
+    }, { once: true });
+  });
+  await assert.rejects(assertFrontendCssNavigation(page, baseUrl, "dark"), /image|decode|source/i);
+  assert.deepEqual(decodes, [{ complete: true, naturalWidth: 0 }]);
+});
+
+test("bounds stalled image loading before decoding", { timeout: 15_000 }, async (t) => {
+  const page = await fixture(t);
+  const decodes = [];
+  await page.exposeFunction("recordImageDecode", () => decodes.push(true));
+  await page.addInitScript(() => {
+    document.addEventListener("DOMContentLoaded", () => {
+      const image = document.createElement("img");
+      Object.defineProperty(image, "complete", { value: false });
+      image.decode = () => window.recordImageDecode();
+      document.querySelector(".faq-hearth-hero")?.append(image);
+    }, { once: true });
+  });
+  await assert.rejects(
+    assertFrontendCssNavigation(page, baseUrl, "dark"),
+    /\/faq \(dark\) \.faq-hearth-hero: image decoding did not settle within 5 seconds/,
+  );
+  assert.deepEqual(decodes, []);
 });
 
 test("bounds stalled font readiness", { timeout: 15_000 }, async (t) => {

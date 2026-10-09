@@ -31,16 +31,22 @@ const tutorialJsonLd = {
   ],
 };
 
-export default function TutorialPage() {
+async function TutorialContent({ searchParams }: PageProps<"/tutorial">) {
+  // Resolve URL data on the server so the scene and its preload precede hydration.
+  await searchParams;
+  return <TutorialFlipbook setupScenes={{
+    werewolves_classic: <SlideSetup mode="werewolves_classic" />,
+    mafia_free: <SlideSetup mode="mafia_free" />,
+    mafia_sport: <SlideSetup mode="mafia_sport" />,
+  }} />;
+}
+
+export default function TutorialPage(props: PageProps<"/tutorial">) {
   return (
     <main className="shell tutorial-shell">
       <JsonLd data={tutorialJsonLd} />
       <Suspense fallback={null}>
-        <TutorialFlipbook setupScenes={{
-          werewolves_classic: <SlideSetup mode="werewolves_classic" />,
-          mafia_free: <SlideSetup mode="mafia_free" />,
-          mafia_sport: <SlideSetup mode="mafia_sport" />,
-        }} />
+        <TutorialContent {...props} />
       </Suspense>
     </main>
   );
