@@ -66,6 +66,36 @@ test("targeted critical mobile CLI regenerates both landing formats without visi
   }
 });
 
+test("critical AVIF quality overrides retain source pixels and leave other derivatives at the default", async (t) => {
+  const { generateCriticalMobileAssets, variants } = await import("./generate-critical-mobile-assets.mjs");
+  const previousConcurrency = sharp.concurrency();
+  t.after(() => sharp.concurrency(previousConcurrency));
+  const root = await temporaryRoot(t);
+  const source = "assets/game-art-source/quality-pattern.png";
+  const width = 96;
+  const height = 128;
+  const pixels = Buffer.from(Array.from({ length: width * height * 3 }, (_, index) => (index * 31 + Math.floor(index / 13)) % 256));
+  const original = await sharp(pixels, { raw: { width, height, channels: 3 } }).png().toBuffer();
+  await mkdir(path.dirname(path.join(root, source)), { recursive: true });
+  await writeFile(path.join(root, source), original);
+  for (const quality of [undefined, 40, 50]) {
+    const output = `apps/web/public/game-art/mobile/quality-${quality ?? "default"}.avif`;
+    await generateCriticalMobileAssets({ rootDirectory: root, assets: [{ source, output, width, quality }] });
+    const encoded = await readFile(path.join(root, output));
+    const expected = await sharp(original).rotate().resize({ width, withoutEnlargement: true })
+      .avif({ quality: quality ?? 55, effort: 7, chromaSubsampling: "4:2:0" }).toBuffer();
+    assert.deepEqual(encoded, expected);
+    const metadata = await sharp(encoded).metadata();
+    assert.deepEqual([metadata.width, metadata.height], [width, height]);
+  }
+  assert.deepEqual(await readFile(path.join(root, source)), original);
+  assert.deepEqual(variants.filter((variant) => variant.quality != null && variant.quality !== 55)
+    .map(({ output, quality }) => [output, quality]), [
+    ["apps/web/public/game-art/mobile/werewolf/bg-hero-light-v1-864.avif", 50],
+    ["apps/web/public/game-art/mobile/texture-parchment.avif", 40],
+  ]);
+});
+
 test("critical mobile derivatives apply source orientation before resizing like the optimizer", async (t) => {
   const { generateCriticalMobileAssets } = await import("./generate-critical-mobile-assets.mjs");
   const root = await temporaryRoot(t);

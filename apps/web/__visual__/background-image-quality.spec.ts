@@ -490,15 +490,24 @@ for (const theme of ["dark", "light"] as const) {
     await page.goto("/tutorial?step=1");
     const stage = page.locator(".tutorial-slide-stage:visible");
     await expect(stage).toHaveAttribute("data-tutorial-scene", "setup");
+    const compactScene = await page.evaluate(() => matchMedia("(max-width: 480px) and (max-resolution: 2dppx)").matches);
+    const expectedAmbient = "/game-art/mobile/texture-ornament-sheet.avif";
+    await expect.poll(async () => (await paintedBackground(page.locator("body"))).path).toBe(expectedAmbient);
+    const ambientBefore = await paintedBackground(page.locator("body"));
+    expect(ambientBefore.backgroundSize).toContain("860px 860px");
     for (const [scene, art] of [["setup", "day"], ["night", "night"]]) {
       await expect(stage).toHaveAttribute("data-tutorial-scene", scene!);
       const artWindow = stage.locator(".tutorial-slide-art");
       await expect(artWindow).toBeVisible();
+      const expectedScene = compactScene
+        ? `/game-art/mobile/tutorial-${art}-scene-960.avif`
+        : `/game-art/tutorial-${art}-scene.avif`;
       await expect.poll(async () => (await paintedBackground(artWindow, null)).path)
-        .toBe(`/game-art/tutorial-${art}-scene.webp`);
+        .toBe(expectedScene);
       await page.screenshot({ path: info.outputPath(`${scene}.png`), animations: "disabled", caret: "initial" });
       const initial = await paintedBackground(artWindow, null);
-      expect(initial.path).toBe(`/game-art/tutorial-${art}-scene.webp`);
+      expect(initial.path).toBe(expectedScene);
+      expect(initial.imageWidth).toBe(compactScene ? 960 : 1672);
       expect(initial.backgroundSize).toBe("cover");
       // Phones: the opening scene keeps a 120px art window, lesson scenes a compact 96px one.
       expect(initial.height).toBe(scene === "setup" ? 120 : 96);
@@ -508,8 +517,7 @@ for (const theme of ["dark", "light"] as const) {
       expect(initial.height).toBeLessThan(slideBox!.height);
       expect(initial.coverScale).toBeLessThanOrEqual(1.35);
       const ambient = await paintedBackground(page.locator("body"));
-      expect(ambient.path).toContain("texture-ornament-sheet.webp");
-      expect(ambient.backgroundSize).toContain("860px 860px");
+      expect(ambient).toEqual(ambientBefore);
       expect(await page.locator("main.tutorial-shell:visible").evaluate((element) => getComputedStyle(element, "::before").content)).toBe("none");
       await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
       const scrolled = await paintedBackground(artWindow, null);
@@ -518,6 +526,7 @@ for (const theme of ["dark", "light"] as const) {
       expect(scrolled.backgroundSize).toBe(initial.backgroundSize);
       expect(scrolled.path).toBe(initial.path);
       expect(scrolled.coverScale).toBe(initial.coverScale);
+      expect(await paintedBackground(page.locator("body"))).toEqual(ambientBefore);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       if (scene === "setup") {
         await page.evaluate(() => scrollTo(0, 0));

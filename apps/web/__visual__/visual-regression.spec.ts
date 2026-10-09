@@ -599,6 +599,7 @@ for (const viewport of REPRESENTATIVE_VIEWPORTS) {
       }
       await expect(page.getByRole("heading", { level: 1, name: route.heading })).toBeVisible();
       if (route.name === "home") await materializeHomepageDeck(page);
+      if (route.name.endsWith("-home")) await materializeFamilyPortraits(page);
       if (route.name === "home" || route.name.endsWith("-home")) await hideNextDevIndicator(page);
       if (route.name.startsWith("tutorial-") || route.name.endsWith("rules")) await hideNextDevIndicator(page);
       await expect(page).toHaveScreenshot(`${viewport.name}-${route.name}.png`, {
@@ -667,6 +668,7 @@ for (const viewport of VIEWPORTS) {
       if (route.name.startsWith("tutorial-") || route.name.endsWith("rules")) await hideNextDevIndicator(page);
       if (COLLECTION_VISUAL_ROUTE_NAMES.has(route.name)) await hideNextDevIndicator(page);
       if (route.name === "home") await materializeHomepageDeck(page);
+      if (route.name.endsWith("-home")) await materializeFamilyPortraits(page);
       if (route.name === "achievements") await materializeAchievementRelics(page);
       await expect(page).toHaveScreenshot(`${viewport.name}-${route.name}.png`, {
         fullPage: true,
@@ -696,6 +698,7 @@ for (const viewport of VIEWPORTS) {
       }
       if (route.name === "home" || route.name.endsWith("-home")) await hideNextDevIndicator(page);
       if (route.name === "home") await materializeHomepageDeck(page);
+      if (route.name.endsWith("-home")) await materializeFamilyPortraits(page);
       await expect(page).toHaveScreenshot(`${viewport.name}-${route.name}-light.png`, {
         fullPage: true,
         maxDiffPixelRatio: 0.01,
@@ -872,6 +875,23 @@ async function materializeRolePortraits(page: Page) {
     await portrait.evaluate((image: HTMLImageElement) => image.decode());
   }
   await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+}
+
+async function materializeFamilyPortraits(page: Page) {
+  const path = new URL(page.url()).pathname;
+  expect(["/werewolf", "/mafia"]).toContain(path);
+  const artwork = page.locator(".role-spotlight__art, .variant-chip__art");
+  await expect(artwork).toHaveCount(path === "/werewolf" ? 7 : 4);
+  for (const frame of await artwork.all()) {
+    await frame.scrollIntoViewIfNeeded();
+    await expect(frame.locator("img")).toHaveCount(1);
+    await expectDecodedImage(frame.locator("img"));
+  }
+  await page.waitForLoadState("networkidle");
+  await page.evaluate(async () => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+    await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+  });
 }
 
 async function materializeAchievementRelics(page: Page) {

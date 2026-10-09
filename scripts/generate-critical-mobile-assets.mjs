@@ -58,6 +58,7 @@ export const variants = [
     source: `assets/game-art-source/mobile/${family}/bg-hero-${version}.png`,
     output: `apps/web/public/game-art/mobile/${family}/bg-hero-${version}-864.avif`,
     width: 864,
+    quality: family === "werewolf" && version === "light-v1" ? 50 : 55,
     maxBytes: 160 * 1024,
   }))),
   ...["day", "night"].flatMap((lighting) => [
@@ -90,6 +91,7 @@ export const variants = [
     source: `assets/game-art-source/texture-${texture}.png`,
     output: `apps/web/public/game-art/mobile/texture-${texture}.avif`,
     width: 640,
+    quality: texture === "parchment" ? 40 : 55,
     maxBytes: 60 * 1024,
   })),
   {
@@ -119,7 +121,7 @@ export async function generateCriticalMobileAssets({ rootDirectory = process.cwd
     });
     const optimized = variant.format === "webp"
       ? await resized.webp({ quality: 78, effort: 6, smartSubsample: true }).toBuffer()
-      : await resized.avif({ quality: 55, effort: 7, chromaSubsampling: "4:2:0" }).toBuffer();
+      : await resized.avif({ quality: variant.quality ?? 55, effort: 7, chromaSubsampling: "4:2:0" }).toBuffer();
 
     const bytes = optimized.length;
     const maxBytes = variant.maxBytes ?? 120 * 1024;

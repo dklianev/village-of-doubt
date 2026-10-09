@@ -1,5 +1,6 @@
-import { expect, test, type Page, type TestInfo } from "playwright/test";
+import { expect, test, type Locator, type Page, type TestInfo } from "playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { expectDecodedImage } from "./image-readiness";
 
 test.use({ contextOptions: { reducedMotion: "reduce", serviceWorkers: "block" } });
 
@@ -23,6 +24,30 @@ const SCENES = [
 ];
 
 const GAMES = ["werewolves_classic", "mafia_free", "mafia_sport"] as const;
+
+async function expectImageDensity(image: Locator, nativeWidth?: number) {
+  await image.scrollIntoViewIfNeeded();
+  await expectDecodedImage(image);
+  const pixels = await image.evaluate(async (node) => {
+    const image = node as HTMLImageElement;
+    const currentSrc = image.currentSrc;
+    const response = await fetch(currentSrc, {
+      headers: { Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*;q=0.8,*/*;q=0.5" },
+    });
+    if (!response.ok) throw new Error(`Image ${response.status}: ${currentSrc}`);
+    // naturalWidth is density-corrected for srcset; check the delivered pixels.
+    const bitmap = await createImageBitmap(await response.blob());
+    const box = image.getBoundingClientRect();
+    const coverWidth = Math.max(box.width, box.height * bitmap.width / bitmap.height);
+    const result = { currentSrc, width: bitmap.width, required: coverWidth * devicePixelRatio, dpr: devicePixelRatio };
+    bitmap.close();
+    return result;
+  });
+  const required = Math.min(pixels.required, nativeWidth ?? Infinity);
+  expect(pixels.width, JSON.stringify(pixels)).toBeGreaterThanOrEqual(Math.ceil(required));
+  if (nativeWidth !== undefined) expect(pixels.width, "never upscale the native source").toBeLessThanOrEqual(nativeWidth);
+  return pixels;
+}
 
 async function findContentOverflow(page: Page) {
   return page.locator(".tutorial-flipbook").evaluate((element) => {
@@ -177,10 +202,9 @@ for (const theme of ["light", "dark"] as const) {
           await expect(page.getByText(/Не гласуваш и не подсказваш на живите/)).toBeVisible();
         }
 
-        await expect.poll(() => stage.locator("img").evaluateAll((images) => images.every((node) => {
-          const image = node as HTMLImageElement;
-          return image.complete && image.naturalWidth >= image.clientWidth * 3;
-        }))).toBe(true);
+        for (const image of await stage.locator("img").all()) {
+          await expectImageDensity(image);
+        }
         await checkLayout(page);
         if (width === 390) {
           expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
@@ -206,6 +230,30 @@ for (const theme of ["light", "dark"] as const) {
     });
   }
 }
+
+test.describe("tutorial setup role density at 390px and DPR 3", () => {
+  test.use({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3 });
+
+  for (const [game, source] of [
+    ["werewolves_classic", "/game-art/thumbs/role-seer.webp?v=3"],
+    ["mafia_free", "/game-art/thumbs/mafia/role-commissioner.webp?v=3"],
+  ] as const) {
+    test(`${game} delivers native-capped cover pixels for the setup role`, async ({ page }) => {
+      await prepare(page, "light");
+      await page.goto(`/tutorial?step=1&game=${game}`);
+      await expect(page.getByRole("combobox", { name: "Игра", exact: true })).toHaveValue(game);
+      const image = page.locator(".tutorial-role img");
+      await expect(image).toBeVisible();
+      const pixels = await expectImageDensity(image, 520);
+      expect(pixels.dpr).toBe(3);
+      expect(pixels.required).toBeGreaterThanOrEqual(84 * 3);
+      const selected = new URL(pixels.currentSrc);
+      expect(selected.pathname).toBe("/_next/image");
+      expect(selected.searchParams.get("url")).toBe(source);
+      expect(selected.searchParams.get("q")).toBe("85");
+    });
+  }
+});
 
 test("tutorial normalizes invalid steps and preserves explicit invitations", async ({ page }) => {
   await prepare(page, "light");
@@ -510,14 +558,16 @@ for (const viewport of [
       test(`tutorial regression: fresh ${game} ${period} ${viewport.name} requests and preloads only its scene art`, async ({ page }) => {
         await page.setViewportSize({ width: viewport.width, height: viewport.height });
         await prepare(page, "light");
-        const sceneArt = /\/game-art\/(?:(?:mobile\/)?tutorial-(?:day|night)-scene\.webp|phase-board\/v1\/(?:mafia|werewolves)\/icon-phase-(?:day|night)-\d+\.webp)$/;
+        const sceneArt = /\/game-art\/(?:(?:mobile\/)?tutorial-(?:day|night)-scene(?:-\d+)?\.(?:avif|webp)|phase-board\/v1\/(?:mafia|werewolves)\/icon-phase-(?:day|night)-\d+\.webp)$/;
         const requests = new Set<string>();
         page.on("request", (request) => {
           const path = new URL(request.url()).pathname;
           if (sceneArt.test(path)) requests.add(path);
         });
-        const expected = game === "werewolves_classic"
-          ? `/game-art/${viewport.name === "mobile landscape" ? "mobile/" : ""}tutorial-${period}-scene.webp`
+        const werewolf = game === "werewolves_classic";
+        const mobileScene = await page.evaluate(() => matchMedia("(max-width: 480px) and (max-resolution: 2dppx)").matches);
+        const expected = werewolf
+          ? `/game-art/${mobileScene ? "mobile/" : ""}tutorial-${period}-scene${mobileScene ? "-960" : ""}.avif`
           : `/game-art/phase-board/v1/mafia/icon-phase-${period}-1120.webp`;
         const artResponse = page.waitForResponse((response) => new URL(response.url()).pathname === expected);
         await page.goto(`/tutorial?game=${game}&step=${step}`);
@@ -533,10 +583,10 @@ for (const viewport of [
           return [{ path, active: !link.media || matchMedia(link.media).matches, priority: link.fetchPriority, type: link.type }];
         }), sceneArt.source);
         expect(preloads.filter((preload) => preload.active)).toEqual([
-          { path: expected, active: true, priority: "high", type: "image/webp" },
+          { path: expected, active: true, priority: "high", type: werewolf ? "image/avif" : "image/webp" },
         ]);
-        const allowedPreloads = game === "werewolves_classic"
-          ? [`/game-art/tutorial-${period}-scene.webp`, `/game-art/mobile/tutorial-${period}-scene.webp`]
+        const allowedPreloads = werewolf
+          ? [`/game-art/tutorial-${period}-scene.avif`, `/game-art/mobile/tutorial-${period}-scene-960.avif`]
           : [expected];
         expect(preloads.filter((preload) => !allowedPreloads.includes(preload.path))).toEqual([]);
         expect([...requests]).toEqual([expected]);
