@@ -126,8 +126,26 @@ for (const theme of ["light", "dark"] as const) {
       await expect(next).toBeEnabled();
       await page.evaluate(() => document.fonts.ready);
       await next.hover();
+      await expect(next).toHaveCSS("overflow-x", "hidden");
+      await expect.poll(() => next.evaluate((node) => {
+        const sheen = getComputedStyle(node, "::before");
+        return node.matches(":hover") && sheen.content === '""'
+          && new DOMMatrixReadOnly(sheen.transform).m41 > parseFloat(sheen.width);
+      })).toBe(true);
+      await checkLayout(page);
+
+      // Composited transforms do not reliably contribute to scrollWidth. Position
+      // the same decoration outside the button to exercise the overflow guard.
+      const overflowFixture = await page.addStyleTag({ content: `
+        .tutorial-nav-action::before {
+          left: 110% !important;
+          transform: none !important;
+          transition: none !important;
+        }
+      ` });
       await expect.poll(() => next.evaluate((node) => node.scrollWidth > node.clientWidth + 1)).toBe(true);
       await checkLayout(page);
+      await overflowFixture.evaluate((node) => node.parentNode?.removeChild(node));
       await next.click();
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(SCENES[1]!);
       await checkLayout(page);
