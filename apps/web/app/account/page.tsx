@@ -5,8 +5,8 @@ import { redirect } from "next/navigation";
 import {
   createDatabase,
   getAchievementsForUser,
-  getGameHistoryForUser,
-  getPlayerOutcomesInGames,
+  getPlayerGameStatistics,
+  getRecentCompletedGamesForUser,
 } from "@werewolf/database";
 import {
   ACHIEVEMENTS,
@@ -16,6 +16,7 @@ import {
   type WinnerTeam,
 } from "@werewolf/shared";
 import { AccountDashboard } from "@/components/account/AccountDashboard";
+import { authRedirectURL } from "@/components/auth/verification-callback";
 import { computePlayerStats } from "@/lib/account-stats";
 import { auth } from "@/lib/auth";
 import { publicGameReference } from "@/lib/game-reference";
@@ -29,54 +30,52 @@ export const metadata: Metadata = {
 
 export const instant = false;
 
-type AccountHistoryGame = Awaited<ReturnType<typeof getGameHistoryForUser>>[number] & {
-  playerRole: string | null;
-  playerWon: boolean;
-};
-
 type AccountDashboardProps = ComponentProps<typeof AccountDashboard>;
 
 export default async function AccountPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ visualAuth?: string | string[] }>;
+  searchParams?: Promise<{ visualAuth?: string | string[]; visualAccount?: string | string[]; section?: string | string[] }>;
 }) {
-  const visualAuth = firstSearchValue((await searchParams)?.visualAuth);
+  const params = await searchParams;
+  const visualAuth = firstSearchValue(params?.visualAuth);
+  const exportRequested = firstSearchValue(params?.section) === "data-export";
   if (process.env.NODE_ENV !== "production" && (process.env.ACCOUNT_DASHBOARD_FIXTURE === "1" || visualAuth === "1")) {
-    return renderDashboard(fixtureDashboardProps());
+    return renderDashboard(fixtureDashboardProps(firstSearchValue(params?.visualAccount)));
   }
 
   const requestHeaders = await headers();
   const session = await auth.api.getSession({ headers: requestHeaders });
 
   if (!session) {
-    redirect("/sign-in?redirect=/account");
+    // URL fragments never reach the server; carry the allowlisted intent in the query.
+    redirect(authRedirectURL("/sign-in", exportRequested ? "/account#account-data-export" : "/account"));
+  }
+
+  if (exportRequested) {
+    redirect("/account#account-data-export");
   }
 
   const accountsPromise = auth.api.listUserAccounts({ headers: requestHeaders }).catch(() => []);
 
-  let games: AccountHistoryGame[] = [];
+  let games: Awaited<ReturnType<typeof getRecentCompletedGamesForUser>> = [];
   let achievements: Awaited<ReturnType<typeof getAchievementsForUser>> = [];
   let activityState: AccountDashboardProps["activityState"] = "unavailable";
   const memberSince = parseMemberSince(session.user.createdAt);
+  let stats = computePlayerStats({ totalGames: 0, totalWins: 0, longestStreak: 0, winsByRole: [] }, memberSince);
 
   if (process.env.DATABASE_URL) {
     try {
       const db = createDatabase(process.env.DATABASE_URL);
-      const [historyRows, achievementRows] = await Promise.all([
-        getGameHistoryForUser(db, session.user.id, 50),
+      const [statistics, recentRows, achievementRows] = await Promise.all([
+        getPlayerGameStatistics(db, session.user.id),
+        getRecentCompletedGamesForUser(db, session.user.id, 3),
         getAchievementsForUser(db, session.user.id),
       ]);
+      stats = computePlayerStats(statistics, memberSince);
+      games = recentRows;
       achievements = achievementRows;
-
-      const gameIds = historyRows.map((game) => game.id);
-      const outcomesByGameId = await getPlayerOutcomesInGames(db, session.user.id, gameIds);
-      games = historyRows.map((game) => ({
-        ...game,
-        playerRole: outcomesByGameId.get(game.id)?.role ?? null,
-        playerWon: outcomesByGameId.get(game.id)?.won ?? false,
-      }));
-      activityState = historyRows.some((game) => game.status === "ended") ? "ready" : "empty";
+      activityState = statistics.totalGames > 0 ? "ready" : "empty";
     } catch (error) {
       console.error("[account]", safeMonitoringErrorMetadata(error));
     }
@@ -84,15 +83,6 @@ export default async function AccountPage({
 
   const accounts = await accountsPromise;
   const providerIds = new Set(accounts.map((account) => account.providerId));
-  if (session.user.email) {
-    providerIds.add("credential");
-  }
-
-  const endedGames = games.filter((game) => game.status === "ended");
-  const stats = computePlayerStats(
-    endedGames.map((game) => ({ game, role: game.playerRole, won: game.playerWon })),
-    memberSince,
-  );
 
   return renderDashboard({
     userId: session.user.id,
@@ -103,7 +93,7 @@ export default async function AccountPage({
     providers: [...providerIds],
     activityState,
     stats,
-    recentGames: endedGames.slice(0, 3).map((game) => ({
+    recentGames: games.map((game) => ({
       id: game.id,
       code: publicGameReference(game.id),
       mode: modeFromConfig(game.config),
@@ -123,8 +113,8 @@ function renderDashboard(props: AccountDashboardProps) {
   );
 }
 
-function fixtureDashboardProps(): AccountDashboardProps {
-  return {
+function fixtureDashboardProps(state?: string): AccountDashboardProps {
+  const props: AccountDashboardProps = {
     userId: "visual-account-user",
     email: "visual@example.com",
     name: "Визуален играч",
@@ -167,6 +157,18 @@ function fixtureDashboardProps(): AccountDashboardProps {
     unlockedAchievementIds: ["first_blood", "guardian_save", "perfect_record"],
     totalAchievementCount: ACHIEVEMENTS.length,
   };
+  if (state === "empty" || state === "unavailable") {
+    props.activityState = state;
+    props.stats = computePlayerStats({ totalGames: 0, totalWins: 0, longestStreak: 0, winsByRole: [] }, props.stats.memberSince);
+    props.recentGames = [];
+    props.unlockedAchievementIds = [];
+  } else if (state === "complete") {
+    props.unlockedAchievementIds = ACHIEVEMENTS.map(({ id }) => id);
+  } else if (state === "long") {
+    props.name = "Александра Константинополска";
+    props.stats = { ...props.stats, totalGames: 12540, totalWins: 8924, winRate: 71, villageWins: 4720, threatWins: 4204, longestStreak: 132 };
+  }
+  return props;
 }
 
 function parseMemberSince(value: Date | string | null | undefined): Date | null {

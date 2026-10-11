@@ -14,7 +14,9 @@ import {
   type RoleDistribution,
   type RolePreset,
 } from "@werewolf/shared";
-import type { Dispatch } from "react";
+import { useRef, useState, type CSSProperties, type Dispatch } from "react";
+import Image from "next/image";
+import { Sheet } from "@werewolf/ui";
 import {
   boundedPlayerCount,
   criticalRoleWarnings,
@@ -26,7 +28,8 @@ import {
   type LobbyFormState,
   type LobbyTemplate,
 } from "@/lib/lobby-form";
-import { roleThumbStyle } from "@/lib/role-art";
+import { coverImageSizes, roleArtSource } from "@/lib/role-art";
+import { InlineRoleDetail } from "./InlineRoleDetail";
 
 type Experience = {
   id: string;
@@ -105,6 +108,8 @@ export function QuickCreateSurface({
   onSubmit: () => void;
   transition: (update: () => void) => void;
 }) {
+  const [previewRole, setPreviewRole] = useState<RoleCode | null>(null);
+  const previewTrigger = useRef<HTMLButtonElement | null>(null);
   const config = currentConfig(state);
   const players = boundedPlayerCount(state);
   const range = playerRange(state.mode);
@@ -113,7 +118,7 @@ export function QuickCreateSurface({
   const canCreate = warnings.length === 0;
   const roles = recommendedRoles(config.roles);
   const context = contextFor(state);
-  const heading = state.family === "werewolves" ? "Стая за Върколак" : "Стая за Мафия";
+  const gameName = state.family === "werewolves" ? "Върколак" : "Мафия";
   const primaryLabel = state.family === "werewolves" ? "Създай селото" : "Отвори масата";
 
   function selectExperience(experience: Experience) {
@@ -148,12 +153,10 @@ export function QuickCreateSurface({
 
   return (
     <section className="create-quick-surface" aria-labelledby="create-quick-title">
+      <div className="create-masthead">
       <header className="create-quick-heading">
         <div>
-          <p className="create-quick-kicker">
-            {state.family === "werewolves" ? "домакин на селото" : "домакин на масата"}
-          </p>
-          <h1 id="create-quick-title">{heading}</h1>
+          <h1 id="create-quick-title"><span className="create-title-prefix">Стая за</span>{" "}<span className="create-title-game">{gameName}</span></h1>
           <p>{state.family === "werewolves" ? "Компанията е твоя. Тайните са на селото." : "Една маса. Всеки със своето алиби."}</p>
         </div>
         <button type="button" className="create-details-button" onClick={(event) => onOpenDetails(event.currentTarget)}>
@@ -161,7 +164,9 @@ export function QuickCreateSurface({
           Настрой детайлите
         </button>
       </header>
+      </div>
 
+      <div className="create-workspace">
       <div className="create-quick-layout">
         <div className="create-quick-controls">
           <div className="create-quick-row">
@@ -193,6 +198,7 @@ export function QuickCreateSurface({
                     min={range.min}
                     max={range.max}
                     value={players}
+                    style={{ "--range-fill": `${(players - range.min) / (range.max - range.min) * 100}%` } as CSSProperties}
                     onChange={(event) =>
                       dispatch({ type: "SET_PLAYER_COUNT", playerCount: Number(event.target.value) })
                     }
@@ -263,13 +269,19 @@ export function QuickCreateSurface({
               <span className="create-roster-capacity">{players} места</span>
             </div>
             <div className="create-role-portraits" aria-label="Всички роли в състава">
-              {roles.map(([role, count]) => (
-                <span className="create-role-portrait" key={role}>
-                  <i aria-hidden="true" style={roleThumbStyle(state.family, role)} />
+              {roles.map(([role, count]) => {
+                const source = roleArtSource(state.family, role);
+                return (
+                <button type="button" className="create-role-portrait" key={role}
+                  aria-haspopup="dialog" aria-expanded={previewRole === role}
+                  onClick={(event) => { previewTrigger.current = event.currentTarget; setPreviewRole(role); }}>
+                  <picture className="role-art-frame" data-frame-family={state.family} aria-hidden="true">
+                    <Image {...source} alt="" quality={85} sizes={coverImageSizes(source, [{ media: "(max-width: 720px)", width: 80, aspectRatio: 2 / 3 }, { width: 96, aspectRatio: 2 / 3 }])} />
+                  </picture>
                   <b>{ROLE_DEFINITIONS[role].nameBg}</b>
                   <small>×{count}</small>
-                </span>
-              ))}
+                </button>
+              ); })}
             </div>
             <p>{recommendationReason(state)}</p>
           </section>
@@ -282,9 +294,13 @@ export function QuickCreateSurface({
           </div>
           <span className="create-ready-mark" data-ready={canCreate ? "true" : "false"}>
             <Check aria-hidden="true" />
-            {canCreate ? "Готови за игра" : "Провери състава"}
+            {canCreate ? "Съставът е готов" : "Провери състава"}
           </span>
           <dl>
+            <div>
+              <dt><Users aria-hidden="true" />Играчи</dt>
+              <dd><strong>{players}</strong></dd>
+            </div>
             <div>
               <dt>
                 <Clock3 aria-hidden="true" />
@@ -317,6 +333,7 @@ export function QuickCreateSurface({
           <small className="create-code-note">Кодът за покана се показва след създаването.</small>
         </aside>
       </div>
+      </div>
 
       <div className="create-mobile-action" aria-label="Бързо създаване">
         <span>
@@ -331,6 +348,15 @@ export function QuickCreateSurface({
           {primaryLabel}
         </button>
       </div>
+      <Sheet open={previewRole !== null} onOpenChange={(open) => { if (!open) setPreviewRole(null); }}
+        title={previewRole ? ROLE_DEFINITIONS[previewRole].nameBg : "Роля"}
+        description="Карта и умение на ролята."
+        closeLabel="Затвори ролята"
+        onCloseAutoFocus={(event) => { event.preventDefault(); previewTrigger.current?.focus({ preventScroll: true }); }}>
+        {previewRole ? <div className="create-roster-detail" data-family={state.family}>
+          <InlineRoleDetail family={state.family} role={previewRole} heading={false} onClose={() => setPreviewRole(null)} />
+        </div> : null}
+      </Sheet>
     </section>
   );
 }

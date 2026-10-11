@@ -15,7 +15,7 @@ export function JoinCodeSlots({ value, onChange, invalid, describedBy, autoFocus
   const refs = useRef<Array<HTMLInputElement | null>>([]);
 
   useEffect(() => {
-    if (autoFocus && !value) {
+    if (autoFocus && !value && window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
       refs.current[0]?.focus();
     }
   }, [autoFocus, value]);
@@ -31,6 +31,14 @@ export function JoinCodeSlots({ value, onChange, invalid, describedBy, autoFocus
   };
 
   function updateSlot(index: number, rawValue: string) {
+    if (rawValue.length >= ROOM_CODE_LENGTH) {
+      const next = normalizeRoomCodeInput(rawValue);
+      if (next) {
+        onChange(next);
+        refs.current[Math.min(next.length, ROOM_CODE_LENGTH - 1)]?.focus();
+      }
+      return;
+    }
     const clean = rawValue
       .toUpperCase()
       .split("")
@@ -39,7 +47,8 @@ export function JoinCodeSlots({ value, onChange, invalid, describedBy, autoFocus
 
     const next = value.padEnd(ROOM_CODE_LENGTH, " ").split("");
     next[index] = clean ?? " ";
-    onChange(next.join("").replace(/\s/g, "").slice(0, ROOM_CODE_LENGTH));
+    if (rawValue && !clean) return;
+    onChange(next.join("").trimEnd());
 
     if (clean && index < ROOM_CODE_LENGTH - 1) {
       refs.current[index + 1]?.focus();
@@ -48,24 +57,27 @@ export function JoinCodeSlots({ value, onChange, invalid, describedBy, autoFocus
   }
 
   function handleKeyDown(index: number, event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key === "Backspace" && !value[index] && index > 0) {
+    if (event.key === "Backspace") {
       event.preventDefault();
+      const target = value[index]?.trim() ? index : Math.max(0, index - 1);
       const next = value.padEnd(ROOM_CODE_LENGTH, " ").split("");
-      next[index - 1] = " ";
-      onChange(next.join("").replace(/\s/g, "").slice(0, ROOM_CODE_LENGTH));
-      refs.current[index - 1]?.focus();
+      next[target] = " ";
+      onChange(next.join("").trimEnd());
+      refs.current[target]?.focus();
       return;
     }
 
     if (event.key === "ArrowLeft" && index > 0) {
       event.preventDefault();
       refs.current[index - 1]?.focus();
+      refs.current[index - 1]?.select();
       return;
     }
 
     if (event.key === "ArrowRight" && index < ROOM_CODE_LENGTH - 1) {
       event.preventDefault();
       refs.current[index + 1]?.focus();
+      refs.current[index + 1]?.select();
     }
   }
 
@@ -76,7 +88,7 @@ export function JoinCodeSlots({ value, onChange, invalid, describedBy, autoFocus
       return;
     }
     onChange(next);
-    refs.current[Math.min(next.length, ROOM_CODE_LENGTH) - 1]?.focus();
+    refs.current[Math.min(next.length, ROOM_CODE_LENGTH - 1)]?.focus();
   }
 
   return (
@@ -86,13 +98,14 @@ export function JoinCodeSlots({ value, onChange, invalid, describedBy, autoFocus
           key={index}
           ref={setRef(index)}
           className="join-codeslot"
-          data-filled={value[index] ? "true" : undefined}
-          maxLength={1}
+          data-filled={value[index]?.trim() ? "true" : undefined}
+          maxLength={ROOM_CODE_LENGTH}
           inputMode="text"
           autoCapitalize="characters"
           autoComplete={index === 0 ? "one-time-code" : "off"}
           spellCheck={false}
-          value={value[index] ?? ""}
+          value={value[index]?.trim() ?? ""}
+          onFocus={(event) => event.target.select()}
           onChange={(event) => updateSlot(index, event.target.value)}
           onKeyDown={(event) => handleKeyDown(index, event)}
           onPaste={handlePaste}

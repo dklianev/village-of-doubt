@@ -1,7 +1,6 @@
-"use client";
-
 import Link from "next/link";
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
+import { LegalReturnLink } from "../legal/LegalReturnLink";
 
 interface LegalSection {
   id: string;
@@ -75,43 +74,46 @@ const SECTIONS: readonly LegalSection[] = [
   },
 ];
 
-export function TermsLegalAnnex() {
-  const [open, setOpen] = useState(false);
-
+export function TermsContents() {
+  const labels: Record<string, string> = {
+    ip: "Собственост",
+    "user-content": "Съдържание",
+    "as-is": "Достъпност",
+    liability: "Отговорност",
+    law: "Приложимо право",
+    contact: "Контакт",
+  };
   return (
-    <section className="terms-section terms-section-annex">
-      <button
-        type="button"
-        className="terms-annex-toggle"
-        onClick={() => setOpen((value) => !value)}
-        aria-expanded={open}
-      >
-        <span className="terms-annex-icon" aria-hidden>
-          {open ? "−" : "+"}
-        </span>
-        <div>
-          <p className="terms-annex-kicker">правен анекс</p>
-          <p className="terms-annex-title">Формалните клаузи ({SECTIONS.length})</p>
-          <p className="terms-annex-hint">
-            Интелектуална собственост, отговорност, приложимо право — за тези, които искат пълния
-            правен текст.
-          </p>
-        </div>
-      </button>
+    <nav id="terms-contents" tabIndex={-1} className="terms-navigation" aria-label="Съдържание на условията">
+      <a href="#terms-commitments">Правила на масата</a>
+      <a href="#terms-conflict">При нарушение</a>
+      {SECTIONS.map((section) => (
+        <a key={section.id} href={`#${section.id}`}>{labels[section.id]}</a>
+      ))}
+    </nav>
+  );
+}
 
-      {open ? (
-        <ol className="terms-annex-list">
-          {SECTIONS.map((section, index) => (
-            <li key={section.id} id={section.id} className="terms-annex-item">
-              <h3>
-                <span className="terms-annex-num">{index + 1}.</span>
-                {section.title}
-              </h3>
-              <div className="terms-annex-body">{section.body}</div>
-            </li>
-          ))}
-        </ol>
-      ) : null}
+export function TermsLegalAnnex() {
+  return (
+    <section id="terms-legal" tabIndex={-1} className="terms-section terms-section-annex">
+      <header className="terms-section-head">
+        <p className="terms-annex-kicker">правни условия</p>
+        <h2 className="terms-annex-title">Условия за услугата</h2>
+        <p className="terms-section-lede">Като играеш, ти приемаш правилата по подразбиране.</p>
+      </header>
+      <ol className="terms-annex-list">
+        {SECTIONS.map((section, index) => (
+          <li key={section.id} id={section.id} tabIndex={-1} className="terms-annex-item">
+            <h3>
+              <span className="terms-annex-num">{index + 1}.</span>
+              {section.title}
+            </h3>
+            <div className="terms-annex-body">{section.body}</div>
+            <LegalReturnLink page="terms" />
+          </li>
+        ))}
+      </ol>
     </section>
   );
 }

@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { ResourceHints } from "@/components/resource-hints";
 import { SignInStage } from "@/components/sign-in/SignInStage";
 import { routeMetadata } from "@/lib/seo";
 import { safeInternalRedirect } from "@/lib/safe-internal-redirect";
 
 export const metadata: Metadata = routeMetadata({
-  title: "Вход — седни на масата",
-  description: "Влез с Google, Discord или имейл. Едно досие пази историята, легендите и поканите за частни стаи.",
+  title: "Вход",
+  description: "Влез в Сенките с Google, Discord или имейл. Събери компанията за Върколак и Мафия.",
   path: "/sign-in",
   image: "/game-art/og/og-sign-in.png",
   imageAlt: "Карти, свещ и ключ върху дървена маса",
@@ -25,22 +24,8 @@ export default async function SignInPage({
   const redirect = Array.isArray(params?.redirect) ? params.redirect[0] : params?.redirect;
 
   return (
-    <main className="shell sign-in-shell">
-      <ResourceHints
-        images={[
-          {
-            href: "/game-art/sign-in-table.webp",
-            media: "(min-width: 721px)",
-            fetchPriority: "high",
-          },
-          {
-            href: "/game-art/mobile/sign-in-table.webp",
-            media: "(max-width: 720px)",
-            fetchPriority: "high",
-          },
-        ]}
-      />
-      <Suspense fallback={<div className="sign-in-loading">Подреждаме масата...</div>}>
+    <main className="sign-in-shell">
+      <Suspense fallback={<div className="sign-in-loading" role="status">Зареждаме входа...</div>}>
         <SignInStage redirectTo={safeInternalRedirect(redirect)} />
       </Suspense>
     </main>

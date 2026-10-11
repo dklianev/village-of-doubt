@@ -1,25 +1,18 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import { VerifyEmailClient } from "@/components/auth/VerifyEmailClient";
-import { ResourceHints } from "@/components/resource-hints";
-import "@/components/auth/AuthRecoveryBase.css";
-import "@/components/auth/AuthRecovery.module.css";
+import { verifyEmailIcons } from "@/components/auth/RecoveryIcons";
+import { AuthRecoveryStage } from "@/components/auth/AuthRecoveryStage";
 
 export const metadata: Metadata = {
-  title: "Потвърждение",
-  description: "Потвърди имейла си за достъп до масата.",
+  title: "Потвърди имейла си",
+  description: "Потвърди имейла си и продължи към Сенките.",
   robots: { index: false, follow: false },
 };
 
 export default function VerifyEmailPage() {
   return (
-    <main className="shell seal-shell auth-recovery-shell framed-shell">
-      <ResourceHints images={[{ href: "/game-art/auth/verify-email-seal.webp", fetchPriority: "high" }]} />
-      <div className="framed-shell-inner">
-        <Suspense fallback={<p className="seal-loading">Восъкът се топи...</p>}>
-          <VerifyEmailClient />
-        </Suspense>
-      </div>
-    </main>
+    <AuthRecoveryStage scene="verify-email">
+      <VerifyEmailClient icons={verifyEmailIcons} />
+    </AuthRecoveryStage>
   );
 }

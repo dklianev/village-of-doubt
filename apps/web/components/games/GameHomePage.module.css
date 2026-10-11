@@ -727,11 +727,6 @@
   content: none;
 }
 
-:global(.game-home-shell .quickstart-skeleton) {
-  min-height: 100px;
-  background: var(--family-wash);
-}
-
 :global(.game-home-closing) {
   display: flex;
   flex-wrap: wrap;

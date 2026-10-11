@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "@/components/legal/LegalShell.module.css";
 import "@/components/privacy/LegacyPrivacy.module.css";
 import { headers } from "next/headers";
-import { createDatabase, getAchievementsForUser, getGameHistoryForUser } from "@werewolf/database";
+import { createDatabase, getAchievementsForUser, getPlayerGameStatistics } from "@werewolf/database";
 import { ACHIEVEMENTS, safeMonitoringErrorMetadata } from "@werewolf/shared";
 import { JsonLd } from "@/components/JsonLd";
 import { PrivacyDashboard, type PrivacyUserSnapshot } from "@/components/privacy/PrivacyDashboard";
@@ -38,31 +38,28 @@ export default async function PrivacyPage({ searchParams }: PrivacyPageProps) {
     const session = await auth.api.getSession({ headers: requestHeaders }).catch(() => null);
 
     if (session?.user?.id) {
-      let totalGames = 0;
-      let totalAchievements = 0;
+      let totalGames: number | null = null;
+      let totalAchievements: number | null = null;
 
       if (process.env.DATABASE_URL) {
         try {
           const db = createDatabase(process.env.DATABASE_URL);
-          const [games, achievements] = await Promise.all([
-            getGameHistoryForUser(db, session.user.id, 200),
-            getAchievementsForUser(db, session.user.id),
+          [totalGames, totalAchievements] = await Promise.all([
+            getPlayerGameStatistics(db, session.user.id)
+              .then((statistics) => statistics.totalGames)
+              .catch(snapshotUnavailable),
+            getAchievementsForUser(db, session.user.id)
+              .then((achievements) => achievements.length)
+              .catch(snapshotUnavailable),
           ]);
-          totalGames = games.length;
-          totalAchievements = achievements.length;
         } catch (error) {
-          console.error("[privacy-snapshot]", safeMonitoringErrorMetadata(error));
+          snapshotUnavailable(error);
         }
       }
 
-      const accounts = await auth.api.listUserAccounts({ headers: requestHeaders }).catch(() => []);
-      const providers = new Set(accounts.map((account) => account.providerId));
-      if (session.user.email) {
-        providers.add("credential");
-      }
+      const accounts = await auth.api.listUserAccounts({ headers: requestHeaders }).catch(() => null);
 
       snapshot = {
-        userId: session.user.id,
         name: session.user.name ?? "",
         email: session.user.email ?? "",
         emailVerified: session.user.emailVerified ?? false,
@@ -70,7 +67,7 @@ export default async function PrivacyPage({ searchParams }: PrivacyPageProps) {
         totalGames,
         totalAchievements,
         achievementTotal: ACHIEVEMENTS.length,
-        providersUsed: providers.size,
+        providersUsed: accounts === null ? null : new Set(accounts.map((account) => account.providerId)).size,
       };
     }
   }
@@ -94,7 +91,6 @@ export default async function PrivacyPage({ searchParams }: PrivacyPageProps) {
 
 function fixtureSnapshot(): PrivacyUserSnapshot {
   return {
-    userId: "privacy-visual-user",
     name: "Визуален играч",
     email: "visual@example.com",
     emailVerified: true,
@@ -104,6 +100,11 @@ function fixtureSnapshot(): PrivacyUserSnapshot {
     achievementTotal: ACHIEVEMENTS.length,
     providersUsed: 2,
   };
+}
+
+function snapshotUnavailable(error: unknown): null {
+  console.error("[privacy-snapshot]", safeMonitoringErrorMetadata(error));
+  return null;
 }
 
 function firstSearchValue(value: string | string[] | undefined): string | undefined {

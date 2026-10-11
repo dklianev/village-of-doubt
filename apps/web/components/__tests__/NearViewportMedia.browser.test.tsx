@@ -24,8 +24,8 @@ const publicRoot = resolve(process.cwd(), "public");
 const imageConfig = { ...imageConfigDefault, qualities: [75, 85] };
 const origin = "https://near-viewport.test";
 const phases: GameRulesPhase[] = ["role_reveal", "night", "day_discussion", "nomination", "voting", "resolution"].map((phase, index) => ({
-  id: phase, phase: phase as GameRulesPhase["phase"], title: `Phase ${index}`, short: `Step ${index}`,
-  body: `Public phase ${index}`, timer: "60", wakes: "Public", example: "Example", watch: "Watch",
+  id: phase, phase: phase as GameRulesPhase["phase"], title: `Phase ${index}`,
+  body: `Public phase ${index}`, action: `Player action ${index}`, timer: "60", wakes: "Public", example: "Example",
 }));
 const scenarios = [
   { family: "werewolves", theme: "light", width: 390 },
@@ -107,7 +107,9 @@ for (const [name, engine] of Object.entries(engines)) {
           page.on("pageerror", (error) => errors.push(error.message));
           page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
           page.on("request", (request) => {
-            if (/phase-board|thumbs/.test(request.url())) requests.push(request.url());
+            const url = new URL(request.url());
+            const source = url.searchParams.get("url") ?? url.pathname;
+            if (source.startsWith("/game-art/")) requests.push(source.split("?")[0]!);
           });
           try {
             await page.route(`${origin}/**`, async (route) => {
@@ -130,7 +132,7 @@ for (const [name, engine] of Object.entries(engines)) {
               expect(await page.locator("img").count()).toBe(0);
               expect(await page.locator("noscript img").count()).toBe(0);
             } else {
-              expect(await page.locator("noscript img").count()).toBe(9);
+              expect(await page.locator("noscript img").count()).toBe(10);
             }
 
             await nearViewport(cards.first());
@@ -150,17 +152,34 @@ for (const [name, engine] of Object.entries(engines)) {
               await decoded(card.locator("img"), 1);
             }
             const image = cards.first().locator("img");
-            expect(await image.getAttribute("width")).toBe("1120");
-            expect(await image.getAttribute("height")).toBe("800");
-            expect(await image.getAttribute("sizes")).toContain("249px");
-            expect(await image.getAttribute("srcset")).toContain("1120.webp");
+            expect(await image.getAttribute("width")).toBe(scenario.family === "mafia" ? "1120" : "1484");
+            expect(await image.getAttribute("height")).toBe(scenario.family === "mafia" ? "800" : "1060");
+            expect(await image.getAttribute("sizes")).toContain("164px");
+            const expectedSource = scenario.family === "mafia"
+              ? "/game-art/phase-board/v1/mafia/icon-phase-role-reveal-1120.webp"
+              : "/game-art/rules/werewolf-secret-card-v1.webp";
+            expect(await image.getAttribute("srcset")).toContain(encodeURIComponent(expectedSource));
             const selected = new URL(await image.evaluate((element: HTMLImageElement) => element.currentSrc));
             expect(selected.searchParams.get("q")).toBe("85");
-            expect(selected.searchParams.get("url")).toContain(`/${scenario.family}/`);
+            expect(selected.searchParams.get("url")).toBe(expectedSource);
+            const phaseSources = await cards.locator("img").evaluateAll((images) => images.map((element) =>
+              new URL((element as HTMLImageElement).currentSrc).searchParams.get("url"),
+            ));
+            expect(new Set(phaseSources).size).toBe(5);
+            expect(phaseSources[3]).toBe(phaseSources[4]);
             if (mode !== "no-js") {
               await cards.last().click();
               expect(await cards.last().getAttribute("aria-pressed")).toBe("true");
               expect(await page.locator("#phase-detail-panel").textContent()).toContain("Public phase 5");
+              // Selection scrolls in rAF. Finish that frame and its layout before positioning the next fixture.
+              const heading = await page.locator("#phase-detail-title").evaluate((element) => new Promise<{ top: number; bottom: number; viewport: number }>((resolve) => {
+                requestAnimationFrame(() => requestAnimationFrame(() => {
+                  const { top, bottom } = element.getBoundingClientRect();
+                  resolve({ top, bottom, viewport: window.innerHeight });
+                }));
+              }));
+              expect(heading.top).toBeGreaterThanOrEqual(0);
+              expect(heading.bottom).toBeLessThanOrEqual(heading.viewport - 24);
             }
 
             await nearViewport(deck);
@@ -189,7 +208,8 @@ for (const [name, engine] of Object.entries(engines)) {
             }
             expect(new Set(art.map((image) => image.transform)).size).toBe(3);
             await page.evaluate(() => window.scrollTo(0, 0));
-            expect(await page.locator("img").count()).toBe(9);
+            expect(await page.locator("img").count()).toBe(mode === "no-js" || scenario.width > 760 ? 10 : 9);
+            // Nomination and voting share their family scene; the detail reuses phase art.
             expect(new Set(requests).size).toBe(8);
             expect(errors).toEqual([]);
           } finally {

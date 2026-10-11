@@ -1,8 +1,7 @@
-import { randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
 import { renderFeedbackEmail } from "@/lib/email-templates";
-import { sendEmail } from "@/lib/email";
 import { auth } from "@/lib/auth";
+import { reportAttempt, ReportDeliveryError, sendReportEmail } from "./delivery";
 import {
   createRuntimeIntakeRateLimiter,
   IntakeBodyError,
@@ -19,7 +18,9 @@ interface ReportBody {
 }
 
 const VALID_TYPES = new Set(["abuse", "copyright", "bug", "gdpr", "other"]);
-const MAX_REQUEST_BYTES = 8_192;
+// Allow full fields even when each UTF-16 code unit is JSON-escaped as \uXXXX.
+// Keep a separate, bounded transport limit for whitespace and unknown fields.
+const MAX_REQUEST_BYTES = 32_768;
 const MAX_REPORT_BODY_LENGTH = 4_000;
 const MAX_EVIDENCE_LENGTH = 500;
 const MAX_EMAIL_LENGTH = 254;
@@ -72,6 +73,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Въведи валиден имейл." }, { status: 400 });
   }
 
+  const attemptKey = request.headers.get("idempotency-key");
+  let referenceId: string;
+  try {
+    referenceId = reportAttempt(attemptKey).referenceId;
+  } catch (error) {
+    return deliveryErrorResponse(error);
+  }
+
   let actorContext = reporterEmail ?? "анонимен";
   if (reporterEmail) {
     try {
@@ -91,7 +100,6 @@ export async function POST(request: Request) {
   }
 
   const typeLabel = TYPE_LABEL_BG[type] ?? TYPE_LABEL_BG.other;
-  const referenceId = createReportReferenceId();
   const summary = `[${referenceId}] [${typeLabel}] ${actorContext} | Доказателство: ${evidence ?? "няма"}\n\n${reportBody}`;
 
   try {
@@ -101,19 +109,33 @@ export async function POST(request: Request) {
       reporterEmail,
       page: `/report · ${typeLabel}`,
     });
-    await sendEmail({
+    await sendReportEmail({
       to: operatorEmail,
       ...template,
       subject: `${template.subject} · ${referenceId}`,
-    });
-  } catch {
+    }, attemptKey!);
+  } catch (error) {
     console.error("[report] email delivery failed");
-    return NextResponse.json({ error: "Сигналът не успя да се изпрати. Опитай отново." }, { status: 500 });
+    return deliveryErrorResponse(error);
   }
 
   return NextResponse.json({ ok: true, referenceId });
 }
 
-function createReportReferenceId() {
-  return `СИГ-${randomBytes(5).toString("hex").toUpperCase()}`;
+function deliveryErrorResponse(error: unknown) {
+  const kind = error instanceof ReportDeliveryError ? error.kind : "uncertain";
+  switch (kind) {
+    case "invalid_key":
+      return NextResponse.json({ error: "Невалиден опит за изпращане. Провери часовника на устройството и отвори сигнала отново." }, { status: 400 });
+    case "expired":
+      return NextResponse.json({ error: "Срокът за безопасно повторение изтече. Не можем да потвърдим дали сигналът е получен." }, { status: 409 });
+    case "conflict":
+      return NextResponse.json({ error: "Сигналът или данните за връзка са променени. Предишното изпращане не може да бъде потвърдено." }, { status: 409 });
+    case "pending":
+      return NextResponse.json({ error: "Сигналът още се изпраща. Опитай отново след малко." }, { status: 409, headers: { "Retry-After": "5" } });
+    case "unavailable":
+      return NextResponse.json({ error: "Сигналите временно не са достъпни." }, { status: 503 });
+    default:
+      return NextResponse.json({ error: "Не успяхме да потвърдим изпращането. Опитай отново след малко." }, { status: 503, headers: { "Retry-After": "5" } });
+  }
 }

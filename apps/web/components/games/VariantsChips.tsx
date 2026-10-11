@@ -4,6 +4,7 @@ import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
 import { coverImageSizes, roleArtPath, roleArtSource } from "@/lib/role-art";
 import { RoleDossierTrigger } from "./RoleDossierTrigger";
+import { NearViewportMedia } from "@/components/NearViewportMedia";
 
 const WEREWOLF_VARIANTS = [
   { label: "Класическа вечер", body: "Селото срещу върколаците. Добро начало за първата ви игра.", href: "/werewolf/create", action: "Създай стая", art: "/game-art/werewolf/night-5-dawn.webp" },
@@ -29,14 +30,17 @@ export function VariantsChips({ family }: { family: GameFamily }) {
       <ul className="variants-chips__list">
         {variants.map((variant) => (
           <li key={variant.label} className="variant-chip">
-            <div
-              className={"role" in variant ? "variant-chip__art role-art-frame" : "variant-chip__art"}
-              data-frame-family={"role" in variant ? family : undefined}
-            >
-              <Image src={variant.art} alt="" fill sizes={coverImageSizes(
-                "role" in variant ? roleArtSource(family, variant.role) : { width: 4, height: 3 },
-                [{ media: "(max-width: 600px)", width: 88, aspectRatio: 2 / 3 }, { width: 112, aspectRatio: 2 / 3 }],
-              )} quality={85} />
+            <div className="variant-chip__art">
+              <NearViewportMedia>
+                <span className={"role" in variant ? "role-art-frame" : undefined}
+                  data-frame-family={"role" in variant ? family : undefined}
+                  style={{ position: "absolute", inset: 0, borderRadius: 5 }}>
+                  <Image src={variant.art} alt="" fill sizes={coverImageSizes(
+                    "role" in variant ? roleArtSource(family, variant.role) : { width: 4, height: 3 },
+                    [{ media: "(max-width: 600px)", width: 88, aspectRatio: 2 / 3 }, { width: 112, aspectRatio: 2 / 3 }],
+                  )} quality={85} />
+                </span>
+              </NearViewportMedia>
             </div>
             <div className="variant-chip__copy">
               <h3>{variant.label}</h3>

@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { chromium, type Page } from "playwright";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { fixtureLeaderboard, LEADERBOARD_FIXTURE_AS_OF } from "@/app/leaderboard/leaderboard-fixture";
 import { LeaderboardSkeleton } from "@/components/skeleton";
 import { NewspaperEmpty } from "../NewspaperEmpty";
 import { NewspaperPage } from "../NewspaperPage";
@@ -15,6 +16,7 @@ const css = readFileSync(resolve(process.cwd(), "components/leaderboard/Leaderbo
 const utilityCss = `
   * { box-sizing: border-box; }
   body { margin: 0; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
   .skeleton { display: block; }
   .h-4 { height: 1rem; } .h-7 { height: 1.75rem; } .h-12 { height: 3rem; } .h-14 { height: 3.5rem; }
   .h-24 { height: 6rem; } .h-\\[360px\\] { height: 360px; }
@@ -44,19 +46,27 @@ afterAll(async () => {
 }, 30_000);
 
 describe("leaderboard loading geometry", () => {
-  it("shows the leading ranks before the portrait on mobile in both themes", async () => {
-    await page.setViewportSize({ width: 390, height: 844 });
-    const markup = renderToStaticMarkup(<NewspaperPage entries={entries} issueCount={42} />);
+  it.each([320, 390, 768, 1440])("keeps the ranking and its first player visible after the editorial hero at %ipx in both themes", async (width) => {
+    await page.setViewportSize({ width, height: 844 });
+    const markup = renderToStaticMarkup(<NewspaperPage entries={entries} asOf={LEADERBOARD_FIXTURE_AS_OF} />);
     for (const theme of ["dark", "light"]) {
       await page.setContent(`<style>${utilityCss}${css}</style><main class="newspaper-shell">${markup}</main>`);
       await page.locator("html").evaluate((node, value) => node.setAttribute("data-theme", value), theme);
-      const ranking = await page.getByRole("table", { name: "Начело на класацията" }).boundingBox({ timeout: 1500 });
-      const portrait = await page.locator(".headline-portrait").boundingBox();
+      const ranking = await page.getByRole("table", { name: "Класиране" }).boundingBox({ timeout: 1500 });
+      const headline = await page.getByRole("region", { name: "Начело на броя" }).boundingBox();
+      const first = await page.locator("tbody tr").first().boundingBox();
       expect(ranking).not.toBeNull();
-      expect(ranking!.y + ranking!.height).toBeLessThan(600);
-      expect(ranking!.y + ranking!.height).toBeLessThan(portrait!.y);
-      expect(portrait!.width).toBeLessThanOrEqual(168);
-      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+      expect(first!.y + first!.height).toBeLessThan(844);
+      expect(headline!.y + headline!.height).toBeLessThanOrEqual(ranking!.y + 1);
+      expect(await page.locator(".headline-portrait, .headline-main img").count()).toBe(0);
+      expect(await page.locator("tbody tr").count()).toBe(entries.length);
+      expect(await page.locator(".headline-runner").count()).toBe(2);
+      if (width === 1440) {
+        // The approved edition has an approximately 500px hero before the full ranking.
+        expect(ranking!.y).toBeLessThanOrEqual(600);
+        expect(await page.locator(".masthead").evaluate((node) => getComputedStyle(node).textAlign)).toMatch(/^(left|start)$/);
+      }
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
     }
     await page.setViewportSize({ width: 768, height: 1024 });
   });
@@ -67,24 +77,31 @@ describe("leaderboard loading geometry", () => {
       await page.setContent(`<style>${utilityCss}${css}</style><main class="newspaper-shell">${renderToStaticMarkup(state)}</main>`);
       const edition = await page.locator(".newspaper-page").boundingBox();
       const actions = await page.locator(".empty-cta").boundingBox();
-      expect(edition!.height).toBeLessThan(600);
+      expect(edition!.y + edition!.height).toBeLessThan(844);
       expect(actions!.y + actions!.height).toBeLessThan(650);
     }
   });
 
-  it(
-    "keeps CLS below 0.05 when the tablet skeleton resolves to every runtime state",
-    async () => {
+  it.each(["dark", "light"])(
+    "keeps CLS below 0.05 when the tablet skeleton resolves to every runtime state in %s",
+    async (theme) => {
       await page.setViewportSize({ width: 768, height: 1024 });
       const skeleton = renderToStaticMarkup(<LeaderboardSkeleton />);
       const states = [
         ["empty", renderToStaticMarkup(<NewspaperEmpty />)],
         ["unavailable", renderToStaticMarkup(<NewspaperUnavailable />)],
-        ["data", renderToStaticMarkup(<NewspaperPage entries={entries} issueCount={42} />)],
+        ...[1, 2, 3, 30].flatMap((count) => [
+          [
+            `data-${count}-dated`, renderToStaticMarkup(<NewspaperPage entries={fixtureLeaderboard(count)} asOf={LEADERBOARD_FIXTURE_AS_OF} />),
+          ] as const,
+          [
+            `data-${count}-undated`, renderToStaticMarkup(<NewspaperPage entries={fixtureLeaderboard(count)} />),
+          ] as const,
+        ]),
       ] as const;
 
       for (const [stateName, stateMarkup] of states) {
-        const result = await measureTransition(page, skeleton, stateMarkup);
+        const result = await measureTransition(page, skeleton, stateMarkup, theme);
         expect(result.cls, `${stateName}: ${JSON.stringify(result.shifts)}`).toBeLessThan(0.05);
         expect(result.stateHeight + 1, stateName).toBeGreaterThanOrEqual(result.skeletonHeight);
       }
@@ -92,11 +109,25 @@ describe("leaderboard loading geometry", () => {
     30_000,
   );
 
-  it("uses a shared responsive state envelope instead of a fixed tall skeleton", () => {
+  it("uses the same responsive minimum envelope for loading and all runtime states", async () => {
     expect(css).not.toMatch(/\.newspaper-skeleton\s*\{[^}]*min-height:\s*(?:1500|1180)px/s);
     expect(css).toContain("--newspaper-state-min-block-size");
-    expect(css).toMatch(/--newspaper-state-min-block-size:\s*clamp\(/);
     expect(css).not.toContain("max(720px");
+    const sizes: number[] = [];
+    for (const viewport of [{ width: 390, height: 844 }, { width: 1440, height: 1200 }]) {
+      await page.setViewportSize(viewport);
+      const states = [<LeaderboardSkeleton />, <NewspaperEmpty />, <NewspaperUnavailable />, <NewspaperPage entries={entries} asOf={LEADERBOARD_FIXTURE_AS_OF} />];
+      const minima: number[] = [];
+      for (const state of states) {
+        await page.setContent(`<style>${utilityCss}${css}</style><main class="newspaper-shell">${renderToStaticMarkup(state)}</main>`);
+        minima.push(await page.locator(".newspaper-page").evaluate((node) => parseFloat(getComputedStyle(node).minBlockSize)));
+      }
+      expect(new Set(minima).size).toBe(1);
+      expect(minima[0]).toBeGreaterThan(0);
+      expect(minima[0]).toBeLessThan(844);
+      sizes.push(minima[0]!);
+    }
+    expect(new Set(sizes).size).toBe(2);
   });
 
   it("gives unavailable editions an explicit way back to the main table", () => {
@@ -108,11 +139,13 @@ describe("leaderboard loading geometry", () => {
   });
 });
 
-async function measureTransition(targetPage: Page, skeletonMarkup: string, stateMarkup: string) {
+async function measureTransition(targetPage: Page, skeletonMarkup: string, stateMarkup: string, theme: string) {
   await targetPage.setContent(`
+    <html data-theme="${theme}">
     <style>${utilityCss}${css}</style>
     <main id="state" class="shell newspaper-shell">${skeletonMarkup}</main>
     <footer id="after-state">Край на броя</footer>
+    </html>
   `);
   const skeletonHeight = await targetPage.locator(".newspaper-page").evaluate((node) => node.getBoundingClientRect().height);
   await targetPage.evaluate(() => {

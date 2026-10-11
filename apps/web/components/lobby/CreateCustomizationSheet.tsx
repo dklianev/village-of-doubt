@@ -1,13 +1,11 @@
 import { useEffect, useId, useRef, useState, type Dispatch, type KeyboardEvent } from "react";
 import { Sheet } from "@werewolf/ui";
-import { BookOpenCheck, Mail, TimerReset, UsersRound, type LucideIcon } from "lucide-react";
+import { BookOpenCheck, Mail, RotateCw, TimerReset, UsersRound, type LucideIcon } from "lucide-react";
 import type { LobbyFormAction, LobbyFormState } from "@/lib/lobby-form";
-import { AdvancedDrawer } from "@/components/lobby/AdvancedDrawer";
-import { CommunicationSettings, NarratorSettings } from "@/components/lobby/StepStyle";
-import { StepRoles } from "@/components/lobby/StepRoles";
-import { TempoSettings } from "@/components/lobby/StepRoom";
+import { loadCreateCustomizationContent } from "./create-customization-deferred";
 
-type DetailTab = "roles" | "rhythm" | "rules" | "invite";
+export type DetailTab = "roles" | "rhythm" | "rules" | "invite";
+type CustomizationContent = Awaited<ReturnType<typeof loadCreateCustomizationContent>>;
 
 const TABS: { id: DetailTab; label: string; mobileLabel: string; description: string; icon: LucideIcon }[] = [
   { id: "roles", label: "Роли", mobileLabel: "Роли", description: "Състав и баланс", icon: UsersRound },
@@ -30,8 +28,22 @@ export function CreateCustomizationSheet({
   onCloseAutoFocus?: (event: Event) => void;
 }) {
   const [activeTab, setActiveTab] = useState<DetailTab>("roles");
+  const [Content, setContent] = useState<CustomizationContent | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const panelId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open || Content) return;
+    let active = true;
+    setFailed(false);
+    void loadCreateCustomizationContent().then(
+      (LoadedContent) => { if (active) setContent(() => LoadedContent); },
+      () => { if (active) setFailed(true); },
+    );
+    return () => { active = false; };
+  }, [open, Content, attempt]);
 
   useEffect(() => {
     if (open && panelRef.current) panelRef.current.scrollTop = 0;
@@ -107,39 +119,29 @@ export function CreateCustomizationSheet({
             className="create-customization-panel"
             role="tabpanel"
             aria-labelledby={`${panelId}-${activeTab}-tab`}
+            aria-busy={!Content && !failed}
+            tabIndex={-1}
           >
-            {activeTab === "roles" ? <StepRoles state={state} dispatch={dispatch} embedded /> : null}
-            {activeTab === "rhythm" ? (
-              <div className="create-customization-stack">
-                <TempoSettings state={state} dispatch={dispatch} />
-                <NarratorSettings state={state} dispatch={dispatch} />
-              </div>
-            ) : null}
-            {activeTab === "rules" ? (
-              <div className="create-customization-stack">
-                <CommunicationSettings state={state} dispatch={dispatch} />
-                <AdvancedDrawer state={state} dispatch={dispatch} onEditRoles={() => {
+            {Content ? (
+              <Content state={state} dispatch={dispatch} activeTab={activeTab} panelId={panelId}
+                onEditRoles={() => {
                   setActiveTab("roles");
                   window.requestAnimationFrame(() => document.getElementById(`${panelId}-roles-tab`)?.focus());
                 }} />
+            ) : (
+              <div className="create-customization-stack">
+                <p role={failed ? "alert" : "status"} aria-atomic="true">
+                  {failed ? "Настройките не се заредиха." : "Зареждаме настройките..."}
+                </p>
+                {failed ? (
+                  <button type="button" className="btn btn-secondary" onClick={() => {
+                    panelRef.current?.focus({ preventScroll: true });
+                    setFailed(false);
+                    setAttempt((value) => value + 1);
+                  }}><RotateCw size={18} aria-hidden="true" /> Опитай отново</button>
+                ) : null}
               </div>
-            ) : null}
-            {activeTab === "invite" ? (
-              <section className="create-invite-settings" aria-labelledby={`${panelId}-invite-title`}>
-                <h2 id={`${panelId}-invite-title`}>Име на стаята</h2>
-                <p>Как ще се казва вашата вечер?</p>
-                <label>
-                  <span>Име на стаята</span>
-                  <input
-                    className="input"
-                    value={state.roomName}
-                    maxLength={42}
-                    onChange={(event) => dispatch({ type: "SET_ROOM_NAME", roomName: event.target.value })}
-                  />
-                </label>
-                <p className="create-name-note">Кодът за покана ще е готов след създаването.</p>
-              </section>
-            ) : null}
+            )}
           </div>
 
           <footer className="create-customization-footer">

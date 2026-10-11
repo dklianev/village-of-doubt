@@ -1,8 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
-import { ChevronDown, Copy, Flame, Search, ThumbsDown, ThumbsUp } from "lucide-react";
+import { ArrowRight, ChevronDown, Copy, Flame, Search, ThumbsDown, ThumbsUp, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FaqCategory, FaqItem } from "@/lib/faq-data";
 import { copyTextToClipboard } from "@/lib/clipboard";
@@ -13,7 +12,7 @@ import "./LegacyFaq.module.css";
 
 const CATEGORY_LABELS: Record<FaqCategory, string> = {
   "pre-game": "Преди първа игра",
-  gameplay: "Геймплей",
+  gameplay: "По време на игра",
   account: "Досие и сесия",
   tech: "Технически",
   privacy: "Поверителност и контакт",
@@ -33,41 +32,55 @@ export function FaqHearth({ items }: { items: readonly FaqItem[] }) {
   const [feedback, setFeedback] = useState<FeedbackState>({});
   const [announcement, setAnnouncement] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const initialQueryState = useRef<"pending" | "opening" | "ready">("pending");
+  const toolbarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setFeedback(safeLocalStorage.getJson<FeedbackState>(STORAGE_FEEDBACK_KEY) ?? {});
+    // Hydration must adopt text typed into the server-rendered input.
+    setSearch(searchInputRef.current?.value ?? "");
+    const toolbar = toolbarRef.current;
+    if (!toolbar) return;
+    const updateSticky = () => {
+      toolbar.dataset.sticky = String(toolbar.offsetHeight + 112 <= window.innerHeight);
+    };
+    updateSticky();
+    const observer = new ResizeObserver(updateSticky);
+    observer.observe(toolbar);
+    window.addEventListener("resize", updateSticky);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", updateSticky);
+    };
   }, []);
 
   useEffect(() => {
-    const initialSlug = new URLSearchParams(window.location.search).get("q");
-    if (!initialSlug || !items.some((item) => item.slug === initialSlug)) {
-      initialQueryState.current = "ready";
-      return;
+    const saved = safeLocalStorage.getJson<unknown>(STORAGE_FEEDBACK_KEY);
+    if (saved && typeof saved === "object" && !Array.isArray(saved)) {
+      setFeedback(Object.fromEntries(Object.entries(saved).filter(([, value]) => value === "up" || value === "down")));
     }
-
-    initialQueryState.current = "opening";
-    setOpenSlugs(new Set([initialSlug]));
-    window.setTimeout(() => {
-      document.querySelector(`[data-slug="${initialSlug}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-      initialQueryState.current = "ready";
-    }, 50);
-  }, [items]);
+  }, []);
 
   useEffect(() => {
-    if (initialQueryState.current === "pending") return;
-    if (initialQueryState.current === "opening" && openSlugs.size === 0) return;
-
-    const firstOpen = [...openSlugs][0];
-    const url = new URL(window.location.href);
-    if (firstOpen) {
-      url.searchParams.set("q", firstOpen);
-    } else {
-      url.searchParams.delete("q");
+    let frame = 0;
+    function readQuery(event?: PopStateEvent) {
+      const slug = new URLSearchParams(window.location.search).get("q");
+      const item = items.find((entry) => entry.slug === slug);
+      setOpenSlugs(new Set(item ? [item.slug] : []));
+      setActiveCategory("all");
+      if (event) setSearch("");
+      window.cancelAnimationFrame(frame);
+      if (item && (event || !searchInputRef.current?.value)) {
+        frame = window.requestAnimationFrame(() => {
+          document.getElementById(`faq-${item.slug}`)?.scrollIntoView({ block: "start" });
+        });
+      }
     }
-
-    window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
-  }, [openSlugs]);
+    readQuery();
+    window.addEventListener("popstate", readQuery);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("popstate", readQuery);
+    };
+  }, [items]);
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -98,16 +111,22 @@ export function FaqHearth({ items }: { items: readonly FaqItem[] }) {
   }, [filtered]);
 
   const toggle = useCallback((slug: string) => {
-    setOpenSlugs((current) => {
-      const next = new Set(current);
-      if (next.has(slug)) {
-        next.delete(slug);
-      } else {
-        next.add(slug);
-      }
-      return next;
-    });
-  }, []);
+    const next = new Set(openSlugs);
+    if (next.has(slug)) next.delete(slug);
+    else next.add(slug);
+    setOpenSlugs(next);
+    const url = new URL(window.location.href);
+    const linkedSlug = next.has(slug) ? slug : [...next][0];
+    if (linkedSlug) url.searchParams.set("q", linkedSlug);
+    else url.searchParams.delete("q");
+    window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+  }, [openSlugs]);
+
+  function clearSearch() {
+    setSearch("");
+    setActiveCategory("all");
+    searchInputRef.current?.focus();
+  }
 
   const copyLink = useCallback(async (slug: string) => {
     const url = `${window.location.origin}/faq?q=${encodeURIComponent(slug)}`;
@@ -146,7 +165,8 @@ export function FaqHearth({ items }: { items: readonly FaqItem[] }) {
         </div>
       </header>
 
-      <div className="faq-hearth-toolbar">
+      <div className="faq-hearth-layout">
+      <div className="faq-hearth-toolbar" ref={toolbarRef}>
         <div className="faq-hearth-search" role="search">
           <Search className="faq-hearth-search-icon" aria-hidden strokeWidth={2} />
           <input
@@ -164,7 +184,16 @@ export function FaqHearth({ items }: { items: readonly FaqItem[] }) {
             aria-label="Търсене в често задавани въпроси"
             className="faq-hearth-search-input"
           />
+          {search ? <button type="button" className="faq-search-clear" onClick={clearSearch} aria-label="Изчисти търсенето" title="Изчисти търсенето"><X aria-hidden /></button> : null}
         </div>
+
+        <label className="faq-category-mobile">
+          <span>Тема</span>
+          <select value={activeCategory} onChange={(event) => setActiveCategory(event.target.value as FaqCategory | "all")}>
+            <option value="all">Всички теми</option>
+            {CATEGORY_ORDER.map((category) => <option key={category} value={category}>{CATEGORY_LABELS[category]}</option>)}
+          </select>
+        </label>
 
         <div className="faq-hearth-filters" role="group" aria-label="Категории">
           <button
@@ -191,10 +220,17 @@ export function FaqHearth({ items }: { items: readonly FaqItem[] }) {
             </button>
           ))}
         </div>
+        <Link href="/tutorial" className="faq-first-evening">Първа вечер? <ArrowRight aria-hidden /></Link>
       </div>
 
+      <div className="faq-hearth-results">
+      <p className="faq-results-count" aria-live="polite" aria-atomic="true">{filtered.length} {filtered.length === 1 ? "отговор" : "отговора"}</p>
       {grouped.length === 0 ? (
-        <p className="faq-hearth-empty">Никой не е питал това още. Опитай друга дума.</p>
+        <div className="faq-hearth-empty">
+          <h2>Няма намерени отговори</h2>
+          <p>Опитай друга дума или разгледай всички теми.</p>
+          <button type="button" onClick={clearSearch}>Изчисти търсенето <X aria-hidden /></button>
+        </div>
       ) : (
         <div className="faq-hearth-body">
           {grouped.map(({ category, entries }) => (
@@ -210,12 +246,13 @@ export function FaqHearth({ items }: { items: readonly FaqItem[] }) {
                   const feedbackValue = feedback[item.slug];
                   return (
                     <li key={item.slug}>
-                      <article className="faq-hearth-item" data-open={isOpen} data-slug={item.slug}>
+                      <article id={`faq-${item.slug}`} className="faq-hearth-item" data-open={isOpen} data-slug={item.slug}>
                         <button
                           type="button"
                           className="faq-hearth-item-handle"
                           onClick={() => toggle(item.slug)}
                           aria-expanded={isOpen}
+                          aria-controls={`faq-answer-${item.slug}`}
                         >
                           <span className="faq-hearth-item-question">
                             <SearchHighlight text={item.question} term={search.trim()} />
@@ -223,7 +260,7 @@ export function FaqHearth({ items }: { items: readonly FaqItem[] }) {
                           <ChevronDown className="faq-hearth-item-chevron" aria-hidden strokeWidth={2.2} />
                         </button>
 
-                        <div className="faq-hearth-item-answer-shell" aria-hidden={!isOpen}>
+                        <div id={`faq-answer-${item.slug}`} className="faq-hearth-item-answer-shell" hidden={!isOpen}>
                           <div className="faq-hearth-item-answer">
                             <FaqAnswerRenderer blocks={item.answer} />
 
@@ -241,9 +278,9 @@ export function FaqHearth({ items }: { items: readonly FaqItem[] }) {
                                 className="faq-hearth-item-copy"
                                 onClick={() => copyLink(item.slug)}
                                 aria-label={`Копирай линк към "${item.question}"`}
+                                title="Копирай линк"
                               >
                                 <Copy aria-hidden strokeWidth={2} />
-                                <span>Копирай линк</span>
                               </button>
 
                               <div className="faq-hearth-item-helpful" role="group" aria-label="Помогна ли отговорът?">
@@ -255,6 +292,7 @@ export function FaqHearth({ items }: { items: readonly FaqItem[] }) {
                                   aria-pressed={feedbackValue === "up"}
                                   onClick={() => setFeedbackFor(item.slug, "up")}
                                   aria-label="Да, помогна"
+                                  title="Да, помогна"
                                 >
                                   <ThumbsUp aria-hidden strokeWidth={2} />
                                 </button>
@@ -265,6 +303,7 @@ export function FaqHearth({ items }: { items: readonly FaqItem[] }) {
                                   aria-pressed={feedbackValue === "down"}
                                   onClick={() => setFeedbackFor(item.slug, "down")}
                                   aria-label="Не, не помогна"
+                                  title="Не, не помогна"
                                 >
                                   <ThumbsDown aria-hidden strokeWidth={2} />
                                 </button>
@@ -281,22 +320,17 @@ export function FaqHearth({ items }: { items: readonly FaqItem[] }) {
           ))}
         </div>
       )}
+      </div>
+      </div>
 
       <footer className="faq-hearth-foot">
-        <Image
-          src="/game-art/legal/faq-hearth-motif.webp"
-          alt=""
-          width={120}
-          height={80}
-          className="faq-hearth-foot-art"
-        />
-        <p>Имаш въпрос, който не е тук?</p>
+        <div><p className="faq-foot-kicker">Насреща сме</p><h2>Не намираш отговор?</h2></div>
         <div className="faq-hearth-foot-actions">
-          <Link href="/report" className="btn btn-secondary">
-            Дай ни бележка
+          <Link href="/report" className="btn btn-primary">
+            Свържи се с нас <ArrowRight aria-hidden />
           </Link>
-          <Link href="/" className="btn btn-secondary">
-            Към началото
+          <Link href="/status">
+            Състояние на услугите
           </Link>
         </div>
       </footer>

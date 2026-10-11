@@ -7,6 +7,7 @@ const suites = [
   "src/game-logic/__tests__/night-resolver.test.ts",
   "src/__tests__/GameRoom.security.test.ts",
   "src/__tests__/GameRoom.regression.test.ts",
+  "src/__tests__/GameRoom.gameplay-flow.test.ts",
 ];
 
 const args = ["--filter", "@werewolf/game-server", "exec", "vitest", "run", ...suites];

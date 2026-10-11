@@ -4,6 +4,7 @@ import { Expand, ArrowRight } from "lucide-react";
 import { ROLE_DEFINITIONS, type GameFamily, type RoleCode } from "@werewolf/shared";
 import { coverImageSizes, roleArtSource } from "@/lib/role-art";
 import { RoleDossierTrigger } from "./RoleDossierTrigger";
+import { NearViewportMedia } from "@/components/NearViewportMedia";
 
 const WEREWOLF_SPOTLIGHT: RoleCode[] = ["ordinary_villager", "werewolf", "seer", "witch"];
 const MAFIA_SPOTLIGHT: RoleCode[] = ["civilian", "mafioso", "commissioner", "don"];
@@ -33,13 +34,18 @@ export function RoleSpotlight({ family }: { family: GameFamily }) {
           return (
             <li key={role} className="role-spotlight__tile">
               <RoleDossierTrigger family={family} role={role} className="role-spotlight__link">
-                <span className="role-spotlight__art role-art-frame" data-frame-family={family}>
-                  <Image src={source.src} alt="" fill sizes={coverImageSizes(source, [
-                    { media: "(max-width: 600px)", width: "45vw", aspectRatio: 2 / 3 },
-                    { media: "(max-width: 900px)", width: "22vw", aspectRatio: 2 / 3 },
-                    { media: "(max-width: 1240px)", width: "17vw", aspectRatio: 2 / 3 },
-                    { width: 202, aspectRatio: 2 / 3 },
-                  ])} quality={85} />
+                <span className="role-spotlight__art">
+                  <NearViewportMedia>
+                    <span className="role-art-frame" data-frame-family={family}
+                      style={{ position: "absolute", inset: 0, borderRadius: family === "mafia" ? 2 : 6 }}>
+                      <Image src={source.src} alt="" fill sizes={coverImageSizes(source, [
+                        { media: "(max-width: 600px)", width: "45vw", aspectRatio: 2 / 3 },
+                        { media: "(max-width: 900px)", width: "22vw", aspectRatio: 2 / 3 },
+                        { media: "(max-width: 1240px)", width: "17vw", aspectRatio: 2 / 3 },
+                        { width: 202, aspectRatio: 2 / 3 },
+                      ])} quality={85} fetchPriority="low" />
+                    </span>
+                  </NearViewportMedia>
                   <span className="role-spotlight__open" style={{ zIndex: 2 }} title="Разгледай ролята" aria-hidden="true"><Expand size={18} /></span>
                 </span>
                 <strong>{definition.nameBg}</strong>

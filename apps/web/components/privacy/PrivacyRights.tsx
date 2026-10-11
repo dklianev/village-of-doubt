@@ -13,7 +13,7 @@ const RIGHTS: readonly RightAction[] = [
   {
     id: "access",
     title: "Право на достъп",
-    description: "Виж точно какво пазим за теб в секция „Какво виждаме за теб точно сега“.",
+    description: "Прегледай данните за досието си и изтегли копие от тях.",
     href: "/account",
     ctaLabel: "Към досието →",
   },
@@ -21,7 +21,7 @@ const RIGHTS: readonly RightAction[] = [
     id: "portability",
     title: "Право на преносимост",
     description: "Изтегли JSON файл с цялата си история, готов за архив или импорт другаде.",
-    href: "/account#account-data-export",
+    href: "/account?section=data-export#account-data-export",
     ctaLabel: "Изтегли данни →",
   },
   {

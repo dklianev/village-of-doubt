@@ -1,0 +1,8 @@
+# Collection social preview
+
+Built-in imagegen, 2026-09-22. Generic artwork only, no personal data. Published as JPEG 1200x630, quality 85, mozjpeg, with the original PNG master retained. This preserves continuous photographic tones while recovering space for the collection backdrop. Replaces the old hall social preview.
+
+Canonical master: `assets/game-art-source/og/og-achievements.png`. Reproduction:
+`node scripts/optimize-assets.mjs --only og/og-achievements.png`.
+
+Generate wide 1200x630 proportions social-share cover artwork for Bulgarian game Senkite achievements, matching attached approved concept. NO UI or text. A richly detailed still-life miniature collection on a matte charcoal-grey mineral surface: on the right a worn ivory theatrical half-mask with burgundy ribbon and tiny silver bells, next to an antique engraved brass cartridge in a small open aged silver case; at front a deep red sealing-wax droplet emblem. A tiny dark green journal slightly behind. Painterly realism, neutral gentle side light, fine believable tactile patina. Mostobjects gathered in the right65percent, left35percent darkquietnegative space for externalcarddescription, but do not addwrittenwordsorlabels. No palace walls, no humans, no trophy cups or generic badges. Cool dark stone, ivory, silver, red accents, limitedgoldonlycartridge. Wholeobjectsfullyvisible with comfortable6percent safeimageedge margin. Sharpclearprimaryobjects, no blur or bokeh, no floatingobjects. Onecoherent scene, not a sheet of separate assets. This is a replacement generic social preview with no user stats, names, dates or game data.

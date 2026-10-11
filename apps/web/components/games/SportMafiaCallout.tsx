@@ -22,7 +22,7 @@ export function SportMafiaCallout() {
           <span><b>3</b> от Мафията</span>
         </figcaption>
       </figure>
-      <NextLinkPill href="/mafia/create?mode=mafia_sport" className="sport-mafia-callout__cta">
+      <NextLinkPill href="/mafia/create?mode=mafia_sport" className="sport-mafia-callout__cta" tracked>
         Създай маса<ArrowRight size={17} aria-hidden="true" />
       </NextLinkPill>
     </section>

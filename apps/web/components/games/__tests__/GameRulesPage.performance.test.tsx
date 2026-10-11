@@ -1,14 +1,9 @@
-import { preload } from "react-dom";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
+import sharp from "sharp";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GameRulesPage } from "../game-rules-page";
-
-vi.mock("react-dom", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("react-dom")>();
-  return { ...actual, preload: vi.fn() };
-});
 
 vi.mock("next/link", () => ({
   default: ({ prefetch, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { prefetch?: boolean }) => (
@@ -16,50 +11,29 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-const preloadMock = vi.mocked(preload);
 const rulesCss = readFileSync(resolve(process.cwd(), "components/games/GameRulesPage.module.css"), "utf8");
 
 describe("rules hero image loading", () => {
-  beforeEach(() => preloadMock.mockClear());
+  beforeEach(() => {
+    vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} });
+  });
 
-  it.each([
-    ["werewolves", "werewolf"],
-    ["mafia", "mafia"],
-  ] as const)("preloads responsive %s hero art at high priority", (family, path) => {
-    GameRulesPage({ family });
-    const mobileDarkVersion = family === "werewolves" ? "v3" : "v2";
-
-    expect(preloadMock).toHaveBeenCalledTimes(4);
-    expect(preloadMock).toHaveBeenCalledWith(`/game-art/${path}/bg-hero-v2.avif`, {
-      as: "image",
-      type: "image/avif",
-      fetchPriority: "high",
-      media: "(min-width: 721px) and (prefers-color-scheme: dark)",
-    });
-    expect(preloadMock).toHaveBeenCalledWith(`/game-art/mobile/${path}/bg-hero-light-v1.avif`, {
-      as: "image",
-      type: "image/avif",
-      fetchPriority: "high",
-      media: "(max-width: 720px) and (prefers-color-scheme: light)",
-    });
-    expect(preloadMock).toHaveBeenCalledWith(`/game-art/mobile/${path}/bg-hero-${mobileDarkVersion}.avif`, {
-      as: "image",
-      type: "image/avif",
-      fetchPriority: "high",
-      media: "(max-width: 720px) and (prefers-color-scheme: dark)",
-    });
+  it.each(["werewolves", "mafia"] as const)("resolves the selected %s theme without OS-theme image preloads", (family) => {
+    const { container } = render(<GameRulesPage family={family} />);
+    expect(container.querySelector("script")?.textContent).toContain("document.documentElement.dataset.theme");
+    expect(container.querySelector('link[rel="preload"]')).toBeNull();
   });
 
   it("не prefetch-ва другата игра и вторичните route дървета от hero действията", () => {
     render(GameRulesPage({ family: "werewolves" }));
 
-    for (const link of screen.getAllByRole("link")) {
+    for (const link of screen.getAllByRole("link").filter((link) => link.getAttribute("href")?.startsWith("/"))) {
       expect(link).toHaveAttribute("data-prefetch", "false");
     }
   });
 
   it("does not retain superseded first-pass phase board declarations", () => {
-    expect(rulesCss).not.toContain("grid-template-columns: repeat(6, minmax(0, 1fr))");
+    expect(rulesCss).not.toContain("phase-loop-arrow");
     expect(rulesCss).not.toContain("padding: 24px 14px 104px");
     expect(rulesCss).not.toContain("border-radius: 34px");
   });
@@ -72,8 +46,8 @@ describe("rules hero image loading", () => {
     expect(phaseArt).toHaveAttribute("loading", "lazy");
     expect(phaseArt).toHaveAttribute("decoding", "async");
     expect(phaseArt).toHaveAttribute("fetchpriority", "low");
-    expect(phaseArt).toHaveAttribute("width", "1120");
-    expect(phaseArt).toHaveAttribute("height", "800");
+    expect(phaseArt).toHaveAttribute("width", "1484");
+    expect(phaseArt).toHaveAttribute("height", "1060");
     expect(phaseArt!.srcset).toMatch(/\d+w/);
     expect(phaseArt!.sizes).not.toBe("");
     expect(rulesCss).toContain("content-visibility: auto");
@@ -81,7 +55,7 @@ describe("rules hero image loading", () => {
   });
 
   it.each([
-    ["werewolves", "/game-art/phase-board/v1/werewolves/icon-phase-role-reveal-1120.webp", "/game-art/phase-board/v1/werewolves/icon-phase-day-1120.webp"],
+    ["werewolves", "/game-art/rules/werewolf-secret-card-v1.webp", "/game-art/werewolf/bg-hero-light-v1.webp"],
     ["mafia", "/game-art/phase-board/v1/mafia/icon-phase-role-reveal-1120.webp", "/game-art/phase-board/v1/mafia/icon-phase-day-1120.webp"],
   ] as const)("uses the high-density %s board crop without expanding small rail thumbnails", (family, roleRevealSrc, daySrc) => {
     const { container } = render(<GameRulesPage family={family} />);
@@ -92,5 +66,31 @@ describe("rules hero image loading", () => {
     expect(phaseSources).toContain(roleRevealSrc);
     expect(phaseSources).toContain(daySrc);
     expect(phaseSources.every((source) => !source?.includes("role_reveal") && !source?.includes("day_discussion"))).toBe(true);
+  });
+
+  it.each(["werewolves", "mafia"] as const)("matches all six %s phase images to their native metadata", async (family) => {
+    vi.spyOn(window, "requestAnimationFrame").mockReturnValue(0);
+    const { container } = render(<GameRulesPage family={family} />);
+    const buttons = container.querySelectorAll<HTMLButtonElement>(".phase-node");
+    expect(buttons).toHaveLength(6);
+
+    for (const button of buttons) {
+      const thumbnail = button.querySelector("img")!;
+      const source = new URL(thumbnail.src).searchParams.get("url")!;
+      const metadata = await sharp(resolve(process.cwd(), "public", source.slice(1))).metadata();
+      expect(thumbnail).toHaveAttribute("width", String(metadata.width));
+      expect(thumbnail).toHaveAttribute("height", String(metadata.height));
+      fireEvent.click(button);
+      const detail = container.querySelector<HTMLImageElement>(".phase-detail-art img")!;
+      expect(new URL(detail.src).searchParams.get("url")).toBe(source);
+      expect(detail).toHaveAttribute("width", String(metadata.width));
+      expect(detail).toHaveAttribute("height", String(metadata.height));
+      expect(detail.sizes).toContain("(max-width: 760px) 1px");
+    }
+
+    if (family === "werewolves") {
+      const day = container.querySelector<HTMLImageElement>('[data-phase="day_discussion"] img')!;
+      expect(day.sizes).toBe("(max-width: 760px) 207px, 242px");
+    }
   });
 });

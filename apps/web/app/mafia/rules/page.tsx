@@ -3,6 +3,9 @@ import { JsonLd } from "@/components/JsonLd";
 import { GameRulesPage } from "@/components/games/game-rules-page";
 import { absoluteUrl, routeMetadata } from "@/lib/seo";
 
+export const prefetch = "partial";
+export const ensureStatic = "navigation";
+
 export const metadata: Metadata = routeMetadata({
   title: "Правила за Мафия — алибита и присъди",
   description: "Научи правилата за Мафия: роли, нощни договорки, дневни обвинения, гласуване, градски отбор и финална развръзка.",

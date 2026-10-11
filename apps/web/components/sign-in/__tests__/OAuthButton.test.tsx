@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { OAuthButton } from "../OAuthButton";
+import { SIGN_IN_PROVIDERS } from "../SignInStage";
 
 vi.mock("@/lib/auth-client", () => ({
   authClient: {
@@ -17,13 +18,13 @@ describe("OAuthButton", () => {
   });
 
   it("shows the Google label", () => {
-    render(<OAuthButton provider="google" redirectTo="/" />);
+    render(<OAuthButton provider="google" redirectTo="/" {...SIGN_IN_PROVIDERS.google} />);
 
     expect(screen.getByText("Продължи с Google")).toBeInTheDocument();
   });
 
   it("shows the Discord label", () => {
-    render(<OAuthButton provider="discord" redirectTo="/" />);
+    render(<OAuthButton provider="discord" redirectTo="/" {...SIGN_IN_PROVIDERS.discord} />);
 
     expect(screen.getByText("Продължи с Discord")).toBeInTheDocument();
   });
@@ -31,7 +32,7 @@ describe("OAuthButton", () => {
   it("starts the social sign-in flow on click", async () => {
     const { authClient } = await import("@/lib/auth-client");
     const user = userEvent.setup();
-    render(<OAuthButton provider="google" redirectTo="/play/ABC123" />);
+    render(<OAuthButton provider="google" redirectTo="/play/ABC123" {...SIGN_IN_PROVIDERS.google} />);
 
     await user.click(screen.getByRole("button", { name: "Продължи с Google" }));
 
@@ -45,7 +46,7 @@ describe("OAuthButton", () => {
     const { authClient } = await import("@/lib/auth-client");
     vi.mocked(authClient.signIn.social).mockRejectedValueOnce(new Error("network"));
     const user = userEvent.setup();
-    render(<OAuthButton provider="discord" redirectTo="/" />);
+    render(<OAuthButton provider="discord" redirectTo="/" {...SIGN_IN_PROVIDERS.discord} />);
 
     await user.click(screen.getByRole("button", { name: "Продължи с Discord" }));
 

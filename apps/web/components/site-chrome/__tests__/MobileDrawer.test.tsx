@@ -3,10 +3,13 @@ import { resolve } from "node:path";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useRef, useState } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AuthSessionView } from "@/lib/use-auth-session";
 import { MobileDrawer } from "../MobileDrawer";
+import "@/lib/__tests__/auth-session-end-styles";
 
+const browserWindow = window;
+const replace = vi.fn();
 const authMocks = vi.hoisted(() => ({
   signOut: vi.fn(async () => ({ error: null })),
   push: vi.fn(),
@@ -52,8 +55,19 @@ function DrawerHarness({ pathname = "/" }: { pathname?: string }) {
 describe("MobileDrawer", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubGlobal("window", new Proxy(browserWindow, {
+      get(target, key) {
+        if (key === "location") return { replace };
+        return Reflect.get(target, key, target);
+      },
+    }));
     authMocks.session.data = null;
     authMocks.session.isPending = false;
+  });
+
+  afterEach(() => {
+    document.getElementById("auth-session-ended")?.remove();
+    vi.unstubAllGlobals();
   });
 
   it("uses a modal sheet, isolates the page, and restores focus to its opener", async () => {
@@ -136,7 +150,8 @@ describe("MobileDrawer", () => {
     await user.click(await screen.findByRole("button", { name: "Излизам" }));
 
     await waitFor(() => expect(authMocks.signOut).toHaveBeenCalledOnce());
-    expect(authMocks.push).toHaveBeenCalledWith("/");
+    expect(authMocks.push).not.toHaveBeenCalled();
+    expect(replace).toHaveBeenCalledExactlyOnceWith("/");
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
   });
 });

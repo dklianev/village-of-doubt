@@ -126,6 +126,19 @@
   height: 18px;
 }
 
+/* Compact dock: the whole header is the tap target, while the button stays the single accessible control.
+   No transform here, otherwise the stretched area would collapse to the button on hover. */
+.root[data-compact="true"] .toggle:hover {
+  transform: none;
+}
+
+.root[data-compact="true"] .toggle::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  cursor: pointer;
+}
+
 .toggle:focus-visible {
   outline: 2px solid #f5e8c8;
   outline-offset: 3px;
@@ -228,6 +241,11 @@
 
   .root[data-expanded="false"] {
     min-height: calc(70px + env(safe-area-inset-bottom));
+  }
+
+  /* Collapsed, the grid below is hidden: its spacing would only lift the dock over the seats. */
+  .root.root[data-expanded="false"] .header {
+    margin-bottom: 0;
   }
 
   .header {

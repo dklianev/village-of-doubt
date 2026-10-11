@@ -10,15 +10,16 @@ import { NewspaperUnavailable } from "@/components/leaderboard/NewspaperUnavaila
 import { LeaderboardSkeleton } from "@/components/skeleton";
 import type { LeaderboardEntry } from "@/lib/leaderboard-headlines";
 import { absoluteUrl, routeMetadata } from "@/lib/seo";
+import { fixtureLeaderboard, LEADERBOARD_FIXTURE_AS_OF } from "./leaderboard-fixture";
 import "@/components/leaderboard/Leaderboard.module.css";
 
 export const metadata: Metadata = routeMetadata({
-  title: "Вечерен брой — седмичният списък на масата",
-  description: "Анонимен вечерен брой от завършени игри: участия, победи и последна активност, подредени като стар градски вестник.",
+  title: "Вечерен брой | Класация",
+  description: "Класация по победи от публичните игри през последните 7 дни. Профилни имена, победи, изиграни игри и процент победи.",
   path: "/leaderboard",
-  image: "/game-art/og/og-leaderboard.png",
-  imageAlt: "Празен стар вестник, пишеща машина и кафе",
-  ogDescription: "Участия, победи и последна активност от завършените игри.",
+  image: "/game-art/og/og-leaderboard.jpg",
+  imageAlt: "Вечерен брой на Сенките: печатарска маса, метална единица и пишеща машина",
+  ogDescription: "Класация по победи от публичните завършени игри през последните 7 дни.",
 });
 
 export const instant = true;
@@ -27,7 +28,7 @@ const leaderboardJsonLd = {
   "@context": "https://schema.org",
   "@type": "CollectionPage",
   name: "Вечерен брой",
-  description: "Анонимен вечерен брой от завършени игри с участия, победи и последна активност.",
+  description: "Класация с профилни имена и победи от публичните завършени игри през последните 7 дни.",
   url: absoluteUrl("/leaderboard"),
   inLanguage: "bg-BG",
 };
@@ -57,7 +58,7 @@ async function LeaderboardRouteContent({
 }
 
 async function LeaderboardContent({ visualLeaderboard }: { visualLeaderboard: string | undefined }) {
-  const { entries, issueCount } = await loadLeaderboard(visualLeaderboard);
+  const { entries, asOf } = await loadLeaderboard(visualLeaderboard);
 
   if (entries === null) {
     return <NewspaperUnavailable />;
@@ -67,39 +68,40 @@ async function LeaderboardContent({ visualLeaderboard }: { visualLeaderboard: st
     return <NewspaperEmpty />;
   }
 
-  return <NewspaperPage entries={entries} issueCount={issueCount} />;
+  return <NewspaperPage entries={entries} asOf={asOf} />;
 }
 
 interface LeaderboardData {
   entries: LeaderboardEntry[] | null;
-  issueCount: number;
+  asOf?: Date;
 }
 
 async function loadLeaderboard(visualLeaderboard?: string): Promise<LeaderboardData> {
   if (process.env.NODE_ENV !== "production") {
     if (visualLeaderboard === "unavailable") {
-      return { entries: null, issueCount: 1 };
+      return { entries: null };
     }
     if (visualLeaderboard === "empty") {
-      return { entries: [], issueCount: 1 };
+      return { entries: [] };
     }
-    if (visualLeaderboard === "fixture") {
-      return { entries: fixtureLeaderboard(), issueCount: 18 };
+    if (["fixture", "fixture-single", "fixture-three", "fixture-full"].includes(visualLeaderboard ?? "")) {
+      const count = visualLeaderboard === "fixture-single" ? 1 : visualLeaderboard === "fixture-three" ? 3 : visualLeaderboard === "fixture-full" ? 30 : 18;
+      return { entries: fixtureLeaderboard(count), asOf: LEADERBOARD_FIXTURE_AS_OF };
     }
     if (process.env.LEADERBOARD_NEWSPAPER_FIXTURE === "empty") {
-      return { entries: [], issueCount: 1 };
+      return { entries: [] };
     }
     if (process.env.LEADERBOARD_NEWSPAPER_FIXTURE === "filled") {
-      return { entries: fixtureLeaderboard(), issueCount: 18 };
+      return { entries: fixtureLeaderboard(), asOf: LEADERBOARD_FIXTURE_AS_OF };
     }
   }
 
   if (!process.env.DATABASE_URL) {
-    return { entries: null, issueCount: 1 };
+    return { entries: null };
   }
 
   try {
-    const rows = await loadCachedLeaderboard();
+    const { rows, asOf } = await loadCachedLeaderboard();
     const entries = rows.map((row) => ({
       id: row.userId,
       displayName: row.displayName,
@@ -107,11 +109,10 @@ async function loadLeaderboard(visualLeaderboard?: string): Promise<LeaderboardD
       wins: row.wins,
       lastPlayed: row.lastPlayedAt ? new Date(row.lastPlayedAt) : null,
     }));
-    const issueCount = Math.max(1, rows.reduce((sum, row) => sum + row.gamesPlayed, 0));
-    return { entries, issueCount: Math.max(1, issueCount) };
+    return { entries, asOf: new Date(asOf) };
   } catch (error) {
     console.error("[leaderboard]", safeMonitoringErrorMetadata(error));
-    return { entries: null, issueCount: 1 };
+    return { entries: null };
   }
 }
 
@@ -121,74 +122,22 @@ async function loadCachedLeaderboard() {
   cacheTag("public-leaderboard");
 
   const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) return [];
+  if (!databaseUrl) throw new Error("Leaderboard database is not configured");
 
+  const asOf = new Date();
   const db = createDatabase(databaseUrl);
   const rows = await getLeaderboardRows(db, 30, {
-    since: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+    since: new Date(asOf.getTime() - 7 * 24 * 60 * 60 * 1000),
   });
-  return rows.map((row) => ({
-    ...row,
-    lastPlayedAt: row.lastPlayedAt?.toISOString() ?? null,
-  }));
+  return {
+    asOf: asOf.toISOString(),
+    rows: rows.map((row) => ({
+      ...row,
+      lastPlayedAt: row.lastPlayedAt?.toISOString() ?? null,
+    })),
+  };
 }
 
 function firstSearchValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
-}
-
-function fixtureLeaderboard(): LeaderboardEntry[] {
-  const day = 24 * 60 * 60 * 1000;
-  const today = new Date("2026-05-15T19:00:00.000Z");
-  const names = [
-    "Мила",
-    "Калоян",
-    "Ива",
-    "Борис",
-    "Сияна",
-    "Радо",
-    "Неда",
-    "Тео",
-    "Лора",
-    "Виктор",
-    "Елица",
-    "Петър",
-    "Дара",
-    "Никола",
-    "Яна",
-    "Сава",
-    "Рая",
-    "Крис",
-  ];
-  const scores: Array<[number, number]> = [
-    [9, 8],
-    [11, 7],
-    [8, 5],
-    [10, 5],
-    [7, 4],
-    [9, 4],
-    [6, 3],
-    [8, 3],
-    [6, 2],
-    [5, 2],
-    [7, 2],
-    [4, 1],
-    [5, 1],
-    [3, 1],
-    [6, 1],
-    [2, 1],
-    [4, 0],
-    [3, 0],
-  ];
-
-  return names.map((displayName, index) => {
-    const [games, wins] = scores[index] ?? [1, 0];
-    return {
-      id: `fixture-${index + 1}`,
-      displayName,
-      games,
-      wins,
-      lastPlayed: new Date(today.getTime() - index * day),
-    };
-  });
 }

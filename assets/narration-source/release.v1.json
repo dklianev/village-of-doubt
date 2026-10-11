@@ -1,0 +1,5589 @@
+{
+  "version": 1,
+  "provider": "ElevenLabs",
+  "model": "eleven_v4_exp",
+  "language": "bg",
+  "targetLufs": -24.5,
+  "clips": [
+    {
+      "voice": "classic",
+      "cueId": "preview.night",
+      "voiceId": "gdk0ZsvfAOobfbTtnx6p",
+      "sourceSha256": "2afacc612d4fcd5ec200bd9d9337fe78a4c7d2f3f2c2621453e70d380b4af094",
+      "review": {
+        "status": "approved",
+        "reviewedBy": "user",
+        "evidence": "Keep both classic voices; user: нека и двата ги има.",
+        "scope": "Previously auditioned original take; no claim of approval for newly generated final cues."
+      },
+      "original": {
+        "sha256": "2afacc612d4fcd5ec200bd9d9337fe78a4c7d2f3f2c2621453e70d380b4af094",
+        "bytes": 291874,
+        "durationMs": 11468,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -23.22,
+        "peakDb": -2.04
+      },
+      "prepared": {
+        "sha256": "77b4749e4163a25d0c68e3bdedebe798516a7d16e26be364e8770ef0872eeaa7",
+        "bytes": 184363,
+        "durationMs": 11468,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -3.55
+      },
+      "gainDb": -1.28
+    },
+    {
+      "voice": "classic_nikolay",
+      "cueId": "preview.night",
+      "voiceId": "jFUMfgSnXMVNWDwPdkDf",
+      "sourceSha256": "56ee818d4389a6ea0761764e6609467ff838e25b043e9de186b32cc3f95b20fc",
+      "review": {
+        "status": "approved",
+        "reviewedBy": "user",
+        "evidence": "Keep both classic voices; user: нека и двата ги има.",
+        "scope": "Previously auditioned original take; no claim of approval for newly generated final cues."
+      },
+      "original": {
+        "sha256": "56ee818d4389a6ea0761764e6609467ff838e25b043e9de186b32cc3f95b20fc",
+        "bytes": 300024,
+        "durationMs": 11807,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -22.69,
+        "peakDb": -2.34
+      },
+      "prepared": {
+        "sha256": "49b8d225996669ef9c358aed9bd90b15d66746ae0387eae4b6c397dee213b792",
+        "bytes": 189796,
+        "durationMs": 11807,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.93,
+        "peakDb": -4.62
+      },
+      "gainDb": -1.81
+    },
+    {
+      "voice": "old_villager",
+      "cueId": "preview.night",
+      "voiceId": "406EiNlYvqFqcz3vsnOm",
+      "sourceSha256": "7315ed079c9fd0206cb75d703974ec8e39dfd5ea25337fc68ba8dc6edfc8cc63",
+      "review": {
+        "status": "approved",
+        "reviewedBy": "user",
+        "evidence": "User selected sample 2 and later approved emotional range.",
+        "scope": "Previously auditioned original take; no claim of approval for newly generated final cues."
+      },
+      "original": {
+        "sha256": "7315ed079c9fd0206cb75d703974ec8e39dfd5ea25337fc68ba8dc6edfc8cc63",
+        "bytes": 211834,
+        "durationMs": 12199,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -22.95,
+        "peakDb": -5.84
+      },
+      "prepared": {
+        "sha256": "31de92f4d55d2ee6d3ee94b13fc774d4fb5b45ae5f5c1e64c2462b68cc3935fd",
+        "bytes": 196065,
+        "durationMs": 12199,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -7.8
+      },
+      "gainDb": -1.55
+    },
+    {
+      "voice": "inspector",
+      "cueId": "preview.night",
+      "voiceId": "vZifugoCmJjNgn0bBdKH",
+      "sourceSha256": "2792d0fcbb4a498705757eeec97c0cabc5aeb6995be2a6604b3e4162e62563fa",
+      "review": {
+        "status": "approved",
+        "reviewedBy": "user",
+        "evidence": "User: F ме кефи; later emotional range approved.",
+        "scope": "Previously auditioned original take; no claim of approval for newly generated final cues."
+      },
+      "original": {
+        "sha256": "2792d0fcbb4a498705757eeec97c0cabc5aeb6995be2a6604b3e4162e62563fa",
+        "bytes": 288112,
+        "durationMs": 11311,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -21.19,
+        "peakDb": -2.7
+      },
+      "prepared": {
+        "sha256": "a5a9d63a181ca713348184e682eed7acdb042d78821418dac2a7270683a87cd0",
+        "bytes": 181855,
+        "durationMs": 11311,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.96,
+        "peakDb": -6.45
+      },
+      "gainDb": -3.31
+    },
+    {
+      "voice": "witch",
+      "cueId": "preview.night",
+      "voiceId": "M1ydWt7KnBCiuv4CnEDC",
+      "sourceSha256": "6824a7a76fb494ab745d659553274884d19cfcb4337dce6e739aa3d11cc52a3b",
+      "review": {
+        "status": "approved",
+        "reviewedBy": "user",
+        "evidence": "User: Супер добри са; И двете.",
+        "scope": "Previously auditioned original take; no claim of approval for newly generated final cues."
+      },
+      "original": {
+        "sha256": "6824a7a76fb494ab745d659553274884d19cfcb4337dce6e739aa3d11cc52a3b",
+        "bytes": 303786,
+        "durationMs": 11964,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -28.15,
+        "peakDb": -10.4
+      },
+      "prepared": {
+        "sha256": "022f487ae0791b3ba19121f32bbac3c0322e9cbbbcf9d636426516672a196077",
+        "bytes": 192304,
+        "durationMs": 11964,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -7.2
+      },
+      "gainDb": 3.65
+    },
+    {
+      "voice": "witch_moonglow",
+      "cueId": "preview.night",
+      "voiceId": "vnewfQdVVk9Y9DZWVRNm",
+      "sourceSha256": "cabcff6a28a934af5a9e6d6e58a76be42a9103e7b5b5dabd72c267f8c711699e",
+      "review": {
+        "status": "approved",
+        "reviewedBy": "user",
+        "evidence": "User: Супер добри са; И двете.",
+        "scope": "Previously auditioned original take; no claim of approval for newly generated final cues."
+      },
+      "original": {
+        "sha256": "cabcff6a28a934af5a9e6d6e58a76be42a9103e7b5b5dabd72c267f8c711699e",
+        "bytes": 301905,
+        "durationMs": 11886,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -28.12,
+        "peakDb": -7.82
+      },
+      "prepared": {
+        "sha256": "9094a60c8034f154678f29eb0435cbfb3f6900b0388de1ba51dda29ff2983642",
+        "bytes": 191050,
+        "durationMs": 11886,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -4.67
+      },
+      "gainDb": 3.62
+    },
+    {
+      "voice": "classic",
+      "cueId": "werewolves.phase.role.reveal",
+      "voiceId": "gdk0ZsvfAOobfbTtnx6p",
+      "sourceSha256": "04ee58ef06d80fe9b8f6f0a5967c839befca53b42d85b9f11078b25864b33ea0",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "04ee58ef06d80fe9b8f6f0a5967c839befca53b42d85b9f11078b25864b33ea0",
+        "bytes": 138274,
+        "durationMs": 5068,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -21.89,
+        "peakDb": -3.03
+      },
+      "prepared": {
+        "sha256": "aabb1de12f9fc7e9c586523bb0a74126d2f884161a8617da732751db470a9973",
+        "bytes": 81963,
+        "durationMs": 5068,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -6.07
+      },
+      "gainDb": -2.61
+    },
+    {
+      "voice": "classic",
+      "cueId": "werewolves.phase.first.night",
+      "voiceId": "gdk0ZsvfAOobfbTtnx6p",
+      "sourceSha256": "1a4b31217abba2d9259c10fea283371cdacf88e10291edcfdea10288adaef098",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "1a4b31217abba2d9259c10fea283371cdacf88e10291edcfdea10288adaef098",
+        "bytes": 165232,
+        "durationMs": 6191,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -26.11,
+        "peakDb": -4.95
+      },
+      "prepared": {
+        "sha256": "5fcf2b166b4fb26a3a5434b5a6de9fa9466597405bd1ebd7087c919654fa1fcd",
+        "bytes": 99935,
+        "durationMs": 6191,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -3.79
+      },
+      "gainDb": 1.61
+    },
+    {
+      "voice": "classic",
+      "cueId": "werewolves.phase.night",
+      "voiceId": "gdk0ZsvfAOobfbTtnx6p",
+      "sourceSha256": "7d69c5a7e948eb06f1c955cf367ddc54a30ae1b6ebabdbc6ed8f9625c4747cfa",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "7d69c5a7e948eb06f1c955cf367ddc54a30ae1b6ebabdbc6ed8f9625c4747cfa",
+        "bytes": 150510,
+        "durationMs": 6269,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -23.8,
+        "peakDb": -1.13
+      },
+      "prepared": {
+        "sha256": "7fe31ccc639e03128db99364608ec558f319f932966948a9464b121fbaf47986",
+        "bytes": 101189,
+        "durationMs": 6269,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -2.28
+      },
+      "gainDb": -0.7
+    },
+    {
+      "voice": "classic",
+      "cueId": "werewolves.phase.day.announcement",
+      "voiceId": "gdk0ZsvfAOobfbTtnx6p",
+      "sourceSha256": "b6506dc6c14a5a704bc6e45a3ce6d34bbe0919b43cfc482e936bdd9749aacd1b",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "b6506dc6c14a5a704bc6e45a3ce6d34bbe0919b43cfc482e936bdd9749aacd1b",
+        "bytes": 130750,
+        "durationMs": 4754,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -19.68,
+        "peakDb": -2.49
+      },
+      "prepared": {
+        "sha256": "725b553bdc3d597de5533d257a2e25f5555127a116ad76471d21095768c10711",
+        "bytes": 76947,
+        "durationMs": 4754,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -7.81
+      },
+      "gainDb": -4.82
+    },
+    {
+      "voice": "classic",
+      "cueId": "werewolves.phase.day.discussion",
+      "voiceId": "gdk0ZsvfAOobfbTtnx6p",
+      "sourceSha256": "b86ec049b733b4b19ef9305592cd6bf610e8f8cc3216f43421c88e537a295708",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "b86ec049b733b4b19ef9305592cd6bf610e8f8cc3216f43421c88e537a295708",
+        "bytes": 150186,
+        "durationMs": 5564,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -20.6,
+        "peakDb": -1.79
+      },
+      "prepared": {
+        "sha256": "4b4fa430f6f12db1259b5cbda763c9a636615a93f201b57c5eed340ad18b403b",
+        "bytes": 89904,
+        "durationMs": 5564,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -6.08
+      },
+      "gainDb": -3.9
+    },
+    {
+      "voice": "classic",
+      "cueId": "werewolves.phase.voting",
+      "voiceId": "gdk0ZsvfAOobfbTtnx6p",
+      "sourceSha256": "79809f06855630b582df052c753b3de8e2f80256481e0a8f019d6210dd195dfe",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "79809f06855630b582df052c753b3de8e2f80256481e0a8f019d6210dd195dfe",
+        "bytes": 132631,
+        "durationMs": 4833,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -20.12,
+        "peakDb": -2.79
+      },
+      "prepared": {
+        "sha256": "2ca4b8f972d5049eebd5927a166291435c3070a7d3845b5116b63b0235817734",
+        "bytes": 78201,
+        "durationMs": 4833,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -7.6
+      },
+      "gainDb": -4.38
+    },
+    {
+      "voice": "classic",
+      "cueId": "werewolves.phase.resolution",
+      "voiceId": "gdk0ZsvfAOobfbTtnx6p",
+      "sourceSha256": "d95b43830d23e0cca9480dce6dcd4b116b9c15e4f44c8ccfe8dc0bb6f51276d5",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "d95b43830d23e0cca9480dce6dcd4b116b9c15e4f44c8ccfe8dc0bb6f51276d5",
+        "bytes": 117585,
+        "durationMs": 4206,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -20.72,
+        "peakDb": -3.17
+      },
+      "prepared": {
+        "sha256": "1a258102c94840635b3e05957fae440691316a1aa377f494fc1b5c1fc9ae05c9",
+        "bytes": 68170,
+        "durationMs": 4206,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.93,
+        "peakDb": -7.37
+      },
+      "gainDb": -3.78
+    },
+    {
+      "voice": "classic",
+      "cueId": "mafia.phase.role.reveal",
+      "voiceId": "gdk0ZsvfAOobfbTtnx6p",
+      "sourceSha256": "91dacf1aa5ad1823e910c8018ad5e0f5a601a78a69a2ff9ca58729dc1c21846f",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "91dacf1aa5ad1823e910c8018ad5e0f5a601a78a69a2ff9ca58729dc1c21846f",
+        "bytes": 140154,
+        "durationMs": 5146,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -22.18,
+        "peakDb": -2.35
+      },
+      "prepared": {
+        "sha256": "805b7f72fe39485a9aec0f2cfa7b47092783bef17f41051ed3402d69c033ee5c",
+        "bytes": 83216,
+        "durationMs": 5146,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -5.11
+      },
+      "gainDb": -2.32
+    },
+    {
+      "voice": "classic",
+      "cueId": "mafia.phase.first.night",
+      "voiceId": "gdk0ZsvfAOobfbTtnx6p",
+      "sourceSha256": "df0d982697fa2efa853de56aa61388c9dac371c2d91ca12d594e5920b513aaef",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "df0d982697fa2efa853de56aa61388c9dac371c2d91ca12d594e5920b513aaef",
+        "bytes": 159590,
+        "durationMs": 5956,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -26.97,
+        "peakDb": -6.08
+      },
+      "prepared": {
+        "sha256": "190defe3cdd42d852b1babde54ca2a6cd48a6e9d2d718015d235e49a942f6243",
+        "bytes": 96173,
+        "durationMs": 5956,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -4.06
+      },
+      "gainDb": 2.47
+    },
+    {
+      "voice": "classic",
+      "cueId": "mafia.phase.night",
+      "voiceId": "gdk0ZsvfAOobfbTtnx6p",
+      "sourceSha256": "d03aafee7264c855f967a186f1f9c603ef519526922c1a57aa794f01d8231f1c",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "d03aafee7264c855f967a186f1f9c603ef519526922c1a57aa794f01d8231f1c",
+        "bytes": 146424,
+        "durationMs": 5407,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -22.34,
+        "peakDb": -2.15
+      },
+      "prepared": {
+        "sha256": "91e8f8ce9f666f9d9dc5b3152a63a58cad81570f4cb22ab6b3ad269b4d5305f3",
+        "bytes": 87396,
+        "durationMs": 5407,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -4.77
+      },
+      "gainDb": -2.16
+    },
+    {
+      "voice": "classic",
+      "cueId": "mafia.phase.day.announcement",
+      "voiceId": "gdk0ZsvfAOobfbTtnx6p",
+      "sourceSha256": "6d520ff1aa6285bb0e6a8744ec4f6862fc348da4144dfa59c9da73e2dd9032a9",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "6d520ff1aa6285bb0e6a8744ec4f6862fc348da4144dfa59c9da73e2dd9032a9",
+        "bytes": 140154,
+        "durationMs": 5146,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -21.11,
+        "peakDb": -4.46
+      },
+      "prepared": {
+        "sha256": "799dc36b7ed540cbedf1620c06072611d2d417f98072acfab21898ee2d0df55e",
+        "bytes": 83216,
+        "durationMs": 5146,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -8.25
+      },
+      "gainDb": -3.39
+    },
+    {
+      "voice": "classic",
+      "cueId": "mafia.phase.day.discussion",
+      "voiceId": "gdk0ZsvfAOobfbTtnx6p",
+      "sourceSha256": "87a5787c4f3c15d793cb4f9afbc6f5cd8f10acc1240ff224cc378e229b5e673a",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "87a5787c4f3c15d793cb4f9afbc6f5cd8f10acc1240ff224cc378e229b5e673a",
+        "bytes": 132631,
+        "durationMs": 4833,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -19.39,
+        "peakDb": -2.98
+      },
+      "prepared": {
+        "sha256": "16c111ee2dbd48c980a37e6030b9ff39c2db2e491f89c4f2625397684c2e8e00",
+        "bytes": 78201,
+        "durationMs": 4833,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -8.61
+      },
+      "gainDb": -5.11
+    },
+    {
+      "voice": "classic",
+      "cueId": "mafia.phase.voting",
+      "voiceId": "gdk0ZsvfAOobfbTtnx6p",
+      "sourceSha256": "d56043dbe62a940f54477c23d404609c2888c14d7f0742abc9366e470c738ae8",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "d56043dbe62a940f54477c23d404609c2888c14d7f0742abc9366e470c738ae8",
+        "bytes": 130750,
+        "durationMs": 4754,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -20.4,
+        "peakDb": -3.2
+      },
+      "prepared": {
+        "sha256": "ca8761713688cf97952d5b2fd4ccfb074a28be709fd8126897dbb578a9ab0bc1",
+        "bytes": 76947,
+        "durationMs": 4754,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -7.78
+      },
+      "gainDb": -4.1
+    },
+    {
+      "voice": "classic",
+      "cueId": "mafia.phase.resolution",
+      "voiceId": "gdk0ZsvfAOobfbTtnx6p",
+      "sourceSha256": "51c82bdff46f6be3a684c6ba02e1fd3bc55f1e964050215d99685f5af5152f0d",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "51c82bdff46f6be3a684c6ba02e1fd3bc55f1e964050215d99685f5af5152f0d",
+        "bytes": 117585,
+        "durationMs": 4206,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -19.83,
+        "peakDb": -1.74
+      },
+      "prepared": {
+        "sha256": "2aaaf594c2d5360659666df707da87a6268063deb07d113cbab22a78decadbd0",
+        "bytes": 68170,
+        "durationMs": 4206,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.93,
+        "peakDb": -6.9
+      },
+      "gainDb": -4.67
+    },
+    {
+      "voice": "classic",
+      "cueId": "mafia.phase.nomination",
+      "voiceId": "gdk0ZsvfAOobfbTtnx6p",
+      "sourceSha256": "23c4ecc4752359809796a9491fb77b215dbc666c8fed20f4999ac9fe51f6c770",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "23c4ecc4752359809796a9491fb77b215dbc666c8fed20f4999ac9fe51f6c770",
+        "bytes": 136393,
+        "durationMs": 4989,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -19.56,
+        "peakDb": -2.32
+      },
+      "prepared": {
+        "sha256": "d171b05aeb08c9208a7fe048fe049116bf06e4ac733cf3d950c0687ea7e92087",
+        "bytes": 80709,
+        "durationMs": 4989,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -7.69
+      },
+      "gainDb": -4.94
+    },
+    {
+      "voice": "classic",
+      "cueId": "mafia.phase.defense",
+      "voiceId": "gdk0ZsvfAOobfbTtnx6p",
+      "sourceSha256": "8d90cd05f284d8d0f9b1c0dc0094ad8ef14a921f30db7f20c5aa948637e3138d",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "8d90cd05f284d8d0f9b1c0dc0094ad8ef14a921f30db7f20c5aa948637e3138d",
+        "bytes": 136393,
+        "durationMs": 4989,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -20.21,
+        "peakDb": -1.32
+      },
+      "prepared": {
+        "sha256": "dc552910a7be0782269975ff1373f9e46f88f5e9bc4ff08d3c2c6553f137183a",
+        "bytes": 80709,
+        "durationMs": 4989,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.96,
+        "peakDb": -6.01
+      },
+      "gainDb": -4.29
+    },
+    {
+      "voice": "classic",
+      "cueId": "werewolves.phase.hunter.revenge",
+      "voiceId": "gdk0ZsvfAOobfbTtnx6p",
+      "sourceSha256": "d0cb865e07f69bc8fe41da25e8187e7afb29102851894f6cc65351dba78f78b5",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "d0cb865e07f69bc8fe41da25e8187e7afb29102851894f6cc65351dba78f78b5",
+        "bytes": 115704,
+        "durationMs": 4127,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -20.57,
+        "peakDb": -1.53
+      },
+      "prepared": {
+        "sha256": "d9aad85bebb2d53e9a769cfb2e62c1892af5e0314dc1a34897dfff5f3d64a07d",
+        "bytes": 66916,
+        "durationMs": 4127,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -5.9
+      },
+      "gainDb": -3.93
+    },
+    {
+      "voice": "classic",
+      "cueId": "werewolves.phase.mayor.successor",
+      "voiceId": "gdk0ZsvfAOobfbTtnx6p",
+      "sourceSha256": "a5d5b8f6bd8c91e6509579d478bb456e2508972f72d4a15a24cb01a2e981ee8d",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "a5d5b8f6bd8c91e6509579d478bb456e2508972f72d4a15a24cb01a2e981ee8d",
+        "bytes": 128870,
+        "durationMs": 4676,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -20.69,
+        "peakDb": -1.42
+      },
+      "prepared": {
+        "sha256": "eab7aaa767b684fbf213720da300867da1a886289d2ec866b71e62f3c4bc1329",
+        "bytes": 75693,
+        "durationMs": 4676,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.93,
+        "peakDb": -5.7
+      },
+      "gainDb": -3.81
+    },
+    {
+      "voice": "classic",
+      "cueId": "werewolves.finale.village",
+      "voiceId": "gdk0ZsvfAOobfbTtnx6p",
+      "sourceSha256": "60b999a755dd9a66addc38070f70756688c06be48cbd78da59a4ba81e624c577",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "60b999a755dd9a66addc38070f70756688c06be48cbd78da59a4ba81e624c577",
+        "bytes": 190310,
+        "durationMs": 7236,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -26.25,
+        "peakDb": -6.15
+      },
+      "prepared": {
+        "sha256": "ca8aac239a88c9e6abe9dd21d71a9b74d205876e84ce963d4d957c0ba9ff804d",
+        "bytes": 116653,
+        "durationMs": 7236,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -4.88
+      },
+      "gainDb": 1.75
+    },
+    {
+      "voice": "classic",
+      "cueId": "mafia.finale.village",
+      "voiceId": "gdk0ZsvfAOobfbTtnx6p",
+      "sourceSha256": "50638d4245cc7106955db83c19d3549b7a3b295de9bfd2e0d7b2c85bf2b558e7",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "50638d4245cc7106955db83c19d3549b7a3b295de9bfd2e0d7b2c85bf2b558e7",
+        "bytes": 175263,
+        "durationMs": 6609,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.14,
+        "peakDb": -5.47
+      },
+      "prepared": {
+        "sha256": "8b4eac3da477e1161dcd73495432098303378584abb0e72703eebc848a15997e",
+        "bytes": 106622,
+        "durationMs": 6609,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -6.25
+      },
+      "gainDb": -0.36
+    },
+    {
+      "voice": "classic",
+      "cueId": "werewolves.finale.werewolves",
+      "voiceId": "gdk0ZsvfAOobfbTtnx6p",
+      "sourceSha256": "8962114f6c7bbaf497a106281f71a9d83c5c50b73f214f31709e58405f65b056",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "8962114f6c7bbaf497a106281f71a9d83c5c50b73f214f31709e58405f65b056",
+        "bytes": 195952,
+        "durationMs": 7471,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -22.32,
+        "peakDb": -1.25
+      },
+      "prepared": {
+        "sha256": "155564554768376edeca1a46531ed5fdcc225dd134fcf4b38b4c2f20bfc4ef46",
+        "bytes": 120415,
+        "durationMs": 7471,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -3.86
+      },
+      "gainDb": -2.18
+    },
+    {
+      "voice": "classic",
+      "cueId": "werewolves.finale.vampires",
+      "voiceId": "gdk0ZsvfAOobfbTtnx6p",
+      "sourceSha256": "b79c3944b017d52132f9eedb861ad68c6b0c506cce406c9fcde4a74c80371fb1",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "b79c3944b017d52132f9eedb861ad68c6b0c506cce406c9fcde4a74c80371fb1",
+        "bytes": 209745,
+        "durationMs": 8046,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -23.09,
+        "peakDb": -2.5
+      },
+      "prepared": {
+        "sha256": "3649a39e81e332c34bd02b809d266ac1b3e3a08bcca6b29642ec351e51a179b9",
+        "bytes": 129610,
+        "durationMs": 8046,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -4.38
+      },
+      "gainDb": -1.41
+    },
+    {
+      "voice": "classic",
+      "cueId": "mafia.finale.mafia",
+      "voiceId": "gdk0ZsvfAOobfbTtnx6p",
+      "sourceSha256": "fc3cd67b0559128373ae4c3ee7891a744739d9bd08b9d6ac31fb569d996c8274",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "fc3cd67b0559128373ae4c3ee7891a744739d9bd08b9d6ac31fb569d996c8274",
+        "bytes": 205983,
+        "durationMs": 7889,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -21.27,
+        "peakDb": -2.13
+      },
+      "prepared": {
+        "sha256": "d050319fc0824f49a54b87bbfb6c5797f8799afffda6baf4dc82009266d4b6bf",
+        "bytes": 127102,
+        "durationMs": 7889,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -5.77
+      },
+      "gainDb": -3.23
+    },
+    {
+      "voice": "classic",
+      "cueId": "mafia.finale.maniac",
+      "voiceId": "gdk0ZsvfAOobfbTtnx6p",
+      "sourceSha256": "0a0c5b454e9524c6280dc10ef245a1fd77eb8f41b11af00cb1ce0406276f39f1",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "0a0c5b454e9524c6280dc10ef245a1fd77eb8f41b11af00cb1ce0406276f39f1",
+        "bytes": 201594,
+        "durationMs": 7706,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -22.59,
+        "peakDb": -2.45
+      },
+      "prepared": {
+        "sha256": "f9f1a756b9ede3c449eeea066941de5f47e984a1e4e060ead8adf5db71e89aa3",
+        "bytes": 124176,
+        "durationMs": 7706,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -4.87
+      },
+      "gainDb": -1.91
+    },
+    {
+      "voice": "classic",
+      "cueId": "werewolves.finale.lovers",
+      "voiceId": "gdk0ZsvfAOobfbTtnx6p",
+      "sourceSha256": "a5b8e82a12a55377f814e79cb993cf4f2911eb5bd9a0c0b0eeec1d75cc3e03df",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "a5b8e82a12a55377f814e79cb993cf4f2911eb5bd9a0c0b0eeec1d75cc3e03df",
+        "bytes": 209745,
+        "durationMs": 8046,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -25.16,
+        "peakDb": -3.43
+      },
+      "prepared": {
+        "sha256": "cc45ee1f8081a7d02bd3e5b74db7927190d6df6a8c921828dc9e7a2ec67a1758",
+        "bytes": 129610,
+        "durationMs": 8046,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.93,
+        "peakDb": -3.11
+      },
+      "gainDb": 0.66
+    },
+    {
+      "voice": "classic",
+      "cueId": "mafia.finale.lovers",
+      "voiceId": "gdk0ZsvfAOobfbTtnx6p",
+      "sourceSha256": "5cf16ea686b9709fd3f20bb65daebc533ac03e6f0874f3dc620bb9feba607155",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "5cf16ea686b9709fd3f20bb65daebc533ac03e6f0874f3dc620bb9feba607155",
+        "bytes": 242346,
+        "durationMs": 9404,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -26.2,
+        "peakDb": -6.63
+      },
+      "prepared": {
+        "sha256": "1c3dc5b6322cbdc9a410103ddde4022d9c6bd340e16ba242cce3b3c5bdc52038",
+        "bytes": 151344,
+        "durationMs": 9404,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -5.38
+      },
+      "gainDb": 1.7
+    },
+    {
+      "voice": "classic",
+      "cueId": "shared.finale.draw",
+      "voiceId": "gdk0ZsvfAOobfbTtnx6p",
+      "sourceSha256": "c6dbd820bb7a1070d7404037e0d50af875d25706fdb7a10db5a7f28a32aa379f",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "c6dbd820bb7a1070d7404037e0d50af875d25706fdb7a10db5a7f28a32aa379f",
+        "bytes": 217268,
+        "durationMs": 8359,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -23.22,
+        "peakDb": -3.01
+      },
+      "prepared": {
+        "sha256": "81599d4388098059e3feb04ff19ffad135eb20322b2d0483a33e19a644448090",
+        "bytes": 134625,
+        "durationMs": 8359,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -4.91
+      },
+      "gainDb": -1.28
+    },
+    {
+      "voice": "classic",
+      "cueId": "shared.personal.finale.jester",
+      "voiceId": "gdk0ZsvfAOobfbTtnx6p",
+      "sourceSha256": "6b2aa7202191ddcc794f73be7d20f44930d6af03a25ca20f4dac626731e16a4f",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "6b2aa7202191ddcc794f73be7d20f44930d6af03a25ca20f4dac626731e16a4f",
+        "bytes": 190310,
+        "durationMs": 7236,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -22.44,
+        "peakDb": -3.36
+      },
+      "prepared": {
+        "sha256": "63bce02122304e260ebf8f12e3f994604e5617e150ff70493b44624220aa945a",
+        "bytes": 116653,
+        "durationMs": 7236,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -5.9
+      },
+      "gainDb": -2.06
+    },
+    {
+      "voice": "classic_nikolay",
+      "cueId": "werewolves.phase.role.reveal",
+      "voiceId": "jFUMfgSnXMVNWDwPdkDf",
+      "sourceSha256": "5c775ab6797df8dfe93522c5758c9aeffcfb8a072d03d65b59cad537e2e11f1e",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "5c775ab6797df8dfe93522c5758c9aeffcfb8a072d03d65b59cad537e2e11f1e",
+        "bytes": 140154,
+        "durationMs": 5146,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -22.52,
+        "peakDb": -1.73
+      },
+      "prepared": {
+        "sha256": "9275a705354e8e110db64a92b043f3d904bd50da7f44c0943fa8cc635a152387",
+        "bytes": 83216,
+        "durationMs": 5146,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -4.15
+      },
+      "gainDb": -1.98
+    },
+    {
+      "voice": "classic_nikolay",
+      "cueId": "werewolves.phase.first.night",
+      "voiceId": "jFUMfgSnXMVNWDwPdkDf",
+      "sourceSha256": "67b27d3e87232a67962b36dd099912b9dc42ca062fac886aec4793f4983135b3",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "67b27d3e87232a67962b36dd099912b9dc42ca062fac886aec4793f4983135b3",
+        "bytes": 168994,
+        "durationMs": 6348,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -26.83,
+        "peakDb": -6.34
+      },
+      "prepared": {
+        "sha256": "29ff2e9931efcaed8b4b7139da3c5cb4fd5ca70d7cc475896f742e31bb1efc56",
+        "bytes": 102443,
+        "durationMs": 6348,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -4.54
+      },
+      "gainDb": 2.33
+    },
+    {
+      "voice": "classic_nikolay",
+      "cueId": "werewolves.phase.night",
+      "voiceId": "jFUMfgSnXMVNWDwPdkDf",
+      "sourceSha256": "7c0de7b52600d67e5d78fa6f6640d77f48b695446d1c2c554369a75b147e84bc",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "7c0de7b52600d67e5d78fa6f6640d77f48b695446d1c2c554369a75b147e84bc",
+        "bytes": 167113,
+        "durationMs": 6269,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -25.24,
+        "peakDb": -3.38
+      },
+      "prepared": {
+        "sha256": "33fd090d7334e4cd7535c839a2bee91663b464c6f5558f60e8255b78b463e65a",
+        "bytes": 101189,
+        "durationMs": 6269,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -3.04
+      },
+      "gainDb": 0.74
+    },
+    {
+      "voice": "classic_nikolay",
+      "cueId": "werewolves.phase.day.announcement",
+      "voiceId": "jFUMfgSnXMVNWDwPdkDf",
+      "sourceSha256": "a1647bdf7778448f3692d284e8af99baf0dfbdf8175ca9421d7488b4d704648d",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "a1647bdf7778448f3692d284e8af99baf0dfbdf8175ca9421d7488b4d704648d",
+        "bytes": 132631,
+        "durationMs": 4833,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -20.91,
+        "peakDb": -4.32
+      },
+      "prepared": {
+        "sha256": "8f91a15f96dfcf6072ccea80faee6e861a1187828cf6a564f5a4af92b5f260b5",
+        "bytes": 78201,
+        "durationMs": 4833,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -8.3
+      },
+      "gainDb": -3.59
+    },
+    {
+      "voice": "classic_nikolay",
+      "cueId": "werewolves.phase.day.discussion",
+      "voiceId": "jFUMfgSnXMVNWDwPdkDf",
+      "sourceSha256": "e73df8e86f52137f7876794f1347d3df7a875ad2f6f48d0ce056de0ffbb00122",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "e73df8e86f52137f7876794f1347d3df7a875ad2f6f48d0ce056de0ffbb00122",
+        "bytes": 150186,
+        "durationMs": 5564,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -20.86,
+        "peakDb": -2.87
+      },
+      "prepared": {
+        "sha256": "abcb7306007faa2b93b616dc927f39cf083f9d60a9536e184275b0cb037cc781",
+        "bytes": 89904,
+        "durationMs": 5564,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -6.92
+      },
+      "gainDb": -3.64
+    },
+    {
+      "voice": "classic_nikolay",
+      "cueId": "werewolves.phase.voting",
+      "voiceId": "jFUMfgSnXMVNWDwPdkDf",
+      "sourceSha256": "c66033481a03c21803d0dc4e43806701f72a47dd68a3feda84e1091938356634",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "c66033481a03c21803d0dc4e43806701f72a47dd68a3feda84e1091938356634",
+        "bytes": 138274,
+        "durationMs": 5068,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -21.19,
+        "peakDb": -3
+      },
+      "prepared": {
+        "sha256": "8b43da4877539e3d9a422e71c3184225db0992977276222b33aec299672cec7b",
+        "bytes": 81963,
+        "durationMs": 5068,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.97,
+        "peakDb": -6.78
+      },
+      "gainDb": -3.31
+    },
+    {
+      "voice": "classic_nikolay",
+      "cueId": "werewolves.phase.resolution",
+      "voiceId": "jFUMfgSnXMVNWDwPdkDf",
+      "sourceSha256": "d2a90f6ee7d040d75fda463642438a405d30047628ca00475c17905b355e684c",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "d2a90f6ee7d040d75fda463642438a405d30047628ca00475c17905b355e684c",
+        "bytes": 125108,
+        "durationMs": 4519,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -21.72,
+        "peakDb": -1.23
+      },
+      "prepared": {
+        "sha256": "b0ad6b48e642be5c4489cd4596256d9806646be2adb1a06a4db07ccdb09194af",
+        "bytes": 73185,
+        "durationMs": 4519,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -4.38
+      },
+      "gainDb": -2.78
+    },
+    {
+      "voice": "classic_nikolay",
+      "cueId": "mafia.phase.role.reveal",
+      "voiceId": "jFUMfgSnXMVNWDwPdkDf",
+      "sourceSha256": "c958bc9f302f4ec23bef9ddff5d96120cc9dbaca268aab7bd21ea72512eee082",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "c958bc9f302f4ec23bef9ddff5d96120cc9dbaca268aab7bd21ea72512eee082",
+        "bytes": 144543,
+        "durationMs": 5329,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -22.73,
+        "peakDb": -3.86
+      },
+      "prepared": {
+        "sha256": "574b278b4b7168f78316df18014981a2667e2f7775c7744a568cef5c7133b10c",
+        "bytes": 86142,
+        "durationMs": 5329,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -6.11
+      },
+      "gainDb": -1.77
+    },
+    {
+      "voice": "classic_nikolay",
+      "cueId": "mafia.phase.first.night",
+      "voiceId": "jFUMfgSnXMVNWDwPdkDf",
+      "sourceSha256": "9f1642bdb2cb8447b21dcc4c522a228c5b6cb5ea6a14999d8d3d8a45e1c725e6",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "9f1642bdb2cb8447b21dcc4c522a228c5b6cb5ea6a14999d8d3d8a45e1c725e6",
+        "bytes": 161470,
+        "durationMs": 6034,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -27.05,
+        "peakDb": -7.28
+      },
+      "prepared": {
+        "sha256": "4b08df628eb904fb064d6e45257fc6d65fc88077b965cf2aeb3f25d247df51d3",
+        "bytes": 97427,
+        "durationMs": 6034,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -5.16
+      },
+      "gainDb": 2.55
+    },
+    {
+      "voice": "classic_nikolay",
+      "cueId": "mafia.phase.night",
+      "voiceId": "jFUMfgSnXMVNWDwPdkDf",
+      "sourceSha256": "4788953768dd92f556ee7e27d58378ff97d4b223efd86271a80afd11df7e0cd8",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "4788953768dd92f556ee7e27d58378ff97d4b223efd86271a80afd11df7e0cd8",
+        "bytes": 148305,
+        "durationMs": 5486,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.26,
+        "peakDb": -3.04
+      },
+      "prepared": {
+        "sha256": "aad9b28e02e22edf6b247911dbeb712271c2215b6129fdc790aac615200bf133",
+        "bytes": 88650,
+        "durationMs": 5486,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -3.74
+      },
+      "gainDb": -0.24
+    },
+    {
+      "voice": "classic_nikolay",
+      "cueId": "mafia.phase.day.announcement",
+      "voiceId": "jFUMfgSnXMVNWDwPdkDf",
+      "sourceSha256": "6a4957dc35fc4da8ef881b34863688873c1013da0e2b822f1ca27988ecfe1bdf",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "6a4957dc35fc4da8ef881b34863688873c1013da0e2b822f1ca27988ecfe1bdf",
+        "bytes": 142662,
+        "durationMs": 5251,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -22.25,
+        "peakDb": -3.94
+      },
+      "prepared": {
+        "sha256": "363c003dc326ee23c4fe4a7a9d1f326910b5f347b83e50bb5e548f77be6412c5",
+        "bytes": 84888,
+        "durationMs": 5251,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -6.72
+      },
+      "gainDb": -2.25
+    },
+    {
+      "voice": "classic_nikolay",
+      "cueId": "mafia.phase.day.discussion",
+      "voiceId": "jFUMfgSnXMVNWDwPdkDf",
+      "sourceSha256": "644035a300dbef2f30b0262bcb158980974c9dface81d44e8ed067ff8f436e7a",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "644035a300dbef2f30b0262bcb158980974c9dface81d44e8ed067ff8f436e7a",
+        "bytes": 132631,
+        "durationMs": 4833,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -21.02,
+        "peakDb": -3.41
+      },
+      "prepared": {
+        "sha256": "48d0daad15880971f8a707129c8b6baa9584678772cd6fee0310f8a9105a2e9f",
+        "bytes": 78201,
+        "durationMs": 4833,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -7.49
+      },
+      "gainDb": -3.48
+    },
+    {
+      "voice": "classic_nikolay",
+      "cueId": "mafia.phase.voting",
+      "voiceId": "jFUMfgSnXMVNWDwPdkDf",
+      "sourceSha256": "edcfaebddaf081ed4bc4e874f8df94affe5f08d7477d55b3542bf961003ac1be",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "edcfaebddaf081ed4bc4e874f8df94affe5f08d7477d55b3542bf961003ac1be",
+        "bytes": 134512,
+        "durationMs": 4911,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -21.67,
+        "peakDb": -2.67
+      },
+      "prepared": {
+        "sha256": "8dcc4a84fb6df3d4b39f589ab769eb504a88a4f369266a04b51e973b5255110d",
+        "bytes": 79455,
+        "durationMs": 4911,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.93,
+        "peakDb": -5.92
+      },
+      "gainDb": -2.83
+    },
+    {
+      "voice": "classic_nikolay",
+      "cueId": "mafia.phase.resolution",
+      "voiceId": "jFUMfgSnXMVNWDwPdkDf",
+      "sourceSha256": "f742b9ba35bfc17bdbd2fd9b008b9573bc4edd5640458f81cd0d6e40231efc28",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "f742b9ba35bfc17bdbd2fd9b008b9573bc4edd5640458f81cd0d6e40231efc28",
+        "bytes": 125108,
+        "durationMs": 4519,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -21.76,
+        "peakDb": -5.23
+      },
+      "prepared": {
+        "sha256": "52ddd5faf6cb77d3a9edf8640e0cc3376947b463a1c8956ab2e9aef863f936df",
+        "bytes": 73185,
+        "durationMs": 4519,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.96,
+        "peakDb": -8.39
+      },
+      "gainDb": -2.74
+    },
+    {
+      "voice": "classic_nikolay",
+      "cueId": "mafia.phase.nomination",
+      "voiceId": "jFUMfgSnXMVNWDwPdkDf",
+      "sourceSha256": "c933fbd2bcf2881dc9321cf428bf99f2fede737326130d6845ac6a88baa46ed2",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "c933fbd2bcf2881dc9321cf428bf99f2fede737326130d6845ac6a88baa46ed2",
+        "bytes": 123551,
+        "durationMs": 5146,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -20.89,
+        "peakDb": -2.51
+      },
+      "prepared": {
+        "sha256": "6f0806e8653fadda508680de31df6b4ab76f33ba1fa3dd57e25341ab99d207ad",
+        "bytes": 83216,
+        "durationMs": 5146,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -6.58
+      },
+      "gainDb": -3.61
+    },
+    {
+      "voice": "classic_nikolay",
+      "cueId": "mafia.phase.defense",
+      "voiceId": "jFUMfgSnXMVNWDwPdkDf",
+      "sourceSha256": "80914eba02f5d2212517f26e3b1bb5bae23129e0b3e461911c71330a296b66fa",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "80914eba02f5d2212517f26e3b1bb5bae23129e0b3e461911c71330a296b66fa",
+        "bytes": 142662,
+        "durationMs": 5251,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -21.5,
+        "peakDb": -3.06
+      },
+      "prepared": {
+        "sha256": "dc6f1bc934a73474a57118c13aed5399da15657d4770cb8ec64d76b02981a2e8",
+        "bytes": 84888,
+        "durationMs": 5251,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -6.53
+      },
+      "gainDb": -3
+    },
+    {
+      "voice": "classic_nikolay",
+      "cueId": "werewolves.phase.hunter.revenge",
+      "voiceId": "jFUMfgSnXMVNWDwPdkDf",
+      "sourceSha256": "b1ecfd065250e14556f5ce8881d538d18e1cdafe6b34183ec1f9f244c6d7beb4",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "b1ecfd065250e14556f5ce8881d538d18e1cdafe6b34183ec1f9f244c6d7beb4",
+        "bytes": 121346,
+        "durationMs": 4362,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -22.29,
+        "peakDb": -3.84
+      },
+      "prepared": {
+        "sha256": "a096fef9484a86f984278ec54f26dc4237f2e1279a609e2bbd925b67a82e9e55",
+        "bytes": 70678,
+        "durationMs": 4362,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -6.56
+      },
+      "gainDb": -2.21
+    },
+    {
+      "voice": "classic_nikolay",
+      "cueId": "werewolves.phase.mayor.successor",
+      "voiceId": "jFUMfgSnXMVNWDwPdkDf",
+      "sourceSha256": "e1bd03e3bf15099b59f3a8186c61ad649d0092d04fe4d35da22cff1557b894ad",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "e1bd03e3bf15099b59f3a8186c61ad649d0092d04fe4d35da22cff1557b894ad",
+        "bytes": 130750,
+        "durationMs": 4754,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -22.52,
+        "peakDb": -3.09
+      },
+      "prepared": {
+        "sha256": "68645875bd2148ed5612cf11810dfae93c9fe0888e114c481150cb1879f924b6",
+        "bytes": 76947,
+        "durationMs": 4754,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -5.54
+      },
+      "gainDb": -1.98
+    },
+    {
+      "voice": "classic_nikolay",
+      "cueId": "werewolves.finale.village",
+      "voiceId": "jFUMfgSnXMVNWDwPdkDf",
+      "sourceSha256": "8648d67371ad1cde5ceaa81ba60e81fc5a5f97e64f7258067aa59e6d82070be4",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "8648d67371ad1cde5ceaa81ba60e81fc5a5f97e64f7258067aa59e6d82070be4",
+        "bytes": 186548,
+        "durationMs": 7079,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -27.13,
+        "peakDb": -4.42
+      },
+      "prepared": {
+        "sha256": "269e190d7cab3941f0d057ca4a700ebc0e7ce88e65a38498aa0306f3089d85e7",
+        "bytes": 114145,
+        "durationMs": 7079,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.96,
+        "peakDb": -2.12
+      },
+      "gainDb": 2.63
+    },
+    {
+      "voice": "classic_nikolay",
+      "cueId": "mafia.finale.village",
+      "voiceId": "jFUMfgSnXMVNWDwPdkDf",
+      "sourceSha256": "21ec667c4872d7ea71a2f96d61bed8b50dc220afd51a16774191a0d588028f2a",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "21ec667c4872d7ea71a2f96d61bed8b50dc220afd51a16774191a0d588028f2a",
+        "bytes": 170874,
+        "durationMs": 6426,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -25.99,
+        "peakDb": -5.56
+      },
+      "prepared": {
+        "sha256": "9fa5d310c466c4bf0155f29a95bacc35838e13628c8c83bafb47399d6f20c4ed",
+        "bytes": 103696,
+        "durationMs": 6426,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -4.48
+      },
+      "gainDb": 1.49
+    },
+    {
+      "voice": "classic_nikolay",
+      "cueId": "werewolves.finale.werewolves",
+      "voiceId": "jFUMfgSnXMVNWDwPdkDf",
+      "sourceSha256": "30cc9481d32e4a745093947133f12a78936f40b090eb8ac94186dd26532a2ac3",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "30cc9481d32e4a745093947133f12a78936f40b090eb8ac94186dd26532a2ac3",
+        "bytes": 195952,
+        "durationMs": 7471,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -22.75,
+        "peakDb": -2.7
+      },
+      "prepared": {
+        "sha256": "abd244d69f53a8a9add85464264b95629af7d050c9c429786045c94dde5c50cc",
+        "bytes": 120415,
+        "durationMs": 7471,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -4.88
+      },
+      "gainDb": -1.75
+    },
+    {
+      "voice": "classic_nikolay",
+      "cueId": "werewolves.finale.vampires",
+      "voiceId": "jFUMfgSnXMVNWDwPdkDf",
+      "sourceSha256": "68943ec16fdd902a8b09a9a85ce99b489e786d956ba9abbed61376564388677a",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "68943ec16fdd902a8b09a9a85ce99b489e786d956ba9abbed61376564388677a",
+        "bytes": 209745,
+        "durationMs": 8046,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -23.22,
+        "peakDb": -3.31
+      },
+      "prepared": {
+        "sha256": "76162427942e9b5104768cd4ba1ac86986439f1aa423ae92360bb3553d9e20e1",
+        "bytes": 129610,
+        "durationMs": 8046,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -4.95
+      },
+      "gainDb": -1.28
+    },
+    {
+      "voice": "classic_nikolay",
+      "cueId": "mafia.finale.mafia",
+      "voiceId": "jFUMfgSnXMVNWDwPdkDf",
+      "sourceSha256": "828d287cc00c70264e20cbb6493a0f5ad56cd57890a0252c0f17e428f43c3fd2",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "828d287cc00c70264e20cbb6493a0f5ad56cd57890a0252c0f17e428f43c3fd2",
+        "bytes": 204102,
+        "durationMs": 7811,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -22.57,
+        "peakDb": -2.13
+      },
+      "prepared": {
+        "sha256": "55231fe99506724eafac4e2d6e675e8478c9d5c326b9d0297d82fe0fc8bacf85",
+        "bytes": 125848,
+        "durationMs": 7811,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.96,
+        "peakDb": -4.55
+      },
+      "gainDb": -1.93
+    },
+    {
+      "voice": "classic_nikolay",
+      "cueId": "mafia.finale.maniac",
+      "voiceId": "jFUMfgSnXMVNWDwPdkDf",
+      "sourceSha256": "e817e5fd7e75604d80db25f0fa18fcb2034ac273e82aea034a6ca0e664cd2cba",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "e817e5fd7e75604d80db25f0fa18fcb2034ac273e82aea034a6ca0e664cd2cba",
+        "bytes": 209745,
+        "durationMs": 8046,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -23.48,
+        "peakDb": -2.8
+      },
+      "prepared": {
+        "sha256": "42cb880d06647a67ae38d133fb9ea829a743f43e855d5ed4fad94112546d811c",
+        "bytes": 129610,
+        "durationMs": 8046,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -4.41
+      },
+      "gainDb": -1.02
+    },
+    {
+      "voice": "classic_nikolay",
+      "cueId": "werewolves.finale.lovers",
+      "voiceId": "jFUMfgSnXMVNWDwPdkDf",
+      "sourceSha256": "d5064b0328c628500339ac133e959f0743df48e960f0913b296ea79490a5dc1c",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "d5064b0328c628500339ac133e959f0743df48e960f0913b296ea79490a5dc1c",
+        "bytes": 209745,
+        "durationMs": 8046,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -26.07,
+        "peakDb": -7.63
+      },
+      "prepared": {
+        "sha256": "cd0d98ab08636212de9060ff5a7a199d675ff3a43bb307b13f33a9fcae8f78b2",
+        "bytes": 129610,
+        "durationMs": 8046,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -6.52
+      },
+      "gainDb": 1.57
+    },
+    {
+      "voice": "classic_nikolay",
+      "cueId": "mafia.finale.lovers",
+      "voiceId": "jFUMfgSnXMVNWDwPdkDf",
+      "sourceSha256": "5498a31991acec3cc6e67418af2958a07d0fa9a8d5189a42dfd1630cd0d123a5",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "5498a31991acec3cc6e67418af2958a07d0fa9a8d5189a42dfd1630cd0d123a5",
+        "bytes": 240465,
+        "durationMs": 9326,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -26.01,
+        "peakDb": -6.07
+      },
+      "prepared": {
+        "sha256": "23508f6a5566b29d1b2425c95ba7a5d5dbeb69398bc33747c798921695773bc5",
+        "bytes": 150090,
+        "durationMs": 9326,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -4.98
+      },
+      "gainDb": 1.51
+    },
+    {
+      "voice": "classic_nikolay",
+      "cueId": "shared.finale.draw",
+      "voiceId": "jFUMfgSnXMVNWDwPdkDf",
+      "sourceSha256": "a68d2ad859b0aa13ab8ab0e48b1f9e94d2464e89ca889eb0352efe2446411051",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "a68d2ad859b0aa13ab8ab0e48b1f9e94d2464e89ca889eb0352efe2446411051",
+        "bytes": 207864,
+        "durationMs": 7967,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -23.62,
+        "peakDb": -3.81
+      },
+      "prepared": {
+        "sha256": "9f6e0f8350275731cb614dfc608dfcf863fa35a8654caf016ec6c7ce9201e7ee",
+        "bytes": 128356,
+        "durationMs": 7967,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -5.15
+      },
+      "gainDb": -0.88
+    },
+    {
+      "voice": "classic_nikolay",
+      "cueId": "shared.personal.finale.jester",
+      "voiceId": "jFUMfgSnXMVNWDwPdkDf",
+      "sourceSha256": "1e0c6bbe3622db093f4c83b6c244d9784743b3cf32ab373ff044d8dc33a3d25a",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "1e0c6bbe3622db093f4c83b6c244d9784743b3cf32ab373ff044d8dc33a3d25a",
+        "bytes": 186548,
+        "durationMs": 7079,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.3,
+        "peakDb": -3.73
+      },
+      "prepared": {
+        "sha256": "53bbbf7268e243f87f438703a1368b09d985930297c6582caaa535aa4fc01044",
+        "bytes": 114145,
+        "durationMs": 7079,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -4.41
+      },
+      "gainDb": -0.2
+    },
+    {
+      "voice": "old_villager",
+      "cueId": "werewolves.phase.role.reveal",
+      "voiceId": "406EiNlYvqFqcz3vsnOm",
+      "sourceSha256": "c7dffd923a329b5a0a46962af81c1f88dca2ca77c210b4fca5496a197b8922ca",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "c7dffd923a329b5a0a46962af81c1f88dca2ca77c210b4fca5496a197b8922ca",
+        "bytes": 140154,
+        "durationMs": 5146,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -22.08,
+        "peakDb": -6.03
+      },
+      "prepared": {
+        "sha256": "7ed40deae00582d25046ee75954baf77ed0a7a860e831892cbc08b40b2ec10be",
+        "bytes": 83216,
+        "durationMs": 5146,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -8.91
+      },
+      "gainDb": -2.42
+    },
+    {
+      "voice": "old_villager",
+      "cueId": "werewolves.phase.first.night",
+      "voiceId": "406EiNlYvqFqcz3vsnOm",
+      "sourceSha256": "46108eec6dad2bda9acd6ad62389a62f20a47209d033063879669ce07acf1951",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "46108eec6dad2bda9acd6ad62389a62f20a47209d033063879669ce07acf1951",
+        "bytes": 134512,
+        "durationMs": 4911,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -23.34,
+        "peakDb": -5.35
+      },
+      "prepared": {
+        "sha256": "341973836e6fa6f764f99a26921c28a4db8540c4e82a3ab0f3fd32757b1b9e43",
+        "bytes": 79455,
+        "durationMs": 4911,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -6.91
+      },
+      "gainDb": -1.16
+    },
+    {
+      "voice": "old_villager",
+      "cueId": "werewolves.phase.night",
+      "voiceId": "406EiNlYvqFqcz3vsnOm",
+      "sourceSha256": "fe6062e1f8b237084cee655dc2bdf3c1acb82e916d6e4a070c4b0335428621ec",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "fe6062e1f8b237084cee655dc2bdf3c1acb82e916d6e4a070c4b0335428621ec",
+        "bytes": 134512,
+        "durationMs": 4911,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -22.79,
+        "peakDb": -5.96
+      },
+      "prepared": {
+        "sha256": "69ad9b9016ed4f4ca09ce01d8fb2b49b5bafd9bbed8978ed5ddf11e77e5f599e",
+        "bytes": 79455,
+        "durationMs": 4911,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -8.08
+      },
+      "gainDb": -1.71
+    },
+    {
+      "voice": "old_villager",
+      "cueId": "werewolves.phase.day.announcement",
+      "voiceId": "406EiNlYvqFqcz3vsnOm",
+      "sourceSha256": "b11028b3d8c310a3ef3d119b9e6960f5a1c1bb50cb3ab8826f56c43667a88d89",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "b11028b3d8c310a3ef3d119b9e6960f5a1c1bb50cb3ab8826f56c43667a88d89",
+        "bytes": 119790,
+        "durationMs": 4989,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -23.34,
+        "peakDb": -7.43
+      },
+      "prepared": {
+        "sha256": "6a12a1a499f2ad3be5d534e8e77861996a3b4d32f666f526b2ad2ee079980e67",
+        "bytes": 80709,
+        "durationMs": 4989,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -9.04
+      },
+      "gainDb": -1.16
+    },
+    {
+      "voice": "old_villager",
+      "cueId": "werewolves.phase.day.discussion",
+      "voiceId": "406EiNlYvqFqcz3vsnOm",
+      "sourceSha256": "dd20e7dd6a187abb206237744c0830e209f9d951ad12db9c4dd78ff824e00976",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "dd20e7dd6a187abb206237744c0830e209f9d951ad12db9c4dd78ff824e00976",
+        "bytes": 157709,
+        "durationMs": 5878,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -20.35,
+        "peakDb": -5.9
+      },
+      "prepared": {
+        "sha256": "85524da8ebe2f6608dbb780eae1226caa1c75e0bc2b8dc178208971b1a933503",
+        "bytes": 94919,
+        "durationMs": 5878,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -10.48
+      },
+      "gainDb": -4.15
+    },
+    {
+      "voice": "old_villager",
+      "cueId": "werewolves.phase.voting",
+      "voiceId": "406EiNlYvqFqcz3vsnOm",
+      "sourceSha256": "7ffba83cc4a60ac7d78c976a8eff46629df511c4ebd8d88302b1e71e97bd3384",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "7ffba83cc4a60ac7d78c976a8eff46629df511c4ebd8d88302b1e71e97bd3384",
+        "bytes": 136393,
+        "durationMs": 4989,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -21.69,
+        "peakDb": -4.77
+      },
+      "prepared": {
+        "sha256": "e510e6201b678fbc56c938ccf400592ad9d8f781e972a8a58f0dfc52af16e25e",
+        "bytes": 80709,
+        "durationMs": 4989,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.93,
+        "peakDb": -8.03
+      },
+      "gainDb": -2.81
+    },
+    {
+      "voice": "old_villager",
+      "cueId": "werewolves.phase.resolution",
+      "voiceId": "406EiNlYvqFqcz3vsnOm",
+      "sourceSha256": "3b6b4d8ec46ae41891cc2f61949e1d134a47be7dd3abc78c6191fe3351cfe31f",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "3b6b4d8ec46ae41891cc2f61949e1d134a47be7dd3abc78c6191fe3351cfe31f",
+        "bytes": 117585,
+        "durationMs": 4206,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -21.41,
+        "peakDb": -5.01
+      },
+      "prepared": {
+        "sha256": "7bd73302036f76ef02118ca75406830f60dfe3adb729edb35b80307cf1f77267",
+        "bytes": 68170,
+        "durationMs": 4206,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -8.55
+      },
+      "gainDb": -3.09
+    },
+    {
+      "voice": "old_villager",
+      "cueId": "mafia.phase.role.reveal",
+      "voiceId": "406EiNlYvqFqcz3vsnOm",
+      "sourceSha256": "216b91cda5ad0c86cbca3c468c02c5e456390ee219d600d6da25612414c67ebc",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "216b91cda5ad0c86cbca3c468c02c5e456390ee219d600d6da25612414c67ebc",
+        "bytes": 116028,
+        "durationMs": 4833,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -22.6,
+        "peakDb": -6.16
+      },
+      "prepared": {
+        "sha256": "8f40e12da5b42750bd7a2925beedda7443d07e4100262b798b05b0fadaea6a5d",
+        "bytes": 78201,
+        "durationMs": 4833,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -8.47
+      },
+      "gainDb": -1.9
+    },
+    {
+      "voice": "old_villager",
+      "cueId": "mafia.phase.first.night",
+      "voiceId": "406EiNlYvqFqcz3vsnOm",
+      "sourceSha256": "d809fb541b65034da81748e426c50075844787f2e8bd1f46a5b6cba9ae6dfae3",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "d809fb541b65034da81748e426c50075844787f2e8bd1f46a5b6cba9ae6dfae3",
+        "bytes": 110386,
+        "durationMs": 4598,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -21.92,
+        "peakDb": -4.95
+      },
+      "prepared": {
+        "sha256": "9cebd6ff3ede1ebaaffd2bfb139248ee70c3d28aabea3be55eb750904bf66901",
+        "bytes": 74439,
+        "durationMs": 4598,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -8
+      },
+      "gainDb": -2.58
+    },
+    {
+      "voice": "old_villager",
+      "cueId": "mafia.phase.night",
+      "voiceId": "406EiNlYvqFqcz3vsnOm",
+      "sourceSha256": "7a34ea0ce369d4154cf436d72859d7155752850d512864b6c1baf015d19b4a1a",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "7a34ea0ce369d4154cf436d72859d7155752850d512864b6c1baf015d19b4a1a",
+        "bytes": 150186,
+        "durationMs": 5564,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -22.56,
+        "peakDb": -4.14
+      },
+      "prepared": {
+        "sha256": "14c399d8f6a3176436cb2e6d219cb5809af5c8b11c9023c1fea88a95d12f0884",
+        "bytes": 89904,
+        "durationMs": 5564,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -6.56
+      },
+      "gainDb": -1.94
+    },
+    {
+      "voice": "old_villager",
+      "cueId": "mafia.phase.day.announcement",
+      "voiceId": "406EiNlYvqFqcz3vsnOm",
+      "sourceSha256": "21a8c08e40c881d90fd8dc7d9697c1b9b4ea7853f4d31b9112d008436621a60f",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "21a8c08e40c881d90fd8dc7d9697c1b9b4ea7853f4d31b9112d008436621a60f",
+        "bytes": 125108,
+        "durationMs": 4519,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -21.6,
+        "peakDb": -7.29
+      },
+      "prepared": {
+        "sha256": "15e24b2ce11803bf116fd0e511d2af567b5dcf54af4b7c4eb5377892b5e0955b",
+        "bytes": 73185,
+        "durationMs": 4519,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -10.65
+      },
+      "gainDb": -2.9
+    },
+    {
+      "voice": "old_villager",
+      "cueId": "mafia.phase.day.discussion",
+      "voiceId": "406EiNlYvqFqcz3vsnOm",
+      "sourceSha256": "241f32021510062b8e7b176eb33fc8c1928354bcee0a1bdfef275231c9c08cee",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "241f32021510062b8e7b176eb33fc8c1928354bcee0a1bdfef275231c9c08cee",
+        "bytes": 184667,
+        "durationMs": 7001,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -22.03,
+        "peakDb": -7.52
+      },
+      "prepared": {
+        "sha256": "d5cd04410aa83790abfa0e447adbdcb948177b0a0878a68197f69ddf1c48b88a",
+        "bytes": 112892,
+        "durationMs": 7001,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -10.44
+      },
+      "gainDb": -2.47
+    },
+    {
+      "voice": "old_villager",
+      "cueId": "mafia.phase.voting",
+      "voiceId": "406EiNlYvqFqcz3vsnOm",
+      "sourceSha256": "6aae035c873b355710504461258c28f8d0070c84d70c63fd0899e0f47469cd8f",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "6aae035c873b355710504461258c28f8d0070c84d70c63fd0899e0f47469cd8f",
+        "bytes": 146424,
+        "durationMs": 5407,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -23.32,
+        "peakDb": -6.99
+      },
+      "prepared": {
+        "sha256": "cf0fe45e4796d4cc8251596c4c8fe34e6f1bee8d61848cce2c982ecfbd8de70c",
+        "bytes": 87396,
+        "durationMs": 5407,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -8.61
+      },
+      "gainDb": -1.18
+    },
+    {
+      "voice": "old_villager",
+      "cueId": "mafia.phase.resolution",
+      "voiceId": "406EiNlYvqFqcz3vsnOm",
+      "sourceSha256": "b6455d95fa2748ecf25ad8b11cc826a084b0e34b6e0001ad6cfdafed3dded6db",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "b6455d95fa2748ecf25ad8b11cc826a084b0e34b6e0001ad6cfdafed3dded6db",
+        "bytes": 117585,
+        "durationMs": 4206,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -21.56,
+        "peakDb": -5.48
+      },
+      "prepared": {
+        "sha256": "86a2654dd1595121dbbd4102768a4e7190c00e92869ca73697c1e1e7eacdab61",
+        "bytes": 68170,
+        "durationMs": 4206,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -8.9
+      },
+      "gainDb": -2.94
+    },
+    {
+      "voice": "old_villager",
+      "cueId": "mafia.phase.nomination",
+      "voiceId": "406EiNlYvqFqcz3vsnOm",
+      "sourceSha256": "57328531d9162bbea6fe4a6622549352a070bc80ab274023fb48ef7829ab2d62",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "57328531d9162bbea6fe4a6622549352a070bc80ab274023fb48ef7829ab2d62",
+        "bytes": 134512,
+        "durationMs": 4911,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -18.99,
+        "peakDb": -5.25
+      },
+      "prepared": {
+        "sha256": "a2bc1f2e1532b76ce132d3e6f632e1d44ce6b9104f8dad72b9e5882b4e84bb89",
+        "bytes": 79455,
+        "durationMs": 4911,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -11.2
+      },
+      "gainDb": -5.51
+    },
+    {
+      "voice": "old_villager",
+      "cueId": "mafia.phase.defense",
+      "voiceId": "406EiNlYvqFqcz3vsnOm",
+      "sourceSha256": "28fff786393fbf6df5b16b98591468466ac82e678bd87f1f99702986a76226d0",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "28fff786393fbf6df5b16b98591468466ac82e678bd87f1f99702986a76226d0",
+        "bytes": 153947,
+        "durationMs": 5721,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -22.44,
+        "peakDb": -7.32
+      },
+      "prepared": {
+        "sha256": "e9993d4718b1b6d1347c093a9acb25fb63036a8956c4772863a2eca98b8c865c",
+        "bytes": 92412,
+        "durationMs": 5721,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -9.79
+      },
+      "gainDb": -2.06
+    },
+    {
+      "voice": "old_villager",
+      "cueId": "werewolves.phase.hunter.revenge",
+      "voiceId": "406EiNlYvqFqcz3vsnOm",
+      "sourceSha256": "50c6233023648afb70202c8ae86552eb2fd96bbb91cb2f960bd730acc3e0be21",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "50c6233023648afb70202c8ae86552eb2fd96bbb91cb2f960bd730acc3e0be21",
+        "bytes": 125108,
+        "durationMs": 4519,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -21.82,
+        "peakDb": -6.21
+      },
+      "prepared": {
+        "sha256": "99ad8ed8150ef48b6855efe8b7d52c0dda65718e370ff9dd932c5244d166f1a2",
+        "bytes": 73185,
+        "durationMs": 4519,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.96,
+        "peakDb": -9.34
+      },
+      "gainDb": -2.68
+    },
+    {
+      "voice": "old_villager",
+      "cueId": "werewolves.phase.mayor.successor",
+      "voiceId": "406EiNlYvqFqcz3vsnOm",
+      "sourceSha256": "7d5d0450f2b08cd9db031596c18856579e93f96f9b754a37485081196e13ae12",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "7d5d0450f2b08cd9db031596c18856579e93f96f9b754a37485081196e13ae12",
+        "bytes": 136393,
+        "durationMs": 4989,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -21.59,
+        "peakDb": -6.53
+      },
+      "prepared": {
+        "sha256": "e4f7b21b3ce39d22cadac8682838e39ed17aaa6fbdba0e97b869b35df4b7e20b",
+        "bytes": 80709,
+        "durationMs": 4989,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.97,
+        "peakDb": -9.87
+      },
+      "gainDb": -2.91
+    },
+    {
+      "voice": "old_villager",
+      "cueId": "werewolves.finale.village",
+      "voiceId": "406EiNlYvqFqcz3vsnOm",
+      "sourceSha256": "0692e5b11ff12ab5beeca3da24078bd8e6320d7c812e2164036d30c34b29e963",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "0692e5b11ff12ab5beeca3da24078bd8e6320d7c812e2164036d30c34b29e963",
+        "bytes": 181230,
+        "durationMs": 7549,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -19.48,
+        "peakDb": -5.81
+      },
+      "prepared": {
+        "sha256": "cc22ca6ff99f6bbf38aba0e2b81b114ea2a47aa8aa2c80dffd7e2b6fe1a553a0",
+        "bytes": 121669,
+        "durationMs": 7549,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -11.28
+      },
+      "gainDb": -5.02
+    },
+    {
+      "voice": "old_villager",
+      "cueId": "mafia.finale.village",
+      "voiceId": "406EiNlYvqFqcz3vsnOm",
+      "sourceSha256": "094c023ba5781af15956332847f943543ee3c89469e7930e0d3a1e6dec84c9d7",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "094c023ba5781af15956332847f943543ee3c89469e7930e0d3a1e6dec84c9d7",
+        "bytes": 163351,
+        "durationMs": 6113,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -18.75,
+        "peakDb": -4.96
+      },
+      "prepared": {
+        "sha256": "4ce046749cd90075d611d11206c5d8057fb1e0b65beff11d7fb0d937cbc15b41",
+        "bytes": 98681,
+        "durationMs": 6113,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -11.15
+      },
+      "gainDb": -5.75
+    },
+    {
+      "voice": "old_villager",
+      "cueId": "werewolves.finale.werewolves",
+      "voiceId": "406EiNlYvqFqcz3vsnOm",
+      "sourceSha256": "ce174b7755466b1b6f6f66ded0a7bee71fa1c46f65711bb02e95bbf75d6271c0",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "ce174b7755466b1b6f6f66ded0a7bee71fa1c46f65711bb02e95bbf75d6271c0",
+        "bytes": 194071,
+        "durationMs": 7393,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -20.73,
+        "peakDb": -5.55
+      },
+      "prepared": {
+        "sha256": "e571d63f77595b371eb48641c82ef933b27abbb184b4cb411b3987bb25a03874",
+        "bytes": 119161,
+        "durationMs": 7393,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -9.78
+      },
+      "gainDb": -3.77
+    },
+    {
+      "voice": "old_villager",
+      "cueId": "werewolves.finale.vampires",
+      "voiceId": "406EiNlYvqFqcz3vsnOm",
+      "sourceSha256": "639fc78b183dfc927731f50bd0a1dd24fc712a71275816ea9df8e984e81ad1c9",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "639fc78b183dfc927731f50bd0a1dd24fc712a71275816ea9df8e984e81ad1c9",
+        "bytes": 192190,
+        "durationMs": 7314,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -20.9,
+        "peakDb": -3.89
+      },
+      "prepared": {
+        "sha256": "f9b88582ca9115d616d981f616e28cd7a4d7ed057b7e9394af188b7db7cc79b5",
+        "bytes": 117907,
+        "durationMs": 7314,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -7.91
+      },
+      "gainDb": -3.6
+    },
+    {
+      "voice": "old_villager",
+      "cueId": "mafia.finale.mafia",
+      "voiceId": "406EiNlYvqFqcz3vsnOm",
+      "sourceSha256": "6485f71b42b7b6ec24e07c087806283b4ac8e54f25f07182d49179b97bba4f57",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "6485f71b42b7b6ec24e07c087806283b4ac8e54f25f07182d49179b97bba4f57",
+        "bytes": 192190,
+        "durationMs": 7314,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -20.27,
+        "peakDb": -3.73
+      },
+      "prepared": {
+        "sha256": "80fbf03c90cb82ea368e0c630b2fdd23c2e7bd1408cd79453022ecf4a1b95eb2",
+        "bytes": 117907,
+        "durationMs": 7314,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.93,
+        "peakDb": -8.42
+      },
+      "gainDb": -4.23
+    },
+    {
+      "voice": "old_villager",
+      "cueId": "mafia.finale.maniac",
+      "voiceId": "406EiNlYvqFqcz3vsnOm",
+      "sourceSha256": "d0e7fa106d2b364dde8a8c5fd47130be0c430926134aa9a8f92b3faa94839c67",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "d0e7fa106d2b364dde8a8c5fd47130be0c430926134aa9a8f92b3faa94839c67",
+        "bytes": 188429,
+        "durationMs": 7158,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -20.88,
+        "peakDb": -5.72
+      },
+      "prepared": {
+        "sha256": "cd7bc6650eb533da3580b505935ee83dec608d07b2f13827780bc197509ccfb5",
+        "bytes": 115399,
+        "durationMs": 7158,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -9.66
+      },
+      "gainDb": -3.62
+    },
+    {
+      "voice": "old_villager",
+      "cueId": "werewolves.finale.lovers",
+      "voiceId": "406EiNlYvqFqcz3vsnOm",
+      "sourceSha256": "fe72ebba9640cdf943b861446b2fa3dcb47c2dd240d7faebb8d2f3d598bbd542",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "fe72ebba9640cdf943b861446b2fa3dcb47c2dd240d7faebb8d2f3d598bbd542",
+        "bytes": 188429,
+        "durationMs": 7158,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -25.57,
+        "peakDb": -7.83
+      },
+      "prepared": {
+        "sha256": "9a15aae1dc282bd1d257ef4f079d268f3e26b46524786fc418451f56ace29fee",
+        "bytes": 115399,
+        "durationMs": 7158,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -7.21
+      },
+      "gainDb": 1.07
+    },
+    {
+      "voice": "old_villager",
+      "cueId": "mafia.finale.lovers",
+      "voiceId": "406EiNlYvqFqcz3vsnOm",
+      "sourceSha256": "5cb110042da28ec4003afd4f30ac34efa5669561b930a7091a6c11cc95022fce",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "5cb110042da28ec4003afd4f30ac34efa5669561b930a7091a6c11cc95022fce",
+        "bytes": 199714,
+        "durationMs": 7628,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -23.44,
+        "peakDb": -7.09
+      },
+      "prepared": {
+        "sha256": "38277fecac9701ac7f6cfcaa7912b8c1c1ea7259e25e2f3e4c4820d190204d70",
+        "bytes": 122923,
+        "durationMs": 7628,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -8.6
+      },
+      "gainDb": -1.06
+    },
+    {
+      "voice": "old_villager",
+      "cueId": "shared.finale.draw",
+      "voiceId": "406EiNlYvqFqcz3vsnOm",
+      "sourceSha256": "0414861e1a4caa66e4ae1fbee270a1c0d4a83af2b9dffb866a3860c29a28bfbd",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "0414861e1a4caa66e4ae1fbee270a1c0d4a83af2b9dffb866a3860c29a28bfbd",
+        "bytes": 209745,
+        "durationMs": 8046,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -20.55,
+        "peakDb": -4.9
+      },
+      "prepared": {
+        "sha256": "b466194ff29359fbb14659d34c020e3802c386b7cf316222a5aa5ff02105ceb4",
+        "bytes": 129610,
+        "durationMs": 8046,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -9.26
+      },
+      "gainDb": -3.95
+    },
+    {
+      "voice": "old_villager",
+      "cueId": "shared.personal.finale.jester",
+      "voiceId": "406EiNlYvqFqcz3vsnOm",
+      "sourceSha256": "7bebf0d64767d6d18298ddc0110574b731ce2e8444617a521869e8a3d08bf900",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "7bebf0d64767d6d18298ddc0110574b731ce2e8444617a521869e8a3d08bf900",
+        "bytes": 179025,
+        "durationMs": 6766,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -23.35,
+        "peakDb": -7.63
+      },
+      "prepared": {
+        "sha256": "f02ca5b66f88ee96b9fb63e2f9dd31b20d735a264297f970b462c2ea71f487e6",
+        "bytes": 109130,
+        "durationMs": 6766,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -9.31
+      },
+      "gainDb": -1.15
+    },
+    {
+      "voice": "inspector",
+      "cueId": "werewolves.phase.role.reveal",
+      "voiceId": "vZifugoCmJjNgn0bBdKH",
+      "sourceSha256": "aa1b66cb861aca4852be7b5aeb6a1082aba1c18a767b7b148b851b180d8ace38",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "aa1b66cb861aca4852be7b5aeb6a1082aba1c18a767b7b148b851b180d8ace38",
+        "bytes": 136393,
+        "durationMs": 4989,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.05,
+        "peakDb": -4.6
+      },
+      "prepared": {
+        "sha256": "cd4cbe260083d0029e3f2443561f8c75d23ec34c0d902cd15d6dc907b089c332",
+        "bytes": 80709,
+        "durationMs": 4989,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.93,
+        "peakDb": -5.48
+      },
+      "gainDb": -0.45
+    },
+    {
+      "voice": "inspector",
+      "cueId": "werewolves.phase.first.night",
+      "voiceId": "vZifugoCmJjNgn0bBdKH",
+      "sourceSha256": "73ce15a854f5c7b717013377ecc4d5657d61a9cd9859979bea681c5a3d816d7d",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "73ce15a854f5c7b717013377ecc4d5657d61a9cd9859979bea681c5a3d816d7d",
+        "bytes": 152066,
+        "durationMs": 5642,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -23.81,
+        "peakDb": -4.91
+      },
+      "prepared": {
+        "sha256": "74e114d6866fce034a9f37cbd90062433390c6a7318bea85b4bb2a685fbe9530",
+        "bytes": 91158,
+        "durationMs": 5642,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -6.04
+      },
+      "gainDb": -0.69
+    },
+    {
+      "voice": "inspector",
+      "cueId": "werewolves.phase.night",
+      "voiceId": "vZifugoCmJjNgn0bBdKH",
+      "sourceSha256": "47be86e469dac851c2c2c0dc73ac305755f72e573f7bdd5ff765c394d71abda6",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "47be86e469dac851c2c2c0dc73ac305755f72e573f7bdd5ff765c394d71abda6",
+        "bytes": 152066,
+        "durationMs": 5642,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -21.27,
+        "peakDb": -2.4
+      },
+      "prepared": {
+        "sha256": "c204d70d9f9c181e6457dec0988c7d3e46b07a88f2e118e43c461d5e71ce7479",
+        "bytes": 91158,
+        "durationMs": 5642,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.93,
+        "peakDb": -6.04
+      },
+      "gainDb": -3.23
+    },
+    {
+      "voice": "inspector",
+      "cueId": "werewolves.phase.day.announcement",
+      "voiceId": "vZifugoCmJjNgn0bBdKH",
+      "sourceSha256": "07b4ee9cdb24c7d424cf26a6a41f8114af45248bc696fb2bd6c8c27c071f6f4c",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "07b4ee9cdb24c7d424cf26a6a41f8114af45248bc696fb2bd6c8c27c071f6f4c",
+        "bytes": 140154,
+        "durationMs": 5146,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -21.72,
+        "peakDb": -3.25
+      },
+      "prepared": {
+        "sha256": "1244ecdd6f167a6b26064744fe90286e382deff40c7f559cf35bb407eaa91a88",
+        "bytes": 83216,
+        "durationMs": 5146,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.96,
+        "peakDb": -6.46
+      },
+      "gainDb": -2.78
+    },
+    {
+      "voice": "inspector",
+      "cueId": "werewolves.phase.day.discussion",
+      "voiceId": "vZifugoCmJjNgn0bBdKH",
+      "sourceSha256": "7beff01f5a499587867726cde8752a5e373848dbb8fd0c3e34106c807896f499",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "7beff01f5a499587867726cde8752a5e373848dbb8fd0c3e34106c807896f499",
+        "bytes": 153947,
+        "durationMs": 5721,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -21.26,
+        "peakDb": -1.55
+      },
+      "prepared": {
+        "sha256": "0eecf2d1e83b10c851ee72eabca50fcbbd3d3d91c7ec78aa2c886e4f7cc0c6e2",
+        "bytes": 92412,
+        "durationMs": 5721,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -5.23
+      },
+      "gainDb": -3.24
+    },
+    {
+      "voice": "inspector",
+      "cueId": "werewolves.phase.voting",
+      "voiceId": "vZifugoCmJjNgn0bBdKH",
+      "sourceSha256": "7bdaace2865589e50937134a860408bdee8edf258e0abcdf6d0baed133b5d951",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "7bdaace2865589e50937134a860408bdee8edf258e0abcdf6d0baed133b5d951",
+        "bytes": 134512,
+        "durationMs": 4911,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -20.72,
+        "peakDb": -2.73
+      },
+      "prepared": {
+        "sha256": "fa159fd9dd08d315babc99206c9f0107d2e146d3d66bb381721cfaedd3f4e06e",
+        "bytes": 79455,
+        "durationMs": 4911,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.93,
+        "peakDb": -6.97
+      },
+      "gainDb": -3.78
+    },
+    {
+      "voice": "inspector",
+      "cueId": "werewolves.phase.resolution",
+      "voiceId": "vZifugoCmJjNgn0bBdKH",
+      "sourceSha256": "db718bd81ee963b766c94e1cdef728cf67479e0861554342684a1ad67420b9d4",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "db718bd81ee963b766c94e1cdef728cf67479e0861554342684a1ad67420b9d4",
+        "bytes": 132631,
+        "durationMs": 4833,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -20.23,
+        "peakDb": -3.04
+      },
+      "prepared": {
+        "sha256": "1c18235bd5341118d864e43fda75606790f03401869fb61eac37c6752e3fc379",
+        "bytes": 78201,
+        "durationMs": 4833,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -7.75
+      },
+      "gainDb": -4.27
+    },
+    {
+      "voice": "inspector",
+      "cueId": "mafia.phase.role.reveal",
+      "voiceId": "vZifugoCmJjNgn0bBdKH",
+      "sourceSha256": "98d8fdcb450628f60637faa143179c061a38c17e71179d86b23968d0db71b2e6",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "98d8fdcb450628f60637faa143179c061a38c17e71179d86b23968d0db71b2e6",
+        "bytes": 138274,
+        "durationMs": 5068,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -21.18,
+        "peakDb": -2.06
+      },
+      "prepared": {
+        "sha256": "45ef7863bd6654202610e77e51217e52495ecdfb575f8c2002dec223afdc9d9a",
+        "bytes": 81963,
+        "durationMs": 5068,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -5.87
+      },
+      "gainDb": -3.32
+    },
+    {
+      "voice": "inspector",
+      "cueId": "mafia.phase.first.night",
+      "voiceId": "vZifugoCmJjNgn0bBdKH",
+      "sourceSha256": "caead532354b1d9c6c285f85feca4b7e0a10df52d3f8f9a37ee66c1aadfc3057",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "caead532354b1d9c6c285f85feca4b7e0a10df52d3f8f9a37ee66c1aadfc3057",
+        "bytes": 148305,
+        "durationMs": 5486,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -21.73,
+        "peakDb": -3.55
+      },
+      "prepared": {
+        "sha256": "cb3f2134a164cb6d860fbb3b661677907037af79add5258c5609212ef3b5bb30",
+        "bytes": 88650,
+        "durationMs": 5486,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -6.61
+      },
+      "gainDb": -2.77
+    },
+    {
+      "voice": "inspector",
+      "cueId": "mafia.phase.night",
+      "voiceId": "vZifugoCmJjNgn0bBdKH",
+      "sourceSha256": "85d89515fda2016fbd31978f53735f391eb70a0fdbf92eee280eb1d22254aa3b",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "85d89515fda2016fbd31978f53735f391eb70a0fdbf92eee280eb1d22254aa3b",
+        "bytes": 153947,
+        "durationMs": 5721,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24,
+        "peakDb": -5.13
+      },
+      "prepared": {
+        "sha256": "e647a137a93c8988a5c0eba6ea2852b1b5fceedf9bb1492a58551070eb148853",
+        "bytes": 92412,
+        "durationMs": 5721,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.93,
+        "peakDb": -6.05
+      },
+      "gainDb": -0.5
+    },
+    {
+      "voice": "inspector",
+      "cueId": "mafia.phase.day.announcement",
+      "voiceId": "vZifugoCmJjNgn0bBdKH",
+      "sourceSha256": "1eed24fb095556be7462b05ea52cb2f740d47d897066ab65a3d13d75c48638b9",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "1eed24fb095556be7462b05ea52cb2f740d47d897066ab65a3d13d75c48638b9",
+        "bytes": 152066,
+        "durationMs": 5642,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -22.11,
+        "peakDb": -3.05
+      },
+      "prepared": {
+        "sha256": "85936cb669b176e7b0357508b9f53d7c5550bab0bfed235eef5a3ec8cc016dda",
+        "bytes": 91158,
+        "durationMs": 5642,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -5.83
+      },
+      "gainDb": -2.39
+    },
+    {
+      "voice": "inspector",
+      "cueId": "mafia.phase.day.discussion",
+      "voiceId": "vZifugoCmJjNgn0bBdKH",
+      "sourceSha256": "e1871e63c1e07aafbd4b693ae9efe8810cd954f455f3f459a1fdd3343892a245",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "e1871e63c1e07aafbd4b693ae9efe8810cd954f455f3f459a1fdd3343892a245",
+        "bytes": 163351,
+        "durationMs": 6113,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -21.24,
+        "peakDb": -2.44
+      },
+      "prepared": {
+        "sha256": "47bd2cba42168d40a317d22d5aed22678f625804b48676a79c212e8c72f4b10c",
+        "bytes": 98681,
+        "durationMs": 6113,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -6.14
+      },
+      "gainDb": -3.26
+    },
+    {
+      "voice": "inspector",
+      "cueId": "mafia.phase.voting",
+      "voiceId": "vZifugoCmJjNgn0bBdKH",
+      "sourceSha256": "f669cf2dc415f63fc77701e3a58a44a55879ddeb6d0c72542a5b0fe1a5798060",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "f669cf2dc415f63fc77701e3a58a44a55879ddeb6d0c72542a5b0fe1a5798060",
+        "bytes": 155828,
+        "durationMs": 5799,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -21.7,
+        "peakDb": -3.2
+      },
+      "prepared": {
+        "sha256": "2b4d2cb31bd40545535895963f4d4c98a101ee3ae177bd1e38467beae235b118",
+        "bytes": 93665,
+        "durationMs": 5799,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -6.39
+      },
+      "gainDb": -2.8
+    },
+    {
+      "voice": "inspector",
+      "cueId": "mafia.phase.resolution",
+      "voiceId": "vZifugoCmJjNgn0bBdKH",
+      "sourceSha256": "a83bb9a907278019a028f9f0de4e795bd617df0bb57f1228e1704a590170ae34",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "a83bb9a907278019a028f9f0de4e795bd617df0bb57f1228e1704a590170ae34",
+        "bytes": 134512,
+        "durationMs": 4911,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -20.08,
+        "peakDb": -1.4
+      },
+      "prepared": {
+        "sha256": "4881f5847d8f91d5c754184ae34e263370e1c629c15dc0ae3e5950cde4fde0da",
+        "bytes": 79455,
+        "durationMs": 4911,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -6.27
+      },
+      "gainDb": -4.42
+    },
+    {
+      "voice": "inspector",
+      "cueId": "mafia.phase.nomination",
+      "voiceId": "vZifugoCmJjNgn0bBdKH",
+      "sourceSha256": "627fb4550a5d0c83622fed71becda0e58e46ef8d61f9ef6cb734fc1aca1909a1",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "627fb4550a5d0c83622fed71becda0e58e46ef8d61f9ef6cb734fc1aca1909a1",
+        "bytes": 136393,
+        "durationMs": 4989,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -19.86,
+        "peakDb": -3.15
+      },
+      "prepared": {
+        "sha256": "360a283f3f64e74e5982ad67aa3114a784fb05664a146d192e0b6cff4be64869",
+        "bytes": 80709,
+        "durationMs": 4989,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -8.22
+      },
+      "gainDb": -4.64
+    },
+    {
+      "voice": "inspector",
+      "cueId": "mafia.phase.defense",
+      "voiceId": "vZifugoCmJjNgn0bBdKH",
+      "sourceSha256": "74728b3642efab945537a1cd624f6d31bc41246c5ad25aeee228332585deab9c",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "74728b3642efab945537a1cd624f6d31bc41246c5ad25aeee228332585deab9c",
+        "bytes": 142662,
+        "durationMs": 5251,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -21.1,
+        "peakDb": -3.41
+      },
+      "prepared": {
+        "sha256": "3d47c3311ae981225ff8a6e8d6adb7c9756e9a124cf0ae848e2350a29049c1de",
+        "bytes": 84888,
+        "durationMs": 5251,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -7.24
+      },
+      "gainDb": -3.4
+    },
+    {
+      "voice": "inspector",
+      "cueId": "werewolves.phase.hunter.revenge",
+      "voiceId": "vZifugoCmJjNgn0bBdKH",
+      "sourceSha256": "c4d9807c852067d4509853a2753fd36f64013fa6e69fcebc4ed8e6a389ad8c27",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "c4d9807c852067d4509853a2753fd36f64013fa6e69fcebc4ed8e6a389ad8c27",
+        "bytes": 134512,
+        "durationMs": 4911,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -21.9,
+        "peakDb": -2.21
+      },
+      "prepared": {
+        "sha256": "0f88c31ff27015e615f9d14e9d99f98d46318290a18593360d194a6eb3fff4aa",
+        "bytes": 79455,
+        "durationMs": 4911,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.98,
+        "peakDb": -5.26
+      },
+      "gainDb": -2.6
+    },
+    {
+      "voice": "inspector",
+      "cueId": "werewolves.phase.mayor.successor",
+      "voiceId": "vZifugoCmJjNgn0bBdKH",
+      "sourceSha256": "887ed7b3570d19e835cb58bda7f095c8ceef0f134f82341f13651bce2569b123",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "887ed7b3570d19e835cb58bda7f095c8ceef0f134f82341f13651bce2569b123",
+        "bytes": 126989,
+        "durationMs": 4598,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -22.57,
+        "peakDb": -2.85
+      },
+      "prepared": {
+        "sha256": "6e167f0116a6a28fb8e0b11021ca4416c3de8d946fd5047cfd49589849fe8302",
+        "bytes": 74439,
+        "durationMs": 4598,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -5.22
+      },
+      "gainDb": -1.93
+    },
+    {
+      "voice": "inspector",
+      "cueId": "werewolves.finale.village",
+      "voiceId": "vZifugoCmJjNgn0bBdKH",
+      "sourceSha256": "6f2cdaeac341797e4e4bd5b83de243a110b163e71ad81a51e6c26d130bca83b9",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "6f2cdaeac341797e4e4bd5b83de243a110b163e71ad81a51e6c26d130bca83b9",
+        "bytes": 179025,
+        "durationMs": 6766,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -22.54,
+        "peakDb": -4.91
+      },
+      "prepared": {
+        "sha256": "3db8acc93ee216d542aba73ef3e44772519704405d0337c9956ab7429ae4fc53",
+        "bytes": 109130,
+        "durationMs": 6766,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -7.37
+      },
+      "gainDb": -1.96
+    },
+    {
+      "voice": "inspector",
+      "cueId": "mafia.finale.village",
+      "voiceId": "vZifugoCmJjNgn0bBdKH",
+      "sourceSha256": "11cbefb1a411e0016f3aa64ff472a64302609e17e29e1490a4c03744553f259f",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "11cbefb1a411e0016f3aa64ff472a64302609e17e29e1490a4c03744553f259f",
+        "bytes": 170874,
+        "durationMs": 6426,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -23.19,
+        "peakDb": -5.07
+      },
+      "prepared": {
+        "sha256": "dda13bc4c5c5c5cab0e77a62278ead53b1d0fb13a3e7ee1fd0d1a54d917eda79",
+        "bytes": 103696,
+        "durationMs": 6426,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -6.82
+      },
+      "gainDb": -1.31
+    },
+    {
+      "voice": "inspector",
+      "cueId": "werewolves.finale.werewolves",
+      "voiceId": "vZifugoCmJjNgn0bBdKH",
+      "sourceSha256": "7c13c9806e25abf2b29625990fbf3e54fefe545923f232cb2c163fd3170fc785",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "7c13c9806e25abf2b29625990fbf3e54fefe545923f232cb2c163fd3170fc785",
+        "bytes": 175587,
+        "durationMs": 7314,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -20.67,
+        "peakDb": -3.22
+      },
+      "prepared": {
+        "sha256": "9b703bf4f498f4c6835c90be93980505bd13903f21ccb148b921f7d54b9f4919",
+        "bytes": 117907,
+        "durationMs": 7314,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -7.45
+      },
+      "gainDb": -3.83
+    },
+    {
+      "voice": "inspector",
+      "cueId": "werewolves.finale.vampires",
+      "voiceId": "vZifugoCmJjNgn0bBdKH",
+      "sourceSha256": "a97a26c12061a23f40f45f61bc9ca5fee411014e63c6a7f843ce1b99de60fea9",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "a97a26c12061a23f40f45f61bc9ca5fee411014e63c6a7f843ce1b99de60fea9",
+        "bytes": 195952,
+        "durationMs": 7471,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -19.96,
+        "peakDb": -2.66
+      },
+      "prepared": {
+        "sha256": "36b97d35ec0d5f3581894d0eca108e26627740bead8109531e68c8770e73d491",
+        "bytes": 120415,
+        "durationMs": 7471,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -7.66
+      },
+      "gainDb": -4.54
+    },
+    {
+      "voice": "inspector",
+      "cueId": "mafia.finale.mafia",
+      "voiceId": "vZifugoCmJjNgn0bBdKH",
+      "sourceSha256": "801eab432059e406abc4258a24b6fd02748937f6bbf3cf7b484e57dd21a29721",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "801eab432059e406abc4258a24b6fd02748937f6bbf3cf7b484e57dd21a29721",
+        "bytes": 190310,
+        "durationMs": 7236,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -20.79,
+        "peakDb": -2.86
+      },
+      "prepared": {
+        "sha256": "dbbc73385dd298ce0abc3b64718a0a43e95df04c9ea1c26e4cc48e008200d04b",
+        "bytes": 116653,
+        "durationMs": 7236,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -7.11
+      },
+      "gainDb": -3.71
+    },
+    {
+      "voice": "inspector",
+      "cueId": "mafia.finale.maniac",
+      "voiceId": "vZifugoCmJjNgn0bBdKH",
+      "sourceSha256": "183a8fb936a43578f75a3563888c2d6a1faf7114aec368c98bd76825c7678ca7",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "183a8fb936a43578f75a3563888c2d6a1faf7114aec368c98bd76825c7678ca7",
+        "bytes": 207864,
+        "durationMs": 7967,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -20.43,
+        "peakDb": -1.89
+      },
+      "prepared": {
+        "sha256": "0077dcce52e9af45a08c38c23968be7678e798c0e6c8b4e3a318cee1571a5837",
+        "bytes": 128356,
+        "durationMs": 7967,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -6.44
+      },
+      "gainDb": -4.07
+    },
+    {
+      "voice": "inspector",
+      "cueId": "werewolves.finale.lovers",
+      "voiceId": "vZifugoCmJjNgn0bBdKH",
+      "sourceSha256": "429ab423e2678c562cf276290caf31aafdb4608622ee0da3e000338d1676d3cb",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "429ab423e2678c562cf276290caf31aafdb4608622ee0da3e000338d1676d3cb",
+        "bytes": 192190,
+        "durationMs": 7314,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -23.26,
+        "peakDb": -2.88
+      },
+      "prepared": {
+        "sha256": "49bffafbc3e8f634134a4900b56e824adb8e19965fb6766c2e0e8e7ecc2583eb",
+        "bytes": 117907,
+        "durationMs": 7314,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -4.58
+      },
+      "gainDb": -1.24
+    },
+    {
+      "voice": "inspector",
+      "cueId": "mafia.finale.lovers",
+      "voiceId": "vZifugoCmJjNgn0bBdKH",
+      "sourceSha256": "1b720ec52b7fe3f5099cdde7cb2780456c9c6add9c2daadda00b261b02a90d43",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "1b720ec52b7fe3f5099cdde7cb2780456c9c6add9c2daadda00b261b02a90d43",
+        "bytes": 195952,
+        "durationMs": 7471,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.13,
+        "peakDb": -6.8
+      },
+      "prepared": {
+        "sha256": "e4dbb3f0ab06dba22d9360e3b02fd229d058e36346936b3613c75dedbc58d0cf",
+        "bytes": 120415,
+        "durationMs": 7471,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -7.68
+      },
+      "gainDb": -0.37
+    },
+    {
+      "voice": "inspector",
+      "cueId": "shared.finale.draw",
+      "voiceId": "vZifugoCmJjNgn0bBdKH",
+      "sourceSha256": "21f52e2da1c2aea2483aa8d8d5caa03934950bbf662c328b5988cbf28a82ec4e",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "21f52e2da1c2aea2483aa8d8d5caa03934950bbf662c328b5988cbf28a82ec4e",
+        "bytes": 188429,
+        "durationMs": 7158,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -20.01,
+        "peakDb": -1.96
+      },
+      "prepared": {
+        "sha256": "5488b3be24718cac5f254fbbac2ba8cab39b2591f7262da2d417386aea86ffb2",
+        "bytes": 115399,
+        "durationMs": 7158,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -6.94
+      },
+      "gainDb": -4.49
+    },
+    {
+      "voice": "inspector",
+      "cueId": "shared.personal.finale.jester",
+      "voiceId": "vZifugoCmJjNgn0bBdKH",
+      "sourceSha256": "350ba771baf2806e0ac3a7ba2a1c6f8fe7c0a8306678011f9222e9c0036a4cfe",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "350ba771baf2806e0ac3a7ba2a1c6f8fe7c0a8306678011f9222e9c0036a4cfe",
+        "bytes": 163351,
+        "durationMs": 6113,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -22.05,
+        "peakDb": -2.5
+      },
+      "prepared": {
+        "sha256": "72e039718cfae91893894f46446b8359214d2f4d9df4b0b08e18d7410e74d7e6",
+        "bytes": 98681,
+        "durationMs": 6113,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -5.49
+      },
+      "gainDb": -2.45
+    },
+    {
+      "voice": "witch",
+      "cueId": "werewolves.phase.role.reveal",
+      "voiceId": "M1ydWt7KnBCiuv4CnEDC",
+      "sourceSha256": "f421a43cfbe51a429fa729cdbd6419a665e2f48ac57a3823b0a8f59790f0826b",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "f421a43cfbe51a429fa729cdbd6419a665e2f48ac57a3823b0a8f59790f0826b",
+        "bytes": 153947,
+        "durationMs": 5721,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -27.03,
+        "peakDb": -9.65
+      },
+      "prepared": {
+        "sha256": "18489a92776438a9586b6b98081795f19abfcb964001c4c52cee951df63156d0",
+        "bytes": 92412,
+        "durationMs": 5721,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -7.57
+      },
+      "gainDb": 2.53
+    },
+    {
+      "voice": "witch",
+      "cueId": "werewolves.phase.first.night",
+      "voiceId": "M1ydWt7KnBCiuv4CnEDC",
+      "sourceSha256": "397629d3c1eb5d6a62ca9aa0a9f54176193fd2419b88f870970b526b710c467f",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "397629d3c1eb5d6a62ca9aa0a9f54176193fd2419b88f870970b526b710c467f",
+        "bytes": 159590,
+        "durationMs": 5956,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -27.21,
+        "peakDb": -9.71
+      },
+      "prepared": {
+        "sha256": "88565e4b722133d6e7e8af1cd63c5166886ce7eb73869204afddc9d89f2d9654",
+        "bytes": 96173,
+        "durationMs": 5956,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.96,
+        "peakDb": -7.43
+      },
+      "gainDb": 2.71
+    },
+    {
+      "voice": "witch",
+      "cueId": "werewolves.phase.night",
+      "voiceId": "M1ydWt7KnBCiuv4CnEDC",
+      "sourceSha256": "34bfbe77ab7f919e54392ffaa91cfbea2fa7767e1de1df608c853b618fe1e479",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "34bfbe77ab7f919e54392ffaa91cfbea2fa7767e1de1df608c853b618fe1e479",
+        "bytes": 159590,
+        "durationMs": 5956,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -27.19,
+        "peakDb": -9.94
+      },
+      "prepared": {
+        "sha256": "fb75f792a1304261fe4583e468ada201376041fc810e8f22e09f737befe9189d",
+        "bytes": 96173,
+        "durationMs": 5956,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -7.69
+      },
+      "gainDb": 2.69
+    },
+    {
+      "voice": "witch",
+      "cueId": "werewolves.phase.day.announcement",
+      "voiceId": "M1ydWt7KnBCiuv4CnEDC",
+      "sourceSha256": "d97e4bb276d5b0217e876e095f1c633f79ef9b3eebf88cc9e0104ab4b245cf1d",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "d97e4bb276d5b0217e876e095f1c633f79ef9b3eebf88cc9e0104ab4b245cf1d",
+        "bytes": 150186,
+        "durationMs": 5564,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -27.69,
+        "peakDb": -8.48
+      },
+      "prepared": {
+        "sha256": "e24bce1da5c8aee46d45a205b6f8bdf2ec9f7e964c7e18eadd2a241b38c3cf82",
+        "bytes": 89904,
+        "durationMs": 5564,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -5.73
+      },
+      "gainDb": 3.19
+    },
+    {
+      "voice": "witch",
+      "cueId": "werewolves.phase.day.discussion",
+      "voiceId": "M1ydWt7KnBCiuv4CnEDC",
+      "sourceSha256": "68a94fc0607a813a975da64d742455368f464d3bd35ae5cd69210c9e9aeae41e",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "68a94fc0607a813a975da64d742455368f464d3bd35ae5cd69210c9e9aeae41e",
+        "bytes": 152066,
+        "durationMs": 5642,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -25.16,
+        "peakDb": -9.64
+      },
+      "prepared": {
+        "sha256": "d8b18b704a64c7e0cd9ebd32d087d23707a9f00e0d52b0716960da1d90fa0acd",
+        "bytes": 91158,
+        "durationMs": 5642,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.92,
+        "peakDb": -9.44
+      },
+      "gainDb": 0.66
+    },
+    {
+      "voice": "witch",
+      "cueId": "werewolves.phase.voting",
+      "voiceId": "M1ydWt7KnBCiuv4CnEDC",
+      "sourceSha256": "fb1534ded28ffc58ba7139defcfeb5e608a07e1c994ba1f3bd107bac8ebc6381",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "fb1534ded28ffc58ba7139defcfeb5e608a07e1c994ba1f3bd107bac8ebc6381",
+        "bytes": 144543,
+        "durationMs": 5329,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -23.98,
+        "peakDb": -6.48
+      },
+      "prepared": {
+        "sha256": "7c1913c78d270d6a057b3109fe141bd16842336c0abe8614bd9fe28b8d9782b6",
+        "bytes": 86142,
+        "durationMs": 5329,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -7.44
+      },
+      "gainDb": -0.52
+    },
+    {
+      "voice": "witch",
+      "cueId": "werewolves.phase.resolution",
+      "voiceId": "M1ydWt7KnBCiuv4CnEDC",
+      "sourceSha256": "f5ca8cddca3a6addeb9f54585ed1b6e8dbff2b30ca0cb5dcac48143c712bc46c",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "f5ca8cddca3a6addeb9f54585ed1b6e8dbff2b30ca0cb5dcac48143c712bc46c",
+        "bytes": 157709,
+        "durationMs": 5878,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -27.63,
+        "peakDb": -10.75
+      },
+      "prepared": {
+        "sha256": "de45f47ba77a3d9737600cd6fa1e824214d8f8ffcc15d795757b39bd74ab6c1a",
+        "bytes": 94919,
+        "durationMs": 5878,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.96,
+        "peakDb": -8.06
+      },
+      "gainDb": 3.13
+    },
+    {
+      "voice": "witch",
+      "cueId": "mafia.phase.role.reveal",
+      "voiceId": "M1ydWt7KnBCiuv4CnEDC",
+      "sourceSha256": "807c89d4e2c3405c66bdb38c83d86a03f769d6eb4d0ef09bc9830225b1562d90",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "807c89d4e2c3405c66bdb38c83d86a03f769d6eb4d0ef09bc9830225b1562d90",
+        "bytes": 159590,
+        "durationMs": 5956,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -27.34,
+        "peakDb": -11.49
+      },
+      "prepared": {
+        "sha256": "51045234dbefbcf2a88ee6117a2afbbf9fa6fee272b6bb72335e87de769e3bd5",
+        "bytes": 96173,
+        "durationMs": 5956,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -9.11
+      },
+      "gainDb": 2.84
+    },
+    {
+      "voice": "witch",
+      "cueId": "mafia.phase.first.night",
+      "voiceId": "M1ydWt7KnBCiuv4CnEDC",
+      "sourceSha256": "454f36807dc3f7538aecfb0dc02a7990a0955416093abfb77400baeae643ee58",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "454f36807dc3f7538aecfb0dc02a7990a0955416093abfb77400baeae643ee58",
+        "bytes": 173382,
+        "durationMs": 6531,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -27.87,
+        "peakDb": -10.48
+      },
+      "prepared": {
+        "sha256": "b22be0dfa0bb7ceda31a54aa2e7281dbbdf37f52f5634c9072066b2ee79a07a5",
+        "bytes": 105368,
+        "durationMs": 6531,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -7.57
+      },
+      "gainDb": 3.37
+    },
+    {
+      "voice": "witch",
+      "cueId": "mafia.phase.night",
+      "voiceId": "M1ydWt7KnBCiuv4CnEDC",
+      "sourceSha256": "2e2b3f72c3b36feee6d53b74ce562206c233693bf6c72590f27da35550d3a2bd",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "2e2b3f72c3b36feee6d53b74ce562206c233693bf6c72590f27da35550d3a2bd",
+        "bytes": 159590,
+        "durationMs": 5956,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -29.2,
+        "peakDb": -11.61
+      },
+      "prepared": {
+        "sha256": "7d6ddb837a3576a776de13129ca31c06eea6fd6015d348606dba4b813a02fde8",
+        "bytes": 96173,
+        "durationMs": 5956,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -7.33
+      },
+      "gainDb": 4.7
+    },
+    {
+      "voice": "witch",
+      "cueId": "mafia.phase.day.announcement",
+      "voiceId": "M1ydWt7KnBCiuv4CnEDC",
+      "sourceSha256": "1dbd2220cad9e4bd0da1ad29a32cbaccc3cb6b17102ea02680aebf45d32404c7",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "1dbd2220cad9e4bd0da1ad29a32cbaccc3cb6b17102ea02680aebf45d32404c7",
+        "bytes": 148305,
+        "durationMs": 5486,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -27.68,
+        "peakDb": -7.56
+      },
+      "prepared": {
+        "sha256": "c8c8fca7859fabcec331ef9f5a8fd50108fe5ea337db79fdad4b6453402734e5",
+        "bytes": 88650,
+        "durationMs": 5486,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.93,
+        "peakDb": -4.82
+      },
+      "gainDb": 3.18
+    },
+    {
+      "voice": "witch",
+      "cueId": "mafia.phase.day.discussion",
+      "voiceId": "M1ydWt7KnBCiuv4CnEDC",
+      "sourceSha256": "e4f97099344aa9b84ef0c446f9a2d26d319538353d3bc7ff643a47ef82449a21",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "e4f97099344aa9b84ef0c446f9a2d26d319538353d3bc7ff643a47ef82449a21",
+        "bytes": 146424,
+        "durationMs": 5407,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -26.44,
+        "peakDb": -9.31
+      },
+      "prepared": {
+        "sha256": "5a3e5e019c9e90f756ab7b515847f17e6e1953b133693520dec7cae527849bbf",
+        "bytes": 87396,
+        "durationMs": 5407,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -7.79
+      },
+      "gainDb": 1.94
+    },
+    {
+      "voice": "witch",
+      "cueId": "mafia.phase.voting",
+      "voiceId": "M1ydWt7KnBCiuv4CnEDC",
+      "sourceSha256": "233a7c806f24cf68794264232aefaed65b9b29b99c0c6ec61ca088dd6b1dd7df",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "233a7c806f24cf68794264232aefaed65b9b29b99c0c6ec61ca088dd6b1dd7df",
+        "bytes": 135463,
+        "durationMs": 5642,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -23.5,
+        "peakDb": -6.29
+      },
+      "prepared": {
+        "sha256": "c2dbc02a940dc124e3a22185c92d85dec47d06b11bdf884bb6a5420621dc8e0b",
+        "bytes": 91158,
+        "durationMs": 5642,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -7.76
+      },
+      "gainDb": -1
+    },
+    {
+      "voice": "witch",
+      "cueId": "mafia.phase.resolution",
+      "voiceId": "M1ydWt7KnBCiuv4CnEDC",
+      "sourceSha256": "7aece112206c5ed2dc374ff7b85d6fcf35a50a66251105ec64d63bb9e5a399d8",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "7aece112206c5ed2dc374ff7b85d6fcf35a50a66251105ec64d63bb9e5a399d8",
+        "bytes": 148629,
+        "durationMs": 6191,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -28.31,
+        "peakDb": -9.07
+      },
+      "prepared": {
+        "sha256": "1c7f3fde47a6e77d21ffd8ad8ae7437897ffbe3575ae3f3a99fa4cd2050008e2",
+        "bytes": 99935,
+        "durationMs": 6191,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -5.71
+      },
+      "gainDb": 3.81
+    },
+    {
+      "voice": "witch",
+      "cueId": "mafia.phase.nomination",
+      "voiceId": "M1ydWt7KnBCiuv4CnEDC",
+      "sourceSha256": "a9d405cd7920f2ea01b1b5f033bc47a3b7167780ac32971c3d93802eff4a966b",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "a9d405cd7920f2ea01b1b5f033bc47a3b7167780ac32971c3d93802eff4a966b",
+        "bytes": 157709,
+        "durationMs": 5878,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -23.1,
+        "peakDb": -6.2
+      },
+      "prepared": {
+        "sha256": "446c7294cd81ec7bc7e14883a30570066c020d402a9323522bbeaf65032eb139",
+        "bytes": 94919,
+        "durationMs": 5878,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.93,
+        "peakDb": -8.03
+      },
+      "gainDb": -1.4
+    },
+    {
+      "voice": "witch",
+      "cueId": "mafia.phase.defense",
+      "voiceId": "M1ydWt7KnBCiuv4CnEDC",
+      "sourceSha256": "8cba590b103c20dff1cbb8bd0011545da6223e47a3cc86956eaf4cbf75e1463e",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "8cba590b103c20dff1cbb8bd0011545da6223e47a3cc86956eaf4cbf75e1463e",
+        "bytes": 152066,
+        "durationMs": 5642,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -25.05,
+        "peakDb": -10.04
+      },
+      "prepared": {
+        "sha256": "ae12b32994a27844ff71a4e99c250066d4378eb0f69b1537c58c6219d73ed955",
+        "bytes": 91158,
+        "durationMs": 5642,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -9.93
+      },
+      "gainDb": 0.55
+    },
+    {
+      "voice": "witch",
+      "cueId": "werewolves.phase.hunter.revenge",
+      "voiceId": "M1ydWt7KnBCiuv4CnEDC",
+      "sourceSha256": "566ffa592c623f8941512d222d203aef27be49cd0d1b465de3b83c92175c21a9",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "566ffa592c623f8941512d222d203aef27be49cd0d1b465de3b83c92175c21a9",
+        "bytes": 146424,
+        "durationMs": 5407,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -26.09,
+        "peakDb": -6.38
+      },
+      "prepared": {
+        "sha256": "b14dd628f67a572e64af8fc6b264fcdbcf3d24f20cb08172c0ab1be360c1969b",
+        "bytes": 87396,
+        "durationMs": 5407,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -5.24
+      },
+      "gainDb": 1.59
+    },
+    {
+      "voice": "witch",
+      "cueId": "werewolves.phase.mayor.successor",
+      "voiceId": "M1ydWt7KnBCiuv4CnEDC",
+      "sourceSha256": "402c41fee81c317efacc1913db04fac414dc8f3685180e65ab5e286ab1177a49",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "402c41fee81c317efacc1913db04fac414dc8f3685180e65ab5e286ab1177a49",
+        "bytes": 150186,
+        "durationMs": 5564,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -27.88,
+        "peakDb": -10.04
+      },
+      "prepared": {
+        "sha256": "97ca4f057526665edfae5b03bd5444350c52bfd2f0cb788a563db7d5c86bba99",
+        "bytes": 89904,
+        "durationMs": 5564,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -6.98
+      },
+      "gainDb": 3.38
+    },
+    {
+      "voice": "witch",
+      "cueId": "werewolves.finale.village",
+      "voiceId": "M1ydWt7KnBCiuv4CnEDC",
+      "sourceSha256": "5fdb314f75f1316346180482cd621d4a0136aa9d9e7a1aff54185c2157ef5bb5",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "5fdb314f75f1316346180482cd621d4a0136aa9d9e7a1aff54185c2157ef5bb5",
+        "bytes": 188429,
+        "durationMs": 7158,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -25.13,
+        "peakDb": -7.08
+      },
+      "prepared": {
+        "sha256": "699eca8d15aecc2ad372330063e59d8a315e52c85418c1a2db8638389d60d086",
+        "bytes": 115399,
+        "durationMs": 7158,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -6.91
+      },
+      "gainDb": 0.63
+    },
+    {
+      "voice": "witch",
+      "cueId": "mafia.finale.village",
+      "voiceId": "M1ydWt7KnBCiuv4CnEDC",
+      "sourceSha256": "cd480ac9d031ce96e7b786c17313c317f37f649a4dc2ed3aa14e80f08189c05c",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "cd480ac9d031ce96e7b786c17313c317f37f649a4dc2ed3aa14e80f08189c05c",
+        "bytes": 205983,
+        "durationMs": 7889,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -25.42,
+        "peakDb": -8.01
+      },
+      "prepared": {
+        "sha256": "3e05e3455718363c034c89b5a3b3c4fbff525f82d23340d9edb19cc5a89f4675",
+        "bytes": 127102,
+        "durationMs": 7889,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.96,
+        "peakDb": -7.53
+      },
+      "gainDb": 0.92
+    },
+    {
+      "voice": "witch",
+      "cueId": "werewolves.finale.werewolves",
+      "voiceId": "M1ydWt7KnBCiuv4CnEDC",
+      "sourceSha256": "0e41767a178487416cd34491179de94cdef8481158eaf98ae92797a19aa784bd",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "0e41767a178487416cd34491179de94cdef8481158eaf98ae92797a19aa784bd",
+        "bytes": 204102,
+        "durationMs": 7811,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -26.02,
+        "peakDb": -6.8
+      },
+      "prepared": {
+        "sha256": "3c956f246771810f6a890a86e522ca9330bbb010fa9b89a12e3a0102b329008f",
+        "bytes": 125848,
+        "durationMs": 7811,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.9,
+        "peakDb": -5.74
+      },
+      "gainDb": 1.52
+    },
+    {
+      "voice": "witch",
+      "cueId": "werewolves.finale.vampires",
+      "voiceId": "M1ydWt7KnBCiuv4CnEDC",
+      "sourceSha256": "a79d3140e2bd8da390f4ba81f12ebb10e42a278e61af26ba597337a3ae5232e4",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "a79d3140e2bd8da390f4ba81f12ebb10e42a278e61af26ba597337a3ae5232e4",
+        "bytes": 215387,
+        "durationMs": 8281,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -26.38,
+        "peakDb": -7.47
+      },
+      "prepared": {
+        "sha256": "f904c696cf3a1e8a70b791a900effbfb0f9d4cd58d53743389b93a83489e2d2a",
+        "bytes": 133372,
+        "durationMs": 8281,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -6.01
+      },
+      "gainDb": 1.88
+    },
+    {
+      "voice": "witch",
+      "cueId": "mafia.finale.mafia",
+      "voiceId": "M1ydWt7KnBCiuv4CnEDC",
+      "sourceSha256": "11bcd2c05f4f6d61a668bc4d69d4530a489dcdd69e1dd7af20904f1428e93440",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "11bcd2c05f4f6d61a668bc4d69d4530a489dcdd69e1dd7af20904f1428e93440",
+        "bytes": 197833,
+        "durationMs": 7549,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -25.34,
+        "peakDb": -6.31
+      },
+      "prepared": {
+        "sha256": "683d8dec07989cb7a5da336817db09b6c584820a9663af26ce82e72a40b50bd1",
+        "bytes": 121669,
+        "durationMs": 7549,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -5.92
+      },
+      "gainDb": 0.84
+    },
+    {
+      "voice": "witch",
+      "cueId": "mafia.finale.maniac",
+      "voiceId": "M1ydWt7KnBCiuv4CnEDC",
+      "sourceSha256": "f566864e5144bf73a147a529f2ff8b31d95016d5c10036ab452d6d875d211eff",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "f566864e5144bf73a147a529f2ff8b31d95016d5c10036ab452d6d875d211eff",
+        "bytes": 196903,
+        "durationMs": 8202,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.82,
+        "peakDb": -7.84
+      },
+      "prepared": {
+        "sha256": "ace38b00371b82b6923514000eeb4a02c628fc6e0394dba9e49dd5d6f9af3f11",
+        "bytes": 132118,
+        "durationMs": 8202,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -8.03
+      },
+      "gainDb": 0.32
+    },
+    {
+      "voice": "witch",
+      "cueId": "werewolves.finale.lovers",
+      "voiceId": "M1ydWt7KnBCiuv4CnEDC",
+      "sourceSha256": "d5bf77225f8a32d43e26964b6b1ab0432b7c66c520ccb98dbffa6c7a03729a17",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "d5bf77225f8a32d43e26964b6b1ab0432b7c66c520ccb98dbffa6c7a03729a17",
+        "bytes": 222910,
+        "durationMs": 8594,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -26.17,
+        "peakDb": -8.53
+      },
+      "prepared": {
+        "sha256": "a78517e757a0760fb68deb224e3cd1f413f571dc9ccba2003e90ba8c1277c24a",
+        "bytes": 138387,
+        "durationMs": 8594,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -7.26
+      },
+      "gainDb": 1.67
+    },
+    {
+      "voice": "witch",
+      "cueId": "mafia.finale.lovers",
+      "voiceId": "M1ydWt7KnBCiuv4CnEDC",
+      "sourceSha256": "fea91a96a346b0bd151c05a871a42cbe32ada4c2851f7e8e1c0a46c65199e3a6",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "fea91a96a346b0bd151c05a871a42cbe32ada4c2851f7e8e1c0a46c65199e3a6",
+        "bytes": 207864,
+        "durationMs": 7967,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -26.25,
+        "peakDb": -8.82
+      },
+      "prepared": {
+        "sha256": "de38c0b7e77c5ebc3fa5a830ed5953211321489ac86c15d33c5d569fa0cac4f4",
+        "bytes": 128356,
+        "durationMs": 7967,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -7.36
+      },
+      "gainDb": 1.75
+    },
+    {
+      "voice": "witch",
+      "cueId": "shared.finale.draw",
+      "voiceId": "M1ydWt7KnBCiuv4CnEDC",
+      "sourceSha256": "4f22fbf7f8cdb301f7dd6ab0d068ae5698ed8d53893a16a6fb9a9d987473de05",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "4f22fbf7f8cdb301f7dd6ab0d068ae5698ed8d53893a16a6fb9a9d987473de05",
+        "bytes": 207864,
+        "durationMs": 7967,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -25.96,
+        "peakDb": -9.87
+      },
+      "prepared": {
+        "sha256": "10ee5201d6ae4eaae2c5a8846a1f04cf78f2ff6aa336e6a59ae805e08ecc7fce",
+        "bytes": 128356,
+        "durationMs": 7967,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.93,
+        "peakDb": -8.92
+      },
+      "gainDb": 1.46
+    },
+    {
+      "voice": "witch",
+      "cueId": "shared.personal.finale.jester",
+      "voiceId": "M1ydWt7KnBCiuv4CnEDC",
+      "sourceSha256": "f0e25b5a749a47426e108776594c6977b4c42fa22e2350aba54bdad5f6e53cd4",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "f0e25b5a749a47426e108776594c6977b4c42fa22e2350aba54bdad5f6e53cd4",
+        "bytes": 197833,
+        "durationMs": 7549,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.54,
+        "peakDb": -7.2
+      },
+      "prepared": {
+        "sha256": "04dd496c95e6d14520b64df4c1fec035cc7adbfe808d309ad986e0c2344edc1b",
+        "bytes": 121669,
+        "durationMs": 7549,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.93,
+        "peakDb": -7.6
+      },
+      "gainDb": 0.04
+    },
+    {
+      "voice": "witch_moonglow",
+      "cueId": "werewolves.phase.role.reveal",
+      "voiceId": "vnewfQdVVk9Y9DZWVRNm",
+      "sourceSha256": "068bdbebc583196a38a6a482a1430d64254cd7a5435eba396842b974a70ef2b7",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "068bdbebc583196a38a6a482a1430d64254cd7a5435eba396842b974a70ef2b7",
+        "bytes": 137344,
+        "durationMs": 5721,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -28.27,
+        "peakDb": -11.39
+      },
+      "prepared": {
+        "sha256": "208874bea3270cda74ff0f523e576a94122653228751d1183aa3f1c80e933b42",
+        "bytes": 92412,
+        "durationMs": 5721,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.96,
+        "peakDb": -8.11
+      },
+      "gainDb": 3.77
+    },
+    {
+      "voice": "witch_moonglow",
+      "cueId": "werewolves.phase.first.night",
+      "voiceId": "vnewfQdVVk9Y9DZWVRNm",
+      "sourceSha256": "d10d5de1a89c21989b2e5b8ad8c2c5f60f9bb3b21a647df58e570d0287ff3f4e",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "d10d5de1a89c21989b2e5b8ad8c2c5f60f9bb3b21a647df58e570d0287ff3f4e",
+        "bytes": 155828,
+        "durationMs": 5799,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -28.63,
+        "peakDb": -11.92
+      },
+      "prepared": {
+        "sha256": "38d3b3a11e735e9af5c46b6dfcd947a3e0c2bee87617ec49a7c0ad21efd01970",
+        "bytes": 93665,
+        "durationMs": 5799,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -8.27
+      },
+      "gainDb": 4.13
+    },
+    {
+      "voice": "witch_moonglow",
+      "cueId": "werewolves.phase.night",
+      "voiceId": "vnewfQdVVk9Y9DZWVRNm",
+      "sourceSha256": "535c15a64fb856ff50f43f4052c6485e19c93eb700cd04493f91a142213304e8",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "535c15a64fb856ff50f43f4052c6485e19c93eb700cd04493f91a142213304e8",
+        "bytes": 152066,
+        "durationMs": 5642,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -28.06,
+        "peakDb": -6.08
+      },
+      "prepared": {
+        "sha256": "78479e42a4c1d2ee137a92191534cba94ed94ae1f0abecdb206dcb334592cdbe",
+        "bytes": 91158,
+        "durationMs": 5642,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.93,
+        "peakDb": -2.96
+      },
+      "gainDb": 3.56
+    },
+    {
+      "voice": "witch_moonglow",
+      "cueId": "werewolves.phase.day.announcement",
+      "voiceId": "vnewfQdVVk9Y9DZWVRNm",
+      "sourceSha256": "cd48a65200c8ee120e5ed92ed40f732e69c5453bc2088af40849e2bef45d29b1",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "cd48a65200c8ee120e5ed92ed40f732e69c5453bc2088af40849e2bef45d29b1",
+        "bytes": 144543,
+        "durationMs": 5329,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -29.94,
+        "peakDb": -9.89
+      },
+      "prepared": {
+        "sha256": "01a9b81b613fc6550cff8f927f79e0c7e4957f5ba71a63c980d0d7e181866227",
+        "bytes": 86142,
+        "durationMs": 5329,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -4.89
+      },
+      "gainDb": 5.44
+    },
+    {
+      "voice": "witch_moonglow",
+      "cueId": "werewolves.phase.day.discussion",
+      "voiceId": "vnewfQdVVk9Y9DZWVRNm",
+      "sourceSha256": "ad9fd9ba0862cd25320cf8964440e57de25b2b0c8511b1a1494630256ee1d953",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "ad9fd9ba0862cd25320cf8964440e57de25b2b0c8511b1a1494630256ee1d953",
+        "bytes": 127940,
+        "durationMs": 5329,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -26.74,
+        "peakDb": -10.19
+      },
+      "prepared": {
+        "sha256": "e8a87dda81e3c7e24775a45eb06632809961343ebe98d5624bda9913cdd04f44",
+        "bytes": 86142,
+        "durationMs": 5329,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -8.36
+      },
+      "gainDb": 2.24
+    },
+    {
+      "voice": "witch_moonglow",
+      "cueId": "werewolves.phase.voting",
+      "voiceId": "vnewfQdVVk9Y9DZWVRNm",
+      "sourceSha256": "64aadb59477d1ecefe9f741839084c32372f8569da90af4290024f762f6760f4",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "64aadb59477d1ecefe9f741839084c32372f8569da90af4290024f762f6760f4",
+        "bytes": 144543,
+        "durationMs": 5329,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.96,
+        "peakDb": -6.97
+      },
+      "prepared": {
+        "sha256": "af07939b03bfc673e8e93f176c6f7eb5a2b69a335796bd7444d964629abad274",
+        "bytes": 86142,
+        "durationMs": 5329,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -6.95
+      },
+      "gainDb": 0.46
+    },
+    {
+      "voice": "witch_moonglow",
+      "cueId": "werewolves.phase.resolution",
+      "voiceId": "vnewfQdVVk9Y9DZWVRNm",
+      "sourceSha256": "e3d1f2ec5e662a6e8e0e81da84d39a9dfad68cb9c04e3406997255c8f831e282",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "e3d1f2ec5e662a6e8e0e81da84d39a9dfad68cb9c04e3406997255c8f831e282",
+        "bytes": 163351,
+        "durationMs": 6113,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -31.17,
+        "peakDb": -14.1
+      },
+      "prepared": {
+        "sha256": "376c11a9a47a7f5ff8f8265b3f6ff51048602061a97874395ab1453015084f45",
+        "bytes": 98681,
+        "durationMs": 6113,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -7.83
+      },
+      "gainDb": 6.67
+    },
+    {
+      "voice": "witch_moonglow",
+      "cueId": "mafia.phase.role.reveal",
+      "voiceId": "vnewfQdVVk9Y9DZWVRNm",
+      "sourceSha256": "a078eca975d200ddbd323cf7078674d927e8d063e6f8984662aeee79f42def08",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "a078eca975d200ddbd323cf7078674d927e8d063e6f8984662aeee79f42def08",
+        "bytes": 159590,
+        "durationMs": 5956,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -29.57,
+        "peakDb": -10.9
+      },
+      "prepared": {
+        "sha256": "217173d151e8bdc5990bf2b1bb11ee2892e7633fbc78576f333261065882197d",
+        "bytes": 96173,
+        "durationMs": 5956,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -6.29
+      },
+      "gainDb": 5.07
+    },
+    {
+      "voice": "witch_moonglow",
+      "cueId": "mafia.phase.first.night",
+      "voiceId": "vnewfQdVVk9Y9DZWVRNm",
+      "sourceSha256": "86da98f8d459a30a3ecf6d8b68643c04dbfc9e5d96d8d1e508c5c619ebb89885",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "86da98f8d459a30a3ecf6d8b68643c04dbfc9e5d96d8d1e508c5c619ebb89885",
+        "bytes": 170874,
+        "durationMs": 6426,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -28.78,
+        "peakDb": -9.84
+      },
+      "prepared": {
+        "sha256": "07569753b1162e144a6151a27c853d4157274845ebee9bf53230a508316cadc9",
+        "bytes": 103696,
+        "durationMs": 6426,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -6.03
+      },
+      "gainDb": 4.28
+    },
+    {
+      "voice": "witch_moonglow",
+      "cueId": "mafia.phase.night",
+      "voiceId": "vnewfQdVVk9Y9DZWVRNm",
+      "sourceSha256": "21bbc609e03e7234ab1df53d81c9549001cac28fb12a941ac25a22c927722783",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "21bbc609e03e7234ab1df53d81c9549001cac28fb12a941ac25a22c927722783",
+        "bytes": 165232,
+        "durationMs": 6191,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -27.89,
+        "peakDb": -11.03
+      },
+      "prepared": {
+        "sha256": "57377f446933d5bf1bbfdc49186e3ac63df5a329b5b98a67909bbd3e7c75ae86",
+        "bytes": 99935,
+        "durationMs": 6191,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.93,
+        "peakDb": -8.09
+      },
+      "gainDb": 3.39
+    },
+    {
+      "voice": "witch_moonglow",
+      "cueId": "mafia.phase.day.announcement",
+      "voiceId": "vnewfQdVVk9Y9DZWVRNm",
+      "sourceSha256": "47cbc3fc6de97159256dc0c01bd25ede24420f8f651bac53e35d34afbb8537c4",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "47cbc3fc6de97159256dc0c01bd25ede24420f8f651bac53e35d34afbb8537c4",
+        "bytes": 144543,
+        "durationMs": 5329,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -28.22,
+        "peakDb": -9.7
+      },
+      "prepared": {
+        "sha256": "a3369e79927ed9788cb501cf5440a1945b5a38af69c7beba7c6375d4a12da209",
+        "bytes": 86142,
+        "durationMs": 5329,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.92,
+        "peakDb": -6.42
+      },
+      "gainDb": 3.72
+    },
+    {
+      "voice": "witch_moonglow",
+      "cueId": "mafia.phase.day.discussion",
+      "voiceId": "vnewfQdVVk9Y9DZWVRNm",
+      "sourceSha256": "9541e8a480435b088976d0eac9ca89074bf2a6f680c9e9da49b3a275f6e677e8",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "9541e8a480435b088976d0eac9ca89074bf2a6f680c9e9da49b3a275f6e677e8",
+        "bytes": 148305,
+        "durationMs": 5486,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -26.18,
+        "peakDb": -7.71
+      },
+      "prepared": {
+        "sha256": "2ed0f95490d4f8b3e102d045025ccce160eba2d0c371f1baf367b1c3e258c6bd",
+        "bytes": 88650,
+        "durationMs": 5486,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -6.46
+      },
+      "gainDb": 1.68
+    },
+    {
+      "voice": "witch_moonglow",
+      "cueId": "mafia.phase.voting",
+      "voiceId": "vnewfQdVVk9Y9DZWVRNm",
+      "sourceSha256": "35303e9beaa913ece3744f270be6c779784ec4962e40de0e517b82cf1aaec912",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "35303e9beaa913ece3744f270be6c779784ec4962e40de0e517b82cf1aaec912",
+        "bytes": 146424,
+        "durationMs": 5407,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.2,
+        "peakDb": -5.45
+      },
+      "prepared": {
+        "sha256": "7b85b21fa4ab46fad78a9fdbe75fa11bc6a62e34db8508d596a1ec2cbaf683c9",
+        "bytes": 87396,
+        "durationMs": 5407,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -6.19
+      },
+      "gainDb": -0.3
+    },
+    {
+      "voice": "witch_moonglow",
+      "cueId": "mafia.phase.resolution",
+      "voiceId": "vnewfQdVVk9Y9DZWVRNm",
+      "sourceSha256": "c72e32b343cd58ded5715d3bdd67e249e72847780f785c6fe445c58888afcc3f",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "c72e32b343cd58ded5715d3bdd67e249e72847780f785c6fe445c58888afcc3f",
+        "bytes": 157709,
+        "durationMs": 5878,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -28.92,
+        "peakDb": -11.17
+      },
+      "prepared": {
+        "sha256": "7efe5dbdf8ca47c2e6a9fd5959b826dfe5763cc99226fb5a8b8db32a438d2414",
+        "bytes": 94919,
+        "durationMs": 5878,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -7.2
+      },
+      "gainDb": 4.42
+    },
+    {
+      "voice": "witch_moonglow",
+      "cueId": "mafia.phase.nomination",
+      "voiceId": "vnewfQdVVk9Y9DZWVRNm",
+      "sourceSha256": "ff6d3a6010b9134818deb7354599eca0345e86dd14c886f361fc242e86f09c87",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "ff6d3a6010b9134818deb7354599eca0345e86dd14c886f361fc242e86f09c87",
+        "bytes": 153947,
+        "durationMs": 5721,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.88,
+        "peakDb": -6.28
+      },
+      "prepared": {
+        "sha256": "7fb554efb84aa88e06339d0554393c5870c263d0f37db3f4bd9214fe6e947e5b",
+        "bytes": 92412,
+        "durationMs": 5721,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -6.41
+      },
+      "gainDb": 0.38
+    },
+    {
+      "voice": "witch_moonglow",
+      "cueId": "mafia.phase.defense",
+      "voiceId": "vnewfQdVVk9Y9DZWVRNm",
+      "sourceSha256": "86ddc44733271583b6df5a54d68982497820871230594ee81cbac2842e849c8d",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "86ddc44733271583b6df5a54d68982497820871230594ee81cbac2842e849c8d",
+        "bytes": 153947,
+        "durationMs": 5721,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -28.05,
+        "peakDb": -10.28
+      },
+      "prepared": {
+        "sha256": "301cad6db98dc0185e7ba308c72e579fddd59018658010bea74dd386312d944e",
+        "bytes": 92412,
+        "durationMs": 5721,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -7.13
+      },
+      "gainDb": 3.55
+    },
+    {
+      "voice": "witch_moonglow",
+      "cueId": "werewolves.phase.hunter.revenge",
+      "voiceId": "vnewfQdVVk9Y9DZWVRNm",
+      "sourceSha256": "3b38d58160be006db7fffb260dd3562381b171ae35722cbbde17a4c78f75adce",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "3b38d58160be006db7fffb260dd3562381b171ae35722cbbde17a4c78f75adce",
+        "bytes": 148305,
+        "durationMs": 5486,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -27.83,
+        "peakDb": -11.01
+      },
+      "prepared": {
+        "sha256": "680a97c109c78f9b29f713fe56660f109c843180f0fe60fd2c13005f3611fe56",
+        "bytes": 88650,
+        "durationMs": 5486,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -8.13
+      },
+      "gainDb": 3.33
+    },
+    {
+      "voice": "witch_moonglow",
+      "cueId": "werewolves.phase.mayor.successor",
+      "voiceId": "vnewfQdVVk9Y9DZWVRNm",
+      "sourceSha256": "4dd0df6c524eec05e9cdaeb49967644dd662d3746a981b647945f0ec5d39c7e3",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "4dd0df6c524eec05e9cdaeb49967644dd662d3746a981b647945f0ec5d39c7e3",
+        "bytes": 142662,
+        "durationMs": 5251,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -28.64,
+        "peakDb": -7.68
+      },
+      "prepared": {
+        "sha256": "1d14fdda562a0ea55353908ebba3620ce4d7545a7891c1305cc5a445c058b259",
+        "bytes": 84888,
+        "durationMs": 5251,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.93,
+        "peakDb": -3.99
+      },
+      "gainDb": 4.14
+    },
+    {
+      "voice": "witch_moonglow",
+      "cueId": "werewolves.finale.village",
+      "voiceId": "vnewfQdVVk9Y9DZWVRNm",
+      "sourceSha256": "ffdf42be084a7e614027ab273a65a5d0faf49fa58f140533aac2a3e273d6fa05",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "ffdf42be084a7e614027ab273a65a5d0faf49fa58f140533aac2a3e273d6fa05",
+        "bytes": 184667,
+        "durationMs": 7001,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.93,
+        "peakDb": -5.95
+      },
+      "prepared": {
+        "sha256": "8402449daedf13e42d844f49eafe634f787531be1c0f8dd592b9b1c672bf25d1",
+        "bytes": 112892,
+        "durationMs": 7001,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -5.97
+      },
+      "gainDb": 0.43
+    },
+    {
+      "voice": "witch_moonglow",
+      "cueId": "mafia.finale.village",
+      "voiceId": "vnewfQdVVk9Y9DZWVRNm",
+      "sourceSha256": "7a1f5be96520499077680f68069080dca3770fc65b66f790bd4896e85d1c2b47",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "7a1f5be96520499077680f68069080dca3770fc65b66f790bd4896e85d1c2b47",
+        "bytes": 201594,
+        "durationMs": 7706,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -25.57,
+        "peakDb": -6.7
+      },
+      "prepared": {
+        "sha256": "8285f134e900ea965f311cc5306b78cd7d134785ef50d247f52f795ac4e147f8",
+        "bytes": 124176,
+        "durationMs": 7706,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.96,
+        "peakDb": -6.05
+      },
+      "gainDb": 1.07
+    },
+    {
+      "voice": "witch_moonglow",
+      "cueId": "werewolves.finale.werewolves",
+      "voiceId": "vnewfQdVVk9Y9DZWVRNm",
+      "sourceSha256": "db86be68535c5e2b703113c06c5efcda26afc96c620467b1a18d20f759cf2acf",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "db86be68535c5e2b703113c06c5efcda26afc96c620467b1a18d20f759cf2acf",
+        "bytes": 195952,
+        "durationMs": 7471,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -25.23,
+        "peakDb": -5.11
+      },
+      "prepared": {
+        "sha256": "6c620cb45bd9140524471b794e94376d835cf16d97ff55b2ea6a48262f481624",
+        "bytes": 120415,
+        "durationMs": 7471,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -4.84
+      },
+      "gainDb": 0.73
+    },
+    {
+      "voice": "witch_moonglow",
+      "cueId": "werewolves.finale.vampires",
+      "voiceId": "vnewfQdVVk9Y9DZWVRNm",
+      "sourceSha256": "5b76c56102d1adf3e0d8663692d92bae8f4d4d8c258f55fc8680975a13dc0d4a",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "5b76c56102d1adf3e0d8663692d92bae8f4d4d8c258f55fc8680975a13dc0d4a",
+        "bytes": 217268,
+        "durationMs": 8359,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -26.1,
+        "peakDb": -8.16
+      },
+      "prepared": {
+        "sha256": "39e5e379b209282fece0f72fbf959253bcd52a1cf85e665e975c4ea8e44c4b9e",
+        "bytes": 134625,
+        "durationMs": 8359,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -7.02
+      },
+      "gainDb": 1.6
+    },
+    {
+      "voice": "witch_moonglow",
+      "cueId": "mafia.finale.mafia",
+      "voiceId": "vnewfQdVVk9Y9DZWVRNm",
+      "sourceSha256": "9d425403b43c021f61ac9acc881faaffce33ea27309fa286734c67248892e71a",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "9d425403b43c021f61ac9acc881faaffce33ea27309fa286734c67248892e71a",
+        "bytes": 197833,
+        "durationMs": 7549,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -27.41,
+        "peakDb": -5.2
+      },
+      "prepared": {
+        "sha256": "c43390535f9bee7779eef68b98e30cc87e4af9e5aeb935349477477dab86ce20",
+        "bytes": 121669,
+        "durationMs": 7549,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -2.71
+      },
+      "gainDb": 2.91
+    },
+    {
+      "voice": "witch_moonglow",
+      "cueId": "mafia.finale.maniac",
+      "voiceId": "vnewfQdVVk9Y9DZWVRNm",
+      "sourceSha256": "87516d004faa1a274f6ecd06bec091e1b1bdefce67b89ca6d0f97d69aa89d27a",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "87516d004faa1a274f6ecd06bec091e1b1bdefce67b89ca6d0f97d69aa89d27a",
+        "bytes": 215387,
+        "durationMs": 8281,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -27.38,
+        "peakDb": -7.03
+      },
+      "prepared": {
+        "sha256": "6a86a62c6d63bc6325d284d192dc11d27327da010fdb03b651fc85e2c2b45bf5",
+        "bytes": 133372,
+        "durationMs": 8281,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -4.61
+      },
+      "gainDb": 2.88
+    },
+    {
+      "voice": "witch_moonglow",
+      "cueId": "werewolves.finale.lovers",
+      "voiceId": "vnewfQdVVk9Y9DZWVRNm",
+      "sourceSha256": "033dd1df83fdcbc52b4658219dfb849a7ee5ccdfc0c7897c3162fe5ec5fbd1fb",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "033dd1df83fdcbc52b4658219dfb849a7ee5ccdfc0c7897c3162fe5ec5fbd1fb",
+        "bytes": 215387,
+        "durationMs": 8281,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -25.65,
+        "peakDb": -8.12
+      },
+      "prepared": {
+        "sha256": "bc528260d65ce448fcf58b773463d3f5f5f480809eac90ee45180341089788c8",
+        "bytes": 133372,
+        "durationMs": 8281,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -7.41
+      },
+      "gainDb": 1.15
+    },
+    {
+      "voice": "witch_moonglow",
+      "cueId": "mafia.finale.lovers",
+      "voiceId": "vnewfQdVVk9Y9DZWVRNm",
+      "sourceSha256": "911a78a523c3d3a7283c4049acaabb2d403733960c9175f4a73830553c793bac",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "911a78a523c3d3a7283c4049acaabb2d403733960c9175f4a73830553c793bac",
+        "bytes": 205983,
+        "durationMs": 7889,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -27.31,
+        "peakDb": -10.53
+      },
+      "prepared": {
+        "sha256": "b63eb28f6b8e644d5eb0f9cba4037ae418563516390ac44959c2926b6da53e57",
+        "bytes": 127102,
+        "durationMs": 7889,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.93,
+        "peakDb": -8.16
+      },
+      "gainDb": 2.81
+    },
+    {
+      "voice": "witch_moonglow",
+      "cueId": "shared.finale.draw",
+      "voiceId": "vnewfQdVVk9Y9DZWVRNm",
+      "sourceSha256": "03a067f5e91abd7932b248b0018f652c31dfc5f9e04c9dad1e8d4ada884e94e0",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "03a067f5e91abd7932b248b0018f652c31dfc5f9e04c9dad1e8d4ada884e94e0",
+        "bytes": 201594,
+        "durationMs": 7706,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -25.97,
+        "peakDb": -5.74
+      },
+      "prepared": {
+        "sha256": "18a5d3d87fe391fb713975acf8e197127c6eae3820b275e9154abc5840492b75",
+        "bytes": 124176,
+        "durationMs": 7706,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.94,
+        "peakDb": -4.74
+      },
+      "gainDb": 1.47
+    },
+    {
+      "voice": "witch_moonglow",
+      "cueId": "shared.personal.finale.jester",
+      "voiceId": "vnewfQdVVk9Y9DZWVRNm",
+      "sourceSha256": "0cb18e6c8318134330984a1b8d3184c104660cf6dd43f1257aee102e644afb04",
+      "review": {
+        "status": "pending",
+        "evidence": "Technical checks passed; full human listening has not taken place.",
+        "take": 1
+      },
+      "original": {
+        "sha256": "0cb18e6c8318134330984a1b8d3184c104660cf6dd43f1257aee102e644afb04",
+        "bytes": 201594,
+        "durationMs": 7706,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -22.59,
+        "peakDb": -2.77
+      },
+      "prepared": {
+        "sha256": "1c3f49372f42ebf9c8170b787c9847a01e6c26abd4e1128a19db37bb0bdb4e7e",
+        "bytes": 124176,
+        "durationMs": 7706,
+        "codec": "mp3",
+        "channels": 1,
+        "sampleRate": 44100,
+        "lufs": -24.95,
+        "peakDb": -5.07
+      },
+      "gainDb": -1.91
+    }
+  ],
+  "activation": {
+    "status": "authorized-before-listening",
+    "authorizedBy": "user",
+    "evidence": "2026-10-02: user explicitly requested activation: Давай да ги всключваме, не съм в нас",
+    "scope": "Enable the technically checked runtime recordings locally. Full listening remains pending. No deploy authorization."
+  }
+}

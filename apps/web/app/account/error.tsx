@@ -1,10 +1,13 @@
 "use client";
 
-import { RouteErrorState } from "@/components/system/RouteErrorState";
+import { RouteErrorState, type RouteErrorBoundaryProps } from "@/components/system/RouteErrorState";
 
-export default function AccountError(props: {
-  error: Error & { digest?: string };
-  reset: () => void;
-}) {
-  return <RouteErrorState {...props} title="Досието не се отвори" />;
+export default function AccountError(props: RouteErrorBoundaryProps) {
+  return (
+    <RouteErrorState
+      {...props}
+      title="Досието не се отвори"
+      description="Не успяхме да заредим профила ти. Опитай отново или се върни към началото."
+    />
+  );
 }

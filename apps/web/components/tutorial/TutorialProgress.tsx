@@ -1,15 +1,21 @@
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import { tutorialDestination } from "./tutorial-destination";
+
+export const TUTORIAL_SCENE_LABELS = ["Събиране", "Нощ", "Ден", "Глас", "Развръзка", "Начало"] as const;
 
 interface TutorialProgressProps {
   current: number;
-  total: number;
   onJump: (slide: number) => void;
-  continueHref: string;
+  continueHref: string | null;
+  ready: boolean;
 }
 
-export function TutorialProgress({ current, total, onJump, continueHref }: TutorialProgressProps) {
-  const scenes = ["Събиране", "Нощ", "Ден", "Глас", "Развръзка", "Начало"].slice(0, total);
+// Firefox also applies autocomplete to buttons when restoring disabled state.
+export function TutorialProgress({ current, onJump, continueHref, ready }: TutorialProgressProps) {
+  const scenes = TUTORIAL_SCENE_LABELS;
+  const total = scenes.length;
+  const destination = continueHref ? tutorialDestination(continueHref) : null;
 
   return (
     <nav className="tutorial-progress" aria-label="Ход на репетицията">
@@ -17,10 +23,16 @@ export function TutorialProgress({ current, total, onJump, continueHref }: Tutor
         <div className="tutorial-progress-fill" style={{ width: `${(current / total) * 100}%` }} />
       </div>
 
-      <div className="tutorial-progress-mobile" aria-live="polite">
-        <span>{String(current).padStart(2, "0")} / {String(total).padStart(2, "0")}</span>
-        <strong>{scenes[current - 1]}</strong>
-      </div>
+      <label className="tutorial-progress-mobile">
+        <span className="sr-only">Сцена</span>
+        <select value={current} autoComplete="off" disabled={!ready} onChange={(event) => onJump(Number(event.target.value))}>
+          {scenes.map((label, index) => (
+            <option key={label} value={index + 1}>
+              {String(index + 1).padStart(2, "0")} / {String(total).padStart(2, "0")} - {label}
+            </option>
+          ))}
+        </select>
+      </label>
 
       <div className="tutorial-progress-dots">
         {scenes.map((label, index) => {
@@ -31,6 +43,8 @@ export function TutorialProgress({ current, total, onJump, continueHref }: Tutor
             <button
               key={label}
               type="button"
+              {...{ autoComplete: "off" }}
+              disabled={!ready}
               aria-current={isActive ? "step" : undefined}
               aria-label={`${slide}. ${label}`}
               data-state={isActive ? "active" : isPast ? "past" : "future"}
@@ -46,10 +60,17 @@ export function TutorialProgress({ current, total, onJump, continueHref }: Tutor
         })}
       </div>
 
-      <Link href={continueHref} prefetch={false} className="tutorial-skip-link">
-        <span>Прескочи</span>
-        <ChevronRight className="tutorial-skip-icon" aria-hidden strokeWidth={2} />
-      </Link>
+      {continueHref ? (
+        <Link href={continueHref} prefetch={false} className="tutorial-skip-link">
+          <span>{destination?.invitation ? "Към поканата" : destination?.name ? `Към ${destination.name}` : "Към запазената страница"}</span>
+          <ArrowRight className="tutorial-skip-icon" aria-hidden />
+        </Link>
+      ) : current < total ? (
+        <button type="button" {...{ autoComplete: "off" }} className="tutorial-skip-link" disabled={!ready} onClick={() => onJump(total)}>
+          <span>Избери игра</span>
+          <ArrowRight className="tutorial-skip-icon" aria-hidden />
+        </button>
+      ) : null}
     </nav>
   );
 }

@@ -1,5 +1,3 @@
-"use client";
-
 import { useModal } from "@/lib/use-modal";
 
 interface KeyboardShortcutsModalProps {

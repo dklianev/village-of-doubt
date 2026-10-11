@@ -1,23 +1,15 @@
 import Link from "next/link";
+import { Masthead } from "./Masthead";
 
 export function NewspaperEmpty() {
   return (
     <article className="newspaper-page newspaper-page-empty" data-state="empty" aria-label="Бъдещ брой">
-      <header className="masthead">
-        <h1 className="masthead-title">Вечерен Брой на Масата</h1>
-        <p className="masthead-meta">Брой № 001 · очаква името си</p>
-      </header>
+      <Masthead />
 
       <div className="empty-headline">
         <p className="headline-kicker">главна новина</p>
         <h2 className="headline-main-title">Още няма класирани играчи</h2>
-        <p className="empty-lede">Първата завършена игра ще отвори броя.</p>
-        <div className="empty-press-proof" aria-hidden>
-          <span className="empty-press-number">01</span>
-          <span />
-          <span />
-          <span />
-        </div>
+        <p className="empty-lede">За последните 7 дни няма резултати от публични завършени игри. Частните игри не участват в класацията.</p>
         <div className="empty-cta">
           <Link href="/werewolf/create" className="btn btn-primary">
             Създай стая

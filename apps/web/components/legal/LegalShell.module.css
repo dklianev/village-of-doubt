@@ -1,361 +1,94 @@
-/* Legal/status/FAQ shell styles moved out of globals.css. */
-
-/* ============================== */
-/* Utility pages — atmospheric bg */
-/* Matches homepage .landing-shell  */
-/* ============================== */
-
-:global(.privacy-shell),
-:global(.terms-shell),
-:global(.report-shell),
-:global(.status-shell),
-:global(.faq-shell) {
-  position: relative;
-  z-index: 0;
-  isolation: isolate;
-  background: transparent;
+/* Reading surfaces shared by support pages; route styles never own the navbar. */
+:global(body:has(.site-chrome:is([data-route="/faq"], [data-route="/report"], [data-route="/status"], [data-route="/privacy"], [data-route="/terms"]))) {
+  --support-canvas: #111613;
+  --support-surface: #19201b;
+  --support-text: var(--ds-ink-primary);
+  --support-muted: var(--ds-ink-soft);
+  --support-metal: #d4b779;
+  --support-line: color-mix(in srgb, var(--support-text) 22%, transparent);
+  --support-red: #b63c32;
+  --support-link: #e2bd80;
+  --support-ok: #98c599;
+  --support-error: #ffac9e;
+  background: var(--support-canvas);
 }
-
-:global(body:has(.legal-page-shell)) {
-  --legal-page-art: var(--art-landing-ambient);
-
-  position: relative;
-  z-index: 0;
-  background: #080909;
+:global(html[data-theme="light"] body:has(.site-chrome:is([data-route="/faq"], [data-route="/report"], [data-route="/status"], [data-route="/privacy"], [data-route="/terms"]))) {
+  --support-canvas: #faf7ef;
+  --support-surface: #fffdf8;
+  --support-metal: #805b2c;
+  --support-link: #8b3029;
+  --support-ok: #346b43;
+  --support-error: #a62c25;
 }
-
-:global(body:has(.privacy-shell)) {
-  --legal-page-art: var(--art-privacy);
+:global(body:has(.site-chrome:is([data-route="/faq"], [data-route="/report"], [data-route="/status"], [data-route="/privacy"], [data-route="/terms"]))::before), :global(body:has(.site-chrome:is([data-route="/faq"], [data-route="/report"], [data-route="/status"], [data-route="/privacy"], [data-route="/terms"]))::after) { display: none; }
+:global(html:has(.site-chrome:is([data-route="/faq"], [data-route="/report"], [data-route="/status"], [data-route="/privacy"], [data-route="/terms"]))) { scrollbar-gutter: stable; }
+:global(main.legal-page-shell) {
+  width: 100%; max-width: none; min-height: calc(100svh - 160px);
+  margin: 0; padding: 0 0 64px; border: 0; border-radius: 0;
+  background: var(--support-canvas); box-shadow: none; color: var(--support-text);
+  font-family: var(--font-body); line-height: 1.6; overflow-wrap: anywhere;
 }
-
-:global(body:has(.terms-shell)) {
-  --legal-page-art: var(--art-terms);
+:global(.legal-page-shell :is(h1,h2,h3,h4,p,ol,ul,dl,figure)) { margin-top: 0; }
+:global(.legal-page-shell :is(h1,h2,h3,h4)) { font-family: var(--font-display); letter-spacing: 0; }
+:global(.legal-page-shell :is(h2,h3)) { color: var(--support-text); font-weight: 650; line-height: 1.25; }
+:global(.legal-page-shell h2) { font-size: 1.75rem; margin-bottom: 12px; }
+:global(.legal-page-shell h3) { font-size: 1.15rem; margin-bottom: 8px; }
+:global(.legal-page-shell a:not(.btn)) { color: var(--support-link); text-underline-offset: 4px; }
+:global(.legal-page-shell :is(button,select,input,textarea)) { font-family: inherit; letter-spacing: 0; }
+:global(.legal-page-shell button) { cursor: pointer; }
+:global(.legal-page-shell button:disabled) { cursor: not-allowed; opacity: .65; }
+:global(.legal-page-shell :is(button,a,input,select,textarea,summary):focus-visible) { outline: 2px solid var(--support-metal); outline-offset: 4px; }
+:global(.legal-page-shell [id]) { scroll-margin-top: 96px; }
+:global(.legal-page-shell :is(.faq-hearth-hero,.report-hero,.status-hero,.privacy-hero,.terms-hero)) {
+  position: relative; isolation: isolate; overflow: hidden; border-bottom: 1px solid var(--support-line);
+  background: #101713; color: #fff4df;
 }
-
-:global(body:has(.report-shell)) {
-  --legal-page-art: var(--art-report);
+:global(.legal-page-shell :is(.faq-hearth-inner,.report-hero-inner,.status-hero-inner,.privacy-hero-inner,.terms-hero-inner)) {
+  position: relative; z-index: 1; display: flex; flex-direction: column; justify-content: center;
+  width: 100%; max-width: 1104px; min-height: 248px; margin: 0 auto; padding: 32px;
 }
-
-:global(body:has(.status-shell)) {
-  --legal-page-art: var(--art-status);
+:global(.legal-page-shell :is(.faq-hearth-banner,.report-hero-banner,.status-hero-banner,.privacy-hero-banner,.terms-hero-banner)) { position: absolute; inset: 0; z-index: -1; }
+:global(.legal-page-shell :is(.report-hero-img,.privacy-hero-img,.terms-hero-img)) { object-fit: cover; object-position: center 42%; }
+:global(.legal-page-shell .report-hero-img) { object-position: center 12%; }
+:global(.legal-page-shell .terms-hero-img) { object-position: center 20%; }
+:global(.legal-page-shell :is(.report-hero-inner,.status-hero-inner)) { min-height: 304px; }
+:global(.legal-page-shell :is(.faq-hearth-scrim,.report-hero-scrim,.privacy-hero-scrim,.terms-hero-scrim)) {
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg,rgba(7,13,10,.9),rgba(7,13,10,.65) 46%,rgba(7,13,10,.12)),linear-gradient(0deg,rgba(7,13,10,.55),transparent 70%);
 }
-
-:global(body:has(.faq-shell)) {
-  --legal-page-art: var(--art-faq);
+:global(.legal-page-shell :is(.faq-hearth-kicker,.report-hero-kicker,.status-hero-kicker,.privacy-hero-kicker,.terms-hero-kicker)) {
+  display: flex; align-items: center; gap: 8px; margin: 0 0 10px; color: #e3c68a;
+  font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0;
 }
-
-:global(html[data-theme="dark"] body:has(.legal-page-shell)) {
-  background: #080909;
+:global(.legal-page-shell :is(.faq-hearth-title,.report-hero-title,.status-hero-title,.privacy-hero-title,.terms-hero-title)) {
+  max-width: 24ch; margin: 0 0 14px; color: #fff4df; font-size: 2.75rem; font-weight: 750; line-height: 1.1; text-wrap: balance;
 }
-
-:global(html:has(.legal-page-shell)) {
-  scrollbar-gutter: stable;
+:global(.legal-page-shell :is(.faq-hearth-subtitle,.report-hero-subtitle,.status-hero-subtitle,.privacy-hero-subtitle,.terms-hero-subtitle)) {
+  max-width: 60ch; margin: 0; color: #eee3cb; font-size: 1rem; line-height: 1.6;
 }
-
-:global(html:has(.faq-shell)) {
-  overflow-y: scroll;
+:global(.legal-page-shell :is(.report-hero-stat,.privacy-hero-meta,.terms-hero-meta)) { display: flex; align-items: center; gap: 8px; margin: 16px 0 0; font-size: .8rem; color: #decfb2; }
+:global(.legal-page-shell :is(.privacy-content,.terms-content,.status-content)) { width: 100%; max-width: 1104px; margin: 0 auto; padding-inline: 32px; }
+:global(.legal-page-shell :is(.privacy-section,.terms-section,.status-section)) { padding: 32px 0; border: 0; border-bottom: 1px solid var(--support-line); border-radius: 0; background: none; box-shadow: none; }
+:global(.legal-page-shell :is(.privacy-section-head,.terms-section-head,.status-section-head)) { margin-bottom: 24px; }
+:global(.legal-page-shell :is(.privacy-section-kicker,.terms-section-kicker,.status-section-kicker)) { margin: 0 0 8px; font-size: .75rem; font-weight: 700; color: var(--support-metal); text-transform: uppercase; letter-spacing: 0; }
+:global(.legal-page-shell :is(.privacy-section-lede,.terms-section-lede,.status-section-lede)) { max-width: 68ch; margin: 0; color: var(--support-muted); }
+:global(.legal-page-shell :is(.privacy-navigation,.terms-navigation)) { display: flex; flex-wrap: wrap; gap: 4px 24px; padding: 18px 0; border-bottom: 1px solid var(--support-line); font-size: .875rem; }
+:global(.legal-page-shell :is(.privacy-navigation,.terms-navigation) a) { display: inline-flex; align-items: center; min-height: 44px; }
+:global(.legal-page-shell .legal-return-link) { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; max-width: 100%; margin-block: 8px; font-size: .875rem; }
+:global(.legal-return-link svg) { flex-shrink: 0; }
+@media (max-width: 640px) {
+  :global(main.legal-page-shell) { padding-bottom: 40px; }
+  :global(.legal-page-shell :is(.faq-hearth-inner,.report-hero-inner,.status-hero-inner,.privacy-hero-inner,.terms-hero-inner)) { min-height: 212px; padding: 28px 20px; }
+  :global(.legal-page-shell :is(.faq-hearth-title,.report-hero-title,.status-hero-title,.privacy-hero-title,.terms-hero-title)) { font-size: 2rem; }
+  :global(.legal-page-shell :is(.privacy-content,.terms-content,.status-content)) { padding-inline: 20px; }
+  :global(.legal-page-shell h2) { font-size: 1.5rem; }
+  :global(.legal-page-shell :is(.privacy-section,.terms-section,.status-section)) { padding: 26px 0; }
+  :global(.legal-page-shell :is(.privacy-navigation,.terms-navigation)) { gap: 0 18px; }
+  :global(.legal-page-shell :is(.faq-hearth-scrim,.report-hero-scrim,.privacy-hero-scrim,.terms-hero-scrim)) { background: linear-gradient(90deg,rgba(7,13,10,.84),rgba(7,13,10,.44)),linear-gradient(0deg,rgba(7,13,10,.6),transparent); }
 }
-
-:global(html[data-theme="light"] body:has(.legal-page-shell)) {
-  background: #efe3ce;
+@media (max-width: 360px) {
+  :global(.legal-page-shell .privacy-hero-title) { font-size: 1.75rem; }
 }
-
-:global(body:has(.legal-page-shell)::before) {
-  content: "";
-  position: fixed;
-  inset: 0;
-  display: block;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    radial-gradient(ellipse at 6% 46%, rgba(200, 154, 85, 0.2), transparent 34rem),
-    radial-gradient(ellipse at 94% 48%, rgba(43, 93, 105, 0.2), transparent 38rem),
-    linear-gradient(115deg,
-      rgba(5, 7, 8, 0.72) 0%,
-      rgba(6, 8, 9, 0.44) 47%,
-      rgba(5, 7, 8, 0.76) 100%),
-    var(--legal-page-art) center 38% / cover no-repeat;
-}
-
-:global(html[data-theme="dark"] body:has(.legal-page-shell)::before) {
-  background:
-    radial-gradient(ellipse at 6% 46%, rgba(200, 154, 85, 0.2), transparent 34rem),
-    radial-gradient(ellipse at 94% 48%, rgba(43, 93, 105, 0.2), transparent 38rem),
-    linear-gradient(115deg,
-      rgba(5, 7, 8, 0.72) 0%,
-      rgba(6, 8, 9, 0.44) 47%,
-      rgba(5, 7, 8, 0.76) 100%),
-    var(--legal-page-art) center 38% / cover no-repeat;
-}
-
-:global(html[data-theme="light"] body:has(.legal-page-shell)::before) {
-  background:
-    radial-gradient(ellipse at 6% 46%, rgba(255, 230, 180, 0.4), transparent 34rem),
-    radial-gradient(ellipse at 94% 48%, rgba(180, 200, 220, 0.32), transparent 38rem),
-    linear-gradient(115deg,
-      rgba(252, 244, 230, 0.82) 0%,
-      rgba(252, 244, 230, 0.62) 47%,
-      rgba(252, 244, 230, 0.86) 100%),
-    var(--legal-page-art) center 38% / cover no-repeat;
-}
-
-:global(body:has(.legal-page-shell)::after) {
-  display: none;
-}
-
-/* ============================== */
-/* Privacy trust dashboard        */
-/* ============================== */
-
-:global(.privacy-shell) {
-  --privacy-bg: var(--legal-privacy-shell-privacy-bg, #0d0a08);
-  --privacy-surface: var(--legal-privacy-shell-privacy-surface, rgba(26, 20, 16, 0.72));
-  --privacy-surface-strong: var(--legal-privacy-shell-privacy-surface-strong, rgba(36, 28, 22, 0.9));
-  --privacy-text: var(--legal-privacy-shell-privacy-text, #f5e8c8);
-  --privacy-text-muted: var(--legal-privacy-shell-privacy-text-muted, rgba(245, 232, 200, 0.74));
-  --privacy-text-soft: var(--legal-privacy-shell-privacy-text-soft, rgba(245, 232, 200, 0.5));
-  --privacy-border: var(--legal-privacy-shell-privacy-border, rgba(245, 232, 200, 0.12));
-  --privacy-border-strong: var(--legal-privacy-shell-privacy-border-strong, rgba(245, 232, 200, 0.22));
-  --privacy-accent: var(--legal-privacy-shell-privacy-accent, #3a4f7a);
-  --privacy-accent-warm: var(--legal-privacy-shell-privacy-accent-warm, #d19a42);
-  --privacy-accent-soft: var(--legal-privacy-shell-privacy-accent-soft, rgba(58, 79, 122, 0.22));
-  --privacy-accent-warm-soft: var(--legal-privacy-shell-privacy-accent-warm-soft, rgba(209, 154, 66, 0.18));
-
-  min-height: 100vh;
-  padding: 0 0 64px;
-  background: var(--privacy-bg);
-  color: var(--privacy-text);
-  font-family: var(--font-body);
-}
-
-:global(.privacy-page) {
-  width: 100%;
-}
-
-:global(.privacy-content) {
-  display: grid;
-  max-width: 980px;
-  gap: 28px;
-  margin: 0 auto;
-  padding: 32px 24px 0;
-}
-
-:global(.privacy-section) {
-  padding: 28px;
-  border: 1px solid var(--privacy-border);
-  border-radius: 18px;
-  background: var(--privacy-surface);
-}
-
-:global(.privacy-section-head) {
-  margin-bottom: 22px;
-}
-
-:global(.privacy-section-head h2) {
-  margin: 0 0 8px;
-  color: var(--privacy-text);
-  font-family: var(--font-display);
-  font-size: clamp(1.5rem, 3.2vw, 2rem);
-  font-weight: 900;
-  letter-spacing: 0;
-  line-height: 1.1;
-}
-
-:global(.privacy-section-lede) {
-  max-width: 60ch;
-  margin: 0;
-  color: var(--privacy-text-muted);
-  font-size: 0.98rem;
-  line-height: 1.55;
-}
-
-@media (max-width: 640px) {:global(.privacy-section) {
-    padding: 22px 18px;
-  }
-}
-
-/* ============================== */
-/* Terms and report utility pages  */
-/* ============================== */
-
-:global(.terms-shell),
-:global(.report-shell) {
-  --legal-bg: var(--legal-terms-shell-legal-bg, #0d0a08);
-  --legal-surface: var(--legal-terms-shell-legal-surface, rgba(26, 20, 16, 0.72));
-  --legal-surface-strong: var(--legal-terms-shell-legal-surface-strong, rgba(36, 28, 22, 0.9));
-  --legal-text: var(--legal-terms-shell-legal-text, #f5e8c8);
-  --legal-text-muted: var(--legal-terms-shell-legal-text-muted, rgba(245, 232, 200, 0.74));
-  --legal-text-soft: var(--legal-terms-shell-legal-text-soft, rgba(245, 232, 200, 0.5));
-  --legal-border: var(--legal-terms-shell-legal-border, rgba(245, 232, 200, 0.12));
-  --legal-border-strong: var(--legal-terms-shell-legal-border-strong, rgba(245, 232, 200, 0.22));
-  --legal-accent-warm: var(--legal-terms-shell-legal-accent-warm, #d19a42);
-  --legal-accent-warm-soft: var(--legal-terms-shell-legal-accent-warm-soft, rgba(209, 154, 66, 0.18));
-  --legal-ok: var(--legal-terms-shell-legal-ok, #6fbf6f);
-  --legal-ok-soft: var(--legal-terms-shell-legal-ok-soft, rgba(111, 191, 111, 0.16));
-  --legal-not-ok: var(--legal-terms-shell-legal-not-ok, #f07b6c);
-  --legal-not-ok-soft: var(--legal-terms-shell-legal-not-ok-soft, rgba(217, 74, 61, 0.18));
-
-  min-height: 100vh;
-  padding: 0 0 64px;
-  background: var(--legal-bg);
-  color: var(--legal-text);
-  font-family: var(--font-body);
-}
-
-:global(.terms-shell) {
-  --legal-accent: var(--legal-terms-shell-legal-accent, #b88958);
-}
-
-:global(.report-shell) {
-  --legal-accent: var(--legal-report-shell-legal-accent, #d94a3d);
-}
-
-:global(.terms-page),
-:global(.report-page) {
-  width: 100%;
-}
-
-:global(.terms-content),
-:global(.report-content) {
-  display: grid;
-  gap: 28px;
-  max-width: 980px;
-  margin: 0 auto;
-  padding: 32px 24px 0;
-}
-
-:global(.terms-section) {
-  padding: 28px;
-  border: 1px solid var(--legal-border);
-  border-radius: 18px;
-  background: var(--legal-surface);
-}
-
-:global(.terms-section-head) {
-  margin-bottom: 22px;
-}
-
-:global(.terms-section-head h2) {
-  margin: 0 0 8px;
-  color: var(--legal-text);
-  font-family: var(--font-display);
-  font-size: clamp(1.5rem, 3.2vw, 2rem);
-  font-weight: 900;
-  letter-spacing: 0;
-  line-height: 1.1;
-}
-
-:global(.terms-section-lede) {
-  max-width: 60ch;
-  margin: 0;
-  color: var(--legal-text-muted);
-  font-size: 0.98rem;
-  line-height: 1.55;
-}
-
-@media (max-width: 640px) {:global(.terms-section) {
-    padding: 22px 18px;
-  }
-}
-
-/* ============================== */
-/* Status — service tiles         */
-/* ============================== */
-
-:global(.status-shell) {
-  --status-bg: var(--legal-status-shell-status-bg, #0d0a08);
-  --status-surface: var(--legal-status-shell-status-surface, rgba(26, 20, 16, 0.72));
-  --status-surface-strong: var(--legal-status-shell-status-surface-strong, rgba(36, 28, 22, 0.9));
-  --status-text: var(--legal-status-shell-status-text, #f5e8c8);
-  --status-text-muted: var(--legal-status-shell-status-text-muted, rgba(245, 232, 200, 0.74));
-  --status-text-soft: var(--legal-status-shell-status-text-soft, rgba(245, 232, 200, 0.5));
-  --status-border: var(--legal-status-shell-status-border, rgba(245, 232, 200, 0.12));
-  --status-border-strong: var(--legal-status-shell-status-border-strong, rgba(245, 232, 200, 0.22));
-  --status-accent: var(--legal-status-shell-status-accent, #d19a42);
-  --status-accent-soft: var(--legal-status-shell-status-accent-soft, rgba(209, 154, 66, 0.18));
-  --status-ok: var(--legal-status-shell-status-ok, #6fbf6f);
-  --status-degraded: var(--legal-status-shell-status-degraded, #d19a42);
-  --status-down: var(--legal-status-shell-status-down, #d94a3d);
-  --status-unknown: var(--legal-status-shell-status-unknown, #a8a39b);
-
-  min-height: 100vh;
-  padding: 0 0 64px;
-  color: var(--status-text);
-  background: var(--status-bg);
-  font-family: var(--font-body);
-}
-
-/* ============================== */
-/* FAQ - Hearth concept           */
-/* ============================== */
-
-:global(.faq-shell) {
-  --faq-ink: #f5e8c8;
-  --faq-ink-muted: rgba(245, 232, 200, 0.78);
-  --faq-ink-soft: rgba(245, 232, 200, 0.56);
-  --faq-bg: rgba(13, 10, 8, 0.42);
-  --faq-bg-strong: rgba(13, 10, 8, 0.62);
-  --faq-border: rgba(245, 232, 200, 0.12);
-  --faq-border-strong: rgba(217, 154, 66, 0.42);
-  --faq-accent: #d19a42;
-  --faq-accent-strong: #d94a3d;
-  --faq-accent-soft: rgba(217, 154, 66, 0.18);
-}
-
-/* Migrated legal shell selector fallbacks. */
-:global(.faq-shell) {
-  --doc-bg: var(--legal-faq-shell-doc-bg, transparent);
-  --doc-surface: var(--legal-faq-shell-doc-surface, rgba(245, 232, 200, 0.06));
-  --doc-surface-strong: var(--legal-faq-shell-doc-surface-strong, rgba(245, 232, 200, 0.1));
-  --doc-text: var(--legal-faq-shell-doc-text, #f5e8c8);
-  --doc-text-muted: var(--legal-faq-shell-doc-text-muted, rgba(245, 232, 200, 0.78));
-  --doc-text-soft: var(--legal-faq-shell-doc-text-soft, rgba(245, 232, 200, 0.56));
-  --doc-border: var(--legal-faq-shell-doc-border, rgba(245, 232, 200, 0.12));
-  --doc-border-strong: var(--legal-faq-shell-doc-border-strong, rgba(217, 154, 66, 0.42));
-  --doc-accent: var(--legal-faq-shell-doc-accent, #d19a42);
-  --doc-accent-soft: var(--legal-faq-shell-doc-accent-soft, rgba(217, 154, 66, 0.18));
-}
-
-:global(.privacy-shell),
-:global(.terms-shell),
-:global(.report-shell),
-:global(.status-shell),
-:global(.faq-shell) {
-  position: relative;
-  z-index: 0;
-  overflow: hidden;
-  isolation: isolate;
-  margin: 24px auto 96px;
-  padding: 0 0 56px;
-  border: 1px solid var(--legal-shell-border);
-  border-radius: 28px;
-  background: var(--legal-shell-bg);
-  box-shadow: var(--legal-shell-shadow);
-}
-
-:global(html[data-theme="dark"] .privacy-shell),
-:global(html[data-theme="dark"] .terms-shell),
-:global(html[data-theme="dark"] .report-shell),
-:global(html[data-theme="dark"] .status-shell),
-:global(html[data-theme="dark"] .faq-shell) {
-  background: rgba(17, 12, 10, 0.86);
-}
-
-:global(html[data-theme="light"] .privacy-shell),
-:global(html[data-theme="light"] .terms-shell),
-:global(html[data-theme="light"] .report-shell),
-:global(html[data-theme="light"] .status-shell),
-:global(html[data-theme="light"] .faq-shell) {
-  background: rgba(252, 246, 236, 0.9);
-}
-
-@media (max-width: 640px) {:global(.privacy-shell),
-:global(.terms-shell),
-:global(.report-shell),
-:global(.status-shell),
-:global(.faq-shell) {
-    margin: 16px auto 64px;
-    padding: 0 0 40px;
-    border-radius: 20px;
-  }
+@media (prefers-reduced-motion: reduce) {
+  :global(.legal-page-shell *), :global(.legal-page-shell *::before), :global(.legal-page-shell *::after) { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }

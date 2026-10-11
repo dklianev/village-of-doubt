@@ -21,11 +21,11 @@ export function PrivacyHero({ lastUpdated, hasSnapshot }: PrivacyHeroProps) {
       </div>
 
       <div className="privacy-hero-inner">
-        <p className="privacy-hero-kicker">политика за поверителност</p>
-        <h1 className="privacy-hero-title">Твоите тайни остават при теб.</h1>
+        <p className="privacy-hero-kicker">Сенките</p>
+        <h1 className="privacy-hero-title">Поверителност</h1>
         <p className="privacy-hero-subtitle">
-          Какво събираме, защо го пазим и как си господар на твоите данни.
-          {hasSnapshot ? " По-долу виждаш точно какво знаем за теб." : ""}
+          Какви данни пазим, защо и как можеш да упражниш правата си.
+          {hasSnapshot ? " С обобщение за твоето досие." : ""}
         </p>
         <p className="privacy-hero-meta">
           Последна актуализация: <time>{lastUpdated}</time>

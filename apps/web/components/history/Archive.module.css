@@ -1,0 +1,182 @@
+.archive {
+  --archive-ink: #f3f0e7;
+  --archive-muted: #c5cabc;
+  --archive-edge: #6e705b;
+  --archive-rule: #3f4b40;
+  --archive-surface: #18201b;
+  --archive-accent: #dec18a;
+  --archive-base: #101916;
+  --archive-hover: #1c2c23;
+  --archive-scrim: linear-gradient(90deg, rgb(10 23 17 / 88%), rgb(10 23 17 / 72%) 44%, transparent 72%);
+  --archive-art: url("/game-art/history/archive-ledger-dark-v2.webp");
+  position: relative;
+  isolation: isolate;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1280px;
+  min-height: calc(100svh - 140px);
+  padding: 0 24px 64px;
+  color: var(--archive-ink);
+  letter-spacing: 0;
+}
+
+.archive::before {
+  position: absolute;
+  inset-block: 0;
+  left: calc(50% - 50vw);
+  width: 100vw;
+  z-index: -2;
+  background: var(--archive-base);
+  content: "";
+  pointer-events: none;
+}
+
+.archive::after {
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  left: calc(50% - 50vw);
+  width: 100vw;
+  height: 360px;
+  background: var(--archive-scrim), var(--archive-art) center 28% / cover no-repeat;
+  mask-image: linear-gradient(#000 80%, transparent 100%);
+  content: "";
+  pointer-events: none;
+}
+
+.header { display: flex; flex-direction: column; justify-content: center; min-height: 360px; padding-block: 40px 64px; }
+.header .kicker { margin: 0 0 22px; color: var(--archive-accent); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; }
+.header h1 { max-width: 760px; margin: 0; color: var(--archive-ink); font-family: var(--font-display); font-size: 4.5rem; font-weight: 650; line-height: 1.13; text-wrap: balance; }
+.header > p:last-child { max-width: 38ch; margin: 18px 0 0; color: var(--archive-ink); font-family: var(--font-display); font-size: 1.4rem; line-height: 1.5; }
+
+.filters { container: archive-filters / inline-size; display: flex; align-items: end; flex-wrap: wrap; gap: 12px; padding: 20px 0; border-block: 1px solid var(--archive-edge); }
+.filterField { display: grid; gap: 7px; min-width: 0; }
+.filters label { color: var(--archive-muted); font-size: 0.875rem; font-weight: 600; }
+.filters select { min-height: 44px; min-width: 200px; max-width: 100%; border: 1px solid var(--archive-edge); border-radius: 6px; padding: 8px 32px 8px 12px; background: var(--archive-surface); color: var(--archive-ink); font: inherit; font-size: 0.94rem; cursor: pointer; }
+.filterSubmit { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; border: 1px solid #b75c50; border-radius: 6px; padding: 8px 20px; background: #842f2b; color: #fff8ed; font: inherit; font-weight: 700; cursor: pointer; }
+.filterSubmit:hover { background: #a43930; }
+.reset, .textLink { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 44px; padding: 8px 6px; color: var(--archive-accent); font-size: 0.9rem; font-weight: 650; text-decoration-thickness: 1px; text-underline-offset: 5px; }
+.archive :is(a, button, select):focus-visible { outline: 2px solid var(--archive-accent); outline-offset: 4px; }
+.archiveScope { align-self: end; margin: 0 0 12px auto; color: var(--archive-muted); font-size: 0.875rem; line-height: 1.5; }
+.indexLine { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; margin: 24px 0 16px; }
+.indexLine h2 { margin: 0; font-family: var(--font-display); font-size: 1.7rem; line-height: 1.2; }
+.indexLine p { margin: 0; color: var(--archive-muted); font-size: 0.875rem; line-height: 1.5; }
+.wall { display: grid; grid-template-columns: minmax(0, 1fr); padding: 0; border-bottom: 1px solid var(--archive-edge); }
+
+.caseFile {
+  position: relative;
+  display: grid;
+  grid-template-columns: 144px minmax(0, 1fr) 264px 160px;
+  align-items: center;
+  gap: 24px;
+  min-width: 0;
+  min-height: 112px;
+  border: 1px solid transparent;
+  border-top-color: var(--archive-rule);
+  border-radius: 6px;
+  padding: 12px 16px;
+  color: var(--archive-ink);
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+.caseFile:hover, .caseFile:focus-within { border-color: var(--archive-edge); background: var(--archive-hover); }
+.caseImage { position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; border: 1px solid var(--archive-edge); border-radius: 4px; }
+.caseImage img { object-fit: cover; object-position: center 46%; }
+.caseHead { min-width: 0; }
+.verdict { margin: 0; color: var(--archive-ink); font-family: var(--font-display); font-size: 1.6rem; font-weight: 600; line-height: 1.22; overflow-wrap: anywhere; }
+.caseMode { display: flex; flex-wrap: wrap; gap: 2px 12px; margin: 8px 0 0; color: var(--archive-muted); font-size: 0.875rem; line-height: 1.5; }
+.caseMode > span:first-child { color: var(--archive-accent); }
+.highlight { margin: 6px 0 0; color: var(--archive-muted); font-size: 0.875rem; line-height: 1.5; }
+.caseFacts { display: grid; gap: 7px; min-width: 0; color: var(--archive-muted); font-size: 0.94rem; font-variant-numeric: tabular-nums; line-height: 1.4; }
+.caseFacts p { margin: 0; }
+.caseFacts :is(p, time, span) { display: flex; align-items: center; gap: 7px; }
+.caseFacts .participants { flex-wrap: wrap; gap: 4px 14px; }
+.caseFacts svg { flex-shrink: 0; color: var(--archive-muted); }
+.caseFoot { display: flex; justify-content: flex-end; min-width: 0; border-left: 1px solid var(--archive-rule); }
+.caseLink { display: inline-flex; align-items: center; justify-content: flex-end; gap: 8px; min-height: 44px; padding: 6px 0 6px 12px; color: var(--archive-accent); font-size: 0.94rem; font-weight: 650; text-decoration: none; }
+.caseLink::after { position: absolute; inset: 0; border-radius: 6px; content: ""; }
+.caseLink > svg { flex-shrink: 0; }
+.caseLink:hover { text-decoration: underline; text-underline-offset: 4px; }
+.caseFile:focus-within { outline: 2px solid var(--archive-accent); outline-offset: 3px; }
+.archive .caseLink:focus-visible { outline: none; }
+.pagination { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-top: 20px; }
+.notice { max-width: 640px; padding: 36px 0; }
+.notice h2, .empty h2 { margin: 0; color: var(--archive-ink); font-family: var(--font-display); font-size: 1.7rem; line-height: 1.2; }
+.notice p, .empty p { margin: 14px 0; color: var(--archive-muted); line-height: 1.65; }
+.loading { padding: 32px 0; color: var(--archive-muted); }
+.empty { display: grid; grid-template-columns: minmax(0, 400px) minmax(0, 420px); align-items: center; gap: 32px; padding: 32px 0; }
+.emptyArt { grid-column: 1; grid-row: 1; width: 100%; height: auto; border-radius: 6px; }
+.emptyActions { display: flex; flex-wrap: wrap; gap: 4px 20px; }
+
+:global(html[data-theme="light"]) .archive {
+  --archive-ink: #20352e;
+  --archive-muted: #45554c;
+  --archive-edge: #8d9584;
+  --archive-rule: #bdc4b9;
+  --archive-surface: #f8f9f4;
+  --archive-accent: #89372c;
+  --archive-base: #edf0eb;
+  --archive-hover: #e1e7dc;
+  --archive-scrim: linear-gradient(90deg, rgb(237 240 235 / 82%), rgb(237 240 235 / 68%) 44%, transparent 72%);
+  --archive-art: url("/game-art/history/archive-ledger-light-v2.webp");
+}
+
+@media (max-width: 1100px) {
+  .caseFile { grid-template-columns: 144px minmax(0, 1fr) 220px; gap: 8px 20px; }
+  .caseImage { grid-row: 1 / 3; }
+  .caseHead { grid-row: 1 / 3; }
+  .caseFoot { grid-column: 3; border: 0; justify-content: flex-start; }
+  .caseLink { padding-left: 0; }
+  .archiveScope { flex-basis: 100%; margin: 0; }
+  .header h1 { max-width: 70%; font-size: 3.5rem; }
+}
+
+@media (max-width: 1000px) {
+  .header { min-height: 320px; }
+  .header h1 { max-width: 72%; font-size: 3rem; }
+  .archive::after { height: 320px; background-size: auto 380px; background-position: center top; }
+  .caseFile { grid-template-columns: 96px minmax(0, 1fr) 184px; gap: 8px 16px; padding-inline: 10px; }
+  .verdict { font-size: 1.35rem; }
+  .caseMode { display: grid; gap: 0; }
+}
+
+@media (max-width: 640px) {
+  .archive { padding: 0 20px 48px; }
+  .archive::after { height: 130px; background-image: var(--archive-art); background-size: auto 170px; background-position: right top; mask-image: linear-gradient(#000 72%, transparent); }
+  .header { min-height: 198px; justify-content: flex-end; padding: 100px 0 16px; }
+  .header .kicker { margin-bottom: 10px; font-size: 0.75rem; }
+  .header h1 { max-width: none; font-size: 2.125rem; }
+  .header > p:last-child { display: none; }
+  .filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; padding-block: 12px; }
+  .filterField { gap: 6px; }
+  .filters select { min-width: 0; width: 100%; padding-inline: 8px 24px; font-size: 0.875rem; }
+  .filterSubmit { flex: 1 1 auto; }
+  .archiveScope { align-self: center; font-size: 0.8125rem; }
+  .filters:has(.reset) .archiveScope { grid-column: 1 / -1; }
+  .indexLine { gap: 8px; margin-block: 16px 8px; }
+  .indexLine h2 { font-size: 1.35rem; }
+  .indexLine p { font-size: 0.8125rem; }
+  .caseFile { grid-template-columns: 64px minmax(0, 1fr); align-items: start; gap: 12px 14px; padding: 16px 6px; }
+  .caseImage { grid-row: auto; aspect-ratio: 1; }
+  .caseHead { grid-row: auto; }
+  .verdict { font-size: 1.2rem; }
+  .caseMode { margin-top: 6px; font-size: 0.875rem; }
+  .highlight { margin-top: 8px; }
+  .caseFacts { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 0.875rem; }
+  .caseFacts .participants { gap: 12px; }
+  .caseFoot { grid-column: 1 / -1; justify-content: flex-end; margin-top: -4px; }
+  .caseLink { min-height: 44px; padding-block: 8px; }
+  .empty { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .emptyArt { grid-column: auto; grid-row: auto; max-width: 400px; }
+  .pagination { gap: 8px; }
+}
+
+@media (max-width: 359px) {
+  .filterField { grid-column: 1 / -1; grid-template-columns: 5rem minmax(0, 1fr); align-items: center; }
+}
+
+@container archive-filters (max-width: 17rem) {
+  .filterField { grid-column: 1 / -1; grid-template-columns: minmax(0, 1fr); }
+  .filterSubmit, .reset, .archiveScope { grid-column: 1 / -1; }
+}
+
+@media (prefers-reduced-motion: reduce) { .caseFile { transition: none; } }

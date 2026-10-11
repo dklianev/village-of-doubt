@@ -7,12 +7,14 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type ReactNode,
 } from "react";
 import type { GameFamily, GameMode, GamePhase } from "@werewolf/shared";
+import { Check, Clock, Crown, Eye, Mic2, WifiOff } from "lucide-react";
 import { avatarIdForUser } from "@/lib/avatar-catalog";
-import { communicationBg, modeBg } from "@/lib/play/copy";
-import { phaseBg, phaseSigil } from "@/lib/play/phase-display";
-import { computeSeatLayout, type SeatLayoutItem } from "@/lib/play/seat-layout";
+import { communicationBg, modeBg, narratorBg } from "@/lib/play/copy";
+import { phaseBg } from "@/lib/play/phase-display";
+import type { SeatLayoutItem } from "@/lib/play/seat-layout";
 import type { PublicPlayer } from "@/lib/play/types";
 import { PlaySeat, type StageSeatPlayer } from "@/components/play/PlaySeat";
 import { Timer } from "@/components/play/Timer";
@@ -42,23 +44,42 @@ interface PlayStageProps {
   onSelectSeat: (targetUserId: string) => void;
   onMakeNarrator: (targetUserId: string) => void;
   onMakeMayor: (targetUserId: string) => void;
+  lobbyInvitation?: ReactNode;
+  activeRoomAction?: ReactNode;
 }
 
-type LayoutMode = "full-table" | "compact-table" | "dense-table-grid" | "mobile-table-grid";
+type LayoutMode = "dense-table-grid" | "mobile-table-grid" | "lobby-table" | "active-table" | "crowded-table";
 
 interface StageMeasurements {
   mode: LayoutMode;
+  compact: boolean;
   sceneTop: number;
   sceneWidth: number;
   sceneHeight: number;
 }
 
 const INITIAL_MEASUREMENTS: StageMeasurements = {
-  mode: "compact-table",
+  mode: "dense-table-grid",
+  compact: false,
   sceneTop: 132,
   sceneWidth: 760,
   sceneHeight: 360,
 };
+
+const LOBBY_STATUSES = {
+  disconnected: { label: "Без връзка", Icon: WifiOff, state: "disconnected" },
+  narrator: { label: "Разказвач", Icon: Mic2, state: "observer" },
+  observer: { label: "Наблюдава", Icon: Eye, state: "observer" },
+  ready: { label: "Готов", Icon: Check, state: "ready" },
+  waiting: { label: "Не е готов", Icon: Clock, state: "waiting" },
+} as const;
+
+const LOBBY_EIGHT_SEATS = [[0.5, 0.34], [0.69, 0.38], [0.81, 0.60], [0.65, 0.80], [0.42, 0.81], [0.26, 0.73], [0.17, 0.53], [0.31, 0.385]] as const;
+const LOBBY_TWELVE_SEATS = [[0.26, 0.36], [0.42, 0.34], [0.58, 0.34], [0.74, 0.36], [0.85, 0.58], [0.85, 0.80], [0.65, 0.87], [0.48, 0.87], [0.31, 0.87], [0.15, 0.80], [0.15, 0.58], [0.15, 0.37]] as const;
+const ACTIVE_EIGHT_SEATS = [[0.5, 0.315], [0.685, 0.35], [0.80, 0.525], [0.715, 0.765], [0.5, 0.835], [0.28, 0.765], [0.195, 0.525], [0.315, 0.35]] as const;
+const ACTIVE_TWELVE_SEATS = [[0.30, 0.32], [0.43, 0.285], [0.57, 0.285], [0.70, 0.32], [0.83, 0.50], [0.83, 0.73], [0.66, 0.855], [0.50, 0.885], [0.34, 0.855], [0.17, 0.73], [0.17, 0.50], [0.20, 0.325]] as const;
+const COMPACT_EIGHT_SEATS = [[0.5, 0.26], [0.685, 0.31], [0.80, 0.525], [0.715, 0.765], [0.5, 0.85], [0.28, 0.765], [0.195, 0.525], [0.315, 0.31]] as const;
+const COMPACT_TWELVE_SEATS = [[0.32, 0.31], [0.435, 0.28], [0.55, 0.27], [0.665, 0.28], [0.78, 0.31], [0.89, 0.50], [0.81, 0.77], [0.67, 0.86], [0.48, 0.86], [0.29, 0.86], [0.14, 0.77], [0.14, 0.48]] as const;
 
 export function PlayStage({
   code,
@@ -84,6 +105,8 @@ export function PlayStage({
   onSelectSeat,
   onMakeNarrator,
   onMakeMayor,
+  lobbyInvitation,
+  activeRoomAction,
 }: PlayStageProps) {
   const stageRef = useRef<HTMLElement>(null);
   const hudRef = useRef<HTMLDivElement>(null);
@@ -93,18 +116,29 @@ export function PlayStage({
   const [hasMeasured, setHasMeasured] = useState(false);
   const [openMenuUserId, setOpenMenuUserId] = useState("");
   const publicPlayers = useMemo(() => players.map(toStageSeatPlayer), [players]);
-  const seatedPlayers = phase === "lobby" ? publicPlayers : publicPlayers.filter((player) => player.playing);
+  const participants = publicPlayers.filter((player) => player.playing);
+  const seatedPlayers = phase === "lobby" ? publicPlayers : participants;
   const loadingSeatCount = 6;
   const seatCount = hasSnapshot ? seatedPlayers.length : loadingSeatCount;
-  const aliveCount = publicPlayers.filter((player) => player.playing && player.alive).length;
-  const participants = publicPlayers.filter((player) => player.playing);
-  const readyCount = participants.filter((player) => player.ready).length;
-  const eliminatedCount = publicPlayers.filter((player) => player.playing && !player.alive).length;
-  const seatDensity = seatCount >= 14 ? "crowded" : seatCount >= 10 ? "full" : "open";
+  const aliveCount = participants.filter((player) => player.alive).length;
+  const eliminatedCount = participants.length - aliveCount;
+  const seatDensity = seatCount >= 13 ? "crowded" : seatCount >= 10 ? "full" : "open";
   const isNight = phase === "first_night" || phase === "night";
+  // Public tally only: the seat(s) currently drawing the most votes.
+  const leadingVotes = phase === "voting" ? Math.max(0, ...voteCounts.values()) : 0;
   const currentSpeaker = publicPlayers.find((player) => player.userId === currentSpeakerUserId);
   const currentDefender = publicPlayers.find((player) => player.userId === currentDefenseUserId);
   const titleId = "play-stage-title";
+  const canManageNarrator = Boolean(ownPlayer?.host && narratorMode !== "automatic" && phase === "lobby");
+  const canManageMayor = (player: StageSeatPlayer) => Boolean(
+    (ownPlayer?.host || ownPlayer?.narrator)
+      && mode === "werewolves_classic"
+      && (phase === "lobby" || phase === "mayor_successor")
+      && player.playing
+      && player.alive,
+  );
+  const openMenuEligible = seatedPlayers.some(player => player.userId === openMenuUserId
+    && !targetableIds.has(player.userId) && (canManageNarrator || canManageMayor(player)));
 
   useLayoutEffect(() => {
     const stage = stageRef.current;
@@ -121,17 +155,24 @@ export function PlayStage({
       const sceneWidth = scene.clientWidth;
       const sceneHeight = scene.clientHeight;
       const viewportRequiresGrid = window.matchMedia("(max-width: 1023px)").matches;
-      const nextMode: LayoutMode = viewportRequiresGrid
-        ? "mobile-table-grid"
-        : sceneWidth >= 800 && sceneHeight >= 320
-          ? "full-table"
-          : sceneWidth >= 700 && sceneHeight >= 236
-            ? "compact-table"
-            : "mobile-table-grid";
+      const shortDesktop = window.matchMedia("(min-width: 1366px) and (max-height: 960px)").matches;
+      const activeOvalFits = window.matchMedia("(min-width: 1366px)").matches
+        && stageRect.width >= 1200
+        && seatCount >= 3 && seatCount <= 12
+        && sceneTop <= stageRect.width * 0.135;
+      const crowdedOvalFits = !viewportRequiresGrid && stageRect.width >= 980
+        && seatCount > 12 && seatCount <= 30 && sceneTop <= 300
+        && stageRect.width * 0.88 / (Math.ceil(seatCount / 2) - 1) >= 78
+        && (parseFloat(getComputedStyle(stage).fontSize) || 16) <= 18;
+      const nextMode: LayoutMode = crowdedOvalFits ? "crowded-table" : phase !== "lobby"
+        ? activeOvalFits ? "active-table" : viewportRequiresGrid ? "mobile-table-grid" : "dense-table-grid"
+        : !viewportRequiresGrid && sceneWidth >= 700 && sceneHeight >= 236
+          ? "lobby-table" : "mobile-table-grid";
 
       setMeasurements((current) => {
-        const next = { mode: nextMode, sceneTop, sceneWidth, sceneHeight };
+        const next = { mode: nextMode, compact: phase !== "lobby" && shortDesktop, sceneTop, sceneWidth, sceneHeight };
         return current.mode === next.mode
+          && current.compact === next.compact
           && Math.abs(current.sceneTop - next.sceneTop) < 1
           && Math.abs(current.sceneWidth - next.sceneWidth) < 1
           && Math.abs(current.sceneHeight - next.sceneHeight) < 1
@@ -145,44 +186,81 @@ export function PlayStage({
     observer.observe(stage);
     observer.observe(hud);
     observer.observe(scene);
+    window.addEventListener("resize", measure);
     const initialFrame = window.requestAnimationFrame(measure);
     return () => {
       observer.disconnect();
+      window.removeEventListener("resize", measure);
       window.cancelAnimationFrame(initialFrame);
     };
-  }, []);
+  }, [phase, seatCount]);
 
   const seatLayout = useMemo(() => {
-    if (measurements.mode === "mobile-table-grid" || seatCount < 3 || seatCount > 18) {
-      return [];
-    }
-    try {
-      const coreSize = measurements.mode === "compact-table" ? 136 : 160;
-      const coreCenterYRatio = seatCount >= 10 ? 0.47 : measurements.mode === "compact-table" ? 0.5 : 0.57;
-      return computeSeatLayout({
-        contentWidth: measurements.sceneWidth,
-        contentHeight: measurements.sceneHeight,
-        count: seatCount,
-        reservedHud: { x: 0, y: 0, width: 0, height: 0 },
-        reservedCenter: {
-          x: measurements.sceneWidth / 2 - coreSize / 2,
-          y: measurements.sceneHeight * coreCenterYRatio - coreSize / 2,
-          width: coreSize,
-          height: coreSize,
-        },
-        minHitSize: 44,
+    if (measurements.mode === "crowded-table") {
+      const upperCount = Math.ceil(seatCount / 2);
+      const size = Math.min(76, Math.floor(measurements.sceneWidth * 0.88 / (upperCount - 1)) - 26);
+      // Two facing arcs leave the instrument clear and retain clockwise seat order.
+      return Array.from({ length: seatCount }, (_, index): SeatLayoutItem => {
+        const upper = index < upperCount;
+        const rowCount = upper ? upperCount : seatCount - upperCount;
+        const progress = upper ? index / (rowCount - 1) : 1 - (index - upperCount) / (rowCount - 1);
+        const curve = 1 - Math.sqrt(1 - (2 * progress - 1) ** 2);
+        const x = measurements.sceneWidth * (0.06 + 0.88 * progress);
+        const y = upper ? measurements.sceneTop + 62 + curve * 68
+          : measurements.sceneHeight - (phase === "lobby" ? 88 : 66) - curve * 68;
+        return { index, x, y, visualSize: size, hitSize: size, scale: 1, zIndex: 100 + Math.round(y),
+          menuPlacement: { x: x < measurements.sceneWidth / 2 ? "right" : "left", y: upper ? "down" : "up" } };
       });
-    } catch {
-      return [];
     }
-  }, [measurements, seatCount]);
+    if (phase !== "lobby") {
+      if (measurements.mode !== "active-table") return [];
+      // The active room crops the header from the waiting plate; its seats use
+      // that same physical oval, not a second CSS-generated tabletop.
+      const anchors = measurements.compact
+        ? seatCount >= 9 ? COMPACT_TWELVE_SEATS : COMPACT_EIGHT_SEATS
+        : seatCount >= 9 ? ACTIVE_TWELVE_SEATS : ACTIVE_EIGHT_SEATS;
+      return Array.from({ length: seatCount }, (_, index): SeatLayoutItem => {
+        const anchor = anchors[Math.floor(index * anchors.length / seatCount)]!;
+        const x = measurements.sceneWidth * anchor[0];
+        const y = measurements.sceneHeight * anchor[1];
+        const size = measurements.compact ? seatCount >= 9 ? 60 : 66 : seatCount >= 9 ? 82 : 104;
+        return { index, x, y, visualSize: size, hitSize: size, scale: 1, zIndex: 100 + Math.round(y),
+          menuPlacement: { x: x < measurements.sceneWidth / 2 ? "right" : "left", y: y > measurements.sceneHeight / 2 ? "up" : "down" } };
+      });
+    }
+    if (phase === "lobby" && measurements.mode !== "mobile-table-grid" && seatCount <= 12 && seatCount >= 3) {
+      // The waiting-room plate has a fixed oval; only public seats are overlaid.
+      return Array.from({ length: seatCount }, (_, index): SeatLayoutItem => {
+        const anchors = seatCount >= 9 ? LOBBY_TWELVE_SEATS : LOBBY_EIGHT_SEATS;
+        const anchor = anchors[Math.floor(index * anchors.length / seatCount)]!;
+        const x = measurements.sceneWidth * anchor[0];
+        const y = measurements.sceneHeight * anchor[1];
+        const size = seatCount >= 9 ? 76 : 96;
+        return { index, x, y, visualSize: size, hitSize: size, scale: 1, zIndex: 100 + Math.round(y),
+          menuPlacement: { x: x < measurements.sceneWidth / 2 ? "right" : "left", y: y > measurements.sceneHeight / 2 ? "up" : "down" } };
+      });
+    }
+    return [];
+  }, [measurements, seatCount, phase]);
   const measuredMode: LayoutMode = seatLayout.length === seatCount && seatCount >= 3
     ? measurements.mode
     : measurements.mode === "mobile-table-grid"
       ? "mobile-table-grid"
       : "dense-table-grid";
-  const effectiveMode: LayoutMode = !hasMeasured ? "mobile-table-grid" : measuredMode;
+  const effectiveMode: LayoutMode = !hasMeasured ? "mobile-table-grid"
+    : measurements.mode === "crowded-table" ? "crowded-table"
+    : phase === "lobby" && measurements.mode !== "mobile-table-grid"
+      ? seatCount >= 3 && seatCount <= 12 && measurements.sceneTop <= 280 ? "lobby-table" : "dense-table-grid"
+      : measuredMode;
   const mobileGridColumns = seatCount <= 6 ? 2 : seatCount <= 9 ? 3 : 4;
+
+  useLayoutEffect(() => {
+    setOpenMenuUserId("");
+  }, [phase]);
+
+  useLayoutEffect(() => {
+    if (!openMenuEligible) setOpenMenuUserId("");
+  }, [openMenuEligible]);
 
   const closeMenu = useCallback((restoreFocus: boolean) => {
     setOpenMenuUserId((current) => {
@@ -195,8 +273,16 @@ export function PlayStage({
   }, []);
 
   useLayoutEffect(() => {
-    if (!openMenuUserId) {
+    if (!openMenuEligible) {
       return;
+    }
+    // Clamp the rendered menu, including grids whose columns change in CSS.
+    const controls = stageRef.current?.querySelector<HTMLElement>("[data-seat-menu-root][data-open='true'] [data-seat-menu-controls]");
+    if (controls) {
+      controls.style.transform = "";
+      const { left, right } = controls.getBoundingClientRect();
+      const offset = Math.max(8 - left, Math.min(0, document.documentElement.clientWidth - 8 - right));
+      controls.style.transform = `translateX(${offset}px)`;
     }
     const onPointerDown = (event: PointerEvent) => {
       const target = event.target as HTMLElement | null;
@@ -214,10 +300,11 @@ export function PlayStage({
     document.addEventListener("pointerdown", onPointerDown);
     document.addEventListener("keydown", onKeyDown);
     return () => {
+      if (controls) controls.style.transform = "";
       document.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [closeMenu, openMenuUserId]);
+  }, [closeMenu, openMenuUserId, openMenuEligible, measurements]);
 
   const stageStyle = {
     "--seat-count": Math.max(seatCount, 1),
@@ -228,7 +315,7 @@ export function PlayStage({
   return (
     <section
       ref={stageRef}
-      className={`${styles.stage} play-stage play-section`}
+      className={`${styles.stage} ${phase !== "lobby" ? styles.activeStage : ""} play-stage play-section`}
       data-family={family}
       data-phase={phase}
       data-night={isNight ? "true" : undefined}
@@ -241,13 +328,25 @@ export function PlayStage({
       inert={phase === "game_over" ? true : undefined}
       style={stageStyle}
     >
-      <div className={styles.atmosphereBack} aria-hidden="true" />
-      <div className={styles.atmosphereFront} aria-hidden="true" />
-
       <div ref={hudRef} className={styles.hud} data-stage-hud>
         <div className={styles.copy}>
-          <p className={styles.kicker}>стая {code}{phase === "lobby" ? " · преди началото" : ` · рунд ${round}`}</p>
-          <h1 id={titleId} className={styles.title}>{phaseBg(phase, mode)}</h1>
+          <p className={styles.kicker}>
+            {phase === "lobby"
+              ? `${modeBg(mode)} · ${mode === "mafia_sport" ? "Спортен формат" : "Класическа игра"}`
+              : phase === "role_reveal"
+                ? `${modeBg(mode)} · преди първата нощ`
+                : `${modeBg(mode)} · ${isNight ? "нощ" : "ден"} ${round}`}
+          </p>
+          <h1 id={titleId} className={styles.title}>{phase === "lobby" ? "Масата се събира" : phaseBg(phase, mode)}</h1>
+          {phase === "voting" ? <p className={styles.phaseQuestion}>
+            {family === "mafia" ? "Кой ще напусне масата?" : "Кой ще напусне селото?"}
+          </p> : null}
+          {phase === "lobby" ? <>
+            <p className="play-waiting-settings" aria-label="Настройки на масата">
+              <span>{participants.length} участници</span><span>{narratorBg(narratorMode)}</span><span>{communicationBg(communicationMode)}</span>
+            </p>
+            {ownPlayer?.host ? <p className="play-waiting-host"><Crown aria-hidden="true" />Ти си домакин</p> : null}
+          </> : null}
           {currentSpeaker || currentDefender ? (
             <p className={styles.dayFocus} aria-live="polite">
               {currentSpeaker ? `Говори: ${currentSpeaker.displayName}` : `Защита: ${currentDefender?.displayName}`}
@@ -259,31 +358,21 @@ export function PlayStage({
             </p>
           ) : null}
         </div>
-        <div className={styles.ledger} data-stage-ledger aria-hidden="true">
-          <span>{modeBg(mode)}</span>
-          <span>{communicationBg(communicationMode)}</span>
-        </div>
+        {phase === "lobby" ? lobbyInvitation : <div className={styles.activeLedger} data-stage-ledger>
+          <span className={styles.roomLabel}>Код на стаята</span>
+          <div className={styles.roomCode}><strong>{code}</strong>{activeRoomAction}</div>
+          <span className={styles.activeCounts} data-stage-counts>
+            {`${aliveCount} ${aliveCount === 1 ? "жив" : "живи"}`}
+            {eliminatedCount > 0 ? ` · ${eliminatedCount} ${eliminatedCount === 1 ? "елиминиран" : "елиминирани"}` : ""}
+          </span>
+        </div>}
       </div>
 
       <div ref={sceneRef} className={styles.tableScene} data-table-scene role="group" aria-label="Игрална маса">
-        <div className={styles.tableSurface} aria-hidden="true" />
-        <div className={styles.core} data-table-core role="group" aria-label="Център на масата">
-          <span className={styles.sigil} aria-hidden="true">{phaseSigil(phase)}</span>
-          {phase === "lobby" ? (
-            <div className={styles.lobbyStatus} role="status" aria-label={`Готови: ${readyCount} от ${participants.length}`}>
-              <span>Готови</span>
-              <strong>{readyCount} / {participants.length}</strong>
-            </div>
-          ) : <Timer endsAt={phaseEndsAt} />}
-          <span className={styles.counts}>
-            {phase === "lobby"
-              ? `${participants.length} ${participants.length === 1 ? "участник" : "участници"}`
-              : `${aliveCount} ${aliveCount === 1 ? "жив" : "живи"}`}
-            {phase !== "lobby" && eliminatedCount > 0
-              ? ` · ${eliminatedCount} ${eliminatedCount === 1 ? "елиминиран" : "елиминирани"}`
-              : ""}
-          </span>
-        </div>
+        {phase === "lobby" ? <div className={styles.tableSurface} aria-hidden="true" /> : null}
+        {phase !== "lobby" ? <div className={styles.core} data-table-core role="group" aria-label="Център на масата">
+          <Timer endsAt={phaseEndsAt} presentation="instrument" />
+        </div> : null}
 
         <div className={styles.seatRing} data-seat-ring>
           {!hasSnapshot
@@ -303,8 +392,12 @@ export function PlayStage({
             const targetable = targetableIds.has(player.userId);
             const selected = selectedTargetId === player.userId;
             const secondSelected = secondTargetId === player.userId;
-            const menuOpen = openMenuUserId === player.userId;
+            const menuOpen = openMenuEligible && openMenuUserId === player.userId;
             const menuId = `seat-menu-${index}`;
+            const lobbyStatus = LOBBY_STATUSES[!player.connected ? "disconnected"
+              : !player.playing ? (player.narrator ? "narrator" : "observer")
+                : player.ready ? "ready" : "waiting"];
+            const LobbySeatIcon = lobbyStatus.Icon;
             return (
               <div
                 key={player.userId}
@@ -321,6 +414,7 @@ export function PlayStage({
                 data-speaking={player.userId === currentSpeakerUserId ? "true" : undefined}
                 data-defending={player.userId === currentDefenseUserId ? "true" : undefined}
                 data-nominee={nomineeIds.has(player.userId) ? "true" : undefined}
+                data-vote-leader={leadingVotes > 0 && voteCounts.get(player.userId) === leadingVotes ? "true" : undefined}
                 data-menu-x={geometry?.menuPlacement.x ?? (isMobileStartEdge ? "mobile-start" : undefined)}
                 data-menu-y={geometry?.menuPlacement.y ?? (isMobileLastRow ? "up" : undefined)}
                 style={effectiveMode.endsWith("table-grid") ? undefined : seatStyle(geometry)}
@@ -339,14 +433,8 @@ export function PlayStage({
                   speaking={player.userId === currentSpeakerUserId}
                   defending={player.userId === currentDefenseUserId}
                   nominee={nomineeIds.has(player.userId)}
-                  canManageNarrator={Boolean(ownPlayer?.host && narratorMode !== "automatic" && phase === "lobby")}
-                  canManageMayor={Boolean(
-                    (ownPlayer?.host || ownPlayer?.narrator)
-                      && mode === "werewolves_classic"
-                      && (phase === "lobby" || phase === "mayor_successor")
-                      && player.playing
-                      && player.alive,
-                  )}
+                  canManageNarrator={canManageNarrator}
+                  canManageMayor={canManageMayor(player)}
                   menuId={menuId}
                   menuOpen={menuOpen}
                   menuTriggerRef={(node) => {
@@ -362,6 +450,16 @@ export function PlayStage({
                   onMakeNarrator={() => onMakeNarrator(player.userId)}
                   onMakeMayor={() => onMakeMayor(player.userId)}
                 />
+                {phase === "lobby" ? (
+                  <span className={styles.lobbySeatStatus} data-lobby-seat-status
+                    data-state={lobbyStatus.state}
+                    title={`${player.displayName}${player.host ? " · Домакин" : ""} · ${lobbyStatus.label}`}
+                  >
+                    {player.host ? <Crown aria-label="Домакин" role="img" /> : null}
+                    <LobbySeatIcon aria-hidden="true" />
+                    <span>{lobbyStatus.label}</span>
+                  </span>
+                ) : null}
               </div>
             );
           })}

@@ -1,30 +1,29 @@
 "use client";
 
 import "@/components/games/JoinEntry.module.css";
-import { useEffect, useId, useMemo, useState, useTransition, type FormEvent } from "react";
+import { useEffect, useId, useState, useTransition, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Eye, Gamepad2, KeyRound, LoaderCircle, Martini, Moon, Plus, RefreshCw, Users } from "lucide-react";
+import { ArrowRight, Eye, Gamepad2, KeyRound, LoaderCircle, Martini, Moon, Plus, RefreshCw } from "lucide-react";
 import {
   ROOM_CODE_LENGTH,
   ROOM_CODE_REGEX,
+  getGameFamily,
   normalizeRoomCodeInput,
-  type CommunicationMode,
   type GameFamily,
   type GameMode,
-  type NarratorMode,
-  type TempoProfile,
+  type RoomInvitationEligibility,
 } from "@werewolf/shared";
 import { JoinCodeSlots } from "@/components/games/join-code-slots";
 import { useAuthSession, type AuthSessionView } from "@/lib/use-auth-session";
 import { useRecentRooms } from "@/lib/use-recent-rooms";
 
-type RoomPreview = {
+type RoomPreview = RoomInvitationEligibility & {
   code: string;
   status: "lobby" | "in_game" | "finished";
   playerCount: number;
   capacity: number;
-  family: GameFamily | null;
+  family: GameFamily;
 };
 
 type RoomPreviewState =
@@ -34,47 +33,22 @@ type RoomPreviewState =
   | { kind: "missing"; code: string }
   | { kind: "network_error"; code: string };
 
+export const JOIN_PREVIEW_TIMEOUT_MS = 5_000;
+export const JOIN_PREVIEW_REFRESH_MS = 10_000;
+const JOIN_PREVIEW_FOCUS_THROTTLE_MS = 1_000;
+
 const FAMILY_COPY = {
-  mafia: {
-    Icon: Martini,
-    kicker: "частен бар",
-    greeting: (name: string) => `Добре дошъл в бара, ${name}.`,
-    sub: "Покажи паролата на бара. Настани се на масата.",
-    codeLabel: "Код на стаята",
-    submitLabel: "Хлопам на вратата",
-    submittingLabel: "Хлопаме на вратата...",
-    createLabel: "Създай нов бар",
-    createGhostLabel: "Нямам код? Създай нов бар →",
-    spectatorOn: "Сядам встрани, без роля",
-    spectatorOff: "Влизам да играя",
-    spectatorHint: "Гледаш играта, но не получаваш роля. Можеш да следиш масата отстрани.",
-    flavorFooter: "Името ти е в списъка. Кодът отваря вратата. Останалото е между нас.",
-  },
-  werewolves: {
-    Icon: Moon,
-    kicker: "тихо село",
-    greeting: (name: string) => `Добре дошъл в селото, ${name}.`,
-    sub: "Покажи знака на селото. Премини през оградата.",
-    codeLabel: "Код на стаята",
-    submitLabel: "Влизам в селото",
-    submittingLabel: "Тръгваме към селото...",
-    createLabel: "Създай ново село",
-    createGhostLabel: "Нямам знак? Създай ново село →",
-    spectatorOn: "Гледам отстрани, без роля",
-    spectatorOff: "Влизам да играя",
-    spectatorHint: "Гледаш как селото решава, но не получаваш роля.",
-    flavorFooter: "Селото е тихо. Покажи знака си преди оградата.",
-  },
+  mafia: { Icon: Martini, name: "Мафия", heading: "Влез на масата" },
+  werewolves: { Icon: Moon, name: "Върколак", heading: "Влез в селото" },
 } as const;
 
 export function AuthGatedEntryClient({
   family,
-  mode,
   initialCode = "",
   initialSession,
 }: {
-  family: GameFamily;
-  mode: GameMode;
+  family?: GameFamily;
+  mode?: GameMode;
   initialCode?: string;
   initialSession?: AuthSessionView | null;
 }) {
@@ -82,420 +56,297 @@ export function AuthGatedEntryClient({
   const { data: session, isError: sessionError, isPending, refresh: refreshSession } = useAuthSession(initialSession);
   const normalizedInitialCode = normalizeRoomCodeInput(initialCode);
   const [roomCode, setRoomCode] = useState(normalizedInitialCode);
-  const [spectator, setSpectator] = useState(false);
+  const [spectatorChoice, setSpectatorChoice] = useState<{ key: string; value: boolean } | null>(null);
   const [error, setError] = useState("");
-  const [previewState, setPreviewState] = useState<RoomPreviewState>({ kind: "idle" });
+  const [preview, setPreview] = useState<{ key: string; state: RoomPreviewState } | null>(null);
   const [previewAttempt, setPreviewAttempt] = useState(0);
   const [isJoining, startTransition] = useTransition();
   const errorId = useId();
-  const isMafia = family === "mafia";
-  const copy = FAMILY_COPY[isMafia ? "mafia" : "werewolves"];
+  const modeId = useId();
+  const viewerId = session?.user.id;
+  const choiceKey = JSON.stringify([viewerId, roomCode]);
+  const requestKey = JSON.stringify([viewerId, roomCode, previewAttempt]);
+  const validCode = ROOM_CODE_REGEX.test(roomCode);
+  // Eligibility belongs to this code and this viewer, never the previous response.
+  const previewState: RoomPreviewState = preview?.key === requestKey
+    ? preview.state
+    : validCode && viewerId ? { kind: "loading", code: roomCode } : { kind: "idle" };
+  const previewRoom = previewState.kind === "room" ? previewState.room : null;
+  const activeRoom = Boolean(previewRoom && previewRoom.status !== "finished");
+  const canPlay = activeRoom && Boolean(previewRoom?.canJoinAsPlayer);
+  const canWatch = activeRoom && Boolean(previewRoom?.canSpectate) && previewRoom?.viewerMembership !== "participant";
+  const defaultSpectator = previewRoom?.viewerMembership === "spectator" || !canPlay;
+  const spectator = spectatorChoice?.key === choiceKey ? spectatorChoice.value : defaultSpectator;
+  const joinsAsSpectator = canWatch && (spectator || !canPlay);
+  const roomAcceptsEntry = joinsAsSpectator ? canWatch : canPlay;
+  const effectiveFamily = previewRoom?.family ?? family;
+  const { rooms, remember } = useRecentRooms(effectiveFamily ?? "werewolves");
+  const recentRooms = effectiveFamily ? rooms : [];
+  const copy = effectiveFamily ? FAMILY_COPY[effectiveFamily] : { Icon: KeyRound, name: "Сенките", heading: "Влез с код" };
   const FamilyIcon = copy.Icon;
-  const gameRoot = isMafia ? "/mafia" : "/werewolf";
+  const gameRoot = effectiveFamily === "mafia" ? "/mafia" : effectiveFamily === "werewolves" ? "/werewolf" : "";
+  const entryRoot = family === "mafia" ? "/mafia" : family === "werewolves" ? "/werewolf" : "";
   const redirectCode = [roomCode, normalizedInitialCode].find((code) => ROOM_CODE_REGEX.test(code));
-  const joinPath = `${gameRoot}/join${redirectCode ? `/${redirectCode}` : ""}`;
+  const joinPath = entryRoot
+    ? `${entryRoot}/join${redirectCode ? `/${redirectCode}` : ""}`
+    : `/join${redirectCode ? `?${new URLSearchParams({ code: redirectCode })}` : ""}`;
   const signInPath = `/sign-in?redirect=${encodeURIComponent(joinPath)}`;
-  const playerCount = mode === "mafia_sport" ? 10 : isMafia ? 10 : 8;
-  const tempo: TempoProfile = mode === "mafia_sport" ? "sport_mafia" : "normal_online";
-  const communication: CommunicationMode = "built_in_chat";
-  const narrator: NarratorMode = "automatic";
-  const hasInviteCode = Boolean(normalizedInitialCode);
-  const { rooms: recentRooms, remember } = useRecentRooms(family);
-  const previewRoom = previewState.kind === "room" && previewState.room.code === roomCode ? previewState.room : null;
-  const roomInProgress = previewRoom?.status === "in_game";
-  const roomFull = Boolean(
-    previewRoom?.status === "lobby"
-      && previewRoom.capacity > 0
-      && previewRoom.playerCount >= previewRoom.capacity,
-  );
-  const spectatorRequired = roomInProgress || roomFull;
-  const joinsAsSpectator = spectatorRequired || spectator;
-  const roomAcceptsEntry = previewRoom?.status === "lobby" || roomInProgress;
-
-  const playPath = useMemo(() => {
-    const params = new URLSearchParams({
-      mode,
-      players: String(playerCount),
-      communication,
-      narrator,
-      tempo,
-    });
-    if (joinsAsSpectator) {
-      params.set("spectator", "1");
-    }
-    return `/play/${roomCode}?${params.toString()}`;
-  }, [communication, joinsAsSpectator, mode, narrator, playerCount, roomCode, tempo]);
-
-  const createPath = useMemo(() => {
-    if (!spectator) {
-      return `${gameRoot}/create`;
-    }
-    const params = new URLSearchParams({ spectator: "1" });
-    return `${gameRoot}/create?${params.toString()}`;
-  }, [gameRoot, spectator]);
 
   useEffect(() => {
-    if (!ROOM_CODE_REGEX.test(roomCode)) {
-      setPreviewState({ kind: "idle" });
-      return;
+    if (!ROOM_CODE_REGEX.test(roomCode) || !viewerId) return;
+
+    let disposed = false;
+    let inFlight: AbortController | null = null;
+    let requestTimeout: ReturnType<typeof setTimeout> | undefined;
+    let refreshTimeout: ReturnType<typeof setTimeout> | undefined;
+    let lastRequestAt = -Infinity;
+    const canRefresh = () => !disposed && document.visibilityState === "visible" && navigator.onLine;
+    setPreview({ key: requestKey, state: { kind: navigator.onLine ? "loading" : "network_error", code: roomCode } });
+
+    function scheduleRefresh(delay = JOIN_PREVIEW_REFRESH_MS) {
+      clearTimeout(refreshTimeout);
+      if (canRefresh()) refreshTimeout = setTimeout(() => void loadPreview(), delay);
     }
 
-    const controller = new AbortController();
-    setPreviewState({ kind: "loading", code: roomCode });
+    function cancelPreview() {
+      clearTimeout(refreshTimeout);
+      clearTimeout(requestTimeout);
+      inFlight?.abort();
+      inFlight = null;
+    }
 
     async function loadPreview() {
+      if (!canRefresh() || inFlight) return;
+      clearTimeout(refreshTimeout);
+      const controller = new AbortController();
+      inFlight = controller;
+      lastRequestAt = Date.now();
+
+      function finishRequest() {
+        // A cancelled request may settle after its replacement has already started.
+        if (inFlight !== controller) return;
+        clearTimeout(requestTimeout);
+        inFlight = null;
+        scheduleRefresh();
+      }
+
+      requestTimeout = setTimeout(() => {
+        controller.abort();
+        setPreview({ key: requestKey, state: { kind: "network_error", code: roomCode } });
+        finishRequest();
+      }, JOIN_PREVIEW_TIMEOUT_MS);
+
       try {
-        const response = await fetch(`/api/rooms/${roomCode}/preview`, { signal: controller.signal });
-        if (!response.ok) {
-          throw new Error(`Room preview failed with ${response.status}`);
-        }
-
-        const data = (await response.json()) as unknown;
-        if (isMissingRoomPreview(data)) {
-          setPreviewState({ kind: "missing", code: roomCode });
+        const response = await fetch(`/api/rooms/${roomCode}/preview`, {
+          signal: controller.signal,
+          cache: "no-store",
+          credentials: "same-origin",
+        });
+        if (!response.ok) throw new Error("Room preview unavailable");
+        const data: unknown = await response.json();
+        if (controller.signal.aborted) return;
+        if (data && typeof data === "object" && "status" in data && data.status === "missing") {
+          setPreview({ key: requestKey, state: { kind: "missing", code: roomCode } });
           return;
         }
-        if (!isRoomPreview(data)) {
-          throw new Error("Invalid room preview response");
+        const room = parseJoinRoomPreview(data, roomCode);
+        if (!room) throw new Error("Invalid room preview");
+        setPreview({ key: requestKey, state: { kind: "room", room } });
+      } catch {
+        if (!controller.signal.aborted) {
+          setPreview({ key: requestKey, state: { kind: "network_error", code: roomCode } });
         }
-
-        setPreviewState({ kind: "room", room: data });
-      } catch (loadError) {
-        if (controller.signal.aborted) {
-          return;
-        }
-        console.error("Room preview request failed", loadError);
-        setPreviewState({ kind: "network_error", code: roomCode });
+      } finally {
+        finishRequest();
       }
     }
 
-    void loadPreview();
+    function recheckPreview() {
+      if (!canRefresh()) {
+        cancelPreview();
+        return;
+      }
+      if (inFlight) return;
+      const delay = Math.max(0, lastRequestAt + JOIN_PREVIEW_FOCUS_THROTTLE_MS - Date.now());
+      if (delay > 0) scheduleRefresh(delay);
+      else void loadPreview();
+    }
 
+    document.addEventListener("visibilitychange", recheckPreview);
+    window.addEventListener("focus", recheckPreview);
+    window.addEventListener("online", recheckPreview);
+    window.addEventListener("offline", recheckPreview);
+    void loadPreview();
     return () => {
-      controller.abort();
+      disposed = true;
+      cancelPreview();
+      document.removeEventListener("visibilitychange", recheckPreview);
+      window.removeEventListener("focus", recheckPreview);
+      window.removeEventListener("online", recheckPreview);
+      window.removeEventListener("offline", recheckPreview);
     };
-  }, [previewAttempt, roomCode]);
+  }, [requestKey, roomCode, viewerId]);
 
   function handleCodeChange(next: string) {
-    setRoomCode(normalizeRoomCodeInput(next));
-    setPreviewState({ kind: "idle" });
-    if (error) {
-      setError("");
-    }
-  }
-
-  function submit(action: "create" | "join") {
-    if (action === "join") {
-      const validationError = getRoomCodeError(roomCode);
-      if (validationError) {
-        setError(validationError);
-        return;
-      }
-      if (!roomAcceptsEntry) {
-        setError(joinAvailabilityError(previewState));
-        return;
-      }
-    }
-
+    if (next === roomCode) return;
+    setRoomCode(next);
+    setPreview(null);
+    setSpectatorChoice(null);
     setError("");
-    if (action === "join") {
-      remember(roomCode);
-    }
-
-    startTransition(() => {
-      router.push(action === "create" ? createPath : playPath);
-    });
   }
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    submit("join");
+    if (isJoining || !session) return;
+    const validationError = getRoomCodeError(roomCode);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+    if (!roomAcceptsEntry || !previewRoom) return;
+    setError("");
+    remember(roomCode);
+    const params = new URLSearchParams({ mode: previewRoom.mode });
+    if (joinsAsSpectator) params.set("spectator", "1");
+    startTransition(() => router.push(`/play/${roomCode}?${params}`));
   }
 
-  if (isPending) {
+  if (isPending || !session) {
     return (
-      <section className="auth-entry-card join-entry-card join-entry-card--skeleton" data-faction={family} data-family={family}>
-        <span className="join-entry-mark" aria-hidden>
-          <LoaderCircle strokeWidth={1.8} className="spin" />
-        </span>
-        <p className="section-kicker join-entry-kicker">{copy.kicker}</p>
-        <h2>Проверяваме досието...</h2>
-        <p>След вход ще те върнем към поканата за тази стая.</p>
-      </section>
-    );
-  }
-
-  if (sessionError && !session) {
-    return (
-      <section className="auth-entry-card join-entry-card" data-faction={family} data-family={family}>
+      <section className="join-entry-card" data-family={effectiveFamily}>
         <header className="join-entry-hero">
-          <span className="join-entry-mark" aria-hidden>
-            <RefreshCw strokeWidth={1.8} />
-          </span>
-          <div>
-            <p className="section-kicker join-entry-kicker">{copy.kicker}</p>
-            <h2>Не успяхме да потвърдим сесията</h2>
-            <p>Провери връзката си и опитай отново, без да напускаш поканата.</p>
-          </div>
+          <p className="join-entry-kicker"><FamilyIcon aria-hidden strokeWidth={1.5} />{copy.name}</p>
+          <h1>{isPending ? copy.heading : sessionError ? "Не успяхме да потвърдим сесията" : "Сесията ти е приключила"}</h1>
+          {isPending ? (
+            <p role="status"><LoaderCircle className="spin" aria-hidden />Проверяваме сесията...</p>
+          ) : <p>{sessionError ? "Провери връзката и опитай отново." : "Влез отново, за да продължиш към стаята."}</p>}
         </header>
-        <div className="join-entry-actions">
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={() => void refreshSession({ fresh: true })}
-          >
-            <RefreshCw aria-hidden strokeWidth={1.8} />
-            Провери сесията отново
+        {!isPending && (sessionError ? (
+          <button type="button" className="btn btn-primary join-submit" onClick={() => void refreshSession({ fresh: true })}>
+            <RefreshCw aria-hidden />Провери сесията отново
           </button>
-        </div>
+        ) : (
+          <Link className="btn btn-primary join-submit" href={signInPath}><KeyRound aria-hidden />Влез отново</Link>
+        ))}
       </section>
     );
   }
-
-  if (!session) {
-    return (
-      <section className="auth-entry-card join-entry-card" data-faction={family} data-family={family}>
-        <header className="join-entry-hero">
-          <span className="join-entry-mark" aria-hidden>
-            <KeyRound strokeWidth={1.8} />
-          </span>
-          <div>
-            <p className="section-kicker join-entry-kicker">{copy.kicker}</p>
-            <h2>Сесията ти е приключила</h2>
-            <p>Влез отново и ще те върнем към поканата за тази стая.</p>
-          </div>
-        </header>
-        <div className="join-entry-actions">
-          <Link className="btn btn-primary" href={signInPath}>
-            <KeyRound aria-hidden strokeWidth={1.8} />
-            Влез отново
-          </Link>
-        </div>
-      </section>
-    );
-  }
-
-  const friendlyName = session.user.name?.trim() || "приятел";
-  const canSubmit = !isJoining && (!ROOM_CODE_REGEX.test(roomCode) || roomAcceptsEntry);
 
   return (
-    <section className="auth-entry-card join-entry-card" data-faction={family} data-family={family}>
-      <form className="join-entry-form" onSubmit={onSubmit} noValidate>
+    <section className="join-entry-card" data-family={effectiveFamily}>
+      {/* Firefox must not restore stale disabled/checked state over fresh eligibility. */}
+      <form className="join-entry-form" onSubmit={onSubmit} autoComplete="off" noValidate>
         <header className="join-entry-hero">
-          <span className="join-entry-mark" aria-hidden>
-            <FamilyIcon strokeWidth={1.8} />
-          </span>
-          <div>
-            <p className="section-kicker join-entry-kicker">{copy.kicker}</p>
-            <h2>{copy.greeting(friendlyName)}</h2>
-            <p>{copy.sub}</p>
-          </div>
+          <p className="join-entry-kicker"><FamilyIcon aria-hidden strokeWidth={1.5} />{copy.name}</p>
+          <h1>{copy.heading}</h1>
         </header>
 
-        {error ? (
-          <p id={errorId} className="join-entry-error" role="alert" aria-live="polite">
-            {error}
-          </p>
-        ) : null}
-
-        <div className="join-entry-code-panel" aria-busy={previewState.kind === "loading"}>
+        <div className="join-entry-code-panel">
           <div className="join-entry-code-field">
-            <span>
-              <KeyRound aria-hidden strokeWidth={1.8} />
-              {copy.codeLabel}
-            </span>
-            <JoinCodeSlots
-              value={roomCode}
-              onChange={handleCodeChange}
-              invalid={Boolean(error)}
-              {...(error ? { describedBy: errorId } : {})}
-              autoFocus={!initialCode}
-            />
-            <span className="join-codeslots-hint">
-              {ROOM_CODE_LENGTH} знака - главни латински букви без I и O, цифри 2-9 без 0 и 1
-            </span>
+            <span className="join-entry-label">Код на стаята</span>
+            <JoinCodeSlots value={roomCode} onChange={handleCodeChange} invalid={Boolean(error)} {...(error ? { describedBy: errorId } : {})} />
+            {error && <p id={errorId} className="join-entry-error" role="alert">{error}</p>}
           </div>
 
-          {recentRooms.length > 0 && !roomCode ? (
+          {recentRooms.length > 0 && !roomCode && (
             <div className="join-recent">
-              <span className="join-recent-label">Последни стаи:</span>
+              <span className="join-recent-label">Последни стаи</span>
               {recentRooms.map((room) => (
-                <button key={`${room.family}:${room.code}`} type="button" className="join-recent-chip" onClick={() => handleCodeChange(room.code)}>
-                  {room.code}
-                </button>
+                <button key={`${room.family}:${room.code}`} type="button" className="join-recent-chip" onClick={() => handleCodeChange(room.code)}>{room.code}</button>
               ))}
             </div>
-          ) : null}
+          )}
 
-          <RoomPreviewStatus
-            state={previewState}
-            onRetry={() => {
-              setError("");
-              setPreviewAttempt((attempt) => attempt + 1);
-            }}
-          />
-
-          <div className="join-spectator-row">
-            <button
-              type="button"
-              className="join-spectator-toggle"
-              data-active={joinsAsSpectator}
-              aria-pressed={joinsAsSpectator}
-              disabled={spectatorRequired}
-              onClick={() => setSpectator((value) => !value)}
-            >
-              <span className="join-spectator-dot" aria-hidden />
-              {joinsAsSpectator ? <Eye aria-hidden strokeWidth={1.8} /> : <Gamepad2 aria-hidden strokeWidth={1.8} />}
-              {joinsAsSpectator ? copy.spectatorOn : copy.spectatorOff}
-            </button>
-            <p className="join-spectator-hint">{copy.spectatorHint}</p>
+          <fieldset className="join-mode">
+            <legend>Влизаш като</legend>
+            <div className="join-mode-options">
+              <label>
+                <input type="radio" name={modeId} value="player" checked={!joinsAsSpectator} disabled={!canPlay} onChange={() => setSpectatorChoice({ key: choiceKey, value: false })} />
+                <span><Gamepad2 aria-hidden />Играч</span>
+              </label>
+              <label>
+                <input type="radio" name={modeId} value="spectator" checked={joinsAsSpectator} disabled={!canWatch} onChange={() => setSpectatorChoice({ key: choiceKey, value: true })} />
+                <span><Eye aria-hidden />Наблюдател</span>
+              </label>
+            </div>
+          </fieldset>
+          <div className="join-preview" aria-busy={previewState.kind === "loading"}>
+            <RoomPreviewStatus state={previewState} onRetry={() => setPreviewAttempt((attempt) => attempt + 1)} />
           </div>
         </div>
 
-        <div className="join-entry-actions" data-mode={hasInviteCode ? "invite" : "cold"}>
-          <button className="btn btn-primary" type="submit" disabled={!canSubmit}>
-            {isJoining ? <LoaderCircle className="spin" aria-hidden strokeWidth={1.8} /> : <Users aria-hidden strokeWidth={1.8} />}
-            {isJoining ? copy.submittingLabel : copy.submitLabel}
+        <div className="join-entry-actions">
+          <button className="btn btn-primary join-submit" type="submit" disabled={isJoining || (validCode && !roomAcceptsEntry)}>
+            {isJoining ? <LoaderCircle className="spin" aria-hidden /> : joinsAsSpectator ? <Eye aria-hidden /> : <ArrowRight aria-hidden />}
+            {isJoining ? "Влизаме..." : joinsAsSpectator ? "Наблюдавай" : "Влез в стаята"}
           </button>
-          {hasInviteCode ? (
-            <Link className="btn-ghost-link" href={createPath}>
-              {copy.createGhostLabel}
-            </Link>
-          ) : (
-            <Link className="btn btn-secondary" href={createPath}>
-              <Plus aria-hidden strokeWidth={1.8} />
-              {copy.createLabel}
-            </Link>
-          )}
+          <Link className="join-create-link" href={`${gameRoot}/create${spectatorChoice?.key === choiceKey && spectatorChoice.value ? "?spectator=1" : ""}`}><Plus aria-hidden />Създай стая</Link>
         </div>
       </form>
-
       <footer className="join-entry-footer">
-        <p className="join-entry-flavor">{copy.flavorFooter}</p>
-        <p className="join-entry-trust">
-          <Link href="/faq">Помощ</Link>
-          <span aria-hidden>·</span>
-          <Link href={`${gameRoot}/rules`}>Правила</Link>
-          <span aria-hidden>·</span>
-          Безплатно, без реклами, на български
-        </p>
+        <Link href="/faq">Помощ</Link>
+        {effectiveFamily && <Link href={`${gameRoot}/rules`}>Правила</Link>}
       </footer>
     </section>
   );
 }
 
 function RoomPreviewStatus({ state, onRetry }: { state: RoomPreviewState; onRetry: () => void }) {
-  if (state.kind === "idle") {
-    return null;
-  }
-  if (state.kind === "loading") {
-    return (
-      <p className="join-preview-loading" role="status" aria-live="polite">
-        Проверяваме стаята...
-      </p>
-    );
-  }
+  if (state.kind === "idle") return null;
+  if (state.kind === "loading") return <p className="join-preview-loading" role="status"><LoaderCircle className="spin" aria-hidden />Проверяваме стаята...</p>;
   if (state.kind === "missing") {
-    return (
-      <div className="join-preview-banner" data-status="missing" role="status" aria-live="polite">
-        <span className="join-preview-dot" aria-hidden />
-        <div className="join-preview-text">
-          <strong>Не открихме стая {state.code}.</strong> Провери кода или поискай нов.
-        </div>
-      </div>
-    );
+    return <p className="join-preview-banner" data-status="missing" role="status">Не открихме стая {state.code}. Провери кода или поискай нов.</p>;
   }
   if (state.kind === "network_error") {
     return (
-      <div className="join-preview-banner" data-status="network_error" role="status" aria-live="polite">
-        <span className="join-preview-dot" aria-hidden />
-        <div className="join-preview-text">
-          <strong>Не успяхме да проверим стаята.</strong> Провери връзката и опитай отново.
-        </div>
-        <button type="button" className="join-preview-retry" onClick={onRetry}>
-          <RefreshCw aria-hidden strokeWidth={1.8} />
-          Провери отново
-        </button>
+      <div className="join-preview-banner" data-status="network_error">
+        <p role="status">Не успяхме да проверим стаята.</p>
+        <button type="button" className="join-preview-retry" onClick={onRetry}><RefreshCw aria-hidden />Провери отново</button>
       </div>
     );
   }
-
-  return <RoomPreviewBanner preview={state.room} />;
-}
-
-function RoomPreviewBanner({ preview }: { preview: RoomPreview }) {
-  const full = preview.status === "lobby" && preview.capacity > 0 && preview.playerCount >= preview.capacity;
-
+  const room = state.room;
+  const detail = room.status === "finished" ? "Играта е приключила."
+    : !room.canJoinAsPlayer && !room.canSpectate ? "В момента няма свободни места."
+    : room.viewerMembership === "participant" && room.canJoinAsPlayer ? "Връщаш се на мястото си."
+    : room.viewerMembership === "spectator" && room.canSpectate ? "Връщаш се като наблюдател."
+    : room.status === "in_game" ? "Играта вече тече."
+    : !room.canJoinAsPlayer ? "Местата за игра са заети."
+    : `${room.playerCount} / ${room.capacity} ${room.playerCount === 1 ? "играч" : "играчи"}`;
   return (
-    <div className="join-preview-banner" data-status={full ? "full" : preview.status} role="status" aria-live="polite">
-      <span className="join-preview-dot" aria-hidden />
-      <div className="join-preview-text">
-        {full ? (
-          <>
-            <strong>Стая {preview.code}</strong> · местата за игра са заети. Влизаш като наблюдател.
-          </>
-        ) : preview.status === "lobby" ? (
-          <>
-            <strong>Стая {preview.code}</strong> · {preview.playerCount}/{preview.capacity} {playerCountLabel(preview.playerCount)} в лобито
-          </>
-        ) : preview.status === "in_game" ? (
-          <>
-            <strong>Стая {preview.code}</strong> · играта вече тече. Влизаш като наблюдател.
-          </>
-        ) : (
-          <>
-            <strong>Стая {preview.code}</strong> · приключила
-          </>
-        )}
-      </div>
+    <div className="join-preview-banner" data-status={room.status} role="status">
+      <strong>{room.mode === "mafia_sport" ? "Спортна Мафия" : FAMILY_COPY[room.family].name}</strong>
+      <p>{detail}</p>
     </div>
   );
 }
 
-function isMissingRoomPreview(value: unknown): value is { status: "missing" } {
-  return Boolean(value && typeof value === "object" && (value as { status?: unknown }).status === "missing");
-}
-
-function isRoomPreview(value: unknown): value is RoomPreview {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
+export function parseJoinRoomPreview(value: unknown, expectedCode: string): RoomPreview | null {
+  if (!value || typeof value !== "object") return null;
   const record = value as Record<string, unknown>;
-  return (
-    typeof record.code === "string" &&
-    (record.status === "lobby" || record.status === "in_game" || record.status === "finished") &&
-    typeof record.playerCount === "number" &&
-    typeof record.capacity === "number" &&
-    (record.family === "mafia" || record.family === "werewolves" || record.family === null)
-  );
-}
-
-function joinAvailabilityError(state: RoomPreviewState) {
-  if (state.kind === "loading" || state.kind === "idle") {
-    return "Изчакай да проверим стаята.";
-  }
-  if (state.kind === "missing") {
-    return "Тази стая не е налична.";
-  }
-  if (state.kind === "network_error") {
-    return "Провери връзката и опитай отново.";
-  }
-  return "Играта в тази стая е приключила.";
+  if (
+    typeof record.code !== "string" || record.code !== expectedCode || !ROOM_CODE_REGEX.test(record.code) ||
+    (record.status !== "lobby" && record.status !== "in_game" && record.status !== "finished") ||
+    typeof record.playerCount !== "number" || !Number.isSafeInteger(record.playerCount) || record.playerCount < 0 ||
+    typeof record.capacity !== "number" || !Number.isSafeInteger(record.capacity) || record.capacity <= 0 ||
+    (record.family !== "mafia" && record.family !== "werewolves") ||
+    (record.mode !== "mafia_free" && record.mode !== "mafia_sport" && record.mode !== "werewolves_classic") ||
+    getGameFamily(record.mode) !== record.family ||
+    (record.roomVisibility !== "private" && record.roomVisibility !== "public") ||
+    (record.viewerMembership !== "participant" && record.viewerMembership !== "spectator" && record.viewerMembership !== "none") ||
+    typeof record.canJoinAsPlayer !== "boolean" || typeof record.canSpectate !== "boolean"
+  ) return null;
+  return {
+    code: record.code, status: record.status, playerCount: record.playerCount, capacity: record.capacity,
+    family: record.family, mode: record.mode, roomVisibility: record.roomVisibility,
+    viewerMembership: record.viewerMembership, canJoinAsPlayer: record.canJoinAsPlayer, canSpectate: record.canSpectate,
+  };
 }
 
 function getRoomCodeError(code: string) {
-  if (!code) {
-    return "Въведи кода на стаята.";
-  }
-  if (code.length < ROOM_CODE_LENGTH) {
-    return `Кодът е ${ROOM_CODE_LENGTH} знака. Имаш ${code.length}.`;
-  }
-  if (!ROOM_CODE_REGEX.test(code)) {
-    return "Неправилен формат - само главни латински букви без I и O, и цифри 2-9 без 0 и 1.";
-  }
+  const length = code.replace(/\s/g, "").length;
+  if (!length) return "Въведи кода на стаята.";
+  if (length < ROOM_CODE_LENGTH) return `Кодът е ${ROOM_CODE_LENGTH} знака. Имаш ${length}.`;
+  if (!ROOM_CODE_REGEX.test(code)) return "Неправилен код. Използвай латински букви без I и O и цифри от 2 до 9.";
   return "";
-}
-
-function playerCountLabel(count: number) {
-  return count === 1 ? "играч" : "играчи";
 }

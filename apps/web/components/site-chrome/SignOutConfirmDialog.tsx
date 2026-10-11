@@ -3,7 +3,7 @@
 import { Dialog } from "@werewolf/ui";
 import { LogOut, X } from "lucide-react";
 
-export function SignOutConfirmDialog({
+export default function SignOutConfirmDialog({
   userName,
   pending,
   error,

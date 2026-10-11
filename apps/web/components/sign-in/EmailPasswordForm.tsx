@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, type KeyboardEvent, useEffect, useId, useRef, useState, useTransition } from "react";
+import { type FormEvent, type KeyboardEvent, type ReactNode, useEffect, useId, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
@@ -13,12 +13,24 @@ import { resolveWelcomeRedirect } from "./welcome-redirect";
 type Mode = "sign-in" | "sign-up";
 type ValidationField = "name" | "email" | "password" | null;
 
-export function EmailPasswordForm({ redirectTo }: { redirectTo: string }) {
+export function EmailPasswordForm({
+  redirectTo,
+  intro,
+  registrationIntro,
+  icons,
+  children,
+}: {
+  redirectTo: string;
+  intro?: ReactNode;
+  registrationIntro?: ReactNode;
+  icons?: { showPassword: ReactNode; hidePassword: ReactNode; submit: ReactNode };
+  children?: ReactNode;
+}) {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("sign-in");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [passwordVisible, setPasswordVisible] = useState(false);
   const [status, setStatus] = useState("");
   const [validationField, setValidationField] = useState<ValidationField>(null);
   const [isSubmitting, setSubmitting] = useState(false);
@@ -50,18 +62,23 @@ export function EmailPasswordForm({ redirectTo }: { redirectTo: string }) {
   }, [verification]);
 
   function selectMode(nextMode: Mode) {
+    if (isBusy) return;
+    if (nameRef.current) setName(nameRef.current.value);
     setMode(nextMode);
+    setPasswordVisible(false);
     setStatus("");
     setValidationField(null);
   }
 
   function handleTabKey(event: KeyboardEvent<HTMLDivElement>) {
-    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") {
+    if (isBusy || !["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) {
       return;
     }
 
     event.preventDefault();
-    const nextMode = mode === "sign-in" ? "sign-up" : "sign-in";
+    const nextMode = event.key === "Home" ? "sign-in"
+      : event.key === "End" ? "sign-up"
+        : mode === "sign-in" ? "sign-up" : "sign-in";
     selectMode(nextMode);
     (nextMode === "sign-in" ? signInTabRef : signUpTabRef).current?.focus();
   }
@@ -75,8 +92,14 @@ export function EmailPasswordForm({ redirectTo }: { redirectTo: string }) {
     setStatus("");
     setValidationField(null);
 
-    const nextEmail = email.trim();
-    const checkedName = validateDisplayName(name);
+    // The DOM owns editable values, including input before hydration and silent autofill.
+    const formData = new FormData(event.currentTarget);
+    const nextEmail = String(formData.get("email") ?? "").trim();
+    const nextName = String(formData.get("name") ?? "");
+    const password = String(formData.get("password") ?? "");
+    const checkedName = validateDisplayName(nextName);
+    setEmail(nextEmail);
+    if (mode === "sign-up") setName(nextName);
     if (mode === "sign-up" && !checkedName.ok) {
       setStatus(checkedName.error);
       setValidationField("name");
@@ -107,7 +130,7 @@ export function EmailPasswordForm({ redirectTo }: { redirectTo: string }) {
       const result = mode === "sign-in"
         ? await authClient.signIn.email({ email: nextEmail, password })
         : await authClient.signUp.email({
-          name: checkedName.ok ? checkedName.displayName : name,
+          name: checkedName.ok ? checkedName.displayName : nextName,
           email: nextEmail,
           password,
           callbackURL: verificationCallbackURL(redirectTo),
@@ -115,7 +138,6 @@ export function EmailPasswordForm({ redirectTo }: { redirectTo: string }) {
 
       if (result.error) {
         if (result.error.code === "EMAIL_NOT_VERIFIED") {
-          setPassword("");
           setVerification({ email: nextEmail, cooldown: 0 });
         } else {
           setStatus(mapAuthError(result.error, "Неуспешна заявка. Провери имейла и паролата."));
@@ -125,7 +147,6 @@ export function EmailPasswordForm({ redirectTo }: { redirectTo: string }) {
 
       if (mode === "sign-up" && !result.data?.token) {
         // BetterAuth intentionally returns the same pending result for an existing email.
-        setPassword("");
         setVerification({ email: nextEmail, cooldown: 60 });
         return;
       }
@@ -142,7 +163,7 @@ export function EmailPasswordForm({ redirectTo }: { redirectTo: string }) {
   if (verification) {
     return (
       <section className="email-verification-pending" aria-labelledby={panelId}>
-        <h2 id={panelId} ref={verificationHeadingRef} tabIndex={-1}>Провери имейла си</h2>
+        <h1 id={panelId} ref={verificationHeadingRef} tabIndex={-1}>Провери имейла си</h1>
         <p>Отвори линка в писмото, за да потвърдиш имейла и да продължиш.</p>
         <VerificationEmailRequest initialEmail={verification.email} redirectTo={redirectTo} initialCooldownSeconds={verification.cooldown} />
         <button type="button" className="btn btn-ghost" onClick={() => {
@@ -154,36 +175,29 @@ export function EmailPasswordForm({ redirectTo }: { redirectTo: string }) {
   }
 
   return (
-    <form className="email-form" onSubmit={submit} noValidate>
+    <form className="email-form" method="post" onSubmit={submit} noValidate>
+      <div className="email-form-intro">
+        <div aria-hidden={mode !== "sign-in"}>{intro}</div>
+        <div aria-hidden={mode !== "sign-up"}>{registrationIntro}</div>
+      </div>
       <div className="email-form-tabs" role="tablist" aria-label="Начин на вход" onKeyDown={handleTabKey}>
-        <button
-          ref={signInTabRef}
-          id={signInTabId}
-          type="button"
-          role="tab"
-          aria-selected={mode === "sign-in"}
-          aria-controls={panelId}
-          tabIndex={mode === "sign-in" ? 0 : -1}
-          className={mode === "sign-in" ? "is-active" : ""}
-          onClick={() => selectMode("sign-in")}
-          disabled={isBusy}
-        >
-          Имам досие
-        </button>
-        <button
-          ref={signUpTabRef}
-          id={signUpTabId}
-          type="button"
-          role="tab"
-          aria-selected={mode === "sign-up"}
-          aria-controls={panelId}
-          tabIndex={mode === "sign-up" ? 0 : -1}
-          className={mode === "sign-up" ? "is-active" : ""}
-          onClick={() => selectMode("sign-up")}
-          disabled={isBusy}
-        >
-          Ново досие
-        </button>
+        {(["sign-in", "sign-up"] as const).map((tab) => (
+          <button
+            key={tab}
+            ref={tab === "sign-in" ? signInTabRef : signUpTabRef}
+            id={tab === "sign-in" ? signInTabId : signUpTabId}
+            type="button"
+            role="tab"
+            aria-selected={mode === tab}
+            aria-controls={panelId}
+            tabIndex={mode === tab ? 0 : -1}
+            className={mode === tab ? "is-active" : ""}
+            onClick={() => selectMode(tab)}
+            disabled={isBusy}
+          >
+            {tab === "sign-in" ? "Вход" : "Регистрация"}
+          </button>
+        ))}
       </div>
 
       <div
@@ -192,11 +206,12 @@ export function EmailPasswordForm({ redirectTo }: { redirectTo: string }) {
         role="tabpanel"
         aria-labelledby={mode === "sign-in" ? signInTabId : signUpTabId}
       >
+        <fieldset className="sign-in-oauth" disabled={isBusy} aria-label="Вход с Google или Discord">{children}</fieldset>
+        <div className="sign-in-divider" role="separator" aria-label="или с имейл"><span>или с имейл</span></div>
         {mode === "sign-up" ? (
           <label htmlFor={nameId}>
             <span>Име на масата</span>
-            <input ref={nameRef} id={nameId} value={name} onChange={(event) => {
-              setName(event.target.value);
+            <input ref={nameRef} id={nameId} name="name" defaultValue={name} onChange={() => {
               if (validationField === "name") setValidationField(null);
             }} placeholder="Например: Мила" autoComplete="name" required maxLength={MAX_DISPLAY_NAME_LENGTH}
               aria-invalid={validationField === "name"}
@@ -209,10 +224,10 @@ export function EmailPasswordForm({ redirectTo }: { redirectTo: string }) {
           <input
             ref={emailRef}
             id={emailId}
+            name="email"
             type="email"
-            value={email}
-            onChange={(event) => {
-              setEmail(event.target.value);
+            defaultValue={email}
+            onChange={() => {
               if (validationField === "email") setValidationField(null);
             }}
             placeholder="ime@example.bg"
@@ -223,31 +238,40 @@ export function EmailPasswordForm({ redirectTo }: { redirectTo: string }) {
           />
         </label>
 
-        <label htmlFor={passwordId}>
-          <span>Парола</span>
-          <input
-            ref={passwordRef}
-            id={passwordId}
-            type="password"
-            value={password}
-            onChange={(event) => {
-              setPassword(event.target.value);
-              if (validationField === "password") setValidationField(null);
-            }}
-            placeholder="Поне 8 символа"
-            minLength={8}
-            autoComplete={mode === "sign-in" ? "current-password" : "new-password"}
-            aria-invalid={validationField === "password"}
-            aria-describedby={status && validationField === "password" ? statusId : undefined}
-            required
-          />
-        </label>
-
-        {mode === "sign-in" ? (
-          <Link href={authRedirectURL("/forgot-password", redirectTo)} className="email-form-help">
-            Забравена парола?
-          </Link>
-        ) : null}
+        <div className="email-password-field">
+          <div className="email-password-label">
+            <label htmlFor={passwordId}>Парола</label>
+            {mode === "sign-in" ? (
+              <Link href={authRedirectURL("/forgot-password", redirectTo)} className="email-form-help">
+                Забравена парола?
+              </Link>
+            ) : null}
+          </div>
+          <div className="email-password-input">
+            <input
+              ref={passwordRef}
+              id={passwordId}
+              name="password"
+              type={passwordVisible ? "text" : "password"}
+              onChange={() => {
+                if (validationField === "password") setValidationField(null);
+              }}
+              placeholder={mode === "sign-up" ? "Поне 8 символа" : "Твоята парола"}
+              minLength={8}
+              autoComplete={mode === "sign-in" ? "current-password" : "new-password"}
+              aria-invalid={validationField === "password"}
+              aria-describedby={status && validationField === "password" ? statusId : undefined}
+              required
+            />
+            <button type="button" className="email-password-toggle"
+              aria-label={passwordVisible ? "Скрий паролата" : "Покажи паролата"}
+              title={passwordVisible ? "Скрий паролата" : "Покажи паролата"}
+              aria-controls={passwordId}
+              onClick={() => setPasswordVisible((visible) => !visible)}>
+              {passwordVisible ? icons?.hidePassword : icons?.showPassword}
+            </button>
+          </div>
+        </div>
 
         {status ? (
           <p id={statusId} role="alert" className="email-form-status">
@@ -256,7 +280,8 @@ export function EmailPasswordForm({ redirectTo }: { redirectTo: string }) {
         ) : null}
 
         <button className="btn btn-primary email-form-submit" type="submit" disabled={isBusy} aria-busy={isBusy}>
-          {isBusy ? (mode === "sign-in" ? "Влизаме..." : "Създаваме досието...") : mode === "sign-in" ? "Влез" : "Създай досие"}
+          <span>{isBusy ? (mode === "sign-in" ? "Влизаме..." : "Създаваме профила...") : mode === "sign-in" ? "Влез" : "Създай профил"}</span>
+          {icons?.submit}
         </button>
       </div>
     </form>

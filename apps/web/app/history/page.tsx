@@ -1,17 +1,15 @@
 import type { Metadata } from "next";
 import { cacheLife, cacheTag } from "next/cache";
 import { Suspense } from "react";
-import { createDatabase, getPublicGameTimelinesBatch, getRecentEndedGameHistory } from "@werewolf/database";
+import { createDatabase, getPublicGameArchive, getPublicGameTimelinesBatch } from "@werewolf/database";
 import { safeMonitoringErrorMetadata, type GameMode } from "@werewolf/shared";
 import { JsonLd } from "@/components/JsonLd";
-import { EvidenceWall } from "@/components/history/EvidenceWall";
-import { EvidenceWallSkeleton } from "@/components/skeleton";
+import { ArchiveHeader, ArchiveLoading, EvidenceWall } from "@/components/history/EvidenceWall";
 import type { HistoryGameView, HistoryTimelineEventView } from "@/lib/history-highlights";
 import { publicGameReference } from "@/lib/game-reference";
 import { absoluteUrl, routeMetadata } from "@/lib/seo";
-import "@/components/history/LegacyHistory.module.css";
-
-const HISTORY_CASE_LIMIT = 20;
+import { ARCHIVE_PAGE_SIZE, firstSearchValue, parseArchiveSelection, type ArchiveSelection } from "@/lib/history-archive";
+import styles from "@/components/history/Archive.module.css";
 
 export const metadata: Metadata = routeMetadata({
   title: "История — архивът на масата",
@@ -35,14 +33,15 @@ const historyJsonLd = {
 };
 
 type HistoryPageProps = {
-  searchParams?: Promise<{ visualHistory?: string | string[] }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
 export default function HistoryPage({ searchParams }: HistoryPageProps) {
   return (
-    <main className="shell history-shell evidence-shell">
+    <main className={`shell ${styles.archive}`}>
       <JsonLd data={historyJsonLd} />
-      <Suspense fallback={<EvidenceWallSkeleton />}>
+      <ArchiveHeader />
+      <Suspense fallback={<ArchiveLoading />}>
         <HistoryRouteContent searchParams={searchParams} />
       </Suspense>
     </main>
@@ -54,32 +53,33 @@ async function HistoryRouteContent({
 }: {
   searchParams: HistoryPageProps["searchParams"];
 }) {
-  const visualHistory = firstSearchValue((await searchParams)?.visualHistory);
-  return <HistoryContent visualHistory={visualHistory} />;
-}
-
-async function HistoryContent({ visualHistory }: { visualHistory: string | undefined }) {
-  const result = await loadHistory(visualHistory);
-  return <EvidenceWall games={result.games} status={result.status} />;
+  const params = await searchParams;
+  const selection = parseArchiveSelection(params);
+  const visualHistory = process.env.NODE_ENV !== "production" ? firstSearchValue(params?.visualHistory) : undefined;
+  const result = await loadHistory(selection, visualHistory);
+  return <EvidenceWall {...result} selection={selection} visualHistory={visualHistory} />;
 }
 
 type HistoryLoadResult =
-  | { status: "ready"; games: HistoryGameView[] }
+  | { status: "ready"; games: HistoryGameView[]; hasOlder: boolean; hasNewer: boolean }
   | { status: "unavailable"; games: [] };
 
-async function loadHistory(visualHistory?: string): Promise<HistoryLoadResult> {
+async function loadHistory(selection: ArchiveSelection, visualHistory?: string): Promise<HistoryLoadResult> {
   if (process.env.NODE_ENV !== "production") {
     if (visualHistory === "empty") {
-      return { status: "ready", games: [] };
+      return { status: "ready", games: [], hasOlder: false, hasNewer: false };
     }
-    if (visualHistory === "fixture") {
-      return { status: "ready", games: fixtureHistory() };
+    if (visualHistory === "fixture" || visualHistory === "paginated") {
+      return fixtureArchive(selection, visualHistory === "paginated" ? 36 : 8);
+    }
+    if (visualHistory === "unavailable") {
+      return { status: "unavailable", games: [] };
     }
     if (process.env.HISTORY_EVIDENCE_FIXTURE === "empty") {
-      return { status: "ready", games: [] };
+      return { status: "ready", games: [], hasOlder: false, hasNewer: false };
     }
     if (process.env.HISTORY_EVIDENCE_FIXTURE === "1") {
-      return { status: "ready", games: fixtureHistory() };
+      return fixtureArchive(selection, 8);
     }
   }
 
@@ -88,30 +88,31 @@ async function loadHistory(visualHistory?: string): Promise<HistoryLoadResult> {
   }
 
   try {
-    return { status: "ready", games: await loadCachedPublicHistory() };
+    return { status: "ready", ...await loadCachedPublicHistory(selection) };
   } catch (error) {
     console.error("[history]", safeMonitoringErrorMetadata(error));
     return { status: "unavailable", games: [] };
   }
 }
 
-async function loadCachedPublicHistory(): Promise<HistoryGameView[]> {
+async function loadCachedPublicHistory(selection: ArchiveSelection): Promise<{ games: HistoryGameView[]; hasOlder: boolean; hasNewer: boolean }> {
   "use cache";
   cacheLife({ stale: 30, revalidate: 60, expire: 3_600 });
   cacheTag("public-game-history");
 
   const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) return [];
+  if (!databaseUrl) throw new Error("History database is unavailable");
 
   const db = createDatabase(databaseUrl);
-  const endedGames = await getRecentEndedGameHistory(db, HISTORY_CASE_LIMIT);
+  const page = await getPublicGameArchive(db, { ...selection, limit: ARCHIVE_PAGE_SIZE });
+  const endedGames = page.games;
   const timelinesMap = await getPublicGameTimelinesBatch(
     db,
     endedGames.map((game) => game.id),
     6,
   );
 
-  return endedGames.map((game) => ({
+  const games = endedGames.map((game) => ({
     id: game.id,
     code: publicGameReference(game.id),
     config: game.config,
@@ -123,10 +124,7 @@ async function loadCachedPublicHistory(): Promise<HistoryGameView[]> {
     mode: modeFromConfig(game.config),
     timeline: (timelinesMap.get(game.id) ?? []).map(serializeTimelineEvent),
   }));
-}
-
-function firstSearchValue(value: string | string[] | undefined) {
-  return Array.isArray(value) ? value[0] : value;
+  return { games, hasOlder: page.hasOlder, hasNewer: page.hasNewer };
 }
 
 function serializeTimelineEvent(event: {
@@ -156,7 +154,7 @@ function modeFromConfig(config: unknown): GameMode {
   return "werewolves_classic";
 }
 
-function fixtureHistory(): HistoryGameView[] {
+function fixtureHistory(count = 8): HistoryGameView[] {
   const now = new Date("2026-05-15T20:30:00.000Z");
   const winners = ["village", "mafia", "werewolves", "lovers", "vampires", "draw", "maniac", "village"];
   const modes: GameMode[] = [
@@ -170,17 +168,19 @@ function fixtureHistory(): HistoryGameView[] {
     "werewolves_classic",
   ];
 
-  return modes.map((mode, index) => {
+  return Array.from({ length: count }, (_, index) => {
+    const id = `00000000-0000-4000-8000-${String(count - index).padStart(12, "0")}`;
+    const mode = modes[index % modes.length]!;
     const endedAt = new Date(now.getTime() - index * 1000 * 60 * 60 * 18);
     const startedAt = new Date(endedAt.getTime() - 1000 * 60 * (42 + index * 3));
     const round = 3 + (index % 4);
 
     return {
-      id: `fixture-${index + 1}`,
-      code: String(42 - index).padStart(3, "0"),
+      id,
+      code: publicGameReference(id),
       config: { mode, playerCount: mode === "mafia_sport" ? 10 : 12 + (index % 5) },
       status: "ended",
-      winnerTeam: winners[index] ?? "village",
+      winnerTeam: winners[index % winners.length] ?? "village",
       startedAt: startedAt.toISOString(),
       endedAt: endedAt.toISOString(),
       eventCount: 18 + index * 5,
@@ -192,6 +192,19 @@ function fixtureHistory(): HistoryGameView[] {
       ],
     };
   });
+}
+
+function fixtureArchive(selection: ArchiveSelection, count: number): HistoryLoadResult {
+  const games = fixtureHistory(count).filter((game) =>
+    (selection.family === "all" || (selection.family === "werewolves" ? game.mode === "werewolves_classic" : game.mode !== "werewolves_classic"))
+    && (selection.outcome === "all" || game.winnerTeam === (selection.outcome === "unknown" ? null : selection.outcome)),
+  );
+  const cursorIndex = games.findIndex((game) => game.id === (selection.before ?? selection.after));
+  if ((selection.before || selection.after) && cursorIndex < 0) return { status: "ready", games: [], hasOlder: false, hasNewer: false };
+  const end = selection.after ? cursorIndex : games.length;
+  const start = selection.after ? Math.max(0, end - ARCHIVE_PAGE_SIZE) : selection.before ? cursorIndex + 1 : 0;
+  const page = games.slice(start, Math.min(end, start + ARCHIVE_PAGE_SIZE));
+  return { status: "ready", games: page, hasOlder: start + page.length < games.length, hasNewer: start > 0 };
 }
 
 function fixtureEvent(index: number, offset: number, round: number, type: string, createdAt: Date): HistoryTimelineEventView {

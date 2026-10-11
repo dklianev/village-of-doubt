@@ -171,6 +171,10 @@ export class RoomChatRouter {
     if (channel !== "mafia" && channel !== "werewolves" && channel !== "vampires") {
       return [];
     }
+    const { phase } = this.context.getState();
+    if (phase !== "first_night" && phase !== "night") {
+      return [];
+    }
     if (!privatePlayer.role || !privatePlayer.alive) {
       return [];
     }

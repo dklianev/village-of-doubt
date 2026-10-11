@@ -86,8 +86,10 @@ for (const viewport of [
 
 test("tutorial puts the lesson before secondary mobile chrome", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(() => localStorage.setItem("cookie-consent", "1"));
   await page.goto("/tutorial?step=1", { waitUntil: "domcontentloaded" });
   await page.waitForLoadState("networkidle").catch(() => {});
+  await page.evaluate(() => document.fonts.ready);
 
   const progress = page.locator(".tutorial-progress");
   const stage = page.locator(".tutorial-slide-stage");
@@ -103,22 +105,88 @@ test("tutorial puts the lesson before secondary mobile chrome", async ({ page })
   expect(progressBox).not.toBeNull();
   expect(stageBox).not.toBeNull();
   expect(navigationBox).not.toBeNull();
-  expect(progressBox!.height).toBeLessThanOrEqual(72);
+  // Phones jump between the six scenes with one compact picker instead of six cramped tabs.
+  const scenePicker = progress.getByRole("combobox", { name: "Сцена" });
+  await expect(scenePicker.locator("option")).toHaveCount(6);
+  const pickerBox = (await scenePicker.boundingBox())!;
+  const chooseGame = progress.getByRole("button", { name: "Избери игра", exact: true });
+  const chooseBox = (await chooseGame.boundingBox())!;
+  // The picker/skip row keeps real touch targets and fits without hiding the lesson.
+  for (const box of [pickerBox, chooseBox]) {
+    expect(box.width).toBeGreaterThanOrEqual(44);
+    expect(box.height).toBeGreaterThanOrEqual(44);
+    expect(box.x).toBeGreaterThanOrEqual(progressBox!.x - 1);
+    expect(box.x + box.width).toBeLessThanOrEqual(progressBox!.x + progressBox!.width + 1);
+    expect(box.y + box.height).toBeLessThanOrEqual(progressBox!.y + progressBox!.height);
+  }
+  expect(progressBox!.y + progressBox!.height).toBeLessThanOrEqual(stageBox!.y);
   expect(stageBox!.y).toBeLessThanOrEqual(230);
-  expect(navigationBox!.height).toBeLessThanOrEqual(72);
-  await expect(page.getByRole("link", { name: "Продължи към игра" })).toHaveCount(0);
+  expect(await page.evaluate(() => scrollY)).toBe(0);
+  await expect(stage.getByRole("heading", { level: 1 })).toBeInViewport({ ratio: 1 });
+  await expect(stage.locator(".tutorial-slide-body p").first()).toBeInViewport({ ratio: 1 });
+  expect(stageBox!.y + stageBox!.height).toBeLessThanOrEqual(navigationBox!.y);
+  const navButtons = navigation.getByRole("button");
+  await expect(navButtons).toHaveCount(2);
+  const navBoxes = await navButtons.evaluateAll((elements) => elements.map((element) => element.getBoundingClientRect().toJSON()));
+  for (const box of navBoxes) {
+    expect(box.width).toBeGreaterThanOrEqual(44);
+    expect(box.height).toBeGreaterThanOrEqual(44);
+    expect(box.y).toBe(navBoxes[0]!.y);
+    expect(box.y).toBeGreaterThanOrEqual(navigationBox!.y);
+    expect(box.bottom).toBeLessThanOrEqual(navigationBox!.y + navigationBox!.height);
+  }
+  for (const region of [progress, navigation]) {
+    expect(await region.evaluate((element) => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await expect(stage.getByRole("link", { name: /Създай стая/ })).toHaveCount(0);
+  await expect(navigation.getByRole("link")).toHaveCount(0);
+  await scenePicker.selectOption("3");
+  await expect(navigation).toContainText("Сцена 3 от 6");
+  await chooseGame.click();
+  await expect(stage).toHaveAttribute("data-tutorial-scene", "final");
+  await expect(stage.getByRole("link", { name: /Създай стая/ })).toBeVisible();
 });
 
-test("tutorial offers the game handoff on the final scene", async ({ page }) => {
+test("tutorial ends with a real handoff for each game", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/tutorial?step=6", { waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("link", { name: "Продължи към игра" })).toBeVisible();
+  const stage = page.locator(".tutorial-slide-stage");
+  const game = page.getByRole("combobox", { name: "Игра" });
+  for (const [mode, join, create] of [
+    ["werewolves_classic", "/werewolf/join", "/werewolf/create"],
+    ["mafia_free", "/mafia/join", "/mafia/create"],
+    ["mafia_sport", "/mafia/join", "/mafia/create?mode=mafia_sport"],
+  ] as const) {
+    await game.selectOption(mode);
+    for (const [name, href] of [[/Имам код/, join], [/Създай стая/, create]] as const) {
+      const action = stage.getByRole("link", { name });
+      await expect(action).toBeVisible();
+      await expect(action).toHaveAttribute("href", href);
+      const box = (await action.boundingBox())!;
+      expect(box.width).toBeGreaterThanOrEqual(44);
+      expect(box.height).toBeGreaterThanOrEqual(44);
+    }
+  }
+  await expect(page.locator(".tutorial-nav").getByRole("link")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Следваща сцена" })).toHaveCount(0);
+});
+
+test("tutorial preserves an explicit final-scene redirect", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const destination = "/mafia/join/ABC123?from=friend#invite";
+  await page.goto(`/tutorial?step=6&redirect=${encodeURIComponent(destination)}`, { waitUntil: "domcontentloaded" });
+  // An invitation keeps its exact destination in both the scene and the progress skip.
+  const continueLink = page.getByRole("link", { name: "Продължи към поканата", exact: true });
+  await expect(continueLink).toBeVisible();
+  await expect(continueLink).toHaveAttribute("href", destination);
+  await expect(page.locator(".tutorial-progress").getByRole("link", { name: "Към поканата", exact: true })).toHaveAttribute("href", destination);
 });
 
 test("friends brings the working ledger into the first mobile viewport", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/friends?visualAuth=1", { waitUntil: "domcontentloaded" });
-  const board = page.locator(".friends-board");
+  const board = page.getByRole("region", { name: "Твоята компания", exact: true });
   await expect(board).toBeVisible();
   const box = await board.boundingBox();
   expect(box).not.toBeNull();
@@ -128,7 +196,7 @@ test("friends brings the working ledger into the first mobile viewport", async (
 test("achievements reveals progress before the mobile fold", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/achievements?visualAuth=1&visualAchievements=fixture", { waitUntil: "domcontentloaded" });
-  const progress = page.locator(".achievement-wreath");
+  const progress = page.locator(".achievement-progress");
   await expect(progress).toBeVisible();
   const box = await progress.boundingBox();
   expect(box).not.toBeNull();
@@ -164,14 +232,17 @@ test("compact chrome keeps the complete Senkite wordmark and full touch targets"
 test("audited mobile controls keep a 44px interaction target", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
 
+  // A healthy site sends /offline straight home; keep the health check down to audit the recovery control.
+  await page.route("**/api/health", (route) => route.fulfill({ status: 503, json: { status: "unavailable" } }));
   await page.goto("/offline", { waitUntil: "domcontentloaded" });
-  const retry = await page.getByRole("button", { name: "Опитай отново" }).boundingBox();
+  const retry = await page.getByRole("button", { name: "Провери връзката" }).boundingBox();
   expect(retry).not.toBeNull();
   expect(retry!.width).toBeGreaterThanOrEqual(44);
   expect(retry!.height).toBeGreaterThanOrEqual(44);
 
   await page.goto("/faq", { waitUntil: "domcontentloaded" });
-  const faqFilter = await page.getByRole("button", { name: "Всички", exact: true }).boundingBox();
+  // Phones filter the FAQ with one topic picker; the desktop chips are not rendered at this width.
+  const faqFilter = await page.getByRole("combobox", { name: "Тема", exact: true }).boundingBox();
   expect(faqFilter).not.toBeNull();
   expect(faqFilter!.height).toBeGreaterThanOrEqual(44);
 
@@ -254,7 +325,7 @@ for (const family of ["werewolves", "mafia"] as const) {
               personal: rect(document.querySelector(".play-personal-area")),
               stage: rect(document.querySelector(".play-stage")),
               core: rect(document.querySelector("[data-table-core]")),
-              counts: rect(document.querySelector("[data-table-core] > span:last-child")),
+              counts: rect(document.querySelector("[data-stage-counts]")),
               dockTitle: rect(document.querySelector(".play-action-dock-head h2")),
               dockToggle: rect(document.querySelector(".play-action-dock-toggle")),
               seats: [...document.querySelectorAll("[data-seat-token]")].map((element) => rect(element)!),
@@ -318,7 +389,7 @@ test("compact system and account states stay inside 320px without splitting norm
   await page.setViewportSize({ width: 320, height: 568 });
 
   await page.goto("/missing-audit-route", { waitUntil: "domcontentloaded" });
-  const notFound = page.locator(".not-found-card");
+  const notFound = page.getByRole("region", { name: "Тази страница липсва." });
   await expect(notFound).toBeVisible();
   const notFoundBox = await notFound.boundingBox();
   expect(notFoundBox).not.toBeNull();

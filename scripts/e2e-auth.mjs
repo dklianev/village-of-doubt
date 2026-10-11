@@ -108,7 +108,7 @@ async function authGateRedirect(page) {
 
 async function signInSurface(page) {
   await page.goto(`${baseUrl}/sign-in`, { waitUntil: "domcontentloaded" });
-  await page.getByRole("heading", { name: "Покажи се на масата" }).waitFor();
+  await page.getByRole("heading", { name: "Влез в Сенките" }).waitFor();
   await page.getByRole("button", { name: "Продължи с Google" }).waitFor();
   await page.getByRole("button", { name: "Продължи с Discord" }).waitFor();
 }
@@ -116,11 +116,11 @@ async function signInSurface(page) {
 async function emailRegistration(page) {
   const email = `launch-${Date.now()}@local.invalid`;
   await page.goto(`${baseUrl}/sign-in`, { waitUntil: "domcontentloaded" });
-  await page.getByRole("tab", { name: "Ново досие" }).click();
+  await page.getByRole("tab", { name: "Регистрация" }).click();
   await page.getByLabel("Име на масата").fill("Тест Играч");
   await page.getByRole("textbox", { name: "Имейл" }).fill(email);
   await page.getByLabel("Парола", { exact: true }).fill("Test1234!");
-  await page.getByRole("button", { name: "Създай досие" }).click();
+  await page.getByRole("button", { name: "Създай профил" }).click();
   await verifyEmailFromOutbox(page, email);
   await page.locator(".auth-chip-avatar").waitFor({ timeout: 10_000 });
 }
@@ -140,7 +140,7 @@ async function passwordReset(page) {
   await page.getByRole("textbox", { name: "Имейл" }).fill(email);
   await page.getByRole("button", { name: "Изпрати линк" }).click();
   await page.getByRole("status").filter({
-    hasText: "Ако има досие с този имейл, ще получиш линк за нова парола.",
+    hasText: "Ако има профил с този имейл, ще получиш линк за нова парола.",
   }).waitFor();
 
   const message = await waitForEmail(email, "Нова парола");
@@ -149,6 +149,7 @@ async function passwordReset(page) {
   await page.getByLabel("Повтори").fill(newPassword);
   await page.getByRole("button", { name: "Запази паролата", exact: true }).click();
   await page.getByRole("status").filter({ hasText: "Паролата е сменена." }).waitFor();
+  await page.getByRole("link", { name: "Към входа", exact: true }).click();
   const resetSignInUrl = new URL("/sign-in", baseUrl);
   resetSignInUrl.searchParams.set("redirect", "/");
   await page.waitForURL(resetSignInUrl.href, { timeout: 10_000 });
@@ -172,11 +173,11 @@ async function authenticatedCreateReturn(page) {
   const email = `return-${Date.now()}@local.invalid`;
   await page.goto(`${baseUrl}/werewolf/create`, { waitUntil: "domcontentloaded" });
   await page.waitForURL(/\/sign-in\?redirect=/);
-  await page.getByRole("tab", { name: "Ново досие" }).click();
+  await page.getByRole("tab", { name: "Регистрация" }).click();
   await page.getByLabel("Име на масата").fill("Връщане");
   await page.getByRole("textbox", { name: "Имейл" }).fill(email);
   await page.getByLabel("Парола", { exact: true }).fill("Test1234!");
-  await page.getByRole("button", { name: "Създай досие" }).click();
+  await page.getByRole("button", { name: "Създай профил" }).click();
   await verifyEmailFromOutbox(page, email, "/werewolf/create");
   await page.locator("#create-quick-title").waitFor();
 }
@@ -184,13 +185,15 @@ async function authenticatedCreateReturn(page) {
 async function accountDeletion(page) {
   const email = `delete-${Date.now()}@local.invalid`;
   await page.goto(`${baseUrl}/sign-in`, { waitUntil: "domcontentloaded" });
-  await page.getByRole("tab", { name: "Ново досие" }).click();
+  await page.getByRole("tab", { name: "Регистрация" }).click();
   await page.getByLabel("Име на масата").fill("За Изтриване");
   await page.getByRole("textbox", { name: "Имейл" }).fill(email);
   await page.getByLabel("Парола", { exact: true }).fill("Test1234!");
-  await page.getByRole("button", { name: "Създай досие" }).click();
+  await page.getByRole("button", { name: "Създай профил" }).click();
   await verifyEmailFromOutbox(page, email);
   await page.goto(`${baseUrl}/account`, { waitUntil: "domcontentloaded" });
+  // Deletion lives in the account's "Данни и сигурност" section.
+  await page.getByRole("tab", { name: "Данни и сигурност" }).click();
   await page.getByRole("button", { name: "Изтрий моето досие" }).click();
   await page.getByRole("textbox", { name: "Напиши ИЗТРИЙ за потвърждение" }).fill("ИЗТРИЙ");
   await page.getByRole("button", { name: "Изтрий завинаги" }).click();
@@ -199,11 +202,11 @@ async function accountDeletion(page) {
 
 async function registerAndVerify(page, { email, name, password }) {
   await page.goto(`${baseUrl}/sign-in`, { waitUntil: "domcontentloaded" });
-  await page.getByRole("tab", { name: "Ново досие" }).click();
+  await page.getByRole("tab", { name: "Регистрация" }).click();
   await page.getByLabel("Име на масата").fill(name);
   await page.getByRole("textbox", { name: "Имейл" }).fill(email);
   await page.getByLabel("Парола", { exact: true }).fill(password);
-  await page.getByRole("button", { name: "Създай досие" }).click();
+  await page.getByRole("button", { name: "Създай профил" }).click();
   await verifyEmailFromOutbox(page, email);
 }
 
@@ -229,6 +232,7 @@ async function verifyEmailFromOutbox(page, email, redirectTo = "/") {
   const message = await waitForEmail(email);
   const verifyUrl = extractVerificationUrl(message.html);
   await page.goto(verifyUrl, { waitUntil: "domcontentloaded" });
+  await page.getByRole("link", { name: "Продължи", exact: true }).click();
   await skipWelcomeTutorial(page, baseUrl, redirectTo);
 }
 

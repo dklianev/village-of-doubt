@@ -1,16 +1,34 @@
 import { describe, expect, it } from "vitest";
-import { ROLE_DEFINITIONS } from "@werewolf/shared";
+import { evaluateWinCondition, ROLE_DEFINITIONS, type RoleCode } from "@werewolf/shared";
 import type { PublicPlayer } from "../types";
 import { nightActionHelpBg, nightInstructionBg, nightTargetHeadingBg, phaseGuideBg, roleWakeHint, winnerBg } from "../copy";
 import { formatPrivateResult, ROLE_GUIDE_BG } from "../private-copy";
 
 describe("nightTargetHeadingBg", () => {
   it.each([
+    ["healer", "Защита за Борис"],
     ["doctor", "Защита за Борис"],
+    ["bodyguard", "Защита за Борис"],
     ["priest", "Благословия за Борис"],
+    ["commissioner", "Проверка на Борис"],
+    ["detective", "Проверка на Борис"],
+    ["informant", "Проверка на Борис"],
+    ["don", "Проверка на Борис"],
     ["seer", "Проверка на Борис"],
+    ["oracle", "Проверка на Борис"],
+    ["investigator", "Проверка на Борис"],
     ["lawyer", "Алиби за Борис"],
+    ["medium", "Връзка с Борис"],
+    ["roleblocker", "Блокиране на Борис"],
+    ["witch", "Решение за Борис"],
+    ["stray_cat", "Избран дом: Борис"],
+    ["thief", "Кражба от Борис"],
+    ["cupid", "Първа връзка: Борис"],
+    ["lovers", "Първа връзка: Борис"],
+    ["blacksmith", "Първа цел: Борис"],
     ["werewolf", "Нощна цел: Борис"],
+    ["vampire", "Нощна цел: Борис"],
+    ["mafioso", "Нощна цел: Борис"],
   ] as const)("uses role-appropriate copy for %s", (role, expected) => {
     expect(nightTargetHeadingBg(role, "Борис")).toBe(expected);
   });
@@ -24,6 +42,55 @@ const anna: PublicPlayer = {
 };
 
 describe("truthful play guidance", () => {
+  it.each(["mafia_free", "mafia_sport"] as const)("inherits common guidance without losing %s overrides", (mode) => {
+    for (const phase of ["role_reveal", "nomination", "defense", "voting", "resolution"] as const) {
+      expect(phaseGuideBg(phase, mode).wakes).toBe(phaseGuideBg(phase, "werewolves_classic").wakes);
+    }
+    for (const phase of ["day_announcement", "resolution"] as const) {
+      expect(phaseGuideBg(phase, mode).body).toBe(phaseGuideBg(phase, "werewolves_classic").body);
+    }
+    expect(phaseGuideBg("role_reveal", mode).title).toBe("Виж тайно досието си");
+    expect(phaseGuideBg("nomination", mode).title).toBe(mode === "mafia_sport" ? "Преглед на номинациите" : "Обвинения");
+    expect(phaseGuideBg("day_announcement", mode).wakes).toBe("Градът се събужда.");
+  });
+
+  it("limits Sport Mafia nominations to the current speaker's daytime speech", () => {
+    const speech = phaseGuideBg("day_discussion", "mafia_sport");
+    expect(speech.title).toBe("Дневни речи");
+    expect(speech.body).toContain("Само текущият говорител може да номинира друг жив играч");
+    expect(speech.body).toContain("смени номинацията си");
+    expect(speech.wakes).toBe("Говори и номинира само текущият говорител.");
+
+    const review = phaseGuideBg("nomination", "mafia_sport");
+    expect(review.title).toBe("Преглед на номинациите");
+    expect(review.body).toContain("Номинациите от дневните речи са приключили");
+    expect(review.body).toContain("без номинирани денят завършва без гласуване");
+    expect(review.wakes).toBe("В тази фаза не се подават номинации.");
+  });
+
+  it.each(["mafia_free", "werewolves_classic"] as const)("does not promise Sport Mafia commands in %s", (mode) => {
+    expect(phaseGuideBg("day_discussion", mode).wakes).toBe("Всички живи играчи говорят.");
+    const nomination = phaseGuideBg("nomination", mode);
+    expect(nomination.body).toContain("само в Спортна Мафия, по време на дневните речи");
+    expect(nomination.wakes).toBe("В тази фаза не се подават номинации.");
+  });
+
+  it("limits Sport Mafia voting guidance to the eligible nominees", () => {
+    const { body } = phaseGuideBg("voting", "mafia_sport");
+    expect(body).toContain("гласува сред номинираните");
+    expect(body).toContain("При прегласуване изборът е само между останалите кандидати");
+    expect(phaseGuideBg("voting", "mafia_free").body).not.toContain("номинираните");
+  });
+
+  it("describes a single blessing with persistent protection from night deaths", () => {
+    const { summary } = ROLE_GUIDE_BG.priest!;
+    expect(summary).toContain("Веднъж благославяш");
+    expect(summary).toContain("от нощна смърт до края на играта");
+    expect(summary).toContain("не се изчерпва при атака");
+    expect(summary).not.toContain("първото убийство");
+    expect(nightActionHelpBg("priest")).toContain("защитата остава до края на играта");
+  });
+
   it("describes the canonical seer as a threat check, not an exact-role check", () => {
     expect(nightInstructionBg("seer")).toContain(ROLE_DEFINITIONS.seer.nameBg);
     expect(nightInstructionBg("seer")).toContain("заплаха");
@@ -64,6 +131,47 @@ describe("truthful play guidance", () => {
 
   it("does not offer a living Hunter a revenge shot", () => {
     expect(roleWakeHint("hunter", "hunter_revenge", anna)).not.toContain("избери");
+  });
+});
+
+describe("role goals", () => {
+  it.each(["civilian", "commissioner"] as const)("includes the optional Maniac in %s's town goal", (role) => {
+    expect(ROLE_GUIDE_BG[role]?.win).toBe("Елиминирайте Мафията и Маниака, ако участва");
+    expect(evaluateWinCondition([
+      { playerId: "town", role, alive: true },
+      { playerId: "mafia", role: "mafioso", alive: false },
+      { playerId: "killer", role: "maniac", alive: true },
+      { playerId: "doctor", role: "doctor", alive: true },
+    ]).winner).toBeNull();
+  });
+
+  it.each([
+    ["mafioso", "maniac", "Маниака", "mafia"],
+    ["don", "maniac", "Маниака", "mafia"],
+    ["werewolf", "vampire", "Вампирите", "werewolves"],
+    ["vampire", "werewolf", "Върколаците", "vampires"],
+  ] as const)("does not equate %s parity with victory while %s survives", (role, rival, rivalName, winner) => {
+    const goal = ROLE_GUIDE_BG[role]!.win;
+    expect(goal).toContain(`Елиминирайте ${rivalName}, ако участва`);
+    expect(goal).toContain("контрола над гласуването");
+    expect(goal).not.toContain("паритет");
+    const players = [
+      { playerId: "faction-1", role, alive: true },
+      { playerId: "faction-2", role, alive: true },
+      { playerId: "rival", role: rival, alive: true },
+      { playerId: "town", role: "ordinary_villager" as RoleCode, alive: true },
+    ];
+    expect(evaluateWinCondition(players).winner).toBeNull();
+    expect(evaluateWinCondition(players.map((player) => player.playerId === "rival" ? { ...player, alive: false } : player)).winner).toBe(winner);
+  });
+
+  it.each(["ordinary_villager", "seer", "witch", "healer", "priest", "hunter", "cupid", "little_girl"] as const)("gives %s a village goal rather than a tactical task", (role) => {
+    expect(ROLE_GUIDE_BG[role]?.win).toBe("Печелиш със селото след елиминиране на Върколаците и Вампирите");
+  });
+
+  it("keeps personal and changing-role goals distinct from faction goals", () => {
+    expect(ROLE_GUIDE_BG.jester?.win).toBe("Бъди изгонен през гласуване");
+    expect(ROLE_GUIDE_BG.thief?.win).toBe("След кражбата следваш целта на новата си роля");
   });
 });
 

@@ -36,10 +36,8 @@ export default async function LobbyCodePage({
   }
 
   return (
-    <main className="shell lobby-shell framed-shell">
-      <div className="framed-shell-inner">
-        <LobbyInviteClient code={normalizeRoomCode(code)} />
-      </div>
+    <main className="lobby-invitation-page">
+      <LobbyInviteClient code={normalizeRoomCode(code)} />
     </main>
   );
 }

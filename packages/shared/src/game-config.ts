@@ -1,5 +1,7 @@
 import { getRoleNameBg, isRoleAvailableInFamily, ROLE_DEFINITIONS, type RoleCode } from "./roles.js";
 import { getGameFamily, getGameModeNameBg } from "./game-metadata.js";
+import { NARRATOR_VOICES, type NarratorVoice } from "./narrator-voices.js";
+export { NARRATOR_VOICES, NARRATOR_VOICE_PROFILES, getNarratorArchetype, type NarratorVoice, type NarratorArchetype } from "./narrator-voices.js";
 
 export {
   GAME_MODE_DEFINITIONS,
@@ -30,7 +32,6 @@ export type MajorityMode = "simple" | "absolute";
 export type WerewolfVariant = "werewolves_vs_village" | "vampires_vs_village" | "three_teams";
 export type MayorMode = "secret_role" | "public_vote";
 export type CommissionerResultMode = "team_only" | "exact_role";
-export type NarratorVoice = "classic" | "old_villager" | "inspector" | "witch";
 
 export type RoleDistribution = Partial<Record<RoleCode, number>>;
 
@@ -59,6 +60,8 @@ export interface GameConfig {
   communicationMode: CommunicationMode;
   tempoProfile: TempoProfile;
   timers: PhaseTimers;
+  // Keep host intent separate from composition-enforced death reveal rules.
+  requestedRevealRolesOnDeath: boolean;
   revealRolesOnDeath: boolean;
   tieBreaker: TieBreaker;
   allowSkipVote: boolean;
@@ -146,7 +149,7 @@ export type RoleValidationIssue = {
   messageBg: string;
 };
 
-const DEFAULT_RULESET_VERSION = "bg-werewolf-mafia-2026-04-28-separated-games";
+const DEFAULT_RULESET_VERSION = "bg-werewolf-mafia-2026-09-27-hidden-jester";
 
 export const TEMPO_PRESETS: Record<TempoProfile, PhaseTimers> = {
   fast_online: {
@@ -286,7 +289,6 @@ const MAJORITY_MODES = ["simple", "absolute"] as const satisfies readonly Majori
 const WEREWOLF_VARIANTS = ["werewolves_vs_village", "vampires_vs_village", "three_teams"] as const satisfies readonly WerewolfVariant[];
 const MAYOR_MODES = ["secret_role", "public_vote"] as const satisfies readonly MayorMode[];
 const COMMISSIONER_RESULT_MODES = ["team_only", "exact_role"] as const satisfies readonly CommissionerResultMode[];
-const NARRATOR_VOICES = ["classic", "old_villager", "inspector", "witch"] as const satisfies readonly NarratorVoice[];
 const STRING_GAME_CONFIG_OPTIONS: readonly [keyof GameConfigOptions, readonly string[], string][] = [
   ["mode", GAME_MODES, "Невалиден режим на игра."],
   ["roomVisibility", ROOM_VISIBILITIES, "Невалидна видимост на стаята."],
@@ -771,6 +773,7 @@ export function createDefaultGameConfig(mode: GameMode, playerCount: number): Ga
     communicationMode: "built_in_chat",
     tempoProfile,
     timers: TEMPO_PRESETS[tempoProfile],
+    requestedRevealRolesOnDeath: true,
     revealRolesOnDeath: true,
     tieBreaker: family === "mafia" ? "revote" : "no_elimination",
     allowSkipVote: mode !== "mafia_sport",
@@ -823,6 +826,7 @@ export function createGameConfigFromOptions(rawOptions: GameConfigOptions = {}):
           })
         : config.roles;
   const loversEnabled = (roles.cupid ?? 0) > 0;
+  const requestedRevealRolesOnDeath = options.revealRolesOnDeath ?? config.requestedRevealRolesOnDeath;
 
   // Sanitization copies only known, defined options. Keep input-only controls
   // out of runtime state, then apply the mode- and composition-derived values.
@@ -840,6 +844,9 @@ export function createGameConfigFromOptions(rawOptions: GameConfigOptions = {}):
     timers,
     liveMode: tempoProfile === "live",
     loversEnabled,
+    requestedRevealRolesOnDeath,
+    // A missing death reveal must not identify the Jester by elimination.
+    revealRolesOnDeath: (roles.jester ?? 0) > 0 ? false : requestedRevealRolesOnDeath,
     allowSkipVote: mode === "mafia_sport" ? false : options.allowSkipVote ?? config.allowSkipVote,
     beginnerMode: options.beginnerMode ?? (rolePreset === "beginner"),
     advancedMode: options.advancedMode ?? (rolePreset === "advanced" || rolePreset === "wolves_vampires"),

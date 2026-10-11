@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { ShieldCheck } from "lucide-react";
 
 export function ReportHero() {
   return (
@@ -20,15 +21,14 @@ export function ReportHero() {
         <p className="report-hero-kicker">сигнал</p>
         <h1 className="report-hero-title">Подай сигнал</h1>
         <p className="report-hero-subtitle">
-          Неуместно поведение, спорно съдържание или нарушение на авторски права?
-          Разкажи ни какво се е случило, за да го проверим.
+          Разкажи ни за неуместно поведение, технически проблем или въпрос за твоите права.
         </p>
         <p className="report-hero-stat">
           <span className="report-hero-stat-icon" aria-hidden>
-            ⏱
+            <ShieldCheck size={18} />
           </span>
           <span>
-            Обикновено отговаряме в <strong>24-48 часа</strong>
+            Сигналът не се публикува.
           </span>
         </p>
       </div>

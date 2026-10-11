@@ -3,6 +3,8 @@ import { describe, expect, it, vi } from "vitest";
 import { FinalLandingCta, LandingExperience } from "@/components/landing-experience";
 
 vi.mock("@/components/landing/ModeChoiceCards", () => ({ ModeChoiceCards: () => null }));
+// Async server component (streams live table stats); covered by its own test.
+vi.mock("@/components/landing/HomeLiveSignal", () => ({ HomeLiveSignal: () => null }));
 
 describe("homepage ending", () => {
   it("renders the beta homepage without unavailable activity or invented statistics", () => {

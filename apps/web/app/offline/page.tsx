@@ -9,10 +9,8 @@ export const metadata: Metadata = {
 
 export default function OfflinePage() {
   return (
-    <main className="shell offline-shell framed-shell">
-      <div className="framed-shell-inner">
-        <OfflineClient />
-      </div>
+    <main className="shell offline-shell">
+      <OfflineClient />
     </main>
   );
 }

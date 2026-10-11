@@ -182,6 +182,10 @@ jobs:
       - name: Install Playwright Chromium
         run: pnpm exec playwright install chromium
 
+      - name: Install app visual browser engines
+        if: startsWith(matrix.suite, 'app-')
+        run: pnpm exec playwright install firefox webkit
+
       - name: Build app visual workspace dependencies
         if: matrix.suite != 'ui'
         run: >-

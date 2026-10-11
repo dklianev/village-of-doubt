@@ -43,7 +43,6 @@ export function ModeChoiceCards({ games, initialSession }: { games: readonly Mod
     <div className="game-choice-grid landing-split-grid mt-8">
       {games.map((game) => {
         const art = GAME_CHOICE_ART[game.id];
-        const prioritizeArt = game.id === "werewolf";
         const createHref = `${game.href}/create`;
         const primaryHref = session || sessionPending || sessionQuery.isError
           ? createHref
@@ -66,7 +65,7 @@ export function ModeChoiceCards({ games, initialSession }: { games: readonly Mod
                   width: 1536,
                   height: art.height,
                   loading: "lazy",
-                  fetchPriority: prioritizeArt ? "high" : "low",
+                  fetchPriority: "low",
                 });
                 return (
                   <picture key={theme} className={`game-choice-art game-choice-art--${theme}`} aria-hidden="true">

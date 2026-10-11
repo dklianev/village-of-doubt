@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
-import { chromium } from "playwright";
+import { chromium, firefox, webkit } from "playwright";
 import { assertFrontendCssNavigation } from "./frontend-css-navigation.mjs";
 
 const baseUrl = "http://127.0.0.1:47819";
@@ -8,20 +8,22 @@ const routes = ["/faq", "/werewolf/rules", "/mafia/rules"];
 let browser;
 
 before(async () => {
-  browser = await chromium.launch({
+  const name = process.env.FRONTEND_E2E_BROWSER ?? "chromium";
+  browser = await { chromium, firefox, webkit }[name].launch({
     headless: true,
-    ...(process.env.PLAYWRIGHT_CHANNEL ? { channel: process.env.PLAYWRIGHT_CHANNEL } : {}),
+    ...(name === "chromium" && process.env.PLAYWRIGHT_CHANNEL ? { channel: process.env.PLAYWRIGHT_CHANNEL } : {}),
   });
 });
 after(async () => { await browser?.close(); });
 
 for (const theme of ["light", "dark"]) {
-  for (const width of [390, 1440]) {
+  for (const width of [390, 800, 801, 1440]) {
     test(`direct and client CSS agree at ${width}px in ${theme}`, async (t) => {
       const page = await fixture(t, { width });
       const results = await assertFrontendCssNavigation(page, baseUrl, theme);
       assert.deepEqual(results.map((result) => result.route), routes);
-      assert.ok(results.every((result) => result.theme === theme && result.comparedElements >= 6));
+      assert.ok(results.every((result) => result.theme === theme && result.viewport.width === width));
+      assert.deepEqual(results.map((result) => result.comparedElements), [6, 7, 7]);
     });
   }
 }
@@ -36,6 +38,52 @@ for (const [name, mismatch] of [
     await assert.rejects(assertFrontendCssNavigation(page, baseUrl, "light"), /\/faq \(light\) CSS\/geometry mismatch/);
   });
 }
+
+for (const [width, selector] of [
+  [390, ".faq-category-mobile select"],
+  [800, ".faq-category-mobile select"],
+  [801, ".faq-hearth-filter"],
+  [1440, ".faq-hearth-filter"],
+]) {
+  for (const [name, declaration] of [
+    ["color", "color: rgb(192, 0, 0) !important;"],
+    ["geometry", "transform: translateX(7px);"],
+  ]) {
+    test(`rejects client-only FAQ category ${name} drift at ${width}px`, async (t) => {
+      const page = await fixture(t, { width, mismatch: `${selector} { ${declaration} }` });
+      await assert.rejects(assertFrontendCssNavigation(page, baseUrl, "light"), (error) => {
+        assert.equal(error.message.split("\n")[0], `/faq (light) CSS/geometry mismatch: ${selector}`);
+        return true;
+      });
+    });
+  }
+}
+
+for (const [width, selector] of [[390, ".faq-category-mobile select"], [1440, ".faq-hearth-filter"]]) {
+  for (const on of ["direct", "client", "both"]) {
+    test(`rejects missing FAQ category control on ${on} loads at ${width}px`, { timeout: 20_000 }, async (t) => {
+      const page = await fixture(t, { width, missingControl: { selector, on } });
+      await assert.rejects(assertFrontendCssNavigation(page, baseUrl, "light"), (error) => {
+        assert.equal(error.name, "TimeoutError");
+        assert.ok(error.message.includes(`locator('${selector}')`), error.message);
+        assert.match(error.message, /to be visible/);
+        return true;
+      });
+    });
+  }
+}
+
+test("rejects a hidden mobile category select even when desktop filters are visible", { timeout: 20_000 }, async (t) => {
+  const page = await fixture(t, {
+    mismatch: ".faq-category-mobile { display: none; } .faq-hearth-filters { display: grid; }",
+  });
+  await assert.rejects(assertFrontendCssNavigation(page, baseUrl, "light"), (error) => {
+    assert.equal(error.name, "TimeoutError");
+    assert.ok(error.message.includes("locator('.faq-category-mobile select')"), error.message);
+    assert.match(error.message, /to be visible/);
+    return true;
+  });
+});
 
 test("rejects a real document navigation even when its CSS matches", async (t) => {
   const page = await fixture(t, { clientNavigation: false });
@@ -56,6 +104,99 @@ test("bounds stalled image decoding", { timeout: 15_000 }, async (t) => {
   );
 });
 
+test("waits for a pending image request before decoding, without retrying", async (t) => {
+  const page = await fixture(t);
+  const decodes = [];
+  await page.exposeFunction("recordImageDecode", (ready) => decodes.push(ready));
+  await page.addInitScript(() => {
+    document.addEventListener("DOMContentLoaded", () => {
+      const hero = document.querySelector(".faq-hearth-hero");
+      if (!hero) return;
+      const image = document.createElement("img");
+      image.style.position = "absolute";
+      let ready = false;
+      Object.defineProperty(image, "complete", { get: () => ready });
+      // Model Firefox's lazy request before source selection, then its load event.
+      const addListener = image.addEventListener.bind(image);
+      image.addEventListener = (type, listener, options) => {
+        addListener(type, listener, options);
+        if (type === "load") queueMicrotask(() => {
+          ready = true;
+          image.dispatchEvent(new Event("load"));
+        });
+      };
+      image.decode = async () => {
+        const wasReady = ready;
+        await window.recordImageDecode(wasReady);
+        if (!wasReady) throw new DOMException("Invalid image request.", "EncodingError");
+      };
+      hero.append(image);
+    }, { once: true });
+  });
+  const results = await assertFrontendCssNavigation(page, baseUrl, "dark");
+  assert.deepEqual(results.map((result) => result.route), routes);
+  assert.deepEqual(decodes, [true]);
+});
+
+test("rejects a pending image request that fails to load", async (t) => {
+  const page = await fixture(t);
+  await page.addInitScript(() => {
+    document.addEventListener("DOMContentLoaded", () => {
+      const image = document.createElement("img");
+      Object.defineProperty(image, "complete", { value: false });
+      const addListener = image.addEventListener.bind(image);
+      image.addEventListener = (type, listener, options) => {
+        addListener(type, listener, options);
+        if (type === "error") queueMicrotask(() => image.dispatchEvent(new Event("error")));
+      };
+      document.querySelector(".faq-hearth-hero")?.append(image);
+    }, { once: true });
+  });
+  await assert.rejects(
+    assertFrontendCssNavigation(page, baseUrl, "dark"),
+    /\/faq \(dark\) \.faq-hearth-hero: image failed to load/,
+  );
+});
+
+test("rejects an already complete broken image", async (t) => {
+  const page = await fixture(t);
+  const decodes = [];
+  await page.exposeFunction("recordImageDecode", (state) => decodes.push(state));
+  await page.addInitScript(() => {
+    document.addEventListener("DOMContentLoaded", () => {
+      const image = document.createElement("img");
+      image.src = "data:image/png;base64,broken";
+      const decode = image.decode.bind(image);
+      image.decode = async () => {
+        await window.recordImageDecode({ complete: image.complete, naturalWidth: image.naturalWidth });
+        await decode();
+      };
+      document.querySelector(".faq-hearth-hero")?.append(image);
+    }, { once: true });
+  });
+  await assert.rejects(assertFrontendCssNavigation(page, baseUrl, "dark"), /image|decode|source/i);
+  assert.deepEqual(decodes, [{ complete: true, naturalWidth: 0 }]);
+});
+
+test("bounds stalled image loading before decoding", { timeout: 15_000 }, async (t) => {
+  const page = await fixture(t);
+  const decodes = [];
+  await page.exposeFunction("recordImageDecode", () => decodes.push(true));
+  await page.addInitScript(() => {
+    document.addEventListener("DOMContentLoaded", () => {
+      const image = document.createElement("img");
+      Object.defineProperty(image, "complete", { value: false });
+      image.decode = () => window.recordImageDecode();
+      document.querySelector(".faq-hearth-hero")?.append(image);
+    }, { once: true });
+  });
+  await assert.rejects(
+    assertFrontendCssNavigation(page, baseUrl, "dark"),
+    /\/faq \(dark\) \.faq-hearth-hero: image decoding did not settle within 5 seconds/,
+  );
+  assert.deepEqual(decodes, []);
+});
+
 test("bounds stalled font readiness", { timeout: 15_000 }, async (t) => {
   const page = await fixture(t);
   await page.addInitScript(() => {
@@ -67,19 +208,19 @@ test("bounds stalled font readiness", { timeout: 15_000 }, async (t) => {
   );
 });
 
-async function fixture(t, { width = 390, mismatch = "", clientNavigation = true } = {}) {
+async function fixture(t, { width = 390, mismatch = "", clientNavigation = true, missingControl = null } = {}) {
   const context = await browser.newContext({ viewport: { width, height: 900 }, serviceWorkers: "block" });
   t.after(() => context.close());
   // Fulfill every request in memory: no HTTP listener, Next runtime, or external traffic.
   await context.route("**/*", async (route) => {
     const url = new URL(route.request().url());
     assert.equal(url.origin, baseUrl);
-    await route.fulfill({ contentType: "text/html", body: html(url.pathname, mismatch, clientNavigation) });
+    await route.fulfill({ contentType: "text/html", body: html(url.pathname, mismatch, clientNavigation, missingControl) });
   });
   return context.newPage();
 }
 
-function html(pathname, mismatch, clientNavigation) {
+function html(pathname, mismatch, clientNavigation, missingControl) {
   const home = `<main class="home">
     <h1>Choose a game</h1>
     ${["werewolf", "mafia"].map((family) => `<article class="game-choice-${family}">
@@ -89,7 +230,12 @@ function html(pathname, mismatch, clientNavigation) {
   const faq = `<main class="faq-shell">
     <header class="faq-hearth-hero"><h1>Help</h1></header>
     <input class="faq-hearth-search-input" aria-label="Search">
-    <button class="faq-hearth-filter">All</button>
+    <label class="faq-category-mobile"><span>Category</span>
+      <select><option value="all">All categories</option><option value="game">Game</option></select>
+    </label>
+    <div class="faq-hearth-filters" role="group" aria-label="Categories">
+      <button class="faq-hearth-filter">All</button><button class="faq-hearth-filter">Game</button>
+    </div>
     <button class="faq-hearth-item-handle">Question</button>
   </main>`;
   const pages = Object.fromEntries(routes.map((route) => [route, route === "/faq" ? faq : `<main class="rules-shell">
@@ -109,15 +255,26 @@ function html(pathname, mismatch, clientNavigation) {
       main { width: calc(100% - 32px); max-width: 1080px; margin: 20px auto; }
       h1 { font-size: 32px; line-height: 1.25; color: inherit; }
       h1::before { content: ""; display: block; height: 4px; background: #087f8c; }
-      a, button, input { display: inline-block; padding: 12px; border: 1px solid #777; font: inherit; }
+      a, button, input, select { display: inline-block; padding: 12px; border: 1px solid #777; font: inherit; }
       .faq-hearth-hero, .rules-playbook-hero { padding: 24px; border: 2px solid #087f8c; }
+      .faq-hearth-filters { display: grid; gap: 2px; }
+      .faq-category-mobile { display: none; }
       .phase-detail-panel { padding: 16px; }
+      @media (max-width: 800px) {
+        .faq-hearth-filters { display: none; }
+        .faq-category-mobile { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 12px; }
+        .faq-category-mobile select { width: 100%; min-width: 0; min-height: 44px; padding: 8px; }
+      }
       @media (max-width: 600px) { h1 { font-size: 24px; } }
     </style></head><body>
     <header class="site-chrome"><button class="site-play-cta">Play</button></header>
     <div id="content">${pathname === "/" ? home : pages[pathname]}</div>
     <script>
       const pages = ${JSON.stringify(pages)};
+      const missingControl = ${JSON.stringify(missingControl)};
+      if (missingControl && missingControl.on !== "client") {
+        document.querySelectorAll(missingControl.selector).forEach((control) => control.remove());
+      }
       if (${clientNavigation}) document.addEventListener("click", (event) => {
         const link = event.target.closest("a");
         if (!link || !pages[link.getAttribute("href")]) return;
@@ -125,6 +282,9 @@ function html(pathname, mismatch, clientNavigation) {
         const href = link.getAttribute("href");
         history.pushState({}, "", href);
         document.querySelector("#content").innerHTML = pages[href];
+        if (missingControl && missingControl.on !== "direct") {
+          document.querySelectorAll(missingControl.selector).forEach((control) => control.remove());
+        }
         const style = document.createElement("style");
         style.textContent = ${JSON.stringify(mismatch)};
         document.head.append(style);

@@ -20,41 +20,59 @@ describe("tutorial presentation contract", () => {
     expect(tutorialCss).toContain("--art-tutorial-light: image-set(");
     expect(tutorialCss).toContain("--art-tutorial: var(--art-tutorial-dark)");
     expect(tutorialCss).toContain("--art-tutorial: var(--art-tutorial-light)");
-    expect(tutorialCss).toContain("body:has(.tutorial-shell)::before");
+    expect(tutorialCss).toContain('body:has(.site-chrome[data-route="/tutorial"])::before');
+    expect(tutorialCss).not.toContain("body:has(.tutorial-shell)");
     expect(tutorialCss).toContain(".tutorial-shell::before");
     expect(tutorialCss).toContain("content: none");
   });
 
-  it("keeps only the first scene in the entry module and lazy-loads scenes two through six as one bundle", () => {
-    expect(flipbookSource).toContain('import { SlideSetup } from "./SlideSetup"');
-    expect(flipbookSource).toContain('import("./TutorialDeferredSlide")');
-    expect(flipbookSource.match(/\bdynamic\(/g)).toHaveLength(1);
+  it("receives the static first scene from the server and lazy-loads interactive scenes", () => {
+    expect(flipbookSource).not.toContain('from "./SlideSetup"');
+    const page = readFileSync(resolve(process.cwd(), "app/tutorial/page.tsx"), "utf8");
+    for (const mode of ["werewolves_classic", "mafia_free", "mafia_sport"]) {
+      expect(page).toContain(`<SlideSetup mode="${mode}" />`);
+    }
+    expect(flipbookSource).toContain("setupScene={setupScenes[mode]}");
+    const loader = readFileSync(resolve(process.cwd(), "components/tutorial/tutorial-deferred.ts"), "utf8");
+    expect(loader).toContain('import("./TutorialDeferredSlide")');
+    expect(flipbookSource).not.toContain('from "./TutorialDeferredSlide"');
+    expect(flipbookSource).not.toContain('from "next/dynamic"');
   });
 
-  it("keeps the narrow day scene compact enough for the fixed mobile stage", () => {
-    expect(tutorialCss).toContain('[data-tutorial-scene="day"] .tutorial-slide-title');
-    expect(clueChipsSource).toContain("Разкрий 2-3 карти. Посетени:");
+  it("lets scenes grow with their content instead of cropping text inside a fixed-height stage", () => {
+    const stageRule = tutorialCss.match(/:global\(\.tutorial-slide-stage\)\s*\{([^}]+)\}/)?.[1];
+    expect(stageRule).toBeDefined();
+    expect(stageRule).not.toMatch(/(?:^|;)\s*height:/);
+    expect(tutorialCss).not.toContain("height: 680px");
+    expect(tutorialCss).not.toContain("overflow: hidden");
+    expect(tutorialCss).toContain("background-size: cover");
+    expect(tutorialCss).not.toContain("50% 100%");
+    expect(clueChipsSource).toContain("Примерни реплики");
   });
 
-  it("uses fully opaque light foreground text on dark tutorial controls", () => {
-    expect(tutorialCss).toContain(".tutorial-keyboard-hint");
-    expect(tutorialCss).toContain("color: #ead9ba");
-    expect(tutorialCss).toContain(".tutorial-final-secondary-hint");
-  });
-
-  it("gives the keyboard hint a WCAG AA light-theme foreground", () => {
-    const lightHintRule = tutorialCss.match(
-      /html\[data-theme="light"\][^\n]*\.tutorial-keyboard-hint[^\{]*\{[^}]*color:\s*(#[0-9a-f]{6})/i,
-    );
-
-    expect(lightHintRule?.[1]).toBeDefined();
-    expect(contrastRatio(lightHintRule?.[1] ?? "#ffffff", "#fcf6ec")).toBeGreaterThanOrEqual(4.5);
+  it("uses theme-specific opaque ink with sufficient contrast on the reading surface", () => {
+    let themesChecked = 0;
+    for (const rule of tutorialCss.matchAll(/body:has\(\.site-chrome\[data-route="\/tutorial"\]\)\)?\s*\{([^}]+)\}/g)) {
+      const color = (token: string) => rule[1]!.match(new RegExp(`--tutorial-${token}:\\s*(#[0-9a-f]{6})`))?.[1];
+      const paper = color("paper");
+      if (!paper) continue;
+      themesChecked++;
+      for (const token of ["ink", "soft", "accent", "metal"]) {
+        expect(contrastRatio(color(token)!, paper)).toBeGreaterThanOrEqual(4.5);
+      }
+    }
+    expect(themesChecked).toBe(2);
   });
 
   it("does not prefetch hidden destination trees before the reader chooses to leave", () => {
-    expect(flipbookSource).toContain('prefetch={false}');
-    expect(progressSource).toContain('prefetch={false}');
-    expect(finalSlideSource.match(/prefetch=\{false\}/g)).toHaveLength(5);
+    let linksChecked = 0;
+    for (const source of [flipbookSource, progressSource, finalSlideSource]) {
+      for (const [link] of source.matchAll(/<Link\b[^>]+>/g)) {
+        linksChecked++;
+        expect(link).toContain("prefetch={false}");
+      }
+    }
+    expect(linksChecked).toBeGreaterThan(0);
   });
 
   it("matches the current signed-in room flow", () => {

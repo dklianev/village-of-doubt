@@ -42,12 +42,16 @@ export function getSoundEnabled(storage: StorageLike | undefined = getBrowserSto
   }
 }
 
+export const SOUND_CHANGE_EVENT = "werewolf-sound-change";
+
 export function setSoundEnabled(enabled: boolean, storage: StorageLike | undefined = getBrowserStorage()) {
   try {
     storage?.setItem(SOUND_STORAGE_KEY, enabled ? "on" : "off");
   } catch {
     // Sound remains usable for the current gesture even when preferences cannot persist.
   }
+  // Same-tab listeners (the table soundscape) react at once; storage events only cross tabs.
+  if (typeof window !== "undefined") window.dispatchEvent(new Event(SOUND_CHANGE_EVENT));
 }
 
 export function shouldPlayCue({ forceSilent = false, storage }: PlayCueOptions = {}) {

@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { AccountAchievements } from "../AccountAchievements";
 import { AccountDashboard } from "../AccountDashboard";
 import { AccountDataExport } from "../AccountDataExport";
@@ -23,6 +23,7 @@ vi.mock("@/lib/auth-client", () => ({
 }));
 
 describe("account presentation", () => {
+  afterEach(() => { window.history.replaceState(null, "", "/"); });
   const scrollIntoViewDescriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "scrollIntoView");
 
   beforeAll(() => {
@@ -40,7 +41,7 @@ describe("account presentation", () => {
     }
   });
 
-  it("използва сценичния primitive и account art token за заглавното досие", () => {
+  it("показва профила върху отделна илюстрована заглавна секция", () => {
     const { container } = render(
       <AccountHero
         userId="visual-account-user"
@@ -55,27 +56,40 @@ describe("account presentation", () => {
     );
 
     expect(screen.getByRole("heading", { level: 1, name: "Визуален играч" })).toBeInTheDocument();
-    expect(container.querySelector('[data-ds-scene-card="sm"]')).toBeInTheDocument();
-    expect(container.querySelector("[data-ds-scene-card-background]")).toHaveStyle({
-      backgroundImage: expect.stringContaining("var(--art-account)"),
-    });
+    expect(screen.getByRole("banner", { name: "Досие" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Редактирай" })).toHaveAttribute("href", "#account-identity");
+    expect(container.querySelector('[data-ds-scene-card]')).not.toBeInTheDocument();
   });
 
-  it("представя празните легенди като архивен vault", () => {
+  it("показва празните легенди с връзка към каталога без решетка от заключени печати", () => {
     const { container } = render(<AccountAchievements unlockedIds={[]} total={7} />);
 
     expect(container.querySelector("[data-account-empty-legends]")).toBeInTheDocument();
-    expect(container.querySelectorAll("[data-account-locked-legend]")).toHaveLength(7);
-    expect(screen.getByText("Легендите още не са започнали.")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "Легенди" })).toBeVisible();
+    expect(screen.getByText("Легендите още не са започнали.")).toBeVisible();
+    const catalogLink = screen.getByRole("link", { name: /Разгледай легендите/ });
+    expect(catalogLink).toBeVisible();
+    expect(catalogLink).toHaveAttribute("href", "/achievements");
+    expect(container.querySelectorAll("[data-account-locked-legend]").length).toBeLessThanOrEqual(1);
+    expect(screen.queryAllByLabelText(/Заключена легенда/i).length).toBeLessThanOrEqual(1);
   });
 
-  it("показва заключените легенди като сухи архивни печати", () => {
-    render(<AccountAchievements unlockedIds={["first_blood"]} total={7} />);
+  it("показва спечелената легенда и обобщава заключените без повтарящи се заместители", () => {
+    const { container } = render(<AccountAchievements unlockedIds={["first_blood"]} total={7} />);
 
-    expect(screen.getAllByLabelText("Заключена легенда")).toHaveLength(6);
+    expect(screen.getByRole("heading", { level: 2, name: "Легенди" })).toBeVisible();
+    expect(screen.getByText("Първа кръв")).toBeVisible();
+    expect(screen.getByText("1 от 7 легенди отключени.")).toBeVisible();
+    expect(screen.getByRole("link", { name: /Виж всички легенди/ })).toHaveAttribute("href", "/achievements");
+    expect(container.querySelector("[data-account-empty-legends]")).not.toBeInTheDocument();
+    expect(container.querySelectorAll("[data-account-locked-legend]").length).toBeLessThanOrEqual(1);
+    expect(screen.queryAllByLabelText(/Заключена легенда/i).length).toBeLessThanOrEqual(1);
+    const remainder = screen.getAllByText("Още 6 легенди чакат своята вечер.");
+    expect(remainder).toHaveLength(1);
+    expect(remainder[0]).toBeVisible();
   });
 
-  it("представя празната статистика като четири очакващи регистрови фиша", () => {
+  it("показва три допълнителни показателя без дублиран процент", () => {
     render(
       <AccountStats
         activityState="empty"
@@ -91,7 +105,7 @@ describe("account presentation", () => {
       />,
     );
 
-    expect(screen.getAllByText("Очаква първата игра")).toHaveLength(4);
+    expect(screen.getAllByText("Очаква първата игра")).toHaveLength(3);
   });
 
   it("управлява образите като roving radiogroup с клавиатура", async () => {
@@ -126,7 +140,8 @@ describe("account presentation", () => {
     expect(selected).toHaveAttribute("aria-checked", "true");
   });
 
-  it("събира export и унищожаването в една архивна лента", () => {
+  it("събира export и изтриването в раздела за сигурност", async () => {
+    const user = userEvent.setup();
     const { container } = render(
       <AccountDashboard
         userId="visual-account-user"
@@ -152,6 +167,7 @@ describe("account presentation", () => {
     );
 
     const archiveActions = container.querySelector("[data-account-archive-actions]");
+    await user.click(screen.getByRole("tab", { name: "Данни и сигурност" }));
     expect(archiveActions).not.toBeNull();
     expect(within(archiveActions as HTMLElement).getByRole("heading", { name: "Твоите данни" })).toBeInTheDocument();
     expect(within(archiveActions as HTMLElement).getByRole("heading", { name: "Опасна зона" })).toBeInTheDocument();
@@ -185,16 +201,16 @@ describe("account presentation", () => {
 
     const groups = container.querySelectorAll("[data-account-section]");
     expect(groups).toHaveLength(3);
-    expect(screen.getByRole("radio", { name: "Хроника" })).toBeChecked();
-    expect(screen.getByRole("radio", { name: "Образ и достъп" })).not.toBeChecked();
-    expect(screen.getByRole("radio", { name: "Данни и сигурност" })).not.toBeChecked();
+    expect(screen.getByRole("tab", { name: "Хроника" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: "Образ и достъп" })).toHaveAttribute("aria-selected", "false");
+    expect(screen.getByRole("tab", { name: "Данни и сигурност" })).toHaveAttribute("aria-selected", "false");
     expect(screen.getByText("Хроника")).toBeInTheDocument();
     expect(screen.getByText("Образ и достъп")).toBeInTheDocument();
     expect(screen.getByText("Данни и сигурност")).toBeInTheDocument();
 
-    await user.click(screen.getByLabelText("Образ и достъп"));
-    expect(screen.getByRole("radio", { name: "Хроника" })).not.toBeChecked();
-    expect(screen.getByRole("radio", { name: "Образ и достъп" })).toBeChecked();
+    await user.click(screen.getByRole("tab", { name: "Образ и достъп" }));
+    expect(screen.getByRole("tab", { name: "Хроника" })).toHaveAttribute("aria-selected", "false");
+    expect(screen.getByRole("tab", { name: "Образ и достъп" })).toHaveAttribute("aria-selected", "true");
   });
 
   it("използва Pill за командата за изтегляне", () => {

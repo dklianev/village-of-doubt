@@ -1,70 +1,39 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Check, MessageCircle } from "lucide-react";
+import { TUTORIAL_PLAYERS, type PlayerId, type TutorialSceneProps } from "./tutorial-scenario";
 
-const PLAYERS = [
-  { name: "Анна", clue: "Говори спокойно, но винаги защитава един и същ играч." },
-  { name: "Борис", clue: "Гласува рано, после сменя темата." },
-  { name: "Виктор", clue: "Има проверка, но я разкрива косвено." },
-  { name: "Галя", clue: "Слуша повече, отколкото говори. Запомня всичко." },
-  { name: "Деян", clue: "Обвинява силно без нова причина - често е жертва на блъф." },
-] as const;
+const REPLIES: Record<PlayerId, string> = {
+  anna: "Борис първо подозираше Галя. После я защити, без да обясни защо.",
+  boris: "Не съм сменял мнението си. Анна просто се опитва да отклони разговора.",
+  galya: "Чух обвинението. Искам Борис да обясни какво го накара да се откаже от него.",
+};
 
-export function DayClueChips() {
-  const [revealed, setRevealed] = useState<Record<string, boolean>>({});
-  const [activeName, setActiveName] = useState<string | null>(null);
-
-  const flip = (name: string) => {
-    const willReveal = !revealed[name];
-    const next = { ...revealed, [name]: willReveal };
-
-    setRevealed(next);
-    setActiveName(willReveal ? name : (PLAYERS.find((player) => player.name !== name && next[player.name])?.name ?? null));
-  };
-
-  const visited = Object.values(revealed).filter(Boolean).length;
-  const activePlayer = activeName ? PLAYERS.find((player) => player.name === activeName) : null;
-
+export function DayClueChips({ practice, onPracticeChange }: Pick<TutorialSceneProps, "practice" | "onPracticeChange">) {
+  const [ready, setReady] = useState(false);
+  useEffect(() => setReady(true), []);
+  const [active, setActive] = useState<PlayerId | null>(null);
   return (
     <div className="clue-chips" role="group" aria-label="Примерни играчи">
-      <p className="clue-chips-hint">
-        Разкрий 2-3 карти. Посетени: {visited} / {PLAYERS.length}
-      </p>
+      <p className="clue-chips-hint">Примерни реплики <span>Прочетени: {practice.visited.length} / {TUTORIAL_PLAYERS.length}</span></p>
       <div className="clue-chips-row">
-        {PLAYERS.map((player) => {
-          const isRevealed = Boolean(revealed[player.name]);
-          return (
-            <button
-              key={player.name}
-              type="button"
-              className="clue-chip"
-              data-revealed={isRevealed}
-              onClick={() => flip(player.name)}
-              aria-pressed={isRevealed}
-              aria-label={isRevealed ? `Скрий ${player.name}` : `Разкрий ${player.name}`}
-            >
-              <span className="clue-chip-content clue-chip-front-content">
-                <span className="clue-chip-initial">{player.name[0]}</span>
-                <span className="clue-chip-name">{player.name}</span>
-                <span className="clue-chip-status">{isRevealed ? "следа" : "скрита"}</span>
-              </span>
-            </button>
-          );
-        })}
+        {TUTORIAL_PLAYERS.map((player) => (
+          <button key={player.id} type="button" className="clue-chip" disabled={!ready} aria-pressed={active === player.id}
+            aria-label={`Чуй ${player.name}`} data-revealed={active === player.id}
+            onClick={() => {
+              setActive(player.id);
+              if (!practice.visited.includes(player.id)) onPracticeChange({ ...practice, visited: [...practice.visited, player.id] });
+            }}>
+            <img src={`/game-art/avatars/portrait-${player.portrait}.webp`} width={560} height={560} loading="lazy" decoding="async" className="tutorial-portrait" alt="" />
+            <span>{player.name}</span>
+            {practice.visited.includes(player.id) ? <Check size={14} aria-label="Прочетено" /> : <MessageCircle size={14} aria-hidden="true" />}
+          </button>
+        ))}
       </div>
-
       <aside className="clue-chip-detail" aria-live="polite">
-        {activePlayer ? (
-          <>
-            <strong>{activePlayer.name}</strong>
-            <span>{activePlayer.clue}</span>
-          </>
-        ) : (
-          <>
-            <strong>Избери играч</strong>
-            <span>Виж как една дребна реплика може да промени подозрението.</span>
-          </>
-        )}
+        {active ? <><strong>{TUTORIAL_PLAYERS.find((player) => player.id === active)?.name}</strong><p>„{REPLIES[active]}“</p></>
+          : <><strong>Какво чуха останалите?</strong><p>Избери Анна, Борис или Галя и сравни версиите им.</p></>}
       </aside>
     </div>
   );

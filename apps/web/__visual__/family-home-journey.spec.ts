@@ -142,7 +142,7 @@ test("sport Mafia keeps its format through the guest authentication gate", async
   await page.locator(".sport-mafia-callout").getByRole("link", { name: "Създай маса", exact: true }).click();
   await page.waitForURL(/\/sign-in\?/);
   expect(new URL(page.url()).searchParams.get("redirect")).toBe("/mafia/create?mode=mafia_sport");
-  await expect(page.getByRole("heading", { level: 1, name: "Стани стопанин" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Събери компанията" })).toBeVisible();
 });
 
 test("cached family navigation preserves unique section labels", async ({ page }) => {

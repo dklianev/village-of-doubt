@@ -127,7 +127,7 @@ function reportArtCorpus() {
     return;
   }
 
-  const imageExtensions = new Set([".avif", ".png", ".webp"]);
+  const imageExtensions = new Set([".avif", ".png", ".webp", ".jpg", ".jpeg"]);
   const artFiles = listFilesRecursive(artDir).filter((file) => imageExtensions.has(path.extname(file).toLowerCase()));
   const assets = artFiles.map((file) => ({
     file: toPosix(file),
@@ -150,7 +150,8 @@ function reportArtCorpus() {
   enforceBudget("Art corpus", totalBytes, BUDGETS.artCorpus);
 
   const largest = assets
-    .filter((asset) => asset.extension === ".avif" || asset.extension === ".webp")
+    .filter((asset) => asset.extension === ".avif" || asset.extension === ".webp"
+      || ([".jpg", ".jpeg"].includes(asset.extension) && !asset.file.startsWith("og/")))
     .sort((left, right) => right.sizeBytes - left.sizeBytes)[0];
   const largestBytes = largest?.sizeBytes ?? 0;
   console.log(
@@ -162,6 +163,9 @@ function reportArtCorpus() {
   }
   for (const preview of assets.filter((asset) => asset.extension === ".png")) {
     enforceBudget(`Metadata PNG preview ${preview.file}`, preview.sizeBytes, BUDGETS.metadataPreview);
+  }
+  for (const preview of assets.filter((asset) => asset.file.startsWith("og/") && [".jpg", ".jpeg"].includes(asset.extension))) {
+    enforceBudget(`Metadata JPEG preview ${preview.file}`, preview.sizeBytes, BUDGETS.metadataPreview);
   }
 }
 

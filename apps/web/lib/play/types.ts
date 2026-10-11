@@ -1,7 +1,6 @@
 import type { Room } from "@colyseus/sdk";
 import type {
   ChatChannel,
-  CreateRoomOptions,
   GameMode,
   GamePhase,
   NarratorVoice,
@@ -10,6 +9,7 @@ import type {
   PrivateFactionRoster,
   PublicEventKind,
   RoleCode,
+  TerminalGameResult,
 } from "@werewolf/shared";
 
 export interface PublicPlayer {
@@ -77,7 +77,7 @@ export interface PublicNomination {
 }
 
 export interface GameSnapshot {
-  nextRoomOptions?: CreateRoomOptions;
+  nextRoomOptionsJson?: string;
   code: string;
   mode: GameMode;
   playerCount: number;
@@ -103,6 +103,7 @@ export interface GameSnapshot {
   votingCycle?: number;
   winnerTeam: string;
   winnerReasonBg: string;
+  terminalResult?: TerminalGameResult;
   players: PublicPlayer[];
   roleCounts: PublicRoleCount[];
   voteTally: VoteTallyItem[];

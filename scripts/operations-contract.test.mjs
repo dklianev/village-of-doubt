@@ -274,6 +274,7 @@ test("CI partitions app visuals into four native shards while preserving play an
   assert.match(visualBlock, /if: startsWith\(matrix\.suite, 'app-'\)\r?\n +run: pnpm visual --shard=\$\{\{ matrix\.shard \}\}(?:\r?\n|$)/);
   assert.match(visualBlock, /if: startsWith\(matrix\.suite, 'play-'\)\r?\n +run: pnpm visual:matrix\r?\n +env:\r?\n +M35_SHARD_INDEX: \$\{\{ matrix\.shardIndex \}\}\r?\n +M35_SHARD_TOTAL: 4/);
   assert.match(visualBlock, /if: matrix\.suite == 'ui'\r?\n +run: pnpm visual:ui(?:\r?\n|$)/);
+  assert.match(visualBlock, /if: startsWith\(matrix\.suite, 'app-'\)\r?\n +run: pnpm exec playwright install firefox webkit(?:\r?\n|$)/);
   assert.match(visualBlock, /if: matrix\.suite != 'ui'/);
   assert.match(visualBlock, /fail-fast: false/);
   assert.match(visualBlock, /timeout-minutes: 50/);
@@ -298,6 +299,19 @@ test("release images wait for the cross-browser quality workflow", () => {
     /^  browser-quality:\r?\n    name: Cross-browser release verification\r?\n    uses: \.\/\.github\/workflows\/browser-quality\.yml$/m,
   );
   assert.match(release, /^    needs: \[verify, browser-quality\]$/m);
+});
+
+test("Linux browser QA provides a native audio output before verifying narration", () => {
+  const workflow = read(".github/workflows/browser-quality.yml");
+  const audioStart = workflow.indexOf("- name: Start native audio output");
+  const matrixStart = workflow.indexOf("- name: Run production-build browser matrix");
+  assert.ok(audioStart >= 0 && matrixStart > audioStart);
+  const audioSetup = workflow.slice(audioStart, matrixStart);
+  assert.match(audioSetup, /pulseaudio --start --exit-idle-time=-1/);
+  assert.match(audioSetup, /pactl load-module module-null-sink sink_name=ci_output/);
+  assert.match(audioSetup, /pactl set-default-sink ci_output/);
+  assert.doesNotMatch(audioSetup, /continue-on-error|\|\| true/);
+  assert.ok(workflow.includes('"scripts/frontend-narration-probe*.mjs"'));
 });
 
 test("roles browser QA opens a fresh mobile document instead of reloading WebKit", () => {
@@ -341,20 +355,24 @@ function authWelcomeFixture(redirectTo, overrides = {}) {
       assert.equal(options.name, "Наръчник за първа игра");
       assert.equal(options.exact, true);
       return { getByRole: (role, options) => {
-        assert.equal(role, "link");
-        assert.equal(options.name, "Прескочи");
+        assert.equal(role, "navigation");
+        assert.equal(options.name, "Ход на репетицията");
         assert.equal(options.exact, true);
-        return {
-          getAttribute: async (attribute) => {
-            assert.equal(attribute, "href");
-            events.push("href");
-            return overrides.href ?? redirectTo;
-          },
-          click: async () => {
-            events.push("skip");
-            currentUrl = new URL(overrides.destination ?? redirectTo, baseUrl).href;
-          },
-        };
+        return { getByRole: (role, options) => {
+          assert.equal(role, "link");
+          assert.equal(options, undefined);
+          return {
+            getAttribute: async (attribute) => {
+              assert.equal(attribute, "href");
+              events.push("href");
+              return overrides.href ?? redirectTo;
+            },
+            click: async () => {
+              events.push("skip");
+              currentUrl = new URL(overrides.destination ?? redirectTo, baseUrl).href;
+            },
+          };
+        } };
       } };
     },
   };
@@ -392,7 +410,8 @@ test("auth E2E rejects missing welcome, wrong origin/step/redirect and broken sk
 test("auth E2E visits the outbox token before welcome and preserves create return without a manual goto", () => {
   const source = read("scripts/e2e-auth.mjs");
   assert.match(source, /import \{ skipWelcomeTutorial \} from "\.\/e2e-auth-navigation\.mjs"/);
-  assert.match(source, /const message = await waitForEmail\(email\);\s*const verifyUrl = extractVerificationUrl\(message\.html\);\s*await page\.goto\(verifyUrl, \{ waitUntil: "domcontentloaded" \}\);\s*await skipWelcomeTutorial\(page, baseUrl, redirectTo\)/);
+  // The verified page now waits for "Продължи" instead of redirecting on its own.
+  assert.match(source, /const message = await waitForEmail\(email\);\s*const verifyUrl = extractVerificationUrl\(message\.html\);\s*await page\.goto\(verifyUrl, \{ waitUntil: "domcontentloaded" \}\);\s*await page\.getByRole\("link", \{ name: "Продължи", exact: true \}\)\.click\(\);\s*await skipWelcomeTutorial\(page, baseUrl, redirectTo\)/);
   assert.ok(source.includes("Verification email did not include a verify-email link."));
   assert.ok(source.includes('return match[1].replaceAll("&amp;", "&")'));
   assert.match(source, /await verifyEmailFromOutbox\(page, email, "\/werewolf\/create"\);\s*await page\.locator\("#create-quick-title"\)\.waitFor\(\)/);
@@ -420,7 +439,7 @@ test("auth E2E recovery selectors match the current accessible form states", () 
   const forgot = read("apps/web/components/auth/ForgotPasswordClient.tsx");
   const reset = read("apps/web/components/auth/ResetPasswordClient.tsx");
   for (const [component, text] of [
-    [forgot, "Ако има досие с този имейл, ще получиш линк за нова парола."],
+    [forgot, "Ако има профил с този имейл, ще получиш линк за нова парола."],
     [reset, "Паролата е сменена."],
     [reset, "Запази паролата"],
   ]) {

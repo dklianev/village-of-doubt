@@ -55,6 +55,8 @@ describe.skipIf(!baseUrl)("live role catalogue deep links", () => {
           await dialog.waitFor({ state: "hidden" });
           await page.reload();
           await page.locator(".role-codex-card-button").first().waitFor({ state: "visible" });
+          // Native history integration is installed during hydration, not HTML arrival.
+          await page.waitForFunction(() => document.querySelector<HTMLInputElement>(".role-search-input")?.disabled === false);
           expect(await page.getByRole("dialog").count()).toBe(0);
 
           for (const query of [`role=${foreignRole}`, `role=${role}&role=${role}`, "role=__proto__"]) {

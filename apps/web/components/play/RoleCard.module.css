@@ -629,3 +629,132 @@
   grid-column: 1 / -1;
   grid-row: auto;
 }
+
+.console {
+  --compact-accent: var(--play-console-ink, var(--ds-ink-primary));
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  align-items: start;
+  gap: 20px;
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--play-console-ink, var(--ds-ink-primary));
+}
+
+.console .art {
+  position: relative;
+  inset: auto;
+  width: 92px;
+  height: 134px;
+  border: 1px solid var(--play-console-border, var(--ds-border-subtle));
+  border-radius: 4px;
+  background: var(--role-art) center / cover no-repeat;
+  filter: none;
+  mask-image: none;
+  -webkit-mask-image: none;
+}
+
+.console .art::after,
+.console .content::before {
+  content: none;
+}
+
+.console .content {
+  display: grid;
+  width: 100%;
+  gap: 16px;
+}
+
+.console .header {
+  padding-inline-end: 48px;
+}
+
+.console .kicker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--play-console-muted, var(--ds-ink-soft));
+  font-size: 0.75rem;
+  font-weight: 650;
+  line-height: 1.5;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.console .kicker svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+}
+
+.console .header h2 {
+  margin: 6px 0 0;
+  color: inherit;
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-wrap: wrap;
+}
+
+.console .result {
+  border: 0;
+  padding: 0;
+  color: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.console .resultLabel {
+  color: var(--play-console-muted, var(--ds-ink-soft));
+  font-size: 0.8125rem;
+  font-weight: 400;
+}
+
+.console .details {
+  color: var(--play-console-muted, var(--ds-ink-soft));
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.console .details > summary {
+  min-height: 44px;
+  color: var(--play-console-ink, var(--ds-ink-primary));
+  font-weight: 500;
+}
+
+.console .details > p {
+  margin: 0 0 8px;
+}
+
+@media (min-width: 1366px) {
+  .console { grid-template-columns: 120px minmax(0, 1fr); }
+  .console .art { width: 120px; height: 180px; }
+  .console .header h2 { font-size: 2rem; }
+}
+
+@media (max-width: 600px) {
+  .console {
+    grid-template-columns: 72px minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .console .art {
+    width: 72px;
+    height: 106px;
+  }
+
+  .console .content {
+    gap: 12px;
+  }
+
+  .console .header h2 {
+    font-size: 1.375rem;
+  }
+}

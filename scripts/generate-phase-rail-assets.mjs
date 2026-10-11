@@ -1,4 +1,4 @@
-import { mkdir, stat } from "node:fs/promises";
+import { mkdir, rm, stat } from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
 
@@ -21,6 +21,7 @@ const boardVariants = [
 ];
 
 let totalBytes = 0;
+let generated = 0;
 
 for (const family of ["werewolves", "mafia"]) {
   const sourceRoot = family === "mafia" ? path.join(sourceArtRoot, "mafia") : sourceArtRoot;
@@ -28,7 +29,7 @@ for (const family of ["werewolves", "mafia"]) {
   const boardFamilyOutput = path.join(boardOutputRoot, family);
   await Promise.all([
     mkdir(railFamilyOutput, { recursive: true }),
-    mkdir(boardFamilyOutput, { recursive: true }),
+    ...(family === "mafia" ? [mkdir(boardFamilyOutput, { recursive: true })] : []),
   ]);
 
   for (const sourceName of sourceNames) {
@@ -43,8 +44,14 @@ for (const family of ["werewolves", "mafia"]) {
       throw new Error(`${path.relative(artRoot, railOutput)} е ${Math.ceil(railBytes / 1024)} KB; лимитът е 20 KB.`);
     }
     totalBytes += railBytes;
+    generated++;
     for (const variant of boardVariants) {
       const boardOutput = path.join(boardFamilyOutput, sourceName.replace(/\.png$/, `-${variant.width}.webp`));
+      // Werewolf rules now use dedicated scene art; retain the shared gameplay rail.
+      if (family === "werewolves") {
+        await rm(boardOutput, { force: true });
+        continue;
+      }
       await sharp(source)
         .resize(variant.width, variant.height, { fit: "cover", position: "centre", withoutEnlargement: true })
         .webp({ quality: 74, effort: 6 })
@@ -54,8 +61,9 @@ for (const family of ["werewolves", "mafia"]) {
         throw new Error(`${path.relative(artRoot, boardOutput)} е ${Math.ceil(boardBytes / 1024)} KB; лимитът е ${variant.maxBytes / 1024} KB.`);
       }
       totalBytes += boardBytes;
+      generated++;
     }
   }
 }
 
-console.log(`Generated ${sourceNames.length * 2 * (boardVariants.length + 1)} phase assets (${Math.ceil(totalBytes / 1024)} KB total).`);
+console.log(`Generated ${generated} phase assets (${Math.ceil(totalBytes / 1024)} KB total).`);

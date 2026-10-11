@@ -1,4 +1,4 @@
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { boot, type ColyseusTestServer } from "@colyseus/testing";
 import type { Room as ClientRoom } from "@colyseus/sdk";
 import type { NightActionCapabilities, RoleCode } from "@werewolf/shared";
@@ -199,6 +199,7 @@ describe("GameRoom gameplay regressions", () => {
 
     expect(mafia).toHaveLength(2);
     expect(village).toBeTruthy();
+    await advanceToFirstNight(clients[0]?.client, serverRoom);
 
     const senderMessage = mafia[0]?.client.waitForMessage("private_chat") as Promise<{ id: string; channel: string; message: string }>;
     const recipientMessage = mafia[1]?.client.waitForMessage("private_chat") as Promise<{ id: string; channel: string; message: string }>;
@@ -680,44 +681,101 @@ describe("GameRoom gameplay regressions", () => {
     expect(targetState?.alive).toBe(false);
   });
 
-  it("records a Jester personal win when the village votes them out", async () => {
+  it.each(["werewolves_classic", "mafia_free"] as const)("keeps a voted-out Jester private until the %s finale, including resync and rejoin", async (mode) => {
     const serverRoom = await colyseus.createRoom<GameRoom>("game", {
       code: "JESTER",
-      mode: "mafia_free",
+      mode,
       playerCount: 6,
-      roles: {
-        jester: 1,
-        civilian: 4,
-        mafioso: 1,
-      },
+      revealRolesOnDeath: true,
+      firstNightKill: false,
+      roles: mode === "mafia_free" ? { jester: 1, civilian: 4, mafioso: 1 } : { jester: 1, ordinary_villager: 4, werewolf: 1 },
     });
     const clients = await connectPlayers(colyseus, serverRoom, 6, "jester");
     const roleClients = await startGameAndCollectRoles(clients);
-    const jester = roleClients.find((item) => item.role === "jester");
-    expect(jester).toBeTruthy();
-    const unlockMessage = jester?.client.waitForMessage("achievements_unlocked");
-
-    clients[0]?.client.send("narratorAdvance", {});
-    await serverRoom.waitForNextPatch();
-    clients[0]?.client.send("narratorAdvance", {});
-    await serverRoom.waitForNextPatch();
-    clients[0]?.client.send("narratorAdvance", {});
-    await serverRoom.waitForNextPatch();
-    clients[0]?.client.send("narratorAdvance", {});
-    await serverRoom.waitForNextPatch();
-
-    expect(serverRoom.state.phase).toBe("voting");
+    const jester = roleClients.find((item) => item.role === "jester")!;
+    const enemy = roleClients.find((item) => item.role === "mafioso" || item.role === "werewolf")!;
+    const outsider = roleClients.find((item) => item !== jester)!;
+    const privateMessage = vi.fn();
+    const outsiderMessage = vi.fn();
+    const earlyAchievement = vi.fn();
+    jester.client.onMessage("system", privateMessage);
+    outsider.client.onMessage("system", outsiderMessage);
+    jester.client.onMessage("achievements_unlocked", earlyAchievement);
+    const internals = serverRoom as unknown as {
+      evaluateWin: () => { personalWinnerPlayerIds: string[] };
+      persistGameEvent: (type: string, event?: Record<string, unknown>) => void;
+      transitionTo: (phase: string) => void;
+    };
+    const persist = vi.spyOn(internals, "persistGameEvent");
+    await advanceToVoting(clients[0]?.client, serverRoom);
     for (const client of clients) {
-      client.client.send("submitVote", { targetUserId: jester?.userId });
+      client.client.send("submitVote", { targetUserId: jester.userId });
     }
     await serverRoom.waitForNextPatch(20);
+    expect(serverRoom.state.phase).toBe("resolution");
+    expect(serverRoom.state.winnerTeam).toBe("");
+    expect(serverRoom.state.revealRolesOnDeath).toBe(false);
+    expect(findPublicPlayer(serverRoom, jester.userId)?.alive).toBe(false);
+    expect(findPublicPlayer(serverRoom, jester.userId)?.revealedRole).toBe("");
+    expect([...serverRoom.state.publicEvents.values()].some((event) => /Шут|лична победа/.test(event.messageBg))).toBe(false);
+    expect([...outsider.client.state.players.values()].every((player) => player.revealedRole === "")).toBe(true);
+    expect(privateMessage).toHaveBeenCalledWith(expect.objectContaining({ messageBg: expect.stringContaining("Постигна лична победа") }));
+    expect(outsiderMessage).not.toHaveBeenCalled();
+    expect(earlyAchievement).not.toHaveBeenCalled();
+    expect(internals.evaluateWin().personalWinnerPlayerIds).toContain(jester.userId);
+    expect(persist).toHaveBeenCalledWith("jester_personal_win", { actorId: jester.userId, targetId: jester.userId, visibility: "private" });
+    expect(persist).toHaveBeenCalledWith("death", expect.objectContaining({ payload: expect.objectContaining({ revealRole: null }) }));
 
-    expect([...serverRoom.state.publicEvents.values()].some((event) => event.messageBg.includes("Шут"))).toBe(true);
-    await expect(unlockMessage).resolves.toMatchObject({ achievementIds: ["jester_win"] });
-    const win = (serverRoom as unknown as {
-      evaluateWin: () => { personalWinnerPlayerIds: string[] };
-    }).evaluateWin();
-    expect(win.personalWinnerPlayerIds).toContain(jester?.userId);
+    // A fresh connection restores the personal result without leaking it to other clients.
+    const rejoined = await colyseus.connectTo<GameRoom>(serverRoom, { code: serverRoom.state.code, userId: jester.userId, displayName: jester.displayName });
+    const restored = rejoined.waitForMessage("system");
+    await rejoined.request("syncPrivateState");
+    await expect(restored).resolves.toMatchObject({ messageBg: expect.stringContaining("Постигна лична победа") });
+    await outsider.client.request("syncPrivateState");
+    expect(outsiderMessage).not.toHaveBeenCalled();
+    expect([...serverRoom.state.publicEvents.values()].some((event) => /Шут|лична победа/.test(event.messageBg))).toBe(false);
+
+    // Event-buffer truncation must not lose a deferred award.
+    for (let index = 0; index < 510; index += 1) internals.persistGameEvent("test_padding");
+    const unlockMessage = rejoined.waitForMessage("achievements_unlocked");
+    const host = clients[0]?.userId === jester.userId ? rejoined : clients[0]?.client;
+    await advanceToVoting(host, serverRoom);
+    for (const client of roleClients.filter((item) => item !== jester)) {
+      client.client.send("submitVote", { targetUserId: enemy.userId });
+    }
+    await serverRoom.waitForNextPatch(20);
+    expect(findPublicPlayer(serverRoom, enemy.userId)?.revealedRole).toBe("");
+    host?.send("narratorAdvance", {});
+    await serverRoom.waitForNextPatch(20);
+    expect(serverRoom.state.phase).toBe("game_over");
+    expect(serverRoom.state.winnerTeam).toBe("village");
+    expect(findPublicPlayer(serverRoom, jester.userId)?.revealedRole).toBe("jester");
+    expect([...serverRoom.state.players.values()].filter((player) => player.playing).every((player) => Boolean(player.revealedRole))).toBe(true);
+    expect([...serverRoom.state.publicEvents.values()].filter((event) => event.messageBg.includes("беше Шут"))).toHaveLength(1);
+    await expect(unlockMessage).resolves.toMatchObject({ achievementIds: expect.arrayContaining(["jester_win"]) });
+    internals.transitionTo("game_over");
+    expect([...serverRoom.state.publicEvents.values()].filter((event) => event.messageBg.includes("беше Шут"))).toHaveLength(1);
+  });
+
+  it.each(["werewolves_classic", "mafia_free"] as const)("does not grant or reveal a Jester personal win after a %s night kill", async (mode) => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "JESNGT", mode, playerCount: 6, firstNightKill: true, revealRolesOnDeath: true,
+      roles: mode === "mafia_free" ? { jester: 1, civilian: 4, mafioso: 1 } : { jester: 1, ordinary_villager: 4, werewolf: 1 },
+    });
+    const clients = await connectPlayers(colyseus, serverRoom, 6, "night-jester");
+    const roles = await startGameAndCollectRoles(clients);
+    const jester = roles.find((item) => item.role === "jester")!;
+    const enemy = roles.find((item) => item.role === "mafioso" || item.role === "werewolf")!;
+    const personalMessage = vi.fn();
+    jester.client.onMessage("system", personalMessage);
+    await advanceToFirstNight(clients[0]?.client, serverRoom);
+    enemy.client.send("submitNightAction", { action: { kind: "faction_kill", targetUserId: jester.userId } });
+    await serverRoom.waitForNextPatch(20);
+    expect(findPublicPlayer(serverRoom, jester.userId)?.alive).toBe(false);
+    expect(findPublicPlayer(serverRoom, jester.userId)?.revealedRole).toBe("");
+    expect(personalMessage).not.toHaveBeenCalled();
+    expect((serverRoom as unknown as { evaluateWin: () => { personalWinnerPlayerIds: string[] } }).evaluateWin().personalWinnerPlayerIds).toEqual([]);
+    expect([...serverRoom.state.publicEvents.values()].some((event) => /Шут|лична победа/.test(event.messageBg))).toBe(false);
   });
 
   it("rejects manual room configs with roles from another game family", async () => {

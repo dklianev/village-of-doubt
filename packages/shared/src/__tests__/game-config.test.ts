@@ -122,6 +122,35 @@ describe("role presets", () => {
     );
   });
 
+  it.each(["werewolves_classic", "mafia_free"] as const)("conceals all death roles with an actual Jester in %s", (mode) => {
+    for (const revealRolesOnDeath of [true, false]) {
+      const config = createGameConfigFromOptions({ mode, playerCount: 10, jesterEnabled: true, revealRolesOnDeath });
+      expect(config.roles.jester).toBe(1);
+      expect(config.revealRolesOnDeath).toBe(false);
+      expect(config.requestedRevealRolesOnDeath).toBe(revealRolesOnDeath);
+      const manual = createGameConfigFromOptions({
+        mode, playerCount: 10, roles: config.roles, jesterEnabled: false, revealRolesOnDeath,
+      });
+      expect(manual.revealRolesOnDeath).toBe(false);
+      expect(manual.requestedRevealRolesOnDeath).toBe(revealRolesOnDeath);
+    }
+  });
+
+  it.each(["werewolves_classic", "mafia_free", "mafia_sport"] as const)("preserves the death-reveal setting without a Jester in %s", (mode) => {
+    for (const revealRolesOnDeath of [true, false]) {
+      const roles = createDefaultGameConfig(mode, 10).roles;
+      expect(createGameConfigFromOptions({
+        mode, playerCount: 10, roles, jesterEnabled: true, revealRolesOnDeath,
+      }).revealRolesOnDeath).toBe(revealRolesOnDeath);
+    }
+  });
+
+  it("does not conceal roles for an optional Jester excluded by the small-room preset", () => {
+    const config = createGameConfigFromOptions({ mode: "mafia_free", playerCount: 6, jesterEnabled: true });
+    expect(config.roles.jester).toBeUndefined();
+    expect(config.revealRolesOnDeath).toBe(true);
+  });
+
   it("enforces role maxCopies in validation and config creation", () => {
     expect(validateRoleDistributionForMode("werewolves_classic", 8, {
       ordinary_villager: 4,

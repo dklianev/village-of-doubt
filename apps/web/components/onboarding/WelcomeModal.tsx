@@ -2,8 +2,11 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
 import { BookOpenText, DoorOpen, X } from "lucide-react";
 import { safeLocalStorage } from "@/lib/safe-storage";
+import { safeInternalRedirect } from "@/lib/safe-internal-redirect";
+import { tutorialMode } from "@/components/tutorial/tutorial-scenario";
 import styles from "./WelcomeModal.module.css";
 
 const STORAGE_KEY = "welcome-modal-shown";
@@ -51,6 +54,19 @@ function isolatePageBehind(layer: HTMLElement) {
 }
 
 export function WelcomeModal({ displayName }: { displayName: string }) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentParams = new URLSearchParams(searchParams);
+  currentParams.delete("redirect");
+  const currentHref = `${pathname}${currentParams.size ? `?${currentParams}` : ""}`;
+  const joinHref = /^\/(?:(?:mafia|werewolf)\/)?join(?:\/|$)/.test(pathname)
+    ? safeInternalRedirect(currentHref, "") : "";
+  const redirectTo = safeInternalRedirect(searchParams.get("redirect"), "") || joinHref;
+  const tutorialParams = new URLSearchParams({
+    welcome: "1",
+    game: tutorialMode(searchParams.get("game") ?? searchParams.get("mode"), redirectTo || currentHref),
+  });
+  if (redirectTo) tutorialParams.set("redirect", redirectTo);
   const [visible, setVisible] = useState(false);
   const titleId = useId();
   const descriptionId = useId();
@@ -144,7 +160,7 @@ export function WelcomeModal({ displayName }: { displayName: string }) {
             </p>
           </div>
           <div className={styles.actions}>
-            <Link ref={primaryActionRef} href="/tutorial?welcome=1" className={styles.primaryAction} onClick={dismiss}>
+            <Link ref={primaryActionRef} href={`/tutorial?${tutorialParams}`} className={styles.primaryAction} onClick={dismiss}>
               <BookOpenText aria-hidden="true" />
               <span>Отвори наръчника</span>
             </Link>

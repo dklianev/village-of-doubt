@@ -23,33 +23,24 @@ function dock(props: { compact: boolean; expanded: boolean; onExpandedChange?: (
 }
 
 describe("PlayActionDock", () => {
-  it("keeps readiness visible when mobile lobby details are collapsed", async () => {
-    const ready = vi.fn();
-    const expand = vi.fn();
+  it("does not offer an expansion control without a primary action", () => {
     render(<PlayActionDock
-      eyebrow="преди началото" heading="Потвърди готовност" kind="lobby"
-      compact expanded={false} onExpandedChange={expand}
-      compactSummary={<button onClick={ready}>Готов</button>}
-      primaryContent={<button>Копирай покана</button>}
+      eyebrow="дневен ред" heading="Дневни речи" kind="quiet"
+      compact expanded={false} onExpandedChange={vi.fn()}
+      primaryContent={null}
     />);
-
-    expect(screen.getByRole("button", { name: "Готов" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "Копирай покана", hidden: true })).not.toBeVisible();
-    await userEvent.click(screen.getByRole("button", { name: "Готов" }));
-    expect(ready).toHaveBeenCalledOnce();
-    expect(expand).not.toHaveBeenCalled();
-    await userEvent.click(screen.getByRole("button", { name: "Покажи подробностите за стаята" }));
-    expect(expand).toHaveBeenCalledWith(true);
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Дневни речи" })).toHaveAttribute("data-has-primary", "false");
   });
 
-  it("does not duplicate the compact summary on desktop", () => {
+  it("keeps the public action visible on desktop without duplicating it", () => {
     render(<PlayActionDock
-      eyebrow="преди началото" heading="Потвърди готовност" kind="lobby"
+      eyebrow="дневен ред" heading="Твоят глас" kind="action" privateAction={false}
       compact={false} expanded={false} onExpandedChange={vi.fn()}
-      compactSummary={<button>Готов</button>}
-      primaryContent={<button>Готов</button>}
+      primaryContent={<button>Потвърди гласа</button>}
     />);
-    expect(screen.getAllByRole("button", { name: "Готов" })).toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: "Потвърди гласа" })).toHaveLength(1);
+    expect(screen.getByRole("button", { name: "Потвърди гласа" })).toBeVisible();
   });
 
   it("keeps the desktop command independent from the personal role area", () => {

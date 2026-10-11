@@ -2,15 +2,15 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { ArrowRight, ChevronDown, History, LogOut, Trophy, User } from "lucide-react";
+import { ChevronDown, History, LogIn, LogOut, Trophy, User } from "lucide-react";
 import { useEffect, useRef, useState, type MouseEvent } from "react";
-import { useRouter } from "next/navigation";
-import { ProfilePortrait } from "@/components/ProfilePortrait";
-import { avatarIdForUser } from "@/lib/avatar-catalog";
+import { safeLocalStorage } from "@/lib/safe-storage";
+import { leaveAuthenticatedDocument, LOGOUT_REVISION_KEY } from "@/lib/auth-session-document";
 import { useAuthSession, type AuthSessionView } from "@/lib/use-auth-session";
 
-const SignOutConfirmDialog = dynamic(() => import("./SignOutConfirmDialog").then((module) => module.SignOutConfirmDialog), {
-  loading: () => null,
+const AuthPortrait = dynamic(() => import("./AuthPortrait"), { ssr: false });
+
+const SignOutConfirmDialog = dynamic(() => import("./SignOutConfirmDialog"), {
   ssr: false,
 });
 
@@ -25,16 +25,15 @@ export function AuthChip({
   pathname?: string;
   onNavigate?: () => void;
 }) {
-  const router = useRouter();
-  const sessionQuery = useAuthSession(initialSession);
-  const session = sessionQuery.data;
-  const isPending = sessionQuery.isPending;
+  const { data: session, isPending } = useAuthSession(initialSession);
   const [open, setOpen] = useState(false);
   const [confirmSignOut, setConfirmSignOut] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState("");
   const menuRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  // Undefined is a guest document; null is an authenticated one without storage.
+  const logoutRevision = useRef<string | null | undefined>(undefined);
   const isDrawer = variant === "drawer";
 
   function navigate(event: MouseEvent<HTMLAnchorElement>) {
@@ -42,6 +41,24 @@ export function AuthChip({
     setOpen(false);
     onNavigate?.();
   }
+
+  useEffect(() => {
+    if (session?.user.id && logoutRevision.current === undefined) {
+      const revision = safeLocalStorage.getItem(LOGOUT_REVISION_KEY) ?? "0";
+      logoutRevision.current = safeLocalStorage.setItem(LOGOUT_REVISION_KEY, revision) ? revision : null;
+    }
+
+    function revalidateRestoredDocument(event: PageTransitionEvent) {
+      if (!event.persisted || logoutRevision.current === undefined) return;
+      const revision = safeLocalStorage.getItem(LOGOUT_REVISION_KEY);
+      if (revision !== null && revision === logoutRevision.current) return;
+      // A later logout can leave older native BFCache documents behind. Guest and
+      // unchanged-session restores stay intact, including when navigating offline.
+      leaveAuthenticatedDocument();
+    }
+    window.addEventListener("pageshow", revalidateRestoredDocument);
+    return () => window.removeEventListener("pageshow", revalidateRestoredDocument);
+  }, [session?.user.id]);
 
   useEffect(() => {
     if (!open) {
@@ -80,21 +97,27 @@ export function AuthChip({
   }
 
   if (!session) {
+    if (pathname === "/sign-in") {
+      return (
+        <div className="auth-chip-slot" data-auth-state="guest">
+          <span className="auth-chip auth-chip-signin" aria-current="page">
+            <User className="auth-chip-login-icon" aria-hidden="true" />
+            <span className="auth-chip-text">Вход</span>
+          </span>
+        </div>
+      );
+    }
     return (
       <div className="auth-chip-slot" data-auth-state="guest">
         <Link href="/sign-in" className="auth-chip auth-chip-signin" prefetch={false} onClick={navigate}>
-          <span className="auth-chip-mark" aria-hidden>
-            <KeyholeIcon />
-          </span>
+          <LogIn className="auth-chip-login-icon" aria-hidden="true" />
           <span className="auth-chip-text">Влез</span>
-          <ArrowRight className="auth-chip-arrow" aria-hidden strokeWidth={2.2} />
         </Link>
       </div>
     );
   }
 
   const displayName = session.user.name ?? "Играч";
-  const avatarId = avatarIdForUser(session.user.id, session.user.avatarId);
 
   async function confirmLogout() {
     if (signingOut) {
@@ -102,8 +125,13 @@ export function AuthChip({
     }
     setSigningOut(true);
     setSignOutError("");
+    let endSession: () => void;
     try {
-      const { authClient } = await import("@/lib/auth-client");
+      const [{ authClient }, { endAuthSession }] = await Promise.all([
+        import("@/lib/auth-client"),
+        import("@/lib/auth-session-end"),
+      ]);
+      endSession = endAuthSession;
       const result = await authClient.signOut();
       if (result.error) {
         setSignOutError("Излизането не успя. Опитай отново.");
@@ -115,10 +143,9 @@ export function AuthChip({
     } finally {
       setSigningOut(false);
     }
-    window.dispatchEvent(new Event("auth-session-change"));
     setConfirmSignOut(false);
     onNavigate?.();
-    router.push("/");
+    endSession();
   }
 
   function closeSignOut() {
@@ -136,7 +163,7 @@ export function AuthChip({
         {isDrawer ? (
           <div className="site-drawer-profile-identity">
             <span className="auth-chip-photo" aria-hidden>
-              <ProfilePortrait avatarId={avatarId} decorative />
+              <AuthPortrait userId={session.user.id} avatarId={session.user.avatarId} />
             </span>
             <span>{displayName}</span>
           </div>
@@ -150,7 +177,7 @@ export function AuthChip({
             aria-label={`Меню на ${displayName}`}
           >
             <span className="auth-chip-photo" aria-hidden>
-              <ProfilePortrait avatarId={avatarId} decorative />
+              <AuthPortrait userId={session.user.id} avatarId={session.user.avatarId} />
             </span>
             <span className="auth-chip-name">{displayName}</span>
             <ChevronDown className="auth-chip-chevron" aria-hidden strokeWidth={2.2} />
@@ -202,15 +229,5 @@ export function AuthChip({
         ) : null}
       </div>
     </div>
-  );
-}
-
-
-function KeyholeIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden>
-      <path d="M12 3.75a5.25 5.25 0 0 0-2.2 10.02l-1.05 5.48h6.5l-1.05-5.48A5.25 5.25 0 0 0 12 3.75Z" />
-      <path d="M9.8 14.05h4.4" />
-    </svg>
   );
 }

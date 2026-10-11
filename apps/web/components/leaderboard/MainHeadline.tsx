@@ -1,53 +1,32 @@
-import Image from "next/image";
-import { flavorQuoteFor, headlineFor, winRatePercent, type LeaderboardEntry } from "@/lib/leaderboard-headlines";
+import { flavorQuoteFor, type LeaderboardEntry } from "@/lib/leaderboard-headlines";
 
-export function MainHeadline({ entry }: { entry: LeaderboardEntry }) {
-  const headline = headlineFor(entry, 1);
+export function MainHeadline({
+  entry,
+  runnersUp = [],
+}: {
+  entry: LeaderboardEntry;
+  runnersUp?: LeaderboardEntry[];
+}) {
   const quote = flavorQuoteFor(entry, 1);
 
   return (
-    <section className="headline-main" aria-label="Главна новина">
-      <p className="headline-kicker">главна новина</p>
-      <h2 className="headline-main-title">{headline}</h2>
-
-      <div className="headline-main-grid">
-        <figure className="headline-portrait">
-          <Image
-            src="/game-art/leaderboard-headline-portrait.webp"
-            alt=""
-            width={512}
-            height={683}
-            sizes="(max-width: 767px) 168px, 220px"
-            priority
-            className="headline-portrait-img"
-          />
-          <figcaption className="headline-portrait-caption">«Силуетът, който масата вече разпознава.»</figcaption>
-        </figure>
-
-        <div className="headline-body">
-          {quote ? (
-            <p className="headline-lede">
-              <span className="headline-dropcap">{quote.charAt(0)}</span>
-              {quote.slice(1)}
-            </p>
-          ) : null}
-
-          <dl className="headline-stats">
-            <div>
-              <dt>Вечери</dt>
-              <dd>{entry.games}</dd>
-            </div>
-            <div>
-              <dt>Победи</dt>
-              <dd>{entry.wins}</dd>
-            </div>
-            <div>
-              <dt>Процент</dt>
-              <dd>{winRatePercent(entry)}%</dd>
-            </div>
-          </dl>
-        </div>
+    <section className="headline-main" aria-label="Начело на броя">
+      <div className="headline-body">
+        <p className="headline-kicker">Начело на броя</p>
+        <h2 className="headline-main-title"><bdi>{entry.displayName}</bdi> оглавява броя</h2>
+        <p className="headline-lede">{quote}</p>
       </div>
+      {runnersUp.length > 0 ? (
+        <ol className="headline-runners" start={2} aria-label="След водача">
+          {runnersUp.slice(0, 2).map((runner, index) => (
+            <li className="headline-runner" key={runner.id ?? `${runner.displayName}-${index}`}>
+              <span className="headline-rank" aria-label={`Място ${index + 2}`}>0{index + 2}</span>
+              <bdi className="headline-runner-name">{runner.displayName}</bdi>
+              <span className="headline-runner-wins">{runner.wins} {runner.wins === 1 ? "победа" : "победи"}</span>
+            </li>
+          ))}
+        </ol>
+      ) : null}
     </section>
   );
 }

@@ -1,0 +1,10 @@
+.root { min-width: 0; color: var(--ds-ink-primary); }
+.pending { min-height: 90px; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; }
+.button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; min-width: 0; width: 100%; max-width: 16rem; padding: 8px 12px; border: 1px solid var(--ds-border-subtle); border-radius: 6px; background: var(--ds-surface-paper); color: inherit; font: inherit; font-size: 0.875rem; cursor: pointer; }
+.button svg { flex: 0 0 16px; }
+.button[aria-pressed="true"] { border-color: var(--ds-ink-primary); }
+.button:disabled { opacity: 0.6; cursor: not-allowed; }
+.button:focus-visible { outline: 2px solid var(--ds-ink-primary); outline-offset: 3px; }
+.status { min-height: 2.8em; margin: 8px 0 0; color: var(--ds-ink-soft); font-size: 0.8125rem; line-height: 1.4; overflow-wrap: anywhere; }
+.transcript { margin: 8px 0 0; font-size: 0.875rem; line-height: 1.55; overflow-wrap: anywhere; }

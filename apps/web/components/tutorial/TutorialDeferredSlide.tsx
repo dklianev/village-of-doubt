@@ -3,20 +3,21 @@ import { SlideFinal } from "./SlideFinal";
 import { SlideNight } from "./SlideNight";
 import { SlideResolution } from "./SlideResolution";
 import { SlideVote } from "./SlideVote";
+import type { TutorialSceneProps } from "./tutorial-scenario";
 
 type DeferredSlide = 2 | 3 | 4 | 5 | 6;
 
-export function TutorialDeferredSlide({ slide }: { slide: DeferredSlide }) {
+export function TutorialDeferredSlide({ slide, ...props }: { slide: DeferredSlide } & TutorialSceneProps) {
   switch (slide) {
     case 2:
-      return <SlideNight />;
+      return <SlideNight {...props} />;
     case 3:
-      return <SlideDay />;
+      return <SlideDay {...props} />;
     case 4:
-      return <SlideVote />;
+      return <SlideVote {...props} />;
     case 5:
-      return <SlideResolution />;
+      return <SlideResolution {...props} />;
     case 6:
-      return <SlideFinal />;
+      return <SlideFinal {...props} />;
   }
 }

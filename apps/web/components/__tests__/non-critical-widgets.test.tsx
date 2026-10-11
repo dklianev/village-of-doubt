@@ -2,9 +2,8 @@ import { act, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NonCriticalWidgets } from "../non-critical-widgets";
 
-vi.mock("next/navigation", () => ({
-  usePathname: () => "/",
-}));
+const navigation = vi.hoisted(() => ({ pathname: "/" }));
+vi.mock("next/navigation", () => ({ usePathname: () => navigation.pathname }));
 
 vi.mock("next/dynamic", () => ({
   default: () => function DynamicWidget() {
@@ -31,6 +30,7 @@ vi.mock("@/components/feedback/route-policy", () => ({
 
 describe("NonCriticalWidgets", () => {
   beforeEach(() => {
+    navigation.pathname = "/";
     vi.useFakeTimers();
     storageValues.clear();
     storageValues.set("cookie-consent", "accepted");
@@ -39,6 +39,22 @@ describe("NonCriticalWidgets", () => {
       isPending: false,
       refresh: vi.fn(),
     });
+  });
+
+  it("does not promote the tutorial from the tutorial route, including client navigation", () => {
+    navigation.pathname = "/tutorial";
+    const { rerender } = render(<NonCriticalWidgets initialSession={null} />);
+    act(() => { vi.advanceTimersByTime(1_500); vi.runOnlyPendingTimers(); });
+    expect(useAuthSession).toHaveBeenCalled();
+    expect(screen.queryByTestId("dynamic-widget")).not.toBeInTheDocument();
+
+    navigation.pathname = "/mafia/join/ABC234";
+    rerender(<NonCriticalWidgets initialSession={null} />);
+    expect(screen.getAllByTestId("dynamic-widget")).toHaveLength(1);
+
+    navigation.pathname = "/tutorial";
+    rerender(<NonCriticalWidgets initialSession={null} />);
+    expect(screen.queryByTestId("dynamic-widget")).not.toBeInTheDocument();
   });
 
   afterEach(() => {

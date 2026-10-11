@@ -1,4 +1,6 @@
 import type { ConnectionStatus } from "@/lib/play/types";
+import { WifiOff } from "lucide-react";
+import "./ConnectionBanner.module.css";
 
 export function ConnectionBanner({ status, message }: { status: ConnectionStatus; message: string }) {
   if (status === "connected") {
@@ -16,13 +18,13 @@ export function ConnectionBanner({ status, message }: { status: ConnectionStatus
 
   return (
     <div
-      className={`connection-banner connection-${status} mb-6 p-4 text-[#fff6e5]`}
+      className={`connection-banner connection-${status}`}
       role={status === "error" ? "alert" : "status"}
       aria-live={status === "error" ? "assertive" : "polite"}
       aria-busy={status === "connecting" || status === "reconnecting"}
     >
-      <strong className="block">{title[status]}</strong>
-      <span className="mt-1 block text-sm text-[#ead9ba]">{message}</span>
+      <WifiOff size={20} aria-hidden />
+      <div><strong>{title[status]}</strong><p>{message}</p></div>
     </div>
   );
 }

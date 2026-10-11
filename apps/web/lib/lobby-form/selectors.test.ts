@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
+import { createGameConfigFromOptions, createRoomOptionsFromConfig } from "@werewolf/shared";
+import { roomOptionsToQuery } from "@/lib/room-options";
 import { initialState, queryFromState } from "./url";
 import { lobbyFormReducer } from "./reducer";
 import {
   adjustManualRoleRoster,
   createRoomCode,
+  currentConfig,
   estimatedDurationSeconds,
   optionsFromState,
   replaceManualRoleInRoster,
@@ -326,5 +329,105 @@ describe("lobby form configuration invariants", () => {
     });
 
     expect(estimatedDurationSeconds(state)).toBeGreaterThanOrEqual(50 * 60);
+  });
+});
+
+describe.each(["werewolves", "mafia"] as const)("%s Jester death-reveal preference", (family) => {
+  const mode = family === "mafia" ? "mafia_free" : "werewolves_classic";
+
+  it.each([true, false])("preserves reveal=%s through a URL round-trip and Jester removal", (requested) => {
+    const original = initialState({
+      family,
+      urlParams: new URLSearchParams({ mode, players: "10", reveal: String(Number(requested)) }),
+    });
+    const withJester = lobbyFormReducer(original, { type: "SET_ADVANCED", key: "jesterEnabled", value: true });
+    const params = new URLSearchParams(queryFromState(withJester));
+    expect(params.get("reveal")).toBe(String(Number(requested)));
+
+    const hydrated = initialState({ family, urlParams: params });
+    expect(hydrated.formError).toBe("");
+    expect(hydrated.advanced.revealRolesOnDeath).toBe(requested);
+    expect(currentConfig(hydrated).roles.jester).toBe(1);
+    expect(currentConfig(hydrated).revealRolesOnDeath).toBe(false);
+    expect(new URLSearchParams(queryFromState(hydrated)).get("reveal")).toBe(String(Number(requested)));
+
+    const removed = lobbyFormReducer(hydrated, { type: "SET_ADVANCED", key: "jesterEnabled", value: false });
+    expect(currentConfig(removed).roles.jester ?? 0).toBe(0);
+    expect(currentConfig(removed).revealRolesOnDeath).toBe(requested);
+  });
+
+  it.each([true, false])("preserves reveal=%s when a URL-loaded manual Jester is removed", (requested) => {
+    const roster = createGameConfigFromOptions({ mode, playerCount: 10, jesterEnabled: true }).roles;
+    const hydrated = initialState({
+      family,
+      urlParams: new URLSearchParams(roomOptionsToQuery({
+        mode, playerCount: 10, rolePreset: "manual", roles: roster,
+        revealRolesOnDeath: requested, jesterEnabled: false,
+      })),
+    });
+    expect(hydrated.formError).toBe("");
+    expect(hydrated.manualRolesEnabled).toBe(true);
+    expect(hydrated.advanced.revealRolesOnDeath).toBe(requested);
+    expect(currentConfig(hydrated).revealRolesOnDeath).toBe(false);
+
+    const adjustment = adjustManualRoleRoster({
+      family, playerCount: 10, roles: hydrated.manualRoles, role: "jester", delta: -1,
+    });
+    expect(adjustment.status).toBe("changed");
+    const removed = lobbyFormReducer(hydrated, { type: "SET_MANUAL_ROLES", roles: adjustment.roles });
+    expect(currentConfig(removed).roles.jester ?? 0).toBe(0);
+    expect(currentConfig(removed).revealRolesOnDeath).toBe(requested);
+  });
+
+  it.each([true, false])("restores reveal=%s below the Jester player threshold and retains it on reload", (requested) => {
+    const hydrated = initialState({
+      family,
+      urlParams: new URLSearchParams({ mode, players: "10", jester: "1", reveal: String(Number(requested)) }),
+    });
+    expect(currentConfig(hydrated).roles.jester).toBe(1);
+    expect(currentConfig(hydrated).revealRolesOnDeath).toBe(false);
+
+    const smaller = lobbyFormReducer(hydrated, { type: "SET_PLAYER_COUNT", playerCount: 6 });
+    expect(currentConfig(smaller).roles.jester ?? 0).toBe(0);
+    expect(currentConfig(smaller).revealRolesOnDeath).toBe(requested);
+    const reloaded = initialState({ family, urlParams: new URLSearchParams(queryFromState(smaller)) });
+    expect(reloaded.formError).toBe("");
+    expect(reloaded.advanced.revealRolesOnDeath).toBe(requested);
+    expect(currentConfig(reloaded).revealRolesOnDeath).toBe(requested);
+
+    const larger = lobbyFormReducer(reloaded, { type: "SET_PLAYER_COUNT", playerCount: 10 });
+    expect(currentConfig(larger).roles.jester).toBe(1);
+    expect(currentConfig(larger).revealRolesOnDeath).toBe(false);
+    expect(larger.advanced.revealRolesOnDeath).toBe(requested);
+  });
+
+  it.each([true, false])("preserves reveal=%s in repeated-room options after manual Jester removal", (requested) => {
+    const original = createGameConfigFromOptions({
+      mode, playerCount: 10, jesterEnabled: true, revealRolesOnDeath: requested,
+    });
+    const options = createRoomOptionsFromConfig(original);
+    expect(original.revealRolesOnDeath).toBe(false);
+    expect(options.revealRolesOnDeath).toBe(requested);
+
+    const repeated = initialState({ family, urlParams: new URLSearchParams(roomOptionsToQuery(options)) });
+    expect(repeated.formError).toBe("");
+    expect(currentConfig(repeated).roles).toEqual(original.roles);
+    expect(currentConfig(repeated).revealRolesOnDeath).toBe(false);
+    expect(repeated.advanced.revealRolesOnDeath).toBe(requested);
+
+    const adjustment = adjustManualRoleRoster({
+      family, playerCount: 10, roles: repeated.manualRoles, role: "jester", delta: -1,
+    });
+    const removed = lobbyFormReducer(repeated, { type: "SET_MANUAL_ROLES", roles: adjustment.roles });
+    expect(currentConfig(removed).roles.jester ?? 0).toBe(0);
+    expect(currentConfig(removed).revealRolesOnDeath).toBe(requested);
+  });
+
+  it("retains the default requested reveal when the URL enables Jester without a reveal option", () => {
+    const hydrated = initialState({ family, urlParams: new URLSearchParams({ mode, players: "10", jester: "1" }) });
+    expect(currentConfig(hydrated).revealRolesOnDeath).toBe(false);
+    expect(hydrated.advanced.revealRolesOnDeath).toBe(true);
+    const removed = lobbyFormReducer(hydrated, { type: "SET_ADVANCED", key: "jesterEnabled", value: false });
+    expect(currentConfig(removed).revealRolesOnDeath).toBe(true);
   });
 });

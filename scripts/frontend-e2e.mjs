@@ -6,6 +6,9 @@ import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { chromium, firefox, webkit } from "playwright";
 import { assertFrontendCssNavigation } from "./frontend-css-navigation.mjs";
+import { assertInteractiveTouchTargets } from "./frontend-touch-targets.mjs";
+import { installNarrationProbe, enableNarrationProbe, assertNarratedPhase, assertNarrationSilent } from "./frontend-narration-probe.mjs";
+import { runPlayPerformance } from "./frontend-play-performance.mjs";
 
 const isWindows = process.platform === "win32";
 const processes = [];
@@ -13,7 +16,7 @@ const webStandaloneServer = "apps/web/.next/standalone/apps/web/server.js";
 const browserName = process.env.FRONTEND_E2E_BROWSER ?? "chromium";
 const browserTypes = { chromium, firefox, webkit };
 const browserType = browserTypes[browserName];
-const artifactDir = join("output", "playwright", browserName);
+const artifactDir = process.env.FRONTEND_E2E_ARTIFACT_DIR ?? join("output", "playwright", browserName);
 const webPort = process.env.FRONTEND_E2E_WEB_PORT ?? "3401";
 const gamePort = process.env.FRONTEND_E2E_GAME_PORT ?? "3568";
 const baseUrl = `http://127.0.0.1:${webPort}`;
@@ -23,6 +26,7 @@ const testSecret = "frontend-e2e-secret-that-is-long-enough";
 const databaseUrl = process.env.FRONTEND_E2E_DATABASE_URL ?? process.env.DATABASE_URL;
 const redisUrl = process.env.FRONTEND_E2E_REDIS_URL ?? process.env.REDIS_URL;
 const fixturePassword = "Frontend-e2e-password-2026!";
+const focus = process.env.FRONTEND_E2E_FOCUS ?? "all";
 
 const viewports = {
   desktop: { width: 1440, height: 1000 },
@@ -34,6 +38,9 @@ let activeBrowser = null;
 let authFixture = null;
 
 async function main() {
+  if (!["all", "play", "performance"].includes(focus)) {
+    throw new Error("FRONTEND_E2E_FOCUS must be all, play or performance.");
+  }
   if (!browserType) {
     throw new Error(
       `FRONTEND_E2E_BROWSER must be one of ${Object.keys(browserTypes).join(", ")}; received ${browserName}.`,
@@ -82,26 +89,36 @@ async function main() {
       : {}),
   });
 
-  await runCheck("landing desktop layout and theme picker", testLandingDesktop);
-  await runCheck("landing mobile layout", testLandingMobile);
-  for (const [viewportName, viewport] of Object.entries(viewports)) {
-    for (const theme of ["light", "dark"]) {
-      await runCheck(`route CSS consistency (${viewportName}, ${theme})`, () => testRouteCssNavigation(viewportName, viewport, theme));
+  if (focus === "all") {
+    await runCheck("landing desktop layout and theme picker", testLandingDesktop);
+    await runCheck("landing mobile layout", testLandingMobile);
+    for (const [viewportName, viewport] of Object.entries(viewports)) {
+      for (const theme of ["light", "dark"]) {
+        await runCheck(`route CSS consistency (${viewportName}, ${theme})`, () => testRouteCssNavigation(viewportName, viewport, theme));
+      }
     }
+    await runCheck("tutorial and offline shell", testTutorialAndOfflineShell);
+    await runCheck("auth gates for lobby routes", testLobbyModeFiltering);
+    await runCheck("auth gates for invite lobby routes", testInviteLobbyCopy);
+    await runCheck("roles codex assets and responsiveness", testRolesCodex);
+    await runCheck("anonymous join redirects to sign-in", testAnonymousEntry);
+    await runCheck("authenticated join keeps the room invitation", testAuthenticatedEntry);
+    await runCheck("profile changes persist after the last avatar and reload", testAccountProfileSave);
+    await runCheck("history screen basics", testHistoryScreen);
+    await runCheck("achievements, leaderboard and friends screens", testUtilityPages);
+    await runCheck("single-player play auth gate", testSinglePlayScreen);
   }
-  await runCheck("tutorial and offline shell", testTutorialAndOfflineShell);
-  await runCheck("auth gates for lobby routes", testLobbyModeFiltering);
-  await runCheck("auth gates for invite lobby routes", testInviteLobbyCopy);
-  await runCheck("roles codex assets and responsiveness", testRolesCodex);
-  await runCheck("anonymous join redirects to sign-in", testAnonymousEntry);
-  await runCheck("authenticated join keeps the room invitation", testAuthenticatedEntry);
-  await runCheck("history screen basics", testHistoryScreen);
-  await runCheck("achievements, leaderboard and friends screens", testUtilityPages);
-  await runCheck("single-player play auth gate", testSinglePlayScreen);
-  for (const family of ["werewolves", "mafia"]) {
-    await runCheck(`six browser players reach first voting and reconnect (${family})`, () => testSixClientGameStart(family));
+  if (focus === "performance") {
+    await runCheck("crowded mobile tables on the production build", () => runPlayPerformance({
+      browser: activeBrowser, baseUrl, wsUrl, identities: authFixture.users, signInBrowserContext,
+      secret: testSecret, artifactDir, label: process.env.FRONTEND_E2E_PERF_LABEL ?? "current",
+    }));
+  } else {
+    for (const family of ["werewolves", "mafia"]) {
+      await runCheck(`six browser players reconnect, finish, replay and repeat (${family})`, () => testSixClientGameStart(family));
+    }
+    await runCheck("create token failure can be retried", testCreateTokenRetry);
   }
-  await runCheck("create token failure can be retried", testCreateTokenRetry);
 
   await activeBrowser.close();
   activeBrowser = null;
@@ -146,7 +163,7 @@ async function testLandingDesktop() {
 
     await page.locator(".game-choice-mafia").getByRole("link", { name: "Създай стая", exact: true }).click();
     await page.waitForURL("**/sign-in?redirect=%2Fmafia%2Fcreate");
-    await expectText(page, "Стани");
+    await expectText(page, "Събери компанията");
     await watcher.assertClean();
   } finally {
     await close();
@@ -175,9 +192,16 @@ async function testTutorialAndOfflineShell() {
     await expectText(page, "Масата се събира.");
     await expectText(page, "Сцена 1 от 6");
     await assertNoHorizontalOverflow(page, "tutorial screen");
+    for (const theme of ["light", "dark"]) {
+      await page.evaluate((theme) => { document.documentElement.dataset.theme = theme; }, theme);
+      await page.waitForFunction((theme) => getComputedStyle(document.body, "::before").backgroundImage
+        .includes(`/tutorial/bg-tutorial-hall-${theme}-v1.avif`), theme);
+      await assertCssBackgroundImagesLoaded(page, `tutorial ${theme} scenery`);
+    }
 
     await goto(page, "/offline", "offline screen");
-    await expectText(page, "Лампата свети, чакаме теб.");
+    await expectText(page, "Няма връзка");
+    await page.getByRole("button", { name: "Провери връзката", exact: true }).waitFor({ state: "visible" });
     await assertNoHorizontalOverflow(page, "offline screen");
     await watcher.assertClean();
   } finally {
@@ -190,11 +214,11 @@ async function testLobbyModeFiltering() {
   try {
     await goto(page, "/werewolf/create", "werewolves lobby");
     await page.waitForURL("**/sign-in?redirect=%2Fwerewolf%2Fcreate");
-    await expectText(page, "Стани");
+    await expectText(page, "Събери компанията");
 
     await goto(page, "/mafia/create", "mafia lobby");
     await page.waitForURL("**/sign-in?redirect=%2Fmafia%2Fcreate");
-    await expectText(page, "Стани");
+    await expectText(page, "Събери компанията");
     await assertNoHorizontalOverflow(page, "mafia auth gate");
     await watcher.assertClean();
   } finally {
@@ -211,7 +235,7 @@ async function testInviteLobbyCopy() {
       "mafia invite lobby",
     );
     await page.waitForURL("**/sign-in?redirect=**");
-    await expectText(page, "Покажи се на масата");
+    await expectText(page, "Влез в Сенките");
 
     await goto(
       page,
@@ -219,7 +243,7 @@ async function testInviteLobbyCopy() {
       "werewolves invite lobby",
     );
     await page.waitForURL("**/sign-in?redirect=**");
-    await expectText(page, "Покажи се на масата");
+    await expectText(page, "Влез в Сенките");
     await assertCssBackgroundImagesLoaded(page, "invite auth gates");
     await watcher.assertClean();
   } finally {
@@ -289,13 +313,87 @@ async function testAuthenticatedEntry() {
   const entry = await newPage("authenticated-entry", viewports.desktop);
   try {
     await signInBrowserContext(entry.context, authFixture.users[0]);
-    await goto(entry.page, "/mafia/join/ABCD12", "authenticated join");
-    await entry.page.waitForURL("**/mafia/join/ABCD12");
-    await expectText(entry.page, "Добре дошъл в бара");
+    await goto(entry.page, "/mafia/join/ABCD23", "authenticated join");
+    await entry.page.waitForURL("**/mafia/join/ABCD23");
+    const welcome = entry.page.getByRole("dialog", { name: "Мястото ти е готово.", exact: true });
+    await assertLocatorAttribute(welcome.getByRole("link", { name: "Отвори наръчника", exact: true }), "href",
+      "/tutorial?welcome=1&game=mafia_free&redirect=%2Fmafia%2Fjoin%2FABCD23", "welcome invitation");
+    await welcome.getByRole("button", { name: "Към игрите", exact: true }).click();
+    await welcome.waitFor({ state: "hidden" });
+    await expectText(entry.page, "Влез на масата");
+    for (const [index, character] of [..."ABCD23"].entries()) {
+      await expectInputValue(entry.page.getByRole("textbox", { name: `Символ ${index + 1} от 6`, exact: true }), character);
+    }
+    await expectText(entry.page, "Не открихме стая ABCD23. Провери кода или поискай нов.");
+    if (!await entry.page.getByRole("button", { name: "Влез в стаята", exact: true }).isDisabled()) {
+      throw new Error("A missing room must not accept an entry.");
+    }
     await assertNoHorizontalOverflow(entry.page, "authenticated join");
     await entry.watcher.assertClean();
   } finally {
     await entry.close();
+  }
+}
+
+async function testAccountProfileSave() {
+  const identity = authFixture.users[0];
+  const { page, watcher, close } = await newPage("account-profile-save", viewports.mobile);
+  const savedName = "Проверен образ";
+  let testFailure;
+  try {
+    await signInBrowserContext(page.context(), identity);
+    await page.context().addInitScript(() => localStorage.setItem("welcome-modal-shown", "1"));
+    await goto(page, "/account", "account profile");
+    await page.getByRole("tab", { name: "Образ и достъп", exact: true }).click();
+    if (await page.getByRole("button", { name: "Дай ни бележка", exact: true }).count()) {
+      throw new Error("The floating feedback launcher must not cover account editing.");
+    }
+    const name = page.getByRole("textbox", { name: "Име на масата", exact: true });
+    await name.fill(savedName);
+    const lastAvatar = page.getByRole("radio").last();
+    const avatarId = await lastAvatar.getAttribute("data-avatar-id");
+    if (!avatarId) throw new Error("Profile avatar is missing its identifier.");
+    await lastAvatar.click();
+    const save = page.getByRole("button", { name: "Запази досието", exact: true });
+    const avatarBounds = await lastAvatar.boundingBox();
+    const saveBounds = await save.boundingBox();
+    if (!avatarBounds || !saveBounds || saveBounds.y < avatarBounds.y + avatarBounds.height) {
+      throw new Error("Profile save must follow the last avatar.");
+    }
+    const saved = page.waitForResponse((response) => response.url().endsWith("/api/auth/update-user") && response.request().method() === "POST");
+    await save.click();
+    if (!(await saved).ok()) throw new Error("Profile update was not accepted by the server.");
+    await waitForVisibleText(page.locator("#account-profile-feedback").getByText("Запазено", { exact: true }), "Запазено");
+    await page.reload();
+    await expectInputValue(name, savedName);
+    await page.locator(`button[data-avatar-id="${avatarId}"][aria-checked="true"]`).waitFor({ state: "visible" });
+    const response = await page.context().request.get(`${baseUrl}/api/auth/get-session`);
+    const session = await response.json();
+    if (!response.ok() || session?.user?.name !== savedName || session?.user?.avatarId !== avatarId) {
+      throw new Error("Reloaded session did not retain the saved profile.");
+    }
+    await assertNoHorizontalOverflow(page, "account profile saved");
+    await watcher.assertClean();
+  } catch (error) {
+    testFailure = error;
+    await screenshot(page, "account-profile-save-failure.png").catch(() => {});
+    throw error;
+  } finally {
+    // Other integration scenarios use the fixture's original public identity.
+    try {
+      const restored = await page.context().request.post(`${baseUrl}/api/auth/update-user`, {
+        headers: { Origin: baseUrl },
+        data: { name: identity.name, avatarId: "portrait-f01" },
+      });
+      if (!restored.ok()) {
+        throw new AggregateError([
+          ...(testFailure ? [testFailure] : []),
+          new Error(`Could not restore the synthetic profile: HTTP ${restored.status()}.`),
+        ], "Profile integration or cleanup failed.");
+      }
+    } finally {
+      await close();
+    }
   }
 }
 
@@ -317,7 +415,8 @@ async function testUtilityPages() {
   try {
     await goto(achievements.page, "/achievements", "achievements screen");
     await achievements.page.waitForURL("**/sign-in?redirect=%2Fachievements");
-    await expectText(achievements.page, "Запази");
+    await expectText(achievements.page, "Влез в Сенките");
+    await expectText(achievements.page, "Върни се към своите игри, истории и постижения.");
     await achievements.watcher.assertClean();
   } finally {
     await achievements.close();
@@ -326,7 +425,7 @@ async function testUtilityPages() {
   const leaderboard = await newPage("leaderboard-screen", viewports.desktop);
   try {
     await goto(leaderboard.page, "/leaderboard", "leaderboard screen");
-    await expectText(leaderboard.page, "Вечерен Брой на Масата");
+    await expectText(leaderboard.page, "Вечерен брой");
     await assertNoHorizontalOverflow(leaderboard.page, "leaderboard screen");
     await leaderboard.watcher.assertClean();
   } finally {
@@ -337,7 +436,8 @@ async function testUtilityPages() {
   try {
     await goto(friends.page, "/friends", "friends screen");
     await friends.page.waitForURL("**/sign-in?redirect=%2Ffriends");
-    await expectText(friends.page, "Събери");
+    await expectText(friends.page, "Влез в Сенките");
+    await expectText(friends.page, "Приятелите ти и поканите за следващата игра са тук.");
     await assertNoHorizontalOverflow(friends.page, "utility auth gates");
     await friends.watcher.assertClean();
   } finally {
@@ -397,11 +497,16 @@ async function testSixClientGameStart(family) {
       const context = await activeBrowser.newContext({ viewport: index === 5 ? viewports.mobile : viewports.desktop });
       contexts.push(context);
       await mockSyntheticSentry(context);
-      await context.addInitScript(() => {
+      await context.addInitScript((theme) => {
         window.localStorage.setItem("cookie-consent", "1");
         window.localStorage.setItem("welcome-modal-shown", "1");
-      });
+        window.localStorage.setItem("werewolf-theme", theme);
+      }, index === 5 ? "light" : "dark");
       if (index === 5) await context.addInitScript(installGameSocketProbe, wsUrl);
+      if (index === 0 || index === 5) {
+        await context.addInitScript(() => localStorage.setItem("werewolf-cue-mode", "audio_vibration"));
+        await context.addInitScript(installNarrationProbe);
+      }
       const identity = authFixture.users[index];
       await signInBrowserContext(context, identity);
       const page = await context.newPage();
@@ -446,17 +551,28 @@ async function testSixClientGameStart(family) {
     const pages = contexts.map((context) => context.pages()[0]);
     const expectedUserIds = authFixture.users.slice(0, 6).map((user) => user.id);
     await assertSixPlayerRoster(pages, expectedUserIds);
+    await enableNarrationProbe(pages[0], family);
+    await enableNarrationProbe(pages[5], family);
     await Promise.all(pages.map((page) => page.getByTestId("ready-toggle").click()));
     await startReadyGame(pages[0]);
     await holdFirstGamePhase(pages, "role_reveal");
+    await assertNarratedPhase(pages, "role_reveal");
     const privateRoles = await Promise.all(pages.map((page) => readPrivateRole(page, family)));
     if (new Set(privateRoles).size < 2) {
       throw new Error("The six-player fixture did not render distinct private assignments.");
     }
 
     await advanceFirstGamePhase(pages, "role_reveal", "first_night");
-    // Resolve the first night without submitted attacks; role mechanics have server coverage.
+    const investigator = await submitFirstInvestigation(pages, privateRoles, family);
+    // No attacks: the investigation must resolve privately without eliminating its target.
     await advanceFirstGamePhase(pages, "first_night", "day_announcement");
+    await expectTextIn(pages[investigator].getByRole("status", { name: "Личен резултат", exact: true }),
+      family === "mafia" ? "е от злата страна." : "Видението потвърди нощна заплаха.");
+    for (const [index, page] of pages.entries()) {
+      if (index !== investigator && await page.getByRole("status", { name: "Личен резултат", exact: true }).count()) {
+        throw new Error("A private investigation appeared for another participant.");
+      }
+    }
     await advanceFirstGamePhase(pages, "day_announcement", "day_discussion");
     await advanceFirstGamePhase(pages, "day_discussion", "voting");
 
@@ -471,13 +587,179 @@ async function testSixClientGameStart(family) {
     await expectTextIn(mobilePage.locator(".play-action-receipt"), `Приет глас: ${target.name}`);
     const voterSelector = `[data-seat-user-id="${expectedUserIds[5]}"][data-voted="true"]`;
     await Promise.all(pages.map((page) => page.locator(voterSelector).waitFor({ state: "visible" })));
+    const narrationStarts = await mobilePage.evaluate(() => window.__frontendNarration.read().events.length);
     await reconnectFirstGameGuest(pages, expectedUserIds, privateRoles[5], family, `Приет глас: ${target.name}`);
+    await assertNarrationSilent(mobilePage, narrationStarts);
+    await mobilePage.reload();
+    await mobilePage.locator('main.play-shell[data-phase="voting"]').waitFor({ state: "visible" });
+    await assertSixPlayerRoster(pages, expectedUserIds);
+    if (await readPrivateRole(mobilePage, family) !== privateRoles[5]) throw new Error("Reload changed the viewer's private role.");
+    await mobilePage.locator(voterSelector).waitFor({ state: "visible" });
+    await assertSingleVoteTally(mobilePage, target.name);
+    await enableNarrationProbe(mobilePage, family);
+    await assertNarrationSilent(mobilePage, 0);
+    // ACK receipts are transient. Reconfirm through the UI without double-counting the retained vote.
+    await mobilePage.locator(`button[data-seat-user-id="${target.id}"]`).click();
+    await mobilePage.getByRole("button", { name: `Потвърди гласа за ${target.name}`, exact: true }).click();
+    await expectTextIn(mobilePage.locator(".play-action-receipt"), `Приет глас: ${target.name}`);
+    await assertSingleVoteTally(mobilePage, target.name);
     await assertNoHorizontalOverflow(mobilePage, `six-client ${family} mobile voting after reconnect`);
+    await finishFirstGameAndReplay(pages, privateRoles, family, roomUrl);
     for (const watcher of watchers) {
       await watcher.assertClean();
     }
   } finally {
     await Promise.allSettled(contexts.map((context) => context.close()));
+  }
+}
+
+async function assertSingleVoteTally(page, targetName) {
+  await page.waitForFunction((name) => {
+    const rows = [...document.querySelectorAll(".vote-tally-row")];
+    return rows.length === 1 && rows[0].querySelector("span")?.textContent === name
+      && rows[0].querySelector("strong")?.textContent === "1";
+  }, targetName, { timeout: 10000 });
+}
+
+async function submitFirstInvestigation(pages, privateRoles, family) {
+  const role = family === "mafia" ? "Комисар" : "Гадателка";
+  const enemy = family === "mafia" ? "Мафиот" : "Върколак";
+  const actor = privateRoles.indexOf(`Тайна роля: ${role}`);
+  const target = privateRoles.indexOf(`Тайна роля: ${enemy}`);
+  if (actor < 0 || target < 0) throw new Error("The starter investigation fixture no longer matches its roles.");
+  const page = pages[actor];
+  await page.locator(`button[data-seat-user-id="${authFixture.users[target].id}"]`).click();
+  await page.getByRole("button", { name: family === "mafia" ? "Провери дали е от Мафията" : "Провери заплахата", exact: true }).click();
+  await expectText(page, "Нощното действие е прието.");
+  return actor;
+}
+
+async function finishFirstGameAndReplay(pages, privateRoles, family, roomUrl) {
+  // Read only each synthetic player's own card; the server still assigns roles and decides victory.
+  const enemyRole = family === "mafia" ? "Мафиот" : "Върколак";
+  const targets = privateRoles.flatMap((role, index) => role === `Тайна роля: ${enemyRole}` ? [index] : []);
+  if (targets.length !== (family === "mafia" ? 1 : 2)) {
+    throw new Error("The six-player starter composition changed; review the postgame scenario.");
+  }
+  const eliminated = new Set();
+  for (const targetIndex of targets) {
+    const target = authFixture.users[targetIndex];
+    const majority = Math.floor((pages.length - eliminated.size) / 2) + 1;
+    const voters = pages.map((_, index) => index)
+      .filter((index) => index !== targetIndex && !eliminated.has(index)).slice(0, majority);
+    for (const index of voters) {
+      const page = pages[index];
+      await page.locator(`button[data-seat-user-id="${target.id}"]`).click();
+      await page.getByRole("button", { name: `Потвърди гласа за ${target.name}`, exact: true }).click();
+      await expectTextIn(page.locator(".play-action-receipt"), `Приет глас: ${target.name}`);
+    }
+    await advanceFirstGamePhase(pages, "voting", "resolution");
+    await Promise.all(pages.map((page) => page.locator(
+      `[data-seat-user-id="${target.id}"][data-alive="false"]`,
+    ).waitFor({ state: "visible" })));
+    eliminated.add(targetIndex);
+    if (eliminated.size < targets.length) {
+      await advanceFirstGamePhase(pages, "resolution", "night");
+      await advanceFirstGamePhase(pages, "night", "day_announcement");
+      await advanceFirstGamePhase(pages, "day_announcement", "day_discussion");
+      await advanceFirstGamePhase(pages, "day_discussion", "voting");
+    }
+  }
+  await pages[0].getByRole("button", { name: "Следваща фаза", exact: true }).click();
+  await assertNarratedPhase(pages, "game_over");
+  for (const page of pages) {
+    await page.locator(`[data-endgame="${family === "mafia" ? "town" : "village"}"]`).waitFor({ state: "visible" });
+    for (const [index, identity] of authFixture.users.entries()) {
+      const row = page.locator("[data-endgame] li").filter({ has: page.getByText(identity.name, { exact: true }) });
+      await expectTextIn(row, privateRoles[index].replace("Тайна роля: ", ""));
+      if ((await row.getAttribute("data-winner") === "true") === eliminated.has(index)) {
+        throw new Error("Final player winners disagree with the completed starter scenario.");
+      }
+    }
+    await assertNoHorizontalOverflow(page, `${family} recorded finale`);
+    // game_over precedes persistence; never treat an archive fallback as a successful recording.
+    await page.getByRole("link", { name: "Виж записа", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+    const unlocked = page.getByRole("dialog", { name: "Отключени легенди", exact: true });
+    if (await unlocked.isVisible()) {
+      await unlocked.getByRole("button", { name: "Продължи вечерта", exact: true }).click();
+      await unlocked.waitFor({ state: "hidden" });
+    }
+  }
+  await prepareFinaleScreenshot(pages[0]);
+  await prepareFinaleScreenshot(pages[5]);
+  await screenshot(pages[0], `six-client-${family}-finale-desktop.png`);
+  await screenshot(pages[5], `six-client-${family}-finale-mobile.png`);
+
+  const replayPage = pages[5];
+  await replayPage.getByRole("link", { name: "Виж записа", exact: true }).click();
+  await replayPage.waitForURL(/\/history\/[^/?]+\/replay$/);
+  await replayPage.locator(`[data-replay-shell][data-family="${family}"]`).waitFor({ state: "visible" });
+  await replayPage.getByRole("heading", { level: 1, name: family === "mafia" ? "Градът оцеля." : "Селото оцеля.", exact: true }).waitFor();
+  await expectTextIn(replayPage.locator("[data-replay-summary]"), "Пълен запис");
+  const roster = replayPage.getByRole("complementary", { name: "Участници в записа", exact: true });
+  await roster.locator("summary").click();
+  for (const identity of authFixture.users) await roster.getByText(identity.name, { exact: true }).waitFor();
+  await replayPage.getByRole("link", { name: "Към развръзката", exact: true }).click();
+  await replayPage.getByRole("heading", { level: 4, name: family === "mafia" ? "Гражданите печелят" : "Селото печели", exact: true }).waitFor();
+  await assertNoHorizontalOverflow(replayPage, `${family} recorded replay mobile`);
+  await screenshot(replayPage, `six-client-${family}-replay-mobile.png`);
+  await replayPage.goBack();
+  // The archive anchor may add an entry; traverse it before returning to the game.
+  if (new URL(replayPage.url()).pathname.includes("/replay")) await replayPage.goBack();
+  await replayPage.waitForURL((url) => url.pathname === roomUrl.pathname);
+  await replayPage.locator("main[data-phase='game_over']").waitFor({ state: "visible" });
+  await replayPage.locator(`[data-endgame="${family === "mafia" ? "town" : "village"}"]`).waitFor({ state: "visible" });
+  await replayPage.getByRole("link", { name: "Виж записа", exact: true }).waitFor({ state: "visible" });
+  if (await replayPage.getByText("Получен е личен резултат от нощното действие.", { exact: true }).count()) {
+    throw new Error("Returning from replay announced a retained investigation as a new action.");
+  }
+  await prepareFinaleScreenshot(replayPage);
+  await screenshot(replayPage, `six-client-${family}-back-to-game.png`);
+
+  const host = pages[0];
+  const repeat = host.getByRole("link", { name: "Още една игра", exact: true });
+  const repeatUrl = new URL(await repeat.getAttribute("href"), baseUrl);
+  assertRepeatedRoomOptions(roomUrl, repeatUrl, authFixture.defaultGameConfig(family === "mafia" ? "mafia_free" : "werewolves_classic", 6));
+  await repeat.click();
+  await host.waitForURL(repeatUrl.href);
+  await expectInputValue(host.getByRole("slider", { name: "Брой играчи" }), "6");
+  await host.getByRole("button", { name: family === "mafia" ? "Отвори масата" : "Създай селото", exact: true }).click();
+  await host.waitForURL(/\/play\/[^/?]+(?:\?|$)/);
+  if (new URL(host.url()).pathname === roomUrl.pathname) throw new Error("Repeat game reused the ended room.");
+  await host.locator("main.play-shell[data-phase='lobby']").waitFor({ state: "visible" });
+  await host.getByTestId("ready-toggle").waitFor({ state: "visible" });
+  await assertSixPlayerRoster([host], [authFixture.users[0].id]);
+  if (await host.locator("main.play-shell[data-phase='lobby']:visible").locator("[data-endgame], [data-private-dossier]").count()) {
+    throw new Error("New room retained the previous game's result or private role.");
+  }
+}
+
+async function prepareFinaleScreenshot(page) {
+  await page.locator("[data-endgame]").evaluate(async (element) => {
+    const images = [...element.querySelectorAll("img")];
+    if (!images.length) throw new Error("The finale has no image assets.");
+    await Promise.all(images.map((image) => image.decode()));
+    if (images.some((image) => image.naturalWidth === 0)) throw new Error("The finale contains a broken image.");
+  });
+  await page.evaluate(() => window.scrollTo({ top: 0, left: 0, behavior: "instant" }));
+}
+
+function assertRepeatedRoomOptions(original, repeated, defaults) {
+  if (repeated.origin !== original.origin || repeated.pathname !== `/${defaults.mode === "mafia_free" ? "mafia" : "werewolf"}/create`) {
+    throw new Error("Repeat game left the original game family or origin.");
+  }
+  for (const [query, option] of [
+    ["mode", "mode"], ["players", "playerCount"], ["communication", "communicationMode"],
+    ["narrator", "narratorMode"], ["tempo", "tempoProfile"], ["reveal", "revealRolesOnDeath"],
+    ["visibility", "roomVisibility"], ["preset", "rolePreset"],
+  ]) {
+    const fallback = typeof defaults[option] === "boolean" ? (defaults[option] ? "1" : "0") : String(defaults[option]);
+    if ((repeated.searchParams.get(query) ?? fallback) !== (original.searchParams.get(query) ?? fallback)) {
+      throw new Error(`Repeat game changed the original ${query} option.`);
+    }
+  }
+  if (["code", "spectator", "winnerTeam", "finalRoles"].some((key) => repeated.searchParams.has(key))) {
+    throw new Error("Repeat game carried terminal or room identity data into creation.");
   }
 }
 
@@ -509,9 +791,20 @@ async function startReadyGame(host) {
   await host.locator("main.play-shell[data-phase='role_reveal']").waitFor({ state: "visible", timeout: 15_000 });
 }
 
+async function putDealtCardAway(page) {
+  // The deal is a modal moment on every phone: turn the card, then put it away to reach the table.
+  await page.getByRole("dialog", { name: "Твоята тайна карта", exact: true })
+    .getByRole("button", { name: "Обърни картата", exact: true })
+    .click({ timeout: 15_000 });
+  const done = page.getByRole("button", { name: "Запомних", exact: true });
+  await done.click({ timeout: 15_000 });
+  await done.waitFor({ state: "detached", timeout: 15_000 });
+}
+
 async function holdFirstGamePhase(pages, phase) {
   const selector = `main.play-shell[data-phase="${phase}"]`;
   await pages[0].locator(selector).waitFor({ state: "visible", timeout: 15_000 });
+  if (phase === "role_reveal") await Promise.all(pages.map(putDealtCardAway));
   // Use the real host control to keep assertions independent of short phase timers.
   await pages[0].getByRole("button", { name: "+180 сек.", exact: true }).click();
   await Promise.all(pages.map((page) => page.locator(selector).waitFor({ state: "visible", timeout: 15_000 })));
@@ -525,6 +818,7 @@ async function advanceFirstGamePhase(pages, from, to) {
     throw new Error(`Expected first-round phase ${from} or ${to}, received ${current}.`);
   }
   await holdFirstGamePhase(pages, to);
+  await assertNarratedPhase(pages, to);
 }
 
 async function readPrivateRole(page, family) {
@@ -679,7 +973,7 @@ async function seedAuthFixture(url) {
   const db = databaseModule.createDatabase(url);
   const runId = `${Date.now().toString(36)}-${randomBytes(4).toString("hex")}`;
   const passwordHash = await cryptoModule.hashPassword(fixturePassword);
-  const users = Array.from({ length: 6 }, (_, index) => ({
+  const users = Array.from({ length: focus === "performance" ? 30 : 6 }, (_, index) => ({
     id: `frontend-e2e-${runId}-${index + 1}`,
     name: `Играч ${index + 1}`,
     email: `frontend-e2e-${runId}-${index + 1}@example.test`,
@@ -708,6 +1002,7 @@ async function seedAuthFixture(url) {
 
   return {
     users,
+    defaultGameConfig: sharedModule.createDefaultGameConfig,
     roomCodeAlphabet: sharedModule.ROOM_CODE_ALPHABET,
     roomCodeLength: sharedModule.ROOM_CODE_LENGTH,
     async cleanup() {
@@ -1142,34 +1437,6 @@ async function assertNoOverlap(page, selectorA, selectorB, label) {
   }
 }
 
-async function assertInteractiveTouchTargets(page, label) {
-  const failures = await page.evaluate(() => {
-    const selector = 'button, a, input, select, textarea, summary, [role="button"]';
-    return Array.from(document.querySelectorAll(selector))
-      .filter((element) => {
-        const style = window.getComputedStyle(element);
-        const rect = element.getBoundingClientRect();
-        const isolated = element.closest('[inert], [aria-hidden="true"]');
-        return !isolated && style.visibility !== "hidden" && style.display !== "none" && rect.width > 0 && rect.height > 0;
-      })
-      .map((element) => {
-        const rect = element.getBoundingClientRect();
-        return {
-          tag: element.tagName.toLowerCase(),
-          text: (element.textContent ?? element.getAttribute("aria-label") ?? "").trim().replace(/\s+/g, " ").slice(0, 80),
-          width: Math.round(rect.width),
-          height: Math.round(rect.height),
-        };
-      })
-      .filter((item) => item.width < 28 || item.height < 28)
-      .slice(0, 12);
-  });
-
-  if (failures.length > 0) {
-    throw new Error(`${label} has cramped interactive targets:\n${JSON.stringify(failures, null, 2)}`);
-  }
-}
-
 async function assertNoInteractiveOverlap(page, label) {
   const overlaps = await page.evaluate(() => {
     const selector = 'button, a, input, select, textarea, summary, [role="button"]';
@@ -1344,7 +1611,7 @@ async function scrollThroughPage(page) {
 }
 
 async function screenshot(page, fileName) {
-  await page.screenshot({ path: join(artifactDir, fileName), fullPage: true });
+  await page.screenshot({ path: join(artifactDir, fileName), fullPage: true, animations: "disabled" });
 }
 
 function ensureWebStandaloneAssets() {

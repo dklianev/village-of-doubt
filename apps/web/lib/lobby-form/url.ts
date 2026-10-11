@@ -47,7 +47,7 @@ export function initialState({
   const retiredMafiaLovers =
     getGameFamily(mode) === "mafia" && manualRolesEnabled && (hydratedConfig.roles.lovers ?? 0) > 0;
   const advanced: AdvancedFlags = {
-    revealRolesOnDeath: hydratedConfig.revealRolesOnDeath,
+    revealRolesOnDeath: hydratedConfig.requestedRevealRolesOnDeath,
     allowSkipVote: hydratedConfig.allowSkipVote,
     autoStart: hydratedConfig.autoStart,
     majorityMode: hydratedConfig.majorityMode,

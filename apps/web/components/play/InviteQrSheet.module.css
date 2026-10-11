@@ -1,0 +1,30 @@
+.body {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 8px 0 20px;
+}
+
+/* A scanner needs contrast, not theme colours: warm paper with near-black ink in both themes. */
+.qr {
+  width: min(72vw, 300px);
+  height: auto;
+  border-radius: 12px;
+  box-shadow: 0 0 0 6px #f4ead2, 0 18px 40px rgb(0 0 0 / 0.35);
+}
+
+.paper { fill: #f4ead2; }
+.ink { fill: #1a1410; }
+
+.caption {
+  margin: 8px 0 0;
+  color: var(--ds-ink-muted, currentColor);
+  font-size: 0.875rem;
+}
+
+.code {
+  font-family: var(--font-display);
+  font-size: 2.25rem;
+  letter-spacing: 0.18em;
+  font-variant-numeric: tabular-nums;
+}

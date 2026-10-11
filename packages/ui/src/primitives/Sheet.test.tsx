@@ -26,6 +26,15 @@ describe("Sheet", () => {
     );
   });
 
+  it("disables both sheet animations and close-button motion for reduced motion", () => {
+    render(<Sheet open onOpenChange={() => {}} title="Правила">Съдържание</Sheet>);
+    const styles = document.getElementById("werewolf-ui-sheet-styles")?.textContent ?? "";
+    const reducedMotion = styles.slice(styles.indexOf("@media (prefers-reduced-motion: reduce)"));
+    expect(reducedMotion).toMatch(/\.ds-sheet\[data-state="open"\],\s*\.ds-sheet\[data-state="closed"\]\s*\{\s*animation:\s*none;/);
+    expect(reducedMotion).toMatch(/\.ds-sheet-close\s*\{\s*transition:\s*none;/);
+    expect(reducedMotion).toMatch(/\.ds-sheet-close:hover\s*\{\s*transform:\s*none;/);
+  });
+
   it("renders children", () => {
     const { getByText } = render(
       <Sheet open onOpenChange={() => {}} title="Писма">

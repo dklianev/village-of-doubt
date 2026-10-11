@@ -1,19 +1,21 @@
 import { useEffect, useEffectEvent, useId, useLayoutEffect, useRef, useState, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
-import { ROLE_DEFINITIONS, getRoleRuntimeStatus, getRolesForFamily, teamLabelBg, type GameFamily, type RoleCode } from "@werewolf/shared";
+import type { GameFamily, RoleCode } from "@werewolf/shared";
+import type { RolePresentation } from "@/lib/role-presentation.server";
 import { RoleArt } from "./RoleArt";
 
 type RoleDossierProps = {
   family: GameFamily;
   role: RoleCode;
+  definition: RolePresentation;
   onClose: () => void;
   returnFocusRef?: RefObject<HTMLElement | null>;
 };
 
 export function RoleDossier(props: RoleDossierProps) {
   const [target, setTarget] = useState<HTMLElement | null>(null);
-  const valid = getRolesForFamily(props.family).includes(props.role);
+  const valid = props.definition.id === props.role && props.definition.availableInFamilies.includes(props.family);
   const close = useEffectEvent(props.onClose);
   useEffect(() => {
     if (!valid) {
@@ -25,9 +27,8 @@ export function RoleDossier(props: RoleDossierProps) {
   return target && valid ? createPortal(<RoleDossierContent {...props} />, target) : null;
 }
 
-function RoleDossierContent({ family, role, onClose, returnFocusRef }: RoleDossierProps) {
-  const definition = ROLE_DEFINITIONS[role];
-  const runtimeStatus = getRoleRuntimeStatus(role);
+function RoleDossierContent({ family, role, definition, onClose, returnFocusRef }: RoleDossierProps) {
+  const runtimeStatus = definition.runtimeStatus;
   const titleId = useId();
   const { ref, closeRef } = useDossierModal(onClose, returnFocusRef);
 
@@ -37,7 +38,7 @@ function RoleDossierContent({ family, role, onClose, returnFocusRef }: RoleDossi
       <article className="role-codex-detail-panel">
         <header className="role-codex-detail-heading">
           <div>
-            <p className="section-kicker">{teamLabelBg(definition.team, family)}</p>
+            <p className="section-kicker">{definition.teamLabel}</p>
             <h2 id={titleId}>{definition.nameBg}</h2>
           </div>
           <button type="button" ref={closeRef} className="role-codex-detail-close" aria-label="Затвори досието" onClick={onClose}>
@@ -45,7 +46,7 @@ function RoleDossierContent({ family, role, onClose, returnFocusRef }: RoleDossi
           </button>
         </header>
         <div className="role-codex-detail-body">
-          <RoleArt role={role} family={family} detail />
+          <RoleArt key={role} source={definition.art} family={family} detail />
           <div className="role-codex-detail-copy">
             <p>{definition.fullDescriptionBg}</p>
             <blockquote className="role-table-quote">{roleQuoteBg(role, family)}</blockquote>
@@ -56,8 +57,8 @@ function RoleDossierContent({ family, role, onClose, returnFocusRef }: RoleDossi
               <div><dt>Копия</dt><dd>{definition.maxCopies === 1 ? "1 копие" : `До ${definition.maxCopies} копия`}</dd></div>
             </dl>
             <div className="role-table-advice">
-              <section><h3>С тази роля</h3><p>{roleStrategyBg(role, family)}</p></section>
-              <section><h3>Срещу тази роля</h3><p>{roleCounterplayBg(role, family)}</p></section>
+              <section><h3>С тази роля</h3><p>{roleStrategyBg(definition, family)}</p></section>
+              <section><h3>Срещу тази роля</h3><p>{roleCounterplayBg(definition, family)}</p></section>
             </div>
             <div className="role-codex-tags">
               <span>{runtimeStatus === "playable" ? "Работи в автоматична игра" : "За ръчно водене"}</span>
@@ -165,20 +166,19 @@ function roleQuoteBg(role: RoleCode, family: GameFamily) {
   return quotes[role] ?? (family === "mafia" ? "В този град всяко алиби има цена." : "В това село тишината също говори.");
 }
 
-function roleStrategyBg(role: RoleCode, family: GameFamily) {
-  const definition = ROLE_DEFINITIONS[role];
+function roleStrategyBg(definition: RolePresentation, family: GameFamily) {
   if (definition.team === "mafia" || definition.team === "werewolves" || definition.team === "vampires") {
     return family === "mafia"
       ? "Говори рано, но не води всяко гласуване. Най-доброто алиби е малко несъвършено."
       : "Не се защитавайте като отбор. Оставете селото само да стигне до грешния извод.";
   }
-  if (hasRoleTag(role, "разследваща")) {
+  if (hasRoleTag(definition, "разследваща")) {
     return "Събирай информация, преди да се разкриеш. Един навременен намек може да е по-полезен от открито обвинение.";
   }
-  if (hasRoleTag(role, "защитна")) {
+  if (hasRoleTag(definition, "защитна")) {
     return "Пази хората, които печелят доверие, не само най-шумните. Те често са следващата нощна цел.";
   }
-  if (hasRoleTag(role, "атакуваща")) {
+  if (hasRoleTag(definition, "атакуваща")) {
     return "Атакувай само когато имаш причина, която можеш да защитиш след това.";
   }
   if (definition.team === "neutral" || definition.team === "lovers") {
@@ -187,28 +187,27 @@ function roleStrategyBg(role: RoleCode, family: GameFamily) {
   return "Гледай как хората гласуват, не само какво казват. Сравнявай днешните им обвинения с вчерашните решения.";
 }
 
-function roleCounterplayBg(role: RoleCode, family: GameFamily) {
-  const definition = ROLE_DEFINITIONS[role];
+function roleCounterplayBg(definition: RolePresentation, family: GameFamily) {
   if (definition.team === "mafia" || definition.team === "werewolves" || definition.team === "vampires") {
     return family === "mafia"
       ? "Търси резки смени на версията и прекалено удобни обвинения."
       : "Следи кой подхвърля подозрения, а после оставя другите да обвиняват вместо него.";
   }
-  if (hasRoleTag(role, "разследваща")) {
+  if (hasRoleTag(definition, "разследваща")) {
     return "Увереният тон не доказва проверка. Сравнявай казаното с вече разкритата информация.";
   }
-  if (hasRoleTag(role, "защитна")) {
+  if (hasRoleTag(definition, "защитна")) {
     return "Ако няма смърт, не приемай автоматично, че защитникът е доказан.";
   }
-  if (hasRoleTag(role, "атакуваща")) {
+  if (hasRoleTag(definition, "атакуваща")) {
     return "Питай за причината за избора, не само за резултата.";
   }
-  if (role === "jester") {
+  if (definition.id === "jester") {
     return "Ако някой прекалено много иска да бъде изгонен, може би му помагате.";
   }
   return "Следи кого подкрепя този играч при гласуване и кога сменя позицията си.";
 }
 
-function hasRoleTag(role: RoleCode, tag: string) {
-  return (ROLE_DEFINITIONS[role].tags as readonly string[]).includes(tag);
+function hasRoleTag(definition: RolePresentation, tag: string) {
+  return (definition.tags as readonly string[]).includes(tag);
 }

@@ -1,10 +1,10 @@
 "use client";
 
 import { useId, type ReactNode, type Ref } from "react";
-import { ChevronDown, ChevronUp, EyeOff, Users, Vote } from "lucide-react";
+import { ChevronDown, ChevronUp, EyeOff, Vote } from "lucide-react";
 import styles from "./PlayActionDock.module.css";
 
-export type PlayActionDockKind = "action" | "lobby" | "quiet";
+export type PlayActionDockKind = "action" | "quiet";
 
 interface PlayActionDockProps {
   eyebrow: string;
@@ -14,7 +14,6 @@ interface PlayActionDockProps {
   expanded: boolean;
   onExpandedChange: (expanded: boolean) => void;
   primaryContent: ReactNode;
-  compactSummary?: ReactNode;
   toggleRef?: Ref<HTMLButtonElement>;
   privateAction?: boolean;
 }
@@ -27,15 +26,13 @@ export function PlayActionDock({
   expanded,
   onExpandedChange,
   primaryContent,
-  compactSummary,
   toggleRef,
   privateAction = true,
 }: PlayActionDockProps) {
   const hasPrimaryContent = primaryContent !== null && primaryContent !== false;
   const headingId = useId();
   const gridId = useId();
-  const HeadingIcon = kind === "lobby" ? Users : privateAction ? EyeOff : Vote;
-  const toggleSubject = kind === "lobby" ? "подробностите за стаята" : "личния ход";
+  const HeadingIcon = privateAction ? EyeOff : Vote;
 
   return (
     <section
@@ -61,7 +58,7 @@ export function PlayActionDock({
             ref={toggleRef}
             className={`play-action-dock-toggle ${styles.toggle}`}
             type="button"
-            aria-label={`${expanded ? "Скрий" : "Покажи"} ${toggleSubject}`}
+            aria-label={`${expanded ? "Скрий" : "Покажи"} личния ход`}
             aria-expanded={expanded}
             aria-controls={gridId}
             onClick={() => onExpandedChange(!expanded)}
@@ -70,8 +67,6 @@ export function PlayActionDock({
           </button>
         ) : null}
       </header>
-
-      {compact && compactSummary ? <div className={styles.compactSummary}>{compactSummary}</div> : null}
 
       <div
         id={gridId}

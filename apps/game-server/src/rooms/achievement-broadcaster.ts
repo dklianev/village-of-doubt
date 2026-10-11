@@ -21,6 +21,7 @@ export interface AchievementEvaluationContext {
 export class AchievementBroadcaster {
   private readonly events: AchievementEventLike[] = [];
   private readonly announcedUnlocks = new Set<string>();
+  private eventsTruncated = false;
 
   recordEvent(event: AchievementEventLike) {
     if (event.type === "chat") {
@@ -29,6 +30,7 @@ export class AchievementBroadcaster {
     this.events.push(event);
     if (this.events.length > MAX_ACHIEVEMENT_EVENTS) {
       this.events.shift();
+      this.eventsTruncated = true;
     }
   }
 
@@ -36,6 +38,7 @@ export class AchievementBroadcaster {
     const rawUnlocks = evaluateAchievementUnlocks({
       events: this.events,
       players: context.players,
+      eventsTruncated: this.eventsTruncated,
       ...(context.winnerTeam === undefined ? {} : { winnerTeam: context.winnerTeam }),
     });
 
@@ -75,6 +78,7 @@ export class AchievementBroadcaster {
 
   reset() {
     this.events.length = 0;
+    this.eventsTruncated = false;
     this.announcedUnlocks.clear();
   }
 

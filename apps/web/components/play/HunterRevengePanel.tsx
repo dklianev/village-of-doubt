@@ -1,4 +1,5 @@
 import { Crosshair } from "lucide-react";
+import { Button } from "@/components/button";
 import type { PublicPlayer } from "@/lib/play/types";
 
 export function HunterRevengePanel({
@@ -23,15 +24,14 @@ export function HunterRevengePanel({
         <strong>{selectedTarget?.displayName ?? "избери играч от масата"}</strong>
       </div>
       <div className="play-action-buttons mt-5 flex flex-wrap gap-3">
-        <button
-          className="btn btn-primary action-btn ability-hunter"
-          type="button"
+        <Button
+          className="action-btn ability-hunter"
           disabled={!selectedTarget}
           onClick={() => selectedTarget && sendHunterRevenge(selectedTarget.userId)}
         >
           <Crosshair className="play-button-icon" aria-hidden="true" />
           {selectedTarget ? `Застреляй ${selectedTarget.displayName}` : "Потвърди изстрела"}
-        </button>
+        </Button>
       </div>
       <p className="mt-3 text-[#ead9ba]">Ловецът падна, но може да вземе един жив играч със себе си.</p>
     </section>

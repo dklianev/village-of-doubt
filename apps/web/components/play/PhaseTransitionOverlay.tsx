@@ -1,5 +1,6 @@
 import { getGameFamily, type GameMode, type GamePhase, type NarratorVoice } from "@werewolf/shared";
 import { phaseBg, phaseNarratorLine, phaseSigil } from "@/lib/play/phase-display";
+import "./PhaseTransitionOverlay.module.css";
 
 function transitionKindForPhase(phase: GamePhase) {
   if (phase === "role_reveal") {
@@ -34,6 +35,10 @@ export function PhaseTransitionOverlay({
 }) {
   if (pulseKey === 0 || phase === "lobby") {
     return null;
+  }
+
+  if (phase === "game_over") {
+    return <span className="sr-only" role="status" aria-live="polite" aria-atomic="true">Край на играта</span>;
   }
 
   const family = getGameFamily(mode);

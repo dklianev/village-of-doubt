@@ -23,7 +23,7 @@ describe("resilience surfaces", () => {
   });
 
   it("exposes the cookie notice as a named non-modal region", async () => {
-    render(<CookieBanner />);
+    render(<><main id="main-content" /><CookieBanner /></>);
 
     const notice = await screen.findByRole("region", { name: "Бисквитки" });
 
@@ -52,7 +52,7 @@ describe("resilience surfaces", () => {
     });
 
     expect(fetch).toHaveBeenCalledTimes(8);
-    expect(screen.getByRole("status")).toHaveTextContent("опит 9");
+    expect(screen.getByRole("status")).toHaveTextContent("Автоматичните проверки приключиха.");
     expect(vi.getTimerCount()).toBe(0);
   });
 });

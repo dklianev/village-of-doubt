@@ -34,17 +34,20 @@ function publicPlayer(): PublicPlayer {
 }
 
 describe("PlayStage private-data boundary", () => {
-  it("shows participant readiness rather than an active-round timer in the lobby", () => {
+  it("keeps the lobby stage public without duplicating the bottom readiness status or active timer", () => {
     const players = [publicPlayer(), { ...publicPlayer(), userId: "viewer-2", ready: false },
       { ...publicPlayer(), userId: "narrator", playing: false, narrator: true }];
-    render(<PlayStage code="TEST" phase="lobby" mode="werewolves_classic" family="werewolves"
+    const { container } = render(<PlayStage code="TEST" phase="lobby" mode="werewolves_classic" family="werewolves"
       round={0} phaseEndsAt={0} isPending={false} players={players} hasSnapshot
       narratorMode="honest_human" communicationMode="built_in_chat" ownPlayer={players[0]}
       targetableIds={new Set()} shortcutNumbers={new Map()} selectedTargetId="" secondTargetId=""
       voteCounts={new Map()} currentSpeakerUserId="" currentDefenseUserId="" nomineeIds={new Set()}
       onSelectSeat={vi.fn()} onMakeNarrator={vi.fn()} onMakeMayor={vi.fn()}
     />);
-    expect(screen.getByRole("status", { name: "Готови: 1 от 2" })).toHaveTextContent("1 / 2");
+    expect(screen.queryByRole("status", { name: /Готови:/ })).not.toBeInTheDocument();
+    expect(container.querySelector("[data-table-core]")).toBeNull();
+    expect(container.querySelector("progress")).toBeNull();
+    expect(container.querySelectorAll("[data-seat-user-id]")).toHaveLength(3);
     expect(screen.getByText("2 участници")).toBeVisible();
     expect(screen.queryByRole("timer")).not.toBeInTheDocument();
     expect(screen.queryByText(/рунд 0/)).not.toBeInTheDocument();
@@ -165,14 +168,8 @@ describe("PlayStage stylesheet accessibility contracts", () => {
     expect(statusRule).toContain("text-shadow: var(--play-stage-copy-shadow);");
   });
 
-  it("promotes only clipped animated night layers without a reduced-motion override", () => {
-    expect(PLAY_STAGE_CSS).toMatch(
-      /\.stage\[data-night="true"\] \.atmosphereBack::before,\s*\.stage\[data-night="true"\] \.atmosphereFront::before\s*\{[^}]*will-change:\s*opacity, transform;/s,
-    );
-    expect(PLAY_STAGE_CSS).toMatch(
-      /\.atmosphereBack,\s*\.atmosphereFront\s*\{[^}]*overflow:\s*hidden;/s,
-    );
-    expect(ruleDeclarations(PLAY_STAGE_CSS, ".atmosphereBack")).not.toContain("will-change");
+  it("does not ship the obsolete atmospheric layers hidden by the physical room scene", () => {
+    expect(PLAY_STAGE_CSS).not.toMatch(/atmosphereBack|atmosphereFront/);
     expect(ruleDeclarations(PLAY_STAGE_CSS, ".skeletonPortrait")).toContain("will-change: opacity, transform;");
     expect(PLAY_STAGE_CSS).not.toContain("prefers-reduced-motion");
   });

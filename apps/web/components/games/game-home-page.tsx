@@ -7,11 +7,13 @@ import { NextLinkPill } from "@/components/next-link-pill";
 import { MafiaMechanicsCallouts } from "@/components/games/MafiaMechanicsCallouts";
 import { MafiaNightTimeline } from "@/components/games/MafiaNightTimeline";
 import { RoleSpotlight } from "@/components/games/RoleSpotlight";
+import { FamilyHeroPreload } from "@/components/games/FamilyHeroPreload";
 import { SportMafiaCallout } from "@/components/games/SportMafiaCallout";
 import { VariantsChips } from "@/components/games/VariantsChips";
 import { WerewolfNightTimeline } from "@/components/games/WerewolfNightTimeline";
-import { LiveTickerCard, type LiveStats } from "@/components/landing/LiveTickerCard";
-import { RecentEndingsCard, type Ending } from "@/components/landing/RecentEndingsCard";
+import { LiveTickerCard } from "@/components/landing/LiveTickerCard";
+import { RecentEndingsCard } from "@/components/landing/RecentEndingsCard";
+import { loadGameStats, type GameHomeStats } from "@/lib/game-stats";
 import "@/components/landing/LandingSurface.module.css";
 import "@/components/games/GameHomePage.module.css";
 
@@ -43,8 +45,6 @@ async function GameStatsRow({ family }: { family: GameFamily }) {
   const stats = await loadGameStats();
   return <GameStatsContent family={family} stats={stats} />;
 }
-
-type GameHomeStats = { liveStats: LiveStats; recentEndings: Ending[] };
 
 export function GameStatsContent({ family, stats }: { family: GameFamily; stats: GameHomeStats | null }) {
   if (!stats) {
@@ -78,6 +78,7 @@ export function GameHero({ family }: { family: GameFamily }) {
 
   return (
     <section className={isMafia ? "game-home-hero is-mafia" : "game-home-hero is-werewolf"}>
+      <FamilyHeroPreload family={family} />
       <div className="game-home-hero__scene" aria-hidden="true">
         <div className="game-home-hero__art" />
         <div className="game-home-hero__scrim" />
@@ -104,7 +105,7 @@ export function GameHero({ family }: { family: GameFamily }) {
           >
             Създай стая
           </NextLinkPill>
-          <NextLinkPill href={`${root}/join`} intent="secondary" size="lg" className="game-home-hero__join">
+          <NextLinkPill href={`${root}/join`} intent="secondary" size="lg" tracked className="game-home-hero__join">
             <KeyRound size={17} aria-hidden="true" />Имам код
           </NextLinkPill>
         </div>
@@ -131,40 +132,9 @@ export function GameHomeClosing({ family }: { family: GameFamily }) {
         <p>Приятелите са същите. Ролите остават тайна.</p>
       </div>
       <div className="game-home-closing__actions">
-        <NextLinkPill href={`${root}/create`} size="lg">Създай стая<ArrowRight size={17} aria-hidden="true" /></NextLinkPill>
-        <NextLinkPill href={`${root}/join`} intent="secondary" size="lg">Имам код</NextLinkPill>
+        <NextLinkPill href={`${root}/create`} size="lg" tracked>Създай стая<ArrowRight size={17} aria-hidden="true" /></NextLinkPill>
+        <NextLinkPill href={`${root}/join`} intent="secondary" size="lg" tracked>Имам код</NextLinkPill>
       </div>
     </section>
   );
-}
-
-async function loadGameStats(): Promise<GameHomeStats | null> {
-  const gameServerUrl = process.env.NEXT_PUBLIC_GAME_SERVER_URL?.replace(/^ws/, "http") ?? "http://localhost:2567";
-  try {
-    const response = await fetch(`${gameServerUrl}/stats`, {
-      next: { revalidate: 5 },
-      signal: AbortSignal.timeout(800),
-    });
-    if (!response.ok) {
-      return null;
-    }
-    const stats = (await response.json()) as {
-      activeRooms?: number;
-      connectedPlayers?: number;
-      byFamily?: Partial<Record<GameFamily, number>>;
-      recentEndings?: Ending[];
-      lastWinner?: Ending | null;
-    };
-
-    return {
-      liveStats: {
-        activeRooms: stats.activeRooms ?? 0,
-        connectedPlayers: stats.connectedPlayers ?? 0,
-        ...(stats.byFamily ? { byFamily: stats.byFamily } : {}),
-      },
-      recentEndings: stats.recentEndings ?? (stats.lastWinner ? [stats.lastWinner] : []),
-    };
-  } catch {
-    return null;
-  }
 }

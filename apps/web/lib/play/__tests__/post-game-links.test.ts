@@ -73,6 +73,30 @@ describe("post-game links", () => {
     expect(url.searchParams.has("spectator")).toBe(false);
   });
 
+  it.each(["werewolves_classic", "mafia_free"] as const)("repeats %s setup, not final transformed roles or Jester results", (mode) => {
+    const original = createGameConfigFromOptions({
+      mode, playerCount: 8, jesterEnabled: true, revealRolesOnDeath: true,
+    });
+    expect(original.revealRolesOnDeath).toBe(false);
+    const nextRoomOptions = createRoomOptionsFromConfig(original);
+    const baseline = repeatGameHref({ ...snapshot, mode, nextRoomOptions });
+    const href = repeatGameHref({
+      ...snapshot, mode, nextRoomOptions, winnerTeam: "draw", revealRolesOnDeath: false,
+      terminalResult: {
+        winnerTeam: "draw", winnerPlayerIds: [], personalWinnerPlayerIds: ["synthetic-jester"],
+        finalRoles: [{ userId: "synthetic-transformed", role: "vampire" }, { userId: "synthetic-jester", role: "jester" }],
+      },
+    });
+    expect(href).toBe(baseline);
+    expect(href).not.toMatch(/synthetic-|winner|vampire/);
+    const url = new URL(href, "https://senkite.test");
+    const form = initialState({ urlParams: url.searchParams });
+    const submitted = parseRoomCreateOptions(Object.fromEntries(new URLSearchParams(queryFromState(form))));
+    expect(form.formError).toBe("");
+    expect(createGameConfigFromOptions(submitted)).toEqual(original);
+    expect(submitted.revealRolesOnDeath).toBe(true);
+  });
+
   it.each([
     { mode: "werewolves_classic", playerCount: 12, rolePreset: "classic", loversEnabled: false, firstNightKill: false },
     {

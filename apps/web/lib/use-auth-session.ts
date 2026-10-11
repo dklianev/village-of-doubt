@@ -168,7 +168,7 @@ export function useAuthSession(initialSession?: AuthSessionView | null) {
         }
       }
     } finally {
-      if (showPending && generation === refreshGeneration.current) {
+      if (generation === refreshGeneration.current) {
         setPending(false);
       }
     }

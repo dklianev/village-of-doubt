@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { Check, Gavel, Mic2, ShieldCheck } from "lucide-react";
 import type { GamePhase } from "@werewolf/shared";
+import { Button } from "@/components/button";
 import { ProfilePortrait } from "@/components/ProfilePortrait";
 import { avatarIdForUser } from "@/lib/avatar-catalog";
 import type { PublicNomination, PublicPlayer } from "@/lib/play/types";
@@ -91,15 +92,14 @@ export function NominationPanel({
                 ? `Текуща номинация: ${playerById.get(currentNomination.targetUserId)?.displayName ?? "неизвестен играч"}`
                 : "Няма избрана седалка."}
           </p>
-          <button
-            className="btn btn-primary min-h-11"
-            type="button"
+          <Button
+            className="min-h-11"
             disabled={!selectedTargetId}
             onClick={() => selectedTargetId && onNominate(selectedTargetId)}
           >
             <Gavel className="play-button-icon" aria-hidden strokeWidth={1.9} />
             {currentNomination ? "Смени" : "Номинирай"}
-          </button>
+          </Button>
         </div>
       ) : null}
 

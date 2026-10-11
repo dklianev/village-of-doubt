@@ -1,7 +1,6 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ForgotPasswordClient } from "../ForgotPasswordClient";
-import { ResetPasswordClient } from "../ResetPasswordClient";
+import { ForgotPasswordForm as ForgotPasswordClient, ResetPasswordForm as ResetPasswordClient } from "./recovery-fixtures";
 
 const { requestPasswordReset, resetPassword, push } = vi.hoisted(() => ({
   requestPasswordReset: vi.fn(), resetPassword: vi.fn(), push: vi.fn(),
@@ -22,7 +21,7 @@ function submitEmail() {
 
 function submitPassword() {
   fireEvent.change(screen.getByLabelText("Нова парола"), { target: { value: "test-password" } });
-  fireEvent.change(screen.getByLabelText("Повтори"), { target: { value: "test-password" } });
+  fireEvent.change(screen.getByLabelText("Повтори паролата"), { target: { value: "test-password" } });
   fireEvent.click(screen.getByRole("button", { name: "Запази паролата" }));
 }
 
@@ -43,7 +42,7 @@ describe("password recovery invite redirects", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(/опитай отново/i);
     expect(screen.getByRole("link", { name: "Към входа" })).toHaveAttribute("href", signInHref);
     fireEvent.click(screen.getByRole("button", { name: "Изпрати линк" }));
-    expect(await screen.findByRole("status")).toHaveTextContent("Ако има досие с този имейл");
+    expect(await screen.findByRole("status")).toHaveTextContent("Ако има профил с този имейл");
     expect(requestPasswordReset).toHaveBeenLastCalledWith({
       email: "recovery@example.invalid",
       redirectTo: "/reset-password?redirect=%2Fmafia%2Fjoin%2FABC234%3Fsource%3Dinvite%26mode%3Dmafia_free",
@@ -54,7 +53,7 @@ describe("password recovery invite redirects", () => {
   it.each(["", "INVALID_TOKEN"])("keeps recovery and sign-in destinations for an invalid callback (%s)", (error) => {
     if (error) query.set("error", error);
     render(<ResetPasswordClient />);
-    expect(screen.getByRole("heading", { name: "Невалиден линк" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: error ? "Невалиден линк" : "Липсва линк за нова парола" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Заяви нов линк" })).toHaveAttribute("href", forgotHref);
     expect(screen.getByRole("link", { name: "Към входа" })).toHaveAttribute("href", signInHref);
     expect(resetPassword).not.toHaveBeenCalled();
@@ -72,8 +71,9 @@ describe("password recovery invite redirects", () => {
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "Запази паролата" })));
     expect(screen.getByRole("status")).toHaveTextContent("Паролата е сменена");
     expect(screen.getByRole("link", { name: "Към входа" })).toHaveAttribute("href", signInHref);
-    act(() => vi.advanceTimersByTime(1800));
-    expect(push).toHaveBeenCalledWith(signInHref);
+    expect(screen.getByRole("link", { name: "Към входа" })).toHaveClass("btn-primary");
+    act(() => vi.advanceTimersByTime(60_000));
+    expect(push).not.toHaveBeenCalled();
   });
 
   it("retains the destination when the server rejects an expired reset token", async () => {
@@ -95,8 +95,9 @@ describe("password recovery invite redirects", () => {
     await act(async () => submitPassword());
     expect(screen.getByRole("status")).toHaveTextContent("Паролата е сменена");
     expect(push).not.toHaveBeenCalled();
-    act(() => vi.advanceTimersByTime(1800));
-    expect(push).toHaveBeenCalledExactlyOnceWith("/sign-in?redirect=%2F");
+    act(() => vi.advanceTimersByTime(60_000));
+    expect(push).not.toHaveBeenCalled();
+    expect(screen.getByRole("link", { name: "Към входа" })).toHaveAttribute("href", "/sign-in?redirect=%2F");
   });
 
   it.each(["https://outside.invalid", "//outside.invalid", "/%2foutside.invalid", "/\\outside.invalid", "/%0a/outside.invalid"])(

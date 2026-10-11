@@ -9,8 +9,8 @@ import { absoluteUrl, routeMetadata } from "@/lib/seo";
 import { loadStatusSnapshot } from "@/lib/status-health";
 
 export const metadata: Metadata = routeMetadata({
-  title: "Състояние",
-  description: "Преглед на здравето на услугите ни. Колко бързо отговаряме, кога нещо се е счупило.",
+  title: "Състояние на услугите",
+  description: "Последни резултати от автоматичните проверки на услугите на Сенките.",
   path: "/status",
   image: "/game-art/legal/status-banner.png",
   imageAlt: "Каменно пристанище в полумрак",
@@ -26,14 +26,14 @@ export default async function StatusPage() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebPage",
-    name: "Състояние",
+    name: "Състояние на услугите",
     inLanguage: "bg-BG",
     url: absoluteUrl("/status"),
   };
 
   return (
     <main className="shell legal-page-shell status-shell">
-      <ResourceHints images={[{ href: "/game-art/legal/status-banner.webp", fetchPriority: "high" }]} />
+      <ResourceHints images={[{ href: "/game-art/legal/status-banner.avif", type: "image/avif", fetchPriority: "high" }]} />
       <JsonLd data={jsonLd} />
       <StatusDashboard
         initialServices={services}

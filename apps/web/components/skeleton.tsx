@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { Masthead } from "@/components/leaderboard/Masthead";
 import "@/components/history/History.module.css";
 import "@/components/leaderboard/Leaderboard.module.css";
 
@@ -103,21 +104,21 @@ export function EvidenceWallSkeleton() {
 
 export function LeaderboardSkeleton() {
   return (
-    <article className="newspaper-page newspaper-skeleton">
-      <div className="masthead">
-        <Skeleton className="h-12 w-full max-w-lg rounded-full" />
-        <Skeleton className="h-4 w-80 max-w-full rounded-full" />
-      </div>
-      <Skeleton className="h-14 w-full max-w-3xl rounded-full" />
-      <div className="headline-main-grid mt-6">
-        <Skeleton className="h-[360px] w-full rounded-sm" />
-        <div className="grid content-start gap-4">
-          <Skeleton className="h-7 w-full rounded-full" />
-          <Skeleton className="h-7 w-5/6 rounded-full" />
-          <Skeleton className="h-24 w-full rounded-sm" />
+    <>
+      <p className="sr-only" role="status">Зареждаме класацията...</p>
+      <article className="newspaper-page newspaper-skeleton" aria-busy="true" aria-label="Зареждане на класацията">
+        <Masthead />
+        <div className="headline-main" aria-hidden="true">
+          <Skeleton className="edition-loading-kicker" />
+          <Skeleton className="edition-loading-headline" />
+          <Skeleton className="edition-loading-summary" />
+          <div className="headline-runners">
+            <Skeleton className="edition-loading-runner" />
+            <Skeleton className="edition-loading-runner" />
+          </div>
         </div>
-      </div>
-    </article>
+      </article>
+    </>
   );
 }
 

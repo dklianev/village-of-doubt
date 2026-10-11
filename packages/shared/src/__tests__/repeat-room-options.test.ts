@@ -38,6 +38,30 @@ describe("repeat-room public settings", () => {
     expect(options.roles?.werewolf).toBe(config.roles.werewolf);
     expect(JSON.stringify(options)).not.toContain("private-");
   });
+
+  it.each(["werewolves_classic", "mafia_free"] as const)("retains host intent across repeated Jester rooms in %s", (mode) => {
+    for (const revealRolesOnDeath of [true, false]) {
+      const config = createGameConfigFromOptions({ mode, playerCount: 10, jesterEnabled: true, revealRolesOnDeath });
+      const options = createRoomOptionsFromConfig(config);
+      expect(options.revealRolesOnDeath).toBe(revealRolesOnDeath);
+      expect(options).not.toHaveProperty("requestedRevealRolesOnDeath");
+      const repeated = createGameConfigFromOptions(options);
+      expect(repeated.revealRolesOnDeath).toBe(false);
+      expect(repeated.requestedRevealRolesOnDeath).toBe(revealRolesOnDeath);
+      const { roles: _roles, ...presetOptions } = createRoomOptionsFromConfig(repeated);
+      const withoutJester = createGameConfigFromOptions({ ...presetOptions, jesterEnabled: false });
+      expect(withoutJester.roles.jester ?? 0).toBe(0);
+      expect(withoutJester.revealRolesOnDeath).toBe(revealRolesOnDeath);
+    }
+  });
+
+  it("preserves the effective setting for older saved configs without a requested preference", () => {
+    for (const revealRolesOnDeath of [true, false]) {
+      const config = createGameConfigFromOptions({ revealRolesOnDeath });
+      Reflect.deleteProperty(config, "requestedRevealRolesOnDeath");
+      expect(createRoomOptionsFromConfig(config).revealRolesOnDeath).toBe(revealRolesOnDeath);
+    }
+  });
 });
 
 function configWithoutPrivateData(config: ReturnType<typeof createGameConfigFromOptions>) {

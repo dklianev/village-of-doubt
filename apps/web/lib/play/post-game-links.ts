@@ -12,9 +12,9 @@ import {
 } from "@werewolf/shared";
 import { loversAvailableFor } from "@/lib/lobby-form/preset-policy";
 import { roomOptionsToQuery } from "@/lib/room-options-query";
-import type { GameSnapshot } from "@/lib/play/types";
+import type { PostGameSnapshot } from "@/lib/play/next-room-options";
 
-export function repeatGameHref(snapshot: GameSnapshot) {
+export function repeatGameHref(snapshot: PostGameSnapshot) {
   if (snapshot.nextRoomOptions) {
     const { code: _code, spectator: _spectator, roles, ...setup } = snapshot.nextRoomOptions;
     const options: CreateRoomOptions = roles && !canPreserveRepeatPreset(setup, roles)
@@ -71,7 +71,7 @@ function canPreserveRepeatPreset(setup: CreateRoomOptions, roles: RoleDistributi
   }
 }
 
-export function canOpenRecordedReplay(snapshot: GameSnapshot, currentUserId: string) {
+export function canOpenRecordedReplay(snapshot: PostGameSnapshot, currentUserId: string) {
   if (snapshot.phase !== "game_over") return false;
   if (snapshot.nextRoomOptions?.roomVisibility === "public") return true;
   const viewer = currentUserId ? snapshot.players.find((player) => player.userId === currentUserId) : undefined;

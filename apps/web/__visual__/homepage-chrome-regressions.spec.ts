@@ -114,6 +114,44 @@ async function contentGeometry(page: Page) {
   });
 }
 
+for (const theme of ["dark", "light"] as const) {
+  for (const width of [320, 1440]) {
+    test(`@homepage-chrome restores footer and cookies after leaving a cached room: ${width}px ${theme}`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.route("**/api/auth/get-session**", (route) => route.fulfill({ json: null }));
+      await page.addInitScript((selectedTheme) => {
+        localStorage.setItem("werewolf-theme", selectedTheme);
+      }, theme);
+      const roomUrl = "/play/VISUAL?visualGame=1&family=mafia&phase=game_over&players=10";
+      await page.goto(roomUrl);
+      const header = page.locator("header.site-chrome:not([data-fallback])");
+      const footer = page.locator(".site-footer");
+      const cookies = page.getByRole("region", { name: "Бисквитки" });
+      await expect(header).toHaveAttribute("data-room", "true");
+      await expect(footer).toBeHidden();
+      await expect(cookies).toHaveCSS("position", "fixed");
+
+      await header.getByRole("link", { name: "Сенките, начало" }).click();
+      await expect(page).toHaveURL(/\/$/);
+      await expect(header).not.toHaveAttribute("data-room");
+      await expect(footer).toBeVisible();
+      await expect(footer.getByRole("link", { name: "Поверителност" })).toBeVisible();
+      await expect(cookies).toHaveCSS("position", "static");
+
+      await page.goBack();
+      await expect(header).toHaveAttribute("data-room", "true");
+      await expect(footer).toBeHidden();
+      await expect(cookies).toHaveCSS("position", "fixed");
+
+      await page.goForward();
+      await expect(header).not.toHaveAttribute("data-room");
+      await expect(footer).toBeVisible();
+      await expect(cookies).toHaveCSS("position", "static");
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    });
+  }
+}
+
 async function assertHeaderContent(page: Page) {
   const header = page.locator("header.site-chrome:not([data-fallback])");
   const play = header.locator("button.site-play-cta:visible");

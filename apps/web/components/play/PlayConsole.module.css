@@ -1,0 +1,325 @@
+/* Active play shares the physical room with the lobby; controls live below it. */
+:global(html[data-theme] .play-shell.game-shell.play-scene-shell) {
+  --play-scene-art: url("/game-art/lobby/waiting-werewolves-dark-v1.webp");
+  --play-scene-ink: #f5f0df;
+  --play-scene-muted: #d1d7c8;
+  --play-scene-metal: #cfb476;
+  --play-scene-base: #0b1511;
+  --play-console-paper: #0c1814;
+  --play-console-surface: var(--play-console-paper);
+  --play-console-ink: #f5f0df;
+  --play-console-muted: #bdc8bd;
+  --play-console-border: #89784f;
+  --play-compact-height: clamp(380px, calc(100svh - 390px), 550px);
+  width: 100%;
+  max-width: none;
+  min-height: calc(100svh - 64px);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: var(--play-scene-base);
+  box-shadow: none;
+  color: var(--play-console-ink);
+  isolation: isolate;
+}
+
+:global(html[data-theme] .play-shell.game-shell.play-scene-shell[data-family="mafia"]) {
+  --play-scene-art: url("/game-art/lobby/waiting-mafia-dark-v1.webp");
+  --play-scene-base: #101719;
+  --play-console-paper: #111b1d;
+}
+
+:global(html[data-theme="light"] .play-shell.game-shell.play-scene-shell) {
+  --play-scene-art: url("/game-art/lobby/waiting-werewolves-light-v1.webp");
+  --play-scene-ink: #172e25;
+  --play-scene-muted: #31483b;
+  --play-scene-metal: #796337;
+  --play-scene-base: #e7ede3;
+  --play-console-paper: #f2f4eb;
+  --play-console-ink: #20382d;
+  --play-console-muted: #485e51;
+  --play-console-border: #968560;
+  --play-grid-wash: 22%;
+}
+
+:global(html[data-theme="light"] .play-shell.game-shell.play-scene-shell[data-family="mafia"]) {
+  --play-scene-art: url("/game-art/lobby/waiting-mafia-light-v1.webp");
+  --play-scene-base: #e5e9e8;
+  --play-console-paper: #f0f3f2;
+  --play-console-ink: #243437;
+  --play-console-muted: #4d5e60;
+}
+
+/* The room plate covers the page, so the site ambient behind it would only cost a download. */
+:global(html[data-theme="dark"] body:has(.play-scene-shell)) { background: #0b1511; }
+:global(html[data-theme="light"] body:has(.play-scene-shell)) { background: #e7ede3; }
+
+/* content: none alone still lets Chromium download the suppressed room plate (~200 KB). */
+:global(html[data-theme] .play-scene-shell)::before,
+:global(html[data-theme] .play-scene-shell)::after {
+  content: none;
+  background: none;
+}
+
+:global(.play-scene-shell .play-shell-inner) {
+  padding: 0;
+  gap: 0;
+}
+
+:global(html[data-theme] .play-scene-shell.game-shell .play-layout) {
+  display: block;
+  min-height: 0;
+}
+
+:global(html[data-theme] .play-scene-shell .play-primary-column) {
+  display: block;
+  background: var(--play-scene-art) center -64px / min(100%, 1780px) auto no-repeat;
+}
+
+:global(html[data-theme] .play-scene-shell .play-primary-column:has(.play-stage[data-layout-mode="crowded-table"])) {
+  background-position: center;
+  background-size: min(100%, 1780px) auto;
+}
+
+:global(.play-scene-shell .play-console-band) {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.06fr) minmax(0, 1fr) minmax(0, 1.1fr);
+  align-items: start;
+  gap: 0;
+  border-top: 1px solid var(--play-console-border);
+  padding: 24px max(24px, calc((100% - 1690px) / 2));
+  background: var(--play-console-paper);
+  color: var(--play-console-ink);
+}
+
+:global(.play-scene-shell .play-console-band:not(:has(.play-personal-area))),
+:global(.play-scene-shell .play-console-band:not(:has(.play-action-dock))) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+:global(.play-scene-shell .play-console-band:not(:has(.play-personal-area)):not(:has(.play-action-dock))) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+:global(html[data-theme] .play-scene-shell .play-interaction-column) {
+  display: contents;
+}
+
+:global(html[data-theme] .play-scene-shell .play-console-band .play-personal-area),
+:global(html[data-theme] .play-scene-shell .play-console-band .play-action-dock),
+:global(html[data-theme] .play-scene-shell .play-console-band .play-side-rail) {
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  padding: 0 24px;
+  background: none;
+  box-shadow: none;
+  color: var(--play-console-ink);
+}
+
+:global(html[data-theme] .play-scene-shell .play-console-band .play-personal-area) {
+  padding-left: 0;
+  padding-right: 24px;
+}
+
+:global(html[data-theme] .play-scene-shell .play-console-band .play-action-dock),
+:global(html[data-theme] .play-scene-shell .play-console-band .play-side-rail) {
+  border-left: 1px solid var(--play-console-border);
+}
+
+:global(.play-scene-shell .play-console-band:not(:has(.play-personal-area)) .play-action-dock),
+:global(.play-scene-shell .play-console-band:not(:has(.play-personal-area)):not(:has(.play-action-dock)) .play-side-rail) {
+  border-left: 0;
+}
+
+:global(.play-scene-shell .play-personal-toggle) {
+  z-index: 5;
+  top: 0;
+  right: 16px;
+  width: 44px;
+  min-height: 44px;
+  background: transparent;
+  border-radius: 6px;
+}
+
+:global(.play-scene-shell .play-personal-area[data-concealed]) { min-height: 180px; }
+:global(.play-room-copy) { display: grid; flex: 0 0 44px; width: 44px; height: 44px; place-items: center; border: 1px solid var(--play-scene-metal); border-radius: 6px; background: color-mix(in srgb, var(--play-scene-base) 45%, transparent); color: var(--play-scene-ink); cursor: pointer; }
+:global(.play-room-copy svg) { width: 20px; height: 20px; }
+:global(.play-room-copy:focus-visible) { outline: 2px solid currentColor; outline-offset: 3px; }
+:global(.play-scene-shell .play-personal-concealed) { padding: 60px 0 0; }
+:global(.play-scene-shell .play-personal-area[data-concealed] .play-personal-toggle) { width: auto; }
+
+:global(html[data-theme] .play-scene-shell .play-console-band .play-side-rail) {
+  gap: 0;
+  padding-right: 0;
+  overflow: visible;
+}
+
+:global(html[data-theme] .play-scene-shell .play-side-rail .play-rail-tabs) {
+  display: flex;
+  gap: 24px;
+  border: 0;
+  border-bottom: 1px solid var(--play-console-border);
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+:global(html[data-theme] .play-scene-shell.game-shell .play-side-rail .play-rail-tab) {
+  flex: 0 1 auto;
+  min-height: 44px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  padding: 8px 0;
+  background: none;
+  color: var(--play-console-muted);
+  box-shadow: none;
+  font-weight: 600;
+}
+
+:global(html[data-theme] .play-scene-shell.game-shell .play-side-rail .play-rail-tab[aria-selected="true"]) {
+  border-bottom-color: var(--play-console-ink);
+  background: none;
+  color: var(--play-console-ink);
+  box-shadow: none;
+}
+
+:global(html[data-theme] .play-scene-shell .play-side-rail .play-rail-panel) {
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: 245px;
+  margin: 0;
+  scrollbar-gutter: stable;
+}
+
+:global(.play-scene-shell .play-rail-panel [role="log"]) { margin-top: 0; gap: 0; }
+:global(html[data-theme] .play-scene-shell .play-side-rail .play-rail-panel[data-mobile-panel="events"]) { max-height: 180px; }
+:global(html[data-theme] .play-scene-shell .play-side-rail .play-public-event) { padding: 14px 0; }
+:global(.play-chronicle-header) { display: flex; align-items: start; gap: 8px; }
+:global(.play-chronicle-header .play-rail-tabs) { flex: 1; min-width: 0; }
+:global(.play-shell.game-shell .play-chronicle-header .play-console-tools) {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+:global(.play-chronicle-header .play-console-tools button) { width: 44px; min-height: 44px; padding: 0; border: 0; background: none; }
+:global(.play-chronicle-header .play-console-tools button > span) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+:global(.play-scene-shell .play-console-band .ritual-panel[aria-label="Гласуване"]) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+:global(.play-scene-shell .play-console-band .ritual-panel[aria-label="Гласуване"] .play-action-buttons) { display: contents; }
+:global(.play-scene-shell .play-console-band .ritual-panel[aria-label="Гласуване"] .btn-primary) { grid-column: 1 / -1; }
+:global(.play-scene-shell.game-shell .play-console-band .ritual-panel[aria-label="Гласуване"] > .play-vote-counts) { grid-column: 2; grid-row: 3; align-self: center; }
+:global(html[data-theme] .play-shell.game-shell.play-scene-shell .play-confirm-skip) { grid-column: 1; grid-row: 3; min-width: 0; border: 0; border-radius: 4px; padding: 6px; background: none; box-shadow: none; color: var(--play-console-muted); font-size: 0.8125rem; font-weight: 500; text-transform: none; }
+:global(.play-scene-shell .play-confirm-skip)::before { content: none; }
+:global(.play-scene-shell .play-console-band .play-confirm-skip[data-confirm-state="armed"]) { outline: 1px solid var(--play-console-border); }
+:global(.play-scene-shell .play-console-band .play-vote-counts summary) { min-height: 44px; justify-content: end; }
+:global(.play-scene-shell.game-shell .play-console-band .ritual-panel[aria-label="Гласуване"] > .play-vote-counts[open]) { grid-column: 1 / -1; grid-row: 4; }
+:global(.play-scene-shell .play-narrator-deck) { margin: 0; border-radius: 0; }
+
+@media (min-width: 1024px) {
+  :global(html[data-theme] .play-scene-shell .play-console-band .play-action-dock) {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: auto;
+    max-height: none;
+  }
+
+  :global(.play-scene-shell .play-action-dock-head .section-kicker) { display: none; }
+  :global(html[data-theme] .play-scene-shell .play-action-dock-head h2) {
+    margin: 0;
+    color: var(--play-scene-metal);
+    font-family: inherit;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.5;
+    text-transform: uppercase;
+  }
+}
+
+@media (max-width: 1365px) {
+  :global(html[data-theme] .play-scene-shell .play-primary-column) {
+    background-size: auto 850px;
+    background-position: center top;
+  }
+  :global(.play-scene-shell .play-console-band) { padding: 20px; }
+  :global(html[data-theme] .play-scene-shell .play-console-band .play-action-dock),
+  :global(html[data-theme] .play-scene-shell .play-console-band .play-side-rail) { padding-inline: 18px; }
+}
+
+@media (min-width: 1366px) and (max-height: 960px) {
+  :global(html[data-theme] .play-scene-shell .play-primary-column:has(.play-stage[data-layout-mode="active-table"])) {
+    background-position: center calc(-64px - (min(47.478vw, 845px) - var(--play-compact-height)) * 0.65);
+  }
+}
+
+@media (min-width: 1024px) and (max-height: 800px) {
+  :global(.play-scene-shell .play-console-band) { padding-top: 8px; }
+}
+
+@media (max-width: 1023px) {
+  :global(html[data-theme] .play-scene-shell .play-primary-column) { background-size: auto 780px; }
+  :global(.play-scene-shell .play-mobile-navigation) { top: 8px; margin-block: 12px; }
+  :global(.play-scene-shell .play-mobile-navigation) { max-width: calc(100% - 32px); flex-wrap: wrap; }
+  :global(.play-scene-shell .play-mobile-navigation button) { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+  :global(.play-scene-shell .play-console-band) { display: block; padding: 20px; }
+  :global(html[data-theme] .play-scene-shell .play-console-band .play-personal-area) { padding: 0; }
+  :global(.play-scene-shell .play-personal-area[data-concealed]) { min-height: 80px; }
+  :global(.play-scene-shell .play-personal-toggle) { right: 0; }
+  :global(.play-scene-shell .play-layout[data-mobile-view="conversation"] .play-personal-area) { display: none; }
+  :global(.play-scene-shell .play-layout[data-mobile-view="conversation"] .play-console-band) { min-height: 65svh; }
+  :global(html[data-theme] .play-scene-shell .play-console-band .play-side-rail) { padding: 0; border: 0; }
+  :global(html[data-theme] .play-scene-shell .play-layout[data-mobile-view="table"] .play-side-rail),
+  :global(html[data-theme] .play-scene-shell .play-layout[data-mobile-view="conversation"] .play-primary-column) { display: none; }
+  :global(html[data-theme] .play-scene-shell .play-console-band .play-action-dock) {
+    border: 1px solid var(--play-console-border);
+    border-radius: 8px 8px 0 0;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    background: var(--play-console-paper);
+  }
+  :global(html[data-theme] .play-scene-shell .play-action-dock[data-expanded="true"] .play-action-dock-head) {
+    background: var(--play-console-paper);
+    color: var(--play-console-ink);
+  }
+  :global(.play-scene-shell .play-conversation-context) { padding: 0 0 20px; }
+}
+
+@media (max-width: 360px) {
+  :global(.play-scene-shell .play-console-band) { padding-inline: 16px; }
+}
+
+/* Short phones: the view switch keeps its size but gives the table a little more room. */
+@media (max-width: 430px) and (max-height: 640px) {
+  :global(.play-scene-shell .play-mobile-navigation) { margin-block: 8px; }
+}
+
+/* Phone conversation reads like a chat: the latest lines first, the composer (or the reason it is
+ * closed) pinned underneath. :not([hidden]) keeps the inactive tab hidden despite display:flex. */
+@media (max-width: 1023px) {
+  /* Outranks the desktop rail cap (html[data-theme] .play-scene-shell .play-side-rail .play-rail-panel). */
+  :global(html[data-theme] .play-scene-shell .play-side-rail .play-rail-panel[data-mobile-panel="chat"]:not([hidden])) {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: none;
+    overflow: visible;
+  }
+  :global(html[data-theme] .play-scene-shell .play-side-rail .play-rail-panel[data-mobile-panel="chat"] > :is(form, .play-muted-note)) {
+    order: 2;
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    margin: 0;
+    border-top: 1px solid var(--play-console-border);
+    padding: 12px 0 calc(12px + env(safe-area-inset-bottom));
+    background: var(--play-console-paper);
+  }
+}

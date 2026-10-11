@@ -15,10 +15,11 @@ const FEEDBACK_HIDDEN_ROUTES = new Set([
   "/forgot-password",
   "/reset-password",
   "/verify-email",
+  "/account",
 ]);
 
 const FEEDBACK_HIDDEN_PREFIXES = ["/play/"];
-const FEEDBACK_AUTH_ROUTES = new Set(["/account", "/achievements", "/friends"]);
+const FEEDBACK_AUTH_ROUTES = new Set(["/achievements", "/friends"]);
 const FEEDBACK_AUTH_PREFIXES = ["/history/"];
 
 export function shouldMountFeedback(pathname: string, authenticated = true) {

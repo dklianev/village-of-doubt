@@ -1,276 +1,176 @@
-/* Auth recovery framed-shell polish moved out of globals.css. */
-
-:global(/* Auth recovery — framed shell polish */
-
-.auth-recovery-shell.framed-shell) {
-  width: min(1100px, 92vw);
-  min-height: auto;
-  place-items: stretch;
+.shell {
+  --recovery-paper: #f8f6ef;
+  --recovery-ink: #21362e;
+  --recovery-soft: #526059;
+  --recovery-line: #b8bbaa;
+  --recovery-field: #fffdf8;
+  --recovery-accent: #933b30;
+  --recovery-error: #f9e9e4;
+  isolation: isolate;
+  color: var(--recovery-ink);
+  background: #d4d8ca;
 }
 
-:global(.auth-recovery-shell .framed-shell-inner) {
-  padding: clamp(16px, 3vw, 28px);
+:global(html[data-theme="dark"]) .shell {
+  --recovery-paper: #14241f;
+  --recovery-ink: #f4eddb;
+  --recovery-soft: #c2c8b9;
+  --recovery-line: #62705e;
+  --recovery-field: #0e1b17;
+  --recovery-accent: #f0b681;
+  --recovery-error: #412623;
+  background: #101d18;
 }
 
-:global(.auth-recovery-shell .locksmith-stage),
-:global(.auth-recovery-shell .forge-stage),
-:global(.auth-recovery-shell .seal-stage) {
-  max-width: none;
-  min-height: 560px;
+.shell[data-recovery-scene="forgot-password"] {
+  --recovery-art: image-set(url("/game-art/auth/bg-forgot-password-light-v2.avif") type("image/avif"), url("/game-art/auth/bg-forgot-password-light-v2.webp") type("image/webp"));
+}
+.shell[data-recovery-scene="reset-password"] {
+  --recovery-art: image-set(url("/game-art/auth/bg-reset-password-light-v2.avif") type("image/avif"), url("/game-art/auth/bg-reset-password-light-v2.webp") type("image/webp"));
+}
+.shell[data-recovery-scene="verify-email"] {
+  --recovery-art: image-set(url("/game-art/auth/bg-verify-email-light-v2.avif") type("image/avif"), url("/game-art/auth/bg-verify-email-light-v2.webp") type("image/webp"));
+}
+:global(html[data-theme="dark"]) .shell[data-recovery-scene="forgot-password"] {
+  --recovery-art: image-set(url("/game-art/auth/bg-forgot-password-dark-v2.avif") type("image/avif"), url("/game-art/auth/bg-forgot-password-dark-v2.webp") type("image/webp"));
+}
+:global(html[data-theme="dark"]) .shell[data-recovery-scene="reset-password"] {
+  --recovery-art: image-set(url("/game-art/auth/bg-reset-password-dark-v2.avif") type("image/avif"), url("/game-art/auth/bg-reset-password-dark-v2.webp") type("image/webp"));
+}
+:global(html[data-theme="dark"]) .shell[data-recovery-scene="verify-email"] {
+  --recovery-art: image-set(url("/game-art/auth/bg-verify-email-dark-v2.avif") type("image/avif"), url("/game-art/auth/bg-verify-email-dark-v2.webp") type("image/webp"));
 }
 
-:global(.auth-recovery-shell .locksmith-art),
-:global(.auth-recovery-shell .forge-art),
-:global(.auth-recovery-shell .seal-art) {
-  overflow: hidden;
-  border: 1px solid rgba(245, 232, 200, 0.14);
-  box-shadow:
-    0 24px 54px rgba(0, 0, 0, 0.42),
-    inset 0 1px 0 rgba(245, 232, 200, 0.08);
+.stage {
+  position: relative;
+  min-height: max(664px, calc(100svh - 160px));
+  padding: 64px 24px 48px;
 }
 
-:global(.auth-recovery-shell .locksmith-card),
-:global(.auth-recovery-shell .forge-card),
-:global(.auth-recovery-shell .seal-card) {
-  display: grid;
-  align-content: start;
-  gap: 18px;
-  border: 1px solid rgba(245, 232, 200, 0.14);
-  border-radius: 18px;
-  padding: clamp(24px, 4vw, 38px);
-  background: rgba(13, 10, 8, 0.68);
-  color: #f5e8c8;
-  box-shadow:
-    0 24px 54px rgba(0, 0, 0, 0.36),
-    inset 0 1px 0 rgba(245, 232, 200, 0.06);
-  backdrop-filter: blur(14px);
+.art {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: -1;
+  height: max(664px, calc(100svh - 160px));
+  background: var(--recovery-art) center / cover no-repeat;
+  pointer-events: none;
+  mask-image: linear-gradient(#000 85%, transparent);
 }
 
-:global(.auth-recovery-icon) {
+.content { width: min(1180px, 100%); min-width: 0; margin-inline: auto; }
+
+.shell :global(.recovery-panel) {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: min(440px, 100%);
+  min-height: 512px;
+  padding: 30px 32px 20px;
+  border: 1px solid var(--recovery-line);
+  border-radius: 8px;
+  background: var(--recovery-paper);
+  box-shadow: 0 12px 42px #07130d24;
+}
+
+.shell[data-recovery-scene="forgot-password"] :global(.recovery-panel) { min-height: 440px; }
+.shell :global(.recovery-header) { display: grid; grid-template-columns: 24px 1fr; align-items: center; gap: 12px; }
+.shell :global(.recovery-header h1), .shell :global(.recovery-header .recovery-copy) { grid-column: 1 / -1; }
+.shell :global(.recovery-icon) { display: inline-flex; width: 24px; height: 24px; color: var(--recovery-accent); }
+.shell :global(.recovery-kicker) {
+  margin: 0;
+  color: var(--recovery-accent);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 20px;
+  letter-spacing: 0;
+}
+.shell h1 {
+  margin: 0;
+  color: var(--recovery-ink);
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+.shell p { margin: 0; }
+.shell :global(.recovery-copy) {
+  color: var(--recovery-soft);
+  font-size: 14px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
+.shell :global(.recovery-form) { display: grid; gap: 18px; min-width: 0; }
+.shell :global(.recovery-field) { display: grid; gap: 6px; min-width: 0; }
+.shell label { color: var(--recovery-ink); font-size: 13px; line-height: 20px; font-weight: 650; }
+.shell input {
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  padding: 10px 12px;
+  border: 1px solid var(--recovery-line);
+  border-radius: 6px;
+  background: var(--recovery-field);
+  color: var(--recovery-ink);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 400;
+}
+.shell input::placeholder { color: var(--recovery-soft); opacity: 1; }
+.shell input[aria-invalid="true"] { border-color: var(--recovery-accent); }
+.shell :global(.recovery-password) { position: relative; }
+.shell :global(.recovery-password input) { padding-right: 48px; }
+.shell :global(.recovery-reveal) {
+  position: absolute;
+  inset: 1px 1px 1px auto;
   display: grid;
   place-items: center;
-  width: 42px;
-  height: 42px;
-  border: 1px solid rgba(209, 154, 66, 0.42);
-  border-radius: 50%;
-  background: rgba(209, 154, 66, 0.16);
-  color: #d19a42;
+  width: 44px;
+  border: 0;
+  border-radius: 5px;
+  padding: 0;
+  color: var(--recovery-soft);
+  background: transparent;
+  cursor: pointer;
 }
-
-:global(.auth-recovery-icon svg) {
-  width: 20px;
-  height: 20px;
+.shell :global(.recovery-reveal:hover) { color: var(--recovery-ink); }
+.shell :global(.recovery-error) {
+  border-left: 3px solid var(--recovery-accent);
+  padding: 10px 12px;
+  background: var(--recovery-error);
+  color: var(--recovery-ink);
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
 }
+.shell :global(.recovery-success) { display: grid; gap: 12px; color: var(--recovery-ink); font-size: 14px; line-height: 1.55; }
+.shell :global(.recovery-actions) { display: grid; gap: 12px; }
+.shell :global(.btn) { gap: 8px; min-height: 46px; max-width: 100%; padding: 10px 18px; white-space: normal; text-align: center; box-shadow: none; }
+.shell :global(.recovery-form > .btn), .shell :global(.recovery-actions > .btn) { width: 100%; }
+.shell :global(.btn svg) { flex: 0 0 auto; }
+.shell button:disabled { cursor: not-allowed; opacity: 0.65; }
+.shell :is(button, a, input):focus-visible { outline: 2px solid var(--recovery-accent); outline-offset: 3px; box-shadow: none; }
+.shell :global(.recovery-footer) { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--recovery-line); }
+.shell :global(.recovery-link) { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 36px; padding: 0; border: 0; background: none; color: var(--recovery-accent); font: inherit; font-size: 13px; line-height: 1.45; text-underline-offset: 3px; text-decoration: underline; cursor: pointer; }
 
-:global(.auth-recovery-shell .locksmith-kicker),
-:global(.auth-recovery-shell .forge-kicker),
-:global(.auth-recovery-shell .seal-kicker) {
-  color: #d19a42;
+@media (max-width: 800px) {
+  .shell[data-recovery-scene="forgot-password"] { --recovery-art: url("/game-art/mobile/auth/bg-forgot-password-light-v2.webp"); }
+  .shell[data-recovery-scene="reset-password"] { --recovery-art: url("/game-art/mobile/auth/bg-reset-password-light-v2.webp"); }
+  .shell[data-recovery-scene="verify-email"] { --recovery-art: url("/game-art/mobile/auth/bg-verify-email-light-v2.webp"); }
+  :global(html[data-theme="dark"]) .shell[data-recovery-scene="forgot-password"] { --recovery-art: url("/game-art/mobile/auth/bg-forgot-password-dark-v2.webp"); }
+  :global(html[data-theme="dark"]) .shell[data-recovery-scene="reset-password"] { --recovery-art: url("/game-art/mobile/auth/bg-reset-password-dark-v2.webp"); }
+  :global(html[data-theme="dark"]) .shell[data-recovery-scene="verify-email"] { --recovery-art: url("/game-art/mobile/auth/bg-verify-email-dark-v2.webp"); }
+  .stage { min-height: calc(100svh - 160px); padding: 144px 16px 28px; }
+  /* Keep the focal motif above the fixed panel offset on phones and tablets. */
+  .art { height: 240px; background-position: right 65%; mask-image: linear-gradient(#000 48%, transparent); }
+  .content { width: min(440px, 100%); }
+  .shell :global(.recovery-panel) { min-height: 480px; padding: 24px 20px 16px; gap: 20px; box-shadow: 0 6px 24px #07130d1a; }
+  .shell h1 { font-size: 30px; }
 }
-
-:global(.auth-recovery-shell .locksmith-card h1),
-:global(.auth-recovery-shell .forge-card h1),
-:global(.auth-recovery-shell .seal-card h1) {
-  color: #f5e8c8;
-}
-
-:global(.auth-recovery-shell .locksmith-subtitle),
-:global(.auth-recovery-shell .forge-subtitle),
-:global(.auth-recovery-shell .seal-body),
-:global(.auth-recovery-shell .forge-card p) {
-  color: rgba(245, 232, 200, 0.78);
-}
-
-:global(.auth-recovery-shell .locksmith-form input),
-:global(.auth-recovery-shell .forge-form input) {
-  min-height: 48px;
-  border: 1px solid rgba(245, 232, 200, 0.16);
-  border-radius: 12px;
-  background: rgba(13, 10, 8, 0.48);
-  color: #f5e8c8;
-}
-
-:global(.auth-recovery-shell .locksmith-form input:focus),
-:global(.auth-recovery-shell .forge-form input:focus) {
-  outline: none;
-  border-color: rgba(209, 154, 66, 0.62);
-  box-shadow: 0 0 0 4px rgba(209, 154, 66, 0.16);
-}
-
-:global(.auth-recovery-shell .locksmith-form input::placeholder),
-:global(.auth-recovery-shell .forge-form input::placeholder) {
-  color: rgba(245, 232, 200, 0.42);
-}
-
-:global(.auth-recovery-shell .locksmith-form label > span),
-:global(.auth-recovery-shell .forge-form label > span) {
-  color: #d19a42;
-}
-
-:global(.auth-recovery-shell .locksmith-success),
-:global(.auth-recovery-shell .forge-success) {
-  border-left-color: #75b36a;
-  background: rgba(117, 179, 106, 0.14);
-  color: #f5e8c8;
-}
-
-:global(.auth-recovery-shell .locksmith-success-hint),
-:global(.auth-recovery-shell .seal-hint) {
-  color: rgba(245, 232, 200, 0.62);
-}
-
-:global(.auth-recovery-shell .locksmith-foot-link),
-:global(.auth-recovery-shell .forge-foot a) {
-  color: #d19a42;
-}
-
-:global(.auth-recovery-shell .forge-foot a) {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-:global(html[data-theme="light"] .auth-recovery-shell .locksmith-card),
-:global(html[data-theme="light"] .auth-recovery-shell .forge-card),
-:global(html[data-theme="light"] .auth-recovery-shell .seal-card) {
-  border-color: rgba(83, 52, 31, 0.18);
-  background: rgba(252, 246, 236, 0.88);
-  color: #2a1b10;
-  box-shadow:
-    0 24px 54px rgba(40, 26, 16, 0.16),
-    inset 0 1px 0 rgba(255, 255, 255, 0.5);
-}
-
-:global(html[data-theme="light"] .auth-recovery-shell .locksmith-card h1),
-:global(html[data-theme="light"] .auth-recovery-shell .forge-card h1),
-:global(html[data-theme="light"] .auth-recovery-shell .seal-card h1) {
-  color: #2a1b10;
-}
-
-:global(html[data-theme="light"] .auth-recovery-shell .locksmith-subtitle),
-:global(html[data-theme="light"] .auth-recovery-shell .forge-subtitle),
-:global(html[data-theme="light"] .auth-recovery-shell .seal-body),
-:global(html[data-theme="light"] .auth-recovery-shell .forge-card p) {
-  color: rgba(42, 27, 16, 0.74);
-}
-
-:global(html[data-theme="light"] .auth-recovery-shell .locksmith-form input),
-:global(html[data-theme="light"] .auth-recovery-shell .forge-form input) {
-  border-color: rgba(83, 52, 31, 0.18);
-  background: rgba(255, 250, 238, 0.8);
-  color: #2a1b10;
-}
-
-:global(html[data-theme="light"] .auth-recovery-shell .locksmith-form input:focus),
-:global(html[data-theme="light"] .auth-recovery-shell .forge-form input:focus) {
-  border-color: rgba(132, 47, 43, 0.5);
-  box-shadow: 0 0 0 4px rgba(132, 47, 43, 0.14);
-}
-
-:global(html[data-theme="light"] .auth-recovery-icon) {
-  border-color: rgba(132, 47, 43, 0.38);
-  background: rgba(132, 47, 43, 0.12);
-  color: #842f2b;
-}
-
-:global(html[data-theme="light"] .auth-recovery-shell .locksmith-kicker),
-:global(html[data-theme="light"] .auth-recovery-shell .forge-kicker),
-:global(html[data-theme="light"] .auth-recovery-shell .seal-kicker),
-:global(html[data-theme="light"] .auth-recovery-shell .locksmith-foot-link),
-:global(html[data-theme="light"] .auth-recovery-shell .forge-foot a) {
-  color: #842f2b;
-}
-
-@media (max-width: 720px) {
-  :global(.auth-recovery-shell .locksmith-stage),
-:global(.auth-recovery-shell .forge-stage),
-:global(.auth-recovery-shell .seal-stage) {
-    min-height: auto;
-  }
-}
-
-:global(.auth-recovery-shell .locksmith-error),
-:global(.auth-recovery-shell .forge-card .forge-error),
-:global(.auth-recovery-shell .seal-error) {
-  color: #fff0e6;
-  background: #542820;
-}
-
-:global(.auth-recovery-shell .locksmith-success),
-:global(.auth-recovery-shell .forge-card .forge-success) {
-  color: #e6f2df;
-  background: #263d27;
-}
-
-:global(.auth-recovery-shell .locksmith-success-hint),
-:global(.auth-recovery-shell .seal-hint) {
-  color: #d3c8b3;
-}
-
-:global(.auth-recovery-shell .locksmith-form input::placeholder),
-:global(.auth-recovery-shell .forge-form input::placeholder) {
-  color: #bfb4a0;
-  opacity: 1;
-}
-
-:global(html[data-theme="light"] .auth-recovery-shell .locksmith-error),
-:global(html[data-theme="light"] .auth-recovery-shell .forge-card .forge-error),
-:global(html[data-theme="light"] .auth-recovery-shell .seal-error) {
-  color: #782821;
-  background: #f7e4de;
-}
-
-:global(html[data-theme="light"] .auth-recovery-shell .locksmith-success),
-:global(html[data-theme="light"] .auth-recovery-shell .forge-card .forge-success) {
-  color: #234a29;
-  background: #e4efde;
-}
-
-:global(html[data-theme="light"] .auth-recovery-shell .locksmith-success-hint),
-:global(html[data-theme="light"] .auth-recovery-shell .seal-hint),
-:global(html[data-theme="light"] .auth-recovery-shell .locksmith-form input::placeholder),
-:global(html[data-theme="light"] .auth-recovery-shell .forge-form input::placeholder) {
-  color: #594b3d;
-}
-
-:global(html[data-theme="light"] .auth-recovery-shell .locksmith-form label > span),
-:global(html[data-theme="light"] .auth-recovery-shell .forge-form label > span) {
-  color: #782821;
-}
-
-:global(.auth-recovery-shell .locksmith-card),
-:global(.auth-recovery-shell .forge-card),
-:global(.auth-recovery-shell .seal-card) {
-  min-width: 0;
-}
-
-:global(.auth-recovery-shell .seal-actions) {
-  flex-wrap: wrap;
-}
-
-@media (max-width: 719px) {
-  :global(.auth-recovery-shell .locksmith-stage),
-  :global(.auth-recovery-shell .forge-stage),
-  :global(.auth-recovery-shell .seal-stage) {
-    gap: 16px;
-  }
-
-  :global(.auth-recovery-shell .locksmith-art),
-  :global(.auth-recovery-shell .forge-art),
-  :global(.auth-recovery-shell .seal-art) {
-    width: 100%;
-    min-height: 144px;
-    height: 144px;
-    aspect-ratio: auto;
-    border-radius: 8px;
-  }
-
-  :global(.auth-recovery-shell .locksmith-card),
-  :global(.auth-recovery-shell .forge-card),
-  :global(.auth-recovery-shell .seal-card) {
-    gap: 14px;
-    padding: 20px;
-  }
+@media (max-width: 360px) {
+  .shell :global(.recovery-panel) { padding-inline: 16px; }
+  .shell h1 { font-size: 28px; }
 }

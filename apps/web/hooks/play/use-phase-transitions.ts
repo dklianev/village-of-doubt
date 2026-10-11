@@ -9,6 +9,7 @@ import type { CueMode, PublicEvent } from "@/lib/play/types";
 
 interface UsePhaseTransitionsOptions {
   room: Room | null;
+  connected: boolean;
   phase: GamePhase | null;
   publicEvents: PublicEvent[];
   winnerTeam: string;
@@ -26,6 +27,7 @@ export interface UsePhaseTransitionsResult {
 
 export function usePhaseTransitions({
   room,
+  connected,
   phase,
   publicEvents,
   winnerTeam,
@@ -53,7 +55,7 @@ export function usePhaseTransitions({
   useEffect(() => {
     setStartCountdown(null);
     return () => clearStartGameTimers();
-  }, [clearStartGameTimers, phase, room]);
+  }, [clearStartGameTimers, connected, phase, room]);
 
   useEffect(() => {
     if (!phase) {
@@ -112,7 +114,7 @@ export function usePhaseTransitions({
   }, [forceSilent, winnerTeam]);
 
   const requestStartGame = useCallback(() => {
-    if (!room || phase !== "lobby" || startCountdown !== null) {
+    if (!connected || !room?.connection?.isOpen || phase !== "lobby" || startCountdown !== null) {
       return;
     }
 
@@ -122,11 +124,12 @@ export function usePhaseTransitions({
     startGameTimersRef.current.push(window.setTimeout(() => setStartCountdown(2), 620));
     startGameTimersRef.current.push(window.setTimeout(() => setStartCountdown(1), 1240));
     startGameTimersRef.current.push(window.setTimeout(() => {
-      roomAtStart.send("startGame");
+      // A transport drop can precede the connection-status render; never buffer a start.
+      if (roomAtStart.connection.isOpen) roomAtStart.send("startGame");
       setStartCountdown(null);
       clearStartGameTimers();
     }, 1860));
-  }, [clearStartGameTimers, phase, room, startCountdown]);
+  }, [clearStartGameTimers, connected, phase, room, startCountdown]);
 
   return {
     phasePulse,
