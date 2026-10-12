@@ -48,7 +48,7 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "@radix-ui/react-dialog": "1.1.23"
+    "@radix-ui/react-dialog": "1.2.0"
   },
   "peerDependencies": {
     "react": ">=19",
