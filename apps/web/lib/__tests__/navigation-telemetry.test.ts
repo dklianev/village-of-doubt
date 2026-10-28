@@ -56,4 +56,16 @@ describe("navigation telemetry", () => {
     expect(telemetryRoute("/history/game-private-id/replay")).toBe("/history/[gameId]/replay");
     expect(telemetryRoute("/mafia/rules")).toBe("/mafia/rules");
   });
+
+  it.each(["/mafia/join/PRIVATE42", "/werewolf/join/PRIVATE42", "/join/PRIVATE42/", "/play/PRIVATE42?token=x"])(
+    "removes the room code from %s",
+    (path) => {
+      expect(telemetryRoute(path)).not.toContain("PRIVATE42");
+    },
+  );
+
+  it("keeps public routes and the unknown origin readable", () => {
+    expect(telemetryRoute("/werewolf/join")).toBe("/werewolf/join");
+    expect(telemetryRoute("unknown")).toBe("unknown");
+  });
 });

@@ -10,3 +10,4 @@ export * from "./repeat-room-options.js";
 export * from "./room-code.js";
 export * from "./avatar-catalog.js";
 export * from "./monitoring-sanitization.js";
+export * from "./private-route.js";

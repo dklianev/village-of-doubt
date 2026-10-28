@@ -1,3 +1,5 @@
+import { normalizePrivateRoute } from "@werewolf/shared";
+
 export type NavigationMetric = {
   durationMs: number;
   fromRoute: string;
@@ -66,11 +68,8 @@ export function createNavigationTransitionTracker(options: TrackerOptions) {
 }
 
 export function telemetryRoute(pathname: string): string {
-  const normalized = pathnameFromUrl(pathname).replace(/\/$/, "") || "/";
-  if (/^\/play\/[^/]+$/.test(normalized)) return "/play/[code]";
-  if (/^\/lobby\/[^/]+$/.test(normalized)) return "/lobby/[code]";
-  if (/^\/history\/[^/]+\/replay$/.test(normalized)) return "/history/[gameId]/replay";
-  return normalized;
+  if (pathname === "unknown") return pathname;
+  return normalizePrivateRoute(pathnameFromUrl(pathname));
 }
 
 const browserTracker = createNavigationTransitionTracker({ now: () => Date.now() });

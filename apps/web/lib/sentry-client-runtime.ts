@@ -13,7 +13,7 @@ import {
   metrics,
 } from "@sentry/browser";
 import type { NavigationMetric } from "./navigation-telemetry";
-import { sanitizeMonitoringBreadcrumb, sanitizeMonitoringEvent } from "./sentry-sanitization";
+import { sanitizeMonitoringBreadcrumb, sanitizeMonitoringEvent, sanitizeMonitoringSpan } from "./sentry-sanitization";
 
 type BrowserMonitoringOptions = {
   dsn: string;
@@ -32,11 +32,14 @@ export function initBrowserMonitoring(options: BrowserMonitoringOptions): void {
     ...options,
     sendDefaultPii: false,
     beforeSend: sanitizeMonitoringEvent,
+    beforeSendTransaction: sanitizeMonitoringEvent,
+    beforeSendSpan: sanitizeMonitoringSpan,
     beforeBreadcrumb: sanitizeMonitoringBreadcrumb,
     transport: makeFetchTransport,
     stackParser: defaultStackParser,
     integrations: [
-      breadcrumbsIntegration(),
+      // DOM breadcrumbs serialize class names and aria-labels, which name roles and players.
+      breadcrumbsIntegration({ dom: false }),
       globalHandlersIntegration(),
       linkedErrorsIntegration(),
       dedupeIntegration(),

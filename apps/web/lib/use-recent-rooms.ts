@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { ROOM_CODE_REGEX, type GameFamily } from "@werewolf/shared";
+import { RECENT_ROOMS_STORAGE_KEY as STORAGE_KEY } from "@/lib/room-traces";
 
-const STORAGE_KEY = "werewolf-mafia:recent-rooms";
 const MAX_VISIBLE_ENTRIES = 3;
 const MAX_STORED_ENTRIES = 6;
 
