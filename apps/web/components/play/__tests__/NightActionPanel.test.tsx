@@ -67,12 +67,12 @@ describe("NightActionPanel", () => {
     });
 
     await user.click(screen.getByRole("button", { name: "Пропусни" }));
-    expect(screen.getByRole("button", { name: "Потвърди пропуска" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Потвърди пропуска" })).not.toHaveAttribute("aria-pressed");
     await user.click(screen.getByRole("button", { name: label }));
 
     expect(props.sendNightAction).toHaveBeenCalledExactlyOnceWith(action);
     const skip = screen.getByRole("button", { name: "Пропусни" });
-    expect(skip).toHaveAttribute("aria-pressed", "false");
+    expect(skip).not.toHaveAttribute("aria-pressed");
     expect(screen.getByRole("group", { name: "Избрана цел" })).toHaveTextContent("Борис");
     expect(screen.queryByRole("group", { name: "Приети действия" })).not.toBeInTheDocument();
 
@@ -202,10 +202,7 @@ describe("NightActionPanel", () => {
     await user.click(screen.getByRole("button", { name: "Пропусни" }));
 
     expect(props.sendNightAction).not.toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: "Потвърди пропуска" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    expect(screen.getByRole("button", { name: "Потвърди пропуска" })).not.toHaveAttribute("aria-pressed");
 
     await user.click(screen.getByRole("button", { name: "Потвърди пропуска" }));
 

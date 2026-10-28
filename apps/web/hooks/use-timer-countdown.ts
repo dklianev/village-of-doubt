@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { serverClockNow } from "@/lib/play/server-clock";
 
 export type TimerCountdownResult = {
   remainingSeconds: number;
@@ -10,13 +11,13 @@ export type TimerCountdownResult = {
 };
 
 export function useTimerCountdown(endsAt: number): TimerCountdownResult {
-  const [now, setNow] = useState<number>(() => Date.now());
+  const [now, setNow] = useState<number>(serverClockNow);
 
   useEffect(() => {
     let timer: number | undefined;
 
     const tick = () => {
-      const next = Date.now();
+      const next = serverClockNow();
       setNow(next);
       const remainingMs = endsAt - next;
       if (remainingMs > 0) {

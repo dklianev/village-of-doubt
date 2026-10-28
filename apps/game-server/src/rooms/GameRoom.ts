@@ -1,4 +1,4 @@
-import { Room, type Client } from "@colyseus/core";
+import { ErrorCode, Room, ServerError, type Client } from "@colyseus/core";
 import {
   assignRoles,
   assertRoleCompatibilityForMode,
@@ -202,6 +202,7 @@ export class GameRoom extends Room<{ state: GameState }> {
     family: GameFamily;
   }> = [];
   private activeRoomUserIds = new Set<string>();
+  private membershipOperations = new Map<string, Promise<void>>();
   private static readonly MAX_RECENT_ENDINGS = 12;
 
   static getRuntimeStats() {
@@ -244,6 +245,8 @@ export class GameRoom extends Room<{ state: GameState }> {
           auth?.tokenIssuedAtMs !== undefined
           && room.playerPresence.getClient(auth.userId) === client
           && await PlayerPresenceManager.isGameSessionRevoked(auth.userId, auth.tokenIssuedAtMs)
+          && room.playerPresence.getClient(auth.userId) === client
+          && room.playerPresence.isCurrentConnectionGeneration(auth.userId, auth.connectionGeneration)
           && room.revokeUserConnection(auth.userId)
         ) {
           revoked += 1;
@@ -303,6 +306,7 @@ export class GameRoom extends Room<{ state: GameState }> {
   private playerPresence = new PlayerPresenceManager();
   private privatePlayers = new Map<string, PrivatePlayerState>();
   private pendingNightActions = new Map<string, SubmittedNightAction[]>();
+  private immediateNightActorIds = new Set<string>();
   private phaseStateMachine!: PhaseStateMachine;
   private persistenceCoordinator = new RoomPersistenceCoordinator();
   private chatRouter!: RoomChatRouter;
@@ -311,6 +315,7 @@ export class GameRoom extends Room<{ state: GameState }> {
   private gameFinishPersistenceQueued = false;
   private recordedGameId: string | undefined;
   private pendingHunterRevengeUserId: string | undefined;
+  private pendingHunterRevengeQueue = new Set<string>();
   private pendingMayorSuccessor = false;
   private pendingDeathInterruptionResumePhase: "day_announcement" | "resolution" | undefined;
   private pendingVampireBites = new Map<string, { round: number; causeBg: string }>();
@@ -360,6 +365,8 @@ export class GameRoom extends Room<{ state: GameState }> {
       getPrivatePlayers: () => this.privatePlayers.values(),
       getPublicPlayers: () => this.state.players.values(),
       findPlayerByUserId: (userId) => this.findPlayerByUserId(userId),
+      isHunterRevengeAvailable: (userId) => this.state.phase === "hunter_revenge"
+        && this.pendingHunterRevengeUserId === userId,
       playerPresence: this.playerPresence,
     });
     this.config = createGameConfigFromOptions(options);
@@ -415,24 +422,21 @@ export class GameRoom extends Room<{ state: GameState }> {
   }
 
   async onJoin(client: Client, options: JoinRoomOptions, auth: ClientAuth) {
+    await this.runMembershipOperation(auth.userId, () => this.joinPlayer(client, options, auth));
+  }
+
+  private async joinPlayer(client: Client, options: JoinRoomOptions, auth: ClientAuth) {
     if (auth.tokenNonce && !auth.tokenNonceConsumed) {
       if (!await PlayerPresenceManager.consumeTokenNonce(auth.tokenNonce, auth.tokenExpiresAtMs ?? 0)) {
         await this.releaseTrackedActiveRoom(auth.userId);
-        this.sendSafeError(client, "Този токен вече е използван.");
-        client.leave(4029);
-        return;
+        this.refuseJoin("Този токен вече е използван.", 4029);
       }
       auth.tokenNonceConsumed = true;
     }
 
     if (!auth.matchmakingGuardsApplied && !await PlayerPresenceManager.checkJoinRateLimit(auth.userId)) {
       await this.releaseTrackedActiveRoom(auth.userId);
-      client.send("safe_error", {
-        type: "safe_error",
-        messageBg: "Твърде много опити за вход. Изчакай малко.",
-      } satisfies ServerEvent);
-      client.leave(4029);
-      return;
+      this.refuseJoin("Твърде много опити за вход. Изчакай малко.", 4029);
     }
     const previousClient = this.playerPresence.getClient(auth.userId);
     const existingEntry = this.findPlayerEntryByUserId(auth.userId);
@@ -441,64 +445,44 @@ export class GameRoom extends Room<{ state: GameState }> {
       await this.trackActiveRoom(auth.userId);
       if (!await this.reattachExistingPlayer(client, options, auth)) {
         await this.releaseTrackedActiveRoom(auth.userId);
-        this.sendSafeError(client, "Този играч вече не е в стаята.");
-        client.leave();
+        this.refuseJoin("Този играч вече не е в стаята.");
       }
       return;
     }
 
     if (this.isDisplayNameTaken(auth.displayName, auth.userId)) {
       await this.releaseTrackedActiveRoom(auth.userId);
-      client.send("safe_error", {
-        type: "safe_error",
-        messageBg: "Това име вече се използва в стаята.",
-      } satisfies ServerEvent);
-      client.leave();
-      return;
+      this.refuseJoin("Това име вече се използва в стаята.");
     }
 
     if (this.state.locked && !options.spectator) {
       await this.releaseTrackedActiveRoom(auth.userId);
-      client.send("safe_error", { type: "safe_error", messageBg: "Играта вече е заключена." } satisfies ServerEvent);
-      client.leave();
-      return;
+      this.refuseJoin("Играта вече е заключена.");
     }
     if (!options.spectator && !this.hasAvailablePlayerSlot(auth.userId)) {
       await this.releaseTrackedActiveRoom(auth.userId);
-      this.sendSafeError(client, "Стаята е пълна.");
-      client.leave();
-      return;
+      this.refuseJoin("Стаята е пълна.");
     }
 
     await this.trackActiveRoom(auth.userId);
     if (this.findPlayerEntryByUserId(auth.userId)) {
       if (!await this.reattachExistingPlayer(client, options, auth)) {
         await this.releaseTrackedActiveRoom(auth.userId);
-        this.sendSafeError(client, "Този играч вече не е в стаята.");
-        client.leave();
+        this.refuseJoin("Този играч вече не е в стаята.");
       }
       return;
     }
     if (this.isDisplayNameTaken(auth.displayName, auth.userId)) {
       await this.releaseTrackedActiveRoom(auth.userId);
-      client.send("safe_error", {
-        type: "safe_error",
-        messageBg: "Това име вече се използва в стаята.",
-      } satisfies ServerEvent);
-      client.leave();
-      return;
+      this.refuseJoin("Това име вече се използва в стаята.");
     }
     if (this.state.locked && !options.spectator) {
       await this.releaseTrackedActiveRoom(auth.userId);
-      client.send("safe_error", { type: "safe_error", messageBg: "Играта вече е заключена." } satisfies ServerEvent);
-      client.leave();
-      return;
+      this.refuseJoin("Играта вече е заключена.");
     }
     if (!options.spectator && !this.hasAvailablePlayerSlot(auth.userId)) {
       await this.releaseTrackedActiveRoom(auth.userId);
-      this.sendSafeError(client, "Стаята е пълна.");
-      client.leave();
-      return;
+      this.refuseJoin("Стаята е пълна.");
     }
 
     this.activateClient(auth, client, this.playerPresence.getClient(auth.userId) ?? previousClient);
@@ -553,9 +537,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       !options.spectator && !this.state.locked && this.state.phase === "lobby" && !player.playing;
     if (promotingLobbySpectator) {
       if (!this.hasAvailablePlayerSlot(auth.userId)) {
-        this.sendSafeError(client, "Стаята е пълна.");
-        client.leave();
-        return true;
+        this.refuseJoin("Стаята е пълна.");
       }
       player.host = player.host || !this.hasHostPlayer();
       player.narrator = player.host && this.config.narratorMode !== "automatic";
@@ -621,20 +603,28 @@ export class GameRoom extends Room<{ state: GameState }> {
       return;
     }
 
+    let reconnectError: string | undefined;
     if (auth.tokenIssuedAtMs !== undefined) {
       try {
         if (await PlayerPresenceManager.isGameSessionRevoked(auth.userId, auth.tokenIssuedAtMs)) {
-          this.playerPresence.invalidateConnectionGeneration(auth.userId);
-          this.sendSafeError(client, "Сесията ти беше прекратена. Влез отново, за да продължиш.");
-          client.leave(4029);
-          return;
+          reconnectError = "Сесията ти беше прекратена. Влез отново, за да продължиш.";
         }
       } catch {
-        this.playerPresence.invalidateConnectionGeneration(auth.userId);
-        this.sendSafeError(client, "Не успяхме да възстановим сигурно връзката. Опитай отново.");
-        client.leave(4029);
-        return;
+        reconnectError = "Не успяхме да възстановим сигурно връзката. Опитай отново.";
       }
+    }
+
+    // The revocation lookup can outlive this connection's ownership, even on failure.
+    if (!this.playerPresence.isCurrentConnectionGeneration(auth.userId, auth.connectionGeneration)) {
+      this.sendSafeError(client, "Тази връзка е заменена от по-нова сесия.");
+      client.leave(4029);
+      return;
+    }
+    if (reconnectError) {
+      this.playerPresence.invalidateConnectionGeneration(auth.userId);
+      this.sendSafeError(client, reconnectError);
+      client.leave(4029);
+      return;
     }
 
     this.playerPresence.attachClient(auth.userId, client);
@@ -678,12 +668,14 @@ export class GameRoom extends Room<{ state: GameState }> {
       }
       this.state.players.delete(playerEntry[0]);
       this.privatePlayers.delete(auth.userId);
-      await PlayerPresenceManager.releaseActiveRoom(auth.userId, this.state.code);
-      this.activeRoomUserIds.delete(auth.userId);
+      this.playerPresence.invalidateConnectionGeneration(auth.userId);
     }
     if (player?.host) {
       player.host = false;
       this.assignHostSuccessor(auth.userId);
+    }
+    if (removeFromRoster) {
+      await this.runMembershipOperation(auth.userId, () => this.releaseTrackedActiveRoom(auth.userId));
     }
   }
 
@@ -708,6 +700,9 @@ export class GameRoom extends Room<{ state: GameState }> {
     this.playerPresence.clear();
     this.privatePlayers.clear();
     this.pendingNightActions.clear();
+    this.immediateNightActorIds.clear();
+    this.pendingHunterRevengeQueue.clear();
+    this.pendingHunterRevengeUserId = undefined;
     this.pendingDeathInterruptionResumePhase = undefined;
     this.pendingVampireBites.clear();
     this.personalWinnerUserIds.clear();
@@ -731,8 +726,25 @@ export class GameRoom extends Room<{ state: GameState }> {
   }
 
   private async releaseTrackedActiveRoom(userId: string) {
-    await PlayerPresenceManager.releaseActiveRoom(userId, this.state.code).catch(() => undefined);
+    if (this.findPlayerEntryByUserId(userId)) {
+      return;
+    }
     this.activeRoomUserIds.delete(userId);
+    await PlayerPresenceManager.releaseActiveRoom(userId, this.state.code).catch(() => undefined);
+  }
+
+  private async runMembershipOperation(userId: string, task: () => Promise<void>) {
+    // A departed membership must finish releasing its claim before a new join claims it.
+    const previous = this.membershipOperations.get(userId) ?? Promise.resolve();
+    const operation = previous.then(task, task);
+    this.membershipOperations.set(userId, operation);
+    try {
+      await operation;
+    } finally {
+      if (this.membershipOperations.get(userId) === operation) {
+        this.membershipOperations.delete(userId);
+      }
+    }
   }
 
   private handleCommand(client: Client, command: ClientCommand) {
@@ -783,7 +795,8 @@ export class GameRoom extends Room<{ state: GameState }> {
           break;
         case "syncPrivateState":
           this.syncPrivateState(client, auth.userId);
-          return { synchronized: true };
+          // phaseEndsAt is on this clock; the reply lets clients correct for device clock skew.
+          return { synchronized: true, serverNow: Date.now() };
         case "narratorPause":
           this.pauseByNarrator(client);
           break;
@@ -1170,6 +1183,7 @@ export class GameRoom extends Room<{ state: GameState }> {
     }
     this.validateNightActionSubmission(publicPlayer, privatePlayer, action);
 
+    const hadFactionKill = this.hasPendingNightAction(publicPlayer.userId, "faction_kill");
     if (action.kind === "thief_steal") {
       // The Thief wakes before the remaining roles. Applying the exchange now
       // gives the new role a real chance to act during the same first night.
@@ -1177,7 +1191,10 @@ export class GameRoom extends Room<{ state: GameState }> {
     } else {
       this.queueNightAction(publicPlayer.userId, privatePlayer.role, action);
     }
-    if (action.kind === "faction_kill") {
+    if (
+      action.kind === "faction_kill" ||
+      (hadFactionKill && !this.hasPendingNightAction(publicPlayer.userId, "faction_kill"))
+    ) {
       this.notifyWitchesOfFactionVictim();
     }
     this.persistGameEvent("night_action_submitted", {
@@ -1568,7 +1585,15 @@ export class GameRoom extends Room<{ state: GameState }> {
       targetUserId,
     } satisfies ServerEvent);
     this.pendingHunterRevengeUserId = undefined;
+    this.persistGameEvent("hunter_shot", {
+      actorId: publicPlayer.userId,
+      targetId: targetUserId,
+      visibility: "moderator",
+    });
     const deaths = this.applyDeaths([{ userId: targetUserId, causeBg: "Падна от последния изстрел на Ловеца.", publicEventKind: "hunter_shot" }]);
+    if (this.queueHunterRevenge(deaths)) {
+      return;
+    }
     // queueMayorSuccessor consults this.pendingMayorSuccessor too, so a mayor
     // who died alongside a hunter still triggers a successor selection here.
     if (this.queueMayorSuccessor(deaths)) {
@@ -1772,7 +1797,10 @@ export class GameRoom extends Room<{ state: GameState }> {
       target.isMayor = false;
     }
     delete target.lastResolvedHealerTargetUserId;
+    this.pendingNightActions.delete(actor.userId);
     this.pendingNightActions.delete(targetUserId);
+    this.immediateNightActorIds.add(actor.userId);
+    this.notifyWitchesOfFactionVictim();
 
     const actorClient = this.playerPresence.getClient(actor.userId);
     const targetClient = this.playerPresence.getClient(targetUserId);
@@ -1954,6 +1982,9 @@ export class GameRoom extends Room<{ state: GameState }> {
 
     if (this.state.phase === "hunter_revenge") {
       this.pendingHunterRevengeUserId = undefined;
+      if (this.queueHunterRevenge([])) {
+        return;
+      }
       if (this.queueMayorSuccessor([])) {
         return;
       }
@@ -1997,6 +2028,12 @@ export class GameRoom extends Room<{ state: GameState }> {
   private transitionTo(phase: GamePhase) {
     const previousPhase = this.currentPhase();
     this.state.phase = phase;
+    if (phase === "game_over") {
+      this.pendingVampireBites.clear();
+    }
+    if (phase === "hunter_revenge" || previousPhase === "hunter_revenge") {
+      this.privateEvents.sendHunterRevengeAvailability();
+    }
     // Timer extensions and pause/resume do not open a new ballot.
     if (phase === "voting") {
       this.state.votingCycle += 1;
@@ -2292,6 +2329,9 @@ export class GameRoom extends Room<{ state: GameState }> {
     if (isNightPhase(snapshot.phase)) {
       this.sendNightActionCapabilitiesToActors();
     }
+    if (snapshot.phase === "hunter_revenge") {
+      this.privateEvents.sendHunterRevengeAvailability();
+    }
   }
 
   private scheduleCurrentPhaseTimer(durationMs: number) {
@@ -2306,6 +2346,7 @@ export class GameRoom extends Room<{ state: GameState }> {
         role: player.role,
         alive: player.alive,
         ...(player.priestBlessed ? { priestBlessed: true } : {}),
+        ...(player.loverId ? { loverId: player.loverId } : {}),
       }));
   }
 
@@ -2362,6 +2403,7 @@ export class GameRoom extends Room<{ state: GameState }> {
     this.sendInsomniacResults(effectiveActions);
     this.markNightActionConsumables(effectiveActions, resolution.deathSources);
     this.pendingNightActions.clear();
+    this.immediateNightActorIds.clear();
 
     for (const check of resolution.checks) {
       const exactRole =
@@ -2488,11 +2530,12 @@ export class GameRoom extends Room<{ state: GameState }> {
   }
 
   private sendInsomniacResults(actions: SubmittedNightAction[]) {
-    const activeNeighborIds = new Set(
-      actions
+    const activeNeighborIds = new Set([
+      ...this.immediateNightActorIds,
+      ...actions
         .filter((submission) => submission.action.kind !== "skip")
         .map((submission) => submission.actorUserId),
-    );
+    ]);
     const living = [...this.privatePlayers.values()]
       .filter((player): player is PrivatePlayerState & { role: RoleCode } => Boolean(player.role && player.alive));
 
@@ -2691,13 +2734,19 @@ export class GameRoom extends Room<{ state: GameState }> {
       this.pendingMayorSuccessor = true;
     }
 
-    const hunterDeath = deaths.find((death) => death.role === "hunter");
-    if (!hunterDeath) {
+    for (const death of deaths) {
+      if (death.role === "hunter" && death.userId !== this.pendingHunterRevengeUserId) {
+        this.pendingHunterRevengeQueue.add(death.userId);
+      }
+    }
+    const hunterUserId = this.pendingHunterRevengeQueue.values().next().value;
+    if (!hunterUserId) {
       return false;
     }
 
     this.rememberDeathInterruptionResumePhase();
-    this.pendingHunterRevengeUserId = hunterDeath.userId;
+    this.pendingHunterRevengeQueue.delete(hunterUserId);
+    this.pendingHunterRevengeUserId = hunterUserId;
     this.transitionTo("hunter_revenge");
     return true;
   }
@@ -2746,6 +2795,12 @@ export class GameRoom extends Room<{ state: GameState }> {
     actions: SubmittedNightAction[],
     resolvedDeathSources: NightResolution["deathSources"],
   ) {
+    // Only protection effective in this resolved night restricts the next night.
+    for (const player of this.privatePlayers.values()) {
+      if (player.role === "healer") {
+        delete player.lastResolvedHealerTargetUserId;
+      }
+    }
     for (const submission of actions) {
       const privatePlayer = this.privatePlayers.get(submission.actorUserId);
       if (!privatePlayer) {
@@ -2999,6 +3054,11 @@ export class GameRoom extends Room<{ state: GameState }> {
 
   private sendSafeError(client: Client, messageBg: string) {
     client.send("safe_error", { type: "safe_error", messageBg } satisfies ServerEvent);
+  }
+
+  /** Room messages queue until JOINED and are dropped on rejection; only a thrown error reaches the SDK join. */
+  private refuseJoin(messageBg: string, code: number = ErrorCode.APPLICATION_ERROR): never {
+    throw new ServerError(code, messageBg);
   }
 
   private syncPublicConfig() {

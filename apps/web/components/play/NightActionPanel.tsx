@@ -222,7 +222,6 @@ export function NightActionPanel({
           className={`play-confirm-skip ${styles.skipButton}`}
           data-command-priority="quiet"
           data-confirm-state={skipArmed ? "armed" : "idle"}
-          aria-pressed={skipArmed}
           onClick={() => {
             if (skipArmed) {
               setSkipArmed(false);

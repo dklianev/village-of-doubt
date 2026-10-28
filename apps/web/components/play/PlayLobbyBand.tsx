@@ -38,8 +38,10 @@ export function PlayLobbyBand({ players, ownPlayer, latestEvent, family, connect
             variant={ownPlayer.ready || ownPlayer.host ? "secondary" : "primary"}
             onClick={onReady} disabled={!connected} aria-pressed={ownPlayer.ready}
           >
-            <Users className="play-button-icon" aria-hidden strokeWidth={1.8} />
-            {ownPlayer.ready ? "Не съм готов" : "Готов"}
+            {ownPlayer.ready
+              ? <Check className="play-button-icon" aria-hidden strokeWidth={1.8} />
+              : <Users className="play-button-icon" aria-hidden strokeWidth={1.8} />}
+            Готов
           </Button> : null}
           {ownPlayer?.host ? <Button
             onClick={onStart}

@@ -79,8 +79,12 @@ describe("GameRoom reconnect resilience", () => {
       capabilities: NightActionCapabilities;
     }>;
     const rosterPromise = reconnected.waitForMessage("private_faction_roster") as Promise<PrivateFactionRoster>;
+    const requestedAt = Date.now();
     const syncResult = await reconnected.request("syncPrivateState");
-    expect(syncResult).toEqual({ synchronized: true });
+    // Clients correct the phase countdown for device clock skew from this reply.
+    expect(syncResult).toEqual({ synchronized: true, serverNow: expect.any(Number) });
+    expect(syncResult.serverNow).toBeGreaterThanOrEqual(requestedAt);
+    expect(syncResult.serverNow).toBeLessThanOrEqual(Date.now());
     const privateRole = await privateRolePromise;
     const capabilities = await capabilitiesPromise;
     const roster = await rosterPromise;

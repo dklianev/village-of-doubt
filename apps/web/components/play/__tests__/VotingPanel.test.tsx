@@ -85,7 +85,7 @@ describe("VotingPanel", () => {
   it("does not mistake an accepted skip for the selected player vote", () => {
     render(<VotingPanel currentUserId="u1" livingPlayers={livingPlayers} selectedTargetId="u2" acceptedTargetId="skip" voteTally={[]} allowSkipVote sendVote={vi.fn()} />);
     expect(screen.getByText("Още не е потвърден")).toBeVisible();
-    expect(screen.getByRole("button", { name: "Пропусни глас" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "Пропусни глас" })).not.toHaveAttribute("aria-pressed");
     expect(screen.queryByText("Гласът е приет")).not.toBeInTheDocument();
   });
 
@@ -104,12 +104,12 @@ describe("VotingPanel", () => {
     );
 
     await user.click(screen.getByRole("button", { name: "Пропусни глас" }));
-    expect(screen.getByRole("button", { name: "Потвърди пропускането" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Потвърди пропускането" })).not.toHaveAttribute("aria-pressed");
     await user.click(screen.getByRole("button", { name: "Потвърди гласа за Борис" }));
 
     expect(sendVote).toHaveBeenCalledExactlyOnceWith("u2");
     const skip = screen.getByRole("button", { name: "Пропусни глас" });
-    expect(skip).toHaveAttribute("aria-pressed", "false");
+    expect(skip).not.toHaveAttribute("aria-pressed");
     expect(screen.getByText("Избран играч")).toBeInTheDocument();
     expect(screen.getByText("Борис")).toBeInTheDocument();
 
@@ -205,10 +205,7 @@ describe("VotingPanel", () => {
     await user.click(screen.getByRole("button", { name: "Пропусни глас" }));
 
     expect(sendVote).not.toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: "Потвърди пропускането" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    expect(screen.getByRole("button", { name: "Потвърди пропускането" })).not.toHaveAttribute("aria-pressed");
 
     await user.click(screen.getByRole("button", { name: "Потвърди пропускането" }));
 

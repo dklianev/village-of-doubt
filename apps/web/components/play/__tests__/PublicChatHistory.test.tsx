@@ -18,10 +18,26 @@ describe("PublicChatHistory", () => {
     toggle.focus();
     await user.keyboard("{Enter}");
     expect(toggle).toHaveAttribute("aria-expanded", "true");
-    expect(within(screen.getByRole("log")).getByText("Реплика 1")).toBeInTheDocument();
+    expect(screen.getByText("Реплика 1")).toBeVisible();
     expect(toggle).toHaveFocus();
     await user.keyboard("{Enter}");
     expect(screen.queryByText("Реплика 1")).not.toBeInTheDocument();
+  });
+
+  it("keeps expanded archive lines out of the live log so only new replies are announced", async () => {
+    const { rerender } = render(<PublicChatHistory messages={messages} />);
+    const live = screen.getByRole("log");
+    expect(live).toHaveAttribute("aria-live", "polite");
+
+    await userEvent.click(screen.getByRole("button", { name: /Виж разговора/ }));
+    expect(screen.getByText("Реплика 1")).toBeVisible();
+    expect(within(live).queryByText("Реплика 1")).not.toBeInTheDocument();
+    expect(within(live).queryByText("Реплика 2")).not.toBeInTheDocument();
+
+    rerender(<PublicChatHistory messages={[...messages, { id: "7", channel: "public", senderName: "Борил", message: "Нова реплика" }]} />);
+    expect(within(live).getByText("Нова реплика")).toBeInTheDocument();
+    expect(within(live).queryByText("Реплика 3")).not.toBeInTheDocument();
+    expect(screen.getByText("Реплика 3")).toBeVisible();
   });
 
   it("shows only the current server buffer after it is capped or replaced", async () => {

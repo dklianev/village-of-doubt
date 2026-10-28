@@ -32,7 +32,7 @@ describe("death reveal artwork", () => {
     ["mafia", "doctor", "/game-art/mafia/role-doctor.webp"],
     ["werewolves", "doctor", "/game-art/mafia/role-doctor.webp"],
   ] as const)("resolves %s %s through its visual family", (family, role, pathname) => {
-    const { container } = render(<DeathRevealCinematic family={family} players={[player({ revealedRole: role })]} />);
+    const { container } = render(<DeathRevealCinematic family={family} players={[player({ revealedRole: role })]} revealedUserId="fixture-player" />);
     const source = roleArt.roleArtSource(family, role);
     const picture = container.querySelector(".death-reveal-role-art")!;
     const image = picture.querySelector("img")!;
@@ -56,27 +56,32 @@ describe("death reveal artwork", () => {
       src: "/game-art/role-jester-werewolf.webp?test-revision=updated",
     };
     const resolveSource = vi.spyOn(roleArt, "roleArtSource").mockReturnValue(source);
-    const { container } = render(<DeathRevealCinematic family="werewolves" players={[player({ revealedRole: "jester" })]} />);
+    const { container } = render(<DeathRevealCinematic family="werewolves" players={[player({ revealedRole: "jester" })]} revealedUserId="fixture-player" />);
 
     expect(resolveSource).toHaveBeenCalledWith("werewolves", "jester");
     expect(container.querySelector("source")).toHaveAttribute("srcset", source.src);
     expect(container.querySelector("img")).toHaveAttribute("src", source.src);
   });
 
-  it("keeps the last eligible public reveal without mutating the player order", () => {
+  it("reveals the newest death instead of the last eliminated seat", () => {
     const players = [
-      player({ userId: "earlier", displayName: "Earlier Player" }),
-      player({ userId: "latest", displayName: "Latest Player", revealedRole: "jester" }),
+      player({ userId: "fresh", displayName: "Fresh Victim", revealedRole: "jester" }),
+      player({ userId: "older", displayName: "Older Victim" }),
       player({ userId: "living", displayName: "Living Player", alive: true }),
-      player({ userId: "spectator", displayName: "Spectator", playing: false }),
-      player({ userId: "hidden", displayName: "Hidden Player", revealedRole: "" }),
     ];
     const originalOrder = [...players];
-    render(<DeathRevealCinematic family="werewolves" players={players} />);
+    render(<DeathRevealCinematic family="werewolves" players={players} revealedUserId="fresh" />);
 
-    expect(screen.getByRole("heading")).toHaveTextContent("Latest Player");
+    expect(screen.getByRole("heading")).toHaveTextContent("Fresh Victim");
     expect(players).toEqual(originalOrder);
-    expect(screen.queryByText(/Earlier Player|Living Player|Spectator|Hidden Player/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Older Victim|Living Player/)).not.toBeInTheDocument();
+  });
+
+  it("does not resurface an older death when nobody died this round", () => {
+    const { container } = render(
+      <DeathRevealCinematic family="werewolves" players={[player({ userId: "older" })]} revealedUserId="" />,
+    );
+    expect(container).toBeEmptyDOMElement();
   });
 
   it.each([
@@ -85,12 +90,12 @@ describe("death reveal artwork", () => {
     { revealedRole: "" },
     { revealedRole: "unknown_role" },
   ])("does not render an ineligible public reveal: %j", (overrides) => {
-    const { container } = render(<DeathRevealCinematic family="werewolves" players={[player(overrides)]} />);
+    const { container } = render(<DeathRevealCinematic family="werewolves" players={[player(overrides)]} revealedUserId="fixture-player" />);
     expect(container).toBeEmptyDOMElement();
   });
 
   it("does not render without players", () => {
-    const { container } = render(<DeathRevealCinematic family="werewolves" players={[]} />);
+    const { container } = render(<DeathRevealCinematic family="werewolves" players={[]} revealedUserId="fixture-player" />);
     expect(container).toBeEmptyDOMElement();
   });
 });

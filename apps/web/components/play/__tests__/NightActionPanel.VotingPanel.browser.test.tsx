@@ -48,12 +48,12 @@ describe.skipIf(!baseUrl)("action panel feedback and long names", () => {
               const actionName = phase === "voting" ? /^Потвърди гласа за / : family === "mafia"
                 ? "Провери дали е от Мафията" : "Провери заплахата";
               await dock.getByRole("button", { name: skipName, exact: true }).click();
-              expect(await dock.getByRole("button", { name: confirmSkip }).getAttribute("aria-pressed")).toBe("true");
+              expect(await dock.getByRole("button", { name: confirmSkip }).getAttribute("aria-pressed")).toBeNull();
               await dock.getByRole("button", { name: actionName }).click();
-              expect(await dock.getByRole("button", { name: skipName, exact: true }).getAttribute("aria-pressed")).toBe("false");
+              expect(await dock.getByRole("button", { name: skipName, exact: true }).getAttribute("aria-pressed")).toBeNull();
               expect(await page.locator(".play-action-receipt").count()).toBe(0);
               await dock.getByRole("button", { name: skipName, exact: true }).click();
-              expect(await dock.getByRole("button", { name: confirmSkip }).getAttribute("aria-pressed")).toBe("true");
+              expect(await dock.getByRole("button", { name: confirmSkip }).getAttribute("aria-pressed")).toBeNull();
 
               // Stress only presentation; the fixture has no server and the name is synthetic.
               await dock.locator(".play-selected-target strong").evaluate((name) => {
@@ -64,10 +64,24 @@ describe.skipIf(!baseUrl)("action panel feedback and long names", () => {
                 range.selectNodeContents(element);
                 const text = range.getBoundingClientRect();
                 const container = (element.tagName === "STRONG" ? element.parentElement! : element).getBoundingClientRect();
+                // Font glyphs may extend outside a CSS line box without being clipped.
+                // Check actual clipping ancestors and adjacent content, not that box's ascent.
+                let unclipped = true;
+                for (let parent = element as HTMLElement | null; parent && !parent.classList.contains("play-action-dock"); parent = parent.parentElement) {
+                  const style = getComputedStyle(parent);
+                  const box = parent.getBoundingClientRect();
+                  if (/(hidden|clip|auto|scroll)/.test(style.overflowX) && (text.left < box.left - 1 || text.right > box.right + 1)) unclipped = false;
+                  if (/(hidden|clip)/.test(style.overflowY) && (text.top < box.top - 1 || text.bottom > box.bottom + 1)) unclipped = false;
+                }
+                const next = element.tagName === "STRONG" ? element.nextElementSibling : null;
+                const nextRange = document.createRange();
+                if (next) nextRange.selectNodeContents(next);
+                const noCollision = !next || text.bottom <= nextRange.getBoundingClientRect().top + 1;
                 return {
                   text: element.textContent,
                   fits: text.left >= container.left - 1 && text.right <= container.right + 1
-                    && text.top >= container.top - 1 && text.bottom <= container.bottom + 1,
+                    && unclipped && noCollision
+                    && (element.tagName === "STRONG" || (text.top >= container.top - 1 && text.bottom <= container.bottom + 1)),
                 };
               }));
               expect(geometry.every((item) => item.fits), JSON.stringify(geometry)).toBe(true);

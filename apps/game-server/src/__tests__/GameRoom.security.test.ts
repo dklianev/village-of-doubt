@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { boot, type ColyseusTestServer } from "@colyseus/testing";
 import type { Room as ClientRoom } from "@colyseus/sdk";
-import type { NightActionCapabilities, PrivateFactionRoster, RoleCode } from "@werewolf/shared";
+import type { ClientCommand, NightActionCapabilities, PrivateFactionRoster, RoleCode } from "@werewolf/shared";
 import { createGameToken } from "@werewolf/shared/server";
 import appConfig, { OperationalGameRoom } from "../app.config.js";
 import { authenticateGameJoin, GameRoom } from "../rooms/GameRoom.js";
@@ -31,6 +31,7 @@ describe("GameRoom security boundaries", () => {
   afterEach(async () => {
     await colyseus?.cleanup();
     await colyseus?.shutdown();
+    vi.restoreAllMocks();
     PlayerPresenceManager.resetForTests();
     restoreEnvValue("ALLOW_DEV_AUTH", previousAllowDevAuth);
     restoreEnvValue("GAME_TOKEN_SECRET", previousGameTokenSecret);
@@ -379,15 +380,25 @@ describe("GameRoom security boundaries", () => {
     }
 
     const blockedClient = fakeClient("rate-session-blocked");
-    await serverRoom.onJoin(blockedClient, options, auth);
+    await expect(serverRoom.onJoin(blockedClient, options, auth)).rejects.toMatchObject({
+      code: 4029,
+      message: "Твърде много опити за вход. Изчакай малко.",
+    });
+    expect(blockedClient.send).not.toHaveBeenCalled();
+  });
 
-    expect(blockedClient.send).toHaveBeenCalledWith(
-      "safe_error",
-      expect.objectContaining({
-        messageBg: "Твърде много опити за вход. Изчакай малко.",
-      }),
-    );
-    expect(blockedClient.leave).toHaveBeenCalledWith(4029);
+  it("delivers an in-room join refusal to the real SDK client as its Bulgarian reason", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "NAME25",
+      mode: "werewolves_classic",
+      playerCount: 8,
+    });
+    await connectWithRetry(colyseus, serverRoom, { code: "NAME25", userId: "sdk-name-a", displayName: "Същото име" });
+
+    await expect(
+      connectWithRetry(colyseus, serverRoom, { code: "NAME25", userId: "sdk-name-b", displayName: "Същото име" }),
+    ).rejects.toThrow("Това име вече се използва в стаята.");
+    expect([...serverRoom.state.players.values()].filter((player) => player.displayName === "Същото име")).toHaveLength(1);
   });
 
   it("releases the matchmaking room claim when a full-room join is rejected", async () => {
@@ -410,12 +421,8 @@ describe("GameRoom security boundaries", () => {
     const releaseSpy = vi.spyOn(PlayerPresenceManager, "releaseActiveRoom");
 
     try {
-      await serverRoom.onJoin(rejectedClient, { code: "FULL24" }, auth);
-      expect(rejectedClient.send).toHaveBeenCalledWith(
-        "safe_error",
-        expect.objectContaining({ messageBg: "Стаята е пълна." }),
-      );
-      expect(rejectedClient.leave).toHaveBeenCalled();
+      await expect(serverRoom.onJoin(rejectedClient, { code: "FULL24" }, auth)).rejects.toThrow("Стаята е пълна.");
+      expect(rejectedClient.send).not.toHaveBeenCalled();
       expect(releaseSpy).toHaveBeenCalledWith("full-rejected-user", "FULL24");
     } finally {
       releaseSpy.mockRestore();
@@ -447,16 +454,13 @@ describe("GameRoom security boundaries", () => {
     await serverRoom.onJoin(spectatorClient, { code: "CLAM24", spectator: true }, spectatorIdentity);
 
     const promotionClient = fakeClient("claim-promotion-session");
-    await serverRoom.onJoin(promotionClient, { code: "CLAM24" }, spectatorIdentity);
+    await expect(serverRoom.onJoin(promotionClient, { code: "CLAM24" }, spectatorIdentity)).rejects.toThrow("Стаята е пълна.");
 
     expect([...serverRoom.state.players.values()].find(
       (player) => player.userId === spectatorIdentity.userId,
     )).toMatchObject({ playing: false, connected: true });
     expect(spectatorClient.leave).not.toHaveBeenCalled();
-    expect(promotionClient.send).toHaveBeenCalledWith(
-      "safe_error",
-      expect.objectContaining({ messageBg: "Стаята е пълна." }),
-    );
+    expect(promotionClient.send).not.toHaveBeenCalled();
     await expect(PlayerPresenceManager.claimActiveRoom(
       spectatorIdentity.userId,
       "EXTRA2",
@@ -485,9 +489,8 @@ describe("GameRoom security boundaries", () => {
 
     try {
       const rejectedClient = fakeClient("rate-rejected-session");
-      await serverRoom.onJoin(rejectedClient, { code: "RATE24" }, auth);
+      await expect(serverRoom.onJoin(rejectedClient, { code: "RATE24" }, auth)).rejects.toMatchObject({ code: 4029 });
 
-      expect(rejectedClient.leave).toHaveBeenCalledWith(4029);
       expect(releaseSpy).toHaveBeenCalledWith(userId, "RATE24");
     } finally {
       rateLimitSpy.mockRestore();
@@ -518,9 +521,11 @@ describe("GameRoom security boundaries", () => {
 
     try {
       const rejectedClient = fakeClient("nonce-rejected-session");
-      await serverRoom.onJoin(rejectedClient, { code: "NQNC24" }, auth);
+      await expect(serverRoom.onJoin(rejectedClient, { code: "NQNC24" }, auth)).rejects.toMatchObject({
+        code: 4029,
+        message: "Този токен вече е използван.",
+      });
 
-      expect(rejectedClient.leave).toHaveBeenCalledWith(4029);
       expect(releaseSpy).toHaveBeenCalledWith(userId, "NQNC24");
     } finally {
       nonceSpy.mockRestore();
@@ -599,7 +604,7 @@ describe("GameRoom security boundaries", () => {
       avatarId: "portrait-m04" as const,
     };
 
-    await Promise.all([
+    const results = await Promise.allSettled([
       serverRoom.onJoin(firstClient, { code: "NAME24" }, firstIdentity),
       serverRoom.onJoin(secondClient, { code: "NAME24" }, secondIdentity),
     ]);
@@ -608,14 +613,11 @@ describe("GameRoom security boundaries", () => {
       (player) => player.displayName === firstIdentity.displayName,
     );
     expect(matchingRows).toHaveLength(1);
-    const rejectedClients = [firstClient, secondClient].filter((client) =>
-      vi.mocked(client.send).mock.calls.some(
-        ([type, payload]) => type === "safe_error"
-          && (payload as { messageBg?: string }).messageBg === "Това име вече се използва в стаята.",
-      ),
-    );
-    expect(rejectedClients).toHaveLength(1);
-    expect(rejectedClients[0]?.leave).toHaveBeenCalled();
+    const rejections = results.filter((result) => result.status === "rejected");
+    expect(rejections).toHaveLength(1);
+    expect((rejections[0] as PromiseRejectedResult).reason).toMatchObject({
+      message: "Това име вече се използва в стаята.",
+    });
   });
 
   it("does not let a stale reconnection replace a newer active connection", async () => {
@@ -650,6 +652,61 @@ describe("GameRoom security boundaries", () => {
     expect(firstClient.leave).toHaveBeenCalledWith(4029);
     expect(firstClient.send).not.toHaveBeenCalledWith("private_role", expect.anything());
   });
+
+  it.each(["valid", "revoked", "unavailable"] as const)(
+    "preserves a newer attach when a suspended reconnect lookup becomes %s",
+    async (result) => {
+      const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+        code: "RACE23",
+        mode: "werewolves_classic",
+        playerCount: 8,
+      });
+      const oldClient = fakeClient("reconnect-race-old");
+      const newClient = fakeClient("reconnect-race-new");
+      const identity = {
+        userId: "reconnect-race-user",
+        displayName: "Reconnect race",
+        avatarId: "portrait-m03" as const,
+      };
+      await serverRoom.onJoin(oldClient, { code: "RACE23" }, { ...identity, tokenIssuedAtMs: 1_000 });
+      const lookup = Promise.withResolvers<boolean>();
+      const check = vi.fn(() => lookup.promise);
+      PlayerPresenceManager.configureDurableSessionRevocationCheck(check);
+      const pendingReconnect = serverRoom.onReconnect(oldClient);
+      expect(check).toHaveBeenCalledWith(identity.userId, 1_000);
+
+      // A fresh token's join finishes while only the old reconnect lookup is suspended.
+      PlayerPresenceManager.configureDurableSessionRevocationCheck(async () => false);
+      await serverRoom.onJoin(newClient, { code: "RACE23" }, { ...identity, tokenIssuedAtMs: 2_000 });
+      await serverRoom.onLeave(oldClient);
+      vi.mocked(oldClient.send).mockClear();
+      vi.mocked(oldClient.leave).mockClear();
+      const internals = serverRoom as unknown as {
+        playerPresence: PlayerPresenceManager;
+        handleCommand(client: typeof oldClient, command: ClientCommand): void;
+      };
+      const generation = (newClient.userData as { connectionGeneration: number }).connectionGeneration;
+      const eventsBefore = serverRoom.state.publicEvents.length;
+
+      if (result === "unavailable") lookup.reject(new Error("synthetic revocation store failure"));
+      else lookup.resolve(result === "revoked");
+      await pendingReconnect;
+
+      expect(oldClient.leave).toHaveBeenCalledWith(4029);
+      expect(internals.playerPresence.getClient(identity.userId)).toBe(newClient);
+      expect(internals.playerPresence.isCurrentConnectionGeneration(identity.userId, generation)).toBe(true);
+      expect(serverRoom.state.publicEvents.length).toBe(eventsBefore);
+      expect([...serverRoom.state.players.values()]).toHaveLength(1);
+      const player = [...serverRoom.state.players.values()][0];
+      expect(player?.connected).toBe(true);
+      internals.handleCommand(newClient, { type: "ready", ready: true });
+      expect(player?.ready).toBe(true);
+      internals.handleCommand(oldClient, { type: "ready", ready: false });
+      expect(player?.ready).toBe(true);
+      expect(oldClient.send).toHaveBeenCalledWith("safe_error", expect.anything());
+      expect(oldClient.send).not.toHaveBeenCalledWith("private_role", expect.anything());
+    },
+  );
 
   it("rejects a current reconnection after its game session was revoked", async () => {
     const serverRoom = await colyseus.createRoom<GameRoom>("game", {
