@@ -20,6 +20,12 @@ const game = { id: gameId, code: "4821", hostId: "viewer", status: "ended", ende
   startedAt: date, roomVisibility: "private" as const, winnerTeam: "village", config: { mode: "werewolves_classic" }, eventCount: 4000 };
 const event = { id: gameId, createdAt: date, round: 1, phase: "voting", type: "vote_submitted", actorId: null, targetId: null, payload: {}, visibility: "public" };
 const roleArtPattern = /\/game-art\/(?:[\w-]+\/)*role-[\w-]+/;
+async function expectMissingReplay(id: string) {
+  render(await ReplayPage({ params: Promise.resolve({ gameId: id }) }));
+  expect(screen.getByRole("heading", { level: 1, name: "Този запис не съществува" })).toBeVisible();
+  expect(screen.getByRole("link", { name: "Към архива" })).toHaveAttribute("href", "/history");
+}
+
 function timelineHeadings() {
   return within(screen.getByRole("region", { name: "Хронология на играта" })).queryAllByRole("heading", { level: 4, hidden: true });
 }
@@ -103,21 +109,25 @@ describe("replay authorization, availability and continuation", () => {
     expect(new URL(href, "http://local").searchParams.get("after")).toBe(cursor);
     expect(screen.queryByRole("link", { name: "Към началото" })).toBeNull();
   });
+  it("answers a malformed id with the missing state without touching the archive", async () => {
+    await expectMissingReplay("not-a-game");
+    expect(getGameHistoryById).not.toHaveBeenCalled();
+  });
   it("does not disclose private games to an outsider", async () => {
     vi.mocked(getGameHistoryById).mockResolvedValue({ ...game, hostId: "another" });
-    await expect(ReplayPage({ params: Promise.resolve({ gameId }) })).rejects.toThrow("NOT_FOUND");
+    await expectMissingReplay(gameId);
     expect(getGameTimeline).not.toHaveBeenCalled();
     expect(getGameReplayAchievements).not.toHaveBeenCalled();
   });
   it("keeps missing records indistinguishable from denied records", async () => {
     vi.mocked(getGameHistoryById).mockResolvedValue(null);
-    await expect(ReplayPage({ params: Promise.resolve({ gameId }) })).rejects.toThrow("NOT_FOUND");
+    await expectMissingReplay(gameId);
   });
   it.each([
     { status: "active", endedAt: null }, { status: "abandoned", endedAt: date }, { status: "ended", endedAt: null },
   ])("never serves an incomplete game: $status / $endedAt", async (fields) => {
     vi.mocked(getGameHistoryById).mockResolvedValue({ ...game, ...fields });
-    await expect(ReplayPage({ params: Promise.resolve({ gameId }) })).rejects.toThrow("NOT_FOUND");
+    await expectMissingReplay(gameId);
     expect(getGameTimeline).not.toHaveBeenCalled();
   });
   it("allows completed private participant replays without requiring host ownership", async () => {

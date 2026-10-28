@@ -9,7 +9,7 @@ export function ReportHero() {
           src="/game-art/legal/report-banner.webp"
           alt=""
           fill
-          priority
+          preload
           sizes="100vw"
           className="report-hero-img"
         />

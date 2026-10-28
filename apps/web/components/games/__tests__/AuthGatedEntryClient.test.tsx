@@ -201,6 +201,24 @@ describe("AuthGatedEntryClient", () => {
     expect(firstSlot).toHaveAttribute("aria-describedby", error.id);
   });
 
+  it("explains a rejected character without marking the code invalid or moving focus", async () => {
+    const user = userEvent.setup();
+    render(<AuthGatedEntryClient family="werewolves" mode="werewolves_classic" />);
+
+    const secondSlot = screen.getByRole("textbox", { name: "Символ 2 от 6" });
+    await user.click(secondSlot);
+    await user.keyboard("о");
+
+    const hint = screen.getByRole("status", { name: "" });
+    expect(hint).toHaveTextContent("латински букви");
+    expect(secondSlot).toHaveFocus();
+    expect(secondSlot).not.toHaveAttribute("aria-invalid");
+    expect(secondSlot).toHaveAttribute("aria-describedby", hint.id);
+
+    await user.keyboard("к");
+    expect(screen.queryByText(/латински букви/)).not.toBeInTheDocument();
+  });
+
   it.each([
     ["missing", { status: "missing" }, /Не открихме стая ABC234/],
     [

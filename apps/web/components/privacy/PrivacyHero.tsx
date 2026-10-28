@@ -13,7 +13,7 @@ export function PrivacyHero({ lastUpdated, hasSnapshot }: PrivacyHeroProps) {
           src="/game-art/legal/privacy-banner.webp"
           alt=""
           fill
-          priority
+          preload
           sizes="100vw"
           className="privacy-hero-img"
         />

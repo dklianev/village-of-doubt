@@ -139,7 +139,7 @@ export function GameRolesCatalog({ family, catalog }: {
           <p>{intro}</p>
           <div className="role-codex-hero-actions">
             <Link className="btn btn-primary" href={isMafia ? "/mafia/create" : "/werewolf/create"}>
-              Създай игра
+              Създай стая
             </Link>
             <Link className="role-family-link" href={isMafia ? "/werewolf/roles" : "/mafia/roles"}>
               {isMafia ? "Виж ролите във Върколак" : "Виж ролите в Мафия"}

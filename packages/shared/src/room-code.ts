@@ -3,11 +3,24 @@ export const ROOM_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 export const ROOM_CODE_REGEX = new RegExp(`^[${ROOM_CODE_ALPHABET}]{${ROOM_CODE_LENGTH}}$`);
 export const ROOM_CODE_EXTRACT_REGEX = new RegExp(`[${ROOM_CODE_ALPHABET}]{${ROOM_CODE_LENGTH}}`, "g");
 
+// Bulgarian phonetic layouts put these letters on the Latin key with the same sound.
+const PHONETIC_CYRILLIC_LETTERS: Readonly<Record<string, string>> = {
+  А: "A", Б: "B", Ц: "C", Д: "D", Е: "E", Ф: "F", Г: "G", Х: "H", Й: "J", К: "K",
+  Л: "L", М: "M", Н: "N", П: "P", Р: "R", С: "S", Т: "T", У: "U", З: "Z",
+};
+
+/** Upper-cases a typed code, mapping Cyrillic phonetic-keyboard letters to their Latin keys. */
+export function transliterateRoomCode(input: string) {
+  return input.toUpperCase().replace(/[А-Я]/g, (letter) => PHONETIC_CYRILLIC_LETTERS[letter] ?? letter);
+}
+
 export function normalizeRoomCode(input: string) {
   const urlCode = roomCodeFromInvitationUrl(input);
   if (urlCode !== null) return urlCode;
 
-  const upper = input.toUpperCase();
+  // Only a code-length entry is transliterated, so Cyrillic words in a pasted message never become a code.
+  const typedCode = input.replace(/[\s-]/g, "").length <= ROOM_CODE_LENGTH;
+  const upper = typedCode ? transliterateRoomCode(input) : input.toUpperCase();
   const runs = upper.match(/[A-Z0-9]+/g) ?? [];
 
   for (const run of [...runs].reverse()) {

@@ -13,7 +13,7 @@ export default function NotFoundPage() {
   return (
     <main className="shell not-found-shell">
       <section className="not-found-scene" aria-labelledby="not-found-heading">
-        <Image src="/game-art/system/missing-page-v1.webp" alt="" fill priority sizes="(max-width: 1240px) 100vw, 1180px" className="not-found-art" />
+        <Image src="/game-art/system/missing-page-v1.webp" alt="" fill preload sizes="(max-width: 1240px) 100vw, 1180px" className="not-found-art" />
         <div className="not-found-copy">
           <p className="not-found-marker">404 <span>Липсваща страница</span></p>
           <h1 id="not-found-heading">Тази страница липсва.</h1>

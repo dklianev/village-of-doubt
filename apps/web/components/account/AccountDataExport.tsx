@@ -5,7 +5,7 @@ import { Pill } from "@werewolf/ui/server";
 import { Download } from "lucide-react";
 import styles from "./Account.module.css";
 
-import { downloadCompleteAccountExport } from "./account-export";
+import { accountExportErrorMessage, downloadCompleteAccountExport } from "./account-export";
 
 export function AccountDataExport() {
   const [exporting, setExporting] = useState(false);
@@ -17,8 +17,8 @@ export function AccountDataExport() {
 
     try {
       await downloadCompleteAccountExport();
-    } catch {
-      setError("Не успяхме да подготвим данните. Опитай отново.");
+    } catch (exportError) {
+      setError(accountExportErrorMessage(exportError));
     } finally {
       setExporting(false);
     }

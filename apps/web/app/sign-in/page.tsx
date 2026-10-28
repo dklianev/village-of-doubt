@@ -18,15 +18,16 @@ export const instant = false;
 export default async function SignInPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ redirect?: string | string[] }>;
+  searchParams?: Promise<{ redirect?: string | string[]; error?: string | string[] }>;
 }) {
   const params = await searchParams;
   const redirect = Array.isArray(params?.redirect) ? params.redirect[0] : params?.redirect;
+  const oauthError = Array.isArray(params?.error) ? params.error[0] : params?.error;
 
   return (
     <main className="sign-in-shell">
       <Suspense fallback={<div className="sign-in-loading" role="status">Зареждаме входа...</div>}>
-        <SignInStage redirectTo={safeInternalRedirect(redirect)} />
+        <SignInStage redirectTo={safeInternalRedirect(redirect)} {...(oauthError ? { oauthError } : {})} />
       </Suspense>
     </main>
   );

@@ -20,7 +20,7 @@
   background:
     linear-gradient(180deg, rgba(7, 12, 14, 0.56), rgba(7, 10, 11, 0.9)),
     radial-gradient(circle at 18% 18%, rgba(89, 99, 59, 0.2), transparent 34rem),
-    image-set(url("/game-art/bg-night-phase.webp") type("image/webp")) center 28% / cover no-repeat;
+    var(--art-night) center 28% / cover no-repeat;
   content: "";
   filter: saturate(0.82) brightness(0.72);
   pointer-events: none;
@@ -31,7 +31,7 @@
   background:
     linear-gradient(180deg, rgba(8, 10, 11, 0.48), rgba(8, 7, 7, 0.92)),
     radial-gradient(circle at 82% 16%, rgba(200, 154, 85, 0.16), transparent 30rem),
-    image-set(url("/game-art/mafia/bg-night-phase.webp") type("image/webp")) center 30% / cover no-repeat;
+    var(--art-night) center 30% / cover no-repeat;
   filter: saturate(0.78) brightness(0.68);
 }
 
