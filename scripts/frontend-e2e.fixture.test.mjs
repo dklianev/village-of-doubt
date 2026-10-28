@@ -6,9 +6,12 @@ import { runInNewContext } from "node:vm";
 const source = readFileSync(new URL("./frontend-e2e.mjs", import.meta.url), "utf8");
 
 test("production browser runs cover CSS navigation in both themes and viewport sizes", () => {
-  assert.match(source, /import \{ assertFrontendCssNavigation \} from "\.\/frontend-css-navigation\.mjs"/);
+  assert.match(source, /import \{ assertFrontendCssNavigation, FRONTEND_CSS_ROUTES \} from "\.\/frontend-css-navigation\.mjs"/);
   assert.match(source, /Object\.entries\(viewports\)[\s\S]*for \(const theme of \["light", "dark"\]\)[\s\S]*testRouteCssNavigation\(viewportName, viewport, theme\)/);
-  assert.match(functionSource("testRouteCssNavigation"), /await assertFrontendCssNavigation\(page, baseUrl, theme\)/);
+  assert.match(
+    functionSource("testRouteCssNavigation"),
+    /for \(const route of FRONTEND_CSS_ROUTES\)[\s\S]*await assertFrontendCssNavigation\(page, baseUrl, theme, \{ route \}\)/,
+  );
   assert.match(functionSource("testRouteCssNavigation"), /await watcher\.assertClean\(\)/);
 });
 

@@ -507,7 +507,11 @@ async function testSixClientGameStart(family) {
       }, index === 5 ? "light" : "dark");
       if (index === 5) await context.addInitScript(installGameSocketProbe, wsUrl);
       if (index === 0 || index === 5) {
-        await context.addInitScript(() => localStorage.setItem("werewolf-cue-mode", "audio_vibration"));
+        // Device sound decides whether a room plays audio; the saved cue mode no longer turns it on.
+        await context.addInitScript(() => {
+          localStorage.setItem("werewolf-sound", "on");
+          localStorage.setItem("werewolf-cue-mode", "audio_vibration");
+        });
         await context.addInitScript(installNarrationProbe);
       }
       const identity = authFixture.users[index];

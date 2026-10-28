@@ -451,6 +451,12 @@ test("auth E2E recovery selectors match the current accessible form states", () 
   assert.doesNotMatch(source, /Готово\. Провери имейла си\.|Затвори ключа|Готово\. Сега те водим/);
 });
 
+test("frontend E2E turns on narration through the device sound preference", () => {
+  const frontendE2e = read("scripts/frontend-e2e.mjs");
+
+  assert.match(frontendE2e, /localStorage\.setItem\("werewolf-sound", "on"\);[\s\S]{0,200}installNarrationProbe/);
+});
+
 test("frontend E2E seeds credential identities the way Better Auth 1.7.3+ writes them", () => {
   const frontendE2e = read("scripts/frontend-e2e.mjs");
 
