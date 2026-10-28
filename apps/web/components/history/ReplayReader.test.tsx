@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { Activity } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ReplayReader } from "./ReplayReader";
@@ -43,6 +43,22 @@ function reader(landmarks = false) {
 }
 
 describe("replay reading position", () => {
+  it("targets the active reader when Activity retains another replay with the same IDs", () => {
+    const old = replayDocument(true);
+    const view = render(<Activity mode="visible">{old}</Activity>);
+    view.rerender(<><Activity mode="hidden">{old}</Activity><div data-testid="current-reader">{replayDocument(true)}</div></>);
+    const current = screen.getByTestId("current-reader");
+    expect(document.querySelectorAll("#chapter-2")).toHaveLength(2);
+    fireEvent.click(within(current).getByRole("link", { name: "Second chapter" }));
+    expect(within(current).getByText("Last events")).toBeVisible();
+    expect(within(current).getByText("First events")).not.toBeVisible();
+    fireEvent.click(within(current).getByRole("link", { name: "Roster" }));
+    expect(within(current).getByText("Participants")).toHaveFocus();
+    window.history.replaceState(null, "", "/history/new/replay#phase-2");
+    fireEvent(window, new Event("popstate"));
+    expect(within(current).getByText("Last events")).toHaveFocus();
+  });
+
   it.each(["Roster", "Chronicle"])("retains the selected chapter at %s after a cached route returns", (landmark) => {
     const document = replayDocument(true);
     const view = render(<Activity mode="visible">{document}</Activity>);

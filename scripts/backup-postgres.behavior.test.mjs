@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash, generateKeyPairSync } from "node:crypto";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, utimesSync, writeFileSync } from "node:fs";
+import { chmodSync, chownSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
@@ -63,6 +63,7 @@ function createFixture() {
   writeFileSync(
     nodeStub,
     `#!/bin/sh
+test "$1" = "--jitless" || { echo 'Backup Node invocation must be jitless' >&2; exit 97; }
 exec "${nativeNodeExecutableForShell}" "$@"
 `,
     { mode: 0o755 },
@@ -105,6 +106,12 @@ case "\${1:-}" in
   exec)
     case "$*" in
       *"pg_dump "*)
+        if [ -n "\${FAKE_PENDING_DURING_DUMP:-}" ]; then
+          printf pending > "$FAKE_PENDING_DURING_DUMP"
+        fi
+        if [ -n "\${FAKE_SCHEMA_DURING_DUMP:-}" ]; then
+          printf changed > "$FAKE_SCHEMA_DURING_DUMP"
+        fi
         printf 'CREATE TABLE backup_probe(id integer);\n'
         ;;
       *"deleted_user_identities"*)
@@ -117,6 +124,9 @@ case "\${1:-}" in
     ;;
   compose)
     printf 'CREATE TABLE compose_backup_probe(id integer);\n'
+    ;;
+  inspect)
+    printf '%s\\n' "\${FAKE_CONTAINER_IDENTITY:-werewolf/postgres}"
     ;;
   *)
     exit 64
@@ -132,6 +142,9 @@ set -eu
 printf '%s\n' "$*" >> "$FAKE_RCLONE_LOG"
 if [ "\${FAKE_RCLONE_FAILURE:-}" = "delete" ] && [ "\${1:-}" = "delete" ]; then
   exit 71
+fi
+if [ -n "\${FAKE_RCLONE_FAILURE:-}" ] && [ "$FAKE_RCLONE_FAILURE" != "delete" ]; then
+  case "$*" in *"$FAKE_RCLONE_FAILURE"*) exit 72 ;; esac
 fi
 `,
     { mode: 0o755 },
@@ -155,8 +168,11 @@ fi
   };
 }
 
-function createSignedActiveRelease(fixture) {
-  const releaseManifest = path.join(fixture.directory, "current.json");
+function createSignedActiveRelease(fixture, { advancedSchema = false } = {}) {
+  const stateDir = path.join(fixture.directory, "release-state");
+  mkdirSync(stateDir);
+  const releaseManifest = path.join(stateDir, "current.json");
+  const schemaManifest = path.join(stateDir, "schema-current.json");
   const releasePublicKey = path.join(fixture.directory, "release-manifest.pub");
   const releaseKeys = generateKeyPairSync("ed25519");
   const digest = "a".repeat(64);
@@ -182,19 +198,25 @@ function createSignedActiveRelease(fixture) {
     releasePublicKey,
     releaseKeys.publicKey.export({ type: "spki", format: "pem" }),
   );
-  return { commit, release, releaseManifest, releasePublicKey };
+  const schema = advancedSchema ? { ...release, migrationHead: "0012_applied_after_failed_readiness" } : release;
+  writeFileSync(schemaManifest, `${JSON.stringify(schema)}\n`);
+  writeFileSync(`${schemaManifest}.sig`, `${signReleaseManifest(schema, releaseKeys.privateKey, { allowedImagePrefix: "ghcr.io/example/project" })}\n`);
+  return { commit, release, releaseManifest, releasePublicKey, schema, schemaManifest, stateDir };
 }
 
 function normalized(file) {
   return readFileSync(file, "utf8").replaceAll("\r\n", "\n");
 }
 
-function run(script, env, args = []) {
+function run(script, env, args = [], readerGroup) {
   const scriptDirectoryForShell = path.dirname(script).replaceAll("\\", "/");
-  return spawnSync(posixShell, [script, ...args], {
+  return spawnSync(readerGroup === undefined ? posixShell : "setpriv", readerGroup === undefined ? [script, ...args] : [
+    "--bounding-set=-all", "--inh-caps=-all", "--ambient-caps=-all", `--groups=${readerGroup}`, posixShell, script, ...args,
+  ], {
     encoding: "utf8",
     env: {
       ...process.env,
+      COMPOSE_PROJECT_NAME: "",
       PATH: `${scriptDirectoryForShell}:${nativeNodeDirectoryForShell}:${process.env.PATH || ""}`,
       ...env,
     },
@@ -220,6 +242,7 @@ function baseEnv(fixture) {
 function offsiteEnv(fixture, overrides = {}) {
   return {
     ...baseEnv(fixture),
+    BACKUP_REQUIRE_OFFSITE: "1",
     BACKUP_COMPOSE_PROJECT: "werewolf",
     FAKE_RCLONE_LOG: fixture.rcloneLog,
     RCLONE_COMMAND: fixture.rcloneStub,
@@ -227,6 +250,37 @@ function offsiteEnv(fixture, overrides = {}) {
     RCLONE_DELETION_LEDGER_REMOTE: "ledger-store:werewolf/deletion-ledger",
     ...overrides,
   };
+}
+
+for (const overrides of [
+  { RCLONE_REMOTE: "", RCLONE_DELETION_LEDGER_REMOTE: "" },
+  { RCLONE_REMOTE: "" },
+  { RCLONE_DELETION_LEDGER_REMOTE: "" },
+  { RCLONE_REMOTE: "backup-store:" },
+  { RCLONE_DELETION_LEDGER_REMOTE: "ledger-store:../ledger" },
+  { RCLONE_DELETION_LEDGER_REMOTE: "backup-store:ledger" },
+  { BACKUP_REQUIRE_OFFSITE: "invalid" },
+]) {
+  test(`required offsite fails before dump or remote mutation: ${JSON.stringify(overrides)}`, { skip: !isPosix }, () => {
+    const fixture = createFixture();
+    const result = run(fixture.backupScript, offsiteEnv(fixture, overrides));
+    assert.notEqual(result.status, 0);
+    assert.equal(existsSync(fixture.dockerLog), false);
+    assert.equal(existsSync(fixture.rcloneLog), false);
+    assert.equal(existsSync(fixture.backupDir), false);
+  });
+}
+
+for (const failure of ["werewolf_deletion_ledger.tsv.age.sha256", ".sql.gz.age.sha256"]) {
+  test(`interrupted offsite publication fails closed: ${failure}`, { skip: !isPosix }, () => {
+    const fixture = createFixture();
+    const result = run(fixture.backupScript, offsiteEnv(fixture, { FAKE_RCLONE_FAILURE: failure }));
+    assert.notEqual(result.status, 0);
+    assert.doesNotMatch(result.stdout, /Backup written:/);
+    const uploads = readFileSync(fixture.rcloneLog, "utf8");
+    assert.ok(uploads.includes(failure));
+    assert.doesNotMatch(uploads, /copy .*\.sql\.gz\.age\.manifest\.json\.sig/);
+  });
 }
 
 test("scheduled signed backup fails closed without release provenance", { skip: !isPosix }, () => {
@@ -242,7 +296,7 @@ test("scheduled signed backup fails closed without release provenance", { skip: 
   assert.equal(existsSync(fixture.backupDir), false);
 });
 
-test("scheduled backup derives provenance from the signed active release", { skip: !isPosix }, () => {
+test("scheduled backup derives application and schema provenance from separate signed manifests", { skip: !isPosix }, () => {
   const fixture = createFixture();
   const active = createSignedActiveRelease(fixture);
   const result = run(fixture.backupScript, {
@@ -263,6 +317,97 @@ test("scheduled backup derives provenance from the signed active release", { ski
   const manifest = JSON.parse(readFileSync(path.join(fixture.backupDir, manifestName), "utf8"));
   assert.equal(manifest.releaseVersion, active.commit);
   assert.equal(manifest.migrationHead, active.release.migrationHead);
+});
+
+function activeEnv(fixture, active) {
+  return {
+    ...baseEnv(fixture),
+    COMPOSE_PROJECT_NAME: "werewolf",
+    BACKUP_REQUIRE_ACTIVE_RELEASE: "1",
+    BACKUP_RELEASE_MANIFEST: active.releaseManifest,
+    BACKUP_RELEASE_MANIFEST_COMMAND: fixture.releaseManifestScript,
+    BACKUP_RELEASE_MANIFEST_PUBLIC_KEY_FILE: active.releasePublicKey,
+    BACKUP_RELEASE_ALLOWED_IMAGE_PREFIX: "ghcr.io/example/project",
+  };
+}
+
+test("scheduled backup records the advanced applied schema after candidate readiness fails", { skip: !isPosix }, () => {
+  const fixture = createFixture();
+  const active = createSignedActiveRelease(fixture, { advancedSchema: true });
+  const result = run(fixture.backupScript, activeEnv(fixture, active));
+  assert.equal(result.status, 0, result.stderr);
+  const name = readdirSync(fixture.backupDir).find((file) => file.endsWith(".manifest.json"));
+  const manifest = JSON.parse(readFileSync(path.join(fixture.backupDir, name), "utf8"));
+  assert.equal(manifest.releaseVersion, active.commit);
+  assert.equal(manifest.migrationHead, active.schema.migrationHead);
+});
+
+for (const problem of ["restore-recovery", "pending", "pending-signature", "missing-schema", "missing-signature", "tampered-schema", "tampered-signature"]) {
+  test(`scheduled backup rejects unresolved schema: ${problem}`, { skip: !isPosix }, () => {
+    const fixture = createFixture();
+    const active = createSignedActiveRelease(fixture);
+    if (problem === "restore-recovery") writeFileSync(path.join(active.stateDir, "restore-recovery-required.txt"), "unresolved");
+    if (problem.startsWith("pending")) writeFileSync(path.join(active.stateDir, `migration-pending.json${problem.endsWith("signature") ? ".sig" : ""}`), "pending");
+    if (problem === "missing-schema") rmSync(active.schemaManifest);
+    if (problem === "missing-signature") rmSync(`${active.schemaManifest}.sig`);
+    if (problem === "tampered-schema") writeFileSync(active.schemaManifest, JSON.stringify({ ...active.schema, migrationHead: "0013_tampered" }));
+    if (problem === "tampered-signature") writeFileSync(`${active.schemaManifest}.sig`, "invalid");
+    const result = run(fixture.backupScript, activeEnv(fixture, active));
+    assert.notEqual(result.status, 0);
+    assert.equal(existsSync(fixture.backupDir), false);
+    assert.equal(existsSync(fixture.dockerLog), false);
+  });
+}
+
+for (const change of ["pending", "schema"]) {
+  test(`scheduled backup refuses publication when ${change} changes during dump`, { skip: !isPosix }, () => {
+    const fixture = createFixture();
+    const active = createSignedActiveRelease(fixture);
+    const result = run(fixture.backupScript, {
+      ...activeEnv(fixture, active),
+      [change === "pending" ? "FAKE_PENDING_DURING_DUMP" : "FAKE_SCHEMA_DURING_DUMP"]:
+        change === "pending" ? path.join(active.stateDir, "migration-pending.json") : active.schemaManifest,
+    });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /provenance changed or migration is unresolved/);
+    assert.deepEqual(readdirSync(fixture.backupDir), []);
+  });
+}
+
+test("scheduled backup reads deploy-owned state as capless root only with the reader group", {
+  skip: process.platform !== "linux" || process.getuid?.() !== 0,
+}, () => {
+  const fixture = createFixture();
+  const active = createSignedActiveRelease(fixture);
+  const deployUid = 1001;
+  const readerGid = 1002;
+  chownSync(active.stateDir, deployUid, readerGid);
+  chmodSync(active.stateDir, 0o2750);
+  for (const name of readdirSync(active.stateDir)) {
+    const file = path.join(active.stateDir, name);
+    chownSync(file, deployUid, readerGid);
+    chmodSync(file, 0o640);
+  }
+  const denied = run(fixture.backupScript, activeEnv(fixture, active), [], 1003);
+  assert.notEqual(denied.status, 0);
+  assert.equal(existsSync(fixture.dockerLog), false);
+  const allowed = run(fixture.backupScript, activeEnv(fixture, active), [], readerGid);
+  assert.equal(allowed.status, 0, allowed.stderr);
+  const writeProbe = spawnSync("setpriv", ["--bounding-set=-all", `--groups=${readerGid}`, posixShell, "-c",
+    'test ! -w "$1" && test ! -w "$1/current.json" && test ! -w "$1/schema-current.json"', "sh", active.stateDir], { encoding: "utf8" });
+  assert.equal(writeProbe.status, 0, writeProbe.stderr);
+});
+
+test("scheduled backup rejects conflicting identities and a fixed container from another project", { skip: !isPosix }, () => {
+  for (const extra of [
+    { BACKUP_COMPOSE_PROJECT: "other" },
+    { BACKUP_POSTGRES_CONTAINER: "postgres-one", FAKE_CONTAINER_IDENTITY: "other/postgres" },
+  ]) {
+    const fixture = createFixture();
+    const result = run(fixture.backupScript, { ...baseEnv(fixture), COMPOSE_PROJECT_NAME: "werewolf", ...extra });
+    assert.notEqual(result.status, 0);
+    if (existsSync(fixture.dockerLog)) assert.doesNotMatch(readFileSync(fixture.dockerLog, "utf8"), /pg_dump/);
+  }
 });
 
 test("scheduled backup rejects tampered active release provenance", { skip: !isPosix }, () => {
@@ -348,7 +493,7 @@ test("scheduled backup rejects unsafe project selectors", { skip: !isPosix }, ()
   });
 
   assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /BACKUP_COMPOSE_PROJECT must contain only/);
+  assert.match(result.stderr, /COMPOSE_PROJECT_NAME must start/);
   assert.deepEqual(readdirSync(fixture.backupDir), []);
 });
 
@@ -417,6 +562,34 @@ test("off-site retention cannot exceed the public 30-day limit", { skip: !isPosi
   assert.equal(existsSync(fixture.dockerLog), false);
 });
 
+test("rejects dot and empty segments in either remote before any retention or upload", { skip: !isPosix }, () => {
+  for (const key of ["RCLONE_REMOTE", "RCLONE_DELETION_LEDGER_REMOTE"]) {
+    for (const prefix of [".", "..", "./.", "././", "nested/./backups", "nested/.", "nested/../backups", "nested//backups", "nested/", "/nested"]) {
+      const fixture = createFixture();
+      const result = run(fixture.backupScript, offsiteEnv(fixture, {
+        [key]: `${key === "RCLONE_REMOTE" ? "backup-store" : "ledger-store"}:${prefix}`,
+      }), ["--retention-dry-run"]);
+      assert.notEqual(result.status, 0, `${key}=${prefix}`);
+      assert.match(result.stderr, /explicit non-root.*dot or empty/);
+      assert.equal(existsSync(fixture.rcloneLog), false);
+      assert.equal(existsSync(fixture.dockerLog), false);
+      rmSync(fixture.directory, { recursive: true, force: true });
+    }
+  }
+});
+
+test("accepts nested nonempty remote segments including dots within a name", { skip: !isPosix }, () => {
+  const fixture = createFixture();
+  const result = run(fixture.backupScript, offsiteEnv(fixture, {
+    RCLONE_REMOTE: "backup-store:bucket/project.v2/backups",
+    RCLONE_DELETION_LEDGER_REMOTE: "ledger-store:bucket/.protected/ledger",
+  }), ["--retention-dry-run"]);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(readFileSync(fixture.rcloneLog, "utf8"), /delete backup-store:bucket\/project\.v2\/backups/);
+  assert.equal(existsSync(fixture.dockerLog), false);
+  rmSync(fixture.directory, { recursive: true, force: true });
+});
+
 test("off-site backup prunes only the backup prefix and uploads a protected minimal deletion ledger", { skip: !isPosix }, () => {
   const fixture = createFixture();
   const result = run(fixture.backupScript, offsiteEnv(fixture));
@@ -456,6 +629,9 @@ test("off-site backup prunes only the backup prefix and uploads a protected mini
   );
   assert.equal(ledgerUploads.length, 4);
   assert.match(ledgerUploads.at(-1), /\.manifest\.json\.sig$/u);
+  const databaseUploads = rcloneCalls.filter((call) => call.startsWith("copy "));
+  assert.equal(databaseUploads.length, 4);
+  assert.match(databaseUploads.at(-1), /\.manifest\.json\.sig backup-store:werewolf\/backups$/);
   assert.ok(rcloneCalls.findIndex((call) =>
     call.startsWith("copy ") && call.endsWith(" backup-store:werewolf/backups")
   ) > rcloneCalls.lastIndexOf(ledgerUploads.at(-1)));
@@ -605,6 +781,8 @@ exec "${nativeNodeExecutableForShell}" "$@"
     env: {
       ...process.env,
       FAKE_SYSTEMCTL_LOG: serviceLog,
+      COMPOSE_PROJECT_NAME: "werewolf_fixture",
+      RELEASE_STATE_GROUP: String(process.getgid?.() ?? 0),
       PATH: `${binDir}:${nativeNodeDirectoryForShell}:${process.env.PATH}`,
       RELEASE_STATE_DIR: releaseDir.replaceAll("\\", "/"),
       RELEASE_ALLOWED_IMAGE_PREFIX: "ghcr.io/example/project",
@@ -691,6 +869,8 @@ exec "${nativeNodeExecutableForShell}" "$@"
     encoding: "utf8",
     env: {
       ...process.env,
+      COMPOSE_PROJECT_NAME: "werewolf_fixture",
+      RELEASE_STATE_GROUP: String(process.getgid?.() ?? 0),
       PATH: `${binDir}:${nativeNodeDirectoryForShell}:${process.env.PATH}`,
       RELEASE_STATE_DIR: releaseDir.replaceAll("\\", "/"),
       RELEASE_ALLOWED_IMAGE_PREFIX: "ghcr.io/example/project",

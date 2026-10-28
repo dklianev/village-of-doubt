@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GET } from "../route";
+import { AccountExportChangedError } from "@werewolf/database";
+import { verifyAccountExportContinuation } from "@/lib/account-export-session";
 
 const mocks = vi.hoisted(() => ({
   createDatabase: vi.fn(),
@@ -15,7 +17,8 @@ vi.mock("next/headers", () => ({
   headers: vi.fn(async () => new Headers()),
 }));
 
-vi.mock("@werewolf/database", () => ({
+vi.mock("@werewolf/database", async (importOriginal) => ({
+  ...await importOriginal<typeof import("@werewolf/database")>(),
   ACCOUNT_EXPORT_DEFAULT_EVENT_PAGE_SIZE: 500,
   ACCOUNT_EXPORT_DEFAULT_PAGE_SIZE: 50,
   ACCOUNT_EXPORT_MAX_EVENT_PAGE_SIZE: 1_000,
@@ -24,19 +27,16 @@ vi.mock("@werewolf/database", () => ({
   createDatabase: mocks.createDatabase,
   getAccountExportPage: mocks.getAccountExportPage,
   getAchievementsForUser: mocks.getAchievementsForUser,
-  parseAccountExportCursor: (value: string | null | undefined) => {
-    if (!value) return null;
-    const separator = value.indexOf("|");
-    if (separator <= 0) return null;
-    const date = new Date(value.slice(0, separator));
-    const id = value.slice(separator + 1);
-    return Number.isNaN(date.getTime()) || !id ? null : { createdAt: date, id };
-  },
 }));
 
 vi.mock("@/lib/auth", () => ({
   auth: { api: { getSession: mocks.getSession } },
 }));
+
+vi.mock("@/lib/runtime-rate-limit", async () => {
+  const { createMemoryRateLimitBackend } = await import("@/lib/rate-limit");
+  return { getRuntimeRateLimitBackend: () => createMemoryRateLimitBackend() };
+});
 
 describe("GET /api/account/export", () => {
   beforeEach(() => {
@@ -80,6 +80,45 @@ describe("GET /api/account/export", () => {
     expect(mocks.createDatabase).not.toHaveBeenCalled();
   });
 
+  it.each(["gameCursor", "eventCursor"])("rejects malformed UUID %s before querying", async (key) => {
+    mocks.getSession.mockResolvedValue({ user: { ...signedInSession().user, id: `invalid-${key}` } });
+    const response = await GET(new Request(`http://localhost/api/account/export?${key}=2026-10-16T12:00:00.123Z%7Cnot-a-uuid`));
+    expect(response.status).toBe(400);
+    expect(mocks.getAccountExportPage).not.toHaveBeenCalled();
+  });
+
+  it("binds event continuation to the signed original batch and cutoff", async () => {
+    const userId = "batch-export-user";
+    const id = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    const cursor = "2026-10-15T12:00:00.123900Z|bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+    mocks.getSession.mockResolvedValue({ user: { ...signedInSession().user, id: userId } });
+    const initialPage = { ...await mocks.getAccountExportPage(), games: [{ id, events: [] }], eventsHasMore: true, nextEventCursor: cursor };
+    mocks.getAccountExportPage.mockResolvedValue(initialPage);
+    const initial = await GET(new Request("http://localhost/api/account/export"));
+    const token = initial.headers.get("x-account-export-continuation")!;
+    const context = verifyAccountExportContinuation(token, userId, process.env.GAME_TOKEN_SECRET!)!;
+    expect(context.batch?.gameIds).toEqual([id]);
+    mocks.getAccountExportPage.mockResolvedValue({ ...initialPage, eventsHasMore: false, nextEventCursor: null });
+    const continuation = await GET(new Request(`http://localhost/api/account/export?eventCursor=${encodeURIComponent(cursor)}`, { headers: { "x-account-export-continuation": token } }));
+    expect(continuation.status).toBe(200);
+    expect(mocks.getAccountExportPage).toHaveBeenLastCalledWith(expect.anything(), userId, expect.objectContaining({
+      snapshotAt: new Date(context.snapshotAt), batchGameIds: [id], eventCursor: expect.objectContaining({ timestamp: "2026-10-15T12:00:00.123900Z" }),
+    }));
+    const next = verifyAccountExportContinuation(continuation.headers.get("x-account-export-continuation")!, userId, process.env.GAME_TOKEN_SECRET!)!;
+    expect(next.exportId).toBe(context.exportId);
+    expect(next.expiresAt).toBe(context.expiresAt);
+    expect(next.snapshotAt).toBe(context.snapshotAt);
+    expect(next.batch).toBeUndefined();
+    const wrongBatch = await GET(new Request(`http://localhost/api/account/export?pageSize=1&eventCursor=${encodeURIComponent(cursor)}`, { headers: { "x-account-export-continuation": token } }));
+    expect(wrongBatch.status).toBe(409);
+  });
+
+  it("returns a restart response when authorization changes during a batch", async () => {
+    mocks.getSession.mockResolvedValue({ user: { ...signedInSession().user, id: "changed-export-user" } });
+    mocks.getAccountExportPage.mockRejectedValue(new AccountExportChangedError());
+    expect((await GET(new Request("http://localhost/api/account/export"))).status).toBe(409);
+  });
+
   it("връща bounded страница без foreign hostId и забранява cache", async () => {
     mocks.getSession.mockResolvedValue(signedInSession());
     mocks.getAccountExportPage.mockResolvedValue({
@@ -109,7 +148,7 @@ describe("GET /api/account/export", () => {
     });
 
     const response = await GET(new Request(
-      "http://localhost/api/account/export?page=2&pageSize=25&eventPage=3&eventPageSize=200&gameCursor=2026-01-02T00%3A00%3A00.000Z%7Cgame-2&eventCursor=2026-01-02T00%3A00%3A00.000Z%7Cevent-2",
+      "http://localhost/api/account/export?page=2&pageSize=25&eventPage=3&eventPageSize=200&gameCursor=2026-01-02T00%3A00%3A00.000Z%7Cffffffff-ffff-4fff-8fff-ffffffffffff",
     ));
     const body = await response.json();
 
@@ -138,8 +177,10 @@ describe("GET /api/account/export", () => {
         pageSize: 25,
         eventPage: 3,
         eventPageSize: 200,
-        gameCursor: { createdAt: new Date("2026-01-02T00:00:00.000Z"), id: "game-2" },
-        eventCursor: { createdAt: new Date("2026-01-02T00:00:00.000Z"), id: "event-2" },
+        gameCursor: { createdAt: new Date("2026-01-02T00:00:00.000Z"), timestamp: "2026-01-02T00:00:00.000Z", id: "ffffffff-ffff-4fff-8fff-ffffffffffff" },
+        eventCursor: null,
+        snapshotAt: expect.any(Date),
+        batchGameIds: undefined,
       },
     );
     expect(response.headers.get("cache-control")).toBe("private, no-store");

@@ -17,6 +17,7 @@ for (const [index, browser] of browsers.entries()) {
   await runPackageScript("frontend:e2e", {
     FRONTEND_E2E_BROWSER: browser,
     FRONTEND_E2E_SKIP_BUILD: index === 0 ? "false" : "true",
+    FRONTEND_E2E_REDIS_URL: redisUrl,
     REDIS_URL: redisUrl,
   });
 }

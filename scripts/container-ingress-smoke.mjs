@@ -31,6 +31,7 @@ const landing = await waitForResponse(new URL("/", webBaseUrl), "web ingress", w
 assert(landing.body.includes("Върколак или Мафия"), "Web ingress did not return the landing page.");
 assert(landing.headers["x-frame-options"] === "DENY", "Caddy X-Frame-Options header is missing.");
 assert(landing.headers["x-content-type-options"] === "nosniff", "Caddy nosniff header is missing.");
+assert(landing.headers["referrer-policy"] === "no-referrer", "Caddy must suppress token-bearing referrers.");
 
 const roomPreview = await request(new URL("/api/rooms/ABCDEF/preview", webBaseUrl), webIngressHost);
 assert(roomPreview.statusCode === 200, `Room preview returned HTTP ${roomPreview.statusCode}; web-to-game routing is unavailable.`);
@@ -59,7 +60,7 @@ await waitForWebSocket(gameWebSocketUrl, gameIngressHost, {
   expectedStatusCode: 101,
 });
 
-await provePathOnlyAccessLogs();
+await provePrivateUriRedaction();
 if (exerciseDatabaseOutage) {
   await proveDatabaseOutageKeepsExistingSocket();
 }
@@ -92,9 +93,9 @@ async function proveDatabaseOutageKeepsExistingSocket() {
     await waitForResponse(new URL(gameHealthPath, gameBaseUrl), "game readiness after database outage", gameIngressHost);
   }
 }
-console.log("Caddy liveness, path-only logging, dependency isolation, and WebSocket origin policy smoke passed.");
+console.log("Caddy liveness, private-URI redaction, dependency isolation, and WebSocket origin policy smoke passed.");
 
-async function provePathOnlyAccessLogs() {
+async function provePrivateUriRedaction() {
   if (!caddyContainerName) {
     throw new Error("CADDY_CONTAINER_NAME is required to prove access-log redaction at runtime.");
   }
@@ -102,9 +103,18 @@ async function provePathOnlyAccessLogs() {
   const secret = `reset-token-${randomBytes(12).toString("hex")}`;
   const sensitivePath = `/api/auth/reset-password?token=${secret}&callbackURL=${encodeURIComponent(`${webBaseUrl}/account`)}`;
   await request(new URL(sensitivePath, webBaseUrl), webIngressHost);
+  const referer = `${webBaseUrl}/reset-password?token=${secret}`;
+  await request(new URL(webHealthPath, webBaseUrl), webIngressHost, { Referer: referer });
+  await request(new URL(gameHealthPath, gameBaseUrl), gameIngressHost, { Referer: referer });
+  const code = `SYNTH${randomBytes(4).toString("hex")}`;
+  for (const route of [`/play/${code}`, `/lobby/${code}`, `/api/rooms/${code}/preview`, `/werewolf/join/${code}`, `/mafia/join/${code}`]) {
+    await request(new URL(`${route}?token=${secret}`, webBaseUrl), webIngressHost);
+  }
+  await request(new URL(`/rooms/${code}/preview`, gameBaseUrl), gameIngressHost);
   await delay(250);
   const logs = await dockerOutput(["logs", caddyContainerName]);
-  assert(!logs.includes(secret), "Caddy access logs leaked a reset token from the query string.");
+  assert(!logs.includes(secret), "Caddy access logs leaked a reset token from a URL or Referer.");
+  assert(!logs.includes(code), "Caddy logs leaked a private room path.");
 
   const entries = logs
     .split(/\r?\n/)
@@ -117,9 +127,13 @@ async function provePathOnlyAccessLogs() {
     })
     .filter(Boolean);
   assert(
-    entries.some((entry) => entry.request?.uri === "/api/auth/reset-password"),
-    "Caddy runtime logs did not prove a path-only reset URL.",
+    entries.every((entry) => !entry.request || entry.request.uri === undefined),
+    "Caddy runtime logs must omit URI values, including private paths.",
   );
+  for (const host of [webIngressHost, gameIngressHost]) {
+    assert(entries.some((entry) => entry.request?.host === host), "Ingress host missing from access-log proof.");
+  }
+  assert(entries.every((entry) => !entry.request?.headers?.Referer), "Referer must be removed from every access log.");
 }
 
 async function proveGameOutageDoesNotRemoveWeb() {
@@ -193,7 +207,7 @@ async function waitForWebSocket(url, hostHeader, expectation) {
   throw lastError ?? new Error(`${expectation.label} did not return the expected response.`);
 }
 
-function request(url, hostHeader) {
+function request(url, hostHeader, extraHeaders = {}) {
   return new Promise((resolve, reject) => {
     const transport = url.protocol === "https:" ? https : http;
     const request = transport.request(url, {
@@ -201,6 +215,7 @@ function request(url, hostHeader) {
         Accept: "*/*",
         "Accept-Encoding": "identity",
         Host: hostHeader,
+        ...extraHeaders,
       },
       timeout: 3_000,
     }, (response) => {

@@ -7,13 +7,17 @@ After=docker.service
 Type=oneshot
 User=root
 Group=root
+# Only signed manifests are group-readable; state remains deploy-owned.
+SupplementaryGroups=werewolf-release-readers
 EnvironmentFile=/etc/werewolf/backup.env
 Environment=BACKUP_REQUIRE_FIXED_CONTAINER=1
+Environment=BACKUP_REQUIRE_OFFSITE=1
 Environment=BACKUP_REQUIRE_ENCRYPTION=1
 Environment=BACKUP_REQUIRE_SIGNATURE=1
 Environment=BACKUP_REQUIRE_ACTIVE_RELEASE=1
 Environment=BACKUP_RELEASE_MANIFEST=/var/lib/werewolf/release-state/current.json
 Environment=BACKUP_RELEASE_MANIFEST_SIGNATURE=/var/lib/werewolf/release-state/current.json.sig
+Environment=BACKUP_SCHEMA_MANIFEST=/var/lib/werewolf/release-state/schema-current.json
 Environment=BACKUP_RELEASE_MANIFEST_COMMAND=/usr/local/libexec/werewolf/release-manifest.mjs
 Environment=BACKUP_RELEASE_MANIFEST_PUBLIC_KEY_FILE=/etc/werewolf/release-manifest.pub
 Environment=BACKUP_SIGNING_PRIVATE_KEY_FILE=/etc/werewolf/backup-signing.key

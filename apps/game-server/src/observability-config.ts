@@ -1,6 +1,7 @@
 import {
   sanitizeMonitoringBreadcrumb,
   sanitizeMonitoringEvent,
+  sanitizeMonitoringSpan,
 } from "@werewolf/shared";
 
 interface GameServerSentryEnvironment {
@@ -23,6 +24,8 @@ export function createGameServerSentryOptions(
     sendDefaultPii: false,
     tracesSampleRate: environment.NODE_ENV === "production" ? 0.1 : 1,
     beforeSend: sanitizeMonitoringEvent,
+    beforeSendTransaction: sanitizeMonitoringEvent,
+    beforeSendSpan: sanitizeMonitoringSpan,
     beforeBreadcrumb: sanitizeMonitoringBreadcrumb,
   };
 }

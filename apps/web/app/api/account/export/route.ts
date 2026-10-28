@@ -6,6 +6,7 @@ import {
   ACCOUNT_EXPORT_MAX_EVENT_PAGE_SIZE,
   ACCOUNT_EXPORT_MAX_PAGE,
   ACCOUNT_EXPORT_MAX_PAGE_SIZE,
+  AccountExportChangedError,
   createDatabase,
   getAccountExportPage,
   getAchievementsForUser,
@@ -110,12 +111,28 @@ export async function GET(request?: Request) {
     );
   }
 
+  const snapshotAt = verifiedContinuation?.snapshotAt ?? new Date().toISOString();
+  const gameCursorKey = pagination.gameCursor
+    ? `${pagination.gameCursor.timestamp ?? pagination.gameCursor.createdAt.toISOString()}|${pagination.gameCursor.id}`
+    : null;
+  const batch = pagination.eventCursor ? verifiedContinuation?.batch : undefined;
+  if (pagination.eventCursor && (!batch || batch.gameCursor !== gameCursorKey || batch.pageSize !== pagination.pageSize)) {
+    return NextResponse.json(
+      { error: "Сесията за изтегляне е променена. Започни отново." },
+      { status: 409, headers: PRIVATE_NO_STORE_HEADERS },
+    );
+  }
+
   try {
     const db = createDatabase(process.env.DATABASE_URL);
     const userId = session.user.id;
     const [achievements, exportPage] = await Promise.all([
       getAchievementsForUser(db, userId),
-      getAccountExportPage(db, userId, pagination),
+      getAccountExportPage(db, userId, {
+        ...pagination,
+        snapshotAt: new Date(snapshotAt),
+        ...(batch ? { batchGameIds: batch.gameIds } : {}),
+      }),
     ]);
     const games = exportPage.games.map((game) => ({
       id: game.id,
@@ -171,11 +188,27 @@ export async function GET(request?: Request) {
         ...PRIVATE_NO_STORE_HEADERS,
         "Content-Type": "application/json; charset=utf-8",
         "Content-Disposition": `attachment; filename="werewolf-mafia-export-${userId}-${Date.now()}.json"`,
-        "X-Account-Export-Continuation": suppliedContinuation
-          ?? createAccountExportContinuation(userId, secret),
+        "X-Account-Export-Continuation": createAccountExportContinuation(userId, secret, {
+          ...(verifiedContinuation ? {
+            exportId: verifiedContinuation.exportId,
+            expiresAt: verifiedContinuation.expiresAt,
+          } : {}),
+          snapshotAt,
+          ...(exportPage.eventsHasMore ? { batch: {
+            gameIds: exportPage.games.map((game) => game.id),
+            gameCursor: gameCursorKey,
+            pageSize: pagination.pageSize,
+          } } : {}),
+        }),
       },
     });
   } catch (error) {
+    if (error instanceof AccountExportChangedError) {
+      return NextResponse.json(
+        { error: "Данните са променени. Започни изтеглянето отново." },
+        { status: 409, headers: PRIVATE_NO_STORE_HEADERS },
+      );
+    }
     console.error("[account-export]", safeMonitoringErrorMetadata(error));
     return NextResponse.json(
       { error: "Грешка при експорт на данни." },

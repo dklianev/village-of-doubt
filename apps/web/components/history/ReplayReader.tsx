@@ -11,9 +11,9 @@ export function ReplayReader({ children, defaultChapter }: { children: ReactNode
   function select(target: string) {
     const container = root.current;
     if (!container) return;
-    const destination = document.getElementById(target);
-    const chapter = destination && container.contains(destination) ? destination.closest<HTMLElement>("[data-replay-chapter]") : null;
-    const landmark = destination && container.contains(destination) && destination.hasAttribute("data-replay-landmark");
+    const destination = Array.from(container.querySelectorAll<HTMLElement>("[id]")).find((element) => element.id === target);
+    const chapter = destination?.closest<HTMLElement>("[data-replay-chapter]");
+    const landmark = destination?.hasAttribute("data-replay-landmark");
     if (landmark && initialized.current) return destination;
     const active = chapter?.id ?? defaultChapter;
     for (const panel of container.querySelectorAll<HTMLElement>("[data-replay-chapter]")) panel.hidden = panel.id !== active;

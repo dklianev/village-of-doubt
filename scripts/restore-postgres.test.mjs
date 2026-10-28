@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { gzipSync } from "node:zlib";
-import { chmodSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import { spawnSync } from "node:child_process";
@@ -38,6 +38,9 @@ function runRestore(failure = "", options = {}) {
   const releasePublicKey = path.join(fixtureDir, "release-manifest.pub");
   const ageIdentity = path.join(fixtureDir, "age-identity.txt");
   const deletionLedger = path.join(fixtureDir, "werewolf_deletion_ledger.tsv.age");
+  const databaseModel = path.join(fixtureDir, "databases");
+  mkdirSync(databaseModel);
+  writeFileSync(path.join(databaseModel, "werewolf"), "original-user\n");
   mkdirSync(scratchDir);
   mkdirSync(releaseStateDir);
   writeFileSync(backupFile, gzipSync("-- restore fixture\n"));
@@ -71,7 +74,16 @@ process.stdout.write(JSON.stringify({ createdAt }) + "\\n");
 `);
   writeFileSync(fakeNode, `#!/usr/bin/env sh
 printf 'node %s\\n' "$*" >> "$RESTORE_TEST_LOG"
+if [ "$1" = "-e" ]; then
+  exec "${process.execPath.replaceAll("\\", "/")}" "$@"
+fi
 case "$*" in
+  *"deploy-public-health.mjs"*)
+    case "$RESTORE_TEST_FAILURE" in public-health|stop-failure) exit 46 ;; esac
+    if [ "$RESTORE_TEST_FAILURE" = "schema-publication" ]; then
+      rm "$RELEASE_STATE_DIR/current.json.sig"
+    fi
+    ;;
   *"backup-manifest.mjs verify"*)
     case "$*" in
       *"werewolf_deletion_ledger.tsv.age"*)
@@ -82,7 +94,7 @@ case "$*" in
         fi
         ;;
       *)
-        printf '{"createdAt":"2026-08-20T00:00:00.000Z"}\n'
+        printf '{"createdAt":"2026-08-20T00:00:00.000Z","migrationHead":"0013_restore_contract"}\n'
         ;;
     esac
     exit 0
@@ -130,6 +142,8 @@ cp "$input" "$output"
     encoding: "utf8",
     env: {
       ...process.env,
+      COMPOSE_PROJECT_NAME: "werewolf_fixture",
+      RELEASE_STATE_GROUP: String(process.getgid?.() ?? 0),
       MIGRATION_DATABASE_URL:
         "postgres://werewolf_migrator:secret@postgres:5432/werewolf?application_name=werewolf-migrator",
       POSTGRES_USER: "werewolf",
@@ -147,6 +161,7 @@ cp "$input" "$output"
       RESTORE_TEST_FAILURE: failure,
       RESTORE_TEST_LEDGER_STALE: options.staleLedger ? "1" : "0",
       RESTORE_TEST_LOG: toShellPath(logFile),
+      RESTORE_TEST_DATABASE_MODEL: toShellPath(databaseModel),
       RESTORE_TEST_CURRENT_TOMBSTONES: options.currentTombstones ?? "present",
       RESTORE_TEST_CURRENT_LEDGER_TABLE: options.currentLedgerTable ?? "present",
       RESTORE_ONLY: options.restoreOnly ? "1" : "",
@@ -173,8 +188,13 @@ cp "$input" "$output"
     // Failed restores must not claim a new applied schema.
   }
   const pendingMigration = readFileIfPresent(path.join(releaseStateDir, "migration-pending.json"));
+  const databases = Object.fromEntries(readdirSync(databaseModel).map((name) => [name, readFileSync(path.join(databaseModel, name), "utf8")]));
+  const recoveryMarker = readFileIfPresent(path.join(releaseStateDir, "restore-recovery-required.txt"));
+  const lockRetained = existsSync(path.join(releaseStateDir, "operations.lock", "owner"));
+  const records = path.join(releaseStateDir, "forensics");
+  const record = existsSync(records) ? readdirSync(records).map((name) => readFileSync(path.join(records, name), "utf8")).join("\n") : "";
   rmSync(fixtureDir, { recursive: true, force: true });
-  return { ...result, commands, pendingMigration, schemaManifest };
+  return { ...result, commands, pendingMigration, schemaManifest, databases, recoveryMarker, lockRetained, record };
 }
 
 function readFileIfPresent(file) {
@@ -189,6 +209,19 @@ function fakeDockerSource() {
   return `#!/usr/bin/env sh
 printf '%s\\n' "$*" >> "$RESTORE_TEST_LOG"
 case "$*" in
+  *"createdb"*) printf 'restored-user\\n' > "$RESTORE_TEST_DATABASE_MODEL/${stagingDb}" ;;
+  *'ALTER DATABASE "werewolf" RENAME TO "${rollbackDb}";'*)
+    mv "$RESTORE_TEST_DATABASE_MODEL/werewolf" "$RESTORE_TEST_DATABASE_MODEL/${rollbackDb}" ;;
+  *'ALTER DATABASE "${stagingDb}" RENAME TO "werewolf";'*)
+    case "$RESTORE_TEST_FAILURE" in promote|promote-recovery) ;; *) mv "$RESTORE_TEST_DATABASE_MODEL/${stagingDb}" "$RESTORE_TEST_DATABASE_MODEL/werewolf" ;; esac ;;
+  *'ALTER DATABASE "werewolf" RENAME TO "${stagingDb}";'*)
+    mv "$RESTORE_TEST_DATABASE_MODEL/werewolf" "$RESTORE_TEST_DATABASE_MODEL/${stagingDb}" ;;
+  *'ALTER DATABASE "${rollbackDb}" RENAME TO "werewolf";'*)
+    if [ "$RESTORE_TEST_FAILURE" != "promote-recovery" ]; then
+      mv "$RESTORE_TEST_DATABASE_MODEL/${rollbackDb}" "$RESTORE_TEST_DATABASE_MODEL/werewolf"
+    fi ;;
+esac
+case "$*" in
   "compose ps --status running --services web game")
     if [ "$RESTORE_TEST_FAILURE" = "partial-writers" ]; then
       printf 'web\\n'
@@ -196,10 +229,11 @@ case "$*" in
       printf 'web\\ngame\\n'
     fi
     ;;
-  *"run --name werewolf-restore-migrator-review --rm --no-deps"*"migrate")
+  *"run --name werewolf-restore-migrator-review --rm --no-deps"*"migrate node ./migrator.mjs")
     printf 'migrator-database-url=%s\\n' "$MIGRATION_DATABASE_URL" >> "$RESTORE_TEST_LOG"
     printf 'active-release=%s|%s\\n' "$RELEASE_VERSION" "$MIGRATOR_IMAGE" >> "$RESTORE_TEST_LOG"
     [ "$RESTORE_TEST_FAILURE" = "migrate" ] && exit 41
+    [ "$RESTORE_TEST_FAILURE" = "schema-history" ] && exit 49
     ;;
   *"ALTER DATABASE \\"werewolf_restore_stage_review\\" RENAME TO \\"werewolf\\""*)
     [ "$RESTORE_TEST_FAILURE" = "promote" ] || [ "$RESTORE_TEST_FAILURE" = "promote-recovery" ] && exit 42
@@ -211,7 +245,14 @@ case "$*" in
     [ "$RESTORE_TEST_FAILURE" = "restart" ] && exit 44
     ;;
   "compose up -d --force-recreate --no-build --no-deps --wait --wait-timeout 180 web game caddy")
+    printf 'acknowledged-registration\\ntombstone:restored-user\\n' > "$RESTORE_TEST_DATABASE_MODEL/werewolf"
     [ "$RESTORE_TEST_FAILURE" = "restart" ] && exit 44
+    ;;
+  "compose stop web game")
+    if [ "$RESTORE_TEST_FAILURE" = "stop-failure" ] && [ -f "$RESTORE_TEST_DATABASE_MODEL/${rollbackDb}" ]; then exit 47; fi
+    ;;
+  *"wget -qO- http://127.0.0.1:2567/health/ready"*)
+    [ "$RESTORE_TEST_FAILURE" = "game-health" ] && exit 48
     ;;
   *"restore_semantic_check"*)
     [ "$RESTORE_TEST_FAILURE" = "semantic" ] && exit 45
@@ -235,7 +276,11 @@ case "$*" in
     esac
     ;;
   *"psql -v ON_ERROR_STOP=1"*"--single-transaction"*)
+    grep -q 'CREATE ROLE %I NOLOGIN' "$RESTORE_TEST_LOG" || exit 50
     cat >/dev/null
+    ;;
+  *"psql -v ON_ERROR_STOP=1 -U werewolf -d postgres")
+    sed 's/^/stdin: /' >> "$RESTORE_TEST_LOG"
     ;;
   *"psql -v ON_ERROR_STOP=1"*"-v database_name="*)
     sed 's/^/stdin: /' >> "$RESTORE_TEST_LOG"
@@ -279,39 +324,46 @@ test("preserves staging and rollback copies when rollback recovery also fails", 
   assert.equal(indexOf(result.commands, `dropdb --if-exists --force -U werewolf ${stagingDb}`), -1);
   assert.equal(indexOf(result.commands, `dropdb --if-exists --force -U werewolf ${rollbackDb}`), -1);
   assert.match(result.stderr, new RegExp(`${stagingDb}.*${rollbackDb}|${rollbackDb}.*${stagingDb}`));
+  assert.equal(result.lockRetained, true);
+  assert.match(result.recoveryMarker, /manual reconciliation/);
 });
 
-test("preserves rollback and reports stopped writers when restart fails", () => {
-  const result = runRestore("restart");
-  const failedRestart = indexOf(
-    result.commands,
-    "compose up -d --force-recreate --no-build --no-deps --wait --wait-timeout 180 web game caddy",
-  );
-  const cleanupStop = result.commands.findIndex(
-    (command, index) => index > failedRestart && command.includes("compose stop web game"),
-  );
-  const terminateTargetSessions = result.commands.findIndex(
-    (command, index) =>
-      index > cleanupStop
-      && command.includes("pg_terminate_backend"),
-  );
-  const demoteCandidate = indexOf(
-    result.commands,
-    `ALTER DATABASE "werewolf" RENAME TO "${stagingDb}"`,
-  );
+for (const failure of ["restart", "game-health", "public-health", "schema-publication", "stop-failure"]) {
+  test(`never reverses acknowledged writes/deletions after writer start: ${failure}`, () => {
+    const result = runRestore(failure);
+    const failedRestart = indexOf(
+      result.commands,
+      "compose up -d --force-recreate --no-build --no-deps --wait --wait-timeout 180 web game caddy",
+    );
+    const cleanupStop = result.commands.findIndex(
+      (command, index) => index > failedRestart && command.includes("compose stop web game"),
+    );
+    const demoteCandidate = indexOf(
+      result.commands,
+      `ALTER DATABASE "werewolf" RENAME TO "${stagingDb}"`,
+    );
 
-  assert.notEqual(result.status, 0);
-  assert.ok(indexOf(result.commands, `ALTER DATABASE "${stagingDb}" RENAME TO "werewolf"`) >= 0);
-  assert.ok(failedRestart >= 0);
-  assert.ok(cleanupStop > failedRestart);
-  assert.ok(terminateTargetSessions > cleanupStop);
-  assert.ok(demoteCandidate > terminateTargetSessions);
-  assert.ok(indexOf(result.commands, `ALTER DATABASE "${rollbackDb}" RENAME TO "werewolf"`) >= 0);
-  assert.equal(indexOf(result.commands, `dropdb --if-exists --force -U werewolf ${rollbackDb}`), -1);
-  assert.equal(indexOf(result.commands, `dropdb --if-exists --force -U werewolf ${stagingDb}`), -1);
-  assert.match(result.stderr, /restart did not complete/i);
-  assert.match(result.stderr, /treated as stopped|remain stopped/i);
-});
+    assert.notEqual(result.status, 0);
+    assert.ok(indexOf(result.commands, `ALTER DATABASE "${stagingDb}" RENAME TO "werewolf"`) >= 0);
+    assert.ok(failedRestart >= 0);
+    assert.ok(cleanupStop > failedRestart);
+    assert.equal(demoteCandidate, -1);
+    assert.equal(indexOf(result.commands, `ALTER DATABASE "${rollbackDb}" RENAME TO "werewolf"`), -1);
+    assert.equal(indexOf(result.commands, `dropdb --if-exists --force -U werewolf ${rollbackDb}`), -1);
+    assert.equal(indexOf(result.commands, `dropdb --if-exists --force -U werewolf ${stagingDb}`), -1);
+    assert.match(result.stderr, /RECOVERY REQUIRED/);
+    assert.equal(result.lockRetained, true);
+    assert.match(result.recoveryMarker, /manual reconciliation/);
+    assert.equal(result.databases.werewolf, "acknowledged-registration\ntombstone:restored-user\n");
+    assert.equal(result.databases[rollbackDb], "original-user\n");
+    assert.match(result.record, /recovery_required=1/);
+    assert.match(result.pendingMigration, /unresolved-candidate/);
+    if (failure === "stop-failure") {
+      assert.match(result.stderr, /shutdown is unconfirmed/);
+      assert.match(result.record, /writers_stopped=0/);
+    } else assert.match(result.record, /writers_stopped=1/);
+  });
+}
 
 test("runs a bounded migrator, validates after cutover, and retains rollback for explicit acceptance", () => {
   const result = runRestore();
@@ -344,6 +396,11 @@ test("runs a bounded migrator, validates after cutover, and retains rollback for
     ).length,
     2,
   );
+  const bootstrap = indexOf(result.commands, "CREATE ROLE %I NOLOGIN");
+  const importDump = indexOf(result.commands, "--single-transaction");
+  assert.ok(bootstrap >= 0 && bootstrap < importDump);
+  assert.match(result.commands[migrate], /-e MIGRATION_HEAD=0013_restore_contract/);
+  assert.match(result.commands[migrate], /migrate node \.\/migrator\.mjs$/);
   assert.ok(stop > migrate);
   assert.ok(semantic > promote);
   assert.ok(restart > stop);
@@ -351,6 +408,8 @@ test("runs a bounded migrator, validates after cutover, and retains rollback for
   assert.ok(indexOf(result.commands, "wget -qO- http://127.0.0.1:2567/health/ready") > restart);
   assert.ok(indexOf(result.commands, "deploy-public-health.mjs") > restart);
   assert.equal(dropRollback, -1);
+  assert.equal(result.lockRetained, false);
+  assert.equal(result.recoveryMarker, "");
   assert.match(result.stdout, new RegExp(`${rollbackDb}.*retained|retained.*${rollbackDb}`, "i"));
 });
 
@@ -403,6 +462,9 @@ test("signed restore merges the verified external ledger with current tombstones
   assert.ok(result.commands.some((command) =>
     command.includes("backup-manifest.mjs verify")
       && command.includes("werewolf_deletion_ledger.tsv.age")
+  ));
+  assert.ok(result.commands.some((command) =>
+    command.includes("-e RESTORE_BACKUP_MIGRATION_HEAD=0013_restore_contract")
   ));
   assert.ok(applyExternal >= 0);
   assert.ok(applyCurrent >= 0);
@@ -457,6 +519,16 @@ test("leaves writers and target untouched when staging migration fails", () => {
   assert.ok(indexOf(result.commands, "compose run --rm --no-deps") >= 0);
   assert.equal(indexOf(result.commands, "compose stop web game"), -1);
   assert.equal(indexOf(result.commands, "ALTER DATABASE"), -1);
+});
+
+test("schema history rejection leaves the original database, schema evidence and writers untouched", () => {
+  const result = runRestore("schema-history", { requireSignature: true, externalLedger: true });
+  assert.equal(result.status, 49, result.stderr);
+  assert.equal(indexOf(result.commands, "compose stop web game"), -1);
+  assert.equal(indexOf(result.commands, "ALTER DATABASE"), -1);
+  assert.equal(result.databases.werewolf, "original-user\n");
+  assert.equal(result.schemaManifest, "");
+  assert.match(result.pendingMigration, /unresolved-candidate/);
 });
 
 test("rolls back cutover instead of reporting success when semantic validation fails", () => {

@@ -79,13 +79,9 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
     iconBg: "куршум",
     tier: "gold",
     family: "werewolves",
-    predicate: ({ events, players }) => {
-      const hasHunterShot = events.some((event) => event.type === "death" && payloadAsText(event.payload).includes("Ловеца"));
-      if (!hasHunterShot) {
-        return [];
-      }
-      return players.filter((player) => player.role === "hunter").map((player) => player.userId);
-    },
+    predicate: ({ events }) => uniqueUserIds(
+      events.filter((event) => event.type === "hunter_shot").map((event) => event.actorId),
+    ),
   },
   {
     id: "silent_civilian",
@@ -158,14 +154,6 @@ export function getAchievementById(id: string) {
 
 function uniqueUserIds(values: Array<string | null | undefined>) {
   return [...new Set(values.filter((value): value is string => Boolean(value)))];
-}
-
-function payloadAsText(payload: unknown) {
-  try {
-    return JSON.stringify(payload);
-  } catch {
-    return "";
-  }
 }
 
 function payloadStringValue(payload: unknown, key: string) {

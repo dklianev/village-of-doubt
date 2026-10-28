@@ -5,7 +5,7 @@ import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { chromium, firefox, webkit } from "playwright";
-import { assertFrontendCssNavigation } from "./frontend-css-navigation.mjs";
+import { assertFrontendCssNavigation, FRONTEND_CSS_ROUTES } from "./frontend-css-navigation.mjs";
 import { assertInteractiveTouchTargets } from "./frontend-touch-targets.mjs";
 import { installNarrationProbe, enableNarrationProbe, assertNarratedPhase, assertNarrationSilent } from "./frontend-narration-probe.mjs";
 import { runPlayPerformance } from "./frontend-play-performance.mjs";
@@ -134,19 +134,22 @@ async function main() {
 }
 
 async function testRouteCssNavigation(viewportName, viewport, theme) {
-  const label = `route-css-${viewportName}-${theme}`;
-  const { page, watcher, close } = await newPage(label, viewport);
-  try {
-    const results = await assertFrontendCssNavigation(page, baseUrl, theme);
-    await assertNoHorizontalOverflow(page, label);
-    await watcher.assertClean();
-    console.log(`CSS navigation: ${JSON.stringify(results)}`);
-    await screenshot(page, `${label}.png`);
-  } catch (error) {
-    await screenshot(page, `${label}-failure.png`).catch(() => {});
-    throw error;
-  } finally {
-    await close();
+  // Each comparison owns its cache; direct -> home -> client navigation stays in one document flow.
+  for (const route of FRONTEND_CSS_ROUTES) {
+    const label = `route-css-${viewportName}-${theme}-${route.slice(1).replaceAll("/", "-")}`;
+    const { page, watcher, close } = await newPage(label, viewport);
+    try {
+      const results = await assertFrontendCssNavigation(page, baseUrl, theme, { route });
+      await assertNoHorizontalOverflow(page, label);
+      await watcher.assertClean();
+      console.log(`CSS navigation: ${JSON.stringify(results)}`);
+      await screenshot(page, `${label}.png`);
+    } catch (error) {
+      await screenshot(page, `${label}-failure.png`).catch(() => {});
+      throw error;
+    } finally {
+      await close();
+    }
   }
 }
 
@@ -521,12 +524,13 @@ async function testSixClientGameStart(family) {
         await page.getByRole("link", { name: "Към играта", exact: true }).click();
         await page.waitForURL((url) => url.pathname === roomUrl.pathname);
       }
-      await waitForVisibleText(page.getByTestId("ready-toggle"), "Готов");
       try {
+        // Include initial hydration in the same connection diagnostic boundary.
         await page.waitForFunction(
           () => {
             const button = document.querySelector('[data-testid="ready-toggle"]');
-            return button instanceof HTMLButtonElement && !button.disabled;
+            return button instanceof HTMLButtonElement && !button.disabled
+              && button.getClientRects().length > 0 && button.textContent?.includes("Готов");
           },
           undefined,
           { timeout: 30_000 },

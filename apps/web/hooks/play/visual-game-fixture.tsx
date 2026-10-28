@@ -54,7 +54,7 @@ export interface VisualGameRoomFixtureResult {
   room: Room | null;
   snapshot: GameSnapshot | null;
   currentUserId: string;
-  privateRole: { role: RoleCode; roleNameBg: string } | null;
+  privateRole: UseGameRoomResult["privateRole"];
   privateResult: PrivateResult | null;
   privateLover: PrivateLover | null;
   nightActionCapabilities: NightActionCapabilities | null;
@@ -74,7 +74,7 @@ export interface VisualGameRoomFixtureResult {
 export interface VisualGameFixtureConfig {
   snapshot: GameSnapshot;
   currentUserId: string;
-  privateRole: { role: RoleCode; roleNameBg: string } | null;
+  privateRole: UseGameRoomResult["privateRole"];
   privateResult: PrivateResult | null;
   privateLover: PrivateLover | null;
   nightActionCapabilities: NightActionCapabilities | null;
@@ -343,7 +343,11 @@ export function parseVisualGameFixture(
   return {
     snapshot,
     currentUserId,
-    privateRole: viewerRole ? { role: viewerRole, roleNameBg: ROLE_DEFINITIONS[viewerRole].nameBg } : null,
+    privateRole: viewerRole ? {
+      role: viewerRole,
+      roleNameBg: ROLE_DEFINITIONS[viewerRole].nameBg,
+      ...(viewerRole === "hunter" ? { hunterRevengeAvailable: parsed.phase === "hunter_revenge" && parsed.viewer === "dead" } : {}),
+    } : null,
     privateResult: viewerRole && !["lobby", "role_reveal", "first_night"].includes(parsed.phase)
       ? privateResultForRole(viewerRole, players, assignedRoles)
       : null,

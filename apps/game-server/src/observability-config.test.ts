@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { NodeClient } from "@sentry/node";
 import { createGameServerSentryOptions } from "./observability-config.js";
 
 describe("createGameServerSentryOptions", () => {
@@ -16,6 +17,8 @@ describe("createGameServerSentryOptions", () => {
       sendDefaultPii: false,
       tracesSampleRate: 0.1,
       beforeSend: expect.any(Function),
+      beforeSendTransaction: expect.any(Function),
+      beforeSendSpan: expect.any(Function),
       beforeBreadcrumb: expect.any(Function),
     });
 
@@ -75,5 +78,34 @@ describe("createGameServerSentryOptions", () => {
 
   it("does not initialize without a server DSN", () => {
     expect(createGameServerSentryOptions({ NODE_ENV: "production" })).toBeUndefined();
+  });
+
+  it("scrubs a real SDK transaction envelope before transport", async () => {
+    const options = createGameServerSentryOptions({ NODE_ENV: "production", SENTRY_DSN: "https://public@example.invalid/1" })!;
+    const envelopes: unknown[] = [];
+    const client = new NodeClient({
+      ...options,
+      integrations: [],
+      transport: () => ({
+        send: async (envelope) => { envelopes.push(envelope); return { statusCode: 200 }; },
+        flush: async () => true,
+      }),
+    });
+    try {
+      const now = Date.now() / 1000;
+      client.captureEvent({
+        type: "transaction", transaction: "GET /play/PRIVATE42", start_timestamp: now - 1, timestamp: now,
+        user: { id: "private-user" },
+        request: { url: "https://example.invalid/lobby/PRIVATE42?token=private-token" },
+        contexts: { trace: { trace_id: "a".repeat(32), span_id: "b".repeat(16), data: { "http.target": "/mafia/join/PRIVATE42?token=private-token" } } },
+        spans: [{ trace_id: "a".repeat(32), span_id: "c".repeat(16), start_timestamp: now - 0.5, timestamp: now, op: "db.postgresql", description: "select * from users where email='private@example.invalid'", data: { "db.statement": "private-sql", "db.params": ["private-bound-value"] } }],
+      });
+      expect(await client.flush(1000)).toBe(true);
+      expect(envelopes).toHaveLength(1);
+      const serialized = JSON.stringify(envelopes);
+      for (const secret of ["PRIVATE42", "private-token", "private-user", "private@example.invalid", "private-sql", "private-bound-value"]) expect(serialized).not.toContain(secret);
+      expect(serialized).toContain("db.postgresql");
+      expect(serialized).toContain("/play/[code]");
+    } finally { await client.close(1000); }
   });
 });

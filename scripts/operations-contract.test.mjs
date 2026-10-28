@@ -258,13 +258,13 @@ test("CI isolates visual baselines from the serial core verification path", () =
   assert.doesNotMatch(visualBlock, /apt-get|Install visual fonts/);
 });
 
-test("CI partitions app visuals into four native shards while preserving play and UI jobs", () => {
+test("CI partitions app visuals into four native shards while preserving play, UI and browser contract jobs", () => {
   const ci = read(".github/workflows/ci.yml");
   const visualStart = ci.indexOf("  visual:");
   const visualBlock = ci.slice(visualStart, ci.indexOf("  containers:", visualStart));
   const suites = [...visualBlock.matchAll(/^\s+- suite: (\S+)$/gm)].map((match) => match[1]);
 
-  assert.deepEqual(suites, ["app-1", "app-2", "app-3", "app-4", "play-0", "play-1", "play-2", "play-3", "ui"]);
+  assert.deepEqual(suites, ["app-1", "app-2", "app-3", "app-4", "play-0", "play-1", "play-2", "play-3", "ui", "contracts"]);
   for (let shard = 1; shard <= 4; shard += 1) {
     assert.match(visualBlock, new RegExp(`- suite: app-${shard}\\r?\\n +shard: ${shard}/4(?:\\r?\\n|$)`));
   }
@@ -274,7 +274,8 @@ test("CI partitions app visuals into four native shards while preserving play an
   assert.match(visualBlock, /if: startsWith\(matrix\.suite, 'app-'\)\r?\n +run: pnpm visual --shard=\$\{\{ matrix\.shard \}\}(?:\r?\n|$)/);
   assert.match(visualBlock, /if: startsWith\(matrix\.suite, 'play-'\)\r?\n +run: pnpm visual:matrix\r?\n +env:\r?\n +M35_SHARD_INDEX: \$\{\{ matrix\.shardIndex \}\}\r?\n +M35_SHARD_TOTAL: 4/);
   assert.match(visualBlock, /if: matrix\.suite == 'ui'\r?\n +run: pnpm visual:ui(?:\r?\n|$)/);
-  assert.match(visualBlock, /if: startsWith\(matrix\.suite, 'app-'\)\r?\n +run: pnpm exec playwright install firefox webkit(?:\r?\n|$)/);
+  assert.match(visualBlock, /if: startsWith\(matrix\.suite, 'app-'\) \|\| matrix\.suite == 'contracts'\r?\n +run: pnpm exec playwright install firefox webkit(?:\r?\n|$)/);
+  assert.match(visualBlock, /if: matrix\.suite == 'contracts'\r?\n +run: pnpm test:browser(?:\r?\n|$)/);
   assert.match(visualBlock, /if: matrix\.suite != 'ui'/);
   assert.match(visualBlock, /fail-fast: false/);
   assert.match(visualBlock, /timeout-minutes: 50/);
@@ -463,7 +464,7 @@ test("deploy validates Compose before disruption and applies database privileges
   const deploy = read("scripts/deploy-release.sh");
   const environmentPreflight = 'node --env-file=.env scripts/check-production-env.mjs';
   const preflight = 'docker compose --env-file .env --env-file "$generated_env" config --quiet';
-  const drain = 'pnpm deploy:drain';
+  const drain = 'run_deploy_drain';
   const roles = 'run --rm --no-deps postgres-roles';
   const migrate = 'run_with_process_timeout "$migration_process_timeout_seconds"';
   const grants = 'run --rm --no-deps postgres-grants';
@@ -515,13 +516,14 @@ test("production CSP blocks executable attributes and active object content", ()
 });
 
 test("deploy drain reads operational stats only through the game container loopback", () => {
-  const drain = read("scripts/deploy-drain.mjs");
+  const drain = read("scripts/deploy-drain-lib.mjs");
   const appConfig = read("apps/game-server/src/app.config.ts");
 
   assert.match(drain, /docker[\s\S]*compose[\s\S]*exec[\s\S]*game/);
   assert.match(drain, /http:\/\/127\.0\.0\.1:2567\/operations\/stats/);
   assert.doesNotMatch(drain, /DEPLOY_STATS_URL|https:\/\/\$\{domain\}\/stats/);
-  assert.doesNotMatch(appConfig, /app\.get\("\/stats"/);
+  assert.match(appConfig, /app\.get\("\/operations\/stats", createLocalStatsHandler\(\)\)/);
+  assert.match(appConfig, /app\.get\("\/stats",[\s\S]*?res\.json\(\{ activeRooms, connectedPlayers, byFamily \}\)/);
 });
 
 test("failed deploy and rollback paths can release drain mode without exposing an operator endpoint", () => {
@@ -533,13 +535,14 @@ test("failed deploy and rollback paths can release drain mode without exposing a
   const packageJson = JSON.parse(read("package.json"));
 
   assert.match(appConfig, /app\.delete\("\/operations\/drain", createLocalDrainCancelHandler\(\)\)/);
-  assert.match(cancelDrain, /127\.0\.0\.1:2567\/operations\/drain/);
-  assert.match(cancelDrain, /method: 'DELETE'/);
+  assert.match(read("scripts/deploy-drain-lib.mjs"), /127\.0\.0\.1:2567\/operations\/drain/);
+  assert.match(cancelDrain, /drainRequest\("DELETE",/);
   assert.equal(packageJson.scripts["deploy:cancel-drain"], "node scripts/deploy-cancel-drain.mjs");
-  assert.match(deployDrain, /requestDrain\("DELETE"\)/);
+  assert.match(deployDrain, /request\("DELETE", cancelTimeoutMs\)/);
+  assert.match(read("scripts/deploy-operations-lib.sh"), /run_with_process_timeout "\$drain_cleanup_timeout" pnpm deploy:cancel-drain/);
   for (const script of [deploy, rollback]) {
     assert.match(script, /trap cancel_drain_on_exit EXIT/);
-    assert.match(script, /pnpm deploy:cancel-drain/);
+    assert.match(script, /cancel_drain_bounded/);
     assert.match(script, /SKIP_DEPLOY_DRAIN/);
     assert.match(script, /docker compose ps -q game/);
     assert.match(script, /wget -qO- http:\/\/127\.0\.0\.1:2567\/health/);
@@ -612,7 +615,7 @@ test("rollback validates and pulls before drain without replaying old migrations
   const rollback = read("scripts/rollback-release.sh");
   const preflight = 'docker compose --env-file .env --env-file "$rollback_env" config --quiet';
   const pull = 'docker compose --env-file .env --env-file "$rollback_env" pull web game caddy';
-  const drain = "pnpm deploy:drain";
+  const drain = "run_deploy_drain";
 
   assert.ok(rollback.indexOf(preflight) >= 0);
   assert.ok(rollback.indexOf(preflight) < rollback.indexOf(pull));
@@ -668,6 +671,10 @@ test("database backups are scheduled, verified, retained, and copied off-site", 
   assert.match(service, /^Group=root$/m);
   assert.match(service, /^EnvironmentFile=\/etc\/werewolf\/backup\.env$/m);
   assert.match(service, /^Environment=BACKUP_REQUIRE_FIXED_CONTAINER=1$/m);
+  assert.match(service, /^Environment=BACKUP_REQUIRE_OFFSITE=1$/m);
+  const backupEnvironment = read("ops/systemd/werewolf-backup.env.example");
+  assert.match(backupEnvironment, /^RCLONE_REMOTE=/m);
+  assert.match(backupEnvironment, /^RCLONE_DELETION_LEDGER_REMOTE=/m);
   assert.match(service, /^Environment=BACKUP_REQUIRE_ENCRYPTION=1$/m);
   assert.match(service, /^Environment=BACKUP_REQUIRE_SIGNATURE=1$/m);
   assert.match(service, /^Environment=BACKUP_REQUIRE_ACTIVE_RELEASE=1$/m);
@@ -682,7 +689,8 @@ test("database backups are scheduled, verified, retained, and copied off-site", 
   assert.match(backup, /BACKUP_AGE_RECIPIENT/);
   assert.match(backup, /BACKUP_SIGNING_PRIVATE_KEY_FILE/);
   assert.match(backup, /BACKUP_RELEASE_MANIFEST_PUBLIC_KEY_FILE/);
-  assert.match(backup, /--signature "\$release_manifest_signature"/);
+  assert.match(backup, /--signature "\$provenance_dir\/current.json.sig"/);
+  assert.match(backup, /--signature "\$provenance_dir\/schema.json.sig"/);
   assert.match(backup, /release_version="\$RELEASE_VERSION"/);
   assert.match(backup, /migration_head="\$MIGRATION_HEAD"/);
   assert.match(backup, /backup_file\.manifest\.json/);
@@ -729,6 +737,7 @@ test("database backups are scheduled, verified, retained, and copied off-site", 
   assert.match(rollback, /RELEASE_STATE_DIR:-\/var\/lib\/werewolf\/release-state/);
   assert.match(runbook, /must not belong to the\s+Docker group/i);
   assert.match(runbook, /\/usr\/local\/libexec\/werewolf\/backup-postgres\.sh/);
+  assert.match(runbook, /install -o root -g root -m 0644 "\$release_source\/scripts\/deploy-operations-lib\.sh" \/usr\/local\/libexec\/werewolf\/deploy-operations-lib\.sh/);
   assert.match(runbook, /\/usr\/local\/libexec\/werewolf\/release-manifest\.mjs/);
   assert.match(runbook, /\/etc\/werewolf\/backup\.env/);
   assert.match(runbook, /root:root and mode `0600`/i);
@@ -745,6 +754,27 @@ test("database backups are scheduled, verified, retained, and copied off-site", 
   assert.match(runbook, /if ! sudo test -e \/etc\/werewolf\/backup\.env/);
   assert.match(runbook, /RELEASE_STATE_DIR=\/var\/lib\/werewolf\/release-state/);
   assert.match(runbook, /\/var\/lib\/werewolf\/releases\/candidate\.json/);
+});
+
+test("production identity and hardened backup contracts survive release checkout changes", () => {
+  assert.match(read("docker-compose.yml"), /^name: \$\{COMPOSE_PROJECT_NAME:\?/m);
+  assert.match(read(".env.example"), /^COMPOSE_PROJECT_NAME=werewolf$/m);
+  assert.match(read("ops/systemd/werewolf-backup.env.example"), /^COMPOSE_PROJECT_NAME=werewolf$/m);
+  for (const file of ["deploy-release.sh", "rollback-release.sh", "restore-postgres.sh", "restore-accept.sh"]) {
+    const source = read(`scripts/${file}`);
+    assert.match(source, /^initialize_compose_project$/m);
+    assert.match(source, /^prepare_release_state /m);
+    assert.doesNotMatch(source, /chmod 700/);
+  }
+  const unit = read("ops/systemd/werewolf-backup.service");
+  assert.match(unit, /^SupplementaryGroups=werewolf-release-readers$/m);
+  assert.match(unit, /^MemoryDenyWriteExecute=true$/m);
+  assert.match(unit, /^CapabilityBoundingSet=$/m);
+  for (const file of ["backup-postgres.sh", "check-backup-freshness.sh"]) {
+    const calls = read(`scripts/${file}`).split("\n").filter((line) => /^\s*node /.test(line));
+    assert.ok(calls.length > 0);
+    assert.ok(calls.every((line) => /^\s*node --jitless /.test(line)), file);
+  }
 });
 
 test("runbook documents immutable rollback, restore drills, and recovery objectives", () => {

@@ -11,10 +11,12 @@ import {
 } from "@/lib/intake-security";
 
 const VALID_CATEGORIES = new Set(["bug", "idea", "praise", "other"]);
-const MAX_REQUEST_BYTES = 4_096;
 const MAX_FEEDBACK_BODY_LENGTH = 2_000;
 const MAX_EMAIL_LENGTH = 254;
 const MAX_PAGE_LENGTH = 512;
+// One UTF-16 code unit can require six JSON bytes (a Unicode escape).
+// Field limits still apply after parsing; the allowance covers keys/category.
+const MAX_REQUEST_BYTES = 6 * (MAX_FEEDBACK_BODY_LENGTH + MAX_EMAIL_LENGTH + MAX_PAGE_LENGTH) + 256;
 const feedbackRateLimiter = createRuntimeIntakeRateLimiter(
   { limit: 10, windowMs: 10 * 60 * 1000 },
   "feedback",

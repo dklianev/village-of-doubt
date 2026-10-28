@@ -322,7 +322,7 @@ export interface PrivateCheckResult {
 }
 
 export type ServerEvent =
-  | { type: "private_role"; role: RoleCode; roleNameBg: string }
+  | { type: "private_role"; role: RoleCode; roleNameBg: string; hunterRevengeAvailable?: boolean }
   | {
       type: "narrator_role_snapshot";
       roles: Array<{ userId: string; displayName: string; role: RoleCode; roleNameBg: string }>;

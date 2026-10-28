@@ -33,6 +33,7 @@ describe.skipIf(!baseUrl)("lobby readiness layout", () => {
                 visualGame: "1", phase: "lobby", family, viewer, players: "8",
               })}`);
               await page.locator('.play-stage[data-layout-ready="true"]').waitFor();
+              await page.evaluate(() => document.fonts.ready);
               const ready = page.getByTestId("ready-toggle");
               await ready.waitFor();
               expect(await ready.count()).toBe(1);
@@ -40,7 +41,7 @@ describe.skipIf(!baseUrl)("lobby readiness layout", () => {
               expect(await page.locator(".play-stage").innerText()).not.toMatch(/РУНД 0|ЖИВИ|Свободен ход/);
               expect(await page.locator(".play-stage [data-seat-user-id]").count()).toBe(8);
               expect(await page.getByRole("heading", { name: "Масата се събира" }).isVisible()).toBe(true);
-              expect(await page.getByRole("group", { name: "Настройки на масата" }).isVisible()).toBe(true);
+              expect(await page.getByLabel("Настройки на масата").isVisible()).toBe(true);
               expect(await page.getByRole("status", { name: "Готови: 7 от 8" }).isVisible()).toBe(true);
               expect(await page.locator('[data-lobby-seat-status][data-state="waiting"]').count()).toBe(1);
               expect(await page.locator('[data-lobby-seat-status][data-state="disconnected"]').count()).toBe(1);
@@ -50,25 +51,23 @@ describe.skipIf(!baseUrl)("lobby readiness layout", () => {
                 expect(await page.getByRole("button", { name: "Започни игра", exact: true }).count()).toBe(0);
               }
               if (width < 1024) {
+                await ready.evaluate((button) => button.scrollIntoView({ block: "center", behavior: "instant" }));
                 const button = await ready.boundingBox();
                 expect(button).not.toBeNull();
                 expect(button!.height).toBeGreaterThanOrEqual(44);
                 expect(button!.y).toBeGreaterThanOrEqual(0);
                 expect(button!.y + button!.height).toBeLessThanOrEqual(height);
-                expect(await page.locator(".play-action-dock").getAttribute("data-expanded")).toBe("false");
+                expect(await page.locator(".play-action-dock, [data-table-core]").count()).toBe(0);
                 const geometry = await page.evaluate(() => ({
-                  dockTop: document.querySelector(".play-action-dock")!.getBoundingClientRect().top,
+                  bandTop: document.querySelector(".play-waiting-band")!.getBoundingClientRect().top,
                   seatsBottom: Math.max(...[...document.querySelectorAll(".play-seat-slot")].map((seat) => seat.getBoundingClientRect().bottom)),
-                  coreHeight: document.querySelector("[data-table-core]")!.getBoundingClientRect().height,
                 }));
-                expect(geometry.seatsBottom).toBeLessThanOrEqual(geometry.dockTop - 4);
-                expect(geometry.coreHeight).toBe(48);
-                await page.getByRole("button", { name: "Покажи подробностите за стаята" }).click();
+                expect(geometry.seatsBottom).toBeLessThanOrEqual(geometry.bandTop - 4);
                 await page.getByRole("button", { name: "Копирай покана" }).waitFor();
                 expect(await ready.count()).toBe(1);
                 await page.getByRole("button", { name: "Копирай покана" }).click();
                 await page.getByText(/Поканата е копирана\.|Не успяхме да копираме поканата\./).waitFor();
-                await page.getByRole("button", { name: "Скрий подробностите за стаята" }).click();
+                await ready.scrollIntoViewIfNeeded();
                 expect(await ready.isVisible()).toBe(true);
               }
               expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);

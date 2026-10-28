@@ -9,6 +9,7 @@ import type {
   PrivateFactionRoster,
   PublicEventKind,
   RoleCode,
+  ServerEvent,
   TerminalGameResult,
 } from "@werewolf/shared";
 
@@ -124,6 +125,7 @@ export type SportDaySlice = {
 };
 
 export type PrivateResult = PrivateCheckResult;
+export type PrivateRole = Omit<Extract<ServerEvent, { type: "private_role" }>, "type">;
 
 export interface PrivateLover {
   loverUserId: string;
@@ -144,13 +146,14 @@ export type ShortcutState = {
   phase: GamePhase;
   selectedTargetId: string;
   secondTargetId: string;
-  privateRole: { role: RoleCode; roleNameBg: string } | null;
+  privateRole: PrivateRole | null;
   players: PublicPlayer[];
   livingPlayers: PublicPlayer[];
   actionTargets: PublicPlayer[];
   currentUserId: string;
   ownPlayer: PublicPlayer | undefined;
   canNominate: boolean;
+  canUseHunterRevenge: boolean;
   showShortcuts: boolean;
   liveMode: boolean;
 };

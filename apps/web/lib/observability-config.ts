@@ -1,4 +1,4 @@
-import { sanitizeMonitoringEvent } from "./sentry-sanitization";
+import { sanitizeMonitoringBreadcrumb, sanitizeMonitoringEvent, sanitizeMonitoringSpan } from "./sentry-sanitization";
 
 interface ServerSentryEnvironment {
   NODE_ENV?: string;
@@ -20,5 +20,8 @@ export function createServerSentryOptions(environment: ServerSentryEnvironment =
     sendDefaultPii: false,
     tracesSampleRate: environment.NODE_ENV === "production" ? 0.1 : 1,
     beforeSend: sanitizeMonitoringEvent,
+    beforeSendTransaction: sanitizeMonitoringEvent,
+    beforeSendSpan: sanitizeMonitoringSpan,
+    beforeBreadcrumb: sanitizeMonitoringBreadcrumb,
   };
 }

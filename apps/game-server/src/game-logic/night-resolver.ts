@@ -5,6 +5,7 @@ export interface PrivatePlayerForNight {
   role: RoleCode;
   alive: boolean;
   priestBlessed?: boolean;
+  loverId?: string;
 }
 
 export interface SubmittedNightAction {
@@ -183,7 +184,7 @@ export function resolveNight(
       checks.push({
         actorUserId: submission.actorUserId,
         targetUserId: action.targetUserId,
-        role: covered ? "civilian" : getRoleSeenBySeer(target.role),
+        role: covered ? "civilian" : target.role,
         ...(covered
           ? { coveredByLawyer: true, messageBg: "Адвокатското алиби скри досието. Избраният играч изглежда като Гражданин." }
           : {}),
@@ -385,10 +386,6 @@ function factionKillCauseBg(team: TeamCode) {
   return "Не преживя нощта.";
 }
 
-function getRoleSeenBySeer(role: RoleCode): RoleCode {
-  return role === "jester" ? "ordinary_villager" : role;
-}
-
 function isEvilTeam(team: TeamCode): boolean {
   return team === "mafia" || team === "werewolves" || team === "vampires";
 }
@@ -481,8 +478,24 @@ function protectSpecialFactionTargets(
   preventedDeaths: NightResolution["preventedDeaths"],
   alreadyDyingUserIds = new Set<string>(),
 ) {
+  // Compute unavoidable deaths first: a faction attack on Hood must not defeat
+  // its own protection merely because she is linked to a Hunter.
+  const dyingUserIds = new Set(alreadyDyingUserIds);
+  for (const [userId, intents] of deaths) {
+    const role = aliveById.get(userId)?.role;
+    if ((role !== "cook" && role !== "red_riding_hood")
+      || intents.some((death) => death.sourceTeam !== "werewolves" && death.sourceTeam !== "vampires")) {
+      dyingUserIds.add(userId);
+    }
+  }
+  for (const userId of dyingUserIds) {
+    const loverId = aliveById.get(userId)?.loverId;
+    if (loverId && aliveById.has(loverId)) {
+      dyingUserIds.add(loverId);
+    }
+  }
   const hunterAlive = [...aliveById.values()].some(
-    (player) => player.role === "hunter" && player.alive && !deaths.has(player.userId) && !alreadyDyingUserIds.has(player.userId),
+    (player) => player.role === "hunter" && !dyingUserIds.has(player.userId),
   );
   for (const [userId, deathIntents] of [...deaths.entries()]) {
     if (!deathIntents.some((death) => death.sourceTeam === "werewolves" || death.sourceTeam === "vampires")) {
