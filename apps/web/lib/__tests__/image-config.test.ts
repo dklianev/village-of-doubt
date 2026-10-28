@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import config from "../../next.config";
 import { hasLocalMatch } from "next/dist/shared/lib/match-local-pattern";
 
-vi.mock("@sentry/nextjs", () => ({ withSentryConfig: (value: NextConfig) => value }));
+vi.mock("@sentry/nextjs/config", () => ({ withSentryConfig: (value: NextConfig) => value }));
 
 describe("image optimizer limits", () => {
   it("allows only the explicit art revision query, without opening arbitrary optimizer queries", () => {
