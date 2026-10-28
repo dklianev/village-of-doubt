@@ -45,6 +45,7 @@ test("appends reviewed migrations after the safety-policy baseline", () => {
     "0013_hesitant_blur",
     "0014_identity_privacy",
     "0015_identity_concurrency",
+    "0016_relax_account_issuer",
   ]);
   assert.ok(appended.every((entry) => entry.when > policyBaselineTimestamp));
 });

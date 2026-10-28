@@ -59,7 +59,8 @@ export const account = pgTable(
   "account",
   {
     id: text("id").primaryKey(),
-    issuer: text("issuer").notNull(),
+    // Written only by Better Auth 1.7.0-1.7.2; kept nullable until a cleanup migration drops it.
+    issuer: text("issuer"),
     accountId: text("account_id").notNull(),
     providerId: text("provider_id").notNull(),
     userId: text("user_id")
@@ -76,7 +77,6 @@ export const account = pgTable(
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
   (table) => [
-    uniqueIndex("account_issuer_account_id_uidx").on(table.issuer, table.accountId),
     index("account_user_id_idx").on(table.userId),
   ],
 );

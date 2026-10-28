@@ -451,13 +451,11 @@ test("auth E2E recovery selectors match the current accessible form states", () 
   assert.doesNotMatch(source, /Готово\. Провери имейла си\.|Затвори ключа|Готово\. Сега те водим/);
 });
 
-test("frontend E2E seeds Better Auth 1.7 credential identities with an issuer", () => {
+test("frontend E2E seeds credential identities the way Better Auth 1.7.3+ writes them", () => {
   const frontendE2e = read("scripts/frontend-e2e.mjs");
 
-  assert.match(
-    frontendE2e,
-    /issuer:\s*"local:credential",\s*\r?\n\s*accountId:\s*identity\.id,\s*\r?\n\s*providerId:\s*"credential"/,
-  );
+  assert.match(frontendE2e, /id:\s*randomUUID\(\),\s*\r?\n\s*accountId:\s*identity\.id,\s*\r?\n\s*providerId:\s*"credential"/);
+  assert.doesNotMatch(frontendE2e, /issuer:\s*"local:credential"/);
 });
 
 test("deploy validates Compose before disruption and applies database privileges in order", () => {
