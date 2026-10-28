@@ -15,6 +15,15 @@ test("all ingress loggers discard URI paths, queries and referrers", () => {
   assert.equal((config.match(/Referrer-Policy "no-referrer"/g) ?? []).length, 2);
 });
 
+test("web ingress replaces the Referrer-Policy the app already sends instead of duplicating it", () => {
+  const config = readFileSync(new URL("../Caddyfile", import.meta.url), "utf8");
+  const nextConfig = readFileSync(new URL("../apps/web/next.config.ts", import.meta.url), "utf8");
+  const webSite = config.slice(config.indexOf("{$PUBLIC_WEB_DOMAIN} {"), config.indexOf("{$PUBLIC_WS_DOMAIN} {"));
+  assert.match(nextConfig, /key: "Referrer-Policy", value: "no-referrer"/);
+  // A plain set runs before reverse_proxy copies upstream headers, so the response would carry the value twice.
+  assert.match(webSite, /^\s*>Referrer-Policy "no-referrer"$/m);
+});
+
 test("pinned Caddy removes synthetic room paths from access and proxy-error logs", {
   skip: process.env.RUN_CADDY_RUNTIME_TESTS !== "1",
 }, async () => {
