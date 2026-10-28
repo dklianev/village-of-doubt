@@ -46,6 +46,15 @@ describe("role catalogue deep links", () => {
     window.history.replaceState(null, "", "/werewolf/roles");
   });
 
+  it.each([["werewolves", "/werewolf/create"], ["mafia", "/mafia/create"]] as const)(
+    "names the %s hero action like every other create entry point",
+    (family, href) => {
+      renderCatalog(family);
+      expect(screen.getByRole("link", { name: "Създай стая" })).toHaveAttribute("href", href);
+      expect(screen.queryByRole("link", { name: "Създай игра" })).not.toBeInTheDocument();
+    },
+  );
+
   it.each(["werewolves", "mafia"] as const)("keeps a locally opened %s dossier after refreshing catalogue data", async (family) => {
     const role = family === "mafia" ? "commissioner" : "seer";
     const view = renderCatalog(family);
@@ -111,8 +120,9 @@ describe("role catalogue deep links", () => {
     if (method === "Escape") {
       await user.keyboard("{Escape}");
     } else {
-      const closeButtons = within(dialog).getAllByRole("button");
-      await user.click(closeButtons[method === "backdrop" ? 0 : 1]!);
+      await user.click(method === "backdrop"
+        ? dialog.querySelector<HTMLElement>(".role-codex-detail-backdrop")!
+        : within(dialog).getByRole("button", { name: "Затвори досието" }));
     }
     view.syncUrl();
 

@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { Fragment, StrictMode } from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { Activity, Fragment, StrictMode } from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useModal } from "../use-modal";
 
 function ModalHarness({
@@ -170,5 +170,137 @@ describe("useModal", () => {
       expect(onClose).toHaveBeenCalledOnce();
       outside.remove();
     });
+  });
+});
+
+function NamedModal({ name, open = true }: { name: string; open?: boolean }) {
+  const { ref } = useModal<HTMLElement>({ open, onClose: () => {} });
+  if (!open) return null;
+  return (
+    <section ref={ref} role="dialog" aria-modal="true" aria-label={name}>
+      <button type="button">{name} действие</button>
+    </section>
+  );
+}
+
+describe("useModal page isolation", () => {
+  let page: HTMLElement;
+
+  beforeEach(() => {
+    page = document.createElement("main");
+    page.innerHTML = '<button type="button">Страница</button>';
+    document.body.append(page);
+  });
+
+  afterEach(() => {
+    cleanup();
+    page.remove();
+    document.body.style.overflow = "";
+  });
+
+  describe.each([false, true])("StrictMode: %s", (strictMode) => {
+    const wrapper = strictMode ? StrictMode : Fragment;
+
+    it("hides the page behind from pointer, keyboard and assistive tech until close", () => {
+      const { rerender } = render(<NamedModal name="Първи" />, { wrapper });
+
+      expect(page).toHaveAttribute("inert");
+      expect(page).toHaveAttribute("aria-hidden", "true");
+      expect(screen.queryByRole("button", { name: "Страница" })).toBeNull();
+      expect(screen.getByRole("dialog", { name: "Първи" }).closest("[inert]")).toBeNull();
+
+      rerender(<NamedModal name="Първи" open={false} />);
+      expect(page).not.toHaveAttribute("inert");
+      expect(page).not.toHaveAttribute("aria-hidden");
+      expect(screen.getByRole("button", { name: "Страница" })).toBeInTheDocument();
+    });
+
+    it.each(["older", "newer"])("keeps only the topmost modal usable when the %s one closes first", (closesFirst) => {
+      const older = render(<NamedModal name="Първи" />, { wrapper });
+      const newer = render(<NamedModal name="Втори" />, { wrapper });
+
+      expect(page).toHaveAttribute("inert");
+      expect(older.container).toHaveAttribute("inert");
+      expect(newer.container.closest("[inert]")).toBeNull();
+
+      if (closesFirst === "older") {
+        older.unmount();
+        expect(page).toHaveAttribute("inert");
+        expect(newer.container.closest("[inert]")).toBeNull();
+        newer.unmount();
+      } else {
+        newer.unmount();
+        expect(page).toHaveAttribute("inert");
+        expect(older.container).not.toHaveAttribute("inert");
+        expect(older.container).not.toHaveAttribute("aria-hidden");
+        older.unmount();
+      }
+
+      expect(page).not.toHaveAttribute("inert");
+      expect(page).not.toHaveAttribute("aria-hidden");
+    });
+  });
+
+  it("restores only the attributes it added", () => {
+    const authorInert = document.createElement("div");
+    authorInert.setAttribute("inert", "");
+    const authorExposed = document.createElement("div");
+    authorExposed.setAttribute("aria-hidden", "false");
+    document.body.append(authorInert, authorExposed);
+
+    const { unmount } = render(<NamedModal name="Първи" />);
+    expect(authorInert).toHaveAttribute("aria-hidden", "true");
+    expect(authorExposed).toHaveAttribute("inert");
+    unmount();
+
+    expect(authorInert).toHaveAttribute("inert", "");
+    expect(authorInert).not.toHaveAttribute("aria-hidden");
+    expect(authorExposed).toHaveAttribute("aria-hidden", "false");
+    expect(authorExposed).not.toHaveAttribute("inert");
+    authorInert.remove();
+    authorExposed.remove();
+  });
+
+  it("lets a modal opened inside the isolated page take over", () => {
+    const portaled = render(<NamedModal name="Първи" />);
+    const slot = page.appendChild(document.createElement("div"));
+    const inPage = render(<NamedModal name="Втори" />, { container: slot });
+    const pageButton = page.querySelector("button")!;
+
+    expect(page).not.toHaveAttribute("inert");
+    expect(screen.getByRole("dialog", { name: "Втори" }).closest("[inert]")).toBeNull();
+    expect(pageButton).toHaveAttribute("inert");
+    expect(portaled.container).toHaveAttribute("inert");
+
+    inPage.unmount();
+    expect(page).toHaveAttribute("inert");
+    expect(pageButton).not.toHaveAttribute("inert");
+    portaled.unmount();
+    expect(page).not.toHaveAttribute("inert");
+  });
+
+  it("leaves an open native dialog, such as a lost connection, usable", () => {
+    const connection = document.createElement("div");
+    connection.innerHTML = '<dialog open><button type="button">Опитай пак</button></dialog>';
+    document.body.append(connection);
+
+    const { unmount } = render(<NamedModal name="Първи" />);
+    expect(page).toHaveAttribute("inert");
+    expect(connection).not.toHaveAttribute("inert");
+    expect(connection).not.toHaveAttribute("aria-hidden");
+    unmount();
+    connection.remove();
+  });
+
+  it("releases the page while a retained route hides the modal and isolates again when it returns", () => {
+    const { rerender } = render(<Activity mode="visible"><NamedModal name="Първи" /></Activity>);
+    expect(page).toHaveAttribute("inert");
+
+    rerender(<Activity mode="hidden"><NamedModal name="Първи" /></Activity>);
+    expect(page).not.toHaveAttribute("inert");
+    expect(page).not.toHaveAttribute("aria-hidden");
+
+    rerender(<Activity mode="visible"><NamedModal name="Първи" /></Activity>);
+    expect(page).toHaveAttribute("inert");
   });
 });

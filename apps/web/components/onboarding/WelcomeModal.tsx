@@ -6,52 +6,11 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { BookOpenText, DoorOpen, X } from "lucide-react";
 import { safeLocalStorage } from "@/lib/safe-storage";
 import { safeInternalRedirect } from "@/lib/safe-internal-redirect";
+import { isolateModalLayer } from "@/lib/modal-isolation";
 import { tutorialMode } from "@/components/tutorial/tutorial-scenario";
 import styles from "./WelcomeModal.module.css";
 
 const STORAGE_KEY = "welcome-modal-shown";
-
-type IsolatedElementState = {
-  element: HTMLElement;
-  inert: string | null;
-  ariaHidden: string | null;
-};
-
-function isolatePageBehind(layer: HTMLElement) {
-  const isolated: IsolatedElementState[] = [];
-  let current: HTMLElement | null = layer;
-
-  while (current && current !== document.body) {
-    const parent: HTMLElement | null = current.parentElement;
-    if (!parent) break;
-
-    for (const sibling of parent.children) {
-      if (sibling === current || !(sibling instanceof HTMLElement) || /^(SCRIPT|STYLE|LINK)$/.test(sibling.tagName)) {
-        continue;
-      }
-
-      isolated.push({
-        element: sibling,
-        inert: sibling.getAttribute("inert"),
-        ariaHidden: sibling.getAttribute("aria-hidden"),
-      });
-      sibling.setAttribute("inert", "");
-      sibling.setAttribute("aria-hidden", "true");
-    }
-
-    current = parent;
-  }
-
-  return () => {
-    for (const state of isolated.reverse()) {
-      if (state.inert === null) state.element.removeAttribute("inert");
-      else state.element.setAttribute("inert", state.inert);
-
-      if (state.ariaHidden === null) state.element.removeAttribute("aria-hidden");
-      else state.element.setAttribute("aria-hidden", state.ariaHidden);
-    }
-  };
-}
 
 export function WelcomeModal({ displayName }: { displayName: string }) {
   const pathname = usePathname();
@@ -59,9 +18,9 @@ export function WelcomeModal({ displayName }: { displayName: string }) {
   const currentParams = new URLSearchParams(searchParams);
   currentParams.delete("redirect");
   const currentHref = `${pathname}${currentParams.size ? `?${currentParams}` : ""}`;
-  const joinHref = /^\/(?:(?:mafia|werewolf)\/)?join(?:\/|$)/.test(pathname)
+  const invitationHref = /^\/(?:(?:mafia|werewolf)\/)?(?:join|lobby|play)(?:\/|$)/.test(pathname)
     ? safeInternalRedirect(currentHref, "") : "";
-  const redirectTo = safeInternalRedirect(searchParams.get("redirect"), "") || joinHref;
+  const redirectTo = safeInternalRedirect(searchParams.get("redirect"), "") || invitationHref;
   const tutorialParams = new URLSearchParams({
     welcome: "1",
     game: tutorialMode(searchParams.get("game") ?? searchParams.get("mode"), redirectTo || currentHref),
@@ -88,7 +47,7 @@ export function WelcomeModal({ displayName }: { displayName: string }) {
 
     const previousOverflow = document.body.style.overflow;
     const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const restorePage = backdropRef.current ? isolatePageBehind(backdropRef.current) : () => {};
+    const restorePage = backdropRef.current ? isolateModalLayer(backdropRef.current) : () => {};
 
     document.body.style.overflow = "hidden";
     primaryActionRef.current?.focus();

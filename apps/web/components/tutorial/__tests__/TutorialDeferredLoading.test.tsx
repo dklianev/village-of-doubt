@@ -59,7 +59,7 @@ describe("tutorial deferred loading", () => {
     const progress = screen.getByRole("navigation", { name: "Ход на репетицията" });
     const navigation = screen.getByRole("navigation", { name: "Навигация между сцените" });
 
-    await user.click(screen.getByRole("button", { name: "Следваща сцена" }));
+    await user.click(screen.getByRole("button", { name: "Напред: следваща сцена" }));
     expect(loadTutorialDeferredSlide).toHaveBeenCalledTimes(1);
     expect(screen.getByRole("region", { name: "Сцена 2: Нощ" })).toBe(stage);
     expect(within(stage).getByRole("status")).toHaveTextContent("Зареждаме сцената...");
@@ -70,7 +70,7 @@ describe("tutorial deferred loading", () => {
     expect(screen.getByRole("navigation", { name: "Навигация между сцените" })).toBe(navigation);
     expect(screen.getByRole("button", { name: /2\. Нощ/ })).toHaveAttribute("aria-current", "step");
 
-    await user.click(screen.getByRole("button", { name: "Предишна сцена" }));
+    await user.click(screen.getByRole("button", { name: "Назад: предишна сцена" }));
     await act(async () => pending.resolve(TutorialDeferredSlide));
     expect(screen.getByRole("heading", { name: "Werewolf setup from RSC" })).toBeVisible();
     expect(screen.queryByText("Очите се затварят.")).not.toBeInTheDocument();
@@ -89,7 +89,7 @@ describe("tutorial deferred loading", () => {
     mount(`game=mafia_sport&step=1&redirect=${encodeURIComponent(invite)}#lesson`);
     const stage = screen.getByRole("region", { name: "Сцена 1: Събиране" });
     vi.spyOn(stage, "getBoundingClientRect").mockReturnValue({ height: 680 } as DOMRect);
-    await user.click(screen.getByRole("button", { name: "Следваща сцена" }));
+    await user.click(screen.getByRole("button", { name: "Напред: следваща сцена" }));
     await act(async () => first.reject(new Error("chunk failed")));
     expect(within(stage).getByRole("alert")).toHaveTextContent("Сцената не се зареди.");
     expect(screen.getByRole("button", { name: "Презареди страницата" })).toBeEnabled();

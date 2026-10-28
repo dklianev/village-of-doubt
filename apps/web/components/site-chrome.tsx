@@ -200,7 +200,7 @@ export default function SiteChrome({ initialSession }: { initialSession?: AuthSe
         </div>
       </div> : null}
 
-      <div className="site-utility-cluster" aria-label="Настройки">
+      <div className="site-utility-cluster" role="group" aria-label="Настройки">
         {isRoom ? <button className="site-icon-button" type="button" aria-label={soundLabel} data-tooltip={soundLabel} {...transientButtonAttributes} disabled={!interactive} onClick={toggleSound}>
           {soundEnabled ? <Volume2 className="site-icon" aria-hidden /> : <VolumeX className="site-icon" aria-hidden />}
         </button> : null}

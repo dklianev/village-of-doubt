@@ -177,7 +177,8 @@
   [data-ds-sheet],
   [data-ds-empty-state]
 ) *:focus-visible {
-  outline: none;
+  /* Invisible normally; forced-colors mode repaints it because it drops the box-shadow ring. */
+  outline: 2px solid transparent;
   box-shadow: var(--ds-focus-ring);
   outline-offset: 2px;
 }

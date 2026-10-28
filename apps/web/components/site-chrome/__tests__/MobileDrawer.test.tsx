@@ -86,6 +86,17 @@ describe("MobileDrawer", () => {
     await waitFor(() => expect(opener).toHaveFocus());
   });
 
+  it("names the drawer sound and theme controls as one settings group", async () => {
+    const user = userEvent.setup();
+    render(<DrawerHarness />);
+    await user.click(screen.getByRole("button", { name: "Отвори менюто" }));
+
+    const dialog = await screen.findByRole("dialog", { name: "Навигация" });
+    const settings = within(dialog).getByRole("group", { name: "Настройки" });
+    expect(within(settings).getByRole("button", { name: "Включи звука" })).toBeInTheDocument();
+    expect(within(settings).getByRole("button", { name: "Смени на светла тема" })).toBeInTheDocument();
+  });
+
   it("does not override the design-system Sheet identity from consumer CSS", () => {
     const chromeCss = readFileSync(resolve(process.cwd(), "components/site-chrome/SiteChrome.module.css"), "utf8");
 

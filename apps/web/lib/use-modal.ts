@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useEffectEvent, useRef } from "react";
+import { isolateModalLayer } from "./modal-isolation";
 
 const FOCUSABLE_SELECTOR =
   'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
@@ -27,6 +28,8 @@ export function useModal<T extends HTMLElement = HTMLDivElement>({
     previousActiveElement.current = document.activeElement as HTMLElement | null;
     const dialog = ref.current instanceof HTMLDialogElement ? ref.current : null;
     dialog?.showModal();
+    // showModal() already makes the rest of the page inert.
+    const releasePage = !dialog && ref.current ? isolateModalLayer(ref.current) : undefined;
     // Overlapping modals share the overflow captured by the first lock owner.
     if (!dialog) {
       if (scrollLockCount === 0) previousBodyOverflow = document.body.style.overflow;
@@ -75,6 +78,8 @@ export function useModal<T extends HTMLElement = HTMLDivElement>({
         scrollLockCount -= 1;
         if (scrollLockCount === 0) document.body.style.overflow = previousBodyOverflow;
       }
+      // The trigger sits in the isolated page, and an inert element cannot take focus.
+      releasePage?.();
       previousActiveElement.current?.focus();
     };
   }, [open]);

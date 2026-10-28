@@ -99,6 +99,25 @@ describe("local role dossiers", () => {
     expect(window.location.pathname + window.location.search + window.location.hash).toBe("/werewolf?source=home#roles");
   });
 
+  it("offers one close control and keeps the click-to-close backdrop out of focus order and the accessibility tree", async () => {
+    const user = userEvent.setup();
+    render(
+      <ImageConfigContext.Provider value={imageConfig}>
+        <RoleDossierTrigger family="werewolves" role="seer">Seer</RoleDossierTrigger>
+      </ImageConfigContext.Provider>,
+    );
+    await user.click(screen.getByRole("button", { name: "Seer" }));
+    const dialog = await screen.findByRole("dialog");
+    const close = within(dialog).getByRole("button", { name: "Затвори досието" });
+
+    expect(close).toHaveFocus();
+    await user.tab();
+    expect(close).toHaveFocus();
+    await user.tab({ shift: true });
+    expect(close).toHaveFocus();
+    expect(dialog.querySelector(".role-codex-detail-backdrop")).toHaveAttribute("aria-hidden", "true");
+  });
+
   it.each(["Escape", "backdrop", "close"])("restores background state, scroll and focus after %s", async (method) => {
     const user = userEvent.setup();
     const previouslyHidden = document.createElement("aside");

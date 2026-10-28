@@ -1853,6 +1853,17 @@ html[data-theme="light"] .utility-shell::before {
   transform: translateX(280%) rotate(18deg);
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .btn::before {
+    transition: none;
+  }
+
+  .btn:hover:not(:disabled),
+  .btn:active:not(:disabled) {
+    transform: none;
+  }
+}
+
 .role-sigil {
   background:
     radial-gradient(circle at 50% 48%, rgba(255, 246, 225, 0.3), transparent 52%),
@@ -2423,6 +2434,17 @@ html[data-theme="light"] .skeleton-card {
   animation-fill-mode: forwards;
 }
 
+/* Dismissal waits while the message is hovered or focused; the bar shows the same pause. */
+.toast-card[data-paused] .toast-progress {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast-card {
+    animation: none;
+  }
+}
+
 html[data-theme="light"] .toast-card {
   border-color: rgba(83, 52, 31, 0.16);
   background: rgba(252, 246, 236, 0.94);
@@ -2437,6 +2459,27 @@ html[data-theme="light"] .toast-copy strong {
 html[data-theme="light"] .toast-close {
   border-color: rgba(83, 52, 31, 0.14);
   color: rgba(42, 27, 16, 0.62);
+}
+
+/* The accents stay for icons and borders; on parchment the small label needs a darker ink (>= 6.3:1). */
+html[data-theme="light"] .toast-card[data-kind="success"] {
+  --toast-ink: #7a5214;
+}
+
+html[data-theme="light"] .toast-card[data-kind="warning"] {
+  --toast-ink: #8a4a12;
+}
+
+html[data-theme="light"] .toast-card[data-kind="error"] {
+  --toast-ink: #a12a20;
+}
+
+html[data-theme="light"] .toast-card[data-kind="info"] {
+  --toast-ink: #2d5590;
+}
+
+html[data-theme="light"] .toast-copy span {
+  color: var(--toast-ink);
 }
 
 @keyframes toastSlideIn {
@@ -2692,13 +2735,10 @@ body:has(.site-chrome[data-room="true"]) div:has(> [data-cookie-banner]) {
   min-height: calc(76px + env(safe-area-inset-bottom));
 }
 
+/* Up to three lines fit beside the 44px button, so the full sentence and its privacy link stay readable. */
 body:has(.site-chrome[data-room="true"]) [data-cookie-banner] p {
-  display: -webkit-box;
-  overflow: hidden;
   font-size: 0.7rem;
   line-height: 1.2;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 1;
 }
 
 body:has(.site-chrome[data-room="true"]) [data-cookie-banner] .btn {
@@ -2708,15 +2748,30 @@ body:has(.site-chrome[data-room="true"]) [data-cookie-banner] .btn {
   font-size: 0.68rem;
 }
 
+/* Toasts answer the player's own action, so they stack above the notice (about 54px tall) instead of
+ * under it, and above it in z-order when large text makes the notice taller. */
+body:has(.site-chrome[data-room="true"]):has([data-cookie-banner]) .toast-host {
+  bottom: calc(16px + 64px + env(safe-area-inset-bottom));
+  z-index: 91;
+}
+
 @media (max-width: 1023px) {
   /* Phones keep the collapsed command dock visible below the notice... */
   body:has(.site-chrome[data-room="true"]):has([data-play-command-surface]) [data-cookie-banner] {
     bottom: calc(82px + env(safe-area-inset-bottom));
   }
 
+  body:has(.site-chrome[data-room="true"]):has([data-play-command-surface]):has([data-cookie-banner]) .toast-host {
+    bottom: calc(82px + 64px + env(safe-area-inset-bottom));
+  }
+
   /* ...and an opened dock is a sheet of its own: the notice waits until it closes. */
   body:has(.site-chrome[data-room="true"]):has([data-play-command-surface][data-expanded="true"]) [data-cookie-banner] {
     visibility: hidden;
+  }
+
+  body:has(.site-chrome[data-room="true"]):has([data-play-command-surface][data-expanded="true"]):has([data-cookie-banner]) .toast-host {
+    bottom: max(18px, env(safe-area-inset-bottom));
   }
 }
 
@@ -2726,12 +2781,6 @@ body:has(.site-chrome[data-room="true"]) [data-cookie-banner] .btn {
     left: max(12px, env(safe-area-inset-left));
     width: auto;
     max-width: none;
-  }
-
-  body:has(.site-chrome[data-room="true"]) [data-cookie-banner] p {
-    font-size: 0.7rem;
-    line-height: 1.2;
-    -webkit-line-clamp: 1;
   }
 }
 
@@ -3182,6 +3231,12 @@ html[data-vt="theme"]::view-transition-new(root) {
     var(--texture-wood) center / 480px 480px;
   box-shadow: 0 28px 90px rgba(0, 0, 0, 0.42);
   animation: toastSlideUp 220ms cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shortcut-modal {
+    animation: none;
+  }
 }
 
 .shortcut-modal-close {

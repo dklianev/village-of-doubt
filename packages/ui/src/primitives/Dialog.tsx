@@ -1,7 +1,7 @@
 "use client";
 
 import * as RDialog from "@radix-ui/react-dialog";
-import { useInsertionEffect, useRef, type CSSProperties, type ReactNode } from "react";
+import { useId, useInsertionEffect, useRef, type ReactNode } from "react";
 
 export interface DialogProps {
   open: boolean;
@@ -12,26 +12,13 @@ export interface DialogProps {
   footer?: ReactNode;
 }
 
-const VISUALLY_HIDDEN_STYLE: CSSProperties = {
-  position: "absolute",
-  width: "1px",
-  height: "1px",
-  padding: 0,
-  margin: "-1px",
-  overflow: "hidden",
-  clip: "rect(0, 0, 0, 0)",
-  whiteSpace: "nowrap",
-  border: 0,
-};
-
+// CSS keeps the spring settle without adding an animation runtime to every dialog.
 const DIALOG_RUNTIME_CSS = `
 @keyframes ds-dialog-overlay-open {
   from { opacity: 0; }
-  to { opacity: 1; }
 }
 
 @keyframes ds-dialog-overlay-close {
-  from { opacity: 1; }
   to { opacity: 0; }
 }
 
@@ -40,17 +27,9 @@ const DIALOG_RUNTIME_CSS = `
     opacity: 0;
     transform: translate(-50%, calc(-50% + 12px)) scale(0.98);
   }
-  to {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-  }
 }
 
 @keyframes ds-dialog-close {
-  from {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-  }
   to {
     opacity: 0;
     transform: translate(-50%, calc(-50% + 12px)) scale(0.98);
@@ -74,14 +53,22 @@ const DIALOG_RUNTIME_CSS = `
 }
 
 .ds-dialog {
+  --ds-dialog-block-gutter: max(24px, env(safe-area-inset-top, 0px), env(safe-area-inset-bottom, 0px));
   position: fixed;
   top: 50%;
   left: 50%;
   z-index: 101;
   box-sizing: border-box;
-  width: min(92vw, calc(100vw - 48px), 480px);
+  width: min(calc(100vw - 48px), 480px);
+  max-height: calc(100vh - 2 * var(--ds-dialog-block-gutter));
+  max-height: calc(100dvh - 2 * var(--ds-dialog-block-gutter));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  overflow-wrap: anywhere;
+  scroll-padding-block: 28px;
   padding: 28px;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
   background: var(--ds-surface-paper);
   color: var(--ds-ink-primary);
@@ -92,12 +79,18 @@ const DIALOG_RUNTIME_CSS = `
 
 .ds-dialog[data-state="open"] {
   animation: ds-dialog-open 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
-  /* Spring approximation preserves the previous responsive settle without runtime JS. */
-  animation-timing-function: linear(0.0000 0.0%, 0.0530 3.8%, 0.1751 7.7%, 0.3249 11.5%, 0.4759 15.4%, 0.6130 19.2%, 0.7288 23.1%, 0.8213 26.9%, 0.8914 30.8%, 0.9420 34.6%, 0.9765 38.5%, 0.9985 42.3%, 1.0112 46.2%, 1.0174 50.0%, 1.0192 53.8%, 1.0184 57.7%, 1.0162 61.5%, 1.0133 65.4%, 1.0104 69.2%, 1.0077 73.1%, 1.0054 76.9%, 1.0036 80.8%, 1.0022 84.6%, 1.0012 88.5%, 1.0005 92.3%, 1.0001 96.2%, 0.9998 100.0%);
+  animation-timing-function: linear(0 0%, .053 3.8%, .1751 7.7%, .3249 11.5%, .4759 15.4%, .613 19.2%, .7288 23.1%, .8213 26.9%, .8914 30.8%, .942 34.6%, .9765 38.5%, .9985 42.3%, 1.0112 46.2%, 1.0174 50%, 1.0192 53.8%, 1.0184 57.7%, 1.0162 61.5%, 1.0133 65.4%, 1.0104 69.2%, 1.0077 73.1%, 1.0054 76.9%, 1.0036 80.8%, 1.0022 84.6%, 1.0012 88.5%, 1.0005 92.3%, 1.0001 96.2%, .9998 100%);
 }
 
 .ds-dialog[data-state="closed"] {
   animation: ds-dialog-close 180ms cubic-bezier(0.32, 0, 0.67, 0) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-dialog[data-state],
+  .ds-dialog-overlay[data-state] {
+    animation: none;
+  }
 }
 `;
 
@@ -118,6 +111,7 @@ function useDialogStyles() {
 export function Dialog({ open, onOpenChange, title, description, children, footer }: DialogProps) {
   useDialogStyles();
   const returnFocusRef = useRef<HTMLElement | null>(null);
+  const descriptionId = useId();
 
   return (
     <RDialog.Root open={open} onOpenChange={onOpenChange}>
@@ -126,6 +120,17 @@ export function Dialog({ open, onOpenChange, title, description, children, foote
         <RDialog.Content
           className="ds-dialog"
           data-ds-dialog
+          aria-describedby={description ? descriptionId : undefined}
+          onFocusCapture={(event) => {
+            const control = event.target;
+            if (!event.currentTarget.contains(control)) return;
+            const viewport = event.currentTarget.getBoundingClientRect();
+            const bounds = control.getBoundingClientRect();
+            // Radix wraps focus with preventScroll, including to absolute-positioned controls.
+            if (bounds.top < viewport.top || bounds.bottom > viewport.bottom) {
+              control.scrollIntoView({ block: "nearest" });
+            }
+          }}
           onOpenAutoFocus={() => {
             // This controlled wrapper has an external opener, not a Radix Trigger.
             const activeElement = document.activeElement;
@@ -148,8 +153,9 @@ export function Dialog({ open, onOpenChange, title, description, children, foote
           >
             {title}
           </RDialog.Title>
-          {description && (
+          {description ? (
             <RDialog.Description
+              id={descriptionId}
               style={{
                 color: "var(--ds-ink-soft)",
                 margin: 0,
@@ -159,12 +165,7 @@ export function Dialog({ open, onOpenChange, title, description, children, foote
             >
               {description}
             </RDialog.Description>
-          )}
-          {!description && (
-            <RDialog.Description style={VISUALLY_HIDDEN_STYLE}>
-              Диалогов прозорец.
-            </RDialog.Description>
-          )}
+          ) : null}
           <div>{children}</div>
           {footer && (
             <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: "12px" }}>

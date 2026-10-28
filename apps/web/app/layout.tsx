@@ -4,6 +4,7 @@ import { BrandLogo } from "@/components/site-chrome/BrandLogo";
 import { Suspense } from "react";
 import { NavigationTelemetry } from "@/components/navigation-telemetry";
 import { NonCriticalWidgets } from "@/components/non-critical-widgets";
+import { CookieNoticeFallback } from "@/components/CookieNoticeFallback";
 import { ResourceHints } from "@/components/resource-hints";
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -101,7 +102,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <SiteFooter />
         <ToastHost />
         <Suspense fallback={null}>
-          <NonCriticalWidgets initialSession={null} />
+          <NonCriticalWidgets initialSession={null} cookieFallback={<CookieNoticeFallback />} />
         </Suspense>
         <Suspense fallback={null}>
           <NavigationTelemetry />

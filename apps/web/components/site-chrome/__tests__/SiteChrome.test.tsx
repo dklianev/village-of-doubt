@@ -247,6 +247,13 @@ describe("Senkite navigation", () => {
     expect(screen.queryByRole("button", { name: "Включи звука" })).not.toBeInTheDocument();
   });
 
+  it("names the header settings as one group for assistive technology", () => {
+    render(<SiteChrome initialSession={null} />);
+
+    const settings = screen.getByRole("group", { name: "Настройки" });
+    expect(within(settings).getByRole("button", { name: "Смени на светла тема" })).toBeInTheDocument();
+  });
+
   it.each(["/lobby/ABC234", "/play/ABC234"])("does not let Firefox restore transient button states on %s", (pathname) => {
     route.pathname = pathname;
     const { container } = render(<SiteChrome initialSession={null} />);

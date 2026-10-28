@@ -183,7 +183,7 @@ function TutorialSession({ mode, continueHref, setupScene }: { mode: TutorialMod
       </span>
 
       <nav className="tutorial-nav" aria-label="Навигация между сцените">
-        <button type="button" {...{ autoComplete: "off" }} className="btn btn-secondary" onClick={() => goTo(current - 1)} disabled={!ready || current === 1} aria-label="Предишна сцена">
+        <button type="button" {...{ autoComplete: "off" }} className="btn btn-secondary" onClick={() => goTo(current - 1)} disabled={!ready || current === 1} aria-label="Назад: предишна сцена">
           <ArrowLeft aria-hidden size={18} />
           Назад
         </button>
@@ -198,7 +198,7 @@ function TutorialSession({ mode, continueHref, setupScene }: { mode: TutorialMod
             className="btn btn-primary tutorial-nav-action"
             onClick={() => goTo(current + 1)}
             disabled={!ready}
-            aria-label="Следваща сцена"
+            aria-label="Напред: следваща сцена"
           >
             Напред
             <ArrowRight aria-hidden size={18} />

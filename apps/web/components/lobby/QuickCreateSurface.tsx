@@ -268,7 +268,7 @@ export function QuickCreateSurface({
               </div>
               <span className="create-roster-capacity">{players} места</span>
             </div>
-            <div className="create-role-portraits" aria-label="Всички роли в състава">
+            <div className="create-role-portraits" role="group" aria-label="Всички роли в състава">
               {roles.map(([role, count]) => {
                 const source = roleArtSource(state.family, role);
                 return (
@@ -335,7 +335,7 @@ export function QuickCreateSurface({
       </div>
       </div>
 
-      <div className="create-mobile-action" aria-label="Бързо създаване">
+      <div className="create-mobile-action" role="group" aria-label="Бързо създаване">
         <span>
           <strong>{players}</strong>
           <small>{formatEstimatedDuration(estimatedDurationSeconds(state))}</small>
