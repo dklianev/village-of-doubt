@@ -13,7 +13,7 @@ export function SlideSetup({ mode }: { mode: TutorialMode }) {
   return (
     <TutorialSlide
       bg="day"
-      kicker="сцена 1 - преди нощта"
+      kicker="Сцена 1 - преди нощта"
       title="Масата се събира."
       body={
         <>

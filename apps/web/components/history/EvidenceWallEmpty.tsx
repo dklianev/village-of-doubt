@@ -1,16 +1,17 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { ButtonLink } from "@/components/button-link";
 import styles from "./Archive.module.css";
 
 export function EvidenceWallEmpty() {
   return (
     <section className={styles.empty} data-state="empty">
       <div>
-        <h2>Първата нощ ще остави следа тук.</h2>
+        <h2>Първата публична вечер ще остави следа тук.</h2>
         <p>Все още няма завършени публични игри. Частните вечери остават извън този архив.</p>
         <div className={styles.emptyActions}>
-          <Link href="/" className={styles.textLink}>Избери игра<ArrowRight size={18} aria-hidden="true" /></Link>
+          <ButtonLink href="/create" prefetch={false}>Създай стая<ArrowRight size={18} aria-hidden="true" /></ButtonLink>
           <Link href="/tutorial" className={styles.textLink}>Първи стъпки<ArrowRight size={18} aria-hidden="true" /></Link>
         </div>
       </div>

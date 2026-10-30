@@ -27,32 +27,32 @@ const Body = () => (
 );
 
 export const Default: Story = {
-  args: { eyebrow: "ДОСИЕ", children: <Body /> },
+  args: { eyebrow: "Досие", children: <Body /> },
 };
 
 export const WithMeta: Story = {
-  args: { eyebrow: "ДОСИЕ", meta: <Eyebrow tone="gold">14.05</Eyebrow>, children: <Body /> },
+  args: { eyebrow: "Досие", meta: <Eyebrow tone="gold">14.05</Eyebrow>, children: <Body /> },
 };
 
 export const Dense: Story = {
-  args: { eyebrow: "КРАТКО", density: "sm", children: <Body /> },
+  args: { eyebrow: "Кратко", density: "sm", children: <Body /> },
 };
 
 export const Spacious: Story = {
-  args: { eyebrow: "ГОЛЯМО", density: "lg", children: <Body /> },
+  args: { eyebrow: "Голямо", density: "lg", children: <Body /> },
 };
 
 export const AllVariants: Story = {
   args: { children: <Body /> },
   render: () => (
     <div style={{ display: "grid", gap: "18px", padding: "32px", width: "min(90vw, 720px)" }}>
-      <PaperCard eyebrow="КРАТКО" density="sm">
+      <PaperCard eyebrow="Кратко" density="sm">
         <Body />
       </PaperCard>
-      <PaperCard eyebrow="СТАНДАРТНО" density="md" meta={<Eyebrow tone="gold">14.05</Eyebrow>}>
+      <PaperCard eyebrow="Стандартно" density="md" meta={<Eyebrow tone="gold">14.05</Eyebrow>}>
         <Body />
       </PaperCard>
-      <PaperCard eyebrow="ГОЛЯМО" density="lg">
+      <PaperCard eyebrow="Голямо" density="lg">
         <Body />
       </PaperCard>
     </div>
@@ -63,7 +63,7 @@ export const InteractionStates: Story = {
   args: { children: <Body /> },
   render: () => (
     <div style={{ display: "grid", gap: "18px", padding: "32px", width: "min(90vw, 720px)" }}>
-      <PaperCard eyebrow="ДЕЙСТВИЕ" meta={<Eyebrow tone="gold">ФОКУС</Eyebrow>}>
+      <PaperCard eyebrow="Действие" meta={<Eyebrow tone="gold">Фокус</Eyebrow>}>
         <Body />
         <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
           <Pill style={{ boxShadow: "var(--ds-focus-ring)" }}>Продължи</Pill>
@@ -81,7 +81,7 @@ export const InteractionStates: Story = {
 
 export const Interactive: Story = {
   args: {
-    eyebrow: "ДЕЙСТВИЕ",
+    eyebrow: "Действие",
     interactive: true,
     children: <Body />,
   },
@@ -89,7 +89,7 @@ export const Interactive: Story = {
 
 export const WithAccentWin: Story = {
   args: {
-    eyebrow: "ПОБЕДА",
+    eyebrow: "Победа",
     accent: "win",
     children: <Body />,
   },
@@ -97,7 +97,7 @@ export const WithAccentWin: Story = {
 
 export const WithAccentLoss: Story = {
   args: {
-    eyebrow: "ЗАГУБА",
+    eyebrow: "Загуба",
     accent: "loss",
     children: (
       <>
@@ -112,7 +112,7 @@ export const WithAccentLoss: Story = {
 
 export const WithAccentWarning: Story = {
   args: {
-    eyebrow: "ВНИМАНИЕ",
+    eyebrow: "Внимание",
     accent: "warning",
     children: (
       <>

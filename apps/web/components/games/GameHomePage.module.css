@@ -72,7 +72,7 @@
   transform: none;
 }
 
-:global(.game-home-hero::before), :global(.game-home-hero::after) {
+:global(.game-home-hero)::before, :global(.game-home-hero)::after {
   content: none;
 }
 
@@ -132,10 +132,12 @@
 }
 
 :global(.game-home-title-accent) {
-  width: 76px;
-  height: 2px;
-  margin-top: 24px;
-  background: var(--family-accent);
+  width: 132px;
+  height: 10px;
+  margin-top: 22px;
+  background: var(--ds-motif-color);
+  -webkit-mask: var(--ds-motif-mask);
+  mask: var(--ds-motif-mask);
 }
 
 :global(.game-home-hero__lede) {
@@ -674,7 +676,7 @@
   overflow: visible;
 }
 
-:global(.game-home-shell .quickstart-mini-card::before), :global(.game-home-shell .quickstart-mini-card::after) {
+:global(.game-home-shell .quickstart-mini-card)::before, :global(.game-home-shell .quickstart-mini-card)::after {
   content: none;
 }
 
@@ -718,12 +720,11 @@
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 0;
-  text-transform: none;
   text-decoration: underline;
   text-underline-offset: 4px;
 }
 
-:global(.game-home-shell .quickstart-card-cta::before), :global(.game-home-shell .quickstart-card-cta::after) {
+:global(.game-home-shell .quickstart-card-cta)::before, :global(.game-home-shell .quickstart-card-cta)::after {
   content: none;
 }
 
@@ -872,8 +873,9 @@
   }
 
   :global(.game-home-title-accent) {
-    margin-top: 16px;
-    width: 56px;
+    margin-top: 14px;
+    width: 96px;
+    height: 8px;
   }
 
   :global(.game-home-hero__lede) {

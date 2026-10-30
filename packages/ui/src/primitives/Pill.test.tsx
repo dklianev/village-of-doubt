@@ -33,7 +33,7 @@ describe("Pill", () => {
     expect(pill.dataset.tracked).toBe("true");
   });
 
-  it("preserves text content semantics when tracked uppercase is active", () => {
+  it("preserves text content semantics when tracked is set", () => {
     const { getByRole } = render(<Pill tracked>Избери игра</Pill>);
     expect(getByRole("button").textContent).toBe("Избери игра");
   });

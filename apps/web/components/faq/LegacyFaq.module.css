@@ -63,7 +63,7 @@
 :global(.faq-hearth-empty button) { display: inline-flex; align-items: center; gap: 12px; padding: 10px 14px; min-height: 44px; border: 1px solid var(--support-line); border-radius: 6px; color: var(--support-text); background: none; }
 :global(.faq-hearth-empty button svg) { width: 18px; height: 18px; }
 :global(.faq-hearth-foot) { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 24px; width: 100%; max-width: 1104px; margin: 48px auto 0; padding: 32px 32px 0; border-top: 1px solid var(--support-line); }
-:global(.faq-foot-kicker) { color: var(--support-metal); font-size: .75rem; text-transform: uppercase; margin-bottom: 6px; }
+:global(.faq-foot-kicker) { color: var(--support-metal); font-size: var(--ds-type-label); line-height: var(--ds-leading-label); margin-bottom: 6px; }
 :global(.faq-hearth-foot h2) { margin: 0; }
 :global(.faq-hearth-foot-actions) { display: flex; align-items: center; flex-wrap: wrap; gap: 20px; font-size: .9rem; }
 :global(.faq-hearth-foot-actions svg) { width: 18px; height: 18px; }

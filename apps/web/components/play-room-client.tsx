@@ -947,7 +947,7 @@ export function PlayRoomClientCore({
 
     return (
       <PlayActionDock
-        eyebrow={isSportDayFlow || canVote ? "дневен ред" : "личен ход"}
+        eyebrow={isSportDayFlow || canVote ? "Дневен ред" : "Личен ход"}
         privateAction={canUseNightAction}
         heading={actionDockHeading}
         kind={actionDockKind}
@@ -1062,7 +1062,7 @@ export function PlayRoomClientCore({
 
             {isBlessed ? (
               <article className="play-personal-context play-blessed-card">
-                <p className="section-kicker">тайна закрила</p>
+                <p className="section-kicker">Тайна закрила</p>
                 <h2>Свещеникът те благослови</h2>
                 <p>
                   Благословията остава върху теб до края на играта и спира нощни убийства срещу теб.
@@ -1115,7 +1115,7 @@ export function PlayRoomClientCore({
 
     const consentWarning = hasNarratorWarning ? (
       <article className="narrator-warning-card mt-8 rounded-[2rem] border border-[#842f2b]/50 bg-[#842f2b]/25 p-6">
-        <p className="text-sm uppercase tracking-[0.3em] text-[#c18a38]">важно предупреждение</p>
+        <p className="text-sm font-semibold text-[#c18a38]">Важно предупреждение</p>
         <h2 className="mt-2 text-3xl font-black">Пълен Разказвач вижда всички роли</h2>
         <p className="mt-3 text-[#ead9ba]">
           При този режим човекът Разказвач може да види тайните роли и действия, за да води играта ръчно.

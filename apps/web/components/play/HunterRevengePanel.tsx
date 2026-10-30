@@ -17,11 +17,11 @@ export function HunterRevengePanel({
 
   return (
     <section className="ritual-panel mt-8 rounded-[2rem] p-6">
-      <p className="section-kicker">отмъщение на Ловеца</p>
+      <p className="section-kicker">Отмъщение на Ловеца</p>
       <h2 className="mt-2 text-3xl font-black">Последен изстрел</h2>
       <div className="play-selected-target mt-5" data-filled={selectedTarget ? "true" : undefined}>
-        <span>последна цел</span>
-        <strong>{selectedTarget?.displayName ?? "избери играч от масата"}</strong>
+        <span>Последна цел</span>
+        <strong>{selectedTarget?.displayName ?? "Избери играч от масата"}</strong>
       </div>
       <div className="play-action-buttons mt-5 flex flex-wrap gap-3">
         <Button

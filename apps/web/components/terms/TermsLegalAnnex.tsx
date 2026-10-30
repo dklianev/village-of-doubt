@@ -98,7 +98,7 @@ export function TermsLegalAnnex() {
   return (
     <section id="terms-legal" tabIndex={-1} className="terms-section terms-section-annex">
       <header className="terms-section-head">
-        <p className="terms-annex-kicker">правни условия</p>
+        <p className="terms-annex-kicker">Правни условия</p>
         <h2 className="terms-annex-title">Условия за услугата</h2>
         <p className="terms-section-lede">Като играеш, ти приемаш правилата по подразбиране.</p>
       </header>

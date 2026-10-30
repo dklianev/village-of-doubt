@@ -49,18 +49,6 @@ vi.mock("@/components/play/LiveCuePanel", () => ({
   LiveCuePanel: ({ narratorVoice }: { narratorVoice?: string }) => <div data-testid="live-cue-panel" data-narrator-voice={narratorVoice} />,
 }));
 
-vi.mock("@/components/play/PhaseRail", () => ({
-  PhaseRail: () => <div data-testid="phase-rail" />,
-}));
-
-vi.mock("@/components/play/RulesSummary", () => ({
-  RulesSummary: () => <div data-testid="rules-summary" />,
-}));
-
-vi.mock("@/components/play/PhaseGuide", () => ({
-  PhaseGuide: () => <div data-testid="phase-guide" />,
-}));
-
 vi.mock("@/components/play/Timer", () => ({
   Timer: () => <div data-testid="timer" />,
 }));
@@ -1266,7 +1254,7 @@ describe("PlayRoomClient orchestrator", () => {
 
     render(<PlayRoomClient code="ABCD" createOptions={{ mode: "werewolves_classic" }} />);
 
-    await user.click(screen.getByRole("button", { name: /^Избери Борил: онлайн, клавиш \d$/ }));
+    await user.click(screen.getByRole("button", { name: /^Избери Борил: Онлайн, клавиш \d$/ }));
     expect(screen.getByTestId("night-action")).toHaveTextContent("u2|");
 
     const toggle = await screen.findByRole("button", { name: "Покажи личния ход" });
@@ -1295,15 +1283,15 @@ describe("PlayRoomClient orchestrator", () => {
 
     render(<PlayRoomClient code="ABCD" createOptions={{ mode: "werewolves_classic" }} />);
 
-    await user.click(screen.getByRole("button", { name: /^Избери Борил: онлайн, клавиш \d$/ }));
+    await user.click(screen.getByRole("button", { name: /^Избери Борил: Онлайн, клавиш \d$/ }));
     expect(screen.getByTestId("night-action")).toHaveTextContent("u2|");
 
-    await user.click(screen.getByRole("button", { name: /^Избери Рада: онлайн, клавиш \d$/ }));
+    await user.click(screen.getByRole("button", { name: /^Избери Рада: Онлайн, клавиш \d$/ }));
     expect(screen.getByTestId("night-action")).toHaveTextContent("u2|u3");
 
     await user.click(
       screen.getByRole("button", {
-        name: "Избери Борил: онлайн, избрана цел",
+        name: "Избери Борил: Онлайн, избрана цел",
       }),
     );
     expect(screen.getByTestId("night-action")).toHaveTextContent("|");
@@ -1354,7 +1342,7 @@ describe("PlayRoomClient orchestrator", () => {
     render(<PlayRoomClient code="ABCD" createOptions={{ mode: "werewolves_classic" }} />);
 
     expect(
-      screen.queryByRole("button", { name: /^Избери Борил: онлайн, клавиш \d$/ }),
+      screen.queryByRole("button", { name: /^Избери Борил: Онлайн, клавиш \d$/ }),
     ).not.toBeInTheDocument();
     expect(screen.queryByTestId("voting-panel")).not.toBeInTheDocument();
     expect(await screen.findByTestId("role-card")).toBeInTheDocument();
@@ -1378,7 +1366,7 @@ describe("PlayRoomClient orchestrator", () => {
     render(<PlayRoomClient code="ABCD" createOptions={{ mode: "werewolves_classic" }} />);
 
     expect(
-      screen.queryByRole("button", { name: /^Избери Борил: онлайн, клавиш \d$/ }),
+      screen.queryByRole("button", { name: /^Избери Борил: Онлайн, клавиш \d$/ }),
     ).not.toBeInTheDocument();
     expect(screen.queryByTestId("voting-panel")).not.toBeInTheDocument();
   });
@@ -1402,10 +1390,10 @@ describe("PlayRoomClient orchestrator", () => {
     render(<PlayRoomClient code="ABCD" createOptions={{ mode: "werewolves_classic" }} />);
 
     expect(screen.getByTestId("hunter-revenge")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /^Избери Борил: онлайн, клавиш \d$/ }));
+    await user.click(screen.getByRole("button", { name: /^Избери Борил: Онлайн, клавиш \d$/ }));
     expect(
       screen.getByRole("button", {
-        name: /^Избери Борил: онлайн, клавиш \d, избрана цел$/,
+        name: /^Избери Борил: Онлайн, клавиш \d, избрана цел$/,
       }),
     ).toBeInTheDocument();
   });
@@ -1429,7 +1417,7 @@ describe("PlayRoomClient orchestrator", () => {
 
     expect(screen.queryByTestId("hunter-revenge")).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: /^Избери Борил: онлайн, клавиш \d$/ }),
+      screen.queryByRole("button", { name: /^Избери Борил: Онлайн, клавиш \d$/ }),
     ).not.toBeInTheDocument();
   });
 
@@ -1496,8 +1484,8 @@ describe("PlayRoomClient orchestrator", () => {
       privateRole: { role: "hunter", roleNameBg: "Ловец", hunterRevengeAvailable: false },
     });
     const view = render(<PlayRoomClient code="ABCD" />);
-    fireEvent.click(screen.getByRole("button", { name: /^Избери Борил: онлайн, клавиш \d$/ }));
-    expect(screen.getByRole("button", { name: /^Избери Борил: онлайн, клавиш \d, избрана цел$/ })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /^Избери Борил: Онлайн, клавиш \d$/ }));
+    expect(screen.getByRole("button", { name: /^Избери Борил: Онлайн, клавиш \d, избрана цел$/ })).toBeInTheDocument();
 
     mockHooks("hunter_revenge", {
       room,
@@ -1511,7 +1499,7 @@ describe("PlayRoomClient orchestrator", () => {
     view.rerender(<PlayRoomClient code="ABCD" />);
 
     expect(screen.getByTestId("hunter-revenge")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^Избери Борил: онлайн, клавиш \d$/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Избери Борил: Онлайн, клавиш \d$/ })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /избрана цел$/ })).not.toBeInTheDocument();
     fireEvent.keyDown(window, { key: "Enter" });
     expect(send).not.toHaveBeenCalledWith("submitHunterRevenge", expect.anything());
@@ -1589,7 +1577,7 @@ describe("PlayRoomClient orchestrator", () => {
     render(<PlayRoomClient code="ABCD" createOptions={{ mode: "werewolves_classic" }} />);
 
     expect(
-      screen.getByRole("button", { name: /^Избери Борил: онлайн, клавиш \d$/ }),
+      screen.getByRole("button", { name: /^Избери Борил: Онлайн, клавиш \d$/ }),
     ).toBeInTheDocument();
     expect(screen.getByTestId("voting-panel")).toBeInTheDocument();
   });

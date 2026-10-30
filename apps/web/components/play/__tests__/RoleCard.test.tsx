@@ -48,7 +48,7 @@ describe("RoleCard", () => {
     expect(card).toHaveAttribute("data-role-presentation", "console");
     expect(card).not.toHaveClass("paper-card");
     expect(card).toHaveAttribute("data-private-dossier", "true");
-    expect(screen.getByText("само за теб")).toBeVisible();
+    expect(screen.getByText("Само за теб")).toBeVisible();
     expect(screen.getByRole("heading", { name })).toBeVisible();
     // The console portrait box tops out at 120x180 CSS px, so the 520x780 thumb stays sharp at 3x.
     expect(card.getAttribute("style")).toContain("/thumbs/");
@@ -135,7 +135,7 @@ describe("RoleCard", () => {
     const guide = ROLE_GUIDE_BG[code]!;
     const details = screen.getByText("За ролята").closest("details");
     expect(details).not.toHaveAttribute("open");
-    expect(screen.getByText("само за теб")).toBeVisible();
+    expect(screen.getByText("Само за теб")).toBeVisible();
     expect(screen.getByRole("heading", { name })).toBeVisible();
     expect(screen.getByText(guide.team)).toBeVisible();
     expect(screen.getByText(guide.summary)).toBeVisible();
@@ -232,7 +232,7 @@ describe("RoleCard", () => {
   it("renders the private role guide as a private dossier without implementation copy", () => {
     render(<RoleCard role={{ role: "seer", roleNameBg: "Ясновидка" }} result={null} players={players} />);
 
-    expect(screen.getByText("само за теб")).toBeInTheDocument();
+    expect(screen.getByText("Само за теб")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Ясновидка" })).toBeInTheDocument();
     expect(screen.getByText("Отбор")).toBeInTheDocument();
     expect(screen.getByText("Кога действа")).toBeInTheDocument();

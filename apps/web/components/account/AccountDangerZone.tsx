@@ -119,7 +119,7 @@ export function AccountDangerZone({ email }: { email: string }) {
             triggerRef.current?.focus({ preventScroll: true });
           }}
         >
-          <p className={styles.dialogKicker}>необратимо действие</p>
+          <p className={styles.dialogKicker}>Необратимо действие</p>
           <h3 id={dialogTitleId}>Сигурен/сигурна ли си?</h3>
           <p>
             За потвърждение напиши <strong>ИЗТРИЙ</strong>. Това действие премахва досието и

@@ -33,7 +33,7 @@ export function OfflineClient() {
         <div className="offline-hero-copy">
           <p className="offline-kicker">
             <WifiOff aria-hidden strokeWidth={2} />
-            <span>връзката прекъсна</span>
+            <span>Връзката прекъсна</span>
           </p>
           <h1>Няма връзка</h1>
           <p>

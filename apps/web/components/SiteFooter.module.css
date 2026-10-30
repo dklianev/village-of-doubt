@@ -13,8 +13,23 @@
 .links {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   justify-content: center;
   gap: 8px;
+}
+
+@media (max-width: 480px) {
+  .links {
+    display: grid;
+    grid-template-columns: repeat(2, auto);
+    justify-content: center;
+    justify-items: start;
+    gap: 0 32px;
+  }
+
+  .links > span {
+    display: none;
+  }
 }
 
 .links a {

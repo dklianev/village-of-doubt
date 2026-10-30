@@ -81,8 +81,8 @@ export function replayEventLabel(type: string) {
 }
 
 export function replayVisibilityLabel(visibility: string) {
-  const labels: Record<string, string> = { public: "публично", private: "лично", faction: "отборно", moderator: "за разказвача" };
-  return labels[visibility] ?? "неуточнена видимост";
+  const labels: Record<string, string> = { public: "Публично", private: "Лично", faction: "Отборно", moderator: "За Разказвача" };
+  return labels[visibility] ?? "Неизвестна видимост";
 }
 
 export function replayEventTone(type: string) {

@@ -225,7 +225,6 @@
   box-shadow: none;
   font-size: 16px;
   letter-spacing: 0;
-  text-transform: none;
 }
 :global(.join-entry-hero + .join-submit) { margin-top: 28px; }
 :global(.join-create-link) { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; font-size: 14px; color: var(--join-accent); text-underline-offset: 4px; }

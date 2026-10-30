@@ -108,7 +108,7 @@ export function WelcomeModal({ displayName }: { displayName: string }) {
         </button>
 
         <div className={styles.content}>
-          <p className={styles.kicker}>добре дошъл, {displayName}</p>
+          <p className={styles.kicker}>Добре дошъл, {displayName}</p>
           <h2 id={titleId}>Мястото ти е готово.</h2>
           <div id={descriptionId} className={styles.description}>
             <p className={styles.body}>

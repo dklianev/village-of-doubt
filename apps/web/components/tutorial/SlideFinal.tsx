@@ -9,7 +9,7 @@ export function SlideFinal({ mode, continueHref }: TutorialSceneProps) {
   const destination = continueHref ? tutorialDestination(continueHref) : null;
   const invitation = destination?.invitation;
   return (
-    <TutorialSlide bg="night" kicker="сцена 6 - твоята истинска вечер" title="Изборът сега е твой."
+    <TutorialSlide bg="night" kicker="Сцена 6 - твоята истинска вечер" title="Изборът сега е твой."
       body={<p>{invitation ? "Поканата ти е запазена. Върни се при компанията, когато си готов." : continueHref ? "Вече познаваш първите ходове. Продължи оттам, откъдето започна." : "Знаеш първите ходове. Имаш код от приятел или ще събереш своя компания?"}</p>}>
       <div className="tutorial-final-destination">
         <p className="tutorial-role-private">{destination ? invitation ? "Запазена покана" : destination.name ? `Запазена дестинация: ${destination.name}` : "Запазена страница" : world.name}</p>
