@@ -4,8 +4,10 @@ if (!["desktop", "mobile"].includes(preset)) {
 }
 
 const port = process.env.LHCI_PORT ?? "3410";
-const baseUrl = `http://127.0.0.1:${port}`;
+const baseUrl = `https://127.0.0.1:${port}`;
 const isDesktop = preset === "desktop";
+// scripts/lighthouse-server.mjs serves HTTP/2 with a throwaway self-signed certificate.
+const chromeFlags = "--ignore-certificate-errors";
 
 module.exports = {
   ci: {
@@ -25,6 +27,7 @@ module.exports = {
       numberOfRuns: 3,
       settings: isDesktop
         ? {
+            chromeFlags,
             formFactor: "desktop",
             screenEmulation: {
               mobile: false,
@@ -43,6 +46,7 @@ module.exports = {
             },
           }
         : {
+            chromeFlags,
             ...(process.env.LIGHTHOUSE_SAVE_ASSETS === "1" ? { saveAssets: true } : {}),
           },
     },

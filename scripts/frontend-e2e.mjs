@@ -1221,7 +1221,30 @@ function watchPage(page, label, { expectedHttpError } = {}) {
     );
   });
 
+  // WebKit rejects fetches that a document starts while the main frame is replacing it, and reports each as an
+  // access control failure with no failed request. Router prefetches from a page that redirects on load hit this.
+  let leavingDocument = false;
+  page.on("request", (request) => {
+    if (request.isNavigationRequest() && request.frame() === page.mainFrame()) {
+      leavingDocument = true;
+    }
+  });
+  page.on("framenavigated", (frame) => {
+    if (frame === page.mainFrame()) {
+      leavingDocument = false;
+    }
+  });
+  // Playwright splits WebKit's console text at the first colon, so the URL scheme ends up in the error name.
+  const rejectedFetchUrl = (error) => {
+    const scheme = /^Fetch API cannot load (https?)$/.exec(error.name)?.[1];
+    const rest = /^(\/\S+) due to access control checks\.$/.exec(error.message)?.[1];
+    return scheme && rest ? `${scheme}:/${rest}` : null;
+  };
+
   page.on("pageerror", (error) => {
+    if (leavingDocument && rejectedFetchUrl(error)?.startsWith(`${baseUrl}/`)) {
+      return;
+    }
     issues.push(`page error: ${error.message}`);
   });
 

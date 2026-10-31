@@ -767,3 +767,56 @@ test("browser watchers retain real image/font failures and application errors, i
     await assert.rejects(watcher.assertClean(), expected);
   }
 });
+
+test("a WebKit fetch rejection passes only while the main frame is leaving that document", async () => {
+  const baseUrl = "http://127.0.0.1:3401";
+  // Playwright splits WebKit's console text at the first colon, inside the URL scheme.
+  const rejection = (url = `${baseUrl}/werewolf?_rsc=zKNJIuu5XTxsaOBq`) => {
+    const [scheme, rest] = url.split(/:(?=\/)/);
+    return Object.assign(new Error(`${rest.slice(1)} due to access control checks.`), { name: `Fetch API cannot load ${scheme}` });
+  };
+  function makeWatcher() {
+    const handlers = {};
+    const mainFrame = {};
+    const watcher = loadFunction("watchPage", { baseUrl, describeConsoleArgument: async () => "" })(
+      { on: (name, handler) => { handlers[name] = handler; }, mainFrame: () => mainFrame }, "fixture",
+    );
+    return {
+      watcher,
+      navigate(frame = mainFrame) {
+        handlers.request({ isNavigationRequest: () => true, frame: () => frame });
+      },
+      commit() {
+        handlers.framenavigated(mainFrame);
+      },
+      pageError(error = rejection()) {
+        handlers.pageerror(error);
+      },
+    };
+  }
+
+  const leaving = makeWatcher();
+  leaving.navigate();
+  leaving.pageError();
+  leaving.pageError(rejection(`${baseUrl}/mafia?_rsc=skNgGlUFvT5fyddh`));
+  leaving.commit();
+  await leaving.watcher.assertClean();
+
+  const settled = makeWatcher();
+  settled.navigate();
+  settled.commit();
+  settled.pageError();
+  await assert.rejects(settled.watcher.assertClean(), /werewolf\?_rsc=zKNJIuu5XTxsaOBq due to access control checks/);
+
+  const iframe = makeWatcher();
+  iframe.navigate({});
+  iframe.pageError();
+  await assert.rejects(iframe.watcher.assertClean(), /access control checks/);
+
+  for (const error of [rejection("https://example.invalid/werewolf?_rsc=a"), new Error("Application exception")]) {
+    const unrelated = makeWatcher();
+    unrelated.navigate();
+    unrelated.pageError(error);
+    await assert.rejects(unrelated.watcher.assertClean(), /page error/);
+  }
+});
