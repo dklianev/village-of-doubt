@@ -19,7 +19,7 @@ export function VoteTallyBar({ items, maxVotes }: { items: VoteTallyItem[]; maxV
             <i style={{ transform: `scaleX(${Math.max(0.1, Math.min(1, item.count / maxVotes))})` }} />
           </div>
           <strong>{item.count}</strong>
-          {item.hasMayorVote ? <small>кметски глас при равенство</small> : null}
+          {item.hasMayorVote ? <small>Кметски глас при равенство</small> : null}
         </div>
       ))}
     </div>

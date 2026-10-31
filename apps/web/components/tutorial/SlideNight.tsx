@@ -11,7 +11,7 @@ export function SlideNight({ mode, practice, onPracticeChange }: TutorialScenePr
   const world = tutorialWorld(mode);
   const confirmed = selected !== null && selected === practice.night;
   return (
-    <TutorialSlide bg="night" kicker="сцена 2 - личният ход" title="Очите се затварят."
+    <TutorialSlide bg="night" kicker="Сцена 2 - личният ход" title="Очите се затварят."
       body={<><p>{world.mafia ? "Мафията избира" : "Върколаците избират"} жертва. Ти си {world.role}: посочи един играч и потвърди проверката.</p>
         <p>В истинската игра изчакай личния си резултат. Другите не го виждат.</p></>}
       callout={{ label: "Ако нямаш нощно действие", text: "Като обикновен участник изчакваш утрото. Не е нужно да посочваш никого, за да останеш в играта." }}>

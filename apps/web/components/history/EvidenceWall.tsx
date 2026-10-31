@@ -31,9 +31,10 @@ export function EvidenceWall({ games, status = "ready", selection = { family: "a
   const paged = Boolean(selection.before || selection.after);
   const firstPage = { family: selection.family, outcome: selection.outcome };
   const resetHref = archiveHref({ family: "all", outcome: "all" }, visualHistory);
+  const empty = status === "ready" && games.length === 0 && !filtered && !paged;
   return (
     <>
-      <Form action="/history" key={`${selection.family}:${selection.outcome}`} className={styles.filters} aria-label="Филтри на архива">
+      {empty ? null : <Form action="/history" key={`${selection.family}:${selection.outcome}`} className={styles.filters} aria-label="Филтри на архива">
         {visualHistory ? <input type="hidden" name="visualHistory" value={visualHistory} /> : null}
         <div className={styles.filterField}>
           <label htmlFor="archive-family">Игра</label>
@@ -50,7 +51,7 @@ export function EvidenceWall({ games, status = "ready", selection = { family: "a
         <button type="submit" className={styles.filterSubmit}><ListFilter size={17} aria-hidden="true" />Покажи</button>
         {filtered || paged ? <Link className={styles.reset} href={resetHref}><RotateCcw size={15} aria-hidden="true" />Изчисти</Link> : null}
         <p className={styles.archiveScope}>Публични игри · най-новите първо</p>
-      </Form>
+      </Form>}
 
       {status === "unavailable" ? (
         <section className={styles.notice} data-state="unavailable" role="alert">

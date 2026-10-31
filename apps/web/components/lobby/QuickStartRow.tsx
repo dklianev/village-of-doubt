@@ -27,7 +27,7 @@ const RECIPES: CreateRecipe[] = [
     rolePreset: "beginner",
     playerCount: 6,
     step: 4,
-    eyebrow: "първа игра",
+    eyebrow: "Първа игра",
     label: "Първа нощ",
     detail: "6 души, кратки фази и роли за една минута.",
     roster: "Селяни · Върколаци · Гадателка",
@@ -42,7 +42,7 @@ const RECIPES: CreateRecipe[] = [
     playerCount: 12,
     step: 4,
     advanced: { loversEnabled: true },
-    eyebrow: "препоръчано",
+    eyebrow: "Препоръчано",
     label: "Класика с Влюбени",
     detail: "12 души. Купидон от първата нощ. Чист баланс.",
     roster: "Купидон · Вещица · Гадателка · Ловец",
@@ -57,7 +57,7 @@ const RECIPES: CreateRecipe[] = [
     playerCount: 14,
     step: 2,
     advanced: { loversEnabled: true },
-    eyebrow: "голяма кутия",
+    eyebrow: "За опитна маса",
     label: "Село с тайни",
     detail: "Повече специални роли и място за опитни играчи да блъфират.",
     roster: "Купидон · Оракул · Ловец · Вещица",
@@ -70,7 +70,7 @@ const RECIPES: CreateRecipe[] = [
     rolePreset: "free",
     playerCount: 6,
     step: 4,
-    eyebrow: "първа маса",
+    eyebrow: "Първа маса",
     label: "Бърза Мафия",
     detail: "Малка маса с ясни роли за първи опит.",
     roster: "Граждани · Мафиоти · Комисар",
@@ -85,7 +85,7 @@ const RECIPES: CreateRecipe[] = [
     playerCount: 10,
     step: 4,
     tempoProfile: "sport_mafia",
-    eyebrow: "официално",
+    eyebrow: "Официален състав",
     label: "Спортна Мафия",
     detail: "Точно 10 играчи и фиксирано темпо.",
     roster: "6 Граждани · Комисар · 2 Мафиоти · Дон",
@@ -100,7 +100,7 @@ const RECIPES: CreateRecipe[] = [
     playerCount: 12,
     step: 2,
     advanced: { maniacEnabled: true },
-    eyebrow: "повече напрежение",
+    eyebrow: "Повече напрежение",
     label: "Голяма маса",
     detail: "Повече обвинения, повече алибита и една допълнителна заплаха.",
     roster: "Комисар · Доктор · Маниак · Мафия",
@@ -137,7 +137,7 @@ export function QuickStartRow({
   return (
     <section className="create-recipes" aria-labelledby="create-recipes-title">
       <div className="create-recipes-heading">
-        <p className="section-kicker">готови рецепти</p>
+        <p className="section-kicker">Готови рецепти</p>
         <h2 id="create-recipes-title">Избери вечер, не настройка</h2>
         <p>
           Натискаш една карта и получаваш готова стая. После можеш да пипнеш детайлите, ако искаш.

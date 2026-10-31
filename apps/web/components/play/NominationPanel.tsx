@@ -104,7 +104,7 @@ export function NominationPanel({
       ) : null}
 
       <div aria-live="polite">
-        <p className="text-xs font-black uppercase">Номинирани</p>
+        <p className="text-(length:--ds-type-label) leading-(--ds-leading-label) font-semibold">Номинирани</p>
         {uniqueNominees.length > 0 ? (
           <ol className="mt-2 flex flex-wrap gap-2" data-selectable={interactive || undefined}>
             {uniqueNominees.map((player, index) => (

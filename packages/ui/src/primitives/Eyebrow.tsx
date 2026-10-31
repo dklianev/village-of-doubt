@@ -19,12 +19,12 @@ export function Eyebrow({ tone = "default", children }: EyebrowProps) {
     <span
       data-ds-eyebrow={tone}
       style={{
-        fontFamily: "ui-monospace, 'Cascadia Mono', monospace",
+        fontFamily: "var(--ds-font-body)",
         fontSize: "var(--ds-type-eyebrow)",
-        letterSpacing: "0.18em",
-        textTransform: "uppercase",
+        lineHeight: "var(--ds-leading-label)",
+        letterSpacing: "var(--ds-tracking-label)",
         color: TONE_COLOR[tone],
-        fontWeight: 600,
+        fontWeight: "var(--ds-weight-label)",
       }}
     >
       {children}

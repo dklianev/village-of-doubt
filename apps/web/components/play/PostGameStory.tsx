@@ -22,12 +22,12 @@ export function PostGameStory({ snapshot }: { snapshot: GameSnapshot }) {
 
   return (
     <section className="post-game-story">
-      <p className="section-kicker">история на нощта</p>
+      <p className="section-kicker">История на нощта</p>
       <h2>Как ще я разказвате след играта</h2>
       <div className="post-game-badges mt-5">
-        <span>оцеляха {finalLiving}</span>
-        <span>паднаха {deaths}</span>
-        <span>рундове {snapshot.round}</span>
+        <span>Оцеляха {finalLiving}</span>
+        <span>Паднаха {deaths}</span>
+        <span>Рундове {snapshot.round}</span>
       </div>
       {moments.length > 0 ? (
         <ol>

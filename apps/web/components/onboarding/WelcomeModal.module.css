@@ -120,10 +120,10 @@
 .kicker {
   margin: 0;
   color: #e2a348;
-  font-size: 0.75rem;
-  font-weight: 900;
+  font-size: var(--ds-type-label);
+  line-height: var(--ds-leading-label);
+  font-weight: var(--ds-weight-label);
   letter-spacing: 0;
-  text-transform: uppercase;
 }
 
 .modal h2 {
@@ -173,12 +173,11 @@
   border-radius: 6px;
   padding: 0 17px;
   overflow: hidden;
-  font-size: 0.76rem;
-  font-weight: 900;
+  font-size: var(--ds-type-label);
+  font-weight: var(--ds-weight-action);
   letter-spacing: 0;
   line-height: 1.15;
   text-align: center;
-  text-transform: uppercase;
   cursor: pointer;
   isolation: isolate;
   transition:

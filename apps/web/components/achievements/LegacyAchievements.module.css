@@ -5,6 +5,7 @@
   --collection-muted: #daddd5;
   --collection-edge: #626c62;
   --collection-accent: #dfb785;
+  --collection-locked-art: grayscale(1) brightness(0.62) contrast(0.85);
   width: 100%;
   max-width: 1240px;
   padding: 0 24px 40px;
@@ -16,6 +17,7 @@
   --collection-muted: #203228;
   --collection-edge: #9a9e93;
   --collection-accent: #792821;
+  --collection-locked-art: grayscale(1) brightness(0.5) contrast(0.8);
 }
 :global(.achievement-shell::before) { content: none; }
 :global(.achievement-shell .achievement-hero-frame) {
@@ -46,7 +48,7 @@
   border-bottom: 1px solid var(--collection-edge);
 }
 :global(.achievement-shell .achievement-feature-copy) { position: relative; z-index: 1; width: 54%; min-width: 0; }
-:global(.achievement-shell .achievement-feature-kicker) { margin: 0 0 12px; color: var(--collection-accent); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+:global(.achievement-shell .achievement-feature-kicker) { margin: 0 0 12px; color: var(--collection-accent); font-size: var(--ds-type-label); line-height: var(--ds-leading-label); font-weight: var(--ds-weight-label); }
 :global(.achievement-shell .achievement-feature-title) {
   margin: 0;
   color: var(--collection-ink);
@@ -102,7 +104,20 @@
 }
 :global(.achievement-shell .achievement-plaque-art) { display: block; height: 150px; margin: 0 0 8px; }
 :global(.achievement-shell .achievement-plaque-art img) { width: 100%; height: 100%; object-fit: contain; object-position: left center; transition: filter 180ms ease; }
-:global(.achievement-shell .achievement-plaque[data-locked="true"] .achievement-plaque-art img) { filter: saturate(0.55); }
+/* A locked relic is a muted silhouette pressed into the paper, not a raised object. */
+:global(.achievement-shell .achievement-plaque[data-locked="true"] .achievement-plaque-art) {
+  align-self: flex-start;
+  aspect-ratio: 3 / 2;
+  border-radius: var(--ds-radius-tile);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklab, var(--collection-edge) 40%, transparent),
+    inset 0 3px 10px color-mix(in oklab, var(--ds-surface-scene-deep) 70%, transparent),
+    inset 0 -1px 0 color-mix(in oklab, var(--ds-ink-scene) 18%, transparent);
+}
+:global(.achievement-shell .achievement-plaque[data-locked="true"] .achievement-plaque-art img) {
+  filter: var(--collection-locked-art) drop-shadow(0 1px 0 color-mix(in oklab, var(--ds-ink-scene) 35%, transparent));
+  opacity: 0.6;
+}
 :global(.achievement-shell .achievement-plaque:focus-within .achievement-plaque-art img) { filter: brightness(1.08); }
 :global(.achievement-shell .achievement-plaque-inner) { display: flex; flex: 1; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0; }
 :global(.achievement-shell .achievement-plaque-inner p), :global(.achievement-shell .achievement-plaque-title) { margin: 0; }
@@ -110,6 +125,7 @@
 :global(.achievement-shell .achievement-plaque-tier) { color: var(--plaque-muted-color); }
 :global(.achievement-shell .achievement-plaque-title) { color: var(--plaque-fg-color); font: 700 1.5rem/1.18 var(--font-display); letter-spacing: 0; overflow-wrap: anywhere; }
 :global(.achievement-shell .achievement-plaque-desc) { color: var(--plaque-muted-color); font-size: 0.9375rem; line-height: 1.5; }
+:global(.achievement-shell .achievement-plaque-condition) { display: block; color: var(--plaque-fg-color); font-size: var(--ds-type-label); line-height: var(--ds-leading-label); font-weight: var(--ds-weight-label); letter-spacing: var(--ds-tracking-label); }
 :global(.achievement-shell .achievement-plaque-meta) { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding-top: 4px; color: var(--plaque-meta-color); font-size: 0.75rem; line-height: 1.5; }
 :global(.achievement-shell .achievement-plaque-meta svg) { flex-shrink: 0; }
 :global(.achievement-shell .achievement-replay-link), :global(.achievement-shell .achievement-return) { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; color: var(--collection-ink); font-size: 0.875rem; font-weight: 600; text-decoration: underline; text-underline-offset: 4px; }

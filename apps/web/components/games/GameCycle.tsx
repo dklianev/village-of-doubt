@@ -11,7 +11,7 @@ export function GameCycle({ family, title, phases }: { family: GameFamily; title
   return (
     <section className={`night-timeline night-timeline--${family}`} aria-labelledby={`${family}-game-cycle-title`}>
       <header className="night-timeline__header family-section-heading">
-        <p className="section-kicker">ходът на играта</p>
+        <p className="section-kicker">Ходът на играта</p>
         <h2 id={`${family}-game-cycle-title`}>{title}</h2>
         <p>Тайна роля. Общ разговор. Решение, зад което трябва да застанеш.</p>
         <Link href={`${root}/rules`} className="family-text-link">Правилата накратко<ArrowRight size={16} aria-hidden="true" /></Link>

@@ -45,12 +45,12 @@ export function nightActionHelpBg(role: RoleCode) {
 
 export function privateChannelBg(channel: ChatChannel) {
   const labels: Record<ChatChannel, string> = {
-    public: "публичен разговор",
-    mafia: "разговор на Мафията",
-    werewolves: "разговор на Върколаците",
-    vampires: "разговор на Вампирите",
-    dead: "разговор на мъртвите",
-    system: "системен канал",
+    public: "Публичен разговор",
+    mafia: "Разговор на Мафията",
+    werewolves: "Разговор на Върколаците",
+    vampires: "Разговор на Вампирите",
+    dead: "Разговор на мъртвите",
+    system: "Системен канал",
   };
 
   return labels[channel];
@@ -178,8 +178,8 @@ export function tempoBg(mode: string) {
 
 export function majorityModeBg(mode: string) {
   const labels: Record<string, string> = {
-    simple: "обикновено мнозинство",
-    absolute: "абсолютно мнозинство",
+    simple: "Обикновено мнозинство",
+    absolute: "Абсолютно мнозинство",
   };
 
   return labels[mode] ?? mode;

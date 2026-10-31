@@ -156,7 +156,7 @@ export function FaqHearth({ items }: { items: readonly FaqItem[] }) {
         <div className="faq-hearth-inner">
           <p className="faq-hearth-kicker">
             <Flame className="faq-hearth-kicker-icon" aria-hidden strokeWidth={2} />
-            <span>седни до огъня</span>
+            <span>Седни до огъня</span>
           </p>
           <h1 id="faq-title" className="faq-hearth-title">Помощ</h1>
           <p className="faq-hearth-subtitle">

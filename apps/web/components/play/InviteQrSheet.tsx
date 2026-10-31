@@ -38,7 +38,7 @@ export function InviteQrSheet({
           <rect width={qr.span} height={qr.span} className={styles.paper} />
           <path d={qr.path} className={styles.ink} />
         </svg>
-        <p className={styles.caption}>или въведи кода</p>
+        <p className={styles.caption}>Или въведи кода</p>
         <strong className={styles.code}>{code}</strong>
       </div>
     </Sheet>

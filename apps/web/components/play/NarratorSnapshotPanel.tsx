@@ -3,7 +3,7 @@ import type { NarratorRoleSnapshot } from "@/lib/play/types";
 export function NarratorSnapshotPanel({ snapshot }: { snapshot: NarratorRoleSnapshot }) {
   return (
     <section className="narrator-kit-card paper-card mt-8 rounded-[2rem] p-6">
-      <p className="text-sm uppercase tracking-[0.3em] text-[#842f2b]">само за Пълния Разказвач</p>
+      <p className="text-sm font-semibold text-[#842f2b]">Само за Пълния Разказвач</p>
       <h2 className="mt-2 text-3xl font-black">Тайни роли</h2>
       <p className="mt-3 text-[#4f3829]">
         Само ти виждаш тези роли. Пази ги в тайна от играчите.

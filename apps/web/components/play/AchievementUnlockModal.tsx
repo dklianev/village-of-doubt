@@ -30,7 +30,6 @@ export function AchievementUnlockModal({ achievementIds, onClose }: { achievemen
           <span className={styles.seal} aria-hidden="true">
             <Award />
           </span>
-          <p>нова легенда</p>
           <h2>Нова легенда в залата</h2>
           <span>Постижението вече е гравирано в личното ти досие.</span>
         </header>

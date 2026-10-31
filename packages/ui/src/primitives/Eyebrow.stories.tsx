@@ -15,29 +15,29 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-  args: { children: "СЪСТОЯНИЕ", tone: "default" },
+  args: { children: "Състояние", tone: "default" },
 };
 
 export const Muted: Story = {
-  args: { children: "АРХИВ", tone: "muted" },
+  args: { children: "Архив", tone: "muted" },
 };
 
 export const Blood: Story = {
-  args: { children: "СИГНАЛ", tone: "blood" },
+  args: { children: "Сигнал", tone: "blood" },
 };
 
 export const Gold: Story = {
-  args: { children: "ЛЕГЕНДА", tone: "gold" },
+  args: { children: "Легенда", tone: "gold" },
 };
 
 export const AllVariants: Story = {
-  args: { children: "ВАРИАНТИ" },
+  args: { children: "Варианти" },
   render: () => (
     <div style={{ display: "grid", gap: "18px", padding: "32px" }}>
-      <Eyebrow>СЪСТОЯНИЕ</Eyebrow>
-      <Eyebrow tone="muted">АРХИВ</Eyebrow>
-      <Eyebrow tone="blood">СИГНАЛ</Eyebrow>
-      <Eyebrow tone="gold">ЛЕГЕНДА</Eyebrow>
+      <Eyebrow>Състояние</Eyebrow>
+      <Eyebrow tone="muted">Архив</Eyebrow>
+      <Eyebrow tone="blood">Сигнал</Eyebrow>
+      <Eyebrow tone="gold">Легенда</Eyebrow>
     </div>
   ),
 };

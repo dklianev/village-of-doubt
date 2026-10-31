@@ -13,6 +13,12 @@
   background: transparent;
   color: #fff7df;
   text-align: center;
+  --seat-edge: var(--ds-surface-scene-deep);
+  --seat-ember: color-mix(in oklch, var(--ds-accent-gold) 70%, var(--ds-accent-blood));
+}
+
+:global(html[data-theme="light"]) .token {
+  --seat-ember: color-mix(in oklch, var(--ds-accent-gold-deep) 70%, var(--ds-accent-blood));
 }
 
 button.token {
@@ -35,6 +41,29 @@ button.token:focus-visible {
   width: var(--seat-visual-size, 66px);
   place-items: center;
   aspect-ratio: 1;
+}
+
+/* State layers sit under the avatar skin, which page rules restyle, so a skin can never hide a state:
+ * ::before is the ring (from the skin's 4px edge outward), ::after the stain under a leading seat. */
+.portrait::before,
+.portrait::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.portrait::before {
+  inset: -4px;
+  box-shadow: var(--seat-ring, none);
+  animation: seat-breathe var(--seat-breath, 0s) var(--ds-ease-candle) infinite;
+}
+
+.portrait::after {
+  inset: -12% -40% -72%;
+  z-index: -2;
+  background: var(--seat-stain, none);
 }
 
 .avatar {
@@ -88,6 +117,23 @@ button.token:focus-visible {
   line-height: 1;
 }
 
+.ownPlate {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  z-index: 5;
+  border: 1px solid var(--ds-accent-gold-deep);
+  border-radius: 5px;
+  padding: 1px 0.6em;
+  background: var(--ds-ink-scene);
+  box-shadow: 0 2px 6px color-mix(in oklch, var(--seat-edge) 55%, transparent);
+  color: var(--seat-edge);
+  font-size: clamp(0.75rem, calc(var(--seat-visual-size, 66px) * 0.14), 0.875rem);
+  font-weight: 800;
+  line-height: 1.2;
+  transform: translate(-50%, -60%);
+}
+
 .nameplate {
   display: block;
   max-width: min(12ch, calc(var(--seat-visual-size, 66px) + 26px));
@@ -123,68 +169,25 @@ button.token:focus-visible {
   background: rgba(8, 6, 5, 0.86);
   color: #fff7df;
   font-size: 0.68rem;
-  font-weight: 800;
+  font-weight: var(--ds-weight-label);
   line-height: 1.15;
   text-overflow: ellipsis;
-  text-transform: uppercase;
   white-space: nowrap;
 }
 
-.targetable .avatar {
-  box-shadow:
-    0 0 0 3px rgba(8, 6, 5, 0.72),
-    0 0 0 5px rgba(209, 154, 66, 0.72),
-    0 0 28px rgba(209, 154, 66, 0.42),
-    0 14px 28px rgba(0, 0, 0, 0.55);
-}
-
-.token[data-selected="true"] .avatar,
-.token[data-second-selected="true"] .avatar {
-  border-color: #fff7df;
-  box-shadow:
-    0 0 0 3px rgba(8, 6, 5, 0.82),
-    0 0 0 6px rgba(245, 232, 200, 0.9),
-    0 0 38px rgba(209, 154, 66, 0.58),
-    0 18px 34px rgba(0, 0, 0, 0.6);
-}
-
-.token[data-speaking="true"] .avatar,
-.token[data-defending="true"] .avatar {
-  border-color: #fff7df;
-  box-shadow:
-    0 0 0 3px rgba(8, 6, 5, 0.82),
-    0 0 0 6px rgba(215, 165, 82, 0.9),
-    0 0 34px rgba(215, 165, 82, 0.52),
-    0 18px 34px rgba(0, 0, 0, 0.6);
-}
-
-.token[data-nominee="true"] .nameplate {
-  border-color: rgba(188, 72, 64, 0.78);
-  color: #ffd6c9;
-}
-
-.token[data-voted="true"] .nameplate {
-  border-color: rgba(209, 154, 66, 0.72);
-  color: #f4cf87;
-}
-
-.token[data-ready="true"] .avatar {
-  border-color: rgba(146, 184, 102, 0.72);
-}
-
-.token[data-connected="false"] {
+.token:where([data-connected="false"]) {
   opacity: 0.68;
 }
 
-.token[data-alive="false"] {
+.token:where([data-alive="false"]) {
   opacity: 0.68;
 }
 
-.token[data-alive="false"] .avatar {
+:where(.token[data-alive="false"]) .avatar {
   filter: grayscale(0.88) saturate(0.45) brightness(0.78);
 }
 
-.token[data-alive="false"] .nameplate {
+:where(.token[data-alive="false"]) .nameplate {
   text-decoration: line-through;
   text-decoration-thickness: 2px;
 }
@@ -302,17 +305,19 @@ button.token:focus-visible {
 
 .selectedMark svg { width: 16px; height: 16px; }
 
-.token[data-active-seat="true"] {
+/* Active-seat skin. Skin and state rules wrap their conditions in :where(), so each weighs one class
+ * like the base rules above and source order alone decides between them. */
+.token:where([data-active-seat="true"]) {
   gap: 7px;
   color: #fff7df;
 }
 button.token[data-active-seat="true"]:focus-visible { outline-color: var(--play-scene-ink, #fff7df); }
-.token[data-active-seat="true"] .avatar {
+:where(.token[data-active-seat="true"]) .avatar {
   border: 2px solid #d4b469;
   box-shadow: 0 0 0 3px #101713, 0 0 0 4px #b69b62, 0 8px 20px #0008;
 }
-.token[data-active-seat="true"] .initialBadge:not(.statusBadge) { display: none; }
-.token[data-active-seat="true"] .nameplate {
+:where(.token[data-active-seat="true"]) .initialBadge:not(.statusBadge) { display: none; }
+:where(.token[data-active-seat="true"]) .nameplate {
   max-width: 100%;
   border-radius: 5px;
   border-color: #b59b628c;
@@ -321,14 +326,13 @@ button.token[data-active-seat="true"]:focus-visible { outline-color: var(--play-
   font-weight: 600;
   text-decoration: none;
 }
-.token[data-active-seat="true"] .state { display: none; }
-.token[data-active-seat="true"][data-alive="false"] { opacity: 1; }
-.token[data-active-seat="true"][data-alive="false"] .avatar { border-color: #aaa79a; box-shadow: 0 0 0 3px #131615, 0 0 0 4px #777b72; filter: grayscale(1) brightness(0.85); }
-.token[data-active-seat="true"]:is([data-selected="true"], [data-second-selected="true"]) .avatar { border-color: #ffdf88; box-shadow: 0 0 0 3px #141912, 0 0 0 5px #e5bd5d, 0 8px 20px #0008; }
-.token[data-active-seat="true"] .statusBadge { left: -8px; bottom: 18px; }
+:where(.token[data-active-seat="true"]) .state { display: none; }
+.token:where([data-active-seat="true"][data-alive="false"]) { opacity: 1; }
+:where(.token[data-active-seat="true"][data-alive="false"]) .avatar { border-color: #aaa79a; box-shadow: 0 0 0 3px #131615, 0 0 0 4px #777b72; filter: grayscale(1) brightness(0.85); }
+:where(.token[data-active-seat="true"]) .statusBadge { left: -8px; bottom: 18px; }
 /* The "Избран" plate grows to 26px on wide tables: lift the nominee pin clear of it. */
-.token[data-active-seat="true"]:is([data-selected="true"], [data-second-selected="true"]) .statusBadge { bottom: 26px; }
-.token[data-active-seat="true"] .selectedMark,
+:where(.token[data-active-seat="true"]:is([data-selected="true"], [data-second-selected="true"])) .statusBadge { bottom: 26px; }
+:where(.token[data-active-seat="true"]) .selectedMark,
 .eliminatedMark {
   position: absolute;
   left: 50%;
@@ -353,21 +357,65 @@ button.token[data-active-seat="true"]:focus-visible { outline-color: var(--play-
   line-height: 1.2;
   transform: translateX(-50%);
 }
-.token[data-active-seat="true"] .selectedMark svg { flex-shrink: 0; width: 14px; height: 14px; }
+:where(.token[data-active-seat="true"]) .selectedMark svg { flex-shrink: 0; width: 14px; height: 14px; }
 .eliminatedMark { border-color: #777b72; background: #252927; color: #fff7df; }
 .connectionMark { position: absolute; right: -8px; top: 42%; z-index: 6; display: grid; place-items: center; width: 24px; height: 24px; border: 1px solid #d4b469; border-radius: 50%; background: #18231e; color: #f5e8c8; }
 .connectionMark svg { width: 14px; height: 14px; }
-.token[data-active-seat="true"] .menuTrigger { border-radius: 6px; }
+:where(.token[data-active-seat="true"]) .menuTrigger { border-radius: 6px; }
 
 @media (max-width: 430px) and (max-height: 640px) {
-  .token[data-active-seat="true"] .selectedMark span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  :where(.token[data-active-seat="true"]) .selectedMark span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
   .eliminatedMark { bottom: -5px; font-size: 11px; padding-inline: 3px; max-width: none; }
+}
+
+/* Seat states, lowest priority first. The ring is one shared layer, so a later state replaces an
+ * earlier ring: selected > leading > targetable > speaking/defending > voted. Each ring states its
+ * own breath. The voted seal, the own plate, the nominee plate and the badges never compete. */
+:where(.token[data-voted="true"]) .nameplate {
+  position: relative;
+  overflow: visible;
+}
+:where(.token[data-voted="true"]) .nameplate::after {
+  --seat-wax-lit: color-mix(in oklch, var(--ds-accent-blood) 72%, var(--ds-accent-gold-soft));
+  content: "";
+  position: absolute;
+  top: calc(50% - 0.7em);
+  right: -1.1em;
+  width: 1.4em;
+  height: 1.4em;
+  background:
+    radial-gradient(closest-side, var(--seat-wax-lit) 0 17%, transparent 21% 44%, var(--ds-accent-blood-deep) 47% 54%, var(--seat-wax-lit) 57% 61%, transparent 64%),
+    radial-gradient(circle at 38% 30%, var(--seat-wax-lit), var(--ds-accent-blood) 42%, color-mix(in oklch, var(--ds-accent-blood-deep) 70%, var(--seat-edge)) 88%);
+  mask: url("/game-art/play/wax-seal.svg") center / contain no-repeat;
+  animation: vote-pop 420ms cubic-bezier(0.3, 1.8, 0.4, 1) both;
+}
+/* A long name can push the seal across the focus outline, which paints below positioned marks. */
+:where(.token:focus-visible) .nameplate::after { z-index: -1; }
+:where(.token[data-nominee="true"]) .nameplate {
+  border-color: var(--ds-accent-blood);
+  color: color-mix(in oklch, var(--ds-accent-blood) 22%, var(--ds-ink-scene));
+}
+.token:where([data-speaking="true"], [data-defending="true"]) {
+  --seat-ring: 0 0 0 3px var(--ds-accent-gold), 0 0 0 4px var(--seat-edge);
+}
+.token:where(.targetable) {
+  --seat-ring: 0 0 0 3px var(--seat-ember), 0 0 0 4px var(--seat-edge), 0 0 18px 5px color-mix(in oklch, var(--seat-ember) 55%, transparent);
+  --seat-breath: calc(var(--ds-duration-stage) * 8);
+}
+:where([data-vote-leader="true"]) .token {
+  --seat-ring: 0 0 0 4px var(--ds-accent-blood), 0 0 0 5px var(--seat-edge), 0 0 22px 6px color-mix(in oklch, var(--ds-accent-blood) 60%, transparent);
+  --seat-breath: 0s;
+  --seat-stain: radial-gradient(closest-side, color-mix(in oklch, var(--ds-accent-blood) 78%, transparent) 30%, color-mix(in oklch, var(--ds-accent-blood-deep) 42%, transparent) 66%, transparent);
+}
+.token:where([data-selected="true"], [data-second-selected="true"]) {
+  --seat-ring: 0 0 0 2px var(--seat-edge), 0 0 0 6px var(--ds-accent-gold-soft), 0 0 0 7px var(--seat-edge), 0 0 26px 8px color-mix(in oklch, var(--ds-accent-gold) 60%, transparent);
+  --seat-breath: 0s;
 }
 
 /* Death beat: the portrait takes a blood-red hit, then drains into its eliminated state and the
  * plate is stamped on. CSS-only, so it starts the moment a seat stops being alive; a reconnect
  * settles already-dead seats with the same short beat instead of skipping it. */
-.token[data-alive="false"] .avatar {
+:where(.token[data-alive="false"]) .avatar {
   animation: seat-fall 1400ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
@@ -380,22 +428,20 @@ button.token[data-active-seat="true"]:focus-visible { outline-color: var(--play-
   animation: vote-pop 420ms cubic-bezier(0.3, 1.8, 0.4, 1) both;
 }
 
-/* Keep the leader readable at rest; each changed count already gets a short vote-pop. */
-:global([data-vote-leader="true"]) .token[data-alive="true"] .avatar {
-  box-shadow:
-    0 0 0 3px rgba(8, 6, 5, 0.72),
-    0 0 0 5px #b3261e,
-    0 0 26px 4px rgba(179, 38, 30, 0.5);
-}
-
 /* No scale-up or rotation: transforms extend scrollable overflow on 320 px phones, and the seat
- * stack must never tilt. Reduced motion is handled once by the .play-shell rule in globals. */
+ * stack must never tilt. Reduced motion is handled once by the .play-shell rule in globals, which
+ * also leaves the breathing ring standing still at full strength. */
 @keyframes seat-fall {
   0% { filter: none; }
   16% {
     filter: brightness(1.2) saturate(1.4) sepia(0.35) hue-rotate(-18deg);
     box-shadow: 0 0 0 3px rgba(8, 6, 5, 0.72), 0 0 0 5px #b3261e, 0 0 38px 10px rgba(179, 38, 30, 0.72);
   }
+}
+
+/* Each half eases out, so the ember holds bright and holds dim in equal measure. */
+@keyframes seat-breathe {
+  50% { opacity: 0.4; }
 }
 
 @keyframes seat-stamp {

@@ -693,6 +693,51 @@ test("expected mocked HTTP errors do not silence unrelated or repeated console e
   await assert.rejects(normal.watcher.assertClean(), /console error/);
 });
 
+test("a Firefox image decode error passes only when navigation aborted that same image", async () => {
+  const baseUrl = "http://127.0.0.1:3401";
+  const fog = `${baseUrl}/game-art/texture-fog.webp`;
+  function makeWatcher() {
+    const handlers = {};
+    const watcher = loadFunction("watchPage", { baseUrl, describeConsoleArgument: async () => "" })(
+      { on: (name, handler) => { handlers[name] = handler; } }, "fixture",
+    );
+    return {
+      watcher,
+      abort(url = fog) {
+        handlers.requestfailed({ url: () => url, resourceType: () => "image", failure: () => ({ errorText: "NS_BINDING_ABORTED" }) });
+      },
+      decodeError(url = fog) {
+        handlers.console({
+          type: () => "error", args: () => [], location: () => ({ url }),
+          text: () => `[JavaScript Error: "Image corrupt or truncated." {file: "${url}" line: 0}]`,
+        });
+      },
+    };
+  }
+
+  const aborted = makeWatcher();
+  aborted.decodeError();
+  aborted.abort();
+  assert.equal(aborted.watcher.failed, false);
+  await aborted.watcher.assertClean();
+
+  const truncated = makeWatcher();
+  truncated.decodeError();
+  assert.equal(truncated.watcher.failed, true);
+  await assert.rejects(truncated.watcher.assertClean(), /Image corrupt or truncated/);
+
+  const otherImage = makeWatcher();
+  otherImage.abort(`${baseUrl}/game-art/texture-parchment.webp`);
+  otherImage.decodeError();
+  await assert.rejects(otherImage.watcher.assertClean(), /texture-fog\.webp/);
+
+  const repeated = makeWatcher();
+  repeated.abort();
+  repeated.decodeError();
+  repeated.decodeError();
+  await assert.rejects(repeated.watcher.assertClean(), /Image corrupt or truncated/);
+});
+
 test("browser watchers retain real image/font failures and application errors, including Sentry errors", async () => {
   const baseUrl = "http://127.0.0.1:3401";
   const cases = [

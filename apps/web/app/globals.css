@@ -1364,10 +1364,10 @@ select {
 .phase-kicker,
 .section-kicker {
   color: var(--gold);
-  font-size: 0.72rem;
-  font-weight: 900;
-  letter-spacing: 0.38em;
-  text-transform: uppercase;
+  font-size: var(--ds-type-label);
+  line-height: var(--ds-leading-label);
+  font-weight: var(--ds-weight-label);
+  letter-spacing: var(--ds-tracking-label);
 }
 
 .paper-card .section-kicker {
@@ -1407,7 +1407,7 @@ select {
   border-radius: 999px;
   padding: 0 20px;
   cursor: pointer;
-  font-weight: 800;
+  font-weight: var(--ds-weight-action);
   transition: transform 180ms ease;
 }
 
@@ -1565,7 +1565,6 @@ html[data-theme="light"] .btn-secondary:hover:not(:disabled) {
 
 .landing-shell::before,
 .lobby-shell::before,
-.history-shell::before,
 .game-home-shell::before,
 .rules-shell::before {
   position: absolute;
@@ -1603,7 +1602,6 @@ html[data-theme="dark"] .lobby-shell::before {
 html[data-theme="light"] .landing-shell::before,
 html[data-theme="light"] .game-home-shell::before,
 html[data-theme="light"] .lobby-shell::before,
-html[data-theme="light"] .history-shell::before,
 html[data-theme="light"] .roles-shell::before,
 html[data-theme="light"] .rules-shell::before,
 html[data-theme="light"] .utility-shell::before {
@@ -1613,7 +1611,6 @@ html[data-theme="light"] .utility-shell::before {
 .landing-shell,
 .game-home-shell,
 .lobby-shell,
-.history-shell,
 .roles-shell,
 .rules-shell,
 .sign-in-shell,
@@ -1641,29 +1638,6 @@ html[data-theme="light"] .utility-shell::before {
 }
 
 
-@keyframes tutorial-welcome-in {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes clue-chip-fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-
 .card {
   background:
     linear-gradient(145deg, rgba(28, 15, 11, 0.92), rgba(8, 10, 10, 0.78)),
@@ -1686,17 +1660,6 @@ html[data-theme="light"] .utility-shell::before {
     linear-gradient(90deg, rgba(18, 10, 8, 0.96) 0%, rgba(18, 10, 8, 0.84) 48%, rgba(18, 10, 8, 0.34) 100%),
     var(--art-lobby) center / cover no-repeat;
 }
-
-
-@keyframes quickstartConnectorDots {
-  to {
-    opacity: 1;
-    transform: translateX(-50%);
-  }
-}
-
-/* === landing quickstart section === */
-
 
 .timer-dial {
   background:
@@ -1801,23 +1764,6 @@ html[data-theme="light"] .utility-shell::before {
   font-weight: 950;
 }
 
-.role-count-chip.is-dark {
-  border-color: rgba(248, 236, 210, 0.12);
-  background:
-    linear-gradient(135deg, rgba(248, 236, 210, 0.1), rgba(248, 236, 210, 0.045)),
-    rgba(12, 8, 7, 0.36);
-}
-
-.role-count-chip.is-dark dd,
-.role-count-chip.is-dark .role-count-value {
-  background: rgba(248, 236, 210, 0.12);
-  color: #fff6e5;
-}
-
-.role-count-chip.is-dark span {
-  color: #ead9ba;
-}
-
 .role-count-art {
   flex: 0 0 auto;
   width: 54px;
@@ -1835,7 +1781,6 @@ html[data-theme="light"] .utility-shell::before {
   isolation: isolate;
   overflow: hidden;
   letter-spacing: 0.01em;
-  text-transform: uppercase;
 }
 
 .btn::before {
@@ -2142,9 +2087,8 @@ html[data-theme="light"] .reconnect-modal p:not(.section-kicker) {
   bottom: 16px;
   color: #fff6e5;
   font-size: 0.84rem;
-  font-weight: 950;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
+  font-weight: var(--ds-weight-label);
+  letter-spacing: var(--ds-tracking-label);
   text-shadow: 0 2px 18px rgba(0, 0, 0, 0.82);
 }
 
@@ -2180,10 +2124,10 @@ html[data-theme="light"] .reconnect-modal p:not(.section-kicker) {
     linear-gradient(180deg, transparent 35%, rgba(255, 247, 229, 0.9) 100%),
     var(--achievement-badges-sheet) var(--badge-position, 0% 0%) / 300% 300% no-repeat;
   color: var(--blood-dark);
-  font-size: 0.68rem;
-  font-weight: 950;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font-size: var(--ds-type-label);
+  line-height: var(--ds-leading-label);
+  font-weight: var(--ds-weight-label);
+  letter-spacing: var(--ds-tracking-label);
 }
 
 .achievement-preview-strip span:nth-child(2) {
@@ -2192,12 +2136,6 @@ html[data-theme="light"] .reconnect-modal p:not(.section-kicker) {
 
 .achievement-preview-strip span:nth-child(3) {
   --badge-position: 100% 0%;
-}
-
-@keyframes join-shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-4px); }
-  75% { transform: translateX(4px); }
 }
 
 @keyframes btn-spin {
@@ -2300,20 +2238,6 @@ html[data-theme="light"] .skeleton-card {
   }
 }
 
-@keyframes skeletonShimmer {
-  0% {
-    background-position:
-      -200px 0,
-      0 0;
-  }
-
-  100% {
-    background-position:
-      calc(200px + 100%) 0,
-      0 0;
-  }
-}
-
 .toast-host {
   position: fixed;
   right: max(18px, env(safe-area-inset-right));
@@ -2391,10 +2315,10 @@ html[data-theme="light"] .skeleton-card {
 
 .toast-copy span {
   color: var(--toast-accent);
-  font-size: 0.66rem;
-  font-weight: 850;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
+  font-size: var(--ds-type-label);
+  line-height: var(--ds-leading-label);
+  font-weight: var(--ds-weight-label);
+  letter-spacing: var(--ds-tracking-label);
 }
 
 .toast-copy strong {
@@ -2536,31 +2460,6 @@ html[data-theme="light"] .toast-copy span {
   transform: rotate(8deg);
 }
 
-.faction-village {
-  --faction-art: var(--faction-village);
-}
-
-.faction-werewolves {
-  --faction-art: var(--faction-werewolves);
-}
-
-.faction-vampires {
-  --faction-art: var(--faction-vampires);
-}
-
-.faction-mafia {
-  --faction-art: var(--faction-mafia);
-}
-
-.faction-lovers {
-  --faction-art: var(--faction-lovers);
-}
-
-.faction-draw,
-.faction-neutral {
-  --faction-art: var(--faction-neutral);
-}
-
 .narrator-warning-card,
 .narrator-kit-card {
   position: relative;
@@ -2607,16 +2506,6 @@ html[data-theme="light"] .toast-copy span {
   content: "";
 }
 
-.event-death {
-  --event-art: var(--event-death);
-}
-
-.event-hunter-shot {
-  --event-art: var(--event-hunter-shot);
-}
-
-.event-reveal,
-.event-generic,
 .event-line-empty {
   --event-art: var(--event-reveal);
 }
@@ -2680,10 +2569,10 @@ html[data-theme="light"] .toast-copy span {
   background: rgba(248, 236, 210, 0.1);
   padding: 8px 12px;
   color: #fff6e5;
-  font-size: 0.72rem;
-  font-weight: 950;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font-size: var(--ds-type-label);
+  line-height: var(--ds-leading-label);
+  font-weight: var(--ds-weight-label);
+  letter-spacing: var(--ds-tracking-label);
 }
 
 /* ============================== */
@@ -2959,13 +2848,6 @@ html[data-theme="light"] .play-players-panel .chat-line {
   }
 }
 
-@keyframes lobbyConfettiFall {
-  to {
-    opacity: 0;
-    transform: translate3d(var(--dx), 110dvh, 0) rotate(calc(var(--i) * 47deg));
-  }
-}
-
 @keyframes wolf-moon-breathe {
   from {
     opacity: 0.85;
@@ -3095,10 +2977,10 @@ html[data-vt="theme"]::view-transition-new(root) {
 
 .pre-game-countdown span {
   color: var(--gold);
-  font-size: 0.78rem;
-  font-weight: 950;
-  letter-spacing: 0.28em;
-  text-transform: uppercase;
+  font-size: var(--ds-type-label);
+  line-height: var(--ds-leading-label);
+  font-weight: var(--ds-weight-label);
+  letter-spacing: var(--ds-tracking-label);
 }
 
 .pre-game-countdown strong {
@@ -3446,87 +3328,11 @@ html[data-vt="theme"]::view-transition-new(root) {
     box-shadow: 0 -18px 70px rgba(0, 0, 0, 0.42);
     overscroll-behavior: contain;
   }
-
-  .replay-summary {
-    grid-template-columns: 1fr;
-  }
 }
 
 @media (max-width: 1100px) {
   .landing-hero-copy {
     max-width: 100%;
-  }
-}
-
-@keyframes fog-drift {
-  from {
-    transform: translate3d(-3%, 0, 0) scale(1.02);
-  }
-  to {
-    transform: translate3d(4%, -2%, 0) scale(1.05);
-  }
-}
-
-@keyframes rain-veil {
-  from {
-    background-position: 0 0, 50% 50%;
-  }
-  to {
-    background-position: -220px 420px, 50% 50%;
-  }
-}
-
-@keyframes slowSpin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes drawerIn {
-  from {
-    transform: translateX(100%);
-  }
-  to {
-    transform: translateX(0);
-  }
-}
-
-@keyframes drawerOut {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(100%);
-  }
-}
-
-@keyframes drawerBackdropIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes drawerBackdropOut {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
-}
-
-@keyframes livePulse {
-  0%,
-  100% {
-    transform: scale(0.75);
-    opacity: 0.48;
-  }
-  50% {
-    transform: scale(1.08);
-    opacity: 1;
   }
 }
 
@@ -3560,57 +3366,6 @@ html[data-theme="light"] .framed-shell {
   box-shadow:
     0 32px 60px rgba(40, 26, 16, 0.18),
     inset 0 1px 0 rgba(255, 255, 255, 0.5);
-}
-
-@keyframes auth-chip-skeleton-pulse {
-  0%,
-  100% {
-    opacity: 0.55;
-  }
-  50% {
-    opacity: 0.85;
-  }
-}
-@keyframes auth-chip-halo-pulse {
-  0%,
-  100% {
-    box-shadow:
-      0 0 0 1px rgba(13, 10, 8, 0.6),
-      0 0 14px rgba(217, 154, 66, 0.28);
-  }
-  50% {
-    box-shadow:
-      0 0 0 1px rgba(13, 10, 8, 0.6),
-      0 0 18px rgba(217, 154, 66, 0.45);
-  }
-}
-@keyframes auth-chip-halo-pulse-light {
-  0%,
-  100% {
-    box-shadow:
-      0 0 0 1px rgba(255, 255, 255, 0.6),
-      0 0 10px rgba(132, 47, 43, 0.2);
-  }
-  50% {
-    box-shadow:
-      0 0 0 1px rgba(255, 255, 255, 0.6),
-      0 0 14px rgba(132, 47, 43, 0.34);
-  }
-}
-@keyframes signout-modal-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-@keyframes oauth-spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 /* Keyboard users enter the route without traversing the persistent chrome. */
 .site-skip-link {

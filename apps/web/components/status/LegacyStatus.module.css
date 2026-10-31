@@ -20,7 +20,6 @@
 :global(.status-tile[data-status="degraded"] .status-tile-badge) { color: var(--support-metal); }
 :global(.status-tile-description) { grid-column: 2; grid-row: 2; margin: 0; font-size: .9rem; color: var(--support-muted); }
 :global(.status-tile-detail) { grid-column: 3; grid-row: 2; max-width: 40ch; margin: 0; font-size: .8rem; text-align: right; color: var(--support-muted); }
-:global(.status-services-stale), :global(.status-stale-notice) { color: var(--support-error); margin-bottom: 20px; }
 :global(.status-legend-grid) { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 20px 36px; margin: 0; }
 :global(.status-legend-grid dt) { display: flex; align-items: center; gap: 8px; font-size: .9rem; font-weight: 700; }
 :global(.status-legend-grid dd) { margin: 6px 0 0; font-size: .875rem; color: var(--support-muted); }
@@ -33,7 +32,6 @@
 :global(.status-subscribe-grid) { display: flex; flex-wrap: wrap; gap: 16px; }
 :global(.status-subscribe-card) { display: flex; align-items: center; gap: 12px; padding: 10px 0; }
 :global(.status-subscribe-icon) { width: 24px; height: 24px; }
-:global(.status-subscribe-hint) { font-size: .85rem; color: var(--support-muted); }
 @media (max-width: 640px) {
   :global(.status-tile) { grid-template-columns: 22px minmax(0,1fr); gap: 6px 12px; }
   :global(.status-tile-icon) { grid-row: 1; }

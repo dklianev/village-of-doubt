@@ -57,7 +57,7 @@ export function ManualTempoPanel({
     <section className="manual-tempo-panel" aria-label="Ръчно темпо">
       <div className="manual-tempo-heading">
         <div>
-          <p className="section-kicker">режисьорско темпо</p>
+          <p className="section-kicker">Режисьорско темпо</p>
           <h3>Ти водиш ритъма</h3>
           <p>Остави кратки фази за бърза онлайн игра или дай повече въздух на маса на живо.</p>
         </div>

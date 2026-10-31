@@ -27,6 +27,8 @@ const checks = [
   ["faction theme attribute contracts", checkFactionThemeAttributeContracts],
   ["play room lifecycle contracts", checkPlayRoomLifecycleContracts],
   ["globals.css size budget", checkGlobalsCssBudget],
+  ["design system ratchets", checkDesignSystemRatchets],
+  ["CSS module pseudo-elements", checkCssModulePseudoElements],
   ["production security guards", checkProductionGuardContracts],
   ["launch testing contracts", checkLaunchTestingContracts],
   ["production env checker behavior", checkProductionEnvChecker],
@@ -199,7 +201,7 @@ function checkCssImageSet() {
   assert(css.includes(".toast-host"), "Missing toast host CSS.");
   assert(css.includes(".skeleton"), "Missing loading skeleton CSS.");
   assert(css.includes("@keyframes cuePulse"), "Missing cue pulse animation.");
-  assert(css.includes("@keyframes skeletonShimmer"), "Missing skeleton shimmer animation.");
+  assert(css.includes("@keyframes skeleton-shimmer"), "Missing skeleton shimmer animation.");
   assertThemeVariableBlock(css, '[data-theme="dark"]');
   assertThemeVariableBlock(css, '[data-theme="light"]');
   assert(css.includes('[data-theme="mafia"]'), "Missing Mafia theme selector.");
@@ -271,7 +273,7 @@ function checkLandingLayoutContracts() {
   const lightTheatreBackdropBlock =
     lightTheatreBackdropStart >= 0 ? css.slice(lightTheatreBackdropStart, css.indexOf("}", lightTheatreBackdropStart)) : "";
   const publicShellStackPattern =
-    /\.landing-shell,\s*\.game-home-shell,\s*\.lobby-shell,\s*\.history-shell,\s*\.roles-shell,\s*\.rules-shell,\s*\.sign-in-shell,\s*\.utility-shell\s*{[\s\S]*?z-index:\s*0;[\s\S]*?isolation:\s*isolate;/;
+    /\.landing-shell,\s*\.game-home-shell,\s*\.lobby-shell,\s*\.roles-shell,\s*\.rules-shell,\s*\.sign-in-shell,\s*\.utility-shell\s*{[\s\S]*?z-index:\s*0;[\s\S]*?isolation:\s*isolate;/;
 
   assert(landingPage.includes("<ModeChoiceCards"), "Landing page must render the separated game picker component.");
   assert(modeChoiceCards.includes("game-choice-grid"), "Landing mode choice component needs the game picker grid.");
@@ -297,10 +299,6 @@ function checkLandingLayoutContracts() {
   assert(css.includes(".game-choice-card"), "Game picker cards need dedicated styling.");
   assert(css.includes(".game-choice-actions"), "Landing game choice actions must have a dedicated alignment hook.");
   assert(heroKickerPattern.test(css), "Landing hero kicker chip must be a base dark-and-light style, not light-only.");
-  assert(css.includes(".quickstart-surface"), "Landing quickstart needs the parchment surface selector.");
-  assert(css.includes(".quickstart-medallion"), "Landing quickstart needs medallion styling.");
-  assert(css.includes(".quickstart-connector"), "Landing quickstart needs connector styling.");
-  assert(css.includes("top: 46px;"), "Landing quickstart connector should align through medallion centers on desktop.");
   assert(css.includes(".mode-choice-continue-pill"), "Landing mode cards need the continue pill styling.");
   assert(existsSync(path.join(root, "apps/web/components/landing/UniversalHowToPlay.tsx")), "Missing landing UniversalHowToPlay component.");
   assert(existsSync(path.join(root, "apps/web/components/landing/LiveTickerCard.tsx")), "Missing landing LiveTickerCard component.");
@@ -335,7 +333,6 @@ function checkLandingLayoutContracts() {
     ".landing-shell::before",
     ".game-home-shell::before",
     ".lobby-shell::before",
-    ".history-shell::before",
     ".roles-shell::before",
     ".rules-shell::before",
     ".tutorial-shell::before",
@@ -459,7 +456,7 @@ function checkFamilyQuickStartContracts() {
   assert(mafiaMechanics.includes("Дневникът на Комисаря"), "Mafia mechanics must use current role terminology.");
   assert(sportMafia.includes("Създай маса"), "Sport Mafia CTA must use idiomatic Bulgarian copy.");
   assert(gameRoom.includes("recentEndings") && gameRoom.includes("byFamily"), "Game server stats must expose family counts and recent endings.");
-  for (const selector of [".quickstart-surface", ".quickstart-medallion", ".quickstart-connector", ".quickstart-row", ".night-timeline", ".role-spotlight", ".variants-chips"]) {
+  for (const selector of [".quickstart-row", ".night-timeline", ".role-spotlight", ".variants-chips"]) {
     assert(css.includes(selector), `Missing quickstart CSS selector ${selector}.`);
   }
   for (const asset of [
@@ -650,12 +647,9 @@ function checkLobbyWizardContracts() {
     ".lobby-wizard",
     ".mode-tile-card",
     ".tempo-tile",
-    ".sticky-preview",
-    ".mobile-summary-chip",
     ".role-tile-large",
     ".role-carousel",
     ".preset-chips",
-    ".lobby-confetti",
   ]) {
     assert(css.includes(selector), `Missing lobby wizard CSS selector ${selector}.`);
   }
@@ -695,7 +689,7 @@ function checkPlayUiContracts() {
     "triggerDeviceCue",
     "tempoProfile === \"live\"",
     "При игра на живо е достъпен само тихият режим.",
-    "панел на Разказвача",
+    "Панел на Разказвача",
     "Водиш играта",
     "Управление на домакина",
     "narratorExtendTimer",
@@ -931,6 +925,122 @@ function checkGlobalsCssBudget() {
     result.status === 0,
     `globals.css budget failed:\n${result.stdout ?? ""}\n${result.stderr ?? ""}\n${result.error?.message ?? ""}`,
   );
+}
+
+// Per-file counts that may only fall: forced capitals (CSS, inline styles and Tailwind classes), and page-surface
+// tokens that hold a raw colour instead of pointing at a --ds-* surface. Lower a number in the same change that
+// removes one.
+function checkDesignSystemRatchets() {
+  // The newspaper's section labels and the chronometer's engraving keep their lettering; e-mail clients get the
+  // transactional templates as they are.
+  const FORCED_UPPERCASE_BUDGET = {
+    "apps/web/components/leaderboard/Leaderboard.module.css": 1,
+    "apps/web/components/play/Timer.module.css": 1,
+    "apps/web/lib/email-templates.ts": 4,
+  };
+  const RAW_SURFACE_TOKEN_BUDGET = {
+    "apps/web/app/globals.css": 22,
+    "apps/web/components/account/Account.module.css": 6,
+    "apps/web/components/achievements/LegacyAchievements.module.css": 2,
+    "apps/web/components/auth/AuthRecovery.module.css": 2,
+    "apps/web/components/faq/LegacyFaq.module.css": 1,
+    "apps/web/components/feedback/FeedbackWidget.module.css": 2,
+    "apps/web/components/friends/Friends.module.css": 2,
+    "apps/web/components/games/GameRolesPage.module.css": 4,
+    "apps/web/components/games/GameRulesPage.module.css": 4,
+    "apps/web/components/history/Archive.module.css": 2,
+    "apps/web/components/history/Replay.module.css": 4,
+    "apps/web/components/leaderboard/Leaderboard.module.css": 12,
+    "apps/web/components/legal/LegalShell.module.css": 4,
+    "apps/web/components/lobby/LegacyCreate.module.css": 20,
+    "apps/web/components/offline/Offline.module.css": 2,
+    "apps/web/components/play/PlayConsole.module.css": 4,
+    "apps/web/components/play/PlayRoom.module.css": 8,
+    "apps/web/components/play/RoleCard.module.css": 12,
+    "apps/web/components/sign-in/SignInStage.module.css": 2,
+    "apps/web/components/site-chrome/SiteChrome.module.css": 2,
+    "apps/web/components/system/SystemPages.module.css": 2,
+    "apps/web/components/tutorial/Tutorial.module.css": 4,
+  };
+  const rawColor = /#[0-9a-fA-F]{3,8}\b|\b(?:rgba?|hsla?|oklch|oklab|lab|lch)\(/;
+  const files = ["apps/web", "packages/ui/src"]
+    .flatMap((dir) => listFilesRecursive(path.join(root, dir)).map((file) => path.join(dir, file).replaceAll("\\", "/")))
+    .filter((file) => /\.(css|tsx?|jsx?)$/.test(file) && !/\/(node_modules|\.next|__tests__|__visual__)\/|\.(test|spec|stories)\.[jt]sx?$/.test(file));
+  const problems = [];
+  const compare = (file, actual, budget, what, hint) => {
+    if (actual > budget) problems.push(`${file} has ${actual} ${what}; the budget is ${budget}. ${hint}`);
+    if (actual < budget) problems.push(`${file} has ${actual} ${what}; lower its budget from ${budget} to ${actual} so the gain sticks.`);
+  };
+  for (const file of files) {
+    const text = readText(file);
+    const isCss = file.endsWith(".css");
+    const caps = (text.match(isCss
+      ? /text-transform\s*:\s*uppercase/g
+      : /text-transform\s*:\s*uppercase|textTransform:\s*["']uppercase["']|(?<=["'`\s])uppercase(?=["'`\s])/g) ?? []).length;
+    compare(file, caps, FORCED_UPPERCASE_BUDGET[file] ?? 0, "forced-uppercase uses", "Write labels in sentence case; keep capitals for codes and data.");
+    const labelRules = isCss
+      ? [...text.matchAll(/\{([^{}]*)\}/g)].filter((m) => /font-size\s*:\s*var\(--ds-type-(?:label|eyebrow)\)/.test(m[1]) && !/line-height\s*:/.test(m[1]))
+      : [...text.matchAll(/["'`][^"'`]*text-(?:\[0\.8125rem\]|\(length:--ds-type-label\))[^"'`]*["'`]/g)].filter((m) => !m[0].includes("leading-"));
+    for (const m of labelRules) {
+      problems.push(`${file}:${text.slice(0, m.index).split("\n").length} sets the label size without a line-height. Add the label leading (var(--ds-leading-label)) so it does not inherit the paragraph's.`);
+    }
+    if (!isCss || !file.startsWith("apps/web/")) continue;
+    const rawSurfaces = [...text.matchAll(/--[\w-]*(?:paper|surface|canvas)[\w-]*\s*:\s*([^;]+);/g)].filter((m) => rawColor.test(m[1])).length;
+    compare(file, rawSurfaces, RAW_SURFACE_TOKEN_BUDGET[file] ?? 0, "paper/surface/canvas tokens with raw colours", "Point the token at a --ds-* surface instead.");
+  }
+  for (const file of new Set([...Object.keys(FORCED_UPPERCASE_BUDGET), ...Object.keys(RAW_SURFACE_TOKEN_BUDGET)])) {
+    if (!files.includes(file)) problems.push(`${file} has a design ratchet budget but no longer exists; remove its entry.`);
+  }
+  assert(problems.length === 0, problems.join("\n"));
+}
+
+// lightningcss folds a CSS-module selector list into :is() when a pseudo-element sits inside :global(...), and
+// browsers drop any :is() that holds a pseudo-element, so the whole rule silently never applies.
+function checkCssModulePseudoElements() {
+  const pseudo = /::?(before|after|marker|placeholder|selection|backdrop|first-line|first-letter)\b|::-webkit-|::-moz-/;
+  const splitTopLevel = (text) => {
+    const parts = [];
+    let depth = 0, start = 0;
+    for (let i = 0; i < text.length; i += 1) {
+      if (text[i] === "(") depth += 1;
+      else if (text[i] === ")") depth -= 1;
+      else if (text[i] === "," && depth === 0) { parts.push(text.slice(start, i)); start = i + 1; }
+    }
+    return [...parts, text.slice(start)].map((part) => part.trim());
+  };
+  const globalInners = (selector) => {
+    const inners = [];
+    for (let at = selector.indexOf(":global("); at >= 0; at = selector.indexOf(":global(", at + 1)) {
+      let depth = 0, end = at + 7;
+      for (; end < selector.length; end += 1) {
+        if (selector[end] === "(") depth += 1;
+        else if (selector[end] === ")" && --depth === 0) break;
+      }
+      inners.push(selector.slice(at + 8, end));
+    }
+    return inners;
+  };
+  const problems = [];
+  const files = listFilesRecursive(path.join(root, "apps/web"))
+    .map((file) => path.join("apps/web", file).replaceAll("\\", "/"))
+    .filter((file) => file.endsWith(".module.css") && !/\/(node_modules|\.next)\//.test(file));
+  for (const file of files) {
+    const css = readText(file);
+    let start = 0;
+    for (let i = 0; i < css.length; i += 1) {
+      if (css.startsWith("/*", i)) { i = css.indexOf("*/", i + 2) + 1; start = i + 1; continue; }
+      if (css[i] === "}" || css[i] === ";") { start = i + 1; continue; }
+      if (css[i] !== "{") continue;
+      const prelude = css.slice(start, i).trim();
+      start = i + 1;
+      if (!prelude || prelude.startsWith("@")) continue;
+      const selectors = splitTopLevel(prelude);
+      if (selectors.length > 1 && selectors.some((selector) => globalInners(selector).some((inner) => pseudo.test(inner)))) {
+        problems.push(`${file}:${lineForIndex(css, i)} ${prelude.replace(/\s+/g, " ").slice(0, 110)}`);
+      }
+    }
+  }
+  assert(problems.length === 0, `Keep pseudo-elements outside :global(...) in selector lists, e.g. :global(.card)::before:\n${problems.join("\n")}`);
 }
 
 function checkProductionGuardContracts() {
@@ -1642,12 +1752,10 @@ function readAppStyles() {
     "apps/web/components/system/SystemPages.module.css",
     "apps/web/components/games/GameHomePage.module.css",
     "apps/web/components/history/History.module.css",
-    "apps/web/components/achievements/Achievements.module.css",
     "apps/web/components/auth/AuthRecovery.module.css",
     "apps/web/components/site-chrome/SiteChrome.module.css",
     "apps/web/components/play/PlayRoom.module.css",
     "apps/web/components/play/PlayTools.module.css",
-    "apps/web/components/play/PhaseRail.module.css",
     "apps/web/components/play/ReconnectModal.module.css",
     "apps/web/components/play/VoteTallyBar.module.css",
   );
@@ -1672,7 +1780,6 @@ function readPlayStyles() {
   return readCssSurface(
     "apps/web/app/globals.css",
     "apps/web/components/play/PlayRoom.module.css",
-    "apps/web/components/play/PhaseRail.module.css",
     "apps/web/components/play/ReconnectModal.module.css",
     "apps/web/components/play/VoteTallyBar.module.css",
   );

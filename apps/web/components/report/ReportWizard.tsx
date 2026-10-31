@@ -606,7 +606,7 @@ function ReportSuccessState({
         <CircleCheck size={64} />
       </div>
 
-      <p className="report-success-kicker">сигналът е получен</p>
+      <p className="report-success-kicker">Сигналът е получен</p>
       <h2 ref={headingRef} tabIndex={-1} className="report-success-title">Сигналът е изпратен.</h2>
       <p className="report-success-detail">
         Получихме сигнала ти за <strong>{meta.label.toLowerCase()}</strong>.

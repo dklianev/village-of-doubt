@@ -239,7 +239,7 @@ describe("replay presentation", () => {
 
     expect(container).toHaveTextContent("Неизвестна фаза");
     expect(container).toHaveTextContent("Друго събитие");
-    expect(container).toHaveTextContent("неуточнена видимост");
+    expect(container).toHaveTextContent("Неизвестна видимост");
     expect(container).toHaveTextContent("Неизвестна роля");
     expect(container.textContent).not.toMatch(/future_(winner|phase|event|visibility|role|payload)/);
     expect(decodeURIComponent(container.innerHTML)).not.toMatch(/future_(winner|phase|event|visibility|role|payload)/);

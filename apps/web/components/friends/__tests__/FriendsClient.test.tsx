@@ -45,6 +45,27 @@ describe("FriendsClient", () => {
     expect(screen.getByRole("button", { name: "Копирай поканата" })).toHaveAttribute("autocomplete", "off");
   });
 
+  it("leads an empty ledger into the existing add form and keeps focus on a live control", () => {
+    render(<FriendsClient />);
+    const first = screen.getByRole("button", { name: "Добави първото име" });
+    expect(first).toHaveClass("btn", "btn-primary");
+    fireEvent.click(first);
+    expect(screen.getByRole("dialog")).toHaveAccessibleName("Ново име");
+    expect(screen.getByRole("textbox", { name: "Име" })).toHaveFocus();
+    closeForm();
+    expect(first).toHaveFocus();
+    fireEvent.click(first); fillName("Мила"); add();
+    expect(saved()).toEqual([expect.objectContaining({ name: "Мила" })]);
+    expect(screen.queryByRole("button", { name: "Добави първото име" })).not.toBeInTheDocument();
+    expect(addTrigger()).toHaveFocus();
+  });
+
+  it("does not invite a first name while the stored ledger needs recovery", () => {
+    localStorage.setItem(FRIENDS_STORAGE_KEY, "{broken"); render(<FriendsClient />);
+    expect(screen.getByRole("heading", { name: "Няма достъпни записи" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Добави първото име" })).not.toBeInTheDocument();
+  });
+
   it("offers an explicit invitation shortcut without scrolling or losing selected names", async () => {
     seed(); render(<FriendsClient />);
     const user = userEvent.setup();

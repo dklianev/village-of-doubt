@@ -40,7 +40,7 @@ export function InlineRoleDetail({
         />
       </picture>
       {heading ? <div>
-        <p className="section-kicker">как действа</p>
+        <p className="section-kicker">Как действа</p>
         <h2 id="create-inline-role-title">{definition.nameBg}</h2>
       </div> : null}
       <p>{definition.fullDescriptionBg}</p>

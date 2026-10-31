@@ -25,7 +25,7 @@ export function StepStyle({
   return (
     <section className="lobby-step lobby-step-style" aria-labelledby="step-style-title">
       <div className="lobby-step-heading">
-        <p className="section-kicker">стъпка 3</p>
+        <p className="section-kicker">Стъпка 3</p>
         <h1 id="step-style-title" tabIndex={-1}>Стил на водене</h1>
         <p>Избери колко автоматична да бъде играта и как да общуват играчите.</p>
       </div>

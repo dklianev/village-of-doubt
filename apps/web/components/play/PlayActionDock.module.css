@@ -160,10 +160,6 @@
   gap: 14px;
 }
 
-.compactSummary {
-  margin-top: 10px;
-}
-
 .primaryColumn > :global(*) {
   margin-top: 0;
 }
@@ -184,43 +180,6 @@
   overflow: visible;
   -webkit-box-orient: initial;
   -webkit-line-clamp: unset;
-}
-
-.dossierSheet {
-  position: relative;
-  display: grid;
-  gap: 14px;
-}
-
-.dossierClose {
-  position: absolute;
-  top: -62px;
-  right: 0;
-  z-index: 2;
-  display: grid;
-  width: 44px;
-  height: 44px;
-  padding: 0;
-  place-items: center;
-  border: 1px solid color-mix(in oklch, currentColor 24%, transparent);
-  border-radius: 999px;
-  background: color-mix(in oklch, var(--ds-surface-paper) 86%, transparent);
-  color: var(--ds-ink-primary);
-  cursor: pointer;
-}
-
-.dossierClose svg {
-  width: 20px;
-  height: 20px;
-}
-
-.dossierClose:focus-visible {
-  outline: 2px solid var(--blood);
-  outline-offset: 3px;
-}
-
-.dossierSheet > :global(*) {
-  margin-top: 0;
 }
 
 @media (max-width: 1023px) {

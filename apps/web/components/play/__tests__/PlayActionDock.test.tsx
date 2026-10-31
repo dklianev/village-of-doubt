@@ -11,7 +11,7 @@ const playRoomCss = readFileSync(resolve(process.cwd(), "components/play/PlayRoo
 function dock(props: { compact: boolean; expanded: boolean; onExpandedChange?: (expanded: boolean) => void }) {
   return (
     <PlayActionDock
-      eyebrow="личен ход"
+      eyebrow="Личен ход"
       heading="Избери цел"
       kind="action"
       compact={props.compact}
@@ -25,7 +25,7 @@ function dock(props: { compact: boolean; expanded: boolean; onExpandedChange?: (
 describe("PlayActionDock", () => {
   it("does not offer an expansion control without a primary action", () => {
     render(<PlayActionDock
-      eyebrow="дневен ред" heading="Дневни речи" kind="quiet"
+      eyebrow="Дневен ред" heading="Дневни речи" kind="quiet"
       compact expanded={false} onExpandedChange={vi.fn()}
       primaryContent={null}
     />);
@@ -35,7 +35,7 @@ describe("PlayActionDock", () => {
 
   it("keeps the public action visible on desktop without duplicating it", () => {
     render(<PlayActionDock
-      eyebrow="дневен ред" heading="Твоят глас" kind="action" privateAction={false}
+      eyebrow="Дневен ред" heading="Твоят глас" kind="action" privateAction={false}
       compact={false} expanded={false} onExpandedChange={vi.fn()}
       primaryContent={<button>Потвърди гласа</button>}
     />);

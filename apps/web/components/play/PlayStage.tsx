@@ -389,6 +389,7 @@ export function PlayStage({
             const isMobileGrid = effectiveMode === "mobile-table-grid";
             const isMobileStartEdge = isMobileGrid && index % mobileGridColumns === 0;
             const isMobileLastRow = isMobileGrid && index >= seatCount - mobileGridColumns;
+            const own = player.userId === ownPlayer?.userId;
             const targetable = targetableIds.has(player.userId);
             const selected = selectedTargetId === player.userId;
             const secondSelected = secondTargetId === player.userId;
@@ -402,7 +403,7 @@ export function PlayStage({
               <div
                 key={player.userId}
                 className={`${styles.seatSlot} play-seat-slot`}
-                data-current={player.userId === ownPlayer?.userId ? "true" : undefined}
+                data-current={own ? "true" : undefined}
                 data-targetable={targetable ? "true" : undefined}
                 data-selected={selected ? "true" : undefined}
                 data-second-selected={secondSelected ? "true" : undefined}
@@ -421,6 +422,7 @@ export function PlayStage({
               >
                 <PlaySeat
                   player={player}
+                  own={own}
                   phase={phase}
                   narratorMode={narratorMode}
                   targetable={targetable}
