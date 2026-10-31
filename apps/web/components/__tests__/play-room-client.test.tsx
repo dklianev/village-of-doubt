@@ -103,7 +103,7 @@ vi.mock("@/components/play/RoleCard", () => ({
 }));
 
 vi.mock("@/components/play/DeathRevealCinematic", () => ({
-  DeathRevealCinematic: () => <div data-testid="death-reveal" />,
+  DeathRevealCinematic: ({ revealedUserId }: { revealedUserId: string }) => <div data-testid="death-reveal" data-user={revealedUserId} />,
 }));
 
 vi.mock("@/components/play/NightActionPanel", () => ({
@@ -326,7 +326,8 @@ describe("PlayRoomClient orchestrator", () => {
     mockHooks("role_reveal", { room: { ...room, roomId: "instance-2" }, privateRole: role });
     second.rerender(<PlayRoomClient code="ABCD" />);
     expect(await screen.findByRole("dialog", { name: "Твоята тайна карта" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Виж ролята си" })).toHaveAttribute("aria-expanded", "false");
+    // The modal ritual hides the table behind it from assistive tech.
+    expect(screen.getByRole("button", { name: "Виж ролята си", hidden: true })).toHaveAttribute("aria-expanded", "false");
   });
 
   it.each(["lobby", "night", "day_discussion", "voting", "game_over"] as GamePhase[])(
@@ -418,6 +419,7 @@ describe("PlayRoomClient orchestrator", () => {
     await userEvent.click(ready);
     expect(send).toHaveBeenCalledExactlyOnceWith("ready", { ready: true });
     expect(ready).toHaveAttribute("aria-pressed", "false");
+    expect(ready).toHaveAccessibleName("Готов");
 
     mockHooks("lobby", {
       room: { send, onMessage: vi.fn() },
@@ -425,7 +427,9 @@ describe("PlayRoomClient orchestrator", () => {
     });
     rerender(<PlayRoomClient code="ABCD" />);
     expect(screen.getByRole("status", { name: "Готови: 2 от 2" })).toHaveAttribute("aria-atomic", "true");
+    // A toggle keeps one name; "pressed" alone says the viewer is ready.
     expect(ready).toHaveAttribute("aria-pressed", "true");
+    expect(ready).toHaveAccessibleName("Готов");
     await userEvent.click(ready);
     expect(send).toHaveBeenLastCalledWith("ready", { ready: false });
   });
@@ -834,8 +838,12 @@ describe("PlayRoomClient orchestrator", () => {
 
     render(<PlayRoomClient code="ABCD" createOptions={{ mode: "werewolves_classic" }} />);
 
+    // The deal opens as a modal ritual; the table toggle is reachable once it is dismissed.
+    const ritual = await screen.findByRole("dialog", { name: "Твоята тайна карта" });
+    await waitFor(() => expect(within(ritual).getByRole("button", { name: "Обърни картата" })).toHaveFocus());
+    fireEvent.keyDown(ritual, { key: "Escape" });
     expect(screen.queryByTestId("role-card")).not.toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: "Виж ролята си" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Виж ролята си" }));
     expect(await screen.findByTestId("role-card")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Скрий личния ход" })).not.toBeInTheDocument();
   });
@@ -1139,6 +1147,61 @@ describe("PlayRoomClient orchestrator", () => {
     expect(seat).toHaveAttribute("aria-pressed", "true");
   });
 
+  describe("global action shortcuts", () => {
+    const votingPlayers: PublicPlayer[] = [
+      { ...player, userId: "u1", displayName: "Искра" },
+      { ...player, userId: "u2", displayName: "Борил", host: false },
+      { ...player, userId: "u3", displayName: "Рада", host: false },
+    ];
+    function renderVoting(wrapInMainContent = false) {
+      const send = vi.fn();
+      mockHooks("voting", {
+        room: { send, onMessage: vi.fn() },
+        snapshot: { ...snapshotForPhase("voting"), playerCount: votingPlayers.length, players: votingPlayers },
+        currentUserId: "u1",
+      });
+      const room = <PlayRoomClient code="ABCD" createOptions={{ mode: "werewolves_classic" }} />;
+      render(wrapInMainContent ? <div id="main-content" tabIndex={-1}>{room}</div> : room);
+      return send;
+    }
+
+    it("does not submit the selected vote with Enter while a tab panel has focus", () => {
+      const send = renderVoting();
+      fireEvent.keyDown(document.body, { key: "1" });
+      expect(screen.getByRole("button", { name: /Избери Борил:/ })).toHaveAttribute("aria-pressed", "true");
+
+      const panel = screen.getAllByRole("tabpanel")[0]!;
+      panel.focus();
+      fireEvent.keyDown(panel, { key: "Enter" });
+      expect(send).not.toHaveBeenCalledWith("submitVote", expect.anything());
+
+      fireEvent.keyDown(document.body, { key: "Enter" });
+      expect(send).toHaveBeenCalledWith("submitVote", { targetUserId: "u2" });
+    });
+
+    it("selects targets with number keys after a mouse click on a seat", async () => {
+      const user = userEvent.setup();
+      renderVoting();
+      const borilSeat = screen.getByRole("button", { name: /Избери Борил:/ });
+      await user.click(borilSeat);
+      expect(borilSeat).toHaveFocus();
+
+      await user.keyboard("2");
+
+      expect(screen.getByRole("button", { name: /Избери Рада:/ })).toHaveAttribute("aria-pressed", "true");
+      expect(borilSeat).toHaveAttribute("aria-pressed", "false");
+    });
+
+    it("still submits with Enter when a background click left focus on the main content", () => {
+      const send = renderVoting(true);
+      const main = document.getElementById("main-content")!;
+      main.focus();
+      fireEvent.keyDown(main, { key: "1" });
+      fireEvent.keyDown(main, { key: "Enter" });
+      expect(send).toHaveBeenCalledWith("submitVote", { targetUserId: "u2" });
+    });
+  });
+
   it("replaces a blacksmith's vote target instead of treating it as a second night target", async () => {
     const user = userEvent.setup();
     const send = vi.fn();
@@ -1320,7 +1383,7 @@ describe("PlayRoomClient orchestrator", () => {
     expect(screen.queryByTestId("voting-panel")).not.toBeInTheDocument();
   });
 
-  it("shows hunter revenge actions only for an eliminated Hunter viewer", async () => {
+  it("shows hunter revenge actions only for the privately authorized eliminated Hunter", async () => {
     const user = userEvent.setup();
     const players: PublicPlayer[] = [
       { ...player, userId: "u1", displayName: "Искра", alive: false, revealedRole: "hunter" },
@@ -1333,7 +1396,7 @@ describe("PlayRoomClient orchestrator", () => {
         players,
       },
       currentUserId: "u1",
-      privateRole: { role: "hunter", roleNameBg: "Ловец" },
+      privateRole: { role: "hunter", roleNameBg: "Ловец", hunterRevengeAvailable: true },
     });
 
     render(<PlayRoomClient code="ABCD" createOptions={{ mode: "werewolves_classic" }} />);
@@ -1359,7 +1422,7 @@ describe("PlayRoomClient orchestrator", () => {
         players,
       },
       currentUserId: "u1",
-      privateRole: { role: "hunter", roleNameBg: "Ловец" },
+      privateRole: { role: "hunter", roleNameBg: "Ловец", hunterRevengeAvailable: true },
     });
 
     render(<PlayRoomClient code="ABCD" createOptions={{ mode: "werewolves_classic" }} />);
@@ -1368,6 +1431,144 @@ describe("PlayRoomClient orchestrator", () => {
     expect(
       screen.queryByRole("button", { name: /^Избери Борил: онлайн, клавиш \d$/ }),
     ).not.toBeInTheDocument();
+  });
+
+  it.each([false, undefined])("blocks the panel, table and shortcuts without current Hunter authority (%s)", (available) => {
+    const send = vi.fn();
+    const players = [{ ...player, alive: false }, { ...player, userId: "u2", displayName: "Борил", host: false }];
+    mockHooks("hunter_revenge", {
+      room: { send, onMessage: vi.fn() },
+      snapshot: { ...snapshotForPhase("hunter_revenge"), players, playerCount: 2 },
+      privateRole: { role: "hunter", roleNameBg: "Ловец", hunterRevengeAvailable: available },
+    });
+    render(<PlayRoomClient code="ABCD" />);
+    expect(screen.queryByTestId("hunter-revenge")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Избери Борил:/ })).not.toBeInTheDocument();
+    fireEvent.keyDown(window, { key: "1" });
+    fireEvent.keyDown(window, { key: "Enter" });
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it("ends all Hunter controls on ACK while another Hunter keeps the same phase, and stays inactive next round", () => {
+    const callbacks = new Map<string, (message: unknown) => void>();
+    const send = vi.fn();
+    const room = { send, onMessage: (event: string, callback: (message: unknown) => void) => {
+      callbacks.set(event, callback);
+      return () => callbacks.delete(event);
+    } };
+    const players = [{ ...player, alive: false }, { ...player, userId: "u2", displayName: "Борил", host: false }];
+    const snapshot = { ...snapshotForPhase("hunter_revenge"), players, playerCount: 2 };
+    mockHooks("hunter_revenge", {
+      room, snapshot, privateRole: { role: "hunter", roleNameBg: "Ловец", hunterRevengeAvailable: true },
+    });
+    const view = render(<PlayRoomClient code="ABCD" />);
+    expect(screen.getByTestId("hunter-revenge")).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: "1" });
+    fireEvent.keyDown(window, { key: "Enter" });
+    expect(send).toHaveBeenCalledExactlyOnceWith("submitHunterRevenge", { targetUserId: "u2" });
+    act(() => callbacks.get("hunter_revenge_ack")?.({ phase: "hunter_revenge", round: 1, targetUserId: "u2" }));
+    expect(screen.queryByTestId("hunter-revenge")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Избери Борил:/ })).not.toBeInTheDocument();
+    fireEvent.keyDown(window, { key: "1" });
+    fireEvent.keyDown(window, { key: "Enter" });
+    expect(send).toHaveBeenCalledTimes(1);
+    mockHooks("hunter_revenge", {
+      room, snapshot: { ...snapshot, round: 2 },
+      privateRole: { role: "hunter", roleNameBg: "Ловец", hunterRevengeAvailable: false },
+    });
+    view.rerender(<PlayRoomClient code="ABCD" />);
+    expect(screen.queryByTestId("hunter-revenge")).not.toBeInTheDocument();
+    fireEvent.keyDown(window, { key: "1" });
+    fireEvent.keyDown(window, { key: "Enter" });
+    expect(send).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not carry a voting selection into the Hunter's last shot", () => {
+    const send = vi.fn();
+    const room = { send, onMessage: vi.fn() };
+    const players: PublicPlayer[] = [
+      { ...player, userId: "u1", displayName: "Искра" },
+      { ...player, userId: "u2", displayName: "Борил", host: false },
+    ];
+    mockHooks("voting", {
+      room,
+      snapshot: { ...snapshotForPhase("voting"), players, playerCount: players.length },
+      privateRole: { role: "hunter", roleNameBg: "Ловец", hunterRevengeAvailable: false },
+    });
+    const view = render(<PlayRoomClient code="ABCD" />);
+    fireEvent.click(screen.getByRole("button", { name: /^Избери Борил: онлайн, клавиш \d$/ }));
+    expect(screen.getByRole("button", { name: /^Избери Борил: онлайн, клавиш \d, избрана цел$/ })).toBeInTheDocument();
+
+    mockHooks("hunter_revenge", {
+      room,
+      snapshot: {
+        ...snapshotForPhase("hunter_revenge"),
+        players: [{ ...players[0]!, alive: false }, players[1]!],
+        playerCount: players.length,
+      },
+      privateRole: { role: "hunter", roleNameBg: "Ловец", hunterRevengeAvailable: true },
+    });
+    view.rerender(<PlayRoomClient code="ABCD" />);
+
+    expect(screen.getByTestId("hunter-revenge")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Избери Борил: онлайн, клавиш \d$/ })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /избрана цел$/ })).not.toBeInTheDocument();
+    fireEvent.keyDown(window, { key: "Enter" });
+    expect(send).not.toHaveBeenCalledWith("submitHunterRevenge", expect.anything());
+  });
+
+  it("keeps the accepted Hunter shot visible without re-enabling the shot", () => {
+    const callbacks = new Map<string, (message: unknown) => void>();
+    const send = vi.fn();
+    const room = { send, onMessage: (event: string, callback: (message: unknown) => void) => {
+      callbacks.set(event, callback);
+      return () => callbacks.delete(event);
+    } };
+    const players = [{ ...player, alive: false }, { ...player, userId: "u2", displayName: "Борил", host: false }];
+    mockHooks("hunter_revenge", {
+      room,
+      snapshot: { ...snapshotForPhase("hunter_revenge"), players, playerCount: 2 },
+      privateRole: { role: "hunter", roleNameBg: "Ловец", hunterRevengeAvailable: true },
+    });
+    render(<PlayRoomClient code="ABCD" />);
+    act(() => callbacks.get("hunter_revenge_ack")?.({ phase: "hunter_revenge", round: 1, targetUserId: "u2" }));
+
+    expect(screen.getByText("Приет изстрел: Борил").closest('[role="status"]')).toHaveFocus();
+    expect(screen.queryByTestId("hunter-revenge")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Избери Борил:/ })).not.toBeInTheDocument();
+    fireEvent.keyDown(window, { key: "1" });
+    fireEvent.keyDown(window, { key: "Enter" });
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it("reveals only the death seen this round, never an older victim", async () => {
+    const room = { send: vi.fn(), onMessage: vi.fn() };
+    const viewer = { ...player, userId: "u1", displayName: "Искра" };
+    const older = { ...player, userId: "u2", displayName: "Борил", host: false, alive: false, revealedRole: "seer" };
+    const voted = { ...player, userId: "u3", displayName: "Рада", host: false };
+    const phaseSnapshot = (phase: GamePhase, round: number, players: PublicPlayer[]) => ({
+      ...snapshotForPhase(phase), round, players, playerCount: players.length,
+    });
+    mockHooks("day_announcement", { room, snapshot: phaseSnapshot("day_announcement", 2, [viewer, older, voted]) });
+    const view = render(<PlayRoomClient code="ABCD" />);
+    // Let the lazy card resolve so absence is not just a pending Suspense boundary.
+    await act(async () => {
+      await import("@/components/play/DeathRevealCinematic");
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(screen.queryByTestId("death-reveal")).not.toBeInTheDocument();
+
+    mockHooks("resolution", {
+      room, snapshot: phaseSnapshot("resolution", 2, [viewer, older, { ...voted, alive: false, revealedRole: "jester" }]),
+    });
+    view.rerender(<PlayRoomClient code="ABCD" />);
+    expect(await screen.findByTestId("death-reveal")).toHaveAttribute("data-user", "u3");
+
+    mockHooks("day_announcement", {
+      room, snapshot: phaseSnapshot("day_announcement", 3, [viewer, older, { ...voted, alive: false, revealedRole: "jester" }]),
+    });
+    view.rerender(<PlayRoomClient code="ABCD" />);
+    expect(screen.queryByTestId("death-reveal")).not.toBeInTheDocument();
   });
 
   it("keeps voting seats and panel available for a living voter", () => {

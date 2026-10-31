@@ -220,9 +220,13 @@
   :global(.rules-next) { align-items: start; }
   :global(.rules-next > div) { flex-basis: 100%; }
 }
-@media (max-width: 360px) {
-  :global(.rules-playbook-hero h1) { font-size: 30px; }
+/* Whether both actions share a row depends on text width, which changes when the late display font
+ * swaps in; on phones they always stack, so the hero keeps its height (no layout shift). */
+@media (max-width: 480px) {
   :global(.rules-hero-actions) { gap: 10px; }
   :global(.rules-hero-actions > *) { width: 100%; }
+}
+@media (max-width: 360px) {
+  :global(.rules-playbook-hero h1) { font-size: 30px; }
   :global(.phase-detail-copy) { padding: 16px; }
 }

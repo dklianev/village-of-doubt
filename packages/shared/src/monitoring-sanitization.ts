@@ -1,11 +1,13 @@
+import { normalizePrivateRoute } from "./private-route.js";
+
 type UnknownRecord = Record<string, unknown>;
 
-const SENSITIVE_KEY = /(?:authorization|cookie|token|secret|password|chat|message|role|room.?code|user.?id|email|display.?name|sql|query|statement|params?|parameters?|bind.?values?)/i;
+const SENSITIVE_KEY = /(?:authorization|cookie|token|secret|password|chat|message|role|room.?code|user.?id|email|display.?name|sql|query|statement|param|bind.?values?)/i;
 const SENSITIVE_VALUE = /(["']?)(authorization|cookie|token|secret|password|chat(?:message)?|message|role|room.?code|user.?id|email|display.?name)\1\s*[:=]\s*(?:"[^"]*"|'[^']*'|[^\s,;&}]+)/gi;
 const GAME_ROOM_CONTEXT = /\[GameRoom\s+[^\]\s]+\]/gi;
-const MONITORING_URL = /https?:\/\/[^\s"'<>]+/gi;
-const PRIVATE_ROUTE_IN_TEXT = /(?:\/(?:play|lobby)\/[^/?#\s,;)"'<>]+(?:\?[^\s,;)"'<>]*)?|\/history\/[^/?#\s,;)"'<>]+\/replay(?:\?[^\s,;)"'<>]*)?)/gi;
-const ROUTE_KEY = /^(?:url|href|from|to|route|path)$/i;
+const MONITORING_URL = /(?:https?|wss?):\/\/[^\s"'<>]+/gi;
+const PRIVATE_ROUTE_IN_TEXT = /\/(?:(?:(?:mafia|werewolf)\/)?(?:play|lobby|join)\/[^/?#\s,;)"'<>]+|history\/[^/?#\s,;)"'<>]+\/replay|(?:api\/)?rooms\/[^/?#\s,;)"'<>]+\/preview)(?:[?#][^\s,;)"'<>]*)?/gi;
+const ROUTE_KEY = /^(?:url|href|from|to|route|path|http\.(?:url|target|route)|url\.(?:full|path))$/i;
 const DATABASE_ERROR_TEXT = /(?:^|\r?\n)\s*Failed query:[\s\S]*(?:^|\r?\n)\s*params\s*:/im;
 const DATABASE_ERROR_TYPE = /^(?:DrizzleQueryError|Postgres(?:Js)?Error|DatabaseError)$/i;
 const SAFE_OPERATION = /^[a-z][a-z0-9.-]{0,63}$/;
@@ -48,7 +50,7 @@ export function sanitizeMonitoringUrl(value: string) {
   try {
     const absolute = /^[a-z][a-z\d+.-]*:\/\//i.test(value);
     const url = new URL(value, "https://monitoring.invalid");
-    const pathname = normalizePrivatePath(url.pathname);
+    const pathname = normalizePrivateRoute(url.pathname);
     return absolute ? `${url.origin}${pathname}` : pathname;
   } catch {
     return "/invalid-monitoring-url";
@@ -91,19 +93,31 @@ export function sanitizeMonitoringEvent<T extends object>(event: T): T {
     ...(isRecord(eventRecord.tags) ? { tags: redactRecord(eventRecord.tags) } : {}),
     ...(isRecord(eventRecord.extra) ? { extra: redactRecord(eventRecord.extra) } : {}),
     ...(isRecord(eventRecord.contexts) ? { contexts: redactRecord(eventRecord.contexts) } : {}),
+    ...(Array.isArray(eventRecord.spans)
+      ? { spans: eventRecord.spans.map((span) => isRecord(span) ? sanitizeMonitoringSpan(span) : span) }
+      : {}),
     ...(Array.isArray(eventRecord.breadcrumbs)
       ? { breadcrumbs: eventRecord.breadcrumbs.map((breadcrumb) => sanitizeMonitoringBreadcrumb(breadcrumb as object)) }
       : {}),
   } as T;
 }
 
+export function sanitizeMonitoringSpan<T extends object>(span: T): T {
+  const record = span as UnknownRecord;
+  const sanitized = redactRecord(record);
+  const attributes = isRecord(record.data) ? record.data : record.attributes;
+  const operation = record.op ?? (isRecord(attributes) ? attributes["sentry.op"] : undefined);
+  // SQL span names can contain literal values even when db.statement is removed.
+  if (typeof operation === "string" && /^db(?:\.|$)/i.test(operation)) {
+    if (typeof record.description === "string") sanitized.description = REDACTED;
+    if (typeof record.name === "string") sanitized.name = REDACTED;
+  }
+  return sanitized as T;
+}
+
 export function sanitizeMonitoringBreadcrumb<T extends object>(breadcrumb: T): T {
   const breadcrumbRecord = breadcrumb as UnknownRecord;
   const data = isRecord(breadcrumbRecord.data) ? redactRecord(breadcrumbRecord.data) : undefined;
-  if (data && isRecord(breadcrumbRecord.data) && typeof breadcrumbRecord.data.url === "string") {
-    data.url = sanitizeMonitoringUrl(breadcrumbRecord.data.url);
-  }
-
   return {
     ...breadcrumbRecord,
     ...(typeof breadcrumbRecord.message === "string"
@@ -205,14 +219,6 @@ function sanitizeMonitoringText(value: string) {
     SENSITIVE_VALUE,
     (_match, quote: string, key: string) => `${quote}${key}${quote}=${REDACTED}`,
   );
-}
-
-function normalizePrivatePath(pathname: string) {
-  const normalized = pathname.replace(/\/$/, "") || "/";
-  if (/^\/play\/[^/]+$/.test(normalized)) return "/play/[code]";
-  if (/^\/lobby\/[^/]+$/.test(normalized)) return "/lobby/[code]";
-  if (/^\/history\/[^/]+\/replay$/.test(normalized)) return "/history/[gameId]/replay";
-  return normalized;
 }
 
 function redactRecord(record: UnknownRecord): UnknownRecord {

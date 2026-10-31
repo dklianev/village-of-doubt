@@ -2,8 +2,15 @@ import { ROLE_DEFINITIONS, type GameFamily, type RoleCode } from "@werewolf/shar
 import type { PublicPlayer } from "@/lib/play/types";
 import { roleArtSource } from "@/lib/role-art";
 
-export function DeathRevealCinematic({ family, players }: { family: GameFamily; players: PublicPlayer[] }) {
-  const revealed = [...players].reverse().find((player) => player.playing && !player.alive && player.revealedRole);
+export function DeathRevealCinematic({ family, players, revealedUserId }: {
+  family: GameFamily;
+  players: PublicPlayer[];
+  /** The newest death of the current round; empty when nobody died. */
+  revealedUserId: string;
+}) {
+  const revealed = revealedUserId
+    ? players.find((player) => player.userId === revealedUserId && player.playing && !player.alive && player.revealedRole)
+    : undefined;
   if (!revealed?.revealedRole) {
     return null;
   }

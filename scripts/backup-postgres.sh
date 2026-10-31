@@ -1,6 +1,10 @@
 #!/usr/bin/env sh
 set -eu
 
+script_dir="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+# shellcheck disable=SC1091
+. "$script_dir/deploy-operations-lib.sh"
+
 retention_dry_run=0
 case "$#" in
   0) ;;
@@ -23,8 +27,9 @@ POSTGRES_USER="${POSTGRES_USER:-werewolf}"
 POSTGRES_DB="${POSTGRES_DB:-werewolf}"
 docker_command="${BACKUP_DOCKER_COMMAND:-docker}"
 fixed_container="${BACKUP_POSTGRES_CONTAINER:-}"
-compose_project="${BACKUP_COMPOSE_PROJECT:-}"
+compose_project="${COMPOSE_PROJECT_NAME:-${BACKUP_COMPOSE_PROJECT:-}}"
 require_fixed_container="${BACKUP_REQUIRE_FIXED_CONTAINER:-0}"
+require_offsite="${BACKUP_REQUIRE_OFFSITE:-0}"
 require_encryption="${BACKUP_REQUIRE_ENCRYPTION:-$require_fixed_container}"
 require_signature="${BACKUP_REQUIRE_SIGNATURE:-$require_encryption}"
 age_recipient="${BACKUP_AGE_RECIPIENT:-}"
@@ -36,6 +41,10 @@ migration_head="${BACKUP_MIGRATION_HEAD:-}"
 require_active_release="${BACKUP_REQUIRE_ACTIVE_RELEASE:-0}"
 release_manifest="${BACKUP_RELEASE_MANIFEST:-/var/lib/werewolf/release-state/current.json}"
 release_manifest_signature="${BACKUP_RELEASE_MANIFEST_SIGNATURE:-${release_manifest}.sig}"
+schema_manifest="${BACKUP_SCHEMA_MANIFEST:-$(dirname "$release_manifest")/schema-current.json}"
+schema_manifest_signature="${schema_manifest}.sig"
+pending_migration_manifest="$(dirname "$schema_manifest")/migration-pending.json"
+provenance_dir=""
 release_manifest_command="${BACKUP_RELEASE_MANIFEST_COMMAND:-$(dirname "$0")/release-manifest.mjs}"
 release_manifest_public_key="${BACKUP_RELEASE_MANIFEST_PUBLIC_KEY_FILE:-/etc/werewolf/release-manifest.pub}"
 release_allowed_image_prefix="${BACKUP_RELEASE_ALLOWED_IMAGE_PREFIX:-}"
@@ -61,8 +70,8 @@ validate_rclone_prefix() {
       ;;
   esac
   case "$remote_prefix" in
-    ""|/|.|..|/*|*/|../*|*/../*|*/..)
-      printf '%s must be an explicit non-root rclone prefix without traversal or a trailing slash.\n' "$label" >&2
+    ""|.|..|/*|*/|./*|*/./*|*/.|../*|*/../*|*/..|*//*)
+      printf '%s must be an explicit non-root rclone prefix without dot or empty path segments.\n' "$label" >&2
       exit 1
       ;;
   esac
@@ -81,7 +90,12 @@ run_offsite_retention() {
   fi
 }
 
-if [ -n "$rclone_remote" ] || [ -n "$deletion_ledger_remote" ] || [ "$retention_dry_run" -eq 1 ]; then
+case "$require_offsite" in
+  0|1) ;;
+  *) printf 'BACKUP_REQUIRE_OFFSITE must be 0 or 1.\n' >&2; exit 1 ;;
+esac
+
+if [ "$require_offsite" = "1" ] || [ -n "$rclone_remote" ] || [ -n "$deletion_ledger_remote" ] || [ "$retention_dry_run" -eq 1 ]; then
   if [ -z "$rclone_remote" ]; then
     printf 'RCLONE_REMOTE is required for off-site retention.\n' >&2
     exit 1
@@ -160,6 +174,7 @@ if [ -n "$age_recipient" ] && ! command -v "$age_command" >/dev/null 2>&1; then
 fi
 
 if [ "$require_active_release" = "1" ]; then
+  validate_compose_project "$compose_project"
   if [ ! -f "$release_manifest" ] || [ ! -f "$release_manifest_signature" ]; then
     printf 'Active signed release manifest is unavailable: %s\n' "$release_manifest" >&2
     exit 1
@@ -172,10 +187,28 @@ if [ "$require_active_release" = "1" ]; then
     printf 'BACKUP_RELEASE_ALLOWED_IMAGE_PREFIX is required for active release verification.\n' >&2
     exit 1
   fi
-  provenance_env="$(mktemp)"
-  trap 'rm -f "$provenance_env"' EXIT HUP INT TERM
-  node "$release_manifest_command" "$release_manifest" \
-    --signature "$release_manifest_signature" \
+  if [ -e "$pending_migration_manifest" ] || [ -L "$pending_migration_manifest" ] || \
+    [ -e "$pending_migration_manifest.sig" ] || [ -L "$pending_migration_manifest.sig" ]; then
+    printf 'Applied schema is unresolved: migration pending marker exists.\n' >&2
+    exit 1
+  fi
+  if [ -e "$(dirname "$schema_manifest")/restore-recovery-required.txt" ]; then
+    printf 'Restore recovery is unresolved; backup provenance cannot be trusted.\n' >&2
+    exit 1
+  fi
+  if [ ! -r "$schema_manifest" ] || [ ! -r "$schema_manifest_signature" ]; then
+    printf 'Signed applied-schema provenance is unavailable: %s\n' "$schema_manifest" >&2
+    exit 1
+  fi
+  provenance_dir="$(mktemp -d)"
+  trap 'rm -rf "$provenance_dir"' EXIT HUP INT TERM
+  cp "$release_manifest" "$provenance_dir/current.json"
+  cp "$release_manifest_signature" "$provenance_dir/current.json.sig"
+  cp "$schema_manifest" "$provenance_dir/schema.json"
+  cp "$schema_manifest_signature" "$provenance_dir/schema.json.sig"
+  provenance_env="$provenance_dir/provenance.env"
+  node --jitless "$release_manifest_command" "$provenance_dir/current.json" \
+    --signature "$provenance_dir/current.json.sig" \
     --public-key "$release_manifest_public_key" \
     --allowed-image-prefix "$release_allowed_image_prefix" \
     --env-output "$provenance_env"
@@ -183,10 +216,30 @@ if [ "$require_active_release" = "1" ]; then
   # shellcheck disable=SC1090
   . "$provenance_env"
   release_version="$RELEASE_VERSION"
+  node --jitless "$release_manifest_command" "$provenance_dir/schema.json" \
+    --signature "$provenance_dir/schema.json.sig" \
+    --public-key "$release_manifest_public_key" \
+    --allowed-image-prefix "$release_allowed_image_prefix" \
+    --env-output "$provenance_env"
+  # The applied schema may be newer than the last healthy application release.
+  # shellcheck disable=SC1090
+  . "$provenance_env"
   migration_head="$MIGRATION_HEAD"
-  rm -f "$provenance_env"
-  trap - EXIT HUP INT TERM
 fi
+
+verify_unchanged_provenance() {
+  [ "$require_active_release" = "1" ] || return 0
+  if [ -e "$pending_migration_manifest" ] || [ -L "$pending_migration_manifest" ] || \
+    [ -e "$(dirname "$schema_manifest")/restore-recovery-required.txt" ] || \
+    [ -e "$pending_migration_manifest.sig" ] || [ -L "$pending_migration_manifest.sig" ] || \
+    ! cmp -s "$release_manifest" "$provenance_dir/current.json" || \
+    ! cmp -s "$release_manifest_signature" "$provenance_dir/current.json.sig" || \
+    ! cmp -s "$schema_manifest" "$provenance_dir/schema.json" || \
+    ! cmp -s "$schema_manifest_signature" "$provenance_dir/schema.json.sig"; then
+    printf 'Release/schema provenance changed or migration is unresolved; backup will not be published.\n' >&2
+    return 1
+  fi
+}
 
 if [ "$require_signature" = "1" ]; then
   case "$release_version" in
@@ -229,8 +282,23 @@ validate_docker_identifier() {
 }
 
 resolve_postgres_container() {
+  if [ -n "${BACKUP_COMPOSE_PROJECT:-}" ] && [ "$BACKUP_COMPOSE_PROJECT" != "$compose_project" ]; then
+    printf 'BACKUP_COMPOSE_PROJECT conflicts with COMPOSE_PROJECT_NAME.\n' >&2
+    exit 1
+  fi
+  if [ -n "$compose_project" ]; then
+    validate_compose_project "$compose_project"
+  fi
   if [ -n "$fixed_container" ]; then
     validate_docker_identifier "$fixed_container" "BACKUP_POSTGRES_CONTAINER"
+    if [ -n "$compose_project" ]; then
+      container_identity="$("$docker_command" inspect --format \
+        '{{index .Config.Labels "com.docker.compose.project"}}/{{index .Config.Labels "com.docker.compose.service"}}' "$fixed_container")"
+      if [ "$container_identity" != "$compose_project/postgres" ]; then
+        printf 'Fixed PostgreSQL container does not belong to the configured Compose project.\n' >&2
+        exit 1
+      fi
+    fi
     printf '%s\n' "$fixed_container"
     return
   fi
@@ -281,9 +349,11 @@ temporary_encrypted_deletion_ledger="$deletion_ledger_file.tmp"
 cleanup() {
   rm -f "$temporary_sql" "$temporary_gzip" "$temporary_encrypted" \
     "$temporary_deletion_ledger" "$temporary_encrypted_deletion_ledger"
+  [ -z "$provenance_dir" ] || rm -rf "$provenance_dir"
 }
 trap cleanup EXIT HUP INT TERM
 postgres_container="$(resolve_postgres_container)"
+verify_unchanged_provenance
 
 if [ -n "$postgres_container" ]; then
   "$docker_command" exec -i "$postgres_container" \
@@ -313,6 +383,7 @@ if [ -n "$rclone_remote" ]; then
   fi
 fi
 
+verify_unchanged_provenance
 gzip -c "$temporary_sql" > "$temporary_gzip"
 gzip -t "$temporary_gzip"
 if [ -n "$age_recipient" ]; then
@@ -324,7 +395,7 @@ else
 fi
 (cd "$(dirname "$backup_file")" && sha256sum "$(basename "$backup_file")" > "$(basename "$backup_file").sha256")
 if [ "$require_signature" = "1" ]; then
-  node "$manifest_command" create \
+  node --jitless "$manifest_command" create \
     "$backup_file" \
     "$signing_private_key" \
     "$POSTGRES_DB" \
@@ -339,7 +410,7 @@ if [ -n "$rclone_remote" ]; then
   mv "$temporary_encrypted_deletion_ledger" "$deletion_ledger_file"
   (cd "$(dirname "$deletion_ledger_file")" && \
     sha256sum "$(basename "$deletion_ledger_file")" > "$(basename "$deletion_ledger_file").sha256")
-  node "$manifest_command" create \
+  node --jitless "$manifest_command" create \
     "$deletion_ledger_file" \
     "$signing_private_key" \
     "$POSTGRES_DB" \

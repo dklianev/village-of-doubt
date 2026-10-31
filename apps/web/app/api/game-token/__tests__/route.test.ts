@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { POST } from "../route";
 
 vi.mock("@/lib/auth", () => ({
@@ -8,8 +8,16 @@ vi.mock("@/lib/auth", () => ({
     },
   },
 }));
+vi.mock("@werewolf/database", () => ({
+  createDatabase: vi.fn(() => ({})),
+  isGameSessionRevokedDurably: vi.fn(async () => false),
+}));
 
 describe("POST /api/game-token", () => {
+  beforeEach(async () => {
+    const { isGameSessionRevokedDurably } = await import("@werewolf/database");
+    vi.mocked(isGameSessionRevokedDurably).mockResolvedValue(false);
+  });
   afterEach(() => {
     vi.unstubAllEnvs();
     vi.clearAllMocks();
@@ -22,6 +30,29 @@ describe("POST /api/game-token", () => {
     const response = await POST(jsonRequest({ code: "MN2K7A" }, "203.0.113.1"));
 
     expect(response.status).toBe(401);
+  });
+
+  it("rejects a captured session whose identity was deleted before issuance", async () => {
+    vi.stubEnv("DATABASE_URL", "postgres://synthetic.invalid/unused");
+    const { auth } = await import("@/lib/auth");
+    const { isGameSessionRevokedDurably } = await import("@werewolf/database");
+    vi.mocked(auth.api.getSession).mockResolvedValue({ user: { id: "deleted-user", name: "Анна" } } as never);
+    vi.mocked(isGameSessionRevokedDurably).mockResolvedValue(true);
+    const response = await POST(jsonRequest({ code: "MN2K7A" }, "203.0.113.31"));
+    expect(response.status).toBe(401);
+    expect(isGameSessionRevokedDurably).toHaveBeenCalledWith(expect.anything(), "deleted-user", expect.any(Number));
+    expect(await response.json()).not.toHaveProperty("token");
+  });
+
+  it("does not issue a token when the durable identity check is unavailable", async () => {
+    vi.stubEnv("DATABASE_URL", "postgres://synthetic.invalid/unused");
+    const { auth } = await import("@/lib/auth");
+    const { isGameSessionRevokedDurably } = await import("@werewolf/database");
+    vi.mocked(auth.api.getSession).mockResolvedValue({ user: { id: "offline-user", name: "Анна" } } as never);
+    vi.mocked(isGameSessionRevokedDurably).mockRejectedValue(new Error("Synthetic database failure"));
+    const response = await POST(jsonRequest({ code: "MN2K7A" }, "203.0.113.32"));
+    expect(response.status).toBe(503);
+    expect(await response.json()).not.toHaveProperty("token");
   });
 
   it("rejects an empty room code", async () => {

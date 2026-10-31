@@ -18,6 +18,49 @@ const EXPORT_EVENT_PAGE_SIZE = 1_000;
 const MAX_EXPORT_REQUESTS = 2_000;
 const MAX_COMPLETE_EXPORT_BYTES = 25 * 1024 * 1024;
 
+type AccountExportFailure =
+  | { kind: "rate_limited"; retryAfterSeconds: number | null }
+  | { kind: "changed" }
+  | { kind: "signed_out" }
+  | { kind: "failed" };
+
+export class AccountExportError extends Error {
+  constructor(readonly failure: AccountExportFailure) {
+    super(`account_export_${failure.kind}`);
+  }
+}
+
+/** Bulgarian copy for a failed export, telling the user when a retry can succeed. */
+export function accountExportErrorMessage(error: unknown) {
+  const failure = error instanceof AccountExportError ? error.failure : { kind: "failed" as const };
+  switch (failure.kind) {
+    case "rate_limited":
+      return `Направи твърде много опити за изтегляне. Опитай отново ${retryWait(failure.retryAfterSeconds)}.`;
+    case "changed":
+      return "Данните ти се промениха, докато ги подготвяхме. Опитай отново.";
+    case "signed_out":
+      return "Сесията ти е изтекла. Влез отново, за да изтеглиш данните.";
+    case "failed":
+      return "Не успяхме да подготвим данните. Опитай отново.";
+  }
+}
+
+function exportFailure(response: Response): AccountExportFailure {
+  if (response.status === 429) {
+    const seconds = Number(response.headers.get("retry-after"));
+    return { kind: "rate_limited", retryAfterSeconds: Number.isFinite(seconds) && seconds > 0 ? seconds : null };
+  }
+  if (response.status === 409) return { kind: "changed" };
+  if (response.status === 401) return { kind: "signed_out" };
+  return { kind: "failed" };
+}
+
+function retryWait(seconds: number | null) {
+  if (seconds === null) return "след малко";
+  const minutes = Math.ceil(seconds / 60);
+  return minutes === 1 ? "след минута" : `след ${minutes} минути`;
+}
+
 export interface AccountExportSettings {
   theme: "dark" | "light" | null;
   soundEnabled: boolean | null;
@@ -83,11 +126,11 @@ export async function fetchCompleteAccountExport(
         cache: "no-store",
       });
       if (!response.ok) {
-        throw new Error("export_failed");
+        throw new AccountExportError(exportFailure(response));
       }
 
       const page = parseAccountExportPage(await response.json());
-      continuation ??= response.headers.get("x-account-export-continuation");
+      continuation = response.headers.get("x-account-export-continuation");
       firstPage ??= page;
       if (requestCount === 1) {
         filename = downloadFilename(response.headers.get("content-disposition"));
@@ -141,10 +184,10 @@ export function buildCompleteAccountExport(serverExport: unknown, storage: Reada
 }
 
 export function readAccountExportSettings(storage: ReadableStorage | null): AccountExportSettings {
-  const theme = storage?.getItem("werewolf-theme");
-  const sound = storage?.getItem("werewolf-sound");
-  const cueMode = storage?.getItem("werewolf-cue-mode");
-  const lastGameFamily = storage?.getItem("last-family");
+  const theme = readStorageItem(storage, "werewolf-theme");
+  const sound = readStorageItem(storage, "werewolf-sound");
+  const cueMode = readStorageItem(storage, "werewolf-cue-mode");
+  const lastGameFamily = readStorageItem(storage, "last-family");
 
   return {
     theme: theme === "dark" || theme === "light" ? theme : null,
@@ -153,6 +196,14 @@ export function readAccountExportSettings(storage: ReadableStorage | null): Acco
       cueMode === "silent" || cueMode === "visual" || cueMode === "audio_vibration" ? cueMode : null,
     lastGameFamily: lastGameFamily === "werewolves" || lastGameFamily === "mafia" ? lastGameFamily : null,
   };
+}
+
+function readStorageItem(storage: ReadableStorage | null, key: string) {
+  try {
+    return storage?.getItem(key) ?? null;
+  } catch {
+    return null;
+  }
 }
 
 function getBrowserStorage(): ReadableStorage | null {

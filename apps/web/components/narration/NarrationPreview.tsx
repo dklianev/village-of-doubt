@@ -1,23 +1,14 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Play, Square } from "lucide-react";
 import { NARRATOR_VOICE_LABELS_BG, type NarratorVoice } from "@werewolf/shared";
-import { getSoundEnabled, SOUND_CHANGE_EVENT } from "@/lib/sound";
+import { getSoundEnabled, subscribeSoundEnabled } from "@/lib/sound";
 import { createNarrationPreview, type NarrationPreviewStatus } from "@/lib/play/narration-preview";
 import styles from "./NarrationPreview.module.css";
 
 const TRANSCRIPT = "Добре дошли в Сенките. Нощта започва, а разговорът около масата стихва. Запазете тайните си до утрото. Тогава ще чуем всяка версия. На кого ще повярвате?";
 
-function subscribeSound(listener: () => void) {
-  window.addEventListener(SOUND_CHANGE_EVENT, listener);
-  window.addEventListener("storage", listener);
-  return () => {
-    window.removeEventListener(SOUND_CHANGE_EVENT, listener);
-    window.removeEventListener("storage", listener);
-  };
-}
-
 export function NarrationPreview({ voice, disabled = false }: { voice: NarratorVoice; disabled?: boolean }) {
-  const enabled = useSyncExternalStore(subscribeSound, getSoundEnabled, () => false);
+  const enabled = useSyncExternalStore(subscribeSoundEnabled, getSoundEnabled, () => false);
   const [status, setStatus] = useState<NarrationPreviewStatus>("idle");
   const [showTranscript, setShowTranscript] = useState(false);
   const controller = useRef<ReturnType<typeof createNarrationPreview> | null>(null);

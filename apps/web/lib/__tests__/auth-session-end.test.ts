@@ -25,6 +25,24 @@ afterEach(() => {
 });
 
 describe("ending an authenticated document", () => {
+  it("forgets room codes and seat reconnect tokens but keeps the browser-only guest book", () => {
+    browserWindow.localStorage.setItem("werewolf-mafia:recent-rooms", JSON.stringify([{ code: "ABC234", family: "mafia", visitedAt: 1 }]));
+    browserWindow.localStorage.setItem("werewolf-mafia-friends-v1", "[]");
+    browserWindow.sessionStorage.setItem("room-reconnect:ABC234", "synthetic-token");
+    browserWindow.sessionStorage.setItem("room-reconnect:XYZ789", "synthetic-token");
+    browserWindow.sessionStorage.setItem("unrelated-tab-state", "kept");
+
+    endAuthSession();
+
+    expect(browserWindow.localStorage.getItem("werewolf-mafia:recent-rooms")).toBeNull();
+    expect(browserWindow.sessionStorage.getItem("room-reconnect:ABC234")).toBeNull();
+    expect(browserWindow.sessionStorage.getItem("room-reconnect:XYZ789")).toBeNull();
+    expect(browserWindow.sessionStorage.getItem("unrelated-tab-state")).toBe("kept");
+    expect(browserWindow.localStorage.getItem("werewolf-mafia-friends-v1")).toBe("[]");
+    browserWindow.localStorage.removeItem("werewolf-mafia-friends-v1");
+    browserWindow.sessionStorage.clear();
+  });
+
   it("covers cached pages and body portals, releases native modality and focuses the home fallback", () => {
     const main = document.createElement("main");
     const portal = document.createElement("div");

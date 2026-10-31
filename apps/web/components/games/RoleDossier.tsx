@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import type { GameFamily, RoleCode } from "@werewolf/shared";
 import type { RolePresentation } from "@/lib/role-presentation.server";
+import { isolateModalLayer } from "@/lib/modal-isolation";
 import { RoleArt } from "./RoleArt";
 
 type RoleDossierProps = {
@@ -34,7 +35,7 @@ function RoleDossierContent({ family, role, definition, onClose, returnFocusRef 
 
   return (
     <div ref={ref} className="role-codex-detail" role="dialog" aria-modal="true" aria-labelledby={titleId} data-role-dossier data-family={family} data-faction={family}>
-      <button type="button" className="role-codex-detail-backdrop" aria-label="Затвори досието" onClick={onClose} />
+      <div className="role-codex-detail-backdrop" aria-hidden="true" onClick={onClose} />
       <article className="role-codex-detail-panel">
         <header className="role-codex-detail-heading">
           <div>
@@ -93,15 +94,7 @@ function useDossierModal(onClose: () => void, returnFocusRef?: RefObject<HTMLEle
       ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null);
     const overflow = document.body.style.overflow;
     const position = { top: window.scrollY, left: window.scrollX };
-    const isolated: { element: HTMLElement; inert: string | null; hidden: string | null }[] = [];
-
-    // The portal is a direct body child, so isolating its siblings cannot inert the dossier.
-    for (const element of document.body.children) {
-      if (element === layer || !(element instanceof HTMLElement) || /^(SCRIPT|STYLE|LINK)$/.test(element.tagName)) continue;
-      isolated.push({ element, inert: element.getAttribute("inert"), hidden: element.getAttribute("aria-hidden") });
-      element.setAttribute("inert", "");
-      element.setAttribute("aria-hidden", "true");
-    }
+    const releasePage = isolateModalLayer(layer);
     document.body.style.overflow = "hidden";
     closeRef.current?.focus({ preventScroll: true });
 
@@ -126,12 +119,7 @@ function useDossierModal(onClose: () => void, returnFocusRef?: RefObject<HTMLEle
     document.addEventListener("keydown", onKeyDown);
     return () => {
       document.removeEventListener("keydown", onKeyDown);
-      for (const { element, inert, hidden } of isolated) {
-        if (inert === null) element.removeAttribute("inert");
-        else element.setAttribute("inert", inert);
-        if (hidden === null) element.removeAttribute("aria-hidden");
-        else element.setAttribute("aria-hidden", hidden);
-      }
+      releasePage();
       document.body.style.overflow = overflow;
       previousFocus?.focus({ preventScroll: true });
       if (window.scrollY !== position.top || window.scrollX !== position.left) {

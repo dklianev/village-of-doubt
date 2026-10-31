@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
+import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import type { Room } from "@colyseus/sdk";
 import {
   avatarIdForSeed,
@@ -54,7 +54,7 @@ export interface VisualGameRoomFixtureResult {
   room: Room | null;
   snapshot: GameSnapshot | null;
   currentUserId: string;
-  privateRole: { role: RoleCode; roleNameBg: string } | null;
+  privateRole: UseGameRoomResult["privateRole"];
   privateResult: PrivateResult | null;
   privateLover: PrivateLover | null;
   nightActionCapabilities: NightActionCapabilities | null;
@@ -74,7 +74,7 @@ export interface VisualGameRoomFixtureResult {
 export interface VisualGameFixtureConfig {
   snapshot: GameSnapshot;
   currentUserId: string;
-  privateRole: { role: RoleCode; roleNameBg: string } | null;
+  privateRole: UseGameRoomResult["privateRole"];
   privateResult: PrivateResult | null;
   privateLover: PrivateLover | null;
   nightActionCapabilities: NightActionCapabilities | null;
@@ -226,14 +226,26 @@ export function useVisualGameRoomFixture({
   const [connectionMessage, setConnectionMessage] = useState(() => statusForConnection(config?.connectionStatus ?? "connected"));
   const [unlockedAchievementIds, setUnlockedAchievementIds] = useState<string[]>([]);
   const room = useMemo(() => createVisualRoom(), []);
+  const announcesDeath = config?.snapshot.phase === "day_announcement";
+  const [deathSeen, setDeathSeen] = useState(false);
+  useEffect(() => {
+    if (!announcesDeath) return;
+    // The table reveals only a death it watches happen, so the fixture opens one frame before the victim falls.
+    const frame = window.requestAnimationFrame(() => setDeathSeen(true));
+    return () => window.cancelAnimationFrame(frame);
+  }, [announcesDeath]);
+  const snapshot = useMemo(
+    () => config && announcesDeath && !deathSeen ? withNewestDeathPending(config.snapshot) : config?.snapshot,
+    [announcesDeath, config, deathSeen],
+  );
 
   return useMemo(() => {
-    if (!config) {
+    if (!config || !snapshot) {
       return null;
     }
     return {
       room,
-      snapshot: config.snapshot,
+      snapshot,
       currentUserId: config.currentUserId,
       privateRole: config.privateRole,
       privateResult: config.privateResult,
@@ -251,7 +263,13 @@ export function useVisualGameRoomFixture({
       reconnectNow: () => setConnectionMessage("Визуалната връзка е възстановена."),
       isPending: false,
     };
-  }, [config, connectionMessage, room, unlockedAchievementIds]);
+  }, [config, connectionMessage, room, snapshot, unlockedAchievementIds]);
+}
+
+function withNewestDeathPending<T extends { players: Array<{ userId: string; playing: boolean; alive: boolean }> }>(snapshot: T): T {
+  const victim = snapshot.players.filter((player) => player.playing && !player.alive).at(-1);
+  if (!victim) return snapshot;
+  return { ...snapshot, players: snapshot.players.map((player) => player.userId === victim.userId ? { ...player, alive: true } : player) };
 }
 
 export function parseVisualGameFixture(
@@ -343,7 +361,11 @@ export function parseVisualGameFixture(
   return {
     snapshot,
     currentUserId,
-    privateRole: viewerRole ? { role: viewerRole, roleNameBg: ROLE_DEFINITIONS[viewerRole].nameBg } : null,
+    privateRole: viewerRole ? {
+      role: viewerRole,
+      roleNameBg: ROLE_DEFINITIONS[viewerRole].nameBg,
+      ...(viewerRole === "hunter" ? { hunterRevengeAvailable: parsed.phase === "hunter_revenge" && parsed.viewer === "dead" } : {}),
+    } : null,
     privateResult: viewerRole && !["lobby", "role_reveal", "first_night"].includes(parsed.phase)
       ? privateResultForRole(viewerRole, players, assignedRoles)
       : null,

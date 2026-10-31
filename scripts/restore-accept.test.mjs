@@ -18,7 +18,7 @@ function shellInvocation() {
   return process.platform === "win32" ? null : { command: "sh", prefix: [] };
 }
 
-function runAcceptance({ confirmed = true, schemaProof = true } = {}) {
+function runAcceptance({ confirmed = true, schemaProof = true, recoveryRequired = false } = {}) {
   const shell = shellInvocation();
   assert.ok(shell, "Set POSIX_SHELL to run restore acceptance tests on Windows");
   const directory = mkdtempSync(path.join(root, ".restore-accept-test-"));
@@ -28,6 +28,7 @@ function runAcceptance({ confirmed = true, schemaProof = true } = {}) {
   const releaseStateDir = path.join(directory, "release-state");
   const releasePublicKey = path.join(directory, "release-manifest.pub");
   mkdirSync(releaseStateDir);
+  if (recoveryRequired) writeFileSync(path.join(releaseStateDir, "restore-recovery-required.txt"), "reconcile first");
   if (schemaProof) {
     writeFileSync(path.join(releaseStateDir, "schema-current.json"), '{"signed":"applied-schema"}\n');
     writeFileSync(path.join(releaseStateDir, "schema-current.json.sig"), "signed-applied-schema\n");
@@ -57,6 +58,8 @@ exit 0
     encoding: "utf8",
     env: {
       ...process.env,
+      COMPOSE_PROJECT_NAME: "werewolf_fixture",
+      RELEASE_STATE_GROUP: String(process.getgid?.() ?? 0),
       POSTGRES_USER: "werewolf",
       POSTGRES_DB: "werewolf",
       RESTORE_DOCKER_COMMAND: toShellPath(fakeDocker),
@@ -121,4 +124,11 @@ test("retains rollback when signed applied-schema provenance is missing", () => 
   assert.notEqual(result.status, 0);
   assert.equal(result.commands.some((command) => command.includes("dropdb")), false);
   assert.match(result.stderr, /schema|provenance|manifest/i);
+});
+
+test("cannot accept an unresolved restore even if its lock was manually removed", () => {
+  const result = runAcceptance({ recoveryRequired: true });
+  assert.notEqual(result.status, 0);
+  assert.equal(result.commands.length, 0);
+  assert.match(result.stderr, /manual reconciliation/);
 });

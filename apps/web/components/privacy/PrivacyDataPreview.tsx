@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { downloadCompleteAccountExport } from "@/components/account/account-export";
+import { accountExportErrorMessage, downloadCompleteAccountExport } from "@/components/account/account-export";
 import { formatBulgarianDateTime } from "@/lib/date-time";
 import type { PrivacyUserSnapshot } from "./PrivacyDashboard";
 
@@ -22,8 +22,8 @@ export function PrivacyDataPreview({ snapshot }: PrivacyDataPreviewProps) {
     setExportError("");
     try {
       await downloadCompleteAccountExport();
-    } catch {
-      setExportError("Не успяхме да подготвим данните. Опитай отново.");
+    } catch (exportError) {
+      setExportError(accountExportErrorMessage(exportError));
     } finally {
       setExporting(false);
     }

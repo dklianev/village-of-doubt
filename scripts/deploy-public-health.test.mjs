@@ -71,6 +71,20 @@ test("accepts only deep web/game readiness plus an allowed-origin WebSocket upgr
   });
 });
 
+test("absolute readiness deadline rejects a continuously streaming response", async () => {
+  await withIngress((request, response) => {
+    if (request.url !== "/api/health/ready") return readinessHandler(request, response);
+    response.writeHead(200, { "content-type": "application/json", "x-werewolf-ingress": "web" });
+    response.write(" ");
+    const interval = setInterval(() => response.write(" "), 20);
+    response.once("close", () => clearInterval(interval));
+  }, async (port) => {
+    const started = Date.now();
+    await assert.rejects(runPublicHealthGate({ ...gateOptions(port), timeoutMs: 150 }), /deadline|timed out/);
+    assert.ok(Date.now() - started < 2_000);
+  });
+});
+
 test("rejects a false-green web payload even when HTTP and WebSocket transport succeed", async () => {
   await withIngress((request, response) => {
     if (request.url === "/api/health/ready") {

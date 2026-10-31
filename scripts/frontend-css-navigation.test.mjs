@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 import { chromium, firefox, webkit } from "playwright";
-import { assertFrontendCssNavigation } from "./frontend-css-navigation.mjs";
+import { assertFrontendCssNavigation, FRONTEND_CSS_ROUTES } from "./frontend-css-navigation.mjs";
 
 const baseUrl = "http://127.0.0.1:47819";
 const routes = ["/faq", "/werewolf/rules", "/mafia/rules"];
@@ -15,6 +15,33 @@ before(async () => {
   });
 });
 after(async () => { await browser?.close(); });
+
+test("single-route comparisons use fresh contexts without revisiting cached home HTML", async (t) => {
+  assert.deepEqual(FRONTEND_CSS_ROUTES, routes);
+  const contexts = new Set();
+  for (const route of FRONTEND_CSS_ROUTES) {
+    const page = await fixture(t);
+    contexts.add(page.context());
+    const documents = [];
+    page.on("request", (request) => {
+      if (request.isNavigationRequest()) documents.push(new URL(request.url()).pathname);
+    });
+    const results = await assertFrontendCssNavigation(page, baseUrl, "light", { route });
+    assert.deepEqual(results.map((result) => result.route), [route]);
+    assert.equal(results[0].comparedElements, route === "/faq" ? 6 : 7);
+    assert.deepEqual(documents, [route, "/"]);
+  }
+  assert.equal(contexts.size, routes.length);
+});
+
+test("rejects an unknown single-route comparison before navigation", async (t) => {
+  const page = await fixture(t);
+  await assert.rejects(
+    assertFrontendCssNavigation(page, baseUrl, "light", { route: "/unknown" }),
+    /Unknown CSS navigation route: \/unknown/,
+  );
+  assert.equal(page.url(), "about:blank");
+});
 
 for (const theme of ["light", "dark"]) {
   for (const width of [390, 800, 801, 1440]) {

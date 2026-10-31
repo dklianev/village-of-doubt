@@ -505,7 +505,8 @@
 }
 
 :global(.auth-chip:focus-visible) {
-  outline: none;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
   border-color: rgba(217, 154, 66, 0.7);
   box-shadow: 0 0 0 3px rgba(217, 154, 66, 0.22);
 }
@@ -631,7 +632,8 @@
 }
 
 :global(.auth-chip-trigger:focus-visible) {
-  outline: none;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
   border-color: rgba(217, 154, 66, 0.7);
   box-shadow: 0 0 0 3px rgba(217, 154, 66, 0.22);
 }
@@ -943,5 +945,18 @@
 :global(.site-utility-cluster .auth-chip-avatar),
 :global(.site-utility-cluster .site-utility-separator) {
     display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :global(.nav-dropdown),
+  :global(.auth-chip-loading) {
+    animation: none;
+  }
+
+  :global(.site-play-cta:hover),
+  :global(.auth-chip:hover),
+  :global(.auth-chip-trigger:hover) {
+    transform: none;
   }
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { type ReactNode, useEffect, useId, useState } from "react";
+import { authRedirectURL } from "@/components/auth/verification-callback";
 import { authClient } from "@/lib/auth-client";
 import { resolveWelcomeRedirect } from "./welcome-redirect";
 
@@ -46,6 +47,8 @@ export function OAuthButton({ provider, redirectTo, label, pendingLabel, errorMe
       const result = await authClient.signIn.social({
         provider,
         callbackURL: resolveWelcomeRedirect(redirectTo),
+        // A cancelled or failed provider login returns here with ?error= instead of the English auth error page.
+        errorCallbackURL: authRedirectURL("/sign-in", redirectTo),
       });
       if (result.error) {
         setStatus(errorMessage);

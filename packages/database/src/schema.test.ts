@@ -27,15 +27,20 @@ describe("game_players final outcome schema", () => {
 });
 
 describe("database integrity and anonymization indexes", () => {
-  it("scopes Better Auth account identities by issuer", () => {
+  it("keeps the legacy account issuer optional because Better Auth 1.7.3+ never writes it", () => {
     const config = getTableConfig(account);
     const issuer = config.columns.find((column) => column.name === "issuer");
-    const identityIndex = config.indexes.find(
-      (item) => item.config.name === "account_issuer_account_id_uidx",
-    );
 
-    expect(issuer).toMatchObject({ notNull: true });
-    expect(identityIndex?.config.unique).toBe(true);
+    expect(issuer).toMatchObject({ notNull: false });
+    expect(config.indexes.map((item) => item.config.name)).not.toContain("account_issuer_account_id_uidx");
+  });
+
+  it("relaxes the Better Auth 1.7.0-1.7.2 issuer constraint without dropping data", () => {
+    const migration = readFileSync(resolve(process.cwd(), "drizzle/0016_relax_account_issuer.sql"), "utf8");
+
+    expect(migration).toContain('DROP INDEX "account_issuer_account_id_uidx";');
+    expect(migration).toContain('ALTER TABLE "account" ALTER COLUMN "issuer" DROP NOT NULL;');
+    expect(migration).not.toMatch(/DROP COLUMN|DELETE FROM/i);
   });
 
   it("backfills Better Auth 1.7 account issuers before enforcing identity uniqueness", () => {

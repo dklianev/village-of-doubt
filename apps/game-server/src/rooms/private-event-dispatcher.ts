@@ -17,6 +17,7 @@ interface PrivateEventDispatcherContext {
   getPrivatePlayers: () => Iterable<PrivatePlayerState>;
   getPublicPlayers: () => Iterable<PlayerPublicState>;
   findPlayerByUserId: (userId: string) => PlayerPublicState | undefined;
+  isHunterRevengeAvailable: (userId: string) => boolean;
   playerPresence: PlayerPresenceManager;
 }
 
@@ -32,17 +33,30 @@ export class PrivateEventDispatcher {
       return;
     }
 
-    client.send("private_role", {
-      type: "private_role",
-      role,
-      roleNameBg: getRoleNameBg(role),
-    } satisfies ServerEvent);
+    this.sendRole(client, userId, role);
     if (privatePlayer.loverId) {
       this.sendPrivateLover(userId, privatePlayer.loverId);
     }
     this.sendPrivateBlessing(client, userId);
     this.sendPrivateFactionRoster(client, userId);
     this.replayPrivateCheckResult(client, userId);
+  }
+
+  sendHunterRevengeAvailability() {
+    for (const player of this.context.getPrivatePlayers()) {
+      if (player.role !== "hunter") continue;
+      const client = this.context.playerPresence.getClient(player.userId);
+      if (client) this.sendRole(client, player.userId, player.role);
+    }
+  }
+
+  private sendRole(client: Client, userId: string, role: RoleCode) {
+    client.send("private_role", {
+      type: "private_role",
+      role,
+      roleNameBg: getRoleNameBg(role),
+      ...(role === "hunter" ? { hunterRevengeAvailable: this.context.isHunterRevengeAvailable(userId) } : {}),
+    } satisfies ServerEvent);
   }
 
   sendPrivateLover(userId: string, loverUserId: string) {

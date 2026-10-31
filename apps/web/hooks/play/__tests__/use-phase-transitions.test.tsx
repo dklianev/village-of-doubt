@@ -284,6 +284,55 @@ describe("usePhaseTransitions", () => {
     vi.useRealTimers();
   });
 
+  it("treats the first snapshot after a reload as history and cues only later live events", () => {
+    const room = { send: vi.fn(), connection: { isOpen: true } } as unknown as Room;
+    const history = [
+      { id: "death-1", type: "death" as const, messageBg: "Синтетичен играч напусна играта." },
+      { id: "shot-1", type: "hunter_shot" as const, messageBg: "Ловецът стреля." },
+    ];
+    const { rerender } = renderHook(
+      (props: { phase: GamePhase | null; publicEvents: typeof history; winnerTeam: string }) =>
+        useTestPhaseTransitions({ ...props, room, cueMode: "audio_vibration" }),
+      { initialProps: { phase: null as GamePhase | null, publicEvents: [] as typeof history, winnerTeam: "" } },
+    );
+
+    rerender({ phase: "game_over", publicEvents: history, winnerTeam: "village" });
+    expect(playCue).not.toHaveBeenCalled();
+
+    rerender({
+      phase: "game_over",
+      publicEvents: [...history, { id: "death-2", type: "death" as const, messageBg: "Още един синтетичен играч напусна." }],
+      winnerTeam: "village",
+    });
+    expect(playCue).toHaveBeenCalledExactlyOnceWith("kill", { forceSilent: false });
+  });
+
+  it("does not cue deaths or a win that happened while the viewer was reconnecting", () => {
+    const oldRoom = { send: vi.fn(), connection: { isOpen: true } } as unknown as Room;
+    const newRoom = { send: vi.fn(), connection: { isOpen: true } } as unknown as Room;
+    const seen = [{ id: "event-1", type: "system" as const, messageBg: "Нощта започва." }];
+    const missed = [...seen, { id: "death-1", type: "death" as const, messageBg: "Синтетичен играч напусна играта." }];
+    const { rerender } = renderHook(
+      (props: { room: Room; connected: boolean; publicEvents: typeof missed; winnerTeam: string }) =>
+        useTestPhaseTransitions({ ...props, phase: "night", cueMode: "audio_vibration" }),
+      { initialProps: { room: oldRoom, connected: true, publicEvents: seen as typeof missed, winnerTeam: "" } },
+    );
+
+    rerender({ room: oldRoom, connected: false, publicEvents: seen, winnerTeam: "" });
+    rerender({ room: newRoom, connected: false, publicEvents: seen, winnerTeam: "" });
+    rerender({ room: newRoom, connected: false, publicEvents: missed, winnerTeam: "wolves" });
+    rerender({ room: newRoom, connected: true, publicEvents: missed, winnerTeam: "wolves" });
+    expect(playCue).not.toHaveBeenCalled();
+
+    rerender({
+      room: newRoom,
+      connected: true,
+      publicEvents: [...missed, { id: "death-2", type: "death" as const, messageBg: "Още един синтетичен играч напусна." }],
+      winnerTeam: "wolves",
+    });
+    expect(playCue).toHaveBeenCalledExactlyOnceWith("kill", { forceSilent: false });
+  });
+
   it("plays the kill cue only for typed death events", () => {
     const { rerender } = renderHook(
       ({ publicEvents }) => useTestPhaseTransitions({ publicEvents, cueMode: "audio_vibration" }),

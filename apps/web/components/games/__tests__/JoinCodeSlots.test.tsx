@@ -1,13 +1,13 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { JoinCodeSlots } from "../join-code-slots";
 
-function Fixture({ initial = "", invalid = false, autoFocus = false }) {
+function Fixture({ initial = "", invalid = false, autoFocus = false, onRejectedCharacter = undefined as (() => void) | undefined }) {
   const [value, setValue] = useState(initial);
   return <>
-    <JoinCodeSlots value={value} onChange={setValue} invalid={invalid} describedBy="code-error" autoFocus={autoFocus} />
+    <JoinCodeSlots value={value} onChange={setValue} invalid={invalid} describedBy="code-error" autoFocus={autoFocus} {...(onRejectedCharacter ? { onRejectedCharacter } : {})} />
     <output data-testid="value">{value}</output>
     <p id="code-error">Провери кода.</p>
   </>;
@@ -98,6 +98,21 @@ describe("JoinCodeSlots", () => {
     await userEvent.keyboard("01io!");
     await userEvent.paste("01io!");
     expect(values()).toEqual(["A", "B", "C", "2", "3", "4"]);
+  });
+
+  it("maps letters typed on a Bulgarian phonetic keyboard to their Latin keys", async () => {
+    render(<Fixture />);
+    await userEvent.type(slot(1), "к7мр2с");
+    expect(values()).toEqual(["K", "7", "M", "R", "2", "S"]);
+  });
+
+  it("reports a rejected character without changing the code", async () => {
+    const onRejectedCharacter = vi.fn();
+    render(<Fixture initial="ABC234" onRejectedCharacter={onRejectedCharacter} />);
+    await userEvent.click(slot(2));
+    await userEvent.keyboard("о");
+    expect(values()).toEqual(["A", "B", "C", "2", "3", "4"]);
+    expect(onRejectedCharacter).toHaveBeenCalledTimes(1);
   });
 
   it("keeps trailing typing confined to the last slot", async () => {

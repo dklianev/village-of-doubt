@@ -6,7 +6,10 @@ import { PrivacyDataPreview } from "../PrivacyDataPreview";
 import type { PrivacyUserSnapshot } from "../PrivacyDashboard";
 
 const { download } = vi.hoisted(() => ({ download: vi.fn() }));
-vi.mock("@/components/account/account-export", () => ({ downloadCompleteAccountExport: download }));
+vi.mock("@/components/account/account-export", async (importOriginal) => ({
+  ...await importOriginal<typeof import("@/components/account/account-export")>(),
+  downloadCompleteAccountExport: download,
+}));
 
 const snapshot: PrivacyUserSnapshot = {
   name: "Тестов играч", email: "synthetic@example.test", emailVerified: true,

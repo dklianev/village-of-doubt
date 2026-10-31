@@ -73,6 +73,10 @@ function request(url, timeoutMs) {
     operation.setTimeout(timeoutMs, () => {
       operation.destroy(new Error(`Public HTTPS health probe timed out: ${url}`));
     });
+    const deadline = setTimeout(() => {
+      operation.destroy(new Error("Public HTTPS health deadline exceeded."));
+    }, timeoutMs);
+    operation.once("close", () => clearTimeout(deadline));
     operation.on("error", reject);
     operation.end();
   });
@@ -129,6 +133,10 @@ function probeWebSocket(url, origin, timeoutMs) {
     operation.setTimeout(timeoutMs, () => {
       operation.destroy(new Error(`Public WSS probe timed out: ${url}`));
     });
+    const deadline = setTimeout(() => {
+      operation.destroy(new Error("Public WSS health deadline exceeded."));
+    }, timeoutMs);
+    operation.once("close", () => clearTimeout(deadline));
     operation.on("error", finish);
     operation.end();
   });

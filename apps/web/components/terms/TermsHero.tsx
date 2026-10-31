@@ -8,7 +8,7 @@ export function TermsHero({ lastUpdated }: { lastUpdated: string }) {
           src="/game-art/legal/terms-banner.webp"
           alt=""
           fill
-          priority
+          preload
           sizes="100vw"
           className="terms-hero-img"
         />

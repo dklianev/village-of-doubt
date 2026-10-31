@@ -1,5 +1,15 @@
 #!/usr/bin/env sh
 
+restore_bootstrap_import_roles() {
+  # Dumps reference cluster roles, but the full reconciler also creates DB objects.
+  compose exec -T postgres psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d postgres <<'SQL'
+SELECT format('CREATE ROLE %I NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE', role_name)
+FROM (VALUES ('werewolf_migrator'), ('werewolf_web'), ('werewolf_game')) AS required(role_name)
+WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = role_name)
+\gexec
+SQL
+}
+
 restore_validate_database_structure() {
   database_name="$1"
   validation_result="$(
@@ -32,75 +42,33 @@ restore_validate_database_semantics() {
       SELECT CASE WHEN
         (SELECT count(*) FROM drizzle.__drizzle_migrations) > 0
         AND to_regprocedure('public.werewolf_delete_account(text, text)') IS NOT NULL
-        AND COALESCE(has_table_privilege(
-          (SELECT oid FROM pg_roles WHERE rolname = 'werewolf_web'),
-          'public.\"user\"',
-          'SELECT,INSERT,UPDATE,DELETE'
-        ), false)
-        AND COALESCE(has_table_privilege(
-          (SELECT oid FROM pg_roles WHERE rolname = 'werewolf_web'),
-          'public.session',
-          'SELECT,INSERT,UPDATE,DELETE'
-        ), false)
-        AND COALESCE(has_table_privilege(
-          (SELECT oid FROM pg_roles WHERE rolname = 'werewolf_web'),
-          'public.account',
-          'SELECT,INSERT,UPDATE,DELETE'
-        ), false)
-        AND COALESCE(has_table_privilege(
-          (SELECT oid FROM pg_roles WHERE rolname = 'werewolf_web'),
-          'public.verification',
-          'SELECT,INSERT,UPDATE,DELETE'
-        ), false)
-        AND COALESCE(has_table_privilege(
-          (SELECT oid FROM pg_roles WHERE rolname = 'werewolf_web'),
-          'public.games',
-          'SELECT,UPDATE'
-        ), false)
-        AND COALESCE(has_table_privilege(
-          (SELECT oid FROM pg_roles WHERE rolname = 'werewolf_web'),
-          'public.game_players',
-          'SELECT'
-        ), false)
-        AND COALESCE(has_table_privilege(
-          (SELECT oid FROM pg_roles WHERE rolname = 'werewolf_web'),
-          'public.game_events',
-          'SELECT,DELETE'
-        ), false)
-        AND COALESCE(has_table_privilege(
-          (SELECT oid FROM pg_roles WHERE rolname = 'werewolf_web'),
-          'public.user_achievements',
-          'SELECT'
-        ), false)
+        AND NOT EXISTS (
+          SELECT 1 FROM (VALUES
+            ('werewolf_web', 'public.\"user\"', ARRAY['SELECT','INSERT','UPDATE','DELETE']),
+            ('werewolf_web', 'public.session', ARRAY['SELECT','INSERT','UPDATE','DELETE']),
+            ('werewolf_web', 'public.account', ARRAY['SELECT','INSERT','UPDATE','DELETE']),
+            ('werewolf_web', 'public.verification', ARRAY['SELECT','INSERT','UPDATE','DELETE']),
+            ('werewolf_web', 'public.games', ARRAY['SELECT','UPDATE']),
+            ('werewolf_web', 'public.game_players', ARRAY['SELECT']),
+            ('werewolf_web', 'public.game_events', ARRAY['SELECT','DELETE']),
+            ('werewolf_web', 'public.user_achievements', ARRAY['SELECT']),
+            ('werewolf_game', 'public.\"user\"', ARRAY['SELECT','INSERT']),
+            ('werewolf_game', 'public.games', ARRAY['SELECT','INSERT','UPDATE']),
+            ('werewolf_game', 'public.game_players', ARRAY['SELECT','INSERT','UPDATE']),
+            ('werewolf_game', 'public.game_events', ARRAY['SELECT','INSERT']),
+            ('werewolf_game', 'public.user_achievements', ARRAY['SELECT','INSERT'])
+          ) AS required(role_name, table_name, privileges)
+          CROSS JOIN LATERAL unnest(required.privileges) AS privilege(name)
+          WHERE NOT COALESCE(has_table_privilege(
+            (SELECT oid FROM pg_roles WHERE rolname = required.role_name),
+            required.table_name,
+            privilege.name
+          ), false)
+        )
         AND COALESCE(has_function_privilege(
           (SELECT oid FROM pg_roles WHERE rolname = 'werewolf_web'),
           'public.werewolf_delete_account(text, text)',
           'EXECUTE'
-        ), false)
-        AND COALESCE(has_table_privilege(
-          (SELECT oid FROM pg_roles WHERE rolname = 'werewolf_game'),
-          'public.\"user\"',
-          'SELECT,INSERT'
-        ), false)
-        AND COALESCE(has_table_privilege(
-          (SELECT oid FROM pg_roles WHERE rolname = 'werewolf_game'),
-          'public.games',
-          'SELECT,INSERT,UPDATE'
-        ), false)
-        AND COALESCE(has_table_privilege(
-          (SELECT oid FROM pg_roles WHERE rolname = 'werewolf_game'),
-          'public.game_players',
-          'SELECT,INSERT,UPDATE'
-        ), false)
-        AND COALESCE(has_table_privilege(
-          (SELECT oid FROM pg_roles WHERE rolname = 'werewolf_game'),
-          'public.game_events',
-          'SELECT,INSERT'
-        ), false)
-        AND COALESCE(has_table_privilege(
-          (SELECT oid FROM pg_roles WHERE rolname = 'werewolf_game'),
-          'public.user_achievements',
-          'SELECT,INSERT'
         ), false)
         AND NOT EXISTS (
           SELECT 1 FROM public.session AS session

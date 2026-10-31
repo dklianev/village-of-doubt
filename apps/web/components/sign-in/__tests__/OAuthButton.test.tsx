@@ -39,6 +39,7 @@ describe("OAuthButton", () => {
     expect(authClient.signIn.social).toHaveBeenCalledWith({
       provider: "google",
       callbackURL: "/tutorial?welcome=1&redirect=%2Fplay%2FABC123",
+      errorCallbackURL: "/sign-in?redirect=%2Fplay%2FABC123",
     });
   });
 

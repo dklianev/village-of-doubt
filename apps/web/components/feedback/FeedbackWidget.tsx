@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useId, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { MessageSquareText } from "lucide-react";
 import type { AuthSessionView } from "@/lib/use-auth-session";
@@ -43,6 +43,7 @@ export function FeedbackWidget({ session }: { session: AuthSessionView }) {
   const [category, setCategory] = useState<FeedbackCategory>("bug");
   const [body, setBody] = useState("");
   const [email, setEmail] = useState("");
+  const [submittedEmail, setSubmittedEmail] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
 
@@ -51,9 +52,13 @@ export function FeedbackWidget({ session }: { session: AuthSessionView }) {
   const errorBodyId = useId();
   const panelTitleId = useId();
   const firstFieldRef = useRef<HTMLTextAreaElement>(null);
+  const fabRef = useRef<HTMLButtonElement>(null);
+  const submitRef = useRef<HTMLButtonElement>(null);
+  const sentTitleRef = useRef<HTMLParagraphElement>(null);
+  const wasOpenRef = useRef(false);
+  const emailPrefilledRef = useRef(false);
 
   const hidden = !session.user.id || !shouldMountFeedback(pathname, true);
-  const submittedEmail = useMemo(() => email.trim(), [email]);
 
   const close = useCallback(() => {
     setOpen(false);
@@ -62,20 +67,31 @@ export function FeedbackWidget({ session }: { session: AuthSessionView }) {
       setError("");
     }
   }, [status]);
-  const { ref: panelRef } = useModal<HTMLElement>({ open, onClose: close });
+  // The modal layer includes the sibling backdrop, so isolating the page keeps it clickable.
+  const { ref: layerRef } = useModal<HTMLDivElement>({ open, onClose: close });
 
   useEffect(() => {
     if (hidden && open) {
-      setOpen(false);
-      setStatus("idle");
-      setError("");
+      close();
     }
-  }, [hidden, open]);
+  }, [hidden, open, close]);
 
   useEffect(() => {
-    if (!open || email || !session?.user?.email) return;
-    setEmail(session.user.email);
-  }, [email, open, session?.user?.email]);
+    // The button remounts when the panel closes, so the trigger useModal remembered is already detached.
+    if (wasOpenRef.current && !open) fabRef.current?.focus();
+    wasOpenRef.current = open;
+  }, [open]);
+
+  useEffect(() => {
+    // Prefill once per opening: a cleared optional email must stay cleared.
+    if (!open) {
+      emailPrefilledRef.current = false;
+      return;
+    }
+    if (emailPrefilledRef.current) return;
+    emailPrefilledRef.current = true;
+    if (!email && session.user.email) setEmail(session.user.email);
+  }, [email, open, session.user.email]);
 
   useEffect(() => {
     if (!open || hidden) return;
@@ -86,6 +102,7 @@ export function FeedbackWidget({ session }: { session: AuthSessionView }) {
   useEffect(() => {
     if (status !== "sent") return;
 
+    sentTitleRef.current?.focus();
     const timer = window.setTimeout(() => {
       setOpen(false);
       setStatus("idle");
@@ -97,6 +114,7 @@ export function FeedbackWidget({ session }: { session: AuthSessionView }) {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (status === "submitting") return;
 
     const trimmedBody = body.trim();
     if (trimmedBody.length < 10) {
@@ -104,8 +122,12 @@ export function FeedbackWidget({ session }: { session: AuthSessionView }) {
       return;
     }
 
+    // Keep focus on a control that stays enabled while the fields lock.
+    submitRef.current?.focus();
     setStatus("submitting");
     setError("");
+    const emailSnapshot = email.trim();
+    setSubmittedEmail(emailSnapshot);
 
     try {
       const response = await fetch("/api/feedback", {
@@ -114,7 +136,7 @@ export function FeedbackWidget({ session }: { session: AuthSessionView }) {
         body: JSON.stringify({
           category,
           body: trimmedBody,
-          email: email.trim() || null,
+          email: emailSnapshot || null,
           page: pathname,
         }),
       });
@@ -140,16 +162,16 @@ export function FeedbackWidget({ session }: { session: AuthSessionView }) {
 
   if (!open) {
     return (
-      <button type="button" className={styles.fab} onClick={() => setOpen(true)} aria-label="Дай ни бележка">
+      <button ref={fabRef} type="button" className={styles.fab} onClick={() => setOpen(true)} aria-label="Дай ни бележка">
         <FeedbackIcon className={styles.fabIcon} />
       </button>
     );
   }
 
   return (
-    <>
+    <div ref={layerRef}>
       <div className={styles.overlay} aria-hidden onClick={close} />
-      <aside ref={panelRef} className={styles.panel} role="dialog" aria-modal="true" aria-labelledby={panelTitleId}>
+      <aside className={styles.panel} role="dialog" aria-modal="true" aria-labelledby={panelTitleId}>
         <header className={styles.panelHead}>
           <FeedbackIcon className={styles.panelIcon} />
           <div>
@@ -166,7 +188,7 @@ export function FeedbackWidget({ session }: { session: AuthSessionView }) {
             <div className={styles.sentMark} aria-hidden>
               ✓
             </div>
-            <p className={styles.sentTitle}>Получено. Благодарим.</p>
+            <p ref={sentTitleRef} className={styles.sentTitle} tabIndex={-1}>Получено. Благодарим.</p>
             <p className={styles.sentDetail}>
               {submittedEmail
                 ? `Ще ти отговорим на ${submittedEmail}, ако се наложи.`
@@ -175,8 +197,8 @@ export function FeedbackWidget({ session }: { session: AuthSessionView }) {
             <p className={styles.sentHint}>Затваря автоматично...</p>
           </div>
         ) : (
-          <form onSubmit={submit} className={styles.form}>
-            <fieldset className={styles.category}>
+          <form onSubmit={submit} className={styles.form} aria-busy={status === "submitting"}>
+            <fieldset className={styles.category} disabled={status === "submitting"}>
               <legend>За какво е бележката?</legend>
               <div className={styles.categoryGrid}>
                 {(Object.keys(CATEGORY_LABELS) as FeedbackCategory[]).map((key) => (
@@ -201,6 +223,7 @@ export function FeedbackWidget({ session }: { session: AuthSessionView }) {
                 ref={firstFieldRef}
                 id={bodyId}
                 value={body}
+                disabled={status === "submitting"}
                 onChange={(event) => setBody(event.target.value)}
                 placeholder={CATEGORY_PLACEHOLDERS[category]}
                 rows={5}
@@ -228,6 +251,7 @@ export function FeedbackWidget({ session }: { session: AuthSessionView }) {
                 id={emailId}
                 type="email"
                 value={email}
+                disabled={status === "submitting"}
                 onChange={(event) => setEmail(event.target.value)}
                 placeholder="ime@primer.bg"
                 autoComplete="email"
@@ -240,7 +264,7 @@ export function FeedbackWidget({ session }: { session: AuthSessionView }) {
             </p>
 
             <div className={styles.actions}>
-              <button type="submit" className={styles.submit} disabled={status === "submitting"}>
+              <button ref={submitRef} type="submit" className={styles.submit} aria-disabled={status === "submitting" ? true : undefined}>
                 {status === "submitting" ? "Изпращаме..." : "Изпрати"}
               </button>
               <button type="button" className={styles.cancel} onClick={close}>
@@ -250,6 +274,6 @@ export function FeedbackWidget({ session }: { session: AuthSessionView }) {
           </form>
         )}
       </aside>
-    </>
+    </div>
   );
 }

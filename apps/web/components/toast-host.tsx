@@ -11,16 +11,24 @@ const TOAST_KIND_BG: Record<ToastKind, string> = {
 };
 
 export function ToastHost() {
-  const { items, dismiss } = useToastItems();
+  const { items, dismiss, pause, resume } = useToastItems();
 
-  if (items.length === 0) {
-    return null;
-  }
-
+  // The live region stays mounted while empty: screen readers skip regions inserted with their text.
   return (
     <aside className="toast-host" aria-live="polite" aria-atomic="false">
       {items.map((item) => (
-        <article key={item.id} className="toast-card" data-kind={item.kind}>
+        <article
+          key={item.id}
+          className="toast-card"
+          data-kind={item.kind}
+          data-paused={item.paused || undefined}
+          onMouseEnter={() => pause(item.id, "hover")}
+          onMouseLeave={() => resume(item.id, "hover")}
+          onFocus={() => pause(item.id, "focus")}
+          onBlur={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) resume(item.id, "focus");
+          }}
+        >
           <span className="toast-icon" aria-hidden>
             <ToastIcon kind={item.kind} />
           </span>

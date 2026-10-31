@@ -16,13 +16,13 @@ import type {
   GameMode,
   GamePhase,
   NarratorVoice,
-  RoleCode,
 } from "@werewolf/shared";
 import { createGameClient, GAME_ROOM_NAME } from "@/lib/colyseus-client";
 import { useAuthSession, type AuthSessionView } from "@/lib/use-auth-session";
 import type { pushToast } from "@/lib/toast";
 import { arePhaseSlicesEqual, arePlayerListsEqual } from "@/lib/play/equality";
-import { isDuplicateNameError } from "@/lib/play/join-errors";
+import { isDuplicateNameError, joinFailureMessage } from "@/lib/play/join-errors";
+import { recordServerClock } from "@/lib/play/server-clock";
 import { terminalResultForState } from "@/lib/play/terminal-result";
 import { playCue } from "@/lib/sound";
 import type {
@@ -35,6 +35,7 @@ import type {
   PrivateFactionRoster,
   PrivateLover,
   PrivateResult,
+  PrivateRole,
   PublicChatMessage,
   PublicEvent,
   PublicNomination,
@@ -44,9 +45,11 @@ import type {
   TypingNotice,
   VoteTallyItem,
 } from "@/lib/play/types";
+import { ROOM_RECONNECT_STORAGE_PREFIX } from "@/lib/room-traces";
 
-const ROOM_RECONNECT_STORAGE_PREFIX = "room-reconnect";
 const MAX_RECONNECT_ATTEMPTS = 5;
+const SESSION_ENDED_CLOSE_CODE = 4029;
+const SESSION_ENDED_MESSAGE = "Връзката ти със стаята беше прекратена. Свържи се отново, за да продължиш.";
 
 export interface UseGameRoomOptions {
   code: string;
@@ -60,7 +63,7 @@ export interface UseGameRoomResult {
   room: Room | null;
   snapshot: GameSnapshot | null;
   currentUserId: string;
-  privateRole: { role: RoleCode; roleNameBg: string } | null;
+  privateRole: PrivateRole | null;
   privateResult: PrivateResult | null;
   privateFactionRoster: PrivateFactionRoster | null;
   privateLover: PrivateLover | null;
@@ -114,7 +117,7 @@ export function useGameRoom({
   const [publicEventsSlice, setPublicEventsSlice] = useState<PublicEvent[]>([]);
   const [publicChatSlice, setPublicChatSlice] = useState<PublicChatMessage[]>([]);
   const [currentUserId, setCurrentUserId] = useState("");
-  const [privateRole, setPrivateRole] = useState<{ role: RoleCode; roleNameBg: string } | null>(null);
+  const [privateRole, setPrivateRole] = useState<PrivateRole | null>(null);
   const [privateResult, setPrivateResult] = useState<PrivateResult | null>(null);
   const [privateFactionRoster, setPrivateFactionRoster] = useState<PrivateFactionRoster | null>(null);
   const [privateLover, setPrivateLover] = useState<PrivateLover | null>(null);
@@ -277,13 +280,15 @@ export function useGameRoom({
       const sync = { room: nextRoom };
       privateSync = sync;
       try {
-        const response: { synchronized?: boolean } | undefined = await nextRoom.request("syncPrivateState");
+        const sentAt = Date.now();
+        const response: { synchronized?: boolean; serverNow?: unknown } | undefined = await nextRoom.request("syncPrivateState");
         if (!active || joinedRoom !== nextRoom || privateSync !== sync) {
           return;
         }
         if (response?.synchronized !== true) {
           throw new Error("Private state synchronization was not acknowledged.");
         }
+        recordServerClock(response.serverNow, sentAt, Date.now());
         preferFreshJoin = false;
         persistReconnectionToken(code, nextRoom.reconnectionToken);
         if (needsRecovery) {
@@ -399,7 +404,7 @@ export function useGameRoom({
         });
       });
 
-      onMessage("private_role", (message: { role: RoleCode; roleNameBg: string }) => {
+      onMessage("private_role", (message: PrivateRole) => {
         setPrivateRole(message);
         setPrivateFactionRoster(null);
       });
@@ -439,6 +444,7 @@ export function useGameRoom({
       });
 
       onMessage("hunter_revenge_ack", () => {
+        setPrivateRole((current) => current?.role === "hunter" ? { ...current, hunterRevengeAvailable: false } : current);
         toast({ message: "Последният изстрел е приет.", kind: "success" });
       });
 
@@ -484,10 +490,13 @@ export function useGameRoom({
       });
 
       let rejectedNameMessage: string | null = null;
+      // The server explains a 4029 close in the safe_error it sends just before closing.
+      let latestServerError: string | null = null;
       onMessage("safe_error", (message: { messageBg: string }) => {
         if (isDuplicateNameError(message.messageBg)) {
           rejectedNameMessage = message.messageBg;
         }
+        latestServerError = message.messageBg;
         toast({ message: message.messageBg, kind: "error" });
       });
 
@@ -530,15 +539,18 @@ export function useGameRoom({
         privateSync = null;
         // A fresh join can make the server close the previous socket before it resolves.
         if (freshJoining) return;
-        if (leaveCode === 1000 || leaveCode === 1001) {
+        // 4029 means the server ended this session (revoked or replaced by a newer connection); reconnecting cannot work.
+        const sessionEnded = leaveCode === SESSION_ENDED_CLOSE_CODE;
+        if (sessionEnded || leaveCode === 1000 || leaveCode === 1001) {
           needsRecovery = false;
           joinedRoom = null;
           setRoom(null);
           clearReconnectionToken(code);
           clearViewerPrivateState();
-          if (rejectedNameMessage) {
+          const refusal = rejectedNameMessage ?? (sessionEnded ? latestServerError ?? SESSION_ENDED_MESSAGE : null);
+          if (refusal) {
             preferFreshJoin = true;
-            setConnectionMessage(rejectedNameMessage);
+            setConnectionMessage(refusal);
             setConnectionStatus("error");
           } else {
             setConnectionMessage("Напусна стаята.");
@@ -662,7 +674,7 @@ export function useGameRoom({
           return;
         }
         preferFreshJoin = true;
-        setConnectionMessage(error instanceof Error ? error.message : "Неуспешно свързване.");
+        setConnectionMessage(joinFailureMessage(error));
         setConnectionStatus("error");
       } finally {
         freshJoining = false;

@@ -119,6 +119,7 @@ export function PlayRoomClientCore({
   const [lastReadPrivateMessages, setLastReadPrivateMessages] = useState<Partial<Record<ChatChannel, string>>>({});
   const privateChatScrollPositions = useRef<Partial<Record<string, PrivateChatScrollPosition>>>({});
   const actionDockToggleRef = useRef<HTMLButtonElement>(null);
+  const actionReceiptRef = useRef<HTMLDivElement>(null);
   const suppressNextPhasePulseRef = useRef(false);
   const lastTypingSentRef = useRef<Map<ChatChannel, number>>(new Map());
   const shortcutStateRef = useRef<ShortcutState | null>(null);
@@ -177,6 +178,27 @@ export function PlayRoomClientCore({
     revoteEligibleUserIds: snapshot?.revoteEligibleUserIds,
     votingCycle: snapshot?.votingCycle,
   });
+  const round = snapshot?.round ?? 0;
+  const previousAliveRef = useRef<{ identity: string; alive: ReadonlySet<string> } | null>(null);
+  const [latestDeath, setLatestDeath] = useState<{ identity: string; userId: string; round: number } | null>(null);
+  useEffect(() => {
+    const alive = new Set(players.filter((player) => player.playing && player.alive).map((player) => player.userId));
+    const previous = previousAliveRef.current;
+    previousAliveRef.current = { identity: dealIdentity, alive };
+    // Public events name no target, so only a death seen happening here is "newest"; a fresh snapshot is not.
+    if (previous?.identity !== dealIdentity) return;
+    const newest = players.filter((player) => player.playing && !player.alive && previous.alive.has(player.userId)).at(-1);
+    if (newest) setLatestDeath({ identity: dealIdentity, userId: newest.userId, round });
+  }, [dealIdentity, players, round]);
+  const revealedDeathUserId = latestDeath?.identity === dealIdentity && latestDeath.round === round ? latestDeath.userId : "";
+  // Each phase, round or ballot is a new decision; a pick must never carry into it.
+  const actionScope = `${phase}:${round}:${phase === "voting" ? snapshot?.votingCycle ?? 0 : ""}`;
+  const [selectionScope, setSelectionScope] = useState(actionScope);
+  if (selectionScope !== actionScope) {
+    setSelectionScope(actionScope);
+    setSelectedTargetId("");
+    setSecondTargetId("");
+  }
   const acceptedTargetName = actionReceipt && "targetUserId" in actionReceipt
     ? players.find((player) => player.userId === actionReceipt.targetUserId)?.displayName
     : null;
@@ -220,6 +242,8 @@ export function PlayRoomClientCore({
   const canUseHunterRevenge =
     phase === "hunter_revenge"
     && privateRole?.role === "hunter"
+    && privateRole.hunterRevengeAvailable === true
+    && actionReceipt?.kind !== "revenge"
     && Boolean(ownPlayer?.playing && !ownPlayer.alive);
   const canUseNightAction = isNightPhase(phase)
     && Boolean(
@@ -337,6 +361,7 @@ export function PlayRoomClientCore({
       currentUserId,
       ownPlayer,
       canNominate,
+      canUseHunterRevenge,
       showShortcuts,
       liveMode,
     };
@@ -481,7 +506,7 @@ export function PlayRoomClientCore({
       return;
     }
 
-    if (current.phase === "hunter_revenge" && current.privateRole?.role === "hunter" && current.selectedTargetId) {
+    if (current.canUseHunterRevenge && current.selectedTargetId) {
       current.room.send("submitHunterRevenge", { targetUserId: current.selectedTargetId });
       return;
     }
@@ -633,8 +658,15 @@ export function PlayRoomClientCore({
   const hasDockRitualPanel = Boolean(
     canVote || canNominate || canUseHunterRevenge || canUseNightAction || privateChatChannel || isSportDayFlow,
   );
+  const hasRevengeReceipt = phase === "hunter_revenge" && actionReceipt?.kind === "revenge";
+  useEffect(() => {
+    // The shot control unmounts on ACK; keep keyboard focus on its confirmation.
+    if (hasRevengeReceipt && (!document.activeElement || document.activeElement === document.body)) {
+      actionReceiptRef.current?.focus();
+    }
+  }, [hasRevengeReceipt]);
   const hasPrimaryDockContent = Boolean(
-    canVote || canNominate || canUseHunterRevenge || canUseNightAction || isSportDayFlow,
+    canVote || canNominate || canUseHunterRevenge || hasRevengeReceipt || canUseNightAction || isSportDayFlow,
   );
   const hasActionDock = !hasStageTakeover && hasPrimaryDockContent;
   const actionDockKind =
@@ -651,6 +683,8 @@ export function PlayRoomClientCore({
       ? selectedActionTargetName
         ? `Последен изстрел срещу ${selectedActionTargetName}`
         : "Последен изстрел · избери цел"
+      : hasRevengeReceipt
+        ? "Последен изстрел"
       : canUseNightAction
         ? selectedActionTargetName && privateRole
           ? nightTargetHeadingBg(privateRole.role, selectedActionTargetName)
@@ -702,6 +736,29 @@ export function PlayRoomClientCore({
         return;
       }
 
+      if (event.key === "Enter") {
+        if (isPageFocusTarget(target)) {
+          event.preventDefault();
+          submitCurrentShortcutAction();
+        }
+        return;
+      }
+
+      // A focused button ignores digits, so a seat clicked a moment ago must not swallow them.
+      if (
+        current
+        && !isTextEntryShortcutTarget(target)
+        && (current.canNominate || current.phase === "voting" || current.canUseHunterRevenge || isNightPhase(current.phase))
+        && /^[1-9]$/.test(event.key)
+      ) {
+        const targetPlayer = current.actionTargets[Number(event.key) - 1];
+        if (targetPlayer) {
+          event.preventDefault();
+          selectSeatTarget(targetPlayer.userId);
+        }
+        return;
+      }
+
       if (isInteractiveShortcutTarget(target)) {
         return;
       }
@@ -709,12 +766,6 @@ export function PlayRoomClientCore({
       if (event.key === "?") {
         event.preventDefault();
         setShowShortcuts((value) => !value);
-        return;
-      }
-
-      if (event.key === "Enter") {
-        event.preventDefault();
-        submitCurrentShortcutAction();
         return;
       }
 
@@ -731,16 +782,6 @@ export function PlayRoomClientCore({
       ) {
         event.preventDefault();
         current.room?.send("narratorPause");
-        return;
-      }
-
-      if ((current.canNominate || current.phase === "voting" || current.phase === "hunter_revenge" || isNightPhase(current.phase)) && /^[1-9]$/.test(event.key)) {
-        const index = Number(event.key) - 1;
-        const targetPlayer = current.actionTargets[index];
-        if (targetPlayer) {
-          event.preventDefault();
-          selectSeatTarget(targetPlayer.userId);
-        }
       }
     }
 
@@ -883,8 +924,8 @@ export function PlayRoomClientCore({
           <PublicChatHistory key={code} messages={snapshot?.publicChat ?? []} />
         </div>
 
-        {showRailDeathReveal ? <PlayFeatureBoundary key={`death:${dealIdentity}`}><Suspense fallback={null}>
-          <DeathRevealCinematic family={family} players={players} />
+        {showRailDeathReveal && revealedDeathUserId ? <PlayFeatureBoundary key={`death:${dealIdentity}`}><Suspense fallback={null}>
+          <DeathRevealCinematic family={family} players={players} revealedUserId={revealedDeathUserId} />
         </Suspense></PlayFeatureBoundary> : null}
       </section>
     );
@@ -917,7 +958,7 @@ export function PlayRoomClientCore({
         primaryContent={hasPrimaryDockContent ? (
           <>
             {actionReceipt ? (
-              <div className="play-action-receipt" role="status" aria-live="polite">
+              <div ref={actionReceiptRef} className="play-action-receipt" role="status" aria-live="polite" tabIndex={-1}>
                 <Check aria-hidden />
                 <div>
                   <strong>{actionReceipt.kind === "night"
@@ -1235,6 +1276,11 @@ export function PlayRoomClientCore({
       </div>}
     </main>
   );
+}
+
+// Tab stops such as tab panels and logs are deliberate; the skip-link target is what a background click focuses.
+function isPageFocusTarget(target: HTMLElement | null) {
+  return !target || target === document.body || target.id === "main-content";
 }
 
 function isInteractiveShortcutTarget(target: HTMLElement | null) {

@@ -17,20 +17,25 @@ schema_guard_env="$release_dir/schema-guard.env"
 schema_manifest="$release_dir/schema-current.json"
 pending_migration_manifest="$release_dir/migration-pending.json"
 manifest_signature="${RELEASE_MANIFEST_SIGNATURE:-${manifest_path}.sig}"
-mkdir -p "$release_dir"
-chmod 700 "$release_dir"
+initialize_compose_project
+initialize_drain_timeouts
+prepare_release_state "$release_dir"
 
 operations_lock_dir="${OPERATIONS_LOCK_DIR:-$release_dir/operations.lock}"
 git_command="${RELEASE_GIT_COMMAND:-git}"
 drain_armed=0
+drain_start_pending=0
 forensics_enabled=0
 operation_release="unvalidated"
 cancel_drain_on_exit() {
   exit_code=$?
   trap - EXIT HUP INT TERM
+  if [ "$drain_start_pending" -eq 1 ]; then
+    operations_lock_held=0
+    write_maintenance_marker "$release_dir" 'drain start outcome unconfirmed; host lock retained' || true
+  fi
   if [ "$drain_armed" -eq 1 ]; then
-    pnpm deploy:cancel-drain >/dev/null 2>&1 || \
-      echo "Warning: failed to cancel rollback drain; restart the existing game service before accepting traffic." >&2
+    cancel_drain_bounded || true
   fi
   if [ "$exit_code" -ne 0 ] && [ "$forensics_enabled" -eq 1 ] && [ -f "$rollback_env" ]; then
     preserve_compose_forensics "rollback-failed" "$operation_release" "$release_dir" "$rollback_env"
@@ -107,13 +112,13 @@ rm -f "$schema_guard_env"
 docker compose --env-file .env --env-file "$rollback_env" config --quiet
 forensics_enabled=1
 docker compose --env-file .env --env-file "$rollback_env" pull web game caddy
-if [ "${SKIP_DEPLOY_DRAIN:-0}" != "1" ] && docker compose ps -q game | grep -q .; then
-  if docker compose exec -T game \
-    wget -qO- http://127.0.0.1:2567/health >/dev/null 2>&1; then
-    pnpm deploy:drain
+if [ "${SKIP_DEPLOY_DRAIN:-0}" != "1" ]; then
+  existing_game="$(run_with_process_timeout 10 docker compose ps -q game)"
+  if [ -n "$existing_game" ]; then
+    run_with_process_timeout 10 docker compose exec -T game \
+      wget -qO- http://127.0.0.1:2567/health -T 5 >/dev/null
     drain_armed=1
-  else
-    echo "Warning: existing game service is unavailable; continuing without drain." >&2
+    run_deploy_drain
   fi
 fi
 docker compose --env-file .env --env-file "$rollback_env" \
@@ -125,32 +130,32 @@ drain_armed=0
 attempt=1
 health_deadline=$(( $(date +%s) + health_timeout_seconds ))
 while [ "$attempt" -le "$health_attempts" ] && [ "$(date +%s)" -lt "$health_deadline" ]; do
-  web_health="$(docker compose --env-file .env --env-file "$rollback_env" ps --format json web 2>/dev/null | grep -o '"Health":"[^"]*"' | head -1 || true)"
-  game_health="$(docker compose --env-file .env --env-file "$rollback_env" ps --format json game 2>/dev/null | grep -o '"Health":"[^"]*"' | head -1 || true)"
-  caddy_health="$(docker compose --env-file .env --env-file "$rollback_env" ps --format json caddy 2>/dev/null | grep -o '"Health":"[^"]*"' | head -1 || true)"
+  web_health="$(run_before_deadline "$health_deadline" 10 docker compose --env-file .env --env-file "$rollback_env" ps --format json web 2>/dev/null | grep -o '"Health":"[^"]*"' | head -1 || true)"
+  game_health="$(run_before_deadline "$health_deadline" 10 docker compose --env-file .env --env-file "$rollback_env" ps --format json game 2>/dev/null | grep -o '"Health":"[^"]*"' | head -1 || true)"
+  caddy_health="$(run_before_deadline "$health_deadline" 10 docker compose --env-file .env --env-file "$rollback_env" ps --format json caddy 2>/dev/null | grep -o '"Health":"[^"]*"' | head -1 || true)"
   web_readiness="unready"
-  if docker compose --env-file .env --env-file "$rollback_env" exec -T web \
-    wget -qO- http://127.0.0.1:3000/api/health/ready >/dev/null 2>&1; then
+  if run_before_deadline "$health_deadline" 10 docker compose --env-file .env --env-file "$rollback_env" exec -T web \
+    wget -qO- http://127.0.0.1:3000/api/health/ready -T 5 >/dev/null 2>&1; then
     web_readiness="ready"
   fi
   if [ "$web_health" = '"Health":"healthy"' ] && \
     [ "$game_health" = '"Health":"healthy"' ] && \
     [ "$caddy_health" = '"Health":"healthy"' ] && \
     [ "$web_readiness" = "ready" ] && \
-    node --env-file=.env scripts/deploy-public-health.mjs; then
-    cp "$manifest_path" "$release_dir/current.json"
-    cp "$manifest_signature" "$release_dir/current.json.sig"
-    chmod 600 "$release_dir/current.json"
-    chmod 600 "$release_dir/current.json.sig"
+    run_before_deadline "$health_deadline" "$health_timeout_seconds" node --env-file=.env scripts/deploy-public-health.mjs; then
+    # The recovery target may already be current.json after a failed deploy.
+    cp "$manifest_path" "$release_dir/current.json.$$"
+    cp "$manifest_signature" "$release_dir/current.json.sig.$$"
+    allow_release_state_readers "$release_dir/current.json.$$" "$release_dir/current.json.sig.$$"
+    mv "$release_dir/current.json.sig.$$" "$release_dir/current.json.sig"
+    mv "$release_dir/current.json.$$" "$release_dir/current.json"
     rm -f "$rollback_env"
     echo "Rollback to $RELEASE_VERSION is healthy. No database downgrade was attempted."
     exit 0
   fi
-  sleep "$health_poll_seconds"
+  run_before_deadline "$health_deadline" "$health_poll_seconds" sleep "$health_poll_seconds" || true
   attempt=$((attempt + 1))
 done
 
-docker compose --env-file .env --env-file "$rollback_env" ps
-docker compose --env-file .env --env-file "$rollback_env" logs --tail 150 web game
 echo "Rollback images did not become healthy. Escalate to the database restore runbook." >&2
 exit 1

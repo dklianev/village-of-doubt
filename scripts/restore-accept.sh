@@ -84,13 +84,18 @@ acceptance_cleanup() {
   exit "$exit_code"
 }
 
-mkdir -p "$release_state_dir"
-chmod 700 "$release_state_dir" 2>/dev/null || true
+initialize_compose_project
+prepare_release_state "$release_state_dir"
 acquire_operations_lock "restore-accept" "$operations_lock_dir"
 trap acceptance_cleanup EXIT
 trap 'exit 129' HUP
 trap 'exit 130' INT
 trap 'exit 143' TERM
+
+if [ -e "$release_state_dir/restore-recovery-required.txt" ]; then
+  printf 'Restore recovery requires manual reconciliation before acceptance. Nothing was deleted.\n' >&2
+  exit 1
+fi
 
 "$node_command" --env-file-if-exists=.env "$release_manifest_command" \
   "$schema_manifest" \
@@ -106,9 +111,9 @@ fi
 
 restore_validate_database_structure "$POSTGRES_DB"
 restore_validate_database_semantics "$POSTGRES_DB"
-compose exec -T web wget -qO- http://127.0.0.1:3000/api/health/ready >/dev/null
-compose exec -T game wget -qO- http://127.0.0.1:2567/health/ready >/dev/null
-"$node_command" --env-file-if-exists=.env "$script_dir/deploy-public-health.mjs"
+run_with_process_timeout 10 "$docker_command" compose exec -T web wget -qO- http://127.0.0.1:3000/api/health/ready -T 5 >/dev/null
+run_with_process_timeout 10 "$docker_command" compose exec -T game wget -qO- http://127.0.0.1:2567/health/ready -T 5 >/dev/null
+run_with_process_timeout 30 "$node_command" --env-file-if-exists=.env "$script_dir/deploy-public-health.mjs"
 
 compose exec -T postgres dropdb --if-exists --force -U "$POSTGRES_USER" "$rollback_database"
 

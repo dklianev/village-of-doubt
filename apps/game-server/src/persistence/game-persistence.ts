@@ -253,6 +253,7 @@ export class DrizzleGamePersistence implements GamePersistence {
           targetId,
           visibility: event.visibility ?? "public",
           payload: scrubPersistedEventPayload(event.payload ?? {}, identityMap, {
+            redactRootMessage: Boolean(actorUserId && identityMap.has(actorUserId)),
             rootIdentityWasDeleted: Boolean(
               (actorUserId && identityMap.has(actorUserId))
               || (targetUserId && identityMap.has(targetUserId)),
@@ -363,6 +364,10 @@ const PAYLOAD_ID_KEYS = new Set([
   "playerId",
   "actorId",
   "targetId",
+  "targetUserId",
+  "receiverUserId",
+  "actorUserId",
+  "hostUserId",
   "hostId",
   "previousHostUserId",
   "loverUserId",
@@ -374,6 +379,7 @@ const PAYLOAD_ID_ARRAY_KEYS = new Set([
   "playerIds",
   "participantUserIds",
   "winnerPlayerIds",
+  "targetUserIds",
 ]);
 const PAYLOAD_ID_MAP_KEYS = new Set([
   "assignments",
@@ -446,7 +452,7 @@ export function collectStructuredPayloadUserIds(
 export function scrubPersistedEventPayload(
   payload: unknown,
   deletedIdentityMap: ReadonlyMap<string, string>,
-  options: { rootIdentityWasDeleted?: boolean } = {},
+  options: { rootIdentityWasDeleted?: boolean; redactRootMessage?: boolean } = {},
 ): unknown {
   const scrub = (value: unknown, parentKey?: string, inheritedDeletedIdentity = false): unknown => {
     if (Array.isArray(value)) {
@@ -465,6 +471,9 @@ export function scrubPersistedEventPayload(
     );
     const result: Record<string, unknown> = {};
     for (const [key, item] of Object.entries(source)) {
+      if (options.redactRootMessage && value === payload && key === "message") {
+        continue;
+      }
       const keyIsDeletedIdentity = Boolean(
         parentKey && PAYLOAD_ID_MAP_KEYS.has(parentKey) && deletedIdentityMap.has(key),
       );

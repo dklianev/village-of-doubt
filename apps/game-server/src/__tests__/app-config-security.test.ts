@@ -1,6 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoomPreviewCredential } from "@werewolf/shared/server";
-import { createInternalRoomPreviewHandler, handleGameSessionRevocationMessage } from "../app.config.js";
+import appConfig, { createInternalRoomPreviewHandler, handleGameSessionRevocationMessage } from "../app.config.js";
+import { GameRoom } from "../rooms/GameRoom.js";
+import type { RequestHandler } from "express";
+import express from "express";
+import { createServer } from "node:http";
+import { once } from "node:events";
+import type { AddressInfo } from "node:net";
 import { createGameSessionRevocationMessage } from "@werewolf/shared/server";
 
 const GAME_TOKEN_SECRET = "test-secret-that-is-long-enough-32-chars";
@@ -78,6 +84,56 @@ describe("game-session revocation control plane", () => {
     expect(revoke).toHaveBeenCalledWith("user-1");
     expect(handleGameSessionRevocationMessage("not-json", revoke)).toBe(false);
     expect(revoke).toHaveBeenCalledOnce();
+  });
+});
+
+describe("public game statistics", () => {
+  it("serves the public consumer contract over HTTP without exposing private previews", async () => {
+    const app = express();
+    await appConfig.initializeExpress?.(app);
+    const server = createServer(app);
+    try {
+      server.listen(0, "127.0.0.1");
+      await once(server, "listening");
+      const origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+      const response = await fetch(`${origin}/stats`);
+      expect(response.status).toBe(200);
+      const stats = await response.json();
+      expect(Object.keys(stats).sort()).toEqual(["activeRooms", "byFamily", "connectedPlayers"]);
+      expect(stats.activeRooms).toEqual(expect.any(Number));
+      expect(stats.connectedPlayers).toEqual(expect.any(Number));
+      expect(stats).toEqual({ activeRooms: 0, connectedPlayers: 0, byFamily: {} });
+      expect((await fetch(`${origin}/rooms/ABC234/preview`)).status).toBe(404);
+    } finally {
+      server.closeAllConnections();
+      await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+    }
+  });
+
+  it("registers /stats with only aggregate activity, not room or operations data", async () => {
+    const routes = new Map<string, RequestHandler>();
+    await appConfig.initializeExpress?.({
+      use: vi.fn(), post: vi.fn(), delete: vi.fn(),
+      get: (path: string, handler: RequestHandler) => routes.set(path, handler),
+    } as never);
+    const stats = vi.spyOn(GameRoom, "getRuntimeStats").mockReturnValue({
+      activeRooms: 3, connectedPlayers: 19, byFamily: { werewolves: 2, mafia: 1 },
+      recentEndings: [{ code: "PRIVATE", winnerTeam: "village", winnerReasonBg: "private reason", endedAt: "2026-10-16", family: "werewolves" }],
+      lastWinner: null,
+    });
+    try {
+      const response = fakeResponse();
+      expect(routes.has("/stats")).toBe(true);
+      routes.get("/stats")!({ socket: { remoteAddress: "203.0.113.4" } } as never, response.value, vi.fn());
+      expect(response.json).toHaveBeenCalledWith({
+        activeRooms: 3, connectedPlayers: 19, byFamily: { werewolves: 2, mafia: 1 },
+      });
+      const operationsResponse = fakeResponse();
+      routes.get("/operations/stats")!({ socket: { remoteAddress: "203.0.113.4" } } as never, operationsResponse.value, vi.fn());
+      expect(operationsResponse.status).toHaveBeenCalledWith(404);
+    } finally {
+      stats.mockRestore();
+    }
   });
 });
 

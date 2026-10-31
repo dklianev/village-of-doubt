@@ -43,13 +43,12 @@ describe.skipIf(!baseUrl)("Firefox pregame hydration and public controls", () =>
               await page.evaluate(() => document.fonts.ready);
               await browserExpect(page.locator("html")).toHaveAttribute("data-theme", theme);
               await browserExpect(page.getByRole("heading", { name: "Масата се събира" })).toBeVisible();
-              await browserExpect(page.getByRole("status", { name: "Готови: 7 от 8" })).toHaveText("Готови7 / 8");
-              await browserExpect(page.locator(".play-stage progress")).toHaveAttribute("value", "7");
-              await browserExpect(page.locator(".play-stage progress")).toHaveAttribute("max", "8");
+              await browserExpect(page.getByRole("status", { name: "Готови: 7 от 8" })).toContainText("7 от 8 са готови");
+              await browserExpect(page.locator(".play-stage progress, [data-table-core], .play-action-dock")).toHaveCount(0);
               await browserExpect(page.locator('[data-lobby-seat-status][data-state="ready"]')).toHaveCount(6);
               await browserExpect(page.locator('[data-lobby-seat-status][data-state="waiting"]')).toHaveText("Не е готов");
               await browserExpect(page.locator('[data-lobby-seat-status][data-state="disconnected"]')).toHaveText("Без връзка");
-              await browserExpect(page.getByRole("group", { name: "Настройки на масата" })).toBeVisible();
+              await browserExpect(page.getByLabel("Настройки на масата")).toBeVisible();
               await browserExpect(page.getByTestId("ready-toggle")).toHaveCount(1);
               await browserExpect(page.getByTestId("ready-toggle")).toHaveAttribute("aria-pressed", "true");
               await browserExpect(page.getByRole("button", { name: "Започни игра", exact: true })).toBeEnabled();
@@ -60,7 +59,7 @@ describe.skipIf(!baseUrl)("Firefox pregame hydration and public controls", () =>
                 return {
                   overflow: document.documentElement.scrollWidth > innerWidth,
                   lastSeatBottom: Math.max(...slots.map((seat) => seat.getBoundingClientRect().bottom)),
-                  dockTop: document.querySelector(".play-action-dock")!.getBoundingClientRect().top,
+                  bandTop: document.querySelector(".play-waiting-band")!.getBoundingClientRect().top,
                   collisions: slots.filter((seat) => {
                     const badge = seat.querySelector("[data-lobby-seat-status]")!.getBoundingClientRect();
                     const name = seat.querySelector("[data-seat-name]")!.getBoundingClientRect();
@@ -72,12 +71,10 @@ describe.skipIf(!baseUrl)("Firefox pregame hydration and public controls", () =>
               expect(geometry.overflow).toBe(false);
               expect(geometry.collisions).toBe(0);
               if (viewport.width === 320) {
-                expect(geometry.lastSeatBottom).toBeLessThanOrEqual(geometry.dockTop - 4);
-                await browserExpect(page.locator(".play-action-dock")).toHaveAttribute("data-expanded", "false");
-                await browserExpect(page.locator('[data-lobby-seat-status] [aria-label="Домакин"]')).toBeHidden();
-              } else {
-                await browserExpect(page.getByRole("img", { name: "Домакин", exact: true })).toHaveCount(1);
+                expect(geometry.lastSeatBottom).toBeLessThanOrEqual(geometry.bandTop - 4);
               }
+              await browserExpect(page.getByRole("img", { name: "Домакин", exact: true })).toHaveCount(1);
+              await browserExpect(page.getByRole("img", { name: "Домакин", exact: true })).toBeVisible();
 
               const menus = page.locator("[data-seat-menu-trigger]");
               await browserExpect(menus).toHaveCount(family === "werewolves" ? 8 : 0);
@@ -92,10 +89,11 @@ describe.skipIf(!baseUrl)("Firefox pregame hydration and public controls", () =>
                 }
               }
               if (viewport.width === 320) {
-                await page.getByRole("button", { name: "Покажи подробностите за стаята" }).click();
                 await browserExpect(page.getByRole("button", { name: "Копирай покана" })).toBeVisible();
                 await browserExpect(page.getByTestId("ready-toggle")).toHaveCount(1);
-                await page.getByRole("button", { name: "Скрий подробностите за стаята" }).click();
+                await page.getByRole("button", { name: "Копирай покана" }).click();
+                await browserExpect(page.getByText(/Поканата е копирана\.|Не успяхме да копираме поканата\./)).toBeVisible();
+                await page.getByTestId("ready-toggle").scrollIntoViewIfNeeded();
               }
               expect(errors).toEqual([]);
             }

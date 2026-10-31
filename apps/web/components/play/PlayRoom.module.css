@@ -2701,6 +2701,11 @@
   :global(.play-shell.game-shell .play-action-dock .night-action-sheet .play-action-buttons [data-command-priority="quiet"]) { flex: 0 1 auto; min-width: 90px; }
   :global(.play-shell.game-shell .play-action-dock .play-action-explanation:not([open]) summary) { min-height: 24px; }
   :global(.play-shell.game-shell .play-action-dock .play-vote-counts[open] .vote-tally-card) { display: block; max-height: 160px; }
+  /* overflow: hidden makes the shell a scroll container, which pins the sticky navigation inside it. */
+  :global(.play-shell.framed-shell) {
+    overflow: clip;
+  }
+
   :global(.play-mobile-navigation) {
     position: sticky;
     top: 8px;

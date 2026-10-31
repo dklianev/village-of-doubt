@@ -58,6 +58,33 @@ describe("POST /api/feedback", () => {
     expect((await POST(feedbackRequest(body, ip))).status).toBe(429);
   });
 
+  it.each(["я", "\u754c", "\ud83d\ude00"])("accepts full-length UTF-8 feedback (%s)", async (character) => {
+    process.env.REPORTS_NOTIFY_EMAIL = "operator@example.com";
+    const text = character.repeat(2_000 / character.length);
+    const response = await POST(feedbackRequest({
+      category: "idea", body: text,
+      email: `${"a".repeat(64)}@${"b".repeat(63)}.${"c".repeat(63)}.${"d".repeat(61)}`,
+      page: `/${"\u754c".repeat(511)}`,
+    }));
+
+    expect(response.status).toBe(200);
+    expect(sendEmail).toHaveBeenCalledOnce();
+  });
+
+  it("accepts escaped JSON at the field limits while keeping the stream bounded", async () => {
+    process.env.REPORTS_NOTIFY_EMAIL = "operator@example.com";
+    const escaped = JSON.stringify({ body: "я".repeat(2_000), page: "/" + "я".repeat(511) })
+      .replaceAll("я", "\\u044f");
+    const response = await POST(new Request("http://localhost:3000/api/feedback", {
+      method: "POST", headers: { "x-forwarded-for": "198.51.100.201" }, body: escaped,
+    }));
+    expect(response.status).toBe(200);
+
+    const oversized = await POST(feedbackRequest({ body: "я".repeat(20_000) }));
+    expect(oversized.status).toBe(413);
+    expect(sendEmail).toHaveBeenCalledOnce();
+  });
+
   it("не логва PII или съдържание при липсващ notifier", async () => {
     delete process.env.REPORTS_NOTIFY_EMAIL;
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);

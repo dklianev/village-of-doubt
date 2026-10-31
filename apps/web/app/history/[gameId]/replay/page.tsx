@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight, BookOpen, CalendarDays, Check, ChevronDown, Clock3, Flag, LockKeyhole, Moon, ScrollText, Sun, Users, Vote } from "lucide-react";
 import { createDatabase, GameTimelineCursorExpiredError, getGameHistoryById, getGameReplayParticipants, getGameReplayAchievements,
   getGameTimeline, getPlayerRolesInGames, getReplayParticipantContext } from "@werewolf/database";
@@ -37,6 +36,22 @@ type ReplayData = {
 };
 type ReplayResult = { status: "ready"; data: ReplayData } | { status: "unavailable" } | { status: "missing" } | { status: "expired" };
 
+// Throwing a 404 inside this streamed route left the browser an empty error document, so a missing
+// or private record renders in place. Both share one state so they stay indistinguishable.
+function ReplayMissing() {
+  return <main className={styles.shell}>
+    <div className={styles.content}>
+      <Link className={styles.back} href="/history"><ArrowLeft size={18} aria-hidden="true" />Назад към историята</Link>
+      <section className={styles.unavailable}>
+        <BookOpen size={30} aria-hidden="true" />
+        <h1>Този запис не съществува</h1>
+        <p>Адресът може да е грешен или вечерта да не е достъпна за теб.</p>
+        <Link className="btn btn-primary" href="/history">Към архива</Link>
+      </section>
+    </div>
+  </main>;
+}
+
 export default async function ReplayPage({ params, searchParams }: {
   params: Promise<{ gameId: string }>;
   searchParams?: Promise<ReplaySearch>;
@@ -46,7 +61,7 @@ export default async function ReplayPage({ params, searchParams }: {
   const visualReplay = first(search?.visualReplay);
   const after = parseReplayCursor(first(search?.after));
   const fixture = process.env.NODE_ENV !== "production" && ["fixture", "demo", "public", "mafia", "unknown-codes", "long", "unavailable", "empty"].includes(visualReplay ?? "");
-  if (!fixture && !isUuid(gameId)) notFound();
+  if (!fixture && !isUuid(gameId)) return <ReplayMissing />;
   const basePath = `/history/${encodeURIComponent(gameId)}/replay`;
   const href = (cursor?: ReplayCursor) => {
     const query = new URLSearchParams();
@@ -57,7 +72,7 @@ export default async function ReplayPage({ params, searchParams }: {
   const result = fixture
     ? visualReplay === "unavailable" ? { status: "unavailable" as const } : fixtureReplay(gameId, visualReplay, after)
     : await loadReplayForSession(gameId, after);
-  if (result.status === "missing") notFound();
+  if (result.status === "missing") return <ReplayMissing />;
   if (result.status === "unavailable" || result.status === "expired") {
     const expired = result.status === "expired";
     return <main className={styles.shell}>

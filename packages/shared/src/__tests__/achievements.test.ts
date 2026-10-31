@@ -85,6 +85,38 @@ function awarded(context: AchievementGameContext, achievementId: string) {
     .map((unlock) => unlock.userId);
 }
 
+describe("Hunter shot attribution", () => {
+  const players = [
+    { userId: "shooter", role: "hunter", alive: false },
+    { userId: "former-drunk", role: "hunter", alive: true },
+  ];
+  const shot = (actorId?: string): AchievementEventLike => ({
+    type: "hunter_shot", phase: "hunter_revenge", targetId: "target", payload: {},
+    ...(actorId ? { actorId } : {}),
+  });
+
+  it("awards the semantic actor without relying on prose or the final role", () => {
+    expect(awarded({ players, events: [shot("shooter"), shot("shooter")] }, "hunter_revenge"))
+      .toEqual(["shooter"]);
+    expect(awarded({ players: [], events: [shot("shooter")] }, "hunter_revenge")).toEqual(["shooter"]);
+  });
+
+  it("awards both actors only when both have a shot event", () => {
+    expect(awarded({ players, events: [shot("shooter"), shot("former-drunk")] }, "hunter_revenge"))
+      .toEqual(["shooter", "former-drunk"]);
+  });
+
+  it("does not infer actors from legacy death prose, anonymous events or a timeout", () => {
+    const events: AchievementEventLike[] = [
+      { type: "death", phase: "hunter_revenge", payload: { causeBg: "Падна от последния изстрел на Ловеца." } },
+      { type: "phase_change", phase: "hunter_revenge", actorId: "shooter", payload: {} },
+      shot(),
+    ];
+    expect(awarded({ players, events }, "hunter_revenge")).toEqual([]);
+    expect(awarded({ players, events: [] }, "hunter_revenge")).toEqual([]);
+  });
+});
+
 describe("personal guardian saves", () => {
   const players = [
     { userId: "healer", role: "healer", alive: true },

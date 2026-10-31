@@ -1,5 +1,5 @@
 import type { NextConfig } from "next";
-import { withSentryConfig } from "@sentry/nextjs";
+import { withSentryConfig } from "@sentry/nextjs/config";
 import { dependencies } from "./package.json";
 
 const privateGameRouteSources = [
@@ -49,6 +49,11 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
+      {
+        source: "/:path*",
+        // Also protect token-bearing pages reached through client navigation.
+        headers: [{ key: "Referrer-Policy", value: "no-referrer" }],
+      },
       {
         source: "/sw.js",
         headers: [{ key: "Cache-Control", value: "no-store, must-revalidate" }],

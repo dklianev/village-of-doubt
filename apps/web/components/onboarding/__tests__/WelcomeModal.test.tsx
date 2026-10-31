@@ -55,6 +55,11 @@ describe("WelcomeModal", () => {
     ["/mafia/join", "code=ABC234&mode=mafia_sport", "mafia_sport", "/mafia/join?code=ABC234&mode=mafia_sport"],
     ["/mafia/join", "code=ABC234", "mafia_free", "/mafia/join?code=ABC234"],
     ["/join", "code=ABC234&game=mafia_free", "mafia_free", "/join?code=ABC234&game=mafia_free"],
+    ["/lobby/ABC234", "", "werewolves_classic", "/lobby/ABC234"],
+    ["/lobby/ABC234", "mode=mafia_sport&from=friend", "mafia_sport", "/lobby/ABC234?mode=mafia_sport&from=friend"],
+    ["/lobby/ABC234", "game=mafia_free", "mafia_free", "/lobby/ABC234?game=mafia_free"],
+    ["/play/ABC234", "", "werewolves_classic", "/play/ABC234"],
+    ["/account", "redirect=%2Flobby%2FABC234%3Ffrom%3Dfriend%23players", "werewolves_classic", "/lobby/ABC234?from=friend#players"],
     ["/account", "game=mafia_sport&redirect=%2Fplay%2FABC234", "mafia_sport", "/play/ABC234"],
     ["/", "game=unknown&redirect=%2Fmafia%2Fjoin%2FABC234", "mafia_free", "/mafia/join/ABC234"],
   ])("preserves the tutorial family and destination from %s?%s", async (pathname, search, game, redirect) => {
@@ -74,6 +79,7 @@ describe("WelcomeModal", () => {
     ["/mafia/create", "mode=mafia_sport", "mafia_sport"],
     ["/account", "game=mafia_free", "mafia_free"],
     ["/werewolf", "", "werewolves_classic"],
+    ["/lobby-settings", "", "werewolves_classic"],
   ])("infers the family on %s?%s without inventing an invitation", async (pathname, search, game) => {
     navigation.pathname = pathname;
     navigation.search = search;
@@ -92,6 +98,34 @@ describe("WelcomeModal", () => {
       expect(url.searchParams.has("redirect")).toBe(false);
     },
   );
+
+  it.each(["https://external.invalid/", "//external.invalid/", "/%2fexternal.invalid/", "/lobby/../sign-in"])(
+    "retains the current canonical invitation when its explicit redirect is unsafe: %s", async (redirect) => {
+      navigation.pathname = "/lobby/ABC234";
+      navigation.search = new URLSearchParams({ mode: "mafia_sport", redirect }).toString();
+      render(<WelcomeModal displayName="Демо играч" />);
+      const link = await screen.findByRole("link", { name: "Отвори наръчника" });
+      const url = new URL(link.getAttribute("href")!, "https://example.invalid");
+      expect(Object.fromEntries(url.searchParams)).toEqual({
+        welcome: "1", game: "mafia_sport", redirect: "/lobby/ABC234?mode=mafia_sport",
+      });
+    },
+  );
+
+  it("dismisses onboarding without changing a canonical invitation and stays dismissed on re-entry", async () => {
+    navigation.pathname = "/lobby/ABC234";
+    navigation.search = "mode=mafia_sport";
+    const saved = new Map<string, string>();
+    storage.getItem.mockImplementation((key: string) => saved.get(key) ?? null);
+    storage.setItem.mockImplementation((key: string, value: string) => saved.set(key, value));
+    const user = userEvent.setup();
+    const { unmount } = render(<WelcomeModal displayName="Демо играч" />);
+    await user.click(await screen.findByRole("button", { name: "Към игрите" }));
+    expect(navigation).toEqual({ pathname: "/lobby/ABC234", search: "mode=mafia_sport" });
+    unmount();
+    render(<WelcomeModal displayName="Демо играч" />);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
 
   it("dismisses with Escape and remembers the choice", async () => {
     const user = userEvent.setup();
@@ -140,6 +174,30 @@ describe("WelcomeModal", () => {
 
     expect(backgroundLink).not.toHaveAttribute("inert");
     expect(backgroundLink).not.toHaveAttribute("aria-hidden");
+  });
+
+  it("keeps an already open connection dialog usable while isolating the page", async () => {
+    const connection = document.createElement("dialog");
+    connection.setAttribute("open", "");
+    connection.innerHTML = '<button type="button">Опитай пак</button>';
+    document.body.append(connection);
+
+    try {
+      render(
+        <>
+          <a href="/history">Фоново съдържание</a>
+          <WelcomeModal displayName="Демо играч" />
+        </>,
+      );
+
+      await screen.findByRole("dialog", { name: "Мястото ти е готово." });
+
+      expect(screen.getByText("Фоново съдържание")).toHaveAttribute("inert");
+      expect(connection).not.toHaveAttribute("inert");
+      expect(connection).not.toHaveAttribute("aria-hidden");
+    } finally {
+      connection.remove();
+    }
   });
 
   it("stays hidden after the tutorial is completed", () => {

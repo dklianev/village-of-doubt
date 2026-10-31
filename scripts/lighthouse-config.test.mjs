@@ -25,7 +25,7 @@ function loadConfig(overrides = {}) {
 
 test("Lighthouse asset capture is off locally unless explicitly opted in", () => {
   const defaults = loadConfig();
-  assert.deepEqual(defaults.ci.collect.settings, {});
+  assert.deepEqual(defaults.ci.collect.settings, { chromeFlags: "--ignore-certificate-errors" });
   assert.deepEqual(loadConfig({ LIGHTHOUSE_PROFILE: "mobile" }), defaults);
   for (const value of ["", "0", "true"]) {
     assert.deepEqual(loadConfig({ LIGHTHOUSE_SAVE_ASSETS: value }), defaults);
@@ -50,4 +50,16 @@ test("desktop ignores asset capture opt-in and preserves its complete configurat
     LIGHTHOUSE_PROFILE: "desktop",
     LIGHTHOUSE_SAVE_ASSETS: "1",
   }), defaults);
+});
+
+test("both profiles measure the HTTPS HTTP/2 proxy that the Lighthouse server starts on their port", () => {
+  for (const [profile, port] of [["desktop", "3410"], ["mobile", "3411"]]) {
+    const { collect } = loadConfig({ LIGHTHOUSE_PROFILE: profile, LHCI_PORT: port }).ci;
+    assert.equal(collect.startServerCommand, "node scripts/lighthouse-server.mjs");
+    assert.ok(collect.url.length > 0);
+    for (const url of collect.url) {
+      assert.equal(new URL(url).origin, `https://127.0.0.1:${port}`);
+    }
+    assert.equal(collect.settings.chromeFlags, "--ignore-certificate-errors");
+  }
 });

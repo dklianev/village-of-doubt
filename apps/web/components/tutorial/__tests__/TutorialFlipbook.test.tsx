@@ -78,15 +78,23 @@ describe("TutorialFlipbook", () => {
     );
   });
 
+  it("starts each scene control's accessible name with its visible label", () => {
+    render(<TutorialFlipbook />);
+    const nav = screen.getByRole("navigation", { name: "Навигация между сцените" });
+
+    expect(within(nav).getByRole("button", { name: "Назад: предишна сцена" })).toBeInTheDocument();
+    expect(within(nav).getByRole("button", { name: "Напред: следваща сцена" })).toBeInTheDocument();
+  });
+
   it("moves through the rehearsal while keeping the stage and controls in sync", async () => {
     const user = userEvent.setup();
     const { container } = render(<TutorialFlipbook />);
 
-    const back = screen.getByRole("button", { name: "Предишна сцена" });
+    const back = screen.getByRole("button", { name: "Назад: предишна сцена" });
     expect(back).toBeDisabled();
     expect(container.querySelector('[data-tutorial-scene="setup"]')).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Следваща сцена" }));
+    await user.click(screen.getByRole("button", { name: "Напред: следваща сцена" }));
 
     expect(await screen.findByRole("heading", { level: 1, name: "Очите се затварят." })).toBeInTheDocument();
     const nightStage = container.querySelector('[data-tutorial-scene="night"]');
@@ -115,7 +123,7 @@ describe("TutorialFlipbook", () => {
     expect(screen.getByRole("link", { name: `Правила за ${label}` })).toHaveAttribute("href", `/${family}/rules`);
     createLink.focus();
     expect(createLink).toHaveFocus();
-    expect(screen.queryByRole("button", { name: "Следваща сцена" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Напред: следваща сцена" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Продължи към игра" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Продължи" })).not.toBeInTheDocument();
   });
@@ -203,7 +211,7 @@ describe("TutorialFlipbook", () => {
 
     expect(screen.getByRole("heading", { name: "Масата се събира." })).toBeInTheDocument();
     expect(window.localStorage.getItem("tutorial-last-slide")).toBe("1");
-    await user.click(screen.getByRole("button", { name: "Следваща сцена" }));
+    await user.click(screen.getByRole("button", { name: "Напред: следваща сцена" }));
     expect(await screen.findByRole("heading", { name: "Очите се затварят." })).toBeInTheDocument();
   });
 
@@ -294,7 +302,7 @@ describe("TutorialFlipbook", () => {
     expect(await screen.findByRole("heading", { name: "Още една нощ. Или победа." })).toBeVisible();
     expect(window.localStorage.getItem("tutorial-last-slide")).toBe("5");
 
-    await userEvent.setup().click(screen.getByRole("button", { name: "Следваща сцена" }));
+    await userEvent.setup().click(screen.getByRole("button", { name: "Напред: следваща сцена" }));
     expect(await screen.findByRole("link", { name: "Към стая за Мафия" })).toHaveAttribute("href", "/mafia/create");
     expect(screen.queryByText(/Поканата ти е запазена/)).not.toBeInTheDocument();
     expect(new URLSearchParams(window.location.search).get("step")).toBe("6");
@@ -326,14 +334,14 @@ describe("TutorialFlipbook", () => {
     await user.click(await screen.findByRole("radio", { name: "Борис" }));
     expect(window.localStorage.getItem(`tutorial-practice-v1:${game}`)).toBeNull();
     await user.click(screen.getByRole("button", { name: "Потвърди проверката" }));
-    await user.click(screen.getByRole("button", { name: "Следваща сцена" }));
+    await user.click(screen.getByRole("button", { name: "Напред: следваща сцена" }));
     await user.click(await screen.findByRole("button", { name: "Чуй Анна" }));
     await user.click(screen.getByRole("button", { name: "Чуй Галя" }));
-    await user.click(screen.getByRole("button", { name: "Следваща сцена" }));
+    await user.click(screen.getByRole("button", { name: "Напред: следваща сцена" }));
     await user.click(await screen.findByRole("radio", { name: "Борис" }));
     await user.click(screen.getByRole("button", { name: "Потвърди гласа" }));
     await user.click(screen.getByRole("radio", { name: "Анна" }));
-    await user.click(screen.getByRole("button", { name: "Следваща сцена" }));
+    await user.click(screen.getByRole("button", { name: "Напред: следваща сцена" }));
     expect(await screen.findByRole("heading", { name: "Борис напуска масата." })).toBeInTheDocument();
     expect(JSON.parse(window.localStorage.getItem(`tutorial-practice-v1:${game}`)!)).toEqual({ night: "boris", vote: "boris", visited: ["anna", "galya"] });
     first.unmount();
@@ -351,7 +359,7 @@ describe("TutorialFlipbook", () => {
     render(<TutorialFlipbook />);
     const user = userEvent.setup();
     await user.click(await screen.findByRole("radio", { name: "Галя" }));
-    await user.click(screen.getByRole("button", { name: "Следваща сцена" }));
+    await user.click(screen.getByRole("button", { name: "Напред: следваща сцена" }));
     expect(await screen.findByRole("heading", { name: "Още няма потвърден глас." })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Към гласуването" }));
     expect(await screen.findByRole("radio", { name: "Галя" })).not.toBeChecked();
@@ -382,7 +390,7 @@ describe("TutorialFlipbook", () => {
     const user = userEvent.setup();
     await user.click(await screen.findByRole("radio", { name: "Борис" }));
     await user.click(screen.getByRole("button", { name: "Потвърди гласа" }));
-    await user.click(screen.getByRole("button", { name: "Следваща сцена" }));
+    await user.click(screen.getByRole("button", { name: "Напред: следваща сцена" }));
     expect(await screen.findByRole("heading", { name: "Борис напуска масата." })).toBeInTheDocument();
   });
 

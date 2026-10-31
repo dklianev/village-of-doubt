@@ -14,7 +14,7 @@ export function EvidenceWallEmpty() {
           <Link href="/tutorial" className={styles.textLink}>Първи стъпки<ArrowRight size={18} aria-hidden="true" /></Link>
         </div>
       </div>
-      <Image src="/game-art/history-empty-hero-v2.webp" alt="" width={768} height={512}
+      <Image src="/game-art/history-empty-hero-v2.webp" alt="" width={768} height={512} loading="eager"
         sizes="(max-width: 640px) calc(100vw - 40px), 400px" className={styles.emptyArt} />
     </section>
   );

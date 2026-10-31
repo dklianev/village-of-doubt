@@ -13,6 +13,7 @@ export class PlayerPresenceManager {
 
   private clientsByUserId = new Map<string, Client>();
   private connectionGenerationByUserId = new Map<string, number>();
+  private nextConnectionGeneration = 0;
 
   static configureSecurityStore(store: PlayerSecurityStore) {
     PlayerPresenceManager.securityStore = store;
@@ -80,7 +81,7 @@ export class PlayerPresenceManager {
   }
 
   activateClient(userId: string, client: Client) {
-    const generation = (this.connectionGenerationByUserId.get(userId) ?? 0) + 1;
+    const generation = ++this.nextConnectionGeneration;
     this.connectionGenerationByUserId.set(userId, generation);
     this.attachClient(userId, client);
     return generation;
@@ -91,8 +92,7 @@ export class PlayerPresenceManager {
   }
 
   invalidateConnectionGeneration(userId: string) {
-    const generation = (this.connectionGenerationByUserId.get(userId) ?? 0) + 1;
-    this.connectionGenerationByUserId.set(userId, generation);
+    this.connectionGenerationByUserId.delete(userId);
   }
 
   detachClient(userId: string, client?: Client) {

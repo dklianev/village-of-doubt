@@ -14,6 +14,28 @@ describe("Sheet", () => {
     expect(dialog.classList.contains("room-reference")).toBe(true);
     expect(dialog.style.maxWidth).toBe("640px");
   });
+  it("announces only a description the caller gave", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { getByRole, unmount } = render(
+      <Sheet open onOpenChange={() => {}} title="Правила">
+        Съдържание
+      </Sheet>,
+    );
+    const bare = getByRole("dialog", { name: "Правила" });
+    expect(bare).not.toHaveAttribute("aria-describedby");
+    expect(bare).not.toHaveTextContent("Допълнителен панел");
+    expect(warn).not.toHaveBeenCalled();
+    unmount();
+
+    const described = render(
+      <Sheet open onOpenChange={() => {}} title="Покана" description="Покажи екрана на масата.">
+        Съдържание
+      </Sheet>,
+    ).getByRole("dialog", { name: "Покана" });
+    expect(described).toHaveAccessibleDescription("Покажи екрана на масата.");
+    warn.mockRestore();
+  });
+
   it("renders an accessible dialog when open and titled", () => {
     const { container, getByRole } = render(
       <Sheet open onOpenChange={() => {}} title="Писма">

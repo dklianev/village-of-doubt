@@ -77,7 +77,9 @@ for (const family of ["werewolves", "mafia"] as const) {
         expect(confirmBox!.y).toBeGreaterThanOrEqual(targetBox!.y + targetBox!.height);
         await confirm.click();
         await expect(target).toHaveAttribute("data-selection-state", "ready");
-        await expect(dock.getByRole("button", { name: "Пропусни", exact: true })).toHaveAttribute("aria-pressed", "false");
+        const skip = dock.getByRole("button", { name: "Пропусни", exact: true });
+        await expect(skip).toHaveAttribute("data-confirm-state", "idle");
+        await expect(skip).not.toHaveAttribute("aria-pressed");
 
         if (width > 1023) {
           const actionBox = await dock.getByRole("group", { name: "Текущо действие" }).boundingBox();

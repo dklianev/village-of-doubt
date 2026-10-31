@@ -13,6 +13,23 @@ describe("room code helpers", () => {
     expect(normalizeRoomCodeInput("ABC123")).toBe("ABC23");
   });
 
+  it("reads a code typed on a Bulgarian phonetic keyboard", () => {
+    // Each Cyrillic letter sits on the Latin key of the same sound.
+    expect(normalizeRoomCodeInput("к7мр2с")).toBe("K7MR2S");
+    expect(normalizeRoomCodeInput("АБЦ-234")).toBe("ABC234");
+    expect(normalizeRoomCodeInput("хн2з")).toBe("HN2Z");
+    expect(normalizeRoomCode("К7М")).toBe("K7M");
+  });
+
+  it("does not turn Cyrillic words in a pasted message into a code", () => {
+    expect(normalizeRoomCodeInput("Код: K7MP2Q страда")).toBe("K7MP2Q");
+    expect(normalizeRoomCodeInput("стаята е готова")).not.toMatch(ROOM_CODE_REGEX);
+  });
+
+  it("leaves letters without a Latin key of the same sound to validation", () => {
+    expect(normalizeRoomCodeInput("оия")).toBe("");
+  });
+
   describe.each([
     { name: "normalizeRoomCode", normalize: normalizeRoomCode },
     { name: "normalizeRoomCodeInput", normalize: normalizeRoomCodeInput },

@@ -17,8 +17,9 @@ export const SIGN_IN_PROVIDERS = {
   },
 };
 
-export function SignInStage({ redirectTo }: { redirectTo: string }) {
+export function SignInStage({ redirectTo, oauthError }: { redirectTo: string; oauthError?: string }) {
   const copy = signInCopyForRedirect(redirectTo);
+  const oauthErrorMessage = oauthError ? socialSignInErrorMessage(oauthError) : "";
 
   return (
     <section className="sign-in-stage">
@@ -35,6 +36,7 @@ export function SignInStage({ redirectTo }: { redirectTo: string }) {
               submit: <ArrowRight size={18} aria-hidden="true" />,
             }}
           >
+            {oauthErrorMessage ? <p className="oauth-button-status" role="alert">{oauthErrorMessage}</p> : null}
             <OAuthButton provider="google" redirectTo={redirectTo} {...SIGN_IN_PROVIDERS.google}>
               <span className="oauth-button-logo" aria-hidden="true">
                 <img src="/brand/google-g.svg" alt="" width={24} height={24} />
@@ -55,6 +57,12 @@ export function SignInStage({ redirectTo }: { redirectTo: string }) {
       </div>
     </section>
   );
+}
+
+function socialSignInErrorMessage(code: string) {
+  return code === "access_denied"
+    ? "Влизането през Google или Discord беше отказано. Опитай отново или влез с имейл."
+    : "Не успяхме да завършим влизането през Google или Discord. Опитай отново или влез с имейл.";
 }
 
 function signInCopyForRedirect(redirectTo: string) {

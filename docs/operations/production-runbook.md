@@ -29,13 +29,72 @@ The host serializes deploy, rollback, restore, and restore acceptance through
 `/var/lib/werewolf/release-state/operations.lock`. A second operation fails
 closed and prints the first owner's PID and start time. Never remove a retained
 lock until that PID and the database/release state have been investigated.
+Migrator cleanup uses bounded Docker calls and retains the lock on daemon or
+timeout errors unless removal succeeds or a successful query proves absence.
+
+Drain includes its initial POST in `DEPLOY_DRAIN_TIMEOUT_MS`; each Docker exec
+and in-container HTTP call also has `DEPLOY_DRAIN_OPERATION_TIMEOUT_MS` (10s by
+default). Cancellation has its own `DEPLOY_DRAIN_CANCEL_TIMEOUT_MS` budget
+(10s), including after a failed initial POST. Unknown start/cancel outcomes
+retain the host lock and maintenance evidence even if a subsequent cancel
+succeeds: a queued Docker exec may still mutate drain state. Investigate those
+operations before clearing the lock. Readiness subprocesses use the remaining
+absolute health budget, at most 10s per local probe; the shared timeout helper
+also allows a bounded 30s TERM-to-KILL grace. Public probes have absolute HTTP
+and WSS deadlines, not only inactivity timeouts.
+
+Caddy's pinned built-in `filter` encoder deletes `request>uri` and
+`request>headers>Referer` in both access loggers and the default error logger.
+This deliberately sacrifices path-level diagnostics to avoid leaking room codes
+through invitation paths, encoded paths or future private route families.
+Host, status and timing remain available. The opt-in synthetic runtime check is
+`RUN_CADDY_RUNTIME_TESTS=1 node --test scripts/caddy-security.test.mjs`; it uses
+the already-local pinned image, no network, and no production configuration.
 
 Deploy writes a signed `migration-pending.json` before starting the migrator and
 advances signed `schema-current.json` only after the bounded migrator succeeds.
 A pending marker or a migration-head mismatch blocks automatic image rollback
 with `MAINTENANCE REQUIRED`; do not delete these markers to force a rollback.
-Failed deploys and rollbacks preserve mode-`0600` Compose diagnostics under
-`release-state/forensics/`.
+Failed deploys and rollbacks preserve mode-`0600` allowlisted container status
+under `release-state/forensics/`: ID, status, running/OOM flags, exit code,
+timestamps, restart count and health status only. Each inspect is time-bounded
+and capped at 4 KiB, with at most 20 containers per Compose capture. Environment,
+commands, health output and raw service logs are not automatically collected.
+Do not attach raw `docker inspect` or logs to incidents. When further evidence
+is necessary, review a bounded time window locally and extract only non-secret
+status/error codes; omit request URLs, tokens, connection strings, PII and chat.
+
+## Stable Compose identity
+
+`COMPOSE_PROJECT_NAME` is required. Store the same explicit value in
+`/etc/werewolf/production.env` (linked as `.env` in every immutable checkout)
+and `/etc/werewolf/backup.env`. New, empty installations may use `werewolf`.
+Deploy, rollback and recovery wrappers validate and export it; direct Compose,
+drain and cancel-drain read the same `.env`. An explicitly exported CI project
+name still takes precedence, so isolated CI resources are not renamed.
+
+Before adopting this contract on an existing host, stop scheduled operations
+and inspect the existing stack, without starting a new project:
+
+```sh
+docker compose ls
+docker ps --filter label=com.docker.compose.service=postgres --format '{{.ID}} {{.Label "com.docker.compose.project"}}'
+docker inspect --format '{{range .Mounts}}{{.Type}} {{.Name}} {{.Destination}}{{println}}{{end}}' <postgres-container-id>
+docker volume ls --filter label=com.docker.compose.project=<existing-project>
+docker network ls --filter label=com.docker.compose.project=<existing-project>
+```
+
+Record the existing project label, PostgreSQL/Redis volume names and network.
+Use that exact project name, even if it came from an old checkout directory.
+Do not blindly copy `werewolf` from either example, use `down -v`, rename volumes,
+or start a parallel empty stack. Render `docker compose config --format json`
+from two distinct release checkouts and privately compare only `name`, volume
+names and network names with the recorded resources. Rendered config includes
+secrets: do not save/share the full output. If resources do not match, stop and
+plan a separately approved, backed-up data migration; this change does not
+migrate or relabel resources. A recovery drill must use a separate host/project,
+never the production Docker context. See the
+[Compose project-name precedence](https://docs.docker.com/compose/how-tos/project-name/).
 
 ## Required external setup
 
@@ -172,7 +231,19 @@ sudo chown -h root:root "$release_source/.env"
 sudo chmod -R a-w "$release_source"
 sudo chown root:"$deploy_group" /etc/werewolf/production.env
 sudo chmod 0640 /etc/werewolf/production.env
-sudo install -d -o "$deploy_user" -g "$deploy_group" -m 0700 /var/lib/werewolf/release-state
+getent group werewolf-release-readers >/dev/null || sudo groupadd --system werewolf-release-readers
+sudo usermod -a -G werewolf-release-readers "$deploy_user"
+sudo install -d -o "$deploy_user" -g werewolf-release-readers -m 2750 /var/lib/werewolf/release-state
+# Adopt existing signed provenance only; generated env and forensics stay private.
+for manifest in current previous schema-current migration-pending; do
+  for suffix in .json .json.sig; do
+    file="/var/lib/werewolf/release-state/$manifest$suffix"
+    if sudo test -f "$file"; then
+      sudo chown "$deploy_user:werewolf-release-readers" "$file"
+      sudo chmod 0640 "$file"
+    fi
+  done
+done
 ```
 
 Install the verified helpers and units:
@@ -180,6 +251,7 @@ Install the verified helpers and units:
 ```sh
 sudo install -d -o root -g root -m 0755 /usr/local/libexec/werewolf
 sudo install -o root -g root -m 0755 "$release_source/scripts/backup-postgres.sh" /usr/local/libexec/werewolf/backup-postgres.sh
+sudo install -o root -g root -m 0644 "$release_source/scripts/deploy-operations-lib.sh" /usr/local/libexec/werewolf/deploy-operations-lib.sh
 sudo install -o root -g root -m 0755 "$release_source/scripts/backup-manifest.mjs" /usr/local/libexec/werewolf/backup-manifest.mjs
 sudo install -o root -g root -m 0755 "$release_source/scripts/release-manifest.mjs" /usr/local/libexec/werewolf/release-manifest.mjs
 sudo install -o root -g root -m 0755 "$release_source/scripts/check-backup-freshness.sh" /usr/local/libexec/werewolf/check-backup-freshness.sh
@@ -208,14 +280,46 @@ if sudo test -s /var/lib/werewolf/release-state/current.json; then
 fi
 ```
 
-`BACKUP_COMPOSE_PROJECT` in `/etc/werewolf/backup.env` must match the project shown
-by `docker compose ls`. `BACKUP_AGE_RECIPIENT` must contain the public recipient
+The reader group has only traverse/read access to release state and signed
+manifests (directory `2750`, files `0640`); it has no write access. Setgid preserves
+the group on newly published provenance. The directory owner is the stable
+provenance writer: root-run deploy/rollback/restore retain that UID on signed
+current, previous, applied-schema and pending files, including their signatures.
+Keep the directory owned by the deploy user. Generated env, operation locks and
+diagnostics stay `0600`/`0700`.
+Use a fresh deploy login after the group change. Backup root joins only this
+supplementary group, retains an empty capability bounding set and read-only
+state mount, and receives no DAC override/read-search capability. Do not add
+application accounts to this group. Node calls in both ExecStart and
+ExecStartPost use `--jitless`, preserving `MemoryDenyWriteExecute=true`.
+
+`COMPOSE_PROJECT_NAME` in `/etc/werewolf/backup.env` must match the project shown
+by `docker compose ls` and the production env. `BACKUP_COMPOSE_PROJECT` is a
+legacy alias only; conflicting values fail closed. A fixed container override
+must have matching project and postgres service labels.
+`BACKUP_AGE_RECIPIENT` must contain the public recipient
 for an identity kept on a separate recovery host. The file stays owned by
 root:root and mode `0600`. `BACKUP_RELEASE_ALLOWED_IMAGE_PREFIX` must match the
 reviewed GHCR repository prefix. The timer verifies the signed active manifest
-under `/var/lib/werewolf/release-state/current.json` and derives both the release
-commit and migration head from it; never copy those values manually into
-`backup.env`. Production off-site protection requires all of these values:
+under `/var/lib/werewolf/release-state/current.json` for the last healthy app
+commit and separately verifies signed `schema-current.json` for the applied
+migration head. These may differ after successful migration but failed candidate
+readiness. Missing/tampered schema evidence or either migration-pending file
+fails closed. Provenance is checked again after dumping; changed state prevents
+publication. Never copy these values manually into `backup.env`, or initialize
+schema evidence from an app manifest after an unresolved migration. For an old
+installation with no schema record, investigate the applied DB migration state
+and establish the matching signed manifest before enabling backups.
+Production off-site protection requires all of these values:
+
+The scheduled unit sets `BACKUP_REQUIRE_OFFSITE=1`. Both remote prefixes must be
+configured in `/etc/werewolf/backup.env`, not only the application's `.env`.
+Missing or invalid destinations fail before a dump or remote mutation. Any
+upload failure fails the service; local freshness alone is not off-site proof.
+Local-only development/manual backups intentionally use
+`BACKUP_REQUIRE_OFFSITE=0` with both remotes unset; never disable the production
+unit's requirement. Successful publication requires both signed, encrypted
+quartets (database and deletion ledger), with their signatures uploaded last.
 
 ```sh
 RCLONE_REMOTE=backup-store:werewolf/backups
@@ -224,7 +328,8 @@ RCLONE_BACKUP_RETENTION_DAYS=30
 RCLONE_CONFIG=/etc/werewolf/rclone.conf
 ```
 
-Both destinations must be explicit non-root prefixes without a trailing slash.
+Both destinations must be explicit non-root prefixes without a trailing slash,
+empty path segments, or `.` / `..` segments (including nested aliases).
 The script rejects equal rclone profile names so backup-retention deletion can
 never address the ledger profile. Install `/etc/werewolf/rclone.conf` as
 root:root with mode `0600`.
@@ -334,6 +439,12 @@ from that release's clean checkout before restarting the timer. The conditional
 bootstrap above preserves the live `/etc/werewolf/backup.env`; helper upgrades
 must never replace its off-site configuration.
 
+On the supported staging Linux host, execute the installed service and its
+ExecStartPost with the actual deploy-owned state and group contract. Verify the
+unit's MDWE/capability settings, a signed encrypted artifact and isolated restore
+acceptance. Fixture tests cover capless group access and MDWE-equivalent seccomp,
+not the host's full systemd namespace/LSM configuration or off-site delivery.
+
 `scripts/deploy-release.sh` starts and waits for `werewolf-backup.service` before
 pulling or migrating a candidate release. A non-root deployment identity needs a
 narrow passwordless sudo rule only for
@@ -345,7 +456,10 @@ and the web/game services.
 `COMPOSE_WAIT_TIMEOUT_SECONDS` bounds dependency startup. The migrator also has
 independent PostgreSQL lock, statement, and idle-transaction timeouts plus a
 host process timeout (`MIGRATION_*_TIMEOUT_*`). The process timeout must be
-larger than the server-side limits. Treat a process timeout as unresolved:
+larger than the server-side limits. `drizzle.config.ts` explicitly forwards
+`PGOPTIONS` as a connection startup parameter; Postgres.js does not read the
+libpq environment variable itself. The guarded migrator verifies enabled SQL
+limits and exact migration history before reporting success. Treat a process timeout as unresolved:
 preserve `migration-pending.json`, enter maintenance, and inspect PostgreSQL
 before any rollback decision.
 
@@ -384,11 +498,18 @@ Run a restore drill at least monthly:
    stopping writers. If release state was recovered separately, pass the
    reviewed pair with `RESTORE_RELEASE_MANIFEST` and
    `RESTORE_RELEASE_MANIFEST_SIGNATURE`; never substitute image tags manually.
+   Cluster roles are bootstrapped before importing the dump. The imported
+   migration history must match the signed backup head and the selected image's
+   journal prefix; the final history must match that image's signed release head.
+   If the backup schema is newer than the healthy application's migrator, select
+   a reviewed compatible signed release. Never publish the older application's
+   manifest as schema provenance. Images without `migrator.mjs` are rejected.
 4. After cutover, require the built-in account/history integrity, runtime-role,
    migration, and deletion-tombstone checks. A live restore also requires deep
    web/game readiness plus public HTTPS and WSS through a freshly recreated
-   Caddy container. Any failure automatically returns the original database
-   and keeps writers stopped.
+   Caddy container. Before writer startup, failures can automatically return the
+   original database. Once startup has been attempted, no automatic database
+   reversal is allowed, even if Compose reports a startup failure.
 5. Confirm a real sign-in/account view, history view, and create-to-play flow.
    The original database remains as `<database>_restore_rollback_<run-id>`.
 6. Only after explicit product and operator acceptance, run the exact
@@ -420,9 +541,36 @@ upload.
 
 Only after all selected restore gates pass does the script copy the verified
 active manifest to signed `schema-current.json` and clear an old
-`migration-pending.json`. A failed restore leaves both pieces of schema evidence
-unchanged. This lets a rehearsed restore resolve an interrupted migration
-without claiming that a merely attempted cutover repaired provenance.
+`migration-pending.json`. A failure does not deliberately clear unresolved
+migration evidence. Publication itself can fail partway; the recovery marker
+and retained host lock then override any apparently valid schema pointer.
+
+After any failure following writer startup, the script attempts a bounded stop
+of web/game and retains both the restored live database and the original
+rollback copy, `restore-recovery-required.txt`, the operation record, and the
+host lock. An unconfirmed shutdown is not a claim that writers are stopped.
+Active-release backups also refuse this unresolved recovery state.
+
+Do not remove the lock/marker, run acceptance, or swap the original database
+back simply to restore availability. Isolate ingress, confirm all writers and
+pending Docker actions have stopped, and preserve independent copies of both
+databases first. Manually reconcile acknowledged writes and the union of fresh
+deletion tombstones, reapply deletions to the chosen recovery database, and
+verify integrity, signed schema provenance, internal readiness and public
+HTTPS/WSS. Record the operator decision and reconciliation evidence before
+repairing publication state and explicitly clearing the lock/marker. The
+script intentionally does not guess how to merge divergent application data.
+
+### Privacy migration 0014
+
+Rehearse `0014_identity_privacy` and its one-time, identity-locked backfill on a
+synthetic staging volume representative of production size, measuring lock
+duration and migration timeouts. Deploy in a controlled maintenance window.
+This migration corrects existing privacy scrub functions without a schema-shape
+change; it must not be reverted or bypassed by restoring older data in a way
+that resurrects removed identity data. Recovery must preserve the corrected
+scrubbing semantics and reapply deletion tombstones before accepting traffic.
+No production execution is part of this audit-fix task.
 
 Target recovery objectives for the initial beta are RPO 6 hours and RTO 60 minutes.
 
@@ -432,8 +580,10 @@ Target recovery objectives for the initial beta are RPO 6 hours and RTO 60 minut
 
 1. Check `docker compose ps` and `docker compose logs --tail 200 web caddy`.
 2. Check web readiness, then game and Redis readiness.
-3. If the candidate image is unhealthy and the schema is compatible, deploy the
-   previous release manifest. The rollback script permits this only when its
+3. If a candidate fails readiness before pointer rotation, recover with the
+   surviving `current.json`, not the older `previous.json`. After a successful
+   release, an intentional rollback instead selects `previous.json`. Run from
+   the checkout matching the selected signed manifest. The script permits this only when its
    migration head exactly matches signed `schema-current.json` and no migration
    is pending.
 4. If both releases fail, preserve logs and inspect database/Redis dependencies.

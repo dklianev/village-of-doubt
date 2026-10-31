@@ -1,7 +1,7 @@
 "use client";
 
 import * as RDialog from "@radix-ui/react-dialog";
-import { useEffect, useInsertionEffect, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useId, useInsertionEffect, type CSSProperties, type ReactNode } from "react";
 
 export interface SheetProps {
   open: boolean;
@@ -235,7 +235,7 @@ export function Sheet({
   open,
   onOpenChange,
   title,
-  description = "Допълнителен панел.",
+  description,
   size = "default",
   className,
   style,
@@ -244,6 +244,7 @@ export function Sheet({
   children,
 }: SheetProps) {
   useSheetStyles();
+  const descriptionId = useId();
 
   useEffect(() => {
     if (!open || size !== "workspace") {
@@ -281,7 +282,8 @@ export function Sheet({
     <RDialog.Root open={open} onOpenChange={onOpenChange}>
       <RDialog.Portal>
         <RDialog.Overlay className="ds-sheet-overlay" />
-        <RDialog.Content className={["ds-sheet", className].filter(Boolean).join(" ")} style={style} data-ds-sheet data-size={size} onCloseAutoFocus={onCloseAutoFocus}>
+        <RDialog.Content className={["ds-sheet", className].filter(Boolean).join(" ")} style={style} data-ds-sheet data-size={size} onCloseAutoFocus={onCloseAutoFocus}
+          aria-describedby={description ? descriptionId : undefined}>
           <RDialog.Title className="ds-sheet-title">
             {title}
           </RDialog.Title>
@@ -290,9 +292,7 @@ export function Sheet({
               <span aria-hidden="true">×</span>
             </RDialog.Close>
           ) : null}
-          <RDialog.Description style={VISUALLY_HIDDEN_STYLE}>
-            {description}
-          </RDialog.Description>
+          {description ? <RDialog.Description id={descriptionId} style={VISUALLY_HIDDEN_STYLE}>{description}</RDialog.Description> : null}
           {children}
         </RDialog.Content>
       </RDialog.Portal>

@@ -1,9 +1,11 @@
 import "./auth-session-end.css";
+import { forgetRoomTraces } from "./room-traces";
 
 export const LOGOUT_REVISION_KEY = "auth-logout-revision";
 
 export function leaveAuthenticatedDocument() {
   if (document.getElementById("auth-session-ended")) return;
+  forgetRoomTraces();
 
   // This document is terminal. Cover portals as well as React's cached pages,
   // and take native modality so an old focus trap cannot block the home link.

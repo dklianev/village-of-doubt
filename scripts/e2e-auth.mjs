@@ -144,7 +144,15 @@ async function passwordReset(page) {
   }).waitFor();
 
   const message = await waitForEmail(email, "Нова парола");
-  await page.goto(extractResetPasswordUrl(message.html), { waitUntil: "domcontentloaded" });
+  const resetResponse = await page.goto(extractResetPasswordUrl(message.html), { waitUntil: "domcontentloaded" });
+  if (resetResponse?.headers()["referrer-policy"] !== "no-referrer") {
+    throw new Error("Recovery page must suppress referrers before loading subresources.");
+  }
+  const referrerProbe = page.waitForRequest((request) => new URL(request.url()).pathname === "/api/health");
+  await page.evaluate(() => fetch("/api/health", { cache: "no-store" }));
+  if ((await (await referrerProbe).allHeaders()).referer) {
+    throw new Error("Recovery page leaked its URL in a same-origin request header.");
+  }
   await page.getByLabel("Нова парола").fill(newPassword);
   await page.getByLabel("Повтори").fill(newPassword);
   await page.getByRole("button", { name: "Запази паролата", exact: true }).click();

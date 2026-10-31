@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { normalizeAvatarId, ROOM_CODE_REGEX, normalizeRoomCode } from "@werewolf/shared";
 import { createGameToken } from "@werewolf/shared/server";
+import { createDatabase, isGameSessionRevokedDurably } from "@werewolf/database";
 import { auth } from "@/lib/auth";
 import { normalizeGameTokenDisplayName } from "@/lib/display-name";
 import {
@@ -73,6 +74,16 @@ export async function POST(request: Request) {
   const userLimit = await userRateLimiter.check(`user:${userId}`);
   if (!userLimit.allowed) {
     return rateLimitResponse(userLimit.retryAfterSeconds);
+  }
+
+  if (session?.user && process.env.DATABASE_URL) {
+    try {
+      if (await isGameSessionRevokedDurably(createDatabase(), userId, Date.now())) {
+        return NextResponse.json({ error: "Сесията ти беше прекратена. Влез отново." }, { status: 401 });
+      }
+    } catch {
+      return NextResponse.json({ error: "Не успяхме да проверим сесията. Опитай отново." }, { status: 503 });
+    }
   }
 
   const token = createGameToken({

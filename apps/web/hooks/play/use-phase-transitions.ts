@@ -39,9 +39,7 @@ export function usePhaseTransitions({
   const [showPhaseTransition, setShowPhaseTransition] = useState(false);
   const [startCountdown, setStartCountdown] = useState<number | null>(null);
   const previousCuePhaseRef = useRef<string | null>(null);
-  const previousEventIdsRef = useRef<Set<string>>(new Set());
-  const hasSeenEventsRef = useRef(false);
-  const previousWinnerTeamRef = useRef("");
+  const observedRef = useRef<{ room: Room | null; eventIds: Set<string>; winnerTeam: string } | null>(null);
   const startGameTimersRef = useRef<number[]>([]);
   const forceSilent = liveMode || cueMode !== "audio_vibration";
 
@@ -89,29 +87,22 @@ export function usePhaseTransitions({
     }
   }, [forceSilent, liveMode, phase, suppressNextPhasePulseRef]);
 
+  // The first snapshot of each connected room (join, reload, reconnect) is history, not news.
   useEffect(() => {
-    if (!hasSeenEventsRef.current) {
-      previousEventIdsRef.current = new Set(publicEvents.map((event) => event.id));
-      hasSeenEventsRef.current = true;
+    const previous = observedRef.current;
+    const observing = connected && phase !== null;
+    observedRef.current = observing ? { room, eventIds: new Set(publicEvents.map((event) => event.id)), winnerTeam } : null;
+    if (!observing || !previous || previous.room !== room) {
       return;
     }
 
-    const previousIds = previousEventIdsRef.current;
-    const newEvents = publicEvents.filter((event) => !previousIds.has(event.id));
-    previousEventIdsRef.current = new Set(publicEvents.map((event) => event.id));
-
-    if (newEvents.some((event) => event.type === "death" || event.type === "hunter_shot")) {
+    if (publicEvents.some((event) => !previous.eventIds.has(event.id) && (event.type === "death" || event.type === "hunter_shot"))) {
       playCue("kill", { forceSilent });
     }
-  }, [forceSilent, publicEvents]);
-
-  useEffect(() => {
-    if (!winnerTeam || previousWinnerTeamRef.current === winnerTeam) {
-      return;
+    if (winnerTeam && winnerTeam !== previous.winnerTeam) {
+      playCue("win", { forceSilent });
     }
-    previousWinnerTeamRef.current = winnerTeam;
-    playCue("win", { forceSilent });
-  }, [forceSilent, winnerTeam]);
+  }, [connected, forceSilent, phase, publicEvents, room, winnerTeam]);
 
   const requestStartGame = useCallback(() => {
     if (!connected || !room?.connection?.isOpen || phase !== "lobby" || startCountdown !== null) {

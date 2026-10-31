@@ -104,7 +104,7 @@ function DrawerUtilityCluster({
   onCycleTheme: () => void;
 }) {
   return (
-    <div className="site-utility-cluster" aria-label="Настройки">
+    <div className="site-utility-cluster" role="group" aria-label="Настройки">
       <button className="site-icon-button" type="button" aria-label={soundEnabled ? "Изключи звука" : "Включи звука"} onClick={onToggleSound}>
         {soundEnabled ? (
           <Volume2 className="site-icon" aria-hidden strokeWidth={1.9} />

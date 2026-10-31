@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createGameClient, GAME_ROOM_NAME } from "@/lib/colyseus-client";
 import { useGameRoom } from "@/hooks/play/use-game-room";
 import { useActionReceipt } from "@/hooks/play/use-action-receipt";
+import { useTimerCountdown } from "@/hooks/use-timer-countdown";
 import { isVisualGameFixtureEnabled, parseVisualGameFixture } from "@/hooks/play/visual-game-fixture";
 import type { PublicChatMessage, PublicEvent, PublicRoleCount, VoteTallyItem } from "@/lib/play/types";
 
@@ -216,6 +217,72 @@ describe("useGameRoom", () => {
     expect(client.reconnect).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ["Сесията ти беше прекратена. Влез отново, за да продължиш.", "Сесията ти беше прекратена. Влез отново, за да продължиш."],
+    [null, "Връзката ти със стаята беше прекратена. Свържи се отново, за да продължиш."],
+  ])("stops at a 4029 session close with reason %j instead of retrying the dead session", async (reason, shown) => {
+    mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
+    const { client, joinRoom, reconnectRoom } = createClient();
+    mocks.createGameClient.mockReturnValue(client);
+    const toast = vi.fn();
+    const { result } = renderHook(() => useGameRoom({ code: "ABCD", createOptions: undefined, toast }));
+    await waitFor(() => expect(result.current.connectionStatus).toBe("connected"));
+    vi.useFakeTimers();
+
+    act(() => {
+      if (reason) joinRoom.emitMessage("safe_error", { messageBg: reason });
+      joinRoom.emitLeave(4029);
+    });
+    expect(result.current.connectionStatus).toBe("error");
+    expect(result.current.connectionMessage).toBe(shown);
+    expect(result.current.room).toBeNull();
+    expect(window.sessionStorage.getItem("room-reconnect:ABCD")).toBeNull();
+
+    await act(async () => vi.advanceTimersByTimeAsync(30_000));
+    expect(client.reconnect).not.toHaveBeenCalled();
+    expect(result.current.connectionStatus).toBe("error");
+    vi.useRealTimers();
+
+    client.joinOrCreate.mockResolvedValueOnce(reconnectRoom);
+    act(() => result.current.reconnectNow());
+    await waitFor(() => expect(result.current.connectionStatus).toBe("connected"));
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(client.reconnect).not.toHaveBeenCalled();
+  });
+
+  it("does not retry a join refused with 4029 on its own", async () => {
+    mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
+    const { client } = createClient();
+    client.joinOrCreate.mockRejectedValue(Object.assign(new Error("Този токен вече е използван."), { code: 4029 }));
+    mocks.createGameClient.mockReturnValue(client);
+    const toast = vi.fn();
+    const { result } = renderHook(() => useGameRoom({ code: "ABCD", createOptions: undefined, toast }));
+    await waitFor(() => expect(result.current.connectionStatus).toBe("error"));
+    vi.useFakeTimers();
+
+    await act(async () => vi.advanceTimersByTimeAsync(30_000));
+
+    expect(result.current.connectionMessage).toBe("Този токен вече е използван.");
+    expect(client.joinOrCreate).toHaveBeenCalledOnce();
+    expect(client.reconnect).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it.each([
+    ["Това име вече се използва в стаята.", "Това име вече се използва в стаята."],
+    ["", "Не успяхме да те свържем със стаята. Опитай отново."],
+    ["seat reservation expired.", "Не успяхме да те свържем със стаята. Опитай отново."],
+  ])("shows a join refusal %j as the server's reason or a Bulgarian fallback", async (message, shown) => {
+    mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
+    const { client } = createClient();
+    client.joinOrCreate.mockRejectedValue(new Error(message));
+    mocks.createGameClient.mockReturnValue(client);
+    const { result } = renderHook(() => useGameRoom({ code: "ABCD", createOptions: undefined, toast: vi.fn() }));
+
+    await waitFor(() => expect(result.current.connectionStatus).toBe("error"));
+    expect(result.current.connectionMessage).toBe(shown);
+  });
+
   it("keeps explicit leave cleanup and ordinary action errors separate from join rejection", async () => {
     mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
     const { client, joinRoom } = createClient();
@@ -388,6 +455,26 @@ describe("useGameRoom", () => {
     expect(result.current.currentUserId).toBe("u1");
     expect(result.current.snapshot?.players[0]?.displayName).toBe("Играч");
     expect(result.current.snapshot?.doctorCanSelfProtect).toBe(true);
+  });
+
+  it("counts the phase timer down on the server clock when the device clock is behind", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    const deviceNow = Date.UTC(2026, 0, 10, 20, 0, 0);
+    vi.setSystemTime(deviceNow);
+    mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
+    const { client, joinRoom } = createClient();
+    joinRoom.request.mockResolvedValue({ synchronized: true, serverNow: deviceNow + 60_000 });
+    mocks.createGameClient.mockReturnValue(client);
+
+    const toast = vi.fn();
+    const { result } = renderHook(() => useGameRoom({ code: "ABCD", createOptions: undefined, toast }));
+    await waitFor(() => expect(result.current.connectionStatus).toBe("connected"));
+    await waitFor(() => expect(joinRoom.request).toHaveBeenCalledWith("syncPrivateState"));
+    await act(async () => {});
+
+    // The server set this deadline 30 seconds ahead of its own clock.
+    const { result: countdown } = renderHook(() => useTimerCountdown(deviceNow + 90_000));
+    expect(countdown.current.remainingSeconds).toBe(30);
   });
 
   it("registers private handlers before requesting the retained private state", async () => {
@@ -774,6 +861,35 @@ describe("useGameRoom", () => {
     act(() => joinRoom.emitMessage("game_recorded", { gameId: "game-1" }));
 
     expect(result.current.recordedGameId).toBe("game-1");
+  });
+
+  it("consumes private Hunter turns, clears availability on ACK and refreshes it on reconnect", async () => {
+    mocks.useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
+    const { client, joinRoom } = createClient();
+    mocks.createGameClient.mockReturnValue(client);
+    const toast = vi.fn();
+    const { result } = renderHook(() => useGameRoom({ code: "ABCD", createOptions: undefined, toast }));
+    await waitFor(() => expect(result.current.connectionStatus).toBe("connected"));
+    const role = { role: "hunter", roleNameBg: "Ловец" };
+    act(() => joinRoom.emitMessage("private_role", role));
+    expect(result.current.privateRole?.hunterRevengeAvailable).not.toBe(true);
+    act(() => joinRoom.emitMessage("private_role", { ...role, hunterRevengeAvailable: true }));
+    expect(result.current.privateRole?.hunterRevengeAvailable).toBe(true);
+    act(() => joinRoom.emitMessage("hunter_revenge_ack", { phase: "hunter_revenge", round: 1, targetUserId: "u2" }));
+    expect(result.current.privateRole?.hunterRevengeAvailable).toBe(false);
+    for (const available of [false, true]) {
+      joinRoom.request.mockImplementationOnce(async () => {
+        joinRoom.emitMessage("private_role", { ...role, hunterRevengeAvailable: available });
+        return { synchronized: true };
+      });
+      act(() => joinRoom.emitDrop());
+      expect(result.current.connectionStatus).toBe("reconnecting");
+      act(() => joinRoom.emitReconnect());
+      await waitFor(() => expect(result.current.connectionStatus).toBe("connected"));
+      expect(result.current.privateRole?.hunterRevengeAvailable).toBe(available);
+    }
+    act(() => joinRoom.emitMessage("private_role", { role: "ordinary_villager", roleNameBg: "Селянин" }));
+    expect(result.current.privateRole?.hunterRevengeAvailable).toBeUndefined();
   });
 
   it("consumes viewer-owned faction rosters and retained investigation results", async () => {

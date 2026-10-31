@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, asc, count, desc, eq, gte, inArray, isNotNull, isNull, lt, ne, or, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, isNotNull, isNull, lt, lte, ne, or, sql } from "drizzle-orm";
 import {
   deletedUserIdentities,
   gameEvents,
@@ -127,6 +127,7 @@ export const ACCOUNT_EXPORT_MAX_EVENT_PAGE_SIZE = 1_000;
 export interface AccountExportCursor {
   createdAt: Date;
   id: string;
+  timestamp?: string;
 }
 
 export interface AccountExportPageOptions {
@@ -136,6 +137,15 @@ export interface AccountExportPageOptions {
   eventPageSize: number;
   gameCursor?: AccountExportCursor | null;
   eventCursor?: AccountExportCursor | null;
+  snapshotAt?: Date;
+  batchGameIds?: readonly string[];
+}
+
+export class AccountExportChangedError extends Error {
+  constructor() {
+    super("Export batch is no longer available; restart the export");
+    this.name = "AccountExportChangedError";
+  }
 }
 
 export async function recordGameSessionRevocation(
@@ -168,12 +178,17 @@ export async function isGameSessionRevokedDurably(
     return true;
   }
 
-  const marker = await db
-    .select({ revokedAt: gameSessionRevocations.revokedAt })
-    .from(gameSessionRevocations)
-    .where(eq(gameSessionRevocations.userId, userId))
-    .limit(1);
-  return marker[0] ? tokenIssuedAtMs <= marker[0].revokedAt.getTime() : false;
+  const result = await db.execute<{ revoked: boolean }>(sql`
+    SELECT EXISTS (
+      SELECT 1 FROM ${deletedUserIdentities}
+      WHERE ${deletedUserIdentities.originalUserId} = ${userId}
+    ) OR EXISTS (
+      SELECT 1 FROM ${gameSessionRevocations}
+      WHERE ${gameSessionRevocations.userId} = ${userId}
+        AND ${gameSessionRevocations.revokedAt} >= ${new Date(tokenIssuedAtMs).toISOString()}::timestamptz
+    ) AS revoked
+  `);
+  return result[0]?.revoked !== false;
 }
 
 type DatabaseTransaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
@@ -424,16 +439,13 @@ type DeletedPayloadIdentity = {
 };
 
 const IDENTITY_VALUE_KEYS = /(?:^|_)(?:user|player|actor|target|host)?id$|userid$/i;
+const IDENTITY_ARRAY_KEYS = new Set(["userIds", "playerIds", "participantUserIds", "winnerPlayerIds", "targetUserIds"]);
 const SECRET_ROLE_KEYS = /role/i;
 
 export function scrubDeletedIdentityFromEventPayload(
   payload: unknown,
   identity: DeletedPayloadIdentity,
 ): unknown {
-  const displayNames = new Set(
-    identity.displayNames.filter((name) => name && name !== DELETED_DISPLAY_NAME),
-  );
-
   const canonicalKey = (key: string) => key.replace(/[^a-z0-9]/gi, "").toLowerCase();
 
   const identityStem = (key: string): string | null => {
@@ -484,7 +496,8 @@ export function scrubDeletedIdentityFromEventPayload(
       ...contextualNameStems,
       ...Object.entries(source)
         .filter(([key, item]) =>
-          typeof item === "string" && IDENTITY_VALUE_KEYS.test(key) && item === identity.userId)
+          typeof item === "string" && IDENTITY_VALUE_KEYS.test(key)
+          && (item === identity.userId || item === identity.anonymousUserId))
         .map(([key]) => identityStem(key))
         .filter((stem): stem is string => stem !== null),
     ]);
@@ -508,12 +521,16 @@ export function scrubDeletedIdentityFromEventPayload(
         scrubbed[key] = identity.anonymousUserId;
         continue;
       }
+      if (Array.isArray(item) && IDENTITY_ARRAY_KEYS.has(key)) {
+        scrubbed[key] = item.map((entry) => entry === identity.userId ? identity.anonymousUserId : scrub(entry));
+        continue;
+      }
 
       const currentNameStem = nameStem(key);
       const nameBelongsToIdentity =
         currentNameStem !== null &&
         matchedIdentityStems.has(currentNameStem);
-      if (nameBelongsToIdentity && typeof item === "string" && displayNames.has(item)) {
+      if (nameBelongsToIdentity && typeof item === "string") {
         scrubbed[key] = DELETED_DISPLAY_NAME;
         continue;
       }
@@ -545,7 +562,17 @@ export async function getAccountExportPage(
     Math.max(Math.trunc(options.eventPageSize), 1),
     ACCOUNT_EXPORT_MAX_EVENT_PAGE_SIZE,
   );
-  const gameMembershipFilter = or(eq(games.hostId, userId), eq(gamePlayers.userId, userId));
+  const gameMembershipFilter = or(
+    eq(games.hostId, userId),
+    and(eq(gamePlayers.userId, userId), options.snapshotAt ? lte(gamePlayers.createdAt, options.snapshotAt) : undefined),
+    sql`EXISTS (
+      SELECT 1 FROM ${gameEvents}
+      WHERE ${gameEvents.gameId} = ${games.id}
+        AND ${gameEvents.actorId} = ${userId}
+        AND ${gameEvents.visibility} <> 'moderator'
+        ${options.snapshotAt ? sql`AND ${gameEvents.createdAt} <= ${options.snapshotAt.toISOString()}::timestamp` : sql``}
+    )`,
+  );
   const gameCursorFilter = accountExportKeysetFilter(games.createdAt, games.id, options.gameCursor);
   const rows = await db
     .select({
@@ -558,6 +585,7 @@ export async function getAccountExportPage(
       startedAt: games.startedAt,
       endedAt: games.endedAt,
       createdAt: games.createdAt,
+      cursorCreatedAt: sql<string>`${games.createdAt}::text`,
       isHost: sql<boolean>`${games.hostId} = ${userId}`,
       playerDisplayName: gamePlayers.displayName,
       playerRole: gamePlayers.role,
@@ -572,12 +600,25 @@ export async function getAccountExportPage(
       gamePlayers,
       and(eq(gamePlayers.gameId, games.id), eq(gamePlayers.userId, userId)),
     )
-    .where(gameCursorFilter ? and(gameMembershipFilter, gameCursorFilter) : gameMembershipFilter)
+    .where(and(
+      gameMembershipFilter,
+      gameCursorFilter,
+      options.snapshotAt ? lte(games.createdAt, options.snapshotAt) : undefined,
+      options.batchGameIds ? inArray(games.id, [...options.batchGameIds]) : undefined,
+    ))
     .orderBy(desc(games.createdAt), desc(games.id))
     .limit(pageSize + 1);
   const hasMore = rows.length > pageSize;
   const pageRows = rows.slice(0, pageSize);
   const gameIds = pageRows.map((game) => game.id);
+  if (options.batchGameIds && (gameIds.length !== options.batchGameIds.length
+    || options.batchGameIds.some((id) => !gameIds.includes(id)))) {
+    throw new AccountExportChangedError();
+  }
+  const participantGameIds = pageRows
+    .filter((game) => game.isHost || game.playerDisplayName !== null)
+    .map((game) => game.id);
+  const participantGames = new Set(participantGameIds);
   const eventCursorFilter = accountExportKeysetFilter(
     gameEvents.createdAt,
     gameEvents.id,
@@ -598,14 +639,19 @@ export async function getAccountExportPage(
           visibility: gameEvents.visibility,
           payload: gameEvents.payload,
           createdAt: gameEvents.createdAt,
+          cursorCreatedAt: sql<string>`${gameEvents.createdAt}::text`,
         })
         .from(gameEvents)
         .where(
           and(
             inArray(gameEvents.gameId, gameIds),
             eventCursorFilter,
+            options.snapshotAt ? lte(gameEvents.createdAt, options.snapshotAt) : undefined,
             or(
-              eq(gameEvents.visibility, "public"),
+              and(
+                inArray(gameEvents.gameId, participantGameIds),
+                eq(gameEvents.visibility, "public"),
+              ),
               and(eq(gameEvents.actorId, userId), ne(gameEvents.visibility, "moderator")),
             ),
           ),
@@ -617,6 +663,9 @@ export async function getAccountExportPage(
   const eventsByGameId = new Map<string, Array<Record<string, unknown>>>();
 
   for (const event of eventPageRows) {
+    if (event.actorId !== userId && !participantGames.has(event.gameId)) {
+      continue;
+    }
     if (event.visibility === "moderator" || (event.visibility !== "public" && event.actorId !== userId)) {
       continue;
     }
@@ -638,15 +687,16 @@ export async function getAccountExportPage(
   return {
     games: pageRows.map((game) => {
       const events = eventsByGameId.get(game.id) ?? [];
+      const participant = participantGames.has(game.id);
       return {
         id: game.id,
-        code: game.code,
+        code: participant ? game.code : null,
         isHost: game.isHost,
-        config: game.config,
-        status: game.status,
-        winnerTeam: game.winnerTeam,
-        startedAt: game.startedAt,
-        endedAt: game.endedAt,
+        config: participant ? game.config : null,
+        status: participant ? game.status : null,
+        winnerTeam: participant ? game.winnerTeam : null,
+        startedAt: participant ? game.startedAt : null,
+        endedAt: participant ? game.endedAt : null,
         createdAt: game.createdAt,
         player: game.playerDisplayName === null
           ? null
@@ -671,6 +721,7 @@ export async function getAccountExportPage(
     eventsHasMore,
     nextGameCursor: hasMore ? encodeAccountExportCursor(pageRows.at(-1)) : null,
     nextEventCursor: eventsHasMore ? encodeAccountExportCursor(eventPageRows.at(-1)) : null,
+    batchGameIds: gameIds,
   };
 }
 
@@ -684,17 +735,24 @@ export function parseAccountExportCursor(value: string | null | undefined): Acco
     return null;
   }
 
-  const createdAt = new Date(value.slice(0, separator));
+  const timestamp = value.slice(0, separator);
+  const createdAt = new Date(timestamp);
   const id = value.slice(separator + 1);
-  if (Number.isNaN(createdAt.getTime()) || !id || id.length > 128) {
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?Z$/.test(timestamp)
+    || Number.isNaN(createdAt.getTime()) || !UUID_PATTERN.test(id)
+    || createdAt.toISOString().slice(0, 19) !== timestamp.slice(0, 19)) {
     return null;
   }
 
-  return { createdAt, id };
+  return { createdAt, id, timestamp };
 }
 
-function encodeAccountExportCursor(row: { createdAt: Date | string; id: string } | undefined) {
-  return row ? `${normalizeDatabaseDate(row.createdAt).toISOString()}|${row.id}` : null;
+function encodeAccountExportCursor(row: { createdAt: Date | string; cursorCreatedAt?: string; id: string } | undefined) {
+  if (!row) return null;
+  const timestamp = row.cursorCreatedAt
+    ? `${row.cursorCreatedAt.replace(" ", "T")}Z`
+    : normalizeDatabaseDate(row.createdAt).toISOString();
+  return `${timestamp}|${row.id}`;
 }
 
 function accountExportKeysetFilter(
@@ -705,9 +763,10 @@ function accountExportKeysetFilter(
   if (!cursor) {
     return undefined;
   }
+  const exactTimestamp = sql`${cursor.timestamp ?? cursor.createdAt.toISOString()}::timestamp`;
   return or(
-    lt(createdAtColumn, cursor.createdAt),
-    and(eq(createdAtColumn, cursor.createdAt), lt(idColumn, cursor.id)),
+    lt(createdAtColumn, exactTimestamp),
+    and(eq(createdAtColumn, exactTimestamp), lt(idColumn, cursor.id)),
   );
 }
 
@@ -1238,7 +1297,7 @@ export async function getLeaderboardRows(
 ): Promise<LeaderboardEntryRow[]> {
   const gamesPlayed = sql<number>`COUNT(*)::int`;
   const wins = sql<number>`COALESCE(SUM(CASE WHEN ${gamePlayers.won} THEN 1 ELSE 0 END), 0)::int`;
-  const lastPlayedAt = sql<Date | null>`MAX(${games.endedAt})`;
+  const lastPlayedAt = sql<Date | null>`MAX(${games.endedAt})`.mapWith(games.endedAt);
 
   return db
     .select({

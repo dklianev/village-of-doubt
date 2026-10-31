@@ -54,6 +54,15 @@ export function setSoundEnabled(enabled: boolean, storage: StorageLike | undefin
   if (typeof window !== "undefined") window.dispatchEvent(new Event(SOUND_CHANGE_EVENT));
 }
 
+export function subscribeSoundEnabled(listener: () => void) {
+  window.addEventListener(SOUND_CHANGE_EVENT, listener);
+  window.addEventListener("storage", listener);
+  return () => {
+    window.removeEventListener(SOUND_CHANGE_EVENT, listener);
+    window.removeEventListener("storage", listener);
+  };
+}
+
 export function shouldPlayCue({ forceSilent = false, storage }: PlayCueOptions = {}) {
   return !forceSilent && getSoundEnabled(storage);
 }

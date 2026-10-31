@@ -1,24 +1,22 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { useAuthSession, type AuthSessionView } from "@/lib/use-auth-session";
 import { safeLocalStorage } from "@/lib/safe-storage";
 import { shouldMountFeedback } from "@/components/feedback/route-policy";
+import { OptionalFeatureBoundary as WidgetBoundary } from "./OptionalFeatureBoundary";
 
 const CookieBanner = dynamic(() => import("@/components/CookieBanner").then((mod) => mod.CookieBanner), {
-  loading: () => null,
   ssr: false,
 });
 
 const FeedbackWidget = dynamic(() => import("@/components/feedback/FeedbackWidget").then((mod) => mod.FeedbackWidget), {
-  loading: () => null,
   ssr: false,
 });
 
 const WelcomeModal = dynamic(() => import("@/components/onboarding/WelcomeModal").then((mod) => mod.WelcomeModal), {
-  loading: () => null,
   ssr: false,
 });
 
@@ -32,8 +30,7 @@ type WidgetMountState = {
   welcome: boolean;
 };
 
-export function NonCriticalWidgets({ initialSession }: { initialSession: AuthSessionView | null }) {
-  const pathname = usePathname();
+export function NonCriticalWidgets({ initialSession, cookieFallback }: { initialSession: AuthSessionView | null; cookieFallback?: ReactNode }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -63,16 +60,17 @@ export function NonCriticalWidgets({ initialSession }: { initialSession: AuthSes
     };
   }, []);
 
-  return ready ? <DeferredWidgets initialSession={initialSession} pathname={pathname} /> : null;
+  return ready ? <DeferredWidgets initialSession={initialSession} cookieFallback={cookieFallback} /> : null;
 }
 
 function DeferredWidgets({
   initialSession,
-  pathname,
+  cookieFallback,
 }: {
   initialSession: AuthSessionView | null;
-  pathname: string;
+  cookieFallback?: ReactNode;
 }) {
+  const pathname = usePathname();
   const { data: session } = useAuthSession(initialSession);
   const mount: WidgetMountState = {
     cookie: !safeLocalStorage.getItem(COOKIE_STORAGE_KEY),
@@ -86,9 +84,9 @@ function DeferredWidgets({
 
   return (
     <>
-      {mount.cookie ? <CookieBanner /> : null}
-      {mount.welcome ? <WelcomeModal displayName={session?.user?.name ?? "приятел"} /> : null}
-      {mount.feedback && session ? <FeedbackWidget session={session} /> : null}
+      {mount.cookie ? <WidgetBoundary resetKey={pathname} fallback={cookieFallback}><CookieBanner /></WidgetBoundary> : null}
+      {mount.welcome ? <WidgetBoundary resetKey={pathname}><WelcomeModal displayName={session?.user?.name ?? "приятел"} /></WidgetBoundary> : null}
+      {mount.feedback && session ? <WidgetBoundary resetKey={pathname}><FeedbackWidget session={session} /></WidgetBoundary> : null}
     </>
   );
 }

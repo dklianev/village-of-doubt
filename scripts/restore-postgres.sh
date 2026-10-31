@@ -38,6 +38,7 @@ release_manifest_public_key="${RELEASE_MANIFEST_PUBLIC_KEY:-}"
 release_allowed_image_prefix="${RELEASE_ALLOWED_IMAGE_PREFIX:-}"
 schema_manifest="$release_state_dir/schema-current.json"
 pending_migration_manifest="$release_state_dir/migration-pending.json"
+recovery_marker="$release_state_dir/restore-recovery-required.txt"
 schema_manifest_tmp="$release_state_dir/schema-current.json.restore.$$"
 schema_signature_tmp="$release_state_dir/schema-current.json.sig.restore.$$"
 compose_wait_timeout="${COMPOSE_WAIT_TIMEOUT_SECONDS:-$restore_health_timeout}"
@@ -45,6 +46,7 @@ migration_lock_timeout_ms="${MIGRATION_LOCK_TIMEOUT_MS:-5000}"
 migration_statement_timeout_ms="${MIGRATION_STATEMENT_TIMEOUT_MS:-300000}"
 migration_idle_timeout_ms="${MIGRATION_IDLE_TRANSACTION_TIMEOUT_MS:-300000}"
 migration_process_timeout_seconds="${MIGRATION_PROCESS_TIMEOUT_SECONDS:-600}"
+backup_migration_head=""
 
 if [ ! -f "$backup_file" ]; then
   printf 'Backup file not found: %s\n' "$backup_file" >&2
@@ -289,6 +291,8 @@ temporary_tombstone_sql="$(mktemp "${TMPDIR:-/tmp}/werewolf_restore_tombstones.X
 temporary_release_env="$(mktemp "${TMPDIR:-/tmp}/werewolf_restore_release.XXXXXX.env")"
 writers_stopped=0
 restart_attempted=0
+recovery_required=0
+schema_publication_started=0
 switch_started=0
 target_available=1
 rollback_available=0
@@ -316,16 +320,29 @@ preserve_restore_record() {
     printf 'rollback_database=%s\n' "$rollback_db"
     printf 'rollback_available=%s\n' "$rollback_available"
     printf 'switch_started=%s\n' "$switch_started"
+    printf 'writer_start_attempted=%s\n' "$restart_attempted"
+    printf 'recovery_required=%s\n' "$recovery_required"
+    printf 'writers_stopped=%s\n' "$writers_stopped"
     printf 'captured_at=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   } > "$record_file"
   chmod 600 "$record_file" 2>/dev/null || true
   printf 'Restore operation record preserved at %s.\n' "$record_file" >&2
 }
 
+mark_restore_recovery() {
+  umask 077
+  {
+    printf 'target_database=%s\n' "$POSTGRES_DB"
+    printf 'rollback_database=%s\n' "$rollback_db"
+    printf 'staging_database=%s\n' "$staging_db"
+    printf 'reason=%s\n' "$1"
+  } > "$recovery_marker"
+}
+
 record_restored_schema() {
   cp "$active_release_manifest" "$schema_manifest_tmp"
   cp "$active_release_signature" "$schema_signature_tmp"
-  chmod 600 "$schema_manifest_tmp" "$schema_signature_tmp"
+  allow_release_state_readers "$schema_manifest_tmp" "$schema_signature_tmp"
   mv "$schema_signature_tmp" "$schema_manifest.sig"
   mv "$schema_manifest_tmp" "$schema_manifest"
   rm -f "$pending_migration_manifest" "$pending_migration_manifest.sig"
@@ -345,9 +362,24 @@ cleanup() {
       "restore-migrator" || true
   fi
 
-  if [ "$exit_code" -ne 0 ] && [ "$rollback_available" -eq 1 ]; then
-    compose stop web game >/dev/null 2>&1 || true
-    writers_stopped=1
+  if [ "$exit_code" -ne 0 ] && [ "$schema_publication_started" -eq 1 ]; then
+    recovery_required=1
+  fi
+
+  if [ "$exit_code" -ne 0 ] && [ "$restart_attempted" -eq 1 ]; then
+    # Even a failed Compose start may have exposed writers. Never reverse here.
+    recovery_required=1
+    staging_cleanup_safe=0
+    operations_lock_held=0
+    mark_restore_recovery 'writer start attempted; reconcile acknowledged writes and deletions before recovery' || true
+    writers_stopped=0
+    if run_with_process_timeout 10 "$docker_command" compose stop web game >/dev/null 2>&1; then
+      writers_stopped=1
+    else
+      printf 'CRITICAL: writer shutdown is unconfirmed; isolate ingress and stop writers manually.\n' >&2
+    fi
+    printf 'RECOVERY REQUIRED: databases %s and %s are preserved without reversal. Host lock retained; reconcile writes and deletion tombstones manually.\n' "$POSTGRES_DB" "$rollback_db" >&2
+  elif [ "$exit_code" -ne 0 ] && [ "$rollback_available" -eq 1 ]; then
 
     if [ "$target_available" -eq 1 ]; then
       terminate_database_sessions "$POSTGRES_DB" >/dev/null 2>&1 || true
@@ -357,6 +389,7 @@ cleanup() {
         staging_created=1
       else
         staging_cleanup_safe=0
+        recovery_required=1
         printf 'CRITICAL: failed restored database remains at %s; rollback copy is preserved as %s. Writers remain stopped.\n' "$POSTGRES_DB" "$rollback_db" >&2
       fi
     fi
@@ -368,9 +401,15 @@ cleanup() {
         printf 'Restore failed; original database was restored from %s.\n' "$rollback_db" >&2
       else
         staging_cleanup_safe=0
+        recovery_required=1
         printf 'CRITICAL: automatic rollback failed; valid copies are preserved as %s and %s. Writers remain stopped.\n' "$staging_db" "$rollback_db" >&2
       fi
     fi
+  fi
+
+  if [ "$recovery_required" -eq 1 ]; then
+    operations_lock_held=0
+    mark_restore_recovery 'restore outcome requires manual reconciliation; do not accept or reverse databases' || true
   fi
 
   if [ "$staging_cleanup_safe" -eq 1 ] && [ "$staging_created" -eq 1 ]; then
@@ -381,7 +420,7 @@ cleanup() {
 
   if [ "$exit_code" -ne 0 ] && [ "$writers_stopped" -eq 1 ]; then
     if [ "$restart_attempted" -eq 1 ]; then
-      printf 'Writer restart did not complete; game and web services are treated as stopped. Rollback database %s was preserved.\n' "$rollback_db" >&2
+      printf 'Writer restart validation did not complete; game and web services were stopped. Rollback database %s was preserved.\n' "$rollback_db" >&2
     else
       printf 'Restore did not complete; game and web services remain stopped.\n' >&2
     fi
@@ -392,8 +431,8 @@ cleanup() {
   exit "$exit_code"
 }
 
-mkdir -p "$release_state_dir"
-chmod 700 "$release_state_dir" 2>/dev/null || true
+initialize_compose_project
+prepare_release_state "$release_state_dir"
 if ! acquire_operations_lock "restore" "$operations_lock_dir"; then
   rm -f "$temporary_sql" "$temporary_gzip" "$temporary_backup_manifest" \
     "$temporary_deletion_ledger_manifest" "$temporary_deletion_ledger_plain" \
@@ -425,6 +464,12 @@ if [ "$require_signature" = "1" ]; then
     "$POSTGRES_DB" \
     "$restore_max_age_hours" \
     "$backup_clock_skew_seconds" > "$temporary_backup_manifest"
+  backup_migration_head="$("$node_command" -e '
+    const manifest = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8"));
+    if (!/^[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(manifest.migrationHead ?? "")) process.exit(1);
+    process.stdout.write(manifest.migrationHead);
+  ' "$temporary_backup_manifest")"
+  test -n "$backup_migration_head"
   "$node_command" "$manifest_command" verify \
     "$deletion_ledger_file" \
     "$signing_public_key" \
@@ -499,13 +544,15 @@ compose pull migrate web game caddy
 
 compose exec -T postgres createdb -U "$POSTGRES_USER" -O "$POSTGRES_USER" "$staging_db"
 staging_created=1
+restore_bootstrap_import_roles
 compose exec -T postgres psql -v ON_ERROR_STOP=1 --single-transaction -U "$POSTGRES_USER" "$staging_db" < "$temporary_sql"
 POSTGRES_ROLE_DATABASE="$staging_db" compose run --rm --no-deps -T postgres-roles
 migration_container_started=1
 run_with_process_timeout "$migration_process_timeout_seconds" \
   env "MIGRATION_DATABASE_URL=$staging_database_url" "PGOPTIONS=$migration_pgoptions" \
   "$docker_command" compose run --name "$migrator_container_name" --rm --no-deps -T \
-  -e "PGOPTIONS=$migration_pgoptions" migrate
+  -e "PGOPTIONS=$migration_pgoptions" -e "MIGRATION_HEAD=$MIGRATION_HEAD" \
+  -e "RESTORE_BACKUP_MIGRATION_HEAD=$backup_migration_head" migrate node ./migrator.mjs
 migration_container_started=0
 POSTGRES_ROLE_DATABASE="$staging_db" compose run --rm --no-deps -T postgres-roles
 validate_staging_database
@@ -549,18 +596,21 @@ restore_verify_captured_tombstones \
   "$POSTGRES_DB" "$temporary_tombstones" "$temporary_tombstone_sql"
 
 if [ "$restore_only" -ne 1 ]; then
+  mark_restore_recovery 'writer start pending; retain both databases until restore validation completes'
   restart_attempted=1
-  compose up -d --force-recreate --no-build --no-deps --wait \
+  run_with_process_timeout "$compose_wait_timeout" "$docker_command" compose up -d --force-recreate --no-build --no-deps --wait \
     --wait-timeout "$compose_wait_timeout" web game caddy >/dev/null
-  compose exec -T web \
-    wget -qO- http://127.0.0.1:3000/api/health/ready >/dev/null
-  compose exec -T game \
-    wget -qO- http://127.0.0.1:2567/health/ready >/dev/null
-  "$node_command" --env-file-if-exists=.env "$script_dir/deploy-public-health.mjs"
+  run_with_process_timeout 10 "$docker_command" compose exec -T web \
+    wget -qO- http://127.0.0.1:3000/api/health/ready -T 5 >/dev/null
+  run_with_process_timeout 10 "$docker_command" compose exec -T game \
+    wget -qO- http://127.0.0.1:2567/health/ready -T 5 >/dev/null
+  run_with_process_timeout "$restore_health_timeout" "$node_command" --env-file-if-exists=.env "$script_dir/deploy-public-health.mjs"
   writers_stopped=0
 fi
 
+schema_publication_started=1
 record_restored_schema
+rm -f "$recovery_marker"
 
 if [ "$restore_only" -ne 1 ]; then
   printf 'Restore completed semantic and ingress checks. Rollback database %s is retained until explicit acceptance.\n' "$rollback_db"

@@ -49,7 +49,8 @@
 
 .fab:focus-visible {
   border-color: var(--feedback-accent);
-  outline: none;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
   box-shadow:
     0 0 0 3px var(--feedback-accent-soft),
     0 12px 32px rgba(0, 0, 0, 0.55);
@@ -346,16 +347,18 @@
     filter 160ms ease;
 }
 
-.submit:hover:not(:disabled) {
+.submit:hover:not(:disabled, [aria-disabled="true"]) {
   filter: brightness(1.08);
   transform: translateY(-1px);
 }
 
-.submit:active:not(:disabled) {
+.submit:active:not(:disabled, [aria-disabled="true"]) {
   transform: translateY(0);
 }
 
-.submit:disabled {
+/* Sending keeps the button focusable (aria-disabled) so keyboard focus is not dropped. */
+.submit:disabled,
+.submit[aria-disabled="true"] {
   cursor: not-allowed;
   opacity: 0.6;
 }
@@ -405,6 +408,7 @@
 
 .sentTitle {
   margin: 0;
+  outline: none;
   color: var(--feedback-text);
   font-family: var(--font-display);
   font-size: 1.15rem;
@@ -480,5 +484,19 @@
   .close {
     width: 44px;
     height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay,
+  .panel,
+  .sentMark {
+    animation: none;
+  }
+
+  .fab:hover,
+  .fab:active,
+  .submit:hover:not(:disabled, [aria-disabled="true"]) {
+    transform: none;
   }
 }

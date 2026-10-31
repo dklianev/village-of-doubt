@@ -2,7 +2,8 @@
 	log default {
 		output stdout
 		format filter {
-			request>uri regexp \?.*$ ""
+			request>uri delete
+			request>headers>Referer delete
 			wrap json
 		}
 	}
@@ -13,7 +14,8 @@
 	log {
 		output stdout
 		format filter {
-			request>uri regexp \?.*$ ""
+			request>uri delete
+			request>headers>Referer delete
 			wrap json
 		}
 	}
@@ -22,7 +24,8 @@
 		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
 		X-Frame-Options "DENY"
 		X-Content-Type-Options "nosniff"
-		Referrer-Policy "strict-origin-when-cross-origin"
+		# The app sends this header too; a deferred set replaces it instead of adding a second value.
+		>Referrer-Policy "no-referrer"
 		Permissions-Policy "camera=(), microphone=(), geolocation=()"
 		# Static App Router hydration currently requires inline scripts. Block inline
 		# event attributes and active object content until nonce CSP is adopted with
@@ -42,7 +45,8 @@
 	log {
 		output stdout
 		format filter {
-			request>uri regexp \?.*$ ""
+			request>uri delete
+			request>headers>Referer delete
 			wrap json
 		}
 	}
@@ -51,7 +55,7 @@
 		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
 		X-Frame-Options "DENY"
 		X-Content-Type-Options "nosniff"
-		Referrer-Policy "strict-origin-when-cross-origin"
+		Referrer-Policy "no-referrer"
 	}
 	@private_room_preview path_regexp private_room_preview (?i)^/rooms/[^/]+/preview(?:/.*)?$
 	respond @private_room_preview 404

@@ -973,7 +973,13 @@ function checkProductionGuardContracts() {
   assert(!caddyfile.includes("health_uri /api/health/ready"), "Caddy must not remove web ingress for deep dependency failures.");
   assert(caddyfile.includes("health_uri /health\n"), "Caddy game transport health must use shallow liveness.");
   assert(!caddyfile.includes("health_uri /health/ready"), "Caddy must not sever live game sockets for persistence-only failures.");
-  assert((caddyfile.match(/request>uri regexp/g) ?? []).length >= 3, "Caddy access and runtime error logs must strip query strings from request URIs.");
+  const caddyLogFilters = [...caddyfile.matchAll(/format filter \{([^{}]*)\}/g)].map((match) => match[1]);
+  assert(caddyLogFilters.length === 3, "Caddy must filter both access logs and the default runtime error log.");
+  assert(
+    caddyLogFilters.every((filter) => /^\s*request>uri delete\s*$/m.test(filter)
+      && /^\s*request>headers>Referer delete\s*$/m.test(filter)),
+    "All three Caddy access and runtime error log filters must delete request URIs and Referer headers.",
+  );
 }
 
 function checkLaunchTestingContracts() {

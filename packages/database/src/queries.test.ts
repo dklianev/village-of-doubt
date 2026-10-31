@@ -57,22 +57,32 @@ describe("durable game-session revocations", () => {
     }
   });
 
-  it("rejects tokens issued at or before the durable marker", async () => {
-    const limit = vi.fn(async () => [{ revokedAt: new Date(2_000) }]);
-    const where = vi.fn(() => ({ limit }));
-    const from = vi.fn(() => ({ where }));
-    const select = vi.fn(() => ({ from }));
+  it("checks deletion independently of the token timestamp in one database snapshot", async () => {
+    const execute = vi.fn().mockResolvedValueOnce([{ revoked: true }]).mockResolvedValueOnce([{ revoked: false }]);
 
     await expect(isGameSessionRevokedDurably(
-      { select } as unknown as Database,
+      { execute } as unknown as Database,
       "user-1",
       2_000,
     )).resolves.toBe(true);
     await expect(isGameSessionRevokedDurably(
-      { select } as unknown as Database,
+      { execute } as unknown as Database,
       "user-1",
       2_001,
     )).resolves.toBe(false);
+    const query = new PgDialect().sqlToQuery(execute.mock.calls[0]![0]);
+    expect(query.sql).toContain('FROM "deleted_user_identities"');
+    expect(query.sql).toContain('FROM "game_session_revocations"');
+    expect(query.sql).toContain('"revoked_at" >=');
+    expect(query.params).toEqual(["user-1", "user-1", new Date(2_000).toISOString()]);
+  });
+
+  it("fails closed for invalid input or an absent database result", async () => {
+    const execute = vi.fn(async () => []);
+    const db = { execute } as unknown as Database;
+    await expect(isGameSessionRevokedDurably(db, "user-1", NaN)).resolves.toBe(true);
+    expect(execute).not.toHaveBeenCalled();
+    await expect(isGameSessionRevokedDurably(db, "user-1", 5_000)).resolves.toBe(true);
   });
 });
 
@@ -912,6 +922,27 @@ describe("deleteUserAccountAtomically", () => {
 });
 
 describe("scrubDeletedIdentityFromEventPayload", () => {
+  it("redacts historical names associated with the identity after a rename", () => {
+    expect(scrubDeletedIdentityFromEventPayload({
+      displayName: "Former synthetic name",
+      targetName: "An unrelated name",
+      nested: { userId: "deleted_anon", displayName: "Another old name" },
+    }, {
+      userId: "user-1", anonymousUserId: "deleted_anon",
+      displayNames: ["Current synthetic name"], rootIdentityNameStems: ["", "actor"],
+    })).toEqual({
+      displayName: "Изтрит играч", targetName: "An unrelated name",
+      nested: { userId: "deleted_anon", displayName: "Изтрит играч" },
+    });
+  });
+
+  it("remaps structured identity arrays without rewriting unrelated text arrays", () => {
+    expect(scrubDeletedIdentityFromEventPayload({
+      check: { targetUserIds: ["user-1", "user-2"], notes: ["user-1"] },
+    }, { userId: "user-1", anonymousUserId: "deleted_anon", displayNames: [] })).toEqual({
+      check: { targetUserIds: ["deleted_anon", "user-2"], notes: ["user-1"] },
+    });
+  });
   it("не третира кратки или wildcard имена като глобален free-text шаблон", () => {
     const payload = {
       assignments: [
@@ -970,6 +1001,46 @@ describe("scrubDeletedIdentityFromEventPayload", () => {
 });
 
 describe("getAccountExportPage", () => {
+  it("validates UUID cursors and retains all PostgreSQL fractional digits", () => {
+    const id = "ffffffff-ffff-4fff-8fff-ffffffffffff";
+    expect(databaseQueries.parseAccountExportCursor(`2026-10-16T12:00:00.123900Z|${id}`)).toMatchObject({ id, timestamp: "2026-10-16T12:00:00.123900Z" });
+    for (const invalid of ["not-a-uuid", "", `${id}|extra`]) {
+      expect(databaseQueries.parseAccountExportCursor(`2026-10-16T12:00:00.123Z|${invalid}`)).toBeNull();
+    }
+    expect(databaseQueries.parseAccountExportCursor(`2026-02-30T12:00:00Z|${id}`)).toBeNull();
+  });
+
+  it("includes owned spectator events without granting the game's other public or private data", async () => {
+    let membershipSql = "";
+    let eventSql = "";
+    const gameRow = exportGameRow({ id: "spectated-game", playerDisplayName: null, isHost: false });
+    const events = [
+      { id: "own", gameId: gameRow.id, actorId: "viewer", visibility: "public", payload: { displayName: "Viewer" } },
+      { id: "foreign", gameId: gameRow.id, actorId: "host", visibility: "public", payload: { message: "Other player's message" } },
+      { id: "private", gameId: gameRow.id, actorId: "host", visibility: "private", payload: { role: "seer" } },
+    ];
+    const select = vi.fn(() => ({ from: vi.fn((table: unknown) => {
+      const query = { where: vi.fn((condition: Parameters<PgDialect["sqlToQuery"]>[0]) => {
+        const text = new PgDialect().sqlToQuery(condition).sql;
+        if (table === games) membershipSql = text;
+        else eventSql = text;
+        return { orderBy: vi.fn(() => ({ limit: vi.fn(async () => table === games ? [gameRow] : events) })) };
+      }) };
+      return table === games ? { leftJoin: vi.fn(() => query) } : query;
+    }) }));
+    const result = await databaseQueries.getAccountExportPage({ select } as unknown as Database, "viewer", {
+      page: 1, pageSize: 10, eventPage: 1, eventPageSize: 10,
+    });
+    expect(membershipSql).toContain('EXISTS');
+    expect(membershipSql).toContain('"game_events"."actor_id"');
+    expect(eventSql).toContain('"game_events"."actor_id"');
+    expect(result.games).toEqual([expect.objectContaining({
+      code: null, config: null, winnerTeam: null, player: null,
+      events: [expect.objectContaining({ id: "own", payload: { displayName: "Viewer" } })],
+    })]);
+    expect(JSON.stringify(result)).not.toContain("Other player's message");
+    expect(JSON.stringify(result)).not.toContain('"role":"seer"');
+  });
   it("uses descending created-at and id keysets as deterministic tie-breakers", async () => {
     const getAccountExportPage = (databaseQueries as Record<string, unknown>).getAccountExportPage;
     expect(getAccountExportPage).toBeTypeOf("function");

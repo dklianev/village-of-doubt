@@ -62,7 +62,9 @@ export function AuthGatedEntryClient({
   const [previewAttempt, setPreviewAttempt] = useState(0);
   const [isJoining, startTransition] = useTransition();
   const errorId = useId();
+  const codeHintId = useId();
   const modeId = useId();
+  const [codeHint, setCodeHint] = useState("");
   const viewerId = session?.user.id;
   const choiceKey = JSON.stringify([viewerId, roomCode]);
   const requestKey = JSON.stringify([viewerId, roomCode, previewAttempt]);
@@ -189,6 +191,7 @@ export function AuthGatedEntryClient({
 
   function handleCodeChange(next: string) {
     if (next === roomCode) return;
+    setCodeHint("");
     setRoomCode(next);
     setPreview(null);
     setSpectatorChoice(null);
@@ -244,8 +247,15 @@ export function AuthGatedEntryClient({
         <div className="join-entry-code-panel">
           <div className="join-entry-code-field">
             <span className="join-entry-label">Код на стаята</span>
-            <JoinCodeSlots value={roomCode} onChange={handleCodeChange} invalid={Boolean(error)} {...(error ? { describedBy: errorId } : {})} />
-            {error && <p id={errorId} className="join-entry-error" role="alert">{error}</p>}
+            <JoinCodeSlots
+              value={roomCode}
+              onChange={handleCodeChange}
+              invalid={Boolean(error)}
+              onRejectedCharacter={() => setCodeHint(ROOM_CODE_CHARACTER_HINT)}
+              {...(error ? { describedBy: errorId } : codeHint ? { describedBy: codeHintId } : {})}
+            />
+            {error ? <p id={errorId} className="join-entry-error" role="alert">{error}</p>
+              : codeHint ? <p id={codeHintId} className="join-entry-error" role="status">{codeHint}</p> : null}
           </div>
 
           {recentRooms.length > 0 && !roomCode && (
@@ -342,6 +352,8 @@ export function parseJoinRoomPreview(value: unknown, expectedCode: string): Room
     viewerMembership: record.viewerMembership, canJoinAsPlayer: record.canJoinAsPlayer, canSpectate: record.canSpectate,
   };
 }
+
+const ROOM_CODE_CHARACTER_HINT = "Кодът е с латински букви без I и O и цифри от 2 до 9.";
 
 function getRoomCodeError(code: string) {
   const length = code.replace(/\s/g, "").length;

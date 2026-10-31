@@ -76,7 +76,6 @@ export function VotingPanel({
             className="play-confirm-skip"
             data-command-priority="quiet"
             data-confirm-state={skipArmed ? "armed" : "idle"}
-            aria-pressed={skipArmed}
             onClick={() => {
               if (skipArmed) {
                 setSkipArmed(false);

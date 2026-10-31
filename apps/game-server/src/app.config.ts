@@ -166,6 +166,11 @@ export default defineConfig({
 
     app.get("/health/ready", createReadinessHandler());
 
+    app.get("/stats", (_req, res) => {
+      const { activeRooms, connectedPlayers, byFamily } = getGameRuntimeStats();
+      res.json({ activeRooms, connectedPlayers, byFamily });
+    });
+
     app.post("/operations/drain", createLocalDrainHandler());
 
     app.delete("/operations/drain", createLocalDrainCancelHandler());

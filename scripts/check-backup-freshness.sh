@@ -54,7 +54,7 @@ if [ "$require_signature" = "1" ]; then
     printf 'BACKUP_SIGNING_PUBLIC_KEY_FILE must reference an Ed25519 public key.\n' >&2
     exit 1
   fi
-  node "$manifest_command" verify \
+  node --jitless "$manifest_command" verify \
     "$latest_backup" \
     "$signing_public_key" \
     "$POSTGRES_DB" \

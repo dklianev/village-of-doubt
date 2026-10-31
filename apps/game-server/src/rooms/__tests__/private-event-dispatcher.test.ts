@@ -19,7 +19,7 @@ function makePublicPlayer(userId: string, displayName: string, narrator = false)
   return player;
 }
 
-function createDispatcher(opts?: { narratorMode?: GameConfig["narratorMode"] }) {
+function createDispatcher(opts?: { narratorMode?: GameConfig["narratorMode"]; hunterRevengeUserId?: string }) {
   const playerPresence = new PlayerPresenceManager();
   const publicPlayers = new Map<string, PlayerPublicState>([
     ["seer", makePublicPlayer("seer", "Ясновидка")],
@@ -65,6 +65,7 @@ function createDispatcher(opts?: { narratorMode?: GameConfig["narratorMode"] }) 
     getPrivatePlayers: () => privatePlayers.values(),
     getPublicPlayers: () => publicPlayers.values(),
     findPlayerByUserId: (userId) => publicPlayers.get(userId),
+    isHunterRevengeAvailable: (userId) => opts?.hunterRevengeUserId === userId,
     playerPresence,
   });
 
@@ -72,6 +73,27 @@ function createDispatcher(opts?: { narratorMode?: GameConfig["narratorMode"] }) 
 }
 
 describe("PrivateEventDispatcher", () => {
+  it("refreshes only Hunters with their own availability without replaying other private context", () => {
+    const context = { hunterRevengeUserId: "seer" };
+    const { dispatcher, clients, privatePlayers } = createDispatcher(context);
+    privatePlayers.set("seer", { userId: "seer", role: "hunter", alive: false, loverId: "lover" });
+    privatePlayers.set("lover", { userId: "lover", role: "hunter", alive: false, loverId: "seer" });
+    dispatcher.sendHunterRevengeAvailability();
+    expect(clients.seer.send).toHaveBeenCalledExactlyOnceWith("private_role", {
+      type: "private_role", role: "hunter", roleNameBg: "Ловец", hunterRevengeAvailable: true,
+    });
+    expect(clients.lover.send).toHaveBeenCalledExactlyOnceWith("private_role", {
+      type: "private_role", role: "hunter", roleNameBg: "Ловец", hunterRevengeAvailable: false,
+    });
+    for (const [name, client] of Object.entries(clients)) {
+      if (name !== "seer" && name !== "lover") expect(client.send).not.toHaveBeenCalled();
+    }
+    context.hunterRevengeUserId = "lover";
+    clients.seer.send.mockClear();
+    dispatcher.sendPrivateRole(clients.seer as never, "seer");
+    expect(clients.seer.send).toHaveBeenCalledWith("private_role", expect.objectContaining({ hunterRevengeAvailable: false }));
+  });
+
   it("sends private role only to the requested client and includes lover context", () => {
     const { dispatcher, clients } = createDispatcher();
 

@@ -115,6 +115,9 @@ describe("visual playroom fidelity", () => {
     const result = fixture("preset=hunter_revenge");
     expect(result.snapshot.players.find((player) => player.userId === result.currentUserId)?.alive).toBe(false);
     expect(result.privateRole?.role).toBe("hunter");
+    expect(result.privateRole?.hunterRevengeAvailable).toBe(true);
+    expect(fixture("preset=hunter_revenge&viewer=alive").privateRole?.hunterRevengeAvailable).toBe(false);
+    expect(fixture("preset=hunter_revenge&phase=night").privateRole?.hunterRevengeAvailable).toBe(false);
   });
 
   it("uses citizens, not the village, for a Mafia village-team winner", () => {

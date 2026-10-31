@@ -19,6 +19,8 @@ const ROUTES = [
   })),
 ];
 
+export const FRONTEND_CSS_ROUTES = Object.freeze(ROUTES.map(({ route }) => route));
+
 const STYLE_PROPERTIES = [
   "display", "position", "box-sizing", "color", "background-color", "background-image",
   "font-family", "font-size", "font-weight", "line-height", "letter-spacing", "text-align",
@@ -31,9 +33,11 @@ const STYLE_PROPERTIES = [
   "align-items", "justify-content", "overflow-x", "overflow-y",
 ];
 
-/** Use a fresh page for each viewport/theme; the caller owns its browser and runtime. */
-export async function assertFrontendCssNavigation(page, baseUrl, theme) {
+/** Use a fresh context per route/viewport/theme; the caller owns its browser and runtime. */
+export async function assertFrontendCssNavigation(page, baseUrl, theme, { route } = {}) {
   assert.ok(theme === "light" || theme === "dark", "Expected a light or dark theme");
+  const targets = route === undefined ? ROUTES : ROUTES.filter((target) => target.route === route);
+  assert.ok(targets.length, `Unknown CSS navigation route: ${route}`);
   await page.emulateMedia({ colorScheme: theme, reducedMotion: "reduce" });
   await page.addInitScript((value) => {
     localStorage.setItem("werewolf-theme", value);
@@ -42,7 +46,7 @@ export async function assertFrontendCssNavigation(page, baseUrl, theme) {
   }, theme);
 
   const results = [];
-  for (const target of ROUTES) {
+  for (const target of targets) {
     const url = new URL(target.route, baseUrl).href;
     const response = await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30_000 });
     assert.ok(response?.ok(), `${target.route}: direct load failed`);

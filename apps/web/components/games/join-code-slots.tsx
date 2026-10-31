@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, type ClipboardEvent, type KeyboardEvent } from "react";
-import { ROOM_CODE_ALPHABET, ROOM_CODE_LENGTH, normalizeRoomCodeInput } from "@werewolf/shared";
+import { ROOM_CODE_ALPHABET, ROOM_CODE_LENGTH, normalizeRoomCodeInput, transliterateRoomCode } from "@werewolf/shared";
 
 type JoinCodeSlotsProps = {
   value: string;
@@ -9,9 +9,10 @@ type JoinCodeSlotsProps = {
   invalid?: boolean;
   describedBy?: string;
   autoFocus?: boolean;
+  onRejectedCharacter?: () => void;
 };
 
-export function JoinCodeSlots({ value, onChange, invalid, describedBy, autoFocus }: JoinCodeSlotsProps) {
+export function JoinCodeSlots({ value, onChange, invalid, describedBy, autoFocus, onRejectedCharacter }: JoinCodeSlotsProps) {
   const refs = useRef<Array<HTMLInputElement | null>>([]);
 
   useEffect(() => {
@@ -39,15 +40,17 @@ export function JoinCodeSlots({ value, onChange, invalid, describedBy, autoFocus
       }
       return;
     }
-    const clean = rawValue
-      .toUpperCase()
+    const clean = transliterateRoomCode(rawValue)
       .split("")
       .filter((character) => ROOM_CODE_ALPHABET.includes(character))
       .at(-1);
 
     const next = value.padEnd(ROOM_CODE_LENGTH, " ").split("");
     next[index] = clean ?? " ";
-    if (rawValue && !clean) return;
+    if (rawValue && !clean) {
+      onRejectedCharacter?.();
+      return;
+    }
     onChange(next.join("").trimEnd());
 
     if (clean && index < ROOM_CODE_LENGTH - 1) {

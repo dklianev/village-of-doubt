@@ -53,6 +53,14 @@ describe("QuickCreateSurface redesign", () => {
     }
   });
 
+  it("exposes the roster and the phone action bar as named groups", () => {
+    setup(initialState({ family: "werewolves" }));
+
+    expect(screen.getByRole("group", { name: "Всички роли в състава" })).toBeInTheDocument();
+    const quickCreate = screen.getByRole("group", { name: "Бързо създаване" });
+    expect(within(quickCreate).getByRole("button", { name: primaryLabel("werewolves") })).toBeInTheDocument();
+  });
+
   it.each(families)("reports a ready roster and preserves both %s submit labels", async (family) => {
     const { user, onSubmit } = setup(initialState({ family }));
     expect(screen.getByText("Съставът е готов", { exact: true })).toBeInTheDocument();

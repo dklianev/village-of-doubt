@@ -8,6 +8,21 @@ import {
 } from "./game-persistence.js";
 
 describe("DrizzleGamePersistence", () => {
+  it("collects nested protocol targets and receivers and remaps them after deletion", () => {
+    const payload = { action: { targetUserId: "target", receiverUserId: "receiver" }, targetUserIds: ["target"] };
+    expect(collectStructuredPayloadUserIds(payload, new Set(["target", "receiver"])))
+      .toEqual(["target", "receiver"]);
+    expect(scrubPersistedEventPayload(payload, new Map([["target", "deleted_target"], ["receiver", "deleted_receiver"]])))
+      .toEqual({ action: { targetUserId: "deleted_target", receiverUserId: "deleted_receiver" }, targetUserIds: ["deleted_target"] });
+  });
+
+  it("removes only the deleted author's root message, not another author's text or unrelated notes", () => {
+    const payload = { message: "Authored text", note: "Unrelated free text", nested: { message: "Not the authored chat" } };
+    const identities = new Map([["author", "deleted_author"]]);
+    expect(scrubPersistedEventPayload(payload, identities, { rootIdentityWasDeleted: true, redactRootMessage: true }))
+      .toEqual({ note: "Unrelated free text", nested: { message: "Not the authored chat" } });
+    expect(scrubPersistedEventPayload(payload, identities, { rootIdentityWasDeleted: true })).toEqual(payload);
+  });
   it("scrubs secret fields inherited from a deleted identity map key", () => {
     const deletedIdentityMap = new Map([["deleted-player", "deleted_anon"]]);
     const payload = {

@@ -19,6 +19,14 @@ describe("privacy navigation", () => {
     expect(document.getElementById("retention")).toHaveTextContent("до 30 дни");
   });
 
+  it("names the browser-only data that outlives a session and what sign-out removes", () => {
+    render(<PrivacyDashboard lastUpdated="28 октомври 2026" userSnapshot={null} />);
+    const cookies = document.getElementById("cookies")!;
+    expect(cookies).toHaveTextContent("последните кодове на стаи");
+    expect(cookies).toHaveTextContent("гостовата книга с имена и бележки");
+    expect(cookies).toHaveTextContent("При изход премахваме кодовете на стаите и ключовете за връщане.");
+  });
+
   it("provides working anchors and practical rights before the promises and policy details", () => {
     render(<PrivacyDashboard lastUpdated="5 септември 2026" userSnapshot={null} />);
     const navigation = screen.getByRole("navigation", { name: "Съдържание на политиката" });

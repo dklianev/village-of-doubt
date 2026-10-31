@@ -5,7 +5,7 @@ import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { chromium, firefox, webkit } from "playwright";
-import { assertFrontendCssNavigation } from "./frontend-css-navigation.mjs";
+import { assertFrontendCssNavigation, FRONTEND_CSS_ROUTES } from "./frontend-css-navigation.mjs";
 import { assertInteractiveTouchTargets } from "./frontend-touch-targets.mjs";
 import { installNarrationProbe, enableNarrationProbe, assertNarratedPhase, assertNarrationSilent } from "./frontend-narration-probe.mjs";
 import { runPlayPerformance } from "./frontend-play-performance.mjs";
@@ -134,19 +134,22 @@ async function main() {
 }
 
 async function testRouteCssNavigation(viewportName, viewport, theme) {
-  const label = `route-css-${viewportName}-${theme}`;
-  const { page, watcher, close } = await newPage(label, viewport);
-  try {
-    const results = await assertFrontendCssNavigation(page, baseUrl, theme);
-    await assertNoHorizontalOverflow(page, label);
-    await watcher.assertClean();
-    console.log(`CSS navigation: ${JSON.stringify(results)}`);
-    await screenshot(page, `${label}.png`);
-  } catch (error) {
-    await screenshot(page, `${label}-failure.png`).catch(() => {});
-    throw error;
-  } finally {
-    await close();
+  // Each comparison owns its cache; direct -> home -> client navigation stays in one document flow.
+  for (const route of FRONTEND_CSS_ROUTES) {
+    const label = `route-css-${viewportName}-${theme}-${route.slice(1).replaceAll("/", "-")}`;
+    const { page, watcher, close } = await newPage(label, viewport);
+    try {
+      const results = await assertFrontendCssNavigation(page, baseUrl, theme, { route });
+      await assertNoHorizontalOverflow(page, label);
+      await watcher.assertClean();
+      console.log(`CSS navigation: ${JSON.stringify(results)}`);
+      await screenshot(page, `${label}.png`);
+    } catch (error) {
+      await screenshot(page, `${label}-failure.png`).catch(() => {});
+      throw error;
+    } finally {
+      await close();
+    }
   }
 }
 
@@ -504,7 +507,11 @@ async function testSixClientGameStart(family) {
       }, index === 5 ? "light" : "dark");
       if (index === 5) await context.addInitScript(installGameSocketProbe, wsUrl);
       if (index === 0 || index === 5) {
-        await context.addInitScript(() => localStorage.setItem("werewolf-cue-mode", "audio_vibration"));
+        // Device sound decides whether a room plays audio; the saved cue mode no longer turns it on.
+        await context.addInitScript(() => {
+          localStorage.setItem("werewolf-sound", "on");
+          localStorage.setItem("werewolf-cue-mode", "audio_vibration");
+        });
         await context.addInitScript(installNarrationProbe);
       }
       const identity = authFixture.users[index];
@@ -521,12 +528,13 @@ async function testSixClientGameStart(family) {
         await page.getByRole("link", { name: "Към играта", exact: true }).click();
         await page.waitForURL((url) => url.pathname === roomUrl.pathname);
       }
-      await waitForVisibleText(page.getByTestId("ready-toggle"), "Готов");
       try {
+        // Include initial hydration in the same connection diagnostic boundary.
         await page.waitForFunction(
           () => {
             const button = document.querySelector('[data-testid="ready-toggle"]');
-            return button instanceof HTMLButtonElement && !button.disabled;
+            return button instanceof HTMLButtonElement && !button.disabled
+              && button.getClientRects().length > 0 && button.textContent?.includes("Готов");
           },
           undefined,
           { timeout: 30_000 },
@@ -988,7 +996,6 @@ async function seedAuthFixture(url) {
       })));
       await transaction.insert(databaseModule.account).values(users.map((identity) => ({
         id: randomUUID(),
-        issuer: "local:credential",
         accountId: identity.id,
         providerId: "credential",
         userId: identity.id,
@@ -1207,7 +1214,30 @@ function watchPage(page, label, { expectedHttpError } = {}) {
     );
   });
 
+  // WebKit rejects fetches that a document starts while the main frame is replacing it, and reports each as an
+  // access control failure with no failed request. Router prefetches from a page that redirects on load hit this.
+  let leavingDocument = false;
+  page.on("request", (request) => {
+    if (request.isNavigationRequest() && request.frame() === page.mainFrame()) {
+      leavingDocument = true;
+    }
+  });
+  page.on("framenavigated", (frame) => {
+    if (frame === page.mainFrame()) {
+      leavingDocument = false;
+    }
+  });
+  // Playwright splits WebKit's console text at the first colon, so the URL scheme ends up in the error name.
+  const rejectedFetchUrl = (error) => {
+    const scheme = /^Fetch API cannot load (https?)$/.exec(error.name)?.[1];
+    const rest = /^(\/\S+) due to access control checks\.$/.exec(error.message)?.[1];
+    return scheme && rest ? `${scheme}:/${rest}` : null;
+  };
+
   page.on("pageerror", (error) => {
+    if (leavingDocument && rejectedFetchUrl(error)?.startsWith(`${baseUrl}/`)) {
+      return;
+    }
     issues.push(`page error: ${error.message}`);
   });
 

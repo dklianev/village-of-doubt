@@ -22,6 +22,20 @@ describe("invitation sign-in", () => {
     expect(screen.getByRole("button", { name: "Влез" }).querySelector("svg")).toBeInTheDocument();
   });
 
+  it.each([
+    ["access_denied", "Влизането през Google или Discord беше отказано. Опитай отново или влез с имейл."],
+    ["<b>state_mismatch</b>", "Не успяхме да завършим влизането през Google или Discord. Опитай отново или влез с имейл."],
+  ])("explains a returned social sign-in error %s in Bulgarian", (oauthError, message) => {
+    render(<SignInStage redirectTo="/play/ABC234" oauthError={oauthError} />);
+    expect(screen.getByRole("alert")).toHaveTextContent(message);
+    expect(screen.queryByText(/state_mismatch/)).not.toBeInTheDocument();
+  });
+
+  it("shows no social sign-in error without a returned error", () => {
+    render(<SignInStage redirectTo="/" />);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
   it("changes the single page heading when registration is selected", async () => {
     const user = userEvent.setup();
     render(<SignInStage redirectTo="/" />);

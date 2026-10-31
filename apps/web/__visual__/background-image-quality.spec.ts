@@ -532,7 +532,7 @@ for (const theme of ["dark", "light"] as const) {
       if (scene === "setup") {
         await page.evaluate(() => scrollTo(0, 0));
         await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
-        await page.getByRole("button", { name: "Следваща сцена", exact: true }).click();
+        await page.getByRole("button", { name: "Напред: следваща сцена", exact: true }).click();
       }
     }
   });

@@ -60,7 +60,7 @@ test("Express proxy trust rejects IPv4 spoofing through IPv6 trust subnets", () 
 
 test("Sentry brace expansion bounds nested and comma-separated input without stack exhaustion", () => {
   const sentryRequire = createRequire(webRequire.resolve("@sentry/nextjs"));
-  const pluginRequire = createRequire(sentryRequire.resolve("@sentry/bundler-plugin-core"));
+  const pluginRequire = createRequire(sentryRequire.resolve("@sentry/bundler-plugins/package.json"));
   const globRequire = createRequire(pluginRequire.resolve("glob"));
   const { expand } = createRequire(globRequire.resolve("minimatch"))("brace-expansion");
   for (const pattern of [
@@ -96,6 +96,16 @@ test("PostCSS source maps reject excessive and invalid indexed offsets", () => {
   const consumer = new SourceMapConsumer(indexed(2));
   assert.deepEqual(consumer.sources, ["input.js"]);
   assert.equal(SourceNode.fromStringWithSourceMap("\n\nx", consumer).toString(), "\n\nx");
+});
+
+test("webpack URI handling normalizes encoded host case consistently", () => {
+  const sentryRequire = createRequire(webRequire.resolve("@sentry/nextjs"));
+  const pluginRequire = createRequire(sentryRequire.resolve("@sentry/webpack-plugin"));
+  const webpackRequire = createRequire(pluginRequire.resolve("webpack"));
+  const schemaRequire = createRequire(webpackRequire.resolve("schema-utils"));
+  const uri = createRequire(schemaRequire.resolve("ajv"))("fast-uri");
+  assert.equal(uri.parse("//%41.com").host, "a.com");
+  assert.equal(uri.equal("//%41.com", "//a.com"), true);
 });
 
 test("sharp tooling and runtime use patched librsvg and preserve SVG decoding", async () => {
