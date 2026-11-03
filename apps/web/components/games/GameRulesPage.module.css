@@ -7,6 +7,7 @@
   --rules-line: #a19c7048;
   --rules-accent: #d5b76e;
   --rules-mark: #ed9484;
+  --ds-motif-color: var(--rules-mark);
   width: 100%;
   max-width: 1228px;
   min-width: 0;
@@ -21,6 +22,7 @@
   --rules-muted: #c8c5bd;
   --rules-line: #b6a58c48;
   --page-art: var(--art-mafia);
+  --ds-motif-color: var(--rules-accent);
 }
 :global(.rules-shell[data-family="werewolves"]) { --page-art: var(--art-werewolf); }
 :global(html[data-theme="light"] .rules-shell) {
@@ -41,18 +43,18 @@
 }
 :global(.rules-shell::before) { display: none; }
 :global(.rules-shell :where(h1,h2,h3,p,dl,ul)) { margin: 0; }
-:global(.rules-shell :where(h1,h2,h3)) { font-family: var(--font-display); letter-spacing: 0; }
+:global(.rules-shell :where(h1,h2,h3)) { font-family: var(--font-display); font-weight: var(--ds-weight-heading); letter-spacing: 0; }
 :global(.rules-shell :where(h2)) { font-size: 30px; line-height: 1.2; }
-:global(.rules-shell :where(p,li,dd)) { font-size: 15px; line-height: 1.65; }
+:global(.rules-shell :where(p,li,dd)) { max-inline-size: 66ch; font-size: 15px; line-height: 1.65; }
 :global(.rules-shell :where(p,li,dd,h1,h2,h3,a)) { overflow-wrap: anywhere; }
 :global(.rules-shell :where(a,button,#phase-detail-title):focus-visible) { outline: 2px solid var(--rules-accent); outline-offset: 4px; }
 :global(.rules-shell .section-kicker) {
   margin-bottom: 10px;
-  font-size: 11px;
-  font-weight: 700;
+  font-size: var(--ds-type-label);
+  line-height: var(--ds-leading-label);
+  font-weight: var(--ds-weight-label);
   letter-spacing: 0;
   color: var(--rules-accent);
-  text-transform: uppercase;
 }
 :global(.rules-shell :where(section[id],h3[id])) { scroll-margin-top: 88px; }
 
@@ -89,7 +91,9 @@
 :global(.rules-contents-arrow) { display: none; flex: 0 0 44px; width: 44px; height: 44px; place-items: center; padding: 0; border: 0; background: var(--rules-paper); color: var(--rules-mark); cursor: pointer; }
 :global(.rules-contents[data-overflow="true"] .rules-contents-arrow) { display: grid; }
 :global(.rules-contents-arrow:disabled) { color: var(--rules-muted); opacity: .45; cursor: default; }
-:global(.rules-contents a[aria-current="location"]) { color: var(--rules-mark); box-shadow: inset 0 -2px var(--rules-mark); }
+:global(.rules-contents a[aria-current="location"]) { position: relative; color: var(--rules-mark); }
+/* One selector per pseudo-element rule: Turbopack folds a grouped :global list into :is(), which cannot hold pseudo-elements. */
+:global(.rules-contents a[aria-current="location"]::after) { position: absolute; inset: auto 0 0; height: 7px; content: ""; background: var(--ds-motif-color); -webkit-mask: var(--ds-motif-mask); mask: var(--ds-motif-mask); }
 :global(.rules-contents a) { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 8px; min-height: 44px; font-size: 14px; color: var(--rules-muted); text-decoration: none; white-space: nowrap; }
 :global(.rules-contents a:hover) { color: var(--rules-mark); text-decoration: underline; text-underline-offset: 5px; }
 :global(.rules-contents a:last-child) { margin-left: auto; color: var(--rules-mark); }
@@ -97,17 +101,21 @@
 :global(.rules-objective) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 48px; padding-block: 38px; }
 :global(.rules-objective header > p:last-child) { margin-top: 14px; color: var(--rules-muted); max-width: 52ch; }
 :global(.rules-objective ul) { padding: 0; list-style: none; }
-:global(.rules-objective li) { display: grid; grid-template-columns: 28px minmax(0,1fr); gap: 12px; padding-block: 12px; border-bottom: 1px solid var(--rules-line); }
+:global(.rules-objective li) { display: grid; grid-template-columns: 18px minmax(0,1fr); gap: 12px; padding-block: 12px; border-bottom: 1px solid var(--rules-line); }
 :global(.rules-objective li:first-child) { padding-top: 0; }
 :global(.rules-objective li:last-child) { border-bottom: 0; padding-bottom: 0; }
-:global(.rules-rule-number) { color: var(--rules-mark); font-size: 12px; font-variant-numeric: tabular-nums; padding-top: 4px; }
+/* Win conditions are alternatives, not a sequence, so they get a lozenge instead of numbers. */
+:global(.rules-objective li::before) { width: 7px; height: 7px; margin: 9px 0 0 4px; content: ""; background: var(--rules-mark); transform: rotate(45deg); }
 :global(.rules-basics) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 48px; border-top: 1px solid var(--rules-line); padding-block: 30px; }
 :global(.rules-basics header > p:last-child) { margin-top: 14px; color: var(--rules-muted); }
 :global(.rules-basics ul) { padding-left: 18px; }
 :global(.rules-basics li + li) { margin-top: 12px; }
 :global(.rules-basics li::marker) { color: var(--rules-mark); }
 
-:global(.rules-phase-timeline) { padding-block: 30px; border-block: 1px solid var(--rules-line); }
+/* The phase board is framed top and bottom by the family ornament, like a stitched towel edge or a brass rail. */
+:global(.rules-phase-timeline) { position: relative; padding-block: 40px; }
+:global(.rules-phase-timeline::before) { position: absolute; inset: 0 0 auto; height: 9px; content: ""; background: var(--ds-motif-color); -webkit-mask: var(--ds-motif-mask); mask: var(--ds-motif-mask); }
+:global(.rules-phase-timeline::after) { position: absolute; inset: auto 0 0; height: 9px; content: ""; background: var(--ds-motif-color); -webkit-mask: var(--ds-motif-mask); mask: var(--ds-motif-mask); }
 :global(.phase-timeline-header) { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 22px; }
 :global(.phase-timeline-header > p) { max-width: 30ch; font-size: 14px; color: var(--rules-muted); }
 :global(.phase-timeline) { display: grid; grid-template-columns: repeat(6, minmax(0,1fr)); gap: 10px; padding: 4px; margin-inline: -4px; }

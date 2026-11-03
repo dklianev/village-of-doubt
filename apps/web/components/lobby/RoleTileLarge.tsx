@@ -59,7 +59,7 @@ export function RoleTileLarge({
       </button>
       {!readonly ? (
         reserve ? (
-          <span className="role-tile-reserve-label">запълва местата</span>
+          <span className="role-tile-reserve-label">Запълва местата</span>
         ) : (
           <div className="role-tile-controls">
             <button

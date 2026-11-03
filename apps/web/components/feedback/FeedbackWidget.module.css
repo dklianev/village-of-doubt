@@ -121,10 +121,10 @@
 .kicker {
   margin: 0 0 2px;
   color: var(--feedback-accent);
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
+  font-size: var(--ds-type-label);
+  line-height: var(--ds-leading-label);
+  font-weight: var(--ds-weight-label);
+  letter-spacing: var(--ds-tracking-label);
 }
 
 .panel h2 {
@@ -172,10 +172,10 @@
 .category legend {
   margin-bottom: 10px;
   color: var(--feedback-text-muted);
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+  font-size: var(--ds-type-label);
+  line-height: var(--ds-leading-label);
+  font-weight: var(--ds-weight-label);
+  letter-spacing: var(--ds-tracking-label);
 }
 
 .categoryGrid {
@@ -309,9 +309,8 @@
 }
 
 .contextLabel {
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font-weight: var(--ds-weight-label);
+  letter-spacing: var(--ds-tracking-label);
 }
 
 .context code {

@@ -4,10 +4,10 @@ import { AlertCircle, CheckCircle2, Info, X } from "lucide-react";
 import { useToastItems, type ToastKind } from "@/lib/toast";
 
 const TOAST_KIND_BG: Record<ToastKind, string> = {
-  info: "съобщение",
-  error: "грешка",
-  success: "готово",
-  warning: "внимание",
+  info: "Съобщение",
+  error: "Грешка",
+  success: "Готово",
+  warning: "Внимание",
 };
 
 export function ToastHost() {

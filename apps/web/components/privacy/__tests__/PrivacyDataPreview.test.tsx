@@ -36,7 +36,7 @@ describe("privacy data summary", () => {
 
   it("renders successful zeroes as empty, not as a loading failure", () => {
     render(<PrivacyDataPreview snapshot={{ ...snapshot, totalGames: 0, totalAchievements: 0, providersUsed: 0 }} />);
-    expect(row("Завършени игри").getByText("още няма")).toBeVisible();
+    expect(row("Завършени игри").getByText("Още няма")).toBeVisible();
     expect(row("Легенди").getByText("0 от 20 отключени")).toBeVisible();
     expect(row("Свързани начини за вход").getByText("0")).toBeVisible();
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
@@ -48,7 +48,7 @@ describe("privacy data summary", () => {
     render(<PrivacyDataPreview snapshot={{ ...snapshot, [key]: null }} />);
     expect(row(label).getByText("Временно недостъпни")).toBeVisible();
     expect(screen.getByRole("status")).toHaveTextContent("Това не означава, че липсват.");
-    expect(screen.queryByText("още няма")).not.toBeInTheDocument();
+    expect(screen.queryByText("Още няма")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Изтегли моите данни/ })).toBeEnabled();
   });
 

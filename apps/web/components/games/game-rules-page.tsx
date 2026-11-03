@@ -22,7 +22,7 @@ const WEREWOLF_PHASES: PhaseRule[] = [
     title: "Лоби",
     body: "Водещият избира роли, таймери, Разказвач и дали разговорът ще е вграден, на живо или извън приложението.",
     action: "Присъедини се с кода или поканата, провери състава на стаята и отбележи, че си готов.",
-    timer: "без таймер",
+    timer: "Без таймер",
     wakes: "Никой още не се буди.",
     example: "Преди началото всички виждат разпределението, но не и кой коя роля ще получи.",
   },
@@ -85,7 +85,7 @@ const MAFIA_PHASES: PhaseRule[] = [
     title: "Лоби",
     body: "Свободната Мафия допуска 4-24 играчи и роли по избор. Домакинът определя състава, таймерите и начина на разговор.",
     action: "Присъедини се с кода или поканата, провери правилата на стаята и отбележи, че си готов.",
-    timer: "без таймер",
+    timer: "Без таймер",
     wakes: "Никой още не действа.",
     example: "Домакинът споделя код или покана. Играчите влизат в профилите си и се присъединяват.",
   },
@@ -164,7 +164,7 @@ const MAFIA_SPORT_PHASES: PhaseRule[] = MAFIA_PHASES.flatMap((phase): PhaseRule[
         id: "nomination", phase: "nomination", title: "Номинации",
         body: "След последната реч се обобщават вече направените номинации. Тук не се подават нови. Ако няма номинирани, денят приключва без защити и гласуване.",
         action: "Провери кои играчи са номинирани и изчакай защитите им.",
-        timer: "според стаята", wakes: "Никой не прави нов избор.",
+        timer: "Според стаята", wakes: "Никой не прави нов избор.",
         example: "Без нито една номинация играта преминава направо към развръзката.",
       }, {
         id: "defense", phase: "defense", title: "Защита",
@@ -252,19 +252,18 @@ export function GameRulesPage({ family }: { family: GameFamily }) {
 
       <section id="rules-objective" className="rules-objective" aria-labelledby="rules-objective-title">
         <header>
-          <p className="section-kicker">Кой печели</p>
           <h2 id="rules-objective-title">{objective.titleBg}</h2>
           <p>{objective.bodyBg}</p>
         </header>
         <ul>
-          {objective.bulletsBg?.map((item, index) => (
-            <li key={item}><span className="rules-rule-number" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span><span>{item}</span></li>
+          {objective.bulletsBg?.map((item) => (
+            <li key={item}><span>{item}</span></li>
           ))}
         </ul>
       </section>
 
       <section id="rules-basics" className="rules-basics" aria-labelledby="rules-basics-title">
-        <header><p className="section-kicker">Основни правила</p><h2 id="rules-basics-title">{basics.titleBg}</h2><p>{basics.bodyBg}</p></header>
+        <header><h2 id="rules-basics-title">{basics.titleBg}</h2><p>{basics.bodyBg}</p></header>
         <ul>{basics.bulletsBg.map((item) => <li key={item}>{item}</li>)}</ul>
       </section>
 
@@ -305,7 +304,7 @@ export function GameRulesPage({ family }: { family: GameFamily }) {
 
       <section className="rules-scenario-section">
         <div>
-          <p className="section-kicker">сценарии на масата</p>
+          <p className="section-kicker">Сценарии на масата</p>
           <h2>Какво означава, когато...</h2>
         </div>
         <div className="rules-scenario-grid">

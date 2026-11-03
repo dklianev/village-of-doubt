@@ -136,7 +136,7 @@ export function StepRoles({
     <section className="lobby-step lobby-step-roles" aria-labelledby="step-roles-title">
       <div className="roles-step-sticky">
         <div className="lobby-step-heading">
-          <p className="section-kicker">{embedded ? "състав на вечерта" : "стъпка 2"}</p>
+          <p className="section-kicker">{embedded ? "Състав на вечерта" : "Стъпка 2"}</p>
           <h1 id="step-roles-title" tabIndex={-1}>Избери ролите</h1>
           <p>{total}/{state.playerCount} роли · баланс {balance > 0 ? `+${balance}` : balance}</p>
         </div>
@@ -214,7 +214,7 @@ export function StepRoles({
           ) : (
             <>
               <div className="create-role-summary-heading">
-                <p className="section-kicker">избрани роли</p>
+                <p className="section-kicker">Избрани роли</p>
                 <h2>Състав на масата</h2>
                 <span>{total} от {state.playerCount} места</span>
               </div>

@@ -26,7 +26,7 @@
   --friends-danger: #ffb4a4;
 }
 .headerInner { max-width: 1224px; min-height: 328px; margin-inline: auto; padding: 74px 24px 96px; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; }
-.kicker { margin: 0; color: var(--friends-gold); font-size: 12px; font-weight: 600; text-transform: uppercase; }
+.kicker { margin: 0; color: var(--friends-gold); font-size: var(--ds-type-label); line-height: var(--ds-leading-label); font-weight: var(--ds-weight-label); }
 .header h1 { margin: 0; font-family: var(--font-display); font-size: 60px; font-weight: 600; line-height: 1.13; letter-spacing: 0; text-wrap: balance; }
 .subtitle { margin: 10px 0 0; font-family: var(--font-display); font-size: 24px; line-height: 1.4; }
 .header h1, .subtitle { text-shadow: 0 2px 20px #06120e80; }
@@ -40,7 +40,7 @@
 .workspace h2 { display: flex; gap: 10px; align-items: center; margin: 0; font-family: var(--font-display); font-size: 30px; font-weight: 400; line-height: 1.2; }
 .workspace h2 svg { width: 20px; height: 20px; color: var(--friends-gold); flex-shrink: 0; }
 .workspace button svg { width: 18px; height: 18px; flex-shrink: 0; }
-.page .workspace :global(.btn) { min-height: 48px; gap: 9px; font-size: 15px; white-space: normal; text-transform: none; letter-spacing: 0; }
+.page .workspace :global(.btn) { min-height: 48px; gap: 9px; font-size: 15px; white-space: normal; letter-spacing: 0; }
 .workspace :is(button, input, textarea):focus-visible { outline: 2px solid var(--friends-gold); outline-offset: 3px; }
 .workspace :is(button, input):disabled { opacity: 0.55; cursor: not-allowed; }
 .checkbox { position: relative; display: inline-grid; width: 24px; height: 24px; flex-shrink: 0; }

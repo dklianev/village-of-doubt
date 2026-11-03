@@ -59,6 +59,7 @@ export function FriendsClient({ icons: { ArrowDown, BookOpen, Check, Copy, LockK
   const selectedLabel = selectedFriends.length === 1 ? "1 избрано име" : `${selectedFriends.length} избрани имена`;
   const allVisibleSelected = visibleFriends.length > 0 && visibleFriends.every((friend) => selectedIds.has(friend.id));
   const full = friends.length >= MAX_FRIENDS;
+  const storageBlocked = snapshot.needsRecovery || snapshot.unavailable;
   const validCode = ROOM_CODE_REGEX.test(code);
   const prefix = selectedFriends.length ? `${selectedFriends.map((friend) => friend.name).join(", ")},\n` : "";
   const invite = !origin ? "" : inviteKind === "site"
@@ -320,8 +321,9 @@ export function FriendsClient({ icons: { ArrowDown, BookOpen, Check, Copy, LockK
         {!ready ? <p className={styles.empty} role="status">Зареждаме гостовата книга...</p>
           : friends.length === 0 ? <div className={styles.empty}>
             {BookOpen}
-            <h3>{snapshot.needsRecovery || snapshot.unavailable ? "Няма достъпни записи" : "Още няма вписани имена"}</h3>
+            <h3>{storageBlocked ? "Няма достъпни записи" : "Още няма вписани имена"}</h3>
             <p>Компанията започва с едно познато лице.</p>
+            {storageBlocked ? null : <ActionButton icon={Plus} className="btn btn-primary" onClick={(event) => openForm(event.currentTarget)}>Добави първото име</ActionButton>}
           </div> : <>
             <div className={styles.search}>
               {Search}

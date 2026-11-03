@@ -17,7 +17,7 @@ export function MafiaMechanicsCallouts() {
   return (
     <section className="mafia-mechanics" aria-label="Механики на Мафия">
       <header className="mafia-mechanics__header family-section-heading">
-        <p className="section-kicker">тънкости</p>
+        <p className="section-kicker">Тънкости</p>
         <h2>Алибито не е доказателство.</h2>
       </header>
       <ul className="mafia-mechanics__list">

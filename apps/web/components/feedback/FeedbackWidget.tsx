@@ -175,7 +175,7 @@ export function FeedbackWidget({ session }: { session: AuthSessionView }) {
         <header className={styles.panelHead}>
           <FeedbackIcon className={styles.panelIcon} />
           <div>
-            <p className={styles.kicker}>бележка от масата</p>
+            <p className={styles.kicker}>Бележка от масата</p>
             <h2 id={panelTitleId}>Дай ни бележка.</h2>
           </div>
           <button type="button" className={styles.close} onClick={close} aria-label="Затвори">

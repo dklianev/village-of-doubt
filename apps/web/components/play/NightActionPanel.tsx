@@ -61,7 +61,7 @@ export function NightActionPanel({
   const secondTarget = secondaryTargets.find((player) => player.userId === secondTargetId);
   const secondId = secondTarget?.userId ?? "";
   const canSubmitTarget = Boolean(targetId) && (!needsSecondTarget || Boolean(secondId));
-  const secondTargetLabel = privateRole === "blacksmith" ? "кой получава меча" : "втора цел";
+  const secondTargetLabel = privateRole === "blacksmith" ? "Кой получава меча" : "Втора цел";
   const selectionStep = targetId ? 2 : 1;
   const unavailableReasons = nightActionUnavailableReasons(
     nightActionCapabilities,
@@ -108,7 +108,7 @@ export function NightActionPanel({
       data-command-state={canSubmitTarget ? "ready" : "awaiting-target"}
     >
       <div className={`night-action-description ${styles.commandHeader}`}>
-        <p className={`section-kicker ${styles.kicker}`}>нощно действие</p>
+        <p className={`section-kicker ${styles.kicker}`}>Нощно действие</p>
         <h2>{nightInstructionBg(privateRole)}</h2>
       </div>
       {privateFactionRoster && privateFactionRoster.members.length > 0 ? (
@@ -129,13 +129,13 @@ export function NightActionPanel({
         data-selection-state={selectedTarget && (!needsSecondTarget || secondTarget) ? "ready" : "empty"}
       >
         <div className={`play-selected-target ${styles.selectedTarget}`} data-filled={selectedTarget ? "true" : undefined}>
-          <span>{needsSecondTarget ? "първа цел" : "цел от масата"}</span>
-          <strong>{selectedTarget?.displayName ?? "избери място"}</strong>
+          <span>{needsSecondTarget ? "Първа цел" : "Цел от масата"}</span>
+          <strong>{selectedTarget?.displayName ?? "Избери място"}</strong>
         </div>
         {needsSecondTarget ? (
           <div className={`play-selected-target ${styles.selectedTarget}`} data-filled={secondTarget ? "true" : undefined}>
             <span>{secondTargetLabel}</span>
-            <strong>{secondTarget?.displayName ?? "избери второ място"}</strong>
+            <strong>{secondTarget?.displayName ?? "Избери второ място"}</strong>
           </div>
         ) : null}
       </div>

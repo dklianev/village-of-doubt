@@ -102,9 +102,9 @@ describe("room invitation preview", () => {
     expect(container.querySelector(".lobby-invite-details")).toContainElement(roster);
     expect(container.querySelector(".lobby-invite-paper")).not.toBeInTheDocument();
     expect([...roster.querySelectorAll(".lobby-player-chip strong")].map((node) => node.textContent)).toEqual(["А", "Б", "Р"]);
-    expect(within(roster).getByText("домакин")).toBeInTheDocument();
-    expect(within(roster).getByText("готов")).toBeInTheDocument();
-    expect(within(roster).getByText("извън линия")).toBeInTheDocument();
+    expect(within(roster).getByText("Домакин")).toBeInTheDocument();
+    expect(within(roster).getByText("Готов")).toBeInTheDocument();
+    expect(within(roster).getByText("Извън линия")).toBeInTheDocument();
     expect(within(roster).getByText("И още 2 в стаята.")).toBeInTheDocument();
     expect(screen.queryByText("Четвърти гост")).not.toBeInTheDocument();
     expect(screen.queryByText("Пети гост")).not.toBeInTheDocument();
@@ -128,7 +128,7 @@ describe("room invitation preview", () => {
   it("shows disconnected players as offline even when their previous ready flag is set", async () => {
     fetchPreview.mockResolvedValue(respond({ ...room, players: [{ displayName: "Анна", host: true, ready: true, connected: false }] }));
     render(<LobbyInviteClient {...props} />);
-    expect(await screen.findByText("извън линия")).toBeInTheDocument();
+    expect(await screen.findByText("Извън линия")).toBeInTheDocument();
   });
 
   it("shows a known missing room without invented activity or join/share actions", async () => {

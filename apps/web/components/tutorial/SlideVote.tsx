@@ -10,7 +10,7 @@ export function SlideVote({ mode, practice, onPracticeChange }: TutorialScenePro
   const selected = selection ?? practice.vote;
   const confirmed = selected !== null && selected === practice.vote;
   return (
-    <TutorialSlide bg="day" kicker="сцена 4 - твоят глас" title="Гласът оставя следа."
+    <TutorialSlide bg="day" kicker="Сцена 4 - твоят глас" title="Гласът оставя следа."
       body={<><p>Сравни чутото с личната си проверка. Избери играч и потвърди гласа си. Самото посочване не е достатъчно.</p>
         <p>{mode === "mafia_sport" ? "В Спортна Мафия номинираш по време на своята реч. След защитите гласуваш между номинираните." : "В този пример можеш да посочиш Анна, Борис или Галя. В истинската игра масата решава с общия вот."}</p></>}
       callout={{ label: "Изборът не е потвърждение", text: "Можеш да посочиш друг играч. Винаги провери името, преди да потвърдиш." }}>

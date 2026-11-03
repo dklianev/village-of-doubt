@@ -10,20 +10,23 @@ describe("EvidenceWall route states", () => {
     const { rerender } = render(<EvidenceWall games={[]} status="unavailable" />);
 
     expect(screen.getByRole("alert")).toHaveTextContent("Архивът не отговори");
-    expect(screen.queryByText("Първата нощ ще остави следа тук.")).not.toBeInTheDocument();
+    expect(screen.queryByText("Първата публична вечер ще остави следа тук.")).not.toBeInTheDocument();
+    expect(screen.getByRole("form", { name: "Филтри на архива" })).toBeInTheDocument();
 
     rerender(<EvidenceWall games={[]} status="ready" />);
 
-    expect(screen.getByText("Първата нощ ще остави следа тук.")).toBeInTheDocument();
+    expect(screen.getByText("Първата публична вечер ще остави следа тук.")).toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.queryByRole("form", { name: "Филтри на архива" })).not.toBeInTheDocument();
   });
 
   it("distinguishes a filtered empty page and preserves independent URL filters", () => {
     render(<EvidenceWall games={[]} selection={{ family: "mafia", outcome: "village" }} />);
+    expect(screen.getByRole("form", { name: "Филтри на архива" })).toBeInTheDocument();
     expect(screen.getByLabelText("Игра")).toHaveValue("mafia");
     expect(screen.getByLabelText("Победител")).toHaveValue("village");
     expect(screen.getByRole("heading", { name: "Няма дела с тази развръзка" })).toBeInTheDocument();
-    expect(screen.queryByText("Първата нощ ще остави следа тук.")).not.toBeInTheDocument();
+    expect(screen.queryByText("Първата публична вечер ще остави следа тук.")).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Покажи всички дела" })).toHaveAttribute("href", "/history");
   });
 
@@ -33,12 +36,14 @@ describe("EvidenceWall route states", () => {
     expect(screen.getByRole("link", { name: "Опитай отново" })).toHaveAttribute("href", `/history?family=mafia&outcome=village&before=${id}`);
   });
 
-  it("removes pretend loading cards and describes the tutorial honestly", () => {
+  it("removes pretend loading cards and leads an empty archive to one primary action", () => {
     const { container } = render(<EvidenceWall games={[]} />);
     expect(container.querySelector(".case-file-ghost")).toBeNull();
     expect(screen.getByRole("link", { name: /Първи стъпки/ })).toHaveAttribute("href", "/tutorial");
     expect(screen.getByText(/Частните вечери/)).toBeInTheDocument();
-    const action = screen.getByRole("link", { name: /Избери игра/ });
+    const action = screen.getByRole("link", { name: /Създай стая/ });
+    expect(action).toHaveAttribute("href", "/create");
+    expect([...container.querySelectorAll(".btn-primary")]).toEqual([action]);
     const art = container.querySelector('img[alt=""]')!;
     expect(action.compareDocumentPosition(art) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });

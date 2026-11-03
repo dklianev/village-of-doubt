@@ -98,7 +98,7 @@ export function TermsCommitments() {
   return (
     <section id="terms-commitments" tabIndex={-1} className="terms-section">
       <header className="terms-section-head">
-        <p className="terms-section-kicker">обещания</p>
+        <p className="terms-section-kicker">Обещания</p>
         <h2>Пет обещания на масата.</h2>
         <p className="terms-section-lede">
           За уважението, честната игра и личните граници.

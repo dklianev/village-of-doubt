@@ -26,6 +26,7 @@ export type StageSeatPlayer = Pick<
 
 interface PlaySeatProps {
   player: StageSeatPlayer;
+  own: boolean;
   phase: GamePhase;
   narratorMode: string;
   targetable: boolean;
@@ -50,6 +51,7 @@ interface PlaySeatProps {
 
 export const PlaySeat = memo(function PlaySeat({
   player,
+  own,
   phase,
   narratorMode,
   targetable,
@@ -72,13 +74,16 @@ export const PlaySeat = memo(function PlaySeat({
   onMakeMayor,
 }: PlaySeatProps) {
   const status = speaking
-    ? "говори"
+    ? "Говори"
     : defending
-      ? "защитава се"
+      ? "Защитава се"
       : nominee
-        ? "номиниран"
+        ? "Номиниран"
         : seatStatusText(player, phase, narratorMode);
   const stateParts: string[] = [];
+  if (player.hasVoted) {
+    stateParts.push("подаде глас");
+  }
   if (voteCount > 0) {
     stateParts.push(`${voteCount} ${voteCount === 1 ? "глас" : "гласа"}`);
   }
@@ -91,6 +96,7 @@ export const PlaySeat = memo(function PlaySeat({
     stateParts.push("избрана цел");
   }
   const stateSuffix = stateParts.length > 0 ? `, ${stateParts.join(", ")}` : "";
+  const seatName = own ? `${player.displayName} (ти)` : player.displayName;
   const hasManagementControls = canManageNarrator || canManageMayor;
   const avatarId = avatarIdForUser(player.userId, player.avatarId);
   const content = (
@@ -110,6 +116,7 @@ export const PlaySeat = memo(function PlaySeat({
             </span>
           ) : playerInitials(player.displayName)}
         </span>
+        {own ? <span className={styles.ownPlate} data-seat-own>Ти</span> : null}
         {shortcutNumber ? (
           <span className={styles.shortcutHint} data-seat-shortcut>{shortcutNumber}</span>
         ) : null}
@@ -148,7 +155,7 @@ export const PlaySeat = memo(function PlaySeat({
         data-defending={defending ? "true" : undefined}
         data-nominee={nominee ? "true" : undefined}
         aria-pressed={selected || secondSelected}
-        aria-label={`Избери ${player.displayName}: ${status}${stateSuffix}`}
+        aria-label={`Избери ${seatName}: ${status}${stateSuffix}`}
         onClick={onSelect}
       >
         {content}
@@ -170,7 +177,7 @@ export const PlaySeat = memo(function PlaySeat({
       data-speaking={speaking ? "true" : undefined}
       data-defending={defending ? "true" : undefined}
       data-nominee={nominee ? "true" : undefined}
-      aria-label={`${player.displayName}: ${status}${stateSuffix}`}
+      aria-label={`${seatName}: ${status}${stateSuffix}`}
     >
       {content}
       {hasManagementControls ? (
@@ -227,28 +234,29 @@ export const PlaySeat = memo(function PlaySeat({
 
 function seatStatusText(player: StageSeatPlayer, phase: GamePhase, narratorMode: string) {
   if (!player.playing) {
-    return "извън играта";
+    return "Извън играта";
   }
   if (!player.alive) {
     return player.revealedRole
-      ? ROLE_DEFINITIONS[player.revealedRole as RoleCode]?.nameBg ?? "елиминиран"
-      : "елиминиран";
+      ? ROLE_DEFINITIONS[player.revealedRole as RoleCode]?.nameBg ?? "Елиминиран"
+      : "Елиминиран";
   }
 
   const details = [
-    player.connected ? "онлайн" : "извън връзка",
+    player.connected ? "Онлайн" : "Извън връзка",
     player.host ? "водещ" : "",
     player.narrator ? "разказвач" : "",
     player.mayor ? "кмет" : "",
     phase === "lobby" && player.ready ? "готов" : "",
-    narratorMode === "full_human" ? (player.acceptedFullNarrator ? "приел" : "чака") : "",
+    narratorMode === "full_human" ? (player.acceptedFullNarrator ? "прие" : "чака") : "",
   ].filter(Boolean);
 
-  return details.join(" · ") || "на масата";
+  return details.join(" · ") || "На масата";
 }
 
 function arePlaySeatPropsEqual(previous: PlaySeatProps, next: PlaySeatProps) {
-  return previous.phase === next.phase
+  return previous.own === next.own
+    && previous.phase === next.phase
     && previous.narratorMode === next.narratorMode
     && previous.targetable === next.targetable
     && previous.shortcutNumber === next.shortcutNumber

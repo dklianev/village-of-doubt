@@ -26,9 +26,9 @@ export function KeyboardShortcutsModal({ onClose }: KeyboardShortcutsModalProps)
         onClick={(event) => event.stopPropagation()}
       >
         <button className="shortcut-modal-close" type="button" onClick={onClose}>
-          затвори
+          Затвори
         </button>
-        <p className="section-kicker">клавиши</p>
+        <p className="section-kicker">Клавиши</p>
         <h2>Команди от масата</h2>
         <p>
           Ползвай ги само когато екранът е пред теб. Командата се изпълнява само ако действието е позволено в текущата фаза.

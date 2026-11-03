@@ -25,6 +25,6 @@ describe("VoteTallyBar", () => {
     expect(tally).toHaveAttribute("aria-live", "polite");
     expect(screen.getByText("Борис")).toBeInTheDocument();
     expect(screen.getByText("Вяра")).toBeInTheDocument();
-    expect(screen.getByText("кметски глас при равенство")).toBeInTheDocument();
+    expect(screen.getByText("Кметски глас при равенство")).toBeInTheDocument();
   });
 });

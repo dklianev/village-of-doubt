@@ -18,7 +18,7 @@ export function ReportHero() {
       </div>
 
       <div className="report-hero-inner">
-        <p className="report-hero-kicker">сигнал</p>
+        <p className="report-hero-kicker">Сигнал</p>
         <h1 className="report-hero-title">Подай сигнал</h1>
         <p className="report-hero-subtitle">
           Разкажи ни за неуместно поведение, технически проблем или въпрос за твоите права.

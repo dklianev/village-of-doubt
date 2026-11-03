@@ -129,7 +129,7 @@ export function GameRolesCatalog({ family, catalog }: {
       <section className="role-codex-hero">
         <div className="role-codex-hero-copy">
           <div className="role-codex-hero-meta">
-            <p className="section-kicker">{isMafia ? "досиета на града" : "книга на персонажите"}</p>
+            <p className="section-kicker">{isMafia ? "Досиета на града" : "Книга на персонажите"}</p>
             <p className="role-codex-hero-stat" aria-label="Брой роли">
               <strong>{allRoles.length}</strong>
               <span>{isMafia ? "градски досиета" : "селски роли"}</span>

@@ -1180,6 +1180,8 @@ function watchPage(page, label, { expectedHttpError } = {}) {
   const issues = [];
   const pendingDetails = [];
   const ignoreConsolePatterns = [/Download the React DevTools/i];
+  const abortedRequests = new Map();
+  const imageDecodeErrors = [];
   let expectedHttpErrorRemaining = Boolean(expectedHttpError);
 
   page.on("console", (message) => {
@@ -1197,6 +1199,11 @@ function watchPage(page, label, { expectedHttpError } = {}) {
       text.startsWith("Failed to load resource:") && new RegExp(`\\b${expectedHttpError.status}\\b`).test(text)
     ) {
       expectedHttpErrorRemaining = false;
+      return;
+    }
+    // Firefox also logs an image download cut off by navigation as a decode error, so an abort of that URL explains it.
+    if (/"Image corrupt or truncated\."/.test(text)) {
+      imageDecodeErrors.push({ url: location.url, issue: `console error: ${text} (${location.url})` });
       return;
     }
     const issueIndex = issues.push(
@@ -1244,6 +1251,7 @@ function watchPage(page, label, { expectedHttpError } = {}) {
   page.on("requestfailed", (request) => {
     const errorText = request.failure()?.errorText ?? "unknown";
     if (/ABORTED|request cancelled/i.test(errorText)) {
+      abortedRequests.set(request.url(), (abortedRequests.get(request.url()) ?? 0) + 1);
       return;
     }
     if (
@@ -1270,14 +1278,26 @@ function watchPage(page, label, { expectedHttpError } = {}) {
     }
   });
 
+  // Each aborted request explains one decode error for its URL, whichever event arrived first.
+  const unexplainedIssues = () => {
+    const aborts = new Map(abortedRequests);
+    const decodeIssues = imageDecodeErrors.filter(({ url }) => {
+      const remaining = aborts.get(url) ?? 0;
+      aborts.set(url, remaining - 1);
+      return remaining <= 0;
+    });
+    return [...issues, ...decodeIssues.map(({ issue }) => issue)];
+  };
+
   return {
     get failed() {
-      return issues.length > 0;
+      return unexplainedIssues().length > 0;
     },
     async assertClean() {
       await Promise.allSettled(pendingDetails);
-      if (issues.length > 0) {
-        throw new Error(`${label} produced browser issues:\n${issues.join("\n")}`);
+      const found = unexplainedIssues();
+      if (found.length > 0) {
+        throw new Error(`${label} produced browser issues:\n${found.join("\n")}`);
       }
     },
   };

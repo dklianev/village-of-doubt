@@ -32,7 +32,7 @@ export function PrivacyDataPreview({ snapshot }: PrivacyDataPreviewProps) {
   return (
     <section id="privacy-data" tabIndex={-1} className="privacy-section privacy-section-preview">
       <header className="privacy-section-head">
-        <p className="privacy-section-kicker">личен преглед</p>
+        <p className="privacy-section-kicker">Личен преглед</p>
         <h2>Обобщение на твоите данни.</h2>
         <p className="privacy-section-lede">
           Основни данни за досието ти и завършените игри, в които си участвал.
@@ -51,10 +51,10 @@ export function PrivacyDataPreview({ snapshot }: PrivacyDataPreviewProps) {
           <dd>
             <code>{snapshot.email}</code>
             {snapshot.emailVerified ? (
-              <span className="privacy-data-badge privacy-data-badge-ok">потвърден</span>
+              <span className="privacy-data-badge privacy-data-badge-ok">Потвърден</span>
             ) : (
               <Link href="/verify-email" className="privacy-data-badge privacy-data-badge-warn">
-                непотвърден →
+                Непотвърден →
               </Link>
             )}
           </dd>
@@ -87,7 +87,7 @@ export function PrivacyDataPreview({ snapshot }: PrivacyDataPreviewProps) {
               {snapshot.totalGames === null
                 ? "Временно недостъпни"
                 : snapshot.totalGames === 0
-                  ? "още няма"
+                  ? "Още няма"
                   : `${snapshot.totalGames} ${snapshot.totalGames === 1 ? "игра" : "игри"}`}
             </code>
             <Link href="/history" className="privacy-data-edit">

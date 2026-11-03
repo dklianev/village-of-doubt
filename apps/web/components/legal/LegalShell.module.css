@@ -20,7 +20,7 @@
   --support-ok: #346b43;
   --support-error: #a62c25;
 }
-:global(body:has(.site-chrome:is([data-route="/faq"], [data-route="/report"], [data-route="/status"], [data-route="/privacy"], [data-route="/terms"]))::before), :global(body:has(.site-chrome:is([data-route="/faq"], [data-route="/report"], [data-route="/status"], [data-route="/privacy"], [data-route="/terms"]))::after) { display: none; }
+:global(body:has(.site-chrome:is([data-route="/faq"], [data-route="/report"], [data-route="/status"], [data-route="/privacy"], [data-route="/terms"])))::before, :global(body:has(.site-chrome:is([data-route="/faq"], [data-route="/report"], [data-route="/status"], [data-route="/privacy"], [data-route="/terms"])))::after { display: none; }
 :global(html:has(.site-chrome:is([data-route="/faq"], [data-route="/report"], [data-route="/status"], [data-route="/privacy"], [data-route="/terms"]))) { scrollbar-gutter: stable; }
 :global(main.legal-page-shell) {
   width: 100%; max-width: none; min-height: calc(100svh - 160px);
@@ -58,7 +58,8 @@
 }
 :global(.legal-page-shell :is(.faq-hearth-kicker,.report-hero-kicker,.status-hero-kicker,.privacy-hero-kicker,.terms-hero-kicker)) {
   display: flex; align-items: center; gap: 8px; margin: 0 0 10px; color: #e3c68a;
-  font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0;
+  font-size: var(--ds-type-label);
+  line-height: var(--ds-leading-label); font-weight: var(--ds-weight-label); letter-spacing: 0;
 }
 :global(.legal-page-shell :is(.faq-hearth-title,.report-hero-title,.status-hero-title,.privacy-hero-title,.terms-hero-title)) {
   max-width: 24ch; margin: 0 0 14px; color: #fff4df; font-size: 2.75rem; font-weight: 750; line-height: 1.1; text-wrap: balance;
@@ -70,7 +71,7 @@
 :global(.legal-page-shell :is(.privacy-content,.terms-content,.status-content)) { width: 100%; max-width: 1104px; margin: 0 auto; padding-inline: 32px; }
 :global(.legal-page-shell :is(.privacy-section,.terms-section,.status-section)) { padding: 32px 0; border: 0; border-bottom: 1px solid var(--support-line); border-radius: 0; background: none; box-shadow: none; }
 :global(.legal-page-shell :is(.privacy-section-head,.terms-section-head,.status-section-head)) { margin-bottom: 24px; }
-:global(.legal-page-shell :is(.privacy-section-kicker,.terms-section-kicker,.status-section-kicker)) { margin: 0 0 8px; font-size: .75rem; font-weight: 700; color: var(--support-metal); text-transform: uppercase; letter-spacing: 0; }
+:global(.legal-page-shell :is(.privacy-section-kicker,.terms-section-kicker,.status-section-kicker)) { margin: 0 0 8px; font-size: var(--ds-type-label); line-height: var(--ds-leading-label); font-weight: var(--ds-weight-label); color: var(--support-metal); letter-spacing: 0; }
 :global(.legal-page-shell :is(.privacy-section-lede,.terms-section-lede,.status-section-lede)) { max-width: 68ch; margin: 0; color: var(--support-muted); }
 :global(.legal-page-shell :is(.privacy-navigation,.terms-navigation)) { display: flex; flex-wrap: wrap; gap: 4px 24px; padding: 18px 0; border-bottom: 1px solid var(--support-line); font-size: .875rem; }
 :global(.legal-page-shell :is(.privacy-navigation,.terms-navigation) a) { display: inline-flex; align-items: center; min-height: 44px; }
@@ -90,5 +91,5 @@
   :global(.legal-page-shell .privacy-hero-title) { font-size: 1.75rem; }
 }
 @media (prefers-reduced-motion: reduce) {
-  :global(.legal-page-shell *), :global(.legal-page-shell *::before), :global(.legal-page-shell *::after) { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  :global(.legal-page-shell *), :global(.legal-page-shell *)::before, :global(.legal-page-shell *)::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }

@@ -8,7 +8,7 @@ export function CreateFamilyChoice({ searchParams }: { searchParams: URLSearchPa
   return (
     <section className="create-family-choice" aria-labelledby="create-family-title">
       <header className="create-family-heading">
-        <p className="create-quick-kicker">нова вечер на масата</p>
+        <p className="create-quick-kicker">Нова вечер на масата</p>
         <h1 id="create-family-title">Върколак или Мафия?</h1>
         <p>Коя игра събира компанията тази вечер?</p>
       </header>
@@ -19,7 +19,7 @@ export function CreateFamilyChoice({ searchParams }: { searchParams: URLSearchPa
             <Moon />
           </span>
           <span className="create-family-scene-copy">
-            <small>фолклорен хорър · 6-30 души</small>
+            <small>Фолклорен хорър · 6-30 души</small>
             <strong>Върколак</strong>
             <span>Селото заспива. Тайните роли се събуждат около една обща история.</span>
           </span>
@@ -34,7 +34,7 @@ export function CreateFamilyChoice({ searchParams }: { searchParams: URLSearchPa
             <VenetianMask />
           </span>
           <span className="create-family-scene-copy">
-            <small>градска мистерия · 4-24 души</small>
+            <small>Градска мистерия · 4-24 души</small>
             <strong>Мафия</strong>
             <span>Лампата свети ниско. Всеки има алиби, но не всеки казва истината.</span>
           </span>

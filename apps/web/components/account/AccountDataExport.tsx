@@ -27,7 +27,7 @@ export function AccountDataExport() {
   return (
     <section className={`${styles.archivePanel} ${styles.exportSection}`} id="account-data-export">
       <header className={styles.sectionHead}>
-        <p className={styles.sectionKicker}>архивно копие</p>
+        <p className={styles.sectionKicker}>Архивно копие</p>
         <h2>Твоите данни</h2>
         <p>Имаш право да изтеглиш всичко, което сме записали за теб.</p>
       </header>

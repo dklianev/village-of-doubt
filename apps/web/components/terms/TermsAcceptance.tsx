@@ -30,7 +30,7 @@ export function TermsAcceptance() {
   return (
     <section className="terms-section terms-section-acceptance">
       <header className="terms-section-head">
-        <p className="terms-section-kicker">локална отметка</p>
+        <p className="terms-section-kicker">Локална отметка</p>
         <h2>Отбележи като прочетено</h2>
         <p className="terms-section-lede">
           Отметката е само за този браузър. Не е свързана с досие и не записва съгласие с условията.

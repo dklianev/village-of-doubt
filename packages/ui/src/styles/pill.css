@@ -73,8 +73,7 @@
 }
 
 .ds-pill[data-tracked="true"] {
-  text-transform: uppercase;
-  letter-spacing: 0;
+  letter-spacing: 0.02em;
 }
 
 .ds-pill[data-intent="primary"] {

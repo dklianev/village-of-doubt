@@ -44,7 +44,7 @@ export function LobbyInviteClient({
   const canShare = canEnter || canSpectate;
   const playHref = `/play/${encodeURIComponent(code)}?mode=${preview?.mode ?? ""}`;
   const spectatorHref = `${playHref}&spectator=1`;
-  const modeLabel = preview ? getGameModeNameBg(preview.mode) : "покана с код";
+  const modeLabel = preview ? getGameModeNameBg(preview.mode) : "Покана с код";
   const joinHref = family === "mafia" ? "/mafia/join" : family === "werewolves" ? "/werewolf/join" : "/join";
   const familyLabel = family === "mafia" ? "Мафия" : "Върколак";
   const summary = preview ? roomPreviewSummary(preview)
@@ -116,7 +116,7 @@ export function LobbyInviteClient({
             <span className="lobby-player-chip" key={`${player.displayName}:${index}`}>
               <strong aria-hidden="true">{initialFor(player.displayName)}</strong>
               <span className="lobby-player-name">{player.displayName}</span>
-              <em>{!player.connected ? "извън линия" : player.host ? "домакин" : player.ready ? "готов" : "в стаята"}</em>
+              <em>{!player.connected ? "Извън линия" : player.host ? "Домакин" : player.ready ? "Готов" : "В стаята"}</em>
             </span>
           ))}
         </div>

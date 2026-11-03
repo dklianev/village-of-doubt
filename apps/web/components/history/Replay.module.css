@@ -37,7 +37,7 @@
 .heroContent { min-height: 410px; padding: 36px 12px 64px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; }
 .back { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; margin-bottom: 20px; color: var(--journal-ink); text-decoration: none; font-size: .9rem; }
 .back:hover { color: var(--journal-accent); text-decoration: underline; text-underline-offset: 4px; }
-.kicker { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0; color: var(--journal-accent); font-size: .8rem; font-weight: 700; text-transform: uppercase; }
+.kicker { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0; color: var(--journal-accent); font-size: .8rem; font-weight: var(--ds-weight-label); }
 .header h1 { max-width: 860px; margin: 8px 0 12px; color: var(--journal-ink); font-family: var(--font-display); font-size: 4.5rem; font-weight: 650; line-height: 1.12; text-wrap: balance; }
 .verdict { margin: 0 0 30px; font-family: var(--font-display); font-size: 1.75rem; font-weight: 600; line-height: 1.4; }
 .summary { display: flex; flex-wrap: wrap; gap: 12px 24px; color: var(--journal-ink); font-size: .95rem; }
@@ -52,7 +52,6 @@
 .phaseNav a > svg { flex-shrink: 0; color: var(--journal-accent); }
 .phaseNav a small { display: block; margin-top: 2px; font-size: .75rem; color: var(--journal-muted); }
 .phaseNav a:hover, .phaseNav a:focus-visible { color: var(--journal-accent); }
-.rosterLink { border-top: 1px solid var(--journal-rule); margin-top: 14px; }
 .records, .timeline { min-width: 0; }
 .timelineHeading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--journal-edge); scroll-margin-top: 100px; }
 .timelineHeading h2 { margin: 0; font-family: var(--font-display); font-size: 2rem; font-weight: 650; line-height: 1.2; }
@@ -179,7 +178,6 @@
   .phaseNav ol { display: flex; gap: 16px; max-height: none; padding: 0 4px 6px; margin-inline: -4px; overflow-x: auto; }
   .phaseNav a { white-space: nowrap; min-height: 48px; padding-inline: 0; border-left: 0; border-bottom: 2px solid var(--journal-rule); gap: 8px; }
   .phaseNav a[aria-current] { border-bottom-color: #c34738; }
-  .phaseNav .rosterLink { display: none; }
   .phaseNav a small { display: inline; margin-left: 6px; }
   .timelineHeading { gap: 12px; padding-bottom: 16px; }
   .timelineHeading h2 { font-size: 1.7rem; }

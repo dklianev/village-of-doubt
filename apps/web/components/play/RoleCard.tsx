@@ -59,7 +59,7 @@ export function RoleCard({
       <div className={styles.content}>
         <div className={`role-card-header ${styles.header}`}>
           <div>
-            {!mini ? <p className={`section-kicker ${styles.kicker}`}>{consolePresentation ? <EyeOff aria-hidden /> : null}само за теб</p> : null}
+            {!mini ? <p className={`section-kicker ${styles.kicker}`}>{consolePresentation ? <EyeOff aria-hidden /> : null}Само за теб</p> : null}
             <h2>{role.roleNameBg}</h2>
             {compact ? <p className={styles.team}>{guide.team}</p> : null}
           </div>

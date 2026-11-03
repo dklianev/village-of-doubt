@@ -67,8 +67,9 @@
 :global(.tutorial-welcome-banner button) { display: grid; place-items: center; flex-shrink: 0; width: 44px; height: 44px; border: 0; background: transparent; color: var(--tutorial-ink); cursor: pointer; }
 :global(.tutorial-welcome-banner svg) { width: 18px; height: 18px; }
 :global(.tutorial-progress) { position: relative; display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 24px; padding: 0 32px 12px; }
-:global(.tutorial-progress-bar) { position: absolute; inset: auto 0 0; height: 2px; background: var(--tutorial-rule); }
-:global(.tutorial-progress-fill) { height: 100%; background: var(--tutorial-accent); transition: width 180ms ease; }
+/* The rule stays a hairline; the progress is stitched over it in the family ornament. */
+:global(.tutorial-progress-bar) { position: absolute; inset: auto 0 -4px; height: 10px; background: linear-gradient(var(--tutorial-rule), var(--tutorial-rule)) center / 100% 2px no-repeat; }
+:global(.tutorial-progress-fill) { height: 100%; background: var(--tutorial-accent); -webkit-mask: var(--ds-motif-mask); mask: var(--ds-motif-mask); transition: width 180ms ease; }
 :global(.tutorial-progress-mobile) { display: none; }
 :global(.tutorial-progress-dots) { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); gap: 8px; }
 :global(.tutorial-progress-dot) { display: grid; grid-template-columns: minmax(0,1fr); align-content: center; gap: 3px; min-width: 0; min-height: 52px; padding: 6px 4px; border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: transparent; color: var(--tutorial-soft); font: 600 0.8rem var(--font-body); text-align: left; cursor: pointer; }
@@ -94,7 +95,7 @@
 :global(.tutorial-slide-content) { position: relative; display: grid; grid-template-columns: minmax(0,1fr) minmax(0,.9fr); align-items: start; gap: 32px; min-width: 0; padding: 205px 40px 32px; }
 :global(.tutorial-slide-copy) { min-width: 0; max-width: 64ch; }
 :global(.tutorial-slide-interaction) { display: grid; gap: 20px; min-width: 0; grid-column: 2; grid-row: 1 / span 2; }
-:global(.tutorial-slide-kicker) { margin: 0 0 10px; color: var(--tutorial-metal); font-size: 0.72rem; font-weight: 700; text-transform: uppercase; }
+:global(.tutorial-slide-kicker) { margin: 0 0 10px; color: var(--tutorial-metal); font-size: var(--ds-type-label); line-height: var(--ds-leading-label); font-weight: var(--ds-weight-label); }
 :global(.tutorial-slide-title) { margin: 0 0 18px; color: var(--tutorial-ink); font: 600 2.35rem / 1.12 var(--font-display); letter-spacing: 0; text-wrap: balance; }
 :global(.tutorial-slide-body p) { margin: 0 0 14px; color: var(--tutorial-soft); font-size: 0.96rem; line-height: 1.65; }
 :global(.tutorial-slide-callout) { grid-column: 1; border-left: 2px solid var(--tutorial-accent); padding-left: 16px; }

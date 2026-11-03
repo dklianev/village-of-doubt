@@ -259,7 +259,7 @@ test.describe("invitation reference geometry 1487x1058", () => {
       await expect(page.locator(".lobby-room-status-line p")).toHaveText(["Чака играчи", "6 от 12 места заети"]);
       await expect(page.locator(".lobby-room-host")).toHaveText("Домакин: Мила.");
       await expect(page.locator(".lobby-player-name")).toHaveText(["Мила", "Камен", "Анна"]);
-      await expect(page.locator(".lobby-player-chip em")).toHaveText(["домакин", "готов", "в стаята"]);
+      await expect(page.locator(".lobby-player-chip em")).toHaveText(["Домакин", "Готов", "В стаята"]);
       await expect(page.locator(".lobby-more-players")).toHaveText("И още 3 в стаята.");
       await expect(page.locator(".lobby-invite-hero-copy h1 br")).toHaveCount(1);
       await page.evaluate(() => document.fonts.ready);
@@ -427,7 +427,7 @@ for (const theme of themes) {
             await expect(page.locator(".lobby-invite-v2")).toHaveAttribute("data-family", family);
             await expect(page.getByRole("link", { name: "Наблюдавай", exact: true })).toHaveAttribute("href", spectatorHref);
             await expect(page.getByText("И още 2 в стаята.")).toBeVisible();
-            await expect(page.getByText("извън линия", { exact: true })).toBeVisible();
+            await expect(page.getByText("Извън линия", { exact: true })).toBeVisible();
             await expect(page.locator(".lobby-route-card")).toContainText("5 от 10 места заети");
             await expect(page.locator(".lobby-route-card")).toContainText("Домакин: Анна.");
             await expect(page.locator(".lobby-invite-paper")).toHaveCount(0);

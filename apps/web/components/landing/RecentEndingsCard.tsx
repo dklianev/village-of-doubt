@@ -36,8 +36,8 @@ export function RecentEndingsCard({ family, endings, available = true }: RecentE
               </div>
             </div>
             <article className="ghost-case-file" aria-hidden="true">
-              <span className="ghost-example-tag">ПРИМЕР</span>
-              <p className="ghost-case-eyebrow">ДЕЛО №4821</p>
+              <span className="ghost-example-tag">Пример</span>
+              <p className="ghost-case-eyebrow">Дело №4821</p>
               <h3>Селото оцеля през три нощи.</h3>
               <p>
                 Гадателката разпозна Върколака преди последното гласуване. Никой не повярва,

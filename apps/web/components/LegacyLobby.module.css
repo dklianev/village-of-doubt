@@ -137,7 +137,7 @@
   font-weight: 500;
   letter-spacing: 0;
 }
-:global(.lobby-invite-kicker), :global(.lobby-code-label) { text-transform: uppercase; }
+:global(.lobby-invite-kicker), :global(.lobby-code-label) { }
 :global(.lobby-code-label) { line-height: 20px; }
 
 :global(.lobby-invite-v2 svg) {
@@ -221,7 +221,6 @@
   gap: 12px;
   text-align: center;
   white-space: normal;
-  text-transform: none;
   font-size: 18px;
   font-weight: 650;
   letter-spacing: 0;

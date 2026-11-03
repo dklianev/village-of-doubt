@@ -25,7 +25,7 @@
 :global(.report-identity-card) { position: relative; display: grid; gap: 6px; padding: 18px; border: 1px solid var(--support-line); border-radius: 6px; background: var(--support-surface); cursor: pointer; }
 :global(.report-identity-title) { display: flex; align-items: center; gap: 8px; font-weight: 700; }
 :global(.report-identity-title svg) { flex-shrink: 0; }
-:global(.report-identity-hint), :global(.report-identity-note) { font-size: .9rem; color: var(--support-muted); }
+:global(.report-identity-hint) { font-size: .9rem; color: var(--support-muted); }
 :global(.report-field) { margin: 24px 0; }
 :global(.report-field label) { display: block; margin-bottom: 8px; font-weight: 700; }
 :global(.report-field-optional) { color: var(--support-muted); font-weight: 400; font-size: .85rem; }

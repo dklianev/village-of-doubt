@@ -20,7 +20,7 @@ export function RoleSpotlight({ family }: { family: GameFamily }) {
       aria-label={family === "mafia" ? "Класически роли в Мафия" : "Класически роли във Върколак"}
     >
       <header className="role-spotlight__header family-section-heading">
-        <p className="section-kicker">{family === "mafia" ? "градът" : "селото"}</p>
+        <p className="section-kicker">{family === "mafia" ? "Градът" : "Селото"}</p>
         <h2>{family === "mafia" ? "Лицата зад алибитата" : "Лицата на селото"}</h2>
         <p>{family === "mafia" ? "Познато лице. Неизвестна страна." : "Познаваш съседите си. Но не и техните тайни."}</p>
         <Link href={`${root}/roles`} className="family-text-link">Виж всички роли<ArrowRight size={16} aria-hidden="true" /></Link>

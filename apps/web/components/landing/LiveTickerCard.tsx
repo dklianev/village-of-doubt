@@ -19,7 +19,7 @@ export function LiveTickerCard({ family, liveStats }: LiveTickerCardProps) {
   if (liveStats === null) {
     return (
       <article className="quickstart-live quickstart-mini-card">
-        <p className="section-kicker">в момента играят</p>
+        <p className="section-kicker">В момента играят</p>
         <div className="quickstart-empty-live quickstart-stats-unavailable">
           <div>
             <p>Данните за активните игри временно не са достъпни.</p>
@@ -40,7 +40,7 @@ export function LiveTickerCard({ family, liveStats }: LiveTickerCardProps) {
 
   return (
     <article className="quickstart-live quickstart-mini-card">
-      <p className="section-kicker">в момента играят</p>
+      <p className="section-kicker">В момента играят</p>
       {isEmpty ? (
         family === null ? (
           <div className="quickstart-empty-live quickstart-empty-live--homepage">
@@ -48,7 +48,7 @@ export function LiveTickerCard({ family, liveStats }: LiveTickerCardProps) {
               <SealedInvitationGlyph className="quickstart-invitation-glyph" />
             </span>
             <div className="quickstart-invitation-copy">
-              <p className="quickstart-sealed-tag">ОЧАКВАТ СЕ ГОСТИ</p>
+              <p className="quickstart-sealed-tag">Очакват се гости</p>
               <h3>{emptyHeading(family)}</h3>
               <p>Покани приятели или сподели кода — стаята започва с теб.</p>
               <Link href={`${root}/create`} className="quickstart-card-cta">

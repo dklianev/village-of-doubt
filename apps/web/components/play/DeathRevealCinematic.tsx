@@ -31,7 +31,7 @@ export function DeathRevealCinematic({ family, players, revealedUserId }: {
         <img src={source.src} alt="" loading="lazy" width={280} height={392} />
       </picture>
       <div>
-        <p className="section-kicker">разкрита карта</p>
+        <p className="section-kicker">Разкрита карта</p>
         <h2>{revealed.displayName} беше {definition.nameBg}</h2>
         <p>{definition.shortDescriptionBg}</p>
       </div>

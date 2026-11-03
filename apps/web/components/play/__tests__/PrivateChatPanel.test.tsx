@@ -64,8 +64,8 @@ describe("PrivateChatPanel", () => {
       />,
     );
 
-    const heading = screen.getByRole("heading", { level: 2, name: "разговор на Мафията" });
-    expect(screen.getByRole("log", { name: "разговор на Мафията" })).toHaveAttribute("aria-labelledby", heading.id);
+    const heading = screen.getByRole("heading", { level: 2, name: "Разговор на Мафията" });
+    expect(screen.getByRole("log", { name: "Разговор на Мафията" })).toHaveAttribute("aria-labelledby", heading.id);
     expect(screen.queryByRole("heading", { name: "Таен канал" })).not.toBeInTheDocument();
     expect(screen.getByText(/тайно съобщение 1/)).toBeInTheDocument();
     expect(screen.getByText(/тайно съобщение 7/)).toBeInTheDocument();
@@ -432,7 +432,7 @@ describe("PrivateChatPanel", () => {
     const props = { channel: "mafia" as const, onSend: vi.fn(), onTyping: vi.fn(), typingNotices };
     const { rerender } = render(<PrivateChatPanel {...props} messages={[message(1)]} />);
 
-    const log = screen.getByRole("log", { name: /разговор на Мафията/ });
+    const log = screen.getByRole("log", { name: /Разговор на Мафията/ });
     expect(log).toHaveAttribute("aria-live", "polite");
     expect(log).toHaveAttribute("aria-relevant", "additions");
     expect(log).toHaveAttribute("aria-atomic", "false");
