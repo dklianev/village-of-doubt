@@ -131,7 +131,7 @@ for (const theme of ["dark", "light"] as const) {
       await expect(footer).toBeHidden();
       await expect(cookies).toHaveCSS("position", "fixed");
 
-      await header.getByRole("link", { name: "Сенките, начало" }).click();
+      await header.getByRole("link", { name: "Сенките Бета, начало" }).click();
       await expect(page).toHaveURL(/\/$/);
       await expect(header).not.toHaveAttribute("data-room");
       await expect(footer).toBeVisible();
