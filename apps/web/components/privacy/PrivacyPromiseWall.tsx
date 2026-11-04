@@ -61,7 +61,7 @@ export function PrivacyPromiseWall() {
   return (
     <section id="privacy-promises" tabIndex={-1} className="privacy-section">
       <header className="privacy-section-head">
-        <p className="privacy-section-kicker">обещания</p>
+        <p className="privacy-section-kicker">Обещания</p>
         <h2>Какво гарантираме.</h2>
         <p className="privacy-section-lede">
           Шест обещания, които стоят зад всичко в детайлите по-долу.

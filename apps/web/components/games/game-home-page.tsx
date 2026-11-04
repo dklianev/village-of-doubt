@@ -84,7 +84,7 @@ export function GameHero({ family }: { family: GameFamily }) {
         <div className="game-home-hero__scrim" />
       </div>
       <div className="game-home-hero__content">
-        <p className="section-kicker">{isMafia ? "град под напрежение" : "нощ над селото"}</p>
+        <p className="section-kicker">{isMafia ? "Град под напрежение" : "Нощ над селото"}</p>
         <h1>{isMafia ? "Мафия" : "Върколак"}</h1>
         <span className="game-home-title-accent" aria-hidden="true" />
         <p className="game-home-hero__lede">
@@ -127,7 +127,7 @@ export function GameHomeClosing({ family }: { family: GameFamily }) {
   return (
     <section className="game-home-closing" aria-labelledby={`${family}-invitation-title`}>
       <div>
-        <p className="section-kicker">следващата вечер</p>
+        <p className="section-kicker">Следващата вечер</p>
         <h2 id={`${family}-invitation-title`}>{family === "mafia" ? "Събери масата." : "Събери селото."}</h2>
         <p>Приятелите са същите. Ролите остават тайна.</p>
       </div>

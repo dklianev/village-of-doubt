@@ -28,7 +28,7 @@ export function AchievementPlaque({ achievement, unlockedAt, gameId = null, visu
       <div className="achievement-plaque-inner">
         <Heading className="achievement-plaque-title" id={titleId}>{achievement.titleBg}</Heading>
         <p className="achievement-plaque-family"><span>{familyLabel}</span>{" · "}<span className="achievement-plaque-tier">{tierLabel}</span></p>
-        <p className="achievement-plaque-desc">{achievement.descriptionBg}</p>
+        <p className="achievement-plaque-desc">{isUnlocked ? null : <><span className="achievement-plaque-condition">Условие</span>{" "}</>}{achievement.descriptionBg}</p>
         <p className="achievement-plaque-meta">
           {isUnlocked ? <Check size={16} aria-hidden="true" /> : <LockKeyhole size={15} aria-hidden="true" />}
           {isUnlocked ? "Отключено" : "Заключено"}

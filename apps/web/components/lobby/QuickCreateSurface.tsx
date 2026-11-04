@@ -51,7 +51,7 @@ const COMMUNICATION_LABELS: Record<CommunicationMode, string> = {
 const WEREWOLF_EXPERIENCES: Experience[] = [
   {
     id: "first-night",
-    eyebrow: "за нова група",
+    eyebrow: "За нова група",
     title: "Първа нощ",
     detail: "Основните роли, лесни за първа игра.",
     mode: "werewolves_classic",
@@ -59,7 +59,7 @@ const WEREWOLF_EXPERIENCES: Experience[] = [
   },
   {
     id: "classic-village",
-    eyebrow: "препоръчано",
+    eyebrow: "Препоръчано",
     title: "Класическо село",
     detail: "Баланс между разследване, защита и тайна любов.",
     mode: "werewolves_classic",
@@ -67,7 +67,7 @@ const WEREWOLF_EXPERIENCES: Experience[] = [
   },
   {
     id: "village-secrets",
-    eyebrow: "за опитна маса",
+    eyebrow: "За опитна маса",
     title: "Село с тайни",
     detail: "Повече специални роли и неочаквани обрати.",
     mode: "werewolves_classic",
@@ -79,7 +79,7 @@ const WEREWOLF_EXPERIENCES: Experience[] = [
 const MAFIA_EXPERIENCES: Experience[] = [
   {
     id: "free-table",
-    eyebrow: "гъвкав формат",
+    eyebrow: "Гъвкав формат",
     title: "Свободна маса",
     detail: "Настройва се спрямо групата и оставя повече свобода на водещия.",
     mode: "mafia_free",
@@ -87,7 +87,7 @@ const MAFIA_EXPERIENCES: Experience[] = [
   },
   {
     id: "sport-table",
-    eyebrow: "официален състав",
+    eyebrow: "Официален състав",
     title: "Спортна маса",
     detail: "Точно 10 играчи, фиксирани роли и състезателно темпо.",
     mode: "mafia_sport",
@@ -263,7 +263,7 @@ export function QuickCreateSurface({
           <section className="create-recommendation" aria-labelledby="create-roster-title">
             <div className="create-recommendation-heading">
               <div>
-                <span>{state.manualRolesEnabled ? "твоят състав" : "препоръчан състав"}</span>
+                <span>{state.manualRolesEnabled ? "Твоят състав" : "Препоръчан състав"}</span>
                 <h2 id="create-roster-title">{recommendationTitle(state)}</h2>
               </div>
               <span className="create-roster-capacity">{players} места</span>
@@ -289,7 +289,7 @@ export function QuickCreateSurface({
 
         <aside className="create-receipt" aria-label="Обобщение на стаята">
           <div className="create-receipt-heading">
-            <span>тази вечер</span>
+            <span>Тази вечер</span>
             <strong>{state.roomName}</strong>
           </div>
           <span className="create-ready-mark" data-ready={canCreate ? "true" : "false"}>

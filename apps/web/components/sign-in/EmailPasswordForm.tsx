@@ -207,7 +207,7 @@ export function EmailPasswordForm({
         aria-labelledby={mode === "sign-in" ? signInTabId : signUpTabId}
       >
         <fieldset className="sign-in-oauth" disabled={isBusy} aria-label="Вход с Google или Discord">{children}</fieldset>
-        <div className="sign-in-divider" role="separator" aria-label="или с имейл"><span>или с имейл</span></div>
+        <div className="sign-in-divider" role="separator" aria-label="Или с имейл"><span>Или с имейл</span></div>
         {mode === "sign-up" ? (
           <label htmlFor={nameId}>
             <span>Име на масата</span>

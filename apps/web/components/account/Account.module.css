@@ -63,7 +63,7 @@
 .heroDetails { flex: 1 1 9em; min-width: 0; }
 .heroAvatar { width: 154px; height: 194px; flex: 0 0 154px; border: 6px solid #d4ceb9; border-radius: 3px; outline: 1px solid #a69771; box-shadow: 7px 10px 18px #0005; transform: rotate(-3deg); }
 .heroAvatar > span { width: 100%; height: 100%; display: block; }
-.heroKicker { color: var(--acc-gold); font-size: 12px; font-weight: 700; text-transform: uppercase; margin-bottom: 12px !important; }
+.heroKicker { color: var(--acc-gold); font-size: var(--ds-type-label); line-height: var(--ds-leading-label); font-weight: var(--ds-weight-label); margin-bottom: 12px !important; }
 .heroName { font-size: 42px; line-height: 1.16; font-weight: 600; }
 .heroMeta { color: var(--acc-ink-muted); font-size: 14px; line-height: 1.6; margin-top: 12px !important; }
 .heroEdit { display: inline-flex; align-items: center; gap: 7px; color: var(--acc-red); font-size: 13px; font-weight: 600; min-height: 44px; text-underline-offset: 4px; }
@@ -94,7 +94,7 @@
 .sectionHead { margin-bottom: 24px; }
 .sectionHead h2 { font-size: 25px; line-height: 1.2; }
 .sectionHead p:not(.sectionKicker) { font-size: 14px; color: var(--acc-ink-muted); line-height: 1.6; margin-top: 7px; }
-.sectionKicker, .dialogKicker { color: var(--acc-gold); font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 8px !important; }
+.sectionKicker, .dialogKicker { color: var(--acc-gold); font-size: var(--ds-type-label); line-height: var(--ds-leading-label); font-weight: var(--ds-weight-label); margin-bottom: 8px !important; }
 .sectionLink, .gameLink { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; color: var(--acc-red); font-size: 13px; font-weight: 600; text-underline-offset: 4px; }
 .statsGrid { display: grid; }
 .statCard { position: relative; display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 4px 16px; padding: 18px 0; border-top: 1px solid var(--acc-line); align-items: center; }

@@ -59,7 +59,7 @@ export function PrivacyRights() {
   return (
     <section id="privacy-rights" tabIndex={-1} className="privacy-section privacy-section-rights">
       <header className="privacy-section-head">
-        <p className="privacy-section-kicker">твоите права</p>
+        <p className="privacy-section-kicker">Твоите права</p>
         <h2>Какво можеш да направиш.</h2>
         <p className="privacy-section-lede">
           Шест права по GDPR — всяко с конкретен начин да го упражниш.

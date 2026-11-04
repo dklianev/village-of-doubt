@@ -2,11 +2,11 @@
 :global(.terms-commitment-list), :global(.terms-annex-list) { list-style: none; padding: 0; margin: 0; }
 :global(.terms-commitment-item) { border-bottom: 1px solid var(--support-line); }
 :global(.terms-commitment-handle) { display: grid; grid-template-columns: 30px minmax(0,1fr) 20px; align-items: start; gap: 16px; width: 100%; padding: 22px 0; border: 0; color: var(--support-text); background: none; text-align: left; }
-:global(.terms-commitment-num), :global(.terms-commitment-chevron) { color: var(--support-metal); font-size: 1.25rem; }
+:global(.terms-commitment-num) { color: var(--support-metal); font-size: 1.25rem; }
 :global(.terms-commitment-meta p) { margin: 6px 0 0; color: var(--support-muted); font-size: .95rem; line-height: 1.6; }
 :global(.terms-commitment-detail) { padding: 0 0 24px 46px; }
 :global(.terms-examples-toggle) { min-height: 44px; padding: 0 0 16px 46px; cursor: pointer; color: var(--support-link); font-size: .875rem; }
-:global(.terms-annex-kicker) { color: var(--support-metal); font-size: .75rem; font-weight: 700; text-transform: uppercase; }
+:global(.terms-annex-kicker) { color: var(--support-metal); font-size: var(--ds-type-label); line-height: var(--ds-leading-label); font-weight: var(--ds-weight-label); }
 :global(.terms-examples-grid) { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 28px; }
 :global(.terms-examples) { padding-left: 16px; border-left: 2px solid var(--support-ok); }
 :global(.terms-examples-not-ok) { border-left-color: var(--support-error); }
@@ -28,7 +28,7 @@
 :global(.terms-acceptance-state) { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; padding: 16px 0; border-block: 1px solid var(--support-line); }
 :global(.terms-acceptance-mark) { color: var(--support-metal); font-size: 1.5rem; }
 :global(.terms-acceptance-title) { font-weight: 700; margin-bottom: 4px; }
-:global(.terms-acceptance-detail), :global(.terms-acceptance-toast) { margin: 0; color: var(--support-muted); font-size: .9rem; }
+:global(.terms-acceptance-detail) { margin: 0; color: var(--support-muted); font-size: .9rem; }
 :global(.terms-acceptance-btn) { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 10px 16px; border: 1px solid var(--support-line); border-radius: 6px; background: var(--support-surface); color: var(--support-text); }
 @media (max-width: 640px) {
   :global(.terms-examples-grid), :global(.terms-conflict-steps) { grid-template-columns: minmax(0,1fr); }

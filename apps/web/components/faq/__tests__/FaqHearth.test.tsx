@@ -91,7 +91,7 @@ describe("FaqHearth search", () => {
     render(<FaqHearth items={items} />);
 
     expect(screen.getByRole("heading", { level: 1, name: "Помощ" })).toBeInTheDocument();
-    expect(screen.getByText("седни до огъня")).toBeInTheDocument();
+    expect(screen.getByText("Седни до огъня")).toBeInTheDocument();
     expect(screen.getByRole("searchbox")).toHaveAttribute("placeholder", "Търси въпрос...");
   });
 

@@ -127,9 +127,8 @@
 .kicker {
   color: var(--ritual-accent);
   font-size: 0.8125rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-weight: var(--ds-weight-label);
+  letter-spacing: var(--ds-tracking-label);
 }
 
 .title {
@@ -158,10 +157,10 @@
 
 .goal span {
   color: var(--ritual-accent);
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: var(--ds-type-label);
+  line-height: var(--ds-leading-label);
+  font-weight: var(--ds-weight-label);
+  letter-spacing: var(--ds-tracking-label);
 }
 
 .note {

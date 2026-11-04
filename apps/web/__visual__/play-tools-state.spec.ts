@@ -174,7 +174,7 @@ for (const width of [390, 1440]) {
     for (let attempt = 0; attempt < 2; attempt++) {
       await content.press("?");
       await expect(dialog).toBeVisible();
-      await expect(dialog.getByRole("button", { name: "затвори", exact: true })).toBeFocused();
+      await expect(dialog.getByRole("button", { name: "Затвори", exact: true })).toBeFocused();
       await page.keyboard.press("Escape");
       await expect(dialog).toHaveCount(0);
       await expect(content).toBeFocused();

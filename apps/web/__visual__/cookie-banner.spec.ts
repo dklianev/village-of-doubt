@@ -135,7 +135,7 @@ for (const family of ["werewolves", "mafia"] as const) {
           document.documentElement.dataset.cookieNavigation = marker;
           return marker;
         });
-        await page.getByRole("link", { name: "Сенките, начало", exact: true }).click();
+        await page.getByRole("link", { name: "Сенките Бета, начало", exact: true }).click();
         await expect(page).toHaveURL("/");
         await expect(page.locator("html")).toHaveAttribute("data-cookie-navigation", documentMarker);
         await expect(page.locator(".site-chrome")).toHaveAttribute("data-route", "/");

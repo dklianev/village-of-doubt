@@ -110,7 +110,7 @@ for (const theme of ["light", "dark"]) {
         await ready(page);
         expect(await page.evaluate(() => matchMedia("(prefers-reduced-motion: reduce)").matches)).toBe(true);
         if (source.includes("/create")) await expect(page.locator(".lobby-wizard:not([inert])")).toBeVisible();
-        await page.getByRole("link", { name: "Сенките, начало", exact: true }).click();
+        await page.getByRole("link", { name: "Сенките Бета, начало", exact: true }).click();
         await expect(page).toHaveURL("/");
         await expect(page.locator('.site-chrome')).toHaveAttribute("data-route", "/");
         await expect(page.locator("main.landing-shell")).toBeVisible();

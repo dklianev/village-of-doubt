@@ -217,7 +217,7 @@
 :global(.play-scene-shell .play-console-band .ritual-panel[aria-label="Гласуване"] .play-action-buttons) { display: contents; }
 :global(.play-scene-shell .play-console-band .ritual-panel[aria-label="Гласуване"] .btn-primary) { grid-column: 1 / -1; }
 :global(.play-scene-shell.game-shell .play-console-band .ritual-panel[aria-label="Гласуване"] > .play-vote-counts) { grid-column: 2; grid-row: 3; align-self: center; }
-:global(html[data-theme] .play-shell.game-shell.play-scene-shell .play-confirm-skip) { grid-column: 1; grid-row: 3; min-width: 0; border: 0; border-radius: 4px; padding: 6px; background: none; box-shadow: none; color: var(--play-console-muted); font-size: 0.8125rem; font-weight: 500; text-transform: none; }
+:global(html[data-theme] .play-shell.game-shell.play-scene-shell .play-confirm-skip) { grid-column: 1; grid-row: 3; min-width: 0; border: 0; border-radius: 4px; padding: 6px; background: none; box-shadow: none; color: var(--play-console-muted); font-size: 0.8125rem; font-weight: 500; }
 :global(.play-scene-shell .play-confirm-skip)::before { content: none; }
 :global(.play-scene-shell .play-console-band .play-confirm-skip[data-confirm-state="armed"]) { outline: 1px solid var(--play-console-border); }
 :global(.play-scene-shell .play-console-band .play-vote-counts summary) { min-height: 44px; justify-content: end; }
@@ -238,10 +238,9 @@
     margin: 0;
     color: var(--play-scene-metal);
     font-family: inherit;
-    font-size: 0.75rem;
-    font-weight: 600;
-    line-height: 1.5;
-    text-transform: uppercase;
+    font-size: var(--ds-type-label);
+    font-weight: var(--ds-weight-label);
+    line-height: var(--ds-leading-label);
   }
 }
 

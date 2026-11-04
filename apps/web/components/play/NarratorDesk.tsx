@@ -32,7 +32,7 @@ export function NarratorDesk({
     <section className="narrator-desk mt-8 rounded-[2rem] p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="section-kicker">{isNarrator ? "панел на Разказвача" : "панел на домакина"}</p>
+          <p className="section-kicker">{isNarrator ? "Панел на Разказвача" : "Панел на домакина"}</p>
           <h2 className="mt-2 text-3xl font-black">{isNarrator ? "Водиш играта" : "Управление на домакина"}</h2>
           <p className="mt-3 max-w-2xl text-[#ead9ba]">
             Преди следващата фаза дай време на участниците да завършат действията си.

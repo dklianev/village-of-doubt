@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, Menu, Moon, Play, Sun, Volume2, VolumeX } from "lucide-react";
 import { AuthChip } from "@/components/site-chrome/AuthChip";
-import { BrandLogo } from "@/components/site-chrome/BrandLogo";
+import { BrandLogo, brandHomeLabel } from "@/components/site-chrome/BrandLogo";
 import { NavigationFallback } from "@/components/site-chrome/NavigationFallback";
 import { useNavigationPanels } from "@/components/site-chrome/use-navigation-panels";
 import { createThemeTransition, type ThemePreference } from "@/components/site-chrome/theme-transition";
@@ -153,7 +153,7 @@ export default function SiteChrome({ initialSession }: { initialSession?: AuthSe
         <Menu className="site-icon" aria-hidden strokeWidth={1.9} />
       </button>
 
-      <Link className="site-brand" href="/" prefetch={false} aria-label="Сенките, начало"><BrandLogo /></Link>
+      <Link className="site-brand" href="/" prefetch={false} aria-label={brandHomeLabel()}><BrandLogo /></Link>
 
       <nav className="site-primary-band" aria-label="Основна навигация">
         {!isRoom ? <>

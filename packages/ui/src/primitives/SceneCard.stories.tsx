@@ -27,32 +27,32 @@ const Body = () => (
 );
 
 export const Default: Story = {
-  args: { eyebrow: "СЪСТОЯНИЕ", children: <Body /> },
+  args: { eyebrow: "Състояние", children: <Body /> },
 };
 
 export const WithMeta: Story = {
-  args: { eyebrow: "СЪСТОЯНИЕ", meta: <Eyebrow tone="gold">СЕГА</Eyebrow>, children: <Body /> },
+  args: { eyebrow: "Състояние", meta: <Eyebrow tone="gold">Сега</Eyebrow>, children: <Body /> },
 };
 
 export const Dense: Story = {
-  args: { eyebrow: "КРАТКО", density: "sm", children: <Body /> },
+  args: { eyebrow: "Кратко", density: "sm", children: <Body /> },
 };
 
 export const Spacious: Story = {
-  args: { eyebrow: "ГОЛЯМО", density: "lg", children: <Body /> },
+  args: { eyebrow: "Голямо", density: "lg", children: <Body /> },
 };
 
 export const AllVariants: Story = {
   args: { children: <Body /> },
   render: () => (
     <div style={{ display: "grid", gap: "18px", padding: "32px", width: "min(90vw, 720px)" }}>
-      <SceneCard eyebrow="КРАТКО" density="sm">
+      <SceneCard eyebrow="Кратко" density="sm">
         <Body />
       </SceneCard>
-      <SceneCard eyebrow="СТАНДАРТНО" density="md" meta={<Eyebrow tone="gold">СЕГА</Eyebrow>}>
+      <SceneCard eyebrow="Стандартно" density="md" meta={<Eyebrow tone="gold">Сега</Eyebrow>}>
         <Body />
       </SceneCard>
-      <SceneCard eyebrow="ГОЛЯМО" density="lg">
+      <SceneCard eyebrow="Голямо" density="lg">
         <Body />
       </SceneCard>
     </div>
@@ -73,7 +73,7 @@ const STORY_BACKGROUND =
 
 export const WithBackground: Story = {
   args: {
-    eyebrow: "АРХИВ",
+    eyebrow: "Архив",
     density: "lg",
     background: { image: STORY_BACKGROUND, overlay: "scrim" },
     children: <ArchiveBody />,
@@ -82,7 +82,7 @@ export const WithBackground: Story = {
 
 export const WithBackgroundVeil: Story = {
   args: {
-    eyebrow: "АРХИВ",
+    eyebrow: "Архив",
     density: "lg",
     background: { image: STORY_BACKGROUND, overlay: "veil" },
     children: <ArchiveBody />,
@@ -91,7 +91,7 @@ export const WithBackgroundVeil: Story = {
 
 export const WithBackgroundNoOverlay: Story = {
   args: {
-    eyebrow: "АРХИВ",
+    eyebrow: "Архив",
     density: "lg",
     background: { image: STORY_BACKGROUND, overlay: "none" },
     children: <ArchiveBody />,
@@ -100,7 +100,7 @@ export const WithBackgroundNoOverlay: Story = {
 
 export const WithBackgroundFocalShift: Story = {
   args: {
-    eyebrow: "АРХИВ",
+    eyebrow: "Архив",
     density: "lg",
     background: { image: STORY_BACKGROUND, overlay: "scrim", focalX: 24, focalY: 72 },
     children: <ArchiveBody />,
@@ -109,7 +109,7 @@ export const WithBackgroundFocalShift: Story = {
 
 export const WithBackgroundTallHero: Story = {
   args: {
-    eyebrow: "ПОВЕРИТЕЛНОСТ",
+    eyebrow: "Поверителност",
     density: "lg",
     background: {
       image: STORY_BACKGROUND,
@@ -131,7 +131,7 @@ export const InteractionStates: Story = {
   args: { children: <Body /> },
   render: () => (
     <div style={{ display: "grid", gap: "18px", padding: "32px", width: "min(90vw, 720px)" }}>
-      <SceneCard eyebrow="ДЕЙСТВИЕ" meta={<Eyebrow tone="gold">ФОКУС</Eyebrow>}>
+      <SceneCard eyebrow="Действие" meta={<Eyebrow tone="gold">Фокус</Eyebrow>}>
         <Body />
         <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
           <Pill style={{ boxShadow: "var(--ds-focus-ring)" }}>Провери</Pill>
@@ -149,7 +149,7 @@ export const InteractionStates: Story = {
 
 export const Interactive: Story = {
   args: {
-    eyebrow: "ДЕЙСТВИЕ",
+    eyebrow: "Действие",
     interactive: true,
     children: <Body />,
   },
@@ -157,7 +157,7 @@ export const Interactive: Story = {
 
 export const WithAccentWin: Story = {
   args: {
-    eyebrow: "ПОБЕДА",
+    eyebrow: "Победа",
     accent: "win",
     children: <Body />,
   },
@@ -165,7 +165,7 @@ export const WithAccentWin: Story = {
 
 export const WithAccentLoss: Story = {
   args: {
-    eyebrow: "ЗАГУБА",
+    eyebrow: "Загуба",
     accent: "loss",
     children: (
       <>
@@ -180,7 +180,7 @@ export const WithAccentLoss: Story = {
 
 export const WithAccentWarning: Story = {
   args: {
-    eyebrow: "ВНИМАНИЕ",
+    eyebrow: "Внимание",
     accent: "warning",
     children: (
       <>

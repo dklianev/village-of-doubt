@@ -66,7 +66,7 @@ export function ManualRoleBuilderClient({
     <>
       <div className="manual-builder-header">
         <div>
-          <p className="section-kicker">ръчно разпределение</p>
+          <p className="section-kicker">Ръчно разпределение</p>
           <h2 className="mt-2 text-3xl font-black">Построй своята игра</h2>
           <p className="mt-2 text-sm text-[#ead9ba]">
             Добавяй роли като карти и следи баланса в реално време. Невъзможните комбинации се отбелязват веднага.
@@ -279,9 +279,9 @@ function RoleTile({
         </div>
         <p>{definition.shortDescriptionBg}</p>
         <div className="manual-role-meta">
-          <span>{definition.nightAction ? "нощна" : "дневна"}</span>
+          <span>{definition.nightAction ? "Нощна" : "Дневна"}</span>
           <span>{definition.minPlayers}+ играчи</span>
-          {runtimeStatus === "manual_only" ? <span>ръчно</span> : null}
+          {runtimeStatus === "manual_only" ? <span>Ръчно</span> : null}
         </div>
         <details className="manual-role-details">
           <summary>Как се играе</summary>
@@ -329,13 +329,13 @@ function BalanceMeter({
   const balanceLabel =
     family === "mafia"
       ? total === playerCount
-        ? "брой роли готов"
-        : "провери броя роли"
+        ? "Брой роли готов"
+        : "Провери броя роли"
       : Math.abs(balance) <= 3
-        ? "добър баланс"
+        ? "Добър баланс"
         : balance < 0
-          ? "силна заплаха"
-          : "силно село";
+          ? "Силна заплаха"
+          : "Силно село";
   const fill = family === "mafia" ? Math.min(100, Math.round((total / playerCount) * 100)) : Math.max(8, 100 - Math.min(92, Math.abs(balance) * 12));
 
   return (

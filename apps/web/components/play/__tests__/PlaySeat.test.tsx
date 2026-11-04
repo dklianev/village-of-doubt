@@ -37,6 +37,7 @@ function player(overrides: Partial<PublicPlayer> = {}): PublicPlayer {
 function renderSeat(overrides: Partial<Parameters<typeof PlaySeat>[0]> = {}) {
   const props: Parameters<typeof PlaySeat>[0] = {
     player: player(),
+    own: false,
     phase: "voting",
     narratorMode: "automatic",
     targetable: false,
@@ -88,13 +89,35 @@ describe("PlaySeat", () => {
       onSelect,
     });
 
-    const target = screen.getByRole("button", { name: "Избери Анна Иванова: онлайн · водещ, 2 гласа, избрана цел" });
+    const target = screen.getByRole("button", { name: "Избери Анна Иванова: Онлайн · водещ, 2 гласа, избрана цел" });
 
     expect(target).toHaveAttribute("aria-pressed", "true");
 
     await user.click(target);
 
     expect(onSelect).toHaveBeenCalledTimes(1);
+  });
+
+  it("announces a cast vote, which the seat otherwise shows only as a wax seal", () => {
+    renderSeat({ player: player({ hasVoted: true }), targetable: true, voteCount: 1 });
+
+    const seat = screen.getByRole("button", { name: "Избери Анна Иванова: Онлайн · водещ, подаде глас, 1 глас" });
+    expect(seat).toHaveAttribute("data-voted", "true");
+  });
+
+  it("names the viewer's own seat in its label and on a plate hidden with the portrait", () => {
+    renderSeat({ own: true });
+
+    const seat = screen.getByRole("group", { name: "Анна Иванова (ти): Онлайн · водещ" });
+    const plate = seat.querySelector<HTMLElement>("[data-seat-own]");
+    expect(plate).toHaveTextContent("Ти");
+    expect(seat.querySelector("[data-seat-portrait]")).toContainElement(plate);
+  });
+
+  it("keeps the own plate off every other seat", () => {
+    renderSeat();
+
+    expect(screen.getByRole("group").querySelector("[data-seat-own]")).toBeNull();
   });
 
   it("shows the current keyboard target number on an actionable seat", () => {
@@ -122,7 +145,7 @@ describe("PlaySeat", () => {
 
   it("labels elimination explicitly without exposing an unrevealed role", () => {
     renderSeat({ player: player({ alive: false }) });
-    const seat = screen.getByRole("group", { name: "Анна Иванова: елиминиран" });
+    const seat = screen.getByRole("group", { name: "Анна Иванова: Елиминиран" });
     expect(seat.querySelector("[data-seat-eliminated]")).toHaveTextContent("Елиминиран");
     expect(seat).toHaveAttribute("data-alive", "false");
     expect(screen.queryByRole("button", { name: /Избери/ })).not.toBeInTheDocument();
@@ -130,7 +153,7 @@ describe("PlaySeat", () => {
 
   it("marks a disconnected living participant without suggesting elimination", () => {
     renderSeat({ player: player({ connected: false }) });
-    const seat = screen.getByRole("group", { name: /Анна Иванова: извън връзка/ });
+    const seat = screen.getByRole("group", { name: /Анна Иванова: Извън връзка/ });
     expect(seat.querySelector("[data-seat-disconnected]")).toHaveAttribute("title", "Извън връзка");
     expect(seat.querySelector("[data-seat-disconnected] svg")).not.toBeNull();
     expect(seat.querySelector("[data-seat-eliminated]")).toBeNull();
@@ -161,6 +184,7 @@ describe("PlaySeat", () => {
       return (
         <PlaySeat
           player={player()}
+          own={false}
           phase="lobby"
           narratorMode="honest_human"
           targetable={false}
@@ -210,8 +234,8 @@ describe("PlaySeat", () => {
     renderSeat({ speaking: true, nominee: true, phase: "day_discussion" });
 
     expect(screen.getByTitle("Реч")).toHaveAttribute("data-seat-day-status");
-    expect(screen.getByRole("group", { name: "Анна Иванова: говори" })).toHaveAttribute("data-speaking", "true");
-    expect(screen.getByRole("group", { name: "Анна Иванова: говори" })).toHaveAttribute("data-nominee", "true");
+    expect(screen.getByRole("group", { name: "Анна Иванова: Говори" })).toHaveAttribute("data-speaking", "true");
+    expect(screen.getByRole("group", { name: "Анна Иванова: Говори" })).toHaveAttribute("data-nominee", "true");
   });
 
   it.each([
@@ -236,7 +260,7 @@ describe("PlaySeat", () => {
   it("keeps portrait artwork and public labels in one seat stack", () => {
     renderSeat();
 
-    const seat = screen.getByRole("group", { name: "Анна Иванова: онлайн · водещ" });
+    const seat = screen.getByRole("group", { name: "Анна Иванова: Онлайн · водещ" });
     const portrait = seat.querySelector<HTMLElement>("[data-seat-portrait]");
     const avatar = seat.querySelector<HTMLElement>("[data-seat-avatar]");
     const name = seat.querySelector<HTMLElement>("[data-seat-name]");
@@ -272,12 +296,13 @@ describe("PlaySeat stylesheet contracts", () => {
   it("centers portrait artwork, initials, and labels without rotating the seat stack", () => {
     const tokenRule = ruleDeclarations(PLAY_SEAT_CSS, ".token");
     const initialBadgeRule = ruleDeclarations(PLAY_SEAT_CSS, ".initialBadge");
-    const eliminatedRule = ruleDeclarations(PLAY_SEAT_CSS, '.token[data-alive="false"]');
+    const eliminatedRule = ruleDeclarations(PLAY_SEAT_CSS, '.token:where([data-alive="false"])');
 
     expect(tokenRule).toContain("place-items: center;");
     expect(tokenRule).toContain("padding: 0 3px 3px;");
     expect(initialBadgeRule).toContain("left: 50%;");
     expect(initialBadgeRule).toContain("transform: translateX(-50%);");
+    expect(eliminatedRule).toContain("opacity:");
     expect(eliminatedRule).not.toContain("transform:");
   });
 });

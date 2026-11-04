@@ -178,7 +178,7 @@ export function PrivacySections() {
   return (
     <section className="privacy-section">
       <header className="privacy-section-head">
-        <p className="privacy-section-kicker">детайли</p>
+        <p className="privacy-section-kicker">Детайли</p>
         <h2>По-конкретно.</h2>
         <p className="privacy-section-lede">
           Детайлите зад обещанията — за тези, които искат пълен поглед.

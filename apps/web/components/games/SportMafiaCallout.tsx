@@ -5,7 +5,7 @@ export function SportMafiaCallout() {
   return (
     <section className="sport-mafia-callout" aria-label="Спортна Мафия">
       <div className="sport-mafia-callout__plaque family-section-heading">
-        <p className="section-kicker">спортен формат</p>
+        <p className="section-kicker">Спортен формат</p>
         <h2>Спортна Мафия</h2>
         <p>10 играчи. Фиксиран състав и време за всеки глас.</p>
       </div>

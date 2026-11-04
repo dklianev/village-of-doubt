@@ -155,9 +155,8 @@
   box-shadow: 0 5px 18px -5px var(--chrome-glow), inset 0 1px rgba(255,255,255,0.26);
   font-family: var(--font-body);
   font-size: 13px;
-  font-weight: 800;
+  font-weight: var(--ds-weight-action);
   letter-spacing: 0;
-  text-transform: uppercase;
   cursor: pointer;
   transition: transform 160ms ease, box-shadow 180ms ease, border-color 160ms ease;
 }
@@ -232,8 +231,8 @@
   visibility: hidden;
   pointer-events: none;
 }
-:global(.site-icon-button[data-tooltip]:hover::after),
-:global(.site-icon-button[data-tooltip]:focus-visible::after) { opacity: 1; visibility: visible; }
+:global(.site-icon-button[data-tooltip]:hover)::after,
+:global(.site-icon-button[data-tooltip]:focus-visible)::after { opacity: 1; visibility: visible; }
 :global(.nav-dropdown) {
   --dropdown-bg: #151a17;
   --dropdown-surface-hover: rgba(212,185,124,0.08);
@@ -317,10 +316,10 @@
   margin: 0;
   padding: 5px 12px;
   color: var(--dropdown-text-soft);
-  font-size: 11px;
-  font-weight: 700;
+  font-size: var(--ds-type-label);
+  line-height: var(--ds-leading-label);
+  font-weight: var(--ds-weight-label);
   letter-spacing: 0;
-  text-transform: uppercase;
 }
 :global(.nav-dropdown-divider) { height: 1px; margin: 6px 8px; background: var(--dropdown-border); }
 :global(.site-play-panel) { width: 292px; padding: 16px; }
@@ -511,16 +510,46 @@
   box-shadow: 0 0 0 3px rgba(217, 154, 66, 0.22);
 }
 
-/* Loading skeleton */
+/* Loading skeleton: the resolved chip's avatar and name, at their geometry */
 
-:global(.auth-chip-loading) {
-  width: 100%;
-  height: 44px;
-  padding: 0;
+:global(.auth-chip-slot > .auth-chip-loading) {
+  --auth-chip-skeleton: color-mix(in oklab, var(--ds-ink-primary) 16%, transparent);
+  justify-content: flex-start;
   background: rgba(17, 12, 10, 0.42);
   border: 1px solid rgba(245, 232, 200, 0.08);
-  border-radius: 999px;
-  animation: auth-chip-skeleton-pulse 1.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* One selector per rule: grouped :global() lists compile to :is(), which drops pseudo-elements. */
+:global(.auth-chip-loading::before) {
+  content: "";
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--auth-chip-skeleton);
+}
+
+:global(.auth-chip-loading::after) {
+  content: "";
+  flex-shrink: 0;
+  width: 56px;
+  height: 10px;
+  border-radius: var(--ds-radius-chip);
+  background: var(--ds-shimmer-overlay) -100% 0 / 50% 100% no-repeat, var(--auth-chip-skeleton);
+  animation: auth-chip-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes auth-chip-shimmer {
+  to {
+    background-position: 200% 0, 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :global(.auth-chip-loading::after) {
+    animation: none;
+  }
 }
 
 
@@ -949,8 +978,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  :global(.nav-dropdown),
-  :global(.auth-chip-loading) {
+  :global(.nav-dropdown) {
     animation: none;
   }
 

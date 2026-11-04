@@ -110,6 +110,15 @@ describe("achievement collection", () => {
     expect(screen.getByText("Заключено")).toBeInTheDocument();
   });
 
+  it("states a locked legend's own catalog condition and drops it once earned", () => {
+    const { rerender } = render(<AchievementPlaque achievement={achievement} unlockedAt={null} />);
+    expect(screen.getByRole("article")).toHaveAttribute("data-locked", "true");
+    expect(screen.getByText(achievement.descriptionBg)).toHaveTextContent(`Условие ${achievement.descriptionBg}`);
+    rerender(<AchievementPlaque achievement={achievement} unlockedAt={unlockedAt} />);
+    expect(screen.getByRole("article")).toHaveAttribute("data-locked", "false");
+    expect(screen.getByText(achievement.descriptionBg)).toHaveTextContent(new RegExp(`^${achievement.descriptionBg}$`));
+  });
+
   it("cannot add the visual replay bypass in production", () => {
     vi.stubEnv("NODE_ENV", "production");
     render(<AchievementPlaque achievement={achievement} unlockedAt={unlockedAt} gameId={gameId} visualReplay />);

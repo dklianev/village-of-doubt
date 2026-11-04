@@ -25,7 +25,7 @@
 :global(.not-found-copy) { width: 51%; padding: 44px 40px; min-width: 0; }
 :global(.not-found-marker) { display: flex; align-items: baseline; gap: 14px; margin: 0 0 22px; color: #e2c788; font-family: var(--font-reading); font-size: 1.15rem; }
 :global(.not-found-marker span) { font-family: var(--font-body); font-size: 0.8rem; }
-:global(.not-found-copy h1) { max-width: 12ch; margin: 0 0 20px; font-family: var(--font-display); font-size: 3rem; line-height: 1.12; letter-spacing: 0; overflow-wrap: anywhere; }
+:global(.not-found-copy h1) { max-width: 12ch; margin: 0 0 20px; font-family: var(--font-display); font-size: 3rem; font-weight: var(--ds-weight-heading); line-height: 1.12; letter-spacing: 0; overflow-wrap: anywhere; }
 :global(.not-found-copy > p:not(.not-found-marker)) { max-width: 38ch; margin: 0; color: #e0e2d7; font-size: 1rem; line-height: 1.7; }
 :global(.not-found-actions) { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 24px; margin-top: 28px; }
 :global(.not-found-actions a) { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 44px; }

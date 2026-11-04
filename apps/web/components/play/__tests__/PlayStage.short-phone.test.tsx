@@ -62,7 +62,7 @@ function fixture(family: "mafia" | "werewolves", measured: boolean) {
               <section className="play-personal-area">Лично досие</section>
             </div>
             <div className="play-interaction-column">
-              <PlayActionDock eyebrow="личен ход" heading="Нощен ход · избери цел" kind="action"
+              <PlayActionDock eyebrow="Личен ход" heading="Нощен ход · избери цел" kind="action"
                 compact={measured} expanded={false} onExpandedChange={() => {}}
                 primaryContent={<button>Потвърди</button>}
               />

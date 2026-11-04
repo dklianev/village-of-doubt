@@ -214,7 +214,7 @@ describe("NightActionPanel", () => {
 
     expect(screen.getByRole("region", { name: "Нощен команден ритуал" })).toHaveAttribute("data-command-state", "awaiting-target");
     expect(screen.getByRole("group", { name: "Избрана цел" })).toHaveAttribute("data-selection-state", "empty");
-    expect(screen.getByText("избери място")).toBeInTheDocument();
+    expect(screen.getByText("Избери място")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Пази тази нощ" })).toBeDisabled();
   });
 
@@ -285,7 +285,7 @@ describe("NightActionPanel", () => {
       },
     });
 
-    expect(screen.getByText("избери място")).toBeInTheDocument();
+    expect(screen.getByText("Избери място")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Пази тази нощ" })).toBeDisabled();
     expect(screen.getByText("Не можеш да лекуваш същия играч две нощи поред.")).toBeInTheDocument();
   });
@@ -309,7 +309,7 @@ describe("NightActionPanel", () => {
 
     expect(screen.getByText(/Твои съотборници:/)).toBeInTheDocument();
     expect(screen.getByText("Борис")).toBeInTheDocument();
-    expect(screen.getByText("избери място")).toBeInTheDocument();
+    expect(screen.getByText("Избери място")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Потвърди жертва" })).toBeDisabled();
     expect(screen.getByText("Не можеш да избереш свой съотборник.")).toBeInTheDocument();
   });
@@ -340,7 +340,7 @@ describe("NightActionPanel", () => {
   it("does not treat the Blacksmith actor as a valid sword receiver", () => {
     renderPanel({ privateRole: "blacksmith", selectedTargetId: "u2", secondTargetId: "u1" });
 
-    expect(screen.getByText("избери второ място")).toBeInTheDocument();
+    expect(screen.getByText("Избери второ място")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Изкови меч" })).toBeDisabled();
   });
 });

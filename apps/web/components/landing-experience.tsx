@@ -15,7 +15,7 @@ const GAMES = [
     id: "werewolf",
     family: "werewolves",
     title: "Върколак",
-    eyebrow: "фолклорен хорър",
+    eyebrow: "Фолклорен хорър",
     description:
       "Село, тайни роли и нощни събуждания. Сред вас се крият Върколаци, а понякога и нещо по-старо.",
     line: "Денем сте съседи. Нощем не всички сте хора.",
@@ -26,7 +26,7 @@ const GAMES = [
     id: "mafia",
     family: "mafia",
     title: "Мафия",
-    eyebrow: "градска мистерия",
+    eyebrow: "Градска мистерия",
     description:
       "Градска игра на алибита, натиск и премерени лъжи. Мафията знае своите; Градът трябва да ги разкрие.",
     line: "Дъждът измива улицата, но не и алибитата.",
@@ -40,7 +40,7 @@ export function LandingExperience({ initialSession }: { initialSession: LandingS
     <main className="shell landing-shell">
       <section className="landing-hero-card">
         <div className="landing-hero-art" aria-hidden="true" />
-        <p className="section-kicker">избери игра</p>
+        <p className="section-kicker">Избери игра</p>
         <h1 className="landing-title">
           Върколак или Мафия
         </h1>
