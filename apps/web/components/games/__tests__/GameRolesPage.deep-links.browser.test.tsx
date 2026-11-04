@@ -44,6 +44,9 @@ describe.skipIf(!baseUrl)("live role catalogue deep links", () => {
           expect(await page.evaluate(() => history.length)).toBe(historyLength);
           expect(await page.locator(`.role-${role} button`).evaluate((node) => node === document.activeElement)).toBe(true);
 
+          // Next applies the close's URL change in a transition. A push before it lands folds into it,
+          // so the role never looks removed. Wait for an idle page, as a person's next action would.
+          await page.evaluate(() => new Promise<void>((resolve) => requestIdleCallback(() => resolve())));
           // Exercise Next's native-history integration and the URL subscription.
           await page.evaluate((code) => history.pushState(null, "", `?role=${code}`), role);
           await dialog.waitFor({ state: "visible" });
