@@ -47,7 +47,7 @@ for (const theme of ["light", "dark"] as const) {
       await expect(header.getByRole("button", { name: "Играй", exact: true })).toBeEnabled();
       await expect(header.locator('[data-auth-state="guest"]')).toHaveCount(1);
       await page.evaluate(() => document.fonts.ready);
-      await header.getByRole("link", { name: "Сенките, начало" }).click();
+      await header.getByRole("link", { name: "Сенките Бета, начало" }).click();
       await expect(page).toHaveURL(/\/$/);
       await page.evaluate(() => document.fonts.ready);
       if (width < 1024) await page.getByRole("button", { name: "Отвори менюто" }).click();
@@ -102,7 +102,7 @@ for (const theme of ["light", "dark"] as const) {
       await page.goto("/");
       await page.evaluate(() => document.fonts.ready);
       const header = page.locator(".site-chrome:not([data-fallback])");
-      const brand = header.getByRole("link", { name: "Сенките, начало" });
+      const brand = header.getByRole("link", { name: "Сенките Бета, начало" });
       await expect(brand).toBeVisible();
       await expect(brand.getByRole("img", { name: "Сенките" })).toHaveCSS("mask-image", /senkite-wordmark\.svg/);
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible();

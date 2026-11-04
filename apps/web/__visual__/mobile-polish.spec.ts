@@ -153,12 +153,14 @@ test("tutorial ends with a real handoff for each game", async ({ page }) => {
   await page.goto("/tutorial?step=6", { waitUntil: "domcontentloaded" });
   const stage = page.locator(".tutorial-slide-stage");
   const game = page.getByRole("combobox", { name: "Игра" });
-  for (const [mode, join, create] of [
-    ["werewolves_classic", "/werewolf/join", "/werewolf/create"],
-    ["mafia_free", "/mafia/join", "/mafia/create"],
-    ["mafia_sport", "/mafia/join", "/mafia/create?mode=mafia_sport"],
+  for (const [mode, gameName, join, create] of [
+    ["werewolves_classic", "Върколак", "/werewolf/join", "/werewolf/create"],
+    ["mafia_free", "Мафия", "/mafia/join", "/mafia/create"],
+    ["mafia_sport", "Спортна Мафия", "/mafia/join", "/mafia/create?mode=mafia_sport"],
   ] as const) {
     await game.selectOption(mode);
+    // Mafia and Sport Mafia share the join link, so wait for the new game's scene before measuring.
+    await expect(stage.getByText(gameName, { exact: true })).toBeVisible();
     for (const [name, href] of [[/Имам код/, join], [/Създай стая/, create]] as const) {
       const action = stage.getByRole("link", { name });
       await expect(action).toBeVisible();

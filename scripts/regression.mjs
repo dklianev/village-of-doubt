@@ -373,7 +373,11 @@ function checkLandingLayoutContracts() {
   assert(chromeCss.includes('/brand/senkite-wordmark.svg'), "Navbar should use the current scalable Senkite wordmark.");
   assert(existsSync(path.join(root, "apps/web/public/brand/senkite-wordmark.svg")), "Missing Senkite wordmark asset.");
   assert(brandLogo.includes('aria-label="Сенките"'), "The graphical wordmark needs its accessible brand name.");
-  assert(siteChrome.includes('aria-label="Сенките, начало"'), "The brand link must identify its home destination.");
+  assert(siteChrome.includes("aria-label={brandHomeLabel()}"), "The brand link must identify its home destination.");
+  assert(
+    brandLogo.includes('"Сенките Бета, начало"') && brandLogo.includes('"Сенките, начало"'),
+    "The brand link name must include the beta badge whenever the badge is shown.",
+  );
   assert(!siteChrome.includes("ВЪРКОЛАК · МАФИЯ"), "Navbar must not use the old uppercase subtitle.");
   assert(!siteChrome.includes("Системна тема"), "Navbar theme toggle should only expose light and dark modes.");
   assert(!siteChrome.includes("\"system\""), "Navbar theme cycle should not include the old system preference.");

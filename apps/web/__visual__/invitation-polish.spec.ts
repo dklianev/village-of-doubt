@@ -218,7 +218,7 @@ test.describe("invitation SPA chrome restoration", () => {
           await expectSessionReady();
           await expectHealth(page, errors);
         }
-        await page.getByRole("link", { name: "Сенките, начало", exact: true }).click();
+        await page.getByRole("link", { name: "Сенките Бета, начало", exact: true }).click();
         await expect(page).toHaveURL("/");
         await expect(chrome).toHaveAttribute("data-route", "/");
         // Activity keeps the old route mounted; its presence must not style the active homepage.

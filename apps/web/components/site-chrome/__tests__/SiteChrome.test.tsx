@@ -266,11 +266,22 @@ describe("Senkite navigation", () => {
     "keeps the brand navigable without prefetching the homepage from %s", (pathname) => {
       route.pathname = pathname;
       render(<SiteChrome initialSession={null} />);
-      const brand = screen.getByRole("link", { name: "Сенките, начало" });
+      const brand = screen.getByRole("link", { name: "Сенките Бета, начало" });
       expect(brand).toHaveAttribute("href", "/");
       expect(brand).toHaveAttribute("data-prefetch", "false");
     },
   );
+
+  it("drops the beta badge from the brand link name when the badge is turned off", () => {
+    vi.stubEnv("NEXT_PUBLIC_SHOW_BETA_BADGE", "false");
+    try {
+      render(<SiteChrome initialSession={null} />);
+      expect(screen.getByRole("link", { name: "Сенките, начало" })).toHaveAttribute("href", "/");
+      expect(screen.queryByText("Бета")).not.toBeInTheDocument();
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
 
   it("preloads on More hover and focus without rendering a hidden drawer", async () => {
     const user = userEvent.setup();
@@ -292,7 +303,7 @@ describe("Senkite navigation", () => {
     localStorage.setItem("last-family", family);
     const user = userEvent.setup();
     render(<SiteChrome initialSession={null} />);
-    expect(screen.getByRole("link", { name: "Сенките, начало" })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: "Сенките Бета, начало" })).toHaveAttribute("href", "/");
     expect(screen.getByRole("link", { name: "Имам код" })).toHaveAttribute("href", "/join");
     const play = screen.getAllByRole("button", { name: "Играй" })[0]!;
     await user.click(play);
