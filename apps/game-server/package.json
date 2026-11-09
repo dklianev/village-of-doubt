@@ -18,7 +18,7 @@
     "@colyseus/schema": "^5.0.42",
     "@colyseus/tools": "^0.18.11",
     "@colyseus/ws-transport": "^0.18.4",
-    "@sentry/node": "^10.71.0",
+    "@sentry/node": "^11.11.0",
     "@werewolf/database": "workspace:*",
     "@werewolf/shared": "workspace:*",
     "cors": "^2.8.6",
