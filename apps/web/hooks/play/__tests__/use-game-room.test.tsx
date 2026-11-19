@@ -303,7 +303,7 @@ describe("useGameRoom", () => {
     const toast = vi.fn();
     const { client, joinRoom, reconnectRoom } = createClient();
     mocks.createGameClient.mockReturnValue(client);
-    markRoomCreation("abcd");
+    markRoomCreation("ABCD");
     const { result } = renderHook(() => useGameRoom({ code: "ABCD", createOptions: undefined, toast }));
     await waitFor(() => expect(result.current.connectionStatus).toBe("connected"));
     expect(client.joinOrCreate).toHaveBeenLastCalledWith(GAME_ROOM_NAME, { code: "ABCD", token: "game-token" });

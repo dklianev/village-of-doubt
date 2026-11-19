@@ -4,6 +4,7 @@ import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { GameFamily, GameMode } from "@werewolf/shared";
 import {
+  cleanRoomCode,
   createRoomCode,
   hrefForState,
   initialState,
@@ -92,7 +93,7 @@ function ConfiguredLobbyWizard({
       window.clearTimeout(submitTimerRef.current);
     }
     submitTimerRef.current = window.setTimeout(() => {
-      markRoomCreation(state.code);
+      markRoomCreation(cleanRoomCode(state.code));
       router.push(hrefForState("/play", state));
       // Activity retains this form after navigation; its next submission needs a fresh room.
       dispatch({ type: "SET_CODE", code: createRoomCode() });

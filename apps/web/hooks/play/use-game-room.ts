@@ -10,7 +10,7 @@ import {
   type Dispatch,
   type SetStateAction,
 } from "react";
-import { CloseCode, type Room } from "@colyseus/sdk";
+import type { Room } from "@colyseus/sdk";
 import {
   ROOM_GONE_ERROR_CODE,
   SESSION_ENDED_CLOSE_CODE,
@@ -51,6 +51,8 @@ import { isRoomCreationPending, ROOM_RECONNECT_STORAGE_PREFIX, settleRoomCreatio
 
 const MAX_RECONNECT_ATTEMPTS = 5;
 const CONNECT_TIMEOUT_MS = 15_000;
+// Colyseus CloseCode.SERVER_SHUTDOWN. Kept local: importing the SDK root pulls its whole index into the play bundle.
+const SERVER_SHUTDOWN_CLOSE_CODE = 4001;
 const SESSION_ENDED_MESSAGE = "Връзката ти със стаята беше прекратена. Свържи се отново, за да продължиш.";
 const SERVER_SHUTDOWN_MESSAGE = "Сървърът беше обновен и тази игра прекъсна.";
 const CONNECT_TIMEOUT_MESSAGE = "Свързването отне твърде дълго. Провери връзката и опитай отново.";
@@ -557,7 +559,7 @@ export function useGameRoom({
         privateSync = null;
         // A fresh join can make the server close the previous socket before it resolves.
         if (freshJoining) return;
-        if (leaveCode === CloseCode.SERVER_SHUTDOWN) {
+        if (leaveCode === SERVER_SHUTDOWN_CLOSE_CODE) {
           closeRoom(SERVER_SHUTDOWN_MESSAGE);
           return;
         }
