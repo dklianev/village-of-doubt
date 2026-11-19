@@ -15,6 +15,8 @@ import {
   parseClientCommand,
   phaseLabelBg,
   ROOM_CODE_REGEX,
+  ROOM_GONE_ERROR_CODE,
+  SESSION_ENDED_CLOSE_CODE,
   type ClientCommand,
   type GameConfig,
   type GameFamily,
@@ -107,21 +109,32 @@ function persistencePriorityForEvent(type: string): NonNullable<PersistenceQueue
   return CRITICAL_PERSISTED_EVENTS.has(type) ? "critical" : "normal";
 }
 
+const ROOM_GONE_MESSAGE = "Тази стая вече не съществува.";
+
 export async function authenticateGameJoin(
   options: JoinRoomOptions,
   {
     consumeNonce,
     enforceJoinRateLimit = false,
-  }: { consumeNonce: boolean; enforceJoinRateLimit?: boolean },
+    roomExists,
+  }: { consumeNonce: boolean; enforceJoinRateLimit?: boolean; roomExists?: (roomCode: string) => Promise<boolean> },
 ): Promise<ClientAuth> {
   const roomCode = normalizeRoomCode(options.code ?? "");
   if (!ROOM_CODE_REGEX.test(roomCode)) {
     throw new Error("Невалиден код на стая.");
   }
   options.code = roomCode;
+  // Runs only after identity is proven, so it cannot probe room codes, and before the
+  // nonce, join attempt and active-room slot are spent on a room that is gone.
+  const refuseMissingRoom = async () => {
+    if (options.requireExisting === true && roomExists && !await roomExists(roomCode)) {
+      throw new ServerError(ROOM_GONE_ERROR_CODE, ROOM_GONE_MESSAGE);
+    }
+  };
 
   const allowDevAuth = process.env.ALLOW_DEV_AUTH === "true" && process.env.NODE_ENV !== "production";
   if (allowDevAuth && options.userId && options.displayName) {
+    await refuseMissingRoom();
     if (enforceJoinRateLimit && !await PlayerPresenceManager.checkJoinRateLimit(options.userId)) {
       throw new Error("Твърде много опити за вход. Изчакай малко.");
     }
@@ -151,6 +164,7 @@ export async function authenticateGameJoin(
   if (await PlayerPresenceManager.isGameSessionRevoked(payload.userId, tokenIssuedAtMs)) {
     throw new Error("Тази сесия е прекратена. Влез отново.");
   }
+  await refuseMissingRoom();
   if (consumeNonce && !await PlayerPresenceManager.consumeTokenNonce(payload.nonce, tokenExpiresAtMs)) {
     throw new Error("Този токен вече е използван.");
   }
@@ -334,6 +348,10 @@ export class GameRoom extends Room<{ state: GameState }> {
     if (!isPlainCreateOptions(rawOptions)) {
       throw new Error("Невалидни настройки на стаята.");
     }
+    // Rooms are not restored after a restart, so a rejoin must not silently open an empty one.
+    if (rawOptions.requireExisting === true) {
+      throw new ServerError(ROOM_GONE_ERROR_CODE, ROOM_GONE_MESSAGE);
+    }
     if (rawOptions.code !== undefined && typeof rawOptions.code !== "string") {
       throw new Error("Невалиден код на стая.");
     }
@@ -429,14 +447,14 @@ export class GameRoom extends Room<{ state: GameState }> {
     if (auth.tokenNonce && !auth.tokenNonceConsumed) {
       if (!await PlayerPresenceManager.consumeTokenNonce(auth.tokenNonce, auth.tokenExpiresAtMs ?? 0)) {
         await this.releaseTrackedActiveRoom(auth.userId);
-        this.refuseJoin("Този токен вече е използван.", 4029);
+        this.refuseJoin("Този токен вече е използван.", SESSION_ENDED_CLOSE_CODE);
       }
       auth.tokenNonceConsumed = true;
     }
 
     if (!auth.matchmakingGuardsApplied && !await PlayerPresenceManager.checkJoinRateLimit(auth.userId)) {
       await this.releaseTrackedActiveRoom(auth.userId);
-      this.refuseJoin("Твърде много опити за вход. Изчакай малко.", 4029);
+      this.refuseJoin("Твърде много опити за вход. Изчакай малко.", SESSION_ENDED_CLOSE_CODE);
     }
     const previousClient = this.playerPresence.getClient(auth.userId);
     const existingEntry = this.findPlayerEntryByUserId(auth.userId);
@@ -518,7 +536,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       type: "safe_error",
       messageBg: "Профилът ти беше отворен от друго устройство.",
     } satisfies ServerEvent);
-    previousClient.leave(1000);
+    previousClient.leave(SESSION_ENDED_CLOSE_CODE);
   }
 
   private async reattachExistingPlayer(
@@ -572,7 +590,7 @@ export class GameRoom extends Room<{ state: GameState }> {
       type: "safe_error",
       messageBg: "Сесията ти беше прекратена. Влез отново, за да продължиш.",
     } satisfies ServerEvent);
-    client.leave(4029);
+    client.leave(SESSION_ENDED_CLOSE_CODE);
     return true;
   }
 
@@ -599,7 +617,7 @@ export class GameRoom extends Room<{ state: GameState }> {
 
     if (!this.playerPresence.isCurrentConnectionGeneration(auth.userId, auth.connectionGeneration)) {
       this.sendSafeError(client, "Тази връзка е заменена от по-нова сесия.");
-      client.leave(4029);
+      client.leave(SESSION_ENDED_CLOSE_CODE);
       return;
     }
 
@@ -617,13 +635,13 @@ export class GameRoom extends Room<{ state: GameState }> {
     // The revocation lookup can outlive this connection's ownership, even on failure.
     if (!this.playerPresence.isCurrentConnectionGeneration(auth.userId, auth.connectionGeneration)) {
       this.sendSafeError(client, "Тази връзка е заменена от по-нова сесия.");
-      client.leave(4029);
+      client.leave(SESSION_ENDED_CLOSE_CODE);
       return;
     }
     if (reconnectError) {
       this.playerPresence.invalidateConnectionGeneration(auth.userId);
       this.sendSafeError(client, reconnectError);
-      client.leave(4029);
+      client.leave(SESSION_ENDED_CLOSE_CODE);
       return;
     }
 

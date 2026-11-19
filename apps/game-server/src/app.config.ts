@@ -1,5 +1,6 @@
 import { monitor } from "@colyseus/monitor";
 import { createDatabase, isGameSessionRevokedDurably } from "@werewolf/database";
+import { matchMaker } from "@colyseus/core";
 import defineConfig from "@colyseus/tools";
 import {
   GAME_SESSION_REVOCATION_CHANNEL,
@@ -27,6 +28,7 @@ import {
   type JoinRoomOptions,
 } from "@werewolf/shared";
 
+const GAME_ROOM_NAME = "game";
 const redisUrl = resolveGameServerRedisUrl(process.env);
 const colyseusRedisUrl = resolveColyseusRedisUrl(process.env);
 const redisRuntime = redisUrl && colyseusRedisUrl
@@ -145,7 +147,7 @@ export default defineConfig({
         (userId, tokenIssuedAtMs) => isGameSessionRevokedDurably(database, userId, tokenIssuedAtMs),
       );
     }
-    gameServer.define("game", OperationalGameRoom).filterBy(["code"]);
+    gameServer.define(GAME_ROOM_NAME, OperationalGameRoom).filterBy(["code"]);
     deployDrain.configure({
       getActiveRooms: () => getGameRuntimeStats().activeRooms,
       stopMatchmaking: () => {},
@@ -301,6 +303,8 @@ export class OperationalGameRoom extends GameRoom {
     return authenticateGameJoin(options, {
       consumeNonce: true,
       enforceJoinRateLimit: true,
+      // GameRoom.onCreate still refuses the join if the room disappears after this check.
+      roomExists: async (code) => (await matchMaker.query({ name: GAME_ROOM_NAME, code })).length > 0,
     });
   }
 
