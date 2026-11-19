@@ -14,6 +14,19 @@ describe("room recovery protocol over real sockets", () => {
   let running = false;
   let previousEnv: Record<(typeof ENV_KEYS)[number], string | undefined>;
 
+  // Each test boots a fresh server on the same port, so the first request can hit a keep-alive
+  // socket from the previous one. Retry only that transport failure, as connectWithRetry does.
+  const join = async (options: Record<string, unknown>) => {
+    for (let attempt = 1; ; attempt += 1) {
+      try {
+        return await colyseus.sdk.joinOrCreate("game", options);
+      } catch (error) {
+        if (attempt === 3 || !(error instanceof Error && error.message.includes("fetch failed"))) throw error;
+        await new Promise((resolve) => setTimeout(resolve, 25 * attempt));
+      }
+    }
+  };
+
   beforeEach(async () => {
     previousEnv = Object.fromEntries(ENV_KEYS.map((key) => [key, process.env[key]])) as typeof previousEnv;
     process.env.GAME_TOKEN_SECRET = "test-secret-that-is-long-enough-32-chars";
@@ -37,12 +50,12 @@ describe("room recovery protocol over real sockets", () => {
   });
 
   it("ends the replaced tab's session with a reason it can show", async () => {
-    const oldTab = await colyseus.sdk.joinOrCreate("game", { ...player, code: "RCVR23" });
+    const oldTab = await join({ ...player, code: "RCVR23" });
     const reasons: string[] = [];
     oldTab.onMessage("safe_error", (message: { messageBg: string }) => reasons.push(message.messageBg));
     const oldTabLeft = new Promise<number>((resolve) => oldTab.onLeave(resolve));
 
-    const newTab = await colyseus.sdk.joinOrCreate("game", { ...player, code: "RCVR23", requireExisting: true });
+    const newTab = await join({ ...player, code: "RCVR23", requireExisting: true });
 
     expect(newTab.roomId).toBe(oldTab.roomId);
     await expect(oldTabLeft).resolves.toBe(SESSION_ENDED_CLOSE_CODE);
@@ -50,30 +63,30 @@ describe("room recovery protocol over real sockets", () => {
   });
 
   it("refuses a rejoin to a missing room with a code and Bulgarian reason", async () => {
-    await expect(colyseus.sdk.joinOrCreate("game", { ...player, code: "NNNE23", requireExisting: true }))
+    await expect(join({ ...player, code: "NNNE23", requireExisting: true }))
       .rejects.toMatchObject({ code: ROOM_GONE_ERROR_CODE, message: "Тази стая вече не съществува." });
 
-    await expect(colyseus.sdk.joinOrCreate("game", { ...player, code: "NNNE23" })).resolves.toBeDefined();
+    await expect(join({ ...player, code: "NNNE23" })).resolves.toBeDefined();
   });
 
   it("does not reveal whether a room exists before the joiner is authenticated", async () => {
     process.env.ALLOW_DEV_AUTH = "false";
 
-    await expect(colyseus.sdk.joinOrCreate("game", { code: "NNNE24", requireExisting: true, token: "not-a-token" }))
+    await expect(join({ code: "NNNE24", requireExisting: true, token: "not-a-token" }))
       .rejects.not.toMatchObject({ code: ROOM_GONE_ERROR_CODE });
   });
 
   it("does not spend the player's active-room slots on refused rejoins", async () => {
     for (const code of ["DEAD22", "DEAD23", "DEAD24", "DEAD25", "DEAD26", "DEAD27", "DEAD28"]) {
-      await expect(colyseus.sdk.joinOrCreate("game", { ...player, code, requireExisting: true }))
+      await expect(join({ ...player, code, requireExisting: true }))
         .rejects.toMatchObject({ code: ROOM_GONE_ERROR_CODE });
     }
 
-    await expect(colyseus.sdk.joinOrCreate("game", { ...player, code: "LYVE23" })).resolves.toBeDefined();
+    await expect(join({ ...player, code: "LYVE23" })).resolves.toBeDefined();
   });
 
   it("tells connected players when the server shuts down", async () => {
-    const room = await colyseus.sdk.joinOrCreate("game", { ...player, code: "SHUT23" });
+    const room = await join({ ...player, code: "SHUT23" });
     const left = new Promise<number>((resolve) => room.onLeave(resolve));
 
     running = false;
