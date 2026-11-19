@@ -10,12 +10,14 @@ import {
   type Dispatch,
   type SetStateAction,
 } from "react";
-import type { Room } from "@colyseus/sdk";
-import type {
-  CreateRoomOptions,
-  GameMode,
-  GamePhase,
-  NarratorVoice,
+import { CloseCode, type Room } from "@colyseus/sdk";
+import {
+  ROOM_GONE_ERROR_CODE,
+  SESSION_ENDED_CLOSE_CODE,
+  type CreateRoomOptions,
+  type GameMode,
+  type GamePhase,
+  type NarratorVoice,
 } from "@werewolf/shared";
 import { createGameClient, GAME_ROOM_NAME } from "@/lib/colyseus-client";
 import { useAuthSession, type AuthSessionView } from "@/lib/use-auth-session";
@@ -45,11 +47,13 @@ import type {
   TypingNotice,
   VoteTallyItem,
 } from "@/lib/play/types";
-import { ROOM_RECONNECT_STORAGE_PREFIX } from "@/lib/room-traces";
+import { isRoomCreationPending, ROOM_RECONNECT_STORAGE_PREFIX, settleRoomCreation } from "@/lib/room-traces";
 
 const MAX_RECONNECT_ATTEMPTS = 5;
-const SESSION_ENDED_CLOSE_CODE = 4029;
+const CONNECT_TIMEOUT_MS = 15_000;
 const SESSION_ENDED_MESSAGE = "Връзката ти със стаята беше прекратена. Свържи се отново, за да продължиш.";
+const SERVER_SHUTDOWN_MESSAGE = "Сървърът беше обновен и тази игра прекъсна.";
+const CONNECT_TIMEOUT_MESSAGE = "Свързването отне твърде дълго. Провери връзката и опитай отново.";
 
 export interface UseGameRoomOptions {
   code: string;
@@ -310,6 +314,20 @@ export function useGameRoom({
       }
     };
 
+    // The game cannot come back: rooms are not restored after a server restart.
+    const closeRoom = (message: string) => {
+      needsRecovery = false;
+      reconnecting = false;
+      preferFreshJoin = true;
+      joinedRoom = null;
+      setRoom(null);
+      clearReconnectTimer();
+      clearReconnectionToken(code);
+      clearViewerPrivateState();
+      setConnectionMessage(message);
+      setConnectionStatus("closed");
+    };
+
     const bindRoom = (nextRoom: Room) => {
       const previousRoom = joinedRoom;
       const previousRoomLeft = roomLeft;
@@ -539,6 +557,10 @@ export function useGameRoom({
         privateSync = null;
         // A fresh join can make the server close the previous socket before it resolves.
         if (freshJoining) return;
+        if (leaveCode === CloseCode.SERVER_SHUTDOWN) {
+          closeRoom(SERVER_SHUTDOWN_MESSAGE);
+          return;
+        }
         // 4029 means the server ended this session (revoked or replaced by a newer connection); reconnecting cannot work.
         const sessionEnded = leaveCode === SESSION_ENDED_CLOSE_CODE;
         if (sessionEnded || leaveCode === 1000 || leaveCode === 1001) {
@@ -576,9 +598,11 @@ export function useGameRoom({
         clearReconnectionToken(code);
         setConnectionStatus("error");
         setUnlockedAchievementIds([]);
+        // Server copy is Bulgarian; anything else is a transport detail players should not read.
+        const serverReason = errorMessage?.trim() ?? "";
         setConnectionMessage(
-          errorMessage?.trim()
-            ? `Стаята прекъсна връзката: ${errorMessage}`
+          /[Ѐ-ӿ]/.test(serverReason)
+            ? `Стаята прекъсна връзката: ${serverReason}`
             : `Стаята прекъсна връзката (код ${errorCode}).`,
         );
       });
@@ -637,6 +661,12 @@ export function useGameRoom({
       clearReconnectTimer();
       setConnectionStatus("connecting");
       setConnectionMessage("Свързваме те отново със стаята.");
+      const deadline = new AbortController();
+      const deadlineTimer = window.setTimeout(() => deadline.abort(new Error(CONNECT_TIMEOUT_MESSAGE)), CONNECT_TIMEOUT_MS);
+      const expired = new Promise<never>((_resolve, reject) => {
+        deadline.signal.addEventListener("abort", () => reject(deadline.signal.reason), { once: true });
+      });
+      expired.catch(() => undefined);
       try {
         const response = await fetch("/api/game-token", {
           method: "POST",
@@ -644,6 +674,7 @@ export function useGameRoom({
             "content-type": "application/json",
           },
           body: JSON.stringify({ code }),
+          signal: deadline.signal,
         });
         if (!response.ok) {
           const body = (await response.json().catch(() => ({}))) as { error?: string };
@@ -659,24 +690,37 @@ export function useGameRoom({
           return;
         }
         setCurrentUserId(tokenResponse.userId);
-        const nextRoom = await client.joinOrCreate(GAME_ROOM_NAME, {
+        const requireExisting = !isRoomCreationPending(code);
+        const joining = client.joinOrCreate(GAME_ROOM_NAME, {
           ...stableCreateOptions,
           code: tokenResponse.roomCode,
           token: tokenResponse.token,
+          ...(requireExisting ? { requireExisting } : {}),
         });
+        // A join that lands after the deadline must not keep a seat nobody sees.
+        void joining.then((lateRoom) => {
+          if (deadline.signal.aborted) void lateRoom.leave();
+        }, () => undefined);
+        const nextRoom = await Promise.race([joining, expired]);
         if (!active) {
           nextRoom.leave();
           return;
         }
+        settleRoomCreation(code);
         bindRoom(nextRoom);
       } catch (error: unknown) {
         if (!active) {
+          return;
+        }
+        if (errorCode(error) === ROOM_GONE_ERROR_CODE) {
+          closeRoom(joinFailureMessage(error));
           return;
         }
         preferFreshJoin = true;
         setConnectionMessage(joinFailureMessage(error));
         setConnectionStatus("error");
       } finally {
+        window.clearTimeout(deadlineTimer);
         freshJoining = false;
       }
     };
@@ -1055,6 +1099,10 @@ function arePublicChatEqual(a: PublicChatMessage[], b: PublicChatMessage[]) {
     }
   }
   return true;
+}
+
+function errorCode(error: unknown) {
+  return typeof error === "object" && error !== null && "code" in error ? error.code : undefined;
 }
 
 function reconnectStorageKey(code: string) {

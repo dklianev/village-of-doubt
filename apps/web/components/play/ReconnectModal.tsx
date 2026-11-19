@@ -8,7 +8,7 @@ import type { ConnectionStatus } from "@/lib/play/types";
 import "@/components/play/ReconnectModal.module.css";
 
 type ReconnectProps = {
-  status: Extract<ConnectionStatus, "reconnecting" | "lost" | "error">;
+  status: Extract<ConnectionStatus, "reconnecting" | "lost" | "error" | "closed">;
   message: string;
   onRetry: () => void;
 };
@@ -36,6 +36,7 @@ function ReconnectDialog({
 }: ReconnectProps) {
   const reconnecting = status === "reconnecting";
   const roomError = status === "error";
+  const roomClosed = status === "closed";
   const duplicateName = roomError && isDuplicateNameError(message);
   const keepOpen = useCallback(() => undefined, []);
   const { ref } = useModal<HTMLDialogElement>({ open: true, onClose: keepOpen });
@@ -43,11 +44,13 @@ function ReconnectDialog({
   const descriptionId = useId();
   const title = duplicateName
     ? "Името вече е заето"
-    : reconnecting
-      ? "Свързваме се отново"
-      : roomError
-        ? "Връзката със стаята прекъсна"
-        : "Връзката е прекъсната";
+    : roomClosed
+      ? "Стаята е затворена"
+      : reconnecting
+        ? "Свързваме се отново"
+        : roomError
+          ? "Връзката със стаята прекъсна"
+          : "Връзката е прекъсната";
 
   return (
     <dialog ref={ref} className="reconnect-modal" aria-labelledby={titleId} aria-describedby={descriptionId}
@@ -57,23 +60,30 @@ function ReconnectDialog({
         <h2 id={titleId}>{title}</h2>
         <p id={descriptionId}>{message}</p>
         {duplicateName ? <p>В профила отвори „Образ и достъп“ и запази различно име на масата. После се върни в този раздел и се свържи отново.</p> : null}
-        <div className="reconnect-modal-actions">
-          {duplicateName ? (
-            <a className="btn btn-primary" href="/account" target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="play-button-icon" aria-hidden />
-              Промени името (нов раздел)
-            </a>
-          ) : null}
-          <Button variant={duplicateName ? "secondary" : "primary"} onClick={onRetry} disabled={reconnecting} aria-busy={reconnecting}>
-            <RotateCw size={18} aria-hidden />
-            {reconnecting ? "Опитваме..." : roomError ? "Свържи отново" : "Опитай пак"}
-          </Button>
-          {!duplicateName ? (
-            <Button variant="secondary" onClick={() => window.location.reload()}>
-              Презареди
+        {roomClosed ? (
+          <div className="reconnect-modal-actions">
+            <a className="btn btn-primary" href="/">Към началото</a>
+            <a className="btn btn-secondary" href="/create">Създай нова стая</a>
+          </div>
+        ) : (
+          <div className="reconnect-modal-actions">
+            {duplicateName ? (
+              <a className="btn btn-primary" href="/account" target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="play-button-icon" aria-hidden />
+                Промени името (нов раздел)
+              </a>
+            ) : null}
+            <Button variant={duplicateName ? "secondary" : "primary"} onClick={onRetry} disabled={reconnecting} aria-busy={reconnecting}>
+              <RotateCw size={18} aria-hidden />
+              {reconnecting ? "Опитваме..." : roomError ? "Свържи отново" : "Опитай пак"}
             </Button>
-          ) : null}
-        </div>
+            {!duplicateName ? (
+              <Button variant="secondary" onClick={() => window.location.reload()}>
+                Презареди
+              </Button>
+            ) : null}
+          </div>
+        )}
     </dialog>
   );
 }

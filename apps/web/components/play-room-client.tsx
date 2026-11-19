@@ -1159,7 +1159,7 @@ export function PlayRoomClientCore({
         <PhaseTransitionOverlay phase={phase} mode={mode} narratorVoice={snapshot?.narratorVoice ?? "classic"} pulseKey={phasePulse} />
       ) : null}
       <PreGameCountdown value={startCountdown} />
-      {!hasStageTakeover && (connectionStatus === "reconnecting" || connectionStatus === "lost" || connectionStatus === "error") ? (
+      {!hasStageTakeover && (connectionStatus === "reconnecting" || connectionStatus === "lost" || connectionStatus === "error" || connectionStatus === "closed") ? (
         <ReconnectModal
           status={connectionStatus}
           message={connectionMessage}

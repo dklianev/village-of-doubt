@@ -138,7 +138,8 @@ export interface NarratorRoleSnapshot {
 
 export type { NightActionCapabilities, PrivateFactionRoster };
 
-export type ConnectionStatus = "connecting" | "connected" | "reconnecting" | "disconnected" | "lost" | "error";
+// "closed" means the room itself is gone (server restart or expired room), so retrying cannot help.
+export type ConnectionStatus = "connecting" | "connected" | "reconnecting" | "disconnected" | "lost" | "error" | "closed";
 export type CueMode = "silent" | "visual" | "audio_vibration";
 
 export type ShortcutState = {
