@@ -2033,7 +2033,8 @@ html[data-theme="light"] .utility-shell::before {
 
 .connection-disconnected,
 .connection-lost,
-.connection-error {
+.connection-error,
+.connection-closed {
   --connection-art: var(--screen-error);
 }
 

@@ -653,6 +653,31 @@ describe("GameRoom security boundaries", () => {
     expect(firstClient.send).not.toHaveBeenCalledWith("private_role", expect.anything());
   });
 
+  it("ends the replaced tab's session when the same account joins from another device", async () => {
+    const serverRoom = await colyseus.createRoom<GameRoom>("game", {
+      code: "SWAP23",
+      mode: "werewolves_classic",
+      playerCount: 8,
+    });
+    const identity = {
+      userId: "swap-user",
+      displayName: "Играч на две устройства",
+      avatarId: "portrait-m03" as const,
+    };
+    const oldTab = fakeClient("swap-old");
+    const newTab = fakeClient("swap-new");
+
+    await serverRoom.onJoin(oldTab, { code: "SWAP23" }, identity);
+    await serverRoom.onJoin(newTab, { code: "SWAP23", requireExisting: true }, identity);
+
+    expect(oldTab.send).toHaveBeenCalledWith(
+      "safe_error",
+      expect.objectContaining({ messageBg: "Профилът ти беше отворен от друго устройство." }),
+    );
+    expect(oldTab.leave).toHaveBeenCalledWith(4029);
+    expect(newTab.leave).not.toHaveBeenCalled();
+  });
+
   it.each(["valid", "revoked", "unavailable"] as const)(
     "preserves a newer attach when a suspended reconnect lookup becomes %s",
     async (result) => {

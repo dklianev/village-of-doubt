@@ -18,6 +18,16 @@ describe("ReconnectModal", () => {
     expect(onRetry).toHaveBeenCalledOnce();
   });
 
+  it("points a closed room to a way forward instead of a retry that cannot work", () => {
+    const onRetry = vi.fn();
+    render(<ReconnectModal status="closed" message="Сървърът беше обновен и тази игра прекъсна." onRetry={onRetry} />);
+
+    expect(screen.getByRole("dialog", { name: "Стаята е затворена" })).toHaveAccessibleDescription("Сървърът беше обновен и тази игра прекъсна.");
+    expect(screen.getByRole("link", { name: "Към началото" })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: "Създай нова стая" })).toHaveAttribute("href", "/create");
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
+
   it("keeps the retry action disabled while reconnecting", async () => {
     vi.useFakeTimers();
     const onRetry = vi.fn();

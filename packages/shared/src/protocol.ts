@@ -45,6 +45,14 @@ export type PublicEventKind =
   | "hunter_shot"
   | "reveal";
 
+/** Close code for a connection the server ended on purpose: revoked, or replaced by a newer one. */
+export const SESSION_ENDED_CLOSE_CODE = 4029;
+/**
+ * Matchmaking error code for a join that expected a room which no longer exists.
+ * Colyseus sends room-creation errors as the HTTP status, so this must be a valid one.
+ */
+export const ROOM_GONE_ERROR_CODE = 410;
+
 export interface CreateRoomOptions {
   code?: string;
   mode?: GameMode;
@@ -80,6 +88,8 @@ export interface CreateRoomOptions {
 }
 
 export interface JoinRoomOptions extends CreateRoomOptions {
+  /** Refuse to open a new room when none matches the code. */
+  requireExisting?: boolean;
   userId: string;
   displayName: string;
   avatarId?: string;

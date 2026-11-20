@@ -26,6 +26,7 @@ const checks = [
   ["primitive override anti-pattern", checkPrimitiveOverrideAntiPattern],
   ["faction theme attribute contracts", checkFactionThemeAttributeContracts],
   ["play room lifecycle contracts", checkPlayRoomLifecycleContracts],
+  ["Colyseus SDK deep imports", checkColyseusSdkDeepImports],
   ["globals.css size budget", checkGlobalsCssBudget],
   ["design system ratchets", checkDesignSystemRatchets],
   ["CSS module pseudo-elements", checkCssModulePseudoElements],
@@ -1713,6 +1714,20 @@ function runEnvChecker(env) {
     },
     encoding: "utf8",
   });
+}
+
+// The SDK root re-exports everything; a value import from it adds about 4 KB gzip to the play bundle.
+function checkColyseusSdkDeepImports() {
+  const webRoot = path.join(root, "apps/web");
+  const sources = listFilesRecursive(webRoot)
+    .filter((file) => /\.(ts|tsx)$/.test(file) && !/(^|[\\/])(node_modules|\.next|__tests__|__visual__)[\\/]/.test(file) && !/\.test\.tsx?$/.test(file));
+  for (const file of sources) {
+    const text = readFileSync(path.join(webRoot, file), "utf8");
+    assert(
+      !/^import\s+(?!type\s)[^;]*?from\s+["']@colyseus\/sdk["']/m.test(text),
+      `apps/web/${file} imports a value from the @colyseus/sdk root. Use import type, or a subpath such as @colyseus/sdk/Client.`,
+    );
+  }
 }
 
 function listFilesRecursive(dir, prefix = "") {

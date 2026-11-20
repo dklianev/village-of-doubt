@@ -790,6 +790,7 @@ function statusForConnection(connection: ConnectionStatus) {
     disconnected: "Визуална връзка: прекъсната.",
     lost: "Визуална връзка: изгубена.",
     error: "Визуална връзка: грешка.",
+    closed: "Сървърът беше обновен и тази игра прекъсна.",
   };
   return labels[connection];
 }
@@ -864,7 +865,7 @@ function parseVoteTally(value: string | undefined): VisualVoteTally {
 }
 
 function parseConnection(value: string | undefined): ConnectionStatus {
-  return value === "reconnecting" || value === "lost" || value === "error" ? value : "connected";
+  return value === "reconnecting" || value === "lost" || value === "error" || value === "closed" ? value : "connected";
 }
 
 function parseVisualTimer(value: string | null): number | null {

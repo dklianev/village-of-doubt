@@ -7,6 +7,7 @@ import { LobbyWizard } from "../LobbyWizard";
 import { playCue } from "@/lib/sound";
 import { createGameConfigFromOptions } from "@werewolf/shared";
 import { parseRoomCreateOptions } from "@/lib/room-options";
+import { isRoomCreationPending } from "@/lib/room-traces";
 
 const push = vi.fn();
 let search = new URLSearchParams();
@@ -171,6 +172,9 @@ describe("LobbyWizard", () => {
     const second = new URL(push.mock.calls[1]![0], "http://localhost");
     expect(second.pathname).not.toBe(first.pathname);
     expect(second.search).toBe(first.search);
+    for (const url of [first, second]) {
+      expect(isRoomCreationPending(url.pathname.split("/").at(-1)!)).toBe(true);
+    }
   });
 
   it("hydrates a new setup URL while the same Create route stays mounted", async () => {

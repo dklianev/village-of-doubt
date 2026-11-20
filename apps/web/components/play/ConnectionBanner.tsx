@@ -14,13 +14,15 @@ export function ConnectionBanner({ status, message }: { status: ConnectionStatus
     disconnected: "Напусна стаята",
     lost: "Връзката остана прекъсната",
     error: "Проблем със свързването",
+    closed: "Стаята е затворена",
   };
+  const urgent = status === "error" || status === "closed";
 
   return (
     <div
       className={`connection-banner connection-${status}`}
-      role={status === "error" ? "alert" : "status"}
-      aria-live={status === "error" ? "assertive" : "polite"}
+      role={urgent ? "alert" : "status"}
+      aria-live={urgent ? "assertive" : "polite"}
       aria-busy={status === "connecting" || status === "reconnecting"}
     >
       <WifiOff size={20} aria-hidden />
